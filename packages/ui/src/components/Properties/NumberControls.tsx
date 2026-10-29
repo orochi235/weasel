@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import { decimal, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { UnitField } from '../NumberField';
@@ -320,6 +321,7 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, display
         }}
         onMouseDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
+          if (imeKey(e.nativeEvent)) return;
           if (e.key === 'Enter') {
             e.currentTarget.blur();
           } else if (e.key === 'Escape') {

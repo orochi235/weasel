@@ -50,6 +50,13 @@ describe('ListEditor', () => {
     expect(onChange).toHaveBeenLastCalledWith(['a', 'b']);
   });
 
+  it('leaves an input method\'s Enter to it', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={['a', 'b']} onChange={onChange} />);
+    for (const init of [{ key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 }]) fireEvent.keyDown(screen.getByRole('textbox', { name: 'Glob 1' }), init);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('says so when empty', () => {
     renderWithIcons(<ListEditor value={[]} onChange={vi.fn()} empty="No globs" />);
     expect(screen.getByText('No globs')).toBeTruthy();

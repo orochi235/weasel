@@ -5,6 +5,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import {
   actionItemTitle,
   actionShortcuts,
@@ -173,6 +174,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
   };
 
   const onInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (imeKey(e.nativeEvent)) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       moveHighlight(1);

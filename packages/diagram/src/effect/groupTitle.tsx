@@ -1,5 +1,6 @@
 /** The field a group's title is renamed in, held over the title on the canvas. */
 import { adoptCssOnce, useLatest } from '@weasel-js/react';
+import { imeKey } from '@weasel-js/headless';
 import { useMemo, useState, type ReactElement } from 'react';
 import { titleIdOf } from '../containers/trait';
 import { groupLabelIdOf } from '../dataGroups';
@@ -65,6 +66,7 @@ export function GroupTitleField({ initial, onDone }: { initial: string; onDone: 
       onChange={(e) => setText(e.target.value)}
       onKeyDown={(e) => {
         e.stopPropagation();
+        if (imeKey(e.nativeEvent)) return;
         if (e.key === 'Enter') finish(text.trim());
         else if (e.key === 'Escape') finish(null);
       }}

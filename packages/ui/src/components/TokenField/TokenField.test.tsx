@@ -34,6 +34,15 @@ describe('TokenField', () => {
     expect((field() as HTMLInputElement).value).toBe('');
   });
 
+  it('leaves an input method\'s Enter to it', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={[]} onChange={onChange} />);
+    fireEvent.change(field(), { target: { value: 'にほ' } });
+    for (const init of [{ key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 }]) fireEvent.keyDown(field(), init);
+    expect(onChange).not.toHaveBeenCalled();
+    expect((field() as HTMLInputElement).value).toBe('にほ');
+  });
+
   it('keeps its placeholder once it holds tokens', () => {
     renderWithIcons(<TokenField aria-label="Tag" placeholder="Add tag…" value={['red']} onChange={() => {}} />);
     expect(field()).toHaveAttribute('placeholder', 'Add tag…');

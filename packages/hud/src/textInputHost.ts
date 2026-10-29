@@ -1,3 +1,4 @@
+import { imeKey } from '@weasel-js/headless';
 import type { Hud } from './hud';
 import { isFocusable, type HudTextInput, type Widget } from './widget';
 
@@ -8,10 +9,6 @@ export interface TextInputHandlers {
   /** DOM focus left both the input and the canvas. */
   blur(): void;
 }
-
-/** A key that belongs to an input method mid-composition, which must reach neither the widget nor `preventDefault`. */
-const composing = (e: KeyboardEvent) =>
-  e.isComposing || e.keyCode === 229 || e.key === 'Process' || e.key === 'Dead';
 
 /**
  * A hidden `<input>` that holds DOM focus in place of `element`, the canvas, while the focused widget's
@@ -67,8 +64,8 @@ export function wireTextInput(element: HTMLElement, hud: Hud, on: TextInputHandl
     sync();
   };
 
-  const onKeyDown = (e: KeyboardEvent) => { if (!composing(e)) on.keydown(e); };
-  const onKeyUp = (e: KeyboardEvent) => { if (!composing(e)) on.keyup(e); };
+  const onKeyDown = (e: KeyboardEvent) => { if (!imeKey(e)) on.keydown(e); };
+  const onKeyUp = (e: KeyboardEvent) => { if (!imeKey(e)) on.keyup(e); };
   const onUpdate = (e: CompositionEvent) => { target()?.compose(e.data); };
   const onEnd = (e: CompositionEvent) => {
     const t = target();

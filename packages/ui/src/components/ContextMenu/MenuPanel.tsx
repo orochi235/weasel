@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
+import { imeKey } from '@weasel-js/headless';
 import { blockFrame, clientToBlock, containingBlock } from '../../overlays/blockFrame';
 import { MenuRow } from './MenuRow';
 import { menuFieldId } from './MenuValue';
@@ -54,7 +55,7 @@ export function MenuPanel(props: {
     e.stopPropagation();
     // A key typed into a row's field is the field's; Enter and Escape, which end the edit, give focus back.
     if (e.target !== e.currentTarget) {
-      if (e.key === 'Enter' || e.key === 'Escape') ref.current?.focus();
+      if ((e.key === 'Enter' || e.key === 'Escape') && !imeKey(e.nativeEvent)) ref.current?.focus();
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;

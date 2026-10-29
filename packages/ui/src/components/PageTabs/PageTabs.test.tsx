@@ -75,6 +75,19 @@ describe('PageTabs', () => {
     expect(onRename).toHaveBeenCalledTimes(1);
   });
 
+  it('leaves an input method\'s Enter and Escape to it while renaming, Safari\'s closing Enter included', () => {
+    const { onRename } = setup();
+    press(tab('Page 2'));
+    press(tab('Page 2'));
+    const field = screen.getByLabelText('Page name');
+    fireEvent.change(field, { target: { value: 'にほ' } });
+    fireEvent.keyDown(field, { key: 'Enter', isComposing: true });
+    fireEvent.keyDown(field, { key: 'Enter', keyCode: 229 });
+    fireEvent.keyDown(field, { key: 'Escape', isComposing: true });
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Page name')).toBe(field);
+  });
+
   it('adds a page from the + button', () => {
     const { onAdd } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Add page' }));

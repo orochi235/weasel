@@ -210,6 +210,16 @@ describe('CommandPalette', () => {
     expect(palette()).toBeNull();
   });
 
+  it('leaves an input method\'s Enter to it', async () => {
+    runs.group.mockClear();
+    openPalette();
+    fireEvent.change(search(), { target: { value: 'group' } });
+    for (const init of [{ key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 }]) fireEvent.keyDown(search(), init);
+    await flush();
+    expect(runs.group).not.toHaveBeenCalled();
+    expect(palette()).not.toBeNull();
+  });
+
   it('reopens with an empty search and the first row highlighted', () => {
     openPalette();
     fireEvent.change(search(), { target: { value: 'gro' } });

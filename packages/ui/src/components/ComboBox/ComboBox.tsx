@@ -10,6 +10,7 @@ import {
   type ComboBoxProps as RACComboBoxProps,
   type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
+import { imeKey } from '@weasel-js/headless';
 import { Popover } from '../Popover';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
@@ -201,7 +202,7 @@ function ComboBoxFrame({
   // clears the focused key, so by then there is no way to tell an option
   // commit from a text one.
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+    if (e.key !== 'Enter' || imeKey(e.nativeEvent)) return;
     if (state?.isOpen && state.selectionManager.focusedKey != null) return;
     const text = e.currentTarget.value;
     if (text !== '') onCommitText?.(text);

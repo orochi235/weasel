@@ -2,7 +2,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import {
   menuNumberDisplay, type MenuController, type MenuNumberEntry, type MenuTextEntry,
 } from '@weasel-js/menu';
-import { editEnd, type EditEnd } from '@weasel-js/headless';
+import { editEnd, imeKey, type EditEnd } from '@weasel-js/headless';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField/UnitField';
 import s from './ContextMenu.module.css';
@@ -63,7 +63,7 @@ export function MenuTextValue({ entry: e, rowId, controller: c }: {
         onChange={setDraft}
         onBlur={() => end(editEnd('blur'))}
         onKeyDown={(ev) => {
-          end(editEnd({ key: ev.key, shift: ev.shiftKey }));
+          if (!imeKey(ev.nativeEvent)) end(editEnd({ key: ev.key, shift: ev.shiftKey }));
           ev.continuePropagation();
         }}
         isDisabled={e.disabled}

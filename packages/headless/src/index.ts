@@ -15,8 +15,8 @@ export type { FocusScope, FocusScopeOptions } from './focus';
 export { COARSE_STEPS, arrowSteps, arrowMove, rangeKey } from './keySteps';
 export { usableStops, attract, clampOrdered, sliderKey } from './slider';
 export type { SliderStop, SliderKeyShape } from './slider';
-export { editEnd } from './textCommit';
-export type { EditCause, EditEnd, EditEndShape } from './textCommit';
+export { editEnd, imeKey } from './textCommit';
+export type { EditCause, EditEnd, EditEndShape, KeySource } from './textCommit';
 export {
   moveItems, movedIndex, isNoopDrop, nudgeGap, gapByMidpoint, nearestGap, isNudgeChord, nudgeOf,
 } from './reorder';

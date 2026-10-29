@@ -203,6 +203,19 @@ describe('a text row in a DOM menu', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('leaves an input method\'s Enter and Escape to it, Safari\'s closing Enter included', () => {
+    const { set, close } = openText();
+    act(() => { box().focus(); });
+    act(() => { fireEvent.change(box(), { target: { value: 'にほ' } }); });
+    for (const init of [{ key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 }, { key: 'Escape', isComposing: true }]) {
+      act(() => { fireEvent.keyDown(box(), init); });
+    }
+    expect(set).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(box());
+    expect(box()).toHaveValue('にほ');
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('commits on blur', () => {
     const { set } = openText();
     act(() => {

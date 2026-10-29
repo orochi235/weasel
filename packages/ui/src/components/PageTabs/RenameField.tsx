@@ -1,5 +1,5 @@
 import { useEffect, useRef, type SyntheticEvent } from 'react';
-import { editEnd, type EditEnd } from '@weasel-js/headless';
+import { editEnd, imeKey, type EditEnd } from '@weasel-js/headless';
 import s from './PageTabs.module.css';
 
 /** Keep an event from the tab around the field: the tab would read the keys and presses as its own. */
@@ -30,7 +30,7 @@ export function RenameField({ initial, onDone }: { initial: string; onDone(name:
       onKeyUp={contain}
       onKeyDown={(e) => {
         e.stopPropagation();
-        finish(editEnd({ key: e.key, shift: e.shiftKey }), e.currentTarget.value);
+        if (!imeKey(e.nativeEvent)) finish(editEnd({ key: e.key, shift: e.shiftKey }), e.currentTarget.value);
       }}
       onFocus={contain}
       onBlur={(e) => { e.stopPropagation(); finish(editEnd('blur'), e.currentTarget.value); }}
