@@ -9,15 +9,14 @@
 // whichever ran before it, which costs as much as no build info whenever that one changed an export
 // many files import (2026-10-29, `scripts/bench-typecheck.mjs`).
 import { spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fleetBranch } from './lib/fleet-tree.mjs';
-import { pruneOlderThan } from './lib/prune-older-than.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 const TSC = join(ROOT, 'node_modules/.bin/tsc');
 const INFO = join(ROOT, '.tsbuildinfo');
-const BRANCHES = join(INFO, 'branches');
+const BRANCH_PREFIX = 'branch--';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 /** Each program's arguments, and the build info file its tsconfig names. */
 const PROGRAMS = [
@@ -25,15 +24,22 @@ const PROGRAMS = [
   [['--noEmit', '-p', 'packages'], 'browser-tests.tsbuildinfo'],
 ];
 
-/** The build info `name` is kept in for `branch`, seeded from main's the first time. */
+/**
+ * The build info `name` is kept in for `branch`, seeded from main's the first time. It sits beside
+ * main's because tsc records each file's path relative to the build info: a copy in another directory
+ * names no file the program has, and checks everything.
+ */
 const branchInfo = (branch, name) => {
-  const dir = join(BRANCHES, branch.replace(/[^\w.-]+/g, '_'));
-  const file = join(dir, name);
-  if (!existsSync(file) && existsSync(join(INFO, name))) {
-    mkdirSync(dir, { recursive: true });
-    copyFileSync(join(INFO, name), file);
-  }
+  const file = join(INFO, `${BRANCH_PREFIX}${branch.replace(/[^\w.-]+/g, '_')}--${name}`);
+  if (!existsSync(file) && existsSync(join(INFO, name))) copyFileSync(join(INFO, name), file);
   return file;
+};
+
+const pruneBranches = (cutoff) => {
+  for (const name of readdirSync(INFO)) {
+    const file = join(INFO, name);
+    if (name.startsWith(BRANCH_PREFIX) && (statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? Infinity) < cutoff) rmSync(file, { force: true });
+  }
 };
 
 const tsc = (args) =>
@@ -47,7 +53,7 @@ const tsc = (args) =>
   });
 
 const branch = fleetBranch(ROOT, process.env);
-if (branch) pruneOlderThan(BRANCHES, Date.now() - WEEK_MS);
+if (branch && existsSync(INFO)) pruneBranches(Date.now() - WEEK_MS);
 const results = await Promise.all(
   PROGRAMS.map(([args, name]) => tsc(branch ? [...args, '--tsBuildInfoFile', branchInfo(branch, name)] : args)),
 );
