@@ -2,9 +2,9 @@ import { Highlight, Prism, type PrismTheme } from 'prism-react-renderer';
 import { memo, type CSSProperties } from 'react';
 import s from './CodeBlock.module.css';
 
-/** A language the bundled highlighter reads. */
+/** A language the bundled highlighter reads, or `'text'` for none. */
 export type CodeLanguage =
-  | 'tsx' | 'ts' | 'typescript' | 'jsx' | 'js' | 'javascript' | 'json' | 'css' | 'markup' | 'markdown' | 'md';
+  | 'tsx' | 'ts' | 'typescript' | 'jsx' | 'js' | 'javascript' | 'json' | 'css' | 'markup' | 'markdown' | 'md' | 'text';
 
 /** Props for {@link CodeBlock}. */
 export interface CodeBlockProps {

@@ -93,10 +93,13 @@ export function RegistryEnumControl(ctx: PrefRenderContext) {
       onChange={(v) => ctx.setValue(v)}
       source={pref.source}
       filter={pref.filter}
+      control={pref.control === 'radio' ? 'radio' : 'select'}
       aria-label={pref.name}
     />
   );
 }
+
+RegistryEnumControl.group = (ctx: PrefRenderContext) => (ctx.pref as WeaselDrawPrefRegistryEnum).control === 'radio';
 
 export function DataControl(ctx: PrefRenderContext) {
   // Only `ui.surfaces` has a known shape; any other data pref belongs to other

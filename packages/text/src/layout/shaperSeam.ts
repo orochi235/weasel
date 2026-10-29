@@ -1,10 +1,10 @@
 /**
  * The shaping contract, declared here and implemented elsewhere.
  *
- * This package does not depend on `@weasel-js/shape` and must not, for the
+ * This package does not depend on `@weasel-js/text-shaping` and must not, for the
  * reason it does not depend on `@weasel-js/bidi`: a consumer setting only
  * Latin text never downloads HarfBuzz's WebAssembly, and another engine can
- * stand in. `@weasel-js/shape` satisfies these types structurally.
+ * stand in. `@weasel-js/text-shaping` satisfies these types structurally.
  *
  * Without a shaper, layout finds each code point's glyph on its own and kerns
  * pairs, which is right for Latin, Greek, Cyrillic and CJK and wrong for any
@@ -28,7 +28,7 @@ export interface ShapedGlyph {
 
 /**
  * A shaping engine: registered with `registerShaper` or passed to
- * `layoutRuns` as `opts.shaper`. `@weasel-js/shape`'s `loadShaper()`
+ * `layoutRuns` as `opts.shaper`. `@weasel-js/text-shaping`'s `loadShaper()`
  * resolves with one. `face` is a font file's bytes (an sfnt), the same buffer
  * every call for the same face.
  */

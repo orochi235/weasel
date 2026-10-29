@@ -19,7 +19,7 @@ const D: ThemeDefinition = {
     chip: { ref: 'pad' },
     mixed: { by: 'mode', dark: { ref: 'pad' }, light: { value: '1px', type: 'dimension' } },
   },
-  pins: { 'radius-md': '5px', hairline: '{line}' },
+  pins: { 'radius-md': '5px', hairline: '{line}', hatch: 'linear-gradient(var(--wzl-line) 0 1px, transparent 1px) var(--wzl-pad)' },
 };
 
 describe('axisDependencies', () => {
@@ -34,6 +34,10 @@ describe('axisDependencies', () => {
     expect(deps.line).toEqual({ own: [], all: ['mode'] });
     expect(deps.edge).toEqual({ own: [], all: ['mode'] });
     expect(deps.hairline).toEqual({ own: [], all: ['mode'] });
+  });
+
+  it('follows a var() inside a value, so a gradient over mode colors is redeclared per mode', () => {
+    expect(deps.hatch).toEqual({ own: [], all: ['mode', 'density'] });
   });
 
   it('counts a token that reaches density only through a chain of references', () => {

@@ -4,6 +4,7 @@ import { polygonFromPoints } from '@weasel-js/core/math';
 import type { DataMark } from '../marks';
 import type { Outline } from '../outline';
 import type { PortSpec } from '../types';
+import { flowing } from './symbolFlow';
 import {
   bandExits, canBand, cutLabels, diamond, dot, inputs, placeAlong, styleOf, tintsOf, title, twoExits, type BranchSymbol,
 } from './symbolParts';
@@ -29,9 +30,13 @@ export const hexagon: BranchSymbol = (stage, pipeline, options) => ({
   ports: [...inputs(stage, pipeline, options, undefined, onHexagon), ...onHexagon(stage.outputs ?? [], 'right')],
 });
 
-/** A staircase rising a step at each cut, from the lowest band on the left
- *  to the highest on the right, each band's level led out to its exit. */
-export const step: BranchSymbol = (stage, pipeline, options) => {
+const CUT_SIZE = 10;
+const CUT_GAP = 3;
+/** Wider than a digit, a point or a minus sign at `CUT_SIZE` in any UI face. */
+const CUT_CHAR = 0.6 * CUT_SIZE;
+
+/** A step along a row, its title `titleGap` from the edge its cut labels hang off. */
+const stepAlong = (titleGap: number): BranchSymbol => (stage, pipeline, options) => {
   if (!canBand(stage)) return diamond(stage, pipeline, options);
   const exits = stage.outputs ?? [];
   const n = exits.length;
@@ -43,9 +48,9 @@ export const step: BranchSymbol = (stage, pipeline, options) => {
   const marks: DataMark[] = [{ d: `${stairs} H1`, stroke: ink, strokeWidth: 2 }];
   for (let i = 0; i < n - 1; i++) marks.push({ d: `M${riser(i)} ${level(i)} H1`, stroke: ink, dash: [2, 2], opacity: 0.5 });
   stage.split.at.forEach((cut, k) => marks.push({
-    text: String(cut), at: { u: riser(k), v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: 3 }, style: { fontSize: 10 },
+    text: String(cut), at: { u: riser(k), v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: CUT_GAP }, style: { fontSize: CUT_SIZE },
   }));
-  marks.push(title(stage, options, 18));
+  marks.push(title(stage, options, titleGap));
   return {
     outline: 'rect',
     lines: [],
@@ -55,6 +60,17 @@ export const step: BranchSymbol = (stage, pipeline, options) => {
     ports: [...inputs(stage, pipeline, options, stage.split.input), ...bandExits(exits)],
     marks,
   };
+};
+
+/** A staircase rising a step at each cut, from the lowest band on the left
+ *  to the highest on the right, each band's level led out to its exit.
+ *  Turned down a column, the title and the cut labels share the right edge,
+ *  so the title moves out past the widest label. */
+export const step: BranchSymbol = (stage, pipeline, options) => {
+  if (options?.direction !== 'down') return stepAlong(18)(stage, pipeline, options);
+  if (options.controlSide === 'right') return flowing(stepAlong(18))(stage, pipeline, options);
+  const widest = Math.max(0, ...(stage.split?.at ?? []).map((cut) => String(cut).length * CUT_CHAR));
+  return flowing(stepAlong(Math.max(18, CUT_GAP + widest + 4)))(stage, pipeline, options);
 };
 
 const TRIANGLE: readonly Pt[] = [[0, 0], [1, 0.5], [0, 1]];

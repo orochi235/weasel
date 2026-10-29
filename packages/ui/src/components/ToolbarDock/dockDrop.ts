@@ -1,4 +1,4 @@
-import { dropIndex } from '../Bar/useBarReorder';
+import { gapByMidpoint } from '@weasel-js/headless';
 import { canEnter, isVerticalEdge, moveBar, type BarTarget, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 
 /** Marks the element a dock draws round each bar, holding the bar's id. */
@@ -96,7 +96,9 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, re
     let row = 0;
     while (row + 1 < dock.rows.length && dock.rows[row + 1]!.start <= cross) row++;
     const inRow = dock.rows[row]!.bars;
-    const index = dropIndex(inRow, inRow.findIndex((b) => b.id === bar.id), along);
+    const from = inRow.findIndex((b) => b.id === bar.id);
+    const gap = gapByMidpoint(inRow.map((b) => b.at), along);
+    const index = from >= 0 && gap > from ? gap - 1 : gap;
     const others = inRow.filter((b) => b.id !== bar.id);
     const beside = others[index] ?? others.at(-1);
     const mark = beside ? { bar: beside.id, side: index < others.length ? ('before' as const) : ('after' as const) } : null;

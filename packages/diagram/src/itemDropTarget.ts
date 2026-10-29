@@ -4,6 +4,7 @@
  * place among that container's members.
  */
 import type { Bounds, OngoingOverlay, RectPose, Scene, Vec2 } from '@weasel-js/core';
+import { nearestGap } from '@weasel-js/headless';
 import { bodyAt } from './connectTargets';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { diagramContainerOf } from './containers/trait';
@@ -42,8 +43,7 @@ function placeAmong(scene: DiagramScene, container: string, at: Vec2): { index: 
     return { index: boxed.filter((m) => before(m.bounds)).length, gap: null };
   }
   const slots = sequenceSlots(axis, [...boxed].sort((p, q) => p.bounds[axis] - q.bounds[axis]));
-  let gap: ReorderGap | null = null;
-  for (const g of slots.gaps) if (gap === null || Math.abs(g.a[axis] - at[axis]) < Math.abs(gap.a[axis] - at[axis])) gap = g;
+  const gap = slots.gaps[nearestGap(slots.gaps.map((g) => g.a[axis]), at[axis])] ?? null;
   return { index: gap?.index ?? 0, gap };
 }
 
