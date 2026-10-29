@@ -1180,12 +1180,6 @@ only story runner in the repo.
   slower than teitou (steps ran 0.59–0.81× of plan, 2026-10-21), and matrix mode's steps are mostly unweighted.
   `node scripts/ci-run.mjs --calibrate <log>` from a matrix run rewrites them.
 
-- **(P3) [agent] Merge-gate worktrees outlive their runs.** `scripts/lib/commit-tree.mjs` checks each gated commit
-  out under `.worktrees/` (`fleet-*`, `postbuild-*`) and removes it on `drop()` or SIGINT/SIGTERM/SIGHUP, yet ten
-  were left behind between 2026-10-22 and 2026-10-28, each holding only onto's `.onto/` files. A run killed by
-  SIGKILL, or a session's shell torn down under it, skips both. Sweep stale ones at the next run's start (a tree
-  whose creating process is gone), or create them where something already prunes. Filed 2026-10-28.
-
 ---
 
 ## weaselchart
