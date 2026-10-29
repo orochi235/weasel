@@ -1,7 +1,13 @@
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { dropRuns, textCommandFromRuns } from '@weasel-js/core';
+import { dropRuns, textCommandFromRuns, type StyledRun, type TextStyle } from '@weasel-js/core';
+import type { Fill } from '@weasel-js/paint';
+
+/** The one run every text widget hands `textCommandFromRuns`, which keeps
+ *  nothing of it: it resolves a run of its own from it. */
+const RUN: StyledRun = { text: '' };
+const RUNS: readonly StyledRun[] = [RUN];
 
 /** Options for a text widget. `x`/`y` place the text; its bounds follow from
  *  the string and font size. */
@@ -34,12 +40,21 @@ export function createText(opts: TextOptions): TextWidget {
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: 0, h: opts.fontSize };
   let text = opts.text;
   let hidden = false;
-  let placed: { text: string; color: string; fontFamily: string; cmd: DrawCommand } | null = null;
+  /** The command last built, and the text, color and family it was built from. */
+  let placed: DrawCommand | null = null;
+  let placedText = '';
+  let placedColor = '';
+  let placedFamily = '';
   // The runs a replaced command drew are never drawn again, so the text
   // caches can hand their arrays to the new ones.
-  const drop = () => { if (placed?.cmd.kind === 'text') dropRuns(placed.cmd.runs); };
-  /** What `draw` returns: `placed.cmd` at the corner `x`, `y`. */
-  let moved: { x: number; y: number; out: DrawCommand[] } | null = null;
+  const drop = () => { if (placed?.kind === 'text') dropRuns(placed.runs); };
+  /** What `draw` returns: `placed` at the corner `movedX`, `movedY`. */
+  let moved: DrawCommand[] | null = null;
+  let movedX = 0;
+  let movedY = 0;
+  // Kept from one command to the next while their color and family hold.
+  let fill: Fill = { paint: { kind: 'solid', color: '' } };
+  let style: TextStyle = { fontFamily: '', fontSize: opts.fontSize };
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
@@ -59,20 +74,23 @@ export function createText(opts: TextOptions): TextWidget {
       const fontFamily = opts.fontFamily ?? ctx.defaultFont;
       // The renderer's layout cache is keyed on the runs array, so a move
       // reuses the placed command rather than resolving fresh runs.
-      if (!placed || placed.text !== text || placed.color !== color || placed.fontFamily !== fontFamily) {
+      if (placed === null || placedText !== text || placedColor !== color || placedFamily !== fontFamily) {
+        if (placed === null || placedColor !== color) fill = { paint: { kind: 'solid', color } };
+        if (placed === null || placedFamily !== fontFamily) style = { fontFamily, fontSize: opts.fontSize };
+        RUN.text = text;
+        RUN.fill = fill;
         // Built at the corner it is drawn at, so new text costs one command.
-        const cmd = textCommandFromRuns(bounds.x, bounds.y, [{ text, fill: { paint: { kind: 'solid', color } } }], {
-          fontFamily, fontSize: opts.fontSize,
-        });
+        const cmd = textCommandFromRuns(bounds.x, bounds.y, RUNS, style);
+        RUN.fill = undefined;
         drop();
-        placed = { text, color, fontFamily, cmd };
-        moved = { x: bounds.x, y: bounds.y, out: [cmd] };
+        placed = cmd; placedText = text; placedColor = color; placedFamily = fontFamily;
+        moved = [cmd]; movedX = bounds.x; movedY = bounds.y;
       }
-      if (moved === null || moved.x !== bounds.x || moved.y !== bounds.y) {
-        const cmd = { ...placed.cmd, x: bounds.x, y: bounds.y } as DrawCommand;
-        moved = { x: bounds.x, y: bounds.y, out: [cmd] };
+      if (moved === null || movedX !== bounds.x || movedY !== bounds.y) {
+        moved = [{ ...placed, x: bounds.x, y: bounds.y } as DrawCommand];
+        movedX = bounds.x; movedY = bounds.y;
       }
-      return moved.out;
+      return moved;
     },
     hitTest() { return false; },
     claims: [],

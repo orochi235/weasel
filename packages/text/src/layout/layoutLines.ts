@@ -4,7 +4,7 @@
  * have had their say.
  */
 import type { LineOrder } from './bidiLines';
-import { doubles } from './arrayPool';
+import { doubles, truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
 import type { Entry } from './layoutEntries';
 import { hangs, wrapSpans } from './lineBreak/wrapLines';
@@ -121,7 +121,7 @@ export function breakLines(
       line.height = brk.lineSize * lineHeight;
       line.ascent = aboveBaseline(brk, lineHeight);
       line.srcEnd = brk.srcIndex;
-      line.entries.length = 0;
+      truncate(line.entries, 0);
       continue;
     }
     const out = line.entries;

@@ -79,6 +79,13 @@ export function pooledElements(): number {
   return held;
 }
 
+/** Cut `a` to `n` elements, keeping its backing store for the next refill:
+ *  `length = 0` drops V8's store, so refilling a list emptied that way
+ *  reallocates it every time, and `pop` keeps it. */
+export function truncate(a: unknown[], n: number): void {
+  while (a.length > n) a.pop();
+}
+
 /** Test helper. Do not call from product code. */
 export function _resetArrayPoolForTests(): void {
   nums.clear();

@@ -210,9 +210,6 @@ export interface TextPaint {
   stroke?: Stroke | null;
 }
 
-/** What an absent optional field spreads, rather than a new `{}` a call. */
-const NOTHING = Object.freeze({});
-
 /**
  * Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`,
  * taking the glyph paint from the node rather than from the style.
@@ -225,53 +222,63 @@ export function resolveTextStyle(
   paint?: TextPaint,
   scale = 1,
 ): ResolvedTextStyle {
+  if (!style && resolveFill(paint?.fill) === null && (paint?.stroke ?? undefined) === undefined) {
+    return DEFAULT_TEXT_STYLE;
+  }
+  return resolveTextStyleInto({ ...DEFAULT_TEXT_STYLE }, style, paint, scale);
+}
+
+/**
+ * {@link resolveTextStyle}, written into `out` and returned. A field `out`
+ * holds that this resolution leaves out — `script`, `lang`, `stroke` — is set
+ * to `undefined`, so one object can take resolution after resolution.
+ */
+export function resolveTextStyleInto(
+  out: ResolvedTextStyle,
+  style?: TextStyle,
+  paint?: TextPaint,
+  scale = 1,
+): ResolvedTextStyle {
+  const s = style ?? NO_STYLE;
   const fill = resolveFill(paint?.fill);
   const stroke = paint?.stroke ?? undefined;
-  if (!style) {
-    return fill === null && stroke === undefined
-      ? DEFAULT_TEXT_STYLE
-      : {
-        ...DEFAULT_TEXT_STYLE,
-        fill,
-        caretColor: paintColor((fill?.paint ?? null)),
-        selectionBackground: defaultSelectionBackground(paintColor((fill?.paint ?? null))),
-        ...(stroke !== undefined ? { stroke } : NOTHING),
-      };
-  }
-  const caretColor = style.caretColor ?? paintColor((fill?.paint ?? null));
+  const caretColor = s.caretColor ?? paintColor((fill?.paint ?? null));
   let selectionBackground: string | null;
-  if (style.selectionBackground === 'none') {
+  if (s.selectionBackground === 'none') {
     selectionBackground = null;
-  } else if (style.selectionBackground != null) {
-    selectionBackground = style.selectionBackground;
+  } else if (s.selectionBackground != null) {
+    selectionBackground = s.selectionBackground;
   } else {
     selectionBackground = defaultSelectionBackground(caretColor);
   }
-  return {
-    fontSize: resolveScreenLength(style.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, scale),
-    fontFamily: style.fontFamily ?? DEFAULT_TEXT_STYLE.fontFamily,
-    fontWeight: style.fontWeight ?? DEFAULT_TEXT_STYLE.fontWeight,
-    fontStyle: style.fontStyle ?? DEFAULT_TEXT_STYLE.fontStyle,
-    align: style.align ?? DEFAULT_TEXT_STYLE.align,
-    direction: style.direction ?? DEFAULT_TEXT_STYLE.direction,
-    lineHeight: style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight,
-    tabSize: style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize,
-    wrap: style.wrap ?? DEFAULT_TEXT_STYLE.wrap,
-    fill,
-    caretColor,
-    selectionBackground,
-    selectionColor: style.selectionColor ?? null,
-    letterSpacing: resolveScreenLength(style.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing, scale),
-    underline: style.underline ?? DEFAULT_TEXT_STYLE.underline,
-    strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
-    overline: style.overline ?? DEFAULT_TEXT_STYLE.overline,
-    textTransform: style.textTransform ?? DEFAULT_TEXT_STYLE.textTransform,
-    fontVariantCaps: style.fontVariantCaps ?? DEFAULT_TEXT_STYLE.fontVariantCaps,
-    ...(style.script !== undefined ? { script: style.script } : NOTHING),
-    ...(style.lang ? { lang: style.lang } : NOTHING),
-    ...(stroke !== undefined ? { stroke } : NOTHING),
-  };
+  out.fontSize = resolveScreenLength(s.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, scale);
+  out.fontFamily = s.fontFamily ?? DEFAULT_TEXT_STYLE.fontFamily;
+  out.fontWeight = s.fontWeight ?? DEFAULT_TEXT_STYLE.fontWeight;
+  out.fontStyle = s.fontStyle ?? DEFAULT_TEXT_STYLE.fontStyle;
+  out.align = s.align ?? DEFAULT_TEXT_STYLE.align;
+  out.direction = s.direction ?? DEFAULT_TEXT_STYLE.direction;
+  out.lineHeight = s.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight;
+  out.tabSize = s.tabSize ?? DEFAULT_TEXT_STYLE.tabSize;
+  out.wrap = s.wrap ?? DEFAULT_TEXT_STYLE.wrap;
+  out.fill = fill;
+  out.caretColor = caretColor;
+  out.selectionBackground = selectionBackground;
+  out.selectionColor = s.selectionColor ?? null;
+  out.letterSpacing = resolveScreenLength(s.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing, scale);
+  out.underline = s.underline ?? DEFAULT_TEXT_STYLE.underline;
+  out.strikethrough = s.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough;
+  out.overline = s.overline ?? DEFAULT_TEXT_STYLE.overline;
+  out.textTransform = s.textTransform ?? DEFAULT_TEXT_STYLE.textTransform;
+  out.fontVariantCaps = s.fontVariantCaps ?? DEFAULT_TEXT_STYLE.fontVariantCaps;
+  // Absent stays absent on a fresh object, and is cleared on a reused one.
+  if (s.script !== undefined || out.script !== undefined) out.script = s.script;
+  const lang = s.lang || undefined;
+  if (lang !== undefined || out.lang !== undefined) out.lang = lang;
+  if (stroke !== undefined || out.stroke !== undefined) out.stroke = stroke;
+  return out;
 }
+
+const NO_STYLE: TextStyle = Object.freeze({});
 
 /** Build a CSS `font` shorthand suitable for `ctx.font`. */
 export function fontString(s: ResolvedTextStyle): string {

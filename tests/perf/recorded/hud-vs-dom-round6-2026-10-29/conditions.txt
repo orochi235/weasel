@@ -1,0 +1,7 @@
+Every run: HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_CAMERAS=fixed,moving HVD_APPROACHES=hud,dom
+HVD_GLYPHS=2500,5000 WEASEL_PERF_PORT=33519 npm run test:perf -- perf/hud-vs-dom.spec.ts, through
+onto do --solo on msb-uai (Apple M3 Max, 14 cores) in the weasel-perf-hudtext tree, one run each,
+each from a clean checkout (dirty: false).
+
+1-before  4d5f3483e, main with 55375c042 (scratch lists refilled in place); load 6.3 at start
+2-after   3c3e00b88, the three commits of this round; load 3.3 at start

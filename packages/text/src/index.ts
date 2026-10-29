@@ -19,6 +19,7 @@ export {
   DEFAULT_TEXT_STYLE,
   DEFAULT_TEXT_FILL,
   resolveTextStyle,
+  resolveTextStyleInto,
   resolveAlign,
   fontString,
 } from './textStyle';
