@@ -23,6 +23,10 @@ address, and syncs every edit made here until Ctrl-C stops the servers; `--drop`
 it headless from here with chrome-devtools or Playwright by the printed IP: headless Chrome resolves no
 `.local` names. `DRAW_E2E_URL=http://<ip>:33452 npm run test:e2e:draw` runs draw's e2e suite against it.
 
+**keiei takes no weasel jobs** (`onto set keiei --refuse repo:orochi235/weasel`, 2026-10-29). With 24 GB
+and 7–11 GB of swap it failed forge's timeline test in five full runs on 2026-10-20, where the other nodes
+pass it in 20–44 s. `onto set keiei --allow repo:orochi235/weasel` takes it back.
+
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
 this is what says a commit would fail there. `test:fleet` runs it with everything else, so read its

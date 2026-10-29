@@ -826,24 +826,10 @@ only story runner in the repo.
   (Playwright's Linux image under Docker, arm64 rather than CI's x86; it reproduced CI's numbers exactly).
   Studio's Docker Desktop has to be running (`open -g -a Docker` there).
 
-- **(P3) [maintainer] Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
-  (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five
-  full runs, `main` at `416328e36` among them; msb-uai failed it once. Nothing in the tests waits
-  on a timer or a load that could be cut: the time is the whole workshop mounting, which is React
-  in development mode plus jsdom, and the tests that fail mount it two or three times.
-
-  | keiei, 2026-10-20 | one mount, to the first playhead | the timeline file |
-  |---|---:|---:|
-  | alone | 0.5–0.7 s | 14 s |
-  | full run, 16 GB free | 1.4–2.7 s | 42 s, passed |
-  | full runs that failed | — | 88–102 s |
-
-  teitou, studio and msb-uai run the file in 20–44 s. That the failing runs were the swapping ones
-  is inferred from `onto status` at the time, not measured inside them. Keeping a node that reports swap out of full runs is an onto setting, left unchanged.
-  Of a mount's CPU, 11% is `Element.closest` in jsdom, which `useOverlayPortal` calls through
-  `nearestPortalHost` on every render of every `Tooltip`, and about 4% is axe, which the a11y panel
-  runs on each mount. A timeout no longer leaks: the file's helpers stop once vitest aborts the
-  test's signal, where before a timed-out test could mount into the next one's document.
+- **(P3) [agent] forge's workshop takes 0.5–0.7 s to mount in jsdom, alone on keiei.** The timeline file
+  (`packages/forge/src/timeline/timeline.test.tsx`) mounts it two or three times a test. Of a mount's CPU, 11% is
+  `Element.closest` in jsdom, which `useOverlayPortal` calls through `nearestPortalHost` on every render of every
+  `Tooltip`, and about 4% is axe, which the a11y panel runs on each mount (2026-10-20).
 
 - **(P3) [maintainer] forge serves ui and labkit file by file unless `WEASEL_DEV_BUNDLE_STORIES=1`.** Their
   stories import through package specifiers, so the flag bundles both (`scripts/vite-prebundle.ts`).
