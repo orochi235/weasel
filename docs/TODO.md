@@ -412,8 +412,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   so folding it means moving public API out of `@weasel-js/react` and core's re-export into
   `@weasel-js/clock/react`, and its runs-only-while-subscribed behavior has no clock equivalent.
   Its one user is the site's `CustomShaderDemo` (2026-10-28).
-- **(P3) [agent] A turned `step` symbol's title and its cut labels both sit on the right**, so in a
-  `direction: 'down'` rack they can overlap when a cut falls near the middle (2026-10-28).
 
 ## Audio
 
