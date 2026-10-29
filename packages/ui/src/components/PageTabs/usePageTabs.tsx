@@ -1,4 +1,5 @@
 import { pageName } from '@weasel-js/core';
+import { movedIndex, nudgeOf } from '@weasel-js/headless';
 import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { Key } from 'react-aria-components';
 import { useReorderDragList, type ReorderDragHandlers, type ReorderLine } from '../../useReorderDragList';
@@ -12,8 +13,6 @@ import s from './PageTabs.module.css';
 const DOUBLE_PRESS_MS = 500;
 /** Lit when no page is current: a key no tab has, so React Aria does not light the first. */
 export const NONE = '\u0000none';
-
-const ARROW_STEP: Partial<Record<string, -1 | 1>> = { ArrowLeft: -1, ArrowRight: 1 };
 
 /** What a page strip draws from, straight or along a run. */
 export interface PageTabsParts {
@@ -65,7 +64,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     onReorder: (ids, target) => {
       const id = ids[0]!;
       const from = items.findIndex((it) => it.id === id);
-      onMove?.(id, target > from ? target - 1 : target);
+      onMove?.(id, movedIndex([from], target));
     },
     onPress,
   });
@@ -90,10 +89,10 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
 
   // Captured ahead of the tab list, which would take Alt+arrow as a plain arrow and move focus.
   const onKeyDownCapture = (e: KeyboardEvent) => {
-    const by = e.altKey && onMove ? ARROW_STEP[e.key] : undefined;
+    const by = onMove ? nudgeOf(e, 'ArrowLeft', 'ArrowRight') : null;
     const tab = (e.target as Element).closest('[role="tab"]');
     const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
-    if (by === undefined || at < 0 || pages[at] === undefined) return;
+    if (by === null || at < 0 || pages[at] === undefined) return;
     e.preventDefault();
     e.stopPropagation();
     drag.nudge(pages[at].id, at, by);

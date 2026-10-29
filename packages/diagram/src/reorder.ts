@@ -19,6 +19,7 @@ import {
   type TargetPredicate,
   type Vec2,
 } from '@weasel-js/core';
+import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/headless';
 import { carriedBy, slideOthers, type Box } from './reorderSlide';
 
 /** The action that drags an item of a sequence to another place in it. */
@@ -133,15 +134,12 @@ function gapAt(held: Held, by: number): ReorderGap | null {
   const { axis, gaps } = held.slots;
   const size = axis === 'x' ? 'width' : 'height';
   const mid = held.item.bounds[axis] + held.item.bounds[size] / 2 + by;
-  let best: ReorderGap | null = null;
-  for (const g of gaps) if (best === null || Math.abs(g.a[axis] - mid) < Math.abs(best.a[axis] - mid)) best = g;
-  return best === null || best.index === held.from || best.index === held.from + 1 ? null : best;
+  const best = gaps[nearestGap(gaps.map((g) => g.a[axis]), mid)];
+  return best === undefined || isNoopDrop([held.from], best.index) ? null : best;
 }
 
 function moveOf(held: Held, gap: ReorderGap): ReorderMove {
-  const order = held.slots.items.map((i) => i.id);
-  order.splice(held.from, 1);
-  order.splice(gap.index > held.from ? gap.index - 1 : gap.index, 0, held.item.id);
+  const order = moveItems(held.slots.items.map((i) => i.id), [held.from], gap.index);
   return { id: held.item.id, from: held.from, to: gap.index, order };
 }
 

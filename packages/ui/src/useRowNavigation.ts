@@ -1,6 +1,5 @@
-import { rovingKey } from '@weasel-js/headless';
+import { nudgeOf, rovingKey } from '@weasel-js/headless';
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { nudgeOf } from './nudgeKey';
 import { modsOf, type PressModifiers } from './useReorderDragList';
 import { useRemovedRowFocus, type FocusRow } from './useRemovedRowFocus';
 import { useTypeahead } from './useTypeahead';

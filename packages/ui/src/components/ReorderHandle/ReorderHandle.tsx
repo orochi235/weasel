@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
-import { nudgeOf } from '../../nudgeKey';
+import { nudgeOf } from '@weasel-js/headless';
 import { DragGrip } from '../DragGrip';
 import s from './ReorderHandle.module.css';
 
