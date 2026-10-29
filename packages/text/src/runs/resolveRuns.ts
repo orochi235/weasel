@@ -176,9 +176,6 @@ export function resolveRunFace(
   };
 }
 
-/** What an absent optional field spreads, rather than a new `{}` a run. */
-const NOTHING = Object.freeze({});
-
 /** Resolve each run's styling against the node's text style, filling in
  *  everything the run left inherited. `viewScale` resolves a run's own
  *  `{ px }` size or spacing; the inherited ones arrived already resolved on
@@ -188,7 +185,8 @@ export function resolveRuns(
   style: ResolvedTextStyle,
   viewScale = 1,
 ): ResolvedRun[] {
-  const out: ResolvedRun[] = [];
+  // Sized up front: pushing onto `[]` gives even a one-run array room for 17.
+  const out = new Array<ResolvedRun>(runs.length);
   let transformed = false;
   for (const r of runs) if ((r.textTransform ?? style.textTransform) !== 'none') transformed = true;
   const shown = transformed
@@ -230,20 +228,15 @@ export function resolveRuns(
       }
     }
     const lang = run.lang ?? style.lang;
-    out.push({
+    // Every field every run has, in one literal, and only then the optional
+    // ones: a spread in the literal grew the run's property store field by field.
+    const r: ResolvedRun = {
       text,
-      ...(srcMap ? { srcMap } : NOTHING),
       fontFamily,
       fontSize,
-      ...(sizeMap ? { sizeMap } : NOTHING),
       fontWeight,
       fontStyle,
       fill: run.fill !== undefined ? run.fill : style.fill,
-      // Unlike the decorations below, a run's stroke *replaces* the node's
-      // rather than adding to it — there is only one outline to paint.
-      ...((run.stroke ?? style.stroke) !== undefined
-        ? { stroke: run.stroke ?? style.stroke }
-        : NOTHING),
       letterSpacing: run.letterSpacing !== undefined
         ? resolveScreenLength(run.letterSpacing, viewScale)
         : style.letterSpacing,
@@ -252,11 +245,18 @@ export function resolveRuns(
       strikethrough: run.strikethrough || style.strikethrough,
       overline: run.overline || style.overline,
       baselineShift: shiftEm * style.fontSize,
-      ...(relative ? { strutSize: style.fontSize } : NOTHING),
-      ...(run.rotate && Number.isFinite(run.rotate) ? { rotate: run.rotate } : NOTHING),
-      ...(fontFeatures ? { fontFeatures } : NOTHING),
-      ...(lang ? { lang } : NOTHING),
-    });
+    };
+    if (srcMap) r.srcMap = srcMap;
+    if (sizeMap) r.sizeMap = sizeMap;
+    // Unlike the decorations, a run's stroke *replaces* the node's rather
+    // than adding to it — there is only one outline to paint.
+    const stroke = run.stroke ?? style.stroke;
+    if (stroke !== undefined) r.stroke = stroke;
+    if (relative) r.strutSize = style.fontSize;
+    if (run.rotate && Number.isFinite(run.rotate)) r.rotate = run.rotate;
+    if (fontFeatures) r.fontFeatures = fontFeatures;
+    if (lang) r.lang = lang;
+    out[i] = r;
   }
   return out;
 }

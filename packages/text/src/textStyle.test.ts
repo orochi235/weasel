@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   resolveTextStyle,
+  resolveTextStyleInto,
   fontString,
   DEFAULT_TEXT_STYLE,
   DEFAULT_TEXT_FILL,
@@ -175,5 +176,31 @@ describe('resolveTextStyle screen-pixel sizes', () => {
     const a = resolveTextStyle({ fontSize: { px: 16 } }, undefined, 2).fontSize * 2;
     const b = resolveTextStyle({ fontSize: { px: 16 } }, undefined, 8).fontSize * 8;
     expect(a).toBeCloseTo(b);
+  });
+});
+
+describe('resolveTextStyleInto', () => {
+  const STROKE = { paint: { kind: 'solid' as const, color: '#f00' }, width: 1 };
+
+  it('resolves into the object it is handed what resolveTextStyle returns', () => {
+    const out = { ...DEFAULT_TEXT_STYLE };
+    const style = { fontFamily: 'inter', fontSize: { px: 12 }, script: 'super' as const, lang: 'fr' };
+    const paint: TextPaint = { fill: { paint: { kind: 'solid', color: '#123' } }, stroke: STROKE };
+    expect(resolveTextStyleInto(out, style, paint, 2)).toBe(out);
+    expect(out).toEqual(resolveTextStyle(style, paint, 2));
+  });
+
+  it('clears the optional fields a previous resolution set', () => {
+    const out = { ...DEFAULT_TEXT_STYLE };
+    resolveTextStyleInto(out, { script: 'sub', lang: 'de' }, { stroke: STROKE });
+    resolveTextStyleInto(out, { fontSize: 9 });
+    expect(out.script).toBeUndefined();
+    expect(out.lang).toBeUndefined();
+    expect(out.stroke).toBeUndefined();
+    expect(out).toEqual(resolveTextStyle({ fontSize: 9 }));
+  });
+
+  it('leaves the optional fields off a fresh resolution', () => {
+    expect(Object.keys(resolveTextStyle({ fontSize: 9 }))).not.toContain('script');
   });
 });

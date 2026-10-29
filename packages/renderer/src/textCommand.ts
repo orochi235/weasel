@@ -17,13 +17,17 @@
 
 import type { DrawCommand, TextDrawCommand } from './index';
 import type { TextPaint, TextPose, TextStyle } from '@weasel-js/text';
-import { resolveTextStyle, textPoseLayoutInput } from '@weasel-js/text';
+import { DEFAULT_TEXT_STYLE, resolveTextStyleInto, textPoseLayoutInput } from '@weasel-js/text';
 import { resolveRuns } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
-import type { TextVerticalAlign, ResolvedRun } from '@weasel-js/text';
+import type { TextVerticalAlign, ResolvedRun, ResolvedTextStyle } from '@weasel-js/text';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import type { FillPoseBox } from './fillInPoseFrame';
 import { commandFill, commandPaint } from './patterns/commandPaint';
+
+/** The style each command resolves into: read while its runs resolve, and
+ *  kept by nothing. */
+const resolvedStyle: ResolvedTextStyle = { ...DEFAULT_TEXT_STYLE };
 
 /** Build a draw command from styled runs, for text with no pose. `style`
  *  supplies the defaults each run inherits; the rest match `textCommand`. */
@@ -39,7 +43,7 @@ export function textCommandFromRuns(
   width?: number,
   scale = 1,
 ): DrawCommand {
-  const resolved = resolveTextStyle(style, paint, scale);
+  const resolved = resolveTextStyleInto(resolvedStyle, style, paint, scale);
   return {
     kind: 'text',
     x,
