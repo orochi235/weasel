@@ -54,15 +54,20 @@ export const TOOLS = {
   textAlong: `
     <path d="M1.875 16 Q9.375 7.75 16.875 16"/>
     <path d="M5.375 3.125 H13.375 M9.375 3.125 V8.25"/>`,
-  // A square with each corner and each edge's middle knocked out of place.
+  // A square whose edges are toothed one pixel deep at uneven spacing, so its rough edge survives 16px.
   roughen: `
-    <path d="${poly([[2, 2], [7, 3], [12, 1], [13, 7], [14, 13], [8, 12], [2, 14], [3, 8]])}Z" stroke-width="1.25"/>`,
+    <path d="${poly([
+      [2, 2], [3, 1], [5, 2], [6, 1], [7, 2], [9, 1], [10, 2], [12, 1], [13, 2],
+      [14, 3], [13, 5], [14, 6], [13, 7], [14, 9], [13, 10], [14, 12], [13, 13],
+      [12, 14], [10, 13], [9, 14], [8, 13], [6, 14], [5, 13], [3, 14], [2, 13],
+      [1, 12], [2, 10], [1, 9], [2, 8], [1, 6], [2, 5], [1, 3],
+    ])}Z" stroke-width="1.25"/>`,
   // Teeth at 45 degrees, three pixels high.
   zigzag: `
     <path d="${poly([[0, 9], [3, 6], [6, 9], [9, 6], [12, 9], [15, 6]])}" stroke-width="1.25"/>`,
-  // A square puckered into four spikes.
+  // A diamond puckered to spikes on its left half and bloated to a half circle on its right.
   puckerBloat: `
-    <path d="M${P(7, 1)}C${P(7, 4.7)} ${P(9.3, 7)} ${P(13, 7)}C${P(9.3, 7)} ${P(7, 9.3)} ${P(7, 13)}C${P(7, 9.3)} ${P(4.7, 7)} ${P(1, 7)}C${P(4.7, 7)} ${P(7, 4.7)} ${P(7, 1)}Z" stroke-width="1.25"/>`,
+    <path d="M${P(7, 1)}C${P(10.3, 1)} ${P(13, 3.7)} ${P(13, 7)}C${P(13, 10.3)} ${P(10.3, 13)} ${P(7, 13)}C${P(7, 9.3)} ${P(4.7, 7)} ${P(1, 7)}C${P(4.7, 7)} ${P(7, 4.7)} ${P(7, 1)}Z" stroke-width="1.25"/>`,
   expand: `
     <circle cx="10" cy="10" r="6" stroke-width="1.25" stroke-dasharray="2 1.7"/>
     <rect x="8.5" y="2.5" width="3" height="3" fill="currentColor" stroke="none"/>
