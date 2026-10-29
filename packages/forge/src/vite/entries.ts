@@ -15,6 +15,7 @@ const workshop = mountWorkshop({
   config,
   frameUrl: ${JSON.stringify(`${base}frame.html`)},
   captureBase: ${JSON.stringify(base)},
+  issuesBase: ${JSON.stringify(base)},
   stories: ${JSON.stringify(stories)},
 });
 // Read from source on first request, so the graph costs nothing until the page is up.

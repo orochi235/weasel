@@ -4,6 +4,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import type { IndexEntry } from '../story/types';
+import type { ShellConfig } from '../config';
 import { installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -39,6 +40,30 @@ const shows = (text: string) =>
 
 afterEach(() => {
   history.replaceState(null, '', '/');
+});
+
+describe('pins in the URL', () => {
+  it('pins the globals a link names on the trial it opens, and drops them from the URL', async () => {
+    const config: ShellConfig = {
+      globals: { mode: { label: 'Mode', default: 'light', options: [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }] } },
+    };
+    const globalsModule = {
+      default: meta({ title: 'X' }),
+      A: story({ config: f.schema({ label: f.string('hi') }), render: ({ config, globals }) => <output data-testid="story">{config.label}/{String(globals.mode)}</output> }),
+    };
+    history.replaceState(null, '', '/#/x--a?label=Go&%24globals.mode=dark');
+    renderWithIcons(
+      <Workshop
+        index={[a]}
+        frameUrl="/frame.html"
+        config={config}
+        importers={{ '/x.stories.tsx': vi.fn(() => Promise.resolve(globalsModule as unknown as Record<string, unknown>)) }}
+        storage={createMemoryAdapter()}
+      />,
+    );
+    await shows('Go/dark');
+    await waitFor(() => expect(location.hash).toBe('#/x--a?label=Go'));
+  });
 });
 
 describe('knobs in the URL', () => {

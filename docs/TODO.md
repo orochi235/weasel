@@ -643,15 +643,11 @@ only story runner in the repo.
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
 
-- **(P3) [agent] The Issues panel has no tracker behind it** (2026-10-25). `shell/issues/IssuesPanel.tsx` takes
-  `issues` and `onReport` as props, and the workshop passes neither, so it says "Not connected" and Report stays
-  disabled. Settled so far: GitHub Issues is the tracker, a component's issues are those labeled
-  `forge:<component>`, and a report attaches its story, a link reopening it with the same args and globals, and
-  the branch and commit. A screenshot with the trial's marks on it goes into the issue by pasting it there;
-  never by committing it to the repo. Ruled (2026-10-28): forge's dev server lists a component's issues through
-  `gh issue list --label forge:<component>` (the local `gh` login, no token in the browser), and Report opens
-  GitHub's new-issue page with its title, body and label filled in, where the screenshot is pasted. Still open:
-  whether marks come back (next entry) to draw that screenshot.
+- **(P3) [maintainer] Whether the workshop's marks come back, to draw on a reported issue's screenshot**
+  (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
+  opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
+  turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
+  up the trial before that screenshot is taken. Not decided: whether marks come back for that.
 
 - **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
