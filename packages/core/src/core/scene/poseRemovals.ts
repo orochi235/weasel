@@ -62,6 +62,7 @@ export function createRemovalLog<TPose, TNode>(
       return gone?.pose;
     },
     drain() {
+      if (removals.size === 0) return [];
       // Undoing a group's add takes its children first, each its own root.
       const out: PoseRemoval<TPose, TNode>[] = [];
       for (const r of removals.values()) {
