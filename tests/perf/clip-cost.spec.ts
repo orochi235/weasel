@@ -36,6 +36,8 @@
  * there: the CPU cut refuses it, and the rect clip, snapped to the hull grid,
  * goes to the shader as a hull. `ss-slant-rectstencil` is the same frame with
  * the shader clip off, where the rect clip goes on the stencil instead.
+ * `ss-slant-nest3` puts each turned rect under three nested rect clips, twelve
+ * half-planes before any facing the same way are merged.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -73,6 +75,8 @@ const VARIANTS = [
   { id: 'ss-slant-plain',       groups: 0, note: 'N turned rects on a single-sampled canvas, one batch' },
   { id: 'ss-slant-rectclip',    groups: N, note: 'a turned rect across each rect clip, the rect tested as a hull' },
   { id: 'ss-slant-rectstencil', groups: N, note: 'the same with the shader clip off: the stencil' },
+  { id: 'ss-slant-nest3',        groups: N, note: 'a turned rect across three nested rect clips' },
+  { id: 'ss-slant-nest3stencil', groups: N, note: 'the same with the shader clip off: the stencil' },
 ] as const;
 
 type VariantId = (typeof VARIANTS)[number]['id'];
@@ -108,7 +112,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     cells.push({ run: c.run, variant: c.variant, perFrameMs: c.perFrameMs });
     console.log(
       `  ${String(c.index).padStart(2)}/${total}  run ${c.run}  `
-      + `${c.variant.padEnd(16)} ${c.perFrameMs.toFixed(3)} ms/frame`,
+      + `${c.variant.padEnd(21)} ${c.perFrameMs.toFixed(3)} ms/frame`,
     );
   });
 
@@ -192,6 +196,19 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const rectClip = (i: number) => ({
         kind: 'rect', x: px(i) - 6, y: py(i) - 6, width: 100, height: 100,
       });
+      /** `kids` under three nested rect clips, each tighter than the last on
+       *  some side, off the hull grid by `off`. */
+      const nest3 = (i: number, kids: unknown[], off = 0) => ({
+        kind: 'group', clip: rectClip(i), children: [{
+          kind: 'group',
+          clip: { kind: 'rect', x: px(i) - 4 + off, y: py(i) - 8, width: 96, height: 100 - off },
+          children: [{
+            kind: 'group',
+            clip: { kind: 'rect', x: px(i) - 7, y: py(i) - 3 - off, width: 94 + off, height: 96 },
+            children: kids,
+          }],
+        }],
+      });
       /** A 130 x 24 bar turned 20 degrees about the clip's center, so it
        *  crosses the clip's left and right edges. */
       const slantPath = (i: number) => {
@@ -241,6 +258,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
 
       function buildVariant(id: string): unknown[] {
         if (id === 'ss-slant-plain') return slants;
+        if (id.startsWith('ss-slant-nest3')) return chunk(slants, 1, (i, kids) => nest3(i, kids));
         if (id.startsWith('ss-slant-rect')) {
           return chunk(slants, 1, (i, kids) => ({ kind: 'group', clip: rectClip(i), children: kids }));
         }
@@ -307,11 +325,14 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
         clip: { kind: 'rect', x: px(i * 7) - 6.03, y: py(i * 7) - 5.97, width: 100.07, height: 99.91 },
         children: [red(i * 7, own), greenSlant(i * 7, own)],
       }));
+      const nestAgreeTree = (own: boolean) => Array.from({ length: 64 }, (_, i) =>
+        nest3(i * 7, [red(i * 7, own), greenSlant(i * 7, own)], 0.03));
       const agreement = {
         hullsOffered,
         shaderVsOwnDraw: diff(readSs(agreeTree(false), true), readSs(agreeTree(true), true)),
         shaderVsUnsnapped: diff(readSs(agreeTree(false), true), readSs(agreeTree(false), false)),
         rectShaderVsOwnDraw: diff(readSs(rectAgreeTree(false), true), readSs(rectAgreeTree(true), true)),
+        nestShaderVsOwnDraw: diff(readSs(nestAgreeTree(false), true), readSs(nestAgreeTree(true), true)),
       };
 
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
@@ -403,6 +424,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   const hullClipK8 = deltaUs('ss-rect-hullclip-k8', 'ss-rect-plain', N / K);
   const slantRectHull = deltaUs('ss-slant-rectclip', 'ss-slant-plain', N);
   const slantRectStencil = deltaUs('ss-slant-rectstencil', 'ss-slant-plain', N);
+  const slantNest = deltaUs('ss-slant-nest3', 'ss-slant-plain', N);
+  const slantNestStencil = deltaUs('ss-slant-nest3stencil', 'ss-slant-plain', N);
 
   const num = (x: number) => x.toFixed(2);
   const lines = [
@@ -432,11 +455,14 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     `| the same clip on the stencil, single-sampled | ${num(ssStencilClip)} | ss-rect-stencilclip − ss-rect-plain, per clip |`,
     `| a rect clip a slanted item crosses, as a hull | ${num(slantRectHull)} | ss-slant-rectclip − ss-slant-plain, per clip |`,
     `| the same on the stencil | ${num(slantRectStencil)} | ss-slant-rectstencil − ss-slant-plain, per clip |`,
+    `| three nested rect clips a slanted item crosses | ${num(slantNest)} | ss-slant-nest3 − ss-slant-plain, per nest |`,
+    `| the same on the stencil | ${num(slantNestStencil)} | ss-slant-nest3stencil − ss-slant-plain, per nest |`,
     '',
     `single-sampled canvas offers the shader clip: ${String(agreement.hullsOffered)}; `
     + `pixels where a shader-clipped solid and a stencil-clipped fill differ: ${agreement.shaderVsOwnDraw}; `
     + `pixels where the shader clip differs from the stencil of the unsnapped path: ${agreement.shaderVsUnsnapped}; `
-    + `pixels where rect clips, cut and shader-tested, differ from the stencil: ${agreement.rectShaderVsOwnDraw}`,
+    + `pixels where rect clips, cut and shader-tested, differ from the stencil: ${agreement.rectShaderVsOwnDraw}; `
+    + `the same under three nested rect clips: ${agreement.nestShaderVsOwnDraw}`,
     '',
     `stencil is ${((stencilOnly / clipTotal) * 100).toFixed(0)}% of clip entry; `
     + `the batch break is ${((breakShare / clipTotal) * 100).toFixed(0)}%.`,
@@ -457,6 +483,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   expect(draws['ss-rect-hullclip'], 'a shader-decided clip should not end the run').toBeLessThan(N / 4);
   expect(draws['ss-rect-stencilclip'], 'with the shader clip off, each clip should close its run').toBeGreaterThanOrEqual(N);
   expect(agreement.rectShaderVsOwnDraw, 'a rect clip cut and shader-tested must keep the stencil\'s pixels').toBe(0);
+  expect(agreement.nestShaderVsOwnDraw, 'nested rect clips, cut and shader-tested, must keep the stencil\'s pixels').toBe(0);
+  expect(draws['ss-slant-nest3stencil'], 'with the shader clip off, nested clips should take the stencil').toBeGreaterThanOrEqual(N);
   expect(draws['ss-slant-rectclip'], 'a slanted item across a rect clip should stay in the run').toBeLessThan(N / 4);
   expect(draws['ss-slant-rectstencil'], 'with the shader clip off, it should take the stencil').toBeGreaterThanOrEqual(N);
   // A clipped frame that did not cost more than its unclipped twin means the
@@ -486,9 +514,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.item('shader clip agreement', {
     shaderVsOwnDraw: metric(agreement.shaderVsOwnDraw, 'count', 'pixels differing over 64 clips: a solid under the shader clip, a vertex-colored fill under the stencil'),
     shaderVsUnsnapped: metric(agreement.shaderVsUnsnapped, 'count', 'pixels differing over the same clips: the shader clip, the stencil of the unsnapped path'),
+    nestShaderVsOwnDraw: metric(agreement.nestShaderVsOwnDraw, 'count', 'the same over 64 nests of three rect clips off the hull grid'),
     rectShaderVsOwnDraw: metric(agreement.rectShaderVsOwnDraw, 'count', 'pixels differing over 64 rect clips off the hull grid: an axis-aligned solid cut on the CPU and a turned one tested in the shader, against both drawn for themselves through the stencil'),
   });
   run.item('rect clip a slanted item crosses, as a hull', { perClip: metric(slantRectHull, 'us', `${derived}, ss-slant-rectclip - ss-slant-plain`) });
   run.item('rect clip a slanted item crosses, on the stencil', { perClip: metric(slantRectStencil, 'us', `${derived}, ss-slant-rectstencil - ss-slant-plain`) });
+  run.item('three nested rect clips a slanted item crosses', { perNest: metric(slantNest, 'us', `${derived}, ss-slant-nest3 - ss-slant-plain`) });
+  run.item('three nested rect clips a slanted item crosses, on the stencil', { perNest: metric(slantNestStencil, 'us', `${derived}, ss-slant-nest3stencil - ss-slant-plain`) });
   run.write();
 });
