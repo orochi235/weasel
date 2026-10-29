@@ -130,12 +130,8 @@
   /* Positioning context for the useTextEdit contenteditable overlay,
      which positions absolutely within its container. */
   position: relative;
-  /* The workspace texture — diagonal stripes outside the document page.
-     Composited under the canvas; the canvas paints with alpha so these
-     stripes show through everywhere the document doesn't cover. */
-  background:
-    repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px)
-    var(--wzl-workspace-surface);
+  /* Under the canvas, which paints with alpha, so the workspace shows wherever the page doesn't cover. */
+  background: var(--wzl-workspace);
   overflow: hidden;
 }
 

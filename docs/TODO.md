@@ -369,12 +369,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Symmetry follow-ups
 
-### Container layout strategies
-
-- **(P3) [agent] The `diagram-drop` demo's straight edge strikes through the boxes dropped across it.** Ruled
-  (2026-10-28): edges keep painting above every node (`mainSpecs` pushes them last), and the demo
-  (`apps/site/demos/DiagramDropDemo.tsx`) routes with `router="avoid"` so its edges go round what is dropped.
-
 ---
 
 ## Animation
@@ -598,12 +592,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   switches it from a menu button showing its surface, and a toolbar or menu button switches from its
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
-
-- **(P3) [agent] The workspace hatch is written twice.** `.wd-canvas-host` in `apps/draw/src/app.css` restates the
-  diagonal bands that `packages/ui/src/components/workspace.module.css` defines for the asset editor's preview, over a
-  different ground. Ruled (2026-10-28): one layer, as a theme token (`--wzl-workspace`) both use, and its ground is the
-  asset editor's lighter one (`--wzl-surface-raised` with its tint taken out), which `--wzl-workspace-surface` becomes;
-  the ground around draw's page gets lighter.
 
 ---
 
@@ -939,8 +927,11 @@ only story runner in the repo.
 
 - **(P3) [agent] The timeout warning prints once per vitest project.** A one-file run whose test timed out and
   passed on retry printed `⚠ 1 test(s) timed out and were retried once` about a dozen times (2026-10-27). The `seen` guard in
-  `timeoutRetries()` (`scripts/vitest-timeout-retries.ts`) is meant to add one reporter per run; why it adds more
-  is not yet known.
+  `timeoutRetries()` (`scripts/vitest-timeout-retries.ts`) is meant to add one reporter per run, but vitest 5 has every
+  inline project extend the declaring config file, so `vitest.config.ts` is evaluated again for each project and each
+  evaluation makes a fresh plugin with its own `seen` (a one-file run called `timeoutRetries()` 11 times, 2026-10-28).
+  The fix is to mark the shared `Vitest` object itself, e.g. under a `Symbol.for` key, rather than a closure set; it
+  edits a `triggers` path, so it goes through a full run rather than a batch.
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
