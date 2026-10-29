@@ -38,6 +38,11 @@ change.** Bisecting with the file in isolation at one end and the whole suite at
 other produced a clean, entirely false "both parents green, merge red" — the two ends
 were different experiments. Use one probe across the whole range.
 
+**A browser test file that loads no tests, beside `weasel-request … net::ERR_NETWORK_CHANGED`
+lines, lost its imports to the node's network and not to the change under test.** Chromium on
+macOS drops every request in flight when the network changes, those to vite on localhost included.
+`docs/TODO.md` ("fail to load when the node's network changes") has the evidence.
+
 **Run vitest with `--reporter=default` to see a passing test's console output.** The
 reporter vitest picks on its own when an agent runs it drops stderr from passing tests, so
 React's "not wrapped in act(...)" warnings looked like they only happened in CI. They

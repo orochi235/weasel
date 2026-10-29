@@ -799,7 +799,9 @@ only story runner in the repo.
   reproduced (2026-10-28): 30 runs of the file alone on studio, and 15 runs of the chart and diagram browser tests
   beside 8 busy loops on keiei, all passed; probes of the drag under jank and stress showed no failure either. The
   next step was a probe of whether layout is still settling when `mountChartApp` returns. Waiting on a third
-  sighting before spending more fleet time on it.
+  sighting before spending more fleet time on it; none in the fleet runs through 2026-10-29 16:00, and
+  neither sighting overlapped a network change on its node (measured from configd's log; see the entry on
+  files failing to load).
 
 - **(P3) [agent] The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
@@ -887,64 +889,42 @@ only story runner in the repo.
   instead of acting on the next test, and the run's timeout warning prints the stack of each step it was still
   awaiting (2026-10-27). Read that stack at the next sighting.
 
-- **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
-  others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
-  so a tab's renderer cannot pile up the Mach ports that closed its sockets, and waits at each
-  file's start until vitest's frame lookup returns that file's own frame (`settleFrame`,
-  `scripts/vitest-browser-commands.ts`); the measurements behind each are in the commits that
-  made them (2026-10-13 to 10-17). On 2026-10-19, 15 runs of the project alone on the fleet, beside
-  other jobs (teitou 12, studio 2, keiei 1), passed all 220 files with no detached frame and no
-  lost tab. Left open:
-  - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test failed `frame.evaluate: Frame was
-    detached` under `userEvent.keyboard`** in 8 runs before `settleFrame`, all at the old worker
-    count. That the frame lookup was the cause is inferred, never caught in a run; a sighting
-    with the wait in place means it is something else.
-  - **A trial's status strip grows 2 px when its numeric face arrives**, which refits the view a
-    second time. The strip itself now takes its room on the first layout (`TrialChrome` reads an
-    unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
-    loads the face first to test the structural half, and its "entering refits" test still waits
-    for the settled box. The readouts' boxes depend on the face because `ScaleIndicator` is
-    inline-flex inside a line box; made face-independent the strip would settle near 27 px (estimated)
-    rather than 30, which is a look to decide, not a fix to make.
-  - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
+- **(P2) [maintainer] A trial's status strip grows 2 px when its numeric face arrives**, which refits
+  the view a second time. The strip itself takes its room on the first layout (`TrialChrome` reads an
+  unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
+  loads the face first to test the structural half, and its "entering refits" test still waits for
+  the settled box. The readouts' boxes depend on the face because `ScaleIndicator` is inline-flex
+  inside a line box; made face-independent the strip would settle near 27 px (estimated) rather than
+  30. Which height the strip should have is the decision.
 
-- **(P2) [agent] Browser test files fail to load in bursts: "Failed to fetch dynamically imported module".**
-  On 2026-10-25, four fleet runs of branches that touched none of them failed whole files this way,
-  and the next run passed. Each failure is the file's own import, `Failed to import test file …
-  Caused by: TypeError: Failed to fetch dynamically imported module: http://localhost:<port>/…?import&browserv=<ms>`,
-  where `browserv` is the `Date.now()` the tester stamped on the import, so each run's failures can
-  be dated to the millisecond:
-
-  | Log (scratchpad, `fleet-fix-*`) | Node, mode | Files | Project | Window | Into the run |
-  |---|---|---:|---|---|---:|
-  | `n858-squeezed-dock-row` | msb-uai, browser beside | 10 | forge-stories | 01:54:24–01:54:26 | 99 s |
-  | `p932-clean` | studio, browser after | 5 | forge-stories | 01:54:21–01:54:24 | 189 s |
-  | `ui-shared-register` | msb-uai, browser beside | 5 | forge-stories | 02:26:00–02:26:09 | 94 s |
-  | `s825-bar-menubar-defaults-2` | studio, browser after | 1 | browser (`hud/src/glyph.browser.test.ts`) | 02:33:54 | 403 s |
-
-  Ruled out, from the logs and the nodes (verified):
-  - **The optimizer.** Both browser projects log at `info`, and none of these logs has a
-    "Re-optimizing", "new dependencies optimized" or "reloading" line. On msb-uai the
-    `forge-stories` and `browser` dep caches (`node_modules/.vite/vitest/<sha1 of the project
-    name>/deps`) were born at 01:02:48–49 and not rewritten since, which spans both msb-uai failures
-    (stat on the node, 02:58). So neither the run nor the gate's `vitest list` (check:test-projects,
-    which starts a vite server for every project on the same cache dirs) re-bundled under them.
-  - **A fleet-tree sync.** Every log ends `fleet-tree: the tree held … for the whole run`.
-  - **A broken import elsewhere.** None of these logs has an `Internal server error`, a
-    `Failed to resolve import` or a pre-transform error; `x637-curved-label-red`'s single such
-    failure was its own missing `./CurvedLabel`, a real red.
-  - **Another job on the node.** `onto jobs --internal` shows no other job on msb-uai or studio
-    at any of the four moments (studio's long-lived `brick-spot-render` service aside).
-
-  Every failed or 400-and-up module load in either browser project now prints a `weasel-request <epoch
-  ms> <ISO> <status|error> <type> <url>` line to stdout, on the same epoch ms as `browserv`
-  (`watchRequests`, `scripts/vitest-browser-commands.ts`, 2026-10-26), so the next burst's log says
-  what the server answered. The burst shape, many files in under 10 s and then clean, points at a
-  transient server- or browser-side event rather than any one file (inferred).
-  The first two bursts came 3 s apart on two different nodes (01:54:21 on studio, 01:54:24 on
-  msb-uai), each serving its own localhost, so what they shared at that moment is the first thing
-  to look for: a sync from this machine into another tree, a network event, or the onto daemons. The
-  logs lived in a session scratchpad and are not kept.
+- **(P2) [maintainer] Browser test files fail to load when the node's network changes.** A file
+  fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
+  imported module`, along with any file loading in the same tenth of a second, and the next run
+  passes. The cause is Chromium: on a macOS network change it drops every request in flight, those
+  to vite on localhost included, with `net::ERR_NETWORK_CHANGED`. Seen once since `watchRequests`
+  (`scripts/vitest-browser-commands.ts`) began logging failed loads (2026-10-26): in the
+  palette-carry run on studio, configd logged `IPMonitor] network changed` at 18:13:55.736 on
+  2026-10-28, and 66 ms later 376 module requests failed with `ERR_NETWORK_CHANGED` and
+  `apps/chart/src/pipeline/pages.browser.test.tsx` loaded no tests (measured, from the job log and
+  `log show --process configd` on the node). It was the only weasel test job of 491 run from
+  2026-10-25 to 10-29 that overlapped a logged network change, and the only one with a load failure.
+  - **How often.** `IPMonitor] network changed` events, 2026-10-28 to 10-29: studio about 35 a day,
+    msb-uai 9 in 13 h, keiei 6 in 25 h, teitou 4 in 19 h (measured). Studio alone is on both
+    Ethernet (en0) and Wi-Fi (en1), and its event came right after an IPv6 republish on en1; that
+    the Wi-Fi link is why studio has the most is inferred. Some events are the whole LAN's: at
+    16:12:32 on 10-29 all four nodes logged one within 0.4 s (measured). That explains the
+    2026-10-25 bursts 3 s apart on studio and msb-uai (inferred: the nodes' logs no longer reach back).
+  - **Where to find a sighting.** A run's log holds `weasel-request <epoch ms> <ISO> net::ERR_NETWORK_CHANGED script …`
+    lines at the failed import's `browserv` stamp, and the node's `log show --process configd`
+    holds the event, for a day or two before it rotates. onto keeps each job's log in
+    `~/.config/onto/archive/<node>/<job>/`.
+  - **Not available.** Headless Chromium has no switch to ignore address changes (searched the
+    strings of Playwright's `chrome-headless-shell` 1248, 2026-10-29), and vitest retries tests,
+    never a file's import.
+  - **The decision.** Either take studio's Wi-Fi down while it has Ethernet, which removes its own
+    events and leaves the LAN-wide ones, or have `scripts/vitest-overlap.mjs` run again only the
+    files that loaded no tests when the run logged `ERR_NETWORK_CHANGED`. The second is a rerun the
+    suite does on its own, which nothing in it does today.
 
 - **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.** With the readout
   changing every frame the HUD allocates 978 KB a frame at 5,000 glyphs on a fixed camera against the DOM's 102
