@@ -146,6 +146,7 @@ describe('WeaselChart containers', () => {
     await expect.poll(() => bodies().length).toBe(1);
     const body = bodies()[0]!;
     expect(body.parent).toBe(box);
-    expect([Math.round(body.pose.x) % 12, Math.round(body.pose.y) % 12]).toEqual([0, 0]);
+    const center = [body.pose.x + body.pose.width / 2, body.pose.y + body.pose.height / 2];
+    expect(center.map((v) => Math.round(v) % 12)).toEqual([0, 0]);
   });
 });

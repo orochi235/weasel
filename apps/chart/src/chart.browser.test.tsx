@@ -260,14 +260,15 @@ describe('WeaselChart chart mode', () => {
     expect(poseOf(id).y).toBeCloseTo(108);
   });
 
-  it('drops a stencil with its origin on the grid under snap to grid', async () => {
+  it('drops a stencil with its box on the grid under snap to grid', async () => {
     chartPrefs().set('view.snapToGrid', true);
     const { host } = await mountApp();
-    // A Decision is 120 by 80, so its origin would sit at (340, 260): the grid's (336, 264).
+    // A Decision is 120 by 80, so its box would sit at (340, 260): every x probe is 4 past a line
+    // of the 12 grid, and its center's y, 300, is on one.
     await carryStencil('decision', at(host, 400, 300));
     await expect.poll(() => bodies().length).toBe(1);
     const pose = bodies()[0]!.pose!;
-    expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 264, 120, 80]);
+    expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 260, 120, 80]);
 
     // The label rides the snap: it sits in its body as it does in one dropped with no snapping.
     chartPrefs().set('view.snapToGrid', false);
