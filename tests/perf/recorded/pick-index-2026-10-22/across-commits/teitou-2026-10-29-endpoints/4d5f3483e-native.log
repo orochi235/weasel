@@ -1,0 +1,16 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/private/var/folders/n5/j3kqgk6x5tb51hyh99q3j3fh0000gn/T/weasel-areawalk-59260[39m
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/walk.bench.ts [2m([22m[2m1 test[22m[2m)[22m[33m 6519[2mms[22m[39m
+   [33m[2m✓[22m[39m hitTestArea, 10000 rect nodes, 25% query rect[33m 6519[2mms[22m[39m
+     [1mname       [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     hitTestArea  [34m2,012.10[39m  [36m0.4670[39m  [36m0.7221[39m  [36m0.4989[39m  [36m0.5124[39m  [36m0.6122[39m  [36m0.6285[39m  [36m0.6683[39m  [2m±0.16%[22m  [2m   6014[22m[1m[32m   fastest[39m[22m
+     full walk    [34m  602.03[39m  [36m1.5505[39m  [36m7.6778[39m  [36m1.6691[39m  [36m1.7236[39m  [36m1.9558[39m  [36m1.9881[39m  [36m2.9955[39m  [2m±0.48%[22m  [2m   1798[22m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 16:19:39
+[2m   Duration [22m 7.24s[2m (tests 91%, import 6%, environment 2%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/recorded/pick-index-2026-10-22/across-commits/teitou-2026-10-29-endpoints/4d5f3483e-native.json

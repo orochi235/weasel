@@ -342,15 +342,18 @@ Owner tags, after the priority (2026-10-26):
   `tests/perf/bench/scene-ops.bench.ts`, or a plain loop over `scene.add`/`scene.remove` under
   `tests/perf/bench/node-hooks.mjs`.
 
-- **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
-  marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
-  8.97 ms at 394b86d43 (medians, keiei, one session, 2026-10-22); the pick-index branch's own full
-  walk is 8.42 ms, so the branch did not cause it. The index hides it for marquees in a still
-  scene, but every pick after a change still walks. Bisect with
-  `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (edit its commit list); the
-  raw runs are beside it.
-  The recorded runs' `conditions.txt` show a load average of 5.9–7.4 on keiei's 8 threads, so part of
-  the 3x may be contention: bisect on a quiet node (4,893 commits, about 13 steps).
+- **(P3) [agent] The unindexed area walk still costs 2.5 times what it did on 2026-09-29.** The 25%
+  marquee over 10,000 rect nodes (`walk.bench.ts`, the `full walk` row) takes 0.91 ms; `hitTestArea`
+  at 9db2cae5f took 0.37 ms (teitou, native imports, 2026-10-29). The tripling this entry used to
+  report was mostly Vite's module runner, which the benches left on 2026-10-27: under it the same two
+  commits read 2.28 and 7.00 ms. Natively, 679138cac (per-node hidden and locked, through
+  `nodeGates`) took the walk from 0.62 to 1.65 ms, and ae38d2edd brought it back to 0.91. What is
+  left: about 0.25 ms of drift between 0a2eba982 (2026-10-11, 0.38 ms) and 79210c328 (2026-10-17,
+  0.62 ms), spread over several commits, and 0.29 ms the gates still add; unmeasured, the likely
+  share of that is their two `scene.get` per node, which a gate
+  taking the candidate node instead of its id would drop. Bisect with
+  `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (`bisect <good> <bad> native`);
+  the runs are beside it, in `teitou-2026-10-29-*/runs.jsonl`.
 
 - **(P3) [maintainer] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and

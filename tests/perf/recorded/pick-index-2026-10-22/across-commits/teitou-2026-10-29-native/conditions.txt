@@ -1,0 +1,10 @@
+2026-10-29T20:20:37Z start mode=measure args=9db2cae5f 394b86d43 host=teitou
+2026-10-29T20:20:37Z synced tree: 4d5f3483e241c62726815ebc4fe03434e343709c dirty-paths: 4
+2026-10-29T20:20:37Z cpu: Apple M5 Max (18 threads) node: v26.12.1
+2026-10-29T20:20:37Z npm ci at 9db2cae5f (lock ceff54c6bec732cb6129e87edbfdfee2e0c986b8)
+2026-10-29T20:20:45Z   9db2cae5f 2026-09-29 re-record the vitest benchmark baseline and drop the vitest 4 reader [runner]: 2.2751250000001164 ms
+2026-10-29T20:20:49Z   9db2cae5f 2026-09-29 re-record the vitest benchmark baseline and drop the vitest 4 reader [native]: 0.37454200000001947 ms
+2026-10-29T20:20:49Z npm ci at 394b86d43 (lock 2577623e1172c86ea4a8ebbd3e28a439bac55c5c)
+2026-10-29T20:20:59Z   394b86d43 2026-10-22 plan laying content along a path, text as a path effect [runner]: 7.001125000000229 ms
+2026-10-29T20:21:03Z   394b86d43 2026-10-22 plan laying content along a path, text as a path effect [native]: 1.5665835000002062 ms
+2026-10-29T20:21:03Z end

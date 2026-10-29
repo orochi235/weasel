@@ -1,0 +1,11 @@
+2026-10-29T21:00:53Z start mode=compare args=4d5f3483e 3 host=teitou
+2026-10-29T21:00:53Z synced tree: ae38d2edd82ca73bfcb1ec36b73053f85483f048 dirty-paths: 6
+2026-10-29T21:00:53Z cpu: Apple M5 Max (18 threads) node: v26.12.1
+2026-10-29T21:00:54Z npm ci at 4d5f3483e (lock 5c4a4967c21f095ec1ddaa59c7e02717f5802048)
+2026-10-29T21:01:05Z   4d5f3483e 2026-10-29 chore: version packages (#62) [native]: 0.4925829999999678 ms
+2026-10-29T21:01:13Z   synced tree [native] round 1: 0.3112500000002001 ms
+2026-10-29T21:01:20Z   4d5f3483e 2026-10-29 chore: version packages (#62) [native]: 0.5000840000000153 ms
+2026-10-29T21:01:28Z   synced tree [native] round 2: 0.3098339999997961 ms
+2026-10-29T21:01:36Z   4d5f3483e 2026-10-29 chore: version packages (#62) [native]: 0.4956250000000182 ms
+2026-10-29T21:01:43Z   synced tree [native] round 3: 0.3118750000003274 ms
+2026-10-29T21:01:43Z end

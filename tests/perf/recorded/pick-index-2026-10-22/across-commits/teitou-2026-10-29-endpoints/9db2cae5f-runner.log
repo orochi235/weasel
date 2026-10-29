@@ -1,0 +1,39 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (tests/perf/vitest.bench.config.ts:6:26). Use `import.meta.dirname` instead
+  - import "../../scripts/vite-aliases" without a file extension (tests/perf/vitest.bench.config.ts:4:31). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/private/var/folders/n5/j3kqgk6x5tb51hyh99q3j3fh0000gn/T/weasel-areawalk-59260[39m
+
+[90mstderr[2m | tests/perf/bench/walk.bench.ts[2m > [22m[2mhitTestArea, 10000 rect nodes, 25% query rect
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea, 10000 rect nodes, 25% query rect"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/interactions/actions/resize/geometry.ts > RECT_POSE_DESCRIPTOR
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/walk.bench.ts [2m([22m[2m1 test[22m[2m)[22m[33m 3263[2mms[22m[39m
+   [33m[2m✓[22m[39m hitTestArea, 10000 rect nodes, 25% query rect[33m 3262[2mms[22m[39m
+     [1mname       [22m  [1m    hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     hitTestArea  [34m415.98[39m  [36m2.1552[39m  [36m3.0331[39m  [36m2.4115[39m  [36m2.4941[39m  [36m2.7954[39m  [36m2.8510[39m  [36m2.8971[39m  [2m±0.32%[22m  [2m   1245[22m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 16:19:07
+[2m   Duration [22m 3.77s[2m (tests 87%, transform 6%, environment 5%, import 1%, setup 1%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/recorded/pick-index-2026-10-22/across-commits/teitou-2026-10-29-endpoints/9db2cae5f-runner.json
