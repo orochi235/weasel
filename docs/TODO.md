@@ -422,6 +422,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] A tree's Left and Right don't swap in a right-to-left layout** (2026-10-28). `treeKey`
+  (`packages/headless/src/tree.ts`) ignores `ListShape.dir`, so in RTL Right still opens a branch. The tree keys
+  also differ from the WAI-ARIA treeview pattern in ways kept on purpose so far: no `*` to expand every sibling,
+  Space activates like Enter instead of toggling selection, and Shift+Home/End extends where the pattern uses
+  Ctrl+Shift+Home/End.
+
 - **(P1) [agent] Rework how a pref leaf says it can be auto.** Three fields on a leaf say it today
   (`packages/prefs/src/schema.ts`): `manual` (never auto), `unpinned` (starts auto), and `autoValue` (what it reads
   while auto, where its owner computes nothing; unset, it reads no value), and a schema can set them against each
@@ -835,6 +841,11 @@ only story runner in the repo.
   better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] `npm ci` in a fresh worktree fails in forge's postinstall build** (2026-10-28, seen once, in a
+  worktree cut from `main`): `TS7016: Could not find a declaration file for module '@weasel-js/labkit/config'`,
+  apparently labkit's declarations not built before forge needs them. `node_modules` installed anyway and the
+  branch's fleet runs passed, so it fails the install's exit code, not the tree. Not yet checked on a clean clone.
 
 - **(P1) [mike] Publish `@weasel-js/text-shaping` by hand, then retire `@weasel-js/shape` (2026-10-28).** The
   package was renamed after 1.13.0 went out as `@weasel-js/shape`. The release job's `check:first-publish`
