@@ -67,7 +67,6 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   let coalesceAnchorVersion = -1;
   const changed = createEmitter();
   const stepped = createEmitter<[HistoryStep]>();
-  /** A step given as a function is built only when someone observes steps. */
   function bump(step?: HistoryStep | (() => HistoryStep)): void {
     version++;
     if (step && stepped.size > 0) stepped.emit(typeof step === 'function' ? step() : step);
