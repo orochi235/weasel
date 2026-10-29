@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ComboBox, ComboBoxItem } from './ComboBox';
 
@@ -116,6 +116,17 @@ describe('ComboBox keyboard navigation', () => {
     await user.tab();
     await user.keyboard('3001{Enter}');
     expect(onCommit).toHaveBeenCalledWith({ source: 'text', text: '3001' });
+  });
+
+  it('leaves Safari\'s composition-ending Enter, keyCode 229, to the input method', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    render(<ComboBox label="Part" options={OPTIONS} allowsCustomValue onCommit={onCommit} />);
+
+    await user.tab();
+    await user.keyboard('3001');
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter', keyCode: 229 });
+    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it('commits text that is an option\'s own label as text when no option is highlighted', async () => {

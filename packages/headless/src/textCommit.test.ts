@@ -1,4 +1,4 @@
-import { editEnd } from './textCommit';
+import { editEnd, imeKey } from './textCommit';
 
 describe('editEnd', () => {
   it('commits on Enter and blur and cancels on Escape', () => {
@@ -19,5 +19,19 @@ describe('editEnd', () => {
   it('leaves Shift+Enter to a multiline field', () => {
     expect(editEnd({ key: 'Enter', shift: true }, { multiline: true })).toBeNull();
     expect(editEnd({ key: 'Enter' }, { multiline: true })).toBe('commit');
+  });
+});
+
+describe('imeKey', () => {
+  it('claims a key pressed mid-composition, Safari\'s closing Enter included', () => {
+    expect(imeKey({ key: 'Enter', isComposing: true })).toBe(true);
+    expect(imeKey({ key: 'Enter', keyCode: 229 })).toBe(true);
+    expect(imeKey({ key: 'Process' })).toBe(true);
+    expect(imeKey({ key: 'Dead' })).toBe(true);
+  });
+
+  it('leaves a plain key to the field', () => {
+    expect(imeKey({ key: 'Enter', isComposing: false, keyCode: 13 })).toBe(false);
+    expect(imeKey({ key: 'Escape' })).toBe(false);
   });
 });
