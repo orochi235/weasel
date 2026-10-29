@@ -621,7 +621,9 @@ relaxation seeded from the current positions, so re-running it keeps relaxing.
 `layered` turns around any edge that closes a cycle, then gives each node a
 rank that keeps the total edge length as short as it can (`ranksByLength`,
 network simplex), so a node with no inputs sits beside what it feeds rather
-than in the first rank. It lines each node up with its neighbors across the
+than in the first rank. A group's members share one rank wherever the edges
+between them allow it, and a group's box closes any stretch none of its members
+covers to `nodeGap`, so the box holds no empty room. It lines each node up with its neighbors across the
 ranks (Brandes–Köpf), lining up the two ports an edge joins rather than the two
 centers. An edge that spans ranks stands in each rank it crosses, so placement
 leaves it room, and an edge whose `GraphEdge.label` gives its label's size gets

@@ -324,16 +324,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] `layered` lays out a 28-node cloud architecture poorly.** Rendered 2026-10-29 from
-  [ghosted's phase3.clarc.json](https://github.com/dooreelko/ghosted/blob/nx54g-phase3-lambda/phase3/phase3.clarc.json)
-  (28 nodes, 53 edges, 4 groups) through `diagramScene` with default options. A group whose members sit in
-  different ranks (Admin: one function two ranks above the other three) draws as a box mostly empty, and
-  edges into the wide rank of functions sweep out around the whole diagram rather than through it.
-  `elkPlanner()` on the same data, with orthogonal routes, keeps every group tight and routes nothing around
-  the outside, so the gap is in `layered` itself.
-  On the same branch's `phase3.clarc.proposed.json` (15 nodes, 22 edges, no groups), `elkPlanner()` draws some
-  wires across the faces of wide boxes: into the Admin and Background function boxes from points inside their
-  outline, and up through the bottom of both buckets (seen in a screenshot, 2026-10-29; cause not looked at).
+- **(P3) [agent] `layered` runs a long edge outside the drawing when it is the outermost wire in a rank.**
+  On `CLOUD` (`packages/diagram/src/layered/cloudFixture.ts`, shaped like ghosted's phase3.clarc.json), the
+  chains for `admin-people -> db` and `admin-config -> db` pass right of the widest node in their ranks and
+  sit 60 and 141 units outside the hull of nodes and group boxes; `gateway -> alerts` sits 58 left of it
+  (measured 2026-10-29). Brandes–Köpf keeps each chain straight, so the wire jumps out on its first hop and
+  back on its last. `elkPlanner()` does the same on this graph, by up to 197. The default bezier router also
+  draws 9 of the 53 wires through boxes they do not join (2 under `router: 'orthogonal'`, 0 under ELK).
+  `layered.cloud.test.ts` pins only the wires into the functions; tighten it once this is fixed.
 
 - **(P3) [agent] A scene add-and-remove round trip costs 2.4 µs, against 1.3 µs on 2026-09-29.** Native imports,
   this machine, flat across tree depth since the lock guard stopped climbing (2026-10-27). About 0.4 µs is

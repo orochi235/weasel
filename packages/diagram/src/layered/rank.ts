@@ -2,11 +2,18 @@
  *  Technique for Drawing Directed Graphs", the ranking Graphviz dot uses). */
 import type { Graph } from '../graph';
 
-/** An edge between two nodes of one component, by their index in it. */
+/** An edge between two nodes of one component, by their index in it: at
+ *  least `minlen` ranks long, its length counting `weight` times. */
 interface Arc {
   tail: number;
   head: number;
+  weight: number;
+  minlen: number;
 }
+
+/** What a rank of span costs a group, per member: enough that a group sits in
+ *  one rank whenever its members' edges let it at any reasonable price. */
+const GROUP_WEIGHT = 4;
 
 /** A connected component: its nodes' graph indices in graph order, and its
  *  arcs in edge order, naming nodes by their position in `nodes`. */
@@ -22,7 +29,12 @@ interface Part {
  *
  * An edge in `back` counts as running the other way, so it is ranked and kept
  * forward like any other; a self-loop is ignored; parallel edges each count.
- * Each connected component is ranked on its own and starts at rank 0.
+ * A group's members are also drawn into as few ranks as they can share: each
+ * rank between its first member's and its last costs every member
+ * `GROUP_WEIGHT` edge lengths, so a group sits in one rank unless an edge
+ * between its members, or a much longer route elsewhere, needs more. Each
+ * connected component, joining a group's members as one, is ranked on its own
+ * and starts at rank 0.
  *
  * Starts from the longest-path ranking and improves it by network simplex,
  * stopping after a number of rounds proportional to the edge count. Every
@@ -41,16 +53,31 @@ export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<stri
     const from = index.get(edge.from);
     const to = index.get(edge.to);
     if (from === undefined || to === undefined || from === to) continue;
-    arcs.push(back.has(edge.id) ? { tail: to, head: from } : { tail: from, head: to });
+    arcs.push(back.has(edge.id) ? { tail: to, head: from, weight: 1, minlen: 1 } : { tail: from, head: to, weight: 1, minlen: 1 });
+  }
+  // A group spans the ranks from a node above all its members to one below
+  // them, both standing in for the group's box and nothing else.
+  let count = graph.nodes.length;
+  for (const group of graph.groups ?? []) {
+    const members = [...new Set(group.members.map((id) => index.get(id)).filter((i): i is number => i !== undefined))];
+    if (members.length < 2) continue;
+    const [top, bottom] = [count, count + 1];
+    count += 2;
+    for (const m of members) {
+      arcs.push({ tail: top, head: m, weight: GROUP_WEIGHT, minlen: 0 });
+      arcs.push({ tail: m, head: bottom, weight: GROUP_WEIGHT, minlen: 0 });
+    }
   }
 
-  const start = longestPath(graph.nodes.length, arcs);
+  const real = graph.nodes.length;
+  const start = longestPath(count, arcs);
   const ranks = new Map<string, number>();
-  for (const part of components(graph.nodes.length, arcs)) {
+  for (const part of components(count, arcs)) {
     const rank = part.nodes.map((g) => start[g]!);
     simplex(part.arcs, rank);
-    const min = Math.min(...rank);
-    part.nodes.forEach((g, i) => ranks.set(graph.nodes[g]!.id, rank[i]! - min));
+    const own = part.nodes.flatMap((g, i) => (g < real ? [i] : []));
+    const min = Math.min(...own.map((i) => rank[i]!));
+    for (const i of own) ranks.set(graph.nodes[part.nodes[i]!]!.id, rank[i]! - min);
   }
   return ranks;
 }
@@ -61,17 +88,17 @@ export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<stri
 function longestPath(count: number, arcs: readonly Arc[]): number[] {
   const rank = new Array<number>(count).fill(0);
   const pending = new Array<number>(count).fill(0);
-  const out: number[][] = Array.from({ length: count }, () => []);
+  const out: Arc[][] = Array.from({ length: count }, () => []);
   for (const arc of arcs) {
     pending[arc.head]!++;
-    out[arc.tail]!.push(arc.head);
+    out[arc.tail]!.push(arc);
   }
   const ready: number[] = [];
   for (let i = 0; i < count; i++) if (pending[i] === 0) ready.push(i);
   for (let k = 0; k < ready.length; k++) {
     const u = ready[k]!;
-    for (const v of out[u]!) {
-      rank[v] = Math.max(rank[v]!, rank[u]! + 1);
+    for (const { head: v, minlen } of out[u]!) {
+      rank[v] = Math.max(rank[v]!, rank[u]! + minlen);
       if (--pending[v]! === 0) ready.push(v);
     }
   }
@@ -106,19 +133,19 @@ function components(count: number, arcs: readonly Arc[]): Part[] {
   const local = new Array<number>(count);
   for (const p of parts) p.nodes.forEach((g, i) => (local[g] = i));
   for (const arc of arcs) {
-    parts[part[arc.tail]!]!.arcs.push({ tail: local[arc.tail]!, head: local[arc.head]! });
+    parts[part[arc.tail]!]!.arcs.push({ ...arc, tail: local[arc.tail]!, head: local[arc.head]! });
   }
   return parts;
 }
 
-const slackOf = (arc: Arc, rank: readonly number[]): number => rank[arc.head]! - rank[arc.tail]! - 1;
+const slackOf = (arc: Arc, rank: readonly number[]): number => rank[arc.head]! - rank[arc.tail]! - arc.minlen;
 
 /** Network simplex over one component, improving `rank` in place. */
 function simplex(arcs: readonly Arc[], rank: number[]): void {
   if (arcs.length === 0 || arcs.some((arc) => slackOf(arc, rank) < 0)) return;
   const inTree = feasibleTree(arcs, rank);
   const cap = 4 * arcs.length + 100;
-  // Each pivot changes the total by (cut value × entering slack) ≤ 0, so the
+  // Each pivot changes the weighted total by (cut value × entering slack) ≤ 0, so the
   // last ranking is the best one seen.
   for (let round = 0; round < cap; round++) {
     const tree = postorder(rank.length, arcs, inTree);
@@ -239,8 +266,8 @@ function insideOf(tree: Rooted, child: number): (v: number) => boolean {
   return (v) => lo <= tree.lim[v]! && tree.lim[v]! <= hi;
 }
 
-/** Tree arc `a`'s cut value: arcs crossing from its tail's side to its head's,
- *  less those crossing back. */
+/** Tree arc `a`'s cut value: the weight of arcs crossing from its tail's side
+ *  to its head's, less that of those crossing back. */
 function cutValue(arcs: readonly Arc[], a: number, tree: Rooted): { value: number; tailInside: boolean } {
   const treeArc = arcs[a]!;
   const child = childOf(treeArc, a, tree);
@@ -250,12 +277,12 @@ function cutValue(arcs: readonly Arc[], a: number, tree: Rooted): { value: numbe
   for (const arc of arcs) {
     const from = inside(arc.tail);
     if (from === inside(arc.head)) continue;
-    value += from === tailInside ? 1 : -1;
+    value += from === tailInside ? arc.weight : -arc.weight;
   }
   return { value, tailInside };
 }
 
-/** Re-ranks so every tree arc has length 1, holding node 0 where it is. */
+/** Re-ranks so every tree arc is as short as it may be, holding node 0 where it is. */
 function tighten(rank: number[], arcs: readonly Arc[], inTree: readonly boolean[]): void {
   const adj = treeAdjacency(rank.length, arcs, inTree);
   const seen = rank.map(() => false);
@@ -268,7 +295,7 @@ function tighten(rank: number[], arcs: readonly Arc[], inTree: readonly boolean[
       const w = arc.tail === v ? arc.head : arc.tail;
       if (seen[w]) continue;
       seen[w] = true;
-      rank[w] = arc.tail === v ? rank[v]! + 1 : rank[v]! - 1;
+      rank[w] = arc.tail === v ? rank[v]! + arc.minlen : rank[v]! - arc.minlen;
       queue.push(w);
     }
   }
