@@ -100,7 +100,8 @@ function read(gl: WebGL2RenderingContext, r: WeaselRenderer, commands: DrawComma
 
 /** The largest channel difference between `a` and `b`, and how many pixels
  *  differ by more than 8-bit rounding: `b` read `sx, sy` device pixels
- *  right and down of `a`, where both cover it. */
+ *  right and down of `a`, where both cover it. A surface's extra rounding
+ *  reaches 2 on SwiftShader, which Linux CI's Chromium draws with. */
 function diff(a: Uint8Array, b: Uint8Array, sx = 0, sy = 0): { max: number; off: number } {
   let max = 0;
   let off = 0;
@@ -111,7 +112,7 @@ function diff(a: Uint8Array, b: Uint8Array, sx = 0, sy = 0): { max: number; off:
       let d = 0;
       for (let c = 0; c < 4; c++) d = Math.max(d, Math.abs(a[i + c] - b[j + c]));
       max = Math.max(max, d);
-      if (d > 1) off++;
+      if (d > 2) off++;
     }
   }
   return { max, off };

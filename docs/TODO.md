@@ -805,20 +805,15 @@ only story runner in the repo.
   to 1`, line 247) in CI run 40818081756 on 76adffe24 (2026-10-29), and passed when that job was rerun. The fleet,
   which runs no Linux, has never seen it fail. Waiting on a second sighting.
 
-- **(P2) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
-  `ubuntu-latest`, while every fleet node is a Mac. CI run 39349499006 (2026-10-20, at
-  `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
-  `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
-  and `PropertyList.pairs.browser.test.tsx` measure boxes a fraction of a pixel wider, and
-  `retained.browser.test.ts` counts 2 draws where it allows 1. All of these failed again in run
-  39761178968 (2026-10-22, at `33efd3167`), beside the theme test above. The same run also failed
-  `laidLines.browser.test.ts`, whose glyphs landed 0.50–0.92 px from the layout. The reading is that
-  Linux headless Chromium snaps glyph advances to whole pixels (inferred from the numbers, not
-  observed), so that file now skips where a probe sees snapped advances. The fix is a Linux node
-  (or container) for the `browser` project. (CI's Node 22 leg has a fleet twin since 2026-10-21: `npm run test:fleet:matrix`.)
+- **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
+  `ubuntu-latest`, while every fleet node is a Mac, so a browser test that leans on the OS fails only in CI.
+  The 11 that failed every `main` run from 2026-10-15 were fixed on 2026-10-29, passing in the lane below:
+  they read Mac shortcut glyphs or the Apple word-delete key, measured text in the OS's fallback font
+  instead of the kit's Oswald, or held WebGL rounding to 1 where CI's SwiftShader reaches 2. Open: whether
+  the fleet should run that lane routinely, so the next one is caught before CI.
   Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
-  (Playwright's Linux image under Docker, arm64 rather than CI's x86), not yet run end to end because
-  Docker is not running on studio (2026-10-26).
+  (Playwright's Linux image under Docker, arm64 rather than CI's x86; it reproduced CI's numbers exactly).
+  Studio's Docker Desktop has to be running (`open -g -a Docker` there).
 
 - **(P3) [maintainer] Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
   (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five

@@ -1,11 +1,15 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/fonts.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { baselineOf } from '@weasel-js/react/testing/baselineOf';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, beforeAll, expect, test } from 'vitest';
 import { PropertyField } from './PropertyField';
 import { PropertyList } from './PropertyList';
 
 // Where the two rows of a pair put their labels, and how wide a row is, are layout questions.
+
+// Measured in the kit's own face: without it each OS lays text out in a fallback of its own.
+beforeAll(async () => { await document.fonts.load('400 16px Oswald'); });
 
 afterEach(cleanup);
 

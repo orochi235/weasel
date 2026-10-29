@@ -70,6 +70,11 @@ function rightClick(target: Element, at: { x: number; y: number }): void {
 const menuItems = (): string[] =>
   Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]')).map((el) => el.textContent ?? '');
 
+/** Each row's label, without the shortcut after it: `⌘X` on a Mac, `Ctrl+X` elsewhere. */
+const menuLabels = (): string[] =>
+  Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]'))
+    .map((el) => el.querySelector(':scope > span:not([aria-hidden])')?.textContent ?? '');
+
 const menuItem = (label: string): HTMLElement | undefined =>
   Array.from(document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"]'))
     .find((el) => el.textContent?.includes(label));
@@ -85,7 +90,7 @@ describe('WeaselDraw context menus', () => {
     await expect.poll(() => menuItem('Duplicate')).toBeDefined();
     expect(document.querySelectorAll('[role="menu"]')).toHaveLength(1);
     // An id draw does not register drops out of the menu silently.
-    expect(menuItems().map((t) => t.replace(/[⌘⇧⌥⌃⌦].*$/, ''))).toEqual([
+    expect(menuLabels()).toEqual([
       'Cut', 'Copy', 'Paste', 'Duplicate', 'Delete', 'Group', 'Ungroup',
       'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back', 'Edit path anchors', 'Enter text edit',
     ]);

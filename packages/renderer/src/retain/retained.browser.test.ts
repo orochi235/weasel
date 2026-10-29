@@ -116,8 +116,8 @@ describe('a retained group, in a real context', () => {
 
     expect(maxDiff(drawn, kept)).toBe(0);
     // Translucent pixels round once more, through the surface's 8 bits, than
-    // they do blended straight onto the canvas.
-    expect(maxDiff(direct, drawn)).toBeLessThanOrEqual(1);
+    // they do blended straight onto the canvas: by 1 on a GPU, 2 on SwiftShader.
+    expect(maxDiff(direct, drawn)).toBeLessThanOrEqual(2);
   });
 
   it('matches drawing it under an enclosing alpha, color matrix and clip', () => {
@@ -154,7 +154,7 @@ describe('a retained group, in a real context', () => {
 
     const moved = frame(r, stack({ kind: 'group', retain: 'layer', transform: TRANSFORM, children }));
     expect(r.lastFrameStats().retained.redrawn).toBe(1);
-    expect(maxDiff(moved, frame(r, stack({ kind: 'group', transform: TRANSFORM, children })))).toBeLessThanOrEqual(1);
+    expect(maxDiff(moved, frame(r, stack({ kind: 'group', transform: TRANSFORM, children })))).toBeLessThanOrEqual(2);
 
     // The frame drawn straight through freed the surface.
     frame(r, stack({ kind: 'group', retain: 'layer', transform: TRANSFORM, children }));

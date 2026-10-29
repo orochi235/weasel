@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/faces.css';
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { painted } from '../../testing/paintedContrast';
 import { GestureRoute } from '../GestureRoute/GestureRoute';
@@ -339,6 +340,14 @@ describe('a composed badge under keyboard focus', () => {
 // The remove button cannot sit inside a root button or link, so a removable badge with an
 // action moves the action onto its label. The box has to come out the same as any other badge's.
 describe('a removable badge with an action', () => {
+  // Where the remove control sits follows the label's cap height, so measure in the kit's own face: without it
+  // each OS lays the label out in a fallback of its own.
+  beforeAll(async () => {
+    document.documentElement.style.fontFamily = 'var(--wzl-font-ui)';
+    await document.fonts.load('400 16px Oswald');
+  });
+  afterAll(() => { document.documentElement.style.fontFamily = ''; });
+
   const textBox = (badge: HTMLElement, text: string): DOMRect => {
     const walker = document.createTreeWalker(badge, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {

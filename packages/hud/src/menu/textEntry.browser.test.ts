@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import type { CanvasExtensionApi, OpenMenu } from '@weasel-js/core';
 import { createPaintedCursorState } from '@weasel-js/core';
+import { isApplePlatform } from '@weasel-js/gestures';
 import type { MenuTextEntry } from '@weasel-js/menu';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { attachHud } from '../attach';
@@ -69,7 +70,8 @@ describe('a HUD menu text row in a browser', () => {
     input().dispatchEvent(new CompositionEvent('compositionstart', { data: '' }));
     input().dispatchEvent(new CompositionEvent('compositionupdate', { data: 'に' }));
     input().dispatchEvent(new CompositionEvent('compositionend', { data: '日' }));
-    await userEvent.keyboard('{Alt>}{Backspace}{/Alt}');
+    const word = isApplePlatform() ? 'Alt' : 'Control';
+    await userEvent.keyboard(`{${word}>}{Backspace}{/${word}}`);
     await userEvent.keyboard('c{Enter}');
     expect(row.set).toHaveBeenCalledExactlyOnceWith('c');
     expect(document.activeElement).toBe(el);

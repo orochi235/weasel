@@ -1,12 +1,16 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/fonts.css';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, beforeAll, expect, it } from 'vitest';
 import { Bar } from './Bar';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Which cells a line has room for is layout, and jsdom has none.
+
+// Measured in the kit's own face: without it each OS lays text out in a fallback of its own.
+beforeAll(async () => { await document.fonts.load('400 16px Oswald'); });
 
 afterEach(() => {
   cleanup();
