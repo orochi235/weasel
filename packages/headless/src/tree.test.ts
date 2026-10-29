@@ -31,6 +31,16 @@ describe('treeKey', () => {
     expect(treeKey(rows, 2, 'ArrowLeft', shape)).toEqual({ handled: true, at: 0 });
     expect(treeKey(rows, 1, 'ArrowLeft', shape)).toEqual({ handled: true, at: 0 });
   });
+  it('mirrors under rtl: Left opens and steps in, Right closes and steps out', () => {
+    const rtl = { ...shape, dir: 'rtl' as const };
+    expect(treeKey(rows, 2, 'ArrowLeft', rtl)).toEqual({ handled: true, toggle: 2 });
+    expect(treeKey(rows, 0, 'ArrowLeft', rtl)).toEqual({ handled: true, at: 1 });
+    expect(treeKey(rows, 0, 'ArrowRight', rtl)).toEqual({ handled: true, toggle: 0 });
+    expect(treeKey(rows, 1, 'ArrowRight', rtl)).toEqual({ handled: true, at: 0 });
+  });
+  it("takes a right-to-left list's dir through rowKey", () => {
+    expect(rowKey(rows, 2, { key: 'ArrowLeft' }, { tree: shape, dir: 'rtl' })).toEqual({ kind: 'toggle', at: 2 });
+  });
   it('leaves Left on a closed top-level row unhandled', () => {
     expect(treeKey([{ id: 'x' }], 0, 'ArrowLeft', shape)).toEqual({ handled: false });
   });

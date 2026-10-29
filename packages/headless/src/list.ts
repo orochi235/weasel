@@ -113,7 +113,7 @@ export function rowKey<T>(
   const step = rovingKey(items, at, key, shape);
   if (step.handled) return { kind: 'move', at: step.at, extend: !!press.shiftKey };
   if (shape.tree && (key === 'ArrowRight' || key === 'ArrowLeft')) {
-    const t = treeKey(items, at, key, shape.tree);
+    const t = treeKey(items, at, key, shape.dir && !shape.tree.dir ? { ...shape.tree, dir: shape.dir } : shape.tree);
     if (!t.handled) return null;
     return 'toggle' in t ? { kind: 'toggle', at: t.toggle } : { kind: 'move', at: t.at, extend: false };
   }

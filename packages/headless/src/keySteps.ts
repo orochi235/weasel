@@ -1,7 +1,7 @@
+import { COARSE_STEPS } from '@weasel-js/quantity';
 import { arrowDir } from './list';
 
-/** How many steps a coarse key press takes: an arrow with Shift held, or Page Up and Page Down. */
-export const COARSE_STEPS = 10;
+export { COARSE_STEPS };
 
 /** Steps an arrow key asks for along one axis: one, or {@link COARSE_STEPS} with Shift, positive
  *  toward ArrowRight and ArrowUp. Under `'rtl'` ArrowLeft and ArrowRight swap, as a native range

@@ -60,6 +60,9 @@ export function canSpin(key: string, from: number, bounds: SpinBounds): boolean 
   return next !== null && next !== from;
 }
 
+/** How many steps a coarse key press takes: an arrow with Shift held, or Page Up and Page Down. */
+export const COARSE_STEPS = 10;
+
 function finiteSpin(key: string, from: number, bounds: SpinBounds): number | null {
   const by = (n: number) => {
     const places = Math.max(placesOf(from), placesOf(bounds.step));
@@ -71,9 +74,9 @@ function finiteSpin(key: string, from: number, bounds: SpinBounds): number | nul
     case 'ArrowDown':
       return by(-1);
     case 'PageUp':
-      return by(10);
+      return by(COARSE_STEPS);
     case 'PageDown':
-      return by(-10);
+      return by(-COARSE_STEPS);
     case 'Home':
       return bounds.min ?? null;
     case 'End':

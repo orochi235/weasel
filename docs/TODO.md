@@ -392,16 +392,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] `quantity.spinKey` keeps its own ×10 for Page Up/Down** (2026-10-28). Every other coarse arrow step
-  reads `COARSE_STEPS` from `@weasel-js/headless`, but headless now depends on quantity, so quantity can't import it.
-  Move the constant down into quantity (headless re-exporting it), or move `spinKey` up.
-
-- **(P3) [agent] A tree's Left and Right don't swap in a right-to-left layout** (2026-10-28). `treeKey`
-  (`packages/headless/src/tree.ts`) ignores `ListShape.dir`, so in RTL Right still opens a branch. The tree keys
-  also differ from the WAI-ARIA treeview pattern in ways kept on purpose so far: no `*` to expand every sibling,
-  Space activates like Enter instead of toggling selection, and Shift+Home/End extends where the pattern uses
-  Ctrl+Shift+Home/End.
-
 - **(P2) [maintainer] Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
