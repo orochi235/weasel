@@ -9,8 +9,7 @@ For the session picking this up: what is in flight and what has no other home. O
 - `main` is far ahead of `origin/main` and nothing since 2026-10-28 00:41 is pushed. The last CI run on
   `origin/main` failed (2026-10-28 04:41); the fleet runs only Node 24 on macOS, so CI's Node 22 and Linux legs
   are the ones that see it (P2 "CI tests Linux Chromium; the fleet does not").
-- In flight: branch `labeldrag-flake` (the P2 "`labelDrag.browser.test.tsx` fails now and then on the fleet"),
-  worked by a subagent of the session that wrote this; merge it once it reports.
+- Nothing in flight. The full suite passed at 8d72ccf08 (32,055 tests, no unhandled errors).
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
@@ -41,7 +40,8 @@ Passed its tests and was never looked at by a person. Delete a line when someone
   title; draw's `registry-enum` radios; the custom shader demo on a clock; the Export literal drawn plain then
   colored; kernel3d's footprint and aim on the ground plane; the view snapped to whole device pixels while
   panning; forge's Issues panel listing through `gh` and its Report page; the `--wzl-workspace` ground in draw
-  and the asset editor, light and dark; the 13 text fields under an input method.
+  and the asset editor, light and dark; the 13 text fields under an input method; Roughen, Zigzag and Pucker & Bloat in draw's
+  Path menu, their glyphs (wall, zone `weasel`, CABD0CBC), and their keys (Alt+Shift+G, Z, K).
 - Agent batches 2–10: the redrawn path and warp glyphs (wall, zone `weasel`, 5FEDE721) and the boolean-group
   glyph (702ADFE6).
 - 2026-10-25 batch: the Tooltip fade, the square lens body's line-track zoom, a squeezed `ToolbarDock` row, a
