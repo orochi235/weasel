@@ -35,7 +35,7 @@ export function graphemeEnds(text: string, into?: number[]): number[] {
   } else {
     const seg = graphemeSegmenter();
     if (seg) {
-      for (const s of seg.segment(text)) out[n++] = s.index + s.segment.length;
+      n = segmentedEnds(seg, text, out);
     } else {
       let at = 0;
       for (const ch of text) out[n++] = at += ch.length;
@@ -43,6 +43,43 @@ export function graphemeEnds(text: string, into?: number[]): number[] {
   }
   out.length = n;
   return out;
+}
+
+/** A code unit no cluster rule reaches across: below U+0300, and not a CR. */
+const plain = (u: number): boolean => u < 0x300 && u !== 13;
+
+/**
+ * {@link graphemeEnds} through `seg`, written into `out`, returning the count.
+ * `seg` allocates for every cluster it hands out, so it is asked only about
+ * the clusters of stretches that need it: between two plain units there is
+ * always a boundary. A stretch runs from the plain unit before its first other
+ * unit to the plain unit after its last, since a prepended mark joins the one
+ * after it and an emoji sequence can open on © or ®.
+ */
+function segmentedEnds(seg: Intl.Segmenter, text: string, out: number[]): number {
+  const len = text.length;
+  let segments: Intl.Segments | null = null;
+  let n = 0;
+  let i = 0;
+  while (i < len) {
+    if (plain(text.charCodeAt(i)) && (i + 1 === len || plain(text.charCodeAt(i + 1)))) {
+      out[n++] = ++i;
+      continue;
+    }
+    let end = i + 1;
+    for (;;) {
+      while (end < len && !plain(text.charCodeAt(end))) end++;
+      if (end === len) break;
+      end++;
+      if (end === len || plain(text.charCodeAt(end))) break;
+    }
+    segments ??= seg.segment(text);
+    while (i < end) {
+      const s = segments.containing(i)!;
+      out[n++] = i = s.index + s.segment.length;
+    }
+  }
+  return n;
 }
 
 /** Number of grapheme clusters in `text`: how many times it is tracked. */
