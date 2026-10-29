@@ -218,6 +218,6 @@ describe('mountFrame', () => {
     mount({ default: meta({ title: 'ui/A' }), Two: story({ render: () => null }) }, 'ui-a--two');
     handoff(location.origin, window.parent);
     await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
-    expect(vi.mocked(startFrame).mock.calls[0]?.[0].story.layout).toBe('centered');
+    expect(vi.mocked(startFrame).mock.calls[0]?.[0].story.layout).toBe('padded');
   });
 });

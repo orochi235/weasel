@@ -121,8 +121,8 @@ interface Reading {
 }
 
 /**
- * An argType for each prop a control can edit: a boolean, a string or anything a string may stand for (a
- * `ReactNode`), a number, a union with string literals in it, or an array, object or union of objects built of those.
+ * An argType for each prop a control can edit: a boolean, a string or a union of a string with other scalars, a number,
+ * a union with string literals in it, or an array, object or union of objects built of those.
  */
 function propTable(
   tsm: typeof ts,
@@ -160,7 +160,7 @@ function controlFor(reading: Reading, type: ts.Type, written: () => string[] | n
   const { TypeFlags } = reading.tsm;
   const parts = type.isUnion() ? type.types : [type];
   if (parts.every((part) => part.flags & TypeFlags.BooleanLike)) return { control: { type: 'boolean' } };
-  if (parts.some((part) => part.flags & TypeFlags.String)) return { control: { type: 'text' } };
+  if (textLike(reading, parts)) return { control: { type: 'text' } };
   if (type.flags & TypeFlags.Number) return { control: { type: 'number' } };
   // No control type: the options alone make it a select, and a story's own argType may still say radio.
   const options = literalsOf(reading, parts);
@@ -174,6 +174,12 @@ function controlFor(reading: Reading, type: ts.Type, written: () => string[] | n
 }
 
 const SCALARS = { boolean: true, string: true, number: true };
+
+/** A string with nothing beside it that text could not stand for: a `ReactNode`, which also takes elements, has no
+ *  text control, since a story's text would never be what the prop draws. */
+function textLike({ tsm }: Reading, parts: readonly ts.Type[]): boolean {
+  return parts.some((part) => part.flags & tsm.TypeFlags.String) && !parts.some((part) => part.flags & tsm.TypeFlags.Object);
+}
 
 function literalsOf({ tsm }: Reading, parts: readonly ts.Type[]): string[] {
   return parts.filter((part) => part.flags & tsm.TypeFlags.StringLiteral).map((part) => (part as ts.StringLiteralType).value);
@@ -195,7 +201,7 @@ function shapeOf(reading: Reading, type: ts.Type, depth: number): ArgShape | nul
   const parts = whole.isUnion() ? whole.types : [whole];
   if (parts.length === 0) return null;
   if (parts.every((part) => part.flags & TypeFlags.BooleanLike)) return { name: 'boolean' };
-  if (parts.some((part) => part.flags & TypeFlags.String)) return { name: 'string' };
+  if (textLike(reading, parts)) return { name: 'string' };
   if (whole.flags & TypeFlags.Number) return { name: 'number' };
   const literals = literalsOf(reading, parts);
   if (literals.length === parts.length || literals.length > 1) return { name: 'enum', value: literals };

@@ -9,6 +9,7 @@ import { FrameView } from './FrameView';
 import { CaptureInputs } from './loupe/CaptureInputs';
 import { type GlobalDeclarations, withGlobals } from './globals';
 import { type Ready, readyKey } from './readyKey';
+import { DEFAULT_LAYOUT } from '../protocol/messages';
 
 export interface StoryInstrumentOptions {
   entry: IndexEntry;
@@ -49,7 +50,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
           ctx={ctx}
           {...(setup ? { setup } : {})}
         />
-        <CaptureInputs entry={entry} layout={ready?.layout ?? 'centered'} config={ctx.config} state={ctx.state} />
+        <CaptureInputs entry={entry} layout={ready?.layout ?? DEFAULT_LAYOUT} config={ctx.config} state={ctx.state} />
       </>
     ),
     // Taken from the index until the frame reports, so the trial does not move the frame into a stage and reload it.

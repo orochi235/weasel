@@ -9,7 +9,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import type { Globals, Layout, Viewport } from '../protocol/messages';
+import { DEFAULT_LAYOUT, type Globals, type Layout, type Viewport } from '../protocol/messages';
 import { storyId, storyNameFromExport } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
 import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
@@ -233,7 +233,7 @@ export function loadCsfModule(
         return scoped(ctx, (context) => renderFn(context.args, context));
       },
       decorators: [...asArray(spec.decorators), ...asArray(meta.decorators)].map(adapt),
-      layout: layout && LAYOUTS.includes(layout) ? layout : 'padded',
+      layout: layout && LAYOUTS.includes(layout) ? layout : DEFAULT_LAYOUT,
       viewport: resolveViewport(parameters, storyGlobals),
       isolate: typeof isolate === 'string' ? isolate : null,
       play: play

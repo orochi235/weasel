@@ -3,6 +3,7 @@ import { isNative } from './define';
 import { storyId, storyNameFromExport } from './ids';
 import { timelineOf } from '../timeline/declare';
 import type { LoadedStory, MetaSpec, StorySpec } from './types';
+import { DEFAULT_LAYOUT } from '../protocol/messages';
 
 /**
  * Normalizes a module written with `meta` and `story`; exports that are not stories are skipped. `title` is the index
@@ -24,7 +25,7 @@ export function loadNativeModule(mod: Record<string, unknown>, title: string): L
       initialState: spec.state ?? null,
       render: spec.render,
       decorators: [...(spec.decorators ?? []), ...(metaSpec.decorators ?? [])],
-      layout: spec.layout ?? metaSpec.layout ?? 'centered',
+      layout: spec.layout ?? metaSpec.layout ?? DEFAULT_LAYOUT,
       viewport: spec.viewport ?? null,
       isolate: spec.isolate ?? metaSpec.isolate ?? null,
       play: spec.play ?? null,

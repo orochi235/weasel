@@ -6,6 +6,8 @@ export const PROTOCOL_VERSION = 1;
 export type Globals = Readonly<Record<string, unknown>>;
 /** How a story sits in its frame. */
 export type Layout = 'centered' | 'padded' | 'fullscreen';
+/** The layout a story takes when it names none, in either story format. */
+export const DEFAULT_LAYOUT: Layout = 'padded';
 /** A frame size a story asks for, in CSS pixels. */
 export interface Viewport {
   width: number;

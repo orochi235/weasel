@@ -90,7 +90,6 @@ export default { component: Wrapped };
       disabled: { control: { type: 'boolean' } },
       label: { control: { type: 'text' }, description: 'Shown beside the glyph.' },
       style: expect.objectContaining({ control: 'object' }),
-      note: expect.any(Object),
       fit: expect.any(Object),
       stops: expect.any(Object),
       bounds: expect.any(Object),
@@ -99,8 +98,8 @@ export default { component: Wrapped };
     expect(table?.argTypes.size?.options).toHaveLength(2);
   });
 
-  it('gives a text control to a union a string may stand in, as a ReactNode is', () => {
-    expect(reader.read(at('chip.stories.ts'))?.argTypes.note).toEqual({ control: { type: 'text' } });
+  it('gives no control to a ReactNode, which takes elements a text control cannot stand for', () => {
+    expect(reader.read(at('chip.stories.ts'))?.argTypes.note).toBeUndefined();
   });
 
   it("offers a union's string literals, in written order, when its other members have no control", () => {
