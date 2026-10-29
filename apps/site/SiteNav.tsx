@@ -6,10 +6,10 @@ import { FEATURES_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID } from './routes
 /** The site's own pages, listed ahead of the demos. */
 const PAGES = [
   { id: GET_STARTED_ID, label: '🚀 Get started' },
-  { id: FEATURES_ID, label: '🧩 Canvas features' },
-  { id: WHATS_NEW_ID, label: '✨ Demo updates' },
   { id: RELEASES_ID, label: '🏷️ Releases' },
   { id: PACKAGES_ID, label: '📦 Packages' },
+  { id: WHATS_NEW_ID, label: '✨ Demo updates' },
+  { id: FEATURES_ID, label: '🧩 Canvas features' },
 ] as const;
 
 interface NavProps {
