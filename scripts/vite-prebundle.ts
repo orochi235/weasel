@@ -231,11 +231,21 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       if (off) return;
       server.watcher.add(bundled);
       let timer: ReturnType<typeof setTimeout> | undefined;
+      // A restart outlasts the debounce, and two at once race for the port: the second dies `already in use`.
+      let restarting: Promise<void> | undefined;
+      let again = false;
+      const restart = () => {
+        if (restarting) { again = true; return; }
+        restarting = restartLeavingNothing(server).finally(() => {
+          restarting = undefined;
+          if (again) { again = false; restart(); }
+        });
+      };
       const rebundle = (why: string) => {
         clearTimeout(timer);
         timer = setTimeout(() => {
           server.config.logger.info(`re-bundling workspace packages: ${why}`, { timestamp: true });
-          void restartLeavingNothing(server);
+          restart();
         }, 200);
       };
       const fromSource = (file: string) => under(file, served) || isStory(file) || sourced.has(file);

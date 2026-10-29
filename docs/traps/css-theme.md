@@ -14,8 +14,8 @@ it and the workarounds it needed are gone.
 `--wzl-x: 0 1px 3px var(--wzl-shadow)` in `:root` bakes in the default mode's shadow and
 inherits that frozen value into every other mode's block. In a real property it resolves per
 element and is fine. `build-tokens.ts` now redeclares any token whose reference chain reaches a
-mode semantic inside every mode block, so authoring one is safe — but hand-written CSS is not
-covered, and jsdom resolves neither `var()` nor `color-mix()`, so only a browser can tell you.
+mode semantic inside every mode block, a `var(--wzl-…)` written inside its value counting as a
+reference, so authoring one is safe — but hand-written CSS is not covered, and jsdom resolves neither `var()` nor `color-mix()`, so only a browser can tell you.
 
 **A consumer overriding a theme token at matching specificity loses silently.** `applyTheme`
 emits one flat rule carrying the whole resolved token set on

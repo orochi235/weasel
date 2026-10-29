@@ -100,12 +100,14 @@ function block(selector: string): string {
 // token built on a mode semantic has to be restated in every mode block.
 describe('transparency checker and workspace tokens', () => {
   it('paint from mode semantics, restated per mode', () => {
-    for (const sel of [':root', "[data-wzl-mode='dark']", "[data-wzl-mode='light']"]) {
+    const surface = { ':root': '#272727', "[data-wzl-mode='dark']": '#272727', "[data-wzl-mode='light']": '#e7e7e7' };
+    for (const [sel, ground] of Object.entries(surface)) {
       const body = block(sel);
       expect(body).toMatch(/--wzl-checker-a: var\(--wzl-border\);/);
       expect(body).toMatch(/--wzl-checker-b: var\(--wzl-surface\);/);
-      expect(body).toMatch(/--wzl-workspace-surface: var\(--wzl-surface-sunken\);/);
+      expect(body).toContain(`--wzl-workspace-surface: ${ground};`);
       expect(body).toMatch(/--wzl-workspace-line: var\(--wzl-line-subtle\);/);
+      expect(body).toMatch(/--wzl-workspace: repeating-linear-gradient\(/);
     }
   });
 

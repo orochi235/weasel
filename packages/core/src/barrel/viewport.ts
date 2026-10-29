@@ -89,8 +89,6 @@ export * from '../core/viewport/useAutoCenter';
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
 export { useVisibleRaf } from '@weasel-js/react';
 export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from '@weasel-js/react';
-export { useFrameClock } from '@weasel-js/react';
-export type { FrameClock, FrameClockOptions } from '@weasel-js/react';
 
 // ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from '../core/viewport/wheelHandler';

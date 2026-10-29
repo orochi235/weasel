@@ -1,3 +1,5 @@
+import { treeKey, type TreeShape } from './tree';
+
 /** How a list's items are read: which ones the highlight can land on, and which way its arrows run. */
 export interface ListShape<T> {
   /** Whether the highlight can land on `item`. A separator or a heading can't. Default: every item. */
@@ -42,7 +44,7 @@ export function stepStop<T>(
 export type RovingResult = { handled: false } | { handled: true; at: number | null };
 
 /** Which way an arrow key steps a list of `shape`: 1, -1, or 0 for a key that is not one of its arrows. */
-function arrowDir(key: string, shape: ListShape<unknown>): 1 | -1 | 0 {
+export function arrowDir(key: string, shape: ListShape<unknown>): 1 | -1 | 0 {
   const orientation = shape.orientation ?? 'vertical';
   if (orientation !== 'horizontal') {
     if (key === 'ArrowDown') return 1;
@@ -62,4 +64,62 @@ export function rovingKey<T>(items: readonly T[], at: number | null, key: string
   if (key === 'End') return { handled: true, at: stepStop(items, null, -1, shape) };
   const dir = arrowDir(key, shape as ListShape<unknown>);
   return dir === 0 ? { handled: false } : { handled: true, at: stepStop(items, at, dir, shape) };
+}
+
+/** A key as {@link rowKey} reads it: the key and the modifiers held. */
+export interface KeyPress {
+  key: string;
+  shiftKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+}
+
+/** A list of rows, and which of the keys past the arrows its caller answers. */
+export interface RowKeysShape<T> extends ListShape<T> {
+  /** Set for a list that folds: Right and Left open, close, and walk it ({@link treeKey}). */
+  tree?: TreeShape<T>;
+  /** Cmd/Ctrl+A selects every row. */
+  selectAll?: boolean;
+  /** Enter and Space activate a row. */
+  activate?: boolean;
+  /** Typing a character searches the rows' text. */
+  typeahead?: boolean;
+}
+
+/** What one key on a row asks for, for the caller to carry out. */
+export type RowKeyAction =
+  /** Select every row. */
+  | { kind: 'selectAll' }
+  /** Move to row `at`, extending a range from the anchor when `extend`. `at` null takes the key without moving. */
+  | { kind: 'move'; at: number | null; extend: boolean }
+  /** Open or close the branch at `at`. */
+  | { kind: 'toggle'; at: number }
+  | { kind: 'activate' }
+  /** Hand the key to typeahead. `held` when the key is the list's whether or not the search finds a row. */
+  | { kind: 'type'; held: boolean };
+
+/**
+ * What a key on row `at` of a list of rows does, in the order the keys are tried: Cmd/Ctrl+A, the arrows with Home
+ * and End (Shift to extend), a tree's Right and Left, a space typed mid-search, Enter or Space to activate, then any
+ * other character to search. `searching` says a typeahead search is under way. Null for a key that is not the list's.
+ */
+export function rowKey<T>(
+  items: readonly T[], at: number, press: KeyPress, shape: RowKeysShape<T> = {}, searching = false,
+): RowKeyAction | null {
+  const { key } = press;
+  const chord = !!(press.ctrlKey || press.metaKey);
+  if (shape.selectAll && key.toLowerCase() === 'a' && chord && !press.altKey && !press.shiftKey) return { kind: 'selectAll' };
+  const step = rovingKey(items, at, key, shape);
+  if (step.handled) return { kind: 'move', at: step.at, extend: !!press.shiftKey };
+  if (shape.tree && (key === 'ArrowRight' || key === 'ArrowLeft')) {
+    const t = treeKey(items, at, key, shape.tree);
+    if (!t.handled) return null;
+    return 'toggle' in t ? { kind: 'toggle', at: t.toggle } : { kind: 'move', at: t.at, extend: false };
+  }
+  // Mid-search a space is a typed character: "new f" must not activate at the space.
+  if (key === ' ' && shape.typeahead && searching) return { kind: 'type', held: true };
+  if (key === 'Enter' || key === ' ') return shape.activate ? { kind: 'activate' } : null;
+  if (shape.typeahead && key.length === 1 && !chord && !press.altKey) return { kind: 'type', held: false };
+  return null;
 }

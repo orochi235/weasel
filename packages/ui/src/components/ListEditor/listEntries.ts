@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { nudgeOf } from '../../nudgeKey';
+import { moveItems, movedIndex, nudgeGap, nudgeOf } from '@weasel-js/headless';
 import { useReorderDragList, type ReorderItem } from '../../useReorderDragList';
 
 /** Where focus goes once the list has committed an edit. `removed`: the entry that held it is gone. */
@@ -30,13 +30,6 @@ export function useListFocus() {
   return { inputs, handles, removes, add, request: setFocus };
 }
 
-/** `list` with the entry at `from` taken out and put back in front of what was at `target`. */
-export function movedEntry<T>(list: readonly T[], from: number, target: number): T[] {
-  const out = list.filter((_, i) => i !== from);
-  out.splice(target > from ? target - 1 : target, 0, list[from] as T);
-  return out;
-}
-
 /**
  * How a list's entries move: `drag` for each entry's handle, and `move` for Alt+Up / Alt+Down anywhere in an
  * entry. Focus follows the entry, into its text field when it was there, and onto its handle otherwise.
@@ -53,18 +46,18 @@ export function useEntryMoves<T>(
     selectedIds: [],
     onReorder: ([id], target) => {
       const from = Number(id);
-      onChange(movedEntry(value, from, target));
-      focus.request({ at: target > from ? target - 1 : target, to: 'handle' });
+      onChange(moveItems(value, [from], target));
+      focus.request({ at: movedIndex([from], target), to: 'handle' });
     },
   });
   const move = (e: KeyboardEvent, at: number): void => {
     const by = nudgeOf(e);
     if (!enabled || by === null) return;
     e.preventDefault();
-    const to = at + by;
-    if (to < 0 || to >= value.length) return;
-    onChange(movedEntry(value, at, by < 0 ? to : to + 1));
-    focus.request({ at: to, to: e.target === focus.inputs.current[at] ? 'input' : 'handle' });
+    const gap = nudgeGap([at], by, value.length);
+    if (gap === null) return;
+    onChange(moveItems(value, [at], gap));
+    focus.request({ at: at + by, to: e.target === focus.inputs.current[at] ? 'input' : 'handle' });
   };
   return { drag, move };
 }

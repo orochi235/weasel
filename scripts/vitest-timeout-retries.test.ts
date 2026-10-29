@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RETRY_TIMEOUTS, timedOut, timeoutReport } from './vitest-timeout-retries';
+import { RETRY_TIMEOUTS, claimRun, timedOut, timeoutReport, timeoutRetries } from './vitest-timeout-retries';
 
 const test = (name: string, state: 'passed' | 'failed', ...messages: string[]) => ({
   fullName: name,
@@ -35,5 +35,15 @@ describe('timeout retries', () => {
     expect(timeoutReport(ten)).toMatchObject({ error: null });
     expect(timeoutReport(ten)!.warning).toContain('10 test(s) timed out');
     expect(timeoutReport([...ten, { name: 't10', passed: true }])!.error).toContain('more than the 10');
+  });
+
+  it('adds its reporter once a run, however many times the config is evaluated', () => {
+    expect(claimRun({})).toBe(true);
+    const run = { config: { reporters: [] as unknown[] } };
+    for (let i = 0; i < 11; i++) {
+      const plugin = timeoutRetries() as unknown as { configureVitest(ctx: { vitest: unknown }): void };
+      plugin.configureVitest({ vitest: run });
+    }
+    expect(run.config.reporters).toHaveLength(1);
   });
 });

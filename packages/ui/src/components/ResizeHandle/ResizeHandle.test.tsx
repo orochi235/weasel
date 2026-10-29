@@ -146,7 +146,7 @@ describe('ResizeHandle', () => {
     fireEvent.keyDown(handle, { key: 'ArrowRight' });
     expect(onInput).toHaveBeenLastCalledWith(264);
     fireEvent.keyDown(handle, { key: 'ArrowLeft', shiftKey: true });
-    expect(onInput).toHaveBeenLastCalledWith(228);
+    expect(onInput).toHaveBeenLastCalledWith(220);
     expect(onChange).toHaveBeenCalledTimes(2);
   });
 

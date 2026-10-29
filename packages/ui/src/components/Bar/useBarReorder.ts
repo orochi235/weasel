@@ -1,6 +1,7 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { keysHeld, modifierStateOf, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
+import { gapByMidpoint, isNoopDrop } from '@weasel-js/headless';
 import type { PrefOrder } from '@weasel-js/prefs';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { swallowNextClick } from '../../useReorderDragList';
@@ -88,7 +89,7 @@ export function useBarReorder({ root, order, onReorder, measure, keysOf }: BarRe
       },
       onMove: (ev) => {
         if (from < 0) return;
-        to = dropIndex(units, from, along(ev));
+        to = gapByMidpoint(units.map((unit) => unit.at), along(ev));
         markDrop(el, units, from, to);
       },
       onCommit: () => {
@@ -146,24 +147,15 @@ export function containerUnits(root: HTMLElement, container: string, along: (p: 
   });
 }
 
-/** Where the unit at `from` lands with the pointer `p` along the line: how many of the others it passes. A line whose
- *  units run backward along the measure, as a right-to-left one does along x, counts the other way. A `from` of -1 is a
- *  unit arriving from elsewhere, so every unit counts. */
-export function dropIndex(units: readonly { at: number }[], from: number, p: number): number {
-  const backward = units.length > 1 && units.at(-1)!.at < units[0]!.at;
-  return units.filter((unit, i) => i !== from && (backward ? unit.at > p : unit.at < p)).length;
-}
-
-/** The sibling the unit at `from` lands beside at `to`, and on which side; undefined where it lands where it is. */
+/** The sibling the unit at `from` lands beside in gap `to`, and on which side; undefined where it lands where it is. */
 function dropTarget(units: readonly Unit[], from: number, to: number): { unit: Unit; after: boolean } | undefined {
-  if (from < 0 || to === from) return undefined;
-  const others = units.filter((_, i) => i !== from);
+  if (from < 0 || isNoopDrop([from], to)) return undefined;
   const after = to > from;
-  const unit = after ? others[to - 1] : others[to];
+  const unit = after ? units[to - 1] : units[to];
   return unit && { unit, after };
 }
 
-/** Marks the sibling the unit at `from` lands beside at `to`, or none where it lands where it is. */
+/** Marks the sibling the unit at `from` lands beside in gap `to`, or none where it lands where it is. */
 function markDrop(root: HTMLElement, units: readonly Unit[], from: number, to: number): void {
   for (const mark of root.querySelectorAll(`[${BAR_DROP}]`)) mark.removeAttribute(BAR_DROP);
   const target = dropTarget(units, from, to);
@@ -179,7 +171,7 @@ function markDrop(root: HTMLElement, units: readonly Unit[], from: number, to: n
 export function movedInto(order: PrefOrder, container: string, full: readonly string[] | undefined, units: readonly Unit[], from: number, target: { unit: Unit; after: boolean }): PrefOrder {
   const keys = full ?? units.map((unit) => unit.key);
   const moved = units[from]!.key;
-  const at = keys.filter((key) => key !== moved).indexOf(target.unit.key);
-  if (at < 0) return order;
+  const at = keys.indexOf(target.unit.key);
+  if (at < 0 || target.unit.key === moved) return order;
   return movedOrder(order, container, keys, keys.indexOf(moved), at + (target.after ? 1 : 0));
 }

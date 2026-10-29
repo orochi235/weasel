@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { OpenMenu } from '@weasel-js/core';
 import { percent } from '@weasel-js/quantity';
+import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/headless';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import type { HudDrawCtx, HudKeyEvent } from '../widget';
@@ -123,6 +124,52 @@ describe('createMenuWidget: value rows', () => {
     click(p.x + 20, y + m.rowHeight);
     expect(close).not.toHaveBeenCalled();
     expect(row.set).toHaveBeenCalledTimes(3);
+  });
+
+  it('repeats a held chip after the repeat delay, and stops on release or leaving the chip', () => {
+    vi.useFakeTimers();
+    try {
+      const row = zoomRow();
+      const { w } = widget([row]);
+      const p = w.bounds;
+      const chips = numberChips(p.w, m);
+      const y = p.y + m.padY + m.rowHeight / 2;
+      const plus = p.x + chips.plus.x + chips.plus.w / 2;
+      w.onPointer({ type: 'down', x: plus, y, native: null });
+      expect(row.set).toHaveBeenLastCalledWith(9);
+      vi.advanceTimersByTime(REPEAT_DELAY_MS - 1);
+      expect(row.set).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(1 + REPEAT_EVERY_MS);
+      expect(row.set).toHaveBeenLastCalledWith(11);
+      w.onPointer({ type: 'up', x: plus, y, native: null });
+      vi.advanceTimersByTime(REPEAT_DELAY_MS * 2);
+      expect(row.set).toHaveBeenCalledTimes(3);
+
+      w.onPointer({ type: 'down', x: plus, y, native: null });
+      w.onPointer({ type: 'move', x: p.x + 20, y, native: null });
+      vi.advanceTimersByTime(REPEAT_DELAY_MS * 2);
+      expect(row.set).toHaveBeenLastCalledWith(12);
+      expect(row.set).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ends a held chip at the bound it heads for', () => {
+    vi.useFakeTimers();
+    try {
+      const row = zoomRow({ value: 14 });
+      const { w } = widget([row]);
+      const p = w.bounds;
+      const chips = numberChips(p.w, m);
+      const y = p.y + m.padY + m.rowHeight / 2;
+      w.onPointer({ type: 'down', x: p.x + chips.plus.x + chips.plus.w / 2, y, native: null });
+      vi.advanceTimersByTime(REPEAT_DELAY_MS + REPEAT_EVERY_MS * 10);
+      expect(vi.mocked(row.set).mock.calls).toEqual([[15], [16]]);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('steps a highlighted number row with + and -', () => {

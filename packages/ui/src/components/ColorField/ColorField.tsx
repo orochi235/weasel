@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
-import { parseColor, rgbaToHex } from '@weasel-js/paint';
+import { getAlpha01, withAlpha01 } from '@weasel-js/core';
+import { normalizeHex, parseColor, rgbaToHex } from '@weasel-js/paint';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { OpacityRange } from './OpacityRange';
 import { usePickerClose } from './usePickerClose';
@@ -42,9 +42,8 @@ export interface ColorFieldProps {
  * `hsl()`, a name) is read as the color it names; one that cannot be read here (`rgb(from …)`, `oklch()`) is black.
  */
 function hex8Of(value: string): string {
-  if (value.startsWith('#')) return toHex8(value);
   try {
-    return toHex8(rgbaToHex(parseColor(value)));
+    return normalizeHex(rgbaToHex(parseColor(value)), 'rgba');
   } catch {
     return '#000000ff';
   }

@@ -97,20 +97,31 @@ export function parseColorToRgba255(input: string): [number, number, number, num
   ];
 }
 
+/** The hex form {@link normalizeHex} writes: `'rgb'` drops alpha, `'rgba'` always writes it (`ff` when none was named). */
+export type HexForm = 'rgb' | 'rgba';
+
 /**
- * Canonicalize a hex color string to lowercase `#rrggbb` or `#rrggbbaa`.
+ * Canonicalize a hex color string to lowercase `#rrggbb` or `#rrggbbaa`: the
+ * latter when `form` is `'rgba'`, or with no `form`, when the input names an alpha.
  *
  * Accepts: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, with or without the
  * leading `#`, any case. Throws on other inputs.
  */
-export function normalizeHex(input: string): string {
+export function normalizeHex(input: string, form?: HexForm): string {
+  const hex = tryNormalizeHex(input, form);
+  if (hex === undefined) throw new Error(`normalizeHex: invalid hex "${input}"`);
+  return hex;
+}
+
+/** {@link normalizeHex}, undefined where it would throw. */
+export function tryNormalizeHex(input: string, form?: HexForm): string | undefined {
   const trimmed = input.trim();
   const hashed = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   const bytes = parseHexBytes(hashed);
-  if (!bytes) throw new Error(`normalizeHex: invalid hex "${input}"`);
+  if (!bytes) return undefined;
   const digits = bytes.map((n) => n.toString(16).padStart(2, '0')).join('');
-  const namesAlpha = hashed.length === 5 || hashed.length === 9;
-  return `#${namesAlpha ? digits : digits.slice(0, 6)}`;
+  const alpha = form ? form === 'rgba' : hashed.length === 5 || hashed.length === 9;
+  return `#${alpha ? digits : digits.slice(0, 6)}`;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
+import { moveItems, movedIndex } from '@weasel-js/headless';
 import { useReorderDragList, type ReorderItem } from '../../useReorderDragList';
 import { wrapLine } from '../../wrapLine';
-import { movedEntry } from '../ListEditor/listEntries';
 
 /** The rows of a token field: its chips, which are the container's children marked `data-token`. */
 export const TOKEN_ROW = '[data-token]';
@@ -25,7 +25,7 @@ export function useTokenDrag<T>(
     rowSelector: TOKEN_ROW,
     onReorder: ([id], target) => {
       const from = Number(id);
-      onMoved(movedEntry(value, from, target), target > from ? target - 1 : target);
+      onMoved(moveItems(value, [from], target), movedIndex([from], target));
     },
     onPress: (id) => onPress(Number(id)),
   });
