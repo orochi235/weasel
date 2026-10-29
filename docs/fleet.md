@@ -46,14 +46,15 @@ that path added there, or a branch changing only it will skip the check; `main` 
 **Typecheck keeps its build info between runs.** `.tsbuildinfo/` is ignored, so onto's sync leaves
 it in the node's tree, and tsc rechecks only files whose content, or whose imports' exported types,
 changed; it keys on content, never mtime (`scripts/typecheck-incremental.test.ts`). A branch run
-keeps its own copy beside main's (`.tsbuildinfo/branch--<name>--*`), started from main's and pruned
-after a week of disuse, so that rerunning a branch rechecks only its new edits rather than whatever
-the node ran last. It has to sit in the same directory: tsc records paths relative to the build
-info, so a copy anywhere else matches no file and checks everything. An edit to an export that most of the repo imports costs as much as no build info, or more:
-on teitou on 2026-10-29 the two programs took 36 s together with no build info and the node idle,
-6 s with nothing changed, and 94 s after one export was added to `@weasel-js/core`'s index with
-7–13 of its cores busy (`scripts/bench-typecheck.runs.jsonl`). `npm run typecheck` runs the two at
-once.
+keeps its own copy (`.tsbuildinfo/branch--<name>--*`), started from main's and pruned after a week
+of disuse, so that rerunning a branch rechecks only its new edits rather than whatever the node ran
+last. `scripts/typecheck.mjs` swaps that copy into the path the tsconfig names for the run and puts
+main's back after: tsc records its build info path and reads one written under another as none.
+
+An edit to an export that most of the repo imports costs as much as no build info, or more: on
+teitou on 2026-10-29 the two programs took 36 s together with no build info and the node idle, 6 s
+with nothing changed, and 94 s after one export was added to `@weasel-js/core`'s index with 7–13 of
+its cores busy (`scripts/bench-typecheck.runs.jsonl`). `npm run typecheck` runs the two at once.
 
 **The gate stops at ci.yml's first build; `npm run test:fleet:postbuild -- <ref>` runs the rest.**
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
