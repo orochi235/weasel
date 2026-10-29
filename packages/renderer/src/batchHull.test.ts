@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
-import { concatHulls, hullOf, snappedRectOf, windowMap, HULL_PLANES, type HullSet } from './batchHull';
+import { meetHulls, hullOf, snappedRectOf, windowMap, HULL_PLANES, type HullSet } from './batchHull';
 
 /** An 800×600 frame at dpr 1, its projection as `u_proj` holds it. */
 const MAP = windowMap(mat3.toUniform(mat3.screenToClip(800, 600)), [0, 0], 800, 600);
@@ -67,9 +67,49 @@ describe('hullOf', () => {
 
   it('nests up to the plane budget', () => {
     const a = hullOf(pathFromD('M 100 10 L 190 100 L 100 190 L 10 100 Z'), ID, MAP)!.set;
-    const both = concatHulls(a, a)!;
+    const b = hullOf(pathFromD('M 20 20 L 180 20 L 180 180 L 20 180 Z'), ID, MAP)!.set;
+    const both = meetHulls(a, b)!;
     expect(both.count).toBe(8);
-    expect(concatHulls(both, a)).toBeNull();
+    expect(meetHulls(both, hullOf(pathFromD('M 30 10 L 170 30 L 150 170 L 10 150 Z'), ID, MAP)!.set)).toBeNull();
+  });
+
+  /** Whether `set` keeps exactly the pixels every one of `sets` does, over a
+   *  window around the clips. */
+  function keepsTheMeet(set: HullSet, sets: HullSet[]): boolean {
+    for (let y = 380; y < 600; y++) {
+      for (let x = 0; x < 220; x++) {
+        if (inside(set, x, y) !== sets.every((s) => inside(s, x, y))) return false;
+      }
+    }
+    return true;
+  }
+
+  it('keeps only the tighter of two planes facing the same way', () => {
+    const rects = [
+      pathFromD('M 10.03 10.4 L 190.2 10.4 L 190.2 180.9 L 10.03 180.9 Z'),
+      pathFromD('M 20.5 5 L 150 5 L 150 170.27 L 20.5 170.27 Z'),
+      pathFromD('M 4 30.06 L 160.94 30.06 L 160.94 200 L 4 200 Z'),
+    ].map((p) => hullOf(p, ID, MAP)!.set);
+    const met = meetHulls(meetHulls(rects[0], rects[1])!, rects[2])!;
+    expect(met.count).toBe(4);
+    expect(keepsTheMeet(met, rects)).toBe(true);
+  });
+
+  it('merges turned clips that face alike, and keeps the rest', () => {
+    const turned = (d: number) =>
+      hullOf(pathFromD(`M 100 ${10 + d} L ${190 - d} 100 L 100 ${190 - d} L ${10 + d} 100 Z`), ID, MAP)!.set;
+    const square = hullOf(pathFromD('M 40 40 L 160 40 L 160 160 L 40 160 Z'), ID, MAP)!.set;
+    const sets = [turned(0), turned(13.3), square, turned(31.7)];
+    const met = sets.slice(1).reduce((acc, s) => meetHulls(acc, s)!, sets[0]);
+    expect(met.count).toBe(8);
+    expect(keepsTheMeet(met, sets)).toBe(true);
+  });
+
+  it('keeps nothing under a clip that keeps nothing', () => {
+    const a = hullOf(pathFromD('M 100 10 L 190 100 L 100 190 L 10 100 Z'), ID, MAP)!.set;
+    const none = hullOf(pathFromD('M 10 10 L 90 10.01 L 10 10.02 Z'), ID, MAP)!.set;
+    const met = meetHulls(a, none)!;
+    expect(inside(met, 100, 500)).toBe(false);
   });
 });
 

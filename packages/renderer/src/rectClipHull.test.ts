@@ -73,26 +73,33 @@ describe('a rect clip where the shader decides hulls', () => {
       .toBe(true);
   });
 
-  it('carries nested rect clips as one set', () => {
-    r.render([
-      clipped({ x: 0, y: -100, width: 100, height: 200 }, [
-        clipped({ x: -50, y: -50, width: 60, height: 60 }, [turned(rect(0))]),
-      ]),
-      rect(40),
-    ]);
-    expect(draws()).toEqual([12]);
-    expect(vertices()[0][3]).toBe(8);
-  });
-
-  it('goes back to the stencil past the plane budget', () => {
+  it('carries nested rect clips as one set of four planes', () => {
     r.render([
       clipped({ x: 0, y: -100, width: 100, height: 200 }, [
         clipped({ x: -50, y: -50, width: 60, height: 60 }, [
           clipped({ x: -40, y: -40, width: 60, height: 60 }, [turned(rect(0))]),
         ]),
       ]),
+      rect(40),
+    ]);
+    expect(draws()).toEqual([12]);
+    expect(clipBitWrites()).toEqual([]);
+    expect(vertices()[0][3]).toBe(4);
+  });
+
+  it('goes back to the stencil past the plane budget', () => {
+    // Planes facing three ways at once: the rect's, and two turned clips'.
+    const t = Math.PI / 12;
+    const twelfth = new Float32Array([Math.cos(t), -Math.sin(t), 0, Math.sin(t), Math.cos(t), 0, 0, 0, 1]);
+    const turnedClip = (transform: Float32Array, child: DrawCommand): DrawCommand => ({
+      kind: 'group', transform, clip: { kind: 'rect', x: -50, y: -50, width: 100, height: 100 }, children: [child],
+    } as unknown as DrawCommand);
+    r.render([
+      clipped({ x: 0, y: -100, width: 100, height: 200 }, [
+        turnedClip(EIGHTH_TURN, turnedClip(twelfth, rect(0))),
+      ]),
     ]);
     expect(clipBitWrites().length).toBeGreaterThan(0);
-    expect(vertices()[0][3]).toBe(0);
+    expect(draws().length).toBeGreaterThan(1);
   });
 });

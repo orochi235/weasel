@@ -25,7 +25,8 @@ import type { GlMat3, Path } from '@weasel-js/geom';
 import { PATH_L, PATH_M, PATH_Z, polygonFromPoints } from '@weasel-js/geom';
 import type { ClipRect } from './batchClip';
 
-/** Half-planes one set of clips can hold, nested clips' together. */
+/** Half-planes one set of clips can hold, nested clips' together once
+ *  planes facing the same way are merged (`meetHulls`). */
 export const HULL_PLANES = 8;
 
 /** Half-planes one run can hold across all its sets: the length of the
@@ -187,13 +188,59 @@ function buildHull(path: Path, m: GlMat3, map: WindowMap): Hull | null {
 /** A clip that covers nothing: snapped to a sliver, or to a point. */
 const EMPTY: HullSet = { planes: Int32Array.of(0, 0, -1, packOrigin(0, 0)), count: 1 };
 
-/** `a` and `b` as one set, or `null` past `HULL_PLANES`. */
-export function concatHulls(a: HullSet, b: HullSet): HullSet | null {
-  if (a.count + b.count > HULL_PLANES) return null;
-  const planes = new Int32Array((a.count + b.count) * 4);
-  planes.set(a.planes);
-  planes.set(b.planes, a.count * 4);
-  return { planes, count: a.count + b.count };
+/** A clip that keeps every pixel: what is left once every plane is. */
+const ALL: HullSet = { planes: Int32Array.of(0, 0, 0, packOrigin(0, 0)), count: 1 };
+
+/**
+ * `a` and `b` as one set, or `null` past `HULL_PLANES`. Of two planes facing
+ * the same way only the tighter is kept, so nested rect clips, or clips turned
+ * alike, stay at four planes however deep they go.
+ */
+export function meetHulls(a: HullSet, b: HullSet): HullSet | null {
+  const out: number[] = [];
+  for (const set of [a, b]) {
+    for (let k = 0; k < set.count; k++) {
+      const p = set.planes.subarray(4 * k, 4 * k + 4);
+      if (p[0] === 0 && p[1] === 0) {
+        if (p[2] < 0) return EMPTY;
+        continue;
+      }
+      const j = sameFacing(out, p[0], p[1]);
+      if (j < 0) out.push(p[0], p[1], p[2], p[3]);
+      else if (threshold(p, 0) > threshold(out, j)) out.splice(j, 4, p[0], p[1], p[2], p[3]);
+    }
+  }
+  if (out.length === 0) return ALL;
+  if (out.length / 4 > HULL_PLANES) return null;
+  return { planes: Int32Array.from(out), count: out.length / 4 };
+}
+
+/** The offset of the plane in `planes` whose normal points along `(a, b)`, or -1. */
+function sameFacing(planes: ArrayLike<number>, a: number, b: number): number {
+  for (let j = 0; j < planes.length; j += 4) {
+    const pa = planes[j], pb = planes[j + 1];
+    if (pa * b === pb * a && pa * a + pb * b > 0) return j;
+  }
+  return -1;
+}
+
+/**
+ * The plane at `j` as `n . (X, Y) >= T`, `n` its normal reduced to lowest
+ * terms: `T`, an integer, since every pixel center is. Two planes facing the
+ * same way share `n`, and the larger `T` is the tighter. Exact: every product
+ * here stays under 2^53.
+ */
+function threshold(planes: ArrayLike<number>, j: number): number {
+  const a = planes[j], b = planes[j + 1], w = planes[j + 3];
+  const ox = (w % ORIGIN_SPAN) - ORIGIN_BIAS;
+  const oy = Math.floor(w / ORIGIN_SPAN) - ORIGIN_BIAS;
+  const c = planes[j + 2] - UNITS * (a * ox + b * oy);
+  return Math.ceil(-c / gcd(Math.abs(a), Math.abs(b)));
+}
+
+function gcd(x: number, y: number): number {
+  while (y !== 0) [x, y] = [y, x % y];
+  return x;
 }
 
 /** The corners of a rect, or of a polygon of one closed contour of straight
