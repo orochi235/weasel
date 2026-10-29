@@ -204,7 +204,7 @@ let loading: Promise<Shaper> | null = null;
  * it. Once per process: every call answers the same shaper.
  *
  * ```ts
- * import { loadShaper } from '@weasel-js/shape';
+ * import { loadShaper } from '@weasel-js/text-shaping';
  * import { registerShaper } from '@weasel-js/core';
  *
  * registerShaper(await loadShaper());
