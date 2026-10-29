@@ -1,4 +1,5 @@
 import type { MenuHost } from '@weasel-js/core';
+import { attachMenuDismiss } from '@weasel-js/menu';
 import type { Hud } from '../hud';
 import type { Widget } from '../widget';
 import { createMenuWidget, type MenuWidgetOptions } from './menuWidget';
@@ -51,25 +52,23 @@ export function attachMenuHost(hud: Hud, host: MenuHost, opts: AttachMenuHostOpt
     if (!hud.focus(w)) { drop(); host.close(); }
   };
 
-  const dismiss = () => { if (widget) host.close(); };
-  const wheel = (e: WheelEvent) => {
-    if (!widget) return;
-    const p = opts.toCanvas({ x: e.clientX, y: e.clientY });
-    if (!widget.hitTest(p.x, p.y)) host.close();
-  };
-
   const unsubscribe = host.subscribe(sync);
   const unfocus = hud.subscribeFocus((f) => { if (widget && f !== widget) host.close(); });
-  window.addEventListener('wheel', wheel, { capture: true, passive: true });
-  window.addEventListener('blur', dismiss);
-  window.addEventListener('resize', dismiss);
+  // The focus subscription above is this host's press-outside.
+  const undismiss = attachMenuDismiss<MouseEvent>(window, {
+    press: false,
+    outside: (e) => {
+      if (!widget) return false;
+      const p = opts.toCanvas({ x: e.clientX, y: e.clientY });
+      return !widget.hitTest(p.x, p.y);
+    },
+    close: () => { if (widget) host.close(); },
+  });
   sync();
   return () => {
     unsubscribe();
     unfocus();
-    window.removeEventListener('wheel', wheel, true);
-    window.removeEventListener('blur', dismiss);
-    window.removeEventListener('resize', dismiss);
+    undismiss();
     drop();
   };
 }
