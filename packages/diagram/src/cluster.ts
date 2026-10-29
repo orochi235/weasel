@@ -162,20 +162,7 @@ export function packClusters(
   const pref = (n: GraphNode) => preferred.get(n.id) ?? 0;
   const insets = new Map(spans.map((s) => [s, canonical(s.group.inset, axes)]));
 
-  const centerOf = new Map<Span, number>();
-  for (const span of spans) {
-    const inside = new Set(span.group.members);
-    let sum = 0;
-    let count = 0;
-    for (const row of rows) {
-      for (const n of row) {
-        if (!inside.has(n.id)) continue;
-        sum += pref(n) + width(n) / 2;
-        count++;
-      }
-    }
-    centerOf.set(span, count === 0 ? 0 : sum / count);
-  }
+  const centerOf = centersOf(spans, rows, (n) => pref(n) + width(n) / 2);
 
   /** What sits side by side in each rank at one level: the nodes directly in
    *  `owner` and the groups directly in it, in the order of their centers. */
@@ -242,10 +229,17 @@ export function packClusters(
     const byRow = itemsByRow(span, span.children);
     // Each node keeps where placement put it, measured from the block's
     // lowest, so the ports a wire joins stay lined up inside a group; nested
-    // columns and the gap only push things apart.
+    // columns and the gap only push things apart. A stretch no member covers
+    // in any rank closes to `nodeGap`, so the box holds no empty room.
+    const own = rows.flat().filter((n) => spanOf(n) === span);
     const base = Math.min(...rows.flat().filter((n) => span.group.members.includes(n.id) || spanOf(n) === span).map(pref));
-    const childAt = new Map<Span, number>(span.children.map((c) => [c, Math.max(0, centerOf.get(c)! - outer(c) / 2 - base)]));
-    const { nodeAt, ends } = settle(byRow, childAt, (n) => pref(n) - base, 0);
+    const childLo = new Map(span.children.map((c) => [c, Math.max(0, centerOf.get(c)! - outer(c) / 2 - base)]));
+    const squeezed = closeGaps([
+      ...own.map((n) => [pref(n) - base, pref(n) - base + width(n)] as const),
+      ...span.children.map((c) => [childLo.get(c)!, childLo.get(c)! + outer(c)] as const),
+    ], nodeGap);
+    const childAt = new Map<Span, number>(span.children.map((c) => [c, squeezed(childLo.get(c)!)]));
+    const { nodeAt, ends } = settle(byRow, childAt, (n) => squeezed(pref(n) - base), 0);
     const block: Block = { width: Math.max(0, ...ends), nodeAt, childAt };
     const slack = widen(block, span.group, insets.get(span)!, axes);
     for (const [id, x] of nodeAt) nodeAt.set(id, x + slack);
@@ -269,6 +263,39 @@ export function packClusters(
   };
   for (const root of roots) place(root, start.get(root)!);
   return at;
+}
+
+/** Each group's mean member center, where placement put them. */
+function centersOf(spans: readonly Span[], rows: readonly (readonly GraphNode[])[], center: (n: GraphNode) => number): Map<Span, number> {
+  const out = new Map<Span, number>();
+  for (const span of spans) {
+    const inside = new Set(span.group.members);
+    const centers = rows.flat().filter((n) => inside.has(n.id)).map(center);
+    out.set(span, centers.length === 0 ? 0 : centers.reduce((a, b) => a + b, 0) / centers.length);
+  }
+  return out;
+}
+
+/** A map from a block's own coordinates to ones where every stretch that
+ *  `spans` leave uncovered is at most `gap` wide, and covered ones keep
+ *  their length. */
+function closeGaps(spans: readonly (readonly [number, number])[], gap: number): (at: number) => number {
+  const sorted = [...spans].sort((a, b) => a[0] - b[0]);
+  const cuts: [number, number][] = [];
+  let reach = sorted[0]?.[1] ?? 0;
+  let removed = 0;
+  for (const [lo, hi] of sorted.slice(1)) {
+    if (lo - reach > gap) {
+      removed += lo - reach - gap;
+      cuts.push([lo, removed]);
+    }
+    reach = Math.max(reach, hi);
+  }
+  return (at) => {
+    let shift = 0;
+    for (const [from, by] of cuts) if (at >= from) shift = by;
+    return at - shift;
+  };
 }
 
 /** Widen a block to its group's `minWidth`, centering what it holds, and

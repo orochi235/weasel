@@ -108,6 +108,18 @@ describe('elkPlan', () => {
     expect((await elkPlan(graph)).ports!.get('ab')).toEqual({ from: 's', to: 'n' });
   });
 
+  it('names a port on the face ELK met, though another face has one nearer', async () => {
+    const wide = node('a', { bounds: { x: 0, y: 0, width: 600, height: 40 } });
+    const graph = graphOf([wide, node('b'), node('c'), node('d'), node('e')], ['b', 'c', 'd', 'e'].map((to) => ({ id: `a${to}`, from: 'a', to })));
+    const plan = await elkPlan(graph);
+    const at = placed(graph, plan.moves).get('a')!;
+    const starts = ['ab', 'ac', 'ad', 'ae'].map((id) => plan.routes.get(id)![0]!);
+    // The outermost start is nearer the west or east port than the south one.
+    expect(starts.some((p) => Math.hypot(p.x - at.x, p.y - at.y - 20) < Math.abs(p.x - at.x - 300)
+      || Math.hypot(p.x - at.x - 600, p.y - at.y - 20) < Math.abs(p.x - at.x - 300))).toBe(true);
+    for (const id of ['ab', 'ac', 'ad', 'ae']) expect(plan.ports!.get(id)!.from).toBe('s');
+  });
+
   it('meets the node itself where an edge names a port the node does not declare', async () => {
     const graph = graphOf([node('a'), node('b')], [{ id: 'ab', from: 'a', to: 'b', fromPort: 'gone' }]);
     expect((await elkPlan(graph)).routes.has('ab')).toBe(true);
