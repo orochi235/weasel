@@ -810,6 +810,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P1) [mike] Register `@weasel-js/text-shaping`'s trusted publisher (2026-10-28).** 1.13.0 is uploaded (its
+  version endpoint answers) and `@weasel-js/shape` is deprecated toward it, but the package's main record, which
+  `npm install` and `check:first-publish` read, was still 404 minutes later: npm's staged window. Once it appears
+  (`npm view @weasel-js/text-shaping`), run `node scripts/setup-trusted-publishing.mjs @weasel-js/text-shaping` in a
+  terminal; it records the package in `scripts/trust-pending.json`, which then gets committed.
+
 - **(P2) [agent] A dev server can die on vite's own optimizer timer after a restart** (2026-10-28, seen once on the
   site server). `restartLeavingNothing` (`scripts/vite-prebundle.ts`) deletes every key of the outgoing environments
   once the new server is up, to stop a ~30 MB-a-restart leak. vite's dep optimizer arms a 1 s timer that reads
@@ -828,12 +834,6 @@ only story runner in the repo.
   worktree cut from `main`): `TS7016: Could not find a declaration file for module '@weasel-js/labkit/config'`,
   apparently labkit's declarations not built before forge needs them. `node_modules` installed anyway and the
   branch's fleet runs passed, so it fails the install's exit code, not the tree. Not yet checked on a clean clone.
-
-- **(P1) [mike] Publish `@weasel-js/text-shaping` by hand, then retire `@weasel-js/shape` (2026-10-28).** The
-  package was renamed after 1.13.0 went out as `@weasel-js/shape`. The release job's `check:first-publish`
-  fails until the new name exists on npm with a trusted publisher: publish it once by hand
-  (`docs/releasing.md`, "Publishing by hand"), run `node scripts/setup-trusted-publishing.mjs`, and add it to
-  `scripts/trust-pending.json`. Then `npm deprecate @weasel-js/shape "renamed to @weasel-js/text-shaping"`.
 
 - **(P3) [agent] The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
