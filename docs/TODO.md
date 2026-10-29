@@ -797,14 +797,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] A dev server can die on vite's own optimizer timer after a restart** (2026-10-28, seen once on the
-  site server). `restartLeavingNothing` (`scripts/vite-prebundle.ts`) deletes every key of the outgoing environments
-  once the new server is up, to stop a ~30 MB-a-restart leak. vite's dep optimizer arms a 1 s timer that reads
-  `environment.logger`, so a run begun on an old environment within a second of a restart crashes the process:
-  `TypeError: Cannot read properties of undefined (reading 'info')` at `node_modules/vite/dist/node/chunks/node.js`
-  (`bundleTimer`). Fix candidates: empty only the keys that hold the module graph, or empty after pending optimizer
-  runs settle; either needs `scripts/probe-dev-restarts.ts` rerun to show the leak stays fixed.
-
 - **(P2) [agent] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
   label, keeps it on a reroute, and resets it" timed out on `expect.poll(() => savedLabel()?.dodge).toBe(false)`
   (received `undefined`: the drag saved no label) in the fleet runs of `headless-slider-steps` (cacb14e98) and
