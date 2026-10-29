@@ -1,0 +1,298 @@
+  waiting for room
+  waiting: teitou unknown (someone is using it)
+  waiting: teitou unknown (a05-sparkplug has outrun its longest recent run)
+  waiting: teitou unknown (weasel-rss-probe-variants has no estimate)
+  waiting: teitou unknown (a05-sparkplug has outrun its longest recent run)
+  waiting: teitou unknown (has 0.0 of its 18 cores free, too few to start on)
+  waiting: teitou unknown (has 0.2 of its 18 cores free, too few to start on)
+  waiting: teitou unknown (has 0.4 of its 18 cores free, too few to start on)
+  base   beffdf0a
+  delta  199 file(s), 0 deleted
+  sent   4 new file(s), 195 already there
+  updated weasel-overlay-scale on teitou at beffdf0a + 199 uncommitted file(s)
+  job    62fffe2d on teitou
+
+onto: agent-af264e6338baaf526 is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel-overlay-scale[39m
+
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20 dx 0.094 dRight 0.024 ocx 25.946
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20 dx -0.055 dRight 0.113 ocx 25.940
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20 dx 0.094 dRight 0.024 ocx 25.946
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20 dx -0.055 dRight 0.113 ocx 25.940
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20.125 dx -0.276 dRight -0.034 ocx 25.946
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20.125 dx -0.096 dRight 0.047 ocx 25.940
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20.125 dx -0.276 dRight -0.034 ocx 25.946
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20.125 dx -0.096 dRight 0.047 ocx 25.940
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20.25 dx -0.580 dRight -0.067 ocx 25.946
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20.25 dx 0.010 dRight 0.057 ocx 26.202
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20.25 dx -0.251 dRight 0.053 ocx 26.274
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20.25 dx 0.010 dRight 0.057 ocx 26.202
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20.375 dx -0.382 dRight 0.036 ocx 26.274
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20.375 dx -0.167 dRight -0.038 ocx 26.202
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20.375 dx -0.382 dRight 0.036 ocx 26.274
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20.375 dx -0.167 dRight -0.038 ocx 26.202
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20.5 dx -0.321 dRight 0.028 ocx 26.274
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20.5 dx -0.055 dRight 0.113 ocx 26.440
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20.5 dx 0.019 dRight 0.744 ocx 26.614
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20.5 dx -0.055 dRight 0.113 ocx 26.440
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20.625 dx -0.143 dRight -0.011 ocx 26.274
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20.625 dx -0.096 dRight 0.047 ocx 26.440
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20.625 dx 0.197 dRight 0.704 ocx 26.614
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20.625 dx -0.096 dRight 0.047 ocx 26.440
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20.75 dx 0.234 dRight 0.319 ocx 26.614
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20.75 dx 0.010 dRight 0.057 ocx 26.702
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20.75 dx 0.234 dRight 0.319 ocx 26.614
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20.75 dx 0.010 dRight 0.057 ocx 26.702
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 16 x 20.875 dx 0.078 dRight -0.022 ocx 26.614
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 16 x 20.875 dx -0.167 dRight -0.038 ocx 26.702
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 16 x 20.875 dx 0.410 dRight 0.143 ocx 26.946
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 16 x 20.875 dx -0.167 dRight -0.038 ocx 26.702
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20 dx -0.499 dRight -0.170 ocx 72.293
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20 dx -0.499 dRight -0.170 ocx 72.293
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20 dx 0.033 dRight -0.160 ocx 72.384
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20 dx 0.033 dRight -0.160 ocx 72.384
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20.125 dx -0.738 dRight -0.326 ocx 72.293
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20.125 dx -0.562 dRight -0.326 ocx 72.468
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20.125 dx -0.096 dRight -0.286 ocx 72.384
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20.125 dx -0.096 dRight -0.286 ocx 72.384
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20.25 dx -0.791 dRight -0.441 ocx 72.293
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20.25 dx -0.316 dRight -0.441 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20.25 dx -0.236 dRight -0.410 ocx 72.384
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20.375 dx -0.164 dRight -0.486 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20.25 dx -0.022 dRight 0.090 ocx 72.597
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20.375 dx -0.164 dRight -0.486 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20.375 dx -0.014 dRight -0.034 ocx 72.746
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20.5 dx 0.103 dRight -0.513 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20.375 dx -0.014 dRight -0.034 ocx 72.746
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20.5 dx 0.103 dRight -0.513 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20.5 dx 0.033 dRight -0.160 ocx 72.884
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20.625 dx 0.145 dRight -0.622 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20.5 dx 0.033 dRight -0.160 ocx 72.884
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20.625 dx 0.145 dRight -0.622 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20.625 dx -0.096 dRight -0.286 ocx 72.884
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20.75 dx -0.146 dRight -0.786 ocx 72.767
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20.625 dx -0.096 dRight -0.286 ocx 72.884
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20.75 dx 0.109 dRight 0.214 ocx 73.022
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20.75 dx -0.236 dRight -0.410 ocx 72.884
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 40 x 20.875 dx -0.373 dRight 0.022 ocx 73.022
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20.75 dx -0.022 dRight 0.090 ocx 73.097
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 40 x 20.875 dx -0.101 dRight 0.022 ocx 73.293
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 40 x 20.875 dx -0.014 dRight -0.034 ocx 73.246
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20 dx -0.294 dRight -0.457 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 40 x 20.875 dx -0.014 dRight -0.034 ocx 73.246
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20 dx -0.294 dRight -0.457 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20 dx -0.435 dRight -0.477 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.125 dx -0.453 dRight -0.474 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20 dx -0.435 dRight -0.477 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.125 dx -0.453 dRight -0.474 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.125 dx -0.527 dRight -0.593 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.25 dx -0.597 dRight -0.480 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.125 dx -0.527 dRight -0.593 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.25 dx -0.597 dRight -0.480 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.25 dx -0.433 dRight -0.597 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.375 dx -0.689 dRight -0.501 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.25 dx -0.433 dRight -0.597 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.375 dx -0.689 dRight -0.501 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.5 dx -0.850 dRight -0.636 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.375 dx -0.619 dRight -0.735 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.5 dx -0.850 dRight -0.636 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.375 dx -0.619 dRight -0.735 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.625 dx -0.958 dRight -0.854 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.5 dx -0.435 dRight -0.477 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.625 dx -0.958 dRight -0.854 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.5 dx -0.435 dRight -0.477 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.75 dx -1.005 dRight -1.118 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.625 dx -0.527 dRight -0.593 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.75 dx -1.005 dRight -1.118 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.625 dx -0.527 dRight -0.593 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.875 dx -1.141 dRight -1.363 ocx 45.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.75 dx -0.433 dRight -0.597 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.875 dx -0.141 dRight -0.363 ocx 46.981
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.75 dx -0.433 dRight -0.597 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.875 dx -0.619 dRight -0.735 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20 dx 0.317 dRight -0.789 ocx 83.024
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.875 dx -0.619 dRight -0.735 ocx 46.481
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20 dx 0.317 dRight -0.789 ocx 83.024
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20 dx 0.120 dRight -0.313 ocx 83.110
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.125 dx 0.149 dRight -0.913 ocx 83.024
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20 dx 0.120 dRight -0.313 ocx 83.110
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.125 dx 0.425 dRight 0.087 ocx 83.300
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.25 dx 0.339 dRight -0.066 ocx 83.300
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.125 dx 0.025 dRight -0.419 ocx 83.110
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.25 dx 0.339 dRight -0.066 ocx 83.300
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.125 dx 0.162 dRight 0.081 ocx 83.248
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.375 dx 0.100 dRight -0.209 ocx 83.300
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.25 dx 0.034 dRight -0.060 ocx 83.248
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.375 dx 0.379 dRight -0.209 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.25 dx 0.034 dRight -0.060 ocx 83.248
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.5 dx 0.296 dRight -0.297 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.375 dx -0.071 dRight -0.173 ocx 83.248
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.5 dx 0.296 dRight -0.297 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.375 dx -0.071 dRight -0.173 ocx 83.248
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.625 dx 0.195 dRight -0.417 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.5 dx 0.120 dRight -0.313 ocx 83.610
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.625 dx 0.195 dRight -0.417 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.5 dx 0.120 dRight -0.313 ocx 83.610
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.75 dx 0.144 dRight -0.529 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.625 dx 0.025 dRight -0.419 ocx 83.610
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.75 dx 0.144 dRight -0.529 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.625 dx 0.162 dRight 0.081 ocx 83.748
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 none 72 x 20.875 dx -0.021 dRight -0.705 ocx 83.579
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.75 dx 0.034 dRight -0.060 ocx 83.748
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr1 nudge6 72 x 20.875 dx 0.424 dRight -0.705 ocx 84.024
+ [32m✓[39m [30m[46m webkit-dpr1 [49m[39m packages/core/src/domains/text/overlayProbe.browser.test.tsx [2m([22m[2m2 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 8268[2mms[22m[39m
+   [32m✓[39m overlay probe [2m(2)[22m
+     [33m[2m✓[22m[39m variants[33m 8253[2mms[22m[39m
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.75 dx 0.034 dRight -0.060 ocx 83.748
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 none 72 x 20.875 dx -0.071 dRight -0.173 ocx 83.748
+[90mstdout[2m | packages/core/src/domains/text/overlayProbe.browser.test.tsx[2m > [22m[2moverlay probe[2m > [22m[2mvariants
+[22m[39mwebkit-dpr2 nudge6 72 x 20.875 dx -0.071 dRight -0.173 ocx 83.748
+ [32m✓[39m [30m[42m webkit-dpr2 [49m[39m packages/core/src/domains/text/overlayProbe.browser.test.tsx [2m([22m[2m2 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 8616[2mms[22m[39m
+   [32m✓[39m overlay probe [2m(2)[22m
+     [33m[2m✓[22m[39m variants[33m 8598[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m2 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (4)[39m
+[2m   Start at [22m 17:21:09
+[2m   Duration [22m 11.83s[2m (tests 89%, import 6%, setup 4%, worker 1%)[22m
+
+== probe-overlay exit 0
+  2 files  34.4 KiB  → 0 already local (0 bytes)
+  fetching 2 files (34.4 KiB)
+  [1/2] overlay-probe/variants-webkit-dpr1.json  16.9 KiB
+  [2/2] overlay-probe/variants-webkit-dpr2.json  17.5 KiB
+  ✓ 2 files, 34.4 KiB in 0s
+  193 local file(s) are not on the node; nothing was deleted
+  cleared 2 files (34.4 KiB) from teitou; ~/src/weasel/.claude/worktrees/agent-af264e6338baaf526/.probe-out holds the only copy

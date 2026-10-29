@@ -1,0 +1,19 @@
+#!/bin/bash
+# Scratch probe runner, not committed.
+set -e
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; . "$NVM_DIR/nvm.sh"; nvm use >/dev/null
+if ! cmp -s package-lock.json node_modules/.package-lock.json.src 2>/dev/null; then
+  npm ci --no-audit --no-fund >/dev/null
+  cp package-lock.json node_modules/.package-lock.json.src
+fi
+npx playwright install chromium webkit firefox >/dev/null
+rm -rf node_modules/.cache/overlay-probe node_modules/.cache/overlay-alignment .probe-out
+set +e
+for cfg in "$@"; do
+  npx vitest run -c "scripts/$cfg.config.ts" --reporter=default $VITEST_ARGS
+  echo "== $cfg exit $?"
+done
+mkdir -p .probe-out
+cp -R node_modules/.cache/overlay-probe .probe-out/ 2>/dev/null
+cp -R node_modules/.cache/overlay-alignment .probe-out/ 2>/dev/null
+exit 0
