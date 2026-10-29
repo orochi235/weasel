@@ -279,27 +279,39 @@ Owner tags, after the priority (2026-10-26):
   Firefox, or at DPR 2. What is left is a ruling: snap the canvas's text baseline to device pixels
   as browsers do, which moves all canvas text, or keep the half pixel.
 
-- **(P3) [agent] WebKit at DPR 1 fails one overlay-alignment case, because it paints text on whole
-  pixels.** `"Hgd" Inter 72px small caps` reports `dRight -0.79` against the 0.75 bound in
-  `npx vitest run -c scripts/measure-overlay-alignment.config.ts`; Chromium and Firefox pass it at
-  both DPRs, and so does WebKit at DPR 2. CI runs Chromium only, so nothing gates on it. It is not
-  advances, small-caps synthesis, or `text-rendering`: WebKit's DOM width of `GDGDGDGDGD` matches
-  the atlas to 0.001px at 54.024px (the small-caps size), and turning off `font-variant`, kerning,
-  or `geometricPrecision` on the overlay moves no pixel. WebKit floors a text box's paint origin
-  to the device-pixel grid: the small capitals sit in their own span, which starts at x 73.5 and
-  paints from 73, so `G` and `D` land 0.44 and 0.69px left of the canvas's. Not compensable from
-  the overlay as far as measured: a WebKit-only half-device-pixel `translate` fixes this case but
-  moves WebKit DPR 1's matrix mean `dx` from -0.14 to +0.36 and fails three other cases, and a
-  0.492px nudge on the small-caps span alone moved `D` a whole pixel and `G` not at all.
+- **(P3) [maintainer] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
+  and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
+  in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
+  16px stays put from `x` 20 to 20.25 and moves next at 20.375 and 20.75), where Chromium and
+  Firefox step by quarters to the nearest. A piece that starts between pixels paints from the one
+  below: the small capitals of `"Hgd" Inter 72px small caps` start at 73.508 and paint from 73, so
+  that case's `dRight` runs from -0.07 to -0.91 across the pixel, and is -0.79 at `x` 20 against
+  the test's 0.75. It is the whole configuration, not that case: in
+  `npx vitest run -c scripts/measure-overlay-alignment.config.ts`, 22 of WebKit DPR 1's 160 matrix
+  rows fall outside the test's bounds, every one trailing the canvas (mean `dx` -0.14); WebKit DPR 2
+  has 2, the same Arial 72px rows that Chromium DPR 2 has. Advances are not it: WebKit's DOM width of
+  `GDGDGDGDGD` matches the atlas to 0.001px. Nothing on the overlay moves the grid: `will-change`,
+  `translateZ(0)`, either `text-rendering`, and `-webkit-font-smoothing` left every pixel in place
+  (the last moved the small-caps case 0.76px further left). A WebKit-only nudge only trades one
+  case for another: a half pixel took the matrix mean `dx` to +0.36 and failed three cases, and a
+  sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
+  0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
+  WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
 
-- **(P3) [agent] At 12px with a script, the atlas tier's ink still sits ~0.55px off the overlay's at DPR
-  1, and the sign follows the sub-pixel phase.** `dx` is −0.5 at `x` 20 and +0.5 at 20.5 in every
-  engine; DPR 2 agrees within 0.06. The stems of a 7.2px `H` are ~0.65px wide, and the shader
-  reads coverage from the distance at each pixel's center, so a stem centered on a pixel carries
-  about twice the ink of one straddling two. Center-sampled coverage cannot do better; area
-  coverage would need several field taps per fragment on small glyphs. The same rows show `dy` of
-  ±0.45, which is unexplained. The `super`/`sub` 12px rows of
-  `npx vitest run -c scripts/measure-overlay-alignment.config.ts` show both.
+- **(P3) [agent] At 16px and below at DPR 1, the atlas tier's ink wobbles as a glyph moves across a
+  pixel, so the overlay's sits up to ~0.6px off it.** Measured 2026-10-29: as `x` steps from 20 to
+  20.875 in eighths, the canvas centroid of a 7.2px `H` (what a 12px super- or subscript draws, and
+  the same with no script) runs 23.14, 23.25, 23.12, 22.87, 22.77, 22.89, 23.34, 23.71, moving left
+  for half the pixel, while every engine's overlay moves steadily right. So `dx` swings between
+  about -0.5 and +0.5 with the phase (max 0.51 Chromium, 0.60 Firefox, 0.57 WebKit); Inter 16px
+  swings by about 0.4. The shader reads coverage from the field at each pixel's center, so a stem
+  narrower than a pixel is inked by where it sits: at `x` 20 the canvas gives the `H`'s left stem,
+  straddling two columns, 2.84 pixels of ink and its right stem, centered on one, 4.35, where the
+  overlay gives them 3.92 and 3.54. At DPR 2, where the stems are wider than a pixel, `dx` stays
+  within 0.19 in every engine. The fix is area coverage, several field taps per fragment where a
+  pixel spans more of the field than a stem is wide, in `GLYPH_COVERAGE_GLSL`, priced with
+  `tests/perf/fill-rate.spec.ts`. The `dy` of up to ±0.45 in the same rows is the overlay's
+  whole-pixel rounding, the entry "The edit overlay's text lands on whole CSS pixels".
 
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
