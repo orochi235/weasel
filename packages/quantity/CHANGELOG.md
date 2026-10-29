@@ -1,5 +1,15 @@
 # @weasel-js/quantity
 
+## 1.14.0
+
+### Patch Changes
+
+- b59380e: Holding a step chip on a `@weasel-js/hud` canvas menu's number row now repeats, as a `@weasel-js/ui` number field's steppers do: one step on the press, then after 400 ms one every 60 ms until release, until the pointer leaves the chip, or until the value reaches its bound. The step now comes on the press rather than the release. `attachMenuHost` and `createMenuWidget` take `repeat` to time it.
+  
+  `@weasel-js/headless` exports `createStepRepeat`, the hold-to-repeat both run, with `REPEAT_DELAY_MS`, `REPEAT_EVERY_MS`, and `Scheduler` / `timerScheduler` for the clock it runs on; `@weasel-js/menu`'s `MenuScheduler` is now that `Scheduler`. `@weasel-js/quantity` exports `canSpin(key, from, bounds)`, whether a spin key moves a value anywhere, which `menuNumberCanStep` and `UnitField`'s steppers both use. This adds API.
+- 624cf38: `scientific()`, a display kind for powers of ten: `1.23 × 10⁶` at three significant figures by default, `engineering: true` for exponents in multiples of three (`12.3 × 10³`), and `form: 'e'` for `1.23e6`. It speaks `1.23 times 10 to the power of 6`, has a MathML form, and reads back its own text as well as `1.23e6`, `1.23*10^6`, and `1.23 x 10^-4`.
+- d5c4ee6: A tree's Left and Right mirror in a right-to-left list: `TreeShape` takes `dir`, and `rowKey` passes a list's own `dir` to it, so Left opens a branch and Right closes it under `'rtl'`. `COARSE_STEPS` now lives in `@weasel-js/quantity`, which `spinKey`'s Page Up and Page Down read, and `@weasel-js/headless` re-exports it as before.
+
 ## 1.13.0
 
 ### Patch Changes

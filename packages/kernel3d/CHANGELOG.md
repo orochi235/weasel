@@ -1,5 +1,136 @@
 # @weasel-js/kernel3d
 
+## 1.14.0
+
+### Patch Changes
+
+- 7f6a74c: A kernel3d view's aim drawn into a 2D view now outlines the part of the plane z = 0 its frustum actually takes in, cut off at the camera's far plane. A camera tilted so the horizon is in view used to outline nothing, because one of its corner rays missed the plane; it now outlines the ground it sees. A camera whose corner rays all meet the plane within its far distance outlines the same four points as before.
+- 14f8583: `@weasel-js/geom/nd` exports `createSettledCache()`: a value built only once its source holds still. Each `read(key, build)` passes the source's key as a tuple; the first read at a new key answers null, and the second at the same key builds and keeps the value (`reads` moves which read builds it, and `reads: 1` makes it a plain memo). Keys match element by element under `Object.is`. This adds API.
+  
+  Core's pick index, the diagram port and label indexes, and kernel3d's snap box index now use it, in place of three copies of that rule. They build at the same reads as before.
+- f130e8f: A kernel3d view drawn into a 2D view now outlines its footprint on the ground, the plane `createInsert` drops nodes onto, in place of the plane z = 0. A 2D view's aim drawn into a kernel3d pane, and a drag across one, lands on that same ground. In kernel3d's default y-up world, z = 0 is an upright wall, so a camera looking down at the floor used to outline nothing useful in a 2D view; its footprint now lies on y = 0, with world x and z carrying the 2D x and y. `aimOf3d` and `aimSpace3d` take an optional third argument, `{ up }`, read as `createInsert`'s `up` is (default +y); pass `{ up: { x: 0, y: 0, z: 1 } }` to keep the old z = 0 placement. The new `Aim3dOptions` type names it.
+- d6884c8: kernel3d's README says how containers select: as in 2D, a click on a nested node selects its outermost container, a double-click enters it, and a click inside then selects the next level in. This needs nothing from a host beyond `<SceneCanvas>`'s own select tool, and is now under test.
+- 1d39cf6: In a 3D move of several roots, a root stored under a container now moves by the same world distance as the first root, as roots stored in world space already did. It used to resolve the drag on its own plane, so it went a different distance and missed a snap target the first root found. A move now hands such a root the lead (`TranslateLead`) expressed in its container's frame, and kernel3d's descriptor applies the lead's change whole rather than flattening it onto the pose's own height.
+- 8f3562e: kernel3d ships `POSE3_COMPOSITION`, a container composition for `Pose3`: a container's position, rotation and scale reach everything under it. It is exact when a container's scale is uniform; under a non-uniform one a turned child keeps its own axes rather than shearing.
+  
+  Picking, the marquee, `screenBoxOf`, snap targets and what a move drags now read each node at its world pose, folded up through its containers, where they used to read the stored pose. A node inside a container was picked and snapped at its container-relative position before. Picking also follows a gesture's in-flight pose. A move's snap leaves out everything under the moved nodes, which moves with them.
+  
+  `worldPoseOf(scene, id)` is new: the pose a renderer draws a node at. Additive API.
+  
+  Behavior change: `NodeBounds` is handed the node at its world pose and may return `null` for a node that occupies nothing, which is then never picked or snapped to. With no `bounds`, a group now occupies nothing, where it used to be a unit cube carried by its pose.
+- e5ea7e8: A `@weasel-js/kernel3d` move or nudge of several roots moves them as one body. Each root used to turn the screen delta into a world delta on the plane at its own height and from its own place on screen, so roots moved by slightly different amounts and only the first landed on what the snap held it to. `PoseDescriptor.translate` takes an optional fourth argument, `lead: { from, to }`: how the move's first root went under the same delta. Core's move, nudge and `moveNodes` pass it for every root stored in world space, and kernel3d's descriptor moves each root by the lead's world change. `TranslateLead` is exported. A descriptor that ignores the argument behaves as before.
+- 8bc23c2: `boxSnapSource` and `alignPlaneSource` read the scene's world boxes through an index kept against the scene's version and the world's `bounds`, so a snap during a drag reads only the boxes in reach of its probes instead of boxing every node each frame. They offer the same candidates in the same order as before.
+- a80f8be: A scene composes poses by default. A child's stored pose is now relative to the frame of the nearest container above it that defines one (`RIGID_POSE_COMPOSITION`), so moving a container writes one pose, rotating it rotates its contents, and resizing it leaves them where they draw. A container whose pose derives from its children (`dependsOn: 'children'` with a `derivePose`) is an envelope, not a frame: its children share the frame above it.
+  
+  **This breaks a consumer that stores absolute child poses.** To migrate:
+  
+  - A scene whose `TPose` is not a rect pose must name its composition: `useScene` and `createScene` require `composition` in the type unless `TPose` is a `RectPose`. `IDENTITY_POSE_COMPOSITION` keeps every pose world; under it a container groups its children and never carries them. kernel3d's scenes name it.
+  - Saves: `toJSON` writes version 3, whose child poses are local. `sceneFromJSON`, `Scene.loadState`, and `specsFromSerialized` read a version 1 or 2 save as world and make each pose local as it loads, under the scene's composition (`SpecsFromSerializedOptions.composition`). A recorded history from before is not restored: `SCENE_HISTORY_FORM` is 4.
+  - Specs or ops you build with world poses for children: put them through `localizeWorldPoses(specs, composition)`, or `localizeInScene(scene, specs)` when they land under a container already in the scene. `worldPosesOf(specs, composition)` reads them back as world, and `heldInFrame(scene, id)` names what a container's frame holds.
+  - `sceneToAdapter`'s `setPose` no longer moves a container's descendants by the same delta, and a container's pose target no longer shows them traveling beside it: the frame carries them. `PoseCascade` and the `cascade` argument of `scenePoseTarget` and `sceneClipTargets` are gone.
+  - The group action makes a frame group, whose pose is authored, under any composition; it no longer derives an envelope's pose from its members under the identity strategy.
+  - `resolvePreviews` answers each entry's pose in world, and a previewed frame brings the children it carries.
+  - `SnapTarget.slotPose` is world, as documented; `snapToContainer` stores it in the target's frame.
+  - `diagramScene` returns each spec's pose in its container's frame (`composition`, default `RIGID_POSE_COMPOSITION`; pass `IDENTITY_POSE_COMPOSITION` to read the layout in world). Body rows, container titles, lanes, and members are stored relative to what holds them; `DiagramView`'s reports, `diagramLayoutOf`, and `documentFromScene` stay in world.
+  - `svgNodesFromKit` folds a tree's `composition` when it has one, and `unpackSvgFiles` stores each imported node in its container's frame.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [767713e]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [a370edb]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9a3626f]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [871a56b]
+- Updated dependencies [f645651]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/react@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

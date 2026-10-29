@@ -1,5 +1,158 @@
 # @weasel-js/diagram-formats
 
+## 1.14.0
+
+### Patch Changes
+
+- e1bbdcd: Diagram outlines are now a registrable table. `registerOutline(name, def)` adds a named outline (or shadows a built-in until disposed), `outlineFromD(d, opts)` builds one from unit-square SVG path data, and `outlineDetail` gives the strokes an outline draws over its fill. `Outline` widens to any registered name; an unregistered one paints as `rect` and warns once. Eleven built-ins join the flowchart seven: `roundRect`, `cylinder`, `document`, `note`, `cloud`, `triangle`, `octagon`, `folder`, `cube`, `actor`, and `doubleEllipse`. Each keeps its content box inside the visible shape, and `diagramShape` strokes a cylinder's rim, a note's fold, a folder's tab, a cube's front edges, and a double ellipse's inner ring.
+  
+  New stroke markers: the crow's-foot family `crow-one`, `crow-many`, `crow-zero-one`, `crow-one-many`, and `crow-zero-many`, and `triangle-hollow` for UML generalization. `KitMarkerKey` lists them.
+  
+  DOT, Mermaid, and draw-style XML read and write the new outlines and markers where the format has a counterpart. Mermaid's writer no longer throws on an outline it has no brackets for: it writes a rectangle and warns. draw-style XML reads `rounded=1` below the stadium arc as `roundRect`, a hollow `block` head as `triangle-hollow`, Mermaid reads `(text)` as `roundRect`, and DOT and Mermaid read a double circle as `doubleEllipse`. DOT reads `onormal` as `triangle-hollow`.
+- 726d80b: Add UML class and ERD stencils and diagram types to `@weasel-js/diagram`. The `uml` group holds class, interface, abstract class, package, note, actor, use case, and component; the `erd` group holds entity, weak entity, relationship, and attribute. The `umlClass` type routes new connectors orthogonally to an open arrowhead, and `erd` draws them from `crow-one` to `crow-many`.
+  
+  A body takes a new `divider` row, a rule across its content box that the outline painter draws in the body's own stroke, and a row's text style can now be `italic`. A built body records each row's height, so `bodyFollower`, a new transform follower, lays a resized body's rows out again inside its new box. `DiagramStencil` takes `padding`, `gap`, and `verticalAlign`. Two outlines are added: `component` and `doubleRect`.
+  
+  `@weasel-js/diagram-formats` reads divider rows back from a scene, leaves them out of DOT, Mermaid, and draw-style XML text without a warning, and writes and reads an italic row in draw-style XML.
+- ee615ae: Draw-style XML now writes and reads BPMN's events, gateways and subprocess and the network devices as draw.io's own shapes (`mxgraph.bpmn.event`, `mxgraph.bpmn.gateway2`, `mxgraph.bpmn.task`, and `mxgraph.networks.*`), each with its label below the figure, where it used to write them as rectangles with a warning. A BPMN event or gateway draw.io draws that has no outline here, such as an end event or a complex gateway, reads as the nearest one. The network `globe` still goes out as a rectangle. Mermaid, which has no such figures, now writes an event as a circle, an intermediate event as a double circle, a gateway as a diamond without its marker, and a subprocess as a rounded rectangle, with a warning saying so.
+- 3418e3a: DOT keeps outlines it has no exact shape for. A stadium, and any outline DOT has no shape of its own for (the network devices, BPMN gateways and events, and the rest), is written with a `weasel_outline` attribute beside the box Graphviz draws, and read back as itself. A rounded box without one now reads as `roundRect` rather than `stadium`, which is how Graphviz draws it.
+- 39cc5a8: draw.io export writes inclusive and event-based BPMN gateways the way draw.io's own palette does, as an event outline
+  inside the diamond (`outline=end;symbol=general`, `outline=catching;symbol=multiple`); the `gwType` values it wrote
+  before are not ones draw.io knows, and drew a bare diamond. Import reads draw.io's forms and the earlier ones. A
+  `globe` node goes out as `mxgraph.office.concepts.globe_internet` rather than a rectangle.
+- a80f8be: A scene composes poses by default. A child's stored pose is now relative to the frame of the nearest container above it that defines one (`RIGID_POSE_COMPOSITION`), so moving a container writes one pose, rotating it rotates its contents, and resizing it leaves them where they draw. A container whose pose derives from its children (`dependsOn: 'children'` with a `derivePose`) is an envelope, not a frame: its children share the frame above it.
+  
+  **This breaks a consumer that stores absolute child poses.** To migrate:
+  
+  - A scene whose `TPose` is not a rect pose must name its composition: `useScene` and `createScene` require `composition` in the type unless `TPose` is a `RectPose`. `IDENTITY_POSE_COMPOSITION` keeps every pose world; under it a container groups its children and never carries them. kernel3d's scenes name it.
+  - Saves: `toJSON` writes version 3, whose child poses are local. `sceneFromJSON`, `Scene.loadState`, and `specsFromSerialized` read a version 1 or 2 save as world and make each pose local as it loads, under the scene's composition (`SpecsFromSerializedOptions.composition`). A recorded history from before is not restored: `SCENE_HISTORY_FORM` is 4.
+  - Specs or ops you build with world poses for children: put them through `localizeWorldPoses(specs, composition)`, or `localizeInScene(scene, specs)` when they land under a container already in the scene. `worldPosesOf(specs, composition)` reads them back as world, and `heldInFrame(scene, id)` names what a container's frame holds.
+  - `sceneToAdapter`'s `setPose` no longer moves a container's descendants by the same delta, and a container's pose target no longer shows them traveling beside it: the frame carries them. `PoseCascade` and the `cascade` argument of `scenePoseTarget` and `sceneClipTargets` are gone.
+  - The group action makes a frame group, whose pose is authored, under any composition; it no longer derives an envelope's pose from its members under the identity strategy.
+  - `resolvePreviews` answers each entry's pose in world, and a previewed frame brings the children it carries.
+  - `SnapTarget.slotPose` is world, as documented; `snapToContainer` stores it in the target's frame.
+  - `diagramScene` returns each spec's pose in its container's frame (`composition`, default `RIGID_POSE_COMPOSITION`; pass `IDENTITY_POSE_COMPOSITION` to read the layout in world). Body rows, container titles, lanes, and members are stored relative to what holds them; `DiagramView`'s reports, `diagramLayoutOf`, and `documentFromScene` stay in world.
+  - `svgNodesFromKit` folds a tree's `composition` when it has one, and `unpackSvgFiles` stores each imported node in its container's frame.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [0c6c086]
+- Updated dependencies [436f034]
+- Updated dependencies [99fc88d]
+- Updated dependencies [0145603]
+- Updated dependencies [b2bd005]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [726d80b]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [b4a8e98]
+- Updated dependencies [60c7c69]
+- Updated dependencies [fc0962a]
+- Updated dependencies [8b14236]
+- Updated dependencies [41ebe89]
+- Updated dependencies [47330a3]
+- Updated dependencies [db4b0aa]
+- Updated dependencies [1298c24]
+- Updated dependencies [76edfb1]
+- Updated dependencies [61e07e5]
+- Updated dependencies [270bc4f]
+- Updated dependencies [7242ab2]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [2f3d924]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5c8636b]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [1968706]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [baf354e]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [18c96c3]
+- Updated dependencies [5af16a6]
+- Updated dependencies [966c37f]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [d9896bb]
+- Updated dependencies [03d30ee]
+- Updated dependencies [c8fcbc2]
+- Updated dependencies [34a364e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [b668624]
+- Updated dependencies [e9ea01b]
+- Updated dependencies [928f014]
+- Updated dependencies [3401898]
+- Updated dependencies [7e4c7c4]
+- Updated dependencies [5967c5c]
+- Updated dependencies [0dd5658]
+- Updated dependencies [2bdc135]
+- Updated dependencies [a4b6c5b]
+- Updated dependencies [16f7828]
+- Updated dependencies [0ac4e47]
+- Updated dependencies [8c7fb03]
+- Updated dependencies [3b25c35]
+- Updated dependencies [058fcdf]
+- Updated dependencies [1a64358]
+- Updated dependencies [99a8383]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [871a56b]
+- Updated dependencies [1fb8193]
+- Updated dependencies [f645651]
+- Updated dependencies [1e54d33]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [69d6ede]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/diagram@1.14.0
+  - @weasel-js/svg@1.14.0
+  - @weasel-js/pdf@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

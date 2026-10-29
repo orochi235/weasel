@@ -1,5 +1,93 @@
 # @weasel-js/pdf
 
+## 1.14.0
+
+### Patch Changes
+
+- 2f3d924: Text runs can turn their glyphs. A `StyledRun`'s new `rotate` turns each of its glyphs that many degrees, clockwise, each about its own pen on the baseline, as SVG's `rotate` does; the glyphs keep their places along the line. Layout carries it on each `PlacedGlyph` as `rotate`, and the renderer draws it on every tier: atlas and canvas quads, color glyphs and outline glyphs, with painted bounds grown to hold the turned glyph. `textToPath`, `textClusters` and PDF export turn the glyphs the same way.
+  
+  SVG import reads `rotate` on a `<text>` or `<tspan>` instead of warning: each value turns one glyph, a glyph past the end of a list takes its last value, and a `<tspan>`'s own list wins over the text's. A list naming different angles over white space SVG collapses is reported and not read. Export writes a run's turn as `rotate` on its `<tspan>`.
+  
+  This adds API: `StyledRun.rotate`, `ResolvedRun.rotate`, `PlacedGlyph.rotate`, `LaidOutOutlineGlyph.rotate`, `glyphTurn`, and `penX` and `rotate` on `LaidOutQuad`. `QUAD_STRIDE` is now 11: each packed quad in `LaidOutGroup.quadData` gains its pen and its turn after `baselineY`, so code reading `quadData` by a hard-coded stride of 9 breaks.
+- 5af16a6: `@weasel-js/text` exports `glyphOutlineAt(d, glyph, dx, dy)`, which sets a glyph's em-space outline data where the
+  renderer's outline tier draws it: wound positive, grown for synthetic bold, and sheared for synthetic italic.
+  `textToPath` and `textClusters` already placed glyphs this way. `@weasel-js/pdf` now does too, so a glyph it draws
+  as an outline is wound positive whichever way its face winds it, and glyphs from faces that disagree on winding fill
+  where they overlap under nonzero, as they do on the canvas.
+- 966c37f: `writePdf` exports shaped text as the glyphs its shaper chose. Before, a shaped run was written one code point at a time, so Arabic lost its joining forms and Devanagari its conjuncts, and every code point of a cluster drew its own glyph on top of the one the cluster drew. Now each cluster's glyphs are written by glyph index where the shaper set them, a mark lifted off the baseline with `Ts`. A cluster of one glyph reads back through `/ToUnicode` as all of its code points (क्ष copies as क्ष); a cluster `/ToUnicode` cannot give back, such as a letter drawn as a body and its dots, is wrapped in `/ActualText` with its text. A face that cannot be embedded draws the shaped cluster's outline rather than each code point's.
+  
+  This adds API: `ShapedCluster.text`, the text a cluster's glyphs stand for.
+- Updated dependencies [79357fc]
+- Updated dependencies [d6221a7]
+- Updated dependencies [38bb299]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [7b048f4]
+- Updated dependencies [aba8563]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [2f3d924]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [8763fc3]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [e7fca17]
+- Updated dependencies [64d4e97]
+- Updated dependencies [d7d29f9]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [5af16a6]
+- Updated dependencies [966c37f]
+- Updated dependencies [941f382]
+- Updated dependencies [9ef7751]
+- Updated dependencies [561472d]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [c66c536]
+- Updated dependencies [cbb344e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [d3fdba8]
+- Updated dependencies [f9282f7]
+- Updated dependencies [0509c29]
+- Updated dependencies [3803ba2]
+- Updated dependencies [2e4943e]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [32889fc]
+- Updated dependencies [1fb8193]
+- Updated dependencies [ab41dea]
+- Updated dependencies [f645651]
+- Updated dependencies [5399b45]
+- Updated dependencies [55375c0]
+- Updated dependencies [486ff61]
+- Updated dependencies [23dcddf]
+- Updated dependencies [f2acefd]
+- Updated dependencies [95eb9d3]
+- Updated dependencies [ff3c2ad]
+- Updated dependencies [b0d5f18]
+- Updated dependencies [7507e13]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+  - @weasel-js/font@1.14.0
+  - @weasel-js/renderer@1.14.0
+  - @weasel-js/text@1.14.0
+  - @weasel-js/stroke@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/geom@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

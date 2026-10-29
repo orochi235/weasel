@@ -1,5 +1,156 @@
 # @weasel-js/path-tools
 
+## 1.14.0
+
+### Patch Changes
+
+- 607cb0e: The anchor selection commands (`growAnchorSelection`, `shrinkAnchorSelection`, `selectEveryNthAnchor`, `selectCornerAnchors`, `selectSmoothAnchors`, `invertAnchorSelection`) and each of `setSpiroKind`'s variants have icons, so an action bar shows them as glyphs rather than as text. They are `path-tools:` glyphs under the new "Anchor selection" and "Spiro points" groups.
+- 436f034: `central-topic` draws its outline as an oval of four circular arcs instead of an ellipse, flatter across the top, so it holds solid rows and columns at 16px 1x where the ellipse stepped through gray on every side. `blend` is redrawn on the pixel grid at a stroke one pixel wide, with a larger circle, so it no longer renders gray at 1x.
+- c13f843: The `path-tools:roughen` and `path-tools:puckerBloat` glyphs are redrawn so each reads at 16px. Roughen is a square whose edge is finely toothed, where it was a square with its corners knocked out of place. Pucker & Bloat shows both sides of the effect, pinched to spikes on its left half and bloated round on its right, where it was a four-point star.
+- c898ec6: Every path effect's create action reads `hideSources` from its params, so Blend, Bend Along, and Repeat Along can
+  hide their sources when made, and Text Along Path can be told to leave them shown. The edit action still ignores it.
+- 5b7d0ac: Breaking: an immediate action's params carry the event's point as `world`, a `WorldPoint`, in place of `worldX`/`worldY`, and a click's press point as `press` in place of `pressX`/`pressY`. Read `params.world.x` where you read `params.worldX`, and pass `{ world: { x, y } }` where you passed `{ worldX: x, worldY: y }`: to `trigger`, as a menu's params, and to an invoker called directly. The new exported `ImmediateParams` type names every field the dispatcher puts in the bag; cast `params` to it to read them. `trigger` asks `enabled` at `params.world`. A parallax plane now carries `press` into the plane as it already did the release point. The align and flip actions' `'pointer'` reference reads `world` too. The input events themselves are unchanged: a `ClickEvent` still has `x`/`y` and `pressX`/`pressY`, and `useClipboardOps`' `paste(at)` keeps its `{ worldX, worldY }` shape.
+- aeb8e3d: Resample, Convert to path (`releaseSpiro`), Set Spine and Release Spine have glyphs of their own (`path-tools:resamplePath`, `releaseSpiro`, `setBlendSpine`, `releaseBlendSpine`), so a command bar draws them as icons instead of their labels.
+- 39cb8ed: `core:symmetricHandles`, `core:simplifyBrush`, `core:harmonize`, `path-tools:spiro`, `path-tools:spiroSmooth`, `path-tools:spiroG4`, and the warp tools' `path-tools:distort`, `path-tools:envelope` and `path-tools:puppetWarp` are redrawn on the 16px pixel grid at a one-pixel stroke. The spiro S-curves now run level and along the pixel diagonal, so at 1x they no longer render as a gray diagonal. `simplifyBrush` is now a zigzag path that runs straight from inside the brush's ring, and `harmonize` is a circular arc under two equal curvature-comb teeth.
+- a58fb4f: Every reader of a `PolygonPath`'s coords now reads them where its `origin` puts them: hit-testing and marquee/lasso picking, distance, anchors (`pathToAnchors`, anchor editing, corner expansion and restore), the booleans, `pathToD` and SVG export, cubic contours, puppet meshes, pose interpolation, derived parts, path warps, diagram connectors, and skinning. `translatePath` and `rotatePathAround` move the origin rather than the coords, and `anchorsToPath` given `like` writes back from its origin. This adds API: `worldCoords`, `pathPoint`, `originOf`, `addOrigin` and `coordsFrom` read and write coords in a path's own space.
+  
+  Paths far from 0 now get an origin where they are made: past `ORIGIN_THRESHOLD` (16,384), `anchorsToPath` without `like` (the pen tool), `pathFromD`, the booleans, and SVG import measure the path from `originFor`, the rounded center of its points. `PathBuilder.autoOrigin()` and `transformPath`'s `{ autoOrigin: true }` opt a producer in. A path near 0 is built as before.
+- b06e2b9: Breaking: `PointerWorldPos`, the pointer store's value, is `{ world: WorldPoint; viewId }` in place of `{ worldX, worldY, viewId }`. Read `p.world.x` where you read `p.worldX`, and publish with `store.set({ world: { x, y }, viewId })`. `useClipboardOps`' own `getDropPoint` option keeps its `{ worldX, worldY }` shape. When that option is left out, the paste point read from the pointer store no longer carries the store's `viewId` along with it.
+- 01b103e: `core:retractHandles` and `path-tools:resamplePath` are redrawn on the 16px pixel grid. `retractHandles`'s corner runs on the pixel diagonal and its arrows carry 45-degree heads; `resamplePath`'s anchors are two pixels square on pixel corners, so they no longer blur at 1x.
+- 8e2c8c8: <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
+  
+  Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [d6221a7]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [a40d519]
+- Updated dependencies [2993216]
+- Updated dependencies [61e07e5]
+- Updated dependencies [a64647a]
+- Updated dependencies [7b048f4]
+- Updated dependencies [aba8563]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [8ef803d]
+- Updated dependencies [2f3d924]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [7cc9da9]
+- Updated dependencies [2692828]
+- Updated dependencies [767713e]
+- Updated dependencies [2232189]
+- Updated dependencies [6a69c27]
+- Updated dependencies [8763fc3]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [a370edb]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [f7c49b7]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [4aa138a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [e7d70f5]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9a3626f]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [941f382]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [561472d]
+- Updated dependencies [c66c536]
+- Updated dependencies [cbb344e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [d3fdba8]
+- Updated dependencies [f9282f7]
+- Updated dependencies [0509c29]
+- Updated dependencies [3803ba2]
+- Updated dependencies [01b103e]
+- Updated dependencies [9819d7a]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [871a56b]
+- Updated dependencies [f645651]
+- Updated dependencies [95eb9d3]
+- Updated dependencies [7507e13]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/renderer@1.14.0
+  - @weasel-js/stroke@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/routing@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/cursor@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

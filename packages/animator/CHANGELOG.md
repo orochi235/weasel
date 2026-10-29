@@ -1,5 +1,48 @@
 # @weasel-js/animator
 
+## 1.14.0
+
+### Patch Changes
+
+- cc0e73a: `useAnimator` takes an optional `clock`, a `ClockHandle` from `@weasel-js/clock`. Given one, the animator runs no frame loop of its own: it advances when the clock moves, reading its time from the clock, so the clock's pause, rate, seeking, `holdAt` and visibility gating govern it, and the host's `useClockLoop` syncs it. When the clock goes back, by a seek or a negative rate, the running animations play backward to the time it stands at; one that has ended meanwhile, at its end or back at its start, does not come back. Without a clock nothing changes. This adds API.
+- a58fb4f: Every reader of a `PolygonPath`'s coords now reads them where its `origin` puts them: hit-testing and marquee/lasso picking, distance, anchors (`pathToAnchors`, anchor editing, corner expansion and restore), the booleans, `pathToD` and SVG export, cubic contours, puppet meshes, pose interpolation, derived parts, path warps, diagram connectors, and skinning. `translatePath` and `rotatePathAround` move the origin rather than the coords, and `anchorsToPath` given `like` writes back from its origin. This adds API: `worldCoords`, `pathPoint`, `originOf`, `addOrigin` and `coordsFrom` read and write coords in a path's own space.
+  
+  Paths far from 0 now get an origin where they are made: past `ORIGIN_THRESHOLD` (16,384), `anchorsToPath` without `like` (the pen tool), `pathFromD`, the booleans, and SVG import measure the path from `originFor`, the rounded center of its points. `PathBuilder.autoOrigin()` and `transformPath`'s `{ autoOrigin: true }` opt a producer in. A path near 0 is built as before.
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [9912c13]
+- Updated dependencies [3d36f5e]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [b142892]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [783756a]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [e7fca17]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [2e4943e]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/clock@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

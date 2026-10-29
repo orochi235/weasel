@@ -1,5 +1,17 @@
 # @weasel-js/simulation
 
+## 1.14.0
+
+### Patch Changes
+
+- cc0e73a: `useSimulation` takes an optional `clock`, a `ClockHandle` from `@weasel-js/clock`. Given one, the simulation runs no frame loop of its own: it steps once per `step` ms of the clock's time (the clock's own `step`, or 1000/60), so the clock's pause, rate and visibility gating govern it, and the host's `useClockLoop` syncs it. A run is built up by stepping and cannot be unwound, so the clock should be declared `seekable: false`; time it goes back, as on a `reset`, steps nothing and leaves the nodes where they are. Time spent stopped or settled owes no steps once `restart` resumes it. `createSimulation` is unchanged, and without a clock nothing changes. This adds API.
+- Updated dependencies [9912c13]
+- Updated dependencies [3d36f5e]
+- Updated dependencies [34a364e]
+- Updated dependencies [4f68c3a]
+  - @weasel-js/clock@1.14.0
+  - @weasel-js/react@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

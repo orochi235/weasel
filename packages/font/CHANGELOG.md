@@ -1,5 +1,15 @@
 # @weasel-js/font
 
+## 1.14.0
+
+### Patch Changes
+
+- 79357fc: An atlas or canvas face's `GlyphMetrics.ascent` and `descent` no longer allocate on each read: the products are kept until the face's metrics are measured again. Values are unchanged.
+- ec07e24: Resolving a font variant, and resolving a text style's default selection color, no longer build a new string on each call. Results are unchanged.
+- d68c4f8: `glyphIn` and `resolveGlyph` take an optional object to write their answer into, which they then return, so a caller that copies the fields out at once allocates nothing a code point. Text layout uses it: a HUD readout of 5,000 glyphs changing every frame allocated 4.70 MB a frame before and 4.48 after (teitou, headless Chromium, `tests/perf/hud-vs-dom.spec.ts` with `HVD_ALLOC=1`).
+- 7507e13: Drawing a glyph group allocates less each frame. `textureCacheKey` and `glyphFieldScale` keep their last answer, which is nearly always the next one asked for, rather than building a new string and pair per group, and the renderer stages a group's text color through one reused array where no color matrix maps it. Every frame of a static label pays these, as well as text that changes.
+- @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

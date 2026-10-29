@@ -1,5 +1,39 @@
 # @weasel-js/theme
 
+## 1.14.0
+
+### Patch Changes
+
+- eb43052: `themePrefsReferences(schema)` (on `@weasel-js/theme/prefs`) reads a token's CSS as a reference to another
+  custom property where the whole value is one `var()`, and names the leaf of a theme prefs schema that edits it.
+  Adds API.
+- 348a400: `themePrefsSchema` names a token's leaf without its group's prefix, since the leaf sits on that group's page: `button-pressed-surface` reads `pressed-surface` on the Button page, and `gray-50` reads `50`. The whole token name is the leaf's tag, so a settings filter still finds it, and the leaf's path is unchanged.
+- 775b724: Folds several duplicated pieces of weasel-ui into one definition each. `SwatchGrid` and `CommandPalette` change behavior or look as noted below; the rest look and behave as before.
+  
+  - The transparency checker under swatches, wells, and gradient stops is one background layer, built in `components/checker.module.css`; the `--wzl-checker-a` token's description points there instead of spelling out the gradient to paste.
+  - `solidColorOf` decides "solid" with `@weasel-js/paint`'s `isSolidPaint`, and `PaintInput`, `PropertyReadout`, and `paintPreviewCss` read a solid paint's color through it.
+  - Adds `SegmentedSize`, `SegmentedVariant`, and `SEGMENTED_VARIANT_ICONS`, shared by `ToggleBar`, `ButtonBar`, and `OptionsBar`. Each bar's own size and variant types and its `*_VARIANT_ICONS` map are now aliases of these.
+  - `SwatchGrid` moves focus with the kit's grid roving rule: Left and Right now wrap and follow right-to-left layout, and Down from a full row lands on the last swatch of a shorter row below it.
+  - `CommandPalette` draws each shortcut with `ShortcutKeys`, so its keycaps are lettered in the UI font at normal weight, as every other list of actions shows them.
+  - `Slider` and `RangeSlider` share one stylesheet for the invisible hit area past the track and each thumb.
+  - `Button` passes `id` and any `data-*` attribute through to its `<button>`.
+- 461b6e1: New `--wzl-workspace` theme token: the whole workspace background as one layer, `--wzl-workspace-surface` struck with diagonal bands of `--wzl-workspace-line`. Use it as an element's `background`. The asset editor's preview stage now paints from it. `--wzl-workspace-surface` is now `--wzl-surface-raised` with its tint taken out (`#272727` dark, `#e7e7e7` light) rather than `--wzl-surface-sunken`, so every workspace drawn from it is lighter than before.
+  
+  A theme token whose value writes a `var(--wzl-…)` inside it is now redeclared in every mode block when that token varies by mode, the same as a `{token}` reference, so the value resolves against the mode of the element it is used on.
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [b142892]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [a370edb]
+- Updated dependencies [9a3626f]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [78213f7]
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

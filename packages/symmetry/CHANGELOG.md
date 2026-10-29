@@ -1,5 +1,121 @@
 # @weasel-js/symmetry
 
+## 1.14.0
+
+### Patch Changes
+
+- a80f8be: A scene composes poses by default. A child's stored pose is now relative to the frame of the nearest container above it that defines one (`RIGID_POSE_COMPOSITION`), so moving a container writes one pose, rotating it rotates its contents, and resizing it leaves them where they draw. A container whose pose derives from its children (`dependsOn: 'children'` with a `derivePose`) is an envelope, not a frame: its children share the frame above it.
+  
+  **This breaks a consumer that stores absolute child poses.** To migrate:
+  
+  - A scene whose `TPose` is not a rect pose must name its composition: `useScene` and `createScene` require `composition` in the type unless `TPose` is a `RectPose`. `IDENTITY_POSE_COMPOSITION` keeps every pose world; under it a container groups its children and never carries them. kernel3d's scenes name it.
+  - Saves: `toJSON` writes version 3, whose child poses are local. `sceneFromJSON`, `Scene.loadState`, and `specsFromSerialized` read a version 1 or 2 save as world and make each pose local as it loads, under the scene's composition (`SpecsFromSerializedOptions.composition`). A recorded history from before is not restored: `SCENE_HISTORY_FORM` is 4.
+  - Specs or ops you build with world poses for children: put them through `localizeWorldPoses(specs, composition)`, or `localizeInScene(scene, specs)` when they land under a container already in the scene. `worldPosesOf(specs, composition)` reads them back as world, and `heldInFrame(scene, id)` names what a container's frame holds.
+  - `sceneToAdapter`'s `setPose` no longer moves a container's descendants by the same delta, and a container's pose target no longer shows them traveling beside it: the frame carries them. `PoseCascade` and the `cascade` argument of `scenePoseTarget` and `sceneClipTargets` are gone.
+  - The group action makes a frame group, whose pose is authored, under any composition; it no longer derives an envelope's pose from its members under the identity strategy.
+  - `resolvePreviews` answers each entry's pose in world, and a previewed frame brings the children it carries.
+  - `SnapTarget.slotPose` is world, as documented; `snapToContainer` stores it in the target's frame.
+  - `diagramScene` returns each spec's pose in its container's frame (`composition`, default `RIGID_POSE_COMPOSITION`; pass `IDENTITY_POSE_COMPOSITION` to read the layout in world). Body rows, container titles, lanes, and members are stored relative to what holds them; `DiagramView`'s reports, `diagramLayoutOf`, and `documentFromScene` stay in world.
+  - `svgNodesFromKit` folds a tree's `composition` when it has one, and `unpackSvgFiles` stores each imported node in its container's frame.
+- 12dcc21: Add a `wallpaper` symmetry kind, which tiles a group's contents across a lattice. The spec's
+  `spacing`, `angle`, `rowSpacing`, and `rowAngle` set the lattice, its `extent` is the box around the
+  center the lattice fills, and its `cell` draws one of the turning or reflecting kinds about every
+  lattice point, turned `cellAngle` from the lattice. `wallpaperSpec(name, spacing)` gives the fields
+  for fifteen of the seventeen wallpaper groups, listed in `WALLPAPER_GROUPS`. The guide outlines the
+  extent, dots the lattice, and adds a handle for the row.
+  
+  `SymmetryKindDef` loses `group` in favor of `pointGroup`, the copies that keep the center fixed,
+  which path edits now read. This is a breaking change for code that read `group`.
+- 304dd60: `WALLPAPER_GROUPS` now has all seventeen wallpaper groups: pgg and p4g join it. They use a new optional `SymmetrySpec.glideRows`, which makes a wallpaper's glide mirror every other row rather than every other column; on a lattice whose rows are offset, that puts the glide axes between the rows, which is what those two groups need. A spec without it behaves as before.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [767713e]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [871a56b]
+- Updated dependencies [f645651]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/geom@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

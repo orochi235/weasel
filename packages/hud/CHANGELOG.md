@@ -1,5 +1,157 @@
 # @weasel-js/hud
 
+## 1.14.0
+
+### Patch Changes
+
+- b142892: Add `attachMenuDismiss` to `@weasel-js/menu`: it closes a menu on a press or wheel outside it, on the window losing focus, and on a resize, attaching to any `Window`-like target and returning a detach. `press: false` leaves out the press listener, and `keepOnBlur` keeps the menu open through a blur. ui's `ContextMenuHost` and hud's `attachMenuHost` both dismiss through it.
+  
+  `normalizeHex` takes an optional form: `'rgb'` drops alpha, `'rgba'` always writes it (`ff` when none was named). `tryNormalizeHex` is the same, returning undefined where `normalizeHex` throws. hud's color row and ui's `ColorField` and `TokenPanel` read hex through them. hud's hex row now accepts `#rgba` shorthand, and `ColorField` shows a malformed `#` value as black rather than passing it to the color input.
+  
+  core's `toHex8`, `getAlpha01`, `withAlpha01` and `mergeAlphaFromPrev` read hex through `tryNormalizeHex` too. A malformed `#` value (`#xyz`, `#12345`) now comes back unchanged instead of expanded into an invalid 8-digit string, and `getAlpha01` reads 1 from one. `toHex8` now lowercases `#RRGGBB` as it already did every other hex form, and ignores surrounding whitespace.
+- 1c046e3: Keyboard focus is one contract across the DOM and the HUD. `@weasel-js/headless` adds `FocusScope<T>` (the focused target, whether its ring shows, `focus`, `moveFocus`, `tabOrder`, `subscribeFocus`) and the `tabSort` and `tabStep` rules behind it. `Hud` now extends `FocusScope<Widget>`, and `HudFocusOptions` is an alias of `FocusScopeOptions`; its behavior is unchanged, and `@weasel-js/hud` now depends on `@weasel-js/headless`. `@weasel-js/ui` adds `domFocusScope(root)`, the same contract over the elements under `root`, with the browser's Tab order.
+- b59380e: Holding a step chip on a `@weasel-js/hud` canvas menu's number row now repeats, as a `@weasel-js/ui` number field's steppers do: one step on the press, then after 400 ms one every 60 ms until release, until the pointer leaves the chip, or until the value reaches its bound. The step now comes on the press rather than the release. `attachMenuHost` and `createMenuWidget` take `repeat` to time it.
+  
+  `@weasel-js/headless` exports `createStepRepeat`, the hold-to-repeat both run, with `REPEAT_DELAY_MS`, `REPEAT_EVERY_MS`, and `Scheduler` / `timerScheduler` for the clock it runs on; `@weasel-js/menu`'s `MenuScheduler` is now that `Scheduler`. `@weasel-js/quantity` exports `canSpin(key, from, bounds)`, whether a spin key moves a value anywhere, which `menuNumberCanStep` and `UnitField`'s steppers both use. This adds API.
+- ba998f9: `@weasel-js/headless` adds `editEnd`, the one rule for how a text field's edit ends: Enter and blur commit, Escape cancels, with options for an Escape that commits and for a multiline field that leaves Shift+Enter alone. hud's menu text rows, ui's `MenuTextValue` and `RenameField`, and text-dom's `useTextEdit` now read it; none of them behaves differently. `@weasel-js/text-dom` now depends on `@weasel-js/headless`.
+- 045daf9: The HUD's render layer declares `deps`, which hold for as long as no widget would draw anything different: the same widgets in the same order, each with the same `hidden`, bounds and `deps`, under the same focus and canvas size. A canvas then reuses the layer's commands instead of asking every widget again, and once the layer is large enough for its retain policy, keeps its pixels instead of drawing its text again each frame. A showing widget that declares no `deps`, or paints `content` from the scene, still redraws the layer every frame.
+- 7bb0c6e: A HUD menu's color row that has a `set` is now edited from the menu. It draws as a submenu with the color as a swatch in its icon column; the submenu holds one row per palette color, drawn as its swatch, which writes that color, then a `Hex` text row that writes a typed `#rgb`, `#rrggbb` or `#rrggbbaa`; the menu stays open through both. A row with `alpha` keeps its opacity when a swatch is picked. The palette comes from the new `palette` option on `createMenuWidget` and `attachMenuHost`, defaulting to the new `DEFAULT_MENU_PALETTE`. Adds API. A color row with no `set`, or disabled, still draws read-only.
+- dfcc765: A HUD menu's text row puts the caret where the typed text is pressed, both when the press starts the edit and during it; a press over the row's label still starts the edit with the caret at the end. Alt+Left and Alt+Right move the caret by a word, and extend the selection by one with Shift held.
+- a3a58c1: A HUD menu's text row now takes typed text. Enter on a highlighted text row, or a press on it, starts an edit: a character goes in at the caret, Left, Right, Home and End move it (Cmd or Ctrl with an arrow goes to an end), Shift with any of them selects, Cmd or Ctrl+A selects all, a character, Backspace or Delete replaces the selection or takes the character either side of the caret, Enter writes the text without closing the menu, and Escape puts the value back. A press on another row, or the menu closing, keeps what was typed. The row draws its value in the foreground color with its selection and caret while it is typed into, and the panel leaves room to type. There is no IME composition, and a press does not place the caret.
+- c5e74cf: A HUD menu's text row takes input-method composition: while an edit runs, `attachHud` moves the canvas's DOM focus to a hidden `<input>` placed at the caret, draws the text being composed underlined in place of the selection, and enters it when the composition ends. The HUD keeps focus while the input holds it, and keys typed there reach the widget as the canvas's would; keys belonging to a composition reach neither. Text the platform enters without a key, as from a character picker, is entered too. Alt+Backspace and Alt+Delete now delete a word.
+  
+  Adds API: `Widget.textInput`, typed `HudTextInput`, through which any widget can ask for the same hidden input.
+- bb10dc8: A HUD menu's text row now edits by the platform's keys: on macOS, Cmd+Backspace deletes to the start of the line
+  and Cmd+Delete (Fn+Cmd+Delete) to its end, with Option working by the word as before. On Windows and Linux, Ctrl
+  works by the word (Ctrl+Arrow, Ctrl+Backspace, Ctrl+Delete) where it used to jump to an end, and Ctrl+Alt (AltGr)
+  types its character instead of being swallowed.
+- a2ce048: A HUD redrawing a widget allocates less each frame. `attachHud` refills a widget's cached entry in place rather than replacing it, a kit widget's `deps` hands back one array until it changes, and a text widget builds its command at the corner it is drawn at and returns the same array while nothing changed.
+- 6cb0cf6: `@weasel-js/headless` adds `imeKey(e)`, whether a keydown belongs to an input method mid-composition: `isComposing`, or `keyCode` 229, which Safari sends for the Enter that ends a composition, or a `Process` or `Dead` key. This adds API. The hud's hidden text input, text-dom's `useTextEdit` and ui's `ComboBox` now use it in place of their own checks; `ComboBox` no longer commits typed text on Safari's composition-ending Enter, and `useTextEdit` also leaves `Process` and `Dead` keys alone.
+  
+  A context menu's text row and `PageTabs`' rename field leave Enter and Escape to an input method. Before, confirming a Japanese or Chinese candidate with Enter committed the half-typed text.
+- 5b7d0ac: Breaking: an immediate action's params carry the event's point as `world`, a `WorldPoint`, in place of `worldX`/`worldY`, and a click's press point as `press` in place of `pressX`/`pressY`. Read `params.world.x` where you read `params.worldX`, and pass `{ world: { x, y } }` where you passed `{ worldX: x, worldY: y }`: to `trigger`, as a menu's params, and to an invoker called directly. The new exported `ImmediateParams` type names every field the dispatcher puts in the bag; cast `params` to it to read them. `trigger` asks `enabled` at `params.world`. A parallax plane now carries `press` into the plane as it already did the release point. The align and flip actions' `'pointer'` reference reads `world` too. The input events themselves are unchanged: a `ClickEvent` still has `x`/`y` and `pressX`/`pressY`, and `useClipboardOps`' `paste(at)` keeps its `{ worldX, worldY }` shape.
+- f645651: Text rewritten every frame stops allocating its layout and quad arrays. Adds API: `dropRuns(runs)` tells the text caches a runs array will not be laid out again, and `cachedLayoutRuns` and `cachedPaintRuns` take a last argument, `'keep'` (the default) or `'read'`, for a caller that is done with the result before its next call. A layout that no runs array files, that the structural list has let go, and that every caller only read gives its arrays to the next layout and painting of the same size. The renderer reads; a HUD text widget drops the runs it replaces. Results are unchanged.
+- 7a6f462: `<CanvasView follows>` names a view whose layers this one paints and picks, read at every paint and pick, while it keeps its own rect and camera. Where that view owns a selection, this one acts on it and draws its chrome. A loupe that is a view follows whichever view is under its aim, so a lens over a `<CanvasView>` panel no longer shows or picks a layer the panel hides, and a press in it selects into the panel's own selection where the panel has one.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [79357fc]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [8ef803d]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [1c046e3]
+- Updated dependencies [11e2b7d]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [b59380e]
+- Updated dependencies [ba998f9]
+- Updated dependencies [9a963cd]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [6cb0cf6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [4aa138a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [5e24531]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [230a206]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [871a56b]
+- Updated dependencies [f645651]
+- Updated dependencies [7507e13]
+- Updated dependencies [eb43052]
+- Updated dependencies [348a400]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [d5c4ee6]
+- Updated dependencies [775b724]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [461b6e1]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/font@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/gestures@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/menu@1.14.0
+  - @weasel-js/headless@1.14.0
+  - @weasel-js/theme@1.14.0
+  - @weasel-js/loupe@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

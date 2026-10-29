@@ -1,5 +1,12 @@
 # @weasel-js/icons-plugin
 
+## 1.14.0
+
+### Patch Changes
+
+- 572e537: In dev and vitest, a linked workspace package's glyphs now come from its source table rather than its built one, so a glyph added to a package shows up without rebuilding that package first.
+- @weasel-js/icons@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

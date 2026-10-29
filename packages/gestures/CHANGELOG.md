@@ -1,5 +1,20 @@
 # @weasel-js/gestures
 
+## 1.14.0
+
+### Patch Changes
+
+- 41a013b: The wheel scrolls a layout container whose content runs past its bounds, such as `tileGrid({ overflow: 'scroll' })`. `<SceneCanvas>` registers `containerScrollAction` (`container.scroll`) ahead of the wheel pan: over a container whose strategy's `contentExtent` reaches past its bounds, the wheel moves `scene.scroll`'s offset for it, clamped to that extent, and Shift+wheel scrolls it across; anywhere else it declines and the wheel pans the view. `scrollRange` and `scrollableAt` answer how far a container can scroll and which one is under a point. Hiding the overflow is the container's own `clip`. This adds API.
+  
+  A wheel event now carries the world point under the pointer: `WheelEvent` gains optional `x`/`y`, `Action.enabled` is handed it, an immediate invoker's params carry it as `worldX`/`worldY`, and `InvocationCtx.world` holds it.
+- 8ef803d: Breaking: `PressFacts` and `ReleaseFacts`, what the pointer recognizer keeps of a press and a release and hands a hold observer, carry the world point as `world: Point` in place of the flat `worldX` and `worldY`. The events they synthesize are unchanged: a click still has `x`, `y`, `pressX` and `pressY`.
+- Updated dependencies [b142892]
+- Updated dependencies [11e2b7d]
+- Updated dependencies [b59380e]
+- Updated dependencies [4aa138a]
+- Updated dependencies [5e24531]
+  - @weasel-js/menu@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

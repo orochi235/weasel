@@ -1,5 +1,73 @@
 # @weasel-js/geom
 
+## 1.14.0
+
+### Patch Changes
+
+- e974dba: The curve-preserving booleans and pieces no longer flatten when outlines coincide. Two inputs that share a stretch of one line or curve (a shape and a copy of it, the same circle drawn from another start point, two faces of a divide united back together, a rect along a half disk's straight side) are cut where the shared stretch starts and ends, and the pieces along it become one edge both inputs own, so the result keeps its curves. `pathUnion(a, a)` gives back `a`'s own cubics.
+- 30582cb: `pathUnion`, `pathIntersect`, `pathSubtract` and `pathExclude` keep curves. Where any input has a quadratic or cubic, the outlines are cut where they cross, each piece is kept or dropped by the winding on its two sides, and the result's curves are pieces of the inputs' curves: two circles united where they do not touch come back as their own cubics. This changes their output, which used to be straight segments only. Inputs of straight lines only, inputs over 4096 segments, and the cases the curve path declines (outlines that coincide or share a stretch, a cubic that crosses itself) still go through `polygon-clipping` and come back flattened. `pathDivide`, `pathCrop`, `pathTrim`, `pathMerge` and the face pieces still flatten.
+- 2999820: `pathDivide`, `pathDividePieces`, `pathFacePieces`, `pathCrop`, `pathCropPieces`, `pathTrim` and `pathMerge` keep curves, as `pathUnion` and the other three booleans already did: each curve in a piece is a piece of an input curve, so a circle no other input touches comes back as its own cubics. This changes their output, which used to be straight segments only. They fall back to `polygon-clipping`, flattened, in the same cases the four booleans do. Signatures are unchanged.
+- 6d5f7c2: `@weasel-js/geom/3d` adds `quatMultiply`, `quatConjugate` and `quatRotate`: composing two rotations, undoing one, and rotating a vector by one. Additive API.
+- 14f8583: `@weasel-js/geom/nd` exports `createSettledCache()`: a value built only once its source holds still. Each `read(key, build)` passes the source's key as a tuple; the first read at a new key answers null, and the second at the same key builds and keeps the value (`reads` moves which read builds it, and `reads: 1` makes it a plain memo). Keys match element by element under `Object.is`. This adds API.
+  
+  Core's pick index, the diagram port and label indexes, and kernel3d's snap box index now use it, in place of three copies of that rule. They build at the same reads as before.
+- 783756a: A scoped container's grid runs in the container's own frame: from its corner, along its axes, so
+  it turns when the container does. `sceneGridRegions` gives each region its `frame` and, without an
+  `outlineOf`, the outline the container draws; the grid layer draws a region's lattice in that
+  frame, and `pointToGridCell`, `useGridCellHover` and `createCellHighlightLayer` count and draw a
+  cell in it. `gridSnapSource` rounds in the same frame, read through the new
+  `SnapCollect.frameOf`, which a scene session fills from `sceneBoxFrames`. This changes behavior
+  for an unturned container too: its lattice now starts at its corner rather than at the grid's
+  origin. A subject spread over two containers still snaps on the world lattice.
+  `sceneGridRegions` now takes a `Scene`, and `GridRegionScene` is gone. geom adds `boxFrameOf` and
+  `pxExtentInFrame`.
+- e7fca17: `@weasel-js/geom` adds `joinPaths(parts)`, which joins polygon paths into one `'nonzero'` compound path measured from the first part's origin, re-measuring any part that has another. `textToPath`, `textToPathsByPaint` and `textClusters` join their glyphs through it, so text set far from 0 keeps an origin instead of dropping it, and a decoration rule there is measured from one too. A derived path made of several parts (a blend, a repeat) joins through it as well.
+- a58fb4f: Every reader of a `PolygonPath`'s coords now reads them where its `origin` puts them: hit-testing and marquee/lasso picking, distance, anchors (`pathToAnchors`, anchor editing, corner expansion and restore), the booleans, `pathToD` and SVG export, cubic contours, puppet meshes, pose interpolation, derived parts, path warps, diagram connectors, and skinning. `translatePath` and `rotatePathAround` move the origin rather than the coords, and `anchorsToPath` given `like` writes back from its origin. This adds API: `worldCoords`, `pathPoint`, `originOf`, `addOrigin` and `coordsFrom` read and write coords in a path's own space.
+  
+  Paths far from 0 now get an origin where they are made: past `ORIGIN_THRESHOLD` (16,384), `anchorsToPath` without `like` (the pen tool), `pathFromD`, the booleans, and SVG import measure the path from `originFor`, the rounded center of its points. `PathBuilder.autoOrigin()` and `transformPath`'s `{ autoOrigin: true }` opt a producer in. A path near 0 is built as before.
+- 8e6ed97: A `PolygonPath` can carry an `origin`, the point its `coords` are measured from, in doubles; a `Mesh` built from one carries it too. This adds API. Far from 0 a float32 coordinate loses its fraction (at x = 262,144 it sits on a 1/32 grid, 2 px at 64x); measured from an origin beside the shape it keeps it. `PathBuilder.setOrigin(x, y)` builds such a path from points given in the path's own space.
+  
+  The renderer draws one where its origin puts it, batched or by its own draw, filled, stroked, clipped, and culled. `tessellate`, `tessellateStroke`, `markerHeads`, `strokeToPath`, `transformPath` and `boundsOfPath` honor it, and so does a node's stroked bounds.
+- 6b1b532: `findPathSnaps` and `findPathSnap` look up a probe's targets and segments in a bounding-volume tree built the first time an index is asked, instead of scanning every target and segment of every path on each probe. A snap over many paths now costs what the paths near the probe cost. The hits are the same, in the same order. An axis whose `scale` is 0 now reaches every target along it for the tangent, perpendicular and nearest kinds too, as it already did for the rest.
+- 9ef7751: `warpPath` refits a warped path with fewer anchors. In the refit it shares with `simplifyPath`, each cubic now runs as far along the samples
+  as one cubic can follow within the tolerance, and when the least-squares fit falls short, a search
+  over its two handle lengths looks for one that holds. `warpPath` also samples more densely where
+  the warp bends a segment. A puppet-warped bar pushed into an S refits with 11 anchors where it took
+  22, and a pulled 24-segment star with 59 where it took 96. The refit costs about twice as long: the
+  star's goes from 1.6 ms to 3.4 ms on an M-series Mac.
+- 2e4943e: `trackRun` takes a `direction: 'ltr' | 'rtl'` option and reports it on the run. Under `'rtl'` the run starts at its right end on the side it stands on, `tangent` points the way it reads, and each item is still tipped upright as left-to-right reading would tip it. A curved `Bar`, segmented row, `RadioGroup`, `TabList` and `PageTabs` read their root's computed `direction`, so in a right-to-left locale item 1 sits at the right end as it does laid out straight, and the chevron past a scrolled run's end points out of the end it is at.
+- 8e2c8c8: <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
+  
+  Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
+- 0fc0e50: A thick stroke flattens its path so its edges, half a width out, stay within the flatten tolerance of the true ones,
+  in place of capping every piece at 10° of turn. A bend whose edges sit far out still subdivides as finely as it
+  needs; a wiggle smaller than the stroke no longer does, so a 4-wide stroke over 512 small curves flattens to 1,750
+  points where it took 10,034. Breaking for callers of `extractPolylines`, `flattenCubicWithArcLen` and
+  `flattenQuadraticWithArcLen`: the `maxTurn` option and argument are replaced by `offset`, the distance out from the
+  path its outermost edge sits.
+- dc6f83a: `tessellate` measures a rect reaching past `ORIGIN_THRESHOLD` (2^14) from an origin, as it already did for a polygon that carries one, so a rect drawn far from 0 keeps the fractions of its corners. The mesh's `origin` says where; a rect near 0 has none, as before.
+- 97d889f: A `TrackRun` has `toShape(g)`, the fraction along its underlying shape that reading fraction `g` falls at. This adds a required member to the `TrackRun` interface, so an object built by hand to satisfy it needs one too. `Jog` reads left to right in a right-to-left locale as well, curved or straight, as playback controls do; its caption takes its own text's direction.
+- 9adc0cd: `transformPath` now gives a polygon that lands past `ORIGIN_THRESHOLD` (2^14) with no origin one of its own by default, so resizing a path, `pathInWorld`, and an SVG element's own skew or scale baked in on import keep their fractions far from 0. A rect it promotes to a polygon under rotation is measured from an origin too. Pass `{ autoOrigin: false }` for the old float32-only result. A caller that read a far-out result's `coords` without its `origin` now has to read through `worldCoords`.
+- 24e03ff: A puppet warp that folds solves faster, with the same result. Each round of the injective pass reads the
+  Jacobians inline, solves both coordinates against the edge system in one pass over its factor, and finds
+  the nearest flattening without allocating per triangle.
+- b43c94c: A puppet warp that folds untangles in fewer rounds. The injective pass now steps along a limited-memory
+  BFGS direction built over the same edge system, and stops after two settled rounds in a row instead of
+  one. The squashed disc in the fold tests takes 17 rounds where it took 28, and the bar pushed into an S
+  45 where it took 51, each ending at a lower untangling energy than before. Time per solve: the disc
+  went from 5.0 ms to 4.1 ms; the bar from 6.2 ms to 6.7 ms, since each round costs more.
+- dfdc8a6: A puppet warp that folds spends fewer rounds polishing once nothing is turned over. Past that point the
+  injective pass scales each step to the curvature the last one saw, so a step now runs its full length
+  where the line search used to halve nearly every one, and it stops once a round takes off less than 0.3%
+  of the energy above a rigid motion, where it compared against the whole energy. The bar pushed into an S
+  takes 34 rounds where it took 41; the squashed disc takes 19 where it took 18. Its result moves slightly,
+  so a refit of the warped outline can land on a different number of anchors.
+- e23101b: A puppet warp that folds untangles in fewer rounds when its bend is long. The injective pass shrinks its
+  softening at least 20% a round while some triangle is turned over, and at least 5% once none is, where it
+  shrank 10% throughout. The bar pushed into an S takes 41 rounds where it took 45; the squashed disc takes
+  18 where it took 17. Its result moves slightly, so a refit of the warped outline can land on a different
+  number of anchors.
+
 ## 1.13.0
 
 ### Patch Changes
