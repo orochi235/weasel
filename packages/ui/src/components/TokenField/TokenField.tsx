@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import f from '../field.module.css';
 import { TokenChip } from './TokenChip';
 import { useTokenDrag } from './tokenDrag';
@@ -98,6 +99,7 @@ export function TokenField<T>({
   const set = (at: number, next: T): void => onChange(value.map((v, i) => (i === at ? next : v)));
 
   const onInputKey = (e: KeyboardEvent<HTMLInputElement>): void => {
+    if (imeKey(e.nativeEvent)) return;
     const caretAtStart = e.currentTarget.selectionStart === 0 && e.currentTarget.selectionEnd === 0;
     if (SEPARATORS.has(e.key) && draft.trim() !== '') {
       e.preventDefault();

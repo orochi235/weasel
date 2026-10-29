@@ -346,6 +346,17 @@ describe('LayerList controls', () => {
     expect(screen.queryByLabelText('Rename Alpha')).toBeNull();
   });
 
+  it('leaves an input method\'s Enter to it while renaming', () => {
+    const onRename = vi.fn();
+    list({ onRename });
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    const field = screen.getByLabelText('Rename Alpha');
+    fireEvent.change(field, { target: { value: 'にほ' } });
+    for (const init of [{ key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 }]) fireEvent.keyDown(field, init);
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Rename Alpha')).toBe(field);
+  });
+
   it('starts a rename with F2 on the focused row, and Escape drops it', () => {
     const onRename = vi.fn();
     list({ onRename });

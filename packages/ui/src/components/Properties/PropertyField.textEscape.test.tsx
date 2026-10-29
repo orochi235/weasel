@@ -45,4 +45,14 @@ describe('a text field ended with Escape', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onChange.mock.calls).toEqual([['new']]);
   });
+
+  it('leaves an input method\'s Enter and Escape to it', () => {
+    const { onChange, input } = setup();
+    input.focus();
+    fireEvent.change(input, { target: { value: 'にほ' } });
+    for (const init of [...[{ key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 }], { key: 'Escape', isComposing: true }]) fireEvent.keyDown(input, init);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue('にほ');
+    expect(input).toHaveFocus();
+  });
 });

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import { Input } from '../Input';
 import s from './PrefSchemaEditor.module.css';
 
@@ -27,5 +28,5 @@ export function NumberText({ label, value, placeholder, accept, onCommit }: {
     setDraft(shown);
     if (n === undefined || (Number.isFinite(n) && accept?.(n) !== false)) onCommit(n);
   };
-  return <Input className={s.number} aria-label={label} placeholder={placeholder} value={draft} onChange={setDraft} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />;
+  return <Input className={s.number} aria-label={label} placeholder={placeholder} value={draft} onChange={setDraft} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter' && !imeKey(e.nativeEvent)) commit(); }} />;
 }

@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
@@ -196,6 +197,7 @@ function StringControl(p: PropertyStringFieldProps) {
       onChange={edit.type}
       onBlur={edit.settle}
       onKeyDown={(e) => {
+        if (imeKey(e.nativeEvent)) return;
         if (e.key === 'Enter') (e.target as HTMLElement).blur();
         else edit.keyDown(e);
       }}

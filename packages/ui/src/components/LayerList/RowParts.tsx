@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import rows from '../ItemList/ItemList.module.css';
 import type { LayerListItem, LayerListProps } from './layerListProps';
 import s from './LayerList.module.css';
@@ -52,7 +53,7 @@ function RenameField({ item, props, close }: { item: LayerListItem; props: Layer
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     e.stopPropagation();
-    if (e.key !== 'Enter' && e.key !== 'Escape') return;
+    if ((e.key !== 'Enter' && e.key !== 'Escape') || imeKey(e.nativeEvent)) return;
     e.preventDefault();
     finish(e.key === 'Enter', e.currentTarget.closest<HTMLElement>('[role="row"]'));
   };

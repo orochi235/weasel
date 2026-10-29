@@ -1,4 +1,5 @@
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import type { ReorderDragState } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
@@ -100,6 +101,7 @@ export function ListEditor<T>({
   };
   const { drag, move } = useEntryMoves(value, onChange, focus, reorder && !disabled);
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>, at: number): void => {
+    if (imeKey(e.nativeEvent)) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       if (kinds[0]) insert(at + 1, kinds[0].make);

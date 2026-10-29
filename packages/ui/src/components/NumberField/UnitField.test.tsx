@@ -53,6 +53,15 @@ describe('UnitField', () => {
     expect(onChange).toHaveBeenCalledWith(200);
   });
 
+  it('leaves an input method\'s Enter to it', () => {
+    const { onChange, field } = setup();
+    field.focus();
+    fireEvent.change(field, { target: { value: '２' } });
+    for (const init of [{ key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 }]) fireEvent.keyDown(field, init);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(field).toHaveFocus();
+  });
+
   it('commits nothing on Escape', () => {
     const { onChange, field } = setup();
     field.focus();

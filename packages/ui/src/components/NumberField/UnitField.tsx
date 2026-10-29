@@ -1,4 +1,5 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import {
   canSpin, clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
 } from '@weasel-js/quantity';
@@ -224,6 +225,7 @@ export function UnitField({
             setDraft(null);
           }}
           onKeyDown={(e) => {
+            if (imeKey(e.nativeEvent)) return;
             if (e.key === 'Enter') {
               e.currentTarget.blur();
             } else if (e.key === 'Escape') {

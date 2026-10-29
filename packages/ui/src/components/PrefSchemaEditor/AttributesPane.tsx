@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import { isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
@@ -178,7 +179,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     ),
     [KEY_KIND]: () => (
       <Input aria-label="Key" className={s.symbol} value={key} onChange={setKey} onBlur={commitKey}
-        onKeyDown={(e) => { if (e.key === 'Enter') commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
+        onKeyDown={(e) => { if (e.key === 'Enter' && !imeKey(e.nativeEvent)) commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
     ),
     [PATH_KIND]: () => <span className={s.pathText}>{keysOf(path).join('.')}</span>,
     [KIND_KIND]: () => isPrefLeaf(node) && leaf && (

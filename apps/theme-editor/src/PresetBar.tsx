@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { imeKey } from '@weasel-js/headless';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
 import styles from './PaletteLab.module.css';
@@ -85,7 +86,7 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
           placeholder="Name this state"
           onChange={setName}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') save();
+            if (e.key === 'Enter' && !imeKey(e.nativeEvent)) save();
           }}
           aria-label="Preset name"
         />
