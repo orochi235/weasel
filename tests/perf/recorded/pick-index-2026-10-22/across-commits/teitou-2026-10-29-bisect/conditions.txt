@@ -1,0 +1,37 @@
+2026-10-29T20:21:17Z start mode=bisect args=9db2cae5f 394b86d43 native host=teitou
+2026-10-29T20:21:17Z synced tree: 4d5f3483e241c62726815ebc4fe03434e343709c dirty-paths: 5
+2026-10-29T20:21:17Z cpu: Apple M5 Max (18 threads) node: v26.12.1
+2026-10-29T20:21:18Z npm ci at 9db2cae5f (lock ceff54c6bec732cb6129e87edbfdfee2e0c986b8)
+2026-10-29T20:21:25Z   9db2cae5f 2026-09-29 re-record the vitest benchmark baseline and drop the vitest 4 reader [native]: 0.3699579999999969 ms
+2026-10-29T20:21:25Z npm ci at 394b86d43 (lock 2577623e1172c86ea4a8ebbd3e28a439bac55c5c)
+2026-10-29T20:21:34Z   394b86d43 2026-10-22 plan laying content along a path, text as a path effect [native]: 1.5727080000001479 ms
+2026-10-29T20:21:34Z bisect 9db2cae5f (0.3699579999999969 ms) .. 394b86d43 (1.5727080000001479 ms) [native], slow above 0.763 ms
+2026-10-29T20:21:34Z   1683 first-parent commits in 9db2cae5f..394b86d43
+2026-10-29T20:21:35Z npm ci at 0a2eba982dc1227c59a16efb989351248f626bbb (lock 7c08573114c573127f06a793a96ef60c2a08a281)
+2026-10-29T20:21:44Z   0a2eba982 2026-10-11 bound the pattern tile cache and free an evicted tile's texture [native]: 0.37829099999999016 ms
+2026-10-29T20:21:44Z npm ci at b47208b7f3d094c18a459dba862c9123e6cbae66 (lock 385137f59abe7f23901a2781f5bd04430417b9a3)
+2026-10-29T20:21:53Z   b47208b7f 2026-10-13 Merge branch 'worktree-agent-a344f75eb38d9ada3' into todo-pass-6 [native]: 0.46645900000021356 ms
+2026-10-29T20:21:53Z npm ci at 72aeb0c45a4beaf407cf2c15f952a2afc330800a (lock 23df90c15f36cdb506e7ee273c860fab9daa86a1)
+2026-10-29T20:22:01Z   72aeb0c45 2026-10-17 file a ScoreDemo bar-boundary failure seen under fleet load [native]: 0.5637499999999136 ms
+2026-10-29T20:22:02Z npm ci at d03db13f812dc7959750ac0ee69e2b9158e306c7 (lock 96c7c8f0231624aad1e1e9f019778f82c11fc568)
+2026-10-29T20:22:11Z   d03db13f8 2026-10-21 merge PDF Porter-Duff composites drawn onto their backdrop [native]: 1.5467500000000882 ms
+2026-10-29T20:22:11Z npm ci at 07b686c0ce366d68dd3b4d76ef4fdb781b85e95b (lock a6399e45b5d24b1a6ca25bcb99cd605232918be4)
+2026-10-29T20:22:19Z   07b686c0c 2026-10-18 smooth the puppet map across its mesh with a Clough-Tocher interpolan [native]: 1.5869580000000951 ms
+2026-10-29T20:22:20Z npm ci at 53620f3166c3cae3d5521866eebd51dad816cddc (lock 5af695ab77957ca16fb3e4b1b2623975e7bafe89)
+2026-10-29T20:22:28Z   53620f316 2026-10-17 file the configLoader warning icons-plugin's extensionless imports pr [native]: 0.5747089999999844 ms
+2026-10-29T20:22:28Z npm ci at 7afd7ab54893d296c367442804bc2348c98f0cd0 (lock 682a0f4d1899959ab13b49384de582535c5542bc)
+2026-10-29T20:22:37Z   7afd7ab54 2026-10-17 Merge branch 'sticky-tool': a sticky-note tool in core, on text nodes [native]: 1.6278750000000173 ms
+2026-10-29T20:22:37Z npm ci at eca973b8802fe27ae8852fd7688a69af41a11206 (lock 0a4accf55514ca6d1da97f4f2e79064ef635fa8d)
+2026-10-29T20:22:46Z   eca973b88 2026-10-17 file the blend spine that can only be set when a blend is made [native]: 0.5927499999997963 ms
+2026-10-29T20:22:46Z npm ci at bd33b2b217e39d844b1fc0d80a4d22fe704b3944 (lock 682a0f4d1899959ab13b49384de582535c5542bc)
+2026-10-29T20:22:55Z   bd33b2b21 2026-10-17 Merge branch 'node-visibility': per-node hidden and locked state, rea [native]: 1.6515420000000631 ms
+2026-10-29T20:22:55Z npm ci at 79210c3287cfdab04cd214bc949cf86f08405e35 (lock 0a4accf55514ca6d1da97f4f2e79064ef635fa8d)
+2026-10-29T20:23:04Z   79210c328 2026-10-17 Merge branch 'path-geometry': the shape builder traces one arrangemen [native]: 0.6194585000000643 ms
+2026-10-29T20:23:04Z npm ci at 461e7a8c9b4749ba7682d20819ef6ad98c9d7731 (lock 682a0f4d1899959ab13b49384de582535c5542bc)
+2026-10-29T20:23:13Z   461e7a8c9 2026-10-17 Merge origin/main: resizable demos, layered pins, grid bounds, and br [native]: 0.5941250000000764 ms
+2026-10-29T20:23:13Z first slow first-parent commit bd33b2b217e39d844b1fc0d80a4d22fe704b3944 is a merge; descending into its second parent
+2026-10-29T20:23:13Z   2 first-parent commits in bd33b2b217e39d844b1fc0d80a4d22fe704b3944^1..bd33b2b217e39d844b1fc0d80a4d22fe704b3944^2
+2026-10-29T20:23:13Z npm ci at 679138cac72427a9d64c4f14c33d064ce3d31973 (lock 5af695ab77957ca16fb3e4b1b2623975e7bafe89)
+2026-10-29T20:23:22Z   679138cac 2026-10-17 add per-node hidden and locked to the scene, read through one gate [native]: 1.6469999999999345 ms
+2026-10-29T20:23:22Z culprit: 679138cac72427a9d64c4f14c33d064ce3d31973 2026-10-17 add per-node hidden and locked to the scene, read through one gate
+2026-10-29T20:23:22Z end

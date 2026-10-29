@@ -1,0 +1,49 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/private/var/folders/n5/j3kqgk6x5tb51hyh99q3j3fh0000gn/T/weasel-areawalk-59260[39m
+
+file:///private/var/folders/n5/j3kqgk6x5tb51hyh99q3j3fh0000gn/T/weasel-areawalk-59260/tests/perf/bench/node-hooks.mjs:35
+    if (find.test(specifier)) return specifier.replace(find, replacement);
+             ^
+
+TypeError: find.test is not a function
+    at target (file:///private/var/folders/n5/j3kqgk6x5tb51hyh99q3j3fh0000gn/T/weasel-areawalk-59260/tests/perf/bench/node-hooks.mjs:35:14)
+    at resolve (file:///private/var/folders/n5/j3kqgk6x5tb51hyh99q3j3fh0000gn/T/weasel-areawalk-59260/tests/perf/bench/node-hooks.mjs:43:18)
+    at nextStep (node:internal/modules/customization_hooks:189:26)
+    at resolveWithHooks (node:internal/modules/customization_hooks:417:10)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:754:16)
+    at #resolve (node:internal/modules/esm/loader:690:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+    at node:internal/modules/esm/loader:639:32
+    at TracingChannel.tracePromise (node:diagnostics_channel:582:22)
+    at ModuleLoader.import (node:internal/modules/esm/loader:635:21)
+
+Node.js v26.12.1
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: [vitest-pool]: Worker forks emitted error.[39m
+[90m [2m❯[22m EventEmitter.onTaskError node_modules/vitest/dist/chunks/index.C-uw7tH9.js:[2m11460:21[22m[39m
+[90m [2m❯[22m EventEmitter.emit node:events:[2m526:24[22m[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/index.C-uw7tH9.js:[2m10937:22[22m[39m
+[90m [2m❯[22m ChildProcess.emit node:events:[2m514:20[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit node:internal/child_process:[2m323:12[22m[39m
+
+[31m[1mCaused by: Error[22m: Worker exited unexpectedly with exit code 1 during starting state[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/index.C-uw7tH9.js:[2m10935:33[22m[39m
+[90m [2m❯[22m ChildProcess.emit node:events:[2m514:20[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit node:internal/child_process:[2m323:12[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [2mno tests[22m
+[2m      Tests [22m [2mno tests[22m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 16:19:11
+[2m   Duration [22m 52ms
+
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/recorded/pick-index-2026-10-22/across-commits/teitou-2026-10-29-endpoints/9db2cae5f-native.json

@@ -1,0 +1,15 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/private/var/folders/n5/j3kqgk6x5tb51hyh99q3j3fh0000gn/T/weasel-areawalk-62467[39m
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/walk.bench.ts [2m([22m[2m1 test[22m[2m)[22m[33m 3261[2mms[22m[39m
+   [33m[2m✓[22m[39m hitTestArea, 10000 rect nodes, 25% query rect[33m 3261[2mms[22m[39m
+     [1mname       [22m  [1m    hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     hitTestArea  [34m600.35[39m  [36m1.5222[39m  [36m10.1755[39m  [36m1.6734[39m  [36m1.7118[39m  [36m1.8720[39m  [36m1.9029[39m  [36m2.3140[39m  [2m±0.60%[22m  [2m   1793[22m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 16:22:51
+[2m   Duration [22m 4.08s[2m (tests 82%, import 10%, environment 5%, setup 3%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/recorded/pick-index-2026-10-22/across-commits/teitou-2026-10-29-bisect/bd33b2b21-native.json

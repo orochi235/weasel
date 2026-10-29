@@ -53,42 +53,55 @@ export interface NodeGates {
  * a fresh one after an edit.
  */
 export function nodeGates(scene: GateSource): NodeGates {
-  const hiddenLayers = new Set<string>();
-  const lockedLayers = new Set<string>();
-  for (const l of scene.layers ?? []) {
-    if (l.visible === false) hiddenLayers.add(l.id);
-    if (l.locked === true) lockedLayers.add(l.id);
-  }
+  const hiddenLayers = flaggedLayers(scene, 'hidden');
+  const lockedLayers = flaggedLayers(scene, 'locked');
+  const ownLock = lockedLayers === null
+    ? (node: GatedNode) => node.locked === true
+    : (node: GatedNode) => node.locked === true || lockedLayers.has(node.layer);
 
-  /** Whether `flag` holds on the node at `id` or any ancestor, the node's
-   *  layer counting when `layers` holds it. */
-  const inherited = (flag: 'hidden' | 'locked', layers: Set<string> | null) => {
+  /** Whether `test` holds on the node at `parent` or any of its ancestors.
+   *  Only ancestors are remembered, so a walk over a flat scene allocates
+   *  nothing; that walk is every pick made after an edit. */
+  const above = (test: (node: GatedNode) => boolean) => {
     const memo = new Map<string, boolean>();
-    const climb = (id: string, seen: Set<string>): boolean => {
-      const known = memo.get(id);
-      if (known !== undefined) return known;
-      const node = scene.get(id as NodeId);
-      if (node === undefined || seen.has(id)) return false;
-      seen.add(id);
-      const parent = node.parent ?? null;
-      const out = (flag === 'hidden' ? hidesSubtree(node) : node.locked === true)
-        || (layers !== null && layers.has(node.layer))
-        || (parent !== null && climb(parent, seen));
-      memo.set(id, out);
+    const path: string[] = [];
+    return (parent: string | null): boolean => {
+      if (parent === null) return false;
+      let out = false;
+      let seen: Set<string> | null = null;
+      path.length = 0;
+      for (let at: string | null = parent; at !== null; ) {
+        const known = memo.get(at);
+        if (known !== undefined) { out = known; break; }
+        const node = scene.get(at as NodeId);
+        if (node === undefined) break;
+        if (path.length > 64) {
+          seen ??= new Set(path);
+          if (seen.has(at)) break;
+          seen.add(at);
+        }
+        path.push(at);
+        if (test(node)) { out = true; break; }
+        at = node.parent ?? null;
+      }
+      for (const id of path) memo.set(id, out);
       return out;
     };
-    return (id: string) => climb(id, new Set());
   };
 
-  const flaggedHidden = inherited('hidden', null);
-  const locked = inherited('locked', lockedLayers);
+  const hiddenAbove = above(hidesSubtree);
+  const lockedAbove = above(ownLock);
   return {
     hidden(id) {
       const node = scene.get(id as NodeId);
       if (node === undefined) return false;
-      return hiddenLayers.has(node.layer) || flaggedHidden(id);
+      return hiddenLayers?.has(node.layer) === true || hidesSubtree(node) || hiddenAbove(node.parent ?? null);
     },
-    locked,
+    locked(id) {
+      const node = scene.get(id as NodeId);
+      if (node === undefined) return false;
+      return ownLock(node) || lockedAbove(node.parent ?? null);
+    },
   };
 }
 
