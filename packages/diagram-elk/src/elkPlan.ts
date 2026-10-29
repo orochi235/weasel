@@ -152,7 +152,10 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
 }
 
 /** The port an edge leaves and arrives by: the one it names, or else the
- *  declared port nearest where ELK met the node. A group end has none. */
+ *  declared port nearest where ELK met the node, among those on the face it
+ *  met when there are any. Nearest overall can sit on another face of a wide
+ *  box, and the wire then runs across the box to reach it. A group end has
+ *  none. */
 function endPorts(
   graph: Graph,
   edge: DrawnEdge,
@@ -164,9 +167,13 @@ function endPorts(
     const node = graph.node(id);
     const at = placed.nodes.get(id);
     if (node === undefined || at === undefined) return undefined;
+    const box = { ...shift(at), width: node.bounds.width, height: node.bounds.height };
+    const ports = portPoints(node, shift(at));
+    const met = faceOf(box, point);
+    const onFace = ports.filter((p) => faceOf(box, p.point) === met);
     let best: string | undefined;
     let bestDist = Infinity;
-    for (const port of portPoints(node, shift(at))) {
+    for (const port of onFace.length > 0 ? onFace : ports) {
       const dist = Math.hypot(port.point.x - point.x, port.point.y - point.y);
       if (dist < bestDist) [best, bestDist] = [port.id, dist];
     }
@@ -175,6 +182,17 @@ function endPorts(
   const from = edge.fromPort ?? nearest(edge.from, route[0]!);
   const to = edge.toPort ?? nearest(edge.to, route.at(-1)!);
   return { ...(from !== undefined ? { from } : {}), ...(to !== undefined ? { to } : {}) };
+}
+
+/** The side of `box` nearest `p`. */
+function faceOf(box: Bounds, p: Vec2): 'top' | 'right' | 'bottom' | 'left' {
+  const sides = [
+    ['top', Math.abs(p.y - box.y)],
+    ['right', Math.abs(p.x - box.x - box.width)],
+    ['bottom', Math.abs(p.y - box.y - box.height)],
+    ['left', Math.abs(p.x - box.x)],
+  ] as const;
+  return sides.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
 }
 
 function nearestOnRoute(route: readonly Vec2[], probe: Vec2): Vec2 {
