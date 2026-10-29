@@ -1,0 +1,1152 @@
+  waiting for room
+  waiting: msb-uai unknown (it wants the node to itself, and the node is promised to retained-tiles-a85_11a)
+  base   3c3e00b8
+  commits sent directly, 12.9 KiB (not on origin)
+  updated weasel-perf-hudtext on msb-uai at 3c3e00b8
+  job    346e1c91 on msb-uai
+
+onto: agent-a0008052ffa673277 is already set up
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/hud-vs-dom.spec.ts
+
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+GPU timer query: available
+36 measurements (4 configurations, each approach twice a pass, + 2 baselines, x 2 passes), 120 frames each
+load at start 3.3 6.8 8.9 on 14 cores
+onto: plan 36 measurements
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+    1/36  pass 1  none          0 glyphs  static       fixed   main   0.49  (js  0.25 style  0.00 layout  0.00 paint  0.09)  comp  0.33  raster  0.00  gpu-proc  2.50  total   3.32 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.22  load    3.1      5s
+onto: progress 1/36
+    2/36  pass 1  hud        2500 glyphs  every-frame  fixed   main   1.62  (js  1.52 style  0.00 layout  0.00 paint  0.03)  comp  0.17  raster  0.00  gpu-proc  2.01  total   3.80 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.28  load    3.0     12s
+         allocated    222.0 KB/frame; by function, KB/frame self, total:
+               37.5    221.4  step
+               29.8     29.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+               26.5     60.5  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               22.6     22.8  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               17.1     17.1  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.1     16.1  set
+               10.7     52.8  cachedCommands (packages/hud/src/attach.ts:199)
+                9.1      9.1  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                7.9     24.9  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                7.5     19.7  textCommandFromRuns (node_modules/.vite/deps/src-CUvYCWRJ.js:9357)
+                7.5      7.5  delete
+                4.7     34.6  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                4.3     57.2  draw (packages/hud/src/attach.ts:73)
+                4.3     28.3  draw (packages/hud/src/widgets/text.ts:71)
+                3.4      3.4  padStart
+         by total:
+                0.4    221.8  loop
+               37.5    221.4  step
+                1.8    123.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    119.6  dispatch (packages/renderer/src/draw.ts:11)
+                0.0     85.0  drawText (packages/renderer/src/draw/text.ts:36)
+                3.1     65.5  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               26.5     60.5  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                4.3     57.2  draw (packages/hud/src/attach.ts:73)
+               10.7     52.8  cachedCommands (packages/hud/src/attach.ts:199)
+                4.7     34.6  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               29.8     29.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+                4.3     28.3  draw (packages/hud/src/widgets/text.ts:71)
+                7.9     24.9  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               22.6     22.8  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+                7.5     19.7  textCommandFromRuns (node_modules/.vite/deps/src-CUvYCWRJ.js:9357)
+onto: progress 2/36
+    3/36  pass 1  dom        2500 glyphs  every-frame  fixed   main   2.18  (js  0.30 style  0.00 layout  0.79 paint  0.87)  comp  0.32  raster  0.00  gpu-proc  1.74  total   4.24 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.27  load    3.4     19s
+         allocated     75.2 KB/frame; by function, KB/frame self, total:
+               32.7     32.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+               23.7     69.8  step
+                5.8      5.8  padStart
+                4.7     37.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                1.9      4.1  visitNode
+                1.2     40.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.1      1.1  (V8 API)
+                0.9      4.1  visitChild
+                0.6      0.6  checkAndReturn
+                0.5      0.5  push
+                0.4      0.4  Float32Array
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.6  expectValue
+                0.2      0.2  WeakMap
+                0.2      0.2  next
+         by total:
+                0.0     69.9  loop
+               23.7     69.8  step
+                1.2     40.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.7     37.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                0.0     37.5  dispatch (packages/renderer/src/draw.ts:11)
+               32.7     32.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.8      5.8  padStart
+                1.9      4.1  visitNode
+                0.0      4.1  captureSnapshot
+                0.9      4.1  visitChild
+                0.0      0.9  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.6  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  checkAndReturn
+                0.2      0.6  expectValue
+                0.5      0.5  push
+onto: progress 3/36
+    4/36  pass 1  dom        2500 glyphs  every-frame  fixed   main   2.05  (js  0.27 style  0.00 layout  0.75 paint  0.84)  comp  0.32  raster  0.00  gpu-proc  1.77  total   4.14 ms/frame  interval 16.67 (traced 16.66)  missed   0  gpu  0.26  load    3.3     27s
+         allocated     72.0 KB/frame; by function, KB/frame self, total:
+               30.8     30.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+               22.9     67.4  step
+                5.7      5.7  padStart
+                4.6     35.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                1.6     38.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      3.3  visitNode
+                1.1      1.1  (V8 API)
+                0.7      3.3  visitChild
+                0.6      0.6  checkAndReturn
+                0.5      0.5  push
+                0.4      0.4  Float32Array
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  subarray
+                0.2      0.5  expectValue
+                0.1      0.1  stageSolid (packages/renderer/src/draw/batch.ts:43)
+         by total:
+               22.9     67.4  step
+                0.0     67.4  loop
+                1.6     38.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.6     35.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                0.0     35.5  dispatch (packages/renderer/src/draw.ts:11)
+               30.8     30.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.7      5.7  padStart
+                1.4      3.3  visitNode
+                0.0      3.3  captureSnapshot
+                0.7      3.3  visitChild
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  checkAndReturn
+                0.5      0.5  push
+                0.2      0.5  expectValue
+onto: progress 4/36
+    5/36  pass 1  hud        2500 glyphs  every-frame  fixed   main   1.67  (js  1.56 style  0.00 layout  0.00 paint  0.04)  comp  0.14  raster  0.00  gpu-proc  2.05  total   3.86 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.29  load    3.2     33s
+         allocated    220.4 KB/frame; by function, KB/frame self, total:
+               37.9    220.2  step
+               31.0     31.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+               28.3     62.7  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               22.6     51.1  cachedCommands (packages/hud/src/attach.ts:199)
+               20.3     20.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               18.3     18.3  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               15.4     15.4  set
+                8.8      8.8  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                8.1      8.1  delete
+                7.3     25.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                4.8     35.9  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                3.2      3.2  padStart
+                3.2      3.2  variant (node_modules/.vite/deps/src-w2zEXMea.js:3315)
+                3.1     54.2  draw (packages/hud/src/attach.ts:73)
+                3.1     67.1  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+         by total:
+               37.9    220.2  step
+                0.0    220.2  loop
+                1.5    124.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    121.7  dispatch (packages/renderer/src/draw.ts:11)
+                0.0     85.8  drawText (packages/renderer/src/draw/text.ts:36)
+                3.1     67.1  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               28.3     62.7  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                3.1     54.2  draw (packages/hud/src/attach.ts:73)
+               22.6     51.1  cachedCommands (packages/hud/src/attach.ts:199)
+                4.8     35.9  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               31.0     31.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+                7.3     25.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               20.3     20.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               18.3     18.3  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               15.4     15.4  set
+onto: progress 5/36
+    6/36  pass 1  hud        5000 glyphs  every-frame  fixed   main   2.25  (js  2.15 style  0.00 layout  0.00 paint  0.03)  comp  0.12  raster  0.00  gpu-proc  1.80  total   4.16 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.30  load    3.3     40s
+         allocated    398.9 KB/frame; by function, KB/frame self, total:
+               74.1    398.2  step
+               54.8    124.5  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               44.3    101.6  cachedCommands (packages/hud/src/attach.ts:199)
+               41.0     41.0  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               36.7     36.7  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               32.1     32.1  set
+               30.2     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               18.4     18.4  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               16.3     16.3  delete
+               14.6     51.3  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                6.8      6.8  variant (node_modules/.vite/deps/src-w2zEXMea.js:3315)
+                6.6    108.2  draw (packages/hud/src/attach.ts:73)
+                6.5    134.1  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                5.1     35.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                3.8      3.8  padStart
+         by total:
+                0.0    398.3  loop
+               74.1    398.2  step
+                1.7    212.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    173.1  drawText (packages/renderer/src/draw/text.ts:36)
+                6.5    134.1  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               54.8    124.5  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                6.6    108.2  draw (packages/hud/src/attach.ts:73)
+               44.3    101.6  cachedCommands (packages/hud/src/attach.ts:199)
+               14.6     51.3  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               41.0     41.0  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               36.7     36.7  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+                5.1     35.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               32.1     32.1  set
+               30.2     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               18.4     18.4  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+onto: progress 6/36
+    7/36  pass 1  dom        5000 glyphs  every-frame  fixed   main   2.66  (js  0.31 style  0.00 layout  1.06 paint  1.10)  comp  0.29  raster  0.00  gpu-proc  1.18  total   4.13 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    3.1     48s
+         allocated    102.3 KB/frame; by function, KB/frame self, total:
+               44.4     93.5  step
+               30.5     30.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.0     10.0  padStart
+                5.1     36.0  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                3.3      6.9  visitNode
+                1.7      1.7  (V8 API)
+                1.6     38.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      6.9  visitChild
+                1.1      1.1  checkAndReturn
+                0.7      1.0  expectValue
+                0.4      0.4  push
+                0.4      0.4  Float32Array
+                0.3      0.3  stageSolid (packages/renderer/src/draw/batch.ts:43)
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  subarray
+         by total:
+                0.0     93.5  loop
+               44.4     93.5  step
+                1.6     38.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.1     36.0  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               30.5     30.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.0     10.0  padStart
+                3.3      6.9  visitNode
+                0.0      6.9  captureSnapshot
+                1.4      6.9  visitChild
+                1.1      1.1  checkAndReturn
+                0.7      1.0  expectValue
+                0.0      0.9  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.4      0.4  push
+                0.4      0.4  Float32Array
+onto: progress 7/36
+    8/36  pass 1  dom        5000 glyphs  every-frame  fixed   main   2.66  (js  0.32 style  0.00 layout  1.06 paint  1.10)  comp  0.29  raster  0.00  gpu-proc  1.19  total   4.14 ms/frame  interval 16.67 (traced 16.66)  missed   0  gpu  0.16  load    3.2     56s
+         allocated    101.7 KB/frame; by function, KB/frame self, total:
+               45.5     93.5  step
+               29.4     29.5  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.1     10.1  padStart
+                5.0     34.6  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                3.2      6.2  visitNode
+                1.5     37.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.5      1.5  (V8 API)
+                1.2      6.2  visitChild
+                0.9      0.9  checkAndReturn
+                0.5      0.7  expectValue
+                0.4      0.4  push
+                0.4      0.4  Float32Array
+                0.2      0.2  String
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  WeakMap
+         by total:
+               45.5     93.5  step
+                0.0     93.5  loop
+                1.5     37.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.0     34.6  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               29.4     29.5  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.1     10.1  padStart
+                0.0      6.2  captureSnapshot
+                3.2      6.2  visitNode
+                1.2      6.2  visitChild
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.9      0.9  checkAndReturn
+                0.5      0.7  expectValue
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.0      0.5  traceFrames
+                0.4      0.4  push
+onto: progress 8/36
+    9/36  pass 1  hud        5000 glyphs  every-frame  fixed   main   2.22  (js  2.10 style  0.00 layout  0.00 paint  0.04)  comp  0.14  raster  0.00  gpu-proc  1.70  total   4.06 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.32  load    3.0     63s
+         allocated    400.8 KB/frame; by function, KB/frame self, total:
+               72.2    400.2  step
+               56.1    124.5  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               46.6    104.3  cachedCommands (packages/hud/src/attach.ts:199)
+               41.7     41.7  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               36.1     36.1  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               33.0     33.0  set
+               31.6     31.7  pushRect (packages/renderer/src/draw/batch.ts:195)
+               17.7     17.7  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               16.1     16.1  delete
+               14.5     50.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                6.3      6.3  variant (node_modules/.vite/deps/src-w2zEXMea.js:3315)
+                6.1    134.5  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                5.7    110.0  draw (packages/hud/src/attach.ts:73)
+                5.0     36.7  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                3.9      3.9  runsHash (node_modules/.vite/deps/src-w2zEXMea.js:3345)
+         by total:
+                0.0    400.3  loop
+               72.2    400.2  step
+                1.7    214.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    173.8  drawText (packages/renderer/src/draw/text.ts:36)
+                6.1    134.5  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               56.1    124.5  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                5.7    110.0  draw (packages/hud/src/attach.ts:73)
+               46.6    104.3  cachedCommands (packages/hud/src/attach.ts:199)
+               14.5     50.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               41.7     41.7  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+                5.0     36.7  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               36.1     36.1  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               33.0     33.0  set
+               31.6     31.7  pushRect (packages/renderer/src/draw/batch.ts:195)
+               17.7     17.7  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+onto: progress 9/36
+   10/36  pass 1  hud        2500 glyphs  every-frame  moving  main   1.71  (js  1.59 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  1.62  total   3.47 ms/frame  interval 16.67 (traced 16.66)  missed   0  gpu  0.23  load    3.0     70s
+         allocated    276.8 KB/frame; by function, KB/frame self, total:
+               72.0    276.4  step
+               33.4     63.3  cachedCommands (packages/hud/src/attach.ts:199)
+               31.9     32.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+               28.1     62.8  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               21.9     21.9  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               17.7     17.7  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.6     16.6  set
+                8.9      8.9  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                8.1     25.7  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                7.9      7.9  delete
+                6.1     93.7  drawText (packages/renderer/src/draw/text.ts:36)
+                5.1     37.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.8     68.0  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                3.4     66.7  draw (packages/hud/src/attach.ts:73)
+                2.8     79.7  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+         by total:
+                0.0    276.5  loop
+               72.0    276.4  step
+                2.1    135.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    130.9  dispatch (packages/renderer/src/draw.ts:11)
+                6.1     93.7  drawText (packages/renderer/src/draw/text.ts:36)
+                2.8     79.7  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                3.8     68.0  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                3.4     66.7  draw (packages/hud/src/attach.ts:73)
+               33.4     63.3  cachedCommands (packages/hud/src/attach.ts:199)
+               28.1     62.8  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                5.1     37.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               31.9     32.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+                8.1     25.7  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               21.9     21.9  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               17.7     17.7  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+onto: progress 10/36
+   11/36  pass 1  dom        2500 glyphs  every-frame  moving  main   2.16  (js  0.41 style  0.15 layout  0.69 paint  0.75)  comp  0.23  raster  0.00  gpu-proc  1.32  total   3.71 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    2.7     77s
+         allocated    102.8 KB/frame; by function, KB/frame self, total:
+               48.2     93.4  step
+               29.6     29.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.3      6.3  (V8 API)
+                6.1     35.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                5.8      5.8  padStart
+                1.5      2.9  visitNode
+                1.4     39.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.5      2.9  visitChild
+                0.5      0.5  checkAndReturn
+                0.4      0.4  Float32Array
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  subarray
+                0.2      0.2  push
+                0.2      0.2  reclaim (packages/renderer/src/effects/EffectTargets.ts:27)
+                0.2      0.2  Map
+         by total:
+                0.0     93.4  loop
+               48.2     93.4  step
+                1.4     39.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                6.1     35.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                0.0     35.9  dispatch (packages/renderer/src/draw.ts:11)
+               29.6     29.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.8      5.8  padStart
+                1.5      2.9  visitNode
+                0.5      2.9  visitChild
+                0.0      2.9  captureSnapshot
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  checkAndReturn
+                0.4      0.4  Float32Array
+                0.0      0.4  from
+onto: progress 11/36
+   12/36  pass 1  dom        2500 glyphs  every-frame  moving  main   2.46  (js  0.46 style  0.17 layout  0.79 paint  0.84)  comp  0.27  raster  0.00  gpu-proc  1.43  total   4.16 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    2.9     84s
+         allocated    105.7 KB/frame; by function, KB/frame self, total:
+               50.5     96.6  step
+               31.7     31.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.6      6.6  padStart
+                6.1      6.1  (V8 API)
+                4.4     36.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.5      2.7  visitNode
+                1.2     39.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.6      0.6  Float32Array
+                0.5      0.5  push
+                0.4      2.7  visitChild
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  checkAndReturn
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.1      0.5  expectValue
+                0.1      0.1  stageSolid (packages/renderer/src/draw/batch.ts:43)
+         by total:
+                0.0     96.7  loop
+               50.5     96.6  step
+                1.2     39.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.4     36.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                0.0     36.2  dispatch (packages/renderer/src/draw.ts:11)
+               31.7     31.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.6      6.6  padStart
+                1.5      2.7  visitNode
+                0.4      2.7  visitChild
+                0.0      2.7  captureSnapshot
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+                0.5      0.5  push
+onto: progress 12/36
+   13/36  pass 1  hud        2500 glyphs  every-frame  moving  main   1.65  (js  1.53 style  0.00 layout  0.00 paint  0.04)  comp  0.15  raster  0.00  gpu-proc  1.98  total   3.78 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.25  load    2.8     91s
+         allocated    272.1 KB/frame; by function, KB/frame self, total:
+               68.1    271.6  step
+               33.4     63.3  cachedCommands (packages/hud/src/attach.ts:199)
+               30.3     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               28.7     65.1  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               22.5     22.5  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               18.8     18.8  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               15.6     15.6  set
+                9.9      9.9  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                7.7     26.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                7.3      7.3  delete
+                6.6     94.7  drawText (packages/renderer/src/draw/text.ts:36)
+                4.7     35.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.8     67.1  draw (packages/hud/src/attach.ts:73)
+                3.1     69.8  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                3.1      3.1  padStart
+         by total:
+                0.0    271.7  loop
+               68.1    271.6  step
+                1.3    133.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    129.8  dispatch (packages/renderer/src/draw.ts:11)
+                6.6     94.7  drawText (packages/renderer/src/draw/text.ts:36)
+                2.5     80.0  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                3.1     69.8  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                3.8     67.1  draw (packages/hud/src/attach.ts:73)
+               28.7     65.1  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               33.4     63.3  cachedCommands (packages/hud/src/attach.ts:199)
+                4.7     35.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.3     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+                7.7     26.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               22.5     22.5  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               18.8     18.8  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+onto: progress 13/36
+   14/36  pass 1  hud        5000 glyphs  every-frame  moving  main   2.55  (js  2.45 style  0.00 layout  0.00 paint  0.03)  comp  0.13  raster  0.00  gpu-proc  2.05  total   4.74 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.33  load    2.7     98s
+         allocated    499.1 KB/frame; by function, KB/frame self, total:
+              138.1    498.9  step
+               70.6    131.1  cachedCommands (packages/hud/src/attach.ts:199)
+               54.6    121.0  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               43.3     43.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               34.5     34.5  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               31.3     31.3  set
+               31.1     31.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               18.3     18.3  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               17.2     17.2  delete
+               13.6     48.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               12.7    180.7  drawText (packages/renderer/src/draw/text.ts:36)
+                6.6    130.4  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                6.3    151.6  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                5.7    136.8  draw (packages/hud/src/attach.ts:73)
+                4.7     36.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+         by total:
+              138.1    498.9  step
+                0.0    498.9  loop
+                1.5    220.0  render (packages/renderer/src/WeaselRenderer.ts:433)
+               12.7    180.7  drawText (packages/renderer/src/draw/text.ts:36)
+                6.3    151.6  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                5.7    136.8  draw (packages/hud/src/attach.ts:73)
+               70.6    131.1  cachedCommands (packages/hud/src/attach.ts:199)
+                6.6    130.4  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               54.6    121.0  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               13.6     48.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               43.3     43.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+                4.7     36.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               34.5     34.5  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               31.1     31.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               31.3     31.3  set
+onto: progress 14/36
+   15/36  pass 1  dom        5000 glyphs  every-frame  moving  main   3.65  (js  0.67 style  0.24 layout  1.20 paint  1.28)  comp  0.34  raster  0.00  gpu-proc  1.45  total   5.44 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    2.9    106s
+         allocated    166.7 KB/frame; by function, KB/frame self, total:
+              100.1    148.0  step
+               29.8     30.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+               11.6     11.6  (V8 API)
+                9.6      9.6  padStart
+                4.9     35.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.2      6.8  visitNode
+                1.5     37.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      6.8  visitChild
+                1.1      1.1  checkAndReturn
+                0.7      0.9  expectValue
+                0.5      0.5  push
+                0.4      0.4  String
+                0.4      0.4  Float32Array
+                0.3      0.3  stageSolid (packages/renderer/src/draw/batch.ts:43)
+                0.3      0.3  subarray
+         by total:
+                0.0    148.0  loop
+              100.1    148.0  step
+                1.5     37.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.9     35.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               29.8     30.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.6      9.6  padStart
+                3.2      6.8  visitNode
+                1.4      6.8  visitChild
+                0.0      6.8  captureSnapshot
+                1.1      1.1  checkAndReturn
+                0.7      0.9  expectValue
+                0.0      0.9  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.5  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  push
+                0.4      0.4  String
+onto: progress 15/36
+   16/36  pass 1  dom        5000 glyphs  every-frame  moving  main   3.52  (js  0.66 style  0.25 layout  1.22 paint  1.17)  comp  0.34  raster  0.00  gpu-proc  1.49  total   5.35 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.21  load    3.0    113s
+         allocated    168.7 KB/frame; by function, KB/frame self, total:
+               99.1    149.8  step
+               31.9     32.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+               12.4     12.4  (V8 API)
+               10.0     10.0  padStart
+                4.8     36.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.1      6.0  visitNode
+                1.7     40.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.0      1.0  checkAndReturn
+                0.9      6.0  visitChild
+                0.7      1.0  expectValue
+                0.5      0.5  Float32Array
+                0.3      0.3  push
+                0.3      0.3  subarray
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  String
+         by total:
+                0.0    149.9  loop
+               99.1    149.8  step
+                1.7     40.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.8     36.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               31.9     32.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.0     10.0  padStart
+                3.1      6.0  visitNode
+                0.9      6.0  visitChild
+                0.0      6.0  captureSnapshot
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.7      1.0  expectValue
+                1.0      1.0  checkAndReturn
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+onto: progress 16/36
+   17/36  pass 1  hud        5000 glyphs  every-frame  moving  main   2.64  (js  2.53 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  2.10  total   4.87 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.33  load    2.8    120s
+         allocated    507.4 KB/frame; by function, KB/frame self, total:
+              139.2    507.1  step
+               70.2    129.6  cachedCommands (packages/hud/src/attach.ts:199)
+               56.7    127.1  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               43.3     43.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               37.5     37.5  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               33.3     33.3  set
+               31.7     31.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+               19.3     19.3  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               16.1     16.1  delete
+               13.7     51.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               12.1    188.0  drawText (packages/renderer/src/draw/text.ts:36)
+                6.1    158.2  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                6.0    135.6  draw (packages/hud/src/attach.ts:73)
+                5.5     37.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                5.5    136.4  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+         by total:
+                0.0    507.2  loop
+              139.2    507.1  step
+                1.3    228.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+               12.1    188.0  drawText (packages/renderer/src/draw/text.ts:36)
+                6.1    158.2  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                5.5    136.4  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                6.0    135.6  draw (packages/hud/src/attach.ts:73)
+               70.2    129.6  cachedCommands (packages/hud/src/attach.ts:199)
+               56.7    127.1  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               13.7     51.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               43.3     43.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               37.5     37.5  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+                5.5     37.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               33.3     33.3  set
+               31.7     31.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+onto: progress 17/36
+   18/36  pass 1  none          0 glyphs  static       fixed   main   0.42  (js  0.19 style  0.00 layout  0.00 paint  0.08)  comp  0.31  raster  0.00  gpu-proc  2.31  total   3.04 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.18  load    2.7    125s
+onto: progress 18/36
+   19/36  pass 2  none          0 glyphs  static       fixed   main   0.51  (js  0.29 style  0.00 layout  0.00 paint  0.07)  comp  0.26  raster  0.00  gpu-proc  2.17  total   2.94 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.6    130s
+onto: progress 19/36
+   20/36  pass 2  dom        2500 glyphs  every-frame  fixed   main   2.14  (js  0.39 style  0.00 layout  0.76 paint  0.84)  comp  0.35  raster  0.00  gpu-proc  1.28  total   3.77 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.7    137s
+         allocated     71.3 KB/frame; by function, KB/frame self, total:
+               29.7     29.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+               22.7     66.5  step
+                5.8      5.8  padStart
+                4.5     34.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                2.1      3.6  visitNode
+                1.9     37.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.0      1.0  (V8 API)
+                0.6      0.6  checkAndReturn
+                0.4      0.4  String
+                0.4      3.6  visitChild
+                0.3      0.3  Float32Array
+                0.2      0.2  push
+                0.2      0.2  next
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  expectValue
+         by total:
+               22.7     66.5  step
+                0.0     66.5  loop
+                1.9     37.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.5     34.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               29.7     29.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.8      5.8  padStart
+                2.1      3.6  visitNode
+                0.4      3.6  visitChild
+                0.0      3.6  captureSnapshot
+                0.0      0.8  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.6      0.6  checkAndReturn
+                0.0      0.5  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.4      0.4  String
+                0.3      0.3  Float32Array
+                0.0      0.3  from
+onto: progress 20/36
+   21/36  pass 2  hud        2500 glyphs  every-frame  fixed   main   1.72  (js  1.60 style  0.00 layout  0.00 paint  0.05)  comp  0.15  raster  0.00  gpu-proc  1.66  total   3.53 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.21  load    2.6    144s
+         allocated    234.8 KB/frame; by function, KB/frame self, total:
+               38.1    234.4  step
+               32.1     32.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+               30.6     62.2  cachedCommands (packages/hud/src/attach.ts:199)
+               28.9     62.0  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               22.6     22.6  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               17.6     17.6  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.3     16.3  set
+                9.0      9.0  delete
+                8.5      8.5  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                7.1     24.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                5.3     37.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                4.0     66.1  draw (packages/hud/src/attach.ts:73)
+                4.0     78.6  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                3.2      3.2  padStart
+                2.8     66.3  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+         by total:
+                0.0    234.5  loop
+               38.1    234.4  step
+                1.4    127.0  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     86.8  drawText (packages/renderer/src/draw/text.ts:36)
+                4.0     78.6  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                2.8     66.3  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                4.0     66.1  draw (packages/hud/src/attach.ts:73)
+               30.6     62.2  cachedCommands (packages/hud/src/attach.ts:199)
+               28.9     62.0  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                5.3     37.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               32.1     32.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+                7.1     24.6  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               22.6     22.6  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               17.6     17.6  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.3     16.3  set
+onto: progress 21/36
+   22/36  pass 2  hud        2500 glyphs  every-frame  fixed   main   1.75  (js  1.61 style  0.00 layout  0.00 paint  0.05)  comp  0.15  raster  0.00  gpu-proc  1.69  total   3.59 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.21  load    2.7    151s
+         allocated    226.2 KB/frame; by function, KB/frame self, total:
+               38.3    225.6  step
+               28.4     28.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               27.8     63.1  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               27.3     57.4  cachedCommands (packages/hud/src/attach.ts:199)
+               22.1     22.1  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               19.0     19.0  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.4     16.4  set
+                9.2      9.2  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                8.1      8.1  delete
+                7.0     26.0  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                4.7     33.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.3     60.7  draw (packages/hud/src/attach.ts:73)
+                3.2     79.3  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                3.0      3.0  padStart
+                2.8     67.7  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+         by total:
+                0.0    225.7  loop
+               38.3    225.6  step
+                1.6    123.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     87.3  drawText (packages/renderer/src/draw/text.ts:36)
+                3.2     79.3  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                2.8     67.7  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               27.8     63.1  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                3.3     60.7  draw (packages/hud/src/attach.ts:73)
+               27.3     57.4  cachedCommands (packages/hud/src/attach.ts:199)
+                4.7     33.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               28.4     28.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+                7.0     26.0  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               22.1     22.1  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               19.0     19.0  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.4     16.4  set
+onto: progress 22/36
+   23/36  pass 2  dom        2500 glyphs  every-frame  fixed   main   2.33  (js  0.46 style  0.00 layout  0.80 paint  0.86)  comp  0.39  raster  0.00  gpu-proc  1.79  total   4.51 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.27  load    2.5    159s
+         allocated     73.7 KB/frame; by function, KB/frame self, total:
+               30.4     30.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               25.1     68.9  step
+                5.1      5.1  padStart
+                5.0     35.6  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.7     38.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.6      3.5  visitNode
+                1.0      1.0  (V8 API)
+                0.7      3.4  visitChild
+                0.5      0.5  checkAndReturn
+                0.4      0.4  Float32Array
+                0.3      0.3  push
+                0.2      0.4  expectValue
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  String
+                0.1      0.1  stageSolid (packages/renderer/src/draw/batch.ts:43)
+         by total:
+                0.0     68.9  loop
+               25.1     68.9  step
+                1.7     38.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.0     35.6  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.4     30.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.1      5.1  padStart
+                1.6      3.5  visitNode
+                0.0      3.5  captureSnapshot
+                0.7      3.4  visitChild
+                0.0      0.8  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  checkAndReturn
+                0.0      0.4  projFor (packages/renderer/src/draw/uniforms.ts:57)
+                0.2      0.4  expectValue
+                0.4      0.4  Float32Array
+onto: progress 23/36
+   24/36  pass 2  dom        5000 glyphs  every-frame  fixed   main   3.53  (js  0.69 style  0.00 layout  1.30 paint  1.26)  comp  0.41  raster  0.00  gpu-proc  1.46  total   5.40 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.19  load    2.3    166s
+         allocated    101.4 KB/frame; by function, KB/frame self, total:
+               43.4     93.2  step
+               30.3     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.4     10.4  padStart
+                4.4     34.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.1      6.4  visitNode
+                1.9     38.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.6      1.6  (V8 API)
+                1.5      6.4  visitChild
+                0.7      0.7  String
+                0.6      0.6  checkAndReturn
+                0.6      0.6  push
+                0.6      1.0  expectValue
+                0.6      0.6  Float32Array
+                0.2      0.2  next
+                0.2      0.2  Map
+         by total:
+                0.0     93.2  loop
+               43.4     93.2  step
+                1.9     38.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.4     34.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.3     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.4     10.4  padStart
+                3.1      6.4  visitNode
+                0.0      6.4  captureSnapshot
+                1.5      6.4  visitChild
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.6      1.0  expectValue
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.7      0.7  String
+                0.6      0.6  checkAndReturn
+                0.6      0.6  push
+onto: progress 24/36
+   25/36  pass 2  hud        5000 glyphs  every-frame  fixed   main   2.61  (js  2.51 style  0.00 layout  0.00 paint  0.03)  comp  0.13  raster  0.00  gpu-proc  2.10  total   4.84 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    2.1    173s
+         allocated    404.0 KB/frame; by function, KB/frame self, total:
+               71.2    403.6  step
+               56.6    122.2  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               56.0    114.6  cachedCommands (packages/hud/src/attach.ts:199)
+               42.3     42.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               34.9     34.9  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               32.0     32.0  set
+               31.4     31.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               17.8     17.8  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               16.2     16.2  delete
+               13.0     47.8  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                6.0    153.2  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                5.9    120.4  draw (packages/hud/src/attach.ts:73)
+                5.8    131.4  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                4.7     36.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.4      3.4  runsHash (node_modules/.vite/deps/src-w2zEXMea.js:3345)
+         by total:
+               71.2    403.6  step
+                0.0    403.6  loop
+                1.2    208.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    169.5  drawText (packages/renderer/src/draw/text.ts:36)
+                6.0    153.2  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                5.8    131.4  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               56.6    122.2  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                5.9    120.4  draw (packages/hud/src/attach.ts:73)
+               56.0    114.6  cachedCommands (packages/hud/src/attach.ts:199)
+               13.0     47.8  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               42.3     42.3  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+                4.7     36.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               34.9     34.9  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               32.0     32.0  set
+               31.4     31.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+onto: progress 25/36
+   26/36  pass 2  hud        5000 glyphs  every-frame  fixed   main   2.59  (js  2.48 style  0.00 layout  0.00 paint  0.04)  comp  0.14  raster  0.00  gpu-proc  2.12  total   4.85 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.35  load    2.1    180s
+         allocated    408.2 KB/frame; by function, KB/frame self, total:
+               74.3    407.9  step
+               57.1    118.1  cachedCommands (packages/hud/src/attach.ts:199)
+               54.9    120.0  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               43.2     43.2  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               35.0     35.0  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               31.8     31.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+               31.4     31.4  set
+               17.8     17.8  delete
+               17.0     17.0  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               13.2     48.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                6.3    128.9  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                6.0    150.5  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                5.8    124.0  draw (packages/hud/src/attach.ts:73)
+                5.0     36.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.4      3.4  padStart
+         by total:
+                0.0    408.0  loop
+               74.3    407.9  step
+                1.7    206.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    166.4  drawText (packages/renderer/src/draw/text.ts:36)
+                6.0    150.5  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                6.3    128.9  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                5.8    124.0  draw (packages/hud/src/attach.ts:73)
+               54.9    120.0  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               57.1    118.1  cachedCommands (packages/hud/src/attach.ts:199)
+               13.2     48.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               43.2     43.2  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+                5.0     36.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               35.0     35.0  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               31.8     31.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+               31.4     31.4  set
+onto: progress 26/36
+   27/36  pass 2  dom        5000 glyphs  every-frame  fixed   main   3.05  (js  0.57 style  0.00 layout  1.14 paint  1.11)  comp  0.35  raster  0.00  gpu-proc  1.27  total   4.67 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.0    188s
+         allocated    105.3 KB/frame; by function, KB/frame self, total:
+               47.5     96.7  step
+               30.9     31.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.3     10.3  padStart
+                4.3     35.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.9      6.5  visitNode
+                1.8      1.8  (V8 API)
+                1.5     38.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.0      6.5  visitChild
+                0.8      0.8  checkAndReturn
+                0.8      0.8  String
+                0.4      0.4  Float32Array
+                0.4      0.4  push
+                0.4      0.5  expectValue
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  subarray
+         by total:
+                0.0     96.8  loop
+               47.5     96.7  step
+                1.5     38.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.3     35.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.9     31.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.3     10.3  padStart
+                0.0      6.5  captureSnapshot
+                3.9      6.5  visitNode
+                1.0      6.5  visitChild
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.8      0.8  checkAndReturn
+                0.8      0.8  String
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.4      0.5  expectValue
+                0.4      0.4  Float32Array
+onto: progress 27/36
+   28/36  pass 2  dom        2500 glyphs  every-frame  moving  main   2.37  (js  0.57 style  0.15 layout  0.72 paint  0.75)  comp  0.29  raster  0.00  gpu-proc  1.30  total   3.95 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.0    195s
+         allocated    102.9 KB/frame; by function, KB/frame self, total:
+               50.3     94.0  step
+               30.3     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.5      5.5  padStart
+                5.3      5.3  (V8 API)
+                4.6     35.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.8      3.2  visitNode
+                1.3     38.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.6      0.6  checkAndReturn
+                0.4      3.2  visitChild
+                0.4      0.4  push
+                0.4      0.4  Float32Array
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  String
+                0.2      0.2  subarray
+                0.2      0.2  Map
+         by total:
+                0.0     94.1  loop
+               50.3     94.0  step
+                1.3     38.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.6     35.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.3     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.5      5.5  padStart
+                1.8      3.2  visitNode
+                0.4      3.2  visitChild
+                0.0      3.2  captureSnapshot
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  checkAndReturn
+                0.4      0.4  push
+                0.4      0.4  Float32Array
+                0.0      0.4  from
+onto: progress 28/36
+   29/36  pass 2  hud        2500 glyphs  every-frame  moving  main   1.92  (js  1.77 style  0.00 layout  0.00 paint  0.05)  comp  0.16  raster  0.00  gpu-proc  1.69  total   3.76 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.22  load    1.9    202s
+         allocated    273.7 KB/frame; by function, KB/frame self, total:
+               71.5    273.1  step
+               34.3     64.3  cachedCommands (packages/hud/src/attach.ts:199)
+               30.3     30.5  pushRect (packages/renderer/src/draw/batch.ts:195)
+               28.3     63.4  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               22.4     22.4  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               18.7     18.7  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               15.1     15.1  set
+               10.0     10.0  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                7.6      7.6  delete
+                6.5     25.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                6.1     92.4  drawText (packages/renderer/src/draw/text.ts:36)
+                5.2     35.7  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.2     79.0  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                3.2      3.2  padStart
+                3.1     67.9  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+         by total:
+                0.0    273.2  loop
+               71.5    273.1  step
+                1.4    131.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                6.1     92.4  drawText (packages/renderer/src/draw/text.ts:36)
+                3.2     79.0  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                3.1     67.9  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                2.9     67.1  draw (packages/hud/src/attach.ts:73)
+               34.3     64.3  cachedCommands (packages/hud/src/attach.ts:199)
+               28.3     63.4  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                5.2     35.7  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.3     30.5  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.5     25.2  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               22.4     22.4  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               18.7     18.7  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               15.1     15.1  set
+onto: progress 29/36
+   30/36  pass 2  hud        2500 glyphs  every-frame  moving  main   1.29  (js  1.19 style  0.00 layout  0.00 paint  0.03)  comp  0.11  raster  0.00  gpu-proc  1.70  total   3.11 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.23  load    1.8    209s
+         allocated    267.8 KB/frame; by function, KB/frame self, total:
+               69.6    267.3  step
+               34.4     62.0  cachedCommands (packages/hud/src/attach.ts:199)
+               30.6     30.7  pushRect (packages/renderer/src/draw/batch.ts:195)
+               28.0     61.4  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               19.0     19.0  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               16.8     16.8  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.2     16.2  set
+                9.3      9.3  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+                8.6      8.6  delete
+                7.3     24.1  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+                6.2     90.5  drawText (packages/renderer/src/draw/text.ts:36)
+                5.1     35.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.6     65.6  draw (packages/hud/src/attach.ts:73)
+                3.0      3.0  padStart
+                2.6     65.6  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+         by total:
+                0.0    267.3  loop
+               69.6    267.3  step
+                1.3    129.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                6.2     90.5  drawText (packages/renderer/src/draw/text.ts:36)
+                2.4     75.9  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                2.6     65.6  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                3.6     65.6  draw (packages/hud/src/attach.ts:73)
+               34.4     62.0  cachedCommands (packages/hud/src/attach.ts:199)
+               28.0     61.4  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+                5.1     35.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.6     30.7  pushRect (packages/renderer/src/draw/batch.ts:195)
+                7.3     24.1  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               19.0     19.0  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               16.8     16.8  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               16.2     16.2  set
+onto: progress 30/36
+   31/36  pass 2  dom        2500 glyphs  every-frame  moving  main   2.07  (js  0.53 style  0.12 layout  0.61 paint  0.65)  comp  0.28  raster  0.00  gpu-proc  1.31  total   3.66 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    1.9    217s
+         allocated    104.5 KB/frame; by function, KB/frame self, total:
+               49.0     95.2  step
+               32.0     32.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.7      5.7  (V8 API)
+                5.3      5.3  padStart
+                5.1     37.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.8      3.2  visitNode
+                1.6     40.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.6      3.2  visitChild
+                0.5      0.5  Float32Array
+                0.4      0.4  push
+                0.3      0.3  checkAndReturn
+                0.3      0.3  Map
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  next
+         by total:
+                0.0     95.3  loop
+               49.0     95.2  step
+                1.6     40.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.1     37.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               32.0     32.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.3      5.3  padStart
+                0.0      3.2  captureSnapshot
+                1.8      3.2  visitNode
+                0.6      3.2  visitChild
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+                0.0      0.5  projFor (packages/renderer/src/draw/uniforms.ts:57)
+                0.4      0.4  push
+onto: progress 31/36
+   32/36  pass 2  dom        5000 glyphs  every-frame  moving  main   3.85  (js  0.93 style  0.25 layout  1.23 paint  1.17)  comp  0.36  raster  0.00  gpu-proc  1.37  total   5.58 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.1    224s
+         allocated    169.9 KB/frame; by function, KB/frame self, total:
+              102.9    151.1  step
+               29.5     29.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               12.3     12.3  (V8 API)
+                9.6      9.6  padStart
+                4.8     34.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.3      6.3  visitNode
+                1.5     37.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.3      6.3  visitChild
+                1.2      1.2  checkAndReturn
+                1.1      1.1  String
+                0.4      0.4  Float32Array
+                0.3      0.4  expectValue
+                0.3      0.3  subarray
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  push
+         by total:
+                0.0    151.2  loop
+              102.9    151.1  step
+                1.5     37.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.8     34.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               29.5     29.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.6      9.6  padStart
+                3.3      6.3  visitNode
+                1.3      6.3  visitChild
+                0.0      6.3  captureSnapshot
+                1.2      1.2  checkAndReturn
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                1.1      1.1  String
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.3      0.4  expectValue
+                0.4      0.4  Float32Array
+onto: progress 32/36
+   33/36  pass 2  hud        5000 glyphs  every-frame  moving  main   2.16  (js  2.05 style  0.00 layout  0.00 paint  0.03)  comp  0.11  raster  0.00  gpu-proc  1.59  total   3.86 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.29  load    2.2    231s
+         allocated    501.0 KB/frame; by function, KB/frame self, total:
+              141.6    500.7  step
+               72.8    129.8  cachedCommands (packages/hud/src/attach.ts:199)
+               54.2    122.3  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               41.1     41.1  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               36.1     36.1  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               32.0     32.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+               30.9     30.9  set
+               18.2     18.2  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               15.9     15.9  delete
+               13.7     49.8  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               12.2    179.4  drawText (packages/renderer/src/draw/text.ts:36)
+                6.3    136.1  draw (packages/hud/src/attach.ts:73)
+                6.1    151.6  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                5.1    130.1  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                4.4      4.4  padStart
+         by total:
+                0.0    500.8  loop
+              141.6    500.7  step
+                1.6    218.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+               12.2    179.4  drawText (packages/renderer/src/draw/text.ts:36)
+                6.1    151.6  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                6.3    136.1  draw (packages/hud/src/attach.ts:73)
+                5.1    130.1  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+               72.8    129.8  cachedCommands (packages/hud/src/attach.ts:199)
+               54.2    122.3  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               13.7     49.8  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               41.1     41.1  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+                3.9     36.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               36.1     36.1  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               32.0     32.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+               30.9     30.9  set
+onto: progress 33/36
+   34/36  pass 2  hud        5000 glyphs  every-frame  moving  main   2.27  (js  2.15 style  0.00 layout  0.00 paint  0.04)  comp  0.12  raster  0.00  gpu-proc  1.65  total   4.03 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.28  load    2.4    238s
+         allocated    494.6 KB/frame; by function, KB/frame self, total:
+              137.2    494.2  step
+               69.8    126.2  cachedCommands (packages/hud/src/attach.ts:199)
+               53.8    123.8  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               40.4     40.4  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               37.4     37.4  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+               32.3     32.3  set
+               30.2     30.3  pushRect (packages/renderer/src/draw/batch.ts:195)
+               17.9     17.9  placeLine (node_modules/.vite/deps/src-w2zEXMea.js:2454)
+               16.0     16.0  delete
+               14.7     52.1  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               12.1    183.3  drawText (packages/renderer/src/draw/text.ts:36)
+                6.8    133.8  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                6.3    132.5  draw (packages/hud/src/attach.ts:73)
+                5.0    155.0  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                4.4     34.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+         by total:
+                0.0    494.3  loop
+              137.2    494.2  step
+                1.4    221.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+               12.1    183.3  drawText (packages/renderer/src/draw/text.ts:36)
+                5.0    155.0  cachedLayoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:3401)
+                6.8    133.8  structuralLayout (node_modules/.vite/deps/src-w2zEXMea.js:3449)
+                6.3    132.5  draw (packages/hud/src/attach.ts:73)
+               69.8    126.2  cachedCommands (packages/hud/src/attach.ts:199)
+               53.8    123.8  layoutRuns (node_modules/.vite/deps/src-w2zEXMea.js:2546)
+               14.7     52.1  measureRuns (node_modules/.vite/deps/src-w2zEXMea.js:1998)
+               40.4     40.4  resolveRuns (node_modules/.vite/deps/src-w2zEXMea.js:661)
+               37.4     37.4  resolveFontVariantInternal (node_modules/.vite/deps/src-G0zhlZLx.js:2483)
+                4.4     34.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               32.3     32.3  set
+               30.2     30.3  pushRect (packages/renderer/src/draw/batch.ts:195)
+onto: progress 34/36
+   35/36  pass 2  dom        5000 glyphs  every-frame  moving  main   3.68  (js  0.89 style  0.23 layout  1.20 paint  1.12)  comp  0.33  raster  0.00  gpu-proc  1.32  total   5.34 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.15  load    2.4    246s
+         allocated    171.5 KB/frame; by function, KB/frame self, total:
+              103.0    153.4  step
+               30.0     30.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+               11.5     11.5  (V8 API)
+               10.8     10.8  padStart
+                5.0     35.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.8      6.2  visitNode
+                1.8     39.0  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.1      6.2  visitChild
+                0.9      0.9  checkAndReturn
+                0.8      0.8  Float32Array
+                0.6      0.6  String
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  push
+                0.3      0.4  expectValue
+                0.2      0.2  WeakMap
+         by total:
+                0.0    153.5  loop
+              103.0    153.4  step
+                1.8     39.0  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.0     35.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.0     30.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.8     10.8  padStart
+                3.8      6.2  visitNode
+                1.1      6.2  visitChild
+                0.0      6.2  captureSnapshot
+                0.0      1.6  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.3  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.9      0.9  checkAndReturn
+                0.8      0.8  Float32Array
+                0.0      0.8  from
+                0.6      0.6  String
+onto: progress 35/36
+   36/36  pass 2  none          0 glyphs  static       fixed   main   0.48  (js  0.22 style  0.00 layout  0.00 paint  0.10)  comp  0.30  raster  0.00  gpu-proc  2.54  total   3.33 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.21  load    2.3    251s
+onto: progress 36/36
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+Per frame, ms; median of 4 samples (ABBA x 2), spread = max - min.
+Baseline (background scene alone): main 0.48, all threads 3.18.
+
+**every-frame, camera fixed**: main thread / all threads / untraced frame interval, median [spread of all threads]
+
+| glyphs | hud | dom |
+|---:|---:|---:|
+| 2500 |   1.70 /   3.69 / 16.67 [0.33] |   2.16 /   4.19 / 16.67 [0.74] |
+| 5000 |   2.42 /   4.50 / 16.67 [0.79] |   2.86 /   4.41 / 16.67 [1.28] |
+
+**every-frame, camera moving**: main thread / all threads / untraced frame interval, median [spread of all threads]
+
+| glyphs | hud | dom |
+|---:|---:|---:|
+| 2500 |   1.68 /   3.62 / 16.67 [0.67] |   2.27 /   3.83 / 16.67 [0.50] |
+| 5000 |   2.41 /   4.38 / 16.67 [1.01] |   3.67 /   5.39 / 16.67 [0.25] |
+perf result: tests/perf/results/a0008-after/hud-vs-dom-every-frame-2026-10-29T20-45-23Z.json
+  ✓  1 tests/perf/hud-vs-dom.spec.ts:530:1 › hud vs dom: text over the canvas, per frame (4.2m)
+
+  1 passed (4.2m)
+  1 files  156.3 KiB  → 0 already local (0 bytes)
+  fetching 1 files (156.3 KiB)
+  [1/1] hud-vs-dom-every-frame-2026-10-29T20-45-23Z.json  156.3 KiB
+  ✓ 1 files, 156.3 KiB in 0s
+  cleared 1 file (156.3 KiB) from msb-uai; /tmp/agent-a0008/runs/after holds the only copy

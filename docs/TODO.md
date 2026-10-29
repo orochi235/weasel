@@ -961,22 +961,22 @@ only story runner in the repo.
   logs lived in a session scratchpad and are not kept.
 
 - **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.** With the readout
-  changing every frame the HUD allocates 978 KB a frame at 5,000 glyphs on a fixed camera against the DOM's 102
-  (msb-uai, 2026-10-27, down from 1,942; `tests/perf/hud-vs-dom.spec.ts`, README "What the HUD allocates"). A
-  recycled layout now hands its line boxes, paintings and groups to the next one, and the 180 KB once charged to
-  `dropRuns` was `Array.prototype.fill` in `LayoutColumns.recycle`. What is left, self KB a frame: `cachedCommands`
-  in the HUD (135); `layoutRuns` (111) and `breakLines` (77), whose avoidable allocation is now fixed (2026-10-27):
-  their lists, and `graphemeEnds`', were emptied with `length = 0`, which drops the backing store, and regrown by
-  `push` every call, and `measureRuns` walked runs with a `forEach` closure. In Node a 48-character readout's
-  `measureRuns` and `breakLines` now allocate nothing of their own, from about 2.4 KB and 1.3 KB a call; the browser re-measure
-  (`tests/perf/hud-vs-dom.spec.ts`) has not been run. `lineBreakOpportunities` still builds its result array and
-  three closures a wrapped call (about 0.6 KB at 48 characters); `resolveRuns` (69) and `resolveTextStyle` (56)
-  building the command; `paintRunsInto` (49) and `groupFor` (37); `resolveFontVariantInternal`'s result object
-  (36; caching it per font entry would change result identity); `graphemeEnds` (39), which still allocates per
-  cluster on its `Intl.Segmenter` path, taken by text with anything from U+0300 up. A run with Chromium's inlining
-  off (`--js-flags=--no-turbo-inlining --no-maglev-inlining`) shows where a function's allocation really sits.
-  Main-thread time fell, with ranges apart in two of four cells, from one run each. A still HUD drawn through
-  `drawLayers` costs the main thread what the DOM does (README, "A still HUD through `drawLayers`").
+  changing every frame the HUD allocates 402 KB a frame at 5,000 glyphs on a fixed camera against the DOM's 102
+  (msb-uai, 2026-10-29, down from 779 that morning and 978 on 2026-10-27; `tests/perf/hud-vs-dom.spec.ts` with
+  `HVD_ALLOC=1`, README "What the HUD allocates"); renderer main-thread time did not move with it. What is left, self
+  KB a frame, and what stands in the way of each:
+  the caches' `WeakMap` set and delete for every new runs array (48), which the layout cache and the paint cache's
+  `own` map each pay, so folding the paint cache's entry into the layout cache's would halve it;
+  `layoutRuns`' result and `bounds` objects (56), the result kept new because the paint cache finds a runs array's
+  painting by layout identity, though `bounds` could ride the recycled columns;
+  `resolveFontVariantInternal`'s result object (36), which caching per font entry would make shared across calls of
+  the public `resolveFontVariant` (a decision, not a fix);
+  `placeLine` (18) and `measureRuns` (14), not yet located: a run with Chromium's inlining off
+  (`--js-flags=--no-turbo-inlining --no-maglev-inlining` in `tests/perf/lib/launchArgs.ts`) shows where a
+  function's allocation really sits.
+  The rest is the command itself (`cachedCommands` 51, `resolveRuns` 42), the spec's own label strings (`step` 73)
+  and the renderer's batch (`pushRect` 32). A still HUD drawn through `drawLayers` costs the main thread what the DOM
+  does (README, "A still HUD through `drawLayers`").
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op

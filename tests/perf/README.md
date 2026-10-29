@@ -425,10 +425,36 @@ and replacing `fill` with a loop removed it (an in-process Node profile of the s
 nothing). Measured on msb-uai on 2026-10-27, at `d67dcb7aa` and `7690dc0d9`, one run of each; the
 runs between them, the diagnostic one among them, are in `recorded/hud-vs-dom-objrecycle-2026-10-27/`.
 
-What is left, at 5,000 glyphs on the fixed camera, self KB a frame: `cachedCommands` in the HUD
-(135); `layoutRuns` (111) and `breakLines` (77), neither of whose visible work should allocate;
-`resolveRuns` (69) and `resolveTextStyle` (56) building the command; `paintRunsInto` (49) and
-`groupFor` (37); `resolveFontVariantInternal`'s result object (36); and `graphemeEnds` (39).
+A sixth round took out what the caches' own bookkeeping allocated. **`length = 0` drops an
+array's backing store, so the next push reallocates it; `pop` keeps it**, and the lists the caches
+refill (a runs array's variants, a layout's paintings, a painting's groups and group slots) are
+emptied with `truncate` in `arrayPool.ts`. A function holding a closure over its locals allocated
+the scope they live in on every call, whether or not the closure was built: `layoutRuns`,
+`orderLine`, `paintRunsInto` and `lineBreakOpportunities` keep theirs outside. `resolveRuns`
+sizes its result and builds each run's fields in one literal, `textCommandFromRuns` resolves the
+style into one reused object (`resolveTextStyleInto`), and a HUD text widget keeps its fill, style
+and placed command in locals. KB allocated a frame and renderer main thread in ms a frame, median
+[min–max] of 4 samples:
+
+| Camera | Glyphs | HUD before | HUD after | DOM after |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 | 414, 1.71 [1.34–1.72] | 224, 1.70 [1.63–1.75] |  73, 2.16 [2.05–2.33] |
+| fixed  | 5,000 | 779, 2.41 [2.18–2.71] | 402, 2.42 [2.22–2.61] | 102, 2.86 [2.66–3.53] |
+| moving | 2,500 | 462, 1.67 [1.67–1.70] | 273, 1.68 [1.29–1.92] | 104, 2.27 [2.07–2.46] |
+| moving | 5,000 | 879, 2.43 [2.08–2.74] | 500, 2.41 [2.16–2.64] | 169, 3.67 [3.52–3.85] |
+
+Allocation fell 41–48% in every cell; main-thread time did not move. The before column is `main`
+after 55375c042, whose refilled scratch lists had taken the fixed 5,000-glyph cell from 978 KB to
+779 and `breakLines` out of the profile. Measured on msb-uai on 2026-10-29, one run of each tree,
+at `4d5f3483e` and `3c3e00b88`; the runs are in `recorded/hud-vs-dom-round6-2026-10-29/`.
+
+What is left, at 5,000 glyphs on the fixed camera, self KB a frame: the spec's own `step` (73),
+which builds each label's string and the widget's revision; `layoutRuns` (56), the result and
+`bounds` objects each layout gets new, since the paint cache finds a runs array's painting by
+layout identity; the HUD's command and the one-element array its widget returns, charged to
+`cachedCommands` (51); the resolved runs the command carries (`resolveRuns`, 42);
+`resolveFontVariantInternal`'s result object (36); the layout and paint caches' `WeakMap` set and
+delete for every new runs array (48); and `pushRect` in the renderer's batch (32).
 
 ### A still HUD through `drawLayers`
 
