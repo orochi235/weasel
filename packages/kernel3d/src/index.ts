@@ -27,7 +27,9 @@ export {
 } from './deps';
 export { createInsert, type Footprint } from './insert';
 export { projectPoint } from './project';
-export { aimOf3d, aimSpace3d, cameraOfAim3d, type Aim3d, type Frustum3d } from './aim';
+export {
+  aimOf3d, aimSpace3d, cameraOfAim3d, type Aim3d, type Aim3dOptions, type Frustum3d,
+} from './aim';
 export {
   alignPlaneSource, boxSnapSource, groundGridSource, type GroundGridSourceOptions,
 } from './snap/sources';

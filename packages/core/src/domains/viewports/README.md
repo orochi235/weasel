@@ -52,9 +52,9 @@ A view's **aim** is what it shows, read in its own world: a `ViewAim` names its
 view (`null` for the root), carries an `extent` in its owner's terms, and can
 outline itself in another view's frame or pan itself there. Core's aim is
 `RectAim`, a world rect, built by `rectAim`. The frame an aim is drawn into is
-an `AimSpace`; `aimSpace2d` builds one from a camera and frame size. A 2D world
-is the plane z = 0, which is how a 3D aim (kernel3d's `aimOf3d`) and a 2D view
-meet.
+an `AimSpace`; `aimSpace2d` builds one from a camera and frame size. A 2D
+world is the plane z = 0 of an `AimPoint`; a 3D aim (kernel3d's `aimOf3d`)
+meets a 2D view by laying that plane on its own ground.
 
 **A `<CanvasView>` holds either its camera or its aim.** Pass `view` /
 `defaultView` / `onViewChange` and it holds its camera, as before. Pass `aim`, a

@@ -33,6 +33,7 @@ import {
 } from '@weasel-js/geom/3d';
 import { cameraEye, type Camera3d } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
+import { groundAxes, type Axis } from './ground';
 import { rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { worldPickIndex } from './pickIndex';
 import { projectAabbToScreen } from './screen';
@@ -70,7 +71,7 @@ function onPlane(
 }
 
 /** `pose` moved by `delta`, kept at its own height along `upAxis`. */
-function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: 'x' | 'y' | 'z'): Pose3 {
+function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
   const position = { ...add(pose.position, delta), [upAxis]: pose.position[upAxis] };
   return { ...pose, position };
 }
@@ -176,7 +177,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
 ): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
   const up = world.up ?? DEFAULT_UP;
-  const upAxis = up.y !== 0 ? 'y' : up.x !== 0 ? 'x' : 'z';
+  const upAxis = groundAxes(up).up;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
   // A drag whose camera stops casting rays mid-gesture keeps moving through the

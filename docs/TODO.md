@@ -79,15 +79,6 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
-## Viewport
-
-- **(P3) [agent] Put 2D on kernel3d's ground plane.** Ruled: the ground, at right angles to `up` as `insert` reads it (2026-10-28). kernel3d's frustum outlines into a 2D view as its footprint on z = 0, which in kernel3d's y-up world is a wall
-  facing yaw 0, and `aimSpace3d` unprojects onto the same plane, while `insert` already casts onto the plane through
-  the origin at right angles to its `up` (default y). Move `aim.ts` onto that ground through one function both share,
-  mapping 2D (x, y) to the two axes `up` is not, and say in a changeset that a 2D view's footprint and aim move.
-
----
-
 ## Paths & booleans
 
 - **(P3) [maintainer] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
