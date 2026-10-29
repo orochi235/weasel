@@ -641,7 +641,7 @@ only story runner in the repo.
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
   opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
   turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
-  up the trial before that screenshot is taken. Not decided: whether marks come back for that.
+  up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
 
 - **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a

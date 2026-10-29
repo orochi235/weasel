@@ -27,7 +27,7 @@ export interface CanvasRetainOptions {
    *  a retained layer is composited moved rather than drawn again; it draws
    *  exactly once the view holds. Drawn and hit positions then differ by up
    *  to half a device pixel while the view moves. Default `true`. */
-  snap?: boolean;
+  whole?: boolean;
 }
 
 /**

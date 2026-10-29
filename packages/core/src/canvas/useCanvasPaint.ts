@@ -97,7 +97,7 @@ export function useCanvasPaint(
 
     const dpr = resolveDpr(dprIn);
     // The renderer's own device pixels to the CSS pixel, from its rounded buffer width.
-    const view = snapRef.current.draw(viewRef.current, Math.round(w * dpr) / w, retain !== false && retain?.snap !== false);
+    const view = snapRef.current.draw(viewRef.current, Math.round(w * dpr) / w, retain !== false && retain?.whole !== false);
     const { layerVisibility: vis, layerOrder: order } = gateRef.current;
     const spans = debugFrame?.time();
     const commands = drawLayers(

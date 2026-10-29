@@ -105,7 +105,7 @@ describe('Canvas view snapping', () => {
   });
 
   it('draws every frame exactly with snap off, and the moved layer straight through', async () => {
-    const { ref, moving } = await pan({ snap: false }, 0.3, 2);
+    const { ref, moving } = await pan({ whole: false }, 0.3, 2);
     expect(moving.at(-1)!.at).toEqual(Array.from(viewToMat3(ref.current!.getView())));
     expect(moving.map((f) => f.stats.declined)).toEqual([1, 1]);
   });
