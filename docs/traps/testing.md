@@ -54,6 +54,14 @@ mount, and every `addTrial`, `rerender` or mark added does the same. Mount throu
 `renderSettled` (`@weasel-js/react/testing/renderSettled`), and make a store-changing
 `act` async, so the notify lands inside it.
 
+**An async `act` never returns while a tree re-renders every frame faster than it can render.**
+React's async `act` keeps flushing until a turn of the event loop finds no update queued; a playing
+clock's transport queues one per frame, and on a loaded node, where a render outlasts a frame, there
+is one every turn. labkit's lab tests stalled for their whole 20 s timeout this way on the fleet and
+passed in milliseconds alone (2026-10-29). `actSettled` (`@weasel-js/react/testing/renderSettled`),
+which `renderSettled` uses, holds animation frames until it returns; use it for an async `act` that
+starts or runs during playback.
+
 **`useScene` builds its scene once into a ref and never rebuilds it.** Editing a demo's
 `initial` nodes and saving leaves the previous scene live under HMR, so the canvas paints
 the old data with no error and no warning. A hard reload is the only way to trust a

@@ -38,7 +38,8 @@ export const sampleLoad = async (ms = 1000) => {
  * How the browser project shares a node with the rest. It keeps `reserve` cores and jsdom gets the
  * idle ones left, so long as that is at least `minJsdomWorkers`. Measured 2026-10-21 over R = 1-4 on
  * 10-, 14- and 18-core nodes (`scripts/bench-overlap-reserve.mjs`): no browser test timed out at any R,
- * jsdom timed out on the 10-core node at R 1-2, and R 3 ran fastest on 18 cores.
+ * jsdom timed out on the 10-core node at R 1-2, and R 3 ran fastest on 18 cores. That sweep ignored
+ * `busy`; 169 fleet runs since (`bench-overlap-reserve.runs.jsonl`) show no measurable cost from subtracting it.
  */
 export const LIMITS = { reserve: 3, minJsdomWorkers: 4, gpu: 30 };
 

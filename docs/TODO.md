@@ -253,6 +253,13 @@ Owner tags, after the priority (2026-10-26):
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
   paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`).
 
+- **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
+  the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
+  (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code
+  (2026-10-29). It passed in every other run found. Whether a tile seam can round differently, or
+  `max: 0` is stricter than the GPU guarantees, is not known; read the failure screenshot at the
+  next sighting.
+
 ---
 
 ## Text
@@ -854,32 +861,17 @@ only story runner in the repo.
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
 
-- **(P3) [agent] Find what a long-lived vitest vm worker builds up that crashes V8, and drop
-  `--no-sparkplug` if it does nothing.** Fleet runs on teitou died partway from a worker SIGSEGV: a
-  jump to address 0 under `PromiseConstructor` while another worker ran a full GC. Under
-  `--stress-flush-code` on teitou it crashed 3 of 3 runs at vitest's default memory limit and 0 of 6
-  with `vmMemoryLimit: '1gb'` (2026-10-22). It is not a leak: one worker running 319 `weasel-ui`
-  files held a flat ~200 MB of live heap and ~1.9 GB RSS. vitest compares the limit with `heapUsed`
-  read without a GC (median ~300 MB), so the default (RAM / workers, 3–5 GB) never recycles a
-  worker, and 1 GB replaces each about once a run. The crash therefore tracks worker age rather than
-  heap size; what accumulates, and why only teitou crashed, is unknown. `--no-sparkplug` went in
-  (2026-10-19) for nodejs/node#62393, whose `0xe` signature none of these reports has; two from
-  10-15 and 10-17 (fault `0x89` in `MarkingWorklists::~Local`) are the only ones it might have
-  answered. Before removing it, run the jsdom projects on teitou without it a few times and check
-  `~/Library/Logs/DiagnosticReports/node-*.ips` there for new reports.
-
-- **(P3) [agent] The overlap's jsdom worker count subtracts busy cores the reserve sweep never did.**
-  `roomToOverlap` (`scripts/lib/node-load.mjs`) gives jsdom `floor(cores - busy) - reserve` workers, but
-  the 2026-10-21 sweep that chose the reserve ran `cores - reserve` regardless of load
-  (`scripts/bench-overlap-reserve.mjs`). On studio, busy read 1.5–6.3 cores in that sweep, where the
-  shipped rule would have given 2–5 workers or no overlap at all. At 58f8810f9 (2026-10-26, studio, 2.1
-  busy) it gave 4: the browser projects finished in 338 s and the jsdom ones in 479 s, while the sweep's
-  R 3–4 runs at 6–7 workers took 347–357 s for the whole suite (other commits; inferred, not compared
-  head to head). Head to head on studio at 58f8810f9 (2026-10-26, one pass each, both in
-  `scripts/bench-overlap-reserve.runs.jsonl`): the shipped rule's 4 workers took 495 s launcher to
-  finish with 10 timed-out tests retried; `cores - 3`'s 7 workers took 562 s with none, its browser side
-  slowed from 338 s to 482 s. So the cut is not costing time there; whether 5–6 workers would keep the
-  retries away without slowing the browser side is the next pass.
+- **(P3) [maintainer] Whether to find what a long-lived vitest vm worker builds up that crashed V8.**
+  Fleet runs on teitou died from a worker SIGSEGV (a jump to address 0 under `PromiseConstructor`
+  while another worker ran a full GC) until `vmMemoryLimit: '1gb'` (2026-10-22) made vitest replace
+  each vm worker about once a run; the default limit never does, because it compares against
+  `heapUsed` read without a GC. Nothing leaks: one worker over 319 `weasel-ui` files held a flat
+  ~200 MB of live heap. teitou has written no SIGSEGV report since, over 183 suite runs, and with
+  `--no-sparkplug` dropped the jsdom projects ran 3 of 3 clean under `--stress-flush-code`, which
+  crashed 3 of 3 at the default limit (2026-10-29). So the crash is held off, not explained: what an
+  aged worker accumulates, and why only teitou crashed, are unknown. The cost of not knowing is that
+  raising or removing the limit would bring it back. Whether that is worth a heap-snapshot hunt is
+  the open call.
 
 - **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
   (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
@@ -891,15 +883,6 @@ only story runner in the repo.
   whatever source imports by relative path, so no module would load twice, but tests import their
   own package that way, so most of each package would stay unbundled. forge got its gain by moving
   its stories onto package specifiers first (2026-10-21); the tests would need the same.
-
-- **(P3) [agent] labkit's Lab-mounting tests stall for 20 s on the fleet now and then.** `Lab.messages.test.tsx`'s
-  "reports its state as it starts, on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in the
-  batch-5 gate at 9d51e9d04, where it takes 62 ms locally, and `TrialTransport.test.tsx`'s "shares the chosen speed
-  between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both 2026-10-27).
-  What they wait on is unknown. Both files, and `still.browser.test.tsx`, now take their awaited steps through
-  labkit's `live` fixture (`packages/labkit/src/testing/liveTest.ts`), so a timed-out attempt stops at its next step
-  instead of acting on the next test, and the run's timeout warning prints the stack of each step it was still
-  awaiting (2026-10-27). Read that stack at the next sighting.
 
 - **(P2) [maintainer] A trial's status strip grows 2 px when its numeric face arrives**, which refits
   the view a second time. The strip itself takes its room on the first layout (`TrialChrome` reads an

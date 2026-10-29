@@ -1,5 +1,5 @@
 import { act, fireEvent, waitFor } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { actSettled, renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { renderWithIcons, withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -102,7 +102,7 @@ describe('a presented trial’s play controls', () => {
   it('show for a trial with a clock, and answer Space', async () => {
     const { getByRole } = await mountTimed({ present: true });
     expect(getByRole('button', { name: 'Play' })).not.toBeNull();
-    await act(async () => fireEvent.keyDown(document.body, { key: ' ' }));
+    await actSettled(async () => fireEvent.keyDown(document.body, { key: ' ' }));
     expect(getByRole('button', { name: 'Pause' })).not.toBeNull();
   });
 
