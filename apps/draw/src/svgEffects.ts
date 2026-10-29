@@ -24,7 +24,9 @@ export interface EffectAttrs {
   dependsOn: string[];
 }
 
-const EFFECT_KINDS: ReadonlySet<string> = new Set<PathEffect['kind']>(['blend', 'bendAlong', 'repeatAlong', 'textAlong']);
+const EFFECT_KINDS: ReadonlySet<string> = new Set<PathEffect['kind']>([
+  'blend', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat',
+]);
 
 /** The `wd:` attributes of an effect's group. */
 export function encodeEffectAttrs(o: EffectObj): Record<string, string> {

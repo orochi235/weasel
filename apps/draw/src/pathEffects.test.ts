@@ -152,6 +152,26 @@ describe('a path effect through draw\'s SVG', () => {
     }
   });
 
+  it('round-trips a roughen, a zigzag and a pucker & bloat of one shape', async () => {
+    for (const effect of [
+      { kind: 'roughen', size: 4, seed: 2 },
+      { kind: 'zigzag', size: 3, smooth: true },
+      { kind: 'puckerBloat', amount: -0.4 },
+    ] as const) {
+      const scene = drawScene([
+        box('a', 0, '#ff0000'),
+        { ...pathEffectNode(effect, [asNodeId('a')], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') } as Spec,
+      ]);
+      expect(liveSteps(scene)).toHaveLength(1);
+      const reopened = drawScene([]);
+      openSvgText(reopened, await exportOf(scene), 'x.svg');
+      const [node] = effectsIn(reopened);
+      expect(node!.data.pathEffect).toEqual(effect);
+      expect(node!.dependsOn).toHaveLength(1);
+      expect(liveSteps(reopened)).toHaveLength(1);
+    }
+  });
+
   it('reopens an effect that paints nothing, though its group is empty', async () => {
     for (const effect of [
       { kind: 'blend', steps: 0 },

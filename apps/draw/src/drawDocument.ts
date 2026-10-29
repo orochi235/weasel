@@ -54,7 +54,7 @@ export interface WeaselDrawData {
   /** The parameters a polygon or star was drawn with, which the sidebar
    *  edits and `path` is made again from. */
   generator?: ShapeGenerator;
-  /** A live blend, bend or repeat: what this node derives from its sources. */
+  /** A live path effect: what this node derives from its sources. */
   pathEffect?: PathEffect;
   /** A boolean group's operation over its children (core's `booleanGroupFields`). */
   boolean?: BooleanShapeOp;
@@ -63,8 +63,8 @@ export interface WeaselDrawData {
 
 /** The functions a draw document's nodes name by key, for the scene and for
  *  reading a saved document back: a group's hug of its members, a symmetry
- *  group's copies, and the kit's path effects, so Blend, Bend Along Path and
- *  Repeat Along Path work and a document holding one saves and reopens. */
+ *  group's copies, and the kit's path effects, so they work and a document
+ *  holding one saves and reopens. */
 export const DRAW_REGISTRY: SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer> =
   withPathEffectsRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>({
     ...(symmetryRegistry as SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>),

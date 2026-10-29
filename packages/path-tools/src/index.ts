@@ -73,7 +73,8 @@ export {
   type ConstrainAnchorsParams,
 } from './constraints/anchorConstraints';
 export {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction, textAlongAction,
+  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
+  roughenAction, textAlongAction, zigzagAction,
   PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
 export { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';

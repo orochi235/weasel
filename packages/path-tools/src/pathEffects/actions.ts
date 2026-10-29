@@ -1,6 +1,7 @@
 /**
  * The path-effect actions: make a live blend, bend, repeat, or text along a
- * path from the selection; change one's settings; and expand one into ordinary paths.
+ * path from the selection, or a live roughen, zigzag, or pucker and bloat of
+ * each selected shape; change one's settings; and expand one into ordinary paths.
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
@@ -19,15 +20,15 @@ type AnyNode = Node<unknown, string, unknown>;
 export const PATH_EFFECTS_GROUP = 'pathEffects';
 
 /** The selected leaves, in the order they were selected, when there are at
- *  least two. `null` too in a scene whose registry holds no path effects,
+ *  least `min`. `null` too in a scene whose registry holds no path effects,
  *  which could not save one. */
-function selectedLeaves(deps: ActionDeps | undefined): AnyNode[] | null {
+function selectedLeaves(deps: ActionDeps | undefined, min = 2): AnyNode[] | null {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene || registeredPathEffects(scene.registry) === null) return null;
   const leaves = (deps?.selection?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is AnyNode => n !== undefined && n.kind === 'mark');
-  return leaves.length >= 2 ? leaves : null;
+  return leaves.length >= min ? leaves : null;
 }
 
 /** The selected nodes holding a path effect, of `kind` where given. */
@@ -58,6 +59,9 @@ interface CreateSpec {
   between: boolean;
   /** Take a third selected leaf as a source too. */
   third?: boolean;
+  /** Make one effect of each selected leaf, its only source, rather than one
+   *  effect of the first two. */
+  each?: boolean;
   /** The selected leaves as sources, in order, or `null` where they cannot
    *  be; in selection order when absent. */
   order?(leaves: readonly AnyNode[]): AnyNode[] | null;
@@ -65,7 +69,7 @@ interface CreateSpec {
 
 /** The sources `spec` makes from the selection, or `null` when it cannot. */
 function sourcesFor(spec: CreateSpec, deps: ActionDeps | undefined): AnyNode[] | null {
-  const leaves = selectedLeaves(deps);
+  const leaves = selectedLeaves(deps, spec.each ? 1 : 2);
   return leaves && spec.order ? spec.order(leaves) : leaves;
 }
 
@@ -90,30 +94,41 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         if (!scene || !leaves) return;
         const derivations = registeredPathEffects(scene.registry)!;
         const [a, b, c] = leaves as [AnyNode, AnyNode, AnyNode?];
-        const sources = spec.third && c ? [a.id, b.id, c.id] : [a.id, b.id];
+        // Top slot first, so an insert cannot shift a later one's index.
+        const groups = spec.each
+          ? leaves.map((n) => [n]).sort(([x], [y]) => slotOf(scene, y!.id) - slotOf(scene, x!.id))
+          : [spec.third && c ? [a, b, c] : [a, b]];
         const settled = newEffect(spec.kind, params as Record<string, unknown> | undefined);
-        const foundHidden = settled.hideSources === true ? sources.flatMap((id, at) => (hiddenOnItsOwn(scene, id) ? [at] : [])) : [];
-        const effect = foundHidden.length > 0 ? { ...settled, foundHidden } : settled;
-        const sameParent = a.parent === b.parent;
-        const slots = [slotOf(scene, a.id), slotOf(scene, b.id)];
-        // Inserting at the upper source's slot puts the steps just under it.
-        const index = !sameParent ? -1 : spec.between ? Math.max(...slots) : Math.max(...slots) + 1;
-        const node = {
-          ...pathEffectNode(effect, sources, a.layer, derivations),
-          id: scene.mintId(),
-          parent: sameParent ? a.parent : null,
-        } as unknown as AnyNode;
-        // Hiding a source after the insert, so undo shows it before the effect goes.
-        const hide = effect.hideSources === true ? sources.flatMap((id) => hiddenOps(scene, id, true, spec.label)) : [];
-        commitOps(deps, [insertAt(node, index, spec.label), ...hide], spec.label);
-        deps.selection?.set([node.id] as never);
+        const ops: Op[] = [];
+        const made: NodeId[] = [];
+        for (const group of groups) {
+          const [first, second = first] = group as [AnyNode, AnyNode?];
+          const sources = group.map((n) => n.id);
+          const foundHidden = settled.hideSources === true ? sources.flatMap((id, at) => (hiddenOnItsOwn(scene, id) ? [at] : [])) : [];
+          const effect = foundHidden.length > 0 ? { ...settled, foundHidden } : settled;
+          const sameParent = first.parent === second.parent;
+          const slots = [slotOf(scene, first.id), slotOf(scene, second.id)];
+          // Inserting at the upper source's slot puts the steps just under it.
+          const index = !sameParent ? -1 : spec.between ? Math.max(...slots) : Math.max(...slots) + 1;
+          const node = {
+            ...pathEffectNode(effect, sources, first.layer, derivations),
+            id: scene.mintId(),
+            parent: sameParent ? first.parent : null,
+          } as unknown as AnyNode;
+          // Hiding a source after the insert, so undo shows it before the effect goes.
+          const hide = effect.hideSources === true ? sources.flatMap((id) => hiddenOps(scene, id, true, spec.label)) : [];
+          ops.push(insertAt(node, index, spec.label), ...hide);
+          made.push(node.id);
+        }
+        commitOps(deps, ops, spec.label);
+        deps.selection?.set(made as never);
       },
     } satisfies ImmediateInvoker,
     enabled: (deps) => {
       const scene = deps?.scene as AnyScene | undefined;
       if (scene && registeredPathEffects(scene.registry) === null) return ActionDisabledReason.NotApplicable;
       if (sourcesFor(spec, deps)) return true;
-      return selectedLeaves(deps) ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
+      return selectedLeaves(deps, spec.each ? 1 : 2) ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
     },
   };
 }
@@ -143,6 +158,33 @@ export const bendAlongAction = createEffectAction({
  */
 export const repeatAlongAction = createEffectAction({
   id: 'repeatAlong', label: 'Repeat Along Path', icon: icon('repeatAlong'), kind: 'repeatAlong', key: 'r', code: 'KeyR', between: false,
+});
+
+/**
+ * Each selected shape roughened, live: every point of its outline moved at
+ * random, after `detail` points are added to each segment. The effect goes
+ * just over its shape and hides it. Params are `RoughenEffect`'s.
+ */
+export const roughenAction = createEffectAction({
+  id: 'roughen', label: 'Roughen', icon: icon('roughen'), kind: 'roughen', key: 'g', code: 'KeyG', between: false, each: true,
+});
+
+/**
+ * Each selected shape zigzagged, live: `ridges` points added to each segment
+ * and every point pushed alternately to either side of the outline. The
+ * effect goes just over its shape and hides it. Params are `ZigzagEffect`'s.
+ */
+export const zigzagAction = createEffectAction({
+  id: 'zigzag', label: 'Zigzag', icon: icon('zigzag'), kind: 'zigzag', key: 'z', code: 'KeyZ', between: false, each: true,
+});
+
+/**
+ * Each selected shape puckered or bloated, live, about the middle of its
+ * bounds. The effect goes just over its shape and hides it. Params are
+ * `PuckerBloatEffect`'s.
+ */
+export const puckerBloatAction = createEffectAction({
+  id: 'puckerBloat', label: 'Pucker & Bloat', icon: icon('puckerBloat'), kind: 'puckerBloat', key: 'k', code: 'KeyK', between: false, each: true,
 });
 
 /** Two leaves, the text one first. */

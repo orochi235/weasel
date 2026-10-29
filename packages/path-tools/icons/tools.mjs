@@ -11,6 +11,8 @@ const bow = (row, back = false) => {
   return back ? `L${d.slice(1)}` : d;
 };
 const P = (c, r) => `${px(c)} ${px(r)}`;
+// Straight segments through pixel centers, every corner on one.
+const poly = (pts) => pts.map(([c, r], i) => `${i ? 'L' : 'M'}${P(c, r)}`).join('');
 const dot = (c, r, rad = 1.875) => `<circle cx="${px(c)}" cy="${px(r)}" r="${rad}" fill="currentColor" stroke="none"/>`;
 // A handle three pixels square on pixel (c, r).
 const handle = (c, r) => `<rect x="${px(c) - 1.875}" y="${px(r) - 1.875}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`;
@@ -52,6 +54,15 @@ export const TOOLS = {
   textAlong: `
     <path d="M1.875 16 Q9.375 7.75 16.875 16"/>
     <path d="M5.375 3.125 H13.375 M9.375 3.125 V8.25"/>`,
+  // A square with each corner and each edge's middle knocked out of place.
+  roughen: `
+    <path d="${poly([[2, 2], [7, 3], [12, 1], [13, 7], [14, 13], [8, 12], [2, 14], [3, 8]])}Z" stroke-width="1.25"/>`,
+  // Teeth at 45 degrees, three pixels high.
+  zigzag: `
+    <path d="${poly([[0, 9], [3, 6], [6, 9], [9, 6], [12, 9], [15, 6]])}" stroke-width="1.25"/>`,
+  // A square puckered into four spikes.
+  puckerBloat: `
+    <path d="M${P(7, 1)}C${P(7, 4.7)} ${P(9.3, 7)} ${P(13, 7)}C${P(9.3, 7)} ${P(7, 9.3)} ${P(7, 13)}C${P(7, 9.3)} ${P(4.7, 7)} ${P(1, 7)}C${P(4.7, 7)} ${P(7, 4.7)} ${P(7, 1)}Z" stroke-width="1.25"/>`,
   expand: `
     <circle cx="10" cy="10" r="6" stroke-width="1.25" stroke-dasharray="2 1.7"/>
     <rect x="8.5" y="2.5" width="3" height="3" fill="currentColor" stroke="none"/>

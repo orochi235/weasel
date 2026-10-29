@@ -8,8 +8,11 @@ import { pathEffectOf, type NodeId, type PathEffect, type Scene } from '@weasel-
 import { SettingsFields } from '../settingsFields';
 
 type Kind = PathEffect['kind'];
-const KINDS: readonly Kind[] = ['blend', 'bendAlong', 'repeatAlong', 'textAlong'];
-const COUNT: Record<Kind, string> = { blend: 'blends', bendAlong: 'bends', repeatAlong: 'repeats', textAlong: 'texts' };
+const KINDS: readonly Kind[] = ['blend', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat'];
+const COUNT: Record<Kind, string> = {
+  blend: 'blends', bendAlong: 'bends', repeatAlong: 'repeats', textAlong: 'texts',
+  roughen: 'roughens', zigzag: 'zigzags', puckerBloat: 'puckerBloats',
+};
 
 /** Each field's value where an effect leaves it unset, so a form never shows
  *  a default the effect does not paint with. */
@@ -18,6 +21,9 @@ const DEFAULTS: { [K in Kind]: Record<string, unknown> } = {
   bendAlong: { fit: 'stretch', baseline: 0.5, flip: false, tolerance: 0.5 },
   repeatAlong: { count: 5, align: 'start', offset: 0, orient: true },
   textAlong: { align: 'start', start: 0, shift: 0, anchor: 'baseline', overflow: 'clip', side: 'auto' },
+  roughen: { size: 5, detail: 4, seed: 0 },
+  zigzag: { size: 5, ridges: 4, smooth: false },
+  puckerBloat: { amount: 0.5 },
 };
 
 const hidden = (name: string) => ({ kind: 'number' as const, name, description: '', default: 0, hidden: true });
@@ -30,6 +36,9 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
     bends: hidden('Selected bends'),
     repeats: hidden('Selected repeats'),
     texts: hidden('Selected texts'),
+    roughens: hidden('Selected roughens'),
+    zigzags: hidden('Selected zigzags'),
+    puckerBloats: hidden('Selected puckers and bloats'),
     blend: {
       name: 'Blend',
       as: 'section',
@@ -113,6 +122,34 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
         },
       },
     },
+    roughen: {
+      name: 'Roughen',
+      as: 'section',
+      showIf: { path: 'roughens', above: 0 },
+      children: {
+        size: { kind: 'number', name: 'Size', description: 'The farthest a point moves on each axis.', default: 5, min: 0, step: 1, control: 'input' },
+        detail: { kind: 'number', name: 'Detail', description: 'Points added to each segment before roughening.', default: 4, min: 0, max: 100, step: 1, control: 'input' },
+        seed: { kind: 'number', name: 'Seed', description: 'Picks another set of random offsets.', default: 0, step: 1, control: 'input' },
+      },
+    },
+    zigzag: {
+      name: 'Zigzag',
+      as: 'section',
+      showIf: { path: 'zigzags', above: 0 },
+      children: {
+        size: { kind: 'number', name: 'Size', description: 'How far each point is pushed off the outline.', default: 5, step: 1, control: 'input' },
+        ridges: { kind: 'number', name: 'Ridges', description: 'Points added to each segment.', default: 4, min: 0, max: 100, step: 1, control: 'input' },
+        smooth: { kind: 'boolean', name: 'Smooth', description: 'Curve through the points instead of meeting at corners.', default: false },
+      },
+    },
+    puckerBloat: {
+      name: 'Pucker & Bloat',
+      as: 'section',
+      showIf: { path: 'puckerBloats', above: 0 },
+      children: {
+        amount: { kind: 'number', name: 'Amount', description: 'Below 0 puckers the anchors into spikes; above 0 bloats the segments outward.', default: 0.5, min: -1, max: 1, step: 0.05, control: 'slider' },
+      },
+    },
   },
 };
 
@@ -120,7 +157,7 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
 export function readPathEffectSettings(deps: ActionDeps): ActionSettingsState {
   const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
   const fields = new SettingsFields();
-  const counts: Record<string, number> = { blends: 0, bends: 0, repeats: 0, texts: 0 };
+  const counts: Record<string, number> = Object.fromEntries(Object.values(COUNT).map((name) => [name, 0]));
   for (const id of deps.selection?.get() ?? []) {
     const effect = pathEffectOf(scene?.get(id as NodeId));
     if (!effect) continue;
