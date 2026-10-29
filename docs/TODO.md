@@ -1204,14 +1204,6 @@ only story runner in the repo.
     its commands. Measure before changing it.
   - **The threshold** was left at 250 after measurement (`tests/perf/layer-dispatch.spec.ts`; result files in
     `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`).
-- **(P3) [agent] Snap the view's translation to whole device pixels while it moves.** A pan by fractions of a
-  device pixel (kit inertia, most trackpad momentum) never reuses a retained surface: the layer is drawn straight
-  through and its surface redrawn once the view holds. Resampling was ruled out (2026-10-27: a 1-device-px
-  hairline at a half-pixel offset becomes two half-strength pixels and pops sharp at rest). Ruled (2026-10-28):
-  while the view is moving, core draws with its translation rounded to whole device pixels, and draws the exact
-  translation once it holds; hit-testing reads the exact view throughout, so drawn and hit positions differ by up
-  to half a device pixel only in motion. Not snapping stays available as an option a consumer sets, for one that
-  needs drawn and hit positions to agree exactly while moving (2026-10-28).
 
 - **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
   `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a

@@ -11,6 +11,7 @@ import { resolveDpr, type CanvasRendererLease } from './canvasRenderer';
 import type { CanvasProps } from './canvasProps';
 import type { CanvasElements } from './useCanvasElements';
 import { NO_LAYER_VISIBILITY, type LayerGate } from './useExtraLayers';
+import { ViewSnap } from './viewSnap';
 
 /** What a frame's paint reads that a React render owns. */
 export interface PaintInputs extends Pick<CanvasProps<unknown>, 'dpr' | 'layerGroups' | 'shaders' | 'flattenTolerance' | 'imageMinification' | 'retain'> {
@@ -63,10 +64,12 @@ export function useCanvasPaint(
   target: Pick<CanvasElements, 'paintTargetRef' | 'ownCanvasRef' | 'paintRectRef'>,
   frame: PaintFrame,
   markPainted: () => void,
+  requestRedraw: () => void,
 ): void {
   const { paintTargetRef, ownCanvasRef, paintRectRef } = target;
   const { inputsRef, viewRef, gateRef, helpersRef } = frame;
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
+  const snapRef = useRef(new ViewSnap());
 
   const paint = useCallback((): boolean => {
     const c = paintTargetRef.current ?? ownCanvasRef.current;
@@ -92,7 +95,9 @@ export function useCanvasPaint(
     // No WebGL2 (jsdom), or a context that is lost for now: nothing to paint.
     if (!renderer) return false;
 
-    const view = viewRef.current;
+    const dpr = resolveDpr(dprIn);
+    // The renderer's own device pixels to the CSS pixel, from its rounded buffer width.
+    const view = snapRef.current.draw(viewRef.current, Math.round(w * dpr) / w, retain !== false && retain?.snap !== false);
     const { layerVisibility: vis, layerOrder: order } = gateRef.current;
     const spans = debugFrame?.time();
     const commands = drawLayers(
@@ -101,7 +106,7 @@ export function useCanvasPaint(
       vis ?? NO_LAYER_VISIBILITY,
       order,
       view,
-      { width: w, height: h, dpr: resolveDpr(dprIn) },
+      { width: w, height: h, dpr },
       layerCacheRef.current,
       undefined,
       groups,
@@ -109,10 +114,12 @@ export function useCanvasPaint(
       retainPolicy(retain),
     );
     renderer.render(commands, viewToMat3(view), spans ? { spans } : undefined);
-    debugFrame?.end(renderer.lastFrameStats());
+    const stats = renderer.lastFrameStats();
+    debugFrame?.end(stats);
     markPainted();
+    if (snapRef.current.owesFrame(stats.retained.declined)) requestRedraw();
     return true;
-  }, [gateRef, helpersRef, inputsRef, lease, markPainted, ownCanvasRef, paintRectRef, paintTargetRef, viewRef]);
+  }, [gateRef, helpersRef, inputsRef, lease, markPainted, ownCanvasRef, paintRectRef, paintTargetRef, requestRedraw, viewRef]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });

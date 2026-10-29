@@ -141,7 +141,7 @@ function CanvasInner<TPose>(
     announceControlled();
   });
 
-  useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted);
+  useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted, requestRedraw);
   useEffect(() => clearSubscribers, [clearSubscribers]);
 
   useToolCursor(cursorSink, tools, detached ? inputElement : null, style?.cursor);

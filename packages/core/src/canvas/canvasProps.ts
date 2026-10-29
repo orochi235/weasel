@@ -23,6 +23,11 @@ export interface CanvasRetainOptions {
   /** GPU memory, in bytes, retained layers may hold together:
    *  `WeaselRendererOptions.retainBudget`. 0 retains nothing. */
   budget?: number;
+  /** Round the view's translation to whole device pixels while it moves, so
+   *  a retained layer is composited moved rather than drawn again; it draws
+   *  exactly once the view holds. Drawn and hit positions then differ by up
+   *  to half a device pixel while the view moves. Default `true`. */
+  snap?: boolean;
 }
 
 /**
