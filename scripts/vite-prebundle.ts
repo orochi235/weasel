@@ -145,17 +145,22 @@ function viteQueriesExternal() {
  * `server.restart(true)`, less its leak. Each restart left its environments reachable, and with them its whole module
  * graph: ~30 MB a restart on forge (`scripts/probe-dev-restarts.ts`). vite hands them to the next server, whose
  * closures keep them, and rolldown's resolver holds a handle that is never released on a closure that reaches them.
- * Neither holder can be reached from here, so the outgoing environments are emptied once the new server is up.
+ * Neither holder can be reached from here, so the outgoing environments are emptied once the new server is up, all but
+ * the fields of vite's `PartialEnvironment` (`KEPT_AFTER_CLOSE`).
  */
 export async function restartLeavingNothing(server: ViteDevServer): Promise<void> {
   const outgoing = server.environments as Record<string, object>;
   await server.restart(true);
   if (server.environments === outgoing) return;
   for (const [name, env] of Object.entries(outgoing)) {
-    for (const key of Object.keys(env)) delete (env as Record<string, unknown>)[key];
+    for (const key of Object.keys(env)) if (!KEPT_AFTER_CLOSE.has(key)) delete (env as Record<string, unknown>)[key];
     delete outgoing[name];
   }
 }
+
+// vite's dep optimizer cancels a run on close without waiting for it, and the run, with its 1 s "bundling" timer,
+// reads these until it ends: emptied, it throws outside any catch and the dev server exits (vite 8.3).
+const KEPT_AFTER_CLOSE = new Set(['name', 'config', 'logger', '_options', '_topLevelConfig']);
 
 export interface PrebundleOptions {
   /** Read `*.stories.*` files under `sourceDirs` for specifiers, for a server that loads stories. */

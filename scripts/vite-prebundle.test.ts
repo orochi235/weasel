@@ -1,8 +1,9 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
-import { bundledDirs, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
+import type { ViteDevServer } from 'vite';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { bundledDirs, restartLeavingNothing, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
 import { relativeImportsIn } from './vite-prebundle-reach';
 
 const tree = mkdtempSync(join(tmpdir(), 'vite-prebundle-'));
@@ -143,5 +144,60 @@ describe('storyServing', () => {
       sourceDirs: ['/repo/apps/forge'],
       storyTrees: ['/repo/packages/ui/src'],
     });
+  });
+});
+
+/** An environment shaped like vite's: what `PartialEnvironment` holds, then the module graph and its holders. */
+function environment(name: string) {
+  const env: Record<string, unknown> = {
+    name,
+    _options: { optimizeDeps: {} },
+    _topLevelConfig: { cacheDir: '/cache' },
+    logger: { info: vi.fn() },
+    moduleGraph: { modules: new Map() },
+    _pluginContainer: {},
+    _pendingRequests: new Map(),
+    _crawlEndFinder: {},
+    hot: {},
+    depsOptimizer: {},
+  };
+  env.config = new Proxy(env._options as object, {
+    get: (target, prop) => (prop in target ? (env._options as Record<PropertyKey, unknown>)[prop] : (env._topLevelConfig as Record<PropertyKey, unknown>)[prop]),
+  });
+  return env;
+}
+
+/** A server whose restart swaps in new environments, as vite's does, while a dep optimizer run of the old one is still in flight. */
+function serverWithOptimizerRun() {
+  const outgoing = { client: environment('client') };
+  const server = { environments: outgoing as Record<string, object> } as unknown as ViteDevServer;
+  const client = outgoing.client as { logger: { info: (m: string) => void }; config: { cacheDir: string } };
+  // vite's runOptimizeDeps: a 1 s timer that announces a slow run, and the run reading its environment as it goes.
+  setTimeout(() => client.logger.info('[optimizer] bundling dependencies...'), 1000);
+  const run = new Promise<string>((done) => setTimeout(() => done(client.config.cacheDir), 3000));
+  server.restart = async () => { (server as { environments: object }).environments = { client: environment('client') }; };
+  return { server, outgoing, run };
+}
+
+describe('restartLeavingNothing', () => {
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('leaves a closed environment what a dep optimizer run still in flight reads', async () => {
+    vi.useFakeTimers();
+    const { server, outgoing, run } = serverWithOptimizerRun();
+    const client = outgoing.client;
+    await restartLeavingNothing(server);
+    await vi.advanceTimersByTimeAsync(3000);
+    await expect(run).resolves.toBe('/cache');
+    expect(client.logger.info).toHaveBeenCalledWith('[optimizer] bundling dependencies...');
+  });
+
+  it('drops the closed environment from the server and empties its module graph and holders', async () => {
+    vi.useFakeTimers();
+    const { server, outgoing } = serverWithOptimizerRun();
+    const client = outgoing.client;
+    await restartLeavingNothing(server);
+    expect(outgoing).toEqual({});
+    expect(Object.keys(client).sort()).toEqual(['_options', '_topLevelConfig', 'config', 'logger', 'name']);
   });
 });
