@@ -17,6 +17,7 @@ vi.mock('@weasel-js/renderer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
   WeaselRenderer: class {
     render(commands: readonly unknown[]): void { painted.commands = commands; }
+    lastFrameStats() { return { retained: { composited: 0, declined: 0 } }; }
     resize(): void {}
     setTarget(): void {}
     dispose(): void {}

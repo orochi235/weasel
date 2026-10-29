@@ -28,6 +28,7 @@ vi.mock('@weasel-js/renderer', async (importOriginal) => ({
     private readonly target: unknown;
     constructor(opts: { canvas?: unknown }) { this.target = opts.canvas; }
     render(commands: readonly unknown[]): void { painted.set(this.target, commands); }
+    lastFrameStats() { return { retained: { composited: 0, declined: 0 } }; }
     resize(): void {}
     setTarget(): void {}
     dispose(): void {}

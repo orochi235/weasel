@@ -20,6 +20,7 @@ vi.mock('@weasel-js/renderer', async (importOriginal) => ({
   WeaselRenderer: class {
     constructor(opts: { width: number; height: number; dpr: number }) { ctorSpy(opts); }
     render(commands: DrawCommand[]): void { renderMock(commands); }
+    lastFrameStats() { return { retained: { composited: 0, declined: 0 } }; }
     resize(dims: { width: number; height: number; dpr: number }): void { resizeMock(dims); }
     dispose(): void { disposeMock(); }
   },

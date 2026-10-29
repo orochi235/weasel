@@ -42,6 +42,7 @@ vi.mock('@weasel-js/renderer', async (importOriginal) => {
       render(commands: DrawCommand[]): void {
         renderMock(commands);
       }
+      lastFrameStats() { return { retained: { composited: 0, declined: 0 } }; }
       resize(dims: { width: number; height: number; dpr: number }): void {
         resizeMock(dims);
         this.size(dims);
