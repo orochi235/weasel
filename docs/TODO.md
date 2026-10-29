@@ -369,12 +369,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Symmetry follow-ups
 
-### Container layout strategies
-
-- **(P3) [agent] The `diagram-drop` demo's straight edge strikes through the boxes dropped across it.** Ruled
-  (2026-10-28): edges keep painting above every node (`mainSpecs` pushes them last), and the demo
-  (`apps/site/demos/DiagramDropDemo.tsx`) routes with `router="avoid"` so its edges go round what is dropped.
-
 ---
 
 ## Animation
