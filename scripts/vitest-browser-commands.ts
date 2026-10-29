@@ -72,8 +72,11 @@ const dropClipboard: BrowserCommand<[]> = async (ctx) => {
   if (server) await new Promise((r) => server.close(r));
 };
 
-/** Run a full garbage collection in the renderer the test page lives in. */
+/** Run a full garbage collection in the renderer the test page lives in. Chromium only:
+ *  elsewhere there is no CDP, and this does nothing. */
 const collectGarbage: BrowserCommand<[]> = async (ctx) => {
+  const engine = ctx.context.browser()?.browserType().name();
+  if (engine && engine !== 'chromium') return;
   const cdp = await ctx.page.context().newCDPSession(ctx.page);
   try {
     await cdp.send('HeapProfiler.collectGarbage');
