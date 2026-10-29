@@ -394,16 +394,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
 
-### Engines still on their own frame loops
-
-- **(P3) [maintainer] Should `useFrameClock` move onto `@weasel-js/clock`?** It is the last second
-  elapsed-time clock (pause, rebase on resume), but `@weasel-js/clock` depends on `@weasel-js/react`,
-  so folding it means moving public API out of `@weasel-js/react` and core's re-export into
-  `@weasel-js/clock/react`, and its runs-only-while-subscribed behavior has no clock equivalent.
-  Its one user is the site's `CustomShaderDemo` (2026-10-28).
-- **(P3) [agent] A turned `step` symbol's title and its cut labels both sit on the right**, so in a
-  `direction: 'down'` rack they can overlap when a cut falls near the middle (2026-10-28).
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
@@ -606,11 +596,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   different ground. Ruled (2026-10-28): one layer, as a theme token (`--wzl-workspace`) both use, and its ground is the
   asset editor's lighter one (`--wzl-surface-raised` with its tint taken out), which `--wzl-workspace-surface` becomes;
   the ground around draw's page gets lighter.
-
-- **(P3) Draw's `registry-enum` prefs offer a Control the control ignores.** The asset editor lists `select` and
-  `radio` for it (`KINDS` in `apps/draw/src/dev/AssetsPage.tsx`), but `RegistryEnumControl` in
-  `apps/draw/src/PreferencesModal.tsx` always draws a `RegistrySelect`. Either draw radios for `radio` or drop the
-  attribute. Filed 2026-10-28.
 
 ---
 

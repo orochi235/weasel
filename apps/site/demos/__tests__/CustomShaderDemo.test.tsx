@@ -41,4 +41,26 @@ describe('CustomShaderDemo', () => {
     // A loop that stopped would also commit nothing: a frame is still owed.
     expect(queued.size).toBeGreaterThan(0);
   });
+
+  it('runs no frames while ?frozenTime holds the clock', () => {
+    const queued = new Map<number, FrameRequestCallback>();
+    let nextId = 1;
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      queued.set(nextId, cb);
+      return nextId++;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => { queued.delete(id); });
+    window.history.replaceState(null, '', '?frozenTime=1.5');
+    try {
+      render(<CustomShaderDemo />);
+      for (let now = 0; now <= 32; now += 16) {
+        const due = [...queued.values()];
+        queued.clear();
+        act(() => { for (const cb of due) cb(now); });
+      }
+      expect(queued.size).toBe(0);
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
 });
