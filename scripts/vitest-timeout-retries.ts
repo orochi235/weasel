@@ -75,13 +75,22 @@ class TimeoutReporter implements Reporter {
  * line, which is how onto runs the suite.
  */
 export function timeoutRetries(): Plugin {
-  const seen = new WeakSet<Vitest>();
   return {
     name: 'weasel:timeout-retries',
     configureVitest({ vitest }) {
-      if (seen.has(vitest)) return;
-      seen.add(vitest);
+      if (!claimRun(vitest)) return;
       vitest.config.reporters.push(new TimeoutReporter(vitest));
     },
   };
+}
+
+// vitest evaluates the config again for every inline project, so a guard held by the plugin is never shared.
+const ADDED = Symbol.for('weasel:timeout-retries');
+
+/** Whether this is the first call for `run`, marking it so every later call, from any plugin instance, says no. */
+export function claimRun(run: object): boolean {
+  const marked = run as { [ADDED]?: true };
+  if (marked[ADDED]) return false;
+  marked[ADDED] = true;
+  return true;
 }
