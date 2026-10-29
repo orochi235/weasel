@@ -1,4 +1,4 @@
-# @weasel-js/shape
+# @weasel-js/text-shaping
 
 OpenType shaping through [HarfBuzz](https://harfbuzz.github.io/): font bytes and text in,
 positioned glyphs out. It is what lays out the scripts whose letters change with their
@@ -13,7 +13,7 @@ Latin, Greek, Cyrillic and CJK. Importing it costs nothing: HarfBuzz's WebAssemb
 ## Giving it to weasel's text
 
 ```ts
-import { loadShaper } from '@weasel-js/shape';
+import { loadShaper } from '@weasel-js/text-shaping';
 import { bidi } from '@weasel-js/bidi';
 import { registerBidi, registerShaper } from '@weasel-js/core';
 

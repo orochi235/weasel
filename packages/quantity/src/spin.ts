@@ -54,6 +54,12 @@ export function spinKey(key: string, from: number, bounds: SpinBounds): number |
   return at === null ? null : track.fromTrack(at);
 }
 
+/** Whether `key` spins `from` anywhere: false for a key that does not spin, and at the bound it heads for. */
+export function canSpin(key: string, from: number, bounds: SpinBounds): boolean {
+  const next = spinKey(key, from, bounds);
+  return next !== null && next !== from;
+}
+
 function finiteSpin(key: string, from: number, bounds: SpinBounds): number | null {
   const by = (n: number) => {
     const places = Math.max(placesOf(from), placesOf(bounds.step));

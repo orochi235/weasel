@@ -10,7 +10,7 @@
       "@weasel-js/text",
       "@weasel-js/text-dom",
       "@weasel-js/bidi",
-      "@weasel-js/shape",
+      "@weasel-js/text-shaping",
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",

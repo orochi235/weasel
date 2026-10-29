@@ -12,7 +12,7 @@ import type { ShapedGlyph, TextShaper } from './shaperSeam';
 /**
  * Layout with a shaper, against a stand-in one: what each test asserts is how
  * layout lays a shaping over its code points, not what HarfBuzz decides.
- * `@weasel-js/shape` tests the real engine on real faces.
+ * `@weasel-js/text-shaping` tests the real engine on real faces.
  */
 
 const SFNT = new ArrayBuffer(8);
