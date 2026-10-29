@@ -799,11 +799,15 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
+- **(P2) [waiting] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
   label, keeps it on a reroute, and resets it" timed out on `expect.poll(() => savedLabel()?.dodge).toBe(false)`
   (received `undefined`: the drag saved no label) in the fleet runs of `headless-slider-steps` (cacb14e98) and
   `prefs-auto-field`, two branches that touch nothing in chart, on the same evening; every other run that day passed
-  it, including slider-steps' previous commit. Suspected (not shown): the drag lands before the label is placed.
+  it, including slider-steps' previous commit. Suspected (not shown): the drag lands before the label is placed. Not
+  reproduced (2026-10-28): 30 runs of the file alone on studio, and 15 runs of the chart and diagram browser tests
+  beside 8 busy loops on keiei, all passed; probes of the drag under jank and stress showed no failure either. The
+  next step was a probe of whether layout is still settling when `mountChartApp` returns. Waiting on a third
+  sighting before spending more fleet time on it.
 
 - **(P3) [agent] The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
