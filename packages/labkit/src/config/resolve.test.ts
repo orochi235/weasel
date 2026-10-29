@@ -238,7 +238,7 @@ describe('resolveConfigSchema / nested groups', () => {
       {},
     ]);
     expect(leafAt(r, 'plain').autoResolve).toBeUndefined();
-    expect(leafAt(r, 'plain').auto).toBeUndefined();
+    expect(leafAt(r, 'plain').auto).toBe(false);
   });
 
   it('gives a list of strings a string item, and a typed list the item it was built with', () => {

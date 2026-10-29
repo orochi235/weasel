@@ -77,7 +77,7 @@ export function fromConfigFields(fields: readonly ConfigField[]): ResolvedConfig
       }
       group = group.children[segment] as PrefGroup;
     }
-    group.children[leafKey] = { ...patch, default: field.default } as PrefLeaf;
+    group.children[leafKey] = { ...patch, default: field.default, auto: false } as PrefLeaf;
   }
   return {
     group: root,

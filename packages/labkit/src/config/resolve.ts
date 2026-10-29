@@ -1,5 +1,6 @@
 import {
   checkPrefConditions,
+  type PrefAuto,
   type PrefGroup,
   type PrefLeaf,
   type PrefSchemaConditionProblem,
@@ -24,6 +25,12 @@ import type {
 
 /** Drop keys whose value is undefined, so an unset annotation stays a gap the
  *  rule chain can fill rather than a settled `undefined`. */
+/** The `auto` a leaf's own fields gave it, where an object: a prefs leaf `fromPrefs` carried over. */
+const ownAuto = (patch: LeafPatch): PrefAuto | undefined => {
+  const { auto } = patch as { auto?: unknown };
+  return typeof auto === 'object' && auto !== null ? (auto as PrefAuto) : undefined;
+};
+
 function defined(annotations: Record<string, unknown>): LeafPatch {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(annotations)) if (v !== undefined) out[k] = v;
@@ -162,6 +169,8 @@ function resolveEntry(
     // Extra keys survive onto the leaf at runtime; `ControlPanel` reads them
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
     ...(autoResolve === undefined ? {} : { autoResolve }),
-    ...(auto === undefined ? {} : { auto }),
+    // labkit's auto is opt-in, where a leaf with no `auto` can be auto to any other reader. A leaf
+    // `fromPrefs` carried over keeps the `auto` its schema gave it.
+    auto: auto ?? ownAuto(patch) ?? false,
   } as PrefLeaf;
 }

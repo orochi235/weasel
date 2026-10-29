@@ -27,6 +27,16 @@ const SCHEMA: PrefSection = {
 };
 
 describe('f.prefs', () => {
+  it('keeps the auto a leaf says, and gives one that says none `auto: false`', () => {
+    const config = f.prefs({
+      name: 'Box',
+      members: { a: num('A', { auto: { on: true } }), b: num('B'), c: num('C', { auto: false }) },
+    });
+    const resolved = resolveConfigSchema(config, []);
+    const auto = (path: string) => (schemaNodeAtPath(resolved.group, path) as PrefLeaf).auto;
+    expect([auto('a'), auto('b'), auto('c')]).toEqual([{ on: true }, false, false]);
+  });
+
   it('nests each leaf at the path its key names, as the config holds it', () => {
     const config = f.prefs(SCHEMA);
     expect(config.defaults()).toEqual({

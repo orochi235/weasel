@@ -20,8 +20,8 @@ export function autoResolverOf(leaf: PrefLeaf): Resolver | undefined {
   return value === undefined ? undefined : () => value;
 }
 
-/** Whether a leaf may be auto. Where a prefs surface takes a leaf with no `auto` as one that can be,
- *  labkit asks for it: `.auto()` and `.initial(auto)` write an object there, as data can. */
+/** Whether a leaf may be auto: `.auto()` and `.initial(auto)` write an object to `auto`, and every other
+ *  resolved leaf says `false`. */
 export function leafCanAuto(leaf: PrefLeaf): boolean {
   return typeof leaf.auto === 'object';
 }
