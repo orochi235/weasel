@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@weasel-js/font": "1.13.0",
+    "@weasel-js/headless": "1.13.0",
     "@weasel-js/paint": "1.13.0",
     "@weasel-js/react": "1.13.0",
     "@weasel-js/text": "1.13.0"

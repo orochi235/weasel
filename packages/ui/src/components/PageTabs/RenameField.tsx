@@ -1,4 +1,5 @@
 import { useEffect, useRef, type SyntheticEvent } from 'react';
+import { editEnd, type EditEnd } from '@weasel-js/headless';
 import s from './PageTabs.module.css';
 
 /** Keep an event from the tab around the field: the tab would read the keys and presses as its own. */
@@ -8,10 +9,10 @@ const contain = (e: SyntheticEvent) => e.stopPropagation();
 export function RenameField({ initial, onDone }: { initial: string; onDone(name: string | null): void }) {
   const ref = useRef<HTMLInputElement>(null);
   const done = useRef(false);
-  const finish = (name: string | null) => {
-    if (done.current) return;
+  const finish = (how: EditEnd | null, value: string) => {
+    if (!how || done.current) return;
     done.current = true;
-    onDone(name);
+    onDone(how === 'commit' ? value.trim() : null);
   };
   useEffect(() => {
     ref.current?.focus();
@@ -29,11 +30,10 @@ export function RenameField({ initial, onDone }: { initial: string; onDone(name:
       onKeyUp={contain}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === 'Enter') finish(e.currentTarget.value.trim());
-        else if (e.key === 'Escape') finish(null);
+        finish(editEnd({ key: e.key, shift: e.shiftKey }), e.currentTarget.value);
       }}
       onFocus={contain}
-      onBlur={(e) => { e.stopPropagation(); finish(e.currentTarget.value.trim()); }}
+      onBlur={(e) => { e.stopPropagation(); finish(editEnd('blur'), e.currentTarget.value); }}
     />
   );
 }
