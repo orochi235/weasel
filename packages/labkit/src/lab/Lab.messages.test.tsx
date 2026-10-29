@@ -1,5 +1,5 @@
 import { act, screen } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { actSettled, renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, describe, expect, type MockInstance, vi } from 'vitest';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
@@ -47,7 +47,7 @@ const SPAN = 3_600_000;
 // jsdom's own `postMessage` delivers an event with no `source`, which a browser
 // never does, so the host's message is dispatched as the browser would shape it.
 const send = (data: unknown, init: MessageEventInit = {}) =>
-  act(async () => {
+  actSettled(async () => {
     window.dispatchEvent(
       new MessageEvent('message', { data, source: window, origin: location.origin, ...init }),
     );

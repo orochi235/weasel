@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { actSettled, renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
@@ -89,7 +89,7 @@ describe('<TrialTransport>', () => {
     await live(mountLab)(twice);
     const [first] = screen.getAllByRole('slider', { name: /rate/i });
     fireEvent.keyDown(first as HTMLElement, { key: 'ArrowRight' });
-    await live(act)(async () =>
+    await live(actSettled)(async () =>
       fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[1] as HTMLElement),
     );
     expect(c().rate).toBe(2);

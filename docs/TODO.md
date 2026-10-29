@@ -880,15 +880,6 @@ only story runner in the repo.
   own package that way, so most of each package would stay unbundled. forge got its gain by moving
   its stories onto package specifiers first (2026-10-21); the tests would need the same.
 
-- **(P3) [agent] labkit's Lab-mounting tests stall for 20 s on the fleet now and then.** `Lab.messages.test.tsx`'s
-  "reports its state as it starts, on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in the
-  batch-5 gate at 9d51e9d04, where it takes 62 ms locally, and `TrialTransport.test.tsx`'s "shares the chosen speed
-  between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both 2026-10-27).
-  What they wait on is unknown. Both files, and `still.browser.test.tsx`, now take their awaited steps through
-  labkit's `live` fixture (`packages/labkit/src/testing/liveTest.ts`), so a timed-out attempt stops at its next step
-  instead of acting on the next test, and the run's timeout warning prints the stack of each step it was still
-  awaiting (2026-10-27). Read that stack at the next sighting.
-
 - **(P2) [maintainer] A trial's status strip grows 2 px when its numeric face arrives**, which refits
   the view a second time. The strip itself takes its room on the first layout (`TrialChrome` reads an
   unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
