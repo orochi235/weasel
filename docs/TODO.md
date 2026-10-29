@@ -1176,10 +1176,6 @@ only story runner in the repo.
   120-minute limit. Also unmeasured: whether the base, measured first, reads differently from the head
   for that reason alone.
 
-- **(P3) [agent] Recalibrate `scripts/ci-run.weights.json`.** The post-build gate's seconds weights describe a node
-  slower than teitou (steps ran 0.59–0.81× of plan, 2026-10-21), and matrix mode's steps are mostly unweighted.
-  `node scripts/ci-run.mjs --calibrate <log>` from a matrix run rewrites them.
-
 ---
 
 ## weaselchart
