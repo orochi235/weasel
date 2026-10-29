@@ -427,8 +427,8 @@ Where it lives now: `docs/concepts.md` ("Animation target", "Clip", "Rig and ski
 - `npm run check:size -- --update` rewrites other sessions' allowlist entries. Lower your own by
   hand.
 - A new package needs more than its directory: the `fixed` group in `.changeset/config.json`,
-  `paths` and `include` in the root `tsconfig.json`, `build:leaves` or `build:downstream` in the
-  root `package.json`, the dependents' manifests, the README table, and `package-lock.json`
+  `paths` and `include` in the root `tsconfig.json`, `BUILD_ORDER` in
+  `scripts/build-workspaces.mjs`, the dependents' manifests, the README table, and `package-lock.json`
   entries. `git show 01d6e4ec0 --stat` is the list.
 - A test file that needs the scene stays in core even when what it tests moved to the animator;
   one that needs only the animator runs under the `weasel-ui` project. `vi.mock` of a renderer or

@@ -44,8 +44,7 @@ jobs:
       # reads like a missing package rather than an out-of-date CLI.
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
-      # Covers all thirteen workspaces, labkit included — it is last in
-      # `build:downstream` because its types and stylesheet are built from the others'.
+      # Builds every published workspace, in `scripts/build-workspaces.mjs`'s order.
       - run: npm run build
       # Last gate before anything reaches npm: refuse to publish a package whose
       # `exports`/`types` map promises files the tarball does not contain.
