@@ -26,6 +26,7 @@ export function createEmitter<TArgs extends unknown[] = []>(): Emitter<TArgs> {
       return () => { listeners.delete(listener); };
     },
     emit(...args) {
+      if (listeners.size === 0) return;
       for (const listener of [...listeners]) {
         if (!listeners.has(listener)) continue;
         try {
