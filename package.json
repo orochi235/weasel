@@ -40,7 +40,7 @@
     "gen:devtools-extension-icons": "node apps/devtools-extension/scripts/gen-icons.ts",
     "build:api": "typedoc && npm run build:reference",
     "build:reference": "tsx scripts/build-reference.ts",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p packages",
+    "typecheck": "node scripts/typecheck.mjs",
     "typecheck:packages": "node scripts/typecheck-packages.mjs",
     "test": "node scripts/vitest-overlap.mjs run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node --project=smoke --project=browser --project=forge-stories",
     "test:unit": "vitest run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node",

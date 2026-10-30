@@ -4,13 +4,15 @@ How branch and `main` runs on the fleet work, past the rules in `CLAUDE.md` ("Wo
 fleet"). For anyone running or reading a fleet job.
 
 **On a branch, a fleet run tests only what the branch reaches.** The test files whose imports lead to
-a changed path run, and the gate always runs whole; `main` and a bare commit run everything, and so
-does `--full`. A change to a manifest, a tsconfig, a setup file, or anything `vitest.config.ts` loads
+a changed path run, and the gate runs all but the slow checks whose inputs the branch leaves alone
+(below); `main` and a bare commit run everything, and so does `--full`. A change to a manifest, a tsconfig, a setup file, or anything `vitest.config.ts` loads
 runs everything too — the `triggers` list there. A file read at build time rather than imported,
 such as an icon definition a plugin generates from, selects nothing on a branch and is caught only by
 the full run on `main` after the merge. Add such a path to `triggers` once it has slipped through.
 A changed path is one the branch adds to local `main`, or to `origin/main` when that is newer: the
 node builds on the pushed merge-base, but unpushed `main` commits are not the branch's changes.
+`--since <ref>` selects from what the branch adds past `<ref>` instead, for a branch stacked on one
+whose own run was green.
 
 **Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
 main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
@@ -32,6 +34,27 @@ read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs 
 this is what says a commit would fail there. `test:fleet` runs it with everything else, so read its
 results from that log. Don't run `npm run test:gate` yourself: it runs typecheck, lint and every
 check on the machine that types it.
+
+**On a branch run the gate skips `check:needs`, `check:forge-stories`, `check:first-publish`,
+`audit:jsdoc` and `check:test-projects` when the branch changes none of the paths each reads**,
+listed in `scripts/lib/gate-inputs.mjs`; the log shows each as skipped, with a `gate: skipped` line
+saying why. A change to ci.yml, the gate, `scripts/lib/`, a manifest, the lockfile or a tsconfig runs
+them all. `check:test-projects` asks only whether the branch adds or deletes a test file, since an
+edit to one cannot change which project collects it. A script that starts reading a new path needs
+that path added there, or a branch changing only it will skip the check; `main` still runs it.
+
+**Typecheck keeps its build info between runs.** `.tsbuildinfo/` is ignored, so onto's sync leaves
+it in the node's tree, and tsc rechecks only files whose content, or whose imports' exported types,
+changed; it keys on content, never mtime (`scripts/typecheck-incremental.test.ts`). A branch run
+keeps its own copy (`.tsbuildinfo/branch--<name>--*`), started from main's and pruned after a week
+of disuse, so that rerunning a branch rechecks only its new edits rather than whatever the node ran
+last. `scripts/typecheck.mjs` swaps that copy into the path the tsconfig names for the run and puts
+main's back after: tsc records its build info path and reads one written under another as none.
+
+An edit to an export that most of the repo imports costs as much as no build info, or more: on
+teitou on 2026-10-29 the two programs took 36 s together with no build info and the node idle, 6 s
+with nothing changed, and 94 s after one export was added to `@weasel-js/core`'s index with 7–13 of
+its cores busy (`scripts/bench-typecheck.runs.jsonl`). `npm run typecheck` runs the two at once.
 
 **The gate stops at ci.yml's first build; `npm run test:fleet:postbuild -- <ref>` runs the rest.**
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
