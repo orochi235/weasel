@@ -289,20 +289,24 @@ Owner tags, after the priority (2026-10-26):
   0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
   WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
 
-- **(P3) [agent] At 16px and below at DPR 1, the atlas tier's ink wobbles as a glyph moves across a
-  pixel, so the overlay's sits up to ~0.6px off it.** Measured 2026-10-29: as `x` steps from 20 to
-  20.875 in eighths, the canvas centroid of a 7.2px `H` (what a 12px super- or subscript draws, and
-  the same with no script) runs 23.14, 23.25, 23.12, 22.87, 22.77, 22.89, 23.34, 23.71, moving left
-  for half the pixel, while every engine's overlay moves steadily right. So `dx` swings between
-  about -0.5 and +0.5 with the phase (max 0.51 Chromium, 0.60 Firefox, 0.57 WebKit); Inter 16px
-  swings by about 0.4. The shader reads coverage from the field at each pixel's center, so a stem
-  narrower than a pixel is inked by where it sits: at `x` 20 the canvas gives the `H`'s left stem,
-  straddling two columns, 2.84 pixels of ink and its right stem, centered on one, 4.35, where the
-  overlay gives them 3.92 and 3.54. At DPR 2, where the stems are wider than a pixel, `dx` stays
-  within 0.19 in every engine. The fix is area coverage, several field taps per fragment where a
-  pixel spans more of the field than a stem is wide, in `GLYPH_COVERAGE_GLSL`, priced with
-  `tests/perf/fill-rate.spec.ts`. The `dy` of up to ±0.45 in the same rows is the overlay's
-  whole-pixel rounding, the entry "The edit overlay's text lands on whole CSS pixels".
+- **(P3) [agent] Area coverage for small atlas glyphs: what is left.** Since 2026-10-30
+  `glyphCoverage` takes the mean of four field taps a pixel where a pixel spans more than
+  `GLYPH_AREA_FROM` field units, and the 12px and 16px `H`s of `glyphCoverage.browser.test.ts` keep
+  their ink centroid within 0.04px as `x` steps through a pixel (0.35 and 0.66 before). Two things
+  remain, measured on teitou (`tests/perf/recorded/glyph-area-coverage-2026-10-30/`):
+  - **The 7.2px `H` still swings by 0.37px** (0.88 before), and the overlay's `dx` at DPR 1 by up to
+    0.29 Chromium, 0.37 Firefox, and 0.22 WebKit (0.51, 0.60, and 0.57 before). Exact area coverage
+    would leave about 0.16, since a stem inside one pixel keeps its centroid at that pixel's center
+    (a 1D model of this `H`'s two stems, not measured). Not tap spacing: a 2x2 grid and the rotated
+    grid that ships measured the same. The canvas's ink mass still varies 8.03 to 8.65 across the
+    pixel, so something loses or adds ink; unexplained.
+  - **A batch fragment that is not a glyph costs 6 to 10% more** in `fill-rate`'s `batch` variant
+    (two before/after/after/before jobs on one afternoon, 8.24 to 9.02 and 8.04 to 8.54 ms a frame,
+    mean of each side). The variant whose taps fetch nothing (`N`) cost the same as the shipping one,
+    so it is the branch and the math kept live across it, not the second sampler tree. A glyph
+    fragment taking the taps costs 2.1 times a `batch` one; one above the threshold costs what a
+    `batch` one does. Untried: decide on the CPU per glyph run whether it takes taps, and pass that
+    as a flat varying the shader branches on.
 
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType

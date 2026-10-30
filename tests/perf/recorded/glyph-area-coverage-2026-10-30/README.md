@@ -1,0 +1,15 @@
+# Area coverage for small atlas glyphs, 2026-10-30
+
+The measurements behind the `docs/TODO.md` entry "Area coverage for small atlas glyphs: what is left". Taken on teitou
+(Apple M5 Max, ANGLE Metal, headless Chromium), with the fill-rate runs `onto --solo`.
+
+- `overlay-probe/*.json`: the probe from `../overlay-alignment-2026-10-29/probe/` rerun after the change,
+  its `sweeps` test only. `python3 probe_summary.py overlay-probe` prints each engine's canvas centroid
+  swing and `dx` per case; pointed at `../overlay-alignment-2026-10-29/overlay-probe` it prints the same
+  for before.
+- `fill-rate-abba/`: `tests/perf/fill-rate.spec.ts` four times in one job, before / after / after / before.
+  "before" is the three shader sources (`textSdf.ts`, `batchFill.ts`, `glyphPaint.ts`) of `707858878`
+  copied over the tree, so the result files' `git` block names the same tree for both sides.
+- `fill-rate-variants/`: the same in a second job, with two variants of the after shader: `N`, whose
+  `glyphTap` returns a constant (the branch and loop with no fetch), and `F`, whose `glyphTap` calls
+  `sampleSlot` rather than a tree of its own. The `C` passes failed and wrote nothing.
