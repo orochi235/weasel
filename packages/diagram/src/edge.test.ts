@@ -115,6 +115,14 @@ describe('bezier', () => {
     expect(between.length).toBeGreaterThan(0);
     for (const p of between) expect(p.x).toBeCloseTo(100, 6);
   });
+
+  it('keeps a long leg between two facing ports within the band they span', () => {
+    const wide = bezier(req(port('a', 0, 0, { x: 0, y: 1 }), port('b', 600, 40, { x: 0, y: -1 })));
+    for (const p of wide) {
+      expect(p.y).toBeGreaterThanOrEqual(-1e-6);
+      expect(p.y).toBeLessThanOrEqual(40 + 1e-6);
+    }
+  });
 });
 
 describe('routerOf', () => {
