@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Times walk.mjs and ../scene-roundtrip-2026-10-29/roundtrip.mjs at each <label>:<sha> given, and at
 # the synced tree as `<label>:tree`, ROUNDS times, interleaved, one fresh process per run, on one
-# node. With PROFILE=1 each first-round run also writes a V8 CPU profile, digested by profile.mjs.
+# node. ONLY=walk or ONLY=roundtrip times just that one. With PROFILE=1 each first-round run also writes a V8 CPU profile, digested by profile.mjs.
 # Run from the repo root as
 #   onto do --kind bench --solo --expect 15m --out tests/perf/recorded/core-regress-2026-10-30/<pass> -- \
 #     bash tests/perf/recorded/core-regress-2026-10-30/run.sh <pass> <label>:<sha|tree> ...
@@ -36,14 +36,20 @@ for pair in "$@"; do
   git -C "$root" worktree add --detach --force "$trees/$sha" "$sha" > /dev/null
   mkdir -p "$trees/$sha/tests/perf/recorded/core-regress-2026-10-30"
   cp "$here/walk.mjs" "$trees/$sha/tests/perf/recorded/core-regress-2026-10-30/"
-  cp "$root/tests/perf/bench/node-hooks.mjs" "$trees/$sha/tests/perf/bench/node-hooks.mjs"
+  # Older commits' weaselAliases() also emit string `find`s, which the current hooks don't take.
+  sed 's|if (find.test(specifier)) return specifier.replace(find, replacement);|if (typeof find === "string" ? specifier === find : find.test(specifier)) return typeof find === "string" ? replacement : specifier.replace(find, replacement);|' \
+    "$root/tests/perf/bench/node-hooks.mjs" > "$trees/$sha/tests/perf/bench/node-hooks.mjs"
 done
 
-n=$(( rounds * $# * 2 )); i=0
+per=2; [ -z "${ONLY:-}" ] || per=1
+n=$(( rounds * $# * per )); i=0
 for r in $(seq 1 "$rounds"); do
   for pair in "$@"; do
     label="${pair%%:*}" sha="${pair##*:}" dir="$(dir_of "${pair##*:}")"
-    for script in "$dir/tests/perf/recorded/core-regress-2026-10-30/walk.mjs" "$here/../scene-roundtrip-2026-10-29/roundtrip.mjs"; do
+    scripts=()
+    [ "${ONLY:-}" = roundtrip ] || scripts+=("$dir/tests/perf/recorded/core-regress-2026-10-30/walk.mjs")
+    [ "${ONLY:-}" = walk ] || scripts+=("$here/../scene-roundtrip-2026-10-29/roundtrip.mjs")
+    for script in "${scripts[@]}"; do
       i=$(( i + 1 ))
       prof=()
       if [ "${PROFILE:-0}" = 1 ] && [ "$r" = 1 ]; then

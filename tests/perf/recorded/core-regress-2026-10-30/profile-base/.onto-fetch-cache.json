@@ -1,0 +1,38 @@
+{
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-base/msb-uai/conditions.txt": {
+    "size": 209,
+    "mtime": 1793400341457335325,
+    "inode": 740874001,
+    "sha256": "44eaa75065e1dac2bb99d10590aada5c73bb0ec5480b9a7cfc0b29d5bbb000ac"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-base/msb-uai/prof/base-roundtrip.cpuprofile.gz": {
+    "size": 14130,
+    "mtime": 1793400341365744000,
+    "inode": 740874003,
+    "sha256": "00a6aef9a0a5ea7fdf9a6b3ed4986fd930f103afab3910b9a85feaa6e9df4fa9"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-base/msb-uai/prof/base-roundtrip.top.txt": {
+    "size": 2574,
+    "mtime": 1793400341409222194,
+    "inode": 740874004,
+    "sha256": "0c0cbb63951215725d55ea24b03fd0bdc5b86ddfc11b1bd189f40d764d5a4fbd"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-base/msb-uai/prof/base-walk.cpuprofile.gz": {
+    "size": 17844,
+    "mtime": 1793400340537677000,
+    "inode": 740874005,
+    "sha256": "313851e904d5231f863d9d5835214572eb89c4d4dacafac9a5e1361c53d84dfc"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-base/msb-uai/prof/base-walk.top.txt": {
+    "size": 2725,
+    "mtime": 1793400341449021545,
+    "inode": 740874006,
+    "sha256": "f12de002e7d09a0eb9b2c0b64e60290431bf05de013f088b1b73b0ae499af46a"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-base/msb-uai/runs.jsonl": {
+    "size": 453,
+    "mtime": 1793400341373547816,
+    "inode": 740874007,
+    "sha256": "225a277e5bb0227f693b81ae686611e8672191ce4e0ebb4a622735e5f29fa291"
+  }
+}

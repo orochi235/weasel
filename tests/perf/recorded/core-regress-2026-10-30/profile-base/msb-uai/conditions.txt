@@ -1,0 +1,6 @@
+start: 2026-10-30T22:45:38Z
+synced tree: bf541eac0a6522727d2be7a04d43636d682296a7 dirty-paths: 4
+cpu: Apple M3 Max (14 threads, 36 GB)
+node: v26.8.1
+rounds: 1 batches: 200 profile: 1
+end: 2026-10-30T22:45:41Z
