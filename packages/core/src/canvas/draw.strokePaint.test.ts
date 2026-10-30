@@ -114,11 +114,15 @@ function uploadedRamps(rec: Recorder): readonly unknown[][] {
     .map((c) => c.args as unknown[]);
 }
 
+/** Even-odd, it carries a second contour of no area along its first edge: an
+ *  even-odd fill whose outlines never meet is triangulated and batches, and
+ *  these need one that keeps the stencil. */
 function square(fillRule: 'nonzero' | 'evenodd'): PolygonPath {
+  const touch = fillRule === 'evenodd';
   return {
     kind: 'polygon',
-    commands: new Uint8Array([M, L, L, L, Z]),
-    coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+    commands: new Uint8Array(touch ? [M, L, L, L, Z, M, L, Z] : [M, L, L, L, Z]),
+    coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100, ...(touch ? [0, 0, 100, 0] : [])]),
     fillRule,
   };
 }
