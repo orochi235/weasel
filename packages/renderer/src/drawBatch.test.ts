@@ -7,12 +7,13 @@
  * throw or drop pixels — it paints them in the wrong order, or under the wrong
  * group state, which only a test like these or a visual diff catches.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder, type GLCall } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerTexture } from './textures/registerTexture';
+import { registerOwnDrawPaint, ownDrawRect } from './testing/ownDrawPaint';
 import type { DrawCommand } from './DrawCommand';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 
@@ -27,7 +28,7 @@ import {
   MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
   SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
 } from './drawBatch';
-import { RAMP_SLOT, paintModeOf } from './shaders/batchFill';
+import { RAMP_SLOT, PAINT_MODE_IMAGE, paintModeOf } from './shaders/batchFill';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -39,11 +40,14 @@ describe('renderer — consecutive solid-fill batching', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
   let r: WeaselRenderer;
 
+  let unregister: () => void;
   beforeEach(() => {
+    unregister = registerOwnDrawPaint();
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });
+  afterEach(() => unregister());
 
   const rect = (x: number, color = '#ff0000', extra: object = {}): DrawCommand => ({
     kind: 'path',
@@ -54,14 +58,8 @@ describe('renderer — consecutive solid-fill batching', () => {
 
   const STOPS = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
 
-  /** A paint no run can carry, and the one these tests break a run with. Every
-   *  gradient and per-vertex colors batch now; a pattern draws itself. */
-  const TILE = registerTexture({ width: 4, height: 4 } as ImageBitmap);
-  const patternRect = (x: number): DrawCommand => ({
-    kind: 'path',
-    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: { paint: { kind: 'texture', texture: TILE } },
-  } as DrawCommand);
+  /** A paint no run can carry, and the one these tests break a run with. */
+  const breakerRect = (x: number): DrawCommand => ownDrawRect(x);
 
   const linearRect = (x: number): DrawCommand => ({
     kind: 'path',
@@ -151,13 +149,53 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   it('flushes for a fill kind it cannot express, keeping painter\'s order', () => {
-    r.render([rect(0), patternRect(20), rect(40)]);
+    r.render([rect(0), breakerRect(20), rect(40)]);
     const progs = drawPrograms();
     expect(progs).toHaveLength(3);
     expect(progs[0]).toBe(r._batchFill().handle);
-    expect(progs[1]).toBe(r._patternFill().handle);
+    expect(progs[1]).not.toBe(r._batchFill().handle);
     expect(progs[2]).toBe(r._batchFill().handle);
     expect(draws()).toEqual([6, 6, 6]);
+  });
+
+  describe('a pattern', () => {
+    const TILE = registerTexture({ width: 4, height: 4 } as ImageBitmap);
+    const patternRect = (x: number, paint: object = {}): DrawCommand => ({
+      kind: 'path',
+      path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+      fill: { paint: { kind: 'texture', texture: TILE, ...paint } },
+    } as DrawCommand);
+    const staged = (): Float32Array => recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+
+    it('shares one draw with the solids either side, as a premultiplied texel', () => {
+      r.render([rect(0), patternRect(20), rect(40)]);
+      expect(draws()).toEqual([18]);
+      const v = staged();
+      expect(paintModeOf(v[4 * FLOATS_PER_VERTEX + TEX_SLOT_OFFSET])).toBe(PAINT_MODE_IMAGE);
+      expect(paintModeOf(v[TEX_SLOT_OFFSET])).toBe(0);
+    });
+
+    it('carries its tile coordinate in tiles, its opacity after the matrix', () => {
+      // Tiles 5 units wide from the origin: the rect at 20..30 spans two of
+      // them, starting on a whole tile.
+      r.render([patternRect(20, { width: 5, height: 5, opacity: 0.5 })]);
+      const v = staged();
+      const corner = (k: number): number[] =>
+        Array.from(v.subarray(k * FLOATS_PER_VERTEX, (k + 1) * FLOATS_PER_VERTEX));
+      expect(corner(0).slice(6, 9)).toEqual([0, 0, 0.5]);
+      expect(corner(2).slice(6, 8)).toEqual([2, 2]);
+      expect(corner(0).slice(2, 6)).toEqual([1, 1, 1, 1]);
+    });
+
+    it('wraps its tile rather than clamping it', () => {
+      r.render([patternRect(0)]);
+      const wraps = recorder.calls
+        .filter((c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_WRAP_S)
+        .map((c) => c.args[2]);
+      expect(wraps).toContain(recorder.gl.REPEAT);
+    });
   });
 
   /**
@@ -460,7 +498,7 @@ describe('renderer — consecutive solid-fill batching', () => {
 
     it('gives itself a stencil bit when a child draws for itself, and still lets the run cross it', () => {
       r.render([
-        clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0), patternRect(0), rect(0)]),
+        clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0), breakerRect(0), rect(0)]),
         rect(40),
       ]);
       // The run before the per-vertex child, the clip's stencil write, the
@@ -468,7 +506,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       // one after the group.
       expect(draws()).toEqual([6, 6, 6, 6, 12]);
       expect(clipBitWrites().length).toBeGreaterThan(0);
-      expect(drawPrograms()[2]).toBe(r._patternFill().handle);
+      expect(drawPrograms()[2]).not.toBe(r._batchFill().handle);
       let seen = 0;
       const vcolorAt = recorder.calls.findIndex((c) => c.name === 'drawElements' && seen++ === 2);
       let func: unknown[] | null = null;
@@ -558,7 +596,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     /** One flush each: a vertex-colored fill never joins the run, so it drains what is
      *  staged before drawing itself. */
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), patternRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), breakerRect(i * 20 + 10)]).flat();
 
     /** The buffer bound at each solid-flush vertex upload, in issue order.
      *  `drawImage` is the only other `bufferSubData(ARRAY_BUFFER)` writer and
@@ -649,7 +687,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       const perSlot = SOLID_RING_SLOT_VERTICES / 4;
       const big = (n: number): DrawCommand[] => [
         ...Array.from({ length: perSlot + 1 }, (_, i) => rect(n * 10000 + i)),
-        patternRect(0),
+        breakerRect(0),
       ];
       const bigFlushes = SOLID_LARGE_RING_SIZE + 1;
       r.render([
@@ -693,7 +731,7 @@ describe('renderer — consecutive solid-fill batching', () => {
    */
   describe('which flushes re-upload their indices', () => {
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), patternRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), breakerRect(i * 20 + 10)]).flat();
 
     /** Solid-batch index uploads. Nothing else here writes indices this way:
      *  the text and image paths respecify with `bufferData` instead. */
@@ -732,13 +770,13 @@ describe('renderer — consecutive solid-fill batching', () => {
       // larger N — so slot 0 coming round with two rects needs nothing.
       r.render([
         ...alternating(SOLID_RING_SIZE),
-        rect(0), rect(20), patternRect(40),
+        rect(0), rect(20), breakerRect(40),
       ]);
       expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
     });
 
     it('uploads for a flush carrying a mesh, whose indices no count describes', () => {
-      r.render([triangle(0), patternRect(20), triangle(40)]);
+      r.render([triangle(0), breakerRect(20), triangle(40)]);
       expect(indexUploads()).toHaveLength(2);
     });
 
@@ -748,9 +786,9 @@ describe('renderer — consecutive solid-fill batching', () => {
       // still a different pattern. One full turn puts a one-rect flush back on
       // the mesh's slot.
       r.render([
-        triangle(0), patternRect(10),
+        triangle(0), breakerRect(10),
         ...alternating(SOLID_RING_SIZE - 1),
-        rect(0), patternRect(30),
+        rect(0), breakerRect(30),
       ]);
       // Every one of the 65 flushes writes: 64 filling the ring, and the last
       // because the slot it lands on held a mesh.
@@ -773,7 +811,7 @@ describe('renderer — consecutive solid-fill batching', () => {
 
     it('sends the batch its white once a frame, not once a flush', () => {
       const alternating = (flushes: number): DrawCommand[] =>
-        Array.from({ length: flushes }, (_, i) => [rect(i * 20), patternRect(i * 20 + 10)]).flat();
+        Array.from({ length: flushes }, (_, i) => [rect(i * 20), breakerRect(i * 20 + 10)]).flat();
       r.render(alternating(4));
       expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
     });

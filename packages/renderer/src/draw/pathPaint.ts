@@ -20,6 +20,7 @@ import { applyClipTest, ancestorMask, beginParityMask, endParityMask } from './s
 import { flushForOwnDraw } from './clip';
 import { pushRect, pushRampRect, tryStageFill } from './batch';
 import { batchPaint } from './gradient';
+import { pushPatternRect } from './patternBatch';
 import { paintBindContext, bindPattern, bindGradient } from './paintBind';
 import {
   attachVertexColors, detachVertexColors, tryStageVertexColors, vertexColorBase,
@@ -46,6 +47,7 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
 
   if (paint !== undefined && cmd.path.kind === 'rect') {
     if (paint.kind === 'ramp') pushRampRect(ctx, cmd.path, paint);
+    else if (paint.kind === 'pattern') pushPatternRect(ctx, cmd.path, paint);
     else pushRect(ctx, cmd.path, paint);
     return;
   }

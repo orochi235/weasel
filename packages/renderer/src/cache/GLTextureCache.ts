@@ -91,6 +91,12 @@ export class GLTextureCache {
     return this.ensure(id, source, wrap, uploadPremultiplied);
   }
 
+  /** Whether `uploadRegistered(id, source)` would send new pixels to a
+   *  texture already made for `id`. */
+  replaces(id: string, source: TexSource): boolean {
+    return this.map.has(id) && this.registered.get(id) !== source;
+  }
+
   /**
    * Delete the texture of every registry-backed id the registry has dropped.
    * The renderer calls this at the top of `render()`, before any draw, so a
