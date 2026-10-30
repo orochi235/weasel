@@ -316,11 +316,6 @@ When work merges, retire its entry here in the same change.
   the next step (inferred, not tried). `--no-isolate`, which would reuse one page, failed every file at
   about 5 s with its tests skipped (2026-10-20).
 
-- **(P3) [agent] forge's workshop takes 0.5–0.7 s to mount in jsdom, alone on keiei.** The timeline file
-  (`packages/forge/src/timeline/timeline.test.tsx`) mounts it two or three times a test. Of a mount's CPU, 11% is
-  `Element.closest` in jsdom, which `useOverlayPortal` calls through `nearestPortalHost` on every render of every
-  `Tooltip`, and about 4% is axe, which the a11y panel runs on each mount (2026-10-20).
-
 ---
 
 ## forge and dev servers

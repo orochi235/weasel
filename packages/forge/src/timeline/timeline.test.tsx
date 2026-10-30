@@ -14,6 +14,12 @@ import { ClockContext, useTimeline } from './context';
 import { harness, playhead, playheads, Readout, trial, tParam, workshopIt } from './workshopHarness';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
+// These tests drive the timeline; axe auditing every mounted story only costs them time.
+vi.mock('../frame/a11y', async (actual) => ({
+  ...(await actual<typeof import('../frame/a11y')>()),
+  auditElement: () => Promise.resolve({ ok: false, message: 'not audited here' }),
+}));
+
 installResizeObserver();
 
 function SpanReadout() {

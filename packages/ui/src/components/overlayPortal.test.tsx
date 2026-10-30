@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { Callout } from './Callout';
 import { ComboBox } from './ComboBox';
@@ -161,5 +161,25 @@ describe('consumers can override where an overlay portals', () => {
     );
     expect(elsewhere.querySelector('[data-weasel-overlay]')).not.toBeNull();
     elsewhere.remove();
+  });
+});
+
+describe('the portal host lookup', () => {
+  it('walks the ancestors once per mount, not once per render', () => {
+    const closest = vi.spyOn(Element.prototype, 'closest');
+    const lookups = () => closest.mock.calls.filter(([selector]) => selector.includes('data-wzl-portal-host')).length;
+    const tree = (n: number) => (
+      <Themed>
+        <TooltipTrigger delay={0}>
+          <button type="button">{`trigger ${n}`}</button>
+          <Tooltip>hint</Tooltip>
+        </TooltipTrigger>
+      </Themed>
+    );
+    const { rerender } = renderWithIcons(tree(0));
+    const atMount = lookups();
+    for (let n = 1; n <= 5; n++) rerender(tree(n));
+    expect(lookups()).toBe(atMount);
+    closest.mockRestore();
   });
 });
