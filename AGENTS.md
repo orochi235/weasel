@@ -29,6 +29,8 @@ repo. It indexes the canonical docs rather than restating them.
   `scene-serialization.md`).
 - **`docs/TODO.md`** — the backlog. Consult before planning new work; it's
   organized by area with P1/P2/P3 priority tags.
+- **`docs/PERF.md`** — the performance backlog: runtime costs, and test-suite and
+  dev-server speed, under the same tags.
 
 ## Reference implementations (start here for new tools)
 

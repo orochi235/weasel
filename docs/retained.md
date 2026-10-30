@@ -275,8 +275,7 @@ collected by no project.
 
 Solid geometry, image quads, up to seven distinct textures, text and all three
 gradients share one draw. **Nothing is left of step 4**, and the batched dispatch spec is
-deleted. `docs/TODO.md`'s **"(P2) Breaking the batch is what a frame
-pays for"** entry holds what it left open, measured 2026-10-03; the arc's history
+deleted. `docs/PERF.md`'s **"What still breaks the batch"** entry holds what it left open, measured 2026-10-03; the arc's history
 is in `git log`.
 
 What still takes its own draw is what no run can express: per-vertex colors,
@@ -285,7 +284,7 @@ registered shaders, and meshes past the batch's vertex cap.
 
 **The next step is the cost of closing a batch early** — a clipped group fits
 ~1,360 to a 60 Hz frame against ~250,000 solid rects — and the instrument does
-not yet say where that cost goes (see the TODO entry). The plan's own remaining item is the
+not yet say where that cost goes (see that entry). The plan's own remaining item is the
 "one thing to fix along the way" — dispatch is half-deferred, walking the tree
 and emitting GL inline except for the batch, so every mutator has to remember to
 flush first. That is a clarity argument, not a pressure one.
@@ -349,7 +348,7 @@ then mirrored (ABBA, or ABCCBA for three) — under ABAB whichever runs second
 sits later on that ramp every time.
 
 **Do not compare a perf number against one recorded on another day.** The same
-unchanged tree measured 1.85 ms where `docs/TODO.md` records 1.50 for the same
+unchanged tree measured 1.85 ms where `docs/PERF.md` records 1.50 for the same
 rung. Always take the A/B back to back in one sitting, and quote the pair. A
 worktree at the parent commit is how: `git worktree add <dir> HEAD~1`.
 

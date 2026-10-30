@@ -51,12 +51,14 @@ tools also ships `ToolSet`s naming them (core's `SHAPE_TOOLS`, path-tools'
 
 ## Todo list
 
-Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
+Active todos live in `docs/TODO.md`; the ones about a cost (runtime time, frames, allocations and
+memory, or how fast the suite and dev servers run) live in `docs/PERF.md`, under the same tags.
+Consult both when planning new work or picking up a task.
 
-**Never read `docs/TODO.md` whole** (114 KB). Search it — `grep -n '(P2)'`, `grep -n '\[agent\]'`, a
+**Never read `docs/TODO.md` whole** (66 KB). Search it — `grep -n '(P2)'`, `grep -n '\[agent\]'`, a
 keyword — and read only the lines around a hit.
 
-When work merges, update `docs/TODO.md` in the same change — retire the entry, or
+When work merges, update `docs/TODO.md` or `docs/PERF.md` in the same change — retire the entry, or
 rewrite it around what is actually left. An entry describing work that shipped is
 worse than no entry: a reader plans against it. Don't reintroduce a summary index
 at the top: the one that used to live there drifted to listing 21 of 41 P2s, three
