@@ -36,7 +36,7 @@ import { analyzeParagraphs, orderLine } from './bidiLines';
 import { directionOfLevel, warnRtlWithoutEngine } from './bidiRegistry';
 import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
-import { breakLines, placeLine } from './layoutLines';
+import { breakLines, placeLine, type LineOpts } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
 import type { BidiResolver } from './bidiSeam';
 import type { ShapedCluster } from './shaperSeam';
@@ -196,6 +196,8 @@ const CPS: number[] = [];
 /** The options of the layout running now, read into locals before anything
  *  else can lay out. */
 const OPTS = resolveLayoutOpts({ maxWidth: 0, lineHeight: 0, align: 'left' });
+/** The ones its lines read, set once measuring is done. */
+const LINE_OPTS: LineOpts = { maxWidth: 0.5, alignWidth: 0.5, lineHeight: 0.5, justify: false };
 
 // Neither closure is built inside `layoutRuns`: one that captured its locals
 // made every call allocate the scope they live in, bidi engine or not.
@@ -229,7 +231,10 @@ export function layoutRuns(
     : null;
   if (!bidi) warnRtlWithoutEngine(cps);
 
-  const broken = breakLines(entries, cps, maxWidth, lineHeight);
+  const lineOpts = LINE_OPTS;
+  lineOpts.maxWidth = maxWidth; lineOpts.alignWidth = alignWidth;
+  lineOpts.lineHeight = lineHeight; lineOpts.justify = justify;
+  const broken = breakLines(entries, cps, lineOpts);
   let size = 0;
   for (let i = 0; i < broken.length; i++) size += broken[i].entries.length;
   const cols = broken.length > 0 ? LayoutColumns.take(size) : null;
@@ -246,7 +251,7 @@ export function layoutRuns(
     const reads = direction !== 'auto' ? direction
       : directionOfLevel(line.entries.length > 0 ? paragraphs?.baseLevel(line.start) ?? 0 : 0);
     const placed = placeLine(
-      line, y, order, resolveAlign(align, reads), alignWidth, justify, cols!, start, i,
+      line, y, order, resolveAlign(align, reads), lineOpts, cols!, start, i,
     );
     start += line.entries.length;
     width = Math.max(width, placed.inkWidth);

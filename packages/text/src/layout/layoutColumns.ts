@@ -184,10 +184,12 @@ export function blankGlyph(): PlacedGlyph {
 export class LineBox implements LaidOutLineBox {
   declare readonly cells: LaidOutCell[];
   declare readonly glyphs: PlacedGlyph[];
-  x0: number; y0: number; x1: number; y1: number;
-  baselineY: number;
-  srcEnd: number;
-  justified: boolean;
+  // Declared rather than defined: a defined field starts out undefined, which
+  // left V8 boxing every number `refill` writes to it.
+  declare x0: number; declare y0: number; declare x1: number; declare y1: number;
+  declare baselineY: number;
+  declare srcEnd: number;
+  declare justified: boolean;
   readonly #cols: LayoutColumns;
   #start: number;
   #count: number;

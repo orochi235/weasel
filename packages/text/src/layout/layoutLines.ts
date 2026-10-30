@@ -10,6 +10,16 @@ import type { Entry } from './layoutEntries';
 import { hangs, wrapSpans } from './lineBreak/wrapLines';
 import { tabAdvance, widthWithTabs } from './tabStops';
 
+/** What breaking and placing lines read of the layout's options. Handed over
+ *  in an object, not as arguments: a number passed to a call V8 does not
+ *  inline is boxed on every call. */
+export interface LineOpts {
+  maxWidth: number;
+  alignWidth: number;
+  lineHeight: number;
+  justify: boolean;
+}
+
 /** One line's entries, measured and not yet placed. */
 export interface Line {
   /** Index of its first entry among the entries that were broken. */
@@ -96,9 +106,9 @@ function pushSpan(start: number, end: number, wrapped: boolean): void {
 export function breakLines(
   entries: readonly Entry[],
   cps: readonly number[],
-  maxWidth: number,
-  lineHeight: number,
+  opts: LineOpts,
 ): Line[] {
+  const { maxWidth, lineHeight } = opts;
   if (sum.length < entries.length + 1) sum = doubles(entries.length + 1);
   sum[0] = 0;
   let tabCount = 0;
@@ -196,12 +206,12 @@ export function placeLine(
   y: number,
   order: LineOrder,
   align: 'left' | 'center' | 'right',
-  alignWidth: number,
-  justify: boolean,
+  opts: LineOpts,
   cols: LayoutColumns,
   start: number,
   at: number,
 ): PlacedLine {
+  const { alignWidth, justify } = opts;
   const { entries } = line;
   const hung = hungWidth(entries);
   const inkWidth = line.width - hung;
