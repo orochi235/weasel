@@ -10,6 +10,7 @@ import { FOCUS_DELAY } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
 import { TYPEAHEAD_MS } from './useTypeahead';
+import { IDLE_SETTLE_MS } from './useIdleSettle';
 import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
 import { SNAP_RADIUS_PX } from './snap';
@@ -17,6 +18,7 @@ import { SNAP_RADIUS_PX } from './snap';
 declare module '@weasel-js/react' {
   interface KitSettings {
     numberField: { repeatDelayMs: number; repeatEveryMs: number };
+    typing: { settleWhenIdle: boolean; idleMs: number };
     params: Record<ParamsSurface, ParamsPolicy>;
     tree: { typeaheadMs: number; hoverExpandMs: number; tipRestMs: number };
     help: { focusDelayMs: number; icon: boolean };
@@ -61,6 +63,12 @@ export const uiKitSettingsSchema = pref.group('Components', {
   numberField: pref.group('Number fields', {
     repeatDelayMs: ms('Repeat delay', REPEAT_DELAY_MS, 2000, 'How long a held stepper waits before it repeats.'),
     repeatEveryMs: ms('Repeat interval', REPEAT_EVERY_MS, 1000, 'How often a held stepper steps once it repeats.'),
+  }),
+  typing: pref.group('Typing', {
+    settleWhenIdle: pref.boolean('Write when idle', true, {
+      description: 'A typed field writes its text once typing rests, as well as on Enter or leaving it.',
+    }),
+    idleMs: ms('Idle delay', IDLE_SETTLE_MS, 5000, 'How long typing rests before a field that writes when idle writes it.'),
   }),
   params: pref.group('Settings surfaces', {
     form: surface('Forms', 'form'),

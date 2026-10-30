@@ -85,8 +85,15 @@ function paneRuns(entries: readonly Entry[]): Array<{ rows: boolean; entries: En
   return runs;
 }
 
+/** Whether `child` has a row to draw: it is a leaf the form draws, or a group holding one. */
+function paneDraws(ctx: WalkCtx, child: PrefLeaf | PrefGroup): boolean {
+  if (isPrefLeaf(child)) return child.hidden !== true || ctx.showHidden === true;
+  return ctx.keepEmpty === true || Object.values(child.children).some((inner) => paneDraws(ctx, inner));
+}
+
 /**
  * A group's children in schema order: a row per leaf, and each group as its `as` says, a run of tabs as one strip.
+ * A group with no row to draw is left out, as `prefTabRuns` leaves it out.
  * `box` draws a group that asks for a panel or says nothing; without it such a group is a bordered panel when it
  * asks for one and a headed section otherwise.
  */
@@ -95,7 +102,7 @@ export function paneChildren(
   box?: (key: string, group: PrefGroup, path: string) => ReactNode,
 ): ReactNode[] {
   const out: ReactNode[] = [];
-  for (const step of prefTabRuns(entries, ([, c]) => !isPrefLeaf(c) && c.as === 'tab')) {
+  for (const step of prefTabRuns(entries, ([, c]) => !isPrefLeaf(c) && c.as === 'tab', ([, c]) => isPrefLeaf(c) || paneDraws(ctx, c))) {
     if (step.tabs) {
       const tabs = step.tabs.map(([k, c]): [string, PrefGroup] => [join(path, k), c as PrefGroup]);
       out.push(<PaneTabs key={step.tabs[0]![0]} ctx={ctx} tabs={tabs} depth={depth} box={box} />);

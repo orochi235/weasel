@@ -59,8 +59,8 @@ When work merges, retire its entry here in the same change.
     call in `flushBatch` moves it by more than 0.4 us. A stencil clip around a solid rect costs
     24.4 us a clip, 22.2 of it the break; an axis-aligned rect clip, cut on the CPU, costs 0.09
     (`clip-cost.spec.ts`). What still ends a run is a sixteenth texture, a ninth color matrix, a
-    clip only the stencil expresses, and a paint that draws for itself (a pattern, a shader,
-    per-vertex colors).
+    clip only the stencil expresses, an even-odd fill, and a paint that draws for itself (a
+    pattern, a shader).
   - **What joined the run since is checked in a browser.** Each is pinned
     by draw count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium
     (run 2026-10-17):
@@ -80,6 +80,18 @@ When work merges, retire its entry here in the same change.
       draws with costs each of its fragments 12–13% more than the one-matrix program on msb-uai
       and 22–23% on keiei (`batch-8-matrices`, the same runs). The matrix uploads are under the
       same noise as the sampler uploads (`-colormatrix`: 0.08 us on teitou, 0.3–2.2 on msb-uai).
+    - Per-vertex colors (2026-10-30): a fill or centered stroke with `vertexColors` carries them in
+      the batch vertices (`draw/vertexColors.ts`, `vertexColorBatch.browser.test.ts`). They are
+      mapped on the CPU when no corner leaves 0..1 under the group's matrix, and otherwise under a
+      run entry for it, so the shader's per-fragment clamp still decides. Each used to end the run
+      and create and delete a color buffer. On studio (Apple M1 Max, ANGLE Metal), solo, ABBA,
+      `transition-matrix.spec.ts`: a vertex-colored rect fell from 4.22–4.57 to 0.88–0.89 us a
+      command, and its boundary with a solid, gradient, image, text or rect clip from 21.7–24.3 us
+      to between −0.09 and 0.35 (`tests/perf/recorded/vertex-color-batch-2026-10-30/`). Its boundary
+      with a pattern, a shader or an even-odd fill rose from at most 0.9 us to 7.7–8.3, which is
+      still a third of what a solid rect pays beside the same kinds; why it is less is not known. An even-odd
+      fill, an inside- or outside-aligned stroke on a polygon, and a mesh past the vertex cap still
+      draw for themselves.
     - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
       (`draw/foldColor.ts`), and an image's tint.
   - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
@@ -114,10 +126,15 @@ When work merges, retire its entry here in the same change.
     made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.
     The cause was not found. The run's color matrices are cached the same way now
     (`uploadBatchMatrices`), where `setColorMatrixUniforms` cached the one before.
-  - **Changing kind costs 1.35–4.9 us a boundary** (`transition-matrix.spec.ts`): text and gradient
-    the least, shader (4.9) and vcolor (4.4) the most. Pairs whose kinds share a batch cost nothing
-    extra; the rest add 8–16 us, with a run-to-run spread up to 9.7 us, so the spec ranks pairs but
-    does not price one.
+  - **A boundary costs 20.9–24.8 us when one side draws for itself, and nothing otherwise**
+    (`transition-matrix.spec.ts`, the four passes above). Between two kinds that batch it sits
+    within ±0.4 us; between two that draw for themselves it is at most 1.0, since the run is
+    already closed. Per command, a pattern costs 3.51–4.13 us, a shader panel 3.77–4.59 and an
+    even-odd fill 7.84–8.13, against 0.43–0.49 for a solid rect. The pattern looks the cheapest of
+    those to bring into the run: its tile coordinate is affine in position, as a linear gradient's
+    ramp position is, so a vertex could carry it and a texture set to repeat could sample it on the
+    plain path. Not tried: what the pattern program does besides the sample, and which cache owns
+    the tile's wrap mode, decide whether it is sound.
 
 - **(P3) [waiting] `SOLID_RING_SIZE` is measured only on Metal.** The ring (64 slots) exists so a flush never
   writes a buffer a draw is still reading. On 2026-10-06 a ring of 64 measured 24% slower than a
@@ -289,16 +306,16 @@ When work merges, retire its entry here in the same change.
   run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
   every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
 
-- **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
-  (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
-  310 s; the rest is each file's page and module load, and from 35 s on the run is a stream of small
-  files paying it. Splitting the longest files would not help: the tail is the small ones.
-  `--no-isolate`, which would reuse one page, failed every file at about 5 s with its tests skipped.
-  Serving the workspace packages pre-bundled, as `scripts/vite-prebundle.ts` does for the dev
-  servers, is the likely fix (inferred, not tried). The prebundle already keeps out of a bundle
-  whatever source imports by relative path, so no module would load twice, but tests import their
-  own package that way, so most of each package would stay unbundled. forge got its gain by moving
-  its stories onto package specifiers first (2026-10-21); the tests would need the same.
+- **(P3) [agent] The `browser` project still spends about a second per file outside its tests.** Alone on
+  teitou (2026-10-30, 332 files, six tabs), serving the workspace packages pre-bundled under `vitest run`
+  (`scripts/vitest-browser-prebundle.ts`) took the project from 162.5, 164.6 and 163.2 s to 137.2, 138.5
+  and 140.2 s, run alternately; of the six tabs' worker-seconds, the part outside the tests fell from
+  about 455 to 325, 1.37 s a file to 0.98. The first bundled run, which re-bundled, was no slower
+  (`scripts/bench-browser-project.mjs`, records in `scripts/bench-browser-project.runs.jsonl`). What is
+  left: the tests import their own package by relative path, so 2,716 package modules stay source, each
+  a request per file; moving the tests onto package specifiers, as forge's stories did (2026-10-21), is
+  the next step (inferred, not tried). `--no-isolate`, which would reuse one page, failed every file at
+  about 5 s with its tests skipped (2026-10-20).
 
 - **(P3) [agent] forge's workshop takes 0.5–0.7 s to mount in jsdom, alone on keiei.** The timeline file
   (`packages/forge/src/timeline/timeline.test.tsx`) mounts it two or three times a test. Of a mount's CPU, 11% is

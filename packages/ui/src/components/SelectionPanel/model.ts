@@ -23,7 +23,7 @@ import {
   prefAliasTargets,
   prefHeadingKey,
   prefLeafValue,
-  prefSectionLeaves,
+  prefSectionPath,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefBarLead,
@@ -72,11 +72,13 @@ export interface PanelRow {
 }
 
 /**
- * A titled block of rows, derived from one top-level section of a properties
- * schema. `key` is that section's schema key.
+ * A titled block of rows, derived from one section of a properties schema, and the sections nested in it. `key` is
+ * that section's schema key.
  */
 export interface PanelSection {
   key: string;
+  /** The path its conditions name it by (`prefSectionPath`). */
+  path: string;
   name: string;
   /** How the section is drawn; unset, a heading over its rows. */
   as?: PrefSectionAs;
@@ -88,10 +90,25 @@ export interface PanelSection {
   icon?: IconRef;
   /** The motif its frame is drawn in, by name, where it is drawn framed. */
   motif?: string;
-  /** The key of the leaf drawn in its heading, which stays among `rows` until it is drawn there. */
+  /** The key of the leaf drawn in its heading, which stays among its rows until it is drawn there. */
   heading?: string;
-  rows: PanelRow[];
+  /** Its rows and the sections nested in it, in schema order. */
+  items: PanelItem[];
 }
+
+/** One child of a {@link PanelSection}: a row, or a section nested in it. */
+export type PanelItem = PanelRow | PanelSection;
+
+/** Whether `item` is a nested section rather than a row. */
+export const isPanelSection = (item: PanelItem): item is PanelSection => 'items' in item;
+
+/** The rows of `section` itself, without those of the sections nested in it. */
+export const panelOwnRows = (section: PanelSection): PanelRow[] =>
+  section.items.filter((item): item is PanelRow => !isPanelSection(item));
+
+/** Every row of `section`, those of the sections nested in it included, in order. */
+export const panelRowsOf = (section: PanelSection): PanelRow[] =>
+  section.items.flatMap((item) => (isPanelSection(item) ? panelRowsOf(item) : [item]));
 
 /** A node's routing kind under `routing`, as a canvas given the same table names it. A
  *  container is `'group'` only when the table carries `groupNodeRouting`. */
@@ -104,12 +121,32 @@ export function classifyKind(
 
 const ALWAYS = (): boolean => true;
 
-/** Flatten a schema to sections of leaves. Nested sections fold into their
- *  top-level section; top-level leaves get an untitled leading section. An
- *  alias becomes the leaf of `targets` it points at, as a form draws it,
- *  unless `rawAliases` keeps it for a renderer of the kind; an alias of
- *  nothing stays an alias either way. Without `targets` an alias points
- *  into `schema` itself. */
+/** Leaves and the sections between them as items: each run of neighboring leaves paired, and a section ending a run. */
+function panelItems<T>(entries: Iterable<T>, leaves: (entry: T) => PanelLeaf | undefined, section: (entry: T) => PanelSection | null): PanelItem[] {
+  const items: PanelItem[] = [];
+  let run: PanelLeaf[] = [];
+  const flush = (): void => {
+    items.push(...pairRows(run));
+    run = [];
+  };
+  for (const entry of entries) {
+    const leaf = leaves(entry);
+    if (leaf) {
+      run.push(leaf);
+      continue;
+    }
+    flush();
+    const nested = section(entry);
+    if (nested) items.push(nested);
+  }
+  flush();
+  return items;
+}
+
+/** A schema as panel sections. Each section keeps its nested sections, as an object leaf's does; top-level leaves
+ *  get an untitled leading section. An alias becomes the leaf of `targets` it points at, as a form draws it, unless
+ *  `rawAliases` keeps it for a renderer of the kind; an alias of nothing stays an alias either way. Without
+ *  `targets` an alias points into `schema` itself. */
 function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTargets): PanelSection[] {
   const sections: PanelSection[] = [];
   const untitled: PanelLeaf[] = [];
@@ -118,18 +155,22 @@ function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTa
     const target = leaf.kind === 'alias' && !rawAliases ? into.shown(leaf as PrefAlias) : undefined;
     return target ? { ...target, own: key } : { path: key, leaf };
   };
+  const section = (key: string, child: PrefSection, path: string): PanelSection => {
+    const heading = prefHeadingKey(child);
+    const items = panelItems(
+      Object.entries(child.members),
+      ([at, member]) => (isPrefLeaf(member) ? shown(at, member) : undefined),
+      ([at, member]) => (isPrefLeaf(member) ? null : section(at, member, prefSectionPath(path, at))),
+    );
+    return { key, path, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), ...(child.motif ? { motif: child.motif } : {}), ...(heading ? { heading } : {}), items };
+  };
 
   for (const [key, child] of Object.entries(schema.members)) {
-    if (isPrefLeaf(child)) {
-      untitled.push(shown(key, child));
-    } else {
-      const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => shown(path, leaf));
-      const heading = prefHeadingKey(child);
-      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), ...(child.motif ? { motif: child.motif } : {}), ...(heading ? { heading } : {}), rows: pairRows(leaves) });
-    }
+    if (isPrefLeaf(child)) untitled.push(shown(key, child));
+    else sections.push(section(key, child, prefSectionPath('', key)));
   }
   if (untitled.length > 0) {
-    sections.unshift({ key: '', name: '', rows: pairRows(untitled) });
+    sections.unshift({ key: '', path: '', name: '', items: pairRows(untitled) });
   }
   return sections;
 }
@@ -184,22 +225,19 @@ export function effectiveSections(
   // '\0' delimiter: path and kind strings are unconstrained, so a
   // printable separator could collide with real content.
   const leafKey = (l: PanelLeaf): string => `${panelLeafKey(l)}\0${l.leaf.kind}`;
-  const restKeys = rest.map(
-    (flat) =>
-      new Set(
-        flat
-          .flatMap((s) => s.rows)
-          .flatMap((r) => r.leaves)
-          .map(leafKey),
-      ),
-  );
+  const restKeys = rest.map((flat) => new Set(flat.flatMap(panelRowsOf).flatMap((r) => r.leaves).map(leafKey)));
   const keep = (l: PanelLeaf): boolean =>
     restKeys.every((set) => set.has(leafKey(l)));
-
-  return flatFirst
-    // Paired again, since a pair may have lost a leaf to the other kinds.
-    .map((section) => ({ ...section, rows: pairRows(section.rows.flatMap((row) => row.leaves).filter(keep)) }))
-    .filter((section) => section.rows.length > 0);
+  // Paired again, since a pair may have lost a leaf to the other kinds.
+  const narrow = (section: PanelSection): PanelSection | null => {
+    const items = panelItems<PanelSection | PanelLeaf>(
+      section.items.flatMap((item): Array<PanelSection | PanelLeaf> => (isPanelSection(item) ? [item] : item.leaves.filter(keep))),
+      (item) => ('items' in item ? undefined : item),
+      (item) => narrow(item as PanelSection),
+    );
+    return items.length > 0 ? { ...section, items } : null;
+  };
+  return flatFirst.map(narrow).filter((section): section is PanelSection => section !== null);
 }
 
 /** Read a node value at a dotted path of any depth (`pose.x`,

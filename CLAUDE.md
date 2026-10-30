@@ -180,21 +180,31 @@ Demos under `apps/site/demos/` are **terse and single-purpose** — each one exi
 ## Worktrees and the fleet
 
 **Work that takes more than one commit, and anything handed to agents, happens in a worktree of
-its own and merges to `main` when its fleet run is green.** The main checkout's working tree
+its own and merges to `main` through a batch whose fleet run is green.** The main checkout's working tree
 stays clean. A one-commit side request can still go straight to `main`, committed by path. On
 2026-10-11 several sessions made 729 commits to `main` from the one checkout, each having run
 only its own test files; nothing checked the combination, and a fleet run of `main` failed on
 another session's uncommitted stylesheet.
 
-**Small low-risk fixes share one merge gate.** Deciding when this applies is the agent's job, not
-Mike's: on a `docs/TODO.md` pass, or whenever several quick fixes line up, group the ones that
-qualify without being asked, and say which went in the batch. Commit each to a `batch/<date>` branch in a
-worktree of its own, one commit per fix, and run `test:fleet` (which includes the `gate` project)
-and `test:fleet:postbuild` once on the tip before merging. Never run `npm run test:gate` itself:
-it runs typecheck, lint and every check on this machine. The branch run covers the whole batch,
-since it selects tests from the diff against the merge-base. When it fails, fix the commit at fault
-or drop it from the batch, then rerun. A fix that touches a `triggers` path, dependencies or build
-tooling goes through the normal path instead, because it forces a full run anyway.
+**Everything ready to merge shares one fleet run: the batch's (2026-10-30).** A feature branch, an
+agent's arc and a quick fix finish on the test files their diff touches (locally, `--maxWorkers=1`,
+one at a time), `typecheck:packages` for their packages, eslint on their named files and `check:size`,
+then report ready. Where those tests would take a while locally, a branch may run `npm run test:fleet`
+on itself, which runs only the files whose imports reach what it changed; never with `--full`, and it
+does not stand in for the batch run.
+Quick fixes from a `docs/TODO.md` pass go in as one commit each; grouping them is the agent's call,
+not Mike's, and the report says which went in. The controller merges every ready branch and fix into
+one `batch/<date>` branch in a worktree, and runs `test:fleet` (which includes the `gate` project) and
+`test:fleet:postbuild` once on its tip; it covers the whole batch, since a branch run selects tests
+from the diff against the merge-base. Green, `main` fast-forwards to that tip, and that run is
+`main`'s post-merge run, since `main` is then the commit it tested. Red, the failing file says whose it
+is: fix that branch or drop it, and rerun the batch. Hold a ready branch for the next batch rather
+than running one for it alone; a batch touching a `triggers` path, dependencies or build tooling gets a
+full run, which is one more reason to fold such a change in rather than run it separately. Never run
+`npm run test:gate` itself: it runs typecheck, lint and every check on this machine. Perf measurements
+are not test runs and still go to the fleet, one job at a time. On 2026-10-30, seven agents each
+finishing with a branch run and then a run of `main` per merge put 2–3 suite-sized runs behind every
+change.
 
 **A fleet run tests a commit: `npm run test:fleet`, never a bare `onto test`.** `onto test` ships
 the working tree, so from a checkout someone else is editing it tests their half-finished files

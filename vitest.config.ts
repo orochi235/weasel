@@ -17,8 +17,10 @@ import { packageDocs } from './scripts/vite-package-docs.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
+import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
+import { devWatch } from './scripts/vite-watch.ts';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -41,6 +43,7 @@ const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true,
 
 const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'];
 const BROWSER_SETUP = './vitest.browser.setup.ts';
+const withPrebundle = browserPrebundle(import.meta.dirname, { name: 'browser', tests: BROWSER_TESTS, setupFiles: [BROWSER_SETUP] });
 // Both browser projects print every module load that fails: see the command it calls.
 const REQUEST_LOG_SETUP = './scripts/vitest-request-log.setup.ts';
 const RESIZE_LOOPS_SETUP = './scripts/vitest-resize-loops.setup.ts';
@@ -52,6 +55,7 @@ const VITE_SERVER_TESTS = [
   'packages/forge/src/vite/capture/endpoint.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
   'packages/forge/src/vite/replacedFile.test.ts',
+  'packages/forge/src/vite/watchRecovery.test.ts',
   'packages/prefs/src/vite.test.ts',
   'scripts/vite-prebundle.vite.test.ts',
   'scripts/vite-wake.vite.test.ts',
@@ -85,7 +89,7 @@ const related = selection(import.meta.dirname, process.env, {
 const changes = branchChanges(import.meta.dirname, process.env, { triggers: TRIGGERS });
 
 export default defineConfig({
-  plugins: [timeoutRetries()],
+  plugins: [timeoutRetries(), devWatch()],
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
@@ -282,6 +286,8 @@ export default defineConfig({
       // resolves none of. Headless Chromium, like forge-stories below.
       {
         ...shared,
+        plugins: [react(), ...withPrebundle.plugins],
+        ...(withPrebundle.cacheDir && { cacheDir: withPrebundle.cacheDir }),
         // A dependency met mid-run makes vite re-optimize and reload the page under the suites, and a
         // node's warm cache skips the scan that would have found it. `optimizeDeps.force` is not the
         // fix: with it the browser session never connected on two fleet nodes. `info` puts vite's

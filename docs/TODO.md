@@ -313,10 +313,6 @@ Owner tags, after the priority (2026-10-26):
   or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Text drawn from an atlas (baked or
   canvas) is still laid out one code point at a time, because atlases look glyphs up by code point and cannot draw
   a shaped glyph index. Open pieces:
-  - Script pieces are cut over a fixed list of scripts. Any other script is one piece, and its direction is
-    guessed from the right-to-left Unicode blocks.
-  - PDF export does not write a text's `lang` (2026-10-27): no `/Lang` on the catalog or on marked content, so a
-    screen reader or text extraction guesses the language.
   - harfbuzzjs awaits at its module's top level, so a consumer bundling for a target below ES2022 fails (esbuild
     0.27 errors; Vite 8 warns), even though `loadShaper` reaches it only through a dynamic `import()`.
     `@weasel-js/text-shaping` cannot avoid it: harfbuzzjs 1.6.4, the latest, exports only that module and not its
@@ -373,6 +369,12 @@ Owner tags, after the priority (2026-10-26):
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) [agent] `ListEditor`'s own text entries write on every keystroke.** Its built-in `<input>` (no
+  `renderEntry`) calls `onChange` per key, so in `PrefsForm`'s and `SelectionPanel`'s list leaves each key is a
+  write, and in a panel an undo step, where every other typed control holds a draft until blur or Enter, or a
+  pause where `typing.settleWhenIdle` is on (2026-10-30). Moving it onto that draft has to keep Enter inserting
+  an entry and Backspace on an empty one removing it, which read the committed list.
 
 - **(P2) [maintainer] Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
@@ -506,15 +508,6 @@ Owner tags, after the priority (2026-10-26):
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
   `MatrixEditor` always lists an enum as radios.
 
-- **(P3) [recheck] What each group `as` draws differs across the params surfaces.** The run of neighboring
-  `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
-  is a bordered box in ui and a plain `PropertyGroup` in labkit; `section` is a `Subpanel` in
-  labkit and a heading elsewhere; a group's `description` shows under a tab in `PrefsPane` and is
-  dropped for tabs and sections in labkit; `SelectionPanel`'s top level flattens nested sections
-  (`flatten` in `model.ts`), so a nested `tab` or `panel` loses its `as` while the object leaf
-  beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
-  one in labkit, and `PrefsPane` has no emptiness check.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) [recheck] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
@@ -567,21 +560,15 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [recheck] On Linux, a second save within 50 ms of the first can leave the dev server serving the
-  first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
-  server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
-  one it last reported. If the page re-fetches the module in that window (its HMR fetch after the
-  first save), the second save never invalidates it. Run 2026-10-19 in a Linux container
-  (`node:26-alpine`, vite 8.3.1): save, wait 25 ms, save again, with a fetch 5 ms after the first
-  `change`. The server kept the first text after 3 s idle. This held for plain vite and for forge,
-  and for both rename-over and in-place writes. With
-  `server.watch.awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 }` it served the
-  second text at 25 ms and at 80 ms gaps, because events that wait for the write to finish skip
-  that throttle. The cost is about 60 ms more latency on every edit. The throttle sits in
-  chokidar's `_emit` (3.6.0, bundled in vite 8.3.1's `chunks/node.js`), which the fsevents handler
-  goes through too, so macOS is likely affected as well: read, not measured. Open: whether to pay
-  the latency everywhere, and whether forge's plugin or each app's vite config sets it. `replacedFile.test.ts` rewrites until served for the
-  same reason.
+- **(P3) [maintainer] Whether forge's vite plugin should wait for writes to settle, as the repo's own dev servers do.**
+  On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
+  server serving the first text until the next save. Every dev server here (and vitest's watcher) off macOS now waits for
+  the write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30); macOS skips the
+  wait, which the measurements below show it does not need (ruled 2026-10-30). A consumer's server
+  that adds only `forge()` does not, and `replacedFile.test.ts`, which runs such a server, still rewrites until
+  served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
+  stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
+  fsevents reports a path's next change about 100 ms after its last, and median 113 → 115 ms (p90 118 → 148).
 
 - **(P3) [recheck] A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
@@ -627,7 +614,9 @@ only story runner in the repo.
   `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
   itself fired at once, and a dev server served none of three edits. Every dev server in the repo
   now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
-  and the one test that needs a real watcher skips. The cause needs the machine in that state.
+  and the one test that needs a real watcher skips. Since 2026-10-30 the symptom is covered: dev
+  servers find unreported edits by modification time (`watchRecovery`, beside `watchProbe`), so a
+  page gets the edit within seconds rather than never. The cause needs the machine in that state.
 
 ---
 
@@ -684,11 +673,12 @@ only story runner in the repo.
 - **(P3) [waiting] A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
-  7 of 26 tests in one run on 2026-10-13, and polls since; whether a checkout loses them too is not
-  measured. The test's later timeouts were a different thing and are fixed (2026-10-24): a polling
-  watcher takes its baseline of a directory after it reports ready, so a file added in between was
-  never reported. That needs a write within moments of startup, under polling, so it does not
-  explain an edit to an existing file in a long-running server.
+  7 of 26 tests in one run on 2026-10-13, and polls since. Every dev server now recovers from a
+  missed event (2026-10-30): `watchRecovery` (`packages/forge/src/vite/watchRecovery.ts`, in
+  `devWatch()` and forge's plugin) compares each served file's modification time with the one vite
+  read, on each request and after two quiet seconds, and logs `[watch] <file> changed with no file
+  event` when it fixes one. What is left is the cause: the next time that line appears for a file in
+  a checkout, note the server, the file, and whether `fseventsd` was busy, here.
 
 - **(P3) [waiting] `npm pack` died with SIGABRT and no output in the consumer smoke step.** A
   `test:fleet:postbuild` run of d9f7bb7ba's predecessor 570d272b7 on 2026-10-24 failed

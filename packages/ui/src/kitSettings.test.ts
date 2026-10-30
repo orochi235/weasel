@@ -10,6 +10,7 @@ import { FOCUS_DELAY } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
 import { TYPEAHEAD_MS } from './useTypeahead';
+import { IDLE_SETTLE_MS } from './useIdleSettle';
 import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
 import { uiKitSettingsSchema } from './kitSettings';
@@ -23,6 +24,8 @@ const surfaces: ParamsSurface[] = ['form', 'panel', 'lab'];
 const expected: Record<string, unknown> = {
   'numberField.repeatDelayMs': REPEAT_DELAY_MS,
   'numberField.repeatEveryMs': REPEAT_EVERY_MS,
+  'typing.settleWhenIdle': true,
+  'typing.idleMs': IDLE_SETTLE_MS,
   ...Object.fromEntries(
     surfaces.flatMap((s) => [
       [`params.${s}.textWaitMs`, PARAMS_TEXT_WAIT_MS[s]],

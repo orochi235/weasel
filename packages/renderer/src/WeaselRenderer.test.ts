@@ -203,22 +203,17 @@ describe('WeaselRenderer.render — frame isolation', () => {
     expect(() => r.render([tooDeep()])).toThrow(/clip nesting depth exceeded/);
 
     rec.reset();
-    // Per-anchor colors keep the ribbon out of the solid batch, so the draw
-    // uploads `u_model` from the group state instead of folding it into
-    // vertices.
+    // An even-odd fill keeps out of the solid batch, so the draw uploads
+    // `u_model` from the group state instead of folding it into vertices.
     r.render([{
       kind: 'path',
       path: {
         kind: 'polygon',
-        commands: new Uint8Array([0, 1, 1]),
-        coords: new Float32Array([0, 0, 10, 0, 20, 0]),
-        fillRule: 'nonzero',
+        commands: new Uint8Array([0, 1, 1, 3]),
+        coords: new Float32Array([0, 0, 10, 0, 0, 10]),
+        fillRule: 'evenodd',
       },
-      stroke: {
-        width: 2,
-        paint: { color: '#f00' },
-        vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
-      },
+      fill: { paint: { color: '#f00' } },
     }] as unknown as DrawCommand[]);
 
     // The seven groups that never popped composed to a 70px x-translation.
@@ -278,12 +273,18 @@ describe('dispose', () => {
       fill: { paint: { color: '#f00' } },
     }] as never);
     expect(links()).toBe(1);
-    // Per-vertex colors are the vertex-color program's, built on this frame.
+    // Per-vertex colors on an even-odd fill, which the batch cannot take, are
+    // the vertex-color program's, built on this frame.
     const vertexColored = {
       kind: 'path',
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1, 3]),
+        coords: new Float32Array([0, 0, 10, 0, 0, 10]),
+        fillRule: 'evenodd',
+      },
       fill: { paint: { kind: 'solid', color: '#fff' } },
-      vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
+      vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
     };
     r.render([vertexColored] as never);
     expect(links()).toBe(2);

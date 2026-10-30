@@ -69,8 +69,8 @@ export interface PropertyNumberFieldProps extends FieldBase {
   /** Absent reads as an empty field. */
   value: number | null | undefined;
   /**
-   * The committed value. A typed field fires it on blur, Enter, or a step,
-   * never per keystroke. A slider given `onInput` as well fires it once a drag
+   * The committed value. A typed field fires it on blur, Enter, or a step, or
+   * once typing rests where `settleWhenIdle` holds, never per keystroke. A slider given `onInput` as well fires it once a drag
    * ends; on its own it fires on every move, and a caller wanting settled
    * values only passes a no-op `onInput`.
    */
@@ -116,6 +116,9 @@ export interface PropertyNumberFieldProps extends FieldBase {
   /** A typed field's up and down buttons. Default `false`: a dense panel
    *  drives its numbers by typing, the arrow keys and the wheel. */
   steppers?: boolean;
+  /** A typed field commits once typing rests, as well as on blur or Enter. Defaults to the
+   *  `typing.settleWhenIdle` kit setting. */
+  settleWhenIdle?: boolean;
 }
 
 /** A text field. */
@@ -125,13 +128,15 @@ export interface PropertyStringFieldProps extends FieldBase {
   /** Absent reads as an empty field. */
   value: string | null | undefined;
   /**
-   * The committed text: fires once, on blur or Enter, and only if the text
-   * changed. `onInput` gets each keystroke.
+   * The committed text: fires on blur or Enter, or once typing rests where
+   * `settleWhenIdle` holds, and only if the text changed. `onInput` gets each keystroke.
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;
   placeholder?: string;
   maxLength?: number;
+  /** Commit once typing rests, as well as on blur or Enter. Defaults to the `typing.settleWhenIdle` kit setting. */
+  settleWhenIdle?: boolean;
 }
 
 /** A choice among fixed options. */

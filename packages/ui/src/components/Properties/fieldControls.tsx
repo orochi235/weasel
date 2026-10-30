@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { imeKey } from '@weasel-js/headless';
+import { useIdleSettle } from '../../useIdleSettle';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
@@ -135,28 +136,35 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
 /**
  * The text a field shows and how an edit to it lands: the draft shows while it
  * differs from `value`, `onInput` gets each keystroke, and the draft settles
- * through `onChange` on blur or Enter. Escape drops it, and gives `onInput` back
- * the value typing began from.
+ * through `onChange` on blur or Enter, and once typing rests where it settles when
+ * idle. Escape drops it, and gives `onInput` back the value it last committed.
  */
 function useTextEdit(p: PropertyStringFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   // Escape leaves by blurring, and that blur runs the handler of the render before the draft was dropped.
   const canceled = useRef(false);
   const value = p.mixed ? '' : (p.value ?? '');
+  // The draft stays up after an idle commit, so a commit that rewrites the text does not move it under the caret.
+  const idle = useIdleSettle(() => {
+    if (draft !== null && draft !== value) p.onChange(draft);
+  }, p.settleWhenIdle);
   return {
     shown: draft ?? value,
     type: (next: string) => {
       canceled.current = false;
       setDraft(next);
+      idle.typed();
       p.onInput?.(next);
     },
     settle: () => {
+      idle.stop();
       if (draft !== null && draft !== value && !canceled.current) p.onChange(draft);
       canceled.current = false;
       setDraft(null);
     },
     keyDown: (e: { key: string; target: EventTarget }) => {
       if (e.key !== 'Escape') return;
+      idle.stop();
       canceled.current = true;
       if (draft !== null) p.onInput?.(value);
       setDraft(null);

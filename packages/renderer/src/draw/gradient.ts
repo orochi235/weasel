@@ -17,7 +17,7 @@ export type BatchPaint =
 
 /**
  * `fill` as something a run can carry, or `undefined` for a paint no run can
- * express — a pattern, a shader, per-vertex colors — and `null` for a gradient
+ * express — a pattern, a shader — and `null` for a gradient
  * whose space has no inverse under this transform, which draws nothing.
  *
  * **All three gradients qualify, and for the same reason,** which is not that
@@ -31,6 +31,7 @@ export type BatchPaint =
 export function batchPaint(
   ctx: DrawContext, fill: Paint, hasVColors: boolean,
 ): BatchPaint | undefined | null {
+  // Per-vertex colors stage through `tryStageVertexColors` instead.
   if (hasVColors) return undefined;
   const kind = fill.kind ?? 'solid';
   if (kind === 'solid') {

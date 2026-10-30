@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/text';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import { isSpace, outlineCommand, skipGlyph } from './textOutlines';
+import { text as pdfText, writeDict } from './objects';
 import type { EmbeddedFont } from './fonts/embedFont';
 import { type SegmentGlyph, type TextSegment, writeSegment } from './textSegment';
 
@@ -101,10 +102,24 @@ export async function writeText(ctx: PageCtx, cmd: TextDrawCommand, state: DrawS
     }
   }
 
+  // Consecutive text in one language other than the document's is one span marked with it.
+  let open: string | undefined;
   for (const item of items) {
-    if ('kind' in item) await writeCommands(ctx, [item], state);
-    else await writeSegment(ctx, item, cmd, dx, dy, state);
+    if ('kind' in item) {
+      await writeCommands(ctx, [item], state);
+      continue;
+    }
+    const lang = cmd.runs[item.glyphs[0].g.run].lang;
+    ctx.langs.add(lang);
+    const mark = lang && lang.toLowerCase() !== ctx.opts.lang?.toLowerCase() ? lang : undefined;
+    if (mark !== open) {
+      if (open) ctx.out.op('EMC');
+      if (mark) ctx.out.op('BDC', '/Span', writeDict({ Lang: pdfText(mark) }));
+      open = mark;
+    }
+    await writeSegment(ctx, item, cmd, dx, dy, state);
   }
+  if (open) ctx.out.op('EMC');
 
   const { decorations } = cachedPaintRuns(laid, cmd.runs, {});
   const rules: PathDrawCommand[] = decorations.map((d) => ({

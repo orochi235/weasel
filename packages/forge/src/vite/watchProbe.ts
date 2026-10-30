@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, watch as fsWatch, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
+import { WATCH_RECOVERY } from './watchRecovery.ts';
 
 /** Starts a watch on a directory and returns what stops it. */
 export type WatchDir = (dir: string, onEvent: () => void) => () => void;
@@ -56,16 +57,28 @@ export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEve
   });
 }
 
+const UNREPORTED = `[watch] a file written ${WAIT_MS / 1000} s ago has not been reported by the OS file watcher, `;
+const FSEVENTSD = 'On macOS, look for `fseventsd` held at 100% CPU.';
+
 const SILENT =
-  `[watch] a file written ${WAIT_MS / 1000} s ago has not been reported by the OS file watcher, so an edit will not reach the page ` +
-  'until file events arrive again. `server.watch: { usePolling: true }` serves edits without them. ' +
-  'On macOS, look for `fseventsd` held at 100% CPU.';
+  UNREPORTED +
+  'so an edit will not reach the page until file events arrive again. `server.watch: { usePolling: true }` serves edits ' +
+  'without them, and so does the `watchRecovery()` plugin beside `watchProbe()`. ' +
+  FSEVENTSD;
+
+const RECOVERING =
+  UNREPORTED +
+  'so edits are found by their modification times instead: on the next request for the module, or within seconds ' +
+  'once the watcher is quiet, each logged as it is served. ' +
+  FSEVENTSD;
 
 /** Logs a warning when a dev server that relies on file events is getting none. */
 export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => Promise<boolean> = fileEventsArrive): Promise<void> {
   const { watch } = server.config.server;
   if (watch === null || watch?.usePolling) return;
-  if (!(await probe())) server.config.logger.warn(SILENT);
+  if (await probe()) return;
+  const recovering = server.config.plugins.some((p) => p.name === WATCH_RECOVERY);
+  server.config.logger.warn(recovering ? RECOVERING : SILENT);
 }
 
 /** Options for the `watchProbe` vite plugin. */

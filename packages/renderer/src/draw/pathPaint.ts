@@ -21,6 +21,9 @@ import { flushForOwnDraw } from './clip';
 import { pushRect, pushRampRect, tryStageFill } from './batch';
 import { batchPaint } from './gradient';
 import { paintBindContext, bindPattern, bindGradient } from './paintBind';
+import {
+  attachVertexColors, detachVertexColors, tryStageVertexColors, vertexColorBase,
+} from './vertexColors';
 
 export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
   const cmd = withCornersResolved(given);
@@ -48,7 +51,10 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
   }
 
   const mesh = fillMesh(ctx, cmd.path);
-  if (tryStageFill(ctx, mesh, paint)) return;
+  const staged = isSolid && hasVColors
+    ? tryStageVertexColors(ctx, mesh, cmd.vertexColors!, solid)
+    : tryStageFill(ctx, mesh, paint);
+  if (staged) return;
 
   const handle = meshHandle(ctx, mesh);
   atMeshOrigin(ctx, mesh.origin, () => {
@@ -60,56 +66,6 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
       drawPathFillByKind(ctx, fill, handle);
     }
   });
-}
-
-interface VertexColorBinding { vbo: WebGLBuffer; location: number | undefined }
-
-/** Point the bound mesh VAO's a_vertexColor at a fresh buffer of per-vertex
- *  colors. Pair with `detachVertexColors` before the VAO is unbound. */
-function attachVertexColors(
-  gl: WebGL2RenderingContext, prog: ShaderProgram, perAnchor: number[], handle: GLMeshHandle,
-): VertexColorBinding {
-  const vbo = gl.createBuffer();
-  if (!vbo) throw new Error('attachVertexColors: createBuffer returned null');
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, expandAnchorColors(perAnchor, handle), gl.DYNAMIC_DRAW);
-  const location = prog.attribute('a_vertexColor');
-  if (location !== undefined) {
-    gl.enableVertexAttribArray(location);
-    gl.vertexAttribPointer(location, 4, gl.FLOAT, false, 0, 0);
-  }
-  return { vbo, location };
-}
-
-// Order matters: a buffer deleted after its VAO is unbound stays attached to
-// that VAO and is not freed until the mesh is, and one deleted while its
-// attribute is still enabled leaves the VAO unable to draw.
-function detachVertexColors(gl: WebGL2RenderingContext, { vbo, location }: VertexColorBinding): void {
-  if (location !== undefined) gl.disableVertexAttribArray(location);
-  gl.deleteBuffer(vbo);
-}
-
-function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {
-  const aA = handle.anchorA;
-  const aB = handle.anchorB;
-  const aT = handle.anchorT;
-  if (!aA || !aB || !aT) {
-    // Legacy fallback: mesh lacks anchor params (e.g. non-path mesh). Treat
-    // the caller-provided array as already per-vertex.
-    return new Float32Array(perAnchor);
-  }
-  const n = aA.length;
-  const out = new Float32Array(n * 4);
-  for (let i = 0; i < n; i++) {
-    const a4 = aA[i] * 4;
-    const b4 = aB[i] * 4;
-    const t = aT[i];
-    out[i * 4 + 0] = perAnchor[a4 + 0] + (perAnchor[b4 + 0] - perAnchor[a4 + 0]) * t;
-    out[i * 4 + 1] = perAnchor[a4 + 1] + (perAnchor[b4 + 1] - perAnchor[a4 + 1]) * t;
-    out[i * 4 + 2] = perAnchor[a4 + 2] + (perAnchor[b4 + 2] - perAnchor[a4 + 2]) * t;
-    out[i * 4 + 3] = perAnchor[a4 + 3] + (perAnchor[b4 + 3] - perAnchor[a4 + 3]) * t;
-  }
-  return out;
 }
 
 function drawPathFillVColor(
@@ -244,7 +200,10 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spac
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
   const batched = batchPaint(ctx, paint, hasVColors);
   if (batched === null) return;
-  if (tryStageFill(ctx, mesh, batched)) return;
+  const staged = hasVColors
+    ? tryStageVertexColors(ctx, mesh, stroke.vertexColors!, vertexColorBase(paint))
+    : tryStageFill(ctx, mesh, batched);
+  if (staged) return;
   atMeshOrigin(ctx, mesh.origin, () => drawOwnRibbon(ctx, stroke, mesh, hasVColors));
 }
 
@@ -269,9 +228,8 @@ function drawOwnRibbon(ctx: DrawContext, stroke: StrokedPathCommand['stroke'], m
     gl.useProgram(prog.handle);
     gl.bindVertexArray(handle.vao);
     setProjAndModel(ctx, prog);
-    // Per-vertex colors are the paint here; a non-solid base has no single
-    // color to multiply by, so white leaves the vertex colors unmodified.
-    setSolidPaintUniforms(ctx, prog, isSolid ? solid.color : '#ffffff', paint.opacity);
+    const base = vertexColorBase(paint);
+    setSolidPaintUniforms(ctx, prog, base.color, base.opacity);
     setColorMatrixUniforms(ctx, prog);
 
     const colors = attachVertexColors(gl, prog, stroke.vertexColors!, handle);
@@ -313,8 +271,6 @@ function drawPathStrokeStenciled(
 ): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
-  const isSolid = paint.kind === undefined || paint.kind === 'solid';
-  const solid = paint as { color: string; opacity?: number };
   const widerStroke: Stroke = {
     ...stroke,
     width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
@@ -360,9 +316,8 @@ function drawPathStrokeStenciled(
   // function just set up to clip the ribbon to one side.
   let ribbonProg: ShaderProgram | null = prog;
   if (useVColor) {
-    // Per-vertex colors are the paint here; a non-solid base has no single
-    // color to multiply by, so white leaves the vertex colors unmodified.
-    setSolidPaintUniforms(ctx, prog, isSolid ? solid.color : '#ffffff', paint.opacity);
+    const base = vertexColorBase(paint);
+    setSolidPaintUniforms(ctx, prog, base.color, base.opacity);
     setColorMatrixUniforms(ctx, prog);
   } else {
     ribbonProg = bindPathFillByKind(ctx, paint);

@@ -208,10 +208,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       return found !== undefined && !isPrefLeaf(found) && found.as === 'tab';
     };
     const out: ReactNode[] = [];
-    for (const step of prefTabRuns(runs, tabGroup)) {
+    for (const step of prefTabRuns(runs, tabGroup, ({ items }) => items.some(drawsAny))) {
       if (step.tabs) {
-        const tabs = step.tabs.flatMap((run) => run.items).filter(drawsAny);
-        if (tabs.length === 0) continue;
+        const tabs = step.tabs.flatMap((run) => run.items);
         const group = (path: string) => schemaNodeAtPath(resolved.group, path) as PrefGroup;
         const content = (found: PrefGroup, path: string) => listOf(rows, body(found, path, rows));
         out.push(controlTabs(step.tabs[0]?.items[0], tabs, { group, enabled, content }));

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { ViteDevServer } from 'vite';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { bundledDirs, restartLeavingNothing, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
-import { relativeImportsIn } from './vite-prebundle-reach';
+import { pathImportsIn } from './vite-prebundle-reach';
 
 const tree = mkdtempSync(join(tmpdir(), 'vite-prebundle-'));
 afterAll(() => rmSync(tree, { recursive: true, force: true }));
@@ -96,7 +96,7 @@ describe('bundledDirs', () => {
   });
 });
 
-describe('relativeImportsIn', () => {
+describe('pathImportsIn', () => {
   it('finds what a file loads by path, leaving out what is erased', () => {
     const code = [
       "import { a } from './a';",
@@ -107,8 +107,11 @@ describe('relativeImportsIn', () => {
       "import './f.css';",
       "const g = await import('./g');",
       "import h from 'h';",
+      "import { i } from 'core/scene/i';",
+      "import type { J } from 'interactions/j';",
+      "import { k } from 'corer/k';",
     ].join('\n');
-    expect(relativeImportsIn(code)).toEqual(['./a', './c', '../d', './f.css', './g']);
+    expect(pathImportsIn(code)).toEqual(['./a', './c', '../d', './f.css', './g', 'core/scene/i']);
   });
 });
 

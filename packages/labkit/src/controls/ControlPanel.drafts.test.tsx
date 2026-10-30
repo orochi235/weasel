@@ -1,4 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
@@ -21,16 +22,19 @@ const schema = resolveConfigSchema(
   }),
 );
 const config = { count: 1, title: 'old', x: 0, y: 0 };
+const IDLE_MS = 500;
 
-function mount(draftConfig?: (path: string, value: unknown) => void) {
+function mount(draftConfig?: (path: string, value: unknown) => void, settleWhenIdle = false) {
   const setConfig = vi.fn();
   renderWithIcons(
-    <ControlPanel
-      schema={schema}
-      config={config}
-      setConfig={setConfig}
-      draftConfig={draftConfig}
-    />,
+    <KitSettingsProvider value={{ typing: { settleWhenIdle, idleMs: IDLE_MS } }}>
+      <ControlPanel
+        schema={schema}
+        config={config}
+        setConfig={setConfig}
+        draftConfig={draftConfig}
+      />
+    </KitSettingsProvider>,
   );
   return setConfig;
 }
@@ -50,7 +54,7 @@ describe('<ControlPanel> typed fields with no draftConfig', () => {
     expect(setConfig.mock.calls).toEqual([['count', 123]]);
   });
 
-  it('write text once, when the edit settles, however long it is typed for', () => {
+  it('write text once, when the edit settles, with idle commits off', () => {
     const setConfig = mount();
     const input = screen.getByRole('textbox', { name: 'Title' });
     type(input, 'n', 'ne', 'new');
@@ -105,5 +109,26 @@ describe('<ControlPanel> typed fields with a draftConfig', () => {
     act(() => vi.advanceTimersByTime(1000));
     expect(draftConfig.mock.calls.at(-1)).toEqual(['title', 'old']);
     expect(setConfig).not.toHaveBeenCalled();
+  });
+});
+
+describe('<ControlPanel> typed fields under typing.settleWhenIdle', () => {
+  it('write a number once typing rests', () => {
+    const setConfig = mount(undefined, true);
+    const input = screen.getByRole('spinbutton', { name: 'Count' });
+    type(input, '1', '15', '150', '1500');
+    act(() => vi.advanceTimersByTime(IDLE_MS - 1));
+    expect(setConfig).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(setConfig.mock.calls).toEqual([['count', 1500]]);
+  });
+
+  it('write text once typing rests, with a draftConfig as well', () => {
+    const draftConfig = vi.fn();
+    const setConfig = mount(draftConfig, true);
+    const input = screen.getByRole('textbox', { name: 'Title' });
+    type(input, 'new');
+    act(() => vi.advanceTimersByTime(IDLE_MS));
+    expect(setConfig.mock.calls).toEqual([['title', 'new']]);
   });
 });

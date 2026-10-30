@@ -3,6 +3,23 @@ import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch } from './draw';
 import { createRecorderCtx } from './testing/recorderCtx';
+import { makeGLRecorder } from './testing/glRecorder';
+import { WeaselRenderer } from './WeaselRenderer';
+import { FLOATS_PER_VERTEX } from './drawBatch';
+
+/**
+ * Per-vertex colors join the batch, so these exercise the vertex-color program
+ * the way a fill or stroke still reaches it: an even-odd fill, or a ribbon past
+ * the most vertices a run takes (`meshBatching`).
+ */
+const LONG = 1200;
+const zigzag = {
+  kind: 'polygon',
+  commands: new Uint8Array([M, ...Array.from({ length: LONG - 1 }, () => L)]),
+  coords: new Float32Array(Array.from({ length: LONG }, (_, k) => [k, (k % 2) * 3]).flat()),
+  fillRule: 'nonzero',
+};
+const longColors = Array.from({ length: LONG }, (_, k) => [k % 2, 0, 1 - (k % 2), 1]).flat();
 
 describe('per-vertex color buffer lifetime', () => {
   const vColors = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
@@ -12,20 +29,15 @@ describe('per-vertex color buffer lifetime', () => {
       kind: 'polygon',
       commands: new Uint8Array([M, L, L, Z]),
       coords: new Float32Array([0, 0, 50, 0, 50, 50]),
-      fillRule: 'nonzero',
+      fillRule: 'evenodd',
     },
     fill: { paint: { kind: 'solid', color: '#ffffff' } },
     vertexColors: vColors,
   } as unknown as DrawCommand;
   const strokeCmd = {
     kind: 'path',
-    path: {
-      kind: 'polygon',
-      commands: new Uint8Array([0, 1, 1]),
-      coords: new Float32Array([0, 0, 50, 0, 100, 0]),
-      fillRule: 'nonzero',
-    },
-    stroke: { width: 4, paint: { color: '#ffffff' }, vertexColors: vColors },
+    path: zigzag,
+    stroke: { width: 4, paint: { color: '#ffffff' }, vertexColors: longColors },
   } as unknown as DrawCommand;
 
   // A mesh VAO outlives the draw, and a deleted buffer still attached to one
@@ -58,17 +70,8 @@ describe('vertex-colored stroke under a clip', () => {
   function vColorStroke(): DrawCommand {
     return {
       kind: 'path',
-      path: {
-        kind: 'polygon',
-        commands: new Uint8Array([0, 1, 1]),
-        coords: new Float32Array([0, 0, 50, 0, 100, 0]),
-        fillRule: 'nonzero',
-      },
-      stroke: {
-        width: 4,
-        paint: { color: '#ffffff' },
-        vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
-      },
+      path: zigzag,
+      stroke: { width: 4, paint: { color: '#ffffff' }, vertexColors: longColors },
     } as unknown as DrawCommand;
   }
 
@@ -116,19 +119,41 @@ describe('vertex colors on a path with corner shapes', () => {
     return out;
   }
 
+  /** The same, as the batch stages them: a nonzero fill joins the run. */
+  function stagedColors(cmd: DrawCommand): number[][] {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 200, height: 200, dpr: 1 });
+    rec.reset();
+    r.render([cmd]);
+    const upload = rec.calls.find((c) => c.name === 'bufferSubData' && c.args[0] === rec.gl.ARRAY_BUFFER)!;
+    const verts = upload.args[2] as Float32Array;
+    const out: number[][] = [];
+    for (let i = 0; i < (upload.args[4] as number); i += FLOATS_PER_VERTEX) out.push(Array.from(verts.slice(i + 2, i + 6)));
+    return out;
+  }
+
+  const cornered = (fillRule: string): DrawCommand => ({
+    kind: 'path',
+    path: {
+      kind: 'polygon',
+      commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+      fillRule,
+      corners: [null, { shape: 'bevel', radius: 20 }],
+    },
+    fill: { paint: { kind: 'solid', color: '#ffffff' } },
+    vertexColors: [...RED, ...GREEN, ...BLUE, ...WHITE],
+  } as unknown as DrawCommand);
+
+  it("gives a cut corner's points that corner's anchor color in the batch", () => {
+    const colors = stagedColors(cornered('nonzero'));
+    expect(colors).toHaveLength(5);
+    expect(colors.filter((c) => c.every((v, i) => v === GREEN[i]))).toHaveLength(2);
+    for (const c of colors) expect(c.some(Number.isNaN)).toBe(false);
+  });
+
   it("gives a cut corner's points that corner's anchor color", () => {
-    const colors = uploadedColors({
-      kind: 'path',
-      path: {
-        kind: 'polygon',
-        commands: new Uint8Array([M, L, L, L, Z]),
-        coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
-        fillRule: 'nonzero',
-        corners: [null, { shape: 'bevel', radius: 20 }],
-      },
-      fill: { paint: { kind: 'solid', color: '#ffffff' } },
-      vertexColors: [...RED, ...GREEN, ...BLUE, ...WHITE],
-    } as unknown as DrawCommand);
+    const colors = uploadedColors(cornered('evenodd'));
     expect(colors).toHaveLength(5);
     expect(colors.filter((c) => c.every((v, i) => v === GREEN[i]))).toHaveLength(2);
     for (const c of colors) expect(c.some(Number.isNaN)).toBe(false);

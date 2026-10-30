@@ -7,7 +7,8 @@ import f from '../field.module.css';
 import { fieldRootClass } from '../Field/fieldSlots';
 import { MIXED_HINT } from '../mixedHint';
 import s from './NumberField.module.css';
-import { useStepRepeat } from './useStepRepeat';
+import { Steppers } from './Steppers';
+import { useIdleSettle } from '../../useIdleSettle';
 
 /** Props for {@link UnitField}. */
 export interface UnitFieldProps {
@@ -58,6 +59,9 @@ export interface UnitFieldProps {
   steppers?: boolean;
   /** The field and its steppers take no input. */
   disabled?: boolean;
+  /** Commit typed text once typing rests, as well as on blur or Enter: text that reads as a value inside the
+   *  bounds, while the field keeps the text as typed. Defaults to the `typing.settleWhenIdle` kit setting. */
+  settleWhenIdle?: boolean;
   /** Which end of the field the steppers sit at. Defaults to `'start'`. */
   stepperSide?: StepperSide;
   /** Render with no box until focused, as {@link NumberField}'s `ghost` does. */
@@ -106,6 +110,7 @@ export function UnitField({
   mixed = false,
   steppers,
   disabled = false,
+  settleWhenIdle,
   stepperSide = 'start',
   ghost,
   width = 'fill',
@@ -127,9 +132,15 @@ export function UnitField({
     return Number.isNaN(n) ? parseAs(typed, display) : n;
   };
   const bounds = { step, min: minValue, max: maxValue, endless };
+  const idle = useIdleSettle(() => {
+    const n = idleValue(draft, read, bounds);
+    if (n !== null) typing.current = { from: n, sent: false };
+    if (n !== null && n !== value) onChange(n);
+  }, settleWhenIdle);
 
   const from = (): number => stepStart(draft === null ? value : read(draft), value, endless);
   const stepTo = (next: number) => {
+    idle.stop();
     setDraft(null);
     typing.current = null;
     onInput?.(next);
@@ -166,18 +177,6 @@ export function UnitField({
 
   useWheelSteps(input, latestSpin);
 
-  const repeat = useStepRepeat(latestSpin, latestSpent);
-  const stepper = (key: 'ArrowUp' | 'ArrowDown', label: string, glyph: string, atBound: boolean) => (
-    <Stepper
-      label={label}
-      glyph={glyph}
-      disabled={atBound || disabled}
-      onHold={() => repeat.start(key)}
-      onRelease={repeat.stop}
-      onTap={() => latestSpin.current(key)}
-    />
-  );
-
   return (
     <div
       className={fieldRootClass({ width, fit: s.fit, className })}
@@ -205,6 +204,7 @@ export function UnitField({
           onChange={(e) => {
             const typed = e.target.value;
             setDraft(typed);
+            idle.typed();
             typing.current ??= { from: value, sent: false };
             const n = read(typed);
             if (onInput && typed.trim() !== '' && !Number.isNaN(n)) {
@@ -216,6 +216,7 @@ export function UnitField({
             canceled.current = false;
           }}
           onBlur={() => {
+            idle.stop();
             const typedText = canceled.current ? null : draft;
             const by = typedText === null ? null : offsetIn(typedText, read);
             if (typedText?.trim() === '' && known && onClear) onClear();
@@ -227,10 +228,13 @@ export function UnitField({
           onKeyDown={(e) => fieldKey(e, canceled, spin)}
         />
         {steppers && (
-          <div className={s.steppers}>
-            {stepper('ArrowUp', 'Increment', '▲', known && maxValue !== undefined && value >= maxValue)}
-            {stepper('ArrowDown', 'Decrement', '▼', known && minValue !== undefined && value <= minValue)}
-          </div>
+          <Steppers
+            spin={latestSpin}
+            spent={latestSpent}
+            disabled={disabled}
+            atMax={known && maxValue !== undefined && value >= maxValue}
+            atMin={known && minValue !== undefined && value <= minValue}
+          />
         )}
       </div>
     </div>
@@ -269,6 +273,14 @@ function useWheelSteps(
   }, [input, spin]);
 }
 
+/** What a pause in typing commits: a value `typed` reads as inside `bounds`, and never an offset, so a pause
+ *  neither applies one twice nor clamps or reformats the text under the caret. */
+function idleValue(typed: string | null, read: (text: string) => number, bounds: Parameters<typeof clampToBounds>[1]): number | null {
+  if (typed === null || typed.trim() === '' || offsetIn(typed, read) !== null) return null;
+  const n = read(typed);
+  return Number.isNaN(n) || clampToBounds(n, bounds) !== n ? null : n;
+}
+
 /** What `typed` offsets by when it reads as `+=` or `-=` and a number: NaN
  *  when the number does not read, and null for text that is no offset. */
 function offsetIn(typed: string, read: (text: string) => number): number | null {
@@ -276,40 +288,4 @@ function offsetIn(typed: string, read: (text: string) => number): number | null 
   if (!m) return null;
   const n = read(m[2]);
   return m[1] === '-' ? -n : n;
-}
-
-interface StepperProps {
-  label: string;
-  glyph: string;
-  disabled: boolean;
-  onHold: () => void;
-  onRelease: () => void;
-  onTap: () => void;
-}
-
-function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperProps) {
-  return (
-    <button
-      type="button"
-      className={s.stepper}
-      data-wzl-subordinate=""
-      aria-label={label}
-      tabIndex={-1}
-      disabled={disabled}
-      // Keeps focus in the input, where a press on the button would take it.
-      onPointerDown={(e) => {
-        e.preventDefault();
-        onHold();
-      }}
-      onPointerUp={onRelease}
-      onPointerLeave={onRelease}
-      onPointerCancel={onRelease}
-      // A click with no pointer down before it — assistive tech, or a test.
-      onClick={(e) => {
-        if (e.detail === 0) onTap();
-      }}
-    >
-      {glyph}
-    </button>
-  );
 }

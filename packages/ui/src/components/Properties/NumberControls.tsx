@@ -123,6 +123,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       display={p.display}
       steppers={p.steppers}
       disabled={p.disabled}
+      settleWhenIdle={p.settleWhenIdle}
       aria-label={p.name}
       onInput={p.onInput}
       onChange={p.onChange}

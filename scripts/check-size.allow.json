@@ -88,7 +88,7 @@
     "longestFunction": 183
   },
   "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 240
+    "longestFunction": 239
   },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 141
@@ -132,7 +132,7 @@
     "longestFunction": 136
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 210
+    "longestFunction": 209
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 192
@@ -176,7 +176,7 @@
     "lines": 624
   },
   "packages/renderer/src/drawBatch.ts": {
-    "lines": 608
+    "lines": 596
   },
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144

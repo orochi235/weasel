@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases.ts';
 import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
-import { skipWorktrees } from '../../scripts/vite-watch.ts';
+import { devWatch } from '../../scripts/vite-watch.ts';
 import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { callbackSourcePlugin } from './vite-plugin-callback-source.ts';
@@ -33,7 +33,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    skipWorktrees(),
+    devWatch(),
     devSourcemaps(),
     prebundleWorkspace(repoRoot, [resolve(import.meta.dirname, 'src'), resolve(repoRoot, 'apps/shared')]),
     // Opt-in: it AST-rewrites every module under those three trees on every

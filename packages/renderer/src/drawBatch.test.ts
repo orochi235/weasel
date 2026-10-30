@@ -12,6 +12,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder, type GLCall } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
+import { registerTexture } from './textures/registerTexture';
 import type { DrawCommand } from './DrawCommand';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 
@@ -54,13 +55,12 @@ describe('renderer — consecutive solid-fill batching', () => {
   const STOPS = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
 
   /** A paint no run can carry, and the one these tests break a run with. Every
-   *  gradient batches now; per-vertex colors are their own program and a color
-   *  VBO minted per draw, so they cannot join one. */
-  const vcolorRect = (x: number): DrawCommand => ({
+   *  gradient and per-vertex colors batch now; a pattern draws itself. */
+  const TILE = registerTexture({ width: 4, height: 4 } as ImageBitmap);
+  const patternRect = (x: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: { paint: { kind: 'solid', color: '#ffffff' } },
-    vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
+    fill: { paint: { kind: 'texture', texture: TILE } },
   } as DrawCommand);
 
   const linearRect = (x: number): DrawCommand => ({
@@ -151,11 +151,11 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   it('flushes for a fill kind it cannot express, keeping painter\'s order', () => {
-    r.render([rect(0), vcolorRect(20), rect(40)]);
+    r.render([rect(0), patternRect(20), rect(40)]);
     const progs = drawPrograms();
     expect(progs).toHaveLength(3);
     expect(progs[0]).toBe(r._batchFill().handle);
-    expect(progs[1]).toBe(r._pathFillVColor().handle);
+    expect(progs[1]).toBe(r._patternFill().handle);
     expect(progs[2]).toBe(r._batchFill().handle);
     expect(draws()).toEqual([6, 6, 6]);
   });
@@ -460,7 +460,7 @@ describe('renderer — consecutive solid-fill batching', () => {
 
     it('gives itself a stencil bit when a child draws for itself, and still lets the run cross it', () => {
       r.render([
-        clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0), vcolorRect(0), rect(0)]),
+        clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0), patternRect(0), rect(0)]),
         rect(40),
       ]);
       // The run before the per-vertex child, the clip's stencil write, the
@@ -468,7 +468,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       // one after the group.
       expect(draws()).toEqual([6, 6, 6, 6, 12]);
       expect(clipBitWrites().length).toBeGreaterThan(0);
-      expect(drawPrograms()[2]).toBe(r._pathFillVColor().handle);
+      expect(drawPrograms()[2]).toBe(r._patternFill().handle);
       let seen = 0;
       const vcolorAt = recorder.calls.findIndex((c) => c.name === 'drawElements' && seen++ === 2);
       let func: unknown[] | null = null;
@@ -558,7 +558,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     /** One flush each: a vertex-colored fill never joins the run, so it drains what is
      *  staged before drawing itself. */
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), patternRect(i * 20 + 10)]).flat();
 
     /** The buffer bound at each solid-flush vertex upload, in issue order.
      *  `drawImage` is the only other `bufferSubData(ARRAY_BUFFER)` writer and
@@ -649,7 +649,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       const perSlot = SOLID_RING_SLOT_VERTICES / 4;
       const big = (n: number): DrawCommand[] => [
         ...Array.from({ length: perSlot + 1 }, (_, i) => rect(n * 10000 + i)),
-        vcolorRect(0),
+        patternRect(0),
       ];
       const bigFlushes = SOLID_LARGE_RING_SIZE + 1;
       r.render([
@@ -693,7 +693,7 @@ describe('renderer — consecutive solid-fill batching', () => {
    */
   describe('which flushes re-upload their indices', () => {
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), patternRect(i * 20 + 10)]).flat();
 
     /** Solid-batch index uploads. Nothing else here writes indices this way:
      *  the text and image paths respecify with `bufferData` instead. */
@@ -732,13 +732,13 @@ describe('renderer — consecutive solid-fill batching', () => {
       // larger N — so slot 0 coming round with two rects needs nothing.
       r.render([
         ...alternating(SOLID_RING_SIZE),
-        rect(0), rect(20), vcolorRect(40),
+        rect(0), rect(20), patternRect(40),
       ]);
       expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
     });
 
     it('uploads for a flush carrying a mesh, whose indices no count describes', () => {
-      r.render([triangle(0), vcolorRect(20), triangle(40)]);
+      r.render([triangle(0), patternRect(20), triangle(40)]);
       expect(indexUploads()).toHaveLength(2);
     });
 
@@ -748,9 +748,9 @@ describe('renderer — consecutive solid-fill batching', () => {
       // still a different pattern. One full turn puts a one-rect flush back on
       // the mesh's slot.
       r.render([
-        triangle(0), vcolorRect(10),
+        triangle(0), patternRect(10),
         ...alternating(SOLID_RING_SIZE - 1),
-        rect(0), vcolorRect(30),
+        rect(0), patternRect(30),
       ]);
       // Every one of the 65 flushes writes: 64 filling the ring, and the last
       // because the slot it lands on held a mesh.
@@ -773,22 +773,23 @@ describe('renderer — consecutive solid-fill batching', () => {
 
     it('sends the batch its white once a frame, not once a flush', () => {
       const alternating = (flushes: number): DrawCommand[] =>
-        Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
+        Array.from({ length: flushes }, (_, i) => [rect(i * 20), patternRect(i * 20 + 10)]).flat();
       r.render(alternating(4));
       expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
     });
 
     it('is the only writer of u_color on its own program', () => {
-      // What makes one write a frame safe. A per-anchor-colored stroke sends a
-      // real color, and it has to land on a different program — the same one
+      // What makes one write a frame safe. An inside-aligned per-anchor-colored
+      // stroke draws itself and sends a real color, and it has to land on a different program — the same one
       // would leave the batch's cache holding a white GL no longer has, and
       // the next run would paint in the stroke's blue.
       const vcolorStroke = {
         kind: 'path',
-        path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
+        path: { ...squareClip(10), coords: new Float32Array([20, 0, 30, 0, 30, 10, 20, 10]) },
         fill: { paint: { color: '#ff0000' } },
         stroke: {
           width: 2,
+          align: 'inner',
           paint: { color: '#0000ff' },
           vertexColors: [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
         },
