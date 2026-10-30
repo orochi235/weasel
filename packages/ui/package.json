@@ -62,7 +62,6 @@
     "table": "./dist/icons.table.json"
   },
   "dependencies": {
-    "@weasel-js/bidi": "1.14.2",
     "@weasel-js/clock": "1.14.2",
     "@weasel-js/font": "1.14.2",
     "@weasel-js/geom": "1.14.2",
@@ -78,6 +77,7 @@
     "@weasel-js/registry": "1.14.2",
     "@weasel-js/select": "1.14.2",
     "@weasel-js/svg": "1.14.2",
+    "@weasel-js/text": "1.14.2",
     "@weasel-js/theme": "1.14.2",
     "prism-react-renderer": "^2.4.1",
     "react-aria": "3.52.1",
@@ -116,6 +116,7 @@
     "provenance": true
   },
   "devDependencies": {
+    "@weasel-js/bidi": "1.14.2",
     "@weasel-js/cursor": "1.14.2"
   }
 }

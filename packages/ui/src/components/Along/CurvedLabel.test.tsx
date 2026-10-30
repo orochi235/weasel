@@ -1,14 +1,19 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
+import { bidi } from '@weasel-js/bidi';
 import { lineShape } from '@weasel-js/geom';
+import { registerBidi } from '@weasel-js/text';
 import { CurvedLabel } from './CurvedLabel';
 
 // jsdom lays nothing out: every grapheme is 10 wide.
 const realOffset = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!;
+let unregister: () => void;
 beforeAll(() => {
+  unregister = registerBidi(bidi);
   Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get: () => 10 });
 });
 afterAll(() => {
+  unregister();
   Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realOffset);
 });
 afterEach(cleanup);

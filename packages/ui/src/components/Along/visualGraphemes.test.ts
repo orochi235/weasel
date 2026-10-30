@@ -1,5 +1,8 @@
-import { expect, test } from 'vitest';
-import { visualGraphemes } from './visualGraphemes';
+import { expect, test, vi } from 'vitest';
+import { bidi } from '@weasel-js/bidi';
+import { visualGraphemes as withEngine } from './visualGraphemes';
+
+const visualGraphemes = (g: readonly string[], d: 'ltr' | 'rtl') => withEngine(g, d, bidi);
 
 const chars = (s: string) => [...s];
 
@@ -29,4 +32,13 @@ test('a grapheme of several code points stays whole and in its own order', () =>
 
 test('bidi controls alone drop out', () => {
   expect(visualGraphemes(['a', '‫', 'b', '‬'], 'ltr')).toEqual(['a', 'b']);
+});
+
+test('with no engine registered, graphemes keep their logical order and controls drop out', () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  expect(withEngine(chars('ab אבג'), 'ltr', null)).toEqual(chars('ab אבג'));
+  expect(withEngine(['a', '\u202b', 'b', '\u202c'], 'ltr', null)).toEqual(['a', 'b']);
+  expect(warn).toHaveBeenCalledOnce();
+  expect(String(warn.mock.calls[0]![0])).toMatch(/^weasel CurvedLabel: /);
+  warn.mockRestore();
 });
