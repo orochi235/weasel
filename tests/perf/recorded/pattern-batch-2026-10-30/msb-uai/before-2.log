@@ -1,0 +1,242 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/transition-matrix.spec.ts
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Transition matrix — 800x600, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+collected between measurements: true
+every kind paints something: true
+512 commands per frame; 162 cells (54 x 3 runs)
+
+    1/162  run 1  solid (hom1)             0.115 ms/frame
+    2/162  run 1  gradient (hom1)          0.795 ms/frame
+    3/162  run 1  pattern (hom1)           1.850 ms/frame
+    4/162  run 1  image (hom1)             0.370 ms/frame
+    5/162  run 1  text (hom1)              1.315 ms/frame
+    6/162  run 1  shader (hom1)            2.345 ms/frame
+    7/162  run 1  vcolor (hom1)            0.465 ms/frame
+    8/162  run 1  stencil (hom1)           3.970 ms/frame
+    9/162  run 1  clip (hom1)              0.320 ms/frame
+   10/162  run 1  solid + gradient         0.615 ms/frame
+   11/162  run 1  solid + pattern          10.305 ms/frame
+   12/162  run 1  solid + image            0.275 ms/frame
+   13/162  run 1  solid + text             0.660 ms/frame
+   14/162  run 1  solid + shader           8.385 ms/frame
+   15/162  run 1  solid + vcolor           0.360 ms/frame
+   16/162  run 1  solid + stencil          11.070 ms/frame
+   17/162  run 1  solid + clip             0.240 ms/frame
+   18/162  run 1  gradient + pattern       10.425 ms/frame
+   19/162  run 1  gradient + image         0.725 ms/frame
+   20/162  run 1  gradient + text          1.310 ms/frame
+   21/162  run 1  gradient + shader        9.390 ms/frame
+   22/162  run 1  gradient + vcolor        0.725 ms/frame
+   23/162  run 1  gradient + stencil       9.705 ms/frame
+   24/162  run 1  gradient + clip          0.415 ms/frame
+   25/162  run 1  pattern + image          9.800 ms/frame
+   26/162  run 1  pattern + text           10.045 ms/frame
+   27/162  run 1  pattern + shader         2.195 ms/frame
+   28/162  run 1  pattern + vcolor         7.430 ms/frame
+   29/162  run 1  pattern + stencil        3.320 ms/frame
+   30/162  run 1  pattern + clip           10.490 ms/frame
+   31/162  run 1  image + text             0.645 ms/frame
+   32/162  run 1  image + shader           10.055 ms/frame
+   33/162  run 1  image + vcolor           0.295 ms/frame
+   34/162  run 1  image + stencil          9.955 ms/frame
+   35/162  run 1  image + clip             0.330 ms/frame
+   36/162  run 1  text + shader            10.410 ms/frame
+   37/162  run 1  text + vcolor            0.850 ms/frame
+   38/162  run 1  text + stencil           11.475 ms/frame
+   39/162  run 1  text + clip              0.750 ms/frame
+   40/162  run 1  shader + vcolor          7.635 ms/frame
+   41/162  run 1  shader + stencil         2.990 ms/frame
+   42/162  run 1  shader + clip            8.515 ms/frame
+   43/162  run 1  vcolor + stencil         7.900 ms/frame
+   44/162  run 1  vcolor + clip            0.390 ms/frame
+   45/162  run 1  stencil + clip           11.440 ms/frame
+   46/162  run 1  solid (hom2)             0.185 ms/frame
+   47/162  run 1  gradient (hom2)          0.870 ms/frame
+   48/162  run 1  pattern (hom2)           2.065 ms/frame
+   49/162  run 1  image (hom2)             0.275 ms/frame
+   50/162  run 1  text (hom2)              1.370 ms/frame
+   51/162  run 1  shader (hom2)            2.410 ms/frame
+   52/162  run 1  vcolor (hom2)            0.375 ms/frame
+   53/162  run 1  stencil (hom2)           3.935 ms/frame
+   54/162  run 1  clip (hom2)              0.245 ms/frame
+   55/162  run 2  solid (hom1)             0.185 ms/frame
+   56/162  run 2  gradient (hom1)          0.780 ms/frame
+   57/162  run 2  pattern (hom1)           1.455 ms/frame
+   58/162  run 2  image (hom1)             0.320 ms/frame
+   59/162  run 2  text (hom1)              1.055 ms/frame
+   60/162  run 2  shader (hom1)            1.695 ms/frame
+   61/162  run 2  vcolor (hom1)            0.450 ms/frame
+   62/162  run 2  stencil (hom1)           4.890 ms/frame
+   63/162  run 2  clip (hom1)              0.280 ms/frame
+   64/162  run 2  solid + gradient         0.670 ms/frame
+   65/162  run 2  solid + pattern          10.250 ms/frame
+   66/162  run 2  solid + image            0.300 ms/frame
+   67/162  run 2  solid + text             0.640 ms/frame
+   68/162  run 2  solid + shader           8.710 ms/frame
+   69/162  run 2  solid + vcolor           0.395 ms/frame
+   70/162  run 2  solid + stencil          11.285 ms/frame
+   71/162  run 2  solid + clip             0.265 ms/frame
+   72/162  run 2  gradient + pattern       10.365 ms/frame
+   73/162  run 2  gradient + image         0.720 ms/frame
+   74/162  run 2  gradient + text          1.050 ms/frame
+   75/162  run 2  gradient + shader        10.495 ms/frame
+   76/162  run 2  gradient + vcolor        0.845 ms/frame
+   77/162  run 2  gradient + stencil       10.320 ms/frame
+   78/162  run 2  gradient + clip          0.505 ms/frame
+   79/162  run 2  pattern + image          8.490 ms/frame
+   80/162  run 2  pattern + text           10.265 ms/frame
+   81/162  run 2  pattern + shader         2.280 ms/frame
+   82/162  run 2  pattern + vcolor         6.465 ms/frame
+   83/162  run 2  pattern + stencil        3.370 ms/frame
+   84/162  run 2  pattern + clip           10.575 ms/frame
+   85/162  run 2  image + text             0.840 ms/frame
+   86/162  run 2  image + shader           9.990 ms/frame
+   87/162  run 2  image + vcolor           0.320 ms/frame
+   88/162  run 2  image + stencil          9.515 ms/frame
+   89/162  run 2  image + clip             0.375 ms/frame
+   90/162  run 2  text + shader            10.415 ms/frame
+   91/162  run 2  text + vcolor            0.875 ms/frame
+   92/162  run 2  text + stencil           11.160 ms/frame
+   93/162  run 2  text + clip              0.870 ms/frame
+   94/162  run 2  shader + vcolor          7.220 ms/frame
+   95/162  run 2  shader + stencil         4.005 ms/frame
+   96/162  run 2  shader + clip            10.070 ms/frame
+   97/162  run 2  vcolor + stencil         7.480 ms/frame
+   98/162  run 2  vcolor + clip            0.350 ms/frame
+   99/162  run 2  stencil + clip           11.055 ms/frame
+  100/162  run 2  solid (hom2)             0.225 ms/frame
+  101/162  run 2  gradient (hom2)          0.935 ms/frame
+  102/162  run 2  pattern (hom2)           2.105 ms/frame
+  103/162  run 2  image (hom2)             0.325 ms/frame
+  104/162  run 2  text (hom2)              1.440 ms/frame
+  105/162  run 2  shader (hom2)            2.760 ms/frame
+  106/162  run 2  vcolor (hom2)            0.450 ms/frame
+  107/162  run 2  stencil (hom2)           4.340 ms/frame
+  108/162  run 2  clip (hom2)              0.220 ms/frame
+  109/162  run 3  solid (hom1)             0.185 ms/frame
+  110/162  run 3  gradient (hom1)          0.630 ms/frame
+  111/162  run 3  pattern (hom1)           1.485 ms/frame
+  112/162  run 3  image (hom1)             0.320 ms/frame
+  113/162  run 3  text (hom1)              1.285 ms/frame
+  114/162  run 3  shader (hom1)            2.510 ms/frame
+  115/162  run 3  vcolor (hom1)            0.440 ms/frame
+  116/162  run 3  stencil (hom1)           4.805 ms/frame
+  117/162  run 3  clip (hom1)              0.360 ms/frame
+  118/162  run 3  solid + gradient         0.680 ms/frame
+  119/162  run 3  solid + pattern          10.405 ms/frame
+  120/162  run 3  solid + image            0.325 ms/frame
+  121/162  run 3  solid + text             0.600 ms/frame
+  122/162  run 3  solid + shader           8.495 ms/frame
+  123/162  run 3  solid + vcolor           0.265 ms/frame
+  124/162  run 3  solid + stencil          11.145 ms/frame
+  125/162  run 3  solid + clip             0.230 ms/frame
+  126/162  run 3  gradient + pattern       10.225 ms/frame
+  127/162  run 3  gradient + image         0.570 ms/frame
+  128/162  run 3  gradient + text          1.225 ms/frame
+  129/162  run 3  gradient + shader        9.500 ms/frame
+  130/162  run 3  gradient + vcolor        0.695 ms/frame
+  131/162  run 3  gradient + stencil       9.465 ms/frame
+  132/162  run 3  gradient + clip          0.520 ms/frame
+  133/162  run 3  pattern + image          10.065 ms/frame
+  134/162  run 3  pattern + text           10.125 ms/frame
+  135/162  run 3  pattern + shader         2.240 ms/frame
+  136/162  run 3  pattern + vcolor         7.365 ms/frame
+  137/162  run 3  pattern + stencil        2.765 ms/frame
+  138/162  run 3  pattern + clip           10.110 ms/frame
+  139/162  run 3  image + text             0.750 ms/frame
+  140/162  run 3  image + shader           7.390 ms/frame
+  141/162  run 3  image + vcolor           0.315 ms/frame
+  142/162  run 3  image + stencil          9.120 ms/frame
+  143/162  run 3  image + clip             0.290 ms/frame
+  144/162  run 3  text + shader            8.375 ms/frame
+  145/162  run 3  text + vcolor            0.795 ms/frame
+  146/162  run 3  text + stencil           9.215 ms/frame
+  147/162  run 3  text + clip              0.730 ms/frame
+  148/162  run 3  shader + vcolor          3.070 ms/frame
+  149/162  run 3  shader + stencil         2.380 ms/frame
+  150/162  run 3  shader + clip            7.260 ms/frame
+  151/162  run 3  vcolor + stencil         7.045 ms/frame
+  152/162  run 3  vcolor + clip            0.375 ms/frame
+  153/162  run 3  stencil + clip           9.105 ms/frame
+  154/162  run 3  solid (hom2)             0.195 ms/frame
+  155/162  run 3  gradient (hom2)          0.700 ms/frame
+  156/162  run 3  pattern (hom2)           1.500 ms/frame
+  157/162  run 3  image (hom2)             0.295 ms/frame
+  158/162  run 3  text (hom2)              1.030 ms/frame
+  159/162  run 3  shader (hom2)            1.445 ms/frame
+  160/162  run 3  vcolor (hom2)            0.345 ms/frame
+  161/162  run 3  stencil (hom2)           3.815 ms/frame
+  162/162  run 3  clip (hom2)              0.255 ms/frame
+
+Transition matrix — 800x600, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+512 commands per frame, 3 runs; median across runs.
+
+**Per-command cost, one kind per frame** (us/command)
+
+| kind | solid | gradient | pattern | image | text | shader | vcolor | stencil | clip |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| us/cmd | 0.37 | 1.63 | 3.48 | 0.63 | 2.44 | 4.35 | 0.82 | 8.42 | 0.55 |
+
+**Transition surcharge** (us per boundary, above the two kinds' own cost)
+
+| pair | solid | gradient | pattern | image | text | shader | vcolor | stencil | clip |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| solid | · | 0.27 | 18.12 | 0.08 | -0.17 | 14.50 | 0.13 | 17.41 | 0.05 |
+| gradient | 0.27 | · | 17.70 | 0.25 | 0.44 | 16.01 | 0.33 | 14.31 | -0.10 |
+| pattern | 18.12 | 17.70 | · | 16.95 | 17.13 | 0.54 | 12.21 | 0.34 | 18.34 |
+| image | 0.08 | 0.25 | 16.95 | · | 0.03 | 17.04 | -0.13 | 13.79 | 0.05 |
+| text | -0.17 | 0.44 | 17.13 | 0.03 | · | 16.73 | 0.04 | 16.10 | -0.00 |
+| shader | 14.50 | 16.01 | 0.54 | 17.04 | 16.73 | · | 11.51 | -0.34 | 14.06 |
+| vcolor | 0.13 | 0.33 | 12.21 | -0.13 | 0.04 | 11.51 | · | 9.68 | 0.05 |
+| stencil | 17.41 | 14.31 | 0.34 | 13.79 | 16.10 | -0.34 | 9.68 | · | 16.87 |
+| clip | 0.05 | -0.10 | 18.34 | 0.05 | -0.00 | 14.06 | 0.05 | 16.87 | · |
+
+**Additive fit** `S(A,B) = f(A) + f(B)` — a kind's own per-boundary state cost
+
+| kind | solid | gradient | pattern | image | text | shader | vcolor | stencil | clip |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| f (us) | 2.19 | 2.02 | 9.47 | 1.86 | 2.18 | 7.86 | -0.17 | 7.59 | 2.04 |
+
+**Residual** `S(A,B) - f(A) - f(B)` — what the pair costs beyond its two halves
+
+| pair | solid | gradient | pattern | image | text | shader | vcolor | stencil | clip |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| solid | · | -3.95 | 6.46 | -3.98 | -4.54 | 4.45 | -1.89 | 7.63 | -4.19 |
+| gradient | -3.95 | · | 6.21 | -3.63 | -3.77 | 6.12 | -1.53 | 4.70 | -4.16 |
+| pattern | 6.46 | 6.21 | · | 5.62 | 5.48 | -16.79 | 2.92 | -16.72 | 6.83 |
+| image | -3.98 | -3.63 | 5.62 | · | -4.01 | 7.32 | -1.82 | 4.34 | -3.85 |
+| text | -4.54 | -3.77 | 5.48 | -4.01 | · | 6.69 | -1.97 | 6.33 | -4.22 |
+| shader | 4.45 | 6.12 | -16.79 | 7.32 | 6.69 | · | 3.83 | -15.79 | 4.16 |
+| vcolor | -1.89 | -1.53 | 2.92 | -1.82 | -1.97 | 3.83 | · | 2.27 | -1.82 |
+| stencil | 7.63 | 4.70 | -16.72 | 4.34 | 6.33 | -15.79 | 2.27 | · | 7.24 |
+| clip | -4.19 | -4.16 | 6.83 | -3.85 | -4.22 | 4.16 | -1.82 | 7.24 | · |
+
+**Resolution** — same frame measured twice, in the same units as a cell (us/boundary)
+
+| kind | solid | gradient | pattern | image | text | shader | vcolor | stencil | clip |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| noise | 0.08 | 0.15 | 0.42 | 0.05 | 0.50 | 2.08 | 0.18 | 1.08 | 0.15 |
+
+| pair | run-to-run spread (us/boundary) |
+|---|---:|
+| shader + vcolor | 8.52 |
+| clip + shader | 5.31 |
+| clip + stencil | 4.94 |
+| image + shader | 4.83 |
+| stencil + text | 4.59 |
+perf result: tests/perf/recorded/pattern-batch-2026-10-30/msb-uai/before-2/transition-matrix-2026-10-30T22-51-10Z.json
+  ✓  1 tests/perf/transition-matrix.spec.ts:53:1 › transition matrix: what a neighbour of a different kind costs (30.9s)
+
+  1 passed (32.1s)
