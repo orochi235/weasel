@@ -1,4 +1,4 @@
-import { globSync, readdirSync } from 'node:fs';
+import { globSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
@@ -288,8 +288,10 @@ export default defineConfig({
         plugins: [
           react(),
           prebundleWorkspace(import.meta.dirname, [], {
+            // A failed browser test leaves a directory of screenshots named for its file.
             servedFiles: globSync([...BROWSER_TESTS, BROWSER_SETUP], { cwd: import.meta.dirname, exclude: (name) => name === 'node_modules' })
-              .map((file) => resolve(import.meta.dirname, file)),
+              .map((file) => resolve(import.meta.dirname, file))
+              .filter((file) => statSync(file).isFile()),
             watch: false,
           }),
         ],

@@ -36,7 +36,7 @@ function phases(text) {
   return { durationSeconds: m[2] === 'ms' ? Number(m[1]) / 1000 : Number(m[1]), phaseShare: share };
 }
 
-/** Per file: how long it took from start to end, and its tests' own time, from vitest's JSON report. */
+/** From vitest's JSON report, whose per-file times start at the first test, so a file's page and module load is in neither. */
 function files(report) {
   if (!existsSync(report)) return null;
   const { testResults, numPassedTests, numFailedTests, numPendingTests } = JSON.parse(readFileSync(report, 'utf8'));
@@ -48,7 +48,7 @@ function files(report) {
     passed: numPassedTests,
     failed: numFailedTests,
     skipped: numPendingTests,
-    fileSpanSeconds: sum(spans),
+    testSpanSeconds: sum(spans),
     testSeconds: sum(tests),
     failedFiles: testResults.filter((f) => f.status !== 'passed').map((f) => f.name.replace(process.cwd() + '/', '')),
   };
@@ -88,11 +88,12 @@ for (let rep = 1; rep <= reps; rep++) {
     const id = `${node}-${variant}-rep${rep}`;
     const before = await sampleLoad();
     const r = await trial(variant, id);
-    const row = { node, cores, variant, rep, at: new Date().toISOString(), loadBefore: before, ...r };
+    // The project's maxWorkers, so workerSeconds is what the run held: tabs × wall.
+    const row = { node, cores, maxWorkers: 6, workerSeconds: 6 * r.wallSeconds, variant, rep, at: new Date().toISOString(), loadBefore: before, ...r };
     appendFileSync(join(values.out, 'runs.jsonl'), JSON.stringify(row) + '\n');
     console.log(
       `${String(n).padStart(2)}/${total}  ${node}  ${variant.padEnd(7)}  rep ${rep}  ` +
-        `${r.wallSeconds.toFixed(1).padStart(6)}s wall  ${(r.fileSpanSeconds ?? 0).toFixed(1).padStart(6)}s in files  ` +
+        `${r.wallSeconds.toFixed(1).padStart(6)}s wall  ${(6 * r.wallSeconds).toFixed(1).padStart(6)} worker-s  ` +
         `${(r.testSeconds ?? 0).toFixed(1).padStart(6)}s in tests  failed ${String(r.failed ?? '?').padStart(3)}  ` +
         `busy before ${before.busy.toFixed(1).padStart(4)}  exit ${r.code}`,
     );
