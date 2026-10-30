@@ -187,9 +187,11 @@ only its own test files; nothing checked the combination, and a fleet run of `ma
 another session's uncommitted stylesheet.
 
 **Everything ready to merge shares one fleet run: the batch's (2026-10-30).** A feature branch, an
-agent's arc and a quick fix alike get no fleet run of their own, and an agent never starts one: it
-finishes on the test files its diff touches (locally, `--maxWorkers=1`, one at a time),
-`typecheck:packages` for its packages, eslint on its named files and `check:size`, then reports ready.
+agent's arc and a quick fix finish on the test files their diff touches (locally, `--maxWorkers=1`,
+one at a time), `typecheck:packages` for their packages, eslint on their named files and `check:size`,
+then report ready. Where those tests would take a while locally, a branch may run `npm run test:fleet`
+on itself, which runs only the files whose imports reach what it changed; never with `--full`, and it
+does not stand in for the batch run.
 Quick fixes from a `docs/TODO.md` pass go in as one commit each; grouping them is the agent's call,
 not Mike's, and the report says which went in. The controller merges every ready branch and fix into
 one `batch/<date>` branch in a worktree, and runs `test:fleet` (which includes the `gate` project) and
