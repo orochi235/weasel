@@ -1,6 +1,6 @@
 import { Fragment, useId, useLayoutEffect, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
 import { clamp, runStationAt, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
-import { useReadingRun } from './Along/useReadingRun';
+import { useRowRun } from './Along/useRowRun';
 import { AlongContext } from './Along/alongContext';
 import { useItemLengths, useRunGap } from './Along/useItemLengths';
 import { RunBand, RunEnds, useRunRow } from './Along/useRunRow';
@@ -32,7 +32,7 @@ interface Stretch {
 export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
   const { roving, role, ariaLabel, className, height, size, variant = 'default', segments, wrap, shape, align } = props;
   const root = roving.rootRef;
-  const run = useReadingRun(root, shape);
+  const run = useRowRun(root, shape);
   const lengths = useItemLengths(root, segments.map((segment) => segment.key), segmentKeyOf);
   const gap = useRunGap(root);
   const { pad, cap } = useWellEnds(root);

@@ -1,7 +1,7 @@
 import { createContext, useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
 import { Label, RadioGroup as RACRadioGroup } from 'react-aria-components';
 import { runStationAt, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
-import { useReadingRun } from '../Along/useReadingRun';
+import { useRowRun } from '../Along/useRowRun';
 import { AlongContext } from '../Along/alongContext';
 import { placeStyle } from '../Along/placeOnRun';
 import { bendAt } from '../Along/runBend';
@@ -22,13 +22,13 @@ const LEAD = '\u0000lead';
 export type RadioGroupAlongProps = RadioGroupProps & { shape: TrackShape; align: RunAlign };
 
 /**
- * A radio group whose label and radios lie along a curved track shape in reading order, the label first and not
+ * A radio group whose label and radios lie along a curved track shape from its own start, the label first and not
  * pressable, as a curved bar's lead. Its description and error sit at the middle of the run one row further in, toward
  * the inside of the bend. A row too long for the run scrolls along it.
  */
 export function RadioGroupAlong({ label, description, errorMessage, children, className, shape, align, ...rest }: RadioGroupAlongProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const run = useReadingRun(root, shape);
+  const run = useRowRun(root, shape);
   const slots = useMemo(() => createRunSlots(), []);
   const gap = useRunGap(root);
   const host = useRunSlotHost({ slots, root, run, gap, align });

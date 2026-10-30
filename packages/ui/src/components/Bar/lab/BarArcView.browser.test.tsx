@@ -3,8 +3,9 @@ import '@weasel-js/theme/fonts.css';
 import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { arcShape, runPlaces, trackRun, type Point } from '@weasel-js/geom';
+import { arcShape, runPlaces, type Point } from '@weasel-js/geom';
 import { arcInBox } from '../../Along/arcInBox';
+import { rowRun } from '../../Along/rowRun';
 import { renderWithIcons } from '../../../testing/withIcons';
 import { arcOf, BAR_ARC_DEFAULTS, BAR_ARC_PRESETS, type BarArcConfig } from './barArcConfig';
 import { BarArcView } from './BarArcView';
@@ -51,7 +52,7 @@ async function mount(name: string, room = 0) {
   await settle();
   const box = document.querySelector<HTMLElement>('[data-lab-box]')!;
   const { size, ...arc } = config.arc;
-  const run = trackRun(arcShape(arcInBox(arcOf(arc), { width: size, height: size })));
+  const run = rowRun(arcShape(arcInBox(arcOf(arc), { width: size, height: size })));
   /** Px along the run to the element's center. */
   const along = (el: Element) => {
     const b = box.getBoundingClientRect();
@@ -115,7 +116,7 @@ test("a field's popover on the bottom rim opens downward, and one on the right s
   expect(cell('popover')).toBe('Gain: right');
 });
 
-test('align start sets the run against its reading start, align end against its end', async () => {
+test('align start sets the run against its start, align end against its end', async () => {
   const start = await mount('Right side, start');
   const first = placed()[0]!;
   expect(start.along(first) - first.offsetWidth / 2).toBeCloseTo(0, 0);

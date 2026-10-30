@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties, type ReactElement } from 'react';
 import { useTrackShape } from '../Along/alongContext';
-import { useInlineDirection } from '../Along/useReadingRun';
+import { useInlineDirection } from '../Along/useRowRun';
 import { QuantityText } from '../QuantityText';
 import { ReadoutsAlong } from './ReadoutsAlong';
 import { ReadoutsBelow } from './ReadoutsBelow';

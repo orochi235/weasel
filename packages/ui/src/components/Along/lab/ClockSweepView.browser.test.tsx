@@ -5,6 +5,7 @@ import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { arcShape, trackRun, type Point, type TrackRun } from '@weasel-js/geom';
 import { arcInBox } from '../arcInBox';
+import { rowRun } from '../rowRun';
 import { renderWithIcons } from '../../../testing/withIcons';
 import { ClockSweepView, sweepArc, type ClockSweepConfig } from './ClockSweepView';
 
@@ -51,13 +52,13 @@ function gOn(run: TrackRun, box: Element, el: Element): number {
   return run.nearest({ x: p.x - b.left, y: p.y - b.top }).f;
 }
 
-/** `trackRun` over the arc an Along of `inset` lays in `box`, as the lab builds it. */
-function runIn(box: Element, at: number, inset: number): TrackRun {
+/** The arc an Along of `inset` lays in `box`, as the lab builds it. */
+function arcIn(box: Element, at: number, inset: number) {
   const { width, height } = box.getBoundingClientRect();
-  return trackRun(arcShape(arcInBox(sweepArc(at, CONFIG.span, inset), { width, height })));
+  return arcShape(arcInBox(sweepArc(at, CONFIG.span, inset), { width, height }));
 }
 
-/** Parts in DOM order: each tipped as `run` says at its own spot, and laid in reading order along it. A part that
+/** Parts in DOM order: each tipped as `run` says at its own spot, and laid in order along it. A part that
  *  `reads` takes a half turn more where the run's place is turned. */
 function expectReadAlong(run: TrackRun, box: Element, parts: Element[], what: string, reads: boolean) {
   expect(parts.length, what).toBeGreaterThan(1);
@@ -70,17 +71,17 @@ function expectReadAlong(run: TrackRun, box: Element, parts: Element[], what: st
   for (let i = 1; i < gs.length; i++) expect(gs[i]!, `${what} parts read in order`).toBeGreaterThan(gs[i - 1]!);
 }
 
-test('every dial: its caption is trackRun’s verdict, and each bar item is tipped and ordered as the run says', async () => {
+test('every dial: its caption is trackRun’s verdict, and each bar item is tipped as it reads and ordered from the arc’s start', async () => {
   const dials = await mount();
   // 12 hours, and 5 bearings either side of 3 and of 9 o'clock.
   expect(dials).toHaveLength(22);
   for (const dial of dials) {
     const at = Number(dial.dataset.sweepAt);
     const bar = dial.querySelector<HTMLElement>('[role="toolbar"]')!;
-    const run = runIn(bar, at, 16);
+    const run = trackRun(arcIn(bar, at, 16));
     expect(dial.dataset.flipped, `${at}° flipped`).toBe(String(run.flipped));
     expect(dial.dataset.reversed, `${at}° reversed`).toBe(String(run.reversed));
-    expectReadAlong(run, bar, [...bar.querySelectorAll(':scope > [data-bar-item]')], `bar at ${at}°`, true);
+    expectReadAlong(rowRun(arcIn(bar, at, 16)), bar, [...bar.querySelectorAll(':scope > [data-bar-item]')], `bar at ${at}°`, true);
   }
 });
 
@@ -90,7 +91,7 @@ test('every dial: the slider’s stops run min to max in the run’s reading ord
     const at = Number(dial.dataset.sweepAt);
     const thumb = dial.querySelector<HTMLElement>('[role="slider"]')!;
     const along = dial.querySelector<HTMLElement>('[role="toolbar"]')!.parentElement!.nextElementSibling!;
-    const run = runIn(along, at, 64);
+    const run = trackRun(arcIn(along, at, 64));
     const ticks = [...dial.querySelectorAll('[data-slider-tick]')];
     expect(ticks, `${at}° ticks`).toHaveLength(3);
     expectReadAlong(run, along, ticks, `slider at ${at}°`, false);

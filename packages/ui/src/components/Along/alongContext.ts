@@ -27,6 +27,8 @@ export type AlongArc = (ArcEnds | ArcAround) & AlongArcPlace;
 
 /** Where an {@link AlongArc} lies in its box, and which way it runs. */
 export interface AlongArcPlace {
+  /** Which way it runs from `start` to `end`, so which end a row's first item sits at; each item still stands upright.
+   *  Under `rtl` a row starts from the other end. Default `'cw'`. */
   direction?: 'cw' | 'ccw';
   /** Px. Default: the box's inscribed circle, less `inset`. */
   radius?: number;

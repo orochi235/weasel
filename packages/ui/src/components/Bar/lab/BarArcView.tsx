@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
-import { arcShape, trackRun, type Point } from '@weasel-js/geom';
+import { arcShape, type Point } from '@weasel-js/geom';
+import { rowRun } from '../../Along/rowRun';
 import { Along, arcInBox } from '@weasel-js/ui/components/Along';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { LabActions } from '../../Along/lab/labActions';
@@ -30,7 +31,7 @@ export function BarArcView({ config, onPreset }: { config: BarArcConfig; onPrese
   const { center, measure, sweep, length, direction, inset, size } = config.arc;
   const arc = useMemo(() => arcOf({ center, measure, sweep, length, direction, inset }), [center, measure, sweep, length, direction, inset]);
   const shape = useMemo(() => arcShape(arcInBox(arc, { width: size, height: size })), [arc, size]);
-  const run = useMemo(() => trackRun(shape), [shape]);
+  const run = useMemo(() => rowRun(shape), [shape]);
   const reading = useCallback((p: Point) => run.nearest(p, { open: true }).f * run.length, [run]);
   const schema = useMemo(() => barSchema(config.items), [config.items]);
   const [values, setValues] = useState<Record<string, unknown>>({});

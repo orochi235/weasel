@@ -379,10 +379,15 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [maintainer] Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
-  `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
-  governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
-  bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
+- **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
+  a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
+  the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
+  override that `segmentedRow`, `ButtonBar` and `Bar` could pass from the run; `Tabs` and `RadioGroup` take their
+  arrows from React Aria's locale. `SwatchGrid` rings already step by screen direction (`ringStep`).
+
+- **(P3) [maintainer] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
+  (2026-10-30); whether a slider's values should too, so a counterclockwise arc reads as a counterclockwise dial, is
+  undecided (`useSliderGeometry`).
 
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**

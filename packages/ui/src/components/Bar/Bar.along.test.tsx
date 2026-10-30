@@ -81,7 +81,7 @@ describe('Bar along a curve', () => {
     expect(bar.querySelector('[style*="--at-x"]')).toBeNull();
   });
 
-  test('menu mode keeps what fits along the arc and puts More last in reading order', () => {
+  test('menu mode keeps what fits along the arc and puts More last along the run', () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
     expect(shape.length).toBeCloseTo(157.08, 2);
     render(<Bar schema={six} shape={shape} overflow="menu" label="Tools" />);
@@ -125,6 +125,41 @@ describe('Bar along a curve', () => {
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-shape', 'arc');
     expectAt(items()[0]!, shape, spots[0]!.center / run.length);
     expectAt(items()[1]!, shape, spots[1]!.center / run.length);
+  });
+
+  describe("the arc's direction sets which end the first item sits at", () => {
+    const firstX = (arc: { start: number; end: number; direction?: 'cw' | 'ccw' }, dir?: 'rtl') => {
+      render(
+        <div dir={dir}>
+          <Along arc={arc} align="start">
+            <Bar schema={actions('a', 'b')} label="Tools" />
+          </Along>
+        </div>,
+      );
+      const [a, b] = items().map((el) => placed(el));
+      cleanup();
+      return { a: a!, b: b! };
+    };
+
+    test('a clockwise top arc starts at its left end, a counterclockwise one at its right', () => {
+      const cw = firstX({ start: 270, end: 90 });
+      const ccw = firstX({ start: 90, end: 270, direction: 'ccw' });
+      expect(cw.a.x).toBeLessThan(cw.b.x);
+      expect(ccw.a.x).toBeGreaterThan(ccw.b.x);
+      expect(ccw.a.x).toBeCloseTo(200 - cw.a.x);
+    });
+
+    test('a clockwise bottom arc starts at its right end, each item still upright', () => {
+      const { a, b } = firstX({ start: 90, end: 270 });
+      expect(a.x).toBeGreaterThan(b.x);
+      expect(a.y).toBeGreaterThan(100);
+      for (const p of [a, b]) expect(Math.abs(p.angle)).toBeLessThan(90);
+    });
+
+    test('right to left mirrors it: a clockwise top arc starts at its right end', () => {
+      const { a, b } = firstX({ start: 270, end: 90 }, 'rtl');
+      expect(a.x).toBeGreaterThan(b.x);
+    });
   });
 });
 

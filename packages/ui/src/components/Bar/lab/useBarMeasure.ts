@@ -7,7 +7,7 @@ export type Side = 'top' | 'bottom' | 'left' | 'right';
 export interface PlacedReading {
   kind: 'lead' | 'item' | 'more';
   name: string;
-  /** Px along the run from its reading start to the item's center. */
+  /** Px along the run from its start to the item's center. */
   at: number;
   clipped: string;
   /** The compass side of the arc's outward normal at the item: where its popover should open. */

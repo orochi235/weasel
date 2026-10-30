@@ -1,6 +1,6 @@
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import type { TrackShape } from '@weasel-js/geom';
-import { useReadingRun } from '../Along/useReadingRun';
+import { useRowRun } from '../Along/useRowRun';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
@@ -28,9 +28,9 @@ const barKeyOf = (child: Element): string | null =>
   child.getAttribute(BAR_ITEM) ?? (child.hasAttribute(BAR_MORE) ? BAR_MORE : child.hasAttribute(BAR_LEAD) ? BAR_LEAD : null);
 
 /**
- * A bar whose items lie along a curved track shape, each centered on its spot and tipped to it, in reading order
- * after any flip. Every leaf but an action opens from a button. In `'menu'` mode what does not fit along the
- * run opens from the More button at its reading end, and a run the More button and the lead alone overfill sits
+ * A bar whose items lie along a curved track shape, each centered on its spot and tipped to it, from the shape's own
+ * start (its end under `rtl`) and standing upright. Every leaf but an action opens from a button. In `'menu'` mode what does not fit along the
+ * run opens from the More button at its far end, and a run the More button and the lead alone overfill sits
  * centered; in `'scroll'` mode the run scrolls along itself.
  */
 export function BarAlong(props: BarAlongProps): ReactElement {
@@ -38,7 +38,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const menu = overflow === 'menu';
   const root = useRef<HTMLDivElement>(null);
-  const run = useReadingRun(root, shape);
+  const run = useRowRun(root, shape);
   const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.onReorder !== undefined });
   const leading = useBarLead(barLead(props));
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);

@@ -1,6 +1,6 @@
 import { useMemo, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
-import { useReadingRun } from '../Along/useReadingRun';
+import { useRowRun } from '../Along/useRowRun';
 import type { ReorderLine } from '../../useReorderDragList';
 import { AlongContext } from '../Along/alongContext';
 import { createRunSlots, RUN_HOST, slotClass, useRunSlot, useRunSlotHost, type RunSlotHost } from '../Along/runSlots';
@@ -30,7 +30,7 @@ export function PageTabsAlong<P extends PageTabItem>(props: PageTabsAlongProps<P
   const { shape, align, pages, current } = props;
   const root = useRef<HTMLDivElement>(null);
   const frame = useRef<SVGSVGElement>(null);
-  const run = useReadingRun(root, shape);
+  const run = useRowRun(root, shape);
   const slots = useMemo(() => createRunSlots(true), []);
   const gap = useRunGap(root);
   const host = useRunSlotHost({ slots, root, run, gap, align });
