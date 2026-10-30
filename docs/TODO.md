@@ -337,14 +337,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] `layered` runs a long edge outside the drawing when it is the outermost wire in a rank.**
-  On `CLOUD` (`packages/diagram/src/layered/cloudFixture.ts`, shaped like ghosted's phase3.clarc.json), the
-  chains for `admin-people -> db` and `admin-config -> db` pass right of the widest node in their ranks and
-  sit 60 and 141 units outside the hull of nodes and group boxes; `gateway -> alerts` sits 58 left of it
-  (measured 2026-10-29). Brandes–Köpf keeps each chain straight, so the wire jumps out on its first hop and
-  back on its last. `elkPlanner()` does the same on this graph, by up to 197. The default bezier router also
-  draws 9 of the 53 wires through boxes they do not join (2 under `router: 'orthogonal'`, 0 under ELK).
-  `layered.cloud.test.ts` pins only the wires into the functions; tighten it once this is fixed.
+- **(P3) [agent] `elkPlanner()` runs a long edge outside the drawing on `CLOUD`.** The chains for
+  `admin-people -> db` and `admin-config -> db` pass right of every node and group box, by up to 197 units
+  (measured 2026-10-29), where `layered` now keeps them inside (`turnOutward`, `packages/diagram/src/layered/inward.ts`,
+  2026-10-30). ELK draws no wire through a box on this graph. `layered`'s fix cost `CLOUD` 2 more wire
+  crossings under bezier (89 to 91, none under orthogonal) and widened it from 3281 to 3723 units, since
+  `secrets` and `dead` now sit outside the wires they used to sit inside.
 
 - **(P3) [agent] A scene add-and-remove round trip still costs about 0.26 µs more than on 2026-09-29, and
   `setPose` about 0.14 µs more.** That is 599685677 (2026-10-13), which records every scene edit as the kit
