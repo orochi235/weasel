@@ -502,14 +502,12 @@ Owner tags, after the priority (2026-10-26):
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
   `MatrixEditor` always lists an enum as radios.
 
-- **(P3) [recheck] What each group `as` draws differs across the params surfaces.** The run of neighboring
-  `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
-  is a bordered box in ui and a plain `PropertyGroup` in labkit; `section` is a `Subpanel` in
-  labkit and a heading elsewhere; a group's `description` shows under a tab in `PrefsPane` and is
-  dropped for tabs and sections in labkit; `SelectionPanel`'s top level flattens nested sections
-  (`flatten` in `model.ts`), so a nested `tab` or `panel` loses its `as` while the object leaf
-  beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
-  one in labkit, and `PrefsPane` has no emptiness check.
+- **(P3) [agent] Two params surfaces lose or drop a group where the others keep it.** labkit's compact
+  drawing of `panel` and `section`, with no description on a tab or section, stays as labkit's look; ui's
+  `PrefsForm` and `PrefsPane` keep theirs (ruled 2026-10-30, from a side-by-side render). What is left is
+  structural: `SelectionPanel`'s top level flattens nested sections (`flatten` in `model.ts`), so a nested
+  `tab` or `panel` loses its `as` while the object leaf beside it honors nesting; and an empty tab section
+  is left out of the run in `objectRows`, a hidden one in labkit, while `PrefsPane` has no emptiness check.
 
 ### WeaselDraw app follow-ups (defer)
 
