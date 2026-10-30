@@ -1,5 +1,5 @@
-import { globSync, readdirSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
@@ -17,7 +17,7 @@ import { packageDocs } from './scripts/vite-package-docs.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
-import { prebundleWorkspace } from './scripts/vite-prebundle.ts';
+import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 
@@ -42,6 +42,7 @@ const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true,
 
 const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'];
 const BROWSER_SETUP = './vitest.browser.setup.ts';
+const withPrebundle = browserPrebundle(import.meta.dirname, { name: 'browser', tests: BROWSER_TESTS, setupFiles: [BROWSER_SETUP] });
 // Both browser projects print every module load that fails: see the command it calls.
 const REQUEST_LOG_SETUP = './scripts/vitest-request-log.setup.ts';
 const RESIZE_LOOPS_SETUP = './scripts/vitest-resize-loops.setup.ts';
@@ -283,19 +284,8 @@ export default defineConfig({
       // resolves none of. Headless Chromium, like forge-stories below.
       {
         ...shared,
-        // The workspace packages pre-bundled, all but what the tests import by path: a file loads a few
-        // bundles instead of a request per module. `WEASEL_DEV_SOURCE=1` serves them from source.
-        plugins: [
-          react(),
-          prebundleWorkspace(import.meta.dirname, [], {
-            // A failed browser test leaves a directory of screenshots named for its file.
-            servedFiles: globSync([...BROWSER_TESTS, BROWSER_SETUP], { cwd: import.meta.dirname, exclude: (name) => name === 'node_modules' })
-              .map((file) => resolve(import.meta.dirname, file))
-              .filter((file) => statSync(file).isFile()),
-            watch: false,
-          }),
-        ],
-        ...(process.env.WEASEL_DEV_SOURCE !== '1' && { cacheDir: 'node_modules/.vite-browser' }),
+        plugins: [react(), ...withPrebundle.plugins],
+        ...(withPrebundle.cacheDir && { cacheDir: withPrebundle.cacheDir }),
         // A dependency met mid-run makes vite re-optimize and reload the page under the suites, and a
         // node's warm cache skips the scan that would have found it. `optimizeDeps.force` is not the
         // fix: with it the browser session never connected on two fleet nodes. `info` puts vite's

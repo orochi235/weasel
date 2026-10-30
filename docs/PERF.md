@@ -289,16 +289,16 @@ When work merges, retire its entry here in the same change.
   run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
   every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
 
-- **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
-  (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
-  310 s; the rest is each file's page and module load, and from 35 s on the run is a stream of small
-  files paying it. Splitting the longest files would not help: the tail is the small ones.
-  `--no-isolate`, which would reuse one page, failed every file at about 5 s with its tests skipped.
-  Serving the workspace packages pre-bundled, as `scripts/vite-prebundle.ts` does for the dev
-  servers, is the likely fix (inferred, not tried). The prebundle already keeps out of a bundle
-  whatever source imports by relative path, so no module would load twice, but tests import their
-  own package that way, so most of each package would stay unbundled. forge got its gain by moving
-  its stories onto package specifiers first (2026-10-21); the tests would need the same.
+- **(P3) [agent] The `browser` project still spends about a second per file outside its tests.** Alone on
+  teitou (2026-10-30, 332 files, six tabs), serving the workspace packages pre-bundled under `vitest run`
+  (`scripts/vitest-browser-prebundle.ts`) took the project from 162.5, 164.6 and 163.2 s to 137.2, 138.5
+  and 140.2 s, run alternately; of the six tabs' worker-seconds, the part outside the tests fell from
+  about 455 to 325, 1.37 s a file to 0.98. The first bundled run, which re-bundled, was no slower
+  (`scripts/bench-browser-project.mjs`, records in `scripts/bench-browser-project.runs.jsonl`). What is
+  left: the tests import their own package by relative path, so 2,716 package modules stay source, each
+  a request per file; moving the tests onto package specifiers, as forge's stories did (2026-10-21), is
+  the next step (inferred, not tried). `--no-isolate`, which would reuse one page, failed every file at
+  about 5 s with its tests skipped (2026-10-20).
 
 - **(P3) [agent] forge's workshop takes 0.5–0.7 s to mount in jsdom, alone on keiei.** The timeline file
   (`packages/forge/src/timeline/timeline.test.tsx`) mounts it two or three times a test. Of a mount's CPU, 11% is
