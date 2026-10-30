@@ -82,7 +82,10 @@ export function resolveLayoutOpts(
   },
 ): ResolvedLayoutOpts {
   out.maxWidth = opts.maxWidth;
-  out.alignWidth = opts.alignWidth ?? opts.maxWidth;
+  // Stored on each branch: `??` joins a tagged field with a double one, and
+  // V8 boxed the join as a heap number every layout.
+  if (opts.alignWidth === undefined) out.alignWidth = opts.maxWidth;
+  else out.alignWidth = opts.alignWidth;
   out.lineHeight = opts.lineHeight;
   out.align = opts.align;
   out.justify = opts.justify === true || opts.align === 'justify';
