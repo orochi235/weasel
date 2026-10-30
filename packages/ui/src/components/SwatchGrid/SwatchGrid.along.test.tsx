@@ -21,12 +21,13 @@ afterEach(cleanup);
 
 const C = { x: 200, y: 200 };
 const arc = (spec: Partial<ArcTrackSpec>) => arcShape({ center: C, radius: 100, start: 270, end: 90, ...spec });
+/** Each arc, and whether it starts at its left end. */
 const ARCS = {
-  'top, clockwise': arc({}),
-  'top, counterclockwise': arc({ start: 90, end: 270, direction: 'ccw' }),
-  'bottom, counterclockwise': arc({ direction: 'ccw' }),
-  'bottom, clockwise': arc({ start: 90, end: 270 }),
-};
+  'top, clockwise': [arc({}), true],
+  'top, counterclockwise': [arc({ start: 90, end: 270, direction: 'ccw' }), false],
+  'bottom, counterclockwise': [arc({ direction: 'ccw' }), true],
+  'bottom, clockwise': [arc({ start: 90, end: 270 }), false],
+} as const;
 
 const options = (n: number): SwatchGridOption[] => Array.from({ length: n }, (_, i) => ({ value: `#${String(i).padStart(2, '0')}0000ff`, label: `c${i}` }));
 
@@ -45,15 +46,15 @@ const turn = (a: Element, b: Element) => {
 const ring = (k: number) => [...document.querySelectorAll(`[data-ring="${k}"] [data-swatch]`)];
 
 describe('SwatchGrid along a curve', () => {
-  for (const [name, shape] of Object.entries(ARCS)) {
-    test(`${name}: row k lies on the arc k rows in, its swatches a pitch apart in reading order`, () => {
+  for (const [name, [shape, fromLeft]] of Object.entries(ARCS)) {
+    test(`${name}: row k lies on the arc k rows in, its swatches a pitch apart from the arc's start`, () => {
       render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={shape} />);
       expect(ring(0)).toHaveLength(3);
       expect(ring(1)).toHaveLength(3);
       for (const el of ring(0)) expect(radius(el)).toBeCloseTo(100, 2);
       for (const el of ring(1)) expect(radius(el)).toBeCloseTo(80, 2);
       for (const [k, r] of [[0, 100], [1, 80]] as const) {
-        const xs = ring(k).map((el) => at(el).x);
+        const xs = ring(k).map((el) => at(el).x * (fromLeft ? 1 : -1));
         expect(xs[1]!).toBeGreaterThan(xs[0]!);
         expect(xs[2]!).toBeGreaterThan(xs[1]!);
         // 20 px along a ring of radius r is 20 / r of turn.
@@ -63,7 +64,7 @@ describe('SwatchGrid along a curve', () => {
   }
 
   test('right to left, every ring starts at its right end', () => {
-    render(<div dir="rtl"><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise']} /></div>);
+    render(<div dir="rtl"><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise'][0]} /></div>);
     for (const [k, r] of [[0, 100], [1, 80]] as const) {
       for (const el of ring(k)) expect(radius(el)).toBeCloseTo(r, 2);
       const xs = ring(k).map((el) => at(el).x);
@@ -79,7 +80,7 @@ describe('SwatchGrid along a curve', () => {
   });
 
   test('Home and End still reach the first and last swatch', () => {
-    render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise']} />);
+    render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise'][0]} />);
     const b = (i: number) => screen.getByRole('button', { name: `c${i}` });
     b(1).focus();
     fireEvent.keyDown(b(1), { key: 'End' });
@@ -89,7 +90,7 @@ describe('SwatchGrid along a curve', () => {
   });
 
   test('one tab stop, on the current swatch', () => {
-    render(<SwatchGrid options={options(6)} columns={3} value={options(6)[4]!.value} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise']} />);
+    render(<SwatchGrid options={options(6)} columns={3} value={options(6)[4]!.value} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise'][0]} />);
     const stops = screen.getAllByRole('button').filter((el) => el.tabIndex === 0);
     expect(stops.map((el) => el.getAttribute('aria-label'))).toEqual(['c4']);
     expect(stops[0]).toHaveAttribute('aria-current', 'true');
@@ -112,7 +113,7 @@ describe('SwatchStrip along a curve', () => {
   test('the recent rows lie outermost, the palette rows go on further in, each led by its heading', () => {
     const store = createRecentColorsStore({ storage: null });
     store.record(['#111111ff', '#222222ff', '#333333ff']);
-    render(<SwatchStrip store={store} palettes={[WARM]} columns={2} onChange={() => {}} shape={ARCS['top, clockwise']} />);
+    render(<SwatchStrip store={store} palettes={[WARM]} columns={2} onChange={() => {}} shape={ARCS['top, clockwise'][0]} />);
     const recent = screen.getByRole('group', { name: 'Recent colors' });
     const warm = screen.getByRole('group', { name: 'Warm' });
     expect([...recent.querySelectorAll('[data-ring]')].map((el) => el.getAttribute('data-ring'))).toEqual(['0', '1']);
@@ -129,7 +130,7 @@ describe('SwatchStrip along a curve', () => {
   });
 
   test('with more than one palette the picker leads the palette ring, and no recents is said on its ring', () => {
-    render(<SwatchStrip store={createRecentColorsStore({ storage: null })} palettes={[WARM, COOL]} onChange={() => {}} shape={ARCS['top, clockwise']} />);
+    render(<SwatchStrip store={createRecentColorsStore({ storage: null })} palettes={[WARM, COOL]} onChange={() => {}} shape={ARCS['top, clockwise'][0]} />);
     const recent = screen.getByRole('group', { name: 'Recent colors' });
     expect(within(recent).getByText('No recent colors').closest('[data-ring-item]')).toHaveAttribute('data-ring-item', 'empty');
     const lead = screen.getByRole('group', { name: 'Warm' }).querySelector('[data-ring-item="lead"]')!;

@@ -47,7 +47,7 @@ const hint = () => document.querySelector('[data-radio-hint]') as HTMLElement;
 const fromCenter = (p: Point) => Math.hypot(p.x - CENTER.x, p.y - CENTER.y);
 
 describe('RadioGroup along a curve', () => {
-  test('lays the label first and the radios after it, in reading order', () => {
+  test('lays the label first and the radios after it, along the run', () => {
     render(<Sample arc={TOP} />);
     const run = runOf(TOP);
     const parts = [screen.getByText('Color'), labelOf('Red'), labelOf('Green'), labelOf('Blue')];

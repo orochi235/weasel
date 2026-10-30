@@ -9,7 +9,7 @@ import {
   Label,
   type SliderProps as RACSliderProps,
 } from 'react-aria-components';
-import { useInlineDirection } from '../Along/useReadingRun';
+import { useInlineDirection } from '../Along/useRowRun';
 import s from './RangeSlider.module.css';
 
 /** `locale` with its script swapped for one written `direction`, its numbering system pinned so digits don't change.

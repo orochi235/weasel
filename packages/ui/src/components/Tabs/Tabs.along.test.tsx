@@ -52,7 +52,7 @@ const rule = () => document.querySelector('[data-tab-rule]')!;
 const marker = () => document.querySelector('[data-tab-marker]');
 
 describe('TabList along a curve', () => {
-  test('lays its tabs along the run in reading order, a gap apart', () => {
+  test('lays its tabs along the run from its start, a gap apart', () => {
     render(<Sample arc={TOP} />);
     const run = runOf(TOP);
     const along = tabs().map((tab) => run.nearest(at(tab)).f * run.length);

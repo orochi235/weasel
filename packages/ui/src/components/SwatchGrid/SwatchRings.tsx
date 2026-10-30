@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Re
 import { trackRun, type RunAlign, type TrackShape } from '@weasel-js/geom';
 import { AlongContext } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
-import { useInlineDirection } from '../Along/useReadingRun';
+import { useInlineDirection } from '../Along/useRowRun';
 import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunRow';
 import { SwatchButton, swatchesIn, swatchKeyDown, useSwatchApply, type SwatchApply } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';

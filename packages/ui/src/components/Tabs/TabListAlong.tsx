@@ -1,7 +1,7 @@
 import { useContext, useRef, type ReactElement } from 'react';
 import { TabList as RACTabList, TabListStateContext, type TabListProps as RACTabListProps } from 'react-aria-components';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
-import { useReadingRun } from '../Along/useReadingRun';
+import { useRowRun } from '../Along/useRowRun';
 import { AlongContext } from '../Along/alongContext';
 import { useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds } from '../Along/useRunRow';
@@ -14,12 +14,12 @@ import s from './Tabs.module.css';
 export type TabListAlongProps = TabListProps<object> & { shape: TrackShape; align: RunAlign; slots: RunSlots };
 
 /**
- * A tab list whose tabs lie along a curved track shape in reading order, on a rule drawn along the inside of the
+ * A tab list whose tabs lie along a curved track shape from its own start, on a rule drawn along the inside of the
  * bend. A row too long for the run scrolls along it, as a curved bar's does.
  */
 export function TabListAlong({ className, shape, align, slots, ...rest }: TabListAlongProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const run = useReadingRun(root, shape);
+  const run = useRowRun(root, shape);
   const gap = useRunGap(root);
   const host = useRunSlotHost({ slots, root, run, gap, align });
   const state = useContext(TabListStateContext);

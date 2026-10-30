@@ -175,7 +175,7 @@ test('a press in the middle of the circle reaches the image, not either control'
 });
 
 test("menu mode on a short arc opens the rest from More at the run's end, above the bar", async () => {
-  // 330..30: More, last in reading order, sits within 30° of 12 o'clock, where outward is up.
+  // 330..30: More, last along the run, sits within 30° of 12 o'clock, where outward is up.
   await mount({ arc: SHORT, overflow: 'menu', top: 260 });
   const kept = items();
   expect(kept.length).toBeGreaterThan(0);

@@ -366,3 +366,8 @@ order; `side` is `'auto'` (whichever side is upright, the default), `'path'` (th
 center on the run, tip angle, and how far it is clipped past either end). Rows of controls in ui and core's text
 effect both call it, so a new caller should too. `order: 'reading'` (default) lays items along the run's reading
 order; `'track'` starts at the shape's own start. `runPlaces` and `runLength` are its helpers (2026-10-21).
+
+ui's rows of items along a shape (a `Bar`, `Tabs` or `SwatchGrid` inside an `Along`) lay out in track order: the
+shape's direction sets which end the first item sits at, and readability governs only each item's rotation, so a
+clockwise and a counterclockwise arc lay the same row out mirrored (ruled 2026-10-30). Under `rtl` the row starts from
+the shape's end. Text, a slider's values and a `Jog`'s transport stay in reading order.

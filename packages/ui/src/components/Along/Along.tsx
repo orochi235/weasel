@@ -22,9 +22,12 @@ export const TOP_HALF: AlongArc = { start: 270, end: 90 };
  *
  * An arc's angles are degrees clockwise from 12 o'clock on a y-down plane; the default arc is the inscribed
  * circle's top half. An arc is given by its ends, or by the direction its middle faces and its span in degrees or
- * px: `{ at: 0, span: '180px' }` keeps a 180 px top arc however large the box grows. The box takes no pointer
- * input, only the controls inside it do, so a press elsewhere reaches whatever lies beneath. Two `Along`s over one
- * box with different arcs put, say, a `Bar` along the top and a `Slider` along the bottom of one circle.
+ * px: `{ at: 0, span: '180px' }` keeps a 180 px top arc however large the box grows. A row of items laid along it
+ * starts at the arc's start and runs its `direction`, so a clockwise top arc starts at its left end and a clockwise
+ * bottom one at its right, each item standing upright wherever it sits; a slider's values, a `Jog`'s transport and
+ * `CurvedLabel`'s text run in reading order. The box takes no pointer input, only the controls inside it do, so a
+ * press elsewhere reaches whatever lies beneath. Two `Along`s over one box with different arcs put, say, a `Bar` along
+ * the top and a `Slider` along the bottom of one circle.
  *
  * `Slider`, `DetentSlider`, `Bar`, `Jog`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `SwatchGrid`, `SwatchStrip`,
  * `Tabs`, `PageTabs` and `RadioGroup` follow the shape; any other control renders as it does outside an `Along`.

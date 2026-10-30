@@ -5,7 +5,7 @@ import type { AlongArc, RunAlign } from './alongContext';
 import { placeStyle } from './placeOnRun';
 import { joiningRuns } from './joiningRuns';
 import { useBoxShape, type BoxShape } from './useBoxShape';
-import { useInlineDirection } from './useReadingRun';
+import { useInlineDirection } from './useRowRun';
 import { visualGraphemes } from './visualGraphemes';
 import on from './onRun.module.css';
 import s from './CurvedLabel.module.css';

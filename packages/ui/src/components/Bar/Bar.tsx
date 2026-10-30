@@ -64,7 +64,7 @@ export interface BarProps {
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
   /** A track shape to lay the items along, each centered on its spot and tipped to it. On a curve every leaf but
-   *  an action opens from a button, and `'menu'` puts the More button at the run's reading end. `'scroll'` keeps an
+   *  an action opens from a button, and `'menu'` puts the More button at the run's far end. `'scroll'` keeps an
    *  offset along the run, moved by wheel, drag or focus, and clips the run at the shape's ends. A line keeps the
    *  bar's flex line. Default: the nearest `Along`'s shape, else none. */
   shape?: TrackShape;
