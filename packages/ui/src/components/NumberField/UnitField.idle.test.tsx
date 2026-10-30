@@ -77,8 +77,15 @@ describe('UnitField settling when idle', () => {
     expect(onChange.mock.calls).toEqual([[7]]);
   });
 
-  it('never commits while typing without the setting', () => {
+  it('commits when idle with no setting given', () => {
     const { onChange, field } = setup({}, {});
+    type(field, '15');
+    wait(IDLE_SETTLE_MS);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('never commits while typing with the setting off', () => {
+    const { onChange, field } = setup({}, { typing: { settleWhenIdle: false } });
     type(field, '15');
     wait(IDLE_SETTLE_MS * 4);
     expect(onChange).not.toHaveBeenCalled();

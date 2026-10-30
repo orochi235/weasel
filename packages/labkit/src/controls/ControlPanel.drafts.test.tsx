@@ -54,7 +54,7 @@ describe('<ControlPanel> typed fields with no draftConfig', () => {
     expect(setConfig.mock.calls).toEqual([['count', 123]]);
   });
 
-  it('write text once, when the edit settles, however long it is typed for', () => {
+  it('write text once, when the edit settles, with idle commits off', () => {
     const setConfig = mount();
     const input = screen.getByRole('textbox', { name: 'Title' });
     type(input, 'n', 'ne', 'new');

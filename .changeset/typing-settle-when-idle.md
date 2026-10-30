@@ -3,8 +3,8 @@
 '@weasel-js/labkit': patch
 ---
 
-A typed field can commit once typing rests, as well as on blur or Enter. Set the new `typing.settleWhenIdle`
-kit setting (off by default) and every typed number and text control commits its draft after `typing.idleMs`,
+A typed field can commit once typing rests, as well as on blur or Enter. The new `typing.settleWhenIdle`
+kit setting, on by default, makes every typed number and text control commits its draft after `typing.idleMs`,
 800 ms unless set: `PropertyControl`'s and `PropertyField`'s number and text kinds, `UnitField`, and so every
 typed row of labkit's `ControlPanel`, `PrefsForm`, and `SelectionPanel`. A control's own `settleWhenIdle` prop
 overrides the setting. The field keeps the text as typed through the commit, and a number commits only text that

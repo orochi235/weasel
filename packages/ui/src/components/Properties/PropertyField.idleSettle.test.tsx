@@ -79,8 +79,15 @@ describe('a text control settling when idle', () => {
     expect(field).toHaveValue('new');
   });
 
-  it('never commits while typing without the setting', () => {
+  it('commits when idle with no setting given', () => {
     const { onChange, field } = setup(undefined, false);
+    type(field, 'new');
+    wait(IDLE_SETTLE_MS);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('never commits while typing with its own settleWhenIdle off', () => {
+    const { onChange, field } = setup(false, false);
     type(field, 'new');
     wait(IDLE_SETTLE_MS * 4);
     expect(onChange).not.toHaveBeenCalled();

@@ -24,7 +24,7 @@ const surfaces: ParamsSurface[] = ['form', 'panel', 'lab'];
 const expected: Record<string, unknown> = {
   'numberField.repeatDelayMs': REPEAT_DELAY_MS,
   'numberField.repeatEveryMs': REPEAT_EVERY_MS,
-  'typing.settleWhenIdle': false,
+  'typing.settleWhenIdle': true,
   'typing.idleMs': IDLE_SETTLE_MS,
   ...Object.fromEntries(
     surfaces.flatMap((s) => [

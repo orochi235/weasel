@@ -65,7 +65,7 @@ export const uiKitSettingsSchema = pref.group('Components', {
     repeatEveryMs: ms('Repeat interval', REPEAT_EVERY_MS, 1000, 'How often a held stepper steps once it repeats.'),
   }),
   typing: pref.group('Typing', {
-    settleWhenIdle: pref.boolean('Write when idle', false, {
+    settleWhenIdle: pref.boolean('Write when idle', true, {
       description: 'A typed field writes its text once typing rests, as well as on Enter or leaving it.',
     }),
     idleMs: ms('Idle delay', IDLE_SETTLE_MS, 5000, 'How long typing rests before a field that writes when idle writes it.'),
