@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
 import { APP_SOURCES } from './lib/packageEntries.mjs';
-import { reachByPath, relativeImportsIn, resolveRelative } from './vite-prebundle-reach.ts';
+import { isPathImport, pathImportsIn, reachByPath, resolvePath } from './vite-prebundle-reach.ts';
 
 const SPECIFIER = /(?:from|import)\s*\(?\s*'((?:@weasel-js|@editor)\/[\w./-]+)'/g;
 const SOURCE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
@@ -123,8 +123,9 @@ function sourcedExternal(sourced: () => ReadonlySet<string>) {
   return {
     name: 'weasel:prebundle-sourced',
     resolveId(id: string, importer?: string) {
-      if (!importer || !id.startsWith('.')) return null;
-      const file = resolveRelative(dirname(importer), id);
+      // An alias resolved before this plugin hands it an absolute path.
+      if (!importer || !(isPathImport(id) || isAbsolute(id))) return null;
+      const file = resolvePath(dirname(importer), id);
       return file && sourced().has(file) ? { id: file, external: 'absolute' as const } : null;
     },
   };
@@ -172,6 +173,13 @@ export interface PrebundleOptions {
    * relative path is left out of the bundles and served from source too.
    */
   readonly storyTrees?: readonly string[];
+  /**
+   * Files served from source besides `sourceDirs`, such as test files. What they import by path is served from source
+   * too, and the rest of its package is bundled.
+   */
+  readonly servedFiles?: readonly string[];
+  /** Re-bundles when a bundled file changes. A test runner's server has no restart to give it, so it passes `false`. */
+  readonly watch?: boolean;
 }
 
 /** The trees served from source and the story trees whose packages are bundled, as `env` asks. */
@@ -216,7 +224,11 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       // whole isolate (vite 8.3). Compiling on the main thread starts none.
       const css = { preprocessorMaxWorkers: 0 };
       if (off) return { css };
-      const servedFiles = [...filesUnder(served, read), ...filesUnder(storyTrees, (file) => STORY_FILE.test(file))];
+      const servedFiles = [
+        ...filesUnder(served, read),
+        ...filesUnder(storyTrees, (file) => STORY_FILE.test(file)),
+        ...(options.servedFiles ?? []),
+      ];
       sourced = sourcedFromBundled(servedFiles, bundled);
       listed = new Set([...specifiersOf([...servedFiles, ...sourced])].filter(bundles));
       const inBundles = filesUnder(bundled, (file) => read(file) && !isStory(file) && !sourced.has(file)).sort();
@@ -237,7 +249,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       };
     },
     configureServer(server) {
-      if (off) return;
+      if (off || options.watch === false) return;
       server.watcher.add(bundled);
       let timer: ReturnType<typeof setTimeout> | undefined;
       // A restart outlasts the debounce, and two at once race for the port: the second dies `already in use`.
@@ -265,7 +277,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
         try { code = readFileSync(file, 'utf8'); } catch { return; }
         const fresh = specifiersIn(code).find((s) => bundles(s) && !listed.has(s));
         if (fresh) return rebundle(`${fresh} is newly imported`);
-        const reached = relativeImportsIn(code).map((s) => resolveRelative(dirname(file), s));
+        const reached = pathImportsIn(code).map((s) => resolvePath(dirname(file), s));
         const bundledNow = reached.find((target) => target && under(target, bundled) && !sourced.has(target));
         if (bundledNow) rebundle(`${relative(repoRoot, bundledNow)} is newly imported by path`);
       };
