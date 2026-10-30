@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import type { Plugin } from 'vite';
+import { watchRecovery } from '../packages/forge/src/vite/watchRecovery.ts';
 
 /**
  * How every dev server in the repo watches files.
@@ -12,12 +13,17 @@ import type { Plugin } from 'vite';
  * within 50 ms of the last one it reported, so a second quick save could leave the first text served until the next
  * save; a change that waits for the write to finish skips that drop (`scripts/watch-settle.mjs` reproduces it).
  * fsevents reports a file's changes at least ~100 ms apart, so macOS never hits the drop and skips the wait.
+ *
+ * An edit the OS never reports is served anyway, by `watchRecovery` from `@weasel-js/forge/vite`.
  */
-export function devWatch(): Plugin {
+export function devWatch(): Plugin[] {
   const ignored = resolve(import.meta.dirname, '..', '.claude') + '/**';
   const settle = process.platform === 'darwin' ? {} : { awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 } };
-  return {
-    name: 'weasel:dev-watch',
-    config: () => ({ server: { watch: { ignored: [ignored], ...settle } } }),
-  };
+  return [
+    {
+      name: 'weasel:dev-watch',
+      config: () => ({ server: { watch: { ignored: [ignored], ...settle } } }),
+    },
+    watchRecovery(),
+  ];
 }

@@ -11,7 +11,8 @@
  *   double  save; fetch 5 ms after the first `change`; save again once that fetch is back and `--gap` ms have
  *           passed; fetch again after `--idle` ms. The second save lands after the first text is cached again.
  *   single  save once and poll every 2 ms until the new text is served: the save-to-served latency.
- * `--settle` starts the server with the repo's dev-server watch settings (`scripts/vite-watch.ts`). `--linux`
+ * `--settle` starts the server with the repo's dev-server watch settings (`scripts/vite-watch.ts`), less its
+ * missed-event recovery, which would serve the dropped change itself and hide what this measures. `--linux`
  * reruns this script in `node:26-alpine` under Docker, with the vite version the lockfile names.
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -44,7 +45,7 @@ const dir = realpathSync(mkdtempSync(join(tmpdir(), 'watch-settle-')));
 const server = await createServer({
   root: dir,
   configFile: false,
-  plugins: settle ? [devWatch()] : [],
+  plugins: settle ? devWatch().filter((p) => p.name === 'weasel:dev-watch') : [],
   server: { port: 0, host: '127.0.0.1', ws: false },
   appType: 'custom',
   optimizeDeps: { noDiscovery: true },

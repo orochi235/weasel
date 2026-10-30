@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { ViteDevServer } from 'vite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fileEventsArrive, warnWhenWatchIsSilent, watchProbe, type WatchDir } from './watchProbe';
+import { watchRecovery } from './watchRecovery';
 
 /** A directory watch that reports nothing until the test calls `report`. */
 function fakeWatch() {
@@ -66,9 +67,9 @@ describe('fileEventsArrive', () => {
 });
 
 describe('warnWhenWatchIsSilent', () => {
-  const serverWith = (watch: unknown) => {
+  const serverWith = (watch: unknown, plugins: { name: string }[] = []) => {
     const warn = vi.fn();
-    const server = { config: { server: { watch }, logger: { warn } } } as unknown as ViteDevServer;
+    const server = { config: { server: { watch }, logger: { warn }, plugins } } as unknown as ViteDevServer;
     return { server, warn };
   };
 
@@ -77,6 +78,13 @@ describe('warnWhenWatchIsSilent', () => {
     await warnWhenWatchIsSilent(server, async () => false);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]?.[0]).toContain('usePolling');
+  });
+
+  it('says edits are found by modification time instead when the server recovers missed events', async () => {
+    const { server, warn } = serverWith(undefined, [watchRecovery()]);
+    await warnWhenWatchIsSilent(server, async () => false);
+    expect(warn.mock.calls[0]?.[0]).toContain('modification times');
+    expect(warn.mock.calls[0]?.[0]).not.toContain('will not reach the page');
   });
 
   it('says nothing when the event arrives', async () => {
@@ -99,7 +107,7 @@ describe('warnWhenWatchIsSilent', () => {
 describe('watchProbe', () => {
   it('is a serve-only plugin that warns from any dev server getting no file events', async () => {
     const warn = vi.fn();
-    const server = { config: { server: { watch: undefined }, logger: { warn } } } as unknown as ViteDevServer;
+    const server = { config: { server: { watch: undefined }, logger: { warn }, plugins: [] } } as unknown as ViteDevServer;
     const plugin = watchProbe({ probe: async () => false });
     expect(plugin.apply).toBe('serve');
     (plugin.configureServer as (server: ViteDevServer) => void)(server);

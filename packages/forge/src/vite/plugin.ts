@@ -19,6 +19,7 @@ import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
 import { MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { warnWhenWatchIsSilent } from './watchProbe.ts';
+import { watchRecovery } from './watchRecovery.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
 
 /** Options for the `forge` vite plugin. */
@@ -251,6 +252,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   }
 
   return [
+    watchRecovery(),
     ...(options.storybookShims === false ? [] : [storybookShims()]),
     ...(options.propControls === false ? [] : [propControls(() => [...files().keys()], options.propControls === true ? undefined : options.propControls)]),
     {
