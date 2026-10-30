@@ -1,0 +1,50 @@
+{
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/conditions.txt": {
+    "size": 209,
+    "mtime": 1793400891684966335,
+    "inode": 740908065,
+    "sha256": "afbec37fa2a6b48be372e313090d88c8b2a3312975c2f71f19133f62f194df05"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/prof/at-roundtrip.cpuprofile.gz": {
+    "size": 11111,
+    "mtime": 1793400890764241000,
+    "inode": 740908067,
+    "sha256": "0a8f6fc9eadc65b61628280ba844f2830bb15237a7911a51cb944a7a4bf38b96"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/prof/at-roundtrip.top.txt": {
+    "size": 2848,
+    "mtime": 1793400891606265428,
+    "inode": 740908068,
+    "sha256": "f38794b869025b9a8e8a9f615110f131d28cf69f7beeb8245a2f85b511e62a1a"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/prof/now-roundtrip.cpuprofile.gz": {
+    "size": 14549,
+    "mtime": 1793400891565295000,
+    "inode": 740908069,
+    "sha256": "0d0a283d9fce10da4f4620b762a0450fec4157033bb1d68ee7eec05cabfdf633"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/prof/now-roundtrip.top.txt": {
+    "size": 2641,
+    "mtime": 1793400891643015768,
+    "inode": 740908070,
+    "sha256": "950fdabd58696aa31d9ee00266b9c27a66d8884df8fb20a8eae7c51215d53ff9"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/prof/pre-roundtrip.cpuprofile.gz": {
+    "size": 12475,
+    "mtime": 1793400890169662000,
+    "inode": 740908071,
+    "sha256": "a7cbd26b2d753e57b0c5027264053424d282d3fa2164804d71d436ab3f211f91"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/prof/pre-roundtrip.top.txt": {
+    "size": 2736,
+    "mtime": 1793400891678727104,
+    "inode": 740908072,
+    "sha256": "3d8b2018ae9784da36539d72fafcb9b9064fb25b99dabaa297e4054ce1ac06de"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/profile-599/msb-uai/runs.jsonl": {
+    "size": 788,
+    "mtime": 1793400891573267601,
+    "inode": 740908074,
+    "sha256": "82f1901d4e18b4510ddbab98834503e3c2c6ae93f23474f3ed22596f83b4aefa"
+  }
+}

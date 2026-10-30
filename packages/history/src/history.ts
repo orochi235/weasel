@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
-import { createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
+import { anyCaused, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 import {
   rebuilt, snapshot, touchedIdsFromOps,
@@ -104,11 +104,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  floor. */
   function evictFloor(entries: Entry[]): void {
     for (const e of entries) {
-      reportEvicted([e]);
-      const stranded = forks.get(floorId);
-      forks.delete(floorId);
+      if (onEvict) reportEvicted([e]);
+      const stranded = forks.size > 0 ? forks.get(floorId) : undefined;
+      if (stranded !== undefined) forks.delete(floorId);
       floorId = e.id;
-      for (const branch of stranded ?? []) evict(branch);
+      if (stranded !== undefined) for (const branch of stranded) evict(branch);
     }
   }
 
@@ -200,10 +200,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   function pushOrCoalesce(applied: Op[], label: string): void {
     if (applied.length === 0) return;
     const selectionBefore = readSelection();
-    const idle = new Set<Op>();
+    const idle: Op[] = [];
     const anyMutated = applyAllOrNothing(applied, undefined, idle);
-    const kept = idle.size === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.has(op)));
-    const ops = kept.some((op) => op.caused) ? kept.flatMap((op) => op.caused?.() ?? [op]) : kept.slice();
+    const kept = idle.length === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.includes(op)));
+    const ops = anyCaused(kept) ? kept.flatMap((op) => op.caused?.() ?? [op]) : kept.slice();
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
       // tied to real state changes. Surfaced through the kit's debug

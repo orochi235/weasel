@@ -1,0 +1,14 @@
+{
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/ab2/msb-uai/conditions.txt": {
+    "size": 209,
+    "mtime": 1793401046861742820,
+    "inode": 740912128,
+    "sha256": "b005a816056198b7e7ff1c5509a822b202153e28c03c6773b389ce49ae9a8a8e"
+  },
+  "/Users/mike/src/weasel-core-regress/tests/perf/recorded/core-regress-2026-10-30/ab2/msb-uai/runs.jsonl": {
+    "size": 12343,
+    "mtime": 1793401046859602228,
+    "inode": 740912129,
+    "sha256": "1711f23a8259a37a55cd93bcbc1a5fb6ca99c2fcfca1bcc1cf713f12f98be559"
+  }
+}

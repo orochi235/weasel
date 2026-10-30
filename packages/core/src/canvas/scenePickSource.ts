@@ -4,7 +4,7 @@ import type { Path } from '@weasel-js/geom';
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { annotationLayerIds } from 'core/scene/annotation';
-import { nodeGates } from 'core/scene/nodeGates';
+import { nodeGates, type GatedNode } from 'core/scene/nodeGates';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -113,8 +113,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     parentsOf: sceneParentsOf(scene),
     // Absent entirely when nothing is faded, so the walk skips the gate.
     ...(readAlpha ? { alphaOf: readAlpha } : {}),
-    isLocked: (node: PickCandidate<TPose>) => gates.locked(node.id),
-    isHidden: (node: PickCandidate<TPose>) => gates.hidden(node.id),
+    isLocked: (node: PickCandidate<TPose>) => gates.locked(node as GatedNode),
+    isHidden: (node: PickCandidate<TPose>) => gates.hidden(node as GatedNode),
     ...(annotations.size > 0 || layerIsPainted
       ? {
         layerIsPainted: (layer: string) =>

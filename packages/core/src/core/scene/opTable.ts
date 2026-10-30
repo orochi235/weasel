@@ -62,6 +62,14 @@ export function createOpTable(env: OpTableEnv): OpTable {
     return token === undefined ? undefined : `${kind}:${token}`;
   }
 
+  function run(kind: string, payload: unknown, forward: boolean): 'noop' | undefined {
+    const handler = handlerFor(kind);
+    if (env.skips(kind, payload, forward)) return 'noop';
+    (forward ? handler.apply : handler.revert)(payload);
+    env.applied(kind, payload, !forward);
+    return undefined;
+  }
+
   function op(kind: string, payload: unknown, forward = true): Op {
     handlerFor(kind);
     return {
@@ -69,16 +77,9 @@ export function createOpTable(env: OpTableEnv): OpTable {
       args: payload,
       coalesceKey: coalesceKeyFor(kind, payload),
       apply: () => {
-        const run = (): 'noop' | undefined => {
-          const handler = handlerFor(kind);
-          if (env.skips(kind, payload, forward)) return 'noop';
-          (forward ? handler.apply : handler.revert)(payload);
-          env.applied(kind, payload, !forward);
-          return undefined;
-        };
-        if (env.driven()) return run();
+        if (env.driven()) return run(kind, payload, forward);
         let result: 'noop' | undefined;
-        env.replayAlone(() => { result = run(); });
+        env.replayAlone(() => { result = run(kind, payload, forward); });
         return result;
       },
       invert: () => op(kind, payload, !forward),

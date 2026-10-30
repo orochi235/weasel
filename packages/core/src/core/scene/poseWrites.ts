@@ -98,6 +98,8 @@ export interface PoseWriteLog<TPose, TNode = unknown> {
     (kind: string, handler: RegisteredOp<unknown>) => void;
 }
 
+const NOTHING = (): void => {};
+
 interface Posed<TPose> { id: NodeId; pose: TPose }
 interface Parented { id: NodeId; parent: NodeId | null }
 
@@ -105,7 +107,9 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
   const listeners = createEmitter<[writes: readonly PoseWrite<TPose>[], removed: readonly PoseRemoval<TPose, TNode>[]]>();
   const pending = new Map<NodeId, PoseWrite<TPose>>();
   const removals = createRemovalLog<TPose, TNode>(env.shown);
-  let edit: { label: string; via: 'call' | 'ops' } | null = null;
+  // Two fields rather than one object: every bare scene call opens an edit.
+  let editLabel: string | null = null;
+  let editVia: 'call' | 'ops' = 'call';
   let replays = 0;
   let layouts = 0;
   let quiets = 0;
@@ -117,7 +121,7 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
     if (replays > 0) return { origin: reverted ? 'undo' : 'redo' };
     if (layouts > 0) return { origin: 'layout' };
     if (env.untracked()) return { origin: 'untracked' };
-    return edit ? { origin: edit.via, label: edit.label } : { origin: 'call' };
+    return editLabel !== null ? { origin: editVia, label: editLabel } : { origin: 'call' };
   }
 
   function noteSet(id: NodeId, from: TPose, to: TPose, reverted: boolean): void {
@@ -136,7 +140,7 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
   }
 
   const seeOff = (roots: readonly Parented[], nodes: readonly Parented[], reverted: boolean): () => void =>
-    collecting() ? removals.seeOff(roots, nodes, stamp(reverted), pending) : () => {};
+    collecting() ? removals.seeOff(roots, nodes, stamp(reverted), pending) : NOTHING;
 
   function around<T>(fn: () => T, enter: () => void, leave: () => void): T {
     enter();
@@ -158,7 +162,7 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
     }),
     'kit:add': (h) => ({
       ...h,
-      apply: (p) => { h.apply(p); noteAdded([p as AddPayload], false); },
+      apply: (p) => { h.apply(p); if (collecting()) noteAdded([p as AddPayload], false); },
       revert: (p) => { const done = seeOff([p as AddPayload], [p as AddPayload], true); h.revert(p); done(); },
     }),
     'kit:remove': (h) => ({
@@ -195,8 +199,14 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
       };
     },
     labeled(label, via, fn) {
-      if (edit) return fn();
-      return around(fn, () => { edit = { label, via }; }, () => { edit = null; });
+      if (editLabel !== null) return fn();
+      editLabel = label;
+      editVia = via;
+      try {
+        return fn();
+      } finally {
+        editLabel = null;
+      }
     },
     replaying: (fn) => around(fn, () => { replays++; }, () => { replays--; }),
     layout: (fn) => around(fn, () => { layouts++; }, () => { layouts--; }),

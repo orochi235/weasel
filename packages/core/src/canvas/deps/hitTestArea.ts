@@ -32,6 +32,7 @@ import {
   regionBoundsOf,
   regionOf,
   regionTakes,
+  regionTakesByBounds,
   type SelectRegion,
 } from 'core/geometry/regionHit';
 
@@ -157,6 +158,8 @@ export function regionPickQuery(
       const g = poseDescriptorForNode(descriptor, node);
       // A derived node's pose is a placeholder: its path is the extent and the fallback outline.
       const b = derived ? boundsOfPath(derived) : regionBoundsOf(node as object, pose, g);
+      const decided = regionTakesByBounds(r, mode, b);
+      if (decided !== undefined) return decided;
       let ink: boolean | undefined;
       const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>

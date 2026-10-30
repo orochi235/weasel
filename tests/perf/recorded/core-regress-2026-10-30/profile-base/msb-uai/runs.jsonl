@@ -1,0 +1,2 @@
+{"round":1,"sha":"tree","script":"walk.mjs","load":"{ 4.13 7.00 6.50 }","at":"2026-10-30T22:45:40Z","result":{"label":"base","hits":2630,"fullWalkMs":{"median":1.056958,"min":1.042541,"p90":1.143209}}}
+{"round":1,"sha":"tree","script":"roundtrip.mjs","load":"{ 4.13 7.00 6.50 }","at":"2026-10-30T22:45:41Z","result":{"label":"base","roundTripNs":{"median":1100.584,"min":988.5,"p90":1317.75},"setPoseNs":{"median":274.416,"min":269.625,"p90":344.916}}}

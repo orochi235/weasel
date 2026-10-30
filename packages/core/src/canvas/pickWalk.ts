@@ -200,6 +200,8 @@ export function pickWalk<TPose>(
     return found;
   };
 
+  const lookups = { clipOf, copiesOf, carry };
+  const parentsOf = (node: PickCandidate<TPose>) => src.parentsOf(node);
   const order = src.order();
   const copying = order.some((n) => typeof n.copiesFromPose === 'function');
   const visit = (q.broad !== undefined ? src.candidates?.((layer) => {
@@ -221,7 +223,7 @@ export function pickWalk<TPose>(
     const pose = src.poseOf(node);
     const derived = src.derivedPathOf?.(node);
     const inherited = inheritsPaint(node) ? inheritedPaintOf(node, src.parentsOf(node)) : undefined;
-    if (!reaches(node, pose, derived, inherited, query, () => src.parentsOf(node), copying, { clipOf, copiesOf, carry })) continue;
+    if (!reaches(node, pose, derived, inherited, query, parentsOf, copying, lookups)) continue;
     out.push(node.id);
   }
 

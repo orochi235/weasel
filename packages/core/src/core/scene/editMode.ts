@@ -22,17 +22,20 @@ export interface EditMode {
 
 export function createEditMode(): EditMode {
   const depth: Record<EditDriver, number> = { batch: 0, engine: 0, untracked: 0, own: 0 };
+  let open = 0;
 
   return {
-    open: () => depth.batch + depth.engine + depth.untracked + depth.own > 0,
+    open: () => open > 0,
     records: () => depth.engine + depth.untracked === 0,
     untracked: () => depth.untracked > 0,
     during(driver, fn) {
       depth[driver]++;
+      open++;
       try {
         return fn();
       } finally {
         depth[driver]--;
+        open--;
       }
     },
   };
