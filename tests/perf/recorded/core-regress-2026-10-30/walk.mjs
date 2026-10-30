@@ -1,8 +1,8 @@
 /**
- * The unindexed area walk of `walk.bench.ts` (the `full walk` row: the 25% marquee over 10,000 rect
- * nodes, no pick index) and the scene round trip of `../scene-roundtrip-2026-10-29/roundtrip.mjs`,
- * timed in one process. Run from the repo root under tests/perf/bench/node-hooks.mjs; prints one
- * JSON record. Batch medians, as roundtrip.mjs takes them.
+ * The unindexed area walk of `walk.bench.ts` (its `full walk` row: the 25% marquee over 10,000 rect
+ * nodes with no pick index), or `hitTestArea` at a commit from before the index, where it is that
+ * walk. Run from the repo root under tests/perf/bench/node-hooks.mjs; prints one JSON record.
+ * Batch medians, as ../scene-roundtrip-2026-10-29/roundtrip.mjs takes them.
  */
 import * as area from 'canvas/deps/hitTestArea';
 import * as walk from 'canvas/pickWalk';
@@ -15,10 +15,12 @@ const WARM_MS = Number(process.env.WARM_MS ?? 1500);
 const SPAN = 4000;
 const rect = { x: SPAN / 4, y: SPAN / 4, width: SPAN / 2, height: SPAN / 2 };
 const scene = scatterScene(10000, { shape: 'rect' });
-const q = area.regionPickQuery(rectRegion(rect), 'intersect', AUTO_POSE_DESCRIPTOR, {});
+// A commit from before the pick index has no `regionPickQuery`; there `hitTestArea` is the unindexed walk.
+const q = area.regionPickQuery?.(rectRegion(rect), 'intersect', AUTO_POSE_DESCRIPTOR, {});
+const once = q ? () => walk.pickWalk(walk.scenePickSource(scene), q) : () => area.hitTestArea(scene, rect);
 
 let sink = 0;
-const body = () => { sink += walk.pickWalk(walk.scenePickSource(scene), q).length; };
+const body = () => { sink += once().length; };
 const end = performance.now() + WARM_MS;
 while (performance.now() < end) body();
 const per = [];
@@ -29,6 +31,6 @@ for (let b = 0; b < BATCHES; b++) {
 }
 per.sort((a, b) => a - b);
 console.log(JSON.stringify({
-  label: process.env.LABEL ?? null, hits: walk.pickWalk(walk.scenePickSource(scene), q).length,
+  label: process.env.LABEL ?? null, hits: once().length, via: q ? 'pickWalk' : 'hitTestArea',
   fullWalkMs: { median: per[per.length >> 1], min: per[0], p90: per[Math.floor(per.length * 0.9)] },
 }));
