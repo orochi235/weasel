@@ -153,12 +153,12 @@ test("each action's center lies on the top arc, left to right, tipped to it, the
   expect(Math.abs(left + right)).toBeLessThanOrEqual(1);
 });
 
-test('on a bottom arc the run flips and still reads left to right, every item upright enough to read', async () => {
+test('on a clockwise bottom arc the run flips and lays from its start at the right, every item upright enough to read', async () => {
   const { box } = await mount({ arc: { start: 120, end: 240, inset: 18 }, density: 'compact' });
   const c = centerOf(box);
   const els = items();
   const xs = els.map((el) => mid(el).x);
-  for (let i = 1; i < xs.length; i++) expect(xs[i]!).toBeGreaterThan(xs[i - 1]!);
+  for (let i = 1; i < xs.length; i++) expect(xs[i]!).toBeLessThan(xs[i - 1]!);
   for (const el of els) {
     expect(Math.abs(dist(mid(el), c) - RADIUS)).toBeLessThanOrEqual(1);
     expect(mid(el).y).toBeGreaterThan(c.y);
