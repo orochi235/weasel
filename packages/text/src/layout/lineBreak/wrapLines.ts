@@ -38,7 +38,7 @@ export function wrapLines(
   widthOf: (start: number, end: number) => number,
 ): WrappedLine[] {
   const lines: WrappedLine[] = [];
-  wrapSpans(cps, maxWidth, widthOf, (start, end, wrapped) => { lines.push({ start, end, wrapped }); });
+  wrapSpans(cps, { maxWidth }, widthOf, (start, end, wrapped) => { lines.push({ start, end, wrapped }); });
   return lines;
 }
 
@@ -51,23 +51,24 @@ let breakScratchTaken = false;
 const BREAK_SCRATCH_MAX = 1 << 16;
 
 /** {@link wrapLines}, handing each line to `emit` in order rather than
- *  building an object for it. */
+ *  building an object for it. The width comes in an object because a number
+ *  passed to a call V8 does not inline is boxed on every call. */
 export function wrapSpans(
   cps: ArrayLike<number>,
-  maxWidth: number,
+  box: { readonly maxWidth: number },
   widthOf: (start: number, end: number) => number,
   emit: (start: number, end: number, wrapped: boolean) => void,
 ): void {
   const n = cps.length;
-  if (!Number.isFinite(maxWidth)) {
-    wrapAt(cps, maxWidth, widthOf, emit, null);
+  if (!Number.isFinite(box.maxWidth)) {
+    wrapAt(cps, box, widthOf, emit, null);
   } else if (breakScratchTaken || n >= BREAK_SCRATCH_MAX) {
-    wrapAt(cps, maxWidth, widthOf, emit, lineBreakOpportunities(cps));
+    wrapAt(cps, box, widthOf, emit, lineBreakOpportunities(cps));
   } else {
     if (breakScratch.length < n + 1) breakScratch = new Uint8Array(Math.max(n + 1, breakScratch.length * 2));
     breakScratchTaken = true;
     try {
-      wrapAt(cps, maxWidth, widthOf, emit, lineBreakOpportunitiesInto(cps, breakScratch));
+      wrapAt(cps, box, widthOf, emit, lineBreakOpportunitiesInto(cps, breakScratch));
     } finally {
       breakScratchTaken = false;
     }
@@ -76,7 +77,7 @@ export function wrapSpans(
 
 function wrapAt(
   cps: ArrayLike<number>,
-  maxWidth: number,
+  box: { readonly maxWidth: number },
   widthOf: (start: number, end: number) => number,
   emit: (start: number, end: number, wrapped: boolean) => void,
   breaks: Uint8Array | null,
@@ -100,7 +101,7 @@ function wrapAt(
       if (!hangs(cps[j])) ink = j + 1;
       j++;
     }
-    if (breaks && i > start && widthOf(start, ink) > maxWidth) {
+    if (breaks && i > start && widthOf(start, ink) > box.maxWidth) {
       emit(start, i, true);
       start = i;
     }

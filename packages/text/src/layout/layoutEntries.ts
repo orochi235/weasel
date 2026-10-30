@@ -145,14 +145,14 @@ export function measureRuns(
         : 0;
       // A slot with nothing in it: no glyph, no width, and none of the
       // tracking or kerning a width would carry. Filled in place when it inks.
-      const blank = blankEntry(
-        pool, n, runIndex, cp, fontSize, Math.max(run.fontSize, run.strutSize ?? 0),
-        // Optional on the authored run type; absent, every y would go NaN.
-        run.baselineShift ?? 0, run.rotate ?? 0, srcStart, srcEnd, clusterEnd, resolved, metrics,
-      );
+      const blank = blankEntry(pool, n, runIndex, run, cp, fontSize, srcStart, srcEnd, clusterEnd, resolved, metrics);
 
       if (color) {
-        entries[n++] = clusterEnd ? ink(blank, color, 0, tracking) : blank;
+        if (clusterEnd) {
+          blank.tracking = tracking;
+          ink(blank, color);
+        }
+        entries[n++] = blank;
         prev = undefined;
       } else if (isHardLineBreak(cp)) {
         entries[n++] = blank;
@@ -177,13 +177,18 @@ export function measureRuns(
           entries[n++] = prev;
         }
       } else if (slot !== undefined) {
-        entries[n++] = shape(blank, slot, tracking);
+        blank.tracking = tracking;
+        entries[n++] = shape(blank, slot);
         prev = undefined;
       } else {
         const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp, true, HIT);
-        const entry = hit ? ink(blank, hit, kerningBefore, tracking) : blank;
-        entries[n++] = entry;
-        if (!mark) prev = entry;
+        if (hit) {
+          blank.kerningBefore = kerningBefore;
+          blank.tracking = tracking;
+          ink(blank, hit);
+        }
+        entries[n++] = blank;
+        if (!mark) prev = blank;
       }
     }
   }
@@ -205,12 +210,16 @@ const HIT: ResolvedGlyph = { resolved: null as unknown as ResolveResult, metrics
 /** The most entries a pool keeps, so one long text does not hold its entries for good. */
 const POOL_MAX = 4096;
 
-/** An entry with nothing in it — no glyph, no width — as `pool[i]` rewritten, or a new one. */
+/** An entry with nothing in it — no glyph, no width — as `pool[i]` rewritten, or a new one.
+ *  It reads `r`'s numbers itself: a fraction passed to a call V8 does not inline is boxed. */
 function blankEntry(
-  pool: Entry[] | undefined, i: number, run: number, cp: number, fontSize: number, lineSize: number,
-  baselineShift: number, rotate: number, srcIndex: number, srcEnd: number, clusterEnd: boolean,
-  resolved: ResolveResult, metrics: GlyphMetrics,
+  pool: Entry[] | undefined, i: number, run: number, r: ResolvedRun, cp: number, fontSize: number,
+  srcIndex: number, srcEnd: number, clusterEnd: boolean, resolved: ResolveResult, metrics: GlyphMetrics,
 ): Entry {
+  const lineSize = Math.max(r.fontSize, r.strutSize ?? 0);
+  // Optional on the authored run type; absent, every y would go NaN.
+  const baselineShift = r.baselineShift ?? 0;
+  const rotate = r.rotate ?? 0;
   const e = pool?.[i];
   if (!e) {
     const made: Entry = {
@@ -229,24 +238,21 @@ function blankEntry(
 }
 
 /** Fill the empty slot `e` with `hit`, in place: one object a code point. An
- *  escalated code point is served in another tier's units, so its scale is its own. */
-function ink(e: Entry, hit: ResolvedGlyph, kerning: number, tracking: number): Entry {
+ *  escalated code point is served in another tier's units, so its scale is its
+ *  own. Its tracking and kerning are the caller's to set. */
+function ink(e: Entry, hit: ResolvedGlyph): void {
   e.resolved = hit.resolved;
   e.metrics = hit.metrics;
   e.font = hit.font;
   e.glyph = hit.glyph;
   e.advance = hit.advance * (e.fontSize / hit.metrics.size);
-  e.tracking = tracking;
-  e.kerningBefore = kerning;
   e.drawsInk = true;
-  return e;
 }
 
 /** Fill the empty slot `e` with what shaping gave its code point, in place. */
-function shape(e: Entry, slot: ShapedSlot, tracking: number): Entry {
+function shape(e: Entry, slot: ShapedSlot): Entry {
   e.shaped = slot.cluster;
   e.advance = slot.advance * e.fontSize;
-  e.tracking = tracking;
   e.drawsInk = slot.cluster.d !== null;
   return e;
 }

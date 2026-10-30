@@ -108,7 +108,7 @@ export function breakLines(
   cps: readonly number[],
   opts: LineOpts,
 ): Line[] {
-  const { maxWidth, lineHeight } = opts;
+  const { lineHeight } = opts;
   if (sum.length < entries.length + 1) sum = doubles(entries.length + 1);
   sum[0] = 0;
   let tabCount = 0;
@@ -120,7 +120,7 @@ export function breakLines(
   }
   tabs.length = tabCount;
   cur = entries;
-  wrapSpans(cps, maxWidth, tabCount === 0 ? flatWidth : tabbedWidth, pushSpan);
+  wrapSpans(cps, opts, tabCount === 0 ? flatWidth : tabbedWidth, pushSpan);
   cur = NONE;
   broken.length = brokenCount;
 
