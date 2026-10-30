@@ -1,0 +1,1963 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "hud-vs-dom-every-frame",
+  "git": {
+    "sha": "2e4afa9b44d31ecb201d99a196e405c150960257",
+    "dirty": false
+  },
+  "timestamp": "2026-10-30T03:58:19.554Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.2.0 arm64",
+    "node": "v26.12.1",
+    "loadavg": [
+      3.4,
+      2.87,
+      2.46
+    ]
+  },
+  "params": {
+    "viewport": "1280x800",
+    "dpr": 1,
+    "glyphs": [
+      5000
+    ],
+    "glyphsPerLabel": 10,
+    "updates": [
+      "every-frame"
+    ],
+    "cameras": [
+      "fixed"
+    ],
+    "approaches": [
+      "hud",
+      "dom"
+    ],
+    "frames": 120,
+    "warmup": 30,
+    "passes": 2,
+    "order": "each configuration's approaches forward then backward (ABCCBA), reversed on alternate passes",
+    "backgroundRects": 200,
+    "census": false,
+    "alloc": true,
+    "layers": true,
+    "gpuTimer": true
+  },
+  "items": [
+    {
+      "id": "none",
+      "params": {
+        "approach": "none",
+        "glyphs": 0,
+        "update": "static",
+        "camera": "fixed"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.4403,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.4514,
+            0.414,
+            0.4425,
+            0.4381
+          ]
+        },
+        "script": {
+          "value": 0.2333,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2536,
+            0.2232,
+            0.2379,
+            0.2287
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0711,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0706,
+            0.0698,
+            0.0748,
+            0.0716
+          ]
+        },
+        "otherMain": {
+          "value": 0.1278,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1263,
+            0.1202,
+            0.1293,
+            0.1371
+          ]
+        },
+        "compositor": {
+          "value": 0.2177,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2797,
+            0.2025,
+            0.2252,
+            0.2102
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.8117999999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.7984,
+            1.8252,
+            1.8738,
+            1.7915
+          ]
+        },
+        "total": {
+          "value": 2.48555,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            2.5294,
+            2.4417,
+            2.5415,
+            2.4397
+          ]
+        },
+        "totalSpread": {
+          "value": 0.10179999999999989,
+          "unit": "ms",
+          "stat": "max - min of total across 4 samples"
+        },
+        "frameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean rAF interval while tracing",
+          "samples": [
+            16.666,
+            16.666,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedFrameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 untraced windows of 120 frames, mean rAF interval",
+          "samples": [
+            16.666,
+            16.666,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedMissed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 untraced windows of 120 frames, intervals over 25 ms",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "longFrames": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.19975430323891954,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.20814620325203256,
+            0.18169804838709686,
+            0.19136240322580653,
+            0.25238929032258073
+          ]
+        },
+        "load1": {
+          "value": 2.9000000000000004,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            3.21,
+            2.75,
+            2.85,
+            2.95
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 5000 every-frame fixed",
+      "params": {
+        "glyphs": 5000,
+        "update": "every-frame",
+        "camera": "fixed",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 3.16575,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            3.1727,
+            3.1689,
+            3.1626,
+            2.9814
+          ]
+        },
+        "script": {
+          "value": 3.0665,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            3.0726,
+            3.0668,
+            3.0662,
+            2.8772
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0341,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0336,
+            0.0346,
+            0.0326,
+            0.0374
+          ]
+        },
+        "otherMain": {
+          "value": 0.06615,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.066,
+            0.0671,
+            0.0634,
+            0.0663
+          ]
+        },
+        "compositor": {
+          "value": 0.12154999999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1454,
+            0.1239,
+            0.1152,
+            0.1192
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.4745499999999998,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.5009,
+            1.4747,
+            1.4744,
+            1.4719
+          ]
+        },
+        "total": {
+          "value": 4.75985,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            4.819,
+            4.7675,
+            4.7522,
+            4.5725
+          ]
+        },
+        "totalSpread": {
+          "value": 0.24644166666666667,
+          "unit": "ms",
+          "stat": "max - min of total across 4 samples"
+        },
+        "frameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean rAF interval while tracing",
+          "samples": [
+            16.666,
+            16.667,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedFrameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 untraced windows of 120 frames, mean rAF interval",
+          "samples": [
+            16.666,
+            16.666,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedMissed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 untraced windows of 120 frames, intervals over 25 ms",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "longFrames": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.35812317338709676,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.356313064516129,
+            0.3536393387096775,
+            0.35993328225806454,
+            0.37940677419354807
+          ]
+        },
+        "allocated": {
+          "value": 1797539,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles of 120 frames, bytes allocated per frame",
+          "samples": [
+            1790762,
+            1793299,
+            1801779,
+            1803018
+          ]
+        },
+        "allocSelf pushGlyph (packages/renderer/src/drawBatch.ts:193)": {
+          "value": 826639,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            828160,
+            820879,
+            830929,
+            825118
+          ]
+        },
+        "allocSelf placeLine (node_modules/.vite/deps/src-g7RhaSqZ.js:2459)": {
+          "value": 217833.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            212791,
+            219081,
+            218090,
+            217577
+          ]
+        },
+        "allocSelf metricsOf (node_modules/.vite/deps/src-HsfY1v-1.js:2848)": {
+          "value": 159896.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            158989,
+            162106,
+            154537,
+            160804
+          ]
+        },
+        "allocSelf mix (node_modules/.vite/deps/src-g7RhaSqZ.js:3340)": {
+          "value": 90005,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            90586,
+            85253,
+            92158,
+            89424
+          ]
+        },
+        "allocSelf aboveBaseline (node_modules/.vite/deps/src-g7RhaSqZ.js:2312)": {
+          "value": 63632.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            62658,
+            63547,
+            63718,
+            63889
+          ]
+        },
+        "allocSelf glyphIn (node_modules/.vite/deps/src-HsfY1v-1.js:2904)": {
+          "value": 55206.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            56950,
+            55480,
+            54933,
+            54420
+          ]
+        },
+        "allocSelf label": {
+          "value": 46411,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            47456,
+            46531,
+            45916,
+            46291
+          ]
+        },
+        "allocSelf resolveRuns (node_modules/.vite/deps/src-g7RhaSqZ.js:661)": {
+          "value": 43593.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            42855,
+            44257,
+            43162,
+            44025
+          ]
+        },
+        "allocSelf resolveFontVariantInternal (node_modules/.vite/deps/src-HsfY1v-1.js:2483)": {
+          "value": 37963.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            37189,
+            37085,
+            39668,
+            38738
+          ]
+        },
+        "allocSelf textCommandFromRuns (node_modules/.vite/deps/src-BlthjdVy.js:9400)": {
+          "value": 31186.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            31015,
+            29742,
+            31358,
+            32940
+          ]
+        },
+        "allocSelf layoutRuns (node_modules/.vite/deps/src-g7RhaSqZ.js:2551)": {
+          "value": 28365,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            27494,
+            29100,
+            27698,
+            29032
+          ]
+        },
+        "allocSelf changed (packages/hud/src/widget.ts:11)": {
+          "value": 20734.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            20477,
+            20169,
+            21232,
+            20992
+          ]
+        },
+        "allocSelf drawTextGroup (packages/renderer/src/draw/text.ts:150)": {
+          "value": 18937.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            18527,
+            19348,
+            19655,
+            18220
+          ]
+        },
+        "allocSelf solidColor (packages/renderer/src/draw/batch.ts:181)": {
+          "value": 19187,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            17388,
+            19512,
+            18862,
+            20062
+          ]
+        },
+        "allocSelf set": {
+          "value": 16281,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            16240,
+            16755,
+            16322,
+            16210
+          ]
+        },
+        "allocSelf draw (packages/hud/src/widgets/text.ts:71)": {
+          "value": 14402,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            13871,
+            14933,
+            14008,
+            14796
+          ]
+        },
+        "allocSelf fill (node_modules/.vite/deps/src-g7RhaSqZ.js:3311)": {
+          "value": 12032.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            11451,
+            12135,
+            11930,
+            12750
+          ]
+        },
+        "allocSelf resolveRunFace (node_modules/.vite/deps/src-g7RhaSqZ.js:650)": {
+          "value": 11998.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            11434,
+            12050,
+            11947,
+            13283
+          ]
+        },
+        "allocSelf foldColor (packages/renderer/src/draw/foldColor.ts:32)": {
+          "value": 11323.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            11272,
+            11375,
+            10413,
+            11547
+          ]
+        },
+        "allocSelf measureRuns (node_modules/.vite/deps/src-g7RhaSqZ.js:2003)": {
+          "value": 11810.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            11075,
+            11520,
+            12101,
+            12374
+          ]
+        },
+        "allocSelf delete": {
+          "value": 8750.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            8441,
+            9170,
+            9060,
+            8000
+          ]
+        },
+        "allocSelf stagedColor (packages/renderer/src/draw/batch.ts:191)": {
+          "value": 7845,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            7999,
+            8136,
+            7691,
+            6666
+          ]
+        },
+        "allocSelf frameCommands": {
+          "value": 7280,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            7353,
+            6680,
+            7207,
+            7582
+          ]
+        },
+        "allocSelf pushRect (packages/renderer/src/draw/batch.ts:195)": {
+          "value": 7588.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            7110,
+            6939,
+            8341,
+            8067
+          ]
+        },
+        "allocSelf resolveLayoutOpts (node_modules/.vite/deps/src-g7RhaSqZ.js:2499)": {
+          "value": 6290,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            6324,
+            6427,
+            6256,
+            6085
+          ]
+        },
+        "allocSelf laidOutText (packages/renderer/src/textLayout.ts:28)": {
+          "value": 5726,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            5948,
+            5435,
+            5504,
+            6085
+          ]
+        },
+        "allocSelf draw (packages/hud/src/attach.ts:73)": {
+          "value": 6159.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            5843,
+            6221,
+            6098,
+            6318
+          ]
+        },
+        "allocSelf batchPaint (packages/renderer/src/draw/gradient.ts:16)": {
+          "value": 4622,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            5067,
+            4622,
+            4622,
+            4279
+          ]
+        },
+        "allocSelf padStart": {
+          "value": 3933,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            4207,
+            3728,
+            4138,
+            3420
+          ]
+        },
+        "allocSelf render (packages/renderer/src/WeaselRenderer.ts:433)": {
+          "value": 1776,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            1767,
+            1991,
+            1506,
+            1785
+          ]
+        },
+        "allocSelf Float32Array": {
+          "value": 516,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            551,
+            516,
+            310,
+            516
+          ]
+        },
+        "allocSelf push": {
+          "value": 71,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            175,
+            69,
+            73,
+            38
+          ]
+        },
+        "allocSelf Map": {
+          "value": 137.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            172,
+            103,
+            172,
+            0
+          ]
+        },
+        "allocSelf create (node_modules/.vite/deps/src-BFefYC_9.js:8233)": {
+          "value": 137.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            172,
+            413,
+            103,
+            69
+          ]
+        },
+        "allocSelf subarray": {
+          "value": 172,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            172,
+            241,
+            172,
+            69
+          ]
+        },
+        "allocSelf render": {
+          "value": 69,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            138,
+            69,
+            34,
+            69
+          ]
+        },
+        "allocSelf WeakMap": {
+          "value": 154.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            137,
+            172,
+            206,
+            103
+          ]
+        },
+        "allocSelf deviceRect (packages/renderer/src/WeaselRenderer.ts:296)": {
+          "value": 154,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            137,
+            103,
+            171,
+            205
+          ]
+        },
+        "allocSelf next": {
+          "value": 103,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            137,
+            69,
+            137,
+            68
+          ]
+        },
+        "allocSelf setColorUniform (packages/renderer/src/draw/uniforms.ts:30)": {
+          "value": 86,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            103,
+            137,
+            69,
+            68
+          ]
+        },
+        "allocSelf glRect (packages/renderer/src/WeaselRenderer.ts:323)": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            103,
+            34,
+            34,
+            34
+          ]
+        },
+        "allocSelf uploadBatchMatrices (packages/renderer/src/draw/batchMatrices.ts:41)": {
+          "value": 68,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            103,
+            68,
+            68,
+            34
+          ]
+        },
+        "allocSelf uploadAndBind (packages/renderer/src/drawBatch.ts:314)": {
+          "value": 68.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            69,
+            34,
+            103,
+            68
+          ]
+        },
+        "allocSelf endFrame (packages/renderer/src/retain/RetainedSurfaces.ts:236)": {
+          "value": 51.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            69,
+            69,
+            0,
+            34
+          ]
+        },
+        "allocSelf checkAndReturn": {
+          "value": 68.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            68,
+            0,
+            69,
+            103
+          ]
+        },
+        "allocSelf (anonymous)": {
+          "value": 51,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            68,
+            239,
+            34,
+            34
+          ]
+        },
+        "allocSelf reduce": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            68,
+            0,
+            0,
+            0
+          ]
+        },
+        "allocSelf reclaim (packages/renderer/src/effects/EffectTargets.ts:27)": {
+          "value": 137,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            68,
+            137,
+            137,
+            137
+          ]
+        },
+        "allocSelf map": {
+          "value": 40,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            40,
+            0,
+            68,
+            40
+          ]
+        },
+        "allocSelf keys": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            0,
+            0,
+            0
+          ]
+        },
+        "allocSelf captureSnapshot": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            0,
+            0,
+            0
+          ]
+        },
+        "allocSelf visitNode": {
+          "value": 85.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            103,
+            103,
+            68
+          ]
+        },
+        "allocSelf loop": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            0,
+            0,
+            0
+          ]
+        },
+        "allocSelf drainQueries": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            0,
+            34
+          ]
+        },
+        "allocSelf now (packages/renderer/src/WeaselRenderer.ts:51)": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            0,
+            0,
+            34
+          ]
+        },
+        "allocSelf takeMatrix (packages/renderer/src/draw/batchRun.ts:92)": {
+          "value": 51.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            69,
+            103,
+            0
+          ]
+        },
+        "allocSelf screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            0,
+            34
+          ]
+        },
+        "allocSelf sort": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            103,
+            34,
+            0
+          ]
+        },
+        "allocSelf openRun (packages/renderer/src/draw/batchRun.ts:62)": {
+          "value": 86,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            69,
+            206,
+            103
+          ]
+        },
+        "allocSelf inCssPixels (packages/renderer/src/draw/flattenTolerance.ts:22)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            69,
+            0,
+            0
+          ]
+        },
+        "allocSelf onFrame": {
+          "value": 19,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            38,
+            39,
+            0
+          ]
+        },
+        "allocSelf filter": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            34,
+            0,
+            103
+          ]
+        },
+        "allocSelf get bytes (packages/renderer/src/retain/RetainedSurfaces.ts:50)": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            34,
+            69,
+            0
+          ]
+        },
+        "allocSelf keptBytes (packages/renderer/src/retain/RetainedSurfaces.ts:280)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            34,
+            0,
+            0
+          ]
+        },
+        "allocSelf expectValue": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            103,
+            0
+          ]
+        },
+        "allocSelf (V8 API)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            69,
+            0
+          ]
+        },
+        "allocSelf isTypedArray": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            34,
+            0
+          ]
+        },
+        "allocSelf stageGlyphs (packages/renderer/src/draw/batch.ts:131)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            68
+          ]
+        },
+        "allocSelf Promise": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            35
+          ]
+        },
+        "allocSelf uploadedFor (packages/renderer/src/draw/uniforms.ts:5)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            34
+          ]
+        },
+        "allocSelf (IDLE_EXTERNAL)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            34
+          ]
+        },
+        "load1": {
+          "value": 2.865,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            3.12,
+            2.73,
+            2.82,
+            2.91
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 5000 every-frame fixed",
+      "params": {
+        "glyphs": 5000,
+        "update": "every-frame",
+        "camera": "fixed",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 2.54745,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            2.4854,
+            2.5641,
+            2.5324,
+            2.5625
+          ]
+        },
+        "script": {
+          "value": 0.3095,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.303,
+            0.3227,
+            0.3088,
+            0.3102
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0.9755499999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.9375,
+            0.9842,
+            0.9669,
+            0.9886
+          ]
+        },
+        "paint": {
+          "value": 1.0688,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.054,
+            1.0691,
+            1.0685,
+            1.0703
+          ]
+        },
+        "otherMain": {
+          "value": 0.1891,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1904,
+            0.1878,
+            0.1878,
+            0.1931
+          ]
+        },
+        "compositor": {
+          "value": 0.30595,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3033,
+            0.3078,
+            0.3043,
+            0.3076
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.1914,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.1843,
+            1.2161,
+            1.1852,
+            1.1976
+          ]
+        },
+        "total": {
+          "value": 4.04485,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            3.9731,
+            4.0881,
+            4.0219,
+            4.0678
+          ]
+        },
+        "totalSpread": {
+          "value": 0.1150749999999996,
+          "unit": "ms",
+          "stat": "max - min of total across 4 samples"
+        },
+        "frameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean rAF interval while tracing",
+          "samples": [
+            16.666,
+            16.667,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedFrameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 untraced windows of 120 frames, mean rAF interval",
+          "samples": [
+            16.666,
+            16.666,
+            16.667,
+            16.666
+          ]
+        },
+        "untracedMissed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 untraced windows of 120 frames, intervals over 25 ms",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "longFrames": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.1794108024193548,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.18037889516129024,
+            0.17576733064516117,
+            0.1784427096774194,
+            0.1919793064516129
+          ]
+        },
+        "allocated": {
+          "value": 118043,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles of 120 frames, bytes allocated per frame",
+          "samples": [
+            122119,
+            116975,
+            118100,
+            117986
+          ]
+        },
+        "allocSelf label": {
+          "value": 46018,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            48412,
+            44513,
+            45231,
+            46805
+          ]
+        },
+        "allocSelf solidColor (packages/renderer/src/draw/batch.ts:181)": {
+          "value": 19275,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            19344,
+            19685,
+            19206,
+            18725
+          ]
+        },
+        "allocSelf foldColor (packages/renderer/src/draw/foldColor.ts:32)": {
+          "value": 10963,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            10963,
+            10963,
+            10826,
+            11582
+          ]
+        },
+        "allocSelf padStart": {
+          "value": 10243,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            10568,
+            11183,
+            9405,
+            9918
+          ]
+        },
+        "allocSelf stagedColor (packages/renderer/src/draw/batch.ts:191)": {
+          "value": 7606,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            8785,
+            7213,
+            7931,
+            7281
+          ]
+        },
+        "allocSelf pushRect (packages/renderer/src/draw/batch.ts:195)": {
+          "value": 7588.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            7520,
+            6597,
+            8546,
+            7657
+          ]
+        },
+        "allocSelf batchPaint (packages/renderer/src/draw/gradient.ts:16)": {
+          "value": 5101,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            5409,
+            5375,
+            4827,
+            4758
+          ]
+        },
+        "allocSelf visitNode": {
+          "value": 3237,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            2466,
+            3254,
+            3288,
+            3220
+          ]
+        },
+        "allocSelf expectValue": {
+          "value": 953.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            1353,
+            1005,
+            902,
+            798
+          ]
+        },
+        "allocSelf (V8 API)": {
+          "value": 1376,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            1323,
+            1566,
+            1287,
+            1429
+          ]
+        },
+        "allocSelf render (packages/renderer/src/WeaselRenderer.ts:433)": {
+          "value": 1270.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            1182,
+            1359,
+            1819,
+            1092
+          ]
+        },
+        "allocSelf visitChild": {
+          "value": 856.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            938,
+            552,
+            775,
+            1015
+          ]
+        },
+        "allocSelf checkAndReturn": {
+          "value": 805,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            822,
+            959,
+            788,
+            616
+          ]
+        },
+        "allocSelf push": {
+          "value": 398.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            485,
+            346,
+            451,
+            244
+          ]
+        },
+        "allocSelf Float32Array": {
+          "value": 447.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            482,
+            344,
+            688,
+            413
+          ]
+        },
+        "allocSelf create (node_modules/.vite/deps/src-BFefYC_9.js:8233)": {
+          "value": 258,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            309,
+            137,
+            207,
+            379
+          ]
+        },
+        "allocSelf next": {
+          "value": 137,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            274,
+            0,
+            171,
+            103
+          ]
+        },
+        "allocSelf String": {
+          "value": 256.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            239,
+            239,
+            274,
+            274
+          ]
+        },
+        "allocSelf takeMatrix (packages/renderer/src/draw/batchRun.ts:92)": {
+          "value": 154.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            172,
+            172,
+            137,
+            103
+          ]
+        },
+        "allocSelf (anonymous)": {
+          "value": 137.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            104,
+            103,
+            171,
+            239
+          ]
+        },
+        "allocSelf subarray": {
+          "value": 224,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            103,
+            241,
+            207,
+            344
+          ]
+        },
+        "allocSelf openRun (packages/renderer/src/draw/batchRun.ts:62)": {
+          "value": 69,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            69,
+            35,
+            69,
+            69
+          ]
+        },
+        "allocSelf deviceRect (packages/renderer/src/WeaselRenderer.ts:296)": {
+          "value": 69,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            69,
+            103,
+            69,
+            34
+          ]
+        },
+        "allocSelf refreshPrograms (packages/renderer/src/WeaselRenderer.ts:235)": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            69,
+            0,
+            34,
+            0
+          ]
+        },
+        "allocSelf endFrame (packages/renderer/src/retain/RetainedSurfaces.ts:236)": {
+          "value": 51.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            69,
+            34,
+            0,
+            69
+          ]
+        },
+        "allocSelf setColorUniform (packages/renderer/src/draw/uniforms.ts:30)": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            68,
+            0,
+            34,
+            0
+          ]
+        },
+        "allocSelf sort": {
+          "value": 36,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            68,
+            36,
+            36,
+            0
+          ]
+        },
+        "allocSelf setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            41,
+            0,
+            0,
+            0
+          ]
+        },
+        "allocSelf map": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            36,
+            0,
+            0,
+            0
+          ]
+        },
+        "allocSelf glRect (packages/renderer/src/WeaselRenderer.ts:323)": {
+          "value": 51.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            103,
+            34,
+            69
+          ]
+        },
+        "allocSelf uploadAndBind (packages/renderer/src/drawBatch.ts:314)": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            69,
+            34
+          ]
+        },
+        "allocSelf uploadedFor (packages/renderer/src/draw/uniforms.ts:5)": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            34,
+            34
+          ]
+        },
+        "allocSelf entries": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            0,
+            0,
+            34
+          ]
+        },
+        "allocSelf WeakMap": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            137,
+            34,
+            34
+          ]
+        },
+        "allocSelf render": {
+          "value": 103,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            275,
+            103,
+            103
+          ]
+        },
+        "allocSelf now (packages/renderer/src/WeaselRenderer.ts:51)": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            0,
+            34,
+            34
+          ]
+        },
+        "allocSelf Map": {
+          "value": 51,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            69,
+            68
+          ]
+        },
+        "allocSelf screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)": {
+          "value": 17,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            0,
+            0
+          ]
+        },
+        "allocSelf reduce": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            34,
+            0
+          ]
+        },
+        "allocSelf get bytes (packages/renderer/src/retain/RetainedSurfaces.ts:50)": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            34,
+            34,
+            0,
+            34
+          ]
+        },
+        "allocSelf reclaim (packages/renderer/src/effects/EffectTargets.ts:27)": {
+          "value": 102.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            137,
+            68,
+            137
+          ]
+        },
+        "allocSelf uploadBatchMatrices (packages/renderer/src/draw/batchMatrices.ts:41)": {
+          "value": 34,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            34,
+            68,
+            34
+          ]
+        },
+        "allocSelf traceFrames": {
+          "value": 51.5,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            34,
+            69,
+            75
+          ]
+        },
+        "allocSelf keptBytes (packages/renderer/src/retain/RetainedSurfaces.ts:280)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            34,
+            0,
+            0
+          ]
+        },
+        "allocSelf innerSerialize": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            34,
+            0
+          ]
+        },
+        "allocSelf (IDLE_EXTERNAL)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            34,
+            0
+          ]
+        },
+        "allocSelf filter": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            34,
+            0
+          ]
+        },
+        "allocSelf loop": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            53
+          ]
+        },
+        "allocSelf slice": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            40
+          ]
+        },
+        "allocSelf inCssPixels (packages/renderer/src/draw/flattenTolerance.ts:22)": {
+          "value": 0,
+          "unit": "bytes",
+          "stat": "median of 4 sampled heap profiles, self bytes allocated per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            34
+          ]
+        },
+        "load1": {
+          "value": 2.9000000000000004,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            2.95,
+            2.97,
+            2.62,
+            2.85
+          ]
+        }
+      }
+    }
+  ]
+}
