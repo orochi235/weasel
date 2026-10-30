@@ -4,12 +4,13 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-10-28, late)
+## State (2026-10-29, evening)
 
-- `main` is far ahead of `origin/main` and nothing since 2026-10-28 00:41 is pushed. The last CI run on
-  `origin/main` failed (2026-10-28 04:41); the fleet runs only Node 24 on macOS, so CI's Node 22 and Linux legs
-  are the ones that see it (P2 "CI tests Linux Chromium; the fleet does not").
-- Nothing in flight. The full suite passed at 8d72ccf08 (32,055 tests, no unhandled errors).
+- 1.14.1 is on npm (the first Release run lost all but `quantity` to a sigstore 409; a dispatched rerun
+  published the rest). `origin/main` is at 374d7d3c8; `main` adds the faster fleet gate (fd547f57e), unpushed.
+- Nothing in flight. The full suite passed at fd547f57e (32,118 tests).
+- The windease fix for a never-shown node is on branch `mounted-not-laid-out` in `~/src/windease-mounted`,
+  unmerged; the weasel TODO entry says what follows its release.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
@@ -36,6 +37,10 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-10-29: grid and guide snaps landing a stroked shape's drawn box (and its center or far edge), equal
+  spacing and alignment marks on a turned resize, a multi-node move snapping its union box; `layered`'s new
+  group ranking and tight group boxes in the site's diagram demos (before/after on the wall, zone `weasel`,
+  A017E84F and 8DBF1F36); nested rect clips in the renderer.
 - 2026-10-28: the prefs pane's single scrollbar clearance with a mouse connected; the turned `step` symbol's
   title; draw's `registry-enum` radios; the custom shader demo on a clock; the Export literal drawn plain then
   colored; kernel3d's footprint and aim on the ground plane; the view snapped to whole device pixels while
