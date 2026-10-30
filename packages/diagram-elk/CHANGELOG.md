@@ -1,5 +1,27 @@
 # @weasel-js/diagram-elk
 
+## 1.14.2
+
+### Patch Changes
+
+- 4b15345: `elkPlan` and `elkPlanner` now place nodes by network simplex rather than ELK's default, Brandes–Köpf, which
+  could run a long edge's chain past the drawing's outermost node: on a 28-node grouped graph, 7 wires ran
+  outside every node and group box, by up to 197 units. Network simplex keeps them inside and drew that graph
+  19% narrower, at the cost of more bends (206 against 140), since it no longer lines every edge's ends up.
+  This changes where nodes land; pass `layoutOptions: { 'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF' }`
+  for the old placement.
+- 5677062: `elkPlan` names the port on the face of the node ELK's route meets, nearest first, rather than the
+  nearest port overall, which on a wide box could sit on another face and draw the wire across the box.
+- Updated dependencies [012cae5]
+- Updated dependencies [301a320]
+- Updated dependencies [c06637e]
+- Updated dependencies [ae38d2e]
+- Updated dependencies [4bba14d]
+- Updated dependencies [d05de93]
+  - @weasel-js/core@1.14.2
+  - @weasel-js/diagram@1.14.2
+  - @weasel-js/geom@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

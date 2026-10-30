@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/registry",
-  "version": "1.14.1",
+  "version": "1.14.2",
   "description": "Keyed registries with a uniform reflection surface: enumerate the entries, see which ones displaced others, release any one of them, and subscribe to changes. Also the small shared pieces registries are built from: an emitter, a plain-object test, and the MIXED sentinel. No React, no DOM.",
   "license": "MIT",
   "type": "module",

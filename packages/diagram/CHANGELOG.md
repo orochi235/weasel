@@ -1,5 +1,36 @@
 # @weasel-js/diagram
 
+## 1.14.2
+
+### Patch Changes
+
+- 301a320: `layered` keeps a group in one rank wherever the edges between its members allow it: `ranksByLength` now
+  charges a group for every rank its members spread across, so one member with a longer route below it no
+  longer pulls the group's box across several ranks, and wires into the group no longer detour around the
+  column that box reserved. A group's box also closes any stretch none of its members covers to `nodeGap`,
+  so members that placement spread apart are drawn packed. Both change where nodes land on graphs with groups.
+- c06637e: `layered` keeps long edges inside the drawing. Where a run of placeholders sits past the node that sets the
+  drawing's edge in its rank, that node now moves beyond the run, so the wire no longer runs outside every node
+  and group box for its whole length; a run going around its own sibling (a skip edge) stays where it was. A
+  wire passing a group's box now enters and leaves level with the box's edge, so its turns clear the box. The
+  `bezier` router no longer lets a leg between two facing ports swing past either end along the axis they face,
+  which flattens long legs between near ranks. All three change where nodes land and how wires are drawn.
+- Updated dependencies [012cae5]
+- Updated dependencies [56f9771]
+- Updated dependencies [ae38d2e]
+- Updated dependencies [4bba14d]
+- Updated dependencies [d05de93]
+  - @weasel-js/core@1.14.2
+  - @weasel-js/font@1.14.2
+  - @weasel-js/clock@1.14.2
+  - @weasel-js/animator@1.14.2
+  - @weasel-js/icons@1.14.2
+  - @weasel-js/react@1.14.2
+  - @weasel-js/simulation@1.14.2
+  - @weasel-js/audio@1.14.2
+  - @weasel-js/geom@1.14.2
+  - @weasel-js/headless@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

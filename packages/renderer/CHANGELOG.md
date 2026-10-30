@@ -1,5 +1,51 @@
 # @weasel-js/renderer
 
+## 1.14.2
+
+### Patch Changes
+
+- 012cae5: Shader commands and mesh gradients stay exact far from the origin. A shader command's kit vertex stage now
+  takes `u_worldOrigin`, a world point near its bounds, and `u_screenToLocal`, composed in doubles, and exposes
+  `v_worldLocal`, the world point measured from that origin, beside `v_world`, which it now computes from them
+  rather than by inverting `u_view` in float32. A consumer shader drawing detail far out reads `v_worldLocal`
+  (a periodic one, `mod(u_worldOrigin, P) + v_worldLocal`); `u_screenToLocal` and `u_worldOrigin` are kit
+  uniforms, so a shader must not set them. `PaintBindContext.spaceInverse` takes an optional point to measure
+  paint space from, subtracted in doubles; the mesh gradient measures from its bake's corner and its vertex
+  stage takes `u_origin`, so its geometry is rebased like the kit's own paths.
+- 56f9771: Small atlas text keeps its ink where it moves. Where a pixel spans more than `GLYPH_AREA_FROM` (0.2) field
+  units, about 30px an em on a runtime canvas page and 40 on Inter's baked atlas, `glyphCoverage` blends
+  toward the mean of four field taps on a rotated grid, a box filter over the pixel, and takes nothing else
+  from `GLYPH_AREA_FULL` (0.3) up. A stem narrower than a pixel no longer inks by where it sits, so a 16px
+  `H`'s ink centroid stays within 0.04px of its position at every sub-pixel offset, where it swung by 0.66px.
+  
+  The taps cost nothing elsewhere: only a run holding glyphs that small draws with a build of the batch program
+  that has them, and every other run's fragments cost what they did before (`fill-rate`'s `batch` and
+  `batch-glyph-large`, teitou). A fragment taking the taps costs about 2.2 times a plain one.
+  `GLYPH_POINT_COVERAGE_GLSL` is the coverage without them, and `glyphNeedsArea` says which a caller staging
+  glyphs needs.
+  
+  This changes `GLYPH_COVERAGE_GLSL`'s contract: a program pasting it in must first define
+  `vec4 glyphTap(vec2 uv)`, returning the atlas sample at `uv` through `textureLod` at level 0, because the
+  taps run inside a branch where `texture()` would take its level from an undefined derivative.
+- dedcb92: Nested rect clips stay in the batch. Clipping in the batch shader now merges planes that face the same way, so any depth of nested axis-aligned clips keeps four planes, and a slanted item across them no longer falls back to the stencil. 512 such items across three nested clips went from 3,584 draws to 32.
+- c5cba19: Building a text command allocates less. `resolveRuns` sizes its result up front and builds each run with its fields in one literal, `textCommandFromRuns` resolves the style into a reused object through the new `resolveTextStyleInto`, and a HUD text widget keeps its fill and style objects while its color and font hold. Additive: `resolveTextStyleInto(out, style, paint, scale)` from `@weasel-js/text` writes what `resolveTextStyle` returns into `out`, clearing `script`, `lang` and `stroke` when the new resolution has none.
+- 64b59af: A fill or a centered stroke with `vertexColors` joins the batch with the solids, images, gradients, and text
+  around it, rather than ending the run and drawing alone with a color buffer created and deleted every frame.
+  The colors are interpolated and mapped by a group's color matrix as before. An even-odd fill, an inside- or outside-aligned
+  stroke on a polygon, and a mesh past the batch's vertex cap still draw for themselves.
+- Updated dependencies [56f9771]
+- Updated dependencies [3c3e00b]
+- Updated dependencies [9b0c6ee]
+- Updated dependencies [4bba14d]
+- Updated dependencies [c5cba19]
+- Updated dependencies [dec74a9]
+  - @weasel-js/font@1.14.2
+  - @weasel-js/text@1.14.2
+  - @weasel-js/registry@1.14.2
+  - @weasel-js/stroke@1.14.2
+  - @weasel-js/geom@1.14.2
+  - @weasel-js/paint@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

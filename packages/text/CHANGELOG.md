@@ -1,5 +1,20 @@
 # @weasel-js/text
 
+## 1.14.2
+
+### Patch Changes
+
+- 3c3e00b: Splitting text into grapheme clusters asks `Intl.Segmenter` only about the clusters that can span more than one code unit, so mostly-Latin text with a few marks, arrows or dashes allocates far less and runs faster. The clusters are unchanged.
+- 9b0c6ee: Text laid out and painted fresh every frame, such as a HUD readout, allocates 19–28% less in the HUD benchmark. The layout and paint caches share one entry per runs array, a recycled layout hands its result object and `bounds` on to the next layout that takes its arrays, and laying out no longer boxes the numbers it passes between its own steps. A `cachedLayoutRuns` result read with `'read'` may now be the same object as a later, different layout's, as its line boxes already could; one kept with `'keep'` is unaffected.
+- c5cba19: Building a text command allocates less. `resolveRuns` sizes its result up front and builds each run with its fields in one literal, `textCommandFromRuns` resolves the style into a reused object through the new `resolveTextStyleInto`, and a HUD text widget keeps its fill and style objects while its color and font hold. Additive: `resolveTextStyleInto(out, style, paint, scale)` from `@weasel-js/text` writes what `resolveTextStyle` returns into `out`, clearing `script`, `lang` and `stroke` when the new resolution has none.
+- dec74a9: Laying out and painting text allocates less each call. The text caches empty the lists they refill with `pop` rather than `length = 0`, which made V8 reallocate each list on its next push, and `layoutRuns`, `orderLine`, `paintRunsInto` and the line-break scan no longer build closures over their locals, which allocated a scope on every call whether or not the closure ran. A wrap reuses one array of break opportunities from call to call. Layouts and paintings are unchanged.
+- Updated dependencies [56f9771]
+- Updated dependencies [4bba14d]
+  - @weasel-js/font@1.14.2
+  - @weasel-js/registry@1.14.2
+  - @weasel-js/geom@1.14.2
+  - @weasel-js/paint@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes
