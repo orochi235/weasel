@@ -186,9 +186,6 @@ test('a new trial places its view once, in the room its status strip leaves', as
     if (view != null && view !== views.at(-1)) views.push(view);
     return null;
   }
-  // The strip's readouts grow 2 px when their face arrives, which refits the view too.
-  const numeric = getComputedStyle(document.documentElement).getPropertyValue('--wzl-font-numeric');
-  await document.fonts.load(`12px ${numeric}`);
   const { container } = renderWithIcons(
     <div className="lk-present-frame">
       <Lab instruments={[Centered]} defaultInstrument="Centered">
@@ -216,18 +213,10 @@ test('entering refits the view to the presented box, and leaving gives the tile 
   );
   await act(async () => lab?.addTrial('Centered'));
   const focused = () => lab?.trials.find((t) => t.id === lab?.focusedTrialId);
-  // The canvas stack is briefly taller than the tile's body, until the status strip's face arrives;
-  // capture the tile's own view only once the box has settled and the view sits at its middle.
   const stack = () => box(container.querySelector('.lk-canvas-stack'));
-  const body = () => box(container.querySelector('.lk-trial__body'));
-  await expect
-    .poll(
-      () =>
-        (stack()?.height ?? 0) > 0 &&
-        stack()?.height === body()?.height &&
-        (focused()?.view as { pan: { y: number } } | null)?.pan.y === (stack()?.height ?? 0) / 2,
-    )
-    .toBe(true);
+  await expect.poll(() => focused()?.view).not.toBeNull();
+  expect(stack()?.height).toBe(box(container.querySelector('.lk-trial__body'))?.height);
+  expect((focused()?.view as { pan: { y: number } }).pan.y).toBe((stack()?.height ?? 0) / 2);
   const tileView = focused()?.view;
 
   await act(async () => presentation?.enter());

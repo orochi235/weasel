@@ -311,7 +311,7 @@ export function TrialChrome({
       </div>
       <div className="lk-trial__status">
         {job ? <JobProgress job={job} /> : null}
-        <StatusRegion contributions={inRegion('status')} ctx={ctx} />
+        <StatusRegion className="lk-trial__readouts" contributions={inRegion('status')} ctx={ctx} />
       </div>
     </section>
   );
