@@ -106,6 +106,36 @@ export function poseOutline(pose: unknown, b: Bounds): Path {
 }
 
 /**
+ * What `b` alone decides of {@link regionTakes}, or undefined when the
+ * outline has to be asked: a caller that builds the outline's thunks per node
+ * asks this first and builds them only for the nodes it leaves open.
+ */
+export function regionTakesByBounds(region: SelectRegion, mode: LassoHitMode, b: Bounds): boolean | undefined {
+  if (
+    !Number.isFinite(b.x) || !Number.isFinite(b.y) ||
+    !Number.isFinite(b.width) || !Number.isFinite(b.height)
+  ) {
+    return false;
+  }
+  const ab = region.bounds;
+  if (
+    b.x >= ab.x + ab.width || b.x + b.width <= ab.x ||
+    b.y >= ab.y + ab.height || b.y + b.height <= ab.y
+  ) {
+    return false;
+  }
+  if (mode === 'centers') {
+    return pointInPolygon(region.coords, b.x + b.width / 2, b.y + b.height / 2);
+  }
+  // Swallowed whole by a marquee: no outline can change the answer.
+  if (mode === 'intersect' && region.isRect && boxContainsBox(
+    [ab.x, ab.y, ab.x + ab.width, ab.y + ab.height],
+    [b.x, b.y, b.x + b.width, b.y + b.height],
+  )) return true;
+  return undefined;
+}
+
+/**
  * Whether `region` takes a node under `mode`, given its pose, its bounds `b`
  * from {@link regionBoundsOf}, and its drawn outline on demand.
  *
@@ -125,35 +155,19 @@ export function regionTakes(
   outline: () => Path,
   filled: () => boolean = () => true,
 ): boolean {
-  if (
-    !Number.isFinite(b.x) || !Number.isFinite(b.y) ||
-    !Number.isFinite(b.width) || !Number.isFinite(b.height)
-  ) {
-    return false;
-  }
+  const decided = regionTakesByBounds(region, mode, b);
+  if (decided !== undefined) return decided;
   const ab = region.bounds;
-  if (
-    b.x >= ab.x + ab.width || b.x + b.width <= ab.x ||
-    b.y >= ab.y + ab.height || b.y + b.height <= ab.y
-  ) {
-    return false;
-  }
-  if (mode === 'centers') {
-    return pointInPolygon(region.coords, b.x + b.width / 2, b.y + b.height / 2);
-  }
-  const inBox = boxContainsBox(
-    [ab.x, ab.y, ab.x + ab.width, ab.y + ab.height],
-    [b.x, b.y, b.x + b.width, b.y + b.height],
-  );
   const silhouette = isSilhouettePose(pose);
   if (mode === 'enclosed') {
     // A silhouette pose's bounds are its outline's: sticking out of the
     // region's box, it cannot be inside the region.
-    if (silhouette && !inBox) return false;
+    if (silhouette && !boxContainsBox(
+      [ab.x, ab.y, ab.x + ab.width, ab.y + ab.height],
+      [b.x, b.y, b.x + b.width, b.y + b.height],
+    )) return false;
     return polygonContainsPath(region.verts, silhouette ? pose : outline());
   }
-  // Swallowed whole by a marquee: no outline can change the answer.
-  if (region.isRect && inBox) return true;
   const drawn = silhouette ? pose : outline();
   if (!filled()) return polygonIntersectsPath(region.verts, drawn, { filled: false });
   // Two axis-aligned rects meet exactly when their boxes overlap.
