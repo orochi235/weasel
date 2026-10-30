@@ -1,5 +1,27 @@
 # @weasel-js/hud
 
+## 1.14.2
+
+### Patch Changes
+
+- c5cba19: Building a text command allocates less. `resolveRuns` sizes its result up front and builds each run with its fields in one literal, `textCommandFromRuns` resolves the style into a reused object through the new `resolveTextStyleInto`, and a HUD text widget keeps its fill and style objects while its color and font hold. Additive: `resolveTextStyleInto(out, style, paint, scale)` from `@weasel-js/text` writes what `resolveTextStyle` returns into `out`, clearing `script`, `lang` and `stroke` when the new resolution has none.
+- Updated dependencies [012cae5]
+- Updated dependencies [56f9771]
+- Updated dependencies [ae38d2e]
+- Updated dependencies [4bba14d]
+- Updated dependencies [d05de93]
+  - @weasel-js/core@1.14.2
+  - @weasel-js/font@1.14.2
+  - @weasel-js/registry@1.14.2
+  - @weasel-js/loupe@1.14.2
+  - @weasel-js/theme@1.14.2
+  - @weasel-js/icons@1.14.2
+  - @weasel-js/geom@1.14.2
+  - @weasel-js/gestures@1.14.2
+  - @weasel-js/headless@1.14.2
+  - @weasel-js/menu@1.14.2
+  - @weasel-js/paint@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

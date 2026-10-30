@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.14.2
+
+### Patch Changes
+
+- 012cae5: Shader commands and mesh gradients stay exact far from the origin. A shader command's kit vertex stage now
+  takes `u_worldOrigin`, a world point near its bounds, and `u_screenToLocal`, composed in doubles, and exposes
+  `v_worldLocal`, the world point measured from that origin, beside `v_world`, which it now computes from them
+  rather than by inverting `u_view` in float32. A consumer shader drawing detail far out reads `v_worldLocal`
+  (a periodic one, `mod(u_worldOrigin, P) + v_worldLocal`); `u_screenToLocal` and `u_worldOrigin` are kit
+  uniforms, so a shader must not set them. `PaintBindContext.spaceInverse` takes an optional point to measure
+  paint space from, subtracted in doubles; the mesh gradient measures from its bake's corner and its vertex
+  stage takes `u_origin`, so its geometry is rebased like the kit's own paths.
+- ae38d2e: `nodeGates` no longer allocates for a node with no parent, and remembers answers only for ancestors. A walk over a flat scene, which is every pick and marquee made after an edit, had been building a `Set` and two map entries per node to answer hidden and locked.
+- 4bba14d: A scene's `add` and `remove` cost less again: a history builds the step it reports only when something observes its steps, and expands caused ops only when an op has them; a remove narrows an empty selection without building node gates; an empty pose-removal drain returns early; and a `kit:add` payload takes its optional fields by assignment. An emitter with no listeners now returns from `emit` without copying its listener set.
+- d05de93: Grid lines and ruler guides now line up a moved shape's drawn box, stroke included, instead of its pose origin, so **stroked shapes land half a stroke width differently against grid lines and guides**: a rect with a 10-wide stroke now puts its stroke's outer edge on the line, where it used to put the rect's own edge, 5 further in. The grid also lands a box's center or far edge when that is nearer a line than its near edge, and a multi-node move snaps the union box rather than each node's origin. On a turned container's lattice the grid still snaps the pose origin. Drawing a new shape and the pen are unchanged; they snap the pointer.
+  
+  On a resize that turns or skews the box, equal spacing now snaps the sides of the box's axis-aligned extent the drag moves, solving along the handle's own axis; it offered nothing before. Alignment and spacing marks on such a resize span the box where it lands.
+  
+  Breaking for a custom `SnapSource`: `SnapCollect.edges` and the `SnapEdge` and `SnapEdges` types are removed. `SnapCollect.sides` lists the sides of the box a resize moves and each one's rate per unit of the move (`SnapSide`), and `SnapCollect.boxAt(delta)` gives the box where a resolved move puts it.
+- Updated dependencies [012cae5]
+- Updated dependencies [56f9771]
+- Updated dependencies [3c3e00b]
+- Updated dependencies [9b0c6ee]
+- Updated dependencies [dedcb92]
+- Updated dependencies [dc5a786]
+- Updated dependencies [4bba14d]
+- Updated dependencies [c5cba19]
+- Updated dependencies [dec74a9]
+- Updated dependencies [64b59af]
+  - @weasel-js/renderer@1.14.2
+  - @weasel-js/font@1.14.2
+  - @weasel-js/text@1.14.2
+  - @weasel-js/prefs@1.14.2
+  - @weasel-js/history@1.14.2
+  - @weasel-js/registry@1.14.2
+  - @weasel-js/text-dom@1.14.2
+  - @weasel-js/routing@1.14.2
+  - @weasel-js/animator@1.14.2
+  - @weasel-js/cursor@1.14.2
+  - @weasel-js/icons@1.14.2
+  - @weasel-js/modes@1.14.2
+  - @weasel-js/react@1.14.2
+  - @weasel-js/select@1.14.2
+  - @weasel-js/stroke@1.14.2
+  - @weasel-js/simulation@1.14.2
+  - @weasel-js/geom@1.14.2
+  - @weasel-js/gestures@1.14.2
+  - @weasel-js/headless@1.14.2
+  - @weasel-js/paint@1.14.2
+  - @weasel-js/quantity@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

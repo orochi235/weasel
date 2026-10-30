@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/text-shaping",
-  "version": "1.14.1",
+  "version": "1.14.2",
   "description": "OpenType text shaping for weasel through HarfBuzz: contextual forms, ligatures, reordering and mark placement for Arabic, the Indic scripts, Thai and the rest. Font bytes and text in, positioned glyphs out; no renderer and no scene graph.",
   "license": "MIT",
   "type": "module",
@@ -16,12 +16,12 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/bidi": "1.14.1",
+    "@weasel-js/bidi": "1.14.2",
     "harfbuzzjs": "1.6.4"
   },
   "devDependencies": {
-    "@weasel-js/font": "1.14.1",
-    "@weasel-js/text": "1.14.1"
+    "@weasel-js/font": "1.14.2",
+    "@weasel-js/text": "1.14.2"
   },
   "scripts": {
     "test": "vitest run",

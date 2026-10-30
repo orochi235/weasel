@@ -1,5 +1,28 @@
 # @weasel-js/pdf
 
+## 1.14.2
+
+### Patch Changes
+
+- 98c5c23: PDF export writes the document's language as the catalog's `/Lang`, and marks text in another language with
+  its own `/Lang`, so a screen reader or text extraction no longer guesses it. `writePdf` and `exportPagesPdf`
+  take the document's language as a new `lang` option; left out, it is the language every run of text shares,
+  and the document has none when they do not share one. A run's language is its `lang`, or its text node's.
+- Updated dependencies [012cae5]
+- Updated dependencies [56f9771]
+- Updated dependencies [3c3e00b]
+- Updated dependencies [9b0c6ee]
+- Updated dependencies [dedcb92]
+- Updated dependencies [c5cba19]
+- Updated dependencies [dec74a9]
+- Updated dependencies [64b59af]
+  - @weasel-js/renderer@1.14.2
+  - @weasel-js/font@1.14.2
+  - @weasel-js/text@1.14.2
+  - @weasel-js/stroke@1.14.2
+  - @weasel-js/geom@1.14.2
+  - @weasel-js/paint@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

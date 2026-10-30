@@ -1,5 +1,31 @@
 # @weasel-js/forge
 
+## 1.14.2
+
+### Patch Changes
+
+- 92d1993: Additive: a forge dev server now serves an edit the OS file watcher never reported. Each module is stamped with
+  its file's modification time when vite reads it; a request for a module whose file has changed since, and a check
+  of every served file once the watcher has been quiet for two seconds, sends the change through as if the event had
+  arrived, and logs `[watch] <file> changed with no file event`. `watchRecovery()` from `@weasel-js/forge/vite` gives
+  any other vite dev server the same, and the `[watch]` warning about missing file events says when a server has it.
+- Updated dependencies [012cae5]
+- Updated dependencies [ae38d2e]
+- Updated dependencies [dc5a786]
+- Updated dependencies [4bba14d]
+- Updated dependencies [d05de93]
+- Updated dependencies [875b5aa]
+  - @weasel-js/core@1.14.2
+  - @weasel-js/prefs@1.14.2
+  - @weasel-js/ui@1.14.2
+  - @weasel-js/labkit@1.14.2
+  - @weasel-js/registry@1.14.2
+  - @weasel-js/svg@1.14.2
+  - @weasel-js/theme@1.14.2
+  - @weasel-js/clock@1.14.2
+  - @weasel-js/icons@1.14.2
+  - @weasel-js/react@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

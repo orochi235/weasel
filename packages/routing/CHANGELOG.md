@@ -1,5 +1,24 @@
 # @weasel-js/routing
 
+## 1.14.2
+
+### Patch Changes
+
+- Updated dependencies [dc5a786]
+- Updated dependencies [4bba14d]
+  - @weasel-js/prefs@1.14.2
+  - @weasel-js/history@1.14.2
+  - @weasel-js/registry@1.14.2
+  - @weasel-js/cursor@1.14.2
+  - @weasel-js/icons@1.14.2
+  - @weasel-js/modes@1.14.2
+  - @weasel-js/react@1.14.2
+  - @weasel-js/select@1.14.2
+  - @weasel-js/geom@1.14.2
+  - @weasel-js/gestures@1.14.2
+  - @weasel-js/menu@1.14.2
+  - @weasel-js/quantity@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

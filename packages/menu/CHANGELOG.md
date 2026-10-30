@@ -1,5 +1,12 @@
 # @weasel-js/menu
 
+## 1.14.2
+
+### Patch Changes
+
+- @weasel-js/headless@1.14.2
+  - @weasel-js/quantity@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes

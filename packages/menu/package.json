@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/menu",
-  "version": "1.14.1",
+  "version": "1.14.2",
   "description": "Headless menu model: entries, keyboard and pointer behavior, placement. No React, no DOM.",
   "license": "MIT",
   "type": "module",
@@ -37,8 +37,8 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/headless": "1.14.1",
-    "@weasel-js/quantity": "1.14.1"
+    "@weasel-js/headless": "1.14.2",
+    "@weasel-js/quantity": "1.14.2"
   },
   "publishConfig": {
     "access": "public",
