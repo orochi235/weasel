@@ -87,9 +87,9 @@ let warnedLogicalRtl = false;
 
 /**
  * Warn, once per process, when `codePoints` hold right-to-left letters and
- * there is no engine to reorder them.
+ * there is no engine to reorder them. `who` names the caller laying them out.
  */
-export function warnRtlWithoutEngine(codePoints: ArrayLike<number>): void {
+export function warnRtlWithoutEngine(codePoints: ArrayLike<number>, who = 'weasel layoutRuns'): void {
   if (warnedLogicalRtl) return;
   for (let i = 0; i < codePoints.length; i++) {
     const cp = codePoints[i];
@@ -98,7 +98,7 @@ export function warnRtlWithoutEngine(codePoints: ArrayLike<number>): void {
     console.warn(
       // Naming the import in `from "<pkg>"` form would trip labkit's
       // consumer smoke test, which greps dist for that exact shape.
-      'weasel layoutRuns: this text contains right-to-left characters but no ' +
+      `${who}: this text contains right-to-left characters but no ` +
       '`bidi` engine is registered, so it is being laid out in logical order — ' +
       'the glyphs will appear reversed. Import `bidi` out of the ' +
       '`@weasel-js/bidi` package and call `registerBidi(bidi)` once at startup.',
