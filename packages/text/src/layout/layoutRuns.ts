@@ -258,8 +258,8 @@ export function layoutRuns(
     y += line.height;
   }
   lines.length = broken.length;
-  const bounds = cols !== null ? cols.bounds : { width: 0, height: 0 };
-  bounds.width = width;
-  bounds.height = y;
-  return { lines, bounds };
+  if (cols === null) return { lines, bounds: { width, height: y } };
+  cols.bounds.width = width;
+  cols.bounds.height = y;
+  return (cols.laid ??= { lines, bounds: cols.bounds });
 }

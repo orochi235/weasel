@@ -19,6 +19,9 @@ export interface RunsEntry {
    *  hit with no key built. */
   painting: Painting | null;
   paintedOn: LaidOutRuns | null;
+  /** `paintedOn`'s columns' stamp when it was painted: a recycled layout's
+   *  result is handed on, so the object alone does not say it is the same layout. */
+  paintedStamp: number;
   paintMin: number | undefined;
 }
 
@@ -36,7 +39,9 @@ export function entryOf(runs: readonly ResolvedRun[]): RunsEntry | undefined {
 export function entryFor(runs: readonly ResolvedRun[]): RunsEntry {
   let e = entries.get(runs);
   if (e === undefined) {
-    e = spare.pop() ?? { generation: -1, variants: [], painting: null, paintedOn: null, paintMin: undefined };
+    e = spare.pop() ?? {
+      generation: -1, variants: [], painting: null, paintedOn: null, paintedStamp: 0, paintMin: undefined,
+    };
     entries.set(runs, e);
   }
   return e;

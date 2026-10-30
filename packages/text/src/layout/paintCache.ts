@@ -53,6 +53,10 @@ export interface Painting {
  *  for a layout built by hand. */
 const shared = new WeakMap<LaidOutRuns, Painting[]>();
 
+function stampOf(laid: LaidOutRuns): number {
+  return laid.lines.length > 0 ? LineBox.columns(laid.lines[0])?.stamp ?? 0 : 0;
+}
+
 function listOf(laid: LaidOutRuns): Painting[] {
   const cols = laid.lines.length > 0 ? LineBox.columns(laid.lines[0]) : null;
   if (cols !== null) return cols.paintings as Painting[];
@@ -145,7 +149,8 @@ export function cachedPaintRuns(
   const generation = glyphGeneration();
   const min = opts.outlineMinSize;
   const mine = entryOf(runs);
-  const own = mine !== undefined && mine.paintedOn === laid ? mine.painting : null;
+  const stamp = stampOf(laid);
+  const own = mine !== undefined && mine.paintedOn === laid && mine.paintedStamp === stamp ? mine.painting : null;
   const mineHere = own !== null && own.generation === generation;
   if (mineHere && mine!.paintMin === min) return handOut(own, use);
 
@@ -173,7 +178,7 @@ export function cachedPaintRuns(
   if (list.length >= PAINT_CACHE_VARIANT_LIMIT) list.shift();
   list.push(p);
   const e = mine ?? entryFor(runs);
-  e.paintedOn = laid; e.painting = p; e.paintMin = min;
+  e.paintedOn = laid; e.paintedStamp = stamp; e.painting = p; e.paintMin = min;
   return handOut(p, use);
 }
 
