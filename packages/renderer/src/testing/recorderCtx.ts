@@ -29,6 +29,8 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
     patternFill: r._patternFill(),
   };
   r._batchVariants().get(true, false);
+  // The build a run holding small glyphs draws with, which takes the same vertices.
+  const areaBuild = r._batchVariants().get(false, false, true).handle;
   recorder.reset();
   const ctx: DrawContext = {
     gl: recorder.gl,
@@ -48,7 +50,17 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
     clipDepth: 0,
     clipStack: [],
   };
+  AREA_BUILDS.set(ctx, areaBuild);
   return { ctx, calls: recorder.calls, gl: recorder.gl };
+}
+
+/** Each recorder context's batch build with the glyph taps. */
+const AREA_BUILDS = new WeakMap<DrawContext, unknown>();
+
+/** Whether `handle` is a batch build a plain run draws with: the default, or
+ *  the one a run holding small glyphs takes. */
+export function isBatchBuild(ctx: DrawContext, handle: unknown): boolean {
+  return handle === ctx.batchFill.handle || handle === AREA_BUILDS.get(ctx);
 }
 
 /**
@@ -89,7 +101,7 @@ export function stagedVertices(ctx: DrawContext, calls: readonly { name: string;
   let bound: unknown = null;
   for (const c of calls) {
     if (c.name === 'useProgram') bound = c.args[0];
-    if (bound === ctx.batchFill.handle && isVertexUpload(c) && c.args[0] === 0x8892) {
+    if (isBatchBuild(ctx, bound) && isVertexUpload(c) && c.args[0] === 0x8892) {
       runs.push(uploadFloats(c));
     }
   }

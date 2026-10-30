@@ -11,7 +11,7 @@ import { drawGroup, dispatch, type DrawContext } from './draw';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import { paintModeOf } from './shaders/batchFill';
 import {
-  createRecorderCtx, stagedVertices, paintModes, positionsOfMode, SQUARE_CLIP,
+  createRecorderCtx, isBatchBuild, stagedVertices, paintModes, positionsOfMode, SQUARE_CLIP,
 } from './testing/recorderCtx';
 
 /**
@@ -231,7 +231,7 @@ describe('drawText — decoration reaches the GPU', () => {
     let at = -1;
     for (let i = 0; i < calls.length; i++) {
       if (calls[i].name === 'useProgram') bound = calls[i].args[0];
-      if (calls[i].name === 'drawElements' && bound === ctx.batchFill.handle) { at = i; break; }
+      if (calls[i].name === 'drawElements' && isBatchBuild(ctx, bound)) { at = i; break; }
     }
     expect(at).toBeGreaterThanOrEqual(0);
     let enabled = false;
@@ -272,7 +272,7 @@ describe('drawText — decoration reaches the GPU', () => {
       expect(Array.from(v.slice(i + 2, i + 6))).toEqual([0, 1, 0, 0.5]);
     }
     // u_proj / u_model, without which the rect lands in raw clip space.
-    const from = calls.findIndex((c) => c.name === 'useProgram' && c.args[0] === ctx.batchFill.handle);
+    const from = calls.findIndex((c) => c.name === 'useProgram' && isBatchBuild(ctx, c.args[0]));
     expect(calls.slice(from).filter((c) => c.name === 'uniformMatrix3fv')).toHaveLength(2);
   });
 });
