@@ -337,13 +337,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] `elkPlanner()` runs a long edge outside the drawing on `CLOUD`.** The chains for
-  `admin-people -> db` and `admin-config -> db` pass right of every node and group box, by up to 197 units
-  (measured 2026-10-29), where `layered` now keeps them inside (`turnOutward`, `packages/diagram/src/layered/inward.ts`,
-  2026-10-30). ELK draws no wire through a box on this graph. `layered`'s fix cost `CLOUD` 2 more wire
-  crossings under bezier (89 to 91, none under orthogonal) and widened it from 3281 to 3723 units, since
-  `secrets` and `dead` now sit outside the wires they used to sit inside.
-
 - **(P3) [agent] A scene add-and-remove round trip still costs about 0.26 µs more than on 2026-09-29, and
   `setPose` about 0.14 µs more.** That is 599685677 (2026-10-13), which records every scene edit as the kit
   ops it caused: it added 0.26 µs to the round trip and 0.11 µs to `setPose` at that commit alone. Everything

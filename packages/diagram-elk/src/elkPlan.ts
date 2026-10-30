@@ -40,7 +40,7 @@ export interface ElkLayoutOptions extends Omit<LayoutOptions, 'order' | 'chain' 
   elk?: ElkRunner;
   /** ELK options for the root, applied over the ones this derives from the
    *  rest, under their full or `elk.`-prefixed ids. Default algorithm
-   *  `elk.layered`. */
+   *  `elk.layered`, placing nodes by network simplex. */
   layoutOptions?: Record<string, string>;
 }
 
@@ -64,6 +64,8 @@ export function rootOptions(opts: ElkLayoutOptions = {}): Record<string, string>
   const spacing = String(opts.nodeGap ?? DEFAULT_NODE_GAP);
   return {
     'elk.algorithm': 'layered',
+    // ELK's default, Brandes–Köpf, can run a long edge's straight chain past the drawing's outermost node.
+    'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
     'elk.direction': DIRECTIONS[opts.direction ?? 'down'],
     'elk.spacing.nodeNode': spacing,
     'elk.layered.spacing.nodeNodeBetweenLayers': String(opts.rankGap ?? DEFAULT_RANK_GAP),
