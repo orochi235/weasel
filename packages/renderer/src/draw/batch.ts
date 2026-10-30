@@ -1,6 +1,6 @@
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
-import { foldColorInto, foldsColor, textureTint, type Tint } from './foldColor';
+import { foldColorInto, foldsColor, texturedUnder, type Tint } from './foldColor';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor } from '@weasel-js/paint';
 import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot, withMatrix } from '../shaders/batchFill';
@@ -11,6 +11,7 @@ import {
   openRun, runTakes, slotForAtlas, slotForBitmap, slotForRamps, takeHulls, takeMatrix,
 } from './batchRun';
 import { type BatchPaint, rampVertices } from './gradient';
+import { pushPatternMesh } from './patternBatch';
 
 /**
  * Vertices above which a mesh keeps its own draw, by whether a run is open.
@@ -67,42 +68,6 @@ export function stagePlain(
   const staged = openRun(ctx);
   const matrix = takeMatrix(staged, colorMatrix, alpha);
   return packSlot(takeHulls(ctx, staged, withMatrix(WHITE_SLOT, matrix)), PAINT_MODE_PLAIN);
-}
-
-/**
- * What a textured vertex is staged under: the matrix and alpha its run draws
- * it by, the tint its vertices carry, and, once a stage call has filled it in,
- * the slot they name.
- */
-interface Textured {
-  colorMatrix: Float32Array;
-  alpha: number;
-  /** The fourth channel carries group alpha wherever the entry's does not. */
-  tint: Tint;
-  /** Texture slot and matrix index together; `packSlot` adds the paint mode. */
-  slot: number;
-}
-
-const UNTINTED: Tint = [1, 1, 1, 1];
-
-/**
- * A texel's color is not known until it is sampled, so the group's matrix
- * reaches it one of two ways. One that only scales channels down becomes a
- * tint on the vertices, in a run entry at identity. Any other stays a matrix
- * for the shader, as an entry of its own.
- *
- * `alphaInEntry` says where group alpha goes in that second case: into the
- * entry for a gradient, whose `a_post` may be its atlas row, and into the
- * tint's fourth channel for a quad, which multiplies its `a_post` by it.
- */
-function texturedUnder(ctx: DrawContext, alphaInEntry: boolean): Textured {
-  const tint = textureTint(ctx);
-  if (tint !== null) return { colorMatrix: IDENTITY_COLOR_MATRIX, alpha: 1, tint, slot: 0 };
-  const colorMatrix = ctx.state.colorMatrix;
-  const alpha = ctx.state.alpha;
-  return alphaInEntry
-    ? { colorMatrix, alpha, tint: UNTINTED, slot: 0 }
-    : { colorMatrix, alpha: 1, tint: [1, 1, 1, alpha], slot: 0 };
 }
 
 /**
@@ -275,6 +240,7 @@ export function tryStageFill(
 ): boolean {
   if (paint !== undefined && canBatchMesh(ctx, mesh)) {
     if (paint.kind === 'ramp') pushRampMesh(ctx, mesh, paint);
+    else if (paint.kind === 'pattern') pushPatternMesh(ctx, mesh, paint);
     else pushMesh(ctx, mesh, paint);
     return true;
   }

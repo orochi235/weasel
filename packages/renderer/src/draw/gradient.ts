@@ -1,8 +1,9 @@
-import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
+import type { ColorSpace, Paint, PaintUnits, GradStop, TexturePaint } from '@weasel-js/paint';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { GradientUV } from '../drawBatch';
 import { PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
+import { patternBatchPaint, type PatternBatchPaint } from './patternBatch';
 
 /** A paint a run can express, resolved from a `Paint` by `batchPaint`. */
 export type BatchPaint =
@@ -13,12 +14,14 @@ export type BatchPaint =
        *  carries outright; `PAINT_MODE_RADIAL` / `PAINT_MODE_CONIC` otherwise. */
       mode: number;
       uv: GradientUV;
-    };
+    }
+  | PatternBatchPaint;
 
 /**
  * `fill` as something a run can carry, or `undefined` for a paint no run can
- * express — a pattern, a shader — and `null` for a gradient
- * whose space has no inverse under this transform, which draws nothing.
+ * express — a shader, a registered paint kind — and `null` for a gradient or
+ * a pattern whose space has no inverse under this transform, which draws
+ * nothing.
  *
  * **All three gradients qualify, and for the same reason,** which is not that
  * their ramp position is affine in position — only a linear gradient's is. It
@@ -38,6 +41,7 @@ export function batchPaint(
     const solid = fill as { color: string; opacity?: number };
     return { kind: 'solid', color: solid.color, opacity: solid.opacity };
   }
+  if (kind === 'texture') return patternBatchPaint(ctx, fill as TexturePaint);
   if (kind !== 'linear-gradient' && kind !== 'radial-gradient' && kind !== 'conic-gradient') {
     return undefined;
   }

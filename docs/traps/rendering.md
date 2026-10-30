@@ -39,12 +39,13 @@ runtime zero that is not a compile-time zero (`u_color.a - 0.5` where the
 uniform is 0.5) is what keeps the code alive. The same trap waits for any
 "with and without" shader pair.
 
-**No gradient is a run-breaker any more.** Linear, radial and conic all ride the
-vertices off the ramp atlas and join the run, and so do images and text. A test
-reaching for "a paint the batch cannot express" wants a pattern, or an
-even-odd fill for a solid that draws for itself, and should count draws to pin
-that premise: tests written against the old behavior went on passing for the
-wrong reason, twice. Per-vertex colors joined the run on 2026-10-30.
+**No built-in paint is a run-breaker any more.** Gradients ride the vertices off
+the ramp atlas, a pattern's tile takes a slot of its own, and images, text and
+per-vertex colors join the run too. A test reaching for "a paint the batch
+cannot express" wants a registered paint kind (`testing/ownDrawPaint.ts` in the
+renderer), or an even-odd fill for a solid that draws for itself, and should
+count draws to pin that premise: tests written against the old behavior went on
+passing for the wrong reason, twice.
 
 **A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
 disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any

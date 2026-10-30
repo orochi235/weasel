@@ -8,10 +8,10 @@
  * `bufferSubData(ARRAY_BUFFER)` in the frames it renders.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { registerTexture } from './textures/registerTexture';
+import { registerOwnDrawPaint, ownDrawRect } from './testing/ownDrawPaint';
 import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH, FLOATS_PER_VERTEX } from './drawBatch';
 import { BATCH_TEXTURE_SLOTS, RAMP_SLOT, PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, paintModeOf } from './shaders/batchFill';
 import type { DrawCommand } from './DrawCommand';
@@ -43,7 +43,10 @@ describe('renderer — consecutive image batching', () => {
 
   let atlas: ImageBitmap;
 
+  let unregister: () => void;
+  afterEach(() => unregister());
   beforeEach(() => {
+    unregister = registerOwnDrawPaint();
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     atlas = bitmap();
@@ -60,14 +63,8 @@ describe('renderer — consecutive image batching', () => {
     fill: { paint: { color: '#f00' } },
   });
 
-  /** A fill the run cannot express, for tests that need a break they choose.
-   *  Not a gradient or per-vertex colors, which both join the run: a pattern. */
-  const TILE = registerTexture({ width: 4, height: 4 } as ImageBitmap);
-  const breakerRect = (x: number) => ({
-    kind: 'path' as const,
-    path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
-    fill: { paint: { kind: 'texture' as const, texture: TILE } },
-  }) as unknown as DrawCommand;
+  /** A fill the run cannot express, for tests that need a break they choose. */
+  const breakerRect = (x: number): DrawCommand => ownDrawRect(x, 0, 16);
 
   /** Index count of every `drawElements`, in order. */
   const draws = () =>

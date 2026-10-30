@@ -5,8 +5,9 @@
  * produces numbers that say nothing about a GPU.
  *
  * The variants:
- *   - `alternating` — solid and pattern fill alternating. A pattern never
- *     joins the batched run, so every command flushes it and switches program.
+ *   - `alternating` — solid and even-odd fill alternating. An even-odd fill
+ *     never joins the batched run, so every command flushes it and switches
+ *     program. A pattern did this until 2026-10-30, when patterns joined the run.
  *   - `stacked` — every rect at the same spot: the same number of draw calls
  *     over a fraction of the fragments.
  *   - `scene` — each command in its own group, which is what `buildSceneTree`
@@ -55,10 +56,9 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { rows, glRenderer, patternPaints, draws, gcAvailable } = await page.evaluate(
+  const { rows, glRenderer, breakerPaints, draws, gcAvailable } = await page.evaluate(
     async ({ root, sweep, variants, probeN, settle }) => {
-      const { WeaselRenderer, registerTexture } = await import(/* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`);
-      const { checkerBitmap } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/kinds.ts`);
+      const { WeaselRenderer } = await import(/* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`);
       const { frameMs } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`);
 
       const W = 800;
@@ -79,9 +79,15 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
       const solidFill = (i: number) => ({ kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
-      const patternFill = { kind: 'texture' as const, texture: registerTexture(await checkerBitmap()) };
-
       const M = 0, L = 1, Z = 4; // PathVerb
+      /** A rect as an even-odd polygon, which paints itself through the stencil. */
+      const evenOddRect = (x: number, y: number, size: number): unknown => ({
+        kind: 'polygon',
+        commands: new Uint8Array([M, L, L, L, Z]),
+        coords: new Float32Array([x, y, x + size, y, x + size, y + size, x, y + size]),
+        fillRule: 'evenodd',
+      });
+      const breaks = (variant: string, i: number): boolean => variant === 'alternating' && i % 2 === 1;
       /** An octagon, so the command is a tessellated mesh rather than a rect.
        *  One Path object per command, built once: `getMesh` is keyed on Path
        *  identity, and rebuilding them per frame would measure tessellation. */
@@ -108,8 +114,8 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
             kind: 'path',
             path: variant === 'meshes'
               ? octagon(x + 18, y + 18, 18)
-              : { kind: 'rect', x, y, width: 36, height: 36 },
-            fill: { paint: variant === 'alternating' && i % 2 === 1 ? patternFill : solidFill(i) },
+              : breaks(variant, i) ? evenOddRect(x, y, 36) : { kind: 'rect', x, y, width: 36, height: 36 },
+            fill: { paint: solidFill(i) },
           };
           if (variant === 'stroked') cmd.stroke = { width: 2, paint: { color: '#222222' } };
           if (variant === 'rotated') {
@@ -145,24 +151,16 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         return frameMs(gl, () => renderer.render(cmds, identity), { warm: 10, samples: 15, settle });
       }
 
-      /** A row across a pattern rect. One flat color would mean the texture
-       *  never painted, which would make the switch look free. */
-      function checkPatternPaints(): boolean {
+      /** The middle of an even-odd rect. Nothing painted would mean the fill
+       *  drew nothing, which would make the switch look free. */
+      function checkBreakerPaints(): boolean {
         renderer.render([{
-          kind: 'path',
-          path: { kind: 'rect', x: 100, y: 100, width: 100, height: 100 },
-          fill: { paint: patternFill },
+          kind: 'path', path: evenOddRect(100, 100, 100), fill: { paint: { color: '#cc3366' } },
         }], identity);
         gl.finish();
-        const row = new Uint8Array(64 * 4);
-        gl.readPixels(110, H - 150, 64, 1, gl.RGBA, gl.UNSIGNED_BYTE, row);
-        let lo = 255;
-        let hi = 0;
-        for (let i = 0; i < row.length; i += 4) {
-          lo = Math.min(lo, row[i]);
-          hi = Math.max(hi, row[i]);
-        }
-        return hi - lo > 100;
+        const px = new Uint8Array(4);
+        gl.readPixels(150, H - 150, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        return px[0] > 150 && px[3] > 200;
       }
 
       const drawsFor = (variant: string): number => {
@@ -170,7 +168,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         return renderer.lastFrameStats().drawCalls;
       };
 
-      const paints = checkPatternPaints();
+      const paints = checkBreakerPaints();
       const draws = { solid: drawsFor('solid'), alternating: drawsFor('alternating') };
       const rows: Array<{ variant: string; n: number; perFrameMs: number; usPerCmd: number }> = [];
       for (const variant of variants) {
@@ -185,7 +183,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         }
       }
       return {
-        rows, glRenderer, patternPaints: paints, draws,
+        rows, glRenderer, breakerPaints: paints, draws,
         gcAvailable: typeof (globalThis as { gc?: () => void }).gc === 'function',
       };
     },
@@ -195,7 +193,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   const lines = [
     '',
     `Draw loop — 800x600, dpr 1, on ${glRenderer}`,
-    `pattern fills actually paint: ${patternPaints}`,
+    `even-odd fills actually paint: ${breakerPaints}`,
     `draw calls at ${PROBE_N} commands: solid ${draws.solid}, alternating ${draws.alternating}`,
     `collected between measurements: ${gcAvailable}`,
     '',
@@ -212,8 +210,8 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   console.log(lines.join('\n'));
 
   expect(errors).toEqual([]);
-  // A pattern that silently draws nothing would read as a free program switch.
-  expect(patternPaints, 'pattern fill did not paint').toBe(true);
+  // A breaker that silently draws nothing would read as a free program switch.
+  expect(breakerPaints, 'even-odd fill did not paint').toBe(true);
   expect(draws.solid, 'solid rects should share one batched run').toBeLessThan(PROBE_N / 10);
   expect(draws.alternating, 'every alternating command should break the run').toBeGreaterThanOrEqual(PROBE_N);
   for (const v of VARIANTS) {
@@ -223,7 +221,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   }
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
-  run.params({ gcAvailable, patternPaints, draws });
+  run.params({ gcAvailable, breakerPaints, draws });
   for (const r of rows) {
     const stat = `median of 15 to ${SETTLE.maxSamples} single frames, one per task, after 10 untimed, until known to ${SETTLE.withinMs} ms or 2%`;
     run.item(`${r.variant} n=${r.n}`, {

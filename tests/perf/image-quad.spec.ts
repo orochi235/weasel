@@ -6,7 +6,9 @@
  * `unmerged` puts each image in a group whose color matrix alternates, so every
  * command ends the run before it and draws alone — the case `BATCH_TIERS` in
  * `drawBatch.ts` is sized for. `pattern` draws a pattern-filled rect per
- * command off a cached mesh. The header prints each variant's draw count.
+ * command, staged into the run as a quad sampling its repeating tile (until
+ * 2026-10-30 each drew itself off a cached mesh). The header prints each
+ * variant's draw count.
  *
  * **`raw`** attributes that gap without the renderer in the way: N small quads
  * per frame through one trivial program, differing only in how the vertices
@@ -533,7 +535,7 @@ void main() { outColor = u_color; }`;
     row('renderer', 'unmerged', 'kind: image in a group whose color matrix alternates — a run of one'),
     row('renderer', 'atlas', 'kind: image, one bitmap and source rects — one run'),
     row('renderer', 'sprites', 'kind: sprites — the same run, packed'),
-    row('renderer', 'pattern', 'same rect, pattern fill — cached mesh, persistent VAO'),
+    row('renderer', 'pattern', 'same rect, pattern fill — staged into the run'),
     row('raw', 'preloaded', 'one buffer written once; only the index offset moves'),
     row('raw', 'churn', 'VAO + 2 buffers minted and freed per quad'),
     row('raw', 'churn-uniform', 'the same, plus a uniform per quad'),

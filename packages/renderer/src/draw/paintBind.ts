@@ -1,13 +1,14 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
 import type { PaintBindContext, PaintResources } from '../paintKinds';
 import { createPaintResources } from '../paintResources';
-import { getTexture, isOwnedTextureId, type TextureEntry } from '../textures/registerTexture';
+import { getTexture, isOwnedTextureId } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
 import type { DrawContext } from './drawContext';
 import { setAlphaUniform, setColorMatrixUniforms, setProjAndModel } from './uniforms';
 import { gradientSpaceInverse, spaceInverseAbout, spaceToDevice } from './gradient';
+import { tileExtent } from './patternBatch';
 import { isDev } from '@weasel-js/registry';
 
 /** The narrow renderer surface a registered paint kind binds against, built
@@ -87,15 +88,6 @@ export function bindPattern(
   gl.uniform1f(prog.uniform('u_opacity')!, fill.opacity ?? 1);
   setAlphaUniform(ctx, prog, ctx.state.alpha);
   return prog;
-}
-
-/** Tile extent in paint-space units — one tile spans this many units of
- *  whatever space `units` names. A side the paint leaves out is the size the
- *  texture stands for, else its pixel size. */
-function tileExtent(fill: TexturePaint, { source, size }: TextureEntry): [number, number] {
-  const w = fill.width ?? size?.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
-  const h = fill.height ?? size?.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
-  return [w > 0 ? w : 1, h > 0 ? h : 1];
 }
 
 /** The gradient counterpart of `bindPattern`. */

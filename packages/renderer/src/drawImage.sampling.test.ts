@@ -3,7 +3,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { registerTexture } from './textures/registerTexture';
+import { registerOwnDrawPaint, ownDrawRect } from './testing/ownDrawPaint';
 import type { DrawCommand } from './DrawCommand';
 import { SOLID_RING_SIZE as IMAGE_RING_SIZE } from './drawBatch';
 
@@ -70,14 +70,10 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     // a live texture. A consumer's 122MB sheet is where that stops being free.
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
 
-    // Four image flushes at one filter: a pattern breaks the run each time (a
-    // gradient or per-vertex colors no longer do), so the count is flushes and
-    // not commands.
-    const breaker = {
-      kind: 'path' as const,
-      path: { kind: 'rect' as const, x: 0, y: 0, width: 8, height: 8 },
-      fill: { paint: { kind: 'texture' as const, texture: registerTexture({ width: 4, height: 4 } as ImageBitmap) } },
-    } as unknown as DrawCommand;
+    // Four image flushes at one filter: a registered paint kind breaks the run
+    // each time, so the count is flushes and not commands.
+    const unregister = registerOwnDrawPaint();
+    const breaker = ownDrawRect(0, 0, 8);
     const img = {
       kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 64, h: 64,
       sampling: 'nearest' as const,
@@ -95,6 +91,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       .map((c) => c.args[2]);
     // Once, on the first flush that wanted NEAREST — not once per flush.
     expect(magFilters).toEqual([recorder.gl.NEAREST]);
+    unregister();
   });
 
   it('gives each flush its own ring slot', () => {

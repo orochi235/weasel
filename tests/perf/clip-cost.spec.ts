@@ -8,9 +8,10 @@
  *   - the **batch break**: `runTakes` compares `clipDepth`, so a
  *     clipped rect cannot share a draw with its unclipped neighbors.
  *
- * Separating them needs contents that would not have batched anyway. A
- * pattern-filled rect never joins the batch, so wrapping one in a clip adds the
- * stencil and nothing else; wrapping a *solid* rect adds the stencil and the
+ * Separating them needs contents that would not have batched anyway. An
+ * even-odd fill never joins the batch, so wrapping one in a clip adds the
+ * stencil and nothing else (the `pat-` frames are named for the pattern-filled
+ * rect they used until 2026-10-30, when patterns joined the batch); wrapping a *solid* rect adds the stencil and the
  * break. The difference between those two deltas is the break's share. The
  * spec checks that premise by counting draws.
  *
@@ -20,7 +21,7 @@
  *
  * `cmbreak` is a second, independent estimate of one flush: a group whose color
  * matrix differs from the one before it breaks the run without touching the
- * stencil, and its pattern twin subtracts the color-matrix upload.
+ * stencil, and its `pat-` twin subtracts the color-matrix upload.
  *
  * `-k8` puts eight leaves under each clip instead of one. If entry is the whole
  * price, the per-group figure holds and the per-leaf figure falls by eight.
@@ -64,10 +65,10 @@ const VARIANTS = [
   { id: 'rect-cmbreak',    groups: N,     note: 'each rect in its own color-matrix break' },
   { id: 'rect-clipped-k8', groups: N / K, note: `${K} rects per clip` },
   { id: 'rect-rectclip',   groups: N,     note: 'each rect in its own axis-aligned rect clip, cut on the CPU' },
-  { id: 'pat-plain',       groups: 0,     note: 'N pattern rects, never batched' },
-  { id: 'pat-clipped',     groups: N,     note: 'each pattern in its own clip' },
-  { id: 'pat-cmbreak',     groups: N,     note: 'each pattern in its own color-matrix break' },
-  { id: 'pat-clipped-k8',  groups: N / K, note: `${K} patterns per clip` },
+  { id: 'pat-plain',       groups: 0,     note: 'N even-odd rects, never batched' },
+  { id: 'pat-clipped',     groups: N,     note: 'each even-odd rect in its own clip' },
+  { id: 'pat-cmbreak',     groups: N,     note: 'each even-odd rect in its own color-matrix break' },
+  { id: 'pat-clipped-k8',  groups: N / K, note: `${K} even-odd rects per clip` },
   { id: 'ss-rect-plain',       groups: 0,     note: 'rect-plain on a single-sampled canvas' },
   { id: 'ss-rect-hullclip',    groups: N,     note: 'rect-clipped there, each clip decided in the batch shader' },
   { id: 'ss-rect-stencilclip', groups: N,     note: 'the same with the shader clip off: the stencil' },
@@ -185,7 +186,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
 
       const patLeaf = makeKindBuilders({
         W, H, bitmaps: [], pattern: registerTexture(await checkerBitmap()), shader: null,
-      }).pattern;
+      }).stencil;
 
       /** Its top edge slants by 2px, so only the stencil can express it. */
       const clipPath = (i: number) => {
@@ -474,7 +475,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     expect(paints[v.id], `${v.id}: rendered nothing`).toBe(true);
   }
   expect(cells.length).toBe(total);
-  expect(draws['pat-plain'], 'pattern rects must not batch, or pat-* stops isolating the stencil').toBeGreaterThanOrEqual(N);
+  expect(draws['pat-plain'], 'even-odd rects must not batch, or pat-* stops isolating the stencil').toBeGreaterThanOrEqual(N);
   expect(draws['rect-clipped'], 'a stencil clip must close the run, or rect-clipped prices no break').toBeGreaterThanOrEqual(N);
   expect(draws['rect-cmbreak'], 'each color matrix must close the run, or rect-cmbreak prices no flush').toBeGreaterThanOrEqual(N);
   expect(draws['rect-rectclip'], 'a rect clip should be cut on the CPU, inside one run').toBe(draws['rect-plain']);
@@ -491,7 +492,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   // A clipped frame that did not cost more than its unclipped twin means the
   // variant is not doing what its name says.
   expect(clipTotal, 'clipping a rect should cost more than not clipping it').toBeGreaterThan(0);
-  expect(stencilOnly, 'clipping a pattern should cost more than not clipping it').toBeGreaterThan(0);
+  expect(stencilOnly, 'clipping an even-odd rect should cost more than not clipping it').toBeGreaterThan(0);
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   for (const v of VARIANTS) {
