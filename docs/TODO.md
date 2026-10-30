@@ -305,18 +305,32 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
-  or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Text drawn from an atlas (baked or
-  canvas) is still laid out one code point at a time, because atlases look glyphs up by code point and cannot draw
-  a shaped glyph index. Open pieces:
-  - harfbuzzjs awaits at its module's top level, so a consumer bundling for a target below ES2022 fails (esbuild
-    0.27 errors; Vite 8 warns), even though `loadShaper` reaches it only through a dynamic `import()`.
-    `@weasel-js/text-shaping` cannot avoid it: harfbuzzjs 1.6.4, the latest, exports only that module and not its
-    `init`. Fixing it needs an upstream entry without the `await`, or a vendored copy of harfbuzzjs's helpers.
-    The `.wasm` itself survives Vite 8 with no config, in both `vite build` and the dev pre-bundle (measured in a
-    throwaway consumer, 2026-10-27).
-  - PDF export of a mark that is its own cluster (Arabic fatha) reads back in poppler with a space before it,
-    because the mark is set off the baseline. pdf.js ignores `/ActualText`, so it reads a cluster's unmapped
-    glyphs as control characters (`\u0007`) and drops some raised dots.
+  or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Open pieces:
+  - **Atlas-drawn text is not shaped (unbuilt; designed 2026-10-30).** A baked or canvas atlas looks glyphs up by
+    code point (`charMap.get(cp)`, `DynamicFace.requestGlyph(cp)`), and the canvas tier rasterizes with
+    `fillText`, which cannot address a glyph index, so `shapeRun` skips any face without `outlineFace` bytes. What
+    it needs, in order:
+    1. The face's sfnt bytes. Neither tier has them: a baked atlas ships a JSON and a PNG, and a canvas face is
+       an installed font JavaScript cannot read. So an atlas family needs its font file named alongside it (an
+       option on `registerFont` / `registerCanvasFont`, or the same family registered with `registerFontOutlines`
+       and kept off the outline tier), and a baked atlas must be cut from that same file, or the shaper's advances
+       disagree with the atlas's.
+    2. With bytes, shaped clusters can draw through the path `paintRuns` already takes for a large atlas glyph
+       (`glyphOutlineD`): the cluster's `ShapedCluster.d`, tessellated in the `'outline'` group. That is shaping on
+       atlas faces at outline cost, with no atlas change.
+    3. Atlas quads for shaped glyphs, for small sizes: key a face's records by glyph index beside code point. The
+       canvas tier rasterizes a glyph index from `shaper.glyphD` (a `Path2D` fill into the same tile, then the same
+       distance transform) instead of `fillText`; a baked atlas needs its bake to include the glyphs the face's
+       GSUB reaches from its code points, keyed by index. `paintRuns` then emits one quad per cluster glyph at its
+       `(x, y)` offset rather than one per code point.
+  - **What PDF readers read back.** pdf.js ignores `/ActualText`; it now reads a cluster's glyphs that claim no text
+    as nothing (U+2060 in `/ToUnicode`, 2026-10-30), but a glyph claimed later by other text reads as that text
+    inside every cluster: `किक` reads back as `किकक`, the ka under the i-matra taking the lone ka's `क`. poppler
+    (26.10) reads `بَب` as `ب َب`, the fatha's own cluster set off as a word. Its rise is not the cause: with the
+    `Ts` removed the space stays. The fatha's origin sits 0.035 em left of its letter's, where HarfBuzz puts it.
+    Folding the fatha's text into its letter's span (`/ActualText` `بَ`) reads `َبب` instead, since poppler reverses
+    a right-to-left span only when every character in it is right to left (the same span written `َب` reads right);
+    measured on 2026-10-30 and left as separate spans.
 
 ---
 
