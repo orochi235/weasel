@@ -38,6 +38,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-10-30: small atlas text (16px and below at DPR 1) under area coverage, against the edit overlay;
+  `SelectionPanel` drawing a nested `tab`/`panel` in place; a per-vertex-colored shape drawn in the batch; a
+  dev server recovering a missed file event (its `[watch]` log line).
 - 2026-10-30: the site's ELK demo (`DiagramElkDemo`) under network-simplex placement, which moves its nodes.
 - 2026-10-30: `layered` keeping long edges inside the drawing, and `bezier` legs between facing ports kept
   inside their band, on `CLOUD` (before/after on the wall, zone `weasel`: F356DA5C and 9E878B57 before,
