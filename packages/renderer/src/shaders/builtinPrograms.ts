@@ -14,6 +14,7 @@ import {
   BATCH_MATRICES_FRAG_SRC,
   BATCH_HULL_FRAG_SRC,
   BATCH_MATRICES_HULL_FRAG_SRC,
+  batchAreaFragSrc,
   BATCH_FILL_UNIFORMS,
   BATCH_HULL_UNIFORMS,
   BATCH_FILL_ATTRIBUTES,
@@ -111,9 +112,10 @@ export interface BatchVariants {
    * (`batchHull.ts`).
    */
   readonly hulls: boolean;
-  /** The build for a run under several color matrices, or holding a hull, or
-   *  both. A run with neither draws with `createBatchFill`'s. */
-  get(matrices: boolean, hulls: boolean): ShaderProgram;
+  /** The build for a run under several color matrices, holding a hull, or
+   *  holding glyphs that need area coverage, in any combination. A run with
+   *  none of them draws with `createBatchFill`'s. */
+  get(matrices: boolean, hulls: boolean, area?: boolean): ShaderProgram;
 }
 
 /** `BatchVariants` over this context, each build compiled the first time a
@@ -123,6 +125,8 @@ export class BatchVariantPrograms implements BatchVariants {
   private readonly matrices: LazyProgram;
   private readonly hull: LazyProgram;
   private readonly matricesHull: LazyProgram;
+  /** Indexed by `matrices + 2 * hulls`. */
+  private readonly area: LazyProgram[];
 
   constructor(gl: WebGL2RenderingContext) {
     // The default framebuffer's, read while it is bound.
@@ -130,14 +134,21 @@ export class BatchVariantPrograms implements BatchVariants {
     this.matrices = new LazyProgram(gl, BATCH_FILL_MATRICES_SPEC);
     this.hull = new LazyProgram(gl, BATCH_FILL_HULL_SPEC);
     this.matricesHull = new LazyProgram(gl, BATCH_FILL_MATRICES_HULL_SPEC);
+    this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gl, {
+      vert: BATCH_VERT_SRC,
+      frag: batchAreaFragSrc(matrices, hulls),
+      uniforms: hulls ? BATCH_HULL_UNIFORMS : BATCH_FILL_UNIFORMS,
+      attributes: BATCH_FILL_ATTRIBUTES,
+    })));
   }
 
-  get(matrices: boolean, hulls: boolean): ShaderProgram {
+  get(matrices: boolean, hulls: boolean, area = false): ShaderProgram {
+    if (area) return this.area[Number(matrices) + 2 * Number(hulls)].get();
     if (!hulls) return this.matrices.get();
     return (matrices ? this.matricesHull : this.hull).get();
   }
 
   lazy(): LazyProgram[] {
-    return [this.matrices, this.hull, this.matricesHull];
+    return [this.matrices, this.hull, this.matricesHull, ...this.area];
   }
 }

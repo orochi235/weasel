@@ -101,9 +101,11 @@ export type {
 export type { GlyphTextureSink, TexSource } from './textureSink';
 export {
   GLYPH_COVERAGE_GLSL,
+  GLYPH_POINT_COVERAGE_GLSL,
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
   glyphFieldScale,
+  glyphNeedsArea,
   SYNTH_BOLD_AMOUNT,
   syntheticBoldGrowth,
 } from './textSdf';

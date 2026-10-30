@@ -94,7 +94,8 @@ export function batchFragmentVariants(
   const [w, h] = [gl.drawingBufferWidth, gl.drawingBufferHeight];
   const scaleFor = (fieldPerPx: number) => fieldPerPx / (0.5 * (1 / w + 1 / h));
   const glyphLarge = build(mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.1));
-  const glyphSmall = build(mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.5));
+  // A run holding glyphs that small draws with the build that has the taps.
+  const glyphSmall = build(mod.batchAreaFragSrc?.(false, false) ?? mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.5));
   const chain = build(chainSource(mod, 8), 8, 1);
   const matrices = build(mod.BATCH_MATRICES_FRAG_SRC, slots, mod.BATCH_MATRIX_SLOTS);
   return [

@@ -14,6 +14,7 @@ import {
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
   glyphFieldScale,
+  glyphNeedsArea,
   SYNTH_BOLD_AMOUNT,
 } from '@weasel-js/font';
 import { outlineGroupMesh, outlineGroupStrokeMesh } from '../glyphOutlineMesh';
@@ -153,6 +154,20 @@ function ruleMesh(x0: number, y0: number, x1: number, y1: number): Mesh {
 }
 
 /**
+ * Whether a group's glyphs are small enough on screen to need the batch
+ * program's area coverage, read from its first quad: every quad in a group
+ * shares its font size and transform. Device pixels, not CSS ones.
+ */
+function needsArea(
+  ctx: DrawContext, quads: ArrayLike<number>, m: GlMat3, fieldScale: readonly [number, number],
+): boolean {
+  const dpr = (ctx.deviceWidth ?? ctx.widthCss) / (ctx.widthCss || 1);
+  const pxPerU = (Math.hypot(m[0], m[1]) * dpr * (quads[2] - quads[0])) / Math.abs(quads[6] - quads[4]);
+  const pxPerV = (Math.hypot(m[3], m[4]) * dpr * (quads[3] - quads[1])) / Math.abs(quads[7] - quads[5]);
+  return glyphNeedsArea(fieldScale, pxPerU, pxPerV);
+}
+
+/**
  * Stage one group of atlas glyphs into the batch.
  *
  * The text color and the atlas (a slot index packed with the paint mode) ride
@@ -193,23 +208,24 @@ function drawTextGroup(
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let slot = stageGlyphs(ctx, atlasId, fieldScale);
+  const area = needsArea(ctx, group.quadData, m, fieldScale);
+  let slot = stageGlyphs(ctx, atlasId, fieldScale, area);
   const rgba = foldColorInto(ctx, color[0], color[1], color[2], color[3] * opacity, glyphRgba);
 
   const quads = group.quadData;
   for (let at = 0; at < quads.length; at += QUAD_STRIDE) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      slot = stageGlyphs(ctx, atlasId, fieldScale);
+      slot = stageGlyphs(ctx, atlasId, fieldScale, area);
     }
     let cut: ClipRect | null | undefined;
     while (!batch.pushGlyph(quads, at, dx, dy, tanItalic, m, rgba, slot, mode, bold)) {
       cut = enterUncut(ctx);
-      slot = stageGlyphs(ctx, atlasId, fieldScale);
+      slot = stageGlyphs(ctx, atlasId, fieldScale, area);
     }
     if (cut !== undefined) {
       leaveUncut(ctx, cut);
-      slot = stageGlyphs(ctx, atlasId, fieldScale);
+      slot = stageGlyphs(ctx, atlasId, fieldScale, area);
     }
   }
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { getFont, textureCacheKey, _resetFontRegistryForTests } from './registerFont';
 import { registerTestFont } from './testing/registerTestFont';
 import {
-  GLYPH_AREA_FROM, GLYPH_AREA_FULL, GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8, SYNTH_BOLD_AMOUNT, glyphFieldScale, syntheticBoldGrowth,
+  GLYPH_AREA_FROM, GLYPH_AREA_FULL, GLYPH_COVERAGE_GLSL, GLYPH_POINT_COVERAGE_GLSL, GLYPH_MODE_MSDF, glyphNeedsArea, GLYPH_MODE_R8, SYNTH_BOLD_AMOUNT, glyphFieldScale, syntheticBoldGrowth,
 } from './textSdf';
 import { SDF_RADIUS } from './dynamic/dynamicAtlas';
 import { BAKE_SIZE } from './dynamic/glyphRasterizer';
@@ -85,6 +85,22 @@ describe('glyph coverage — area taps', () => {
     expect(GLYPH_COVERAGE_GLSL).toContain(
       `smoothstep(${GLYPH_AREA_FROM.toFixed(2)}, ${GLYPH_AREA_FULL.toFixed(2)}, fieldPerPx)`,
     );
+  });
+
+  it('has a build without the taps that is otherwise the same', () => {
+    expect(GLYPH_POINT_COVERAGE_GLSL).not.toMatch(/\bif\s*\(|glyphTap/);
+    const taps = GLYPH_COVERAGE_GLSL.slice(GLYPH_COVERAGE_GLSL.indexOf('  float area'), GLYPH_COVERAGE_GLSL.indexOf('  return coverage;'));
+    expect(GLYPH_COVERAGE_GLSL.replace(taps, '')).toBe(GLYPH_POINT_COVERAGE_GLSL);
+  });
+
+  it('tells a caller its glyphs need the taps from where the shader starts mixing them in', () => {
+    // Inter's baked atlas: 512 texels wide, range 4, so 128 field units a unit
+    // of u; 32 texels an em, so 1/16 of u is an em.
+    const field = [128, 128] as const;
+    const pxPerUv = (pxPerEm: number) => pxPerEm * 16;
+    expect(glyphNeedsArea(field, pxPerUv(12), pxPerUv(12))).toBe(true);
+    expect(glyphNeedsArea(field, pxPerUv(40), pxPerUv(40))).toBe(true);
+    expect(glyphNeedsArea(field, pxPerUv(48), pxPerUv(48))).toBe(false);
   });
 
   it('puts 16px text and smaller at DPR 1 wholly in area coverage, on either atlas', () => {

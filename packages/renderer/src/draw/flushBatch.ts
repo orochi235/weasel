@@ -50,8 +50,9 @@ export function flushBatch(ctx: DrawContext): void {
   const gl = ctx.gl;
   const several = staged.matrices.length > 1;
   const hulls = staged.hulls !== undefined;
-  const prog = (several || hulls) && ctx.batchVariants
-    ? ctx.batchVariants.get(several, hulls)
+  const area = staged.areaGlyphs;
+  const prog = (several || hulls || area) && ctx.batchVariants
+    ? ctx.batchVariants.get(several, hulls, area)
     : ctx.batchFill;
   gl.useProgram(prog.handle);
   const indexCount = batch.uploadAndBind();

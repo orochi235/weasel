@@ -141,7 +141,7 @@ export function stageImage(
  * the slot the glyph's vertices carry; its color is mapped as a solid's is.
  */
 export function stageGlyphs(
-  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number],
+  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number], area: boolean,
 ): number {
   const folds = foldsColor(ctx);
   const colorMatrix = folds ? IDENTITY_COLOR_MATRIX : ctx.state.colorMatrix;
@@ -158,6 +158,7 @@ export function stageGlyphs(
     staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale });
     slot = staged.textures.length;
   }
+  if (area) staged.areaGlyphs = true;
   return takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, colorMatrix, alpha)));
 }
 

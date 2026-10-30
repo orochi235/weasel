@@ -63,7 +63,7 @@
  * Output: PREMULTIPLIED alpha. Blend: `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
  */
 
-import { GLYPH_COVERAGE_GLSL } from '@weasel-js/font';
+import { GLYPH_COVERAGE_GLSL, GLYPH_POINT_COVERAGE_GLSL } from '@weasel-js/font';
 import { STRAIGHT_RGB_GLSL } from './straightRgb';
 import { HULL_COVERAGE_GLSL } from './hullCoverage';
 import { HULL_PLANES } from '../batchHull';
@@ -215,14 +215,22 @@ void main() {
 }
 `;
 
+/** A glyph's taps, which run inside a branch and so take no derivative. Slot 0
+ *  is the white texel, never an atlas. */
+const GLYPH_TAP_GLSL = /* glsl */ `vec4 glyphTap(vec2 uv) {
+  int slot = v_texSlot;
+${sampleTree(1, BATCH_TEXTURE_SLOTS - 1, 'textureLod(%s, uv, 0.0)')}
+  return vec4(0.0);
+}`;
+
 /**
  * The fragment stage for runs under `matrices` color matrices. Under one, every
  * vertex names entry 0, so the default program indexes it as a constant: a
  * software rasterizer (SwiftShader) took about a quarter of the program's
  * build to index the arrays by a varying. `hulls` builds in the hull clip, for
- * runs that hold one.
+ * runs that hold one, and `area` the glyph taps.
  */
-function batchFragSrc(matrices: number, hulls = false): string {
+function batchFragSrc(matrices: number, hulls = false, area = false): string {
   const m = matrices === 1 ? '0' : 'v_matrix';
   return /* glsl */ `#version 300 es
 precision highp float;
@@ -246,14 +254,8 @@ ${sampleTree(0, BATCH_TEXTURE_SLOTS - 1, 'texture(%s, uv)')}
   // Never reached: every slot returns above.
   return vec4(0.0);
 }
-// A glyph's taps, which run inside a branch and so take no derivative. Slot 0
-// is the white texel, never an atlas.
-vec4 glyphTap(vec2 uv) {
-  int slot = v_texSlot;
-${sampleTree(1, BATCH_TEXTURE_SLOTS - 1, 'textureLod(%s, uv, 0.0)')}
-  return vec4(0.0);
-}
-${GLYPH_COVERAGE_GLSL}
+${area ? GLYPH_TAP_GLSL : ''}
+${area ? GLYPH_COVERAGE_GLSL : GLYPH_POINT_COVERAGE_GLSL}
 ${STRAIGHT_RGB_GLSL}
 ${hulls ? HULL_COVERAGE_GLSL : ''}
 void main() {
@@ -286,7 +288,7 @@ void main() {
   // see the file header. A glyph's a_post is its synthetic-bold shift. A slot
   // that is not an atlas keeps a stale field scale, which would send its
   // fragments through the glyph taps.
-  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot] * isGlyph);
+  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot]${area ? ' * isGlyph' : ''});
   // A glyph's texel is a distance field, so it takes no part in the color; a
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;
@@ -309,6 +311,13 @@ export const BATCH_MATRICES_FRAG_SRC = batchFragSrc(BATCH_MATRIX_SLOTS);
  *  holding a hull needs it. */
 export const BATCH_HULL_FRAG_SRC = batchFragSrc(1, true);
 export const BATCH_MATRICES_HULL_FRAG_SRC = batchFragSrc(BATCH_MATRIX_SLOTS, true);
+
+/** Any of the four with the glyph taps built in, for a run holding glyphs
+ *  small enough to need area coverage (`glyphNeedsArea`). Every other run
+ *  draws without them, because the branch costs the fragments that skip it. */
+export function batchAreaFragSrc(matrices: boolean, hulls: boolean): string {
+  return batchFragSrc(matrices ? BATCH_MATRIX_SLOTS : 1, hulls, true);
+}
 
 export const BATCH_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_fieldScale',

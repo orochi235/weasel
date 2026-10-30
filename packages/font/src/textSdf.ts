@@ -35,6 +35,57 @@ export const GLYPH_AREA_FROM = 0.2;
 export const GLYPH_AREA_FULL = 0.3;
 
 /**
+ * Whether glyphs drawn `pxPerUv` screen pixels to a unit of texture coordinate
+ * (along each axis) off an atlas of `fieldPerUv` need `GLYPH_COVERAGE_GLSL`'s
+ * taps. Errs toward yes: a turned or sheared glyph's pixel spans a little more
+ * field than its axes say.
+ */
+export function glyphNeedsArea(
+  fieldPerUv: readonly [number, number], pxPerUvU: number, pxPerUvV: number,
+): boolean {
+  const fieldPerPx = 0.5 * (fieldPerUv[0] / pxPerUvU + fieldPerUv[1] / pxPerUvV);
+  return fieldPerPx > GLYPH_AREA_FROM * 0.9;
+}
+
+const AREA_TAPS_GLSL = /* glsl */ `
+  float area = smoothstep(${GLYPH_AREA_FROM.toFixed(2)}, ${GLYPH_AREA_FULL.toFixed(2)}, fieldPerPx);
+  if (area > 0.0) {
+    float band = 0.5 * aaW;
+    float lo = threshold - 0.5 * band;
+    float sum = 0.0;
+    vec2 at = vec2(-0.375, -0.125);
+    for (int i = 0; i < 4; i++) {
+      float tap = glyphField(glyphTap(uv + at.x * du + at.y * dv), mode);
+      sum += clamp((tap - lo) / band, 0.0, 1.0);
+      at = vec2(-at.y, at.x);
+    }
+    coverage = mix(coverage, 0.25 * sum, area);
+  }`;
+
+function glyphCoverageGlsl(area: boolean): string {
+  return /* glsl */ `
+float median(float r, float g, float b) {
+  return max(min(r, g), min(max(r, g), b));
+}
+
+float glyphField(vec4 texel, float mode) {
+  return mix(median(texel.r, texel.g, texel.b), texel.r, step(1.5, mode));
+}
+
+float glyphCoverage(vec4 texel, float mode, float synthBold, vec2 uv, vec2 fieldPerUv) {
+  vec2 du = dFdx(uv);
+  vec2 dv = dFdy(uv);
+  float fieldPerPx = 0.5 * (length(du * fieldPerUv) + length(dv * fieldPerUv));
+  float aaW = max(0.5 * fieldPerPx, 0.0005);
+  float threshold = 0.5 - synthBold;
+  float field = glyphField(texel, mode);
+  float coverage = smoothstep(threshold - aaW, threshold + aaW, field);${area ? AREA_TAPS_GLSL : ''}
+  return coverage;
+}
+`;
+}
+
+/**
  * Glyph coverage from the atlas, as GLSL for a program to paste in.
  *
  * `texel` is the atlas sample at `uv`; `mode` says which field it carries:
@@ -75,42 +126,21 @@ export const GLYPH_AREA_FULL = 0.3;
  * the result; it passes a zero `fieldPerUv` for those, which keeps them out of
  * the branch.
  *
+ * The branch costs fragments that never take it: 6 to 15% of a batch fragment
+ * that is not a glyph (`tests/perf/recorded/glyph-area-coverage-2026-10-30/`),
+ * however its condition is decided. So a program that knows no fragment will
+ * need the taps pastes `GLYPH_POINT_COVERAGE_GLSL` instead, which has no
+ * branch and needs no `glyphTap`; `glyphNeedsArea` tells a caller staging
+ * glyphs which they need.
+ *
  * `synthBold` shifts the threshold to thicken strokes where the resolver fell
  * back from a missing bold variant to the regular atlas.
  */
-export const GLYPH_COVERAGE_GLSL = /* glsl */ `
-float median(float r, float g, float b) {
-  return max(min(r, g), min(max(r, g), b));
-}
+export const GLYPH_COVERAGE_GLSL = glyphCoverageGlsl(true);
 
-float glyphField(vec4 texel, float mode) {
-  return mix(median(texel.r, texel.g, texel.b), texel.r, step(1.5, mode));
-}
-
-float glyphCoverage(vec4 texel, float mode, float synthBold, vec2 uv, vec2 fieldPerUv) {
-  vec2 du = dFdx(uv);
-  vec2 dv = dFdy(uv);
-  float fieldPerPx = 0.5 * (length(du * fieldPerUv) + length(dv * fieldPerUv));
-  float aaW = max(0.5 * fieldPerPx, 0.0005);
-  float threshold = 0.5 - synthBold;
-  float field = glyphField(texel, mode);
-  float coverage = smoothstep(threshold - aaW, threshold + aaW, field);
-  float area = smoothstep(${GLYPH_AREA_FROM.toFixed(2)}, ${GLYPH_AREA_FULL.toFixed(2)}, fieldPerPx);
-  if (area > 0.0) {
-    float band = 0.5 * aaW;
-    float lo = threshold - 0.5 * band;
-    float sum = 0.0;
-    vec2 at = vec2(-0.375, -0.125);
-    for (int i = 0; i < 4; i++) {
-      float tap = glyphField(glyphTap(uv + at.x * du + at.y * dv), mode);
-      sum += clamp((tap - lo) / band, 0.0, 1.0);
-      at = vec2(-at.y, at.x);
-    }
-    coverage = mix(coverage, 0.25 * sum, area);
-  }
-  return coverage;
-}
-`;
+/** `GLYPH_COVERAGE_GLSL` reading the field at the pixel's center alone, for a
+ *  program drawing no glyph small enough to need area coverage. */
+export const GLYPH_POINT_COVERAGE_GLSL = glyphCoverageGlsl(false);
 
 /** msdf-bmfont-xml's default `distanceRange`, for an atlas that records none. */
 const DEFAULT_MSDF_RANGE = 4;

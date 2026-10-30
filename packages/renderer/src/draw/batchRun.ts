@@ -53,6 +53,9 @@ export interface StagedBatchState {
   hulls?: { set: HullSet; start: number }[];
   /** Planes the pool holds so far. */
   hullPlanes: number;
+  /** Whether the run holds glyphs small enough to need area coverage, which
+   *  only the batch program's builds with the glyph taps draw. */
+  areaGlyphs: boolean;
 }
 
 /** One entry in a run's slot list. */
@@ -132,7 +135,7 @@ function hullEntry(staged: StagedBatchState, set: HullSet): { set: HullSet; star
 /** The staged state, opening a run if none is. */
 export function openRun(ctx: DrawContext): StagedBatchState {
   ctx.batchState ??= {
-    clipDepth: runClipDepth(ctx), matrices: [], textures: [], ramps: false, hullPlanes: 0,
+    clipDepth: runClipDepth(ctx), matrices: [], textures: [], ramps: false, hullPlanes: 0, areaGlyphs: false,
   };
   return ctx.batchState;
 }

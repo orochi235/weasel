@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_MATRICES_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
   BATCH_TEXTURE_SLOTS, BATCH_MATRIX_SLOTS, WHITE_SLOT, RAMP_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
-  PAINT_MODE_CONIC, PAINT_MODE_IMAGE, packSlot, withMatrix, withHull, paintModeOf, matrixOf, hullOf,
+  PAINT_MODE_CONIC, PAINT_MODE_IMAGE, batchAreaFragSrc, packSlot, withMatrix, withHull, paintModeOf, matrixOf, hullOf,
 } from './batchFill';
 import { FLOATS_PER_VERTEX } from '../drawBatch';
 import { HULL_PLANES, HULL_POOL } from '../batchHull';
@@ -224,16 +224,27 @@ describe('batch program — glyph coverage is unconditional', () => {
     expect(BATCH_FRAG_SRC).toMatch(/mix\(texel,\s*vec4\(1\.0\),\s*isGlyph\)/);
   });
 
+  it('builds the glyph taps only into the area builds', () => {
+    // The branch costs every fragment of a program that has it, taken or not.
+    for (const src of [BATCH_FRAG_SRC, BATCH_MATRICES_FRAG_SRC]) {
+      expect(src).not.toContain('glyphTap');
+      expect(functionBody(src, 'vec2 fieldPerUv) {')).not.toMatch(/\bif\s*\(/);
+    }
+    for (const [matrices, hulls] of [[false, false], [true, false], [false, true], [true, true]]) {
+      expect(batchAreaFragSrc(matrices, hulls)).toContain('glyphTap(uv + ');
+    }
+  });
+
   it('keeps a fragment that is not a glyph out of the glyph taps', () => {
     // A slot that is not an atlas keeps a stale field scale, so only a zero
     // stands between an image fragment and four wasted fetches.
-    expect(BATCH_FRAG_SRC).toMatch(/glyphCoverage\([^;]*u_fieldScale\[v_texSlot\]\s*\*\s*isGlyph\)/);
+    expect(batchAreaFragSrc(false, false)).toMatch(/glyphCoverage\([^;]*u_fieldScale\[v_texSlot\]\s*\*\s*isGlyph\)/);
   });
 
   it('fetches a glyph tap at an explicit level, from every slot but the white texel', () => {
     // The taps run inside a branch, where texture() would take its level from
     // an undefined derivative.
-    const body = functionBody(BATCH_FRAG_SRC, 'vec4 glyphTap(vec2 uv) {');
+    const body = functionBody(batchAreaFragSrc(false, false), 'vec4 glyphTap(vec2 uv) {');
     expect(body).not.toMatch(/\btexture\s*\(/);
     const fetch = /textureLod\(u_samplers\[(\d+)\], uv, 0\.0\)/g;
     const slots = [...body.matchAll(fetch)].map((m) => Number(m[1]));
