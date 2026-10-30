@@ -4,14 +4,14 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-10-29, evening)
+## State (2026-10-30, evening)
 
-- 1.14.1 is on npm (the first Release run lost all but `quantity` to a sigstore 409; a dispatched rerun
-  published the rest). `origin/main` is at 374d7d3c8; `main` adds the faster fleet gate (fd547f57e),
-  layered-hull (b369443bd) and hud-alloc (86712abe7), all unpushed.
-- Nothing in flight. The full suite passed at fd547f57e (32,118 tests).
-- The windease fix for a never-shown node is on windease's `main` (24ec47d), merged by another session that was
-  releasing it on 2026-10-30; the weasel TODO entry says what follows its release.
+- 1.14.2 is on npm (all 49 packages, checked with `npm run check:published`); `main` and `origin/main` are at
+  b6d8ba184. The batch it carries passed the full suite at 106f27060 and 77927c197.
+- Nothing in flight. GitHub's visual regression job may flag text-heavy shots after the small-glyph area
+  coverage change; regenerate through the `visual-update` workflow if it does.
+- The windease fix for a never-shown node is on windease's `main` (24ec47d) and not yet released (npm has
+  2.2.0); the weasel TODO entry says what follows its release.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
