@@ -58,9 +58,12 @@ When work merges, retire its entry here in the same change.
     goes when the vertex `bufferSubData` is dropped, leaving 3.4 for the bind and the draw. No other
     call in `flushBatch` moves it by more than 0.4 us. A stencil clip around a solid rect costs
     24.4 us a clip, 22.2 of it the break; an axis-aligned rect clip, cut on the CPU, costs 0.09
-    (`clip-cost.spec.ts`). What still ends a run is a sixteenth texture, a ninth color matrix, a
-    clip only the stencil expresses, an even-odd fill, and a paint that draws for itself (a
-    pattern, a shader).
+    (`clip-cost.spec.ts`). What still ends a run, as of 2026-10-30: a sixteenth texture, a ninth
+    color matrix, a clip only the stencil expresses (see the convex-clip item below), an even-odd
+    fill, an inside- or outside-aligned stroke on a polygon, a mesh past the vertex cap
+    (`meshBatching`), a custom shader command, and a registered paint kind (`registerPaintDrawKind`).
+    No built-in paint ends one any more. The small-glyph program (`batchAreaFragSrc`) is chosen per
+    run and breaks nothing.
   - **What joined the run since is checked in a browser.** Each is pinned
     by draw count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium
     (run 2026-10-17):
@@ -88,10 +91,22 @@ When work merges, retire its entry here in the same change.
       `transition-matrix.spec.ts`: a vertex-colored rect fell from 4.22–4.57 to 0.88–0.89 us a
       command, and its boundary with a solid, gradient, image, text or rect clip from 21.7–24.3 us
       to between −0.09 and 0.35 (`tests/perf/recorded/vertex-color-batch-2026-10-30/`). Its boundary
-      with a pattern, a shader or an even-odd fill rose from at most 0.9 us to 7.7–8.3, which is
-      still a third of what a solid rect pays beside the same kinds; why it is less is not known. An even-odd
+      with a pattern, a shader or an even-odd fill, before patterns batched, rose from at most 0.9 us to 7.7–8.3,
+      which is still a third of what a solid rect pays beside the same kinds; why it is less is not
+      known. An even-odd
       fill, an inside- or outside-aligned stroke on a polygon, and a mesh past the vertex cap still
       draw for themselves.
+    - Patterns (2026-10-30): a `kind: 'texture'` fill or stroke carries its tile coordinate, in
+      tiles, in the batch vertices, and its tile takes a run slot the way a font atlas does, uploaded
+      to repeat (`draw/patternBatch.ts`, `patternBatch.browser.test.ts`). The coordinate is taken out
+      to whole tiles in doubles at the shape, so a pattern 10^7 units from the origin keeps its
+      texels. On msb-uai (Apple M3 Max), solo, ABBA, `transition-matrix.spec.ts`: a pattern's
+      boundary with a solid, gradient, image, text, per-vertex-colored or rect-clipped neighbor fell
+      from 7.9–18.3 us to between −0.71 and 0.36, and with a shader or an even-odd fill rose from at
+      most 0.54 to 12.9–16.0, as every batched kind's does. A pattern command cost 2.76–3.48 us
+      before and 2.58–2.76 after, against 0.36–0.48 for a solid and 1.46–1.95 for a linear gradient
+      in the same passes; why a staged pattern costs more than a staged gradient is not known
+      (`tests/perf/recorded/pattern-batch-2026-10-30/`).
     - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
       (`draw/foldColor.ts`), and an image's tint.
   - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
@@ -129,12 +144,12 @@ When work merges, retire its entry here in the same change.
   - **A boundary costs 20.9–24.8 us when one side draws for itself, and nothing otherwise**
     (`transition-matrix.spec.ts`, the four passes above). Between two kinds that batch it sits
     within ±0.4 us; between two that draw for themselves it is at most 1.0, since the run is
-    already closed. Per command, a pattern costs 3.51–4.13 us, a shader panel 3.77–4.59 and an
-    even-odd fill 7.84–8.13, against 0.43–0.49 for a solid rect. The pattern looks the cheapest of
-    those to bring into the run: its tile coordinate is affine in position, as a linear gradient's
-    ramp position is, so a vertex could carry it and a texture set to repeat could sample it on the
-    plain path. Not tried: what the pattern program does besides the sample, and which cache owns
-    the tile's wrap mode, decide whether it is sound.
+    already closed. Per command, a shader panel costs 3.77–4.59 us and an even-odd fill 7.84–8.13,
+    against 0.43–0.49 for a solid rect (the pattern, which these passes also priced, batches now;
+    see above). The even-odd fill looks the next to bring in, inferred and not tried: one whose
+    contours neither cross nor nest fills the same pixels under the nonzero rule, so `earcut`
+    could triangulate it and it would batch as any polygon does, where today every even-odd path
+    takes the stencil two-pass whatever its shape (`tessellateEvenoddWithAnchors`).
 
 - **(P3) [waiting] `SOLID_RING_SIZE` is measured only on Metal.** The ring (64 slots) exists so a flush never
   writes a buffer a draw is still reading. On 2026-10-06 a ring of 64 measured 24% slower than a
