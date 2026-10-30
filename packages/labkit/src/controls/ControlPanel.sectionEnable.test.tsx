@@ -98,7 +98,10 @@ describe('<ControlPanel> a tab with no row to draw', () => {
           empty: { name: 'Empty', as: 'tab', children: {} },
         },
       },
-      showIf: new Map([['gone.z', () => false], ['gap', () => false]]),
+      showIf: new Map([
+        ['gone.z', () => false],
+        ['gap', () => false],
+      ]),
     };
     renderWithIcons(<ControlPanel schema={resolved} config={{}} setConfig={vi.fn()} />);
     expect(screen.getAllByRole('tablist')).toHaveLength(1);
