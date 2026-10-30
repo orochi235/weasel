@@ -216,7 +216,9 @@ test('entering refits the view to the presented box, and leaving gives the tile 
   const stack = () => box(container.querySelector('.lk-canvas-stack'));
   await expect.poll(() => focused()?.view).not.toBeNull();
   expect(stack()?.height).toBe(box(container.querySelector('.lk-trial__body'))?.height);
-  expect((focused()?.view as { pan: { y: number } }).pan.y).toBe((stack()?.height ?? 0) / 2);
+  expect((focused()?.view as { pan: { y: number } } | undefined)?.pan.y).toBe(
+    (stack()?.height ?? 0) / 2,
+  );
   const tileView = focused()?.view;
 
   await act(async () => presentation?.enter());
