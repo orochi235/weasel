@@ -248,14 +248,15 @@ function bindMesh(ctx: PaintBindContext, fill: Paint): PaintProgram | null {
   const mesh = asMesh(fill);
   if (!mesh.patches.some(isValidPatch)) return null;
 
-  const inverse = ctx.spaceInverse(mesh.units);
-  if (!inverse) return null;
-
   const program = ctx.program(MESH_PROGRAM_ID);
   if (!program) return null;
 
   const entry = bakeFor(ctx, mesh);
   if (!entry) return null;
+
+  const { box } = entry;
+  const inverse = ctx.spaceInverse(mesh.units, box);
+  if (!inverse) return null;
 
   const gl = ctx.gl;
   gl.useProgram(program.handle);
@@ -266,8 +267,6 @@ function bindMesh(ctx: PaintBindContext, fill: Paint): PaintProgram | null {
   gl.bindTexture(gl.TEXTURE_2D, entry.texture);
   gl.uniform1i(program.uniform('u_sampler')!, 0);
 
-  const { box } = entry;
-  gl.uniform2f(program.uniform('u_meshOrigin')!, box.x, box.y);
   gl.uniform2f(program.uniform('u_meshSize')!, box.width, box.height);
   gl.uniform1f(program.uniform('u_opacity')!, mesh.opacity ?? 1);
   gl.uniform1f(program.uniform('u_alpha')!, ctx.alpha);

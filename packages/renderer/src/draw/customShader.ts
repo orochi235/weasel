@@ -3,7 +3,7 @@ import { getTexture, type TextureHandle } from '../textures/registerTexture';
 import type { ShaderUniform } from '../shaders/registerProgram';
 import type { GLTextureCache } from '../cache/GLTextureCache';
 import type { ShaderProgram, UniformArray } from '../shaders/ShaderProgram';
-import { mat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { applyClipTest } from './stencil';
@@ -229,6 +229,7 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
 
   const uView = program.uniform('u_view');
   if (uView !== undefined) gl.uniformMatrix3fv(uView, false, mat3.toUniform(ctx.state.transform));
+  setWorldFrame(gl, program, ctx.state.transform, cmd.bounds);
 
   setUniforms(gl, program, cmd.program.id, cmd.uniforms, textureCache, { value: 1 });
 
@@ -240,3 +241,37 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 }
+
+/**
+ * `u_worldOrigin` and `u_screenToLocal`: the world point under the bounds'
+ * corner, rounded to a float32, and the screen-to-world map measured from it,
+ * composed in doubles. Far from the origin at high zoom the view's
+ * translation is millions of pixels, and an inverse taken in the shader
+ * subtracts two such numbers. A view with no inverse sends zeros, so every
+ * fragment reads the world origin rather than a plausible wrong mapping.
+ */
+function setWorldFrame(
+  gl: WebGL2RenderingContext, program: ShaderProgram, view: GlMat3, bounds: ShaderDrawCommand['bounds'],
+): void {
+  const uLocal = program.uniform('u_screenToLocal');
+  const uOrigin = program.uniform('u_worldOrigin');
+  if (uLocal === undefined && uOrigin === undefined) return;
+  const inverse = mat3.invert(view);
+  let ox = 0;
+  let oy = 0;
+  let local: GlMat3 = mat3.scaled(mat3.identity(), 0, 0);
+  if (inverse) {
+    const wx = inverse[0] * bounds.x + inverse[3] * bounds.y + inverse[6];
+    const wy = inverse[1] * bounds.x + inverse[4] * bounds.y + inverse[7];
+    if (Math.abs(wx) >= WORLD_REBASE || Math.abs(wy) >= WORLD_REBASE) {
+      ox = Math.fround(wx);
+      oy = Math.fround(wy);
+    }
+    local = mat3.multiply(mat3.translated(mat3.identity(), -ox, -oy), inverse);
+  }
+  if (uLocal !== undefined) gl.uniformMatrix3fv(uLocal, false, mat3.toUniform(local));
+  if (uOrigin !== undefined) gl.uniform2f(uOrigin, ox, oy);
+}
+
+/** A world point at or past this is coarser than 1/1024 of a unit as a float32. */
+const WORLD_REBASE = 8192;

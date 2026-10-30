@@ -45,7 +45,12 @@ export interface PaintBindContext {
    * compilation failed.
    */
   program(id: string): PaintProgram | null;
-  /** Send `u_proj` and `u_model`, which every kit vertex shader takes. */
+  /**
+   * Send `u_proj` and `u_model`, which every kit vertex shader takes, and
+   * `u_origin` where the program declares it. A vertex shader placing
+   * `u_model * vec3(a_position - u_origin, 1.0)` stays exact far from the
+   * origin; one using `u_model * vec3(a_position, 1.0)` is float32 there.
+   */
   setProjAndModel(program: PaintProgram): void;
   /**
    * `u_worldInv` for a paint declaring `units` — the inverse of the transform
@@ -53,11 +58,16 @@ export interface PaintBindContext {
    * the vertex shader's `v_world` varying this is *the* paint-space
    * convention; it is not gradient-specific.
    *
+   * `about`, a point in that space, is where `v_world` measures from: the
+   * paint's own anchor, such as a bake's corner. Subtracted in doubles, it is
+   * what keeps a paint exact far from the origin, where a float32 paint-space
+   * point is coarser than a pixel.
+   *
    * `null` when that space has no inverse — a transform or view that flattens
    * an axis. Nothing the paint draws there means anything, so `bind` should
    * return `null` and draw nothing.
    */
-  spaceInverse(units: PaintUnits | undefined): GlMat3 | null;
+  spaceInverse(units: PaintUnits | undefined, about?: { readonly x: number; readonly y: number }): GlMat3 | null;
   /**
    * The transform from the space `units` names to device pixels of the target
    * this draw lands in — screen pixels times the pixel ratio on screen, output

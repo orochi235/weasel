@@ -7,7 +7,7 @@ import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
 import type { DrawContext } from './drawContext';
 import { setAlphaUniform, setColorMatrixUniforms, setProjAndModel } from './uniforms';
-import { gradientSpaceInverse, spaceToDevice } from './gradient';
+import { gradientSpaceInverse, spaceInverseAbout, spaceToDevice } from './gradient';
 import { isDev } from '@weasel-js/registry';
 
 /** The narrow renderer surface a registered paint kind binds against, built
@@ -20,7 +20,7 @@ export function paintBindContext(ctx: DrawContext): PaintBindContext {
     get alpha() { return ctx.state.alpha; },
     program: (id) => ctx.ensureProgram?.(id) ?? ctx.programRegistry.get(id) ?? null,
     setProjAndModel: (prog) => setProjAndModel(ctx, prog),
-    spaceInverse: (units) => gradientSpaceInverse(ctx, units),
+    spaceInverse: (units, about) => spaceInverseAbout(ctx, units, about),
     spaceToDevice: (units) => spaceToDevice(ctx, units),
     get maxTextureSize() { return ctx.imageCache.maxTextureSide; },
     resources: ctx.paintResources ?? unownedPaintResources(ctx.gl),
@@ -105,13 +105,9 @@ export function bindGradient(
   fill: Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
   model: GlMat3,
 ): ShaderProgram | null {
-  const inverse = gradientSpaceInverse(ctx, fill.units);
-  if (!inverse) return null;
-  // Measured from the gradient's own start, subtracted here in doubles: far
-  // from the origin a float32 paint-space point is coarser than a pixel, and
-  // the shader's subtraction would be of two such numbers.
-  const about = fill.kind === 'linear-gradient' ? fill.from : fill.center;
-  const aboutStart = mat3.multiply(mat3.translated(mat3.identity(), -about.x, -about.y), inverse);
+  // Measured from the gradient's own start or center.
+  const aboutStart = spaceInverseAbout(ctx, fill.units, fill.kind === 'linear-gradient' ? fill.from : fill.center);
+  if (!aboutStart) return null;
   const gl = ctx.gl;
   const row = ctx.gradRamps.upload(fill.stops, fill.interpolate ?? 'rgb');
 

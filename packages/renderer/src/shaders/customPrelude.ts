@@ -16,7 +16,14 @@
  *
  *   out vec2 v_uv          0..1 across the bounds rect (top-left origin)
  *   out vec2 v_screen      screen-space pixel coordinate of this fragment
- *   out vec2 v_world       approximate world-space coordinate (via view inverse)
+ *   out vec2 v_world       world-space coordinate: u_worldOrigin + v_worldLocal
+ *   out vec2 v_worldLocal  world-space coordinate measured from u_worldOrigin
+ *
+ *   uniform vec2 u_worldOrigin  a world point near the bounds, set by kit; zero
+ *                               near the origin. Far from it v_world is as coarse
+ *                               as any float32 that size, and v_worldLocal is not:
+ *                               a periodic pattern reads
+ *                               mod(u_worldOrigin, P) + v_worldLocal.
  *
  *   uniform vec2 u_fragOrigin  declared by a fragment shader reading
  *                              gl_FragCoord, set by kit (see registerProgram)
@@ -36,9 +43,12 @@ in vec2 a_uv;
 uniform vec4 u_bounds;
 uniform mat3 u_view;
 uniform mat3 u_proj;
+uniform mat3 u_screenToLocal;
+uniform vec2 u_worldOrigin;
 out vec2 v_uv;
 out vec2 v_screen;
 out vec2 v_world;
+out vec2 v_worldLocal;
 
 void main() {
   float sx = u_bounds.x + a_uv.x * u_bounds.z;
@@ -46,13 +56,8 @@ void main() {
   v_screen = vec2(sx, sy);
   v_uv = a_uv;
 
-  float det = u_view[0][0] * u_view[1][1] - u_view[0][1] * u_view[1][0];
-  // A flat view has no inverse: every fragment reads the world origin, not a plausible wrong mapping.
-  float invDet = det != 0.0 ? 1.0 / det : 0.0;
-  v_world = vec2(
-    ((sx - u_view[2][0]) *  u_view[1][1] + (sy - u_view[2][1]) * -u_view[0][1]) * invDet,
-    ((sx - u_view[2][0]) * -u_view[1][0] + (sy - u_view[2][1]) *  u_view[0][0]) * invDet
-  );
+  v_worldLocal = (u_screenToLocal * vec3(sx, sy, 1.0)).xy;
+  v_world = u_worldOrigin + v_worldLocal;
 
   vec3 clip = u_proj * vec3(sx, sy, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
@@ -69,7 +74,7 @@ export const CUSTOM_ATTRIBUTES = ['a_position', 'a_uv'] as const;
  * Kit-managed uniform names for custom shader programs.
  * These are set per-draw by drawShader(); consumers must NOT redeclare them.
  */
-export const CUSTOM_KIT_UNIFORMS = ['u_bounds', 'u_view', 'u_proj'] as const;
+export const CUSTOM_KIT_UNIFORMS = ['u_bounds', 'u_view', 'u_proj', 'u_screenToLocal', 'u_worldOrigin'] as const;
 
 /**
  * Auto-quad geometry: 4 vertices covering NDC (-1..1) and UV (0..1), each

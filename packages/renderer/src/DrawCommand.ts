@@ -239,9 +239,9 @@ export interface SpritesDrawCommand {
  * and dispatches the consumer's fragment shader with the kit's vertex prelude.
  *
  * `uniforms` keys must match names declared in the consumer's fragment shader.
- * The kit automatically sets `u_bounds`, `u_view`, `u_proj` and, where the
- * shader declares it, `u_fragOrigin` (see `registerProgram`) — do not
- * declare those in `uniforms`.
+ * The kit automatically sets `u_bounds`, `u_view`, `u_proj`,
+ * `u_screenToLocal`, `u_worldOrigin` and, where the shader declares it,
+ * `u_fragOrigin` (see `registerProgram`) — do not declare those in `uniforms`.
  *
  * `program` is the handle the module-level `registerProgram()` returned. Each
  * renderer compiles it the first time it draws one, so a layer emits this

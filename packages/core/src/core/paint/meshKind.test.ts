@@ -155,18 +155,18 @@ describe('binding a mesh paint', () => {
   });
 
   it('reuses one bake while the node carrying a bounds-relative mesh moves', () => {
-    const { ctx, argsOf, program } = bindContext();
+    const base = bindContext();
+    let about: { x: number; y: number } | undefined;
+    const ctx: PaintBindContext = { ...base.ctx, spaceInverse: (_units, at) => ((about = at && { x: at.x, y: at.y }), scaling(1)) };
     const source = seedMeshPatch('#ff0000ff') as unknown as Paint;
-    const originOf = () => argsOf('uniform2f')
-      .filter((args) => args[0] === program.uniform('u_meshOrigin')).at(-1)!.slice(1);
 
     entry().bind!(ctx, fillInPoseFrame(source, BOX));
-    const first = originOf();
+    const first = about!;
     entry().bind!(ctx, fillInPoseFrame(source, { ...BOX, x: BOX.x + 50, y: BOX.y + 30 }));
 
-    expect(argsOf('texImage2D')).toHaveLength(1);
-    // The shared bake is placed where this frame's mesh is, not the first one's.
-    expect(originOf()).toEqual([(first[0] as number) + 50, (first[1] as number) + 30]);
+    expect(base.argsOf('texImage2D')).toHaveLength(1);
+    // The shared bake is measured from where this frame's mesh is, not the first one's.
+    expect(about).toEqual({ x: first.x + 50, y: first.y + 30 });
   });
 
   it('bakes the same paint again at a new bucket, and reuses each bucket after', () => {
