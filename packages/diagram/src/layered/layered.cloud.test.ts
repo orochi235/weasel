@@ -3,7 +3,7 @@ import { DEFAULT_GROUP_INSET } from '../cluster';
 import { diagramScene } from '../fromData';
 import { DEFAULT_NODE_GAP } from '../layout';
 import { CLOUD } from './cloudFixture';
-import { routedWires } from './overlaps';
+import { routedWires, wiresThroughBoxes } from './overlaps';
 
 type Rect = { x: number; y: number; width: number; height: number };
 
@@ -36,18 +36,20 @@ describe('layered on a grouped cloud architecture', () => {
     }
   });
 
-  it('runs every wire from the gateway into a function inside the drawing rather than around it', () => {
-    const rects = [...CLOUD.nodes.map((n) => box(n.id)), ...CLOUD.groups!.map((g) => box(g.id))];
+  it.each(['bezier', 'orthogonal'] as const)('under %s, runs every wire inside the drawing and through no box it does not join', (router) => {
+    const drawn = diagramScene(CLOUD, { router });
+    const at = (id: string) => drawn.find((s) => s.id === id)!.pose as Rect;
+    const rects = [...CLOUD.nodes.map((n) => at(n.id)), ...CLOUD.groups!.map((g) => at(g.id))];
     const lo = Math.min(...rects.map((r) => r.x));
     const hi = Math.max(...rects.map((r) => r.x + r.width));
-    const grouped = new Set(CLOUD.groups!.flatMap((g) => g.members));
-    const fromGateway = routedWires(specs).filter((w) => w.from === 'gateway' && grouped.has(w.to));
-    expect(fromGateway).toHaveLength(11);
-    for (const wire of fromGateway) {
+    const wires = routedWires(drawn);
+    expect(wires).toHaveLength(53);
+    for (const wire of wires) {
       for (const p of wire.points) {
-        expect(p.x).toBeGreaterThanOrEqual(lo - 1);
-        expect(p.x).toBeLessThanOrEqual(hi + 1);
+        expect(p.x, wire.id).toBeGreaterThanOrEqual(lo - 1);
+        expect(p.x, wire.id).toBeLessThanOrEqual(hi + 1);
       }
     }
+    expect(wiresThroughBoxes(CLOUD, drawn)).toEqual([]);
   });
 });
