@@ -10,8 +10,8 @@ For the session picking this up: what is in flight and what has no other home. O
   published the rest). `origin/main` is at 374d7d3c8; `main` adds the faster fleet gate (fd547f57e),
   layered-hull (b369443bd) and hud-alloc (86712abe7), all unpushed.
 - Nothing in flight. The full suite passed at fd547f57e (32,118 tests).
-- The windease fix for a never-shown node is on branch `mounted-not-laid-out` in `~/src/windease-mounted`,
-  unmerged; the weasel TODO entry says what follows its release.
+- The windease fix for a never-shown node is on windease's `main` (24ec47d), merged by another session that was
+  releasing it on 2026-10-30; the weasel TODO entry says what follows its release.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
@@ -38,6 +38,7 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-10-30: the site's ELK demo (`DiagramElkDemo`) under network-simplex placement, which moves its nodes.
 - 2026-10-30: `layered` keeping long edges inside the drawing, and `bezier` legs between facing ports kept
   inside their band, on `CLOUD` (before/after on the wall, zone `weasel`: F356DA5C and 9E878B57 before,
   0B209999 and 46CC661B after, each bezier then orthogonal); seen only as SVG drawn from the routed points,
