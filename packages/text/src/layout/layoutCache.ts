@@ -212,7 +212,8 @@ function runsHash(runs: readonly ResolvedRun[]): number {
     h = mix(h, r.fontFeatures?.length ?? 0);
     h = mixStr(h, r.lang ?? '');
   }
-  return h;
+  // Cut to 30 bits, which V8 holds unboxed; a wider int32 was a heap number a layout.
+  return h & 0x3fffffff;
 }
 
 function sameNums(a: readonly number[] | undefined, b: readonly number[] | undefined): boolean {
