@@ -19,6 +19,7 @@ import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
+import { devWatch } from './scripts/vite-watch.ts';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -85,7 +86,7 @@ const related = selection(import.meta.dirname, process.env, {
 const changes = branchChanges(import.meta.dirname, process.env, { triggers: TRIGGERS });
 
 export default defineConfig({
-  plugins: [timeoutRetries()],
+  plugins: [timeoutRetries(), devWatch()],
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,

@@ -563,21 +563,14 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [recheck] On Linux, a second save within 50 ms of the first can leave the dev server serving the
-  first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
-  server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
-  one it last reported. If the page re-fetches the module in that window (its HMR fetch after the
-  first save), the second save never invalidates it. Run 2026-10-19 in a Linux container
-  (`node:26-alpine`, vite 8.3.1): save, wait 25 ms, save again, with a fetch 5 ms after the first
-  `change`. The server kept the first text after 3 s idle. This held for plain vite and for forge,
-  and for both rename-over and in-place writes. With
-  `server.watch.awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 }` it served the
-  second text at 25 ms and at 80 ms gaps, because events that wait for the write to finish skip
-  that throttle. The cost is about 60 ms more latency on every edit. The throttle sits in
-  chokidar's `_emit` (3.6.0, bundled in vite 8.3.1's `chunks/node.js`), which the fsevents handler
-  goes through too, so macOS is likely affected as well: read, not measured. Open: whether to pay
-  the latency everywhere, and whether forge's plugin or each app's vite config sets it. `replacedFile.test.ts` rewrites until served for the
-  same reason.
+- **(P3) [maintainer] Whether forge's vite plugin should wait for writes to settle, as the repo's own dev servers do.**
+  On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
+  server serving the first text until the next save. Every dev server here (and vitest's watcher) now waits for the
+  write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30). A consumer's server
+  that adds only `forge()` does not, and `replacedFile.test.ts`, which runs such a server, still rewrites until
+  served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
+  stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
+  fsevents reports a path's next change about 100 ms after its last, and median 113 → 115 ms (p90 118 → 148).
 
 - **(P3) [recheck] A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),

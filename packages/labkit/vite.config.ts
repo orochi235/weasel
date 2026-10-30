@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
-import { type AliasOptions, defineConfig } from 'vite';
+import { type AliasOptions, defineConfig, type PluginOption } from 'vite';
 
 const example = process.env.LABKIT_EXAMPLE ?? 'minimal';
 const here = fileURLToPath(new URL('.', import.meta.url));
@@ -23,8 +23,15 @@ async function weaselAlias(): Promise<AliasOptions> {
   return weaselAliases(weaselRoot);
 }
 
+async function weaselWatch(): Promise<PluginOption> {
+  const { devWatch } = (await import(/* @vite-ignore */ `file://${weaselRoot}/scripts/vite-watch.ts`)) as {
+    devWatch: () => PluginOption;
+  };
+  return devWatch();
+}
+
 export default defineConfig(async () => ({
-  plugins: [react()],
+  plugins: [react(), await weaselWatch()],
   root: `examples/${example}`,
   resolve: {
     alias: [
