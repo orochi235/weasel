@@ -565,8 +565,9 @@ only story runner in the repo.
 
 - **(P3) [maintainer] Whether forge's vite plugin should wait for writes to settle, as the repo's own dev servers do.**
   On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
-  server serving the first text until the next save. Every dev server here (and vitest's watcher) now waits for the
-  write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30). A consumer's server
+  server serving the first text until the next save. Every dev server here (and vitest's watcher) off macOS now waits for
+  the write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30); macOS skips the
+  wait, which the measurements below show it does not need (ruled 2026-10-30). A consumer's server
   that adds only `forge()` does not, and `replacedFile.test.ts`, which runs such a server, still rewrites until
   served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
   stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
@@ -678,6 +679,8 @@ only story runner in the repo.
   watcher takes its baseline of a directory after it reports ready, so a file added in between was
   never reported. That needs a write within moments of startup, under polling, so it does not
   explain an edit to an existing file in a long-running server.
+  A possible fix, not decided (2026-10-30): when the watcher has gone quiet, check edited files' mtimes against
+  the module graph and invalidate anything newer, so a missed event recovers rather than leaving a stale serve.
 
 - **(P3) [waiting] `npm pack` died with SIGABRT and no output in the consumer smoke step.** A
   `test:fleet:postbuild` run of d9f7bb7ba's predecessor 570d272b7 on 2026-10-24 failed
