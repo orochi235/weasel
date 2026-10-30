@@ -53,6 +53,7 @@ const VITE_SERVER_TESTS = [
   'packages/forge/src/vite/capture/endpoint.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
   'packages/forge/src/vite/replacedFile.test.ts',
+  'packages/forge/src/vite/watchRecovery.test.ts',
   'packages/prefs/src/vite.test.ts',
   'scripts/vite-prebundle.vite.test.ts',
   'scripts/vite-wake.vite.test.ts',

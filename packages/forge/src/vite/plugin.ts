@@ -19,6 +19,7 @@ import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
 import { MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { warnWhenWatchIsSilent } from './watchProbe.ts';
+import { watchRecovery } from './watchRecovery.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
 
 /** Options for the `forge` vite plugin. */
@@ -67,6 +68,16 @@ function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps,
       }, logError);
     });
   }
+}
+
+/** The plugins forge serves beside its own, as its options ask. */
+function companions(options: ForgeOptions, storyFiles: () => string[]): Plugin[] {
+  const { storybookShims: shims, propControls: controls } = options;
+  return [
+    watchRecovery(),
+    ...(shims === false ? [] : [storybookShims()]),
+    ...(controls === false ? [] : [propControls(storyFiles, controls === true ? undefined : controls)]),
+  ];
 }
 
 /**
@@ -251,8 +262,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   }
 
   return [
-    ...(options.storybookShims === false ? [] : [storybookShims()]),
-    ...(options.propControls === false ? [] : [propControls(() => [...files().keys()], options.propControls === true ? undefined : options.propControls)]),
+    ...companions(options, () => [...files().keys()]),
     {
       name: 'weaselforge',
       config(config, { command }) {
