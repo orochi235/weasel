@@ -405,8 +405,7 @@ three later runs of near-identical trees put the HUD at 5,000 glyphs on the movi
 A fifth round reused the objects around those arrays. A recycled layout gives its line boxes and
 `lines` array to the next layout, and its paintings their groups, group lists and result objects to
 the next paintings; the layout cache refills the entries and variants `dropRuns` lets go and the
-structural entry it evicts. A layout's result object stays new, because the paint cache finds a runs
-array's own painting by layout identity. KB allocated a frame and renderer main thread in ms a
+structural entry it evicts. KB allocated a frame and renderer main thread in ms a
 frame, median [min–max] of 4 samples:
 
 | Camera | Glyphs | HUD before | HUD after | DOM after |
@@ -448,13 +447,53 @@ after 55375c042, whose refilled scratch lists had taken the fixed 5,000-glyph ce
 779 and `breakLines` out of the profile. Measured on msb-uai on 2026-10-29, one run of each tree,
 at `4d5f3483e` and `3c3e00b88`; the runs are in `recorded/hud-vs-dom-round6-2026-10-29/`.
 
+A seventh round took out the numbers V8 boxed and the objects a layout still built. **A class
+field declared without `declare` starts out `undefined`, so V8 stores every number later written
+to it as a new heap number**: a line box's coordinates cost 18 KB a frame under `placeLine` until
+they were declared (`LineBox` in `layoutColumns.ts`). A number passed to a call V8 does not inline
+is boxed on every call, so the wrap width, line height and align width reach `breakLines`,
+`wrapSpans` and `placeLine` in an object, `blankEntry` reads a run's numbers from the run, and the
+layout cache's hash is cut to 30 bits, which V8 holds unboxed. The paint cache files a runs array's
+own painting on the layout cache's entry for it (`runsEntries.ts`), so a new runs array pays one
+`WeakMap` set and delete rather than two. A recycled layout hands its result object and `bounds` on
+with its columns; the paint cache, which finds a runs array's own painting by that object, also
+compares a stamp the columns take afresh each layout. Self KB a frame at 5,000 glyphs on the fixed
+camera:
+
+| Function | before | after |
+|---|---:|---:|
+| `layoutRuns`, its result, `bounds`, and the numbers it passed on | 56.6 | 0.0 |
+| `set` and `delete`, the caches' `WeakMap`s | 48.7 | 23.9 |
+| `placeLine`, a line box's coordinates | 18.0 | 0.0 |
+| `measureRuns`, the numbers it passed to `blankEntry` and `ink` | 14.2 | 0.0 |
+| `runsHash`, a hash wider than 30 bits | 3.0 | 0.0 |
+| `resolveLayoutOpts`, charged to `layoutRuns` before | 0.0 | 6.2 |
+
+KB allocated a frame and renderer main thread in ms a frame, median [min–max] of 4 samples:
+
+| Camera | Glyphs | HUD before | HUD after | DOM after |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 | 223, 1.70 [1.67–1.76] | 172, 1.57 [1.53–1.69] |  73, 2.15 [1.81–2.43] |
+| fixed  | 5,000 | 404, 2.28 [2.17–2.62] | 293, 2.44 [1.92–2.47] | 104, 3.13 [3.07–3.60] |
+| moving | 2,500 | 270, 1.65 [1.60–1.75] | 218, 1.58 [1.52–1.77] | 103, 2.39 [2.20–2.67] |
+| moving | 5,000 | 500, 2.43 [2.11–2.69] | 395, 2.47 [2.12–2.53] | 169, 3.46 [3.19–4.04] |
+
+Allocation fell 19–28% in every cell; main-thread time moved inside its spread. Measured on msb-uai
+on 2026-10-29, one run of each tree, at `870a213b8` and `fded42e17`. The runs, with the
+inlining-off run that located `placeLine`'s and `measureRuns`' bytes and the runs on teitou between
+the commits, are in `recorded/hud-alloc-2026-10-29/`. **A run with inlining off does not show where
+an inlined function allocates**: it boxes every number passed between functions, so it charged
+`placeLine` 218 KB a frame against 18 with inlining on. An in-process Node profile of the same
+calls showed the line box's boxed coordinates in a few seconds; Node inlines more than Chromium
+does, so a Node profile that is clean is not proof.
+
 What is left, at 5,000 glyphs on the fixed camera, self KB a frame: the spec's own `step` (73),
-which builds each label's string and the widget's revision; `layoutRuns` (56), the result and
-`bounds` objects each layout gets new, since the paint cache finds a runs array's painting by
-layout identity; the HUD's command and the one-element array its widget returns, charged to
-`cachedCommands` (51); the resolved runs the command carries (`resolveRuns`, 42);
-`resolveFontVariantInternal`'s result object (36); the layout and paint caches' `WeakMap` set and
-delete for every new runs array (48); and `pushRect` in the renderer's batch (32).
+which builds each label's string and the widget's revision; the HUD's command and the one-element
+array its widget returns, charged to `cachedCommands` (51); the resolved runs the command carries
+(`resolveRuns`, 42); `resolveFontVariantInternal`'s result object (35); `pushRect` in the
+renderer's batch (31); the layout and paint caches' shared `WeakMap` set and delete for every new
+runs array (24); and one heap number a layout under `resolveLayoutOpts` or `layoutRuns` (6), which
+filling its options object with fractions from the start did not remove.
 
 ### A still HUD through `drawLayers`
 

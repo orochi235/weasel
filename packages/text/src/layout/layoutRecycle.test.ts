@@ -10,7 +10,9 @@ import { _resetFontRegistryForTests, _resetFallbackForTests } from '@weasel-js/f
 import { registerFixture, stubFetch, RUN_PLAIN } from './testing/fontFixtures';
 import { _resetArrayPoolForTests, pooledElements } from './arrayPool';
 import { LineBox } from './layoutColumns';
-import { cachedLayoutRuns, dropRuns, _resetLayoutCacheForTests, LAYOUT_CACHE_STRUCTURAL_LIMIT } from './layoutCache';
+import {
+  cachedLayoutRuns, dropRuns, _resetLayoutCacheForTests, LAYOUT_CACHE_STRUCTURAL_LIMIT, LAYOUT_CACHE_VARIANT_LIMIT,
+} from './layoutCache';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
 import { cachedPaintRuns } from './paintCache';
 import { paintRuns } from './paintRuns';
@@ -125,6 +127,37 @@ describe('recycling a layout', () => {
     expect(pooledElements()).toBeGreaterThan(0);
   });
 
+  it('paints dropped runs passed once more for themselves, not from the entry the next runs took', () => {
+    const a = draw('AB 12');
+    dropRuns(a.runs);
+    const b = draw('CD 34');
+    const laid = cachedLayoutRuns(a.runs, OPTS, 'read');
+    const painted = cachedPaintRuns(laid, a.runs, {}, 'read');
+    expect(painted).not.toBe(b.painted);
+    expect(painted.groups.map((g) => g.quads)).toEqual(paintRuns(laid, a.runs).groups.map((g) => g.quads));
+  });
+
+  it('paints runs for themselves when the result they were painted on has been handed to other runs', () => {
+    const a = draw('AB 12');
+    // An eighth set of options sends every layout of a.runs away while its
+    // painting stays filed under it. The others are kept, so only a.laid
+    // recycles, evicted by the next layout to miss, which takes its result.
+    for (let k = 1; k <= LAYOUT_CACHE_VARIANT_LIMIT; k++) cachedLayoutRuns(a.runs, { ...OPTS, maxWidth: 500 + k });
+    for (let i = 0; i < LAYOUT_CACHE_STRUCTURAL_LIMIT - 1 - LAYOUT_CACHE_VARIANT_LIMIT; i++) {
+      cachedLayoutRuns([RUN_PLAIN(`x filler ${i} and more`)], OPTS, 'read');
+    }
+    const narrow = { ...OPTS, maxWidth: 401 };
+    const red = [{ ...RUN_PLAIN('AB 12'), fill: { paint: { kind: 'solid' as const, color: '#f00' } } }];
+    const laid = cachedLayoutRuns(red, narrow, 'read');
+    expect(laid).toBe(a.laid);
+    const painted = cachedPaintRuns(laid, red, {}, 'read');
+    // Found by content: the same result, now red's.
+    expect(cachedLayoutRuns(a.runs, narrow, 'read')).toBe(laid);
+    const again = cachedPaintRuns(laid, a.runs, {}, 'read');
+    expect(again).not.toBe(painted);
+    expect(again.groups[0].fill?.paint).toEqual({ kind: 'solid', color: '#000' });
+  });
+
   it('lays out again when dropped runs are passed once more', () => {
     const a = draw('AB 12');
     dropRuns(a.runs);
@@ -134,14 +167,14 @@ describe('recycling a layout', () => {
     expect(again.lines[0].cells).toEqual(layoutRuns([RUN_PLAIN('AB 12')], OPTS).lines[0].cells);
   });
 
-  it('refills a recycled layout\'s line boxes and its paintings\' groups, in a result of its own', () => {
+  it('refills a recycled layout\'s result, line boxes and its paintings\' groups', () => {
     const a = draw('AB 12');
     const box = a.laid.lines[0];
     const group = a.painted.groups[0];
     dropRuns(a.runs);
     fillBehind('x');
     const b = draw('BA 21');
-    expect(b.laid).not.toBe(a.laid);
+    expect(b.laid).toBe(a.laid);
     expect(b.laid.lines[0]).toBe(box);
     expect(b.painted.groups).toContain(group);
   });
@@ -157,6 +190,7 @@ describe('recycling a layout', () => {
     const fresh = layoutRuns([RUN_PLAIN('BAB')], OPTS);
     expect(b.laid.lines[0].cells).toEqual(fresh.lines[0].cells);
     expect(b.laid.lines[0].glyphs).toEqual(fresh.lines[0].glyphs);
+    expect(b.laid.bounds).toEqual(fresh.bounds);
     expect(b.painted.groups).not.toContain(group);
     expect(b.painted.groups.map((g) => g.quads)).toEqual(paintRuns(fresh, [RUN_PLAIN('BAB')]).groups.map((g) => g.quads));
   });

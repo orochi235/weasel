@@ -17,7 +17,7 @@
  */
 import type { BmFont, BmFontChar, GlyphMetrics, ResolveResult } from '@weasel-js/font';
 import type { Entry } from './layoutEntries';
-import type { LaidOutCell, LaidOutLineBox, PlacedGlyph } from './layoutRuns';
+import type { LaidOutCell, LaidOutLineBox, LaidOutRuns, PlacedGlyph } from './layoutRuns';
 import type { ShapedCluster } from './shaperSeam';
 import { giveDoubles, giveRefs, takeDoubles, takeRefs, truncate } from './arrayPool';
 
@@ -39,6 +39,7 @@ const EMPTY_REF: unknown[] = [];
  *  HUD labels, each of which recycles its last frame's layout. */
 const spare: LayoutColumns[] = [];
 const SPARE_MAX = 1024;
+let stamps = 0;
 
 /** Every code point of one layout. Index `i` is a code point's place in the
  *  text, in logical order, newlines left out. */
@@ -48,6 +49,14 @@ export class LayoutColumns {
   /** The layout's line boxes, its `lines`. A recycled layout's are refilled
    *  by the next layout to take its columns. */
   readonly boxes: LineBox[] = [];
+  /** The layout's `bounds`, refilled like its boxes. */
+  readonly bounds = { width: 0.5, height: 0.5 };
+  /** The layout itself, `{ lines: boxes, bounds }`, handed to every layout
+   *  that takes these columns. */
+  laid: LaidOutRuns | null = null;
+  /** Which of those layouts this is, new each time the columns are taken:
+   *  what tells a layout apart from the one these columns held before. */
+  stamp = 0;
   /** The paint cache's paintings of this layout, kept here rather than in a
    *  map keyed by the layout, so that recycling one deletes no map entry. */
   readonly paintings: unknown[] = [];
@@ -67,16 +76,21 @@ export class LayoutColumns {
   /** Columns for `size` code points: a recycled layout's, refilled, when the
    *  pool holds one. */
   static take(size: number): LayoutColumns {
-    const cols = spare.pop();
-    if (cols === undefined) return new LayoutColumns(size);
-    cols.num = takeDoubles(size * NUM);
-    cols.ref = takeRefs(size * REF);
+    let cols = spare.pop();
+    if (cols === undefined) {
+      cols = new LayoutColumns(size);
+    } else {
+      cols.num = takeDoubles(size * NUM);
+      cols.ref = takeRefs(size * REF);
+    }
+    cols.stamp = ++stamps;
     return cols;
   }
 
   /** Give the arrays back to the pool, and these columns with their line
-   *  boxes to the next layout. A line box still held afterwards reads that
-   *  layout's code points, so only a layout nobody holds is recycled. */
+   *  boxes and result to the next layout. A line box or result still held
+   *  afterwards reads that layout's code points, so only a layout nobody holds
+   *  is recycled. */
   recycle(): void {
     giveDoubles(this.num);
     // A loop, not `fill`, which Chromium's allocation profile charged 400 bytes a call.
@@ -182,10 +196,12 @@ export function blankGlyph(): PlacedGlyph {
 export class LineBox implements LaidOutLineBox {
   declare readonly cells: LaidOutCell[];
   declare readonly glyphs: PlacedGlyph[];
-  x0: number; y0: number; x1: number; y1: number;
-  baselineY: number;
-  srcEnd: number;
-  justified: boolean;
+  // Declared rather than defined: a defined field starts out undefined, which
+  // left V8 boxing every number `refill` writes to it.
+  declare x0: number; declare y0: number; declare x1: number; declare y1: number;
+  declare baselineY: number;
+  declare srcEnd: number;
+  declare justified: boolean;
   readonly #cols: LayoutColumns;
   #start: number;
   #count: number;

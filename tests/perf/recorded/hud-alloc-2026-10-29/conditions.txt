@@ -1,0 +1,15 @@
+Every run: HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_CAMERAS=fixed,moving HVD_APPROACHES=hud,dom
+HVD_GLYPHS=2500,5000 WEASEL_PERF_PORT=33519 npm run test:perf -- perf/hud-vs-dom.spec.ts, through
+onto do --solo in the weasel-perf-hudtext tree, one run each. The diag runs narrow to
+HVD_CAMERAS=fixed HVD_GLYPHS=5000.
+
+1-before        870a213b8, main; msb-uai (Apple M3 Max, 14 cores); load 3.5 at start. Its sync also
+                carried runsEntries.ts, written while it waited and imported by nothing at that commit.
+2-after         fded42e17, this branch's tip of measured code; msb-uai; load 2.4 at start
+diag1-noinline  94ffdc34f (the runs entry fold) plus --no-turbo-inlining --no-maglev-inlining in
+                tests/perf/lib/launchArgs.ts; teitou (Apple M5 Max, 18 cores)
+diag2           3c0ea0e32 (line box fields declared, LineOpts); teitou
+diag3           560d6042d (wrap width and entry numbers by reference); teitou
+diag4           6439a5dee (layout result recycled, stamped); teitou
+diag5           fded42e17 plus resolveLayoutOpts' default object filled with fractions, a probe that
+                changed nothing and was dropped; teitou
