@@ -48,6 +48,8 @@ export class LayoutColumns {
   /** The layout's line boxes, its `lines`. A recycled layout's are refilled
    *  by the next layout to take its columns. */
   readonly boxes: LineBox[] = [];
+  /** The layout's `bounds`, refilled like its boxes. */
+  readonly bounds = { width: 0.5, height: 0.5 };
   /** The paint cache's paintings of this layout, kept here rather than in a
    *  map keyed by the layout, so that recycling one deletes no map entry. */
   readonly paintings: unknown[] = [];

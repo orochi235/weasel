@@ -12,6 +12,7 @@ import {
   __setGlyphRasterizerForTests, _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
 import { cachedLayoutRuns, _resetLayoutCacheForTests } from './layoutCache';
+import { layoutRuns } from './layoutRuns';
 import { cachedPaintRuns, PAINT_CACHE_VARIANT_LIMIT } from './paintCache';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
@@ -102,6 +103,14 @@ describe('cachedPaintRuns', () => {
     expect(onNarrow).not.toBe(onWide);
     expect(cachedPaintRuns(wide, runs)).toBe(onWide);
     expect(cachedPaintRuns(narrow, runs)).toBe(onNarrow);
+  });
+
+  it('paints runs the layout cache has not seen, which then lay out as fresh runs would', () => {
+    const runs = [run('AB')];
+    const laid = layoutRuns(runs, OPTS);
+    const painted = cachedPaintRuns(laid, runs);
+    expect(cachedPaintRuns(laid, runs)).toBe(painted);
+    expect(cachedLayoutRuns(runs, OPTS).lines[0].cells).toEqual(laid.lines[0].cells);
   });
 
   describe('the outline threshold', () => {

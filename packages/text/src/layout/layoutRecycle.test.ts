@@ -125,6 +125,16 @@ describe('recycling a layout', () => {
     expect(pooledElements()).toBeGreaterThan(0);
   });
 
+  it('paints dropped runs passed once more for themselves, not from the entry the next runs took', () => {
+    const a = draw('AB 12');
+    dropRuns(a.runs);
+    const b = draw('CD 34');
+    const laid = cachedLayoutRuns(a.runs, OPTS, 'read');
+    const painted = cachedPaintRuns(laid, a.runs, {}, 'read');
+    expect(painted).not.toBe(b.painted);
+    expect(painted.groups.map((g) => g.quads)).toEqual(paintRuns(laid, a.runs).groups.map((g) => g.quads));
+  });
+
   it('lays out again when dropped runs are passed once more', () => {
     const a = draw('AB 12');
     dropRuns(a.runs);
@@ -143,6 +153,7 @@ describe('recycling a layout', () => {
     const b = draw('BA 21');
     expect(b.laid).not.toBe(a.laid);
     expect(b.laid.lines[0]).toBe(box);
+    expect(b.laid.bounds).toBe(a.laid.bounds);
     expect(b.painted.groups).toContain(group);
   });
 
@@ -157,6 +168,7 @@ describe('recycling a layout', () => {
     const fresh = layoutRuns([RUN_PLAIN('BAB')], OPTS);
     expect(b.laid.lines[0].cells).toEqual(fresh.lines[0].cells);
     expect(b.laid.lines[0].glyphs).toEqual(fresh.lines[0].glyphs);
+    expect(b.laid.bounds).toEqual(fresh.bounds);
     expect(b.painted.groups).not.toContain(group);
     expect(b.painted.groups.map((g) => g.quads)).toEqual(paintRuns(fresh, [RUN_PLAIN('BAB')]).groups.map((g) => g.quads));
   });

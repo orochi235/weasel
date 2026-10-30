@@ -14,12 +14,13 @@ import { LineBox } from './layoutColumns';
 import type { LaidOutRuns } from './layoutRuns';
 import { giveGroup, NO_QUADS } from './paintGroups';
 import { paintRunsInto, type PaintedRuns, type PaintRunsOpts } from './paintRuns';
+import { entryFor, entryOf } from './runsEntries';
 
 /** Paintings held for one layout on behalf of runs arrays that have since
  *  gone, before the least recently used is dropped. Sized for a palette. */
 export const PAINT_CACHE_VARIANT_LIMIT = 32;
 
-interface Painting {
+export interface Painting {
   /** `glyphGeneration()` when it was painted. */
   generation: number;
   /** What it paints, built only once a second runs array asks this layout
@@ -35,10 +36,11 @@ interface Painting {
   pinned: boolean;
 }
 
-/**
+/*
  * Two tiers, as the layout cache has and for the same reason. A runs array
  * that stays put, which is what the renderer is handed, keeps its own painting
- * for as long as it lives: any number of labels can share one layout and none
+ * for as long as it lives, on the entry the layout cache files it under
+ * (`runsEntries.ts`): any number of labels can share one layout and none
  * evicts another. Runs built fresh on every call can only be found by what
  * they paint, in a bounded list per layout, which hangs off the layout weakly.
  *
@@ -46,17 +48,7 @@ interface Painting {
  * builds no key at all: the list for a fresh layout is empty, and a key is
  * built only when there is something to compare it with.
  */
-const own = new WeakMap<readonly ResolvedRun[], OwnPainting>();
 
-/** A runs array's own painting, the layout it was painted on, and the
- *  threshold it was last asked for at. The runs fix every paint, so the same
- *  layout at an unchanged threshold and glyph generation is a hit with no key
- *  built. One layout a runs array: the layout cache holds that one already. */
-interface OwnPainting {
-  laid: LaidOutRuns;
-  painting: Painting;
-  min: number | undefined;
-}
 /** Each layout's paintings, most recently used last: on its columns, or here
  *  for a layout built by hand. */
 const shared = new WeakMap<LaidOutRuns, Painting[]>();
@@ -152,14 +144,15 @@ export function cachedPaintRuns(
 ): PaintedRuns {
   const generation = glyphGeneration();
   const min = opts.outlineMinSize;
-  const mine = own.get(runs);
-  const mineHere = mine !== undefined && mine.laid === laid && mine.painting.generation === generation;
-  if (mineHere && mine.min === min) return handOut(mine.painting, use);
+  const mine = entryOf(runs);
+  const own = mine !== undefined && mine.paintedOn === laid ? mine.painting : null;
+  const mineHere = own !== null && own.generation === generation;
+  if (mineHere && mine!.paintMin === min) return handOut(own, use);
 
   const bucket = outlineBucket(runs, min);
-  if (mineHere && mine.painting.bucket === bucket) {
-    mine.min = min;
-    return handOut(mine.painting, use);
+  if (mineHere && own.bucket === bucket) {
+    mine!.paintMin = min;
+    return handOut(own, use);
   }
 
   const list = listOf(laid);
@@ -179,17 +172,8 @@ export function cachedPaintRuns(
   }
   if (list.length >= PAINT_CACHE_VARIANT_LIMIT) list.shift();
   list.push(p);
-  if (mine !== undefined) {
-    mine.laid = laid; mine.painting = p; mine.min = min;
-  } else {
-    const o = spareOwn.pop();
-    if (o === undefined) {
-      own.set(runs, { laid, painting: p, min });
-    } else {
-      o.laid = laid; o.painting = p; o.min = min;
-      own.set(runs, o);
-    }
-  }
+  const e = mine ?? entryFor(runs);
+  e.paintedOn = laid; e.painting = p; e.paintMin = min;
   return handOut(p, use);
 }
 
@@ -197,18 +181,6 @@ function handOut(p: Painting, use: CacheUse): PaintedRuns {
   if (use === 'keep') p.pinned = true;
   return p.painted;
 }
-
-/** Forget the painting held for `runs`, which `dropRuns` was told will not be
- *  drawn again. */
-export function forgetPaintRuns(runs: readonly ResolvedRun[]): void {
-  const mine = own.get(runs);
-  if (mine === undefined) return;
-  own.delete(runs);
-  if (spareOwn.length < SPARE_MAX) spareOwn.push(mine);
-}
-
-/** Entries `forgetPaintRuns` let go, for the next runs arrays' own paintings. */
-const spareOwn: OwnPainting[] = [];
 
 /** Drop every painting of `laid`, which no caller can reach any more, giving
  *  those no caller kept, with their groups and quad arrays, to the next

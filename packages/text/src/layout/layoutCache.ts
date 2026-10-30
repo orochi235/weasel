@@ -71,7 +71,8 @@ import { layoutBidi, layoutShaper, type LayoutRunsOpts } from './layoutOpts';
 import { truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
-import { forgetPaintRuns, recyclePaintings } from './paintCache';
+import { recyclePaintings } from './paintCache';
+import { _resetRunsEntriesForTests, dropEntry, entryFor, giveEntry } from './runsEntries';
 import { DEFAULT_TAB_SIZE } from './tabStops';
 
 /** Distinct option combinations held for one runs array before the whole set
@@ -83,17 +84,10 @@ export const LAYOUT_CACHE_VARIANT_LIMIT = 8;
 export const LAYOUT_CACHE_STRUCTURAL_LIMIT = 64;
 
 /** One option combination, defaults filled in, and the layout made with it. */
-interface Variant {
+export interface Variant {
   maxWidth: number; alignWidth: number; lineHeight: number; align: LayoutRunsOpts['align'];
   justify: boolean; direction: NonNullable<LayoutRunsOpts['direction']>; tabSize: number;
   bidi: ReturnType<typeof layoutBidi>; shaper: ReturnType<typeof layoutShaper>; laid: LaidOutRuns;
-}
-
-interface Entry {
-  /** `faceGeneration()` when this entry was filled. */
-  generation: number;
-  /** Most recently matched first. */
-  variants: Variant[];
 }
 
 /** A layout held against the content of the runs that made it. */
@@ -104,7 +98,6 @@ interface Structural extends Variant {
   used: number;
 }
 
-let cache = new WeakMap<readonly ResolvedRun[], Entry>();
 let structural: Structural[] = [];
 let structuralGeneration = -1;
 let clock = 0;
@@ -146,9 +139,7 @@ function release(laid: LaidOutRuns): void {
   cols.recycle();
 }
 
-/** Entries and variants of runs arrays `dropRuns` forgot, for the next
- *  runs arrays to fill. */
-const spareEntries: Entry[] = [];
+/** Variants of runs arrays `dropRuns` forgot, for the next runs arrays to fill. */
 const spareVariants: Variant[] = [];
 const SPARE_MAX = 1024;
 
@@ -278,12 +269,8 @@ export function cachedLayoutRuns(
 ): LaidOutRuns {
   const fonts = faceGeneration();
   const bidi = layoutBidi(opts);
-  let entry = cache.get(runs);
-  if (entry === undefined) {
-    entry = spareEntries.pop() ?? { generation: fonts, variants: [] };
-    entry.generation = fonts;
-    cache.set(runs, entry);
-  } else if (entry.generation !== fonts) {
+  const entry = entryFor(runs);
+  if (entry.generation !== fonts) {
     entry.generation = fonts;
     disown(entry.variants);
   } else {
@@ -315,12 +302,10 @@ export function cachedLayoutRuns(
  * Passing `runs` again afterwards is only a cache miss.
  */
 export function dropRuns(runs: readonly ResolvedRun[]): void {
-  const entry = cache.get(runs);
-  forgetPaintRuns(runs);
+  const entry = dropEntry(runs);
   if (entry === undefined) return;
-  cache.delete(runs);
   disown(entry.variants);
-  if (spareEntries.length < SPARE_MAX) spareEntries.push(entry);
+  giveEntry(entry);
 }
 
 function structuralLayout(
@@ -370,7 +355,7 @@ function unlist(s: Structural): void {
 
 /** Test helper. Do not call from product code. */
 export function _resetLayoutCacheForTests(): void {
-  cache = new WeakMap();
+  _resetRunsEntriesForTests();
   structural = [];
   structuralGeneration = -1;
   clock = 0;
