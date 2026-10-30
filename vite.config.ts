@@ -10,7 +10,7 @@ import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
 import { localWake } from './scripts/vite-wake.ts';
-import { skipWorktrees } from './scripts/vite-watch.ts';
+import { devWatch } from './scripts/vite-watch.ts';
 import { devSourcemaps } from './scripts/vite-sourcemaps.ts';
 import { prebundleWorkspace } from './scripts/vite-prebundle.ts';
 import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
@@ -57,7 +57,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    skipWorktrees(),
+    devWatch(),
     devSourcemaps(),
     prebundleWorkspace(import.meta.dirname, [resolve(import.meta.dirname, 'apps/site'), resolve(import.meta.dirname, 'apps/shared')]),
     serveReferenceInDev(),

@@ -8,7 +8,7 @@ import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
-import { skipWorktrees } from '../../scripts/vite-watch.ts';
+import { devWatch } from '../../scripts/vite-watch.ts';
 import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { forgeAliases, frameConfig, frameStyles, shellConfig, skipWake, stories } from './viteShared.ts';
@@ -28,7 +28,7 @@ export default defineConfig(({ command, isPreview }) => ({
   define: weaselDefines(repoRoot),
   plugins: [
     react(),
-    skipWorktrees(),
+    devWatch(),
     devSourcemaps(),
     // Every other tree holding stories stays source, with its package.
     prebundleWorkspace(
