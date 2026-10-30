@@ -117,7 +117,7 @@ void main() {
           points: p.points.map((q) => ({ x: x0 + q.x, y: q.y * 0.25 })),
         })),
       } },
-    } as DrawCommand];
+    } as unknown as DrawCommand];
     const near = row(0, at);
     const far = row(FAR, at);
     const worst = Math.max(...near.map((v, i) => Math.abs(v - far[i]!)));
