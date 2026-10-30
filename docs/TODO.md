@@ -637,22 +637,6 @@ only story runner in the repo.
   now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
   and the one test that needs a real watcher skips. The cause needs the machine in that state.
 
-- **(P3) [agent] wake (`~/src/wake`, not this repo): a server's exit-time release can drop another app's
-  registry entry.** `releaseSync` and `releaseExtraSync` in `~/src/wake/src/claim.ts` read the
-  registry and write it back without the lock `updateRegistry` (`~/src/wake/src/state.ts`) takes.
-  Scenario: server A exits while server B, another app, is inside `updateRegistry`; A reads, B
-  writes its entry, A writes back its earlier read with only its own holder cleared, and B's entry
-  is gone, so B's next start picks a port as though it had never run. Nothing synchronous can take
-  the port lock; either re-read and compare just before the write, or have the next `claim` treat a
-  dead holder as released and make the exit-time release a no-op.
-  Fixed on wake's `locked-release` branch (2026-10-26), unmerged; retire it once that merges.
-
-- **(P3) [agent] wake (`~/src/wake`, not this repo): the pill calls a busy server unreachable.** It shows "dev
-  server unreachable" whenever `/__wake` takes over 5 s to answer, so a server stalled in a slow
-  module load reads the same as a dead one. That is what a fresh site server showed until
-  a598e6b2d (2026-10-20) took the demo timestamps' per-file `git log` out of its first load.
-  Fixed on wake's `busy-badge` branch (2026-10-26), unmerged; retire it once that merges.
-
 ---
 
 - **(P3) [maintainer] Icons for the package pages.** Said to be specced (gray and blue React icons, an orange
