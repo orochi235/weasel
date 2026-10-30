@@ -71,7 +71,8 @@ function write(v: PdfValue): string {
   return writeDict(v as PdfDict);
 }
 
-function writeDict(d: PdfDict): string {
+/** `d` as PDF syntax, for a dictionary written inline in a content stream. */
+export function writeDict(d: PdfDict): string {
   const parts: string[] = [];
   for (const [k, v] of Object.entries(d)) if (v !== undefined) parts.push(`${writeName(k)} ${write(v)}`);
   return `<<${parts.join(' ')}>>`;

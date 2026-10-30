@@ -33,6 +33,12 @@ export interface WritePdfOptions {
   /** Default true: each face carries only the glyphs the document draws. False embeds each face whole. */
   subsetFonts?: boolean;
   title?: string;
+  /**
+   * The document's language, a BCP 47 tag, written as the catalog's `/Lang`. Text in another
+   * language is marked with its own. Left out, it is the language every run of text shares,
+   * and the document has none when they do not share one.
+   */
+  lang?: string;
   /** Default true; unit tests pass false because jsdom realms lack `CompressionStream`. */
   compress?: boolean;
   readPixels?: (image: ImageBitmap | HTMLImageElement) => RasterPixels;
@@ -76,6 +82,7 @@ export async function writePdfWith(
   const skipped: PdfSkip[] = [];
   const kids: PdfRef[] = [];
   const fonts = new DocumentFonts(objects, opts.fonts, opts.subsetFonts !== false);
+  const langs = new Set<string | undefined>();
 
   for (const page of pages) {
     const pageRef = objects.alloc();
@@ -91,6 +98,7 @@ export async function writePdfWith(
       width: page.width,
       height: page.height,
       trail: [],
+      langs,
     };
     // Page units are points, origin top left, y down.
     ctx.out.op('cm', ...mat3.toAffine(pageFlip(page)));
@@ -107,7 +115,9 @@ export async function writePdfWith(
     kids.push(pageRef);
   }
 
-  objects.set(catalog, { Type: name('Catalog'), Pages: tree });
+  const [shared] = langs.size === 1 ? langs : [];
+  const lang = opts.lang ?? shared;
+  objects.set(catalog, { Type: name('Catalog'), Pages: tree, Lang: lang === undefined ? undefined : text(lang) });
   objects.set(tree, { Type: name('Pages'), Kids: kids, Count: kids.length });
   objects.set(info, { Producer: text('weasel'), Title: opts.title === undefined ? undefined : text(opts.title) });
   await fonts.finish();
