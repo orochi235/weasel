@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
 import type { PropertyRenderer } from './renderContext';
-import { classifyKind, kindBreakdown, type AnyNode } from './model';
+import { classifyKind, kindBreakdown, panelRowsOf, type AnyNode } from './model';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from './conditions';
 import type { MarkHiddenProps } from '../Prefs/hidden';
@@ -126,7 +126,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true, props.over);
   const sections = sectionsInScopes(scope.sections, scene, nodes, props.units);
   const leaves = new Map(
-    sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const))),
+    sections.flatMap(panelRowsOf).flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const)),
   );
   const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
   const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);

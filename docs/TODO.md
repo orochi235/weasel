@@ -502,13 +502,6 @@ Owner tags, after the priority (2026-10-26):
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
   `MatrixEditor` always lists an enum as radios.
 
-- **(P3) [agent] Two params surfaces lose or drop a group where the others keep it.** labkit's compact
-  drawing of `panel` and `section`, with no description on a tab or section, stays as labkit's look; ui's
-  `PrefsForm` and `PrefsPane` keep theirs (ruled 2026-10-30, from a side-by-side render). What is left is
-  structural: `SelectionPanel`'s top level flattens nested sections (`flatten` in `model.ts`), so a nested
-  `tab` or `panel` loses its `as` while the object leaf beside it honors nesting; and an empty tab section
-  is left out of the run in `objectRows`, a hidden one in labkit, while `PrefsPane` has no emptiness check.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) [recheck] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and

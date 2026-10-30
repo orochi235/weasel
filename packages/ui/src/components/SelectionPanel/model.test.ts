@@ -6,8 +6,10 @@ import {
   aggregateValue,
   classifyKind,
   effectiveSections,
+  isPanelSection,
   kindBreakdown,
   nodeValueAt,
+  panelRowsOf,
   setAtPath,
 } from './model';
 
@@ -93,13 +95,13 @@ describe('effectiveSections', () => {
     expect(sections.map((s) => s.name)).toEqual(['Layout', 'Appearance']);
     const layout = sections[0];
     // Its partner absent, W is a row of its own under its own name.
-    expect(layout.rows.map((r) => r.label)).toEqual(['Position', 'W']);
-    expect(layout.rows[0].leaves.map((l) => l.path)).toEqual(['pose.x', 'pose.y']);
+    expect(panelRowsOf(layout).map((r) => r.label)).toEqual(['Position', 'W']);
+    expect(panelRowsOf(layout)[0].leaves.map((l) => l.path)).toEqual(['pose.x', 'pose.y']);
   });
 
   it('intersects across kinds by (path, leaf kind)', () => {
     const sections = effectiveSections(['rect', 'text'], entries);
-    const paths = sections.flatMap((s) => s.rows.flatMap((r) => r.leaves.map((l) => l.path)));
+    const paths = sections.flatMap(panelRowsOf).flatMap((r) => r.leaves.map((l) => l.path));
     expect(paths).toContain('pose.x');
     expect(paths).toContain('data.fill');
     expect(paths).not.toContain('pose.width');   // absent from text
@@ -237,5 +239,31 @@ describe('a section\'s `as`', () => {
       } },
     }]);
     expect(sections.map((s) => [s.name, s.as])).toEqual([['A', 'tab'], ['B', 'panel'], ['C', undefined]]);
+  });
+
+  it('rides onto a section nested in another, which keeps its place among the rows', () => {
+    const leaf = { kind: 'number' as const, name: 'X', description: '', default: 0 };
+    const schema = { name: 'Box', members: {
+      outer: { name: 'Outer', members: {
+        'pose.x': leaf,
+        one: { name: 'One', as: 'tab' as const, members: { 'pose.y': leaf } },
+        box: { name: 'Box', as: 'panel' as const, members: { 'pose.z': leaf } },
+        'pose.w': leaf,
+      } },
+    } };
+    const [outer] = effectiveSections(['box'], [{ name: 'box', schema }]);
+    const shape = outer!.items.map((item) => (isPanelSection(item) ? [item.name, item.as, item.path] : item.leaves[0]!.path));
+    expect(shape).toEqual(['pose.x', ['One', 'tab', '#outer.#one'], ['Box', 'panel', '#outer.#box'], 'pose.w']);
+  });
+
+  it('keeps nesting across kinds, dropping a nested section the intersection empties', () => {
+    const leaf = { kind: 'number' as const, name: 'X', description: '', default: 0 };
+    const of = (name: string, members: Record<string, unknown>) => ({ name, schema: { name, members: { outer: { name: 'Outer', members } } } }) as never;
+    const sections = effectiveSections(['a', 'b'], [
+      of('a', { 'pose.x': leaf, one: { name: 'One', as: 'tab', members: { 'pose.y': leaf } }, two: { name: 'Two', as: 'tab', members: { 'pose.z': leaf } } }),
+      of('b', { 'pose.x': leaf, 'pose.y': leaf }),
+    ]);
+    const shape = sections[0]!.items.map((item) => (isPanelSection(item) ? [item.name, item.as] : item.leaves[0]!.path));
+    expect(shape).toEqual(['pose.x', ['One', 'tab']]);
   });
 });

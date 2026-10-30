@@ -83,3 +83,25 @@ describe('<ControlPanel> a group its enableIf turns off', () => {
     expect(dimmed(screen.getByText('Edge'))).toBe(!on);
   });
 });
+
+describe('<ControlPanel> a tab with no row to draw', () => {
+  it('is left out of its strip, and neither it nor a hidden row between tabs splits the strip', () => {
+    const resolved: ResolvedConfig = {
+      ...schema,
+      group: {
+        name: 'root',
+        children: {
+          one: { name: 'One', as: 'tab', children: { a: flag('Alpha') } },
+          gone: { name: 'Gone', as: 'tab', children: { z: flag('Zeta') } },
+          gap: flag('Gap'),
+          two: { name: 'Two', as: 'tab', children: { b: flag('Beta') } },
+          empty: { name: 'Empty', as: 'tab', children: {} },
+        },
+      },
+      showIf: new Map([['gone.z', () => false], ['gap', () => false]]),
+    };
+    renderWithIcons(<ControlPanel schema={resolved} config={{}} setConfig={vi.fn()} />);
+    expect(screen.getAllByRole('tablist')).toHaveLength(1);
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['One', 'Two']);
+  });
+});

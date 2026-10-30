@@ -28,7 +28,7 @@ describe('a pair with one leaf left to draw', () => {
 
   it('is a row of its own under its own name when the kinds selected share only half of it', () => {
     const [section] = effectiveSections(['thing', 'other'], entries);
-    expect(section!.rows).toEqual([{ label: 'Bold', leaves: [expect.objectContaining({ path: 'data.bold' })] }]);
+    expect(section!.items).toEqual([{ label: 'Bold', leaves: [expect.objectContaining({ path: 'data.bold' })] }]);
     const { container } = panel(entries, ['thing', 'other']);
     expect(container.querySelector('[data-pref-path="data.bold"]')?.textContent).toContain('Bold');
     expect(screen.queryByText('Style')).toBeNull();

@@ -51,9 +51,10 @@ type Drawn<Cell> =
   | { kind: 'tab'; tab: ObjectTab }
   | { kind: 'frame'; key: string; section: PrefSection; inner: ReactNode[]; labeled: boolean; path: string };
 
-/** The children that draw something, in order. `within` is the path a section among them is named under. */
-function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>, within: string): Drawn<Cell>[] {
-  const out: Drawn<Cell>[] = [];
+/** The children in order, each as it is drawn, and a section with nothing to draw as `undefined`. `within` is the
+ *  path a section among them is named under. */
+function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>, within: string): Array<Drawn<Cell> | undefined> {
+  const out: Array<Drawn<Cell> | undefined> = [];
   for (const [key, child] of Object.entries(children)) {
     if (isPrefLeaf(child)) {
       out.push({ kind: 'cell', cell: parts.cell(key, child, 'row') });
@@ -63,13 +64,14 @@ function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeaf
     const off = parts.off?.(path) === true;
     if (child.as === 'bar') {
       const nodes = barNodes(child.members, parts);
-      if (nodes.length > 0) out.push({ kind: 'bar', key, section: child, nodes, off });
+      out.push(nodes.length > 0 ? { kind: 'bar', key, section: child, nodes, off } : undefined);
       continue;
     }
     const labeled = child.name !== '' && child.as !== 'fragment';
     const inner = objectRows(child.members, parts, labeled && child.as !== 'tab', path);
-    if (inner.length === 0) continue;
-    if (child.as === 'tab') {
+    if (inner.length === 0) {
+      out.push(undefined);
+    } else if (child.as === 'tab') {
       const content = [...(parts.lead?.(key, child) ?? []), ...inner];
       out.push({ kind: 'tab', tab: { id: key, name: child.name, section: child, content, disabled: off } });
     } else {
@@ -82,7 +84,7 @@ function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeaf
 /**
  * An object leaf's children as rows, the one walk every params surface makes: fields in runs, a `bar` section as
  * one line, neighboring `tab` sections as one set of tabs, and any other section framed by the surface. A section
- * with nothing to draw is skipped and ends no run. `within` is the path a section among them is named under: the
+ * with nothing to draw is left out as `prefTabRuns` leaves it out. `within` is the path a section among them is named under: the
  * object leaf's own, or the section's that holds them.
  */
 export function objectRows<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>, indent = true, within = parts.path): ReactNode[] {
@@ -92,7 +94,8 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
     if (pending.length > 0) out.push(...parts.rows(pending));
     pending = [];
   };
-  for (const step of prefTabRuns(drawnChildren(children, parts, within), (drawn) => drawn.kind === 'tab')) {
+  const draws = (drawn: Drawn<Cell> | undefined): drawn is Drawn<Cell> => drawn !== undefined;
+  for (const step of prefTabRuns(drawnChildren(children, parts, within), (drawn) => drawn.kind === 'tab', draws)) {
     if (step.tabs) {
       const tabs = step.tabs.map((drawn) => (drawn as Extract<Drawn<Cell>, { kind: 'tab' }>).tab);
       const key = `tabs:${tabs[0]!.id}`;

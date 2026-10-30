@@ -3,7 +3,7 @@ import { prefAsBox, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@w
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
 import { pathWithin, useHeldTab, type PrefMarks } from '../Prefs/selection';
 import { isFlagLeaf } from './cells';
-import { pairRows, panelLeafKey, type PanelRow, type PanelSection } from './model';
+import { isPanelSection, pairRows, panelLeafKey, panelOwnRows, type PanelRow, type PanelSection } from './model';
 import type { PropertyRenderer } from './renderContext';
 
 /** What a panel marks while it draws, and the one of those it brings into view. */
@@ -70,27 +70,43 @@ export const sectionHeaded = (section: PanelSection): boolean =>
 export const sectionNamed = (section: PanelSection): boolean =>
   section.key !== '' && (section.as === 'tab' || prefAsBox(section.as) || sectionHeaded(section));
 
+/** Every section of `sections`, those nested in them included, and whether it is drawn on a bar's line. */
+function everySection(sections: readonly PanelSection[], inBar = false): Array<{ section: PanelSection; inBar: boolean }> {
+  return sections.flatMap((section) => {
+    const bar = inBar || section.as === 'bar';
+    return [{ section, inBar: bar }, ...everySection(section.items.filter(isPanelSection), bar)];
+  });
+}
+
 /**
  * What a panel of `sections` marks for `selected`, as the paths its elements carry: a row for a leaf, the one row
  * a pair's leaves share for any of them, the one cell a bar fuses from a run of flags, and a section
- * {@link sectionNamed} holds for its own key. A path it draws nothing for is left out, a section nested in another
- * among them. `renderers` are the panel's, since a flag one of them draws joins no run.
+ * {@link sectionNamed} holds for its own key, at any depth. A path it draws nothing for is left out, a section on a
+ * bar's line among them. `renderers` are the panel's, since a flag one of them draws joins no run.
  */
 export function panelMarkedPaths(
   sections: readonly PanelSection[], selected: readonly string[], renderers?: Record<string, PropertyRenderer>,
 ): string[] {
-  const rows = sections.flatMap((section) => section.rows);
-  const drawn = rows.flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
+  const all = everySection(sections);
+  const rowsIn = (bar: boolean): PanelRow[] => all.filter((at) => at.inBar === bar).flatMap((at) => panelOwnRows(at.section));
+  const drawn = all.flatMap((at) => panelOwnRows(at.section)).flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
   // A bar draws a cell a leaf, and no row for a pair to share.
-  const shared = sharedRows(sections.filter((section) => section.as !== 'bar').flatMap((section) => section.rows));
-  const fused = fusedFlags(sections.filter((section) => section.as === 'bar').flatMap((section) => section.rows), renderers);
-  const keys = new Set(sections.filter(sectionNamed).map((section) => section.key));
+  const shared = sharedRows(rowsIn(false));
+  const fused = fusedFlags(rowsIn(true), renderers);
+  const keys = new Set(all.filter((at) => !at.inBar && sectionNamed(at.section)).map((at) => at.section.key));
   const out = selected.flatMap((path) => {
     const at = panelShownPath(drawn, path);
     if (at !== null) return [shared.get(at) ?? fused.get(at) ?? at];
     return keys.has(path) ? [path] : [];
   });
   return [...new Set(out)];
+}
+
+/** Whether `section` holds `lead`: as its own key, a nested section's, or a leaf inside it. */
+export function sectionHolds(section: PanelSection, lead: string | null | undefined): boolean {
+  if (lead == null) return false;
+  return section.key === lead || section.items.some((item) =>
+    isPanelSection(item) ? sectionHolds(item, lead) : item.leaves.some((leaf) => pathWithin(panelLeafKey(leaf), lead)));
 }
 
 /** One tab of a {@link PanelTabs} strip, and whether the panel's lead mark lies in it. */
