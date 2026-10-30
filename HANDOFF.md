@@ -37,6 +37,10 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-10-30: `layered` keeping long edges inside the drawing, and `bezier` legs between facing ports kept
+  inside their band, on `CLOUD` (before/after on the wall, zone `weasel`: F356DA5C and 9E878B57 before,
+  0B209999 and 46CC661B after, each bezier then orthogonal); seen only as SVG drawn from the routed points,
+  not in the site's diagram demos.
 - 2026-10-29: grid and guide snaps landing a stroked shape's drawn box (and its center or far edge), equal
   spacing and alignment marks on a turned resize, a multi-node move snapping its union box; `layered`'s new
   group ranking and tight group boxes in the site's diagram demos (before/after on the wall, zone `weasel`,

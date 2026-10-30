@@ -25,6 +25,8 @@ import { expand } from './expand';
 import { orderRows } from './order';
 import { levelRoutes } from './level';
 import { holdPins } from './pins';
+import { turnOutward } from './inward';
+import { boxReach } from './reach';
 import { placeAcross } from './place';
 import { ranksByLength } from './rank';
 import { settlePlaces } from './places';
@@ -93,11 +95,21 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const back = backEdges(graph);
   const ranks = ranksByLength(graph, back);
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
-  const rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
+  let rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
 
-  const preferred = placeAcross(rows, settlePlaces(rows, expanded.hops), axes.cross, nodeGap);
   const grouped = (graph.groups?.length ?? 0) > 0;
-  const packed = grouped ? packClusters(graph, rows, preferred, axes, nodeGap) : preferred;
+  const pinned = pinnedSet(graph, opts);
+  const across = () => {
+    const preferred = placeAcross(rows, settlePlaces(rows, expanded.hops), axes.cross, nodeGap);
+    return grouped ? packClusters(graph, rows, preferred, axes, nodeGap) : preferred;
+  };
+  let packed = across();
+  for (let turn = 0; turn < rows.length; turn++) {
+    const turned = turnOutward({ graph, rows, crossAt: packed, axes, pinned, hops: expanded.hops });
+    if (turned === undefined) break;
+    rows = turned;
+    packed = across();
+  }
   const spaced = grouped ? rankGaps(graph, rows, axes, rankGap) : rows.slice(1).map(() => rankGap);
   // A gap keeps the room its groups' insets take on top of `rankGap`.
   const minGaps = spaced.map((gap) => gap - rankGap + rankGap * MIN_GAP);
@@ -107,7 +119,6 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     spaced[r - 1] = spaced[r - 1]! - rankGap * (1 - LABEL_GAP);
     spaced[r] = spaced[r]! - rankGap * (1 - LABEL_GAP);
   }
-  const pinned = pinnedSet(graph, opts);
   const { crossAt, gaps, depths, rankAt, unheld } = holdPins({ graph, rows, crossAt: packed, gaps: spaced, pinned, axes, nodeGap, minGaps });
 
   const slots = new Map<string, Slot>();
@@ -146,6 +157,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const labels = new Map<string, Vec2>();
   const rankOf = new Map<string, number>();
   rows.forEach((row, r) => row.forEach((n) => rankOf.set(n.id, r)));
+  const reach = boxReach(graph, rows, axes);
   const widthOf = new Map(rows.flat().map((n) => [n.id, extent(n.bounds, axes.cross)]));
   for (const [edge, chain] of expanded.chains) {
     if (chain.ends.some((id) => displaced.has(id))) continue;
@@ -153,7 +165,10 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     const points: Vec2[] = [];
     for (const id of chain.ids) {
       const cross = crossAt.get(id)! + (expanded.wires.get(id) ?? widthOf.get(id)! / 2);
-      const [lo, hi] = bands[rankOf.get(id)!]!;
+      // A wire passing a group's box enters and leaves level with its edge,
+      // so the turns either side of the run stay clear of the box.
+      const r = rankOf.get(id)!;
+      const [lo, hi] = [bands[r]![0] - reach.lo[r]!, bands[r]![1] + reach.hi[r]!];
       for (const rank of chain.back ? [hi, lo] : [lo, hi]) {
         const at = worldOf({ cross, rank }, 0, axes);
         points.push({ x: at.x + offset.x, y: at.y + offset.y });

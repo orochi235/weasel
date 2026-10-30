@@ -4,7 +4,7 @@
  * the ends and calls one by the key the edge names.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { portCurvePoints } from '@weasel-js/geom';
+import { PORT_REACH, portCurvePoints } from '@weasel-js/geom';
 import { routeHolds } from './avoid/holds';
 import type { Port } from './types';
 
@@ -99,6 +99,7 @@ export const bezier: Router = (req) => {
       outN == null ? null : [outN.x, outN.y],
       inN == null ? null : [inN.x, inN.y],
       BEZIER_SAMPLES,
+      legReach(a, b, outN, inN),
     );
     for (const [x, y] of leg) out.push({ x, y });
   }
@@ -106,6 +107,23 @@ export const bezier: Router = (req) => {
 };
 
 const BEZIER_SAMPLES = 16;
+
+/**
+ * How far a leg's control points reach, as `portCurvePoints` reads it. Where
+ * the leg leaves and arrives along one axis, facing on, the reach goes no
+ * further along that axis than the leg travels, so the curve stays between
+ * its two ends there rather than swinging past them into whatever sits beside
+ * either: a long leg between two near ranks otherwise sweeps through the rank
+ * it left.
+ */
+function legReach(a: Vec2, b: Vec2, outN: Vec2 | null | undefined, inN: Vec2 | null | undefined): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const chord = Math.hypot(dx, dy);
+  if (outN == null || inN == null || chord === 0 || outN.x * inN.x + outN.y * inN.y > -0.999) return PORT_REACH;
+  const along = dx * outN.x + dy * outN.y;
+  return along > 0 ? Math.min(PORT_REACH, along / chord) : PORT_REACH;
+}
 
 /**
  * The direction a smooth route passes an interior stop: along the straight run
