@@ -76,8 +76,12 @@ export function getProgramSource(id: string): ProgramSource | null {
  * Register a custom shader program by id.
  *
  * Pass an empty string for `vert` to use the kit's default vertex shader
- * (recommended). The kit's vertex shader exposes `v_uv`, `v_screen`, and
- * `v_world` varyings plus `u_bounds` and `u_view` uniforms.
+ * (recommended). The kit's vertex shader exposes `v_uv`, `v_screen`, `v_world`
+ * and `v_worldLocal` varyings plus `u_bounds`, `u_view` and `u_worldOrigin`
+ * uniforms. Far from the origin `v_world` is as coarse as any float32 that
+ * size; `v_worldLocal` is the same point measured from `u_worldOrigin`, a
+ * world point near the bounds, and stays exact, so a shader drawing detail
+ * there reads it (a periodic one, `mod(u_worldOrigin, P) + v_worldLocal`).
  *
  * **`gl_FragCoord`** counts from the corner of whatever buffer the draw lands
  * in, which is not always the canvas's: a renderer confined to a tile of a

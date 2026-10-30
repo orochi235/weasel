@@ -164,6 +164,20 @@ export function gradientSpaceInverse(ctx: DrawContext, units: PaintUnits | undef
   return ctx.screenMatrix ? mat3.invert(ctx.screenMatrix) : mat3.identity();
 }
 
+/**
+ * {@link gradientSpaceInverse} measured from `about`, a point in that space,
+ * subtracted here in doubles: far from the origin a float32 paint-space point
+ * is coarser than a pixel, and a shader's subtraction would be of two such
+ * numbers.
+ */
+export function spaceInverseAbout(
+  ctx: DrawContext, units: PaintUnits | undefined, about?: { readonly x: number; readonly y: number },
+): GlMat3 | null {
+  const inverse = gradientSpaceInverse(ctx, units);
+  if (!inverse || !about || (about.x === 0 && about.y === 0)) return inverse;
+  return mat3.multiply(mat3.translated(mat3.identity(), -about.x, -about.y), inverse);
+}
+
 /** The paint space `units` names → device pixels: the forward transform
  *  `gradientSpaceInverse` undoes, scaled by the target's pixel ratio. */
 export function spaceToDevice(ctx: DrawContext, units: PaintUnits | undefined): GlMat3 | null {

@@ -199,7 +199,7 @@ return [{
 }];
 ```
 
-An empty vertex source selects the kit's vertex shader, which provides the `v_uv`, `v_screen` and `v_world` varyings and sets `u_bounds`, `u_view` and `u_proj` itself. Uniforms take a number, a 2–4 element tuple, a `Float32Array`, or a `TextureHandle` from `registerTexture`. Output **premultiplied** alpha — `vec4(rgb * a, a)` — or translucent pixels come out too bright. `bounds` is in CSS pixels.
+An empty vertex source selects the kit's vertex shader, which provides the `v_uv`, `v_screen`, `v_world` and `v_worldLocal` varyings and sets `u_bounds`, `u_view`, `u_proj` and `u_worldOrigin` itself. Far from the origin `v_world` is as coarse as any float32 that size; `v_worldLocal` is the same point measured from `u_worldOrigin`, a world point near the bounds, and stays exact, so a periodic pattern reads `mod(u_worldOrigin, P) + v_worldLocal`. Uniforms take a number, a 2–4 element tuple, a `Float32Array`, or a `TextureHandle` from `registerTexture`. Output **premultiplied** alpha — `vec4(rgb * a, a)` — or translucent pixels come out too bright. `bounds` is in CSS pixels.
 
 ## Subpath imports
 

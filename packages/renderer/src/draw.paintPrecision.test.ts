@@ -10,6 +10,8 @@ import { resolvePatternSpec, _resetPatternSpecCacheForTests } from './patterns/r
 import {
   installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas,
 } from './patterns/test-utils/fakeOffscreenCanvas';
+import { registerPaintDrawKind } from './paintKinds';
+import { meshDrawKind, seedMeshPatch } from './meshPaint/meshPaint';
 
 /**
  * A `units: 'world'` paint far from the origin and zoomed in. The paint
@@ -54,6 +56,16 @@ function sent(rec: ReturnType<typeof makeGLRecorder>, prog: ShaderProgram, name:
   const loc = prog.uniform(uniform);
   expect(loc, `${uniform} has no location`).toBeDefined();
   return rec.calls.filter((c) => c.name === name && c.args[0] === loc).at(-1);
+}
+
+/** The program that was asked for `name`, as {@link sent} reads one: by the
+ *  locations the recorder handed back for it. */
+function programDeclaring(rec: ReturnType<typeof makeGLRecorder>, name: string): ShaderProgram {
+  const handle = rec.calls.find((c) => c.name === 'getUniformLocation' && c.args[1] === name)!.args[0];
+  const uniform = (u: string) =>
+    rec.calls.find((c) => c.name === 'getUniformLocation' && c.args[0] === handle && c.args[1] === u)?.result as
+      WebGLUniformLocation | undefined;
+  return { uniform } as unknown as ShaderProgram;
 }
 
 /** `(u_worldInv * vec3(screen, 1.0)).xy` as the vertex stage computes it. */
@@ -109,6 +121,36 @@ describe('paint space far from the origin (world x = 262,144 at 64x)', () => {
         const world = WORLD_X + (SX - k * STEP_PX) / ZOOM;
         const want = world - Math.floor(world / tw) * tw;
         expect(Math.abs(got - want), `pan ${k}`).toBeLessThan(0.01);
+      }
+    });
+  });
+
+  describe('a mesh gradient', () => {
+    let release: () => void;
+    beforeEach(() => { release = registerPaintDrawKind(meshDrawKind); });
+    afterEach(() => release());
+
+    it('moves a world-space mesh under a quarter-pixel pan by a quarter pixel, and its geometry with it', () => {
+      const seed = seedMeshPatch('#ff0000ff');
+      const paint = {
+        ...seed, units: 'world',
+        patches: seed.patches.map((p) => ({ ...p, points: p.points.map((q) => ({ x: WORLD_X + q.x * 4, y: q.y * 4 })) })),
+      };
+      const ts: number[] = [];
+      let width = 0;
+      for (const k of PANS) {
+        const { rec } = frame(paint, k * STEP_PX);
+        const prog = programDeclaring(rec, 'u_meshSize');
+        const worldInv = sent(rec, prog, 'uniformMatrix3fv', 'u_worldInv')!.args[2] as Float32Array;
+        [width] = sent(rec, prog, 'uniform2f', 'u_meshSize')!.args.slice(1) as number[];
+        // The shader's `v_world / u_meshSize`.
+        ts.push(f(paintPoint(worldInv, SX, SY)[0] / f(width)));
+        // The model's translation is what is left past u_origin: a few pixels, not millions.
+        const model = sent(rec, prog, 'uniformMatrix3fv', 'u_model')!.args[2] as Float32Array;
+        expect(Math.abs(model[6]!), `pan ${k}`).toBeLessThan(1e4);
+      }
+      for (const [k, t] of ts.entries()) {
+        expect((t - ts[0]!) * width, `pan ${k}`).toBeCloseTo((-k * STEP_PX) / ZOOM, 4);
       }
     });
   });
