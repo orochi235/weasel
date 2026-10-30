@@ -5,6 +5,7 @@ import { CloseButton } from '../CloseButton';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
 import f from '../field.module.css';
 import { AddEntry, type ListEntryKind } from './AddEntry';
+import { useEntryDraft } from './entryDraft';
 import { useEntryMoves, useListFocus } from './listEntries';
 import s from './ListEditor.module.css';
 
@@ -13,8 +14,8 @@ export type { ListEntryKind };
 /** Props for {@link ListEditor}. */
 export interface ListEditorProps<T = string> {
   value: readonly T[];
-  /** Every edit, add, removal and move, with the whole list. Entries are written as
-   *  typed — an empty one stays until it is removed. */
+  /** Every edit, add, removal and move, with the whole list. A text entry is written like any typed field: on
+   *  blur or Enter, or once typing rests where it settles when idle. An empty one stays until it is removed. */
   onChange: (next: T[]) => void;
   /** Draws one entry's control, named `name` for assistive tech. Without it
    *  the entries are strings, each a text field. */
@@ -27,6 +28,9 @@ export interface ListEditorProps<T = string> {
   minItems?: number;
   /** Entries cannot be added at this many. */
   maxItems?: number;
+  /** A text entry commits once typing rests, as well as on blur or Enter. Defaults to the
+   *  `typing.settleWhenIdle` kit setting. */
+  settleWhenIdle?: boolean;
   /** Shown in an empty entry. */
   placeholder?: string;
   /** Shown in place of the entries when there are none. */
@@ -64,8 +68,9 @@ function dropAttrs(i: number, count: number, { targetIndex, draggedIds }: Reorde
 /**
  * An editable list: one control per entry, a remove button beside each, and
  * an add button under them. Entries are strings in text fields unless
- * `renderEntry` draws them. In a text field, Enter adds an entry after it
- * and Backspace in an empty one removes it. With `reorder`, entries move by
+ * `renderEntry` draws them. A text field holds what is typed until blur,
+ * Enter or a rest, like any typed field; Enter adds an entry after it and
+ * Backspace in an empty one removes it. With `reorder`, entries move by
  * their handles or Alt+Up / Alt+Down.
  */
 export function ListEditor(props: ListEditorProps): ReactNode;
@@ -85,33 +90,36 @@ export function ListEditor<T>({
   maxItems = Infinity,
   disabled = false,
   entryDisabled,
+  settleWhenIdle,
 }: ListEditorProps<T>) {
   const focus = useListFocus();
   const kinds = useMemo(() => kindsOf(newEntry, addLabel), [newEntry, addLabel]);
+  const entries = useEntryDraft(value, onChange, settleWhenIdle);
+  const list = entries.typed;
 
   const insert = (at: number, make: () => T): void => {
-    if (value.length >= maxItems) return;
-    onChange([...value.slice(0, at), make(), ...value.slice(at)]);
+    if (list.length >= maxItems) return;
+    entries.write([...list.slice(0, at), make(), ...list.slice(at)]);
     focus.request({ at, to: 'input' });
   };
   const remove = (at: number): void => {
-    if (value.length <= minItems) return;
-    onChange(value.filter((_, i) => i !== at));
+    if (list.length <= minItems) return;
+    entries.write(list.filter((_, i) => i !== at));
     focus.request({ at: Math.max(0, at - 1), to: 'removed' });
   };
-  const { drag, move } = useEntryMoves(value, onChange, focus, reorder && !disabled);
+  const { drag, move } = useEntryMoves(list, entries.write, focus, reorder && !disabled);
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>, at: number): void => {
     if (imeKey(e.nativeEvent)) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       if (kinds[0]) insert(at + 1, kinds[0].make);
-    } else if (e.key === 'Backspace' && value[at] === '') {
+    } else if (e.key === 'Backspace' && entries.shown(at) === '') {
       e.preventDefault();
       remove(at);
-    }
+    } else entries.keyDown(e);
   };
   const name = (i: number): string => `${ariaLabel ?? 'Entry'} ${i + 1}`;
-  const set = (at: number, next: T): void => onChange(value.map((v, j) => (j === at ? next : v)));
+  const set = (at: number, next: T): void => entries.write(list.map((v, j) => (j === at ? next : v)));
 
   return (
     <div className={[s.editor, className].filter(Boolean).join(' ')} role="group" aria-label={ariaLabel}>
@@ -148,10 +156,12 @@ export function ListEditor<T>({
                   type="text"
                   className={`${f.frame} ${s.input}`}
                   aria-label={name(i)}
-                  value={entry as string}
+                  value={entries.shown(i)}
                   placeholder={placeholder}
                   disabled={disabled || entryDisabled?.(i) === true}
-                  onChange={(e) => set(i, e.target.value as T)}
+                  onFocus={() => entries.focus(i)}
+                  onChange={(e) => entries.type(i, e.target.value)}
+                  onBlur={entries.settle}
                   onKeyDown={(e) => onKeyDown(e, i)}
                 />
               )}

@@ -365,12 +365,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] `ListEditor`'s own text entries write on every keystroke.** Its built-in `<input>` (no
-  `renderEntry`) calls `onChange` per key, so in `PrefsForm`'s and `SelectionPanel`'s list leaves each key is a
-  write, and in a panel an undo step, where every other typed control holds a draft until blur or Enter, or a
-  pause where `typing.settleWhenIdle` is on (2026-10-30). Moving it onto that draft has to keep Enter inserting
-  an entry and Backspace on an empty one removing it, which read the committed list.
-
 - **(P2) [maintainer] Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved

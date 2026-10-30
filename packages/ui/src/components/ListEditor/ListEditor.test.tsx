@@ -22,7 +22,9 @@ describe('ListEditor', () => {
   it('edits one entry and writes the whole list', () => {
     const onChange = vi.fn();
     renderWithIcons(<ListEditor aria-label="Glob" value={['a', 'b']} onChange={onChange} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Glob 2' }), { target: { value: 'c' } });
+    const field = screen.getByRole('textbox', { name: 'Glob 2' });
+    fireEvent.change(field, { target: { value: 'c' } });
+    fireEvent.blur(field);
     expect(onChange).toHaveBeenCalledWith(['a', 'c']);
   });
 
