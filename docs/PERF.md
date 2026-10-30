@@ -10,11 +10,11 @@ When work merges, retire its entry here in the same change.
 
 ## Scene
 
-- **(P3) [agent] A scene add-and-remove round trip still costs about 0.09 µs more than before 599685677,
-  and `setPose` about 0.05 µs more.** 599685677 (2026-10-13) records every scene edit as the kit ops it
+- **(P3) [agent] A scene add-and-remove round trip still costs about 0.06 µs more than before 599685677,
+  and `setPose` about 0.04 µs more.** 599685677 (2026-10-13) records every scene edit as the kit ops it
   caused, and at that commit alone added 0.26 µs to the round trip and 0.12 µs to `setPose`. On msb-uai
-  (7 interleaved runs each, 2026-10-30, `ab4/`) the round trip is 0.95 µs at its parent 43a827165, 1.08 µs on
-  `main` at b6d8ba184 and 1.04 µs after the 2026-10-30 cuts; `setPose` 0.21, 0.28 and 0.26 µs. What a bare
+  (9 interleaved runs each, 2026-10-30, `ab5/`) the round trip is 0.93 µs at its parent 43a827165, 1.05 µs
+  on `main` at b6d8ba184 and 0.99 µs after the 2026-10-30 cuts; `setPose` 0.21, 0.27 and 0.25 µs. What a bare
   call still does that 43a827165 did not: run its engine push inside `mode.during('own')`, copy the ops
   it pushes, and open a labeled edit and run wrapped handlers for the pose-write log, which arrived
   after it. No one of these stands out in a CPU profile (`profile-599/`). Runs, profiles and the script
