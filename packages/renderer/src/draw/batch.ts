@@ -217,9 +217,8 @@ export function pushRect(
   fill: { color: string; opacity?: number },
 ): void {
   const slot = stageSolid(ctx, 4);
-  const [r, g, b, a] = stagedColor(ctx, fill);
   if (!ctx.drawBatch.pushRect(
-    rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a, slot,
+    rect.x, rect.y, rect.width, rect.height, ctx.state.transform, stagedColor(ctx, fill), slot,
   )) retryUncut(ctx, rect, fill, pushRect);
 }
 

@@ -137,8 +137,7 @@ function drawTextDecorations(
       const slot = stageSolid(ctx, 4);
       const rgba = foldColor(ctx, r, g, b, a);
       if (ctx.drawBatch.pushRect(
-        d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
-        rgba[0], rgba[1], rgba[2], rgba[3], slot,
+        d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform, rgba, slot,
       )) break;
       cut = enterUncut(ctx);
     }
