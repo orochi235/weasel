@@ -12,6 +12,7 @@ import {
 } from './patterns/test-utils/fakeOffscreenCanvas';
 import { registerPaintDrawKind } from './paintKinds';
 import { meshDrawKind, seedMeshPatch } from './meshPaint/meshPaint';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 /**
  * A `units: 'world'` paint far from the origin and zoomed in. The paint
@@ -32,12 +33,11 @@ const f = Math.fround;
 
 /** An even-odd square beside `WORLD_X`: its mesh needs the stencil, so it
  *  draws through the path programs and not the batch. */
-const SQUARE: PolygonPath = {
+const SQUARE: PolygonPath = stencilledEvenOdd({
   kind: 'polygon',
   commands: new Uint8Array([M, L, L, L, Z]),
   coords: new Float32Array([WORLD_X, 0, WORLD_X + 4, 0, WORLD_X + 4, 4, WORLD_X, 4]),
-  fillRule: 'evenodd',
-};
+});
 
 function frame(paint: unknown, px: number) {
   const rec = makeGLRecorder();

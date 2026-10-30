@@ -53,7 +53,9 @@ export function beginParityMask(ctx: DrawContext, indexCount: number): void {
   const clipMask = ancestorMask(ctx.clipDepth);
   gl.colorMask(true, true, true, true);
   gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
-  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  // A pixel the fan covers three times would blend three times; clearing its
+  // parity bit as it paints lets it paint once.
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
 }
 
 export function endParityMask(ctx: DrawContext): void {

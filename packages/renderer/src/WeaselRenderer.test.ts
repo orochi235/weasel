@@ -4,6 +4,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
 import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 const MINIMAL_FRAG = `#version 300 es
 precision highp float;
@@ -203,16 +204,15 @@ describe('WeaselRenderer.render — frame isolation', () => {
     expect(() => r.render([tooDeep()])).toThrow(/clip nesting depth exceeded/);
 
     rec.reset();
-    // An even-odd fill keeps out of the solid batch, so the draw uploads
+    // A touching even-odd fill keeps out of the solid batch, so the draw uploads
     // `u_model` from the group state instead of folding it into vertices.
     r.render([{
       kind: 'path',
-      path: {
+      path: stencilledEvenOdd({
         kind: 'polygon',
         commands: new Uint8Array([0, 1, 1, 3]),
         coords: new Float32Array([0, 0, 10, 0, 0, 10]),
-        fillRule: 'evenodd',
-      },
+      }),
       fill: { paint: { color: '#f00' } },
     }] as unknown as DrawCommand[]);
 
@@ -273,16 +273,15 @@ describe('dispose', () => {
       fill: { paint: { color: '#f00' } },
     }] as never);
     expect(links()).toBe(1);
-    // Per-vertex colors on an even-odd fill, which the batch cannot take, are
+    // Per-vertex colors on a touching even-odd fill, which the batch cannot take, are
     // the vertex-color program's, built on this frame.
     const vertexColored = {
       kind: 'path',
-      path: {
+      path: stencilledEvenOdd({
         kind: 'polygon',
         commands: new Uint8Array([0, 1, 1, 3]),
         coords: new Float32Array([0, 0, 10, 0, 0, 10]),
-        fillRule: 'evenodd',
-      },
+      }),
       fill: { paint: { kind: 'solid', color: '#fff' } },
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
     };

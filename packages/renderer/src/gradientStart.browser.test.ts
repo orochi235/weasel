@@ -2,24 +2,24 @@
  * A gradient drawn by the path program starts where its paint says. The start
  * point is folded into `u_worldInv` on the CPU, so the shader measures from the
  * origin of what that matrix hands it; the recorder sees the matrix and never
- * where the ramp lands. Even-odd squares, because that is the fill that still
- * draws through this program and not the batch.
+ * where the ramp lands. Even-odd squares with a touching contour, because that is
+ * the fill that still draws through this program and not the batch.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 const SIZE = 16;
 const STOPS = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }];
 
-const SQUARE: PolygonPath = {
+const SQUARE: PolygonPath = stencilledEvenOdd({
   kind: 'polygon',
   commands: new Uint8Array([M, L, L, L, Z]),
   coords: new Float32Array([0, 0, SIZE, 0, SIZE, SIZE, 0, SIZE]),
-  fillRule: 'evenodd',
-};
+});
 
 let renderer: WeaselRenderer | undefined;
 afterEach(() => {

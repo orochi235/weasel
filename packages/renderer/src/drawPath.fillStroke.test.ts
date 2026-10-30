@@ -4,6 +4,7 @@ import type { RectPath, PolygonPath } from '@weasel-js/geom';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { FLOATS_PER_VERTEX } from './drawBatch';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -43,12 +44,11 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
   });
 
   it('enables stencil and issues two drawElements for an evenodd path', () => {
-    const path: PolygonPath = {
+    const path = stencilledEvenOdd({
       kind: 'polygon',
       commands: new Uint8Array([M, L, L, L, Z]),
       coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
-      fillRule: 'evenodd',
-    };
+    });
     r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
 
     const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
@@ -60,12 +60,11 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
   });
 
   it('clears the parity bit after the cover pass', () => {
-    const path: PolygonPath = {
+    const path = stencilledEvenOdd({
       kind: 'polygon',
       commands: new Uint8Array([M, L, L, L, Z]),
       coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
-      fillRule: 'evenodd',
-    };
+    });
     r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
     const names = recorder.calls.map((c) => c.name);
     const cover = names.lastIndexOf('drawElements');
@@ -177,12 +176,11 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
   });
 
   it('drawPathFillStencil only touches bit 0 — clip-level bits 1-7 survive', () => {
-    const path: PolygonPath = {
+    const path = stencilledEvenOdd({
       kind: 'polygon',
       commands: new Uint8Array([M, L, L, L, Z]),
       coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
-      fillRule: 'evenodd',
-    };
+    });
     r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
 
     // The function must only set stencilMask to 0x01 (bit 0) or 0xFF (the

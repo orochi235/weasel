@@ -14,6 +14,7 @@ import { registerProgram, _resetProgramRegistryForTests } from './shaders/regist
 import { registerPaintDrawKind } from './paintKinds';
 import { meshDrawKind, seedMeshPatch } from './meshPaint/meshPaint';
 import { resolvePatternSpec } from './patterns/resolveSpec';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 const ZOOM = 64;
 const FAR = 3_000_000.3;
@@ -28,16 +29,15 @@ afterEach(() => {
   _resetProgramRegistryForTests();
 });
 
-/** An even-odd square from `x0` one unit wide: even-odd so it draws through
- *  the path programs and not the batch. */
+/** An even-odd square from `x0` one unit wide, with a touching contour so it
+ *  draws through the path programs and not the batch. */
 function square(x0: number): PolygonPath {
-  return {
+  return stencilledEvenOdd({
     kind: 'polygon',
     commands: new Uint8Array([M, L, L, L, Z]),
     coords: new Float32Array([0, 0, 1, 0, 1, 0.25, 0, 0.25]),
     origin: { x: x0, y: 0 },
-    fillRule: 'evenodd',
-  };
+  });
 }
 
 /** The red channel along the middle row of `commands(x0)` drawn under a view

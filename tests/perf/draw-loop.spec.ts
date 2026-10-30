@@ -6,8 +6,8 @@
  *
  * The variants:
  *   - `alternating` — solid and even-odd fill alternating. An even-odd fill
- *     never joins the batched run, so every command flushes it and switches
- *     program. A pattern did this until 2026-10-30, when patterns joined the run.
+ *     whose outlines touch never joins the batched run, so every command
+ *     flushes it and switches program. A pattern did this until 2026-10-30, when patterns joined the run.
  *   - `stacked` — every rect at the same spot: the same number of draw calls
  *     over a fraction of the fragments.
  *   - `scene` — each command in its own group, which is what `buildSceneTree`
@@ -80,11 +80,12 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
 
       const solidFill = (i: number) => ({ kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
       const M = 0, L = 1, Z = 4; // PathVerb
-      /** A rect as an even-odd polygon, which paints itself through the stencil. */
+      /** A rect as an even-odd polygon, with a contour of no area along its
+       *  first edge: outlines that touch keep the stencil, so it paints itself. */
       const evenOddRect = (x: number, y: number, size: number): unknown => ({
         kind: 'polygon',
-        commands: new Uint8Array([M, L, L, L, Z]),
-        coords: new Float32Array([x, y, x + size, y, x + size, y + size, x, y + size]),
+        commands: new Uint8Array([M, L, L, L, Z, M, L, Z]),
+        coords: new Float32Array([x, y, x + size, y, x + size, y + size, x, y + size, x, y, x + size, y]),
         fillRule: 'evenodd',
       });
       const breaks = (variant: string, i: number): boolean => variant === 'alternating' && i % 2 === 1;

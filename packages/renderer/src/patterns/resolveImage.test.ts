@@ -7,6 +7,7 @@ import type { DrawCommand } from '../DrawCommand';
 import { _resetTextureRegistryForTests, getTexture } from '../textures/registerTexture';
 import { __setImageLoaderForTests, _resetImageCacheForTests, getImageBitmap, releaseImage } from '../images/imageCache';
 import { resolveFillPattern } from './resolveSpec';
+import { stencilledEvenOdd } from '../testing/stencilledEvenOdd';
 
 const SRC = 'data:image/png;base64,AAAA';
 
@@ -70,12 +71,12 @@ describe('an image pattern paint', () => {
   });
 });
 
-const SQUARE: PolygonPath = {
+/** Draws for itself, so the pattern program's uniforms are there to read. */
+const SQUARE: PolygonPath = stencilledEvenOdd({
   kind: 'polygon',
   commands: new Uint8Array([M, L, L, L, Z]),
   coords: new Float32Array([0, 0, 40, 0, 40, 40, 0, 40]),
-  fillRule: 'evenodd',
-};
+});
 
 function draw(paint: unknown) {
   const rec = makeGLRecorder();
