@@ -37,8 +37,6 @@ export function _journalAccessInternal(history: History): JournalAccess {
 const SILENT: HistoryLogger = { log: () => {}, warn: () => {} };
 
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
-const NO_BRANCHES: readonly Entry[][] = [];
-
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
   const undoStack: Entry[] = [];
   const redoStack: Entry[] = [];
@@ -105,15 +103,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  floor go with it, and the ones forking from the entry now fork from the
    *  floor. */
   function evictFloor(entries: Entry[]): void {
-    for (const e of entries) evictOne(e);
-  }
-
-  function evictOne(e: Entry): void {
-    if (onEvict) reportEvicted([e]);
-    const stranded = forks.size > 0 ? forks.get(floorId) : undefined;
-    if (stranded !== undefined) forks.delete(floorId);
-    floorId = e.id;
-    for (const branch of stranded ?? NO_BRANCHES) evict(branch);
+    for (const e of entries) {
+      if (onEvict) reportEvicted([e]);
+      const stranded = forks.size > 0 ? forks.get(floorId) : undefined;
+      if (stranded !== undefined) forks.delete(floorId);
+      floorId = e.id;
+      if (stranded !== undefined) for (const branch of stranded) evict(branch);
+    }
   }
 
   /** The id of the entry the history stands on, the floor's beneath them all. */
@@ -135,7 +131,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   /** Evict the oldest undo entries past `historyLimit`, reporting each. */
   function enforceLimit(): void {
     while (undoStack.length > historyLimit) {
-      evictOne(undoStack.shift()!);
+      evictFloor([undoStack.shift()!]);
     }
   }
 

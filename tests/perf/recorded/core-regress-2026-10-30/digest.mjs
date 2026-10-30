@@ -1,7 +1,7 @@
 // Per label, the median across runs of each run's batch median: node digest.mjs <pass>/<node>/runs.jsonl
 import { readFileSync } from 'node:fs';
 const recs = readFileSync(process.argv[2], 'utf8').trim().split('\n').map((l) => JSON.parse(l));
-const med = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[s.length >> 1]; };
+const med = (xs) => { if (xs.length === 0) return NaN; const s = [...xs].sort((a, b) => a - b); return s[s.length >> 1]; };
 const by = new Map();
 for (const r of recs) {
   const row = by.get(r.result.label) ?? { walk: [], rt: [], sp: [] };
