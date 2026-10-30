@@ -309,8 +309,6 @@ Owner tags, after the priority (2026-10-26):
   or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Text drawn from an atlas (baked or
   canvas) is still laid out one code point at a time, because atlases look glyphs up by code point and cannot draw
   a shaped glyph index. Open pieces:
-  - Script pieces are cut over a fixed list of scripts. Any other script is one piece, and its direction is
-    guessed from the right-to-left Unicode blocks.
   - PDF export does not write a text's `lang` (2026-10-27): no `/Lang` on the catalog or on marked content, so a
     screen reader or text extraction guesses the language.
   - harfbuzzjs awaits at its module's top level, so a consumer bundling for a target below ES2022 fails (esbuild
