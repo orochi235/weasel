@@ -6,10 +6,12 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## State (2026-10-30, evening)
 
-- 1.14.2 is on npm (all 49 packages, checked with `npm run check:published`); `main` and `origin/main` are at
-  b6d8ba184. The batch it carries passed the full suite at 106f27060 and 77927c197.
-- Nothing in flight. GitHub's visual regression job may flag text-heavy shots after the small-glyph area
-  coverage change; regenerate through the `visual-update` workflow if it does.
+- 1.14.2 is on npm (all 49 packages, checked with `npm run check:published`); `origin/main` is at b6d8ba184.
+  `main` adds three batches from the evening of 2026-10-30, each green on the fleet (4cb4ac958, 5965a40ec,
+  76d1637e4), unpushed.
+- Nothing in flight. GitHub's visual regression job may flag text-heavy shots (small-glyph area coverage) and
+  translucent concave fills (the stencil cover pass now paints each pixel once); regenerate through the
+  `visual-update` workflow if it does.
 - The windease fix for a never-shown node is on windease's `main` (24ec47d) and not yet released (npm has
   2.2.0); the weasel TODO entry says what follows its release.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
@@ -38,6 +40,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-10-30 evening: rows along an arc following the arc's direction (`Bar`, tabs, radio groups, swatch rings);
+  the trial status strip's scale readout about 1.5 px higher; `ListEditor` entries holding a draft until blur;
+  pattern and simple even-odd fills drawn in the batch; `CurvedLabel` with no bidi engine registered.
 - 2026-10-30: small atlas text (16px and below at DPR 1) under area coverage, against the edit overlay;
   `SelectionPanel` drawing a nested `tab`/`panel` in place; a per-vertex-colored shape drawn in the batch; a
   dev server recovering a missed file event (its `[watch]` log line).
