@@ -24,7 +24,9 @@ async function weaselAlias(): Promise<AliasOptions> {
 }
 
 async function weaselWatch(): Promise<PluginOption> {
-  const { devWatch } = (await import(/* @vite-ignore */ `file://${weaselRoot}/scripts/vite-watch.ts`)) as {
+  const { devWatch } = (await import(
+    /* @vite-ignore */ `file://${weaselRoot}/scripts/vite-watch.ts`
+  )) as {
     devWatch: () => PluginOption;
   };
   return devWatch();
