@@ -41,8 +41,9 @@ for (const g of shaper.shape(fontBytes, 'بيت')) {
 }
 ```
 
-`shape` cuts the text where its script changes and shapes each piece in that script's
-direction, then returns the glyphs in logical order. Its optional fourth argument is a BCP 47
+`shape` cuts the text where its Unicode script changes, keeping spaces, digits, punctuation
+and marks with the letters around them and a closing bracket with its opening one, and
+shapes each piece in its letters' direction, then returns the glyphs in logical order. Its optional fourth argument is a BCP 47
 language tag. `glyphD` is em-space SVG path data, y
 down. Pass the same `ArrayBuffer` for the same face every time: the parsed face is held
 against it.

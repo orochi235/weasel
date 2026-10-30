@@ -3,33 +3,61 @@
  * script in one direction, so a run mixing Latin and Arabic is shaped a piece
  * at a time.
  */
+import { bidiClassOf, pairedBracket } from '@weasel-js/bidi';
 
-/** The scripts a run is cut between. Any other script is one more piece,
- *  shaped as whichever script HarfBuzz guesses from its first letter. */
-const NAMES = [
-  'Latin', 'Greek', 'Cyrillic', 'Armenian', 'Hebrew', 'Arabic', 'Syriac', 'Thaana', 'Nko',
-  'Devanagari', 'Bengali', 'Gurmukhi', 'Gujarati', 'Oriya', 'Tamil', 'Telugu', 'Kannada',
-  'Malayalam', 'Sinhala', 'Thai', 'Lao', 'Tibetan', 'Myanmar', 'Georgian', 'Hangul', 'Ethiopic',
-  'Khmer', 'Mongolian', 'Han', 'Hiragana', 'Katakana', 'Adlam', 'Javanese', 'Balinese',
-];
-const SCRIPTS: readonly RegExp[] = NAMES.map((name) => new RegExp(`^\\p{Script=${name}}$`, 'u'));
+/**
+ * Every value of the Unicode Script property through Unicode 17, but the three
+ * that join their neighbors (Common, Inherited, Unknown). The runtime's
+ * `\p{Script=…}` answers which one a character is in; a name it does not know
+ * yet is skipped, and its characters join their neighbors too.
+ */
+export const SCRIPT_NAMES = `Latin Arabic Cyrillic Han Hiragana Katakana Hangul Devanagari Greek Hebrew Thai Bengali
+Tamil Telugu Gujarati Kannada Malayalam Gurmukhi Oriya Sinhala Myanmar Khmer Lao Georgian Armenian
+Ethiopic Tibetan Syriac Thaana Nko Mongolian Bopomofo Javanese Balinese Adlam Samaritan Mandaic
+Cherokee Canadian_Aboriginal Ogham Runic Yi Old_Italic Gothic Deseret Tagalog Hanunoo Buhid Tagbanwa
+Limbu Tai_Le Linear_B Ugaritic Shavian Osmanya Cypriot Braille Buginese Coptic New_Tai_Lue Glagolitic
+Tifinagh Syloti_Nagri Old_Persian Kharoshthi Cuneiform Phoenician Phags_Pa Sundanese Lepcha Ol_Chiki
+Vai Saurashtra Kayah_Li Rejang Lycian Carian Lydian Cham Tai_Tham Tai_Viet Avestan Egyptian_Hieroglyphs
+Bamum Lisu Meetei_Mayek Imperial_Aramaic Old_South_Arabian Inscriptional_Parthian Inscriptional_Pahlavi
+Old_Turkic Kaithi Batak Brahmi Chakma Meroitic_Cursive Meroitic_Hieroglyphs Miao Sharada Sora_Sompeng
+Takri Caucasian_Albanian Bassa_Vah Duployan Elbasan Grantha Pahawh_Hmong Khojki Linear_A Mahajani
+Manichaean Mende_Kikakui Modi Mro Old_North_Arabian Nabataean Palmyrene Pau_Cin_Hau Old_Permic
+Psalter_Pahlavi Siddham Khudawadi Tirhuta Warang_Citi Ahom Anatolian_Hieroglyphs Hatran Multani
+Old_Hungarian SignWriting Bhaiksuki Marchen Newa Osage Tangut Masaram_Gondi Nushu Soyombo
+Zanabazar_Square Dogra Gunjala_Gondi Makasar Medefaidrin Hanifi_Rohingya Sogdian Old_Sogdian Elymaic
+Nandinagari Nyiakeng_Puachue_Hmong Wancho Chorasmian Dives_Akuru Khitan_Small_Script Yezidi
+Cypro_Minoan Old_Uyghur Tangsa Toto Vithkuqi Kawi Nag_Mundari Garay Gurung_Khema Kirat_Rai Ol_Onal
+Sunuwar Todhri Tulu_Tigalari Sidetic Tai_Yo Beria_Erfe Tolong_Siki`.split(/\s+/);
 
-/** Which of them read right to left. */
-const RTL_NAMES = new Set(['Hebrew', 'Arabic', 'Syriac', 'Thaana', 'Nko', 'Adlam']);
+/** Characters that take the script of the text around them. */
+const SHARED = /^[\p{Script=Common}\p{Script=Inherited}\p{Script=Unknown}]$/u;
 
-/** Characters every script shares, which join the piece around them. */
-const SHARED = /^[\p{Script=Common}\p{Script=Inherited}]$/u;
+let tests: Map<string, RegExp> | null = null;
 
-const OTHER = SCRIPTS.length;
-const NONE = -1;
+/** The script names this runtime knows, each with its test, in `SCRIPT_NAMES`' order. */
+function scriptTests(): Map<string, RegExp> {
+  if (tests) return tests;
+  tests = new Map();
+  for (const name of SCRIPT_NAMES) {
+    try {
+      tests.set(name, new RegExp(`^\\p{Script=${name}}$`, 'u'));
+    } catch {
+      // A script newer than this runtime's Unicode.
+    }
+  }
+  return tests;
+}
 
-function scriptOf(ch: string): number {
-  if (SHARED.test(ch)) return NONE;
-  const cp = ch.codePointAt(0)!;
-  // Most text is Latin, and the Latin letters below U+0250 are all it holds there.
-  if (cp < 0x250) return 0;
-  for (let i = 0; i < SCRIPTS.length; i++) if (SCRIPTS[i].test(ch)) return i;
-  return OTHER;
+/** The script `ch` is written in, or null when it takes its neighbors'.
+ *  `current` is tried first, since most characters continue the piece. */
+function scriptOf(ch: string, current: string | null): string | null {
+  if (SHARED.test(ch)) return null;
+  // Most text is Latin, and the letters below U+0250 that are not shared are all Latin.
+  if (ch.codePointAt(0)! < 0x250) return 'Latin';
+  const all = scriptTests();
+  if (current !== null && all.get(current)?.test(ch)) return current;
+  for (const [name, test] of all) if (test.test(ch)) return name;
+  return null;
 }
 
 /** One stretch of text in a single script. */
@@ -40,39 +68,63 @@ export interface ScriptPiece {
   rtl: boolean;
 }
 
-/** Blocks whose scripts read right to left, for a script not named above. */
-const RTL_BLOCKS: ReadonlyArray<readonly [number, number]> = [
-  [0x0590, 0x08ff], [0xfb1d, 0xfdff], [0xfe70, 0xfeff], [0x10800, 0x10fff], [0x1e800, 0x1efff],
-];
+/** An open bracket still waiting for its close, and the script it opened in. */
+interface Open { close: number; script: string | null }
+
+/** Open brackets remembered at once; deeper nesting forgets the outermost. */
+const MAX_OPEN = 64;
 
 /**
- * `text` cut where its script changes, as UTF-16 spans covering all of it. A
- * character every script shares stays in the piece before it, or the one
- * after it when it opens the text. Empty text has no pieces.
+ * `text` cut where its script changes, as UTF-16 spans covering all of it.
+ *
+ * Following UAX #24, a character every script shares (space, digits,
+ * punctuation, a combining mark) stays in the piece before it, or the one after
+ * it when it opens the text; a closing bracket takes the script its opening
+ * bracket was in, so the `)` of `abc (שלום) def` goes with the Latin. A
+ * piece reads right to left when the first of its own letters with a strong
+ * `Bidi_Class` is R or AL. Empty text has no pieces.
  */
 export function scriptPieces(text: string): ScriptPiece[] {
   const pieces: ScriptPiece[] = [];
-  let current = NONE;
+  const open: Open[] = [];
+  let current: string | null = null;
+  let rtl: boolean | null = null;
   let start = 0;
-  let rtl = false;
   let at = 0;
   for (const ch of text) {
-    const script = scriptOf(ch);
-    if (script !== NONE) {
-      if (current !== NONE && script !== current) {
-        pieces.push({ start, end: at, rtl });
-        start = at;
+    const cp = ch.codePointAt(0)!;
+    let script = scriptOf(ch, current);
+    if (script === null) {
+      const bracket = pairedBracket(cp);
+      if (bracket?.kind === 'open') {
+        if (open.length === MAX_OPEN) open.shift();
+        open.push({ close: bracket.pair, script: current });
+      } else if (bracket?.kind === 'close') {
+        let k = open.length - 1;
+        while (k >= 0 && open[k].close !== cp) k--;
+        if (k >= 0) {
+          script = open[k].script;
+          open.length = k;
+        }
       }
-      if (script !== current) rtl = isRtl(script, ch.codePointAt(0)!);
+    }
+    if (script !== null) {
+      if (current === null) {
+        for (const o of open) o.script ??= script;
+      } else if (script !== current) {
+        pieces.push({ start, end: at, rtl: rtl ?? false });
+        start = at;
+        rtl = null;
+      }
       current = script;
+      if (rtl === null) {
+        const cls = bidiClassOf(cp);
+        if (cls === 'L') rtl = false;
+        else if (cls === 'R' || cls === 'AL') rtl = true;
+      }
     }
     at += ch.length;
   }
-  if (at > start) pieces.push({ start, end: at, rtl });
+  if (at > start) pieces.push({ start, end: at, rtl: rtl ?? false });
   return pieces;
-}
-
-function isRtl(script: number, cp: number): boolean {
-  if (script !== OTHER) return RTL_NAMES.has(NAMES[script]);
-  return RTL_BLOCKS.some(([lo, hi]) => cp >= lo && cp <= hi);
 }
