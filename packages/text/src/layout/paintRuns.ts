@@ -9,7 +9,7 @@
  * from them.
  */
 import {
-  faceMetricsOf, glyphOutline, resolveFontVariant, type BmFontChar, type FaceMetrics, type FontStyle,
+  faceMetricsOf, glyphOutline, cachedFontVariant, type BmFontChar, type FaceMetrics, type FontStyle,
 } from '@weasel-js/font';
 import {
   fillHasInk, paintKey, strokeHasInk, type Fill, type Stroke,
@@ -172,7 +172,7 @@ export function faceOutlineD(g: PlacedGlyph): string | null {
 /** Each run's own face, which places its rules: a glyph's `resolved` may be a
  *  per-glyph fallback. */
 export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMetrics | undefined {
-  const faces = runs.map((r) => faceMetricsOf(resolveFontVariant(r.fontFamily, r.fontWeight, r.fontStyle)));
+  const faces = runs.map((r) => faceMetricsOf(cachedFontVariant(r.fontFamily, r.fontWeight, r.fontStyle)));
   return (run) => faces[run];
 }
 

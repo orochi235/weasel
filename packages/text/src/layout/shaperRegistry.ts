@@ -2,7 +2,7 @@
  * Where the shaping engine arrives, the way the bidi engine does
  * (`bidiRegistry.ts`): registered once, found by every layout.
  */
-import { resolveFontVariant, type FontStyle, type OutlineFace, type ResolveResult } from '@weasel-js/font';
+import { cachedFontVariant, type FontStyle, type OutlineFace, type ResolveResult } from '@weasel-js/font';
 import type { TextShaper } from './shaperSeam';
 
 let registered: TextShaper | null = null;
@@ -49,6 +49,6 @@ export function shapesWithFeature(
   family: string, weight: number, style: FontStyle, tag: string, shaper: TextShaper | null = registered,
 ): boolean {
   if (shaper === null) return false;
-  const bytes = shapeableBytes(resolveFontVariant(family, weight, style));
+  const bytes = shapeableBytes(cachedFontVariant(family, weight, style));
   return bytes !== null && shaper.hasFeature(bytes, tag);
 }

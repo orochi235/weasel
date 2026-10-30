@@ -4,7 +4,7 @@
  * glyph's outline, and setting it where the renderer's outline tier puts it.
  */
 import { paintKey, strokeKey, type Stroke, type Fill } from '@weasel-js/paint';
-import { loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle } from '@weasel-js/font';
+import { loadFontOutlines, outlineStatus, cachedFontVariant, type FontStyle } from '@weasel-js/font';
 import { pathFromD, pathSignedArea, reversePath, transformPath, type Affine, type PolygonPath } from '@weasel-js/geom';
 import type { PlacedGlyph } from './layout/layoutRuns';
 import { hasGlyphQuad } from './layout/glyphQuads';
@@ -64,7 +64,7 @@ export function assertOutlinable(run: ResolvedRun, caller: string): void {
     void loadFontOutlines(fontFamily, { weight: fontWeight, style: fontStyle });
     fail('outlines-loading', 'its outlines have not loaded yet; await loadTextOutlines first.');
   }
-  const r = resolveFontVariant(fontFamily, fontWeight, fontStyle);
+  const r = cachedFontVariant(fontFamily, fontWeight, fontStyle);
   const { family, weight, style } = r.resolved;
   if (r.source === 'outline') return;
   const status = outlineStatus(family, weight, style);

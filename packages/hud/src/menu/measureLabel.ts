@@ -1,4 +1,4 @@
-import { metricsOf, resolveFontVariant } from '@weasel-js/font';
+import { metricsOf, cachedFontVariant } from '@weasel-js/font';
 
 /** A width for `text` with no face to measure it in. */
 export function estimateWidth(text: string, fontSize: number): number {
@@ -9,7 +9,7 @@ export function estimateWidth(text: string, fontSize: number): number {
  *  kerning of the face the text command lays it out with. A face not loaded
  *  yet gives an estimate; `faceGeneration` moves when it lands. */
 export function measureLabel(text: string, fontSize: number, fontFamily: string): number {
-  const metrics = metricsOf(resolveFontVariant(fontFamily, 400, 'normal'));
+  const metrics = metricsOf(cachedFontVariant(fontFamily, 400, 'normal'));
   if (!metrics) return estimateWidth(text, fontSize);
   let units = 0;
   let prev: number | null = null;
