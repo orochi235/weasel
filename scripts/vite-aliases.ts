@@ -45,19 +45,16 @@ function packageAliases(repoRoot: string): ViteAlias[] {
   return out;
 }
 
+/** Bare top-level kit paths, `core/scene/types`: core's tsconfig path mappings, under `KIT_PATH_ROOT`. */
+export const KIT_PATHS = ['core', 'domains', 'affordances', 'interactions', 'tools', 'canvas', 'debug'] as const;
+export const KIT_PATH_ROOT = 'packages/core/src';
+
 /** Full alias list. `repoRoot` is the directory containing `packages/`; `overrides` win over the generated entries. */
 export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): ViteAlias[] {
   return [
     ...overrides,
     ...packageAliases(repoRoot),
-    // Bare top-level kit paths — mirror core's tsconfig path mappings.
-    { find: /^core\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/core/$1') },
-    { find: /^domains\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/domains/$1') },
-    { find: /^affordances\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/affordances/$1') },
-    { find: /^interactions\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/interactions/$1') },
-    { find: /^tools\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/tools/$1') },
-    { find: /^canvas\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/canvas/$1') },
-    { find: /^debug\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/debug/$1') },
+    ...KIT_PATHS.map((dir) => ({ find: new RegExp(`^${dir}/(.*)$`), replacement: resolve(repoRoot, KIT_PATH_ROOT, dir, '$1') })),
     ...Object.entries(APP_SOURCES).map(([alias, dir]) => ({
       find: new RegExp(`^${escapeRegex(alias)}/(.*)$`),
       replacement: resolve(repoRoot, dir, '$1'),

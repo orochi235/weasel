@@ -73,3 +73,6 @@ on 2026-10-21 a forge load fell from 1,624 requests to 1,270 and, at 20 ms of em
 re-bundle and reload. Whatever source imports from a bundled package by relative path is left out of
 the bundle and served from source, so it loads once. A stack trace into a bundled package points at
 `node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves every package file by file again.
+The `browser` vitest project bundles them the same way under `vitest run`, all but what its test files
+reach by path (`scripts/vitest-browser-prebundle.ts`); watch mode and `WEASEL_DEV_SOURCE=1` serve them
+from source.
