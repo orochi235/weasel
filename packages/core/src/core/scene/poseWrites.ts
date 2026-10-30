@@ -162,7 +162,7 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
     }),
     'kit:add': (h) => ({
       ...h,
-      apply: (p) => { h.apply(p); noteAdded([p as AddPayload], false); },
+      apply: (p) => { h.apply(p); if (collecting()) noteAdded([p as AddPayload], false); },
       revert: (p) => { const done = seeOff([p as AddPayload], [p as AddPayload], true); h.revert(p); done(); },
     }),
     'kit:remove': (h) => ({
