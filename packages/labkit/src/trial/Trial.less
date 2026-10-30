@@ -84,6 +84,18 @@
     flex-shrink: 0;
   }
 
+  // One row of readouts, as tall as the numeric face made it at the default density, whatever face
+  // they draw in: a strip that grew when the face arrived refit the trial's view a second time.
+  &__readouts {
+    line-height: 1.6226;
+
+    // Its baseline is the bar's bottom edge, which lands on the row's text baseline wherever the
+    // face puts that.
+    .lk-scale-indicator {
+      vertical-align: top;
+    }
+  }
+
   &--unknown {
     display: flex;
     align-items: center;

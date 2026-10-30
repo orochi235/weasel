@@ -780,14 +780,6 @@ only story runner in the repo.
   raising or removing the limit would bring it back. Whether that is worth a heap-snapshot hunt is
   the open call.
 
-- **(P2) [maintainer] A trial's status strip grows 2 px when its numeric face arrives**, which refits
-  the view a second time. The strip itself takes its room on the first layout (`TrialChrome` reads an
-  unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
-  loads the face first to test the structural half, and its "entering refits" test still waits for
-  the settled box. The readouts' boxes depend on the face because `ScaleIndicator` is inline-flex
-  inside a line box; made face-independent the strip would settle near 27 px (estimated) rather than
-  30. Which height the strip should have is the decision.
-
 - **(P2) [maintainer] Browser test files fail to load when the node's network changes.** A file
   fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
   imported module`, along with any file loading in the same tenth of a second, and the next run

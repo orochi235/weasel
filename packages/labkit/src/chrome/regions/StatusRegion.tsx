@@ -8,6 +8,7 @@ export interface StatusRegionProps<TCtx = TrialChromeContext> {
   ctx: TCtx;
   /** Which region's readouts to lay out; the lab's footer is `footer`. */
   region?: string;
+  className?: string;
 }
 
 /** Lays a bar's readouts out. The first one marked `end`, and every one after
@@ -16,13 +17,14 @@ export function StatusRegion<TCtx = TrialChromeContext>({
   contributions,
   ctx,
   region = 'status',
+  className,
 }: StatusRegionProps<TCtx>) {
   if (contributions.length === 0) return null;
   const shows = (c: RegionContribution<NoInfer<TCtx>>): boolean =>
     !!c.render || (c.region === region && !!c.item);
   const firstEnd = contributions.find((c) => c.end && shows(c));
   return (
-    <StatusBar divided>
+    <StatusBar divided className={className}>
       {contributions.map((c) => {
         let body: ReactNode;
         let title: string | undefined;
