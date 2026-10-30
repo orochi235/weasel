@@ -826,7 +826,9 @@ only story runner in the repo.
   6 paired on one node) and about 250 probe drags all passed. The test now names, when it fails, the cursor its
   press point hovered with ("move" means the label was hit), whether the canvas view matched the fit `at()`
   assumes, and any blur, pointer cancel or real-mouse event during the drag. Waiting on the next sighting to read
-  that line (2026-10-29).
+  that line (2026-10-29). Sighted on teitou on 2026-10-30 in the `hud-alloc` branch's run at `9b0c6ee91`, which
+  touches only text layout: `press at 553.1,365.0 hovered with cursor "default"; connector where at() expects:
+  false; during the drag: nothing else`. The press missed the label, and the view was not the fit `at()` assumes.
 
 - **(P3) [agent] The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
