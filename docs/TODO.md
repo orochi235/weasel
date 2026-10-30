@@ -292,25 +292,16 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [agent] Area coverage for small atlas glyphs: what is left.** Since 2026-10-30
   `glyphCoverage` takes the mean of four field taps a pixel where a pixel spans more than
   `GLYPH_AREA_FROM` field units, and the 12px and 16px `H`s of `glyphCoverage.browser.test.ts` keep
-  their ink centroid within 0.04px as `x` steps through a pixel (0.35 and 0.66 before). Two things
-  remain, measured on teitou (`tests/perf/recorded/glyph-area-coverage-2026-10-30/`):
+  their ink centroid within 0.04px as `x` steps through a pixel (0.35 and 0.66 before). Only runs
+  holding such glyphs draw with the batch builds that have the taps, so other fragments pay nothing for
+  them (`fill-rate`'s `batch`, 8.27 and 8.39 ms a frame on `106f27060`, 7.70 and 7.86 after). One thing
+  remains, measured on teitou (`tests/perf/recorded/glyph-area-coverage-2026-10-30/`):
   - **The 7.2px `H` still swings by 0.37px** (0.88 before), and the overlay's `dx` at DPR 1 by up to
     0.29 Chromium, 0.37 Firefox, and 0.22 WebKit (0.51, 0.60, and 0.57 before). Exact area coverage
     would leave about 0.16, since a stem inside one pixel keeps its centroid at that pixel's center
     (a 1D model of this `H`'s two stems, not measured). Not tap spacing: a 2x2 grid and the rotated
     grid that ships measured the same. The canvas's ink mass still varies 8.03 to 8.65 across the
     pixel, so something loses or adds ink; unexplained.
-  - **A batch fragment that is not a glyph costs 6 to 15% more** in `fill-rate`'s `batch` variant
-    (three jobs on one afternoon, each side's mean: 8.24 to 9.02, 8.04 to 8.54, and 7.99 to 8.98 ms
-    a frame). The variant whose taps fetch nothing (`N`) cost the same as the shipping one,
-    so it is the branch and the math kept live across it, not the second sampler tree. A glyph
-    fragment taking the taps costs 2.1 times a `batch` one; one above the threshold costs what a
-    `batch` one does. A flat branch condition does not help: with the branch taken on a flat varying
-    instead of the field scale, a `batch` fragment cost 8.87 and 8.93 ms a frame against 8.97 and 9.00
-    for the shipping shader and 7.72 and 8.25 before it, in one sitting against `106f27060`
-    (2026-10-30). What is left untried is keeping the branch out of the program a run draws with unless
-    the run holds glyphs that need it, the way the matrix and hull variants are built on demand; a run
-    that does would still charge its other fragments.
 
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType

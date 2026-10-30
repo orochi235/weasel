@@ -16,3 +16,6 @@ The measurements behind the `docs/TODO.md` entry "Area coverage for small atlas 
 - `fill-rate-flat/`: a third job, against `106f27060` as "before": before / after / flat / flat / after /
   before. `flat` is the after shader with the tap branch taken on a flat varying (`v_paintMode > 5.5`,
   never true) in place of the per-fragment field scale. `job.log` is the job's output.
+- `fill-rate-split/`: a fourth job, against `106f27060`: before / after / after / before, after being the
+  split that leaves the taps out of every batch build but the four a run holding small glyphs draws with.
+  "before" swaps in the nine source files the split touches.
