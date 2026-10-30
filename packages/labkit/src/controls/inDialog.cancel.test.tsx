@@ -72,10 +72,12 @@ describe("a compound leaf's dialog", () => {
     const setConfig = mount();
     open('Names');
     fireEvent.change(screen.getByRole('textbox', { name: 'Names 2' }), { target: { value: 'c' } });
+    fireEvent.blur(screen.getByRole('textbox', { name: 'Names 2' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(setConfig).not.toHaveBeenCalled();
     open('Names');
     fireEvent.change(screen.getByRole('textbox', { name: 'Names 2' }), { target: { value: 'c' } });
+    fireEvent.blur(screen.getByRole('textbox', { name: 'Names 2' }));
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(setConfig.mock.calls).toEqual([['names', ['a', 'c']]]);
   });

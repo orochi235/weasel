@@ -58,7 +58,9 @@ describe('PrefsForm list leaf', () => {
     };
     const onChange = vi.fn();
     renderWithIcons(<PrefsForm schema={strings} values={{}} onChange={onChange} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Glob 1' }), { target: { value: 'b' } });
+    const glob = screen.getByRole('textbox', { name: 'Glob 1' });
+    fireEvent.change(glob, { target: { value: 'b' } });
+    fireEvent.blur(glob);
     expect(onChange).toHaveBeenCalledWith('globs', ['b']);
   });
 

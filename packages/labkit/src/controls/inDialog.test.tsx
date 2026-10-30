@@ -35,9 +35,9 @@ describe('f.list', () => {
     expect(trigger.textContent).toContain('**/node_modules/**, dist');
 
     fireEvent.click(trigger);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Draw as icons 2' }), {
-      target: { value: 'build' },
-    });
+    const entry = screen.getByRole('textbox', { name: 'Draw as icons 2' });
+    fireEvent.change(entry, { target: { value: 'build' } });
+    fireEvent.blur(entry);
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.getByTestId('config').textContent).toBe(
       JSON.stringify({ icons: ['**/node_modules/**', 'build'] }),
