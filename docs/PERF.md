@@ -10,26 +10,28 @@ When work merges, retire its entry here in the same change.
 
 ## Scene
 
-- **(P3) [agent] A scene add-and-remove round trip still costs about 0.26 µs more than on 2026-09-29, and
-  `setPose` about 0.14 µs more.** That is 599685677 (2026-10-13), which records every scene edit as the kit
-  ops it caused: it added 0.26 µs to the round trip and 0.11 µs to `setPose` at that commit alone. Everything
-  else that arrived after it was taken back on 2026-10-29; the largest share was the history building a step
-  object for every push with nobody observing steps. In a plain loop on studio the round trip was 1.07 µs at
-  9db2cae5f, 1.85 µs at 4d5f3483e and 1.34 µs after the fixes (medians of 5–7 runs). Runs, the probe and the
-  scripts that bisect it across commits: `tests/perf/recorded/scene-roundtrip-2026-10-29/`.
+- **(P3) [agent] A scene add-and-remove round trip still costs about 0.09 µs more than before 599685677,
+  and `setPose` about 0.05 µs more.** 599685677 (2026-10-13) records every scene edit as the kit ops it
+  caused, and at that commit alone added 0.26 µs to the round trip and 0.12 µs to `setPose`. On msb-uai
+  (7 interleaved runs each, 2026-10-30, `ab4/`) the round trip is 0.95 µs at its parent 43a827165, 1.08 µs on
+  `main` at b6d8ba184 and 1.04 µs after the 2026-10-30 cuts; `setPose` 0.21, 0.28 and 0.26 µs. What a bare
+  call still does that 43a827165 did not: run its engine push inside `mode.during('own')`, copy the ops
+  it pushes, and open a labeled edit and run wrapped handlers for the pose-write log, which arrived
+  after it. No one of these stands out in a CPU profile (`profile-599/`). Runs, profiles and the script
+  that times any commit against the synced tree: `tests/perf/recorded/core-regress-2026-10-30/`; the
+  earlier bisect is in `tests/perf/recorded/scene-roundtrip-2026-10-29/`.
 
-- **(P3) [agent] The unindexed area walk still costs 2.5 times what it did on 2026-09-29.** The 25%
-  marquee over 10,000 rect nodes (`walk.bench.ts`, the `full walk` row) takes 0.91 ms; `hitTestArea`
-  at 9db2cae5f took 0.37 ms (teitou, native imports, 2026-10-29). The tripling this entry used to
-  report was mostly Vite's module runner, which the benches left on 2026-10-27: under it the same two
-  commits read 2.28 and 7.00 ms. Natively, 679138cac (per-node hidden and locked, through
-  `nodeGates`) took the walk from 0.62 to 1.65 ms, and ae38d2edd brought it back to 0.91. What is
-  left: about 0.25 ms of drift between 0a2eba982 (2026-10-11, 0.38 ms) and 79210c328 (2026-10-17,
-  0.62 ms), spread over several commits, and 0.29 ms the gates still add; unmeasured, the likely
-  share of that is their two `scene.get` per node, which a gate
-  taking the candidate node instead of its id would drop. Bisect with
-  `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (`bisect <good> <bad> native`);
-  the runs are beside it, in `teitou-2026-10-29-*/runs.jsonl`.
+- **(P3) [agent] The unindexed area walk still costs 1.6 times what it did on 2026-10-11.** The 25%
+  marquee over 10,000 rect nodes (`walk.bench.ts`, the `full walk` row) takes 0.86 ms on msb-uai;
+  `hitTestArea` at 0a2eba982 (2026-10-11) takes 0.52 ms and at 43a827165 (2026-10-12) 0.66 ms (7
+  interleaved runs each, native imports, 2026-10-30). Before the 2026-10-30 cuts, `main` at b6d8ba184
+  took 1.25 ms; since them the gates take the candidate rather than looking it up, a marquee decides a
+  node from its bounds before building its outline thunks, and the walk builds no object or closure per
+  candidate. What is left is spread thin across every node's
+  reads (`effectivePose` and its override read, `showsComputedPath`, the gates, the region test); the
+  profile is `tests/perf/recorded/core-regress-2026-10-30/profile-base/`. Bisect with
+  `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (`bisect <good> <bad> native`), or
+  time commits side by side with `core-regress-2026-10-30/run.sh`.
 
 ---
 
