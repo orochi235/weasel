@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { PathBuilder, viewToMat3, type PolygonPath } from '@weasel-js/geom';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 const WORLD_X = 262_144;
 const ZOOM = 64;
@@ -66,7 +67,7 @@ describe('a path with an origin far from the world origin, in a real context', (
   });
 
   it('starts an even-odd fill, drawn by its own call, on pixel 10', () => {
-    const red = row(fill(bar('evenodd', true)));
+    const red = row(fill(stencilledEvenOdd(bar('evenodd', true))));
     expect(red[9]).toBe(0);
     expect(red[10]).toBe(255);
     expect(red[22]).toBe(255);

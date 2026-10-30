@@ -134,39 +134,78 @@ describe('tessellate (PolygonPath, bezier curves)', () => {
   });
 });
 
+/** An even-odd polygon of closed contours, each given as flat x,y pairs. */
+function evenodd(...contours: number[][]): PolygonPath {
+  const commands: number[] = [];
+  for (const c of contours) {
+    commands.push(PATH_M);
+    for (let i = 2; i < c.length; i += 2) commands.push(PATH_L);
+    commands.push(PATH_Z);
+  }
+  return { kind: 'polygon', commands: new Uint8Array(commands), coords: new Float32Array(contours.flat()), fillRule: 'evenodd' };
+}
+
+/** Total area the mesh's triangles cover. */
+function meshArea(mesh: { vertices: Float32Array; indices: Uint32Array }): number {
+  const v = mesh.vertices;
+  let a = 0;
+  for (let i = 0; i < mesh.indices.length; i += 3) {
+    const [p, q, r] = [mesh.indices[i] * 2, mesh.indices[i + 1] * 2, mesh.indices[i + 2] * 2];
+    a += Math.abs((v[q] - v[p]) * (v[r + 1] - v[p + 1]) - (v[r] - v[p]) * (v[q + 1] - v[p + 1])) / 2;
+  }
+  return a;
+}
+
 describe('tessellate (PolygonPath, evenodd)', () => {
-  it('emits requiresStencil: true and a naive fan per contour for evenodd', () => {
-    const path: PolygonPath = {
-      kind: 'polygon',
-      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
-      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
-      fillRule: 'evenodd',
-    };
-    const mesh = tessellate(path);
-    expect(mesh.requiresStencil).toBe(true);
-    expect(mesh.vertices.length).toBe(8);
-    expect(mesh.indices.length).toBe(6);
-    expect(Array.from(mesh.indices)).toEqual([0, 1, 2, 0, 2, 3]);
+  const square = (x: number, y: number, s: number): number[] => [x, y, x + s, y, x + s, y + s, x, y + s];
+
+  it('triangulates a single simple contour without the stencil', () => {
+    const mesh = tessellate(evenodd(square(0, 0, 10)));
+    expect(mesh.requiresStencil).toBeFalsy();
+    expect(meshArea(mesh)).toBeCloseTo(100);
   });
 
-  it('emits separate fans per contour with continuous indexing for multi-contour evenodd', () => {
-    const path: PolygonPath = {
-      kind: 'polygon',
-      commands: new Uint8Array([
-        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
-        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
-      ]),
-      coords: new Float32Array([
-        0, 0, 10, 0, 10, 10, 0, 10,
-        3, 3, 7, 3, 7, 7, 3, 7,
-      ]),
-      fillRule: 'evenodd',
-    };
-    const mesh = tessellate(path);
+  it('cuts a nested ring as a hole whichever way it winds', () => {
+    const cw = tessellate(evenodd(square(0, 0, 10), square(3, 3, 4)));
+    const ccw = tessellate(evenodd(square(0, 0, 10), [3, 3, 3, 7, 7, 7, 7, 3]));
+    for (const mesh of [cw, ccw]) {
+      expect(mesh.requiresStencil).toBeFalsy();
+      expect(meshArea(mesh)).toBeCloseTo(100 - 16);
+    }
+  });
+
+  it('fills an island inside a hole, and separate shapes side by side', () => {
+    const island = tessellate(evenodd(square(0, 0, 10), square(2, 2, 6), square(4, 4, 2)));
+    expect(island.requiresStencil).toBeFalsy();
+    expect(meshArea(island)).toBeCloseTo(100 - 36 + 4);
+    const apart = tessellate(evenodd(square(0, 0, 4), square(10, 0, 4)));
+    expect(apart.requiresStencil).toBeFalsy();
+    expect(meshArea(apart)).toBeCloseTo(32);
+  });
+
+  it('keeps a naive fan per contour, and the stencil, for crossing contours', () => {
+    const mesh = tessellate(evenodd(square(0, 0, 10), square(5, 5, 10)));
     expect(mesh.requiresStencil).toBe(true);
-    expect(mesh.vertices.length).toBe(16);
-    expect(mesh.indices.length).toBe(12);
     expect(Array.from(mesh.indices)).toEqual([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
+  });
+
+  it('keeps the stencil for a contour that crosses itself', () => {
+    expect(tessellate(evenodd([0, 0, 10, 10, 10, 0, 0, 10])).requiresStencil).toBe(true);
+  });
+
+  it('keeps the stencil wherever outlines touch without crossing', () => {
+    const atCorner = evenodd(square(0, 0, 10), square(10, 10, 5));
+    const alongEdge = evenodd(square(0, 0, 10), square(10, 2, 5));
+    const holeOnEdge = evenodd(square(0, 0, 10), [0, 3, 4, 3, 4, 7, 0, 7]);
+    const pinched = evenodd([0, 0, 10, 0, 5, 5, 10, 10, 0, 10, 5, 5]);
+    const sameTwice = evenodd(square(0, 0, 10), square(0, 0, 10));
+    for (const p of [atCorner, alongEdge, holeOnEdge, pinched, sameTwice]) {
+      expect(tessellate(p).requiresStencil).toBe(true);
+    }
+  });
+
+  it('keeps the stencil for a contour of no area', () => {
+    expect(tessellate(evenodd(square(0, 0, 10), [2, 2, 6, 2])).requiresStencil).toBe(true);
   });
 });
 

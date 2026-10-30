@@ -6,6 +6,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
 import { pushClip, popClip, drawGroup, dispatch } from './draw';
 import { createRecorderCtx, SQUARE_CLIP } from './testing/recorderCtx';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 describe('pushClip / popClip', () => {
   it('pushClip(level=1): sets bit 1 wherever the clip path covers, no ancestor test needed', () => {
@@ -214,12 +215,11 @@ describe('drawGroup clip integration', () => {
 });
 
 // Helper: a minimal polygon path for evenodd fill.
-const POLYGON_EVENODD: PolygonPath = {
+const POLYGON_EVENODD: PolygonPath = stencilledEvenOdd({
   kind: 'polygon',
   commands: new Uint8Array([M, L, L, L, Z]),
   coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
-  fillRule: 'evenodd',
-};
+});
 
 // Helper: a polygon path for stroke-stencil (inner/outer) — needs visible area.
 const POLYGON_NONZERO: PolygonPath = {

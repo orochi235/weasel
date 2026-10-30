@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 const rect = (x: number): DrawCommand => ({
   kind: 'path',
@@ -9,16 +10,15 @@ const rect = (x: number): DrawCommand => ({
   fill: { paint: { kind: 'solid', color: '#f00' } },
 });
 
-/** An even-odd fill never joins the solid batch, so it draws where it stands,
+/** An even-odd fill whose outlines touch never joins the solid batch, so it draws where it stands,
  *  through the stencil — and closes any run staged before it. */
 const ownDrawFill = {
   kind: 'path',
-  path: {
+  path: stencilledEvenOdd({
     kind: 'polygon',
     commands: new Uint8Array([0, 1, 1, 3]),
     coords: new Float32Array([0, 0, 10, 0, 0, 10]),
-    fillRule: 'evenodd',
-  },
+  }),
   fill: { paint: { color: '#f00' } },
 } as unknown as DrawCommand;
 

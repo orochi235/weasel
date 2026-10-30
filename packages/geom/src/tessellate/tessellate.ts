@@ -13,6 +13,7 @@ import {
 import type { Mesh } from './mesh';
 import { resolveCrossings, type FlattenedContours } from './crossings';
 import { nestRings, type Ring } from './nesting';
+import { evenOddRings } from './evenOdd';
 
 /** Options for `tessellate`. A smaller tolerance means more triangles and
  *  smoother curves; it is in path-local units, so callers rendering at a
@@ -163,6 +164,8 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   const flat = flattenPolygon(p, tolerance);
 
   if (p.fillRule === 'evenodd') {
+    const rings = evenOddRings(flat);
+    if (rings) return tessellateNonzero(flat, rings);
     const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
     return tessellateEvenoddWithAnchors(coords, contourStarts, anchorA, anchorB, anchorT);
   }

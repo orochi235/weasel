@@ -4,6 +4,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { viewToMat3 } from '@weasel-js/geom';
 import { FLOATS_PER_VERTEX } from './drawBatch';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 /**
  * Far from the origin and zoomed in: the view translation is near 1.68e7,
@@ -60,9 +61,9 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
   function ownDrawLefts(coords: Float32Array, wrap: (cmd: DrawCommand) => DrawCommand): number[] {
     const path: DrawCommand = {
       kind: 'path',
-      path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'evenodd' },
+      path: stencilledEvenOdd({ kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords }),
       fill: { paint: { kind: 'solid', color: '#fff' } },
-      // An even-odd fill keeps out of the batch, and per-vertex colors pick
+      // A touching even-odd fill keeps out of the batch, and per-vertex colors pick
       // the program this reads.
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
     } as unknown as DrawCommand;
@@ -125,7 +126,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       transform: view,
       children: [{
         kind: 'path',
-        path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'evenodd' },
+        path: stencilledEvenOdd({ kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords }),
         fill: { paint: { kind: 'solid', color: '#fff' } },
         vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
       } as unknown as DrawCommand],
@@ -157,7 +158,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       transform,
       children: [{
         kind: 'path',
-        path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords: new Float32Array([0, 0, 4, 0, 0, 4]), fillRule: 'evenodd' },
+        path: stencilledEvenOdd({ kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords: new Float32Array([0, 0, 4, 0, 0, 4]) }),
         fill: { paint: { kind: 'solid', color: '#fff' } },
         vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
       } as unknown as DrawCommand],

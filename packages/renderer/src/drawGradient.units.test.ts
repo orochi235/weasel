@@ -6,6 +6,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import { paintModeOf } from './shaders/batchFill';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 describe('gradient units — which space a gradient measures its geometry in', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -15,17 +16,16 @@ describe('gradient units — which space a gradient measures its geometry in', (
   const PATH: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
 
   /**
-   * The same square, even-odd — which tessellates to `requiresStencil` and so
+   * The same square, even-odd with a touching contour — which tessellates to `requiresStencil` and so
    * takes the two-pass stencil fill through `gradFill` rather than the batch.
    * That is the only route left to that program for an ordinary fill, and it is
    * how these tests reach `u_worldInv` at all.
    */
-  const EVEN_ODD: PolygonPath = {
+  const EVEN_ODD: PolygonPath = stencilledEvenOdd({
     kind: 'polygon',
     commands: new Uint8Array([M, L, L, L, Z]),
     coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
-    fillRule: 'evenodd',
-  };
+  });
 
   /** Uniform locations are resolved at link time, when the gradient program is
    *  first built — captured before `reset()` clears the log the assertions read. */
@@ -136,7 +136,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
   });
 
   /**
-   * `gradFill` still paints an even-odd gradient, which cannot join a run: its
+   * `gradFill` still paints a touching even-odd gradient, which cannot join a run: its
    * mesh needs a stencil pass of its own. These pin the uniforms that route
    * takes.
    */

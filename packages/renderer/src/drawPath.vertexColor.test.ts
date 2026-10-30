@@ -1,16 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch } from './draw';
 import { createRecorderCtx } from './testing/recorderCtx';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { FLOATS_PER_VERTEX } from './drawBatch';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 /**
  * Per-vertex colors join the batch, so these exercise the vertex-color program
- * the way a fill or stroke still reaches it: an even-odd fill, or a ribbon past
- * the most vertices a run takes (`meshBatching`).
+ * the way a fill or stroke still reaches it: an even-odd fill whose outlines
+ * touch, or a ribbon past the most vertices a run takes (`meshBatching`).
  */
 const LONG = 1200;
 const zigzag = {
@@ -25,12 +26,11 @@ describe('per-vertex color buffer lifetime', () => {
   const vColors = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
   const fillCmd = {
     kind: 'path',
-    path: {
+    path: stencilledEvenOdd({
       kind: 'polygon',
       commands: new Uint8Array([M, L, L, Z]),
       coords: new Float32Array([0, 0, 50, 0, 50, 50]),
-      fillRule: 'evenodd',
-    },
+    }),
     fill: { paint: { kind: 'solid', color: '#ffffff' } },
     vertexColors: vColors,
   } as unknown as DrawCommand;
@@ -153,7 +153,13 @@ describe('vertex colors on a path with corner shapes', () => {
   });
 
   it("gives a cut corner's points that corner's anchor color", () => {
-    const colors = uploadedColors(cornered('evenodd'));
+    // The added contour's two points take the colors of anchors 0 and 1, after the outline's five.
+    const plain = cornered('evenodd') as DrawCommand & { path: PolygonPath; vertexColors: number[] };
+    const colors = uploadedColors({
+      ...plain,
+      path: stencilledEvenOdd(plain.path),
+      vertexColors: [...plain.vertexColors, ...RED, ...GREEN],
+    } as DrawCommand).slice(0, 5);
     expect(colors).toHaveLength(5);
     expect(colors.filter((c) => c.every((v, i) => v === GREEN[i]))).toHaveLength(2);
     for (const c of colors) expect(c.some(Number.isNaN)).toBe(false);

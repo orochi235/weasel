@@ -62,8 +62,8 @@ When work merges, retire its entry here in the same change.
     24.4 us a clip, 22.2 of it the break; an axis-aligned rect clip, cut on the CPU, costs 0.09
     (`clip-cost.spec.ts`). What still ends a run, as of 2026-10-30: a sixteenth texture, a ninth
     color matrix, a clip only the stencil expresses (see the convex-clip item below), an even-odd
-    fill, an inside- or outside-aligned stroke on a polygon, a mesh past the vertex cap
-    (`meshBatching`), a custom shader command, and a registered paint kind (`registerPaintDrawKind`).
+    fill whose outlines cross or touch, an inside- or outside-aligned stroke on a polygon, a mesh
+    past the vertex cap (`meshBatching`), a custom shader command, and a registered paint kind (`registerPaintDrawKind`).
     No built-in paint ends one any more. The small-glyph program (`batchAreaFragSrc`) is chosen per
     run and breaks nothing.
   - **What joined the run since is checked in a browser.** Each is pinned
@@ -109,6 +109,16 @@ When work merges, retire its entry here in the same change.
       before and 2.58–2.76 after, against 0.36–0.48 for a solid and 1.46–1.95 for a linear gradient
       in the same passes; why a staged pattern costs more than a staged gradient is not known
       (`tests/perf/recorded/pattern-batch-2026-10-30/`).
+    - Even-odd fills whose outlines never meet (2026-10-30): with no contact between edges but at
+      the vertex two neighbors share, each ring is filled or a hole by how many rings enclose it,
+      so `tessellate` triangulates it with `earcut` as a nonzero fill and it stages into the run
+      (`geom/tessellate/evenOdd.ts`, `evenOddBatch.browser.test.ts`, pixel-equal to the stencil
+      with and without multisampling). Contact is judged with a tolerance, so a near miss keeps
+      the stencil. On studio (Apple M1 Max), solo, ABBA, `transition-matrix.spec.ts` with its
+      `stencil` kind then a square ring: the ring fell from 8.05–8.37 us a command to 0.81–0.90,
+      and its boundary with a solid, gradient, pattern, image, text or rect clip from 21.4–24.1 us
+      to between −0.15 and 0.37 (`tests/perf/recorded/evenodd-batch-2026-10-30/`). The spec's
+      `stencil` kind carries a touching contour since, so it still prices the stencil.
     - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
       (`draw/foldColor.ts`), and an image's tint.
   - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
@@ -147,11 +157,10 @@ When work merges, retire its entry here in the same change.
     (`transition-matrix.spec.ts`, the four passes above). Between two kinds that batch it sits
     within ±0.4 us; between two that draw for themselves it is at most 1.0, since the run is
     already closed. Per command, a shader panel costs 3.77–4.59 us and an even-odd fill 7.84–8.13,
-    against 0.43–0.49 for a solid rect (the pattern, which these passes also priced, batches now;
-    see above). The even-odd fill looks the next to bring in, inferred and not tried: one whose
-    contours neither cross nor nest fills the same pixels under the nonzero rule, so `earcut`
-    could triangulate it and it would batch as any polygon does, where today every even-odd path
-    takes the stencil two-pass whatever its shape (`tessellateEvenoddWithAnchors`).
+    against 0.43–0.49 for a solid rect (the pattern and the simple even-odd fill, which these
+    passes also priced, batch now; see above). An even-odd fill whose outlines cross or touch
+    still takes the stencil two-pass (`tessellateEvenoddWithAnchors`); batching it would need its
+    crossings resolved into rings first, as `resolveCrossings` does for nonzero, but by parity.
 
 - **(P3) [waiting] `SOLID_RING_SIZE` is measured only on Metal.** The ring (64 slots) exists so a flush never
   writes a buffer a draw is still reading. On 2026-10-06 a ring of 64 measured 24% slower than a

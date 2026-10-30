@@ -4,6 +4,7 @@ import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX } from './drawBatch';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 /**
  * A path whose own coordinates are far from the origin, at world x = 262,144
@@ -57,9 +58,9 @@ function batchedLefts(path: PolygonPath): number[] {
 function ownDrawLefts(path: PolygonPath): number[] {
   const cmd = {
     kind: 'path',
-    // An even-odd fill keeps out of the batch, and per-vertex colors pick the
+    // A touching even-odd fill keeps out of the batch, and per-vertex colors pick the
     // program this reads.
-    path: { ...path, fillRule: 'evenodd' },
+    path: stencilledEvenOdd(path),
     fill: { paint: { kind: 'solid', color: '#fff' } },
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
   } as unknown as DrawCommand;

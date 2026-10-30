@@ -5,9 +5,10 @@
  * included; the recorder sees neither.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { pathFromD, polygonFromPoints, type Path } from '@weasel-js/geom';
+import { pathFromD, polygonFromPoints, type Path, type PolygonPath } from '@weasel-js/geom';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 const W = 96;
 const H = 80;
@@ -69,8 +70,8 @@ function turned(cx: number, cy: number, w: number, h: number, deg: number): Path
 const FULL = { kind: 'rect' as const, x: 0, y: 0, width: W, height: H };
 const solid = (color: string, path: Path = FULL): DrawCommand =>
   ({ kind: 'path', path, fill: { paint: { color } } });
-/** An even-odd fill, which no run can take: it draws for itself, through the
- *  stencil. One convex contour covers what a nonzero one would. */
+/** An even-odd fill whose outlines touch, which no run can take: it draws for
+ *  itself, through the stencil. One convex contour covers what a nonzero one would. */
 function ownDraw(path: Path, rgba: number[]): DrawCommand {
   const polygon = path.kind === 'rect'
     ? polygonFromPoints([
@@ -81,7 +82,7 @@ function ownDraw(path: Path, rgba: number[]): DrawCommand {
   const [r, g, b] = rgba.map((v) => Math.round(v * 255));
   return {
     kind: 'path',
-    path: { ...polygon, fillRule: 'evenodd' } as Path,
+    path: stencilledEvenOdd(polygon as PolygonPath),
     fill: { paint: { color: `rgba(${r}, ${g}, ${b}, ${rgba[3]})` } },
   };
 }

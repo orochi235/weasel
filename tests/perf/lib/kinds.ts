@@ -129,14 +129,16 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     };
   };
 
-  /** An even-odd polygon, which tessellates to `requiresStencil` and takes the
-   *  two-pass stencil fill rather than the batch. */
+  /** An even-odd ring with a contour of no area along its first edge, which
+   *  tessellates to `requiresStencil` and takes the two-pass stencil fill
+   *  rather than the batch: without that touching contour the ring batches. */
   const stencil = (i: number) => {
     const x = px(i);
     const y = py(i);
     const c = new Float32Array([
       x, y, x + 36, y, x + 36, y + 36, x, y + 36,
       x + 9, y + 9, x + 27, y + 9, x + 27, y + 27, x + 9, y + 27,
+      x, y, x + 36, y,
     ]);
     return {
       kind: 'path',
@@ -145,6 +147,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
         commands: new Uint8Array([
           PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
           PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
+          PATH_M, PATH_L, PATH_Z,
         ]),
         coords: c,
         fillRule: 'evenodd',
