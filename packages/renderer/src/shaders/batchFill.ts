@@ -166,15 +166,16 @@ export const BATCH_ATTRIBUTE_LOCATIONS = {
 
 const L = BATCH_ATTRIBUTE_LOCATIONS;
 
-/** The fetch for slots `lo` to `hi`, halving the range at each compare. */
-function sampleTree(lo: number, hi: number, indent = '  '): string {
-  if (lo === hi) return `${indent}return texture(u_samplers[${lo}], uv);`;
+/** The fetch for slots `lo` to `hi`, halving the range at each compare;
+ *  `fetch` is the sample a leaf returns, `%s` standing for its sampler. */
+function sampleTree(lo: number, hi: number, fetch: string, indent = '  '): string {
+  if (lo === hi) return `${indent}return ${fetch.replace('%s', `u_samplers[${lo}]`)};`;
   const mid = (lo + hi + 1) >> 1;
   return [
     `${indent}if (slot < ${mid}) {`,
-    sampleTree(lo, mid - 1, `${indent}  `),
+    sampleTree(lo, mid - 1, fetch, `${indent}  `),
     `${indent}} else {`,
-    sampleTree(mid, hi, `${indent}  `),
+    sampleTree(mid, hi, fetch, `${indent}  `),
     `${indent}}`,
   ].join('\n');
 }
@@ -241,8 +242,15 @@ uniform vec4 u_colorBias[${matrices}];
 out vec4 outColor;
 
 vec4 sampleSlot(int slot, vec2 uv) {
-${sampleTree(0, BATCH_TEXTURE_SLOTS - 1)}
+${sampleTree(0, BATCH_TEXTURE_SLOTS - 1, 'texture(%s, uv)')}
   // Never reached: every slot returns above.
+  return vec4(0.0);
+}
+// A glyph's taps, which run inside a branch and so take no derivative. Slot 0
+// is the white texel, never an atlas.
+vec4 glyphTap(vec2 uv) {
+  int slot = v_texSlot;
+${sampleTree(1, BATCH_TEXTURE_SLOTS - 1, 'textureLod(%s, uv, 0.0)')}
   return vec4(0.0);
 }
 ${GLYPH_COVERAGE_GLSL}
@@ -275,8 +283,10 @@ void main() {
   texel.rgb = mix(texel.rgb, straightRgb(texel), step(${PAINT_MODE_IMAGE - 0.5}, v_paintMode));
   float isGlyph = step(0.5, v_paintMode) * step(v_paintMode, 2.5);
   // Unconditional, and multiplied out afterwards rather than branched around:
-  // see the file header. A glyph's a_post is its synthetic-bold shift.
-  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot]);
+  // see the file header. A glyph's a_post is its synthetic-bold shift. A slot
+  // that is not an atlas keeps a stale field scale, which would send its
+  // fragments through the glyph taps.
+  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot] * isGlyph);
   // A glyph's texel is a distance field, so it takes no part in the color; a
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;

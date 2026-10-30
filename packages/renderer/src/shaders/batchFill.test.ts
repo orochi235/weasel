@@ -52,15 +52,23 @@ describe('batch program — declaration lists match the sources', () => {
   });
 });
 
+/** The body of the GLSL function `head` opens, between its braces. */
+function functionBody(src: string, head: string): string {
+  const start = src.indexOf(head) + head.length;
+  let depth = 1;
+  for (let i = start; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(start, i);
+  }
+  throw new Error(`no end to ${head}`);
+}
+
 describe('batch program — the sampler tree', () => {
   /** `sampleSlot`'s body with each fetch replaced by the unit it reads, so the
    *  branching can be run here. */
-  const body = BATCH_FRAG_SRC.slice(
-    BATCH_FRAG_SRC.indexOf('vec4 sampleSlot(int slot, vec2 uv) {') + 'vec4 sampleSlot(int slot, vec2 uv) {'.length,
-    BATCH_FRAG_SRC.indexOf('float median('),
-  );
+  const body = functionBody(BATCH_FRAG_SRC, 'vec4 sampleSlot(int slot, vec2 uv) {');
   const unitFor = new Function(
-    'slot', body.replace(/texture\(u_samplers\[(\d+)\], uv\)/g, '$1').replace(/\}\s*$/, ''),
+    'slot', body.replace(/texture\(u_samplers\[(\d+)\], uv\)/g, '$1'),
   ) as (slot: number) => number;
 
   it('samples the unit each slot names', () => {
@@ -214,5 +222,25 @@ describe('batch program — glyph coverage is unconditional', () => {
     // The texel is a distance field there, not a color — multiplying it in
     // would paint every glyph in its own coverage as well as fading it.
     expect(BATCH_FRAG_SRC).toMatch(/mix\(texel,\s*vec4\(1\.0\),\s*isGlyph\)/);
+  });
+
+  it('keeps a fragment that is not a glyph out of the glyph taps', () => {
+    // A slot that is not an atlas keeps a stale field scale, so only a zero
+    // stands between an image fragment and four wasted fetches.
+    expect(BATCH_FRAG_SRC).toMatch(/glyphCoverage\([^;]*u_fieldScale\[v_texSlot\]\s*\*\s*isGlyph\)/);
+  });
+
+  it('fetches a glyph tap at an explicit level, from every slot but the white texel', () => {
+    // The taps run inside a branch, where texture() would take its level from
+    // an undefined derivative.
+    const body = functionBody(BATCH_FRAG_SRC, 'vec4 glyphTap(vec2 uv) {');
+    expect(body).not.toMatch(/\btexture\s*\(/);
+    const fetch = /textureLod\(u_samplers\[(\d+)\], uv, 0\.0\)/g;
+    const slots = [...body.matchAll(fetch)].map((m) => Number(m[1]));
+    expect(slots).toEqual(Array.from({ length: BATCH_TEXTURE_SLOTS - 1 }, (_, i) => i + 1));
+    const unitFor = new Function(
+      'v_texSlot', body.replace('int slot = v_texSlot;', 'const slot = v_texSlot;').replace(fetch, '$1').replace('vec4(0.0)', '-1'),
+    ) as (slot: number) => number;
+    for (let slot = 1; slot < BATCH_TEXTURE_SLOTS; slot++) expect(unitFor(slot)).toBe(slot);
   });
 });

@@ -30,6 +30,12 @@ describe.each([
   ['gradient', GLYPH_GRAD_FRAG_SRC, GLYPH_GRAD_UNIFORMS],
   ['texture', GLYPH_TEXTURE_FRAG_SRC, GLYPH_TEXTURE_UNIFORMS],
 ] as const)('glyph %s program', (_kind, frag, uniforms) => {
+  it('fetches its glyph taps at an explicit level', () => {
+    // They run inside a branch, where texture() would take its level from an
+    // undefined derivative.
+    expect(frag).toMatch(/vec4 glyphTap\(vec2 uv\) \{\s*return textureLod\(u_atlas, uv, 0\.0\);\s*\}/);
+  });
+
   it('looks up exactly the uniforms its stages declare', () => {
     const declared = new Set([...declaredUniforms(GLYPH_PAINT_VERT_SRC), ...declaredUniforms(frag)]);
     expect([...declared].sort()).toEqual([...uniforms].sort());

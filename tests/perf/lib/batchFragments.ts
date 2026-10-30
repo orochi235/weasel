@@ -6,7 +6,8 @@
  * constants, so `a_texSlot` picks the slot, mode, and matrix for the whole
  * frame. `batch-chain8-*` is the batch program with the eight-slot chain of
  * compares it had before the tree, rebuilt here so the two can be timed in one
- * page.
+ * page. `batch-glyph-*` draw glyphs off an MSDF atlas (paint mode 1) at a
+ * field scale for large text and for text small enough to take the glyph taps.
  */
 import type * as BatchFill from '../../../packages/renderer/src/shaders/batchFill';
 
@@ -19,9 +20,12 @@ function chainSource(mod: Mod, slots: number): string {
   const arms: string[] = [];
   for (let i = 1; i < slots; i++) arms.push(`  if (slot == ${i}) return texture(u_samplers[${i}], uv);`);
   const fetch = `vec4 sampleSlot(int slot, vec2 uv) {\n${arms.join('\n')}\n  return texture(u_samplers[0], uv);\n}`;
+  const tapArms = arms.map((a) => a.replace('texture(', 'textureLod(').replace(', uv)', ', uv, 0.0)'));
+  const tap = `vec4 glyphTap(vec2 uv) {\n  int slot = v_texSlot;\n${tapArms.join('\n')}\n  return vec4(0.0);\n}`;
   const n = mod.BATCH_TEXTURE_SLOTS;
   const src = mod.BATCH_FRAG_SRC
     .replace(/vec4 sampleSlot\(int slot, vec2 uv\) \{[\s\S]*?\n\}\n/, `${fetch}\n`)
+    .replace(/vec4 glyphTap\(vec2 uv\) \{[\s\S]*?\n\}\n/, `${tap}\n`)
     .replace(`uniform sampler2D u_samplers[${n}];`, `uniform sampler2D u_samplers[${slots}];`)
     .replace(`uniform vec2 u_fieldScale[${n}];`, `uniform vec2 u_fieldScale[${slots}];`)
     .replace(`u_samplers[${mod.RAMP_SLOT}]`, `u_samplers[${slots - 1}]`);
@@ -35,7 +39,7 @@ export function batchFragmentVariants(
   { layers, tex, quad }: { layers: number; tex: WebGLTexture; quad: WebGLBuffer },
 ): FillVariant[] {
   const L = mod.BATCH_ATTRIBUTE_LOCATIONS;
-  const build = (frag: string, slots: number, matrices: number) => {
+  const build = (frag: string, slots: number, matrices: number, fieldScale = 1) => {
     const vs = gl.createShader(gl.VERTEX_SHADER)!;
     gl.shaderSource(vs, mod.BATCH_VERT_SRC); gl.compileShader(vs);
     const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
@@ -50,7 +54,7 @@ export function batchFragmentVariants(
     gl.uniformMatrix3fv(u('u_proj'), false, ident3);
     gl.uniformMatrix3fv(u('u_model'), false, ident3);
     gl.uniform1iv(u('u_samplers'), Array.from({ length: slots }, (_, i) => i));
-    gl.uniform2fv(u('u_fieldScale'), new Float32Array(slots * 2).fill(1));
+    gl.uniform2fv(u('u_fieldScale'), new Float32Array(slots * 2).fill(fieldScale));
     gl.uniform4f(u('u_color'), 1, 1, 1, 1);
     gl.uniform1fv(u('u_alpha'), new Float32Array(matrices).fill(0.5));
     const m = new Float32Array(matrices * 16);
@@ -84,12 +88,21 @@ export function batchFragmentVariants(
   gl.activeTexture(gl.TEXTURE0);
 
   const tree = build(mod.BATCH_FRAG_SRC, slots, 1);
+  // The quad's uv runs 0 to 1 across the viewport, so a field scale of f puts
+  // f/2 * (1/w + 1/h) field units across a pixel: 0.1 for large text, 0.5 for
+  // text small enough to take the glyph taps.
+  const [w, h] = [gl.drawingBufferWidth, gl.drawingBufferHeight];
+  const scaleFor = (fieldPerPx: number) => fieldPerPx / (0.5 * (1 / w + 1 / h));
+  const glyphLarge = build(mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.1));
+  const glyphSmall = build(mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.5));
   const chain = build(chainSource(mod, 8), 8, 1);
   const matrices = build(mod.BATCH_MATRICES_FRAG_SRC, slots, mod.BATCH_MATRIX_SLOTS);
   return [
     variant('batch', tree, mod.packSlot(1, mod.PAINT_MODE_PLAIN)),
     variant('batch-chain8-1', chain, mod.packSlot(1, mod.PAINT_MODE_PLAIN)),
     variant('batch-chain8-7', chain, mod.packSlot(7, mod.PAINT_MODE_PLAIN)),
+    variant('batch-glyph-large', glyphLarge, mod.packSlot(1, 1)),
+    variant('batch-glyph-small', glyphSmall, mod.packSlot(1, 1)),
     variant('batch-8-matrices', matrices, mod.withMatrix(mod.packSlot(1, mod.PAINT_MODE_PLAIN), 3)),
   ];
 }

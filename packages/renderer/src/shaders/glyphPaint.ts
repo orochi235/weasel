@@ -13,8 +13,8 @@
  * attribute locations are pinned to the batch shader's and one VAO serves
  * both. Positions arrive already in screen space, so `u_model` is identity.
  *
- * Coverage is taken before `shadePaint` runs, and outside any branch: `fwidth`
- * in non-uniform control flow is undefined.
+ * Coverage is taken before `shadePaint` runs, and outside any branch: a
+ * derivative in non-uniform control flow is undefined.
  *
  * Output: PREMULTIPLIED alpha, the paint's own scaled by coverage.
  */
@@ -56,6 +56,9 @@ uniform sampler2D u_atlas;
 uniform float u_synthBold;
 uniform vec2 u_fieldScale;
 ${paintGlsl}
+vec4 glyphTap(vec2 uv) {
+  return textureLod(u_atlas, uv, 0.0);
+}
 ${GLYPH_COVERAGE_GLSL}
 out vec4 outColor;
 void main() {

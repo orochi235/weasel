@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { getFont, textureCacheKey, _resetFontRegistryForTests } from './registerFont';
 import { registerTestFont } from './testing/registerTestFont';
 import {
-  GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8, SYNTH_BOLD_AMOUNT, glyphFieldScale, syntheticBoldGrowth,
+  GLYPH_AREA_FROM, GLYPH_AREA_FULL, GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8, SYNTH_BOLD_AMOUNT, glyphFieldScale, syntheticBoldGrowth,
 } from './textSdf';
 import { SDF_RADIUS } from './dynamic/dynamicAtlas';
 import { BAKE_SIZE } from './dynamic/glyphRasterizer';
@@ -19,8 +19,9 @@ describe('glyph coverage — antialiasing', () => {
   it('derives its AA band from the screen derivatives of uv, not of the field', () => {
     // fwidth(field) reads flat across a stem narrower than a pixel and
     // thresholds it away; the browser half of this is glyphCoverage.browser.test.ts.
-    expect(GLYPH_COVERAGE_GLSL).toMatch(/dFdx\(uv\)\s*\*\s*fieldPerUv/);
-    expect(GLYPH_COVERAGE_GLSL).toMatch(/dFdy\(uv\)\s*\*\s*fieldPerUv/);
+    expect(GLYPH_COVERAGE_GLSL).toMatch(/du\s*=\s*dFdx\(uv\)/);
+    expect(GLYPH_COVERAGE_GLSL).toMatch(/dv\s*=\s*dFdy\(uv\)/);
+    expect(GLYPH_COVERAGE_GLSL).toMatch(/length\(du\s*\*\s*fieldPerUv\)\s*\+\s*length\(dv\s*\*\s*fieldPerUv\)/);
     expect(GLYPH_COVERAGE_GLSL).not.toMatch(/fwidth\(field\)/);
   });
 
@@ -42,15 +43,30 @@ describe('glyph coverage — antialiasing', () => {
 
 describe('glyph coverage — no branch around the derivative', () => {
   /**
-   * `fwidth` in non-uniform control flow is undefined, so a caller runs this on
-   * every fragment and the field selection has to be arithmetic. An `if` here
-   * would compile, pass every unit test, and produce driver-dependent edges on
-   * some machines and not others.
+   * A derivative in non-uniform control flow is undefined, so a caller runs
+   * this on every fragment and the field selection has to be arithmetic. A
+   * derivative behind an `if` would compile, pass every unit test, and produce
+   * driver-dependent edges on some machines and not others.
    */
   it('selects between the two field layouts without a conditional', () => {
     expect(GLYPH_COVERAGE_GLSL).toMatch(/mix\(median\(/);
-    expect(GLYPH_COVERAGE_GLSL).not.toMatch(/\bif\s*\(/);
     expect(GLYPH_COVERAGE_GLSL).not.toMatch(/\?/);
+  });
+
+  it('takes both derivatives before its one branch', () => {
+    const branches = [...GLYPH_COVERAGE_GLSL.matchAll(/\bif\s*\(/g)];
+    expect(branches).toHaveLength(1);
+    const at = branches[0].index;
+    expect(GLYPH_COVERAGE_GLSL.lastIndexOf('dFdx(')).toBeLessThan(at);
+    expect(GLYPH_COVERAGE_GLSL.lastIndexOf('dFdy(')).toBeLessThan(at);
+    expect(GLYPH_COVERAGE_GLSL).not.toMatch(/fwidth\(/);
+  });
+
+  it('samples inside that branch only through the program\'s glyphTap', () => {
+    // texture() takes its level of detail from an implicit derivative; each
+    // host's glyphTap is a textureLod, pinned in batchFill.test.ts and glyphPaint.test.ts.
+    expect(GLYPH_COVERAGE_GLSL).not.toMatch(/\btexture(Lod|Grad)?\s*\(/);
+    expect(GLYPH_COVERAGE_GLSL).toMatch(/glyphTap\(/);
   });
 
   it('splits the two layouts at a threshold between their mode values', () => {
@@ -59,6 +75,24 @@ describe('glyph coverage — no branch around the derivative', () => {
     const at = Number(step![1]);
     expect(at).toBeGreaterThan(GLYPH_MODE_MSDF);
     expect(at).toBeLessThan(GLYPH_MODE_R8);
+  });
+});
+
+describe('glyph coverage — area taps', () => {
+  it('blends into area coverage over a range of field per pixel, in order', () => {
+    expect(GLYPH_AREA_FROM).toBeGreaterThan(0);
+    expect(GLYPH_AREA_FULL).toBeGreaterThan(GLYPH_AREA_FROM);
+    expect(GLYPH_COVERAGE_GLSL).toContain(
+      `smoothstep(${GLYPH_AREA_FROM.toFixed(2)}, ${GLYPH_AREA_FULL.toFixed(2)}, fieldPerPx)`,
+    );
+  });
+
+  it('puts 16px text and smaller at DPR 1 wholly in area coverage, on either atlas', () => {
+    // Field per pixel is field units an em over pixels an em: 6 on a runtime
+    // canvas page, 8 on Inter's baked atlas (32 texels an em, range 4).
+    const canvasPerEm = BAKE_SIZE / SDF_RADIUS;
+    expect(canvasPerEm / 16).toBeGreaterThanOrEqual(GLYPH_AREA_FULL);
+    expect(32 / 4 / 16).toBeGreaterThanOrEqual(GLYPH_AREA_FULL);
   });
 });
 

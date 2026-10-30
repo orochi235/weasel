@@ -316,7 +316,7 @@ void main() {
   const batch = Math.min(...settled('batch'));
   console.log('');
   console.log('  the batch program as it ships, against what it replaced:');
-  for (const name of ['batch', 'batch-chain8-1', 'batch-chain8-7', 'batch-8-matrices']) {
+  for (const name of ['batch', 'batch-chain8-1', 'batch-chain8-7', 'batch-8-matrices', 'batch-glyph-large', 'batch-glyph-small']) {
     const x = Math.min(...settled(name));
     console.log(`  fastest  ${name.padEnd(16)} ${x.toFixed(3).padStart(7)} ms/frame  spread ${spread(name).toFixed(1).padStart(5)}%`
       + `  ${(((x / batch) - 1) * 100).toFixed(1).padStart(6)}% against batch`);

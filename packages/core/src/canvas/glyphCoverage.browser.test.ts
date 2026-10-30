@@ -50,6 +50,14 @@ function columns(img: RasterImage): number[] {
   return cols;
 }
 
+/** Intensity-weighted mean column of the ink, in pixels. */
+function centroidX(img: RasterImage): number {
+  const cols = columns(img);
+  let mass = 0, sum = 0;
+  cols.forEach((v, x) => { mass += v; sum += v * (x + 0.5); });
+  return sum / mass;
+}
+
 beforeAll(async () => {
   await registerFont(FAMILY, {}, metricsUrl, atlasUrl);
 });
@@ -72,11 +80,24 @@ describe('atlas glyph coverage at small sizes', () => {
       worst = Math.min(worst, ratio);
       report.push(`x ${x.toFixed(3)} left ${left.toFixed(2)} right ${right.toFixed(2)}`);
     }
-    // Coverage is read from the distance at each pixel's center, so a 0.65px
-    // stem centered on a pixel carries about twice the ink of one straddling
-    // two: 0.5 is the floor that sampling allows. A stem thresholded away
-    // measured 0.21.
-    expect(worst, report.join('\n')).toBeGreaterThan(0.45);
+    // Read at each pixel's center alone, a 0.65px stem centered on a pixel
+    // carried about twice the ink of one straddling two (0.5); a stem
+    // thresholded away measured 0.21.
+    expect(worst, report.join('\n')).toBeGreaterThan(0.7);
+  });
+
+  // Read at each pixel's center alone, the offsets swung by 0.88, 0.35 and
+  // 0.66px. A stem inside one pixel keeps its centroid at that pixel's center
+  // even under exact area coverage, which at 7.2px is about 0.16px of swing.
+  it.each([[7.2, 0.5], [12, 0.1], [16, 0.1]])('keeps a %spx H\'s ink centroid where it moves to', (size, bound) => {
+    // The centroid's offset from x, as x steps through a pixel in eighths.
+    const offsets: number[] = [];
+    for (let k = 0; k < 8; k++) {
+      const x = 4 + k / 8;
+      offsets.push(centroidX(render(x, size)) - x);
+    }
+    const swing = Math.max(...offsets) - Math.min(...offsets);
+    expect(swing, offsets.map((o) => o.toFixed(3)).join(' ')).toBeLessThan(bound);
   });
 
   it('puts down the same ink wherever a 7.2px H lands', () => {
@@ -85,6 +106,6 @@ describe('atlas glyph coverage at small sizes', () => {
       masses.push(columns(render(4 + k / 8, 7.2)).reduce((a, b) => a + b, 0));
     }
     const spread = Math.min(...masses) / Math.max(...masses);
-    expect(spread, masses.map((m) => m.toFixed(2)).join(' ')).toBeGreaterThan(0.8);
+    expect(spread, masses.map((m) => m.toFixed(2)).join(' ')).toBeGreaterThan(0.88);
   });
 });

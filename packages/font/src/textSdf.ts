@@ -23,10 +23,23 @@ export const GLYPH_MODE_MSDF = 1;
 export const GLYPH_MODE_R8 = 2;
 
 /**
- * Glyph coverage from one atlas sample, as GLSL for a program to paste in.
+ * Fields per screen pixel at which `glyphCoverage` starts taking area coverage
+ * from four taps, and at which it takes nothing else. Between them it mixes the
+ * two, so text zooming through the range does not change weight in a step.
  *
- * `mode` says which field the sample carries: `GLYPH_MODE_MSDF` takes the
- * median of R,G,B, `GLYPH_MODE_R8` reads `.r` alone.
+ * 30 and 20 px an em on a runtime canvas page (6 field units an em), and 40
+ * and 27 on Inter's baked atlas (8). A regular stem is about 0.6 field units
+ * wide, so these are stems of 3 and 2 pixels.
+ */
+export const GLYPH_AREA_FROM = 0.2;
+export const GLYPH_AREA_FULL = 0.3;
+
+/**
+ * Glyph coverage from the atlas, as GLSL for a program to paste in.
+ *
+ * `texel` is the atlas sample at `uv`; `mode` says which field it carries:
+ * `GLYPH_MODE_MSDF` takes the median of R,G,B, `GLYPH_MODE_R8` reads `.r`
+ * alone.
  *
  * The antialiasing band has to be one *screen* pixel wide: `fieldPerUv` is how
  * far the field runs per unit of texture coordinate on each axis (see
@@ -40,10 +53,27 @@ export const GLYPH_MODE_R8 = 2;
  * across a glyph quad, so it cannot do that. Nor a constant band, which is
  * right at one scale only.
  *
- * **Nothing here branches, and the caller must not branch around it.**
- * A derivative in non-uniform control flow is undefined, so it has to
- * be taken before anything selects on paint mode. A merged program therefore
- * runs the glyph math on fragments that are not glyphs and discards the result.
+ * **Small text takes area coverage.** One sample at the pixel's center inks a
+ * stem narrower than a pixel by where it sits: centered on a column it inks
+ * half a pixel plus half its width, straddling two it inks its width, so a
+ * glyph's ink shifts as it moves through a pixel. Where a pixel spans
+ * more of the field than `GLYPH_AREA_FROM` (see there), coverage is the mean of
+ * four taps on a rotated grid, at the centers of the pixel's quarters along
+ * either axis, each through a linear ramp a quarter pixel wide: a box filter
+ * over the pixel, which keeps a stem's ink to its width wherever it lands. A
+ * 2x2 grid would put only two taps along each axis, and a stem narrower than
+ * half a pixel snaps between them; at 7.2px that left the centroid swinging
+ * by 0.37px. The program defines
+ * `vec4 glyphTap(vec2 uv)` before pasting this in, returning the atlas sample
+ * at `uv` with no implicit derivative (`textureLod` at level 0: an atlas has no
+ * mipmaps), because it runs inside the branch.
+ *
+ * **Nothing before that branch may be skipped, and the caller must not branch
+ * around this.** A derivative in non-uniform control flow is undefined, so both
+ * are taken first, and before anything selects on paint mode. A merged program
+ * therefore runs the glyph math on fragments that are not glyphs and discards
+ * the result; it passes a zero `fieldPerUv` for those, which keeps them out of
+ * the branch.
  *
  * `synthBold` shifts the threshold to thicken strokes where the resolver fell
  * back from a missing bold variant to the regular atlas.
@@ -53,12 +83,32 @@ float median(float r, float g, float b) {
   return max(min(r, g), min(max(r, g), b));
 }
 
+float glyphField(vec4 texel, float mode) {
+  return mix(median(texel.r, texel.g, texel.b), texel.r, step(1.5, mode));
+}
+
 float glyphCoverage(vec4 texel, float mode, float synthBold, vec2 uv, vec2 fieldPerUv) {
-  float field = mix(median(texel.r, texel.g, texel.b), texel.r, step(1.5, mode));
-  float fieldPerPx = 0.5 * (length(dFdx(uv) * fieldPerUv) + length(dFdy(uv) * fieldPerUv));
+  vec2 du = dFdx(uv);
+  vec2 dv = dFdy(uv);
+  float fieldPerPx = 0.5 * (length(du * fieldPerUv) + length(dv * fieldPerUv));
   float aaW = max(0.5 * fieldPerPx, 0.0005);
   float threshold = 0.5 - synthBold;
-  return smoothstep(threshold - aaW, threshold + aaW, field);
+  float field = glyphField(texel, mode);
+  float coverage = smoothstep(threshold - aaW, threshold + aaW, field);
+  float area = smoothstep(${GLYPH_AREA_FROM.toFixed(2)}, ${GLYPH_AREA_FULL.toFixed(2)}, fieldPerPx);
+  if (area > 0.0) {
+    float band = 0.5 * aaW;
+    float lo = threshold - 0.5 * band;
+    float sum = 0.0;
+    vec2 at = vec2(-0.375, -0.125);
+    for (int i = 0; i < 4; i++) {
+      float tap = glyphField(glyphTap(uv + at.x * du + at.y * dv), mode);
+      sum += clamp((tap - lo) / band, 0.0, 1.0);
+      at = vec2(-at.y, at.x);
+    }
+    coverage = mix(coverage, 0.25 * sum, area);
+  }
+  return coverage;
 }
 `;
 
