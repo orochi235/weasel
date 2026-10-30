@@ -243,18 +243,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Rendering & paint
 
-- **(P3) [agent] Renderer: geometry far from the origin is still single precision.** The transform stack
-  is in doubles, a large model translation is rebased before upload (`setProjAndModel`,
-  `u_origin`), and a gradient's or a pattern's paint space is rebased the same way (`bindGradient`
-  measures from the gradient's own start, `bindPattern` drops whole tiles). Both are proven by
-  float32 arithmetic (`draw.precision.test.ts`, `draw.paintPrecision.test.ts`), not in a browser
-  far from the origin. Near it, `gradientStart.browser.test.ts` shows the shader honors the rebase
-  (2026-10-21). A path's coords are measured from `PolygonPath.origin` past `ORIGIN_THRESHOLD`
-  (2^14) wherever geometry is made or mapped — `transformPath` by default, `joinPaths`, rect
-  tessellation (2026-10-27). Still float32 for a consumer's own stage, which has no origin to rebase
-  against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
-  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`).
-
 - **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
   the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
   (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code
