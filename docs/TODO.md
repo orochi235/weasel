@@ -300,13 +300,17 @@ Owner tags, after the priority (2026-10-26):
     (a 1D model of this `H`'s two stems, not measured). Not tap spacing: a 2x2 grid and the rotated
     grid that ships measured the same. The canvas's ink mass still varies 8.03 to 8.65 across the
     pixel, so something loses or adds ink; unexplained.
-  - **A batch fragment that is not a glyph costs 6 to 10% more** in `fill-rate`'s `batch` variant
-    (two before/after/after/before jobs on one afternoon, 8.24 to 9.02 and 8.04 to 8.54 ms a frame,
-    mean of each side). The variant whose taps fetch nothing (`N`) cost the same as the shipping one,
+  - **A batch fragment that is not a glyph costs 6 to 15% more** in `fill-rate`'s `batch` variant
+    (three jobs on one afternoon, each side's mean: 8.24 to 9.02, 8.04 to 8.54, and 7.99 to 8.98 ms
+    a frame). The variant whose taps fetch nothing (`N`) cost the same as the shipping one,
     so it is the branch and the math kept live across it, not the second sampler tree. A glyph
     fragment taking the taps costs 2.1 times a `batch` one; one above the threshold costs what a
-    `batch` one does. Untried: decide on the CPU per glyph run whether it takes taps, and pass that
-    as a flat varying the shader branches on.
+    `batch` one does. A flat branch condition does not help: with the branch taken on a flat varying
+    instead of the field scale, a `batch` fragment cost 8.87 and 8.93 ms a frame against 8.97 and 9.00
+    for the shipping shader and 7.72 and 8.25 before it, in one sitting against `106f27060`
+    (2026-10-30). What is left untried is keeping the branch out of the program a run draws with unless
+    the run holds glyphs that need it, the way the matrix and hull variants are built on demand; a run
+    that does would still charge its other fragments.
 
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
