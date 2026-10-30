@@ -15,13 +15,13 @@ export interface ReachLookups<TPose> {
 
 /**
  * Whether `q` lands on `node` anywhere it is painted: as authored, or in any
- * copy an ancestor draws of it. `parents` is innermost first.
+ * copy an ancestor draws of it. `parentsOf` answers innermost first.
  *
  * A copy is the clipped content transformed, so the query is carried into the
  * copy's source frame before the copying container's own clip is asked, and
  * every clip below it is asked in that frame too.
  *
- * `parents` is called only when the answer needs it — always when
+ * `parentsOf` is called only when the answer needs it — always when
  * `copying` says some container in the walk draws copies, otherwise only
  * after the node hits as authored.
  */
@@ -31,22 +31,20 @@ export function reaches<TPose>(
   derived: Path | null | undefined,
   inherited: InheritedPaint | undefined,
   q: PickQuery<TPose>,
-  parentsOf: () => readonly PickCandidate<TPose>[],
+  parentsOf: (node: PickCandidate<TPose>) => readonly PickCandidate<TPose>[],
   copying: boolean,
   look: ReachLookups<TPose>,
 ): boolean {
-  const admits = (query: PickQuery<TPose>, ancestor: PickCandidate<TPose>): boolean => {
-    const clip = look.clipOf(ancestor);
-    return clip === null
-      || query.clipAdmits(look.carry(clip, ancestor.layer, node.layer), node, pose, derived);
-  };
-
-  const parents = copying && q.inCopy !== undefined ? parentsOf() : null;
+  const parents = copying && q.inCopy !== undefined ? parentsOf(node) : null;
   if (parents === null || !parents.some((a) => look.copiesOf(a).length > 0)) {
     if (!q.hits(node, pose, derived, inherited)) return false;
-    return (parents ?? parentsOf()).every((a) => admits(q, a));
+    const all = parents ?? parentsOf(node);
+    for (let i = 0; i < all.length; i++) if (!admitsIn(look, q, all[i]!, node, pose, derived)) return false;
+    return true;
   }
 
+  const admits = (query: PickQuery<TPose>, ancestor: PickCandidate<TPose>): boolean =>
+    admitsIn(look, query, ancestor, node, pose, derived);
   const outermostFirst = [...parents].reverse();
   const from = (i: number, query: PickQuery<TPose>): boolean => {
     if (i === outermostFirst.length) return query.hits(node, pose, derived, inherited);
@@ -59,4 +57,18 @@ export function reaches<TPose>(
     return false;
   };
   return from(0, q);
+}
+
+/** Whether `ancestor`'s clip, carried into `node`'s plane, leaves `query` anything of it. */
+function admitsIn<TPose>(
+  look: ReachLookups<TPose>,
+  query: PickQuery<TPose>,
+  ancestor: PickCandidate<TPose>,
+  node: PickCandidate<TPose>,
+  pose: TPose,
+  derived: Path | null | undefined,
+): boolean {
+  const clip = look.clipOf(ancestor);
+  return clip === null
+    || query.clipAdmits(look.carry(clip, ancestor.layer, node.layer), node, pose, derived);
 }
