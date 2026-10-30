@@ -57,7 +57,8 @@ async function read(bytes: Uint8Array) {
     const doc = await task.promise;
     const { info } = await doc.getMetadata();
     const items = (await (await doc.getPage(1)).getTextContent({ includeMarkedContent: true })).items;
-    const flow = items.map((i) => ('str' in i ? i.str : i.type === 'endMarkedContent' ? ']' : `${i.tag}[`)).join('');
+    // pdf.js sets `tag` on a marked-content item, and its types leave it out.
+    const flow = items.map((i) => ('str' in i ? i.str : i.type === 'endMarkedContent' ? ']' : `${(i as { tag?: string }).tag}[`)).join('');
     return { lang: (info as { Language?: string | null }).Language ?? null, flow };
   } finally {
     await task.destroy();
