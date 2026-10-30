@@ -3,13 +3,15 @@
  * bytes and text in, glyph indices with em-space advances and offsets out,
  * and the outline of any glyph a shaping produced.
  *
- * harfbuzzjs instantiates its WebAssembly when its module is evaluated, so it
- * is imported only by {@link loadShaper}: importing this package costs nothing
- * until a consumer asks for shaping.
+ * HarfBuzz's JavaScript is imported only by {@link loadShaper}, which then
+ * instantiates its WebAssembly: importing this package costs nothing until a
+ * consumer asks for shaping. The JavaScript is harfbuzzjs's, vendored in
+ * `./vendor/harfbuzzjs` because its published module instantiates with a
+ * top-level `await`, which a bundle targeting below ES2022 cannot hold.
  */
 import { scriptPieces, type ScriptPiece } from './scripts';
 
-type HarfBuzz = typeof import('harfbuzzjs');
+type HarfBuzz = typeof import('./vendor/harfbuzzjs/index');
 type HbFont = InstanceType<HarfBuzz['Font']>;
 type HbFeature = InstanceType<HarfBuzz['Feature']>;
 
@@ -211,6 +213,21 @@ let loading: Promise<Shaper> | null = null;
  * ```
  */
 export function loadShaper(): Promise<Shaper> {
-  loading ??= import('harfbuzzjs').then((hb) => new HarfBuzzShaper(hb));
+  loading ??= Promise.all([import('./vendor/harfbuzzjs/index'), import('./vendor/harfbuzzjs/harfbuzz')])
+    .then(async ([hb, { default: createHarfBuzz }]) => {
+      hb.init(await createHarfBuzz(wasmLocation()));
+      return new HarfBuzzShaper(hb);
+    });
   return loading;
+}
+
+/**
+ * Where the WebAssembly is read from. Node reads harfbuzzjs's own copy; anywhere
+ * else it is fetched from beside this package's built JavaScript, where the
+ * build copies it, so a bundler finds it from the `new URL(…, import.meta.url)`
+ * the glue writes.
+ */
+function wasmLocation(): { locateFile?: () => string } {
+  const isNode = typeof process === 'object' && !!process.versions?.node;
+  return isNode ? { locateFile: () => import.meta.resolve('harfbuzzjs/dist/harfbuzz.wasm') } : {};
 }
