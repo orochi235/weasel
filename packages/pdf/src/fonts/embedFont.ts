@@ -23,6 +23,9 @@ export interface EmbeddedFont {
 
 const encoder = new TextEncoder();
 
+/** U+2060 WORD JOINER: format character, no width, no break. */
+const NOTHING = '\u2060';
+
 function baseFontName(e: FaceEmbedding, family: string, weight: number, style: FontStyle): string {
   const safe = (s: string) => s.replace(/[^A-Za-z0-9._-]/g, '');
   return safe(e.postScriptName) || safe(`${family}-${weight}-${style}`);
@@ -74,6 +77,15 @@ class Face implements EmbeddedFont {
     return this.unicode.get(gid);
   }
 
+  /** What `/ToUnicode` maps each glyph to. A glyph standing for no text of its own (a cluster's
+   *  second glyph, always under `/ActualText`) reads as a word joiner: invisible, and skipped by
+   *  readers that ignore `/ActualText` (pdf.js), which otherwise take its glyph id for a code point. */
+  private readings(): Map<number, string> {
+    const out = new Map(this.unicode);
+    for (const gid of this.used) if (!out.has(gid)) out.set(gid, NOTHING);
+    return out;
+  }
+
   widthOf(gid: number): number {
     return Math.round((this.emb.advanceOfGlyph(gid) * 1000) / this.emb.unitsPerEm);
   }
@@ -90,7 +102,7 @@ class Face implements EmbeddedFont {
     const program = this.subset ? subsetTrueType(emb.sfnt, this.used) : new Uint8Array(emb.sfnt);
     const fontName = this.subset ? `${subsetTag(this.used)}+${this.baseFont}` : this.baseFont;
     objects.streamDeflated(file, { Length1: program.byteLength }, program);
-    objects.streamDeflated(toUnicode, {}, encoder.encode(toUnicodeCMap(this.unicode)));
+    objects.streamDeflated(toUnicode, {}, encoder.encode(toUnicodeCMap(this.readings())));
     objects.set(descriptor, {
       Type: name('FontDescriptor'),
       FontName: name(fontName),

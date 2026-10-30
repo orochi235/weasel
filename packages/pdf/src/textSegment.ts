@@ -86,6 +86,9 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
   let parts: string[] = [];
   let hex = '';
   let pen = 0;
+  /** Where the last `Td` put the line, in ems from the segment's start. */
+  let line = 0;
+  let anchor = false;
   let rise = '0';
   const flush = () => {
     if (hex) parts.push(`<${hex}>`);
@@ -106,7 +109,15 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
           flush();
           out.op('Ts', (rise = at));
         }
-        const adjust = num((pen - ((g.x - first.x) / s + x)) * 1000);
+        const to = (g.x - first.x) / s + x;
+        if (anchor) {
+          flush();
+          const step = num(to - line);
+          out.op('Td', step, 0);
+          pen = line += Number(step);
+          anchor = false;
+        }
+        const adjust = num((pen - to) * 1000);
         if (adjust !== '0') {
           if (hex) parts.push(`<${hex}>`);
           hex = '';
@@ -115,6 +126,9 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
         }
         hex += gid.toString(16).toUpperCase().padStart(4, '0');
         pen += seg.font.widthOf(gid) / 1000;
+        // pdf.js drops a glyph that reads as nothing without moving its own pen past it, so the
+        // glyph after one is placed afresh rather than from that pen.
+        anchor ||= seg.font.readsAs(gid) === undefined && seg.font.widthOf(gid) !== 0;
       }
       if (span.text !== undefined) {
         flush();

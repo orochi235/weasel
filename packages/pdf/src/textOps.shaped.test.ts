@@ -60,7 +60,8 @@ function textCmd(text: string, family: string): TextDrawCommand {
 }
 
 async function render(text: string, family: string, fonts: PdfFontSource = registryFontSource) {
-  const { bytes, skipped } = await writePdf([{ width: 300, height: 100, commands: [textCmd(text, family)] }], {
+  // Room below the baseline: pdf.js drops a glyph whose origin is off the page, and a lowered mark's can be.
+  const { bytes, skipped } = await writePdf([{ width: 300, height: 200, commands: [textCmd(text, family)] }], {
     fonts, compress: false,
   });
   const s = latin1(bytes);
@@ -85,7 +86,7 @@ async function extracted(bytes: Uint8Array): Promise<string> {
   }
 }
 
-// pdf.js reads `/ToUnicode` and ignores `/ActualText`, so it is asked only about clusters of one glyph.
+// pdf.js reads `/ToUnicode` and ignores `/ActualText`.
 describe('writePdf with a shaper', () => {
   it('draws the conjunct क्ष as the one glyph the shaper formed, and reads it back as its three code points', async () => {
     const [conjunct] = shaper.shape(DEVANAGARI, 'क्ष');
@@ -117,7 +118,14 @@ describe('writePdf with a shaper', () => {
     // The dots, drawn first, claim the letters; the shared body claims nothing.
     const [dotBeh, body] = shaped;
     expect(s).toContain(`<${hex4(dotBeh.gid)}> <0628>`);
-    expect(s).not.toMatch(new RegExp(`^<${hex4(body.gid)}> `, 'm'));
+    expect(s).toContain(`<${hex4(body.gid)}> <2060>`);
+  });
+
+  it('reads back in pdf.js with no control character for a glyph that claims no text, and no space', async () => {
+    // pdf.js lists text in the order it is drawn, left to right.
+    expect(await extracted((await render('بت', 'pdf-shaped-ar')).bytes)).toBe('تب');
+    expect(await extracted((await render('بَب', 'pdf-shaped-ar')).bytes)).toBe('بَب');
+    expect(await extracted((await render('कि', 'pdf-shaped-deva')).bytes)).toBe('कि');
   });
 
   it('sets a mark where the shaper put it with Ts, and lowers it back after', async () => {
