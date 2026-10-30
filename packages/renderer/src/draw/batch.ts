@@ -35,7 +35,7 @@ export const meshBatching = {
 
 /** Whether a mesh can join a run. Stencil fills need their own two-pass dance,
  *  and a mesh past the cap is cheaper as its own draw. */
-function canBatchMesh(ctx: DrawContext, mesh: Mesh): boolean {
+export function canBatchMesh(ctx: DrawContext, mesh: Mesh): boolean {
   if (mesh.requiresStencil) return false;
   const cap = ctx.drawBatch.length > 0 ? meshBatching.maxVerticesInRun : meshBatching.maxVertices;
   return (mesh.vertices.length >> 1) <= cap;
@@ -52,8 +52,15 @@ function canBatchMesh(ctx: DrawContext, mesh: Mesh): boolean {
  */
 export function stageSolid(ctx: DrawContext, vertices: number): number {
   const folds = foldsColor(ctx);
-  const colorMatrix = folds ? IDENTITY_COLOR_MATRIX : ctx.state.colorMatrix;
-  const alpha = folds ? 1 : ctx.state.alpha;
+  return stagePlain(
+    ctx, vertices, folds ? IDENTITY_COLOR_MATRIX : ctx.state.colorMatrix, folds ? 1 : ctx.state.alpha,
+  );
+}
+
+/** {@link stageSolid} for vertices the run draws under `colorMatrix` and `alpha`. */
+export function stagePlain(
+  ctx: DrawContext, vertices: number, colorMatrix: Float32Array, alpha: number,
+): number {
   const open = ctx.batchState;
   if (open !== undefined && !runTakes(ctx, open, colorMatrix, alpha)) flushBatch(ctx);
   if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);

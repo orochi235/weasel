@@ -379,7 +379,7 @@ test('batched runs paint their own colors', async ({ page }) => {
  * clipped by rects, and by the same squares as polygons, which only the
  * stencil can express — and compares the two framebuffers channel by channel.
  * A triangle crossing a clip edge is refused the cut and goes through the
- * stencil, and a per-vertex-color child forces the rect clip onto the stencil
+ * stencil, and an even-odd child forces the rect clip onto the stencil
  * part-way through, which is the mixed state where a run crosses a clip that
  * holds a bit.
  *
@@ -453,6 +453,10 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
       fill: { paint: { kind: 'solid', color: '#ffffff' } },
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
     });
+    const evenOdd = (x: number, y: number, s: number, color: string) => {
+      const t = tri(x, y, s, color);
+      return { ...t, path: { ...t.path, fillRule: 'evenodd' } };
+    };
 
     /** The clip, as the CPU path takes it or as only the stencil can. */
     const clip = (asPolygon: boolean, x: number, y: number, wd: number, ht: number) => (asPolygon
@@ -471,6 +475,7 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
           { kind: 'image', image: bitmap, x: 40, y: 20, w: 90, h: 50 },
           grad(80, 0, 40),
           tri(4, 30, 50, '#cc6633'),
+          vcolor(15, 10),
           label('Hg', 70, 30),
         ],
       },
@@ -487,7 +492,7 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
       },
       {
         kind: 'group', clip: clip(asPolygon, 230.5, 10.25, 50.5, 50.5),
-        children: [rect(220, 0, 40, 40, '#3399ff'), vcolor(240, 20), rect(250, 40, 40, 40, '#ff9933')],
+        children: [rect(220, 0, 40, 40, '#3399ff'), evenOdd(240, 20, 30, '#aa44ff'), rect(250, 40, 40, 40, '#ff9933')],
       },
       rect(300, 20, 20, 20, '#ffffff'),
     ];

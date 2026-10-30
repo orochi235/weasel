@@ -57,9 +57,10 @@ function batchedLefts(path: PolygonPath): number[] {
 function ownDrawLefts(path: PolygonPath): number[] {
   const cmd = {
     kind: 'path',
-    path,
+    // An even-odd fill keeps out of the batch, and per-vertex colors pick the
+    // program this reads.
+    path: { ...path, fillRule: 'evenodd' },
     fill: { paint: { kind: 'solid', color: '#fff' } },
-    // Per-vertex colors keep a fill out of the batch.
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
   } as unknown as DrawCommand;
   return PANS.map((k) => {

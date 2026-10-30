@@ -19,7 +19,7 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import { PAINT_MODE_IMAGE, packSlot } from './shaders/batchFill';
+import { PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, packSlot } from './shaders/batchFill';
 import { clipConvexPolygon, type ClipRect } from './batchClip';
 import { glyphCorners } from './glyphCorners';
 
@@ -57,6 +57,9 @@ export interface GradientUV {
   ux: number; uy: number; u0: number;
   vx: number; vy: number; v0: number;
 }
+
+/** Every vertex on the white texel, which is how a solid mesh is a gradient one. */
+const SOLID_UV: GradientUV = { ux: 0, uy: 0, u0: WHITE_U, vx: 0, vy: 0, v0: WHITE_V };
 
 /**
  * Flushes between one ring slot's write and its next. Sized for a driver that
@@ -325,11 +328,12 @@ export class DrawBatch {
   }
 
   /** `pushMesh` for a mesh filled by a gradient — see `pushGradientRect` for
-   *  what `uv`, `post` and `mode` carry. */
+   *  what `uv`, `post` and `mode` carry. `colors`, four per vertex, scale
+   *  `rgba` vertex by vertex where given. */
   pushGradientMesh(
     mesh: Mesh, m: GlMat3,
     uv: GradientUV, post: number, slot: number, mode: number,
-    r: number, g: number, b: number, a: number,
+    r: number, g: number, b: number, a: number, colors?: ArrayLike<number>,
   ): boolean {
     const src = mesh.vertices;
     const srcIdx = mesh.indices;
@@ -345,7 +349,12 @@ export class DrawBatch {
       const x = src[k * 2] + ox, y = src[k * 2 + 1] + oy;
       v[i++] = ma * x + mc * y + mtx;
       v[i++] = mb * x + md * y + mty;
-      v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
+      if (colors === undefined) {
+        v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
+      } else {
+        const c = k * 4;
+        v[i++] = r * colors[c]; v[i++] = g * colors[c + 1]; v[i++] = b * colors[c + 2]; v[i++] = a * colors[c + 3];
+      }
       v[i++] = uv.ux * x + uv.uy * y + uv.u0;
       v[i++] = uv.vx * x + uv.vy * y + uv.v0;
       v[i++] = post; v[i++] = P;
@@ -361,36 +370,15 @@ export class DrawBatch {
 
   /**
    * Append a tessellated mesh through `m`, all vertices carrying `rgba` and
-   * `P`, as `pushRect`'s do. The mesh's own indices are rebased onto the staged
-   * vertices, which is why the index buffer is uploaded per flush.
+   * `P`, as `pushRect`'s do, or `rgba` scaled by their own four of `colors`.
+   * The mesh's own indices are rebased onto the staged vertices, which is why
+   * the index buffer is uploaded per flush.
    */
   pushMesh(
     mesh: Mesh, m: GlMat3,
-    r: number, g: number, b: number, a: number, P: number,
+    r: number, g: number, b: number, a: number, P: number, colors?: ArrayLike<number>,
   ): boolean {
-    const src = mesh.vertices;
-    const srcIdx = mesh.indices;
-    const n = src.length >> 1;
-    this.reserve(n, srcIdx.length);
-    this.pureRects = false;
-    const v = this.verts;
-    let i = this.nVerts * FLOATS_PER_VERTEX;
-    const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
-    const ox = mesh.origin?.x ?? 0, oy = mesh.origin?.y ?? 0;
-    for (let k = 0; k < n; k++) {
-      const x = src[k * 2] + ox, y = src[k * 2 + 1] + oy;
-      v[i++] = ma * x + mc * y + mtx;
-      v[i++] = mb * x + md * y + mty;
-      v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
-      v[i++] = WHITE_U; v[i++] = WHITE_V; v[i++] = 1; v[i++] = P;
-    }
-    const base = this.nVerts;
-    const out = this.idx;
-    let j = this.nIdx;
-    for (let k = 0; k < srcIdx.length; k++) out[j++] = base + srcIdx[k];
-    this.nVerts += n;
-    this.nIdx += srcIdx.length;
-    return this.clip === null || this.clipMesh(base, this.nIdx - srcIdx.length, this.clip);
+    return this.pushGradientMesh(mesh, m, SOLID_UV, 1, P, PAINT_MODE_PLAIN, r, g, b, a, colors);
   }
 
   /** Upload the staged geometry into the next set of buffers and bind its VAO.
