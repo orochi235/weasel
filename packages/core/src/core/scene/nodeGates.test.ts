@@ -122,4 +122,19 @@ describe('nodeGates — one read', () => {
     expect(['p', 'q', 'r'].map((n) => gates.hidden(n))).toEqual([false, false, false]);
     expect(['p', 'q', 'r'].map((n) => gates.locked(n))).toEqual([true, true, true]);
   });
+
+  it('takes the node a walk holds as readily as its id, without looking it up', () => {
+    const nodes: N[] = [
+      { id: 'g', layer: 'a', parent: null, hidden: true, locked: true },
+      { id: 'k', layer: 'b', parent: 'g' },
+      { id: 'm', layer: 'b', parent: null },
+    ];
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    let reads = 0;
+    const gates = nodeGates({ layers: [{ id: 'a' }, { id: 'b' }], get: (n) => { reads++; return byId.get(n); } });
+    expect([gates.hidden(byId.get('m')!), gates.locked(byId.get('m')!)]).toEqual([false, false]);
+    expect(reads).toBe(0);
+    expect([gates.hidden(byId.get('k')!), gates.locked(byId.get('k')!)]).toEqual([true, true]);
+    expect([gates.hidden('k'), gates.locked('k')]).toEqual([true, true]);
+  });
 });

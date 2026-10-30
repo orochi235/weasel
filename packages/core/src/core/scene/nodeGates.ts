@@ -39,12 +39,13 @@ export function hidesSubtree(node: { readonly hidden?: boolean }): boolean {
   return node.hidden === true;
 }
 
-/** Both answers, for one read of a scene. */
+/** Both answers, for one read of a scene. Each takes an id, or the node a
+ *  walk already holds, which saves looking it up. */
 export interface NodeGates {
   /** Whether `id` is not drawn. An id not in the scene is not hidden. */
-  hidden(id: string): boolean;
+  hidden(id: string | GatedNode): boolean;
   /** Whether `id` is out of reach. An id not in the scene is not locked. */
-  locked(id: string): boolean;
+  locked(id: string | GatedNode): boolean;
 }
 
 /**
@@ -93,12 +94,12 @@ export function nodeGates(scene: GateSource): NodeGates {
   const lockedAbove = above(ownLock);
   return {
     hidden(id) {
-      const node = scene.get(id as NodeId);
+      const node = typeof id === 'string' ? scene.get(id as NodeId) : id;
       if (node === undefined) return false;
       return hiddenLayers?.has(node.layer) === true || hidesSubtree(node) || hiddenAbove(node.parent ?? null);
     },
     locked(id) {
-      const node = scene.get(id as NodeId);
+      const node = typeof id === 'string' ? scene.get(id as NodeId) : id;
       if (node === undefined) return false;
       return ownLock(node) || lockedAbove(node.parent ?? null);
     },

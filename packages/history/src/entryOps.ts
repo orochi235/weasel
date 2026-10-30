@@ -60,14 +60,14 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
    *  `settle` is for a coalesced entry, whose two halves are not each
    *  other's inverse: inverting what ran lands on the other half's far side,
    *  and re-applying that half is what returns to where the step began. */
-  function applyAllOrNothing(ops: Op[], settle?: () => Op[], idle?: Set<Op>): boolean {
+  function applyAllOrNothing(ops: Op[], settle?: () => Op[], idle?: Op[]): boolean {
     let anyMutated = false;
     let done = 0;
     try {
       for (; done < ops.length; done++) {
         const r = ops[done]!.apply(adapter);
         if (r !== false && r !== 'noop') anyMutated = true;
-        else idle?.add(ops[done]!);
+        else idle?.push(ops[done]!);
       }
     } catch (err) {
       if (done > 0) {
@@ -92,4 +92,11 @@ export function foldEntry(top: Entry, ops: Op[], at: number): void {
   const merged = new Set(top.touchedIds);
   for (const id of touchedIdsFromOps(ops)) merged.add(id);
   top.touchedIds = merged;
+}
+
+/** Whether any op in `ops` records the ops it caused in its place: a loop
+ *  rather than `some`, since every push asks. */
+export function anyCaused(ops: readonly Op[]): boolean {
+  for (let i = 0; i < ops.length; i++) if (ops[i]!.caused !== undefined) return true;
+  return false;
 }
