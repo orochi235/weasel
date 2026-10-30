@@ -7,7 +7,7 @@
 
 import type { Stroke, Fill } from '@weasel-js/paint';
 
-import { loadFontOutlines, resolveFontVariant, type FontStyle } from '@weasel-js/font';
+import { loadFontOutlines, cachedFontVariant, type FontStyle } from '@weasel-js/font';
 import {
   PATH_L, PATH_M, PATH_Z, coordsFrom, joinPaths, originFor, poseFrameOf, transformPath, type PathInWorldPose, type PolygonPath,
 } from '@weasel-js/geom';
@@ -71,7 +71,7 @@ function facesOf(runs: readonly ResolvedRun[]): { family: string; weight: number
   };
   for (const r of runs) {
     add(r.fontFamily, r.fontWeight, r.fontStyle);
-    const { family, weight, style } = resolveFontVariant(r.fontFamily, r.fontWeight, r.fontStyle).resolved;
+    const { family, weight, style } = cachedFontVariant(r.fontFamily, r.fontWeight, r.fontStyle).resolved;
     add(family, weight, style);
   }
   return [...out.values()];

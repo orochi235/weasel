@@ -1,6 +1,6 @@
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
-import { foldColor, foldsColor, textureTint, type Tint } from './foldColor';
+import { foldColorInto, foldsColor, textureTint, type Tint } from './foldColor';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor } from '@weasel-js/paint';
 import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot, withMatrix } from '../shaders/batchFill';
@@ -200,12 +200,15 @@ export function solidColor(paint: { color: string; opacity?: number }): [number,
   return [r, g, b, a * (paint.opacity ?? 1)];
 }
 
-/** Straight-alpha rgba for a solid paint under the live group state. */
+const STAGED: [number, number, number, number] = [0, 0, 0, 0];
+
+/** Straight-alpha rgba for a solid paint under the live group state, read
+ *  before the next call overwrites it. */
 function stagedColor(
   ctx: DrawContext, paint: { color: string; opacity?: number },
-): [number, number, number, number] {
-  const [r, g, b, a] = solidColor(paint);
-  return foldColor(ctx, r, g, b, a);
+): readonly [number, number, number, number] {
+  const c = resolveColor(paint.color);
+  return foldColorInto(ctx, c[0], c[1], c[2], c[3] * (paint.opacity ?? 1), STAGED);
 }
 
 export function pushRect(
@@ -214,9 +217,8 @@ export function pushRect(
   fill: { color: string; opacity?: number },
 ): void {
   const slot = stageSolid(ctx, 4);
-  const [r, g, b, a] = stagedColor(ctx, fill);
   if (!ctx.drawBatch.pushRect(
-    rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a, slot,
+    rect.x, rect.y, rect.width, rect.height, ctx.state.transform, stagedColor(ctx, fill), slot,
   )) retryUncut(ctx, rect, fill, pushRect);
 }
 

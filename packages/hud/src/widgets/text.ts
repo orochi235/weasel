@@ -48,8 +48,9 @@ export function createText(opts: TextOptions): TextWidget {
   // The runs a replaced command drew are never drawn again, so the text
   // caches can hand their arrays to the new ones.
   const drop = () => { if (placed?.kind === 'text') dropRuns(placed.runs); };
-  /** What `draw` returns: `placed` at the corner `movedX`, `movedY`. */
-  let moved: DrawCommand[] | null = null;
+  /** What `draw` returns: `placed` at the corner `movedX`, `movedY`. Refilled
+   *  in place: the HUD holds it only until the next `draw`. */
+  const moved: DrawCommand[] = [];
   let movedX = 0;
   let movedY = 0;
   // Kept from one command to the next while their color and family hold.
@@ -84,10 +85,10 @@ export function createText(opts: TextOptions): TextWidget {
         RUN.fill = undefined;
         drop();
         placed = cmd; placedText = text; placedColor = color; placedFamily = fontFamily;
-        moved = [cmd]; movedX = bounds.x; movedY = bounds.y;
+        moved[0] = cmd; movedX = bounds.x; movedY = bounds.y;
       }
-      if (moved === null || movedX !== bounds.x || movedY !== bounds.y) {
-        moved = [{ ...placed, x: bounds.x, y: bounds.y } as DrawCommand];
+      if (movedX !== bounds.x || movedY !== bounds.y) {
+        moved[0] = { ...placed, x: bounds.x, y: bounds.y } as DrawCommand;
         movedX = bounds.x; movedY = bounds.y;
       }
       return moved;

@@ -8,7 +8,7 @@
  * nothing to shrink, and `lowercase` shrinks everything.
  */
 
-import { faceMetricsOf, resolveFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
+import { faceMetricsOf, cachedFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
 import { caseLocale, type RunSourceMap } from './textTransform';
 
 /** The CSS `font-variant-caps` keywords the run model carries. `normal` is an
@@ -35,7 +35,7 @@ export function smallCapsScale(face?: FaceMetrics): number {
 /** The small-caps scale a run set in `(family, weight, style)` gets —
  *  resolved through the font registry exactly as layout resolves the run. */
 export function smallCapsScaleFor(family: string, weight: number, style: FontStyle): number {
-  return smallCapsScale(faceMetricsOf(resolveFontVariant(family, weight, style)));
+  return smallCapsScale(faceMetricsOf(cachedFontVariant(family, weight, style)));
 }
 
 /** Whether small caps draws `ch` as a smaller capital: whether it has a

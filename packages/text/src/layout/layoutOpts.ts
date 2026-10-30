@@ -82,7 +82,7 @@ export function resolveLayoutOpts(
   },
 ): ResolvedLayoutOpts {
   out.maxWidth = opts.maxWidth;
-  out.alignWidth = opts.alignWidth ?? opts.maxWidth;
+  storeAlignWidth(out, opts);
   out.lineHeight = opts.lineHeight;
   out.align = opts.align;
   out.justify = opts.justify === true || opts.align === 'justify';
@@ -91,6 +91,14 @@ export function resolveLayoutOpts(
   out.direction = opts.direction ?? 'auto';
   out.tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE;
   return out;
+}
+
+/** `opts`' align width, defaulted to its wrap width, into `out`. Stored on
+ *  each branch: `alignWidth ?? maxWidth` joins a tagged field with a double
+ *  one, and V8 boxed the join as a heap number every layout. */
+export function storeAlignWidth(out: { alignWidth: number }, opts: LayoutRunsOpts): void {
+  if (opts.alignWidth === undefined) out.alignWidth = opts.maxWidth;
+  else out.alignWidth = opts.alignWidth;
 }
 
 /** The bidi engine `opts` lays out with: its own, else the registered one. */

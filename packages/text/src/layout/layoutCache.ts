@@ -67,7 +67,7 @@
 
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { layoutBidi, layoutShaper, type LayoutRunsOpts } from './layoutOpts';
+import { layoutBidi, layoutShaper, storeAlignWidth, type LayoutRunsOpts } from './layoutOpts';
 import { truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
@@ -161,7 +161,7 @@ const NO_LAYOUT: LaidOutRuns = { lines: [], bounds: { width: 0, height: 0 } };
 
 /** Set `v` to `opts` and `laid`, defaults filled in. */
 function fill<V extends Variant>(v: V, opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): V {
-  v.maxWidth = opts.maxWidth; v.alignWidth = opts.alignWidth ?? opts.maxWidth; v.lineHeight = opts.lineHeight;
+  v.maxWidth = opts.maxWidth; storeAlignWidth(v, opts); v.lineHeight = opts.lineHeight;
   v.align = opts.align; v.justify = opts.justify === true || opts.align === 'justify';
   v.direction = opts.direction ?? 'auto'; v.tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE; v.bidi = bidi;
   v.shaper = layoutShaper(opts); v.laid = laid;
@@ -171,12 +171,14 @@ function fill<V extends Variant>(v: V, opts: LayoutRunsOpts, bidi: Variant['bidi
 function variant(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Variant {
   const spare = spareVariants.pop();
   if (spare !== undefined) return fill(spare, opts, bidi, laid);
-  return {
-    maxWidth: opts.maxWidth, alignWidth: opts.alignWidth ?? opts.maxWidth, lineHeight: opts.lineHeight,
+  const v: Variant = {
+    maxWidth: opts.maxWidth, alignWidth: opts.maxWidth, lineHeight: opts.lineHeight,
     align: opts.align, justify: opts.justify === true || opts.align === 'justify',
     direction: opts.direction ?? 'auto', tabSize: opts.tabSize ?? DEFAULT_TAB_SIZE, bidi,
     shaper: layoutShaper(opts), laid,
   };
+  storeAlignWidth(v, opts);
+  return v;
 }
 
 function mix(h: number, n: number): number {

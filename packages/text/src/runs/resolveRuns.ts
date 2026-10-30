@@ -15,7 +15,7 @@
 
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
-import { faceMetricsOf, resolveFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
+import { faceMetricsOf, cachedFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
@@ -125,7 +125,7 @@ export function scriptMetricsFor(
   weight: number,
   style: FontStyle,
 ): Readonly<Record<'super' | 'sub', ScriptPreset>> {
-  return scriptMetrics(faceMetricsOf(resolveFontVariant(family, weight, style)));
+  return scriptMetrics(faceMetricsOf(cachedFontVariant(family, weight, style)));
 }
 
 /**
@@ -142,7 +142,7 @@ export function halfLeadingFor(
   fontSize: number,
   lineHeight: number,
 ): number | undefined {
-  const m = faceMetricsOf(resolveFontVariant(family, weight, style));
+  const m = faceMetricsOf(cachedFontVariant(family, weight, style));
   if (m?.ascent === undefined || m.descent === undefined) return undefined;
   return ((lineHeight - m.ascent - m.descent) / 2) * fontSize;
 }

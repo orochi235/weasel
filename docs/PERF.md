@@ -251,19 +251,18 @@ When work merges, retire its entry here in the same change.
 ## Text
 
 - **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.** With the readout
-  changing every frame the HUD allocates 293 KB a frame at 5,000 glyphs on a fixed camera against the DOM's 104
-  (msb-uai, 2026-10-29, down from 404 at `870a213b8` that evening and 978 on 2026-10-27; `tests/perf/hud-vs-dom.spec.ts`
+  changing every frame the HUD allocates 194 KB a frame at 5,000 glyphs on a fixed camera against the DOM's 73
+  (msb-uai, 2026-10-30, down from 301 at `6adbd4e5b` that day and 978 on 2026-10-27; `tests/perf/hud-vs-dom.spec.ts`
   with `HVD_ALLOC=1`, README "What the HUD allocates"); renderer main-thread time did not move with it. What is left,
   self KB a frame, and what stands in the way of each:
-  `resolveFontVariantInternal`'s result object (35), which caching per font entry would make shared across calls of
-  the public `resolveFontVariant` (a decision, not a fix);
-  the shared runs entry's `WeakMap` set and delete for every new runs array (24), which only a key other than the
-  runs array's identity would remove;
-  one heap number a layout under `resolveLayoutOpts` or `layoutRuns` (6), not yet located: filling the options object
-  with fractions from the start did not remove it, and an in-process Node profile does not show it.
-  The rest is the command itself (`cachedCommands` 51, `resolveRuns` 42), the spec's own label strings (`step` 73)
-  and the renderer's batch (`pushRect` 31). A still HUD drawn through `drawLayers` costs the main thread what the DOM
-  does (README, "A still HUD through `drawLayers`").
+  the resolved runs a new text's command carries (`resolveRuns` 42) and the command (`cachedCommands` 36), and the
+  shared runs entry's `WeakMap` set and delete for every new runs array (24), which only a key other than the runs
+  array's identity, or a runs array refilled in place once `dropRuns` let it go, would remove; refilling would make a
+  command drawn again after its runs were dropped draw the wrong text, where now it only misses the cache (a
+  decision, not a fix).
+  The rest is the spec's own `step` (73: label strings, the widget's revision, the frame's command list) and the HUD
+  layer's command list (`draw` 6). A still HUD drawn through `drawLayers` costs the main thread what the DOM does
+  (README, "A still HUD through `drawLayers`").
 
 ---
 

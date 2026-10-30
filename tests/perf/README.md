@@ -487,13 +487,47 @@ an inlined function allocates**: it boxes every number passed between functions,
 calls showed the line box's boxed coordinates in a few seconds; Node inlines more than Chromium
 does, so a Node profile that is clean is not proof.
 
+An eighth round took out what a label cost around its runs and its command. Text resolves its faces
+through `cachedFontVariant`, which hands back one frozen result per face for an exact match;
+`resolveFontVariant` still returns an object of the caller's own. A solid rect's color is staged
+in one reused array, and a text widget refills the one-element array it returns. **`alignWidth ??
+maxWidth` was the heap number a layout**: joining a field that holds `undefined` with one that holds
+a double boxed the join, in `resolveLayoutOpts` and in the layout cache's variants, until each
+branch stored its own value (`storeAlignWidth` in `layoutOpts.ts`). **Four fractions passed to a
+call V8 does not inline are four heap numbers**: `DrawBatch.pushRect` took a rect's color as four
+arguments, 8 KB a frame for the background's 200 rects, until it took the array. Self KB a frame
+at 5,000 glyphs on the fixed camera:
+
+| Function | before | after |
+|---|---:|---:|
+| `resolveFontVariantInternal`, a result per label | 35.0 | 0.0 |
+| `pushRect` and `solidColor`, two color arrays and four numbers a rect | 41.5 | 0.2 |
+| `cachedCommands`, the widget's one-element array | 50.8 | 36.0 |
+| `resolveLayoutOpts`, `structuralLayout` and `laidOutText`, the align width | 14.3 | 0.0 |
+
+KB allocated a frame and renderer main thread in ms a frame, median [min–max] of 4 samples; the
+DOM pays for the background's rects too:
+
+| Camera | Glyphs | HUD before | HUD after | DOM before | DOM after |
+|---|---:|---:|---:|---:|---:|
+| fixed  | 2,500 | 181, 1.70 [1.54–1.79] | 104, 1.73 [1.66–1.86] |  81, 2.20 [2.08–2.39] |  41, 2.17 [1.97–2.41] |
+| fixed  | 5,000 | 301, 2.16 [2.05–2.22] | 194, 2.46 [2.07–2.47] | 115, 3.01 [2.73–3.96] |  73, 3.53 [3.12–3.95] |
+| moving | 2,500 | 227, 1.63 [1.19–1.80] | 153, 1.65 [1.52–1.89] | 114, 2.49 [2.08–2.73] |  74, 2.57 [2.37–2.65] |
+| moving | 5,000 | 403, 2.48 [2.09–2.58] | 289, 2.13 [2.07–2.38] | 178, 3.87 [3.66–4.54] | 137, 3.55 [3.25–3.75] |
+
+The HUD's allocation fell 28–43% and the DOM's 23–49%; main-thread time moved inside its spread.
+Measured on msb-uai on 2026-10-30, one run of each tree, at `6adbd4e5b` and `997a90865`, with
+the run between them at `1f1653419`, before the rect's color went over as one array; the runs are in
+`recorded/hud-alloc-2026-10-30/`.
+
 What is left, at 5,000 glyphs on the fixed camera, self KB a frame: the spec's own `step` (73),
-which builds each label's string and the widget's revision; the HUD's command and the one-element
-array its widget returns, charged to `cachedCommands` (51); the resolved runs the command carries
-(`resolveRuns`, 42); `resolveFontVariantInternal`'s result object (35); `pushRect` in the
-renderer's batch (31); the layout and paint caches' shared `WeakMap` set and delete for every new
-runs array (24); and one heap number a layout under `resolveLayoutOpts` or `layoutRuns` (6), which
-filling its options object with fractions from the start did not remove.
+which builds each label's string, the widget's revision and the frame's command list; the resolved
+runs a new text's command carries (`resolveRuns`, 42) and the command itself, charged to
+`cachedCommands` (36); the layout and paint caches' shared `WeakMap` set and delete for every new
+runs array (24), V8 reallocating the table as entries are filed and unfiled; and the HUD layer's
+command list (`draw`, 6). Refilling a widget's runs array in place, once `dropRuns` let it go,
+could cut the runs, the command and the `WeakMap` traffic, but a command drawn again after its
+runs were dropped would then draw the wrong text, where now it only misses the cache.
 
 ### A still HUD through `drawLayers`
 

@@ -192,13 +192,13 @@ export class DrawBatch {
   }
 
   /**
-   * Append one rect's four corners through `m`, all carrying `rgba` (straight
-   * alpha) and `P` in `a_texSlot`: the white texel, and the run's matrix.
+   * Append one rect's four corners through `m`, all carrying `rgba` (straight alpha, as one array: four fractions
+   * passed apart were four heap numbers a rect) and `P` in `a_texSlot`: the white texel, and the run's matrix.
    */
   pushRect(
-    x: number, y: number, w: number, h: number, m: GlMat3,
-    r: number, g: number, b: number, a: number, P: number,
+    x: number, y: number, w: number, h: number, m: GlMat3, rgba: readonly [number, number, number, number], P: number,
   ): boolean {
+    const r = rgba[0], g = rgba[1], b = rgba[2], a = rgba[3];
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
