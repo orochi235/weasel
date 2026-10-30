@@ -53,7 +53,7 @@ for r in $(seq 1 "$rounds"); do
       rec="$(cd "$dir" && LABEL="$label" node --no-warnings ${prof[@]+"${prof[@]}"} --import ./tests/perf/bench/node-hooks.mjs "$script")"
       printf '{"round":%d,"sha":"%s","script":"%s","load":"%s","at":"%s","result":%s}\n' \
         "$r" "$sha" "$(basename "$script")" "$load" "$(date -u +%FT%TZ)" "$rec" >> "$out/runs.jsonl"
-      echo "$i/$n $label r$r $rec"
+      echo "$i/$n $label r$r $rec"; echo "onto: progress $i/$n" >&2
     done
   done
 done
