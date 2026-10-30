@@ -9,17 +9,17 @@ const rect = (x: number): DrawCommand => ({
   fill: { paint: { kind: 'solid', color: '#f00' } },
 });
 
-/** A stroke with per-anchor colors never joins the solid batch, so it draws
- *  where it stands — and closes any run staged before it. */
-const coloredStroke = {
+/** An even-odd fill never joins the solid batch, so it draws where it stands,
+ *  through the stencil — and closes any run staged before it. */
+const ownDrawFill = {
   kind: 'path',
   path: {
     kind: 'polygon',
-    commands: new Uint8Array([0, 1, 1]),
-    coords: new Float32Array([0, 0, 10, 0, 20, 0]),
-    fillRule: 'nonzero',
+    commands: new Uint8Array([0, 1, 1, 3]),
+    coords: new Float32Array([0, 0, 10, 0, 0, 10]),
+    fillRule: 'evenodd',
   },
-  stroke: { width: 2, paint: { color: '#f00' }, vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1] },
+  fill: { paint: { color: '#f00' } },
 } as unknown as DrawCommand;
 
 function drawCallsIn(rec: ReturnType<typeof makeGLRecorder>): number {
@@ -31,7 +31,7 @@ describe('WeaselRenderer frame stats', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     rec.reset();
-    r.render([rect(0), coloredStroke, rect(20)]);
+    r.render([rect(0), ownDrawFill, rect(20)]);
     const drawn = drawCallsIn(rec);
     expect(drawn).toBeGreaterThan(1);
     expect(r.lastFrameStats().drawCalls).toBe(drawn);
@@ -41,7 +41,7 @@ describe('WeaselRenderer frame stats', () => {
   it('starts every frame from zero', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
-    r.render([rect(0), coloredStroke]);
+    r.render([rect(0), ownDrawFill]);
     rec.reset();
     r.render([rect(0)]);
     expect(r.lastFrameStats().drawCalls).toBe(drawCallsIn(rec));
@@ -51,7 +51,7 @@ describe('WeaselRenderer frame stats', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     rec.reset();
-    r.render([rect(0), coloredStroke, rect(20)], undefined, {
+    r.render([rect(0), ownDrawFill, rect(20)], undefined, {
       spans: [
         { id: 'staged', start: 0, end: 1 },
         { id: 'closer', start: 1, end: 2 },
@@ -60,7 +60,7 @@ describe('WeaselRenderer frame stats', () => {
     });
     const stats = r.lastFrameStats();
     const byId = Object.fromEntries(stats.spans.map((s) => [s.id, s.drawCalls]));
-    // The rect only stages; the stroke flushes it and then draws itself.
+    // The rect only stages; the fill flushes it and then draws itself.
     expect(byId.staged).toBe(0);
     expect(byId.closer).toBeGreaterThanOrEqual(2);
     // The last rect is drawn by the end-of-stream flush, inside the last span.

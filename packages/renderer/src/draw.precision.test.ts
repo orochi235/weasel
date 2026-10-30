@@ -60,9 +60,10 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
   function ownDrawLefts(coords: Float32Array, wrap: (cmd: DrawCommand) => DrawCommand): number[] {
     const path: DrawCommand = {
       kind: 'path',
-      path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'nonzero' },
+      path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'evenodd' },
       fill: { paint: { kind: 'solid', color: '#fff' } },
-      // Per-vertex colors keep a fill out of the batch.
+      // An even-odd fill keeps out of the batch, and per-vertex colors pick
+      // the program this reads.
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
     } as unknown as DrawCommand;
     return PANS.map((k) => {
@@ -124,7 +125,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       transform: view,
       children: [{
         kind: 'path',
-        path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'nonzero' },
+        path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'evenodd' },
         fill: { paint: { kind: 'solid', color: '#fff' } },
         vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
       } as unknown as DrawCommand],
@@ -156,7 +157,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       transform,
       children: [{
         kind: 'path',
-        path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords: new Float32Array([0, 0, 4, 0, 0, 4]), fillRule: 'nonzero' },
+        path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords: new Float32Array([0, 0, 4, 0, 0, 4]), fillRule: 'evenodd' },
         fill: { paint: { kind: 'solid', color: '#fff' } },
         vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
       } as unknown as DrawCommand],

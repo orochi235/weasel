@@ -278,8 +278,8 @@ gradients share one draw. **Nothing is left of step 4**, and the batched dispatc
 deleted. `docs/PERF.md`'s **"What still breaks the batch"** entry holds what it left open, measured 2026-10-03; the arc's history
 is in `git log`.
 
-What still takes its own draw is what no run can express: per-vertex colors,
-even-odd and inner/outer-aligned strokes (their own stencil passes), patterns,
+What still takes its own draw is what no run can express: even-odd fills
+and inner/outer-aligned strokes (their own stencil passes), patterns,
 registered shaders, and meshes past the batch's vertex cap.
 
 **The next step is the cost of closing a batch early** — a clipped group fits

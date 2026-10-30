@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
+import { registerTexture } from './textures/registerTexture';
 import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH, FLOATS_PER_VERTEX } from './drawBatch';
 import { BATCH_TEXTURE_SLOTS, RAMP_SLOT, PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, paintModeOf } from './shaders/batchFill';
 import type { DrawCommand } from './DrawCommand';
@@ -60,13 +61,12 @@ describe('renderer — consecutive image batching', () => {
   });
 
   /** A fill the run cannot express, for tests that need a break they choose.
-   *  Not a gradient: every gradient rides the vertices off the ramp atlas and
-   *  joins the run. Per-vertex colors are their own program. */
+   *  Not a gradient or per-vertex colors, which both join the run: a pattern. */
+  const TILE = registerTexture({ width: 4, height: 4 } as ImageBitmap);
   const breakerRect = (x: number) => ({
     kind: 'path' as const,
     path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
-    fill: { paint: { kind: 'solid' as const, color: '#ffffff' } },
-    vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
+    fill: { paint: { kind: 'texture' as const, texture: TILE } },
   }) as unknown as DrawCommand;
 
   /** Index count of every `drawElements`, in order. */

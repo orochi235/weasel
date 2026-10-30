@@ -69,10 +69,22 @@ function turned(cx: number, cy: number, w: number, h: number, deg: number): Path
 const FULL = { kind: 'rect' as const, x: 0, y: 0, width: W, height: H };
 const solid = (color: string, path: Path = FULL): DrawCommand =>
   ({ kind: 'path', path, fill: { paint: { color } } });
-/** A fill with per-vertex colors, which no run can take: it draws for itself,
- *  through the stencil. */
-const ownDraw = (path: Path, rgba: number[]): DrawCommand =>
-  ({ kind: 'path', path, fill: { paint: { color: '#ffffff' } }, vertexColors: Array.from({ length: 4 }, () => rgba).flat() });
+/** An even-odd fill, which no run can take: it draws for itself, through the
+ *  stencil. One convex contour covers what a nonzero one would. */
+function ownDraw(path: Path, rgba: number[]): DrawCommand {
+  const polygon = path.kind === 'rect'
+    ? polygonFromPoints([
+      { x: path.x, y: path.y }, { x: path.x + path.width, y: path.y },
+      { x: path.x + path.width, y: path.y + path.height }, { x: path.x, y: path.y + path.height },
+    ])
+    : path;
+  const [r, g, b] = rgba.map((v) => Math.round(v * 255));
+  return {
+    kind: 'path',
+    path: { ...polygon, fillRule: 'evenodd' } as Path,
+    fill: { paint: { color: `rgba(${r}, ${g}, ${b}, ${rgba[3]})` } },
+  };
+}
 const half = (left: boolean) => ({ kind: 'rect' as const, x: left ? 0 : W / 2, y: 0, width: W / 2, height: H });
 const clipped = (clip: Path, children: DrawCommand[]): DrawCommand => ({ kind: 'group', clip, children });
 
@@ -94,6 +106,8 @@ describe('a convex clip decided in the batch shader, in a real context', () => {
     it(`keeps the pixels the stencil keeps: ${name}`, () => {
       const shader = paint([clipped(clip, [solid('#ff0000')])]);
       const stencil = paint([clipped(clip, [ownDraw(FULL, [1, 0, 0, 1])])]);
+      // The premise: the reference really drew for itself.
+      expect(stencil.draws).toBeGreaterThan(shader.draws);
       expect(covered(shader.px)).toBeGreaterThan(0);
       expect(differing(shader.px, stencil.px)).toEqual([]);
     });

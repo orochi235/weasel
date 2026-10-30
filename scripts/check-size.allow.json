@@ -176,7 +176,7 @@
     "lines": 624
   },
   "packages/renderer/src/drawBatch.ts": {
-    "lines": 608
+    "lines": 596
   },
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144

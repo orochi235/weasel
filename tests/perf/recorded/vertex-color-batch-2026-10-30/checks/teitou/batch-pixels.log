@@ -1,0 +1,72 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 2 tests using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Batch pixels — 240x80 on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)
+
+  solid beside a quad
+    ok   white ground     want 255,255,255  got 255,255,255  off   0
+    ok   red quad         want 255,  0,  0  got 255,  0,  0  off   0
+  quad before solid
+    ok   red quad         want 255,  0,  0  got 255,  0,  0  off   0
+    ok   white ground     want 255,255,255  got 255,255,255  off   0
+  two bitmaps and a ground per cell
+    ok   cell 1 art       want 255,  0,  0  got 255,  0,  0  off   0
+    ok   cell 1 badge     want   0,  0,255  got   0,  0,255  off   0
+    ok   cell 1 ground    want 255,255,255  got 255,255,255  off   0
+    ok   cell 2 art       want 255,  0,  0  got 255,  0,  0  off   0
+    ok   cell 2 badge     want   0,  0,255  got   0,  0,255  off   0
+    ok   cell 2 ground    want 255,255,255  got 255,255,255  off   0
+  same bitmap either side of a solid
+    ok   first quad       want   0,  0,255  got   0,  0,255  off   0
+    ok   ground           want 255,255,255  got 255,255,255  off   0
+    ok   second quad      want   0,  0,255  got   0,  0,255  off   0
+  solid and quad beside a label
+    ok   white ground     want 255,255,255  got 255,255,255  off   0
+    ok   blue quad        want   0,  0,255  got   0,  0,255  off   0
+    ok   red glyph        want 255,  0,  0  got 255,  0,  0  off   0
+  label before a solid
+    ok   white ground     want 255,255,255  got 255,255,255  off   0
+    ok   red glyph        want 255,  0,  0  got 255,  0,  0  off   0
+  solid and quad beside a gradient
+    ok   white ground     want 255,255,255  got 255,255,255  off   0
+    ok   green gradient   want   0,255,  0  got   0,255,  0  off   0
+    ok   blue quad        want   0,  0,255  got   0,  0,255  off   0
+  two gradients and a ground in one run
+    ok   green gradient   want   0,255,  0  got   0,255,  0  off   0
+    ok   white ground     want 255,255,255  got 255,255,255  off   0
+    ok   magenta gradient want 255,  0,255  got 255,  0,255  off   0
+  a gradient runs the way it was pointed
+    ok   before the ramp  want 255,  0,  0  got 255,  0,  0  off   0
+    ok   just past halfway want 124,  0,131  got 124,  0,132  off   1
+    ok   past the ramp    want   0,  0,255  got   0,  0,255  off   0
+  a radial and a conic beside a ground
+    ok   white ground     want 255,255,255  got 255,255,255  off   0
+    ok   radial center    want 255,  0,  0  got 255,  0,  0  off   0
+    ok   radial halfway   want 128,  0,127  got 128,  0,128  off   1
+    ok   radial past its edge want   0,  0,255  got   0,  0,255  off   0
+    ok   conic quarter turn want 191,  0, 64  got 192,  0, 64  off   1
+    ok   conic three quarters want  64,  0,191  got  64,  0,192  off   1
+  a conic turned by its angle
+    ok   quarter: right   want  64,  0,191  got  64,  0,192  off   1
+    ok   quarter: left    want 191,  0, 64  got 192,  0, 64  off   1
+    ok   eighth: right    want  32,  0,223  got  32,  0,224  off   1
+  a radial and a conic after two bitmaps
+    ok   red quad         want 255,  0,  0  got 255,  0,  0  off   0
+    ok   blue quad        want   0,  0,255  got   0,  0,255  off   0
+    ok   radial center    want   0,255,  0  got   0,255,  0  off   0
+    ok   radial past its edge want 255,  0,255  got 255,  0,255  off   0
+    ok   conic quarter turn want  64,191, 64  got  64,192, 64  off   1
+
+  ✓  1 tests/visual/batch-pixels.spec.ts:40:1 › batched runs paint their own colors (1.6s)
+
+Rect clip, cut against stencil: 264 channels differ (worst 1), first at {"x":82,"y":66}; draws 10 cut, 17 stencil
+
+  ✓  2 tests/visual/batch-pixels.spec.ts:391:1 › a rect clip cut on the CPU paints what the stencil would (1.3s)
+
+  2 passed (4.1s)
