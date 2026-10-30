@@ -35,6 +35,8 @@ export interface PageCtx {
   height: number;
   /** The lists being written, outermost first, each with the index reached in it. */
   trail: TrailStep[];
+  /** The language of each run the document writes as text, across every page; undefined for a run with none. */
+  langs: Set<string | undefined>;
 }
 
 /** One list on the way down to the command being written; `group` holds it, except for the page's own. */

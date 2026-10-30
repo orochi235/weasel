@@ -17,6 +17,8 @@ export interface ExportPagesPdfOptions {
   background?: string | null;
   /** The document's title. */
   title?: string;
+  /** The document's language, a BCP 47 tag. Default: the language every text on the pages shares, if they share one. */
+  lang?: string;
 }
 
 /**
@@ -61,6 +63,7 @@ export async function exportPagesPdf(
     const { bytes, skipped } = await writePdf(out, {
       fonts: registryFontSource,
       ...(opts.title !== undefined ? { title: opts.title } : {}),
+      ...(opts.lang !== undefined ? { lang: opts.lang } : {}),
       rasterize: pageRasterizer(session),
     });
     const copy = new ArrayBuffer(bytes.byteLength);

@@ -311,8 +311,6 @@ Owner tags, after the priority (2026-10-26):
   a shaped glyph index. Open pieces:
   - Script pieces are cut over a fixed list of scripts. Any other script is one piece, and its direction is
     guessed from the right-to-left Unicode blocks.
-  - PDF export does not write a text's `lang` (2026-10-27): no `/Lang` on the catalog or on marked content, so a
-    screen reader or text extraction guesses the language.
   - harfbuzzjs awaits at its module's top level, so a consumer bundling for a target below ES2022 fails (esbuild
     0.27 errors; Vite 8 warns), even though `loadShaper` reaches it only through a dynamic `import()`.
     `@weasel-js/text-shaping` cannot avoid it: harfbuzzjs 1.6.4, the latest, exports only that module and not its
