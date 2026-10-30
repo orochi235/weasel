@@ -7,7 +7,8 @@ For the session picking this up: what is in flight and what has no other home. O
 ## State (2026-10-29, evening)
 
 - 1.14.1 is on npm (the first Release run lost all but `quantity` to a sigstore 409; a dispatched rerun
-  published the rest). `origin/main` is at 374d7d3c8; `main` adds the faster fleet gate (fd547f57e), unpushed.
+  published the rest). `origin/main` is at 374d7d3c8; `main` adds the faster fleet gate (fd547f57e),
+  layered-hull (b369443bd) and hud-alloc (86712abe7), all unpushed.
 - Nothing in flight. The full suite passed at fd547f57e (32,118 tests).
 - The windease fix for a never-shown node is on branch `mounted-not-laid-out` in `~/src/windease-mounted`,
   unmerged; the weasel TODO entry says what follows its release.
