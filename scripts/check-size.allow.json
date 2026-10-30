@@ -69,8 +69,7 @@
     "longestFunction": 337
   },
   "packages/font/src/registerFont.ts": {
-    "lines": 834,
-    "longestFunction": 130
+    "lines": 797
   },
   "packages/forge/src/frame/FrameController.tsx": {
     "longestFunction": 163

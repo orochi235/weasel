@@ -1,0 +1,1153 @@
+label=2-after sha=1f1653419 dirty=0 start=2026-10-30T22:02:54Z
+  waiting for room
+  base   1f165341
+  commits sent directly, 7.0 KiB (not on origin)
+  updated weasel-perf-hudtext on msb-uai at 1f165341
+  job    201087e5 on msb-uai
+
+onto: weasel-hud-gc is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/hud-vs-dom.spec.ts
+
+
+Running 1 test using 1 worker
+
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+GPU timer query: available
+36 measurements (4 configurations, each approach twice a pass, + 2 baselines, x 2 passes), 120 frames each
+load at start 2.5 3.3 3.5 on 14 cores
+onto: plan 36 measurements
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+    1/36  pass 1  none          0 glyphs  static       fixed   main   0.41  (js  0.20 style  0.00 layout  0.00 paint  0.08)  comp  0.30  raster  0.00  gpu-proc  2.21  total   2.92 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.4      5s
+onto: progress 1/36
+    2/36  pass 1  hud        2500 glyphs  every-frame  fixed   main   1.71  (js  1.57 style  0.00 layout  0.00 paint  0.05)  comp  0.21  raster  0.00  gpu-proc  1.70  total   3.62 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.27  load    2.5     12s
+         allocated    106.7 KB/frame; by function, KB/frame self, total:
+               36.1    106.2  step
+               20.9     20.9  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               15.2     39.9  cachedCommands (packages/hud/src/attach.ts:199)
+                8.0      8.0  set
+                6.9      6.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.0     11.9  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                4.0     43.9  draw (packages/hud/src/attach.ts:73)
+                3.8      3.8  delete
+                2.8      2.8  padStart
+                2.0     23.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.4      0.4  Float32Array
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  WeakMap
+                0.2      0.2  push
+                0.1      0.1  subarray
+         by total:
+                0.0    106.2  loop
+               36.1    106.2  step
+                4.0     43.9  draw (packages/hud/src/attach.ts:73)
+               15.2     39.9  cachedCommands (packages/hud/src/attach.ts:199)
+                2.0     23.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+               20.9     20.9  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                0.0     20.0  dispatch (packages/renderer/src/draw.ts:11)
+                5.0     11.9  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                0.0      8.1  drawText (packages/renderer/src/draw/text.ts:36)
+                8.0      8.0  set
+                6.9      6.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.8      3.8  delete
+                2.8      2.8  padStart
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 2/36
+    3/36  pass 1  dom        2500 glyphs  every-frame  fixed   main   2.17  (js  0.31 style  0.00 layout  0.81 paint  0.90)  comp  0.31  raster  0.00  gpu-proc  1.15  total   3.63 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.19  load    2.4     19s
+         allocated     50.2 KB/frame; by function, KB/frame self, total:
+               23.7     45.0  step
+                7.5      7.5  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.8      5.8  padStart
+                4.9     12.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                1.8      4.1  visitNode
+                1.4     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.9      4.1  visitChild
+                0.8      0.8  push
+                0.7      0.7  (V8 API)
+                0.5      0.5  checkAndReturn
+                0.3      0.3  Float32Array
+                0.2      0.2  WeakMap
+                0.2      0.6  expectValue
+                0.2      0.2  reclaim (packages/renderer/src/effects/EffectTargets.ts:27)
+                0.1      0.1  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+         by total:
+                0.0     45.1  loop
+               23.7     45.0  step
+                1.4     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.9     12.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                0.0     12.5  dispatch (packages/renderer/src/draw.ts:11)
+                7.5      7.5  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.8      5.8  padStart
+                1.8      4.1  visitNode
+                0.9      4.1  visitChild
+                0.0      4.1  captureSnapshot
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.8      0.8  push
+                0.2      0.6  expectValue
+                0.0      0.6  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  checkAndReturn
+onto: progress 3/36
+    4/36  pass 1  dom        2500 glyphs  every-frame  fixed   main   2.18  (js  0.27 style  0.00 layout  0.82 paint  0.93)  comp  0.32  raster  0.00  gpu-proc  1.19  total   3.69 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.8     26s
+         allocated     50.7 KB/frame; by function, KB/frame self, total:
+               23.7     45.2  step
+                7.7      7.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                4.9     12.6  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                2.0      3.9  visitNode
+                1.2     15.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.1      1.1  (V8 API)
+                0.6      3.9  visitChild
+                0.6      0.6  checkAndReturn
+                0.5      0.5  Float32Array
+                0.4      0.4  push
+                0.3      4.4  (anonymous)
+                0.3      0.5  expectValue
+                0.3      0.3  next
+                0.2      0.2  glRect (packages/renderer/src/WeaselRenderer.ts:323)
+         by total:
+                0.0     45.3  loop
+               23.7     45.2  step
+                1.2     15.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.9     12.6  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                0.0     12.6  dispatch (packages/renderer/src/draw.ts:11)
+                7.7      7.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                2.0      3.9  visitNode
+                0.6      3.9  visitChild
+                0.0      3.9  captureSnapshot
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  checkAndReturn
+                0.3      0.5  expectValue
+                0.5      0.5  Float32Array
+onto: progress 4/36
+    5/36  pass 1  hud        2500 glyphs  every-frame  fixed   main   1.69  (js  1.57 style  0.00 layout  0.00 paint  0.05)  comp  0.12  raster  0.00  gpu-proc  0.85  total   2.67 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.31  load    2.8     33s
+         allocated    106.3 KB/frame; by function, KB/frame self, total:
+               37.8    105.8  step
+               20.6     20.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               14.9     39.6  cachedCommands (packages/hud/src/attach.ts:199)
+                8.5      8.5  set
+                6.7      6.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.6     11.4  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                4.0      4.0  delete
+                3.6     43.2  draw (packages/hud/src/attach.ts:73)
+                1.9      1.9  padStart
+                1.6     22.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.3      0.3  Float32Array
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  reclaim (packages/renderer/src/effects/EffectTargets.ts:27)
+                0.1      0.1  Map
+                0.1      0.1  WeakMap
+         by total:
+                0.0    105.9  loop
+               37.8    105.8  step
+                3.6     43.2  draw (packages/hud/src/attach.ts:73)
+               14.9     39.6  cachedCommands (packages/hud/src/attach.ts:199)
+                1.6     22.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+               20.6     20.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                0.0     19.9  dispatch (packages/renderer/src/draw.ts:11)
+                4.6     11.4  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                0.0      8.5  drawText (packages/renderer/src/draw/text.ts:36)
+                8.5      8.5  set
+                6.7      6.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.0      4.0  delete
+                1.9      1.9  padStart
+                0.0      0.8  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.6  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 5/36
+    6/36  pass 1  hud        5000 glyphs  every-frame  fixed   main   2.00  (js  1.90 style  0.00 layout  0.00 paint  0.03)  comp  0.10  raster  0.00  gpu-proc  0.68  total   2.78 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.42  load    2.8     40s
+         allocated    194.3 KB/frame; by function, KB/frame self, total:
+               71.9    193.7  step
+               41.6     41.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               30.8     81.0  cachedCommands (packages/hud/src/attach.ts:199)
+               16.3     16.3  set
+                8.5      8.5  delete
+                7.2      7.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9     86.8  draw (packages/hud/src/attach.ts:73)
+                4.5     11.7  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                3.7      3.7  padStart
+                1.4     31.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.6      0.6  Float32Array
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  next
+                0.2      0.2  subarray
+                0.1      0.1  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+         by total:
+                0.0    193.8  loop
+               71.9    193.7  step
+                5.9     86.8  draw (packages/hud/src/attach.ts:73)
+               30.8     81.0  cachedCommands (packages/hud/src/attach.ts:199)
+               41.6     41.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                1.4     31.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     16.4  drawText (packages/renderer/src/draw/text.ts:36)
+               16.3     16.3  set
+                4.5     11.7  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                8.5      8.5  delete
+                7.2      7.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.7      3.7  padStart
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  Float32Array
+onto: progress 6/36
+    7/36  pass 1  dom        5000 glyphs  every-frame  fixed   main   2.74  (js  0.30 style  0.00 layout  1.14 paint  1.13)  comp  0.31  raster  0.00  gpu-proc  1.17  total   4.22 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.8     48s
+         allocated     80.3 KB/frame; by function, KB/frame self, total:
+               44.6     71.6  step
+               10.4     10.4  padStart
+                7.9      7.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.0     12.9  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                3.3      6.4  visitNode
+                1.9      1.9  (V8 API)
+                1.9     16.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.1      6.4  visitChild
+                1.0      1.0  checkAndReturn
+                0.6      0.6  push
+                0.5      0.9  expectValue
+                0.5      0.5  Float32Array
+                0.3      0.3  WeakMap
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  subarray
+         by total:
+                0.0     71.7  loop
+               44.6     71.6  step
+                1.9     16.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.0     12.9  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+               10.4     10.4  padStart
+                7.9      7.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                0.0      6.4  captureSnapshot
+                3.3      6.4  visitNode
+                1.1      6.4  visitChild
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                1.0      1.0  checkAndReturn
+                0.1      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.9  expectValue
+                0.6      0.6  push
+                0.5      0.5  Float32Array
+onto: progress 7/36
+    8/36  pass 1  dom        5000 glyphs  every-frame  fixed   main   2.78  (js  0.31 style  0.00 layout  1.14 paint  1.15)  comp  0.32  raster  0.00  gpu-proc  1.22  total   4.32 ms/frame  interval 16.67 (traced 16.66)  missed   0  gpu  0.19  load    2.4     56s
+         allocated     81.9 KB/frame; by function, KB/frame self, total:
+               47.8     73.5  step
+               10.2     10.2  padStart
+                7.5      7.5  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.5     12.0  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                3.6      6.4  visitNode
+                1.6     15.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.5      1.5  (V8 API)
+                1.1      6.4  visitChild
+                0.9      0.9  checkAndReturn
+                0.6      0.6  Float32Array
+                0.5      0.5  push
+                0.4      0.5  expectValue
+                0.2      0.2  String
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  WeakMap
+         by total:
+                0.0     73.6  loop
+               47.8     73.5  step
+                1.6     15.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.5     12.0  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+               10.2     10.2  padStart
+                7.5      7.5  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.6      6.4  visitNode
+                1.1      6.4  visitChild
+                0.0      6.4  captureSnapshot
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.9      0.9  checkAndReturn
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+                0.4      0.5  expectValue
+onto: progress 8/36
+    9/36  pass 1  hud        5000 glyphs  every-frame  fixed   main   2.40  (js  2.28 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  0.85  total   3.38 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.47  load    2.4     63s
+         allocated    199.9 KB/frame; by function, KB/frame self, total:
+               75.4    199.6  step
+               41.6     41.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               31.4     81.2  cachedCommands (packages/hud/src/attach.ts:199)
+               16.7     16.7  set
+                8.1      8.1  pushRect (packages/renderer/src/draw/batch.ts:205)
+                8.1      8.1  delete
+                5.3     13.4  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                5.3     86.4  draw (packages/hud/src/attach.ts:73)
+                4.0      4.0  padStart
+                1.6     33.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.5      0.5  Float32Array
+                0.3      0.3  subarray
+                0.2      0.2  Map
+                0.2      0.2  WeakMap
+                0.1      0.1  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+         by total:
+                0.0    199.6  loop
+               75.4    199.6  step
+                5.3     86.4  draw (packages/hud/src/attach.ts:73)
+               31.4     81.2  cachedCommands (packages/hud/src/attach.ts:199)
+               41.6     41.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                1.6     33.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     16.8  drawText (packages/renderer/src/draw/text.ts:36)
+               16.7     16.7  set
+                5.3     13.4  drawPathFill (packages/renderer/src/draw/pathPaint.ts:26)
+                8.1      8.1  pushRect (packages/renderer/src/draw/batch.ts:205)
+                8.1      8.1  delete
+                4.0      4.0  padStart
+                0.0      1.4  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  Float32Array
+onto: progress 9/36
+   10/36  pass 1  hud        2500 glyphs  every-frame  moving  main   1.56  (js  1.47 style  0.00 layout  0.00 paint  0.03)  comp  0.10  raster  0.00  gpu-proc  0.76  total   2.42 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    2.3     69s
+         allocated    160.0 KB/frame; by function, KB/frame self, total:
+               69.9    159.7  step
+               27.4     52.3  cachedCommands (packages/hud/src/attach.ts:199)
+               21.1     21.1  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                8.1      8.1  set
+                7.2      7.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                6.1     13.3  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                5.6     13.8  drawText (packages/renderer/src/draw/text.ts:36)
+                3.8      3.8  delete
+                3.6     55.9  draw (packages/hud/src/attach.ts:73)
+                2.8      2.8  padStart
+                1.6     31.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.5      0.5  Float32Array
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  WeakMap
+                0.2      0.3  glRect (packages/renderer/src/WeaselRenderer.ts:323)
+         by total:
+                0.0    159.8  loop
+               69.9    159.7  step
+                3.6     55.9  draw (packages/hud/src/attach.ts:73)
+               27.4     52.3  cachedCommands (packages/hud/src/attach.ts:199)
+                1.6     31.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     27.1  dispatch (packages/renderer/src/draw.ts:11)
+               21.1     21.1  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                5.6     13.8  drawText (packages/renderer/src/draw/text.ts:36)
+                6.1     13.3  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.1      8.1  set
+                0.0      8.1  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                7.2      7.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.8      3.8  delete
+                2.8      2.8  padStart
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+onto: progress 10/36
+   11/36  pass 1  dom        2500 glyphs  every-frame  moving  main   2.36  (js  0.43 style  0.15 layout  0.78 paint  0.83)  comp  0.31  raster  0.00  gpu-proc  1.27  total   3.94 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.25  load    2.3     77s
+         allocated     82.5 KB/frame; by function, KB/frame self, total:
+               52.1     73.5  step
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                5.5      5.5  (V8 API)
+                4.7     12.2  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                1.8      3.2  visitNode
+                1.3     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.5      3.2  visitChild
+                0.5      0.5  Float32Array
+                0.4      0.4  checkAndReturn
+                0.3      0.4  expectValue
+                0.2      0.4  glRect (packages/renderer/src/WeaselRenderer.ts:323)
+                0.2      0.2  push
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  subarray
+         by total:
+                0.0     73.6  loop
+               52.1     73.5  step
+                1.3     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.7     12.2  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                0.0     12.2  dispatch (packages/renderer/src/draw.ts:11)
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                1.8      3.2  visitNode
+                0.5      3.2  visitChild
+                0.0      3.2  captureSnapshot
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+                0.3      0.4  expectValue
+onto: progress 11/36
+   12/36  pass 1  dom        2500 glyphs  every-frame  moving  main   2.31  (js  0.46 style  0.15 layout  0.73 paint  0.78)  comp  0.36  raster  0.00  gpu-proc  1.37  total   4.04 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.32  load    2.7     84s
+         allocated     82.3 KB/frame; by function, KB/frame self, total:
+               52.0     72.8  step
+                6.7      6.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  (V8 API)
+                5.5      5.5  padStart
+                4.9     11.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                1.6     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.5      3.3  visitNode
+                0.6      3.3  visitChild
+                0.6      0.6  checkAndReturn
+                0.6      0.6  Float32Array
+                0.4      0.4  push
+                0.4      0.4  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  subarray
+                0.2      0.2  WeakMap
+                0.2      0.4  expectValue
+         by total:
+                0.0     72.9  loop
+               52.0     72.8  step
+                1.6     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.9     11.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                0.0     11.6  dispatch (packages/renderer/src/draw.ts:11)
+                6.7      6.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.5      5.5  padStart
+                1.5      3.3  visitNode
+                0.6      3.3  visitChild
+                0.0      3.3  captureSnapshot
+                0.0      1.7  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.1  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  checkAndReturn
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+onto: progress 12/36
+   13/36  pass 1  hud        2500 glyphs  every-frame  moving  main   1.59  (js  1.49 style  0.00 layout  0.00 paint  0.03)  comp  0.10  raster  0.00  gpu-proc  0.76  total   2.44 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    2.5     91s
+         allocated    159.0 KB/frame; by function, KB/frame self, total:
+               71.7    158.7  step
+               26.9     51.7  cachedCommands (packages/hud/src/attach.ts:199)
+               21.1     21.1  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                8.2      8.2  set
+                7.2      7.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9     14.1  drawText (packages/renderer/src/draw/text.ts:36)
+                4.7     11.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.7      3.7  delete
+                3.6     55.3  draw (packages/hud/src/attach.ts:73)
+                2.5      2.5  padStart
+                1.6     29.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.4      0.4  Float32Array
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.1      0.1  push
+                0.1      0.1  Map
+         by total:
+                0.0    158.7  loop
+               71.7    158.7  step
+                3.6     55.3  draw (packages/hud/src/attach.ts:73)
+               26.9     51.7  cachedCommands (packages/hud/src/attach.ts:199)
+                1.6     29.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     26.0  dispatch (packages/renderer/src/draw.ts:11)
+               21.1     21.1  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                5.9     14.1  drawText (packages/renderer/src/draw/text.ts:36)
+                4.7     11.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.2      8.2  set
+                0.0      8.2  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                7.2      7.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.7      3.7  delete
+                2.5      2.5  padStart
+                0.0      0.8  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+onto: progress 13/36
+   14/36  pass 1  hud        5000 glyphs  every-frame  moving  main   2.43  (js  2.32 style  0.00 layout  0.00 paint  0.04)  comp  0.12  raster  0.00  gpu-proc  0.82  total   3.37 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.47  load    2.6     98s
+         allocated    302.2 KB/frame; by function, KB/frame self, total:
+              141.7    301.8  step
+               54.9    105.8  cachedCommands (packages/hud/src/attach.ts:199)
+               43.0     43.0  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               16.5     16.5  set
+               11.7     28.2  drawText (packages/renderer/src/draw/text.ts:36)
+                8.3      8.3  pushRect (packages/renderer/src/draw/batch.ts:205)
+                7.9      7.9  delete
+                5.5     13.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                5.1    110.9  draw (packages/hud/src/attach.ts:73)
+                4.0      4.0  padStart
+                1.4     45.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.6      0.6  Float32Array
+                0.2      0.2  WeakMap
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  subarray
+         by total:
+              141.7    301.8  step
+                0.0    301.8  loop
+                5.1    110.9  draw (packages/hud/src/attach.ts:73)
+               54.9    105.8  cachedCommands (packages/hud/src/attach.ts:199)
+                1.4     45.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+               43.0     43.0  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               11.7     28.2  drawText (packages/renderer/src/draw/text.ts:36)
+               16.5     16.5  set
+                0.0     16.5  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                5.5     13.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.3      8.3  pushRect (packages/renderer/src/draw/batch.ts:205)
+                7.9      7.9  delete
+                4.0      4.0  padStart
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 14/36
+   15/36  pass 1  dom        5000 glyphs  every-frame  moving  main   3.32  (js  0.60 style  0.24 layout  1.11 paint  1.16)  comp  0.34  raster  0.00  gpu-proc  1.28  total   4.94 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.7    106s
+         allocated    147.2 KB/frame; by function, KB/frame self, total:
+              102.4    129.0  step
+               12.0     12.0  (V8 API)
+               11.1     11.1  padStart
+                6.9      6.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.9     11.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                2.9      5.9  visitNode
+                1.6     15.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      5.9  visitChild
+                0.8      0.8  checkAndReturn
+                0.5      0.5  Float32Array
+                0.5      0.8  expectValue
+                0.4      0.4  push
+                0.3      0.3  subarray
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  String
+         by total:
+                0.0    129.0  loop
+              102.4    129.0  step
+                1.6     15.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.9     11.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+               11.1     11.1  padStart
+                6.9      6.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                2.9      5.9  visitNode
+                0.0      5.9  captureSnapshot
+                1.4      5.9  visitChild
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.8      0.8  checkAndReturn
+                0.5      0.8  expectValue
+                0.0      0.5  projFor (packages/renderer/src/draw/uniforms.ts:57)
+                0.5      0.5  Float32Array
+onto: progress 15/36
+   16/36  pass 1  dom        5000 glyphs  every-frame  moving  main   3.11  (js  0.55 style  0.23 layout  1.10 paint  1.05)  comp  0.34  raster  0.00  gpu-proc  1.27  total   4.72 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.6    113s
+         allocated    145.2 KB/frame; by function, KB/frame self, total:
+               99.4    126.6  step
+               12.2     12.2  (V8 API)
+                9.9      9.9  padStart
+                8.5      8.5  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.3     12.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.1      6.0  visitNode
+                1.9     17.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.3      6.0  visitChild
+                0.8      0.8  checkAndReturn
+                0.7      0.7  Float32Array
+                0.5      0.7  expectValue
+                0.4      0.4  WeakMap
+                0.3      0.3  push
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+         by total:
+                0.0    126.7  loop
+               99.4    126.6  step
+                1.9     17.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.3     12.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                9.9      9.9  padStart
+                8.5      8.5  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.1      6.0  visitNode
+                1.3      6.0  visitChild
+                0.0      6.0  captureSnapshot
+                0.0      1.7  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.3  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.8      0.8  checkAndReturn
+                0.5      0.7  expectValue
+                0.7      0.7  Float32Array
+                0.0      0.7  from
+onto: progress 16/36
+   17/36  pass 1  hud        5000 glyphs  every-frame  moving  main   2.43  (js  2.34 style  0.00 layout  0.00 paint  0.03)  comp  0.12  raster  0.00  gpu-proc  0.84  total   3.39 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.45  load    2.6    120s
+         allocated    304.6 KB/frame; by function, KB/frame self, total:
+              142.5    304.1  step
+               58.2    108.7  cachedCommands (packages/hud/src/attach.ts:199)
+               42.5     42.5  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               15.7     15.7  set
+               11.3     27.1  drawText (packages/renderer/src/draw/text.ts:36)
+                8.0      8.0  delete
+                7.9      7.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9    114.6  draw (packages/hud/src/attach.ts:73)
+                5.6     13.5  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.8      3.8  padStart
+                1.4     43.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.3      0.3  Float32Array
+                0.2      0.2  Map
+                0.1      0.1  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.1      0.4  (anonymous)
+         by total:
+                0.0    304.2  loop
+              142.5    304.1  step
+                5.9    114.6  draw (packages/hud/src/attach.ts:73)
+               58.2    108.7  cachedCommands (packages/hud/src/attach.ts:199)
+                1.4     43.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+               42.5     42.5  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               11.3     27.1  drawText (packages/renderer/src/draw/text.ts:36)
+               15.7     15.7  set
+                0.0     15.7  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                5.6     13.5  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.0      8.0  delete
+                7.9      7.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.8      3.8  padStart
+                0.0      0.6  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.4  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 17/36
+   18/36  pass 1  none          0 glyphs  static       fixed   main   0.41  (js  0.18 style  0.00 layout  0.00 paint  0.08)  comp  0.21  raster  0.00  gpu-proc  1.45  total   2.07 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.35  load    2.4    125s
+onto: progress 18/36
+   19/36  pass 2  none          0 glyphs  static       fixed   main   0.52  (js  0.28 style  0.00 layout  0.00 paint  0.08)  comp  0.22  raster  0.00  gpu-proc  1.51  total   2.25 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.31  load    2.6    130s
+onto: progress 19/36
+   20/36  pass 2  dom        2500 glyphs  every-frame  fixed   main   2.44  (js  0.43 style  0.00 layout  0.89 paint  0.93)  comp  0.35  raster  0.00  gpu-proc  1.28  total   4.08 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.21  load    2.3    137s
+         allocated     50.1 KB/frame; by function, KB/frame self, total:
+               23.2     46.1  step
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                5.5     13.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                1.7     16.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      3.0  visitNode
+                0.8      0.8  (V8 API)
+                0.6      0.6  checkAndReturn
+                0.5      3.0  visitChild
+                0.5      0.5  Float32Array
+                0.3      0.3  push
+                0.2      0.2  String
+                0.2      0.2  subarray
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.1      0.4  expectValue
+         by total:
+               23.2     46.1  step
+                0.0     46.1  loop
+                1.7     16.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.5     13.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                0.0      3.0  captureSnapshot
+                1.4      3.0  visitNode
+                0.5      3.0  visitChild
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  checkAndReturn
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+                0.0      0.4  projFor (packages/renderer/src/draw/uniforms.ts:57)
+onto: progress 20/36
+   21/36  pass 2  hud        2500 glyphs  every-frame  fixed   main   1.42  (js  1.33 style  0.00 layout  0.00 paint  0.03)  comp  0.11  raster  0.00  gpu-proc  0.77  total   2.30 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.33  load    2.2    144s
+         allocated    112.8 KB/frame; by function, KB/frame self, total:
+               36.9    112.4  step
+               22.3     22.3  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               20.6     46.8  cachedCommands (packages/hud/src/attach.ts:199)
+                7.8      7.8  pushRect (packages/renderer/src/draw/batch.ts:205)
+                7.3      7.3  set
+                5.6     13.4  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.8      3.8  delete
+                2.8     49.5  draw (packages/hud/src/attach.ts:73)
+                2.2      2.2  padStart
+                1.5     23.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.4      0.4  Float32Array
+                0.2      0.2  push
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  Map
+                0.1      0.1  setColorUniform (packages/renderer/src/draw/uniforms.ts:30)
+         by total:
+                0.0    112.5  loop
+               36.9    112.4  step
+                2.8     49.5  draw (packages/hud/src/attach.ts:73)
+               20.6     46.8  cachedCommands (packages/hud/src/attach.ts:199)
+                1.5     23.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+               22.3     22.3  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                5.6     13.4  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                7.8      7.8  pushRect (packages/renderer/src/draw/batch.ts:205)
+                0.0      7.6  drawText (packages/renderer/src/draw/text.ts:36)
+                7.3      7.3  set
+                0.0      7.3  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                3.8      3.8  delete
+                2.2      2.2  padStart
+                0.0      0.9  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 21/36
+   22/36  pass 2  hud        2500 glyphs  every-frame  fixed   main   1.53  (js  1.44 style  0.00 layout  0.00 paint  0.03)  comp  0.10  raster  0.00  gpu-proc  0.77  total   2.40 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.37  load    2.1    151s
+         allocated    110.9 KB/frame; by function, KB/frame self, total:
+               35.8    110.5  step
+               21.2     45.0  cachedCommands (packages/hud/src/attach.ts:199)
+               20.1     20.1  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                8.7      8.7  set
+                7.6      7.6  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.7     12.3  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.6      3.6  delete
+                3.4     48.4  draw (packages/hud/src/attach.ts:73)
+                2.6      2.6  padStart
+                1.3     23.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.4      0.4  Float32Array
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  subarray
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.1      0.1  Map
+         by total:
+                0.0    110.5  loop
+               35.8    110.5  step
+                3.4     48.4  draw (packages/hud/src/attach.ts:73)
+               21.2     45.0  cachedCommands (packages/hud/src/attach.ts:199)
+                1.3     23.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+               20.1     20.1  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                4.7     12.3  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                0.0      8.7  drawText (packages/renderer/src/draw/text.ts:36)
+                8.7      8.7  set
+                0.0      8.7  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                7.6      7.6  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.6      3.6  delete
+                2.6      2.6  padStart
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 22/36
+   23/36  pass 2  dom        2500 glyphs  every-frame  fixed   main   2.35  (js  0.44 style  0.00 layout  0.81 paint  0.90)  comp  0.34  raster  0.00  gpu-proc  1.21  total   3.89 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.23  load    2.1    158s
+         allocated     54.0 KB/frame; by function, KB/frame self, total:
+               25.4     48.8  step
+                8.2      8.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                6.3      6.3  padStart
+                5.4     13.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                1.9      3.9  visitNode
+                1.5     16.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.9      0.9  (V8 API)
+                0.8      0.8  checkAndReturn
+                0.6      0.6  push
+                0.5      0.5  Float32Array
+                0.4      3.9  visitChild
+                0.3      0.3  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.5  expectValue
+                0.2      0.2  subarray
+                0.2      0.2  String
+         by total:
+                0.0     48.9  loop
+               25.4     48.8  step
+                1.5     16.9  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.4     13.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.2      8.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                6.3      6.3  padStart
+                1.9      3.9  visitNode
+                0.4      3.9  visitChild
+                0.0      3.9  captureSnapshot
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.8      0.8  checkAndReturn
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  push
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+onto: progress 23/36
+   24/36  pass 2  dom        5000 glyphs  every-frame  fixed   main   3.29  (js  0.60 style  0.00 layout  1.26 paint  1.20)  comp  0.37  raster  0.00  gpu-proc  1.28  total   4.94 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.1    166s
+         allocated     81.5 KB/frame; by function, KB/frame self, total:
+               46.4     72.7  step
+                9.8      9.8  padStart
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.6     12.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.4      7.0  visitNode
+                1.7      1.7  (V8 API)
+                1.4     15.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.3      7.0  visitChild
+                1.3      1.3  checkAndReturn
+                0.8      0.8  String
+                0.8      0.9  expectValue
+                0.6      0.6  Float32Array
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  push
+                0.2      0.2  subarray
+         by total:
+                0.0     72.7  loop
+               46.4     72.7  step
+                1.4     15.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.6     12.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                9.8      9.8  padStart
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.4      7.0  visitNode
+                1.3      7.0  visitChild
+                0.0      7.0  captureSnapshot
+                1.3      1.3  checkAndReturn
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.0  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.8      0.9  expectValue
+                0.8      0.8  String
+                0.6      0.6  Float32Array
+onto: progress 24/36
+   25/36  pass 2  hud        5000 glyphs  every-frame  fixed   main   2.06  (js  1.97 style  0.00 layout  0.00 paint  0.03)  comp  0.10  raster  0.00  gpu-proc  0.69  total   2.85 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.39  load    2.0    173s
+         allocated    212.1 KB/frame; by function, KB/frame self, total:
+               73.2    211.8  step
+               45.9     96.9  cachedCommands (packages/hud/src/attach.ts:199)
+               42.8     42.8  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               16.1     16.1  set
+                8.1      8.1  delete
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9    102.7  draw (packages/hud/src/attach.ts:73)
+                4.8     12.3  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                4.3      4.3  padStart
+                1.3     31.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.7      0.7  Float32Array
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  WeakMap
+                0.1      0.1  push
+                0.1      0.1  Map
+         by total:
+                0.0    211.9  loop
+               73.2    211.8  step
+                5.9    102.7  draw (packages/hud/src/attach.ts:73)
+               45.9     96.9  cachedCommands (packages/hud/src/attach.ts:199)
+               42.8     42.8  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                1.3     31.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     16.3  drawText (packages/renderer/src/draw/text.ts:36)
+               16.1     16.1  set
+                0.0     16.1  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                4.8     12.3  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.1      8.1  delete
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.3      4.3  padStart
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.0  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 25/36
+   26/36  pass 2  hud        5000 glyphs  every-frame  fixed   main   1.99  (js  1.90 style  0.00 layout  0.00 paint  0.03)  comp  0.09  raster  0.00  gpu-proc  0.68  total   2.76 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.44  load    2.0    180s
+         allocated    205.0 KB/frame; by function, KB/frame self, total:
+               69.8    204.4  step
+               43.0     91.6  cachedCommands (packages/hud/src/attach.ts:199)
+               41.0     41.0  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               16.7     16.7  set
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                7.6      7.6  delete
+                5.6     97.2  draw (packages/hud/src/attach.ts:73)
+                4.9     12.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                4.2      4.2  padStart
+                1.7     33.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.5      0.5  Float32Array
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  subarray
+                0.2      0.2  WeakMap
+         by total:
+                0.0    204.5  loop
+               69.8    204.4  step
+                5.6     97.2  draw (packages/hud/src/attach.ts:73)
+               43.0     91.6  cachedCommands (packages/hud/src/attach.ts:199)
+               41.0     41.0  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                1.7     33.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0     16.7  drawText (packages/renderer/src/draw/text.ts:36)
+               16.7     16.7  set
+                0.0     16.7  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                4.9     12.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                7.6      7.6  delete
+                4.2      4.2  padStart
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 26/36
+   27/36  pass 2  dom        5000 glyphs  every-frame  fixed   main   3.20  (js  0.56 style  0.00 layout  1.22 paint  1.18)  comp  0.37  raster  0.00  gpu-proc  1.27  total   4.85 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.1    188s
+         allocated     80.3 KB/frame; by function, KB/frame self, total:
+               47.0     73.0  step
+                9.4      9.4  padStart
+                7.3      7.3  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.6     11.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.1      5.7  visitNode
+                1.7     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      1.4  (V8 API)
+                1.2      1.2  String
+                1.0      5.7  visitChild
+                0.8      0.8  checkAndReturn
+                0.4      0.7  expectValue
+                0.4      0.4  push
+                0.4      0.4  Float32Array
+                0.3      0.3  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+         by total:
+               47.0     73.0  step
+                0.0     73.0  loop
+                1.7     15.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.6     11.9  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                9.4      9.4  padStart
+                7.3      7.3  pushRect (packages/renderer/src/draw/batch.ts:205)
+                0.0      5.7  captureSnapshot
+                3.1      5.7  visitNode
+                1.0      5.7  visitChild
+                1.2      1.2  String
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.8      0.8  checkAndReturn
+                0.4      0.7  expectValue
+                0.0      0.6  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.0      0.4  uploadBatchMatrices (packages/renderer/src/draw/batchMatrices.ts:41)
+onto: progress 27/36
+   28/36  pass 2  dom        2500 glyphs  every-frame  moving  main   2.73  (js  0.69 style  0.16 layout  0.81 paint  0.82)  comp  0.33  raster  0.00  gpu-proc  1.27  total   4.33 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.24  load    2.0    195s
+         allocated     82.2 KB/frame; by function, KB/frame self, total:
+               51.4     72.7  step
+                6.9      6.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                5.6      5.6  (V8 API)
+                5.1     12.0  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                1.7      3.4  visitNode
+                1.4     15.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.8      3.4  visitChild
+                0.6      0.6  Float32Array
+                0.5      0.5  checkAndReturn
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  push
+                0.2      0.4  expectValue
+                0.2      0.2  String
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+         by total:
+                0.0     72.8  loop
+               51.4     72.7  step
+                1.4     15.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.1     12.0  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                6.9      6.9  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.9      5.9  padStart
+                1.7      3.4  visitNode
+                0.8      3.4  visitChild
+                0.0      3.4  captureSnapshot
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.0  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+                0.0      0.6  projFor (packages/renderer/src/draw/uniforms.ts:57)
+                0.5      0.5  checkAndReturn
+onto: progress 28/36
+   29/36  pass 2  hud        2500 glyphs  every-frame  moving  main   1.60  (js  1.51 style  0.00 layout  0.00 paint  0.03)  comp  0.10  raster  0.00  gpu-proc  0.74  total   2.45 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    1.9    202s
+         allocated    159.3 KB/frame; by function, KB/frame self, total:
+               69.8    158.9  step
+               26.7     53.2  cachedCommands (packages/hud/src/attach.ts:199)
+               22.4     22.4  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                7.7      7.7  set
+                7.7      7.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.6     13.5  drawText (packages/renderer/src/draw/text.ts:36)
+                4.4     12.1  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                4.1      4.1  delete
+                3.5     56.7  draw (packages/hud/src/attach.ts:73)
+                3.4      3.4  padStart
+                1.4     29.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.6      0.6  Float32Array
+                0.3      0.3  subarray
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+         by total:
+                0.0    159.0  loop
+               69.8    158.9  step
+                3.5     56.7  draw (packages/hud/src/attach.ts:73)
+               26.7     53.2  cachedCommands (packages/hud/src/attach.ts:199)
+                1.4     29.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+               22.4     22.4  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                5.6     13.5  drawText (packages/renderer/src/draw/text.ts:36)
+                4.4     12.1  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                7.7      7.7  set
+                0.0      7.7  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                7.7      7.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.1      4.1  delete
+                3.4      3.4  padStart
+                0.0      1.4  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 29/36
+   30/36  pass 2  hud        2500 glyphs  every-frame  moving  main   1.55  (js  1.46 style  0.00 layout  0.00 paint  0.03)  comp  0.11  raster  0.00  gpu-proc  0.82  total   2.49 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.32  load    2.0    209s
+         allocated    159.2 KB/frame; by function, KB/frame self, total:
+               68.8    158.9  step
+               27.7     53.7  cachedCommands (packages/hud/src/attach.ts:199)
+               22.5     22.5  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                7.8      7.8  set
+                7.7      7.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                6.7     14.6  drawText (packages/renderer/src/draw/text.ts:36)
+                4.2     57.9  draw (packages/hud/src/attach.ts:73)
+                3.8     11.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.5      3.5  delete
+                3.1      3.1  padStart
+                1.3     29.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.4      0.4  Float32Array
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  reclaim (packages/renderer/src/effects/EffectTargets.ts:27)
+                0.2      0.2  push
+         by total:
+                0.0    159.0  loop
+               68.8    158.9  step
+                4.2     57.9  draw (packages/hud/src/attach.ts:73)
+               27.7     53.7  cachedCommands (packages/hud/src/attach.ts:199)
+                1.3     29.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+               22.5     22.5  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+                6.7     14.6  drawText (packages/renderer/src/draw/text.ts:36)
+                3.8     11.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                7.8      7.8  set
+                0.0      7.8  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                7.7      7.7  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.5      3.5  delete
+                3.1      3.1  padStart
+                0.0      0.8  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.6  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 30/36
+   31/36  pass 2  dom        2500 glyphs  every-frame  moving  main   2.60  (js  0.60 style  0.16 layout  0.82 paint  0.84)  comp  0.27  raster  0.00  gpu-proc  1.12  total   3.99 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.3    216s
+         allocated     83.4 KB/frame; by function, KB/frame self, total:
+               52.7     73.2  step
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                6.6      6.6  (V8 API)
+                5.7      5.7  padStart
+                4.5     12.0  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                1.5      3.4  visitNode
+                1.3     14.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.7      0.7  checkAndReturn
+                0.6      3.4  visitChild
+                0.4      0.4  Float32Array
+                0.3      0.5  expectValue
+                0.3      0.3  push
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  String
+                0.1      0.1  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+         by total:
+                0.0     73.2  loop
+               52.7     73.2  step
+                1.3     14.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.5     12.0  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.7      5.7  padStart
+                1.5      3.4  visitNode
+                0.6      3.4  visitChild
+                0.0      3.4  captureSnapshot
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.7      0.7  checkAndReturn
+                0.3      0.5  expectValue
+                0.4      0.4  Float32Array
+                0.0      0.4  from
+onto: progress 31/36
+   32/36  pass 2  dom        5000 glyphs  every-frame  moving  main   3.75  (js  0.90 style  0.25 layout  1.23 paint  1.12)  comp  0.37  raster  0.00  gpu-proc  1.29  total   5.42 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.3    224s
+         allocated    145.0 KB/frame; by function, KB/frame self, total:
+               99.7    126.2  step
+               11.5     11.5  (V8 API)
+                9.6      9.6  padStart
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.2     12.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.3      7.0  visitNode
+                1.8     16.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      7.0  visitChild
+                1.3      1.3  checkAndReturn
+                0.9      0.9  String
+                0.6      0.9  expectValue
+                0.5      0.5  Float32Array
+                0.5      0.5  push
+                0.3      0.3  next
+                0.2      0.2  Map
+         by total:
+                0.0    126.3  loop
+               99.7    126.2  step
+                1.8     16.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.2     12.6  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                9.6      9.6  padStart
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.3      7.0  visitNode
+                0.0      7.0  captureSnapshot
+                1.4      7.0  visitChild
+                1.3      1.3  checkAndReturn
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.6      0.9  expectValue
+                0.9      0.9  String
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  Float32Array
+onto: progress 32/36
+   33/36  pass 2  hud        5000 glyphs  every-frame  moving  main   2.43  (js  2.32 style  0.00 layout  0.00 paint  0.04)  comp  0.12  raster  0.00  gpu-proc  0.85  total   3.41 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.44  load    2.4    231s
+         allocated    297.9 KB/frame; by function, KB/frame self, total:
+              138.9    297.6  step
+               53.4    103.2  cachedCommands (packages/hud/src/attach.ts:199)
+               41.9     41.9  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               16.7     16.7  set
+               13.0     29.7  drawText (packages/renderer/src/draw/text.ts:36)
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                7.9      7.9  delete
+                6.6    109.8  draw (packages/hud/src/attach.ts:73)
+                4.0     12.1  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.3      3.3  padStart
+                2.0     45.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.5      0.5  Float32Array
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  Map
+         by total:
+                0.0    297.6  loop
+              138.9    297.6  step
+                6.6    109.8  draw (packages/hud/src/attach.ts:73)
+               53.4    103.2  cachedCommands (packages/hud/src/attach.ts:199)
+                2.0     45.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+               41.9     41.9  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               13.0     29.7  drawText (packages/renderer/src/draw/text.ts:36)
+               16.7     16.7  set
+                0.0     16.7  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                4.0     12.1  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                8.0      8.0  pushRect (packages/renderer/src/draw/batch.ts:205)
+                7.9      7.9  delete
+                3.3      3.3  padStart
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 33/36
+   34/36  pass 2  hud        5000 glyphs  every-frame  moving  main   2.40  (js  2.30 style  0.00 layout  0.00 paint  0.03)  comp  0.12  raster  0.00  gpu-proc  0.83  total   3.34 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.42  load    2.2    238s
+         allocated    296.3 KB/frame; by function, KB/frame self, total:
+              139.4    295.9  step
+               54.7    104.0  cachedCommands (packages/hud/src/attach.ts:199)
+               41.6     41.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               16.0     16.0  set
+               11.4     27.5  drawText (packages/renderer/src/draw/text.ts:36)
+                7.8      7.8  delete
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                5.5    109.5  draw (packages/hud/src/attach.ts:73)
+                5.0     12.4  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.6      3.6  padStart
+                1.5     43.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.6      0.6  Float32Array
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  subarray
+         by total:
+                0.0    296.0  loop
+              139.4    295.9  step
+                5.5    109.5  draw (packages/hud/src/attach.ts:73)
+               54.7    104.0  cachedCommands (packages/hud/src/attach.ts:199)
+                1.5     43.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+               41.6     41.6  resolveRuns (node_modules/.vite/deps/src-B3BNsTIb.js:661)
+               11.4     27.5  drawText (packages/renderer/src/draw/text.ts:36)
+               16.0     16.0  set
+                0.0     16.0  cachedLayoutRuns (node_modules/.vite/deps/src-B3BNsTIb.js:3457)
+                5.0     12.4  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                7.8      7.8  delete
+                7.4      7.4  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.6      3.6  padStart
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 34/36
+   35/36  pass 2  dom        5000 glyphs  every-frame  moving  main   4.35  (js  1.08 style  0.27 layout  1.39 paint  1.30)  comp  0.45  raster  0.00  gpu-proc  1.55  total   6.35 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.18  load    2.0    246s
+         allocated    144.5 KB/frame; by function, KB/frame self, total:
+               99.0    125.8  step
+               12.4     12.4  (V8 API)
+                9.4      9.4  padStart
+                8.2      8.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                4.9     13.1  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                3.2      6.0  visitNode
+                1.6     16.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      6.0  visitChild
+                0.9      0.9  String
+                0.8      0.8  checkAndReturn
+                0.4      0.6  expectValue
+                0.4      0.4  Float32Array
+                0.3      0.3  push
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-BFefYC_9.js:8304)
+                0.3      0.3  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+         by total:
+                0.0    125.9  loop
+               99.0    125.8  step
+                1.6     16.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.9     13.1  drawPath (packages/renderer/src/draw/pathPaint.ts:18)
+                9.4      9.4  padStart
+                8.2      8.2  pushRect (packages/renderer/src/draw/batch.ts:205)
+                3.2      6.0  visitNode
+                0.0      6.0  captureSnapshot
+                1.4      6.0  visitChild
+                0.0      1.0  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.9      0.9  String
+                0.1      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.8      0.8  checkAndReturn
+                0.4      0.6  expectValue
+                0.0      0.5  projFor (packages/renderer/src/draw/uniforms.ts:57)
+onto: progress 35/36
+   36/36  pass 2  none          0 glyphs  static       fixed   main   0.41  (js  0.19 style  0.00 layout  0.00 paint  0.09)  comp  0.23  raster  0.00  gpu-proc  1.57  total   2.22 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    2.1    250s
+onto: progress 36/36
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+Per frame, ms; median of 4 samples (ABBA x 2), spread = max - min.
+Baseline (background scene alone): main 0.41, all threads 2.23.
+
+**every-frame, camera fixed**: main thread / all threads / untraced frame interval, median [spread of all threads]
+
+| glyphs | hud | dom |
+|---:|---:|---:|
+| 2500 |   1.61 /   2.54 / 16.67 [1.32] |   2.26 /   3.79 / 16.67 [0.45] |
+| 5000 |   2.03 /   2.81 / 16.67 [0.62] |   2.99 /   4.58 / 16.67 [0.72] |
+
+**every-frame, camera moving**: main thread / all threads / untraced frame interval, median [spread of all threads]
+
+| glyphs | hud | dom |
+|---:|---:|---:|
+| 2500 |   1.57 /   2.44 / 16.67 [0.07] |   2.48 /   4.01 / 16.67 [0.39] |
+| 5000 |   2.43 /   3.38 / 16.67 [0.06] |   3.54 /   5.18 / 16.67 [1.63] |
+perf result: tests/perf/results/hudgc-2-after/hud-vs-dom-every-frame-2026-10-30T22-03-47Z.json
+  ✓  1 tests/perf/hud-vs-dom.spec.ts:530:1 › hud vs dom: text over the canvas, per frame (4.2m)
+
+  1 passed (4.2m)
+  1 files  141.5 KiB  → 0 already local (0 bytes)
+  fetching 1 files (141.5 KiB)
+  [1/1] hud-vs-dom-every-frame-2026-10-30T22-03-47Z.json  141.5 KiB
+  ✓ 1 files, 141.5 KiB in 0s
+  cleared 1 file (141.5 KiB) from msb-uai; /private/tmp/claude-501/-Users-mike-src-weasel/c665726a-3916-4fec-875a-b4836e489d5a/scratchpad/hudgc/out-2-after holds the only copy
+EXIT=0 end=2026-10-30T22:07:59Z

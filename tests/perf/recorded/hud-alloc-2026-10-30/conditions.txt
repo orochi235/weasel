@@ -1,0 +1,9 @@
+Every run: HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_CAMERAS=fixed,moving HVD_APPROACHES=hud,dom
+HVD_GLYPHS=2500,5000 WEASEL_PERF_PORT=33527 npm run test:perf -- perf/hud-vs-dom.spec.ts, through
+onto do --solo --node msb-uai in the weasel-perf-hudtext tree, one run each, on 2026-10-30.
+
+1-before   6adbd4e5b, main; msb-uai (Apple M3 Max, 14 cores); load 7.6 at start
+2-after    1f1653419: cachedFontVariant, the solid rect's color staged in a reused array, the text
+           widget's refilled command array, and the align width stored on each branch; msb-uai; load 2.5
+3-after    997a90865: 2-after plus the rect's color handed to DrawBatch.pushRect as one array; msb-uai;
+           load 2.1
