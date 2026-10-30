@@ -70,6 +70,16 @@ function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps,
   }
 }
 
+/** The plugins forge serves beside its own, as its options ask. */
+function companions(options: ForgeOptions, storyFiles: () => string[]): Plugin[] {
+  const { storybookShims: shims, propControls: controls } = options;
+  return [
+    watchRecovery(),
+    ...(shims === false ? [] : [storybookShims()]),
+    ...(controls === false ? [] : [propControls(storyFiles, controls === true ? undefined : controls)]),
+  ];
+}
+
 /**
  * The vite plugin that serves the workshop: it indexes the story files, serves the workshop at `/` and the frame
  * document at `/frame.html`, pushes a new index to the open page as story files change, and builds both pages.
@@ -252,9 +262,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   }
 
   return [
-    watchRecovery(),
-    ...(options.storybookShims === false ? [] : [storybookShims()]),
-    ...(options.propControls === false ? [] : [propControls(() => [...files().keys()], options.propControls === true ? undefined : options.propControls)]),
+    ...companions(options, () => [...files().keys()]),
     {
       name: 'weaselforge',
       config(config, { command }) {

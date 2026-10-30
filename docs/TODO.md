@@ -617,7 +617,9 @@ only story runner in the repo.
   `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
   itself fired at once, and a dev server served none of three edits. Every dev server in the repo
   now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
-  and the one test that needs a real watcher skips. The cause needs the machine in that state.
+  and the one test that needs a real watcher skips. Since 2026-10-30 the symptom is covered: dev
+  servers find unreported edits by modification time (`watchRecovery`, beside `watchProbe`), so a
+  page gets the edit within seconds rather than never. The cause needs the machine in that state.
 
 ---
 
@@ -674,13 +676,12 @@ only story runner in the repo.
 - **(P3) [waiting] A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
-  7 of 26 tests in one run on 2026-10-13, and polls since; whether a checkout loses them too is not
-  measured. The test's later timeouts were a different thing and are fixed (2026-10-24): a polling
-  watcher takes its baseline of a directory after it reports ready, so a file added in between was
-  never reported. That needs a write within moments of startup, under polling, so it does not
-  explain an edit to an existing file in a long-running server.
-  A possible fix, not decided (2026-10-30): when the watcher has gone quiet, check edited files' mtimes against
-  the module graph and invalidate anything newer, so a missed event recovers rather than leaving a stale serve.
+  7 of 26 tests in one run on 2026-10-13, and polls since. Every dev server now recovers from a
+  missed event (2026-10-30): `watchRecovery` (`packages/forge/src/vite/watchRecovery.ts`, in
+  `devWatch()` and forge's plugin) compares each served file's modification time with the one vite
+  read, on each request and after two quiet seconds, and logs `[watch] <file> changed with no file
+  event` when it fixes one. What is left is the cause: the next time that line appears for a file in
+  a checkout, note the server, the file, and whether `fseventsd` was busy, here.
 
 - **(P3) [waiting] `npm pack` died with SIGABRT and no output in the consumer smoke step.** A
   `test:fleet:postbuild` run of d9f7bb7ba's predecessor 570d272b7 on 2026-10-24 failed

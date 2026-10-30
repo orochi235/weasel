@@ -105,6 +105,7 @@ for (let i = 0; i < loads; i++) {
   const page = await load();
   const timings = spent;
   record({ kind: 'load', load: i, ...page, middlewareCalls: timings.length, middlewareUs: timings, recoveries });
+  console.log(`onto: progress ${i + 1}/${loads + 1}`);
   console.log(
     `load ${i + 1}/${loads}: ${page.requests} urls, ${timings.length} middleware calls in ${page.ms.toFixed(0)} ms; ` +
       `middleware ${(sum(timings) / 1e3).toFixed(2)} ms total, median ${median(timings).toFixed(1)} µs, ` +

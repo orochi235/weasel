@@ -132,6 +132,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
         const mtime = read.get(id);
         if (mtime === undefined) return;
         read.delete(id);
+        if (this.environment.mode !== 'dev') return;
         const mod = this.environment.moduleGraph.getModuleById(id);
         if (!mod?.file) return;
         let modules = stamps.get(mod.file);
