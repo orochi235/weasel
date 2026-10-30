@@ -114,8 +114,8 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     bounds: { x: px(i), y: py(i), w: 64, h: 64 },
   });
 
-  /** A rect fill whose four anchors carry their own colors, which takes the
-   *  per-vertex-color route: its own program and a color VBO minted per draw. */
+  /** A rect fill whose four anchors carry their own colors, staged into the
+   *  batch with each vertex carrying its own. */
   const vcolor = (i: number) => {
     const colors: number[] = [];
     for (let k = 0; k < 4; k++) {

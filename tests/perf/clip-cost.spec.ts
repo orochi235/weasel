@@ -224,9 +224,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       /** The same bar in green, drawn by the run or for itself. */
       const greenSlant = (i: number, own: boolean) => ({
         kind: 'path',
-        path: slantPath(i),
-        fill: { paint: { kind: 'solid', color: own ? '#ffffff' : '#00ff00' } },
-        ...(own ? { vertexColors: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1] } : {}),
+        path: own ? { ...slantPath(i), fillRule: 'evenodd' } : slantPath(i),
+        fill: { paint: { kind: 'solid', color: '#00ff00' } },
       });
 
       /**
@@ -289,8 +288,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const glOf = (id: string) => (id.startsWith('ss-') ? ssGl : gl);
 
       /**
-       * Each clip around a solid, which the shader clips, and around a fill
-       * with per-vertex colors, which draws for itself through the stencil:
+       * Each clip around a solid, which the shader clips, and around an
+       * even-odd fill, which draws for itself through the stencil:
        * the two must keep the same pixels, exactly. Also counts the pixels
        * where the shader-decided frame differs from the stencil clipping the
        * unsnapped path, which a rasterizer finer than a sixteenth of a pixel
@@ -311,9 +310,10 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       };
       const red = (i: number, own: boolean) => ({
         kind: 'path',
-        path: { kind: 'rect', x: px(i) - 10, y: py(i) - 10, width: 120, height: 120 },
-        fill: { paint: { kind: 'solid', color: own ? '#ffffff' : '#ff0000' } },
-        ...(own ? { vertexColors: [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1] } : {}),
+        path: own
+          ? { ...pathFromD(`M ${px(i) - 10} ${py(i) - 10} h 120 v 120 h -120 Z`), fillRule: 'evenodd' }
+          : { kind: 'rect', x: px(i) - 10, y: py(i) - 10, width: 120, height: 120 },
+        fill: { paint: { kind: 'solid', color: '#ff0000' } },
       });
       const agreeTree = (own: boolean) => Array.from({ length: 64 }, (_, i) => ({
         kind: 'group', clip: clipPath(i * 7), children: [red(i * 7, own)],
@@ -513,7 +513,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.item(`slanted clip decided in the shader at ${K} leaves`, { perClip: metric(hullClipK8, 'us', `${derived}, ss-rect-hullclip-k8 - ss-rect-plain`) });
   run.item('slanted clip on the stencil, single-sampled', { perClip: metric(ssStencilClip, 'us', `${derived}, ss-rect-stencilclip - ss-rect-plain`) });
   run.item('shader clip agreement', {
-    shaderVsOwnDraw: metric(agreement.shaderVsOwnDraw, 'count', 'pixels differing over 64 clips: a solid under the shader clip, a vertex-colored fill under the stencil'),
+    shaderVsOwnDraw: metric(agreement.shaderVsOwnDraw, 'count', 'pixels differing over 64 clips: a solid under the shader clip, an even-odd fill under the stencil'),
     shaderVsUnsnapped: metric(agreement.shaderVsUnsnapped, 'count', 'pixels differing over the same clips: the shader clip, the stencil of the unsnapped path'),
     nestShaderVsOwnDraw: metric(agreement.nestShaderVsOwnDraw, 'count', 'the same over 64 nests of three rect clips off the hull grid'),
     rectShaderVsOwnDraw: metric(agreement.rectShaderVsOwnDraw, 'count', 'pixels differing over 64 rect clips off the hull grid: an axis-aligned solid cut on the CPU and a turned one tested in the shader, against both drawn for themselves through the stencil'),

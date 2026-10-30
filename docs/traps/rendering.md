@@ -41,9 +41,10 @@ uniform is 0.5) is what keeps the code alive. The same trap waits for any
 
 **No gradient is a run-breaker any more.** Linear, radial and conic all ride the
 vertices off the ramp atlas and join the run, and so do images and text. A test
-reaching for "a paint the batch cannot express" wants per-vertex colors or a
-pattern, and should count draws to pin that premise: tests written against the
-old behavior went on passing for the wrong reason, twice.
+reaching for "a paint the batch cannot express" wants a pattern, or an
+even-odd fill for a solid that draws for itself, and should count draws to pin
+that premise: tests written against the old behavior went on passing for the
+wrong reason, twice. Per-vertex colors joined the run on 2026-10-30.
 
 **A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
 disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any
