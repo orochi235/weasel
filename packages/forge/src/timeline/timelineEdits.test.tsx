@@ -11,6 +11,12 @@ import { useTimeline } from './context';
 import * as playheadStories from './Playhead.stories';
 import { playhead, Readout, trial, tParam, workshopIt } from './workshopHarness';
 
+// These tests drive the timeline; axe auditing every mounted story only costs them time.
+vi.mock('../frame/a11y', async (actual) => ({
+  ...(await actual<typeof import('../frame/a11y')>()),
+  auditElement: () => Promise.resolve({ ok: false, message: 'not audited here' }),
+}));
+
 installResizeObserver();
 
 const entry = (file: string, exportName: string, id: string): IndexEntry => ({

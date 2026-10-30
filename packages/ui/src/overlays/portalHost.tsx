@@ -104,7 +104,10 @@ export function useOverlayPortal(explicit?: Element | null): {
 } {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const assigned = useAssignedPortalContainer(explicit);
-  const container = (assigned !== undefined ? assigned : nearestPortalHost(anchorEl)) ?? undefined;
+  const choosing = assigned === undefined;
+  // Once per anchor rather than per render: every Tooltip renders this hook, open or not.
+  const nearest = useMemo(() => (choosing ? nearestPortalHost(anchorEl) : null), [choosing, anchorEl]);
+  const container = (choosing ? nearest : assigned) ?? undefined;
   const getContainer = useCallback(() => (container as HTMLElement | undefined) ?? null, [container]);
   // `null` clears an enclosing provider, so an explicit body beats an outer overlay's container.
   const providerTarget = container ? getContainer : assigned === null ? null : undefined;
