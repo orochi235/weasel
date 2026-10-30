@@ -64,3 +64,23 @@ it('sets a section nested in a bar section apart with a divider on each side, as
   const { container } = render(<PrefsForm layout="list" schema={nested} values={{}} onChange={() => {}} />);
   expect(container.querySelectorAll('[role="separator"]')).toHaveLength(2);
 });
+
+it('leaves a tab section with no row out of its strip inside an object leaf, and the tabs around it share one', () => {
+  const num = (name: string) => ({ kind: 'number' as const, name, description: '', default: 0 });
+  const tabbed: PrefGroup = {
+    name: 'Prefs',
+    children: {
+      stroke: {
+        kind: 'object', name: 'Stroke', description: '', default: {},
+        children: {
+          one: { name: 'One', as: 'tab', members: { dash: num('Dash') } },
+          empty: { name: 'Empty', as: 'tab', members: {} },
+          two: { name: 'Two', as: 'tab', members: { gap: num('Gap') } },
+        },
+      },
+    },
+  };
+  render(<PrefsForm layout="list" schema={tabbed} values={{}} onChange={() => {}} showEmpty />);
+  expect(screen.getAllByRole('tablist')).toHaveLength(1);
+  expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['One', 'Two']);
+});

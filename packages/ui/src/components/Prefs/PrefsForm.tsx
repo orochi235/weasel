@@ -204,7 +204,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const selection = useSelectedRow(selected, lead, props.onSelect);
   const split = useSplitRows(props, schema, props.over);
   const { settles } = useParamsPolicy('form');
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, entryAt, droppable: props.drop !== undefined, split, settles };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

@@ -123,6 +123,10 @@ export interface WalkCtx {
   disabled?: ReadonlySet<string>;
   /** Paths of the leaves, fields, and groups a failed `showIf` hides, in a form that draws them marked. */
   hidden?: ReadonlySet<string>;
+  /** The form draws a leaf marked `hidden` (`PrefsForm`'s `showHidden`). */
+  showHidden?: boolean;
+  /** The form draws a group with no row in it (`PrefsForm`'s `showEmpty`). */
+  keepEmpty?: boolean;
   /** Answers the conditions that read an entry of a list or a map, for that entry. */
   entryAt?: EntryAt;
   /** Which live controls write only the value an edit settles on. */

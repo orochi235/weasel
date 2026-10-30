@@ -120,10 +120,10 @@ describe('a section', () => {
     expect(marked()).toEqual(['data.name', 'look']);
   });
 
-  it('marks nothing for a section nested in another, which draws no heading', () => {
+  it('is marked by its key when it is nested in another, under a heading of its own', () => {
     const { marked } = panel(['inner']);
-    expect(marked()).toEqual([]);
-    expect(screen.getByText('Deep')).toBeInTheDocument();
+    expect(marked()).toEqual(['inner']);
+    expect(screen.getByRole('heading', { name: 'Inner' })).toBeInTheDocument();
   });
 
   it('marks nothing for a top-level section that draws no heading, tab, or panel: a fragment, or a bar', () => {

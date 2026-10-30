@@ -316,6 +316,15 @@ boundary: labkit's Less cannot name `PropertyPanel`'s label class.
 `npm run check:labels` fails on a label in
 those surfaces that sets its size, case or tracking any other way.
 
+### Groups on the params surfaces
+
+The structure of a schema's groups is shared: every surface keeps a nested group where the
+schema puts it, with its `as`, and asks `prefTabRuns` (`@weasel-js/prefs`) which neighboring
+`tab` groups share a strip, so a tab with no row to draw is left out everywhere. How a group is
+drawn is each surface's own: labkit draws `panel` and `section` compactly and shows no
+description on a tab or a section, while ui's `PrefsForm` and `PrefsPane` box a panel and head a
+section (ruled 2026-10-30, from a side-by-side render).
+
 ### Numeric text
 
 Figures read as values — readouts, counters, number inputs, a column of
