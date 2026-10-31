@@ -30,6 +30,8 @@ export interface ModeMachine {
   commitMode(): void;     // strict modes: commit
   cancelMode(): void;     // strict modes: cancel
   discardMode(): void;    // soft modes: take back the session's edits
+  /** Leave whatever mode is open, keeping its work: a soft mode exits, a strict one commits. */
+  leaveMode(): void;
 }
 
 export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
@@ -105,6 +107,9 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
       if (!activeJournal || registry.current().kind !== 'strict') return;
       activeJournal.cancel();
       reset();
+    },
+    leaveMode() {
+      if (active) close();
     },
     discardMode() {
       if (!isSoft()) return;

@@ -115,6 +115,8 @@ export interface OpenSvgTarget {
   setBackgroundColor(color: string): void;
   /** Fit the view to the document's first page, once it has been replaced. */
   showFirstPage(): void;
+  /** Leave the open mode before the document is replaced, so its session closes on the old one. */
+  leaveMode(): void;
 }
 
 /**
@@ -124,6 +126,7 @@ export interface OpenSvgTarget {
 export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
   const picked = await pickSvgFileNamed();
   if (picked === null) return;
+  target.leaveMode();
   const warnings: string[] = [];
   const opened = openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w));
   reportSvgWarnings('Opened', warnings);

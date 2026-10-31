@@ -126,6 +126,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
               selection={selection}
               paperSize={doc.paperSize}
               showFirstPage={showFirstPage}
+              leaveMode={modality.machine.leaveMode}
               page={pages.shown}
               filename={doc.filename}
               setFilename={doc.setFilename}
