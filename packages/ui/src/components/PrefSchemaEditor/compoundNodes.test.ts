@@ -96,7 +96,7 @@ describe('what a leaf and an entry may be', () => {
 
 describe('the attributes of a list and of a typed leaf', () => {
   it('lists an entry\'s name, its default, its kind\'s own attributes, and what enables it', () => {
-    expect(Object.keys(attributeSchema(nodeAt(ROOT, 'phases')!).entry)).toEqual(['name', 'default', 'min', 'max', 'step', 'unit', 'control', 'endless', 'measure', 'enableIf']);
+    expect(Object.keys(attributeSchema(nodeAt(ROOT, 'phases')!).entry)).toEqual(['name', 'default', 'min', 'max', 'step', 'unit', 'stops', 'control', 'endless', 'measure', 'enableIf']);
     expect(attributeSchema(nodeAt(ROOT, 'loose')!).entry).toEqual({});
   });
 

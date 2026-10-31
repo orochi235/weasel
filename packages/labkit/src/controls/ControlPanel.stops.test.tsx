@@ -9,7 +9,17 @@ import { ControlPanel } from './ControlPanel';
 
 /** jsdom lays nothing out: 200px of track puts the 8px pull at 4% of the range either side of a stop. */
 function stubRect(el: HTMLElement, rect: { width: number }) {
-  el.getBoundingClientRect = () => ({ x: 0, y: 0, top: 0, left: 0, right: rect.width, bottom: 24, height: 24, width: rect.width, toJSON: () => ({}) });
+  el.getBoundingClientRect = () => ({
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: rect.width,
+    bottom: 24,
+    height: 24,
+    width: rect.width,
+    toJSON: () => ({}),
+  });
 }
 
 const PERCENT = { suffix: '%', scale: 0.01, precision: 0 };
@@ -21,7 +31,10 @@ const schema = resolveConfigSchema(
 );
 
 /** A panel holding its drafts the way a lab does, so the track follows the drag. */
-function Lab({ setConfig, draftConfig }: {
+function Lab({
+  setConfig,
+  draftConfig,
+}: {
   setConfig: (path: string, value: unknown) => void;
   draftConfig: (path: string, value: unknown) => void;
 }) {
@@ -64,7 +77,11 @@ describe('a schema number with stops', () => {
     expect(setConfig).not.toHaveBeenCalled();
     fireEvent.pointerUp(window);
     fireEvent.change(el);
-    expect(draftConfig.mock.calls).toEqual([['level', 0.1], ['level', 0], ['level', 0]]);
+    expect(draftConfig.mock.calls).toEqual([
+      ['level', 0.1],
+      ['level', 0],
+      ['level', 0],
+    ]);
     expect(setConfig.mock.calls).toEqual([['level', 0]]);
   });
 
@@ -82,7 +99,9 @@ describe('a schema number with stops', () => {
   it('catches a ControlMatrix cell on them too', () => {
     const setConfig = vi.fn();
     const looks = resolveConfigSchema(
-      f.schema({ a: f.group({ level: f.number(0.2).range(-1, 1).step(0.01).stops([0]).label('Level') }) }),
+      f.schema({
+        a: f.group({ level: f.number(0.2).range(-1, 1).step(0.01).stops([0]).label('Level') }),
+      }),
       [],
     );
     render(
@@ -95,7 +114,9 @@ describe('a schema number with stops', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'A Level' }));
-    const el = within(screen.getByRole('dialog', { name: 'A Level' })).getByRole('slider') as HTMLInputElement;
+    const el = within(screen.getByRole('dialog', { name: 'A Level' })).getByRole(
+      'slider',
+    ) as HTMLInputElement;
     stubRect(el, { width: 200 });
     fireEvent.pointerDown(el);
     fireEvent.input(el, { target: { value: '0.03' } });

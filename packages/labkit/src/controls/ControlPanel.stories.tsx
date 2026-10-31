@@ -122,7 +122,12 @@ export const Sections: Story = {
 
 const detents = f.schema({
   level: f.number(0.04).range(-0.12, 0.12).step(0.001).suffix('em').stops([0]),
-  wallDepth: f.number(0.3).range(0, 1).step(0.01).unit({ suffix: '%', scale: 0.01, precision: 0 }).stops([0.5]),
+  wallDepth: f
+    .number(0.3)
+    .range(0, 1)
+    .step(0.01)
+    .unit({ suffix: '%', scale: 0.01, precision: 0 })
+    .stops([0.5]),
 });
 
 /** Stops on a schema slider, declared in the stored unit. The drag drafts
@@ -134,7 +139,8 @@ export const Stops: Story = {
       const schema = resolveConfigSchema(detents);
       const [config, setConfig] = useState<Record<string, unknown>>(detents.defaults());
       const [writes, setWrites] = useState(0);
-      const draft = (path: string, value: unknown) => setConfig((prev) => withValueAtPath(prev, path, value));
+      const draft = (path: string, value: unknown) =>
+        setConfig((prev) => withValueAtPath(prev, path, value));
       return (
         <>
           <ControlPanel
