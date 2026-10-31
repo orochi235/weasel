@@ -1,5 +1,5 @@
 import type { PatternTransform } from '@weasel-js/paint';
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { invert, mat3, type GlMat3 } from '@weasel-js/geom';
 
 /**
  * Screen → tile-space matrix for a pattern fill: `spaceInverse` takes a screen
@@ -16,8 +16,20 @@ export function patternTileSpace(
   origin: { x: number; y: number },
   transform: PatternTransform | undefined,
 ): GlMat3 | null {
-  const [a, b, c, d] = transform ?? [1, 0, 0, 1];
-  const placement = mat3.fromAffine([a, b, c, d, origin.x, origin.y]);
-  const unplace = mat3.invert(placement);
-  return unplace && mat3.multiply(unplace, spaceInverse);
+  // Written out rather than composed through mat3: a batch stages one pattern
+  // command per call, and each mat3 step is an allocation.
+  const t = transform ?? IDENTITY;
+  const u = invert([t[0], t[1], t[2], t[3], origin.x, origin.y]);
+  if (!u) return null;
+  const s = spaceInverse;
+  return mat3.fromAffine([
+    u[0] * s[0] + u[2] * s[1],
+    u[1] * s[0] + u[3] * s[1],
+    u[0] * s[3] + u[2] * s[4],
+    u[1] * s[3] + u[3] * s[4],
+    u[0] * s[6] + u[2] * s[7] + u[4],
+    u[1] * s[6] + u[3] * s[7] + u[5],
+  ]);
 }
+
+const IDENTITY: PatternTransform = [1, 0, 0, 1];
