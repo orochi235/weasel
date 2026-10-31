@@ -1,0 +1,13 @@
+start: 2026-10-31T15:27:34Z
+synced tree: dd3be68fa6959c746552baf046a68473d8ab9dcc dirty-paths: 2
+cpu: Apple M5 Max (18 threads)
+node: v26.12.1
+before-1 clip-cost: load before { 5.69 6.43 6.64 }
+before-1 clip-cost: load after { 4.67 6.10 6.51 }
+after-1 clip-cost: load before { 4.67 6.10 6.51 }
+after-1 clip-cost: load after { 4.64 5.93 6.43 }
+after-2 clip-cost: load before { 4.64 5.93 6.43 }
+after-2 clip-cost: load after { 4.52 5.76 6.35 }
+before-2 clip-cost: load before { 4.52 5.76 6.35 }
+before-2 clip-cost: load after { 3.44 5.34 6.17 }
+end: 2026-10-31T15:29:56Z

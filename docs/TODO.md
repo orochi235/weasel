@@ -862,6 +862,12 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
+- **(P3) [waiting] PatternPicker's "the rotation field reads a typed degree sign" saw two commits once.**
+  In a `test:fleet` run of `2bdba7b91` on studio (2026-10-31) it got two `onChange` calls for one typed
+  value and Enter, where it expects one; alone on the fleet it passed. The branch touched only the
+  renderer. Not looked at.
+  Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
+
 - **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
   `ubuntu-latest`, while every fleet node is a Mac, so a browser test that leans on the OS fails only in CI.
   The 11 that failed every `main` run from 2026-10-15 were fixed on 2026-10-29, passing in the lane below:
