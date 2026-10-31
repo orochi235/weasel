@@ -1,0 +1,22 @@
+---
+title: Release flow
+---
+gitGraph
+  commit id: "ZERO"
+  branch develop order: 2
+  commit id:"A" msg: "start develop"
+  branch feature order: 3
+  commit type: HIGHLIGHT
+  commit
+  checkout develop
+  commit type: REVERSE tag: "revert-1"
+  checkout main
+  branch hotfix order: 1
+  commit id: "FIX"
+  checkout main
+  merge hotfix tag: "v1.0.1"
+  switch develop
+  merge feature id: "M1" type: HIGHLIGHT
+  cherry-pick id: "FIX" tag: "picked"
+  checkout main
+  merge develop tag: "v2.0"

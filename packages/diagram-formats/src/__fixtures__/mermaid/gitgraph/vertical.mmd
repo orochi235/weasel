@@ -1,0 +1,12 @@
+%% vertical, a merge cherry-picked with its parent
+gitGraph TB:
+  commit id: "a"
+  branch side
+  commit id: "b"
+  checkout main
+  commit id: "c"
+  merge side id: "m"
+  branch "release x"
+  commit
+  cherry-pick id: "b"
+  cherry-pick id: "m" parent: "c"
