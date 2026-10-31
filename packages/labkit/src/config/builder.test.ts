@@ -61,7 +61,9 @@ describe('builder', () => {
   });
 
   it("types an enum by its choices, plain or labeled, and refuses a default that isn't one", () => {
-    expectTypeOf(f.enum('fast', ['fast', 'accurate'])).toEqualTypeOf<EnumNode<'fast' | 'accurate'>>();
+    expectTypeOf(f.enum('fast', ['fast', 'accurate'])).toEqualTypeOf<
+      EnumNode<'fast' | 'accurate'>
+    >();
     expectTypeOf(
       f.enum('fast', [
         { value: 'fast', label: 'Fast' },
