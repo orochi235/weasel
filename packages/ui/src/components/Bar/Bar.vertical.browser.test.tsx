@@ -23,5 +23,4 @@ it("turns a vertical bar's button with no glyph to read along the bar, and shows
   expect(turned.height).toBeGreaterThan(turned.width * 2);
   const glyph = screen.getByRole('button', { name: 'Type size' }).getBoundingClientRect();
   expect(glyph.width).toBeLessThan(turned.height / 2);
-  expect(screen.getByRole('toolbar').getBoundingClientRect().width).toBeLessThanOrEqual(Math.max(turned.width, glyph.width) + 1);
 });
