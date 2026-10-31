@@ -31,6 +31,10 @@ export interface ActionTuning<P = Record<string, unknown>> {
   /** Keys for some of the action's `modifierRoles`, by role id. A binding's
    *  own `opts.roles` is laid over these. */
   roles?: RoleRebinds;
+  /** Told the params the last-operation panel just set for the action, which hold for the rest of the session.
+   *  A tuning whose `params` thunk reads a host's store writes the ones it supplies back there, so the store, and
+   *  whatever draws it, says what the next run will use rather than overriding it. */
+  keep?(params: Readonly<Record<string, unknown>>): void;
 }
 
 type Params = BindingOpts['params'];
