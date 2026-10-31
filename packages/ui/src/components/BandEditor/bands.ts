@@ -1,6 +1,6 @@
 import type { Quantity } from '@weasel-js/quantity';
-import type { BandScale } from './scale';
-import { clamp01 } from './scale';
+import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import { clamp01, unitScale } from './scale';
 
 /** One band. `from` may be a tagged quantity, which keeps its display and
  *  unit through every edit: see `BandEditor`. */
@@ -48,11 +48,12 @@ export function withSeams<T>(bands: readonly Band<T>[], seams: readonly number[]
 /** Band edges as track positions: `length + 1` values from 0 to 1. */
 export function unitEdges<T>(
   bands: readonly Band<T>[],
-  scale: BandScale,
+  scale: ContinuousScaleFactory,
   min: number,
   max: number,
 ): number[] {
-  const edges = bands.map((b, i) => (i === 0 ? 0 : clamp01(scale.toUnit(b.from, min, max))));
+  const unit = unitScale(scale, min, max);
+  const edges = bands.map((b, i) => (i === 0 ? 0 : clamp01(unit.map(b.from))));
   edges.push(1);
   return edges;
 }

@@ -18,8 +18,8 @@ dragging a band body is a region drag. Its props and gestures are unchanged. Whe
 - `renderRegion` draws something across each stretch of track between neighboring thumbs, and before the first and
   after the last, in the tab order between the thumbs either side. `regionDrag` makes a drag on an inner region move
   both of its thumbs, keeping the span between them.
-- `scale` maps values onto the track non-linearly; `logScale` and `linearScale` now export from `Slider` (and still
-  from `BandEditor`, whose `BandScale` is the same type as `SliderScale`).
+- `scale` maps values onto the track non-linearly: pass `logScale` from `@weasel-js/plot/scales`, or any scale
+  built the same way.
 - `stopSnapPx` sets how close a drag must come to a stop to land on it, and holding alt through a drag now passes a
   magnetic stop by. This changes every slider with stops: alt used to do nothing there.
 - `onCancel` reports a drag that ended without a release, so a consumer holding the last `onInput` can drop it.

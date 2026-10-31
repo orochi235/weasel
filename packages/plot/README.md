@@ -17,6 +17,13 @@ npm install @weasel-js/plot
 **Scales, axes and marks.** A scale maps values onto a range and says which
 values an axis marks and how they read: `linearScale`, `logScale`,
 `bandScale`, `timeScale` (ticks on calendar units, in UTC) and `ordinalScale`.
+A linear scale also places ticks by room rather than count: `spacedTicks({
+minSpacing, inset })` takes the finest 1/2/5 step that keeps neighbors
+`minSpacing` apart along the range, drops any within `inset` of an end, and
+returns the step and the decimals the column shares, which `formatTick` writes
+every label to. The scales import on their own, with no React, DOM or scene,
+from `@weasel-js/plot/scales`; a control that places values along a track calls
+one with a range of `[0, 1]`.
 `axisMarks` draws an axis from any of the first four: a rule, ticks, labels
 measured through `@weasel-js/text`, grid lines and a title. The mark builders
 (`barMark`, `spanMark`, `lineMark`, `areaMark`, `pointMark`, `arcMark`,

@@ -6,12 +6,7 @@
  *
  * @packageDocumentation
  */
-export type { Scale, ContinuousScale } from './scales/types';
-export { linearScale, niceDomain, tickStep, stepTicks, formatNumber, type LinearScale, type LinearScaleOptions } from './scales/linear';
-export { logScale, type LogScale, type LogScaleOptions } from './scales/log';
-export { bandScale, type BandScale, type BandScaleOptions } from './scales/band';
-export { timeScale, formatInstant, type TimeScale, type TimeScaleOptions } from './scales/time';
-export { ordinalScale, type OrdinalScale, type OrdinalScaleOptions } from './scales/ordinal';
+export * from './scales.entry';
 
 export type {
   MarkKind, PlotBox, PlotDatum, PlotMark, PlotMarkData, PlotMarkTrait, PlotPoint, SolidFill, SolidStroke,

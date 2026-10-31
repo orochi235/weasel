@@ -15,7 +15,8 @@ import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
 import { snapToNearest, useSnapRadiusPx } from '../../snap';
-import { clamp01, resolveScale, withinAxis, type BandScale } from './scale';
+import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import { clamp01, resolveScale, trackOf, withinAxis } from './scale';
 import { retagBands, untag } from './retag';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { DraftGhost, type DraftGhostAt } from './DraftGhost';
@@ -33,7 +34,7 @@ import {
 } from './bands';
 import { sameSeams, seamGhost } from './seamGhost';
 
-export type { Band, BandScale, RangeEdge, BandTick };
+export type { Band, RangeEdge, BandTick };
 
 /** Props for {@link BandEditor}. */
 export interface BandEditorProps<T, F extends Quantity = number> {
@@ -59,7 +60,7 @@ export interface BandEditorProps<T, F extends Quantity = number> {
   /** How far outward `min` and `max` may be dragged. Default unbounded. */
   limits?: readonly [number, number];
   /** Default `'log'`. */
-  scale?: 'linear' | 'log' | BandScale;
+  scale?: 'linear' | 'log' | ContinuousScaleFactory;
   /**
    * A tick with no `label` of its own is labeled through `display`, when given. Where labels
    * would crowd, some give way and leave their notch unlabeled; see {@link BandTick.level}.
@@ -162,8 +163,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const axisMin = Math.min(min, lo);
   const axisMax = Math.max(max, hi);
   const sc = resolveScale(scale, min);
-  const toUnit = (v: number): number => clamp01(sc.toUnit(v, axisMin, axisMax));
-  const fromUnit = (u: number): number => sc.fromUnit(clamp01(u), axisMin, axisMax);
+  const { toUnit, fromUnit } = trackOf(sc, axisMin, axisMax);
 
   const snapRadiusPx = useSnapRadiusPx();
   const trackWidth = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;

@@ -217,7 +217,7 @@
     "longestFunction": 127
   },
   "packages/ui/src/components/BandEditor/BandEditor.tsx": {
-    "longestFunction": 232
+    "longestFunction": 231
   },
   "packages/ui/src/components/Callout/Callout.tsx": {
     "longestFunction": 136

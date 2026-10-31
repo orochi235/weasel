@@ -1,39 +1,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { linearScale, logScale, resolveScale } from './scale';
+import { linearScale, logScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import { resolveScale, unitScale, withinAxis } from './scale';
 
 const MIN = 1 / 64;
 const MAX = 1 / 2;
 
-describe('BandScale', () => {
-  it.each([
-    ['linear', linearScale],
-    ['log', logScale],
-  ] as const)('%s round-trips a value through unit space', (_name, scale) => {
-    for (const v of [MIN, 0.02, 0.05, 0.1, 0.3, MAX]) {
-      expect(scale.fromUnit(scale.toUnit(v, MIN, MAX), MIN, MAX)).toBeCloseTo(v, 10);
-    }
-  });
-
-  it.each([
-    ['linear', linearScale],
-    ['log', logScale],
-  ] as const)('%s is monotonic increasing', (_name, scale) => {
-    const samples = [MIN, 0.02, 0.05, 0.1, 0.3, MAX];
-    const units = samples.map((v) => scale.toUnit(v, MIN, MAX));
-    for (let i = 1; i < units.length; i++) expect(units[i]).toBeGreaterThan(units[i - 1]);
-  });
-
-  it('pins both ends of the track', () => {
-    for (const scale of [linearScale, logScale]) {
-      expect(scale.toUnit(MIN, MIN, MAX)).toBeCloseTo(0, 12);
-      expect(scale.toUnit(MAX, MIN, MAX)).toBeCloseTo(1, 12);
-    }
-  });
-
-  it('spends more of a log track on the narrow end than a linear one', () => {
+describe('a log axis', () => {
+  it('spends more of the track on the narrow end than a linear one', () => {
     // The reason `'log'` is the default: on a linear axis the narrow stops of a
     // width ladder all pile into the leftmost sixth.
-    expect(logScale.toUnit(1 / 16, MIN, MAX)).toBeGreaterThan(linearScale.toUnit(1 / 16, MIN, MAX));
+    expect(unitScale(logScale, MIN, MAX).map(1 / 16)).toBeGreaterThan(unitScale(linearScale, MIN, MAX).map(1 / 16));
   });
 });
 
@@ -49,7 +25,7 @@ describe('resolveScale', () => {
   });
 
   it('passes a custom scale straight through', () => {
-    const custom = { toUnit: () => 0, fromUnit: () => 0 };
+    const custom: ContinuousScaleFactory = (opts) => linearScale(opts);
     expect(resolveScale(custom, 0)).toBe(custom);
   });
 
@@ -58,11 +34,12 @@ describe('resolveScale', () => {
     // this file may already have spent it.
     vi.resetModules();
     const fresh = await import('./scale');
+    const { linearScale: freshLinear } = await import('@weasel-js/plot/scales');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    expect(fresh.resolveScale('log', 0)).toBe(fresh.linearScale);
-    expect(fresh.resolveScale(undefined, -4)).toBe(fresh.linearScale);
-    expect(fresh.resolveScale('log', 0)).toBe(fresh.linearScale);
+    expect(fresh.resolveScale('log', 0)).toBe(freshLinear);
+    expect(fresh.resolveScale(undefined, -4)).toBe(freshLinear);
+    expect(fresh.resolveScale('log', 0)).toBe(freshLinear);
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toMatch(/min > 0/);
@@ -70,8 +47,21 @@ describe('resolveScale', () => {
 
   it('positions seams at real numbers under the fallback', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const scale = resolveScale('log', 0);
-    expect(scale.toUnit(50, 0, 100)).toBeCloseTo(0.5, 12);
-    expect(Number.isNaN(scale.toUnit(50, 0, 100))).toBe(false);
+    const unit = unitScale(resolveScale('log', 0), 0, 100);
+    expect(unit.map(50)).toBeCloseTo(0.5, 12);
+  });
+});
+
+describe('withinAxis', () => {
+  it('places a value where it sits on the whole axis', () => {
+    const whole = unitScale(logScale, 1, 1000);
+    const part = unitScale(withinAxis(logScale, 1, 1000), 10, 100);
+    // 10..100 is the middle third of a log axis over 1..1000.
+    expect(part.map(10)).toBeCloseTo(0, 12);
+    expect(part.map(100)).toBeCloseTo(1, 12);
+    for (const v of [10, 20, 31.6, 50, 100]) {
+      expect(part.map(v)).toBeCloseTo((whole.map(v) - 1 / 3) * 3, 9);
+      expect(part.invert(part.map(v))).toBeCloseTo(v, 9);
+    }
   });
 });

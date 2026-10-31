@@ -21,6 +21,11 @@ import '@weasel-js/ui/style.css';
 
 The stylesheet is required — component styles ship as one bundled file.
 
+A `Slider` or `BandEditor` that maps values onto its track non-linearly takes a
+scale from `@weasel-js/plot/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s
+generated ticks and the `Timeline` ruler's come from the same scales, and a
+custom `TickSettings.format` receives their `TickFormatCtx`.
+
 ## License
 
 MIT
