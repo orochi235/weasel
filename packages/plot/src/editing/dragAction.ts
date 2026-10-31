@@ -51,7 +51,7 @@ function pressOf(ctx: InvocationCtx, measure: PlotMeasure): PlotPress | null {
   const editor = trait && plotEditorOf(trait.data);
   if (pressed === null || scene === undefined || root === undefined || trait === null || mark === null || editor === null) return null;
   const size = { width: (root.pose as RectPose).width, height: (root.pose as RectPose).height };
-  const propose = editor.drag(trait.data, mark, size, trait.theme, measure);
+  const propose = editor.drag(trait.data, mark, size, trait.theme, measure, pressed.part);
   if (propose === null) return null;
   const origin = plotOrigin(scene, pressed.rootId);
   const start = ctx.drag?.start ?? ctx.world;

@@ -1,4 +1,5 @@
 /** Dragging an xychart's bar ends and line points to change their values. */
+import { withTitle } from '../chartTitle';
 import type { PlotEditor } from '../editing/editors';
 import { compileXyChart } from './compile';
 import { setXyValue, xyValueAt } from './edit';
@@ -29,4 +30,5 @@ export const xyEditor: PlotEditor<XyChartData> = {
     const { layout } = compileXyChart(data, size, theme, measure);
     return (at) => setXyValue(data, which.series, which.index, xyValueAt(layout, at));
   },
+  text: (data, datum, text) => (datum.edit === 'title' ? withTitle(data, text) : data),
 };

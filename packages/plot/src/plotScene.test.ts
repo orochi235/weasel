@@ -50,7 +50,7 @@ describe('a plot in a scene', () => {
     const scene = sceneOf();
     const before = scene.get('p/bar:0:1' as NodeId)!.pose;
     replacePlotData(scene, 'p', setXyValue(DATA, 0, 1, 9), { label: 'Edit value', measure });
-    expect(plotRootOf(scene.get('p' as NodeId))!.data.series[0]!.values).toEqual([4, 9]);
+    expect((plotRootOf(scene.get('p' as NodeId))!.data as XyChartData).series[0]!.values).toEqual([4, 9]);
     const after = scene.get('p/bar:0:1' as NodeId)!;
     expect(after.pose.height).toBeGreaterThan(before.height);
     expect(plotMarkOf(after)!.datum).toMatchObject({ value: 9 });

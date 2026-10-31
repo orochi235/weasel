@@ -19,6 +19,25 @@ import { readStateDiagram } from './state/read';
 import { writeStateDiagram } from './state/write';
 import { readMermaidXychart } from './xychart/read';
 import { writeMermaidXychart } from './xychart/write';
+import type { PlotKind } from '@weasel-js/plot';
+import { readMermaidGantt } from './gantt/read';
+import { writeMermaidGantt } from './gantt/write';
+import { readMermaidGitGraph } from './gitgraph/read';
+import { writeMermaidGitGraph } from './gitgraph/write';
+import { readMermaidJourney } from './journey/read';
+import { writeMermaidJourney } from './journey/write';
+import { readMermaidPacket } from './packet/read';
+import { writeMermaidPacket } from './packet/write';
+import { readMermaidPie } from './pie/read';
+import { writeMermaidPie } from './pie/write';
+import { readMermaidQuadrant } from './quadrant/read';
+import { writeMermaidQuadrant } from './quadrant/write';
+import { readMermaidRadar } from './radar/read';
+import { writeMermaidRadar } from './radar/write';
+import { readMermaidSankey } from './sankey/read';
+import { writeMermaidSankey } from './sankey/write';
+import { readMermaidTimeline } from './timeline/read';
+import { writeMermaidTimeline } from './timeline/write';
 
 /** A Mermaid diagram kind this format reads and writes. */
 interface MermaidKind {
@@ -30,6 +49,8 @@ interface MermaidKind {
   page: PageKind;
   /** For a graph kind, the `notation` it reads into and writes from. The flowchart has none: it writes every graph no kind claims. */
   notation?: string;
+  /** For a plot kind, the kind of chart it reads into and writes from. */
+  plot?: PlotKind;
   read(text: string): ImportResult;
   write(doc: DiagramDocument, opts?: WriteOptions): ExportResult;
 }
@@ -48,7 +69,16 @@ const KINDS: readonly MermaidKind[] = [
     name: 'sequenceDiagram', header: /^sequenceDiagram$/, page: 'sequence', read: readMermaidSequence,
     write: (doc, opts) => writeMermaidSequence(pageOfKind(doc, opts, 'sequence')),
   },
-  { name: 'xychart', header: /^xychart(?:-beta)?$/, page: 'plot', read: readMermaidXychart, write: (doc, opts) => writeMermaidXychart(pageOfKind(doc, opts, 'plot')) },
+  { name: 'xychart', header: /^xychart(?:-beta)?$/, page: 'plot', plot: 'xychart', read: readMermaidXychart, write: (doc, opts) => writeMermaidXychart(pageOfKind(doc, opts, 'plot')) },
+  { name: 'gantt', header: /^gantt$/, page: 'plot', plot: 'gantt', read: readMermaidGantt, write: (doc, opts) => writeMermaidGantt(pageOfKind(doc, opts, 'plot')) },
+  { name: 'timeline', header: /^timeline$/, page: 'plot', plot: 'timeline', read: readMermaidTimeline, write: (doc, opts) => writeMermaidTimeline(pageOfKind(doc, opts, 'plot')) },
+  { name: 'pie', header: /^pie$/, page: 'plot', plot: 'pie', read: readMermaidPie, write: (doc, opts) => writeMermaidPie(pageOfKind(doc, opts, 'plot')) },
+  { name: 'quadrantChart', header: /^quadrantChart$/, page: 'plot', plot: 'quadrant', read: readMermaidQuadrant, write: (doc, opts) => writeMermaidQuadrant(pageOfKind(doc, opts, 'plot')) },
+  { name: 'journey', header: /^journey$/, page: 'plot', plot: 'journey', read: readMermaidJourney, write: (doc, opts) => writeMermaidJourney(pageOfKind(doc, opts, 'plot')) },
+  { name: 'gitGraph', header: /^gitGraph:?$/, page: 'plot', plot: 'gitgraph', read: readMermaidGitGraph, write: (doc, opts) => writeMermaidGitGraph(pageOfKind(doc, opts, 'plot')) },
+  { name: 'sankey-beta', header: /^sankey(?:-beta)?$/, page: 'plot', plot: 'sankey', read: readMermaidSankey, write: (doc, opts) => writeMermaidSankey(pageOfKind(doc, opts, 'plot')) },
+  { name: 'packet-beta', header: /^packet(?:-beta)?$/, page: 'plot', plot: 'packet', read: readMermaidPacket, write: (doc, opts) => writeMermaidPacket(pageOfKind(doc, opts, 'plot')) },
+  { name: 'radar-beta', header: /^radar(?:-beta)?$/, page: 'plot', plot: 'radar', read: readMermaidRadar, write: (doc, opts) => writeMermaidRadar(pageOfKind(doc, opts, 'plot')) },
 ];
 
 /** The page `opts` names, which must be of `kind`. */
@@ -77,7 +107,8 @@ function writeMermaid(doc: DiagramDocument, opts?: WriteOptions): ExportResult {
   const page = writtenPage(doc, opts);
   if (page === null) return FLOWCHART.write(doc, opts);
   const notation = page.kind === 'graph' ? page.notation : undefined;
-  const kind = KINDS.find((k) => k.page === page.kind && k.notation === notation);
+  const plot = page.kind === 'plot' ? page.data.kind : undefined;
+  const kind = KINDS.find((k) => k.page === page.kind && k.notation === notation && k.plot === plot);
   if (kind !== undefined) return kind.write(doc, opts);
   const written = FLOWCHART.write(doc, opts);
   return notation === undefined ? written

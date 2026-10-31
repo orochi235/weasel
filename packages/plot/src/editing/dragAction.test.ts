@@ -47,7 +47,7 @@ describe('plot.dragValue', () => {
     const at = { x: handle.at.x, y: handle.at.y + 2 - 3 * unit };
     drag.onMove!(ctx(at));
     drag.onEnd!(ctx(at), 'commit');
-    expect(plotRootOf(scene.get('p' as NodeId))!.data.series[0]!.values).toEqual([4, 9]);
+    expect((plotRootOf(scene.get('p' as NodeId))!.data as XyChartData).series[0]!.values).toEqual([4, 9]);
     expect(scene.historyEntries().at(-1)!.label).toBe('Edit value');
     scene.history.undo();
     expect(plotRootOf(scene.get('p' as NodeId))!.data).toBe(DATA);

@@ -2,7 +2,7 @@
 import { axisMarks, axisRoom } from '../axes';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark } from '../marks/paths';
-import { textMark } from '../marks/text';
+import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import type { PlotMark } from '../marks/types';
 import type { PlotMeasure } from '../measure';
 import { bandScale } from '../scales/band';
@@ -24,8 +24,6 @@ export interface XyLayout {
   slotWidth: number;
 }
 
-const PAD = 12;
-const GAP = 8;
 const BAND_PADDING = 0.2;
 
 /** How many values the longest series holds. */
@@ -68,15 +66,7 @@ export function compileXyChart(
   data: XyChartData, size: { width: number; height: number }, theme: PlotTheme, measure: PlotMeasure,
 ): { marks: PlotMark[]; layout: XyLayout } {
   const vertical = data.orientation !== 'horizontal';
-  const marks: PlotMark[] = [];
-  let top = PAD;
-  if (data.title) {
-    const title = textMark({
-      key: 'title', text: data.title, x: size.width / 2, y: PAD, baseline: 'top', font: theme.font, color: theme.text, measure, bold: true,
-    });
-    marks.push(title);
-    top += title.pose.height + GAP;
-  }
+  const { marks, top } = chartTitle(data.title, size.width, theme, measure);
   const domain = xyValueDomain(data);
   const base = { theme, measure, at: 0 };
   const valueTitle = data.y?.title !== undefined ? { title: data.y.title } : {};

@@ -33,8 +33,8 @@ describe('DIAGRAM_MERMAID', () => {
   });
 
   it('refuses a kind it does not read, naming the kind and the line', () => {
-    expect(() => read('%% a comment\npie title Pets\n"Dogs" : 386'))
-      .toThrow('Mermaid, line 2: pie diagrams are not read; only flowchart, classDiagram, stateDiagram, erDiagram, mindmap, requirementDiagram are');
+    expect(() => read('%% a comment\nzenuml\n  A.method()'))
+      .toThrow(/^Mermaid, line 2: zenuml diagrams are not read; only flowchart, classDiagram, .*, xychart, gantt, .* are$/);
     expect(() => read('A --> B')).toThrow(/line 1.*flowchart/);
   });
 

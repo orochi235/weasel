@@ -3,6 +3,7 @@ import {
 } from '@weasel-js/core';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { plotEditing } from './editing/plotEditing';
+import { usePlotTextEdit } from './editing/textEdit';
 import type { PlotMeasure } from './measure';
 import type { PlotData } from './plotData';
 import { plotRootOf, plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec } from './plotScene';
@@ -12,7 +13,7 @@ import type { PlotTheme } from './theme';
 export interface PlotViewProps {
   /** The chart. A new value redraws it, with no undo entry. */
   data: PlotData;
-  /** Hears each edit a drag commits, with the spec it leaves. Undo and redo in the view report too. */
+  /** Hears each edit a drag or a text edit commits, with the spec it leaves. Undo and redo in the view report too. */
   onChange?: (data: PlotData) => void;
   width: number;
   height: number;
@@ -25,11 +26,12 @@ export interface PlotViewProps {
 }
 
 const ROOT = 'plot';
-const FEATURES = ['pick'] as const;
+const FEATURES = ['pick', 'edit'] as const;
 
 /**
- * A chart on its own canvas, edited by dragging its marks: a bar's end or a
- * line's point moves its value. Each drag is one undo entry. Text paints only
+ * A chart on its own canvas, edited by dragging its marks (a bar's end, a
+ * line's point, a task's span) and by double-clicking its text to edit it in
+ * place. Each edit is one undo entry. Text paints only
  * in a registered font family, so register the theme's (`registerCanvasFont`).
  */
 export function PlotView(props: PlotViewProps): ReactElement {
@@ -72,6 +74,9 @@ function Inner({ data, onChange, width, height, theme, measure, background, clas
 
   const editing = useMemo(() => plotEditing({ scene: scene as never, ...(measure ? { measure } : {}) }), [scene, measure]);
   const ambient = useMemo(() => [editing.contribution], [editing]);
+  const textEditor = usePlotTextEdit(scene as never, (edit) => replacePlotData(scene, edit.rootId, edit.data, {
+    label: edit.label, ...(measure ? { measure } : {}),
+  }));
   const [canvas, setCanvas] = useState<SceneCanvasApi | null>(null);
   useEffect(() => (canvas === null ? undefined : canvas.registerLayer(editing.layer)), [canvas, editing]);
 
@@ -83,6 +88,7 @@ function Inner({ data, onChange, width, height, theme, measure, background, clas
         features={FEATURES}
         enableKeybindings
         ambient={ambient}
+        textEditor={textEditor as never}
         width={width}
         height={height}
         {...(background ? { backgroundFill: background } : {})}

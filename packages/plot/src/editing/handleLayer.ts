@@ -9,7 +9,7 @@ import {
 } from '@weasel-js/core';
 import type { PlotPoint } from '../marks/types';
 import { plotMarkOf, plotRootOf, plotRootsIn } from '../plotScene';
-import { plotEditorOf, type PlotHandle } from './editors';
+import { handlesOf, plotEditorOf, type PlotHandle } from './editors';
 
 /** The layer id the handles are composed into. */
 export const PLOT_HANDLE_LAYER_ID = 'plot-handles';
@@ -23,6 +23,8 @@ export interface PlotHandleScratch {
   markId: string;
   /** The handle, in world coordinates. */
   at: PlotPoint;
+  /** Which of the mark's handles, for a mark with more than one. */
+  part?: string;
 }
 
 /** A press's scratch, read back off the hit an action was handed. */
@@ -51,9 +53,14 @@ export function* plotHandles(scene: AnyScene): Iterable<PlotHandleScratch & Plot
       const node = scene.get(id);
       const mark = plotMarkOf(node);
       if (node === undefined || mark === null) continue;
-      const handle = editor.handle(trait.data, { trait: mark, pose: node.pose as RectPose });
-      if (handle === null) continue;
-      yield { rootId, markId: id, cursor: handle.cursor, at: { x: origin.x + handle.at.x, y: origin.y + handle.at.y } };
+      for (const handle of handlesOf(editor.handle(trait.data, { trait: mark, pose: node.pose as RectPose }))) {
+        const { box, part } = handle;
+        yield {
+          rootId, markId: id, cursor: handle.cursor, at: { x: origin.x + handle.at.x, y: origin.y + handle.at.y },
+          ...(part !== undefined ? { part } : {}),
+          ...(box !== undefined ? { box: { x: origin.x + box.x, y: origin.y + box.y, width: box.width, height: box.height } } : {}),
+        };
+      }
     }
   }
 }
@@ -61,15 +68,18 @@ export function* plotHandles(scene: AnyScene): Iterable<PlotHandleScratch & Plot
 const HIT_RADIUS_PX = 6;
 
 function handleAffordance(scene: AnyScene): Affordance {
-  const regions = (): AffordanceRegion[] => [...plotHandles(scene)].map(({ rootId, markId, at, cursor }) => ({
-    id: markId,
-    targetId: null,
-    shape: { kind: 'point', x: at.x, y: at.y, hitRadiusPx: HIT_RADIUS_PX },
-    cursor,
-    strength: 'exclusive',
-    claimedKinds: ['pointer'],
-    bind: () => ({ initialScratch: { rootId, markId, at } satisfies PlotHandleScratch }),
-  }));
+  // Boxes first, so a point handle inside one wins a press at an equal distance.
+  const regions = (): AffordanceRegion[] => [...plotHandles(scene)]
+    .sort((a, b) => Number(b.box !== undefined) - Number(a.box !== undefined))
+    .map(({ rootId, markId, at, cursor, part, box }) => ({
+      id: part === undefined ? markId : `${markId}#${part}`,
+      targetId: null,
+      shape: box !== undefined ? { kind: 'rect', ...box } : { kind: 'point', x: at.x, y: at.y, hitRadiusPx: HIT_RADIUS_PX },
+      cursor,
+      strength: 'exclusive',
+      claimedKinds: ['pointer'],
+      bind: () => ({ initialScratch: { rootId, markId, at, ...(part !== undefined ? { part } : {}) } satisfies PlotHandleScratch }),
+    }));
   return { id: PLOT_HANDLE_LAYER_ID, regions, regionsAt: regions };
 }
 

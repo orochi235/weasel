@@ -44,7 +44,7 @@ describe('plot pages', () => {
     expect(doc.pages.map((p) => p.kind)).toEqual(['graph', 'plot']);
     const plot = doc.pages[1] as PlotPage;
     expect(plot).toMatchObject({ id: 'two', name: 'Chart', width: 500, height: 300 });
-    expect(plot.data.series[0]!.values).toEqual([3, 9]);
+    expect((plot.data as XyChartData).series[0]!.values).toEqual([3, 9]);
     const graph = doc.pages[0]!;
     expect(graph.kind === 'graph' && graph.data.nodes.map((n) => n.id)).toEqual(['n']);
   });

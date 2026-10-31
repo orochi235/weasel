@@ -31,13 +31,33 @@ export { compilePlot, type PlotCompiler, type PlotData, type PlotKind } from './
 export type { XyBandAxis, XyChartData, XyRangeAxis, XySeries, XyValueAxis } from './xychart/types';
 export { compileXyChart, xyLength, xyValueDomain, type XyLayout } from './xychart/compile';
 export { setXyValue, xyValueAt } from './xychart/edit';
+export type { GanttData, GanttEnd, GanttSection, GanttStart, GanttTag, GanttTask, GanttUnit } from './gantt/types';
+export { compileGantt } from './gantt/compile';
+export type { TimelineData, TimelinePeriod, TimelineSection } from './timeline/types';
+export { compileTimeline } from './timeline/compile';
+export type { PieData, PieSlice } from './pie/types';
+export { compilePie } from './pie/compile';
+export type { QuadrantAxis, QuadrantData, QuadrantPoint, QuadrantPointStyle } from './quadrant/types';
+export { compileQuadrant } from './quadrant/compile';
+export type { JourneyData, JourneySection, JourneyTask } from './journey/types';
+export { compileJourney } from './journey/compile';
+export type { GitCommand, GitCommitType, GitGraphData } from './gitgraph/types';
+export { compileGitGraph } from './gitgraph/compile';
+export type { SankeyData, SankeyLink } from './sankey/types';
+export { compileSankey } from './sankey/compile';
+export type { PacketData, PacketField } from './packet/types';
+export { compilePacket } from './packet/compile';
+export type { RadarAxis, RadarCurve, RadarData } from './radar/types';
+export { compileRadar } from './radar/compile';
+export { CHART_PAD, chartTitle, withTitle } from './chartTitle';
 
 export {
   markSpecs, plotMarkId, plotMarkOf, plotRootOf, plotRootsIn, plotSpecs, replacePlotData,
   type PlotRootData, type PlotRootTrait, type PlotSceneData, type PlotSpec, type PlotSpecsOptions, type ReplacePlotOptions,
 } from './plotScene';
 
-export { plotEditorOf, type PlotEditor, type PlotHandle } from './editing/editors';
+export { handlesOf, plotEditorOf, type PlotEditor, type PlotHandle } from './editing/editors';
+export { foldPlotText, isPlotText, plotTextOf, usePlotTextEdit } from './editing/textEdit';
 export {
   PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, plotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
   type PlotHandleScratch,
