@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { StrictMode, type ReactNode } from 'react';
 import { createModeRegistry, NORMAL, type ModeDefinition } from '@weasel-js/modes';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 import { useTools } from './useTools';
@@ -19,10 +19,13 @@ const MISSING: ModeDefinition = { id: 'missing', kind: 'soft', allows: [], scopi
 
 function setup(initial = 'normal') {
   const modes = createModeRegistry({ modes: [NORMAL, EDIT, BARE, MISSING], initial });
-  const wrapper = ({ children }: { children: ReactNode }) => <ActiveToolContextProvider>{children}</ActiveToolContextProvider>;
-  const { result } = renderHook(() => useTools({ active: 'select', registry, modes }), { wrapper });
+  // StrictMode runs every effect twice, as a re-run would.
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <StrictMode><ActiveToolContextProvider>{children}</ActiveToolContextProvider></StrictMode>
+  );
+  const { result, rerender } = renderHook(() => useTools({ active: 'select', registry, modes }), { wrapper });
   const enter = (id: string) => act(() => modes.setMode(id));
-  return { result, enter };
+  return { result, rerender, enter };
 }
 
 describe('a mode with a default tool', () => {
@@ -40,6 +43,13 @@ describe('a mode with a default tool', () => {
     expect(result.current.active).toBe('anchors');
     enter('normal');
     expect(result.current.active).toBe('select');
+  });
+
+  it('keeps a tool picked in the mode through a re-render', () => {
+    const { result, rerender } = setup('edit');
+    act(() => result.current.setActive('brush'));
+    rerender();
+    expect(result.current.active).toBe('brush');
   });
 
   it('restores the prior tool when leaving for a mode with none', () => {

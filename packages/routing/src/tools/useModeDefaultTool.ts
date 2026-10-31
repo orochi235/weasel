@@ -1,12 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { defaultToolOf, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 import { useLatest } from '@weasel-js/react';
 
 /** What {@link useModeDefaultTool} reads and writes of the tools. */
 export interface ModeDefaultToolTarget {
   active: string | null;
+  /** The tool the canvas starts on, which `active` may not show yet on the render that mounts it. */
+  initial: string | null;
   setActive(id: string | null): void;
   has(id: string): boolean;
+}
+
+/** The mode last entered, and the tool to restore on leaving it: undefined when entering it activated none. */
+interface Entered {
+  mode: ModeDefinition;
+  restore: string | null | undefined;
 }
 
 /**
@@ -16,29 +24,26 @@ export interface ModeDefaultToolTarget {
  */
 export function useModeDefaultTool(modes: ModeRegistry | undefined, tools: ModeDefaultToolTarget): void {
   const toolsRef = useLatest(tools);
+  // Outlives the effect, so a re-run (StrictMode's, or a new `tools`) does not enter the same mode again.
+  const entered = useRef<Entered | null>(null);
   useEffect(() => {
     if (!modes) return;
-    let mode = modes.current();
-    // The tool to restore on leaving `mode`; undefined when entering it activated none.
-    let restore: string | null | undefined;
     const enter = (next: ModeDefinition, from: string | null): void => {
       const target = defaultToolOf(next, toolsRef.current.has);
-      if (target === null) {
-        if (from !== toolsRef.current.active) toolsRef.current.setActive(from);
-        return;
-      }
-      restore = from;
-      if (target !== toolsRef.current.active) toolsRef.current.setActive(target);
+      entered.current = { mode: next, restore: target === null ? undefined : from };
+      const want = target ?? from;
+      if (want !== toolsRef.current.active) toolsRef.current.setActive(want);
     };
-    enter(mode, toolsRef.current.active);
-    return modes.subscribe(() => {
+    const follow = (): void => {
       const next = modes.current();
-      if (next === mode) return;
-      mode = next;
-      const prior = restore;
-      restore = undefined;
-      const from = prior !== undefined && (prior === null || toolsRef.current.has(prior)) ? prior : toolsRef.current.active;
-      enter(next, from);
-    });
+      const prior = entered.current;
+      if (prior?.mode === next) return;
+      const restore = prior?.restore;
+      const back = restore !== undefined && (restore === null || toolsRef.current.has(restore));
+      enter(next, back ? restore : toolsRef.current.active);
+    };
+    if (entered.current === null) enter(modes.current(), toolsRef.current.active ?? toolsRef.current.initial);
+    follow();
+    return modes.subscribe(follow);
   }, [modes, toolsRef]);
 }

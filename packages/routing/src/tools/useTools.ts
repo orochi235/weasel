@@ -188,7 +188,7 @@ export function useTools<TOverlay = KernelOverlay>(
     [slotted],
   );
 
-  useModeDefaultTool(opts.modes, { active: contributions.focused, setActive, has });
+  useModeDefaultTool(opts.modes, { active: contributions.focused, initial: initialActive, setActive, has });
 
   // Memoized: a consumer using `tools` as an effect dep loops infinitely on
   // identity churn when it setStates from inside that effect.
