@@ -9,7 +9,8 @@ import {
   type PaintKind,
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
-import { MeshEditor, isMeshPaint } from '../MeshEditor';
+import { isMeshGradientPaint } from '@weasel-js/core/mesh';
+import { MeshEditor } from '../MeshEditor';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { GradientStops } from './GradientStops';
 import s from './GradientEditor.module.css';
@@ -159,7 +160,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         />
       );
     }
-    if (isMeshPaint(value)) {
+    if (isMeshGradientPaint(value)) {
       return <><MeshEditor value={value} spaceSwitch={false} onInput={onInput} onChange={onChange} />{spaceBar}</>;
     }
     return <div className={s.noEditor}>{entry?.label ?? kind}: no editor</div>;

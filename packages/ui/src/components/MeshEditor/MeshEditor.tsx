@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
 import { asPaint, type ColorSpace, type Paint } from '@weasel-js/core';
-import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
+import type { MeshGradientPaint } from '@weasel-js/core/mesh';
 import { ColorField } from '../ColorField';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { paintPreviewCss } from '../../paintPreview';
@@ -98,9 +98,4 @@ function previewOf(value: MeshGradientPaint, patchIndex: number): string | undef
   return paintPreviewCss(
     { ...value, patches: [value.patches[patchIndex]] } as unknown as Paint,
   );
-}
-
-/** Narrowing for a consumer rendering this behind a kind switch. */
-export function isMeshPaint(fill: Paint | null | undefined): fill is Paint & MeshGradientPaint {
-  return isMeshGradientPaint(fill);
 }
