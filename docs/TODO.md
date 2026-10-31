@@ -117,11 +117,6 @@ Owner tags, after the priority (2026-10-26):
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
   Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
   Envelope mesh as Cloth warp among them.
-- **(P2) [maintainer] Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
-  audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
-  applies, and how it shows what it will remove (`packages/path-tools/src/simplifyBrush/simplifyBrush.ts`).
-  Closes when the maintainer has driven the Simplify brush hands-on and the defaults and keys he picks
-  are committed.
 - **(P2) [maintainer] Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
   scale and density, when it shows, and no key to toggle it (`packages/path-tools/src/comb/comb.ts`).
   Closes when the maintainer has driven the curvature comb hands-on and the defaults and keys he picks
