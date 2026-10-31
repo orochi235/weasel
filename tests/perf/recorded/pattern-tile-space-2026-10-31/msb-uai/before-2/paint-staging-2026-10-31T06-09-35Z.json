@@ -1,0 +1,332 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "paint-staging",
+  "git": {
+    "sha": "c6fdf09d2dae31240e6d1eb1c3e49a3f1f019803",
+    "dirty": true
+  },
+  "timestamp": "2026-10-31T06:09:35.282Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M3 Max",
+    "cores": 14,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      3.58,
+      2.79,
+      2.84
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "commands": 512,
+    "runs": 3,
+    "profiledFrames": 200
+  },
+  "items": [
+    {
+      "id": "solid",
+      "metrics": {
+        "perCommand": {
+          "value": 0.41992124170064926,
+          "unit": "us",
+          "stat": "median of 3 runs of a frame through its read, per command",
+          "samples": [
+            0.449218787252903,
+            0.41992124170064926,
+            0.39062462747097015
+          ]
+        },
+        "issuePerCommand": {
+          "value": 0.12695323675870895,
+          "unit": "us",
+          "stat": "median of 3 runs of the median of 40 issues with the GPU drained, per command",
+          "samples": [
+            0.12695323675870895,
+            0.13671815395355225,
+            0.11718831956386566
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "(program) (:0)": {
+          "value": 1.4576562499999997,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "readPixels (:0)": {
+          "value": 1.3252636718749888,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(idle) (:0)": {
+          "value": 0.7740917968750002,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "visitNode (:274)": {
+          "value": 0.074326171875,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "pushRect (batch.ts:164)": {
+          "value": 0.03006835937500001,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "pushRect (drawBatch.ts:120)": {
+          "value": 0.0215625,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "drawPathFill (pathPaint.ts:28)": {
+          "value": 0.017822265624999997,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "visitChild (:329)": {
+          "value": 0.011835937499999998,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "render (WeaselRenderer.ts:433)": {
+          "value": 0.010029296875000003,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "bufferSubData (:0)": {
+          "value": 0.006669921874999999,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "expectValue (:299)": {
+          "value": 0.005341796875,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "runTakes (batchRun.ts:47)": {
+          "value": 0.00521484375,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(garbage collector) (:0)": {
+          "value": 0.003017578125,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "fitQuad (batchStage.ts:86)": {
+          "value": 0.00220703125,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        }
+      }
+    },
+    {
+      "id": "gradient",
+      "metrics": {
+        "perCommand": {
+          "value": 1.3085929676890373,
+          "unit": "us",
+          "stat": "median of 3 runs of a frame through its read, per command",
+          "samples": [
+            1.308593899011612,
+            1.3085929676890373,
+            1.2988289818167686
+          ]
+        },
+        "issuePerCommand": {
+          "value": 0.9863283485174179,
+          "unit": "us",
+          "stat": "median of 3 runs of the median of 40 issues with the GPU drained, per command",
+          "samples": [
+            1.005859114229679,
+            0.9667966514825821,
+            0.9863283485174179
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "readPixels (:0)": {
+          "value": 1.3892871093749897,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(idle) (:0)": {
+          "value": 0.7608398437500002,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(program) (:0)": {
+          "value": 0.36796875,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "stageRamps (batch.ts:125)": {
+          "value": 0.30054687500000077,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "drawPathFill (pathPaint.ts:28)": {
+          "value": 0.24125976562500046,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "multiply (src-BFefYC_9.js:8249)": {
+          "value": 0.2209277343750002,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "visitNode (:274)": {
+          "value": 0.07044921874999999,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "pushGradientRect (drawBatch.ts:210)": {
+          "value": 0.06690429687499998,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "pushRampRect (batch.ts:175)": {
+          "value": 0.06531249999999997,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(garbage collector) (:0)": {
+          "value": 0.025400390625,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "linearRampUV (gradient.ts:69)": {
+          "value": 0.012744140624999997,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "visitChild (:329)": {
+          "value": 0.011142578124999998,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "runTakes (batchRun.ts:47)": {
+          "value": 0.006748046875,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "writeVertex (batchStage.ts:36)": {
+          "value": 0.005966796875,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        }
+      }
+    },
+    {
+      "id": "pattern",
+      "metrics": {
+        "perCommand": {
+          "value": 1.718750223517418,
+          "unit": "us",
+          "stat": "median of 3 runs of a frame through its read, per command",
+          "samples": [
+            1.8066409975290298,
+            1.699218526482582,
+            1.718750223517418
+          ]
+        },
+        "issuePerCommand": {
+          "value": 1.4062495902180672,
+          "unit": "us",
+          "stat": "median of 3 runs of the median of 40 issues with the GPU drained, per command",
+          "samples": [
+            1.416015438735485,
+            1.4062495902180672,
+            1.3964846730232239
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "readPixels (:0)": {
+          "value": 1.4675390624999878,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(idle) (:0)": {
+          "value": 0.7499804687500016,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "patternTileSpace (patternSpace.ts:12)": {
+          "value": 0.6483398437500021,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(program) (:0)": {
+          "value": 0.4817578125000002,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "create (src-BFefYC_9.js:8233)": {
+          "value": 0.32177734375,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "tileExtent (patternBatch.ts:52)": {
+          "value": 0.09139648437499996,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "visitNode (:274)": {
+          "value": 0.071328125,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "drawPathFill (pathPaint.ts:28)": {
+          "value": 0.06664062499999998,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "gradientSpaceInverse (gradient.ts:151)": {
+          "value": 0.050615234375,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "pushGradientRect (drawBatch.ts:210)": {
+          "value": 0.043408203125,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "stagePattern (patternBatch.ts:63)": {
+          "value": 0.04031250000000001,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "multiply (src-BFefYC_9.js:8249)": {
+          "value": 0.037119140625000005,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "patternBatchPaint (patternBatch.ts:23)": {
+          "value": 0.033076171875,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        },
+        "(garbage collector) (:0)": {
+          "value": 0.03240234374999999,
+          "unit": "us",
+          "stat": "self time per command over 200 profiled frames"
+        }
+      }
+    }
+  ]
+}

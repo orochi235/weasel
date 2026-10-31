@@ -112,6 +112,13 @@ export interface BatchVariants {
    * (`batchHull.ts`).
    */
   readonly hulls: boolean;
+  /**
+   * Whether the CPU cuts what the stencil would otherwise: where `hulls` is
+   * off, a convex clip and a slanted edge across a rect clip (`batchClip.ts`),
+   * and anywhere, an aligned stroke on a convex fill (`alignedRibbon.ts`).
+   * Always on but in a test that wants the stencil as its reference.
+   */
+  readonly cuts: boolean;
   /** The build for a run under several color matrices, holding a hull, or
    *  holding glyphs that need area coverage, in any combination. A run with
    *  none of them draws with `createBatchFill`'s. */
@@ -122,6 +129,7 @@ export interface BatchVariants {
  *  run needs it. */
 export class BatchVariantPrograms implements BatchVariants {
   readonly hulls: boolean;
+  readonly cuts = true;
   private readonly matrices: LazyProgram;
   private readonly hull: LazyProgram;
   private readonly matricesHull: LazyProgram;

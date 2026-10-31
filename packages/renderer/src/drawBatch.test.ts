@@ -15,13 +15,14 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { registerTexture } from './textures/registerTexture';
 import { registerOwnDrawPaint, ownDrawRect } from './testing/ownDrawPaint';
 import type { DrawCommand } from './DrawCommand';
-import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z, pathFromD, type PolygonPath } from '@weasel-js/geom';
 
-/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
+/** A square notched at its bottom edge: not convex, so no CPU cut can stand
+ *  in for it, and the clip goes through the stencil. */
 const squareClip = (size: number): PolygonPath => ({
   kind: 'polygon',
-  commands: new Uint8Array([M, L, L, L, Z]),
-  coords: new Float32Array([0, 0, size, 0, size, size, 0, size]),
+  commands: new Uint8Array([M, L, L, L, L, Z]),
+  coords: new Float32Array([0, 0, size, 0, size, size, size / 2, size / 2, 0, size]),
   fillRule: 'nonzero',
 });
 import {
@@ -358,15 +359,15 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   it('gives a stroke its own draw when the run cannot carry it', () => {
-    // Inner-aligned on a polygon needs the stencil two-pass.
+    // Inner-aligned on a polygon that is not convex needs the stencil two-pass.
     r.render([
       rect(0),
       {
         kind: 'path',
         path: {
           kind: 'polygon',
-          commands: new Uint8Array([0, 1, 1, 4]),
-          coords: new Float32Array([20, 0, 30, 0, 20, 10]),
+          commands: new Uint8Array([0, 1, 1, 1, 4]),
+          coords: new Float32Array([20, 0, 30, 0, 24, 4, 20, 10]),
         },
         fill: { paint: { color: '#ff0000' } },
         stroke: { width: 2, align: 'inner', paint: { color: '#000' } },
@@ -375,6 +376,22 @@ describe('renderer — consecutive solid-fill batching', () => {
     ]);
     // The run flushes ahead of the stencil dance, which then draws twice.
     expect(draws()).toHaveLength(4);
+  });
+
+  it('keeps an aligned stroke on a convex polygon in the run, cut to its side of the fill', () => {
+    const triangle = {
+      kind: 'polygon', commands: new Uint8Array([0, 1, 1, 4]), coords: new Float32Array([20, 0, 30, 0, 20, 10]),
+    };
+    for (const align of ['inner', 'outer']) {
+      recorder.reset();
+      r.render([
+        rect(0),
+        { kind: 'path', path: triangle, fill: { paint: { color: '#ff0000' } }, stroke: { width: 2, align, paint: { color: '#000' } } } as unknown as DrawCommand,
+        rect(40),
+      ]);
+      expect(draws()).toHaveLength(1);
+      expect(recorder.calls.some((c) => c.name === 'enable' && c.args[0] === STENCIL_TEST)).toBe(false);
+    }
   });
 
   it('merges across a group transform, placing corners itself', () => {
@@ -464,9 +481,8 @@ describe('renderer — consecutive solid-fill batching', () => {
       }
     });
 
-    it('refuses to cut a turned rect, and clips it through the stencil instead', () => {
-      // Cutting a slanted edge moves its endpoint off the rasterizer's subpixel
-      // grid, so the shortened edge would cover different samples.
+    it('cuts a turned rect across it where no shader hull can clip it, keeping it in the run', () => {
+      // The recorder's context decides no hulls, as a multisampled one does not.
       const c = Math.SQRT1_2;
       const eighthTurn = new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]);
       r.render([
@@ -476,11 +492,47 @@ describe('renderer — consecutive solid-fill batching', () => {
         ]),
         rect(40, '#00ff00'),
       ]);
+      expect(clipBitWrites()).toEqual([]);
+      expect(drawPrograms().filter((p2) => p2 === r._batchFill().handle)).toHaveLength(1);
+      // The diamond's left half is cut off at x = 0.
+      const xs = positions().filter((_, i) => i % 2 === 0);
+      expect(Math.min(...xs)).toBe(0);
+    });
+
+    it('cuts each triangle of a mesh across it, keeping what lies inside', () => {
+      const octagon = pathFromD(`M ${[0, 1, 2, 3, 4, 5, 6, 7].map((k) => `${10 + 10 * Math.cos(k * Math.PI / 4)} ${10 + 10 * Math.sin(k * Math.PI / 4)}`).join(' L ')} Z`);
+      r.render([
+        rect(40),
+        clipped({ x: 0, y: 0, width: 10, height: 20 }, [{ kind: 'path', path: octagon, fill: { paint: { color: '#00ff00' } } } as DrawCommand]),
+      ]);
+      expect(clipBitWrites()).toEqual([]);
+      expect(draws()).toHaveLength(1);
+      const { verts, floats } = firstUpload();
+      const idx = recorder.calls.find((c) => c.name === 'bufferSubData' && c.args[0] === ELEMENT_ARRAY_BUFFER)!.args[2] as Uint32Array;
+      const used = new Set(Array.from(idx.subarray(6, draws()[0])));
+      for (const v of used) {
+        expect(v * FLOATS_PER_VERTEX).toBeLessThan(floats);
+        expect(verts[v * FLOATS_PER_VERTEX]).toBeLessThanOrEqual(10);
+      }
+    });
+
+    it('cuts to a turned clip inside a retained surface, where no shader hull reaches', () => {
+      const c = Math.SQRT1_2;
+      const frame = [{ kind: 'group', retain: 'layer', children: [{
+        kind: 'group', clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        transform: new Float32Array([c, c, 0, -c, c, 0, 20, 0, 1]), children: [rect(0)],
+      }, rect(40)] } as unknown as DrawCommand];
+      Object.defineProperty(r._batchVariants(), 'hulls', { value: true });
+      Object.defineProperty(r._batchVariants(), 'cuts', { value: false, configurable: true });
+      r.render(frame);
+      // The premise: drawn into a surface of its own, and without the cut, the
+      // clip goes on that surface's stencil.
+      expect(recorder.calls.some((c2) => c2.name === 'bindFramebuffer' && c2.args[1] !== null)).toBe(true);
       expect(clipBitWrites().length).toBeGreaterThan(0);
-      // The diamond is staged whole, in a run of its own under the bit.
-      const uploads = recorder.calls.filter((c2) => c2.name === 'bufferSubData' && c2.args[0] === ARRAY_BUFFER);
-      expect(uploads.map((u) => u.args[4])).toEqual([4, 4, 4].map((n) => n * FLOATS_PER_VERTEX));
-      expect(drawPrograms().filter((p2) => p2 === r._batchFill().handle)).toHaveLength(3);
+      Object.defineProperty(r._batchVariants(), 'cuts', { value: true });
+      recorder.reset();
+      r.render([{ ...frame[0], retain: 'other' } as DrawCommand]);
+      expect(clipBitWrites()).toEqual([]);
     });
 
     it('keeps a turned rect that lies wholly inside, in the run', () => {
@@ -520,12 +572,13 @@ describe('renderer — consecutive solid-fill batching', () => {
       expect(func!.slice(1)).toEqual([0x02, 0x02]);
     });
 
-    it('goes through the stencil when its transform turns it off the axes', () => {
+    it('cuts to its half-planes when its transform turns it off the axes', () => {
       const c = Math.SQRT1_2;
-      r.render([clipped({ x: 0, y: 0, width: 10, height: 10 }, [rect(0)], {
+      r.render([rect(40), clipped({ x: 0, y: 0, width: 10, height: 10 }, [rect(0)], {
         transform: new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]),
       })]);
-      expect(clipBitWrites().length).toBeGreaterThan(0);
+      expect(clipBitWrites()).toEqual([]);
+      expect(draws()).toHaveLength(1);
     });
 
     it('starts the next frame unclipped after a frame that threw inside it', () => {

@@ -129,17 +129,20 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     };
   };
 
-  /** An even-odd ring with a contour of no area along its first edge, which
-   *  tessellates to `requiresStencil` and takes the two-pass stencil fill
-   *  rather than the batch: without that touching contour the ring batches. */
+  /** An even-odd ring with a contour of no area running back and forth along
+   *  its first edge, 1026 edges of it, which puts it past what the tessellator
+   *  resolves (`MAX_EVENODD_RESOLVE_WORK`): it tessellates to `requiresStencil`
+   *  and takes the two-pass stencil fill rather than the batch. Until
+   *  2026-10-31 that contour was one edge, which now batches. */
+  const STENCIL_PAD = 1026;
   const stencil = (i: number) => {
     const x = px(i);
     const y = py(i);
-    const c = new Float32Array([
+    const c = [
       x, y, x + 36, y, x + 36, y + 36, x, y + 36,
       x + 9, y + 9, x + 27, y + 9, x + 27, y + 27, x + 9, y + 27,
-      x, y, x + 36, y,
-    ]);
+    ];
+    for (let k = 0; k <= STENCIL_PAD; k++) c.push(k % 2 ? x + 36 : x, y);
     return {
       kind: 'path',
       path: {
@@ -147,9 +150,9 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
         commands: new Uint8Array([
           PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
           PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
-          PATH_M, PATH_L, PATH_Z,
+          PATH_M, ...new Array(STENCIL_PAD).fill(PATH_L), PATH_Z,
         ]),
-        coords: c,
+        coords: new Float32Array(c),
         fillRule: 'evenodd',
       },
       fill: { paint: solidPaint(i) },

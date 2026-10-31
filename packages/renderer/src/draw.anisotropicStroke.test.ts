@@ -248,13 +248,14 @@ describe('renderer — { px } strokes under a non-uniform transform', () => {
     expect(drawCalls(recorder)).toBe(1);
   });
 
-  it('aligns a rect through the stencil when the transform turns it', () => {
+  it('aligns a rect the transform turns by cutting its ribbon to the rect, not through the stencil', () => {
     const c = Math.cos(0.5), s = Math.sin(0.5);
     const turned = mat3.multiply(mat3.scaled(mat3.identity(), 4, 1), mat3.fromAffine([c, s, -s, c, 0, 0]));
     const rect: Path = { kind: 'rect', x: 10, y: 10, width: 20, height: 40 };
     recorder.reset();
     r.render([{ kind: 'group', transform: turned, children: [{ kind: 'path', path: rect, stroke: { ...onePx, align: 'inner' } }] } as DrawCommand]);
     const replace = recorder.calls.filter((c) => c.name === 'stencilOp' && c.args[2] === recorder.gl.REPLACE);
-    expect(replace.length).toBe(1);
+    expect(replace.length).toBe(0);
+    expect(drawCalls(recorder)).toBe(1);
   });
 });

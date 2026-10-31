@@ -81,13 +81,19 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
       const solidFill = (i: number) => ({ kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
       const M = 0, L = 1, Z = 4; // PathVerb
       /** A rect as an even-odd polygon, with a contour of no area along its
-       *  first edge: outlines that touch keep the stencil, so it paints itself. */
-      const evenOddRect = (x: number, y: number, size: number): unknown => ({
-        kind: 'polygon',
-        commands: new Uint8Array([M, L, L, L, Z, M, L, Z]),
-        coords: new Float32Array([x, y, x + size, y, x + size, y + size, x, y + size, x, y, x + size, y]),
-        fillRule: 'evenodd',
-      });
+       *  first edge: 1026 edges back and forth along it put the fill past what the tessellator
+       *  resolves (`MAX_EVENODD_RESOLVE_WORK`), so it keeps the stencil and paints itself. */
+      const PAD = 1026;
+      const evenOddRect = (x: number, y: number, size: number): unknown => {
+        const coords = [x, y, x + size, y, x + size, y + size, x, y + size];
+        for (let k = 0; k <= PAD; k++) coords.push(k % 2 ? x + size : x, y);
+        return {
+          kind: 'polygon',
+          commands: new Uint8Array([M, L, L, L, Z, M, ...new Array(PAD).fill(L), Z]),
+          coords: new Float32Array(coords),
+          fillRule: 'evenodd',
+        };
+      };
       const breaks = (variant: string, i: number): boolean => variant === 'alternating' && i % 2 === 1;
       /** An octagon, so the command is a tessellated mesh rather than a rect.
        *  One Path object per command, built once: `getMesh` is keyed on Path

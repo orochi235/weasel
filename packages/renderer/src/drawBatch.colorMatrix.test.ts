@@ -288,9 +288,10 @@ describe('renderer — a group color matrix and the run', () => {
 
   it('does not upload again for a run whose matrices the program already holds', () => {
     // Two runs, broken by a clip only the stencil expresses, under one matrix.
+    /** Notched, so not convex: only the stencil expresses it. */
     const diamond = {
-      kind: 'polygon', commands: new Uint8Array([M, L, L, L, Z]),
-      coords: new Float32Array([5, 0, 10, 5, 5, 10, 0, 5]), fillRule: 'nonzero',
+      kind: 'polygon', commands: new Uint8Array([M, L, L, L, L, Z]),
+      coords: new Float32Array([5, 0, 10, 5, 5, 10, 5, 6, 0, 5]), fillRule: 'nonzero',
     };
     r.render([
       group({ colorMatrix: TINTED }, [img(0)]),

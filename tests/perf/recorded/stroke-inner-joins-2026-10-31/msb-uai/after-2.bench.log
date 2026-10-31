@@ -1,0 +1,47 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 perf:bench
+> node tests/perf/bench.mjs --raw /Users/mike/.config/onto/work/weasel-batch-breakers/tests/perf/recorded/stroke-inner-joins-2026-10-31/Mac/after-2/tessellate-bench.json tests/perf/bench/tessellate.bench.ts
+
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel-batch-breakers[39m
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/tessellate.bench.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 28314[2mms[22m[39m
+   [33m[2m✓[22m[39m tessellate — curve count (default tolerance 0.5)[33m 3772[2mms[22m[39m
+     [1mname      [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     8 cubics    [34m23,565.89[39m  [36m0.0383[39m  [36m1.8302[39m  [36m0.0428[39m  [36m0.0425[39m  [36m0.0516[39m  [36m0.0577[39m  [36m0.1218[39m  [2m±0.52%[22m  [2m  23349[22m[1m[32m   fastest[39m[22m
+     64 cubics   [34m 7,502.88[39m  [36m0.1201[39m  [36m0.3176[39m  [36m0.1338[39m  [36m0.1337[39m  [36m0.1951[39m  [36m0.2210[39m  [36m0.2491[39m  [2m±0.18%[22m  [2m   7475[22m
+     512 cubics  [34m 2,086.26[39m  [36m0.4605[39m  [36m0.7328[39m  [36m0.4802[39m  [36m0.4770[39m  [36m0.5859[39m  [36m0.6005[39m  [36m0.6675[39m  [2m±0.21%[22m  [2m   2083[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tessellate — flatten tolerance (64 cubics)[33m 5015[2mms[22m[39m
+     [1mname          [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     tolerance 2     [34m13,793.72[39m  [36m0.0645[39m  [36m0.2380[39m  [36m0.0729[39m  [36m0.0726[39m  [36m0.0888[39m  [36m0.1388[39m  [36m0.1839[39m  [2m±0.18%[22m  [2m  13714[22m[1m[32m   fastest[39m[22m
+     tolerance 0.5   [34m 7,476.42[39m  [36m0.1198[39m  [36m0.3226[39m  [36m0.1344[39m  [36m0.1341[39m  [36m0.2008[39m  [36m0.2234[39m  [36m0.2687[39m  [2m±0.20%[22m  [2m   7442[22m
+     tolerance 0.25  [34m 5,134.39[39m  [36m0.1735[39m  [36m0.3929[39m  [36m0.1956[39m  [36m0.1957[39m  [36m0.2748[39m  [36m0.3066[39m  [36m0.3580[39m  [2m±0.21%[22m  [2m   5113[22m
+     tolerance 0.05  [34m 2,238.38[39m  [36m0.4017[39m  [36m0.6420[39m  [36m0.4478[39m  [36m0.4454[39m  [36m0.5602[39m  [36m0.5860[39m  [36m0.6167[39m  [2m±0.22%[22m  [2m   2234[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tessellate — rect fast path[33m 1641[2mms[22m[39m
+     [1mname[22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     rect  [34m1,270,246.69[39m  [36m0.0007[39m  [36m0.0810[39m  [36m0.0008[39m  [36m0.0008[39m  [36m0.0010[39m  [36m0.0010[39m  [36m0.0011[39m  [2m±0.07%[22m  [2m1264690[22m
+   [33m[2m✓[22m[39m mesh cache — hit vs miss (64 cubics)[33m 10329[2mms[22m[39m
+     [1mname        [22m  [1m           hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1m samples[22m
+     getMesh hit   [34m24,520,788.77[39m  [36m0.0000[39m  [36m 0.0641[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0001[39m  [2m±0.04%[22m  [2m27850831[22m[1m[32m   fastest[39m[22m
+     getMesh miss  [34m     7,502.75[39m  [36m0.1203[39m  [36m15.1320[39m  [36m0.1375[39m  [36m0.1319[39m  [36m0.2061[39m  [36m0.2256[39m  [36m0.2683[39m  [2m±3.69%[22m  [2m    7272[22m
+   [33m[2m✓[22m[39m tessellateStroke — curve count[33m 3763[2mms[22m[39m
+     [1mname      [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     8 cubics    [34m7,816.35[39m  [36m0.1231[39m  [36m0.2984[39m  [36m0.1285[39m  [36m0.1283[39m  [36m0.1934[39m  [36m0.2141[39m  [36m0.2340[39m  [2m±0.18%[22m  [2m   7785[22m[1m[32m   fastest[39m[22m
+     64 cubics   [34m2,511.16[39m  [36m0.3793[39m  [36m0.5774[39m  [36m0.3994[39m  [36m0.3972[39m  [36m0.5192[39m  [36m0.5305[39m  [36m0.5590[39m  [2m±0.24%[22m  [2m   2504[22m
+     512 cubics  [34m  664.25[39m  [36m1.4408[39m  [36m1.7869[39m  [36m1.5073[39m  [36m1.5187[39m  [36m1.7099[39m  [36m1.7353[39m  [36m1.7829[39m  [2m±0.28%[22m  [2m    664[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tessellateStroke — joins (a closed 24-gon star)[33m 3794[2mms[22m[39m
+     [1mname [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     bevel  [34m62,427.61[39m  [36m0.0147[39m  [36m0.1943[39m  [36m0.0161[39m  [36m0.0161[39m  [36m0.0195[39m  [36m0.0204[39m  [36m0.0779[39m  [2m±0.14%[22m  [2m  62014[22m[1m[32m   fastest[39m[22m
+     miter  [34m56,429.79[39m  [36m0.0170[39m  [36m0.1259[39m  [36m0.0178[39m  [36m0.0178[39m  [36m0.0214[39m  [36m0.0227[39m  [36m0.0773[39m  [2m±0.12%[22m  [2m  56108[22m
+     round  [34m16,162.46[39m  [36m0.0571[39m  [36m0.2019[39m  [36m0.0621[39m  [36m0.0621[39m  [36m0.0738[39m  [36m0.0803[39m  [36m0.1511[39m  [2m±0.14%[22m  [2m  16094[22m[1m[90m   slowest[39m[22m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 02:25:42
+[2m   Duration [22m 29.59s[2m (tests 96%, import 2%, environment 1%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel-batch-breakers/tests/perf/results/.vitest-bench-pSOaVJ/vitest-bench.json
+perf result: tests/perf/results/vitest-bench-2026-10-31T06-25-42Z.json

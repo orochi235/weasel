@@ -1,0 +1,790 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "clip-cost",
+  "git": {
+    "sha": "54904eb0b5b5bb0cd18bd962f495a536d9e47e8b",
+    "dirty": true
+  },
+  "timestamp": "2026-10-31T06:23:48.639Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M3 Max",
+    "cores": 14,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      2.46,
+      3.04,
+      3.08
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "leaves": 512,
+    "leavesPerClipK8": 8,
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "rect-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.245,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.245,
+            0.245,
+            0.26
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "rect-clipped",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 24.04,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            23.75,
+            24.32,
+            24.04
+          ]
+        },
+        "drawCalls": {
+          "value": 1536,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "rect-cmbreak",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 15.525,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            15.505,
+            15.695,
+            15.525
+          ]
+        },
+        "drawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "rect-clipped-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.68,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.8,
+            0.68,
+            0.63
+          ]
+        },
+        "drawCalls": {
+          "value": 192,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "rect-rectclip",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.085,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.145,
+            0.085,
+            0
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "rect-convexclip",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.16,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.21,
+            0.16,
+            0.09
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "rect-convexclip-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.03,
+            0.04,
+            0.01
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "slant-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.38,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.38,
+            0.345,
+            0.55
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "slant-rectclip",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 1.795,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.61,
+            1.795,
+            2.115
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "astroke-center",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 1.18,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.18,
+            1.175,
+            1.635
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "astroke-inner",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 1.825,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.555,
+            1.825,
+            2.175
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "pat-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 5.08,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.185,
+            5.08,
+            5.265
+          ]
+        },
+        "drawCalls": {
+          "value": 1024,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "pat-clipped",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 7.965,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.56,
+            7.965,
+            8.11
+          ]
+        },
+        "drawCalls": {
+          "value": 2048,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "pat-cmbreak",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 2.95,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.225,
+            2.765,
+            2.95
+          ]
+        },
+        "drawCalls": {
+          "value": 1024,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "pat-clipped-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 3.565,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.67,
+            3.555,
+            3.565
+          ]
+        },
+        "drawCalls": {
+          "value": 1152,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-rect-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.2,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.21,
+            0.15,
+            0.2
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-rect-hullclip",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 1.365,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.445,
+            1.31,
+            1.365
+          ]
+        },
+        "drawCalls": {
+          "value": 32,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-rect-stencilclip",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 23.875,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            23.875,
+            23.885,
+            23.545
+          ]
+        },
+        "drawCalls": {
+          "value": 1536,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-rect-hullclip-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.255,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.255,
+            0.22,
+            0.27
+          ]
+        },
+        "drawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-slant-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.27,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.27,
+            0.26,
+            0.305
+          ]
+        },
+        "drawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-slant-rectclip",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.875,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.825,
+            0.885,
+            0.875
+          ]
+        },
+        "drawCalls": {
+          "value": 32,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-slant-rectstencil",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 9.45,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            9.405,
+            9.85,
+            9.45
+          ]
+        },
+        "drawCalls": {
+          "value": 1536,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-slant-nest3",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 3.635,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.66,
+            3.635,
+            3.4
+          ]
+        },
+        "drawCalls": {
+          "value": 32,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "ss-slant-nest3stencil",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 11.715,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            11.545,
+            12.24,
+            11.715
+          ]
+        },
+        "drawCalls": {
+          "value": 3584,
+          "unit": "count",
+          "stat": "one untimed frame"
+        }
+      }
+    },
+    {
+      "id": "stencil push+pop",
+      "metrics": {
+        "perClip": {
+          "value": 5.556640624999999,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, pat-clipped - pat-plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry",
+      "metrics": {
+        "perClip": {
+          "value": 46.44531249999999,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-clipped - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry: batch break",
+      "metrics": {
+        "perClip": {
+          "value": 40.88867187499999,
+          "unit": "us",
+          "stat": "clip entry - stencil push+pop"
+        }
+      }
+    },
+    {
+      "id": "solid-batch flush",
+      "metrics": {
+        "perFlush": {
+          "value": 34.3359375,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-cmbreak - pat-cmbreak, net of plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": 6.796875000000001,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-clipped-k8 - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "stencil at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": -23.828125,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, pat-clipped-k8 - pat-plain"
+        }
+      }
+    },
+    {
+      "id": "rect clip cut on the CPU",
+      "metrics": {
+        "perClip": {
+          "value": -0.31249999999999994,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-rectclip - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "slanted convex clip, multisampled",
+      "metrics": {
+        "perClip": {
+          "value": -0.16601562499999997,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-convexclip - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "slanted convex clip, multisampled, at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": -3.359375,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-convexclip-k8 - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "rect clip a turned rect crosses, multisampled",
+      "metrics": {
+        "perClip": {
+          "value": 2.83203125,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, slant-rectclip - slant-plain"
+        }
+      }
+    },
+    {
+      "id": "inner stroke over centered",
+      "metrics": {
+        "perStroke": {
+          "value": 1.0546874999999996,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, astroke-inner - astroke-center"
+        }
+      }
+    },
+    {
+      "id": "slanted clip decided in the shader",
+      "metrics": {
+        "perClip": {
+          "value": 2.275390625,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, ss-rect-hullclip - ss-rect-plain"
+        }
+      }
+    },
+    {
+      "id": "slanted clip decided in the shader at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": 1.09375,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, ss-rect-hullclip-k8 - ss-rect-plain"
+        }
+      }
+    },
+    {
+      "id": "slanted clip on the stencil, single-sampled",
+      "metrics": {
+        "perClip": {
+          "value": 46.220703125,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, ss-rect-stencilclip - ss-rect-plain"
+        }
+      }
+    },
+    {
+      "id": "shader clip agreement",
+      "metrics": {
+        "shaderVsOwnDraw": {
+          "value": 0,
+          "unit": "count",
+          "stat": "pixels differing over 64 clips: a solid under the shader clip, an even-odd fill under the stencil"
+        },
+        "shaderVsUnsnapped": {
+          "value": 0,
+          "unit": "count",
+          "stat": "pixels differing over the same clips: the shader clip, the stencil of the unsnapped path"
+        },
+        "nestShaderVsOwnDraw": {
+          "value": 0,
+          "unit": "count",
+          "stat": "the same over 64 nests of three rect clips off the hull grid"
+        },
+        "rectShaderVsOwnDraw": {
+          "value": 0,
+          "unit": "count",
+          "stat": "pixels differing over 64 rect clips off the hull grid: an axis-aligned solid cut on the CPU and a turned one tested in the shader, against both drawn for themselves through the stencil"
+        }
+      }
+    },
+    {
+      "id": "rect clip a slanted item crosses, as a hull",
+      "metrics": {
+        "perClip": {
+          "value": 1.1132812500000002,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, ss-slant-rectclip - ss-slant-plain"
+        }
+      }
+    },
+    {
+      "id": "rect clip a slanted item crosses, on the stencil",
+      "metrics": {
+        "perClip": {
+          "value": 17.861328125,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, ss-slant-rectstencil - ss-slant-plain"
+        }
+      }
+    },
+    {
+      "id": "three nested rect clips a slanted item crosses",
+      "metrics": {
+        "perNest": {
+          "value": 6.591796875,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, ss-slant-nest3 - ss-slant-plain"
+        }
+      }
+    },
+    {
+      "id": "three nested rect clips a slanted item crosses, on the stencil",
+      "metrics": {
+        "perNest": {
+          "value": 22.28515625,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, ss-slant-nest3stencil - ss-slant-plain"
+        }
+      }
+    }
+  ]
+}

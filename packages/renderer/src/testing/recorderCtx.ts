@@ -143,10 +143,11 @@ export function positionsOfMode(
   return out;
 }
 
-/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
-export const SQUARE_CLIP: PolygonPath = {
+/** A square notched at its bottom edge: not convex, so no CPU cut or shader
+ *  hull can stand in for it, and the clip goes through the stencil. */
+export const NOTCHED_CLIP: PolygonPath = {
   kind: 'polygon',
-  commands: new Uint8Array([M, L, L, L, Z]),
-  coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+  commands: new Uint8Array([M, L, L, L, L, Z]),
+  coords: new Float32Array([0, 0, 10, 0, 10, 10, 5, 5, 0, 10]),
   fillRule: 'nonzero',
 };

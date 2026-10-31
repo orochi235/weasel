@@ -5,7 +5,7 @@ import {
   DYNAMIC_PAGE_SIZE as PAGE_SIZE,
 } from '@weasel-js/font';
 import type { LaidOutGroup, LaidOutQuad } from '@weasel-js/text';
-import type { ClipRect } from '../batchClip';
+import type { BatchCut } from '../batchClip';
 import type { DrawContext } from './drawContext';
 import { enterUncut, leaveUncut } from './clip';
 import { flushBatch } from './flushBatch';
@@ -49,7 +49,7 @@ export function drawColorGlyphs(ctx: DrawContext, group: LaidOutGroup, dx: numbe
       flushBatch(ctx);
       restage();
     }
-    let cut: ClipRect | null | undefined;
+    let cut: BatchCut | null | undefined;
     // A turned glyph's quad is still its upright box, drawn through the turn.
     const qm = q.rotate
       ? mat3.multiply(m, mat3.fromAffine(rotateAboutPoint(q.penX + dx, q.baselineY + dy, (q.rotate * Math.PI) / 180)))

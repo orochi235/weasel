@@ -33,6 +33,38 @@ function chainSource(mod: Mod, slots: number): string {
   return src;
 }
 
+/**
+ * The shipping batch fragment stage less each of its parts in turn, and less
+ * all of them: the gradient branch, the slot tree (a direct fetch from slot 1
+ * instead), the straight-alpha conversion, the glyph coverage, and the color
+ * matrix with its clamp. Each is cut out of the source, not zeroed, so no
+ * compiler fold stands in for it (`docs/traps/rendering.md`). A knockout
+ * frame draws what the shipping one does for a plain vertex in slot 1, so
+ * shipping less knockout is that part's price.
+ */
+const KNOCKOUTS = ['gradient', 'tree', 'straight', 'glyph', 'matrix'] as const;
+
+export function knockedOut(src: string, parts: readonly string[]): string {
+  let out = src;
+  for (const part of parts) {
+    const before = out;
+    if (part === 'gradient') {
+      out = out.replace(/ {2}vec4 texel;\n {2}if \(isGrad > 0\.5\) \{[\s\S]*?\} else \{\n {4}texel = sampleSlot\(v_texSlot, v_uv\);\n {2}\}\n/,
+        '  vec4 texel = sampleSlot(v_texSlot, v_uv);\n');
+    } else if (part === 'tree') {
+      out = out.replace(/sampleSlot\(v_texSlot, v_uv\)/, 'texture(u_samplers[1], v_uv)');
+    } else if (part === 'straight') {
+      out = out.replace(/ {2}texel\.rgb = mix\(texel\.rgb, straightRgb\(texel\), step\([^;]*\);\n/, '');
+    } else if (part === 'glyph') {
+      out = out.replace(/float coverage = glyphCoverage\([^;]*\);/, 'float coverage = 1.0;');
+    } else if (part === 'matrix') {
+      out = out.replace('vec4 mapped = clamp(u_colorMatrix[0] * src + u_colorBias[0], 0.0, 1.0);', 'vec4 mapped = src;');
+    }
+    if (out === before) throw new Error(`knockedOut: the batch fragment stage changed shape at ${part}`);
+  }
+  return out;
+}
+
 export function batchFragmentVariants(
   gl: WebGL2RenderingContext,
   mod: Mod,
@@ -98,8 +130,12 @@ export function batchFragmentVariants(
   const glyphSmall = build(mod.batchAreaFragSrc?.(false, false) ?? mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.5));
   const chain = build(chainSource(mod, 8), 8, 1);
   const matrices = build(mod.BATCH_MATRICES_FRAG_SRC, slots, mod.BATCH_MATRIX_SLOTS);
+  const parts = KNOCKOUTS;
+  const knockouts = parts.map((part) => variant(`batch-no-${part}`, build(knockedOut(mod.BATCH_FRAG_SRC, [part]), slots, 1), mod.packSlot(1, mod.PAINT_MODE_PLAIN)));
   return [
     variant('batch', tree, mod.packSlot(1, mod.PAINT_MODE_PLAIN)),
+    ...knockouts,
+    variant('batch-bare', build(knockedOut(mod.BATCH_FRAG_SRC, parts), slots, 1), mod.packSlot(1, mod.PAINT_MODE_PLAIN)),
     variant('batch-chain8-1', chain, mod.packSlot(1, mod.PAINT_MODE_PLAIN)),
     variant('batch-chain8-7', chain, mod.packSlot(7, mod.PAINT_MODE_PLAIN)),
     variant('batch-glyph-large', glyphLarge, mod.packSlot(1, 1)),

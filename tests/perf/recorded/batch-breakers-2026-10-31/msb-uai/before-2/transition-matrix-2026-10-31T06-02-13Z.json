@@ -1,0 +1,1339 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "transition-matrix",
+  "git": {
+    "sha": "c294b728cf79faea611952f54a58dc846aaad6fb",
+    "dirty": true
+  },
+  "timestamp": "2026-10-31T06:02:13.673Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M3 Max",
+    "cores": 14,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      1.78,
+      2.67,
+      2.96
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "commands": 512,
+    "kinds": [
+      "solid",
+      "gradient",
+      "pattern",
+      "image",
+      "text",
+      "shader",
+      "vcolor",
+      "stencil",
+      "clip"
+    ],
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "kind solid",
+      "params": {
+        "kind": "solid"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 0.40039062500000006,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            0.4638671875,
+            0.3515625,
+            0.40039062500000006
+          ]
+        },
+        "stateCost": {
+          "value": 0.7893311434162718,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 0.09784735812133069,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind gradient",
+      "params": {
+        "kind": "gradient"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 1.3769531250000002,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            1.66015625,
+            1.3769531250000002,
+            1.3525390625
+          ]
+        },
+        "stateCost": {
+          "value": 0.5534491193737766,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 0.15655577299412907,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind pattern",
+      "params": {
+        "kind": "pattern"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 2.32421875,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            2.32421875,
+            1.8310546875,
+            2.5830078125
+          ]
+        },
+        "stateCost": {
+          "value": 0.7519394744199056,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 1.1545988258317028,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind image",
+      "params": {
+        "kind": "image"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 0.76171875,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            0.8544921875,
+            0.76171875,
+            0.7275390625
+          ]
+        },
+        "stateCost": {
+          "value": 0.8452439194856031,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 0.136986301369863,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind text",
+      "params": {
+        "kind": "text"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 2.6171874999999996,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            2.353515625,
+            2.7880859375,
+            2.6171874999999996
+          ]
+        },
+        "stateCost": {
+          "value": 0.44232247693597976,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 1.1350293542074361,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind shader",
+      "params": {
+        "kind": "shader"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 4.31640625,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            3.955078125,
+            4.31640625,
+            4.5947265625
+          ]
+        },
+        "stateCost": {
+          "value": 9.15632862734135,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 2.6027397260273974,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind vcolor",
+      "params": {
+        "kind": "vcolor"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 0.693359375,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            0.6640624999999999,
+            0.693359375,
+            0.7080078125
+          ]
+        },
+        "stateCost": {
+          "value": -0.6332995526977915,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 0.09784735812133069,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind stencil",
+      "params": {
+        "kind": "stencil"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 6.064453125,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            6.064453125,
+            6.6015625,
+            5.83984375
+          ]
+        },
+        "stateCost": {
+          "value": 10.309529633771316,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 0.3718199608610575,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "kind clip",
+      "params": {
+        "kind": "clip"
+      },
+      "metrics": {
+        "perCommand": {
+          "value": 0.5029296875,
+          "unit": "us",
+          "stat": "median of 3 runs, each the mean of the two bracketing passes",
+          "samples": [
+            0.546875,
+            0.5029296875,
+            0.4833984375
+          ]
+        },
+        "stateCost": {
+          "value": 0.5230465473860778,
+          "unit": "us",
+          "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
+        },
+        "noise": {
+          "value": 0.2152641878669276,
+          "unit": "us",
+          "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
+        }
+      }
+    },
+    {
+      "id": "pair solid+gradient",
+      "params": {
+        "a": "solid",
+        "b": "gradient"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.14187866927592957,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.12964774951076327,
+            0.14187866927592957,
+            0.5210371819960861
+          ]
+        },
+        "residual": {
+          "value": -1.2009015935141187,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.39138943248532276,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair solid+pattern",
+      "params": {
+        "a": "solid",
+        "b": "pattern"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.15900195694716251,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.15900195694716251,
+            0.022015655577299377,
+            0.5503913894324851
+          ]
+        },
+        "residual": {
+          "value": -1.382268660889015,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.5283757338551858,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair solid+image",
+      "params": {
+        "a": "solid",
+        "b": "image"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.04158512720156554,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.05381604696673183,
+            -0.01956947162426616,
+            0.04158512720156554
+          ]
+        },
+        "residual": {
+          "value": -1.5929899357003094,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.073385518590998,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair solid+text",
+      "params": {
+        "a": "solid",
+        "b": "text"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.44765166340508783,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.44765166340508783,
+            -0.2813111545988257,
+            0.6311154598825832
+          ]
+        },
+        "residual": {
+          "value": -0.7840019569471637,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.9124266144814089,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair solid+shader",
+      "params": {
+        "a": "solid",
+        "b": "shader"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 13.162915851272016,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            15.633561643835616,
+            12.915851272015656,
+            13.162915851272016
+          ]
+        },
+        "residual": {
+          "value": 3.217256080514394,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 2.71771037181996,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair solid+vcolor",
+      "params": {
+        "a": "solid",
+        "b": "vcolor"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.18835616438356176,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.18835616438356176,
+            -0.06360078277886491,
+            0.2862035225048924
+          ]
+        },
+        "residual": {
+          "value": 0.03232457366508146,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.3498043052837573,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair solid+stencil",
+      "params": {
+        "a": "solid",
+        "b": "stencil"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 14.163405088062625,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            18.833170254403132,
+            13.542074363992171,
+            14.163405088062625
+          ]
+        },
+        "residual": {
+          "value": 3.0645443108750374,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 5.291095890410961,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair solid+clip",
+      "params": {
+        "a": "solid",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.04158512720156559,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.07093933463796467,
+            -0.056262230919765156,
+            -0.04158512720156559
+          ]
+        },
+        "residual": {
+          "value": -1.3539628180039152,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.12720156555772982,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair gradient+pattern",
+      "params": {
+        "a": "gradient",
+        "b": "pattern"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0,
+            0.10518590998043045,
+            -0.3571428571428574
+          ]
+        },
+        "residual": {
+          "value": -1.3053885937936822,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.46232876712328785,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair gradient+image",
+      "params": {
+        "a": "gradient",
+        "b": "image"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.073385518590998,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.28131115459882594,
+            -0.014677103718199731,
+            -0.073385518590998
+          ]
+        },
+        "residual": {
+          "value": -1.4720785574503776,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.2666340508806262,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair gradient+text",
+      "params": {
+        "a": "gradient",
+        "b": "text"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.20058708414872803,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.20058708414872803,
+            0.2617416829745593,
+            -0.21771037181996056
+          ]
+        },
+        "residual": {
+          "value": -1.1963586804584845,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.47945205479451986,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair gradient+shader",
+      "params": {
+        "a": "gradient",
+        "b": "shader"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 13.106653620352251,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            14.408023483365952,
+            13.106653620352251,
+            12.568493150684931
+          ]
+        },
+        "residual": {
+          "value": 3.396875873637123,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 1.8395303326810204,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair gradient+vcolor",
+      "params": {
+        "a": "gradient",
+        "b": "vcolor"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.21526418786692755,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.21526418786692755,
+            0.36203522504892355,
+            -0.05381604696673183
+          ]
+        },
+        "residual": {
+          "value": 0.29511462119094245,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.41585127201565536,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair gradient+stencil",
+      "params": {
+        "a": "gradient",
+        "b": "stencil"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 13.402641878669273,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            18.34148727984344,
+            12.137964774951074,
+            13.402641878669273
+          ]
+        },
+        "residual": {
+          "value": 2.5396631255241804,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 6.2035225048923675,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair gradient+clip",
+      "params": {
+        "a": "gradient",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.01956947162426616,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.23483365949119395,
+            -0.217710371819961,
+            0.01956947162426616
+          ]
+        },
+        "residual": {
+          "value": -1.0569261951355884,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.45254403131115495,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair pattern+image",
+      "params": {
+        "a": "pattern",
+        "b": "image"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.06604696673189835,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.5993150684931509,
+            -0.06604696673189835,
+            -0.24951076320939347
+          ]
+        },
+        "residual": {
+          "value": -1.663230360637407,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.8488258317025443,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair pattern+text",
+      "params": {
+        "a": "pattern",
+        "b": "text"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.2519569471624269,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            1.0420743639921721,
+            -0.3864970645792566,
+            0.2519569471624269
+          ]
+        },
+        "residual": {
+          "value": -0.9423050041934584,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 1.4285714285714288,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair pattern+shader",
+      "params": {
+        "a": "pattern",
+        "b": "shader"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 12.145303326810177,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            17.108610567514678,
+            12.145303326810177,
+            11.67808219178082
+          ]
+        },
+        "residual": {
+          "value": 2.2370352250489205,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 5.430528375733857,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair pattern+vcolor",
+      "params": {
+        "a": "pattern",
+        "b": "vcolor"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.017123287671232945,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.06849315068493178,
+            0.017123287671232945,
+            -0.2201565557729942
+          ]
+        },
+        "residual": {
+          "value": -0.10151663405088118,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.288649706457926,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair pattern+stencil",
+      "params": {
+        "a": "pattern",
+        "b": "stencil"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 15.650684931506849,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            15.650684931506849,
+            14.033757338551862,
+            18.725538160469668
+          ]
+        },
+        "residual": {
+          "value": 4.589215823315627,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 4.691780821917806,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair pattern+clip",
+      "params": {
+        "a": "pattern",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.15655577299412907,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.15655577299412907,
+            0.09295499021526415,
+            -0.26418786692759294
+          ]
+        },
+        "residual": {
+          "value": -1.4315417948001126,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.3571428571428571,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair image+text",
+      "params": {
+        "a": "image",
+        "b": "text"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.24706457925636002,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.022015655577299377,
+            -0.7411937377690802,
+            -0.24706457925636002
+          ]
+        },
+        "residual": {
+          "value": -1.5346309756779428,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.7191780821917808,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair image+shader",
+      "params": {
+        "a": "image",
+        "b": "shader"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 15.32778864970646,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            16.680528375733857,
+            12.857142857142858,
+            15.32778864970646
+          ]
+        },
+        "residual": {
+          "value": 5.326216102879506,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 3.8233855185909995,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair image+vcolor",
+      "params": {
+        "a": "image",
+        "b": "vcolor"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.07583170254403132,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.07583170254403132,
+            -0.10273972602739724,
+            0.1712328767123288
+          ]
+        },
+        "residual": {
+          "value": -0.28777606933184285,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.27397260273972607,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair image+stencil",
+      "params": {
+        "a": "image",
+        "b": "stencil"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 13.774461839530332,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            13.774461839530332,
+            13.571428571428573,
+            18.95058708414873
+          ]
+        },
+        "residual": {
+          "value": 2.619688286273414,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 5.379158512720156,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair image+clip",
+      "params": {
+        "a": "image",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.026908023483366024,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.026908023483366024,
+            -0.20303326810176123,
+            0.01956947162426616
+          ]
+        },
+        "residual": {
+          "value": -1.395198490355047,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.2226027397260274,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair text+shader",
+      "params": {
+        "a": "text",
+        "b": "shader"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 12.712818003913894,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            12.58317025440313,
+            12.712818003913894,
+            14.518101761252447
+          ]
+        },
+        "residual": {
+          "value": 3.1141668996365635,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 1.934931506849317,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair text+vcolor",
+      "params": {
+        "a": "text",
+        "b": "vcolor"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.2764187866927593,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.034246575342465675,
+            -0.3449119373776909,
+            -0.2764187866927593
+          ]
+        },
+        "residual": {
+          "value": -0.08544171093094766,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.3106653620352252,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair text+stencil",
+      "params": {
+        "a": "text",
+        "b": "stencil"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 13.170254403131114,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            13.37573385518591,
+            12.810665362035223,
+            13.170254403131114
+          ]
+        },
+        "residual": {
+          "value": 2.418402292423819,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.5650684931506866,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair text+clip",
+      "params": {
+        "a": "text",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": -0.02446183953033281,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            0.10273972602739724,
+            -0.02446183953033281,
+            -0.30088062622309186
+          ]
+        },
+        "residual": {
+          "value": -0.9898308638523904,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.4036203522504891,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair shader+vcolor",
+      "params": {
+        "a": "shader",
+        "b": "vcolor"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 7.382583170254403,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            7.382583170254403,
+            6.687866927592956,
+            10.376712328767123
+          ]
+        },
+        "residual": {
+          "value": -1.1404459043891562,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 3.6888454011741674,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair shader+stencil",
+      "params": {
+        "a": "shader",
+        "b": "stencil"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.16389432485322852,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.704500978473581,
+            3.1996086105675143,
+            0.16389432485322852
+          ]
+        },
+        "residual": {
+          "value": -19.30196393625944,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 3.904109589041095,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair shader+clip",
+      "params": {
+        "a": "shader",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 12.83023483365949,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            13.067514677103718,
+            12.83023483365949,
+            12.729941291585128
+          ]
+        },
+        "residual": {
+          "value": 3.1508596589320623,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.3375733855185903,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair vcolor+stencil",
+      "params": {
+        "a": "vcolor",
+        "b": "stencil"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 10.817025440313111,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            10.817025440313111,
+            16.179060665362034,
+            9.811643835616438
+          ]
+        },
+        "residual": {
+          "value": 1.1407953592395863,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 6.367416829745595,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair vcolor+clip",
+      "params": {
+        "a": "vcolor",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 0.036692759295499,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            -0.06849315068493146,
+            0.036692759295499,
+            0.16634050880626225
+          ]
+        },
+        "residual": {
+          "value": 0.14694576460721265,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.23483365949119372,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    },
+    {
+      "id": "pair stencil+clip",
+      "params": {
+        "a": "stencil",
+        "b": "clip"
+      },
+      "metrics": {
+        "surcharge": {
+          "value": 13.762230919765166,
+          "unit": "us",
+          "stat": "median of 3 runs, per boundary",
+          "samples": [
+            13.762230919765166,
+            13.730430528375736,
+            14.082681017612522
+          ]
+        },
+        "residual": {
+          "value": 2.9296547386077725,
+          "unit": "us",
+          "stat": "surcharge minus the additive fit"
+        },
+        "spread": {
+          "value": 0.3522504892367859,
+          "unit": "us",
+          "stat": "max - min across 3 runs"
+        }
+      }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ import {
   flattenQuadraticWithArcLen,
 } from '../flatten';
 import type { Mesh } from './mesh';
-import { resolveCrossings, type FlattenedContours } from './crossings';
+import { resolveCrossings, resolveEvenOdd, type FlattenedContours } from './crossings';
 import { nestRings, type Ring } from './nesting';
 import { evenOddRings } from './evenOdd';
 
@@ -166,6 +166,8 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   if (p.fillRule === 'evenodd') {
     const rings = evenOddRings(flat);
     if (rings) return tessellateNonzero(flat, rings);
+    const resolved = resolveEvenOdd(flat);
+    if (resolved) return tessellateNonzero(resolved, nestRings(resolved));
     const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
     return tessellateEvenoddWithAnchors(coords, contourStarts, anchorA, anchorB, anchorT);
   }

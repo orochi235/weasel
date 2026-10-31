@@ -17,11 +17,12 @@ import { BATCH_TEXTURE_SLOTS, RAMP_SLOT, PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, pai
 import type { DrawCommand } from './DrawCommand';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 
-/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
+/** A square notched at its bottom edge: not convex, so no CPU cut can stand
+ *  in for it, and the clip goes through the stencil. */
 const squareClip = (size: number): PolygonPath => ({
   kind: 'polygon',
-  commands: new Uint8Array([M, L, L, L, Z]),
-  coords: new Float32Array([0, 0, size, 0, size, size, 0, size]),
+  commands: new Uint8Array([M, L, L, L, L, Z]),
+  coords: new Float32Array([0, 0, size, 0, size, size, size / 2, size / 2, 0, size]),
   fillRule: 'nonzero',
 });
 import { SPRITE_STRIDE } from './DrawCommand';

@@ -127,11 +127,11 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
     expect(recorder.calls.filter((c) => c.name === 'drawElements').length).toBe(1);
   });
 
-  it('uses stencil two-pass when stroking a PolygonPath with align: inner', () => {
+  it('uses stencil two-pass when stroking a PolygonPath that is not convex with align: inner', () => {
     const path: PolygonPath = {
       kind: 'polygon',
-      commands: new Uint8Array([M, L, L, L, Z]),
-      coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+      commands: new Uint8Array([M, L, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 100, 0, 100, 100, 50, 50, 0, 100]),
       fillRule: 'nonzero',
     };
     r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
@@ -202,8 +202,8 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
   it('drawPathStrokeStenciled only touches bit 0 — clip-level bits 1-7 survive', () => {
     const path: PolygonPath = {
       kind: 'polygon',
-      commands: new Uint8Array([M, L, L, L, Z]),
-      coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+      commands: new Uint8Array([M, L, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 100, 0, 100, 100, 50, 50, 0, 100]),
       fillRule: 'nonzero',
     };
     r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);

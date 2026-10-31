@@ -1,0 +1,9 @@
+start: 2026-10-31T06:04:01Z
+synced tree: b2fa917131286e8b77f4e9790fa05659369ff638 dirty-paths: 3
+cpu: Apple M3 Max (14 threads)
+node: v26.8.1
+fill-rate: load before { 2.69 2.79 2.98 }
+fill-rate: load after { 1.45 2.33 2.77 }
+paint-staging: load before { 1.45 2.33 2.77 }
+paint-staging: load after { 1.38 2.29 2.75 }
+end: 2026-10-31T06:05:54Z

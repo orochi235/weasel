@@ -12,6 +12,7 @@ import { tessellate } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from '@weasel-js/stroke';
 import { getMesh, _resetCacheForTests } from '@weasel-js/renderer/test-seams';
 import { curvyPath, rectPath } from './fixtures';
+import { polygonFromPoints } from '@weasel-js/geom';
 
 const CURVE_COUNTS = [8, 64, 512];
 const TOLERANCES = [0.05, 0.25, 0.5, 2];
@@ -63,6 +64,19 @@ group('tessellateStroke — curve count', (bench) => {
     const path = paths.get(n)!;
     bench(`${n} cubics`, () => {
       tessellateStroke(path, stroke);
+    });
+  }
+});
+
+group('tessellateStroke — joins (a closed 24-gon star)', (bench) => {
+  const star = polygonFromPoints(Array.from({ length: 24 }, (_, k) => {
+    const r = k % 2 ? 40 : 100, a = (k * Math.PI) / 12;
+    return { x: r * Math.cos(a), y: r * Math.sin(a) };
+  }));
+  for (const join of ['miter', 'bevel', 'round'] as const) {
+    const stroke = { paint: { kind: 'solid' as const, color: '#000' }, width: 6, join };
+    bench(join, () => {
+      tessellateStroke(star, stroke);
     });
   }
 });

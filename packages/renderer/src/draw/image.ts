@@ -1,5 +1,5 @@
 import { type ImageDrawCommand, type SpritesDrawCommand, SPRITE_STRIDE } from '../DrawCommand';
-import type { ClipRect } from '../batchClip';
+import type { BatchCut } from '../batchClip';
 import type { DrawContext } from './drawContext';
 import { enterUncut, leaveUncut, retryUncut } from './clip';
 import { flushBatch } from './flushBatch';
@@ -97,7 +97,7 @@ export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
       ({ slot, tint } = stage());
     }
     const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
-    let cut: ClipRect | null | undefined;
+    let cut: BatchCut | null | undefined;
     while (!batch.pushQuad(
       data[i], data[i + 1], data[i + 2], data[i + 3], m,
       sx / tw, sy / th, (sx + sw) / tw, (sy + sh) / th,

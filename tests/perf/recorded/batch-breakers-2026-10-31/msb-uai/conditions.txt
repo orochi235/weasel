@@ -1,0 +1,21 @@
+start: 2026-10-31T05:57:37Z
+synced tree: c294b728cf79faea611952f54a58dc846aaad6fb dirty-paths: 1
+cpu: Apple M3 Max (14 threads)
+node: v26.8.1
+before-1 clip-cost: load before { 2.88 3.37 3.22 }
+before-1 clip-cost: load after { 2.97 3.30 3.20 }
+before-1 transition-matrix: load before { 2.97 3.30 3.20 }
+before-1 transition-matrix: load after { 3.06 3.28 3.20 }
+after-1 clip-cost: load before { 3.06 3.28 3.20 }
+after-1 clip-cost: load after { 2.75 3.19 3.17 }
+after-1 transition-matrix: load before { 2.75 3.19 3.17 }
+after-1 transition-matrix: load after { 3.12 3.25 3.19 }
+after-2 clip-cost: load before { 3.12 3.25 3.19 }
+after-2 clip-cost: load after { 2.17 3.00 3.10 }
+after-2 transition-matrix: load before { 2.17 3.00 3.10 }
+after-2 transition-matrix: load after { 1.78 2.83 3.03 }
+before-2 clip-cost: load before { 1.78 2.83 3.03 }
+before-2 clip-cost: load after { 1.76 2.68 2.96 }
+before-2 transition-matrix: load before { 1.76 2.68 2.96 }
+before-2 transition-matrix: load after { 2.79 2.82 3.01 }
+end: 2026-10-31T06:02:42Z

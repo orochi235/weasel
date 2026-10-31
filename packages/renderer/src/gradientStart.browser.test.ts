@@ -2,7 +2,7 @@
  * A gradient drawn by the path program starts where its paint says. The start
  * point is folded into `u_worldInv` on the CPU, so the shader measures from the
  * origin of what that matrix hands it; the recorder sees the matrix and never
- * where the ramp lands. Even-odd squares with a touching contour, because that is
+ * where the ramp lands. Even-odd squares too costly to resolve, because that is
  * the fill that still draws through this program and not the batch.
  */
 import { afterEach, describe, expect, it } from 'vitest';

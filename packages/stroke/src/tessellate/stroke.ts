@@ -7,6 +7,7 @@ import { strokeFlattening } from './flattening';
 import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
 import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
+import { meetInnerEdges } from './innerJoins';
 import {
   type StrokeMetric, coordsOutOfMetric, rectIntoMetric, worldWidthInMetric, worldWidthInMetricAlongWorld,
 } from './metric';
@@ -211,8 +212,9 @@ function expandPolyline(
 
   // Joins between consecutive segments.
   const joinCount = pl.closed ? segs.length : segs.length - 1;
+  const inner = meetInnerEdges(segs, segBaseIdx, pl.closed, verts);
   for (let j = 0; j < joinCount; j++) {
-    emitJoin(segs, segBaseIdx, j, join, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT);
+    emitJoin(segs, segBaseIdx, j, join, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT, inner[j]);
   }
 
   // Caps, from the local edges at each end.

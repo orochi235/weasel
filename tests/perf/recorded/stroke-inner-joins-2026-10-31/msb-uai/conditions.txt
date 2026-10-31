@@ -1,0 +1,13 @@
+start: 2026-10-31T06:23:16Z
+synced tree: 54904eb0b5b5bb0cd18bd962f495a536d9e47e8b dirty-paths: 1
+cpu: Apple M3 Max (14 threads)
+node: v26.8.1
+before-1: load before { 2.59 3.12 3.10 }
+before-1: load after { 2.67 3.03 3.07 }
+after-1: load before { 2.67 3.03 3.07 }
+after-1: load after { 2.61 2.98 3.05 }
+after-2: load before { 2.61 2.98 3.05 }
+after-2: load after { 3.14 3.02 3.05 }
+before-2: load before { 3.14 3.02 3.05 }
+before-2: load after { 2.71 2.92 3.01 }
+end: 2026-10-31T06:28:08Z

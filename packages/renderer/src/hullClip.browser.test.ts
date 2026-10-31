@@ -34,7 +34,11 @@ function paint(commands: DrawCommand[], opts: { antialias?: boolean; hulls?: boo
   })!;
   const r = new WeaselRenderer({ gl, width: W, height: H, dpr: 1 });
   renderers.push(r);
-  if (opts.hulls === false) Object.defineProperty(r._batchVariants(), 'hulls', { value: false });
+  if (opts.hulls === false) {
+    // The stencil as it came: no hull, and no CPU cut standing in for one.
+    Object.defineProperty(r._batchVariants(), 'hulls', { value: false });
+    Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
+  }
   r.render(commands);
   const px = new Uint8Array(W * H * 4);
   gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);
@@ -70,7 +74,7 @@ function turned(cx: number, cy: number, w: number, h: number, deg: number): Path
 const FULL = { kind: 'rect' as const, x: 0, y: 0, width: W, height: H };
 const solid = (color: string, path: Path = FULL): DrawCommand =>
   ({ kind: 'path', path, fill: { paint: { color } } });
-/** An even-odd fill whose outlines touch, which no run can take: it draws for
+/** An even-odd fill too costly to resolve, which no run can take: it draws for
  *  itself, through the stencil. One convex contour covers what a nonzero one would. */
 function ownDraw(path: Path, rgba: number[]): DrawCommand {
   const polygon = path.kind === 'rect'
@@ -181,10 +185,9 @@ describe('a convex clip decided in the batch shader, in a real context', () => {
     expect(differing(paint(frame).px, paint(frame, { hulls: false }).px)).toEqual([]);
   });
 
-  it('on a multisampled buffer, keeps the stencil and agrees with it', () => {
+  it('on a multisampled buffer, leaves the clip to the CPU cut (planeClip.browser.test.ts)', () => {
     const clip = CLIPS[1][1];
-    const shader = paint([clipped(clip, [solid('#ff0000')])], { antialias: true });
-    const stencil = paint([clipped(clip, [ownDraw(FULL, [1, 0, 0, 1])])], { antialias: true });
-    expect(differing(shader.px, stencil.px)).toEqual([]);
+    const frame = [solid('#202020'), clipped(clip, [solid('#ff0000')])];
+    expect(paint(frame, { antialias: true }).draws).toBe(1);
   });
 });

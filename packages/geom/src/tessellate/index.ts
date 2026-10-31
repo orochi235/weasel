@@ -6,6 +6,7 @@
  * @packageDocumentation
  */
 export { tessellate, type TessellateOptions } from './tessellate';
+export { MAX_EVENODD_RESOLVE_WORK } from './crossings';
 export { extractPolylines, type Polyline, type ExtractOptions } from './polyline';
 export { trimPolyline } from './trim';
 export { anchorParamsBetween } from './anchorParams';
