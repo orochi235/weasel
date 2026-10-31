@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.14.3
+
+### Patch Changes
+
+- 8461e7b: `NodeGates.hidden` and `NodeGates.locked` take the node itself as well as its id, and answer the same for
+  either; a walk that already holds the node saves looking it up. The pick walk now hands them its
+  candidates, decides a marquee from a node's bounds before building anything to test its outline, and no
+  longer allocates per candidate. Scene edits and history pushes allocate less per op. No result changes.
+- Updated dependencies [8461e7b]
+- Updated dependencies [3f13a49]
+- Updated dependencies [d40f593]
+- Updated dependencies [b7d362d]
+- Updated dependencies [2e2f76c]
+- Updated dependencies [fbc7ebf]
+  - @weasel-js/history@1.14.3
+  - @weasel-js/font@1.14.3
+  - @weasel-js/text@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/renderer@1.14.3
+  - @weasel-js/routing@1.14.3
+  - @weasel-js/text-dom@1.14.3
+  - @weasel-js/animator@1.14.3
+  - @weasel-js/headless@1.14.3
+  - @weasel-js/stroke@1.14.3
+  - @weasel-js/gestures@1.14.3
+  - @weasel-js/cursor@1.14.3
+  - @weasel-js/icons@1.14.3
+  - @weasel-js/modes@1.14.3
+  - @weasel-js/paint@1.14.3
+  - @weasel-js/prefs@1.14.3
+  - @weasel-js/quantity@1.14.3
+  - @weasel-js/react@1.14.3
+  - @weasel-js/registry@1.14.3
+  - @weasel-js/select@1.14.3
+  - @weasel-js/simulation@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

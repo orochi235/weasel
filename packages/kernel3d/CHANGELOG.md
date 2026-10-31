@@ -1,5 +1,16 @@
 # @weasel-js/kernel3d
 
+## 1.14.3
+
+### Patch Changes
+
+- Updated dependencies [8461e7b]
+- Updated dependencies [b7d362d]
+  - @weasel-js/core@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/prefs@1.14.3
+  - @weasel-js/react@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

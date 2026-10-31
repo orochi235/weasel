@@ -1,5 +1,9 @@
 # @weasel-js/paint
 
+## 1.14.3
+
+No changes in this release.
+
 ## 1.14.2
 
 No changes in this release.

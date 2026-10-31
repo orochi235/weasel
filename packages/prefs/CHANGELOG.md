@@ -1,5 +1,16 @@
 # @weasel-js/prefs
 
+## 1.14.3
+
+### Patch Changes
+
+- @weasel-js/icons@1.14.3
+  - @weasel-js/paint@1.14.3
+  - @weasel-js/quantity@1.14.3
+  - @weasel-js/react@1.14.3
+  - @weasel-js/registry@1.14.3
+  - @weasel-js/storage@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

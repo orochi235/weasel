@@ -1,5 +1,25 @@
 # @weasel-js/routing
 
+## 1.14.3
+
+### Patch Changes
+
+- 2e2f76c: A key held for an `over` binding now follows the pointer: a key already down when the pointer comes over a surface presses that surface's `over` key-held bindings, and leaving releases them. A single-press `key` binding is not repeated on arrival. Holding a loupe's peek key and then moving onto a loupe raises it again, and the peek carries from one loupe to the next.
+- Updated dependencies [8461e7b]
+- Updated dependencies [b7d362d]
+  - @weasel-js/history@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/menu@1.14.3
+  - @weasel-js/gestures@1.14.3
+  - @weasel-js/cursor@1.14.3
+  - @weasel-js/icons@1.14.3
+  - @weasel-js/modes@1.14.3
+  - @weasel-js/prefs@1.14.3
+  - @weasel-js/quantity@1.14.3
+  - @weasel-js/react@1.14.3
+  - @weasel-js/registry@1.14.3
+  - @weasel-js/select@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

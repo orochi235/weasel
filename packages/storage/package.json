@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/storage",
-  "version": "1.14.2",
+  "version": "1.14.3",
   "description": "Keyed async storage behind one adapter interface — IndexedDB, localStorage, the URL hash, memory — and an in-memory record cache that writes behind and hears other tabs. No React.",
   "license": "MIT",
   "type": "module",
@@ -16,7 +16,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/registry": "1.14.2"
+    "@weasel-js/registry": "1.14.3"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/parallax",
-  "version": "1.14.2",
+  "version": "1.14.3",
   "description": "Parallax planes and tiled surfaces for weasel: layers that draw other layers through a derived view, and a live plane a camera drives. No React.",
   "license": "MIT",
   "type": "module",
@@ -37,10 +37,10 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/registry": "1.14.2"
+    "@weasel-js/registry": "1.14.3"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.14.2"
+    "@weasel-js/core": "1.14.3"
   },
   "publishConfig": {
     "access": "public",
