@@ -3,7 +3,7 @@ import type { TrackShape } from '@weasel-js/geom';
 import { useRowRun } from '../Along/useRowRun';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
-import { RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
+import { RUN_SLACK, RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
 import { positionAt } from '../Along/useRunScroll';
 import { sideAtRun } from './barSide';
 import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems, type BarItem } from './barItems';
@@ -45,7 +45,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const gap = useRunGap(root);
 
   const leadLength = leading != null ? (lengths.get(BAR_LEAD) ?? 0) : 0;
-  const room = { size: run.length - (leadLength ? leadLength + gap : 0), gap };
+  const room = { size: run.length + RUN_SLACK - (leadLength ? leadLength + gap : 0), gap };
   const kept = menu ? Math.min(items.length, fitting(items.map((item) => item.key), lengths, lengths.get(BAR_MORE) ?? 0, room)) : items.length;
   const { line, rest } = splitBarItems(items, kept);
 

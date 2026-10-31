@@ -11,6 +11,9 @@ import s from './runRow.module.css';
 /** What a run too long for its track does: `'scroll'` along itself, or `'center'` on the track and stay put. */
 export type RunOverflow = 'scroll' | 'center';
 
+/** How far, in px, a row may run past its track and still be drawn whole, centered on it, rather than scroll. */
+export const RUN_SLACK = 8;
+
 /** What {@link useRunRow} reads. */
 export interface RunRowArgs {
   root: RefObject<HTMLElement | null>;
@@ -60,12 +63,13 @@ export interface RunRow {
  */
 export function useRunRow({ root, keyOf, itemsOf, run, lengths, gap, align, overflow = 'scroll', modReorders }: RunRowArgs): RunRow {
   const band = useRef<SVGSVGElement>(null);
-  const scrolling = overflow === 'scroll';
-  const total = scrolling ? runLength(lengths, gap) : 0;
+  const full = runLength(lengths, gap);
+  const scrolling = overflow === 'scroll' && full - run.length > RUN_SLACK;
+  const total = scrolling ? full : 0;
   let spots: RunPlace[] = [];
   const scroll = useRunScroll({ root, keyOf, itemsOf, frame: band, run, total, spots: () => spots, lengths, modReorders });
   useRunText(root, run);
-  spots = placeAlongRun(run, lengths, { gap, align, offset: scrolling ? scroll.offset : Math.max(0, (runLength(lengths, gap) - run.length) / 2), past: 'hold' });
+  spots = placeAlongRun(run, lengths, { gap, align, offset: scrolling ? scroll.offset : Math.max(0, (full - run.length) / 2), past: 'hold' });
   // A zero-length run has no direction to carry items along: they all sit at its one point.
   const flat = run.length <= 0;
   const place = (i: number): RunItemPlace => {
