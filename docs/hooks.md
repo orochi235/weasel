@@ -90,7 +90,7 @@ via a tool's `bindings` or a `trigger` call.
 | `nudge.up` / `.down` / `.left` / `.right` | Arrow key (`magnitude: 'small'`), Shift+Arrow (`'big'`) |
 | `reorder.forward` | Mod+] (`distance: 'adjacent'`), Mod+Alt+] (`'extreme'`) |
 | `reorder.backward` | Mod+[ (`'adjacent'`), Mod+Alt+[ (`'extreme'`) |
-| `pathEditTool.exit` | Escape (channel `*`, phase `initial`) while a path-edit tool is on — puts the tool down, so a second Escape leaves path edit |
+| `tool.modeDefault` | Escape (channel `*`, phase `initial`, hotkey tier) in a mode that names a `defaultTool` while another tool is on — makes the default tool active, so a second Escape leaves the mode; a mode shortcut's `exit` yields to it |
 | `exitPathEdit` | Escape |
 | `deleteAnchors` | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` | Arrow / Shift+Arrow, as `nudge` |
@@ -110,8 +110,8 @@ curly quote, so both codepoints are listed.
 | `balanceHandles` | drag whose press hit a curved segment's `balance:N` grip, shown while chrome-caps shows `path-edit.balance`; `move` turns those down too, and a length lock in force (`handleLock.length`, or Mod) holds it still |
 | `equalizeHandles` | double-click on a `balance:N` grip |
 | `marqueeAnchors` | drag on `empty` |
-| `simplifyBrush` | drag anywhere, while path edit's `simplifyBrush` tool is on; `editAnchors`, `editCorner`, `bendSegment`, `balanceHandles`, `equalizeHandles`, `marqueeAnchors`, and `selectAnchor` stand aside while any path-edit tool is |
-| `lengthenPath` | drag on an open path's end anchor, Shift optional, while path edit's `lengthen` tool is on; its `mode` param (`'tangent'`, the default, or `'curvature'`) picks how the end grows, Shift picks the other, and both are read on every move |
+| `simplifyBrush` | none of its own: the `simplifyBrush` path-edit tool binds a drag anywhere, at the active tier, so it outranks every ambient anchor-editing drag |
+| `lengthenPath` | none of its own: the `lengthen` path-edit tool binds a drag on an anchor, Shift optional, and the action takes it only on an open end, so a drag on any other anchor falls through to `editAnchors`; its `mode` param (`'tangent'`, the default, or `'curvature'`) picks how the end grows, Shift picks the other, and both are read on every move |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
 | `insertPathAnchor` | Alt+click |

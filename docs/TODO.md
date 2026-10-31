@@ -206,7 +206,7 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven Extend to next path hands-on and the defaults and keys he picks
   are committed.
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
-  tool toggle has no key; a plain drag grows along the end tangent and Shift along the end
+  path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
   curvature (the `mode` param flips which); a curvature arc stops at a full turn, and a trim always
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
@@ -274,8 +274,8 @@ Owner tags, after the priority (2026-10-26):
   behavior and keys: `setPathStart` and `reversePath` have no default keys, an open subpath's
   interior anchor cannot become its start, and the direction marks' look (a 9 px orange arrow per
   segment and an 8 px start ring, `DIRECTION_DEFAULTS`), off by default under
-  `path-edit.direction` with draw's View toggle as the only switch
-  (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathDirection.ts`).
+  `path-edit.direction`, switched by the `pathEdit.show.direction` toggle, which draw keeps as a View
+  preference (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathOverlays.ts`).
   Closes when the maintainer has driven path start and direction hands-on and the defaults and keys he
   picks are committed.
 - **(P2) [maintainer] Tune segment type hands-on, with the maintainer driving.** First-draft behavior and keys:

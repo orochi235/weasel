@@ -3,7 +3,7 @@
 For whoever builds or later changes how tools are scoped to modes, and how WeaselDraw's left palette is laid out.
 Answers: what the palette shows in each mode, and what the kit gains so that it can.
 
-Status: designed and approved by the maintainer (2026-10-31); being built on branch `path-edit-palette`.
+Status: designed and approved by the maintainer (2026-10-31); built on branch `path-edit-palette` (2026-10-31).
 
 ## Decisions (2026-10-31)
 
