@@ -3,10 +3,10 @@ import {
   composeWorldPose, pageHolding, placedPagesOf, scenePoseAdapter, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
-  type DataNode, type DiagramTheme,
+  DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, diagramThemeFrom, offPageSplits, sequenceRootOf, type DataContainer, type DataEdge,
+  type DataGroup, type DataNode, type DiagramTheme, type SequenceData,
 } from '@weasel-js/diagram';
-import type { DiagramDocument, GraphPage } from './document';
+import type { DiagramDocument, DocumentPage } from './document';
 import { kindOf, readEdge, readGroup, readRegion, readShape, type ReadNode, type ReadScene } from './sceneReaders';
 
 /** Options for {@link documentFromScene}. */
@@ -21,7 +21,11 @@ type AnyScene = ReadScene & {
   doc: { get(key: string): unknown };
 };
 
-interface PageBucket { nodes: DataNode[]; edges: DataEdge[]; groups: DataGroup[]; containers: DataContainer[] }
+interface PageBucket {
+  nodes: DataNode[]; edges: DataEdge[]; groups: DataGroup[]; containers: DataContainer[];
+  /** The first sequence on the page, which makes it a sequence page. */
+  sequence?: SequenceData;
+}
 
 /** One page around everything, for a scene with no page list. */
 function contentPage(scene: AnyScene): PlacedPage {
@@ -43,7 +47,8 @@ function contentPage(scene: AnyScene): PlacedPage {
  * different pages, goes in `crossPageEdges`: without waypoints when split,
  * with them in world coordinates when not. Colors are kept
  * where the scene's theme would not give them: the author's own, and any a
- * theme never set.
+ * theme never set. A page holding a sequence's root is a sequence page holding
+ * its data; the parts drawn from it, and anything else on that page, are not read.
  */
 export function documentFromScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, opts: DocumentFromSceneOptions = {},
@@ -80,6 +85,10 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
     const page = pageOf(node);
     itemPage.set(node.id, page);
     const bucket = buckets.get(page.id)!;
+    if (kind === 'sequence') {
+      bucket.sequence ??= sequenceRootOf(node)!.sequence;
+      continue;
+    }
     if (kind === 'shape') bucket.nodes.push(readShape(s, node, page, theme));
     else if (kind === 'group') bucket.groups.push(readGroup(s, node));
     else if (isContainerOrPool(node)) bucket.containers.push(readRegion(s, node, page, theme));
@@ -103,14 +112,13 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   }
 
   return {
-    pages: pages.map((p): GraphPage => {
-      const { nodes, edges: pageEdges, groups, containers } = buckets.get(p.id)!;
+    pages: pages.map((p): DocumentPage => {
+      const { nodes, edges: pageEdges, groups, containers, sequence } = buckets.get(p.id)!;
+      const base = { id: p.id, ...(p.name !== undefined ? { name: p.name } : {}), width: p.width, height: p.height };
+      if (sequence !== undefined) return { kind: 'sequence', ...base, data: sequence };
       return {
         kind: 'graph',
-        id: p.id,
-        ...(p.name !== undefined ? { name: p.name } : {}),
-        width: p.width,
-        height: p.height,
+        ...base,
         data: { nodes, edges: pageEdges, ...(groups.length > 0 ? { groups } : {}), ...(containers.length > 0 ? { containers } : {}) },
       };
     }),

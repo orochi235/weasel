@@ -6,9 +6,9 @@
  * @packageDocumentation
  */
 export {
-  formatHolds, graphPageOf, graphPagesOf, writtenPage,
+  formatHolds, formatTakes, graphPageOf, graphPagesOf, writtenPage,
   type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase,
-  type PageKind, type WriteOptions,
+  type PageKind, type SequencePage, type WriteOptions,
 } from './document';
 export { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';
 export { DIAGRAM_JSON } from './jsonFormat';
@@ -16,6 +16,7 @@ export { DRAW_XML } from './drawXml/format';
 export { DIAGRAM_MERMAID } from './mermaid/format';
 export { DIAGRAM_DOT } from './dot/format';
 export { documentFromScene, type DocumentFromSceneOptions } from './fromScene';
+export { scenePageKinds } from './pageKinds';
 export { documentSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';
 export { exportPageSvg, type ExportPageSvgOptions } from './pageSvg';
 export { exportPagePng, type ExportPagePngOptions } from './pagePng';

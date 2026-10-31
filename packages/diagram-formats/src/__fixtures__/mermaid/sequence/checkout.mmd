@@ -1,0 +1,56 @@
+---
+title: Checkout
+---
+sequenceDiagram
+  %% Every construct the reader takes, once.
+  autonumber 3
+  box Aqua Storefront
+    actor U as Shopper
+    participant W as Web<br>app
+  end
+  participant API@{ "type" : "boundary" }
+  participant DB@{ "type" : "database" }
+  participant Q@{ "type" : "queue" } as Events
+  U->>+W: Place order
+  W->>API: POST /orders
+  activate API
+  API-)Q: order.created
+  alt card accepted
+    API->>DB: insert
+    DB-->>API: ok
+  else declined
+    API--xW: 402
+  end
+  loop every 5s
+    W->>W: poll status
+  end
+  par to shopper
+    W-->>U: confirmation
+  and to warehouse
+    API-)Q: ship
+  end
+  critical charge
+    API->>DB: settle
+  option timeout
+    API->>API: retry
+  end
+  opt gift wrap
+    Note right of W: wrap it
+  end
+  break out of stock
+    API-->>W: 409
+  end
+  rect rgb(200, 220, 255)
+    Note over API,DB: inside a colored region
+  end
+  create participant L as Ledger
+  API->>L: open account
+  destroy L
+  API-xL: close account
+  deactivate API
+  W-->>-U: done
+  U<<->>W: chat
+  U<<-->>W: chat again
+  W->U: plain
+  W-->U: plain dashed
+  Note left of U: two<br>lines

@@ -4,12 +4,13 @@ import { offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type D
 import { documentFromScene } from './fromScene';
 import { documentSpecs } from './toScene';
 import { DOC_DATA, MEASURE, docScene, type DocScene } from './testing/docScene';
+import { asGraph } from './testing/graphPages';
 
-const pageOf = (scene: DocScene, id: string) => documentFromScene(scene).pages.find((p) => p.id === id)!;
+const pageOf = (scene: DocScene, id: string) => documentFromScene(scene).pages.map(asGraph).find((p) => p.id === id)!;
 const nodeOf = (scene: DocScene, page: string, id: string): DataNode => pageOf(scene, page).data.nodes.find((n) => n.id === id)!;
 const edgeOf = (scene: DocScene, id: string): DataEdge => {
   const doc = documentFromScene(scene);
-  return [...doc.pages.flatMap((p) => p.data.edges), ...(doc.crossPageEdges ?? [])].find((e) => e.id === id)!;
+  return [...doc.pages.map(asGraph).flatMap((p) => p.data.edges), ...(doc.crossPageEdges ?? [])].find((e) => e.id === id)!;
 };
 const editEdge = (scene: DocScene, id: string, trait: Record<string, unknown>) => {
   const data = scene.get(id as never)!.data as { diagram: Record<string, unknown> };
@@ -58,7 +59,7 @@ describe('documentFromScene', () => {
     const doc = documentFromScene(docScene());
     expect(doc.crossPageEdges?.map((e) => e.id)).toEqual(['ac']);
     expect(doc.crossPageEdges![0]).toMatchObject({ from: 'a', to: 'c', router: 'bezier', label: 'away' });
-    expect(doc.pages.flatMap((p) => p.data.edges).map((e) => e.id)).toEqual(['ab', 'bm']);
+    expect(doc.pages.map(asGraph).flatMap((p) => p.data.edges).map((e) => e.id)).toEqual(['ab', 'bm']);
   });
 
   it('reads a route layout owns, and an avoiding route, as routed rather than as waypoints', () => {

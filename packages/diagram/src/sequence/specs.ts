@@ -15,7 +15,7 @@ import type { DiagramTheme } from '../theme/types';
 import { sequenceLayout, type SequenceLayout } from './layout';
 import { SEQ, type SeqRect } from './metrics';
 import type { SeqPartKind, SeqPartTrait, SequenceGeometry } from './trait';
-import type { SeqMessage, SeqStep, SeqTextTarget, SequenceData } from './types';
+import type { SeqStep, SeqTextTarget, SequenceData } from './types';
 import { flatSteps } from './columns';
 
 /** The theme role each kind of part is drawn in, where its data names none. */
@@ -118,10 +118,10 @@ function messageSpecs(out: PartSpecs, steps: readonly SeqStep[], layout: Sequenc
   const byId = new Map(layout.messages.map((m) => [m.id, m]));
   const edge = roleEdgeStyle(theme);
   const width = edge.width ?? 1.5;
-  for (const s of flatSteps(steps)) {
-    const at = s.kind === 'message' ? byId.get(s.id) : undefined;
-    if (at === undefined) continue;
-    const msg = s as SeqMessage;
+  for (const msg of flatSteps(steps)) {
+    const at = msg.kind === 'message' ? byId.get(msg.id) : undefined;
+    if (at === undefined || msg.kind !== 'message') continue;
+    const s = msg;
     const marker = MARKERS[msg.head];
     const stroke = {
       paint: { color: edge.stroke }, width, ...(msg.line === 'dashed' ? { dash: DASH } : {}),

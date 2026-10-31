@@ -10,6 +10,7 @@ import { DIAGRAM_MERMAID } from './mermaid/format';
 import { MEASURE } from './testing/docScene';
 import { documentSpecs } from './toScene';
 import { DRAW_XML } from './drawXml/format';
+import { asGraph } from './testing/graphPages';
 
 const DOC: DiagramDocument = {
   pages: [{ kind: 'graph', id: 'p1', name: 'One', width: 300, height: 200, data: { nodes: [{ id: 'a', lines: ['A'], at: { x: 10, y: 20 } }], edges: [] } }],
@@ -75,7 +76,7 @@ describe('the graph formats', () => {
     const scene = createScene<unknown, string, RectPose>({
       systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc, initial: specs as never,
     });
-    const page = documentFromScene(scene).pages[0]!;
+    const page = documentFromScene(scene).pages.map(asGraph)[0]!;
     const placed = page.data.nodes;
     expect(placed.map((n) => n.id)).toEqual(['A', 'B', 'C']);
     for (const n of placed) {

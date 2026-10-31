@@ -4,6 +4,7 @@
  */
 import {
   boundsOfPath,
+  composeWorldPose,
   derivedDepOf,
   derivedPartsOf,
   documentOf,
@@ -11,6 +12,7 @@ import {
   resolvePartPaint,
   effectivePose,
   isAnnotationLayer,
+  scenePoseAdapter,
   type DrawCommand,
   type NodeShapeEntry,
   type Paint,
@@ -98,9 +100,11 @@ export function pageSvgNodes(live: PageExportScene, page: PageRect): SvgNode[] {
   const painters = [diagramShape<RectPose>(), markShape<RectPose>()];
   const shown = new Set(scene.layers.filter((l) => l.visible && !isAnnotationLayer(l)).map((l) => l.id));
   const poseCache = new Map<string, RectPose>();
+  // A child stores its pose in its parent's frame; the walk below is handed every pose in the world.
+  const poses = { ...scenePoseAdapter(scene as never), getPose: (id: string) => effectivePose(scene, scene.get(id as never)!) };
   const pose = (node: SceneNode): RectPose => {
     let p = poseCache.get(node.id);
-    if (p === undefined) poseCache.set(node.id, (p = effectivePose(scene, node)));
+    if (p === undefined) poseCache.set(node.id, (p = composeWorldPose(poses as never, node.id, scene.composition.compose as never) as RectPose));
     return p;
   };
   const pathOf = (node: SceneNode) => (node.kind === 'mark' ? derivedDepOf(scene, node.id)?.path ?? null : null);

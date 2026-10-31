@@ -6,14 +6,15 @@ import type { DiagramDocument } from '../document';
 import { DRAW_XML } from './format';
 import { outlineOf } from './readStyle';
 import { parseStyle } from './style';
+import { asGraph } from '../testing/graphPages';
 
 const fixture = (name: string): string => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
 const read = (text: string) => Promise.resolve(DRAW_XML.read!(text));
 
-const nodes = (doc: DiagramDocument, page = 0): Map<string, DataNode> => new Map(doc.pages[page]!.data.nodes.map((n) => [n.id, n]));
-const edges = (doc: DiagramDocument, page = 0): Map<string, DataEdge> => new Map(doc.pages[page]!.data.edges.map((e) => [e.id!, e]));
+const nodes = (doc: DiagramDocument, page = 0): Map<string, DataNode> => new Map(doc.pages.map(asGraph)[page]!.data.nodes.map((n) => [n.id, n]));
+const edges = (doc: DiagramDocument, page = 0): Map<string, DataEdge> => new Map(doc.pages.map(asGraph)[page]!.data.edges.map((e) => [e.id!, e]));
 const regions = (doc: DiagramDocument, page = 0): Map<string, DataContainer> =>
-  new Map((doc.pages[page]!.data.containers ?? []).map((c) => [c.id, c]));
+  new Map((doc.pages.map(asGraph)[page]!.data.containers ?? []).map((c) => [c.id, c]));
 
 describe('detecting draw-style XML', () => {
   it('knows the file by its root element', () => {
@@ -125,7 +126,7 @@ describe('reading a file of pages', () => {
   });
 
   it('reads a group cell as a group of what it holds', () => {
-    expect(doc.pages[0]!.data.groups).toEqual([{ id: 'grp', members: ['g1', 'g2'] }]);
+    expect(doc.pages.map(asGraph)[0]!.data.groups).toEqual([{ id: 'grp', members: ['g1', 'g2'] }]);
     expect(nodes(doc).get('g2')!.at).toEqual({ x: 560, y: 300 });
   });
 
@@ -157,7 +158,7 @@ describe('reading other shapes of file', () => {
     const { document: doc } = await read(fixture('model.xml'));
     expect(nodes(doc).get('a')!.at).toEqual({ x: 40, y: 20 });
     expect(nodes(doc).get('b')!.at).toEqual({ x: 340, y: 20 });
-    expect(doc.pages[0]!.width).toBe(340 + 80 + 40);
+    expect(doc.pages.map(asGraph)[0]!.width).toBe(340 + 80 + 40);
   });
 
   it('draws a text cell with no fill or stroke', async () => {

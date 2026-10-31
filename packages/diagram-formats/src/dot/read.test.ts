@@ -3,9 +3,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { DataNode, DiagramData } from '@weasel-js/diagram';
 import { readDot } from './read';
+import { asGraph } from '../testing/graphPages';
 
 const fixture = (name: string) => readFileSync(join(__dirname, '..', '__fixtures__', name), 'utf8');
-const page = (text: string) => readDot(text).document.pages[0]!;
+const page = (text: string) => readDot(text).document.pages.map(asGraph)[0]!;
 const node = (data: DiagramData, id: string) => data.nodes.find((n) => n.id === id) as DataNode;
 
 describe('reading DOT', () => {
@@ -43,7 +44,7 @@ describe('reading DOT', () => {
 
   it('reads each shape of the table, and the rest as rects with a warning', () => {
     const { document, warnings } = readDot(fixture('shapes.dot'));
-    const outlines = Object.fromEntries(document.pages[0]!.data.nodes.map((n) => [n.id, n.outline]));
+    const outlines = Object.fromEntries(document.pages.map(asGraph)[0]!.data.nodes.map((n) => [n.id, n.outline]));
     expect(outlines).toEqual({
       r: 'rect', s: 'roundRect', d: 'diamond', e: 'ellipse', plain: 'ellipse', h: 'hexagon', p: 'parallelogram',
       t: 'trapezoid', c: 'ellipse', cyl: 'cylinder', n: 'note', html: 'ellipse',
@@ -71,7 +72,7 @@ describe('reading DOT', () => {
 
   it('reads compass ports, and drops named ports and corners with a warning', () => {
     const { document, warnings } = readDot(fixture('shapes.dot'));
-    const edges = document.pages[0]!.data.edges;
+    const edges = document.pages.map(asGraph)[0]!.data.edges;
     expect(edges.find((e) => e.from === 'e')).toMatchObject({ fromPort: 'n', toPort: 's' });
     const pt = edges.find((e) => e.from === 'p')!;
     expect(pt.fromPort).toBeUndefined();
