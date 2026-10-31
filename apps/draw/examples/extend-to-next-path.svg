@@ -9,8 +9,8 @@
 <text x="440" y="126" font-family="sans-serif" font-size="13" fill="#333">turning 30° more, then run straight.</text>
 <text x="440" y="142" font-family="sans-serif" font-size="13" fill="#333">After a click, the panel at bottom left</text>
 <text x="440" y="158" font-family="sans-serif" font-size="13" fill="#333">sets Shape (Eased/Straight) and Ease turn.</text>
-<path d="M 740 140 L 740 470" fill="none" stroke="#8a8a90" stroke-width="2"/>
-<path d="M 450 260 C 520 190 580 190 630 220" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<path d="M 740 90 L 740 470" fill="none" stroke="#8a8a90" stroke-width="2"/>
+<path d="M 450 250 C 520 310 580 310 630 280" fill="none" stroke="#1d4e89" stroke-width="2"/>
 <path d="M 450 420 C 520 430 580 420 620 395" fill="none" stroke="#1d4e89" stroke-width="2"/>
 <text x="40" y="520" font-family="sans-serif" font-size="13" fill="#333">3. Control: click the LEFT ends, which</text>
 <text x="40" y="536" font-family="sans-serif" font-size="13" fill="#333">point off the page. Nothing should happen.</text>
