@@ -186,7 +186,23 @@ export function resolveRuns(
   viewScale = 1,
 ): ResolvedRun[] {
   // Sized up front: pushing onto `[]` gives even a one-run array room for 17.
-  const out = new Array<ResolvedRun>(runs.length);
+  return resolveRunsInto(new Array<ResolvedRun>(runs.length), runs, style, viewScale);
+}
+
+/**
+ * {@link resolveRuns} into `out`, which is refilled in place and returned: a
+ * run already at an index is rewritten when it has the same optional fields as
+ * its replacement. For a caller that owns `out` and hands nothing it held
+ * to anyone who keeps it; one whose runs the text caches have seen calls
+ * `clearRuns` on them first.
+ */
+export function resolveRunsInto(
+  out: ResolvedRun[],
+  runs: readonly StyledRun[],
+  style: ResolvedTextStyle,
+  viewScale = 1,
+): ResolvedRun[] {
+  if (out.length !== runs.length) out.length = runs.length;
   let transformed = false;
   for (const r of runs) if ((r.textTransform ?? style.textTransform) !== 'none') transformed = true;
   const shown = transformed
@@ -228,32 +244,48 @@ export function resolveRuns(
       }
     }
     const lang = run.lang ?? style.lang;
-    // Every field every run has, in one literal, and only then the optional
-    // ones: a spread in the literal grew the run's property store field by field.
-    const r: ResolvedRun = {
-      text,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      fontStyle,
-      fill: run.fill !== undefined ? run.fill : style.fill,
-      letterSpacing: run.letterSpacing !== undefined
-        ? resolveScreenLength(run.letterSpacing, viewScale)
-        : style.letterSpacing,
-      // `||`, not `??`: run-level decorations are additive over the node style.
-      underline: run.underline || style.underline,
-      strikethrough: run.strikethrough || style.strikethrough,
-      overline: run.overline || style.overline,
-      baselineShift: shiftEm * style.fontSize,
-    };
-    if (srcMap) r.srcMap = srcMap;
-    if (sizeMap) r.sizeMap = sizeMap;
+    const fill = run.fill !== undefined ? run.fill : style.fill;
+    const letterSpacing = run.letterSpacing !== undefined
+      ? resolveScreenLength(run.letterSpacing, viewScale)
+      : style.letterSpacing;
+    // `||`, not `??`: run-level decorations are additive over the node style.
+    const underline = run.underline || style.underline;
+    const strikethrough = run.strikethrough || style.strikethrough;
+    const overline = run.overline || style.overline;
     // Unlike the decorations, a run's stroke *replaces* the node's rather
     // than adding to it — there is only one outline to paint.
     const stroke = run.stroke ?? style.stroke;
+    const rotate = run.rotate && Number.isFinite(run.rotate) ? run.rotate : undefined;
+    const prev = out[i];
+    // Rewritten only at the same shape: deleting a field would leave it a dictionary.
+    if (prev !== undefined && (prev.srcMap !== undefined) === (srcMap !== undefined)
+      && (prev.sizeMap !== undefined) === (sizeMap !== undefined)
+      && (prev.stroke !== undefined) === (stroke !== undefined)
+      && (prev.strutSize !== undefined) === relative && (prev.rotate !== undefined) === (rotate !== undefined)
+      && (prev.fontFeatures !== undefined) === (fontFeatures !== undefined) && (prev.lang !== undefined) === !!lang) {
+      prev.text = text; prev.fontFamily = fontFamily; prev.fontSize = fontSize; prev.fontWeight = fontWeight;
+      prev.fontStyle = fontStyle; prev.fill = fill; prev.letterSpacing = letterSpacing; prev.underline = underline;
+      prev.strikethrough = strikethrough; prev.overline = overline; prev.baselineShift = shiftEm * style.fontSize;
+      if (srcMap) prev.srcMap = srcMap;
+      if (sizeMap) prev.sizeMap = sizeMap;
+      if (stroke !== undefined) prev.stroke = stroke;
+      if (relative) prev.strutSize = style.fontSize;
+      if (rotate !== undefined) prev.rotate = rotate;
+      if (fontFeatures) prev.fontFeatures = fontFeatures;
+      if (lang) prev.lang = lang;
+      continue;
+    }
+    // Every field every run has, in one literal, and only then the optional
+    // ones: a spread in the literal grew the run's property store field by field.
+    const r: ResolvedRun = {
+      text, fontFamily, fontSize, fontWeight, fontStyle, fill, letterSpacing,
+      underline, strikethrough, overline, baselineShift: shiftEm * style.fontSize,
+    };
+    if (srcMap) r.srcMap = srcMap;
+    if (sizeMap) r.sizeMap = sizeMap;
     if (stroke !== undefined) r.stroke = stroke;
     if (relative) r.strutSize = style.fontSize;
-    if (run.rotate && Number.isFinite(run.rotate)) r.rotate = run.rotate;
+    if (rotate !== undefined) r.rotate = rotate;
     if (fontFeatures) r.fontFeatures = fontFeatures;
     if (lang) r.lang = lang;
     out[i] = r;

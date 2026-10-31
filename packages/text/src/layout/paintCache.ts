@@ -178,8 +178,15 @@ export function cachedPaintRuns(
   if (list.length >= PAINT_CACHE_VARIANT_LIMIT) list.shift();
   list.push(p);
   const e = mine ?? entryFor(runs);
+  if (e.painting !== null && e.painting !== p) settlePainting(e.painting, runs);
   e.paintedOn = laid; e.paintedStamp = stamp; e.painting = p; e.paintMin = min;
   return handOut(p, use);
+}
+
+/** Build `p`'s key now if it would be built from `runs`, which are about to
+ *  be refilled in place or painted elsewhere. */
+export function settlePainting(p: Painting, runs: readonly ResolvedRun[]): void {
+  if (p.runs === runs) keyOf(p);
 }
 
 function handOut(p: Painting, use: CacheUse): PaintedRuns {

@@ -12,7 +12,7 @@ export type {
 } from '@weasel-js/text-dom';
 export { useSceneTextEdit } from './useSceneTextEdit';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
-export { textCommand, textCommandFromRuns, textCommandFromPose } from '@weasel-js/renderer';
+export { textCommand, textCommandFromRuns, textCommandFromRunsInto, textCommandFromPose } from '@weasel-js/renderer';
 export {
   runsToDom,
   domToRuns,

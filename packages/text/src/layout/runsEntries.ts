@@ -4,7 +4,7 @@
  * than one in each cache.
  */
 import type { ResolvedRun } from '../runs/resolveRuns';
-import type { Variant } from './layoutCache';
+import type { Structural, Variant } from './layoutCache';
 import type { LaidOutRuns } from './layoutRuns';
 import type { Painting } from './paintCache';
 
@@ -23,6 +23,9 @@ export interface RunsEntry {
    *  result is handed on, so the object alone does not say it is the same layout. */
   paintedStamp: number;
   paintMin: number | undefined;
+  /** The structural entry these runs filled, which compares later runs with
+   *  them: it is dead once they are refilled in place. */
+  listed: Structural | null;
 }
 
 let entries = new WeakMap<readonly ResolvedRun[], RunsEntry>();
@@ -41,6 +44,7 @@ export function entryFor(runs: readonly ResolvedRun[]): RunsEntry {
   if (e === undefined) {
     e = spare.pop() ?? {
       generation: -1, variants: [], painting: null, paintedOn: null, paintedStamp: 0, paintMin: undefined,
+      listed: null,
     };
     entries.set(runs, e);
   }
@@ -55,12 +59,18 @@ export function dropEntry(runs: readonly ResolvedRun[]): RunsEntry | undefined {
   return e;
 }
 
-/** Take back an entry whose `variants` the caller has emptied. */
-export function giveEntry(e: RunsEntry): void {
+/** Reset an entry whose `variants` the caller has emptied, leaving it filed. */
+export function emptyEntry(e: RunsEntry): void {
   e.generation = -1;
   e.painting = null;
   e.paintedOn = null;
   e.paintMin = undefined;
+  e.listed = null;
+}
+
+/** Take back an entry whose `variants` the caller has emptied. */
+export function giveEntry(e: RunsEntry): void {
+  emptyEntry(e);
   if (spare.length < SPARE_MAX) spare.push(e);
 }
 

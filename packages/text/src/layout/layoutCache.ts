@@ -71,8 +71,8 @@ import { layoutBidi, layoutShaper, storeAlignWidth, type LayoutRunsOpts } from '
 import { truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
-import { recyclePaintings } from './paintCache';
-import { _resetRunsEntriesForTests, dropEntry, entryFor, giveEntry } from './runsEntries';
+import { recyclePaintings, settlePainting } from './paintCache';
+import { _resetRunsEntriesForTests, dropEntry, emptyEntry, entryFor, entryOf, giveEntry, type RunsEntry } from './runsEntries';
 import { DEFAULT_TAB_SIZE } from './tabStops';
 
 /** Distinct option combinations held for one runs array before the whole set
@@ -91,7 +91,7 @@ export interface Variant {
 }
 
 /** A layout held against the content of the runs that made it. */
-interface Structural extends Variant {
+export interface Structural extends Variant {
   hash: number;
   runs: readonly ResolvedRun[];
   /** When it was last read, for the eviction. */
@@ -287,7 +287,7 @@ export function cachedLayoutRuns(
     }
   }
 
-  const laid = structuralLayout(runs, opts, bidi, fonts);
+  const laid = structuralLayout(runs, opts, bidi, fonts, entry);
   const vs = entry.variants;
   if (vs.length >= LAYOUT_CACHE_VARIANT_LIMIT) disown(vs);
   vs.unshift(variant(opts, bidi, laid));
@@ -312,10 +312,10 @@ export function dropRuns(runs: readonly ResolvedRun[]): void {
 }
 
 function structuralLayout(
-  runs: readonly ResolvedRun[], opts: LayoutRunsOpts, bidi: Variant['bidi'], fonts: number,
+  runs: readonly ResolvedRun[], opts: LayoutRunsOpts, bidi: Variant['bidi'], fonts: number, entry: RunsEntry,
 ): LaidOutRuns {
   if (structuralGeneration !== fonts) {
-    for (const s of structural) unlist(s);
+    for (const s of structural) { unlist(s); s.runs = NO_RUNS; }
     structural = [];
     structuralGeneration = fonts;
   }
@@ -336,11 +336,41 @@ function structuralLayout(
   // The evicted entry is refilled in place.
   const filled = full ? fill(structural[oldest], opts, bidi, laid) : structuralEntry(opts, bidi, laid);
   filled.hash = hash; filled.runs = runs; filled.used = ++clock;
+  entry.listed = filled;
   const cols = columnsOf(laid);
   if (cols !== null) cols.listed = true;
   if (!full) structural.push(filled);
   return laid;
 }
+
+/**
+ * Forget what the caches hold for `runs`, which its caller is about to refill
+ * in place, leaving the array filed: unlike {@link dropRuns}, the next call
+ * with it costs no `WeakMap` set. A readout rewriting its text every frame
+ * refills one runs array this way, so the command it hands the renderer
+ * stays the same object.
+ *
+ * Call it before the first write to `runs` or any run in it: the structural
+ * list compares later runs with these, and a painting may still have to build
+ * its key from them.
+ */
+export function clearRuns(runs: readonly ResolvedRun[]): void {
+  const entry = entryOf(runs);
+  if (entry === undefined) return;
+  const s = entry.listed;
+  if (s !== null && s.runs === runs) {
+    // Left in the list unmatchable and oldest, for the next layout to refill.
+    unlist(s);
+    s.laid = NO_LAYOUT; s.runs = NO_RUNS; s.hash = -1; s.used = 0;
+  }
+  const p = entry.painting;
+  disown(entry.variants);
+  // After the layouts went back: a painting that went with them needs no key.
+  if (p !== null) settlePainting(p, runs);
+  emptyEntry(entry);
+}
+
+const NO_RUNS: readonly ResolvedRun[] = [];
 
 function structuralEntry(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Structural {
   return fill({

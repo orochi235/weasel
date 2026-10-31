@@ -43,6 +43,18 @@ describe('text widget', () => {
     expect(t.draw(ctx)[0]).toMatchObject({ x: 0, y: 10, runs: [{ text: 'b' }] });
   });
 
+  it('refills its one command and its runs when the text changes', () => {
+    const t = createText({ id: 't', x: 0, y: 10, text: 'a', fontSize: 14, color: '#000' });
+    const cmd = t.draw(ctx)[0] as TextDrawCommand;
+    const { runs } = cmd;
+    const run = runs[0];
+    t.setText('b');
+    expect(t.draw(ctx)[0]).toBe(cmd);
+    expect(cmd.runs).toBe(runs);
+    expect(runs[0]).toBe(run);
+    expect(run.text).toBe('b');
+  });
+
   it('onChange fires when state mutates', () => {
     const onChange = vi.fn();
     const t = createText({ id: 't', x: 0, y: 0, text: 'x', fontSize: 13, color: '#000', onChange });

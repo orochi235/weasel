@@ -18,7 +18,7 @@
 import type { DrawCommand, TextDrawCommand } from './index';
 import type { TextPaint, TextPose, TextStyle } from '@weasel-js/text';
 import { DEFAULT_TEXT_STYLE, resolveTextStyleInto, textPoseLayoutInput } from '@weasel-js/text';
-import { resolveRuns } from '@weasel-js/text';
+import { resolveRuns, resolveRunsInto } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun, ResolvedTextStyle } from '@weasel-js/text';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
@@ -58,6 +58,40 @@ export function textCommandFromRuns(
     verticalAlign,
     width,
   };
+}
+
+/**
+ * {@link textCommandFromRuns} into `cmd`, an earlier result of it that the
+ * caller owns, refilled in place along with its runs and returned. For text
+ * rewritten every frame: call `clearRuns(cmd.runs)` first, and anything still
+ * holding `cmd` sees the new text.
+ */
+export function textCommandFromRunsInto(
+  cmd: TextDrawCommand,
+  x: number,
+  y: number,
+  runs: readonly StyledRun[],
+  style?: TextStyle,
+  maxWidth?: number,
+  height?: number,
+  verticalAlign?: TextVerticalAlign,
+  paint?: TextPaint,
+  width?: number,
+  scale = 1,
+): TextDrawCommand {
+  const resolved = resolveTextStyleInto(resolvedStyle, style, paint, scale);
+  cmd.x = x;
+  cmd.y = y;
+  cmd.runs = resolveRunsInto(cmd.runs, runs, resolved, scale);
+  cmd.align = resolved.align;
+  cmd.direction = resolved.direction;
+  cmd.justify = resolved.align === 'justify';
+  cmd.maxWidth = maxWidth;
+  cmd.style = style ?? {};
+  cmd.height = height;
+  cmd.verticalAlign = verticalAlign;
+  cmd.width = width;
+  return cmd;
 }
 
 /** Build a draw command for a single unstyled string. Text is laid out with

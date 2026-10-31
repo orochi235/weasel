@@ -1,7 +1,9 @@
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
-import type { DrawCommand } from '@weasel-js/core/renderer';
-import { dropRuns, textCommandFromRuns, type StyledRun, type TextStyle } from '@weasel-js/core';
+import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
+import {
+  clearRuns, dropRuns, textCommandFromRuns, textCommandFromRunsInto, type StyledRun, type TextStyle,
+} from '@weasel-js/core';
 import type { Fill } from '@weasel-js/paint';
 
 /** The one run every text widget hands `textCommandFromRuns`, which keeps
@@ -40,19 +42,15 @@ export function createText(opts: TextOptions): TextWidget {
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: 0, h: opts.fontSize };
   let text = opts.text;
   let hidden = false;
-  /** The command last built, and the text, color and family it was built from. */
-  let placed: DrawCommand | null = null;
+  /** The one command this widget draws, refilled in place with its runs when
+   *  the text, color or family changes, and the text, color and family it
+   *  holds. So what `draw` returned is the current text, not a snapshot. */
+  let placed: TextDrawCommand | null = null;
   let placedText = '';
   let placedColor = '';
   let placedFamily = '';
-  // The runs a replaced command drew are never drawn again, so the text
-  // caches can hand their arrays to the new ones.
-  const drop = () => { if (placed?.kind === 'text') dropRuns(placed.runs); };
-  /** What `draw` returns: `placed` at the corner `movedX`, `movedY`. Refilled
-   *  in place: the HUD holds it only until the next `draw`. */
-  const moved: DrawCommand[] = [];
-  let movedX = 0;
-  let movedY = 0;
+  /** What `draw` returns, `[placed]`. */
+  const out: DrawCommand[] = [];
   // Kept from one command to the next while their color and family hold.
   let fill: Fill = { paint: { kind: 'solid', color: '' } };
   let style: TextStyle = { fontFamily: '', fontSize: opts.fontSize };
@@ -73,25 +71,25 @@ export function createText(opts: TextOptions): TextWidget {
     draw(ctx: HudDrawCtx): DrawCommand[] {
       const color = opts.color ?? ctx.tokens['--wzl-fg'];
       const fontFamily = opts.fontFamily ?? ctx.defaultFont;
-      // The renderer's layout cache is keyed on the runs array, so a move
-      // reuses the placed command rather than resolving fresh runs.
       if (placed === null || placedText !== text || placedColor !== color || placedFamily !== fontFamily) {
         if (placed === null || placedColor !== color) fill = { paint: { kind: 'solid', color } };
         if (placed === null || placedFamily !== fontFamily) style = { fontFamily, fontSize: opts.fontSize };
         RUN.text = text;
         RUN.fill = fill;
-        // Built at the corner it is drawn at, so new text costs one command.
-        const cmd = textCommandFromRuns(bounds.x, bounds.y, RUNS, style);
+        if (placed === null) {
+          placed = textCommandFromRuns(bounds.x, bounds.y, RUNS, style) as TextDrawCommand;
+          out[0] = placed;
+        } else {
+          clearRuns(placed.runs);
+          textCommandFromRunsInto(placed, bounds.x, bounds.y, RUNS, style);
+        }
         RUN.fill = undefined;
-        drop();
-        placed = cmd; placedText = text; placedColor = color; placedFamily = fontFamily;
-        moved[0] = cmd; movedX = bounds.x; movedY = bounds.y;
+        placedText = text; placedColor = color; placedFamily = fontFamily;
       }
-      if (movedX !== bounds.x || movedY !== bounds.y) {
-        moved[0] = { ...placed, x: bounds.x, y: bounds.y } as DrawCommand;
-        movedX = bounds.x; movedY = bounds.y;
-      }
-      return moved;
+      // A move keeps the runs, so the renderer's layout cache still has them.
+      placed.x = bounds.x;
+      placed.y = bounds.y;
+      return out;
     },
     hitTest() { return false; },
     claims: [],
@@ -99,7 +97,7 @@ export function createText(opts: TextOptions): TextWidget {
     dispose() {
       if (disposed) return;
       disposed = true;
-      drop();
+      if (placed !== null) dropRuns(placed.runs);
       opts.removeFromHud?.();
     },
   };

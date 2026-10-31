@@ -28,7 +28,7 @@ export type {
 } from './textStyle';
 
 export {
-  resolveRuns, resolveRunFace, SCRIPT_METRICS, scriptMetrics, scriptMetricsFor, halfLeadingFor, numericWeight, isBoldWeight,
+  resolveRuns, resolveRunsInto, resolveRunFace, SCRIPT_METRICS, scriptMetrics, scriptMetricsFor, halfLeadingFor, numericWeight, isBoldWeight,
 } from './runs/resolveRuns';
 export type { ResolvedRun, ScriptPreset } from './runs/resolveRuns';
 export { DEFAULT_DECORATION_METRICS, decorationMetrics } from './layout/decorationMetrics';
@@ -47,6 +47,7 @@ export {
 export {
   cachedLayoutRuns,
   dropRuns,
+  clearRuns,
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';

@@ -96,9 +96,9 @@ describe('attachHud: widget command cache', () => {
     const label = hud.text({ id: 't', x: 10, y: 10, text: 'one', fontSize: 14 });
     const before = paint()[0];
     label.setBounds({ x: 50, y: 10, w: 0, h: 14 });
-    const after = paint()[0];
-    expect(after).not.toBe(before);
-    expect(after).toMatchObject({ x: 50 });
+    expect(before).toMatchObject({ x: 10 });
+    // The text widget refills its one command, so only a redraw moves it.
+    expect(paint()[0]).toMatchObject({ x: 50 });
   });
 
   // A label pinned to the camera moves every frame; only its position changed,
@@ -111,7 +111,8 @@ describe('attachHud: widget command cache', () => {
     const after = paint()[0] as { runs: unknown };
     expect(after.runs).toBe(before.runs);
     label.setText('two');
-    expect((paint()[0] as { runs: unknown }).runs).not.toBe(before.runs);
+    expect((paint()[0] as { runs: unknown }).runs).toBe(before.runs);
+    expect(before.runs).toMatchObject([{ text: 'two' }]);
   });
 
   it('invalidates a bare-factory widget that has no onChange', () => {

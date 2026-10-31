@@ -96,7 +96,7 @@ export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPo
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';
 export { createTilePattern, type TilePatternOpts } from './patterns';
 export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
-export { textCommand, textCommandFromPose, textCommandFromRuns } from './textCommand';
+export { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
 export {
   bitmapSrc,
   getImageBitmap,
