@@ -37,6 +37,13 @@ export function outlineDetail(outline: Outline, bounds: Bounds): Path | null {
   return resolveOutline(outline).detail?.(bounds) ?? null;
 }
 
+/** What `outline` fills in its stroke's color over its fill — a start state's
+ *  dot — or null when it has none. */
+export function outlineSolid(outline: Outline, bounds: Bounds): Path | null {
+  if (typeof outline !== 'string' || bounds.width <= 0 || bounds.height <= 0) return null;
+  return resolveOutline(outline).solid?.(bounds) ?? null;
+}
+
 /**
  * The largest axis-aligned box a shape's content can occupy without leaving
  * the shape. Rows lay out in here, not in the bounds — a diamond's corners and

@@ -46,7 +46,7 @@ const boxOf = (spec: DiagramSpec | undefined): Rect | undefined =>
   spec === undefined ? undefined : { x: spec.pose.x, y: spec.pose.y, width: spec.pose.width, height: spec.pose.height };
 
 /**
- * `page` laid out with `layered`, the way its `direction` says, every node and
+ * `page` laid out with its `layout` (default `layered`), the way its `direction` says, every node and
  * box it already places pinned there: each node gets an `at`, each pool and
  * empty container a box, and each edge the route layout chose as `routed`.
  * When the page placed nothing, what layout placed is moved to sit
@@ -61,9 +61,10 @@ export function laidOutPage(page: GraphPage, opts: { theme: DiagramTheme; measur
     ...(data.containers ? { containers: data.containers.map((c) => (c.box !== undefined ? { ...c, pinned: true } : c)) } : {}),
   };
   // Read as laid out, in world.
+  const layoutOptions = { ...page.layout?.options, ...(page.direction ? { direction: page.direction } : {}) };
   const specs = diagramScene(pinned, {
-    layout: 'layered', theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
-    ...(page.direction ? { layoutOptions: { direction: page.direction } } : {}),
+    layout: page.layout?.name ?? 'layered', theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
+    ...(Object.keys(layoutOptions).length > 0 ? { layoutOptions } : {}),
   });
   const byId = new Map(specs.map((s) => [s.id as string, s]));
   const boxed = (c: DataContainer): DataContainer => {

@@ -42,6 +42,10 @@ export const SHAPES: ReadonlyArray<{
   { name: 'folder', outline: 'folder', write: [['shape', 'folder'], ['tabPosition', 'left']] },
   { name: 'umlActor', outline: 'actor', write: [['shape', 'umlActor'], ['verticalLabelPosition', 'bottom'], ['verticalAlign', 'top']] },
   { name: 'doubleEllipse', outline: 'doubleEllipse', write: ['ellipse', ['shape', 'doubleEllipse']] },
+  // As draw.io's UML palette (Sidebar-UML.js) writes a state machine's start, end, and fork or join.
+  { name: 'startState', outline: 'start', write: ['ellipse', ['shape', 'startState']] },
+  { name: 'endState', outline: 'end', write: ['ellipse', ['shape', 'endState']] },
+  { name: 'line', outline: 'bar', write: [['shape', 'line']] },
   { name: 'mxgraph.bpmn.event', when: ['outline', 'standard'], outline: 'event', write: event('standard') },
   { name: 'mxgraph.bpmn.event', when: ['outline', 'catching'], outline: 'intermediateEvent', write: event('catching') },
   { name: 'mxgraph.bpmn.event', when: ['outline', 'throwing'], outline: 'intermediateEvent' },

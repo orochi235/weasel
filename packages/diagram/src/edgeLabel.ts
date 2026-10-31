@@ -38,6 +38,12 @@ export function labelSize(text: string, style: RowTextStyle, measure?: MeasureRo
   return { width: measure !== undefined ? measure(text, style).width : text.length * size * GLYPH, height: size };
 }
 
+/** The id of the label at edge `edgeId`'s `from` or `to` end (`DataEdge.endLabels`). */
+export const endLabelIdOf = (edgeId: string, end: 'from' | 'to'): string => `${edgeId}/label:${end}`;
+
+/** Where an end label sits: just off the end, to the left of travel. `to`'s is at `'end'`. */
+export const END_LABEL_PLACEMENT: DiagramLabel = { at: 'start', offset: 4, inset: 4 };
+
 /** Options for {@link edgeLabelSpec}. */
 export interface EdgeLabelOptions<TLayer extends string> {
   layer: TLayer;
@@ -50,13 +56,14 @@ export interface EdgeLabelOptions<TLayer extends string> {
   measure?: MeasureRowText;
 }
 
-/** The label node for edge `edgeId`: a leaf that derives its pose from the edge's route. */
+/** The label node for edge `edgeId`: a leaf that derives its pose from the edge's route. `id` defaults to
+ *  `<edgeId>/label`. */
 export function edgeLabelSpec<TLayer extends string>(
-  edgeId: string, text: string, opts: EdgeLabelOptions<TLayer>,
+  edgeId: string, text: string, opts: EdgeLabelOptions<TLayer> & { id?: string },
 ): AddNodeSpec<unknown, TLayer, RectPose> {
   const style = opts.style ?? LABEL_STYLE;
   return {
-    id: `${edgeId}/label` as never,
+    id: (opts.id ?? `${edgeId}/label`) as never,
     kind: 'mark',
     layer: opts.layer,
     pickable: false,

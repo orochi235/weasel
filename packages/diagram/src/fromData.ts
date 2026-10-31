@@ -108,7 +108,7 @@ function nodeSpecs(
     row: (text, at) =>
       at.row.kind === 'slot'
         ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
-        : text === '' ? null : { ...textData(text, at.row), bodyRow: at.index },
+        : text === '' ? null : { ...textData(text, at.row), bodyRow: at.index, ...(at.row.kind === 'field' ? { bodyField: at.row.label } : {}) },
     portLabel: (text) => textData(text, undefined),
   });
   return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);

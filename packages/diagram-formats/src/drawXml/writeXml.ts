@@ -39,3 +39,13 @@ export function edgeXml(
   return `        <mxCell${head}>\n          <mxGeometry${geometry}>\n            <Array as="points">\n${list}            </Array>\n`
     + '          </mxGeometry>\n        </mxCell>\n';
 }
+
+/** A label on edge `parent` at one end, `x` -1 for its source and 1 for its target, as draw.io writes a multiplicity. */
+export function endLabelXml(cell: { id: string; value: string; parent: string }, x: -1 | 1): string {
+  const head = attrs([
+    ['id', cell.id], ['value', cell.value], ['style', `edgeLabel;html=1;resizable=0;align=${x < 0 ? 'left' : 'right'};verticalAlign=bottom;`],
+    ['vertex', '1'], ['connectable', '0'], ['parent', cell.parent],
+  ]);
+  return `        <mxCell${head}>\n          <mxGeometry${attrs([['x', x], ['relative', '1'], ['as', 'geometry']])}>\n`
+    + '            <mxPoint as="offset" />\n          </mxGeometry>\n        </mxCell>\n';
+}

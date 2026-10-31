@@ -162,7 +162,9 @@ export type {
   GraphNodeLike,
   GraphSource,
 } from './graph';
-export { EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize } from './edgeLabel';
+export {
+  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
+} from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export {
   LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, draggableLabels, labelDragLayer, labelScratchOf, labelUnder,
@@ -303,7 +305,7 @@ export type {
 } from './portAffordance';
 export { portLayer, sceneParticipants } from './portLayer';
 export type { ParticipantScene } from './portLayer';
-export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, registerOutline } from './outline';
+export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, outlineSolid, registerOutline } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';
 export type { Bounds, BuiltinOutline, Outline, OutlineDef } from './outline';

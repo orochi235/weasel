@@ -4,7 +4,7 @@
  * `documentFromScene` and `documentSpecs` know scenes, so a codec is written
  * once for a chart and for a data-backed host alike.
  */
-import type { DataEdge, DiagramData, DiagramTheme, LayoutDirection } from '@weasel-js/diagram';
+import type { DataEdge, DiagramData, DiagramTheme, LayoutDirection, LayoutOptions } from '@weasel-js/diagram';
 
 /** What every page has: its sheet size. Ids share one namespace across the whole document. */
 export interface PageBase {
@@ -20,9 +20,17 @@ export interface GraphPage extends PageBase {
   data: DiagramData;
   /** The way layout runs when the page is laid out on import, which it is when a node has no `at`. */
   direction?: LayoutDirection;
+  /** The layout that runs when the page is laid out on import. Unset, `layered`. */
+  layout?: PageLayout;
   /** What the graph models, such as `'class'` or `'state'`: a format with a notation of that name writes it in
    *  that notation. Unset, a plain flowchart. */
   notation?: string;
+}
+
+/** A layout by name, and the options a file can carry for it. */
+export interface PageLayout {
+  name: 'layered' | 'tree' | 'force' | 'chain';
+  options?: Pick<LayoutOptions, 'nodeGap' | 'rankGap' | 'order' | 'chainSide' | 'treeSides'>;
 }
 
 /** One page of a document; `kind` says what its `data` is. */

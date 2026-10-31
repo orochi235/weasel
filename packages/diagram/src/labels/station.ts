@@ -65,7 +65,12 @@ export function labelCenter(whole: Path, label: DiagramLabel, size: { width: num
     ? nearestStation(path, at.at.near) ?? pointAlongPath(path, 0.5)
     : pointAlongPath(path, typeof at.at === 'number' ? at.at : NAMED[at.at] ?? 0.5);
   if (station === null) return null;
-  return besideStation(station.point, station.tangent, at.offset ?? 0, size);
+  const beside = besideStation(station.point, station.tangent, at.offset ?? 0, size);
+  const end = label.placed !== undefined || label.inset === undefined ? 0 : label.at === 'start' ? 1 : label.at === 'end' ? -1 : 0;
+  if (end === 0) return beside;
+  const { x: tx, y: ty } = station.tangent;
+  const reach = end * (label.inset! + (Math.abs(tx) * size.width + Math.abs(ty) * size.height) / 2);
+  return { x: beside.x + tx * reach, y: beside.y + ty * reach };
 }
 
 /** Half the depth of a label `size` big along the normal to `tangent`. */

@@ -7,7 +7,7 @@
  */
 export {
   formatHolds, graphPageOf, graphPagesOf, writtenPage,
-  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase,
+  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase, type PageLayout,
   type PageKind, type WriteOptions,
 } from './document';
 export { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';

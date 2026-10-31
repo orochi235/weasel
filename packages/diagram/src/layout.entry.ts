@@ -84,7 +84,7 @@ export {
 } from './layout';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export type { Bounds, BuiltinOutline, Outline, OutlineDef } from './outline';
-export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, registerOutline } from './outline';
+export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, outlineSolid, registerOutline } from './outline';
 export type { PortsOptions } from './ports';
 export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export { forestOf, subtreeBlocks, tree } from './tree';

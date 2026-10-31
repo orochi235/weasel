@@ -153,4 +153,10 @@ describe('writing DOT', () => {
     };
     expect(back(pageOf(data)).data.edges.map((e) => e.colors?.markerEnd)).toEqual([...heads]);
   });
+
+  it('writes the labels at an edge\'s ends as its tail and head labels, and reads them back', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', endLabels: { from: '1', to: '0..*' } }] };
+    expect(writeDot(pageOf(data)).text).toContain('taillabel="1"');
+    expect(back(pageOf(data)).data.edges[0]!.endLabels).toEqual({ from: '1', to: '0..*' });
+  });
 });

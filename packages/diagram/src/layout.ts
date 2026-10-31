@@ -51,6 +51,11 @@ export interface LayoutOptions {
   /** `chain` only: which side of the line everything else hangs on, along
    *  the cross axis. Default `'after'`. */
   chainSide?: 'after' | 'before';
+  /** `tree` only: `'both'` splits each root's children between the two sides
+   *  of it along the rank axis, as a mind map spreads, the halves as near
+   *  equal in size as order allows; groups then are kept but not packed apart.
+   *  Default `'one'`, every child past its parent. */
+  treeSides?: 'one' | 'both';
 }
 
 /** The new top-left for each node that moves. A node that is already there is

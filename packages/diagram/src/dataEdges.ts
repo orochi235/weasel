@@ -5,7 +5,7 @@ import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './fromData';
 import { ownEdgeStyle, withColors } from './dataColors';
-import { edgeLabelSpec, labelSize, labelStyleOf } from './edgeLabel';
+import { END_LABEL_PLACEMENT, edgeLabelSpec, endLabelIdOf, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
@@ -114,14 +114,15 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       dependsOn: [e.from as never, e.to as never],
       derivePath: EDGE_DERIVE_PATH,
     });
+    const look = { layer: 'main' as const, style: labelStyleOf(ctx.labelFont ?? ctx.font), fill: style.label ?? style.stroke, measure: ctx.measure };
+    for (const end of ['from', 'to'] as const) {
+      const text = e.endLabels?.[end];
+      if (!text) continue;
+      const label = end === 'from' ? END_LABEL_PLACEMENT : { ...END_LABEL_PLACEMENT, at: 'end' as const };
+      specs.push(edgeLabelSpec(id, text, { ...look, id: endLabelIdOf(id, end), label }) as DiagramSpec);
+    }
     if (!e.label) continue;
-    specs.push(edgeLabelSpec(id, e.label, {
-      layer: 'main',
-      label: placementOf(e, route, ctx),
-      style: labelStyleOf(ctx.labelFont ?? ctx.font),
-      fill: style.label ?? style.stroke,
-      measure: ctx.measure,
-    }) as DiagramSpec);
+    specs.push(edgeLabelSpec(id, e.label, { ...look, label: placementOf(e, route, ctx) }) as DiagramSpec);
   }
   return specs;
 }

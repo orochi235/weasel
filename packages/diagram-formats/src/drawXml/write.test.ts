@@ -165,9 +165,11 @@ describe('writing what the format cannot carry', () => {
   });
 
   it('round-trips the storage and figure outlines, and the crow\'s-foot and hollow-triangle heads', async () => {
-    const OUTLINES = ['roundRect', 'cylinder', 'document', 'note', 'cloud', 'triangle', 'cube', 'folder', 'actor', 'doubleEllipse'] as const;
+    const OUTLINES = [
+      'roundRect', 'cylinder', 'document', 'note', 'cloud', 'triangle', 'cube', 'folder', 'actor', 'doubleEllipse', 'start', 'end', 'bar',
+    ] as const;
     const MARKERS = ['triangle-hollow', 'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many'] as const;
-    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 900, height: 200, data: {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 1400, height: 200, data: {
       nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 80, height: 60 })),
       edges: MARKERS.map((m, i) => ({ id: m, from: OUTLINES[i]!, to: OUTLINES[i + 1]!, colors: { markerEnd: m } })),
     } }] };
@@ -201,5 +203,16 @@ describe('writing what the format cannot carry', () => {
       cell('task', 'shape=mxgraph.bpmn.task;taskMarker=user;rounded=1;')}</root></mxGraphModel></diagram></mxfile>`;
     const back = (await DRAW_XML.read!(text)).document.pages[0]!.data;
     expect(back.nodes.map((n) => [n.id, n.outline])).toEqual([['end', 'event'], ['complex', 'diamond'], ['task', 'roundRect']]);
+  });
+
+  it('round-trips the labels at an edge\'s ends as labels at its source and target', async () => {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 400, height: 200, data: {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 0, y: 0 } }, { id: 'b', lines: ['B'], at: { x: 200, y: 0 } }],
+      edges: [{ id: 'ab', from: 'a', to: 'b', label: 'owns', endLabels: { from: '1', to: '0..*' } }],
+    } }] };
+    const text = DRAW_XML.write!(doc).text;
+    expect(geometry(xml(text), 'ab/label:from').x).toBe(-1);
+    const back = (await DRAW_XML.read!(text)).document.pages[0]!.data.edges[0]!;
+    expect(back).toMatchObject({ label: 'owns', endLabels: { from: '1', to: '0..*' } });
   });
 });
