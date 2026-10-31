@@ -5,11 +5,12 @@ import { NETWORK } from './network.mjs';
 import { MIND_MAP } from './mindMap.mjs';
 import { ORG } from './org.mjs';
 import { ERD, UML } from './modeling.mjs';
+import { BLOCK, C4, KANBAN, REQUIREMENT, STATE } from './notations.mjs';
 
 export const namespace = 'diagram';
 export const owner = '@weasel-js/diagram';
 
 export const groups = [
   ['Containers', CONTAINERS], ['Org chart', ORG], ['Network', NETWORK], ['BPMN', BPMN], ['UML', UML], ['ERD', ERD],
-  ['Mind map', MIND_MAP], ['Connectors', CONNECTORS],
+  ['Mind map', MIND_MAP], ['State', STATE], ['Requirement', REQUIREMENT], ['C4', C4], ['Block', BLOCK], ['Kanban', KANBAN], ['Connectors', CONNECTORS],
 ];

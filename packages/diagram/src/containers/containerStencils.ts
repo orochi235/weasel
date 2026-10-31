@@ -23,6 +23,10 @@ export interface ContainerStencil {
   size: { width: number; height: number };
   /** The glyph a palette draws on its button. */
   icon?: IconRef;
+  /** The title a new one is drawn with. Default `label`, and `'Pool'` for a pool. */
+  title?: string;
+  /** A new pool's lanes, by title, in the order they stack. Default two, `Lane 1` and `Lane 2`. */
+  lanes?: readonly string[];
 }
 
 export { CONTAINER_STENCILS } from '../stencils/containers';
@@ -50,13 +54,13 @@ export function containerBuild<TLayer extends string>(
   const id = opts.newId();
   const axis = stencil.axis ?? 'y';
   const at = placedBounds(stencil, bounds);
-  const title = stencil.role === 'pool' ? 'Pool' : stencil.label;
+  const title = stencil.title ?? (stencil.role === 'pool' ? 'Pool' : stencil.label);
   const style = stencil.role === 'pool' && opts.laneStyles ? opts.laneStyles.header : opts.style;
   const specs = [
     ...regionSpecs(stencil.role, axis, at, title, {
       id, layer: opts.layer, parent: opts.parent ?? null, ...(style ? { style } : {}),
     }),
-    ...(stencil.role === 'pool' ? firstLanes(id, axis, at, opts) : []),
+    ...(stencil.role === 'pool' ? firstLanes(id, axis, at, opts, stencil.lanes) : []),
   ];
   const label = `Insert ${stencil.label}`;
   // Built in one frame; each lane and title is stored in its container's.

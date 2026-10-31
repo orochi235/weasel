@@ -19,6 +19,8 @@ export interface DiagramTypeEdge {
   router?: RouterName;
   markerStart?: MarkerRef | null;
   markerEnd?: MarkerRef | null;
+  /** A dash pattern, as `Stroke.dash`: a requirement's dashed relationship. Unset, solid. */
+  dash?: readonly number[];
 }
 
 /** A kind of diagram: the stencil groups a new one opens with, how its connectors start out, and the

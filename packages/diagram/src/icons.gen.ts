@@ -50,6 +50,14 @@ export type DiagramIconName =
   | 'subtopic'
   | 'floatingNote'
   | 'mindMap'
+  | 'stateStart'
+  | 'stateEnd'
+  | 'stateFork'
+  | 'requirement'
+  | 'c4Container'
+  | 'queue'
+  | 'blocks'
+  | 'kanbanCard'
   | 'routerStraight'
   | 'routerOrthogonal'
   | 'routerCurved'
@@ -143,6 +151,39 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconN
     ]
   },
   {
+    "label": "State",
+    "names": [
+      "stateStart",
+      "stateEnd",
+      "stateFork"
+    ]
+  },
+  {
+    "label": "Requirement",
+    "names": [
+      "requirement"
+    ]
+  },
+  {
+    "label": "C4",
+    "names": [
+      "c4Container",
+      "queue"
+    ]
+  },
+  {
+    "label": "Block",
+    "names": [
+      "blocks"
+    ]
+  },
+  {
+    "label": "Kanban",
+    "names": [
+      "kanbanCard"
+    ]
+  },
+  {
     "label": "Connectors",
     "names": [
       "routerStraight",
@@ -202,6 +243,14 @@ declare module '@weasel-js/icons' {
     'diagram:subtopic': true;
     'diagram:floatingNote': true;
     'diagram:mindMap': true;
+    'diagram:stateStart': true;
+    'diagram:stateEnd': true;
+    'diagram:stateFork': true;
+    'diagram:requirement': true;
+    'diagram:c4Container': true;
+    'diagram:queue': true;
+    'diagram:blocks': true;
+    'diagram:kanbanCard': true;
     'diagram:routerStraight': true;
     'diagram:routerOrthogonal': true;
     'diagram:routerCurved': true;

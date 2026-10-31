@@ -25,6 +25,9 @@ export interface DiagramStencil {
   icon?: IconRef;
   /** Laid over the style the body is drawn in: a BPMN end event's heavier ring. */
   style?: Partial<NodeStyle>;
+  /** The theme role the body is drawn in, kept on its trait as an imported shape's is: C4's `muted` for what lies
+   *  outside the system. The host resolves its colors (`StencilInsertOptions.theme`). */
+  themeRole?: string;
   /** How its body stacks its rows, as `BodySpec`'s fields of the same names. */
   padding?: number;
   gap?: number;
@@ -85,7 +88,7 @@ export function stencilBuild<TLayer extends string>(
       layer: opts.layer,
       ...(opts.measure ? { measure: opts.measure } : {}),
       body: (trait) => ({
-        diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure) },
+        diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure), ...(stencil.themeRole !== undefined ? { style: stencil.themeRole } : {}) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
       }),
@@ -95,6 +98,7 @@ export function stencilBuild<TLayer extends string>(
             style: rowTextStyle(box.row, opts.font ?? DEFAULT_FONT),
             fill: { paint: { color: style.text } },
             bodyRow: box.index,
+            ...(box.row.kind === 'field' ? { bodyField: box.row.label } : {}),
           }
         : null,
     },

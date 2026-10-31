@@ -1,8 +1,8 @@
 /** A chart authored as a user draws one: a diagram type, one page, and stencils placed from its groups. */
 import { PAGES_DOC_KEY, createScene, defaultCommitAdapter, type Op, type RectPose } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, STENCIL_GROUPS, containerBuild, diagramTypeDocValue, isContainerStencil, stencilBuild,
-  withDiagramRegistry, type ContainerStencil, type DiagramStencil,
+  DIAGRAM_THEME_KEY, DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, STENCIL_GROUPS, commitEdgeToScene, containerBuild, diagramTypeDocValue,
+  diagramTypeEdgeStroke, diagramTypeOf, isContainerStencil, lanesOf, stencilBuild, withDiagramRegistry, type ContainerStencil, type DiagramStencil,
 } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
 import { documentFromScene } from '../fromScene';
@@ -18,8 +18,9 @@ export function stencilById(id: string): DiagramStencil | ContainerStencil {
   throw new Error(`no stencil "${id}"`);
 }
 
-/** A stencil to place: its id, where its box's corner goes, and the container its body goes in. */
-export interface Placement { stencil: string; at: { x: number; y: number }; parent?: string }
+/** A stencil to place: its id, where its center goes, and what its body goes in: an earlier placement by index, or a
+ *  lane of one, `at` then in that container's frame. */
+export interface Placement { stencil: string; at: { x: number; y: number }; parent?: number | { pool: number; lane: number } }
 
 /** A one-page scene of diagram type `type`, each placement inserted as its stencil's tool inserts it. Returns
  *  the scene and each placement's new id, in order. */
@@ -34,17 +35,31 @@ export function authoredScene(type: string, placements: readonly Placement[] = [
     },
   });
   let n = 0;
-  const ids = placements.map((p) => {
+  const ids: string[] = [];
+  const parentOf = (p: Placement): string | null => {
+    if (p.parent === undefined) return null;
+    if (typeof p.parent === 'number') return ids[p.parent]!;
+    return lanesOf(scene as never, ids[p.parent.pool]!)[p.parent.lane]!;
+  };
+  for (const p of placements) {
     const stencil = stencilById(p.stencil);
     const bounds = { ...p.at, width: 0, height: 0 };
-    const common = { layer: 'main', newId: () => `${p.stencil}-${++n}`, parent: p.parent ?? null };
+    const common = { layer: 'main', newId: () => `${p.stencil}-${++n}`, parent: parentOf(p) };
     const { id, ops } = isContainerStencil(stencil)
       ? containerBuild(stencil, bounds, common)
       : stencilBuild(stencil, bounds, { ...common, measure: MEASURE });
     scene.applyBatch(ops as Op[], `Insert ${stencil.label}`, defaultCommitAdapter(scene));
-    return id;
-  });
+    ids.push(id);
+  }
   return { scene, ids };
+}
+
+/** A connector from `from` to `to`, body to body, as the connector tool draws one in the scene's diagram type. */
+export function connect(scene: DocScene, from: string, to: string): void {
+  const type = diagramTypeOf(scene, DIAGRAM_TYPES);
+  const end = (nodeId: string) => ({ kind: 'body' as const, nodeId, point: { x: 0, y: 0 } });
+  const ctx = { deps: { scene } } as unknown as Parameters<typeof commitEdgeToScene>[1];
+  commitEdgeToScene({ from: end(from), to: end(to), router: type.edge?.router ?? 'straight' }, ctx, { stroke: diagramTypeEdgeStroke(THEME, type) });
 }
 
 /** The scene as a document, as Mermaid, and that Mermaid read back. */

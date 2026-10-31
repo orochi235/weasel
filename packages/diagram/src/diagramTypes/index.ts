@@ -1,6 +1,7 @@
 export {
-  BPMN_TYPE, DIAGRAM_TYPES, ERD_TYPE, FLOWCHART_TYPE, MIND_MAP_TYPE, NETWORK_TYPE, ORG_CHART_TYPE, STENCIL_GROUPS,
-  UML_CLASS_TYPE, groupStencilIds, groupStencils, isContainerStencil,
+  ARCHITECTURE_TYPE, BLOCK_TYPE, BPMN_TYPE, C4_TYPE, DIAGRAM_TYPES, ERD_TYPE, FLOWCHART_TYPE, KANBAN_TYPE, MIND_MAP_TYPE,
+  NETWORK_TYPE, ORG_CHART_TYPE, REQUIREMENT_TYPE, STATE_TYPE, STENCIL_GROUPS, UML_CLASS_TYPE, groupStencilIds, groupStencils,
+  isContainerStencil,
 } from './catalog';
 export {
   addStencilGroup, diagramNotationOf, diagramTypeDocOf, diagramTypeDocValue, diagramTypeOf, diagramTypeOfNotation, removeStencilGroup,

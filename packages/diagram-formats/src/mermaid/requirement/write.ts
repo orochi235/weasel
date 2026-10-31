@@ -1,4 +1,5 @@
-/** One graph page as a Mermaid requirement diagram: boxes as requirements and elements, edges as relationships. */
+/** One graph page as a Mermaid requirement diagram: boxes as requirements and elements, each named by its name row,
+ *  and edges as relationships. */
 import type { DataNode, LayoutDirection, Row } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { graphOut } from '../../graphWrite';
@@ -33,6 +34,26 @@ function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [s
   return { type: known ?? 'requirement', fields };
 }
 
+/** A box's name: its first text row past the `<<kind>>` one, else its id. */
+function blockName(node: DataNode): string {
+  const rows: readonly Row[] = node.rows ?? (node.lines ?? []).map((text) => ({ kind: 'label', text }));
+  const labels = rows.flatMap((r) => (r.kind === 'label' ? [r.text] : []));
+  const named = labels[0] !== undefined && /^<<\w+>>$/.test(labels[0]) ? labels[1] : labels[0];
+  return named !== undefined && named.trim() !== '' ? named.trim() : node.id;
+}
+
+/** Each box's name, a name two boxes share made distinct by a number. */
+function blockNames(nodes: readonly DataNode[]): Map<string, string> {
+  const taken = new Set<string>();
+  return new Map(nodes.map((n) => {
+    const base = blockName(n);
+    let name = base;
+    for (let k = 2; taken.has(name); k++) name = `${base} ${k}`;
+    taken.add(name);
+    return [n.id, name];
+  }));
+}
+
 /** Writes the page `opts.page` names, else the first, as a Mermaid requirement diagram. */
 export function writeRequirementDiagram(doc: DiagramDocument, opts?: WriteOptions): ExportResult {
   const out = graphOut(doc, opts, 'Mermaid');
@@ -41,20 +62,22 @@ export function writeRequirementDiagram(doc: DiagramDocument, opts?: WriteOption
   if (out.clusters.length > 0) warnings.add('Mermaid requirement diagrams have no containers; they were dropped.');
   const lines = [...titleLines(page.name), 'requirementDiagram'];
   if (page.direction !== undefined && page.direction !== 'down') lines.push(`  direction ${HEADER[page.direction]}`);
+  const names = blockNames(page.data.nodes);
+  const name = (id: string) => nameOf(names.get(id) ?? id);
   for (const n of page.data.nodes) {
     const { type, fields } = blockOf(n, warnings);
-    lines.push(`  ${type} ${nameOf(n.id)} {`, ...fields.map(([k, v]) => `    ${k}: ${v}`), '  }');
+    lines.push(`  ${type} ${name(n.id)} {`, ...fields.map(([k, v]) => `    ${k}: ${v}`), '  }');
   }
   for (const e of out.edges) {
     if (!out.byId.has(e.from) || !out.byId.has(e.to)) continue;
     const type = /^<<(\w+)>>$/.exec(e.label ?? '')?.[1];
     const known = RELATIONS.find((r) => r === type);
     if (known === undefined) warnings.add('Mermaid relationships are one of seven kinds, named in their label; others were written as traces.');
-    lines.push(`  ${nameOf(e.from)} - ${known ?? 'traces'} -> ${nameOf(e.to)}`);
+    lines.push(`  ${name(e.from)} - ${known ?? 'traces'} -> ${name(e.to)}`);
   }
   for (const n of page.data.nodes) {
     const props = n.colors !== undefined ? styleProps(n.colors) : '';
-    if (props !== '' && /^[\w-]+$/.test(n.id)) lines.push(`  style ${n.id} ${props}`);
+    if (props !== '' && /^[\w-]+$/.test(names.get(n.id)!)) lines.push(`  style ${names.get(n.id)} ${props}`);
   }
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };
 }

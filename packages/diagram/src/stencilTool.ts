@@ -12,6 +12,8 @@ import { diagramDropParentAt, type DropParentScene } from './containers/canDropI
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
 import type { NodeStyle } from './fromData';
 import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
+import { roleStyle } from './theme/resolve';
+import type { DiagramTheme } from './theme/types';
 
 /** The tool that draws `stencil`, a shape's or a container's: its id is the stencil's insert kind. */
 export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon'>): Tool {
@@ -48,6 +50,8 @@ export interface StencilInsertOptions {
   containerStyle?: NodeStyle;
   /** A new pool's header colors and its lanes' bodies in turn. Default `containerStyle`. */
   laneStyles?: { header: NodeStyle; bodies: readonly NodeStyle[] };
+  /** Resolves the role a stencil names (`DiagramStencil.themeRole`); one naming a role is drawn in `style` without it. */
+  theme?: DiagramTheme;
 }
 
 type Bounds = { x: number; y: number; width: number; height: number };
@@ -76,7 +80,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       if (scene === undefined) return null;
       const center = { x: world.x + world.width / 2, y: world.y + world.height / 2 };
       const role = 'role' in stencil ? stencil.role : null;
-      const { style, measure, font, containerStyle, laneStyles } = optsRef.current;
+      const { style, measure, font, containerStyle, laneStyles, theme } = optsRef.current;
       const parent = diagramDropParentAt(scene as unknown as DropParentScene, center, role);
       // Drawn in world; built in the frame of the container it lands in.
       const bounds = parent === null ? world : scenePoseFrame(scene as never).localUnder(parent as NodeId, { ...world }) as Bounds;
@@ -87,8 +91,9 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
           ...common, ...(boxStyle ? { style: boxStyle } : {}), ...(laneStyles ? { laneStyles } : {}),
         });
       }
+      const shapeStyle = stencil.themeRole !== undefined && theme !== undefined ? roleStyle(theme, stencil.themeRole) : style;
       return stencilBuild(stencil, bounds, {
-        ...common, ...(style ? { style } : {}), ...(measure ? { measure } : {}), ...(font ? { font } : {}),
+        ...common, ...(shapeStyle ? { style: shapeStyle } : {}), ...(measure ? { measure } : {}), ...(font ? { font } : {}),
       });
     };
     const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {

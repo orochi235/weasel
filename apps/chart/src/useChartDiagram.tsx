@@ -94,7 +94,7 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
 export function StencilInsertPublisher({ theme }: { theme: DiagramTheme }): null {
   const opts = useMemo(
     () => ({
-      style: roleStyle(theme), font: themeFont(theme), measure: rendererMeasure,
+      style: roleStyle(theme), theme, font: themeFont(theme), measure: rendererMeasure,
       containers: CONTAINER_STENCILS, containerStyle: theme.container, laneStyles: theme.lane,
     }),
     [theme],

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PAGES_DOC_KEY } from '@weasel-js/core';
@@ -39,6 +39,8 @@ describe('a chart\'s diagram type and its pages\' notation', () => {
 
   it('opens an imported diagram as the type its notation names', () => {
     expect(typeOf(imported(fixture('class', 'shop.mmd')))).toBe('umlClass');
+    expect(typeOf(imported(fixture('state', 'door.mmd')))).toBe('state');
+    expect(typeOf(imported(fixture('c4', readdirSync(join(__dirname, '__fixtures__', 'mermaid', 'c4'))[0]!)))).toBe('c4');
     expect(typeOf(imported('flowchart LR\n  a --> b'))).toBe('flowchart');
   });
 

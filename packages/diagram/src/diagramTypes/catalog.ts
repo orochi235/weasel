@@ -8,6 +8,11 @@ import { MIND_MAP_GROUP } from '../stencils/mindMap';
 import { ORG_GROUP } from '../stencils/org';
 import { ERD_GROUP } from '../stencils/erd';
 import { UML_GROUP } from '../stencils/uml';
+import { ARCHITECTURE_GROUP } from '../stencils/architecture';
+import { C4_GROUP } from '../stencils/c4';
+import { KANBAN_GROUP } from '../stencils/kanban';
+import { REQUIREMENT_GROUP } from '../stencils/requirement';
+import { STATE_GROUP } from '../stencils/state';
 import type { DiagramStencil } from '../stencil';
 import { FLOWCHART_NOTATION, type DiagramType, type StencilGroup } from './types';
 
@@ -18,6 +23,7 @@ const byId = <T extends { id: string }>(list: readonly T[]): Readonly<Record<str
 export const STENCIL_GROUPS: Readonly<Record<string, StencilGroup>> = byId([
   FLOWCHART_GROUP, CONTAINERS_GROUP,
   ORG_GROUP, NETWORK_GROUP, BPMN_GROUP, UML_GROUP, ERD_GROUP, MIND_MAP_GROUP,
+  STATE_GROUP, REQUIREMENT_GROUP, C4_GROUP, ARCHITECTURE_GROUP, KANBAN_GROUP,
 ]);
 
 /** The flowchart: its symbols and containers, connectors as the theme draws them, no auto layout. */
@@ -88,10 +94,68 @@ export const ERD_TYPE: DiagramType = {
   notations: ['er'],
 };
 
+/** A state machine: states and pseudostates, composites holding more, transitions ending in an arrow. */
+export const STATE_TYPE: DiagramType = {
+  id: 'state',
+  label: 'State',
+  icon: icon('stateEnd'),
+  groups: [STATE_GROUP.id],
+  notations: ['state'],
+};
+
+/** A requirement diagram: requirements and the elements meeting them, joined by dashed relationships. */
+export const REQUIREMENT_TYPE: DiagramType = {
+  id: 'requirement',
+  label: 'Requirement',
+  icon: icon('requirement'),
+  groups: [REQUIREMENT_GROUP.id],
+  edge: { markerEnd: 'arrow', dash: [4, 4] },
+  notations: ['requirement'],
+};
+
+/** A C4 model, at any of its levels: a page authored as one is a context diagram. */
+export const C4_TYPE: DiagramType = {
+  id: 'c4',
+  label: 'C4',
+  icon: icon('c4Container'),
+  groups: [C4_GROUP.id],
+  notations: ['c4-context', 'c4-container', 'c4-component', 'c4-dynamic', 'c4-deployment'],
+};
+
+/** A block diagram: the flowchart's shapes, laid out on a grid. */
+export const BLOCK_TYPE: DiagramType = {
+  id: 'block',
+  label: 'Block',
+  icon: icon('blocks'),
+  groups: [FLOWCHART_GROUP.id, CONTAINERS_GROUP.id],
+  layout: 'grid',
+  notations: ['block'],
+};
+
+/** An architecture diagram: services in groups, joined square at their sides with plain links. */
+export const ARCHITECTURE_TYPE: DiagramType = {
+  id: 'architecture',
+  label: 'Architecture',
+  icon: icon('cloud'),
+  groups: [ARCHITECTURE_GROUP.id],
+  edge: { router: 'orthogonal', markerEnd: null },
+  notations: ['architecture'],
+};
+
+/** A kanban board: a pool of column lanes, cards stacked down them, and no connectors. */
+export const KANBAN_TYPE: DiagramType = {
+  id: 'kanban',
+  label: 'Kanban',
+  icon: icon('kanbanCard'),
+  groups: [KANBAN_GROUP.id],
+  notations: ['kanban'],
+};
+
 /** The diagram types this package ships, by id, in menu order. */
 export const DIAGRAM_TYPES: Readonly<Record<string, DiagramType>> = byId([
   FLOWCHART_TYPE,
   ORG_CHART_TYPE, NETWORK_TYPE, BPMN_TYPE, UML_CLASS_TYPE, ERD_TYPE, MIND_MAP_TYPE,
+  STATE_TYPE, REQUIREMENT_TYPE, C4_TYPE, BLOCK_TYPE, ARCHITECTURE_TYPE, KANBAN_TYPE,
 ]);
 
 /** Whether `stencil` is a container's rather than a shape's. */

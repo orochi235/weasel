@@ -80,20 +80,21 @@ export function regionSpecs<TLayer extends string>(
   }];
 }
 
-/** The lane specs a new pool at `at` starts with. */
+/** The lane specs a new pool at `at` starts with: one per title in `titles`, default `Lane 1` and `Lane 2`. */
 export function firstLanes<TLayer extends string>(
   poolId: string, axis: 'x' | 'y', at: RectPose, opts: ContainerBuildOptions<TLayer>,
+  titles: readonly string[] = Array.from({ length: NEW_POOL_LANES }, (_, i) => `Lane ${i + 1}`),
 ): RegionSpec<TLayer>[] {
   const { header } = containerShape('pool', axis);
-  const size = Math.max(MIN_LANE_SIZE, (axis === 'y' ? at.height : at.width) / NEW_POOL_LANES);
+  const size = Math.max(MIN_LANE_SIZE, (axis === 'y' ? at.height : at.width) / Math.max(1, titles.length));
   const out: RegionSpec<TLayer>[] = [];
-  for (let i = 0; i < NEW_POOL_LANES; i++) {
+  for (let i = 0; i < titles.length; i++) {
     const pose: RectPose = axis === 'y'
       ? { x: at.x + header.size, y: at.y + i * size, width: at.width - header.size, height: size }
       : { x: at.x + i * size, y: at.y + header.size, width: size, height: at.height - header.size };
     const bodies = opts.laneStyles?.bodies ?? [];
     const style = bodies.length > 0 ? bodies[i % bodies.length] : opts.style;
-    out.push(...regionSpecs('lane', axis, pose, `Lane ${i + 1}`, {
+    out.push(...regionSpecs('lane', axis, pose, titles[i]!, {
       id: opts.newId(), layer: opts.layer, parent: poolId, ...(style ? { style } : {}),
     }));
   }

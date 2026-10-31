@@ -33,7 +33,7 @@ function GroupPanel({ group, tools, look }: { group: StencilGroup; tools: ToolsA
   const ghost = (tool: Tool): ReactNode => {
     const stencil = group.stencils.find((s) => s.id === stencilIdOf(tool.id));
     if (stencil === undefined) return null;
-    const style = 'outline' in stencil ? roleStyle(look.theme) : look.theme.container;
+    const style = 'outline' in stencil ? roleStyle(look.theme, stencil.themeRole) : look.theme.container;
     return <StencilGhost stencil={stencil} style={style} scale={look.scale} />;
   };
   return (
