@@ -139,56 +139,6 @@ describe('createPathEditState', () => {
   });
 });
 
-describe('path-edit tools', () => {
-  it('holds one active tool while a path is open, and notifies on a change', () => {
-    const state = createPathEditState();
-    const heard = vi.fn();
-    state.setEditingId('a');
-    state.subscribe(heard);
-    state.setTool('simplifyBrush');
-    state.setTool('simplifyBrush');
-    expect(state.getTool()).toBe('simplifyBrush');
-    state.setTool('lengthen');
-    expect(state.getTool()).toBe('lengthen');
-    expect(heard).toHaveBeenCalledTimes(2);
-    state.setTool(null);
-    expect(state.getTool()).toBeNull();
-  });
-
-  it('has no tool with no path open, and drops it when the path closes', () => {
-    const state = createPathEditState();
-    state.setTool('simplifyBrush');
-    expect(state.getTool()).toBeNull();
-    state.setEditingId('a');
-    state.setTool('simplifyBrush');
-    state.setEditingId(null);
-    state.setEditingId('a');
-    expect(state.getTool()).toBeNull();
-  });
-
-  it('drops the tool when the mode stops allowing anchor editing', () => {
-    let allowed = true;
-    const state = createPathEditState({ isAllowed: () => allowed });
-    state.setEditingId('a');
-    state.setTool('simplifyBrush');
-    allowed = false;
-    expect(state.getTool()).toBeNull();
-    allowed = true;
-    expect(state.getTool()).toBeNull();
-  });
-
-  it('defers to a host that owns the tool', () => {
-    let tool: string | null = 'simplifyBrush';
-    const state = createPathEditState({
-      host: () => ({ editingId: () => 'a', setEditingId: () => {}, tool: () => tool, setTool: (t) => { tool = t; } }),
-    });
-    expect(state.getTool()).toBe('simplifyBrush');
-    state.setTool(null);
-    expect(tool).toBeNull();
-    expect(state.getTool()).toBeNull();
-  });
-});
-
 describe('isSelectedNode', () => {
   const sceneWith = (hideSources: boolean) => createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],

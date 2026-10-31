@@ -55,11 +55,24 @@ export interface ModeDefinition {
   /** Leave a soft mode and throw its session away, where `exit` keeps it to
    *  resume. */
   discard?: { shortcut?: string };
+  /**
+   * The tool the mode starts on. Entering the mode activates it and leaving
+   * restores the tool active at entry; the key that leaves the mode, pressed
+   * with another tool on, returns to it instead. Ignored where the canvas
+   * mounts no tool by that id.
+   */
+  defaultTool?: string;
 }
 
 /** A mode's display name: its `label`, else its `id`. */
 export function modeLabel(mode: ModeDefinition): string {
   return mode.label ?? mode.id;
+}
+
+/** The tool `mode` starts on, when `has` says the canvas mounts it; else null. */
+export function defaultToolOf(mode: ModeDefinition, has: (toolId: string) => boolean): string | null {
+  const id = mode.defaultTool;
+  return id !== undefined && has(id) ? id : null;
 }
 
 /** True iff a tool carrying `toolTags` is eligible for `mode`. */

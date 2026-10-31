@@ -11,6 +11,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
+import { LastOperationPanel } from '@weasel-js/ui/components/LastOperationPanel';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
@@ -32,7 +33,7 @@ function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { selection, pathEdit, redrawOn } = useSeededPathEdit();
   return (
-    <PathLabStage bar={<ActionBar group="anchors" />}>
+    <PathLabStage bar={<><ActionBar group="anchors" /><LastOperationPanel /></>}>
       <TrialSceneCanvas
         features={features}
         scene={scene}

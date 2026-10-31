@@ -47,6 +47,11 @@ export interface DepSchema {
   dispatchTrace?: import('./interactions/dispatcher/dispatchTrace').DispatchTrace;
   /** The keymaps open on the canvas: what a leader opens and a hint reads. */
   keymaps?: import('./keymaps/keymapStack').KeymapStack;
+  /** Every selection the host holds, captured so the last operation can put it back before it reruns. */
+  selectionSnapshot?: import('./interactions/actions/lastOperation').SelectionSnapshotDep;
+  /** The tool the active mode starts on (`ModeDefinition.defaultTool`), when the canvas mounts it;
+   *  else null. `<SceneCanvas>` sources it. */
+  modeDefaultTool?: () => string | null;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -113,6 +118,7 @@ export type {
 export { actionItems, actionItemTitle } from './interactions/actions/actionItems';
 export { actionSettingsParams, readActionSettings } from './interactions/actions/actionSettings';
 export type { ActionSettings, ActionSettingsState } from './interactions/actions/actionSettings';
+export type { LastOperation, LastOperationStore, SelectionSnapshotDep } from './interactions/actions/lastOperation';
 export type { ActionItem } from './interactions/actions/actionItems';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
@@ -198,6 +204,7 @@ export type {
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
+export { returnToModeDefault } from './tools/returnToModeDefault';
 export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas } from './tools/toolSet';
 export type { ToolSet, ToolEntry } from './tools/toolSet';
 export { isTool } from './tools/types';

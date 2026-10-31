@@ -554,9 +554,11 @@ in path edit, Escape exits the edit instead of resetting the tool. A plain drag
 carries no intent of its own, so no kit action binds one by default: the select
 tool marquees, the shape tools insert and the hand tool pans through their own
 bindings, and a canvas that wants a marquee or a pan under every tool adds
-`areaSelectContribution()` or `dragPanContribution()`. The one exception is a
-path-edit tool such as `simplifyBrush`: its action binds a plain drag, and
-declines it through `enabled()` unless its tool is on. Two actions tied through
+`areaSelectContribution()` or `dragPanContribution()`. Path edit's anchor
+editing binds ambient drags on its own affordances, and a path-edit tool such
+as the Simplify brush binds its drag at the active tier, which outranks them;
+the `anchors` tool path edit starts on binds nothing, so they take the drag.
+Two actions tied through
 step 4 fall to registration order, and the kit's route-conflict check reports
 them (`reportRouteConflicts`). Two actions gated by different rules count as
 tied unless the rules exclude each other, or, when the check is given the

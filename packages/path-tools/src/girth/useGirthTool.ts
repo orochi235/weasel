@@ -57,7 +57,7 @@ export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
     capabilities: ['edits-page'],
     hookName: 'useGirthTool',
     cursor: 'crosshair',
-    presentation: { label: 'Girth', group: 'shape', icon: icon('girth') },
+    presentation: { label: 'Girth', group: 'path', icon: icon('girth') },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'W', shift: true } }),
     actions,
     overlay,

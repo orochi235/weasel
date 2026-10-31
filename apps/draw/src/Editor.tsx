@@ -4,14 +4,14 @@ import {
   placedPagesOf,
   type SceneCanvasApi,
   type SelectionApi,
-  type Tool,
+  TOOL_GROUP_ORDER,
   type ToolsApi,
-  toolSetHas,
   useActionsRegistry,
   useCanvasSize,
   type View
 } from '@weasel-js/core';
-import { RESHAPE_TOOLS } from '@weasel-js/path-tools';
+import { PATH_OVERLAYS_GROUP } from '@weasel-js/path-tools';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
@@ -30,6 +30,7 @@ import { showFirstRunNotice } from './firstRunNotice';
 import { LoupeProvider } from './LoupeProvider';
 import { DRAW_MENU_BAR } from './menuBar';
 import type { UseModalityReturn } from './modality/useModality';
+import { useModeId } from './modality/useModeId';
 import { useLoupeSource } from './pageLayers';
 import { PreferencesModal } from './PreferencesModal';
 import { toolEnumSources } from './registry/toolEnumSource';
@@ -47,11 +48,11 @@ import { useHoldContentUnderChrome } from './useHoldContentUnderChrome';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 
-const isCoreTool = (tool: Tool): boolean => !toolSetHas(RESHAPE_TOOLS, tool.id);
-/** The path palette's groups: the Girth tool, the stroke tools, then the warps. */
-const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
-const CORE_TOOL_STACKS = [['rect', 'ellipse', 'polygon', 'star'], ['pen', 'spiro', 'pencil']];
-const PATH_TOOL_STACKS = [['trim', 'extend'], ['distort', 'envelope', 'puppet']];
+/** The palette's groups: core's, then path-tools' reshaping tools and its warps. */
+const TOOL_GROUPS = [...TOOL_GROUP_ORDER, 'path', 'warp'];
+const TOOL_STACKS = [
+  ['rect', 'ellipse', 'polygon', 'star'], ['pen', 'spiro', 'pencil'], ['trim', 'extend'], ['distort', 'envelope', 'puppet'],
+];
 /** What the view fits before the scene has a page to fit. */
 const FALLBACK_PAGE = { x: 0, y: 0, ...PAPER_PRESETS[DEFAULT_PAPER_SIZE] };
 
@@ -65,7 +66,7 @@ export interface EditorProps {
  *  tool-options strip, the two sidebars, and the status bar. */
 export function Editor({ scene, selection, modality }: EditorProps): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
-  useLastTool(tools);
+  useLastTool(tools, modality.machine.registry);
   const prefSources = useMemo(() => toolEnumSources(tools), [tools]);
   const actionsReg = useActionsRegistry();
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -109,6 +110,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   const surfaceHost = useEditorSurfaceHost({ scene, selection, measurements, doc, cornerSelection: modality.cornerSelection });
 
   const textEdit = useTextEditSession(scene, hostRef.current, modality.machine);
+  const inPathEdit = useModeId(modality.machine) === 'path-edit';
   // The character strip shows only during a text edit, and moves the workspace as it comes and goes.
   const optionsRef = useRef<HTMLDivElement | null>(null);
   useHoldContentUnderChrome(optionsRef, setView, textEdit.effectiveStyle != null);
@@ -144,30 +146,16 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                       {tools && (
                         <ToolPalette
                           tools={tools}
-                          include={isCoreTool}
-                          stacks={CORE_TOOL_STACKS}
+                          groupOrder={TOOL_GROUPS}
+                          stacks={TOOL_STACKS}
                           orientation="vertical"
                           lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
                           modeRegistry={modality.machine.registry}
+                          ineligible="hide"
                         />
                       )}
+                      {inPathEdit && <ActionBar group={PATH_OVERLAYS_GROUP} orientation="vertical" className="wd-path-overlays" />}
                       <ActiveSwatches />
-                    </Sidebar>
-                  </ShowChrome>
-                  <ShowChrome id={FIXED_CHROME.pathTools.id}>
-                    <Sidebar side="left" className="wd-sidebar left path" ariaLabel={FIXED_CHROME.pathTools.label}>
-                      {tools && (
-                        <ToolPalette
-                          tools={tools}
-                          include={RESHAPE_TOOLS}
-                          ariaLabel={FIXED_CHROME.pathTools.label}
-                          groupOrder={PATH_TOOL_GROUPS}
-                          stacks={PATH_TOOL_STACKS}
-                          orientation="vertical"
-                          lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                          modeRegistry={modality.machine.registry}
-                        />
-                      )}
                     </Sidebar>
                   </ShowChrome>
                   <Workspace

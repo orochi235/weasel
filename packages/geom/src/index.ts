@@ -98,8 +98,9 @@ export {
 } from './paths/extendPath';
 export {
   lengthenPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
-  type LengthenMode, type PathEndFrame,
+  type EaseOptions, type LengthenMode, type PathEndFrame,
 } from './paths/lengthenPathEnd';
+export { easeLength, extensionPieces, type ExtensionPiece } from './paths/pathEndExtension';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
@@ -108,7 +109,7 @@ export { growRegion, type GrowRegionOptions } from './paths/growRegion';
 export { mergeRegion, type MergeRegionOptions } from './paths/mergeRegion';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
-export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';
+export { addExtremaAnchors, segmentExtremaTs, type ExtremaAxes } from './paths/extremaAnchors';
 export {
   anchorsWhere, cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection,
   shrinkAnchorSelection, smoothAnchors,

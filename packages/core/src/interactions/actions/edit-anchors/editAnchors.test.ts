@@ -64,8 +64,8 @@ describe('editAnchorsAction descriptor', () => {
     expect(editAnchorsAction.requires).toContain('editAnchors');
   });
 
-  it("enabled returns true (invoker self-guards on empty selection)", () => {
-    expect(editAnchorsAction.enabled!()).toBe(true);
+  it('has no enabled gate (invoker self-guards on empty selection)', () => {
+    expect(editAnchorsAction.enabled).toBeUndefined();
   });
 
   it('start returns empty handle when editAnchors dep is absent', () => {

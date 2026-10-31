@@ -45,7 +45,6 @@ import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { icon } from '../../../icons.gen';
-import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
 import type { ImmediateParams } from '@weasel-js/routing';
 
@@ -101,10 +100,9 @@ export function anchorEditWouldChange(deps: ActionDeps | undefined, edit: (set: 
   return path !== null && editAnchorSetTracked(path, edit) !== null;
 }
 
-/** Enabled while a path is open and no path-edit tool has the pointer. */
+/** Enabled while a path is open. */
 function plainAnchorEditing(deps?: ActionDeps): true | ActionDisabledReason {
-  if (!depOf(deps)) return ActionDisabledReason.SelectionRequired;
-  return pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true;
+  return depOf(deps) ? true : ActionDisabledReason.SelectionRequired;
 }
 
 /** Enabled only while a path is in edit mode with anchors selected. */
@@ -386,8 +384,6 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  // A path-edit tool has the drag.
-  enabled: (deps) => (pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true),
 }, editingLayer);
 
 /** Flat indices of `path`'s anchors inside `rect`. */

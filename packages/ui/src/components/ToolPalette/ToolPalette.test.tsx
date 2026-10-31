@@ -381,6 +381,15 @@ describe('ToolPalette — mode eligibility', () => {
     expect(handBtn.tabIndex).toBe(0);
   });
 
+  it('with ineligible="hide", renders only the tools the mode allows', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} ineligible="hide" />);
+    expect(screen.queryByRole('button', { name: /select/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /anchor/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /hand/i })).toBeTruthy();
+  });
+
   it('when modeRegistry is omitted, all tools are eligible (fallback behaviour)', () => {
     // PATH_EDIT would normally disable 'select', but no registry means all eligible.
     const tools = makeTools(selectTool, anchorTool, handTool);

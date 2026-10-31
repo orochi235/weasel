@@ -26,6 +26,8 @@ export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from
 export { actionCursor } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionSettings, ActionSettingsState } from '@weasel-js/routing';
 export { actionSettingsParams, readActionSettings } from '@weasel-js/routing';
+export type { LastOperation, LastOperationStore, SelectionSnapshotDep } from '@weasel-js/routing';
+export { lastOperationOf, useLastOperation, useLastOperationStore } from '@weasel-js/routing/react';
 export { actionBindings, actionItems, actionItemTitle, actionsTagged, taggedActionItems, matchActionItem } from '@weasel-js/routing';
 export { PATH_GESTURE_TAGS, pathOperationTags, type PathGestureFamily } from '../interactions/actions/pathGestureTags';
 export { heldKeySpec } from '@weasel-js/routing';
@@ -52,9 +54,6 @@ export { insertAction } from '../interactions/actions/insert/action';
 export { placeAction } from '../interactions/actions/insert/placeAction';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
-export {
-  exitPathEditToolAction, pathEditToolAction, pathEditToolActive,
-} from '../interactions/actions/defaults/pathEditTools';
 export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';

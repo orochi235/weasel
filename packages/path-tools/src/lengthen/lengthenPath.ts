@@ -1,5 +1,5 @@
 import {
-  type Action, ActionDisabledReason, type ActionDeps, type BindingOpts, type InvocationCtx, isAnchor,
+  type Action, ActionDisabledReason, type ActionDeps, type BindingOpts, type InvocationCtx,
   type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
@@ -8,16 +8,13 @@ import {
   pathEndFrame, pathToAnchors, type AnchorSet, type LengthenMode, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  depOf, type EditAnchorsDep, editingLayer, inPlane, pathEditPreview, pathEditToolAction, pathOperationTags,
+  depOf, type EditAnchorsDep, editingLayer, inPlane, pathEditPreview, pathOperationTags,
 } from '@weasel-js/core';
-import { icon } from '../icons.gen';
-
-/** The path-edit tool under which a drag on an open end lengthens the path. */
-export const LENGTHEN_TOOL = 'lengthen';
 
 /** Params `lengthenPath` reads on every move. */
 export interface LengthenPathParams {
-  /** How an unmodified drag grows the end; Shift picks the other. Default `'tangent'`. */
+  /** How an unmodified drag grows the end. Shift picks `'curvature'` over
+   *  `'tangent'` and `'tangent'` over either curve. Default `'tangent'`. */
   mode?: LengthenMode;
 }
 
@@ -28,7 +25,7 @@ const END_HIT_PX = 8;
 
 function editedPath(deps: ActionDeps | undefined): { dep: EditAnchorsDep; path: PolygonPath } | null {
   const dep = depOf(deps);
-  if (!dep || dep.tool !== LENGTHEN_TOOL) return null;
+  if (!dep) return null;
   const path = dep.getEditablePath(dep.editingId) as PolygonPath | null | undefined;
   return path?.kind === 'polygon' ? { dep, path } : null;
 }
@@ -45,9 +42,9 @@ function endUnder(deps: ActionDeps | undefined, x: number, y: number): boolean {
 /** The `mode` param, or the other mode while `flip` is held. */
 function modeOf(opts: BindingOpts | undefined, flip: boolean): LengthenMode {
   const mode = (resolveParams(opts?.params) as LengthenPathParams | undefined)?.mode;
-  const base: LengthenMode = mode === 'curvature' ? 'curvature' : 'tangent';
+  const base: LengthenMode = mode === 'curvature' || mode === 'eased' ? mode : 'tangent';
   if (!flip) return base;
-  return base === 'curvature' ? 'tangent' : 'curvature';
+  return base === 'tangent' ? 'curvature' : 'tangent';
 }
 
 function pressedAnchor(ctx: InvocationCtx): number {
@@ -56,20 +53,20 @@ function pressedAnchor(ctx: InvocationCtx): number {
 }
 
 /**
- * Lengthen, the path-edit tool's drag. While path edit's `lengthen` tool is
- * on, dragging an open path's end anchor lengthens the path from that end
- * (`lengthenPathEnd`): straight along its end tangent, or along an arc with
- * the curvature the end has. Dragging back into the path shortens it along
- * itself. The `mode` param (`'tangent'`, the default, or `'curvature'`) picks
- * which, and Shift picks the other; both are read on every move. One undo
- * step per drag. With the tool off, a drag on the anchor is `editAnchors`'
- * and moves it.
+ * Lengthen: the drag `useLengthenTool`, a path-edit tool, binds. Dragging an
+ * open path's end anchor lengthens the path from that end
+ * (`lengthenPathEnd`): straight along its end tangent, along an arc with
+ * the curvature the end has, or easing out of that curvature into a straight
+ * run. Dragging back into the path shortens it along itself. The `mode` param
+ * (`'tangent'`, the default, `'curvature'`, or `'eased'`) picks which, and
+ * Shift flips it (see {@link LengthenPathParams}); both are read on every move.
+ * One undo step per drag. One it turns down, on an anchor that is no open end,
+ * falls through to `editAnchors`, which moves the anchor.
  */
 export const lengthenPathAction: Action & { requires: string[] } = inPlane({
   id: 'lengthenPath',
   label: 'Lengthen path',
   tags: pathOperationTags('drag'),
-  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isAnchor }, mods: { shift: 'optional' } }, opts: { id: 'lengthenPath.drag' } }],
   cursor: LENGTHEN_CURSOR,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],
@@ -116,11 +113,8 @@ export const lengthenPathAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: (deps, at) => {
-    if (depOf(deps)?.tool !== LENGTHEN_TOOL) return ActionDisabledReason.NotApplicable;
+    if (!depOf(deps)) return ActionDisabledReason.NotApplicable;
     if (at && !endUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },
 }, editingLayer);
-
-/** The bar toggle for Lengthen: `pathEditTool.lengthen`. */
-export const lengthenToolAction = pathEditToolAction(LENGTHEN_TOOL, 'Lengthen', icon('lengthen'));

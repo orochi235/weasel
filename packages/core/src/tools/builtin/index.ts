@@ -34,6 +34,7 @@ export type { PressTargetTree } from './pressTarget';
 // point snap, group expansion); pose geometry comes from `poseDescriptor`.
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool, dragPanContribution, DRAG_PAN_ID } from './hand';
+export { anchorsTool, ANCHORS_TOOL_ID } from './anchors';
 export { useTextTool } from './text';
 export {
   useStickyTool, stickyData, stickyNodeFactory, STICKY_DEFAULTS,

@@ -227,7 +227,7 @@ export const SceneCanvas = /* @__PURE__ */ forwardRef(SceneCanvasWrapper) as <
 export { DEFAULT_HANDLE_SIZE, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
 export {
   BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
-  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
+  SELECT_TOOLS, ANCHOR_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
 } from './SceneCanvas/builtinToolSets';
 export { mergeLayersWithDefaults } from './SceneCanvas/mergeLayers';
 export type {

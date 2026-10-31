@@ -10,9 +10,12 @@ const MAX_PASSES = 64;
  *  settled. */
 const SETTLED = 1e-12;
 /** Handles that end up no further than this fraction of their length from
- *  where they started count as unchanged: a path stored in single precision
- *  comes back this far off the harmony it was given. */
-const UNCHANGED = 1e-6;
+ *  where they started count as unchanged. */
+const UNCHANGED = 1e-4;
+/** Nor further than this many single-precision steps at the handle's
+ *  coordinates: a stored path comes back that far off the harmony it was
+ *  given, and re-solving it lands about 1e-4 away at document scale. */
+const UNCHANGED_STEPS = 64;
 
 /**
  * Make each smooth anchor at `flatIndexes` curvature-continuous: the curve
@@ -57,7 +60,9 @@ export function harmonizeAnchors(set: AnchorSet, flatIndexes?: Iterable<number>)
 function movedFar(a: Point, from: Point | undefined, to: Point | undefined): boolean {
   if (!from || !to || from === to) return false;
   const len = Math.hypot(from.x - a.x, from.y - a.y);
-  return Math.hypot(to.x - from.x, to.y - from.y) > UNCHANGED * Math.max(len, 1e-9);
+  const magnitude = Math.max(Math.abs(from.x), Math.abs(from.y), Math.abs(a.x), Math.abs(a.y));
+  const tolerance = Math.max(UNCHANGED * len, UNCHANGED_STEPS * magnitude * 2 ** -23, 1e-9);
+  return Math.hypot(to.x - from.x, to.y - from.y) > tolerance;
 }
 
 /** Harmonize one anchor; returns how far its handles moved, relative to

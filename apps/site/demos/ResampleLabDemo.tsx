@@ -1,4 +1,4 @@
-import { type RectPose, useOngoingAction } from '@weasel-js/core';
+import { type RectPose, useActionsRegistry } from '@weasel-js/core';
 import { resamplePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -11,20 +11,15 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { Button } from '@weasel-js/ui/components/Button';
-import { useEffect, useMemo } from 'react';
+import { LastOperationPanel } from '@weasel-js/ui/components/LastOperationPanel';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const config = f.schema({
-  by: f.enum('count', ['count', 'spacing']).label('Resample by'),
-  count: f.number(12).range(3, 48).step(1).label('Anchors').showIf((c) => c.by === 'count'),
-  spacing: f.number(40).range(5, 160).step(5).suffix('px').label('Spacing').showIf((c) => c.by === 'spacing'),
-  keepCorners: f.boolean(true).label('Keep corners'),
-  tolerance: f.number(0.5).range(0.05, 5).step(0.05).suffix('px').label('Tolerance'),
-});
+// Resample's params are in the last-operation panel, once it has run.
+const config = f.schema({});
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
@@ -38,17 +33,11 @@ const features = ['draw', resamplePreset] as const;
 function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { selection, pathEdit, redrawOn } = useSeededPathEdit();
-  const resample = useOngoingAction('resamplePath');
-  const { by, count, spacing, keepCorners, tolerance } = ctx.config;
-  const params = useMemo(
-    () => ({ count, spacing: by === 'spacing' ? spacing : 0, keepCorners, tolerance }),
-    [by, count, spacing, keepCorners, tolerance],
-  );
-  useEffect(() => { resample.input(params); }, [resample, params]);
+  const actions = useActionsRegistry();
   const bar = (
     <>
-      <Button stance="confirm" size="sm" onClick={() => resample.commit()}>Apply</Button>
-      <Button size="sm" onClick={() => resample.cancel()}>Cancel</Button>
+      <Button stance="confirm" size="sm" onClick={() => actions?.trigger('resamplePath')}>Resample</Button>
+      <LastOperationPanel />
     </>
   );
   return (

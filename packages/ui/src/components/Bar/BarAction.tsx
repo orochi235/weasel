@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useContext, useEffect, useRef, type ReactNode } from 'react';
 import { Focusable } from '../Tooltip/Focusable';
 import type { PrefAction } from '@weasel-js/prefs';
 import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
@@ -6,6 +6,7 @@ import { useLeafAction } from '../Prefs/useLeafAction';
 import { ActionSettingsPopover } from '../ActionSettings/ActionSettingsPopover';
 import { segmentTooltipContent } from '../segmentTooltip';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { BarInMenuContext } from './barInMenu';
 import s from './Bar.module.css';
 
 /** Props for {@link BarActionButton}. */
@@ -20,6 +21,8 @@ export interface BarActionButtonProps {
   labeled?: boolean;
   /** Drawn as a panel's row: icon and label across the row's width. Implies `labeled`. */
   row?: boolean;
+  /** Drawn as a menu's row: icon, label, and shortcut across the row's width. Implies `labeled`. */
+  menu?: boolean;
   /** It cannot be pressed now. */
   disabled?: boolean;
   /** Why it cannot be pressed. Given, a disabled button keeps its tooltip and
@@ -44,8 +47,8 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, description, icon, shortcut, row = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
-  const labeled = row || props.labeled === true;
+  const { label, description, icon, shortcut, row = false, menu = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
+  const labeled = row || menu || props.labeled === true;
   const dead = missing !== undefined;
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
   const explained = dead || (disabled && disabledReason !== undefined);
@@ -67,7 +70,7 @@ export function BarActionButton(props: BarActionButtonProps) {
           aria-pressed={active}
           {...(expanded !== undefined ? { 'aria-haspopup': 'dialog' as const, 'aria-expanded': expanded } : {})}
           disabled={disabled && !explained}
-          className={[s.action, words && s.actionLabeled, row && s.actionRow].filter(Boolean).join(' ')}
+          className={[s.action, words && s.actionLabeled, row && s.actionRow, menu && s.actionMenu].filter(Boolean).join(' ')}
           {...(dead ? { 'data-missing': missing } : {})}
           onClick={() => {
             hide();
@@ -80,6 +83,7 @@ export function BarActionButton(props: BarActionButtonProps) {
         >
           {icon}
           {words && <span>{label}</span>}
+          {menu && shortcut && <span className={s.actionShortcut}>{shortcut}</span>}
         </button>
       </Focusable>
       <Tooltip>{tip}</Tooltip>
@@ -121,6 +125,7 @@ export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: st
 
 function BarActionOne({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
   const { press, settings, ...button } = useLeafAction(leaf, path, disabled);
-  if (settings) return <ActionSettingsPopover {...button} form={settings} description={leaf.description} labeled={leaf.control === 'button'} />;
-  return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} onPress={press} />;
+  const menu = useContext(BarInMenuContext);
+  if (settings) return <ActionSettingsPopover {...button} form={settings} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} />;
+  return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} onPress={press} />;
 }

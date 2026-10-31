@@ -1,5 +1,9 @@
 // The tool palette's glyphs, drawn from core's tool icon components.
 export const TOOLS = {
+  // The select arrow hollow, for path edit's anchor editing. Its upright edge and the foot of its head sit on pixel
+  // centers at a one-pixel stroke, so both are crisp at 16px.
+  anchors: `
+    <path d="M 4.375 3.125 L 4.375 14.6 L 7.55 11.5 L 9.85 16.1 L 11.75 15.2 L 9.45 10.625 L 13.75 10.625 Z" stroke-width="1.25" stroke-linejoin="round"/>`,
   arrow: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <path d="M3.5 16.5 12.9 7.1" stroke-linecap="round"/>

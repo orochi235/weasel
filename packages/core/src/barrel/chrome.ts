@@ -136,6 +136,7 @@ export type {
   UseHoverTrackingArgs,
   HoverTracking,
 } from '../domains/chrome-caps';
+export type { ChromeRulesDep, VisibilityRule } from '../canvas/deps/chromeRules';
 
 // ─── Selection overlay: outlines, handles, composer ─────────────────────────
 export {

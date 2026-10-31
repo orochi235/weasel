@@ -1,6 +1,6 @@
 export { ALL_TAGS, IMPLICIT_TAGS, capabilitiesAllowed, isCapabilityTag } from './capabilities';
 export type { CapabilityTag } from './capabilities';
-export { eligibleForMode, modeLabel } from './modeDefinition';
+export { defaultToolOf, eligibleForMode, modeLabel } from './modeDefinition';
 export type { ModeDefinition, ModeEntry, WorkspaceVisual } from './modeDefinition';
 export { DEFAULT_MODES, byId, NORMAL, PATH_EDIT, FREE_TRANSFORM, TEXT_EDIT, CROP } from './presets/default';
 export { activeModeOf, createModeRegistry, getActiveModeFor } from './registry';

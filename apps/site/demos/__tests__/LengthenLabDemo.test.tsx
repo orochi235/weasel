@@ -82,9 +82,9 @@ describe('LengthenLabDemo', () => {
     expect(gentle()).toHaveLength(3);
   });
 
-  it('moves the anchor instead once Select is picked in the palette', async () => {
+  it('moves the anchor instead once Anchors is picked in the palette', async () => {
     const canvas = await mount();
-    await userEvent.click(screen.getByRole('button', { name: /^Select/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Anchors/ }));
     drag(canvas, [320, 120], [320, 160]);
     expect(gentle()).toHaveLength(2);
     expect(gentle()[1]).toMatchObject({ x: 320, y: 160 });

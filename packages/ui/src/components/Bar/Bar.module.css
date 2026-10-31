@@ -346,6 +346,29 @@
   background: var(--wzl-surface);
 }
 
+/* An action in a bar's overflow, as a menu row: the shortcut sits at the row's far end. */
+.actionMenu {
+  inline-size: 100%;
+  justify-content: flex-start;
+  gap: var(--wzl-space-3);
+}
+
+.actionShortcut {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  margin-inline-start: auto;
+  padding-inline-start: var(--wzl-space-4);
+  color: var(--wzl-fg-muted);
+}
+
+.menu > .cell:has(.actionMenu) {
+  align-self: stretch;
+}
+
+.menu .actions:has(.actionMenu) {
+  flex-direction: column;
+  align-items: stretch;
+}
+
 /* A marked `actions` button's wrapper: it lays out as the bare button would. */
 .unit {
   display: flex;

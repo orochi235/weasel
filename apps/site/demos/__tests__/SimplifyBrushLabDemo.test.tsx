@@ -125,10 +125,10 @@ describe('SimplifyBrushLabDemo', () => {
     expect(scribble().length).toBeLessThan(atDefault);
   });
 
-  it('edits anchors as usual once Select is picked in the palette', async () => {
+  it('edits anchors as usual once Anchors is picked in the palette', async () => {
     const canvas = await mount();
     const before = scribble().length;
-    await userEvent.click(screen.getByRole('button', { name: /^Select/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Anchors/ }));
     dragThrough(canvas, alongScribble());
     expect(scribble()).toHaveLength(before);
   });

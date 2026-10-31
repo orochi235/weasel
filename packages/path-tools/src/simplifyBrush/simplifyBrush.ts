@@ -7,12 +7,8 @@ import {
   type AnchorSet, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathEditToolAction, pathOperationTags,
+  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathOperationTags,
 } from '@weasel-js/core';
-import { icon } from '../icons.gen';
-
-/** The path-edit tool under which a plain drag brushes. */
-export const SIMPLIFY_BRUSH_TOOL = 'simplifyBrush';
 
 /** The brush's radius on screen when no param names one. */
 export const SIMPLIFY_BRUSH_RADIUS_PX = 12;
@@ -34,8 +30,6 @@ export function brushRingCursor(radiusPx: number): CursorSpec {
 
 type Point = { x: number; y: number };
 
-const brushing = (deps: Parameters<typeof depOf>[0]) => depOf(deps)?.tool === SIMPLIFY_BRUSH_TOOL;
-
 function radiusOf(params: SimplifyBrushParams | undefined): number {
   const r = params?.radiusPx;
   return typeof r === 'number' && r > 0 ? r : SIMPLIFY_BRUSH_RADIUS_PX;
@@ -47,20 +41,19 @@ function toleranceOf(params: SimplifyBrushParams | undefined): number {
 }
 
 /**
- * The Simplify command, brushed on. While path edit's
- * `simplifyBrush` tool is on, a plain drag gathers every anchor a round brush
- * passes over, and each unbroken stretch of them along a subpath is refitted
- * as one span by Simplify's own fitter (`simplifyAnchorsAt`) at `tolerance`.
+ * The Simplify command, brushed on. A drag in path edit gathers every anchor a
+ * round brush passes over, and each unbroken stretch of them along a subpath
+ * is refitted as one span by Simplify's own fitter (`simplifyAnchorsAt`) at
+ * `tolerance`.
  * Only anchors the shape does not need go, so brushing again goes further.
  * The path previews the result while the brush is down and commits as one
- * undo step on release.
+ * undo step on release. It has no binding of its own: `useSimplifyBrushTool`
+ * binds it.
  */
 export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
   id: 'simplifyBrush',
   label: 'Simplify brush',
   tags: pathOperationTags('brush'),
-  // Declines through `enabled` unless its tool is on.
-  defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: 'simplifyBrush.drag', yields: true } }],
   cursor: (params) => brushRingCursor(radiusOf(params as SimplifyBrushParams | undefined)),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],
@@ -68,7 +61,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {
       const dep = depOf(ctx.deps);
-      if (!dep || dep.tool !== SIMPLIFY_BRUSH_TOOL) return {};
+      if (!dep) return {};
       const id = dep.editingId;
       const origin = dep.getEditablePath(id) as PolygonPath | undefined;
       if (!origin || origin.kind !== 'polygon') return {};
@@ -122,8 +115,5 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  enabled: (deps) => (brushing(deps) ? true : ActionDisabledReason.NotApplicable),
+  enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.NotApplicable),
 }, editingLayer);
-
-/** The bar toggle for the brush: `pathEditTool.simplifyBrush`. */
-export const simplifyBrushToolAction = pathEditToolAction(SIMPLIFY_BRUSH_TOOL, 'Simplify brush', icon('core:simplifyBrush'));

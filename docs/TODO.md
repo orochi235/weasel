@@ -117,15 +117,6 @@ Owner tags, after the priority (2026-10-26):
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
   Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
   Envelope mesh as Cloth warp among them.
-- **(P2) [maintainer] Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
-  audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
-  applies, and how it shows what it will remove (`packages/path-tools/src/simplifyBrush/simplifyBrush.ts`).
-  Closes when the maintainer has driven the Simplify brush hands-on and the defaults and keys he picks
-  are committed.
-- **(P2) [maintainer] Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
-  scale and density, when it shows, and no key to toggle it (`packages/path-tools/src/comb/comb.ts`).
-  Closes when the maintainer has driven the curvature comb hands-on and the defaults and keys he picks
-  are committed.
 - **(P2) [maintainer] Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
@@ -140,19 +131,6 @@ Owner tags, after the priority (2026-10-26):
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
   Closes when the maintainer has driven handle locks hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
-  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Alt+J binding
-  it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
-  Closes when the maintainer has driven Bridge hands-on and the defaults and keys he picks are
-  committed.
-- **(P2) [maintainer] Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
-  it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
-  selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
-  `packages/path-tools/src/harmonize/harmonize.tsx`). It has no key of its own; its lab tunes H onto it,
-  which the Hand tool also answers wherever that tool is mounted
-  (`apps/site/demos/HarmonizeLabDemo.tsx`).
-  Closes when the maintainer has driven Harmonize curvature hands-on and the defaults and keys he picks
-  are committed.
 - **(P2) [maintainer] Tune anchor selection along the path hands-on, with the maintainer driving.**
   First-draft behavior and keys: `]` grows and `[` shrinks by one anchor, Alt+N selects every Nth
   (N defaults to 2, counted from the first selected anchor, with no UI for N outside the lab's
@@ -162,17 +140,11 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven anchor selection along the path hands-on and the defaults and
   keys he picks are committed.
 - **(P2) [maintainer] Tune Resample hands-on, with the maintainer driving.** First-draft behavior: no key,
-  driven only as an ongoing action; a count of 0 keeps the path's anchor count, corners are held
-  by default, the refit tolerance is 0.5 and a piece that misses it is halved up to six times, so
-  the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
+  run as a command whose params are adjusted afterward in the last-operation panel; a count of 0 keeps
+  the path's anchor count, corners are held by default, the refit tolerance is 0.5 and a piece that
+  misses it is halved up to six times, so the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
   `packages/geom/src/paths/resamplePath.ts`).
   Closes when the maintainer has driven Resample hands-on and the defaults and keys he picks are
-  committed.
-- **(P2) [maintainer] Tune Add extremes hands-on, with the maintainer driving.** First-draft behavior and key:
-  Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
-  is, so a selection reaching no whole segment does nothing; the new anchors join the selection
-  (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
-  Closes when the maintainer has driven Add extremes hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
   a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
@@ -191,23 +163,10 @@ Owner tags, after the priority (2026-10-26):
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
   Closes when the maintainer has driven Blend, Bend along a path, and Repeat along a path hands-on and
   the defaults and keys he picks are committed.
-- **(P2) [maintainer] Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
-  screen px, `DEFAULT_STROKE_REACH_PX` in `packages/path-tools/src/shared/scenePaths.ts`), the preview's look (the
-  `cut` overlay role's red dash at width 3, `packages/path-tools/src/trim/piecePreview.ts`), and its tool key,
-  Y (`packages/path-tools/src/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
-  Closes when the maintainer has driven Trim segment hands-on and the defaults and keys he picks are
-  committed.
-- **(P2) [maintainer] Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
-  (the same 6 screen px as Trim segment, `packages/path-tools/src/shared/scenePaths.ts`), that a curved end grows a
-  straight run rather than following its curvature (`lengthenOpenEnd`, which is Lengthen's
-  `lengthenPathEnd` in tangent mode, `packages/geom/src/paths/lengthenPathEnd.ts`), no preview of where an end will land, its tool key, U
-  (`packages/path-tools/src/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
-  lab binds E through `tune`.
-  Closes when the maintainer has driven Extend to next path hands-on and the defaults and keys he picks
-  are committed.
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
-  tool toggle has no key; a plain drag grows along the end tangent and Shift along the end
-  curvature (the `mode` param flips which); a curvature arc stops at a full turn, and a trim always
+  path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
+  curvature (the `mode` param flips which, and `'eased'` makes the plain drag ease out of the bend as
+  Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
@@ -274,8 +233,8 @@ Owner tags, after the priority (2026-10-26):
   behavior and keys: `setPathStart` and `reversePath` have no default keys, an open subpath's
   interior anchor cannot become its start, and the direction marks' look (a 9 px orange arrow per
   segment and an 8 px start ring, `DIRECTION_DEFAULTS`), off by default under
-  `path-edit.direction` with draw's View toggle as the only switch
-  (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathDirection.ts`).
+  `path-edit.direction`, switched by the `pathEdit.show.direction` toggle, which draw keeps as a View
+  preference (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathOverlays.ts`).
   Closes when the maintainer has driven path start and direction hands-on and the defaults and keys he
   picks are committed.
 - **(P2) [maintainer] Tune segment type hands-on, with the maintainer driving.** First-draft behavior and keys:

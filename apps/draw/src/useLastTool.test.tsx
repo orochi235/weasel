@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ToolsApi } from '@weasel-js/core';
+import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { drawPrefs } from './prefs';
 import { useLastTool } from './useLastTool';
 
@@ -36,5 +37,16 @@ describe('useLastTool', () => {
     });
     rerender({ tools: fakeTools('ellipse') });
     expect(drawPrefs().get('tools.lastTool')).toBe('ellipse');
+  });
+
+  it('stores no tool picked in a mode that names a default tool', () => {
+    const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    const { rerender } = renderHook(({ tools }) => useLastTool(tools, modes), {
+      initialProps: { tools: fakeTools('select') },
+    });
+    rerender({ tools: fakeTools('rect') });
+    act(() => modes.setMode('path-edit'));
+    rerender({ tools: fakeTools('anchors') });
+    expect(drawPrefs().get('tools.lastTool')).toBe('rect');
   });
 });

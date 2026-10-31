@@ -5,7 +5,7 @@ import {
 import { actionCursor, tuneAction, type InvocationCtx, type OngoingHandle, type OngoingInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import {
-  brushRingCursor, simplifyBrushAction, SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL,
+  brushRingCursor, simplifyBrushAction, SIMPLIFY_BRUSH_RADIUS_PX,
 } from './simplifyBrush';
 
 /** A gentle wave sampled every 5 units along x from 0 to 400: dense, so most anchors are redundant. */
@@ -36,18 +36,17 @@ function sampled(sub: readonly PenAnchor[]): { x: number; y: number }[] {
 const encode = (set: AnchorSet): PolygonPath => anchorsToPath(set.anchors, set.closed);
 const anchorsOf = (path: unknown): PenAnchor[] => pathToAnchors(path as PolygonPath).anchors[0];
 
-function setup(original: AnchorSet = wave(), tool: string | null = SIMPLIFY_BRUSH_TOOL) {
+function setup(original: AnchorSet = wave(), editingId = 'p1') {
   const commits: Array<{ path: PolygonPath; label: string }> = [];
   let current = encode(original);
   const dep = makeEditAnchorsDep({
-    editingId: 'p1',
+    editingId,
     getEditablePath: () => current,
     applyEdit: (_id, worldPath, label) => {
       current = worldPath as PolygonPath;
       commits.push({ path: current, label });
     },
   });
-  dep.setTool(tool);
   const deps = { editAnchors: dep, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } };
   const at = (x: number, y: number): InvocationCtx => ({
     world: { x, y },
@@ -160,12 +159,11 @@ describe('simplifyBrush', () => {
     expect(dep.selectedAnchors.size).toBe(0);
   });
 
-  it('owns a plain drag only while its path-edit tool is on', () => {
-    expect(simplifyBrushAction.defaultBinding).toEqual([{ spec: { kind: 'drag' }, opts: { id: 'simplifyBrush.drag', yields: true } }]);
-    const off = setup(wave(), null);
-    expect(start(off.at(100, 0))).toEqual({});
-    expect(simplifyBrushAction.enabled?.(off.at(0, 0).deps)).not.toBe(true);
-    const on = setup();
-    expect(simplifyBrushAction.enabled?.(on.at(0, 0).deps)).toBe(true);
+  it('binds nothing itself, and is enabled only with a path open', () => {
+    expect(simplifyBrushAction.defaultBinding).toBeUndefined();
+    const closed = setup(wave(), '');
+    expect(start(closed.at(100, 0))).toEqual({});
+    expect(simplifyBrushAction.enabled?.(closed.at(0, 0).deps)).not.toBe(true);
+    expect(simplifyBrushAction.enabled?.(setup().at(0, 0).deps)).toBe(true);
   });
 });

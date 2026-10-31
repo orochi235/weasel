@@ -4,6 +4,7 @@ import { scopedIcon } from '@weasel-js/icons';
 
 /** A glyph this package draws, by its bare name. */
 export type CoreIconName =
+  | 'anchors'
   | 'arrow'
   | 'ellipse'
   | 'eyedropper'
@@ -141,6 +142,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
   {
     "label": "Tools",
     "names": [
+      "anchors",
       "arrow",
       "ellipse",
       "eyedropper",
@@ -335,6 +337,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
 
 declare module '@weasel-js/icons' {
   interface IconName {
+    'core:anchors': true;
     'core:arrow': true;
     'core:ellipse': true;
     'core:eyedropper': true;

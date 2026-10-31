@@ -80,13 +80,6 @@ export interface EditAnchorsDep {
   /** Set or clear the in-flight marquee rect. */
   setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
 
-  /** The path-edit tool in use, or null for plain anchor editing — one of a
-   *  set of named tools, such as `'simplifyBrush'`, that each change what a
-   *  plain drag in path edit does. Always null with no path open. */
-  tool: string | null;
-  /** Switch path-edit tool, or pass null for plain anchor editing. */
-  setTool(id: string | null): void;
-
   /** The handle locks held for every handle drag, on top of the modifiers —
    *  what the `handleLock.angle` and `handleLock.length` toggles set. Absent,
    *  the drag holds what its `handleLock` param names. Unlike the anchor

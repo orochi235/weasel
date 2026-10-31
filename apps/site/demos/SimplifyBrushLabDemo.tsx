@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest } from '@weasel-js/core';
-import { SIMPLIFY_BRUSH_TOOL, simplifyBrushPreset } from '@weasel-js/path-tools';
+import { simplifyBrushPreset, useSimplifyBrushTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
@@ -82,32 +82,28 @@ const createLabScene = () =>
   });
 
 /**
- * Path edit as a mode the trial holds, its target the open path, and the
- * path-edit tool as the trial palette's tool: picking Simplify brush there
- * turns the brush on, and the canvas putting the tool down moves the palette
- * back to Select.
+ * Path edit as a mode the trial holds, its target the open path. The mode
+ * starts on the Anchors tool and leaving it puts back the tool it replaced;
+ * the trial palette and the canvas share one active tool.
  */
-function usePathEdit(ctx: RenderContext<State, Config>, seeded: string) {
+function usePathEdit(seeded: string) {
   const [modes] = useState(() => createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' }));
   const [target, setTarget] = useState<string | null>(seeded);
-  const trial = useLatest(ctx.trial);
-  const paletteTool = ctx.trial.activeToolId;
   const pathEdit = useMemo<PathEditHost>(() => ({
     editingId: () => (modes.current().id === 'path-edit' ? target : null),
     setEditingId: (id) => {
       setTarget(id);
       modes.setMode(id ? 'path-edit' : 'normal');
-      if (!id && trial.current.activeToolId === SIMPLIFY_BRUSH_TOOL) trial.current.setActiveTool('select');
     },
-    tool: () => (paletteTool === SIMPLIFY_BRUSH_TOOL ? SIMPLIFY_BRUSH_TOOL : null),
-    setTool: (id) => trial.current.setActiveTool(id ?? 'select'),
-  }), [modes, target, paletteTool, trial]);
+  }), [modes, target]);
   return { modes, pathEdit };
 }
 
 function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { modes, pathEdit } = usePathEdit(ctx, SEEDED_PATH_ID);
+  const { modes, pathEdit } = usePathEdit(SEEDED_PATH_ID);
+  const simplifyBrush = useSimplifyBrushTool();
+  const tools = useMemo(() => ({ simplifyBrush }), [simplifyBrush]);
   const brush = useLatest(ctx.config);
   // Thunked, so a change reaches a stroke already under way.
   const tune = useMemo<ActionTunings>(() => ({
@@ -124,6 +120,7 @@ function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       trial={ctx.trial}
       modes={modes}
       pathEdit={pathEdit}
+      tools={tools}
       tune={tune}
       selectionOptions={selectionOptions}
     />
@@ -138,9 +135,10 @@ const brushInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: SIMPLIFY_BRUSH_TOOL, label: 'Simplify brush', icon: icon('core:simplifyBrush') },
+      { id: 'anchors', label: 'Anchors', icon: icon('core:anchors'), shortcut: 'A' },
+      { id: 'simplifyBrush', label: 'Simplify brush', icon: icon('core:simplifyBrush') },
     ],
-    initial: SIMPLIFY_BRUSH_TOOL,
+    initial: 'simplifyBrush',
   },
   render: (ctx) => <BrushTrial ctx={ctx} />,
 });

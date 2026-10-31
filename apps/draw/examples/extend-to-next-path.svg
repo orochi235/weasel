@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="816" height="1056" viewBox="0 0 816 1056">
+<text x="40" y="48" font-family="sans-serif" font-size="13" fill="#333">Extend to next path: press U, click near an open end of a blue path.</text>
+<text x="40" y="64" font-family="sans-serif" font-size="13" fill="#333">The end grows on until it meets the next path (gray). Reach: 6 screen px.</text>
+<text x="40" y="110" font-family="sans-serif" font-size="13" fill="#333">1. Lines stopping short of a wall.</text>
+<text x="40" y="126" font-family="sans-serif" font-size="13" fill="#333">Click each right-hand end.</text>
+<path d="M 300 140 L 300 400" fill="none" stroke="#8a8a90" stroke-width="2"/>
+<path d="M 60 170 L 200 170" fill="none" stroke="#1d4e89" stroke-width="2"/><path d="M 60 230 L 240 230" fill="none" stroke="#1d4e89" stroke-width="2"/><path d="M 60 290 L 150 330" fill="none" stroke="#1d4e89" stroke-width="2"/><path d="M 60 380 L 260 360" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="440" y="110" font-family="sans-serif" font-size="13" fill="#333">2. Curved ends ease out of their bend,</text>
+<text x="440" y="126" font-family="sans-serif" font-size="13" fill="#333">turning 30° more, then run straight.</text>
+<text x="440" y="142" font-family="sans-serif" font-size="13" fill="#333">After a click, the panel at bottom left</text>
+<text x="440" y="158" font-family="sans-serif" font-size="13" fill="#333">sets Shape (Eased/Straight) and Ease turn.</text>
+<path d="M 740 90 L 740 470" fill="none" stroke="#8a8a90" stroke-width="2"/>
+<path d="M 450 250 C 520 310 580 310 630 280" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<path d="M 450 420 C 520 430 580 420 620 395" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="40" y="520" font-family="sans-serif" font-size="13" fill="#333">3. Control: click the LEFT ends, which</text>
+<text x="40" y="536" font-family="sans-serif" font-size="13" fill="#333">point off the page. Nothing should happen.</text>
+<path d="M 220 600 L 60 600" fill="none" stroke="#1d4e89" stroke-width="2"/><path d="M 240 640 C 180 700 120 640 60 700" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="440" y="520" font-family="sans-serif" font-size="13" fill="#333">4. Two walls in a row: the end stops at</text>
+<text x="440" y="536" font-family="sans-serif" font-size="13" fill="#333">the first; a second click crosses to the next.</text>
+<path d="M 620 560 L 620 780" fill="none" stroke="#8a8a90" stroke-width="2"/><path d="M 720 560 L 720 780" fill="none" stroke="#8a8a90" stroke-width="2"/>
+<path d="M 450 620 L 560 620" fill="none" stroke="#1d4e89" stroke-width="2"/><path d="M 450 720 L 520 700" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="40" y="860" font-family="sans-serif" font-size="13" fill="#333">5. Both ends: a line between two walls.</text>
+<text x="40" y="876" font-family="sans-serif" font-size="13" fill="#333">Click each end in turn.</text>
+<path d="M 60 880 L 60 1020" fill="none" stroke="#8a8a90" stroke-width="2"/><path d="M 380 880 L 380 1020" fill="none" stroke="#8a8a90" stroke-width="2"/>
+<path d="M 140 950 L 300 950" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="440" y="860" font-family="sans-serif" font-size="13" fill="#333">6. Hitting a curve and a closed shape.</text>
+<path d="M 620 900 C 700 900 760 960 760 1020" fill="none" stroke="#8a8a90" stroke-width="2"/>
+<path d="M 480 920 L 540 940" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<path d="M 470 1000 L 560 1000 L 560 1040 L 470 1040 Z" fill="none" stroke="#8a8a90" stroke-width="2"/>
+<path d="M 520 960 L 520 985" fill="none" stroke="#1d4e89" stroke-width="2"/>
+</svg>

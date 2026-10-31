@@ -44,7 +44,7 @@ import type { EditAnchorsDep, SnapDep } from '../depSchema';
 import type { SnapBegin, SnapMods, SnapSession } from '../snapDep';
 import { inputSession } from 'domains/snap/session2d';
 import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
-import { ActionDisabledReason, isAnchorOrControl, resolveParams, roleReader, type ModifierRoles } from '@weasel-js/routing';
+import { isAnchorOrControl, resolveParams, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
@@ -66,7 +66,6 @@ import {
   claimWheel, dragWeights, endExtensionDrags, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
 } from './extensionDrags';
 import type { PathEditDrag } from 'domains/paths/pathEditExtension';
-import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
 import { pathOperationTags } from '../pathGestureTags';
 
@@ -271,6 +270,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
     },
     opts: { id: 'editAnchors.drag' },
   }],
+  cursor: 'pointer',
   eligible: { capability: 'edits-anchors' },
   modifierRoles: EDIT_ANCHORS_ROLES,
   requires: ['selection', 'editAnchors', 'pathSymmetry', 'snap'],
@@ -389,6 +389,4 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  // A path-edit tool has the drag.
-  enabled: (deps) => (pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true),
 }, editingLayer);

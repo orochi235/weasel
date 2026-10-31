@@ -23,7 +23,7 @@ function setup(selected: number[]) {
   return { dep, deps: { editAnchors: dep } as unknown as ActionDeps, labels, anchors: () => pathToAnchors(current).anchors[0] };
 }
 
-const run = (deps: ActionDeps) => (addExtremeAnchorsAction.invoker as ImmediateInvoker).run(deps, {});
+const run = (deps: ActionDeps, params: Record<string, unknown> = {}) => (addExtremeAnchorsAction.invoker as ImmediateInvoker).run(deps, params);
 
 describe('addExtremeAnchorsAction', () => {
   it('adds the extremes of the whole path in one commit while no anchor is selected', () => {
@@ -51,5 +51,15 @@ describe('addExtremeAnchorsAction', () => {
     expect(addExtremeAnchorsAction.enabled!(deps)).toBe(true);
     run(deps);
     expect(addExtremeAnchorsAction.enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('splits at the turns along the axes its params name', () => {
+    // The arches turn only in y, at their tops.
+    const inX = setup([]);
+    run(inX.deps, { axes: 'x' });
+    expect(inX.labels).toEqual([]);
+    const inY = setup([]);
+    run(inY.deps, { axes: 'y' });
+    expect(inY.anchors()).toHaveLength(6);
   });
 });

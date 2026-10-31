@@ -17,7 +17,7 @@ import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RegistryEnumFilter } from './registry/types';
-import { panelsToSurfaces } from './surfaces/prefsMigration';
+import { dropPathToolsChrome, panelsToSurfaces } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -145,6 +145,24 @@ export const PREFS = {
           description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
           default: false,
         },
+        pathComb: {
+          kind: 'boolean',
+          name: 'Show curvature comb',
+          description: 'While editing a path, draw its curvature comb: a tooth on each curve as long as the curve is tight there.',
+          default: false,
+        },
+        pathBalance: {
+          kind: 'boolean',
+          name: 'Show handle balance',
+          description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
+          default: false,
+        },
+        pathCorners: {
+          kind: 'boolean',
+          name: 'Show corner widgets',
+          description: 'While editing a path, draw a widget inside each corner that rounds it as you drag.',
+          default: true,
+        },
         symmetry: {
           kind: 'boolean',
           name: 'Symmetry',
@@ -269,7 +287,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {

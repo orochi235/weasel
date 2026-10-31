@@ -131,7 +131,7 @@ describe('resolveFeatures', () => {
     const before = (a: string, b: string) => expect(order.indexOf(a), `${a} before ${b}`).toBeLessThan(order.indexOf(b));
     before('nudgeAnchors.up', 'nudge.up');
     before('deleteAnchors', 'delete');
-    for (const exit of ['exitPathEdit', 'pathEditTool.exit']) for (const twin of ['escape', 'cancelGesture']) before(exit, twin);
+    for (const twin of ['escape', 'cancelGesture']) before('exitPathEdit', twin);
   });
 
   it('resolves no names where none are given, and says which', () => {
@@ -188,7 +188,7 @@ describe('FEATURE_PRESETS', () => {
     for (const [id, row] of leaves) {
       expect([...presetBuiltinTools(resolve([id]))], id).toEqual(presetToolIds(row));
     }
-    expect([...presetBuiltinTools(all)].sort()).toEqual(['hand', 'lasso', 'select']);
+    expect([...presetBuiltinTools(all)].sort()).toEqual(['anchors', 'hand', 'lasso', 'select']);
   });
 
   it("installs each preset's ambient entry alone, and handles ahead of the body when together", () => {

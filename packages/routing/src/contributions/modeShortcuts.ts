@@ -1,6 +1,8 @@
 import { modeLabel, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 import { key, type KeySpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
+import type { ActionDeps } from '../interactions/actions/invoker';
+import { returnToModeDefault } from '../tools/returnToModeDefault';
 import type { Rule } from '../eligibility';
 import type { Contribution } from './types';
 
@@ -51,7 +53,9 @@ export function modeShortcutSpec(shortcut: string): KeySpec {
  * The bindings ride the hotkey tier, so leaving a mode outranks what the same
  * key does otherwise (Escape clearing the selection), and they yield while a
  * gesture is in flight, so Escape mid-drag still cancels the drag first. Keys
- * typed into an editable element never reach them.
+ * typed into an editable element never reach them. A mode's `exit` and
+ * `cancel`, pressed while a tool other than its `defaultTool` is active,
+ * return to that tool instead (`returnToModeDefault`), so the next press leaves.
  */
 export function modeShortcuts(
   registry: ModeRegistry,
@@ -71,9 +75,10 @@ export function modeShortcuts(
       const shortcut = mode[role]?.shortcut;
       const run = handlers[role];
       if (!shortcut || !run) continue;
+      const backsOut = role === 'exit' || role === 'cancel';
       actions.push(shortcutAction(mode, role, shortcut, { mode: mode.id },
         () => registry.current().id === mode.id,
-        run, true));
+        backsOut ? (deps) => { if (!returnToModeDefault(deps)) run(); } : run, true));
     }
   }
   return { id: 'modes.shortcuts', eligibility: { always: true }, actions };
@@ -85,7 +90,7 @@ function shortcutAction(
   shortcut: string,
   eligible: Rule,
   live: () => boolean,
-  run: () => void,
+  run: (deps: ActionDeps) => void,
   yields: boolean,
 ): Action {
   return {
@@ -97,10 +102,11 @@ function shortcutAction(
       opts: { id: `mode.${mode.id}.${role}.key`, yields },
     }],
     eligible,
+    requires: ['activeTool', 'modeDefaultTool'],
     // `eligible` is the gate the dispatcher and palettes read, but a canvas
     // with no `modes` evaluates none; without this the key is
     // swallowed in every mode.
     enabled: () => (live() ? true : ActionDisabledReason.NotApplicable),
-    invoker: { timing: 'immediate', run: () => run() },
+    invoker: { timing: 'immediate', run: (deps) => run(deps) },
   };
 }

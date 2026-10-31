@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import type { Tool, ToolsApi } from '@weasel-js/core';
+import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { ToolPalette, type ToolPaletteProps } from '@weasel-js/ui/components/ToolPalette';
 import { icon } from '../../icons.gen';
 
@@ -85,6 +86,41 @@ function SplitDemo({ args }: { args: Story['args'] }) {
     </div>
   );
 }
+
+function modalList(): Tool[] {
+  const withCaps = (id: string, label: string, glyph: ReturnType<typeof icon>, group: string, capabilities: string[]) =>
+    ({ id, eligibility: { focus: true, capabilities }, presentation: { label, icon: glyph, group } }) as Tool;
+  return [
+    withCaps('select', 'Select', icon('core:select'), 'select', ['creates-selection']),
+    withCaps('anchors', 'Anchors', icon('core:anchors'), 'path-edit', ['edits-anchors']),
+    withCaps('simplifyBrush', 'Simplify brush', icon('core:simplifyBrush'), 'path-edit', ['edits-anchors']),
+    withCaps('hand', 'Hand', icon('core:hand'), 'view', ['navigation']),
+    withCaps('rect', 'Rect', icon('core:rect'), 'shape', ['creates-shapes']),
+  ];
+}
+
+interface ModalArgs extends Partial<ToolPaletteProps> {
+  /** The mode the palette is filtered by. */
+  mode?: 'normal' | 'path-edit';
+}
+
+function ModalDemo({ mode = 'path-edit', ...props }: ModalArgs) {
+  const [active, setActive] = useState<string>('anchors');
+  const modeRegistry = createModeRegistry({ modes: DEFAULT_MODES, initial: mode });
+  const tools = makeFakeToolsApi(modalList(), active, setActive);
+  return <ToolPalette {...props} tools={tools} modeRegistry={modeRegistry} />;
+}
+
+// A mode decides which tools the palette holds. `ineligible: 'dim'` greys out the ones it does not allow;
+// `'hide'` leaves them out, so path edit's palette holds only its tools and the hand.
+export const Ineligible: StoryObj<ModalArgs> = {
+  args: { mode: 'path-edit', ineligible: 'hide' },
+  argTypes: {
+    mode: { control: 'inline-radio', options: ['normal', 'path-edit'] },
+    ineligible: { control: 'inline-radio', options: ['dim', 'hide'] },
+  },
+  render: (args) => <ModalDemo {...args} />,
+};
 
 // One `tools`, two palettes: `include` splits the canvas's tools between them,
 // and the active tool shows pressed in whichever palette holds it.

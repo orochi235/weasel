@@ -12,21 +12,24 @@ import { insertAnchorOnSegment, type AnchorSet } from './anchorEdits';
  *  an anchor of its own. Nearer, it is the end's. */
 const END_SLOP = 1e-4;
 
-/** The parameters in (0, 1) where the segment from `a` to `b` turns in x or
- *  y, ascending, or none for a straight segment. */
-export function segmentExtremaTs(a: PenAnchor, b: PenAnchor): number[] {
+/** Which turns count as extremes: in x (furthest left and right), in y (furthest up and down), or both. */
+export type ExtremaAxes = 'xy' | 'x' | 'y';
+
+/** The parameters in (0, 1) where the segment from `a` to `b` turns along
+ *  `axes`, ascending, or none for a straight segment. */
+export function segmentExtremaTs(a: PenAnchor, b: PenAnchor, axes: ExtremaAxes = 'xy'): number[] {
   if (isStraightSegment(a, b)) return [];
   const c1 = a.outHandle ?? a;
   const c2 = b.inHandle ?? b;
   const ts = [
-    ...cubicAxisExtremaTs(a.x, c1.x, c2.x, b.x),
-    ...cubicAxisExtremaTs(a.y, c1.y, c2.y, b.y),
+    ...(axes === 'y' ? [] : cubicAxisExtremaTs(a.x, c1.x, c2.x, b.x)),
+    ...(axes === 'x' ? [] : cubicAxisExtremaTs(a.y, c1.y, c2.y, b.y)),
   ].filter((t) => t > END_SLOP && t < 1 - END_SLOP).sort((p, q) => p - q);
   return ts.filter((t, i) => i === 0 || t - ts[i - 1] > END_SLOP);
 }
 
 /**
- * Split every curved segment of `set` at its extremes
+ * Split every curved segment of `set` at its extremes along `axes`
  * ({@link segmentExtremaTs}), in place. `include(sub, segIdx)` limits it to
  * some segments, named as `segmentEnds` names them; absent, every one.
  * Returns the new anchors' flat indices in the edited set. Each new anchor is
@@ -35,6 +38,7 @@ export function segmentExtremaTs(a: PenAnchor, b: PenAnchor): number[] {
 export function addExtremaAnchors(
   set: AnchorSet,
   include?: (sub: number, segIdx: number) => boolean,
+  axes: ExtremaAxes = 'xy',
 ): number[] {
   const added = new Set<PenAnchor>();
   set.anchors.forEach((sub, s) => {
@@ -46,7 +50,7 @@ export function addExtremaAnchors(
       if (!ends) continue;
       // Highest first: what is left to split is then always [0, end].
       let end = 1;
-      for (const t of segmentExtremaTs(ends.a, ends.b).reverse()) {
+      for (const t of segmentExtremaTs(ends.a, ends.b, axes).reverse()) {
         const at = insertAnchorOnSegment(set, { sub: s, segIdx, t: t / end });
         if (at >= 0) added.add(sub[segIdx + 1]);
         end = t;

@@ -1,4 +1,5 @@
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
+import { anchorsTool } from 'tools/builtin/anchors';
 import { useHandTool } from 'tools/builtin/hand';
 import { useSliceTool } from 'tools/builtin/slice';
 import type { Tool } from 'tools/overlayBinding';
@@ -27,7 +28,7 @@ export function useBuiltinTools(args: UseBuiltinToolsArgs): Record<string, Tool>
   const shapes = useBuiltinShapeTools({ options: toolOptions });
   const slice = useSliceTool(toolOptions?.slice);
   return resolveToolRegistry({
-    builtins: { select, hand, ...shapes, slice },
+    builtins: { select, anchors: anchorsTool, hand, ...shapes, slice },
     defaultTools,
     enabled,
     patch,

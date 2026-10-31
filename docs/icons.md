@@ -250,7 +250,9 @@ named `all`, nor share a namespace's name. The import types come from
 
 In the dev server and under vitest, `virtual:weasel-icons` holds every table the plugin can reach:
 vite pre-bundles `node_modules` with esbuild, which never runs the plugin's hooks, so the kit's
-refs are invisible there.
+refs are invisible there. It reaches the app's own source tables, each `node_modules` up to the
+nearest workspace root, and the source tables of that workspace's packages, and stops there: a git
+worktree sits inside its main checkout, whose packages are not the ones the worktree serves.
 
 Chunk sizes from `npm run build:draw` at `46e968c97`. The last column is what the variant would
 weigh, gzipped, if it held only names, groups and tags, with bodies and fills stripped; no build
@@ -284,6 +286,7 @@ Forge registers `kitIcons` whole, plus whatever `FrameSetup.icons` passes
 
 | Check | Fails when |
 |---|---|
+| `apps/draw/src/iconCoverage.test.tsx` | A tool or action on draw's canvas names a glyph `virtual:weasel-icons` does not serve |
 | `packages/core/src/icons.refs.test.ts` | An annotated literal in core's source names something outside core's table. `meshKind.ts` writes `/* @icon */ 'core:paintMesh'` by hand, because its self-contained bundle cannot import `icon()` |
 | `packages/icons/scripts/gen-icons.test.ts` | A file outside `icons.gen` calls `scopedIcon`, or hands `toIconRef` a literal |
 | `scripts/smoke-consumer-icons.mjs` (part of `test:smoke:consumer`) | The packed `@weasel-js/icons-plugin` does not load with only its declared dependencies installed, or a consumer app built with it ships a glyph it does not name outside a variant chunk, or misses one it names through its own `icon()` or through a kit `dist` |

@@ -70,6 +70,28 @@ describe('harmonizeAnchors', () => {
     expect(harmonizeAnchors(set)).toBe(false);
   });
 
+  it('finds nothing to do on a harmonized path stored in single precision', () => {
+    const at = 1000;
+    const set: AnchorSet = {
+      anchors: [[
+        { x: at, y: at, inHandle: { x: at - 10, y: at + 60 }, outHandle: { x: at + 10, y: at - 60 } },
+        { x: at + 100, y: at - 80, inHandle: { x: at + 40, y: at - 80 }, outHandle: { x: at + 120, y: at - 80 } },
+        { x: at + 200, y: at, inHandle: { x: at + 205, y: at - 30 }, outHandle: { x: at + 190, y: at + 60 } },
+        { x: at + 100, y: at + 90, inHandle: { x: at + 170, y: at + 90 }, outHandle: { x: at + 60, y: at + 90 } },
+      ]],
+      closed: [true],
+    };
+    expect(harmonizeAnchors(set)).toBe(true);
+    const f = (p: { x: number; y: number }) => ({ x: Math.fround(p.x), y: Math.fround(p.y) });
+    const stored: AnchorSet = {
+      anchors: set.anchors.map((sub) => sub.map((a) => ({
+        ...f(a), ...(a.inHandle ? { inHandle: f(a.inHandle) } : {}), ...(a.outHandle ? { outHandle: f(a.outHandle) } : {}),
+      }))),
+      closed: set.closed,
+    };
+    expect(harmonizeAnchors(stored)).toBe(false);
+  });
+
   it('leaves corners, open ends, and inflecting anchors alone', () => {
     const set: AnchorSet = {
       anchors: [[

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="816" height="1056" viewBox="0 0 816 1056">
+<text x="40" y="48" font-family="sans-serif" font-size="13" fill="#333">Curvature comb: double-click a path for path edit, then turn on the comb toggle under the palette.</text>
+<text x="40" y="64" font-family="sans-serif" font-size="13" fill="#333">Each tooth stands off the curve as long as it bends tight there; a line joins the tips.</text>
+<text x="40" y="110" font-family="sans-serif" font-size="13" fill="#333">1. A circle: every tooth the same</text>
+<text x="40" y="126" font-family="sans-serif" font-size="13" fill="#333">length, the tips a second circle.</text>
+<path d="M 300.00 260.00 C 300.00 315.23 255.23 360.00 200.00 360.00 C 144.77 360.00 100.00 315.23 100.00 260.00 C 100.00 204.77 144.77 160.00 200.00 160.00 C 255.23 160.00 300.00 204.77 300.00 260.00 Z" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="440" y="110" font-family="sans-serif" font-size="13" fill="#333">2. Smooth but not curvature-continuous:</text>
+<text x="440" y="126" font-family="sans-serif" font-size="13" fill="#333">the comb jumps where the arcs meet.</text>
+<path d="M 450 330 C 450 230 520 180 600 180 C 625 180 655 195 670 240" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="40" y="520" font-family="sans-serif" font-size="13" fill="#333">3. An S-curve: the teeth cross to the</text>
+<text x="40" y="536" font-family="sans-serif" font-size="13" fill="#333">other side where the bend reverses.</text>
+<path d="M 60 700 C 160 560 260 840 360 700" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="440" y="520" font-family="sans-serif" font-size="13" fill="#333">4. A corner: two curves meeting at an</text>
+<text x="440" y="536" font-family="sans-serif" font-size="13" fill="#333">angle. Each side keeps its own comb.</text>
+<path d="M 450 760 C 500 620 560 620 610 700 C 650 640 720 640 760 760" fill="none" stroke="#1d4e89" stroke-width="2"/>
+<text x="40" y="860" font-family="sans-serif" font-size="13" fill="#333">5. Drag an anchor or handle with the comb on:</text>
+<text x="40" y="876" font-family="sans-serif" font-size="13" fill="#333">the teeth follow the drag.</text>
+<path d="M 60 980 C 140 880 260 1040 360 940 C 420 880 480 960 540 920" fill="none" stroke="#1d4e89" stroke-width="2"/>
+</svg>

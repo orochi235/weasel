@@ -32,7 +32,7 @@ Tag: `path-drag`
 | Path snapping | — | Locks a dragged anchor to other shapes' anchors, crossings, tangent and perpendicular points, midpoints, extremes, and strokes, and to the parts of its own path the drag leaves still; the pen, the insert tools, and a move snap the same way | Any anchor drag: other shapes' anchors by default, every kind with a `pathSnapSource` in `<SceneCanvas snap>` | main | core |
 | Soft selection | — | Moves nearby anchors with falling weight; the wheel scrubs the radius mid-drag | Any anchor drag, under `createSoftSelectionPreset` | landing | path-tools |
 | Handle snap | — | Snaps a handle's angle to steps and to its partner | Any handle drag, under `createHandleSnapPreset` | landing | path-tools |
-| Lengthen | `lengthenPath` | Grows an open end along its tangent or curvature, or trims it back along itself | Drag an end anchor with the Lengthen path-edit tool on | main | path-tools |
+| Lengthen | `lengthenPath` | Grows an open end along its tangent or curvature, or trims it back along itself | Drag an end anchor with the Lengthen path-edit tool (`useLengthenTool`) on | main | path-tools |
 
 ## Click on a path
 

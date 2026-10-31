@@ -1,0 +1,26 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  inline-size: 260px;
+  padding: var(--wzl-space-4) var(--wzl-space-5);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  box-shadow: 0 8px 24px var(--wzl-shadow);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wzl-space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+}
