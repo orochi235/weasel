@@ -6,6 +6,7 @@ import type { CameraGestures } from '../canvas/cameraGestures';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { ClockCapability } from '../clock/trialClock';
+import type { LabOver } from '../config/over';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabDensity, LabMode, TrialRecord } from '../state/types';
@@ -112,6 +113,10 @@ export interface LabBaseProps {
   /** Control overrides and app-defined kinds for every trial's settings panel.
    *  Keys are config paths (checked first) or leaf kinds. Memoize or hoist. */
   controls?: Record<string, ControlRenderer>;
+  /** The values of the schemas instruments' configs are drawn over (`f.schema(nodes, { over })`), and
+   *  their writer: the app's, which its own surfaces for that schema read too. Omitted, the lab keeps
+   *  them in memory, shared by every trial. */
+  over?: LabOver;
   children?: ReactNode;
   /** Start presenting: one trial, opened on `seed`, without the lab's chrome or
    *  its own. `?present` in the page's URL does the same. Read once, at mount.

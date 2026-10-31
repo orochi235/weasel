@@ -215,6 +215,7 @@ export {
   valueAtPath,
   withValueAtPath,
 } from './config/path';
+export type { LabOver, OverAccess } from './config/over';
 export { resolveConfigSchema } from './config/resolve';
 export { applyRules, builtinRules, titleCase } from './config/rules';
 export { type SectionTree, sectionTree } from './config/sectionTree';

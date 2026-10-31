@@ -21,13 +21,14 @@ import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
-import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import type { TrialContribution } from '../chrome/types';
 import { TrialClockContext, TrialRootContext } from '../clock/contexts';
 import { useTrialClockSetup } from '../clock/useTrialClockSetup';
+import { useOverAccess } from '../config/over';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
+import { withDragFeedback } from '../dragdrop/feedbackLayer';
 import { Palette } from '../dragdrop/Palette';
 import type { Instrument, InstrumentList, PaletteItem, RenderContext } from '../instrument/types';
 import { useJob } from '../job/useJob';
@@ -131,6 +132,7 @@ function TrialRuntime({
   // reaches it through `record` on `TrialChrome`.
   const schema = useConfigSchema(instrument);
   const { config } = useResolvedConfig(schema, record.config, record.auto);
+  const over = useOverAccess(schema.over);
 
   const { layerVisibility, layerOrder, setOrder, setShown } = useTrialLayerState();
   const [loupeOn, setLoupeOn] = useState(false);
@@ -159,6 +161,7 @@ function TrialRuntime({
     instrument,
     state: record.state,
     config,
+    over,
     layerVisibility,
     layerOrder,
     clock: clockHandle?.clock,
@@ -234,6 +237,7 @@ function TrialRuntime({
       updateTrialState(record.id, next);
     },
     setConfig,
+    ...(over ? { over } : {}),
     trial: {
       id: record.id,
       view: record.view,
@@ -282,30 +286,10 @@ function TrialRuntime({
     return typeof p === 'function' ? p(record.state, config) : p;
   }, [instrument.dragDrop, record.state, config]);
 
-  const layersWithFeedback: CanvasLayerDescriptor[] = useMemo(() => {
-    if (!dragDropResult.drag?.feedback) return canvasLayers;
-    const fb = dragDropResult.drag.feedback;
-    const screen = dragDropResult.drag.screenPos;
-    return [
-      ...canvasLayers,
-      {
-        id: '__lk_drag_feedback',
-        visible: true,
-        render: (ctx) => {
-          const el = canvasContainerRef.current;
-          if (!el) return;
-          const r = el.getBoundingClientRect();
-          ctx.save();
-          ctx.strokeStyle = fb.ok ? '#3a7' : '#c44';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(screen.x - r.left, screen.y - r.top, 16, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        },
-      },
-    ];
-  }, [canvasLayers, dragDropResult.drag]);
+  const layersWithFeedback = useMemo(
+    () => withDragFeedback(canvasLayers, dragDropResult.drag, canvasContainerRef),
+    [canvasLayers, dragDropResult.drag],
+  );
 
   let body: ReactNode;
   if (camera?.kind === 'canvas') {

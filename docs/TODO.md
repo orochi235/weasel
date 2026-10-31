@@ -553,15 +553,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every variant at `md` and `sm` in a browser and called it
   done.
 
-- **(P3) [agent] A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
-  with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
-  condition on its setting. Every surface reads `over`'s values from the config it is handed, and
-  a trial's config holds its instrument's alone: where a lab keeps another schema's values (each
-  trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
-  would need them too.
-  Closes when an instrument's config schema resolves with an `over`, and a condition on another schema's
-  setting shows and hides its row in a trial.
-
 - **(P3) [maintainer] An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
@@ -856,6 +847,14 @@ only story runner in the repo.
   chose.
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] `typecheck:packages` checks nothing of labkit.** labkit's `tsconfig.json` is
+  solution-style (`"files": []` beside a reference to `tsconfig.lib.json`), and the script runs
+  `tsc -p <pkg>/tsconfig.json --noEmit`, which builds an empty program and prints `labkit ok`. Run on
+  `tsconfig.lib.json` instead (2026-10-31), it reports 191 errors: that config does not extend the root
+  one, so it has none of its `paths` and reads siblings through `node_modules` as published, where
+  `@weasel-js/*/testing/*` does not exist (139 TS2307) and types lag source (`Toolbar.Button`, `PrefAuto`).
+  Closes when the script follows a solution config's references and labkit's program passes under it.
 
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera } from '../canvas/worldSpec';
 import type { TrialClock } from '../clock/trialClock';
+import type { OverAccess } from '../config/over';
 import type { Instrument, LayerDescriptor } from '../instrument/types';
 import type { LayerListItem } from '../passthrough/weasel-ui';
 
@@ -9,6 +10,7 @@ interface TrialLayersInput {
   instrument: Instrument;
   state: unknown;
   config: unknown;
+  over: OverAccess | undefined;
   layerVisibility: Record<string, boolean>;
   layerOrder: readonly string[] | null;
   clock: TrialClock | undefined;
@@ -20,6 +22,7 @@ export function useTrialLayers({
   instrument,
   state,
   config,
+  over,
   layerVisibility,
   layerOrder,
   clock,
@@ -49,6 +52,7 @@ export function useTrialLayers({
         layer.draw(ctx, {
           state,
           config,
+          ...(over ? { over } : {}),
           zoom: view.zoom,
           elapsed: clock?.elapsed ?? 0,
           pass: clock?.pass ?? 0,
@@ -56,7 +60,7 @@ export function useTrialLayers({
         });
       },
     }));
-  }, [instrument.canvas, state, config, layerVisibility, layerOrder, clock]);
+  }, [instrument.canvas, state, config, over, layerVisibility, layerOrder, clock]);
 
   const layerDescriptors: LayerDescriptor[] = useMemo(() => {
     if (!instrument.layers) return [];

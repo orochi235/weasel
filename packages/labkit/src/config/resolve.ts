@@ -76,7 +76,8 @@ export function resolveConfigSchema<TC>(
   const group = resolveShape(schema.nodes, '', '', sink);
   const said = ({ field, at, problem }: PrefSchemaConditionProblem) =>
     `[labkit] ${field} of "${at}": ${problem}`;
-  const problems = checkPrefConditions(group, over);
+  const drawnOver = over ?? schema.over;
+  const problems = checkPrefConditions(group, drawnOver);
   // An enum's options can change under a condition written against them; a test of one it no
   // longer has never matches, and is no reason to take the whole panel down.
   const faults = problems.filter((p) => p.code !== 'option');
@@ -91,6 +92,7 @@ export function resolveConfigSchema<TC>(
     dialogs: sink.dialogs,
     resettable: sink.resettable,
     motifs: sink.motifs,
+    ...(drawnOver === undefined ? {} : { over: drawnOver }),
   };
 }
 

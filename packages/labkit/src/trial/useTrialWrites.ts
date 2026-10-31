@@ -1,8 +1,9 @@
 import { createHistory } from '@weasel-js/core';
 import { isDev } from '@weasel-js/react';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useContext, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import { resolveAutoConfig } from '../config/autoConfig';
+import { LabOverContext, writesOver } from '../config/over';
 import { hasConfigPath, schemaNodeAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import type { Instrument } from '../instrument/types';
@@ -29,7 +30,8 @@ export interface TrialWrites {
   snapshot: (event: string) => void;
   /** Write one config value: snapshots on `config.change` and
    *  `config.change:<path>`, once for a run of writes to one path, then runs
-   *  the instrument's `onConfigChange` against the stored record. */
+   *  the instrument's `onConfigChange` against the stored record. A path of
+   *  the schema the config is drawn over goes to the lab's `over` instead. */
   setConfig: (path: string, value: unknown) => void;
 }
 
@@ -47,6 +49,7 @@ export function useTrialWrites({
   const undoCap = instrument.undo;
   const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? ['state.change']), [undoCap]);
   const maxDepth = undoCap?.maxDepth ?? 50;
+  const setOver = useContext(LabOverContext)?.set;
 
   // Read from the store, not the render: a caller may write several times
   // before the next render, and each write has to build on the one before.
@@ -77,6 +80,10 @@ export function useTrialWrites({
   const lastWrite = useRef<{ path: string; at: number; version: number } | null>(null);
   const setConfig = useCallback(
     (path: string, value: unknown): void => {
+      if (writesOver(schema, path)) {
+        setOver?.(path, value);
+        return;
+      }
       const before = stored();
       if (!before) return;
       if (
@@ -110,7 +117,7 @@ export function useTrialWrites({
       const next = instrument.onConfigChange(resolved(after), resolved(before), after.state);
       updateTrialState(trialId, next as never);
     },
-    [stored, schema, snapshot, updateTrialConfig, updateTrialState, trialId, instrument],
+    [stored, schema, setOver, snapshot, updateTrialConfig, updateTrialState, trialId, instrument],
   );
 
   return useMemo(() => ({ snapshot, setConfig }), [snapshot, setConfig]);

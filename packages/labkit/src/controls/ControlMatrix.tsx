@@ -51,7 +51,7 @@ export interface ControlMatrixProps extends AppearanceProps, CollapseProps {
   schema: ResolvedConfig;
   /** The schema the matrix's aliases point into, and its conditions may read, when that is not `schema`
    *  itself: a matrix drawn from a layout over a dialog's settings. Its values are read from `config` at
-   *  their own paths. */
+   *  their own paths. Defaults to the schema's own `over`. */
   over?: PrefGroup | PrefSection;
   /** The scopes. Unless `inherit` is false, the first is the fallback the others inherit from: its cells
    *  never inherit, and its header is emphasized. */
@@ -127,7 +127,7 @@ function rowSpecsOf(
 export function ControlMatrix({
   title,
   schema,
-  over,
+  over = schema.over,
   columns,
   rows,
   config,

@@ -31,6 +31,7 @@ export {
   valueAtPath,
   withValueAtPath,
 } from './path';
+export type { LabOver, OverAccess } from './over';
 export { resolveConfigSchema } from './resolve';
 export { applyRules, builtinRules, titleCase } from './rules';
 export { type SectionTree, sectionTree } from './sectionTree';
