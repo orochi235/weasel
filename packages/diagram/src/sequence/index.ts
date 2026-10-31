@@ -11,6 +11,7 @@ export { SEQUENCE_ROLES, sequenceSpecs, type SequenceSpecsOptions } from './spec
 export {
   sequencePartOf, sequenceRootOf, type SeqPartKind, type SeqPartTrait, type SequenceGeometry, type SequenceRootTrait,
 } from './trait';
+export { isSequenceText, useSequenceTextEdit } from './textEdit';
 export { commitSequence, foldSequenceText, redrawSequences, type SequenceDrawOptions, type SequenceEdit } from './commit';
 export { SEQUENCE_AFFORDANCE_KIND, SEQUENCE_LAYER_ID, sequenceScratchOf, type SequenceScratch } from './layer';
 export {

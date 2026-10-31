@@ -31,6 +31,7 @@ import { registerMarkShape } from './marks';
 import { diagramResizable } from './resizable';
 import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
+import { useSequenceTextEdit } from './sequence/textEdit';
 
 export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 export type {
@@ -68,6 +69,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 
 function Inner({
   specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  onEditSequence,
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
@@ -133,7 +135,7 @@ function Inner({
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
     scene: scene as never, source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
-    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel, onReorder, onResize, onEditContainer, onMove,
+    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel, onReorder, onResize, onEditContainer, onMove, onEditSequence,
     connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
   const itemDrop = useItemDrop(source, { onDropItem, canDropItem });
@@ -146,8 +148,12 @@ function Inner({
   }, [editing.layers]);
   const moves = onMove !== undefined || onEditContainer !== undefined;
   const resizes = onResize !== undefined || onEditContainer !== undefined;
-  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick;
-  const features = useMemo(() => ['view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : [])] as const, [moves, resizes]);
+  const sequences = onEditSequence !== undefined;
+  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick || sequences;
+  const features = useMemo(() => [
+    'view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : []), ...(sequences ? ['edit' as const] : []),
+  ] as const, [moves, resizes, sequences]);
+  const textEditor = useSequenceTextEdit(scene, onEditSequence);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
@@ -160,6 +166,7 @@ function Inner({
         selection={selection}
         features={features}
         {...(resizes ? { selectTool } : {})}
+        {...(textEditor ? { textEditor } : {})}
         enableKeybindings={enableKeybindings ?? edits}
         ambient={ambient}
         actions={editing.actions}

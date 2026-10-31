@@ -30,6 +30,7 @@ import { regionEditing } from './regionEditing';
 import type { ContainerEdit } from './regionSync';
 import { dataKeyReader } from './trait';
 import type { DeleteReport, DiagramViewProps, NodeResize, ReconnectChange } from './diagramViewProps';
+import { diagramSequence } from './sequence/actions';
 
 const AMBIENT = [dragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
@@ -119,6 +120,7 @@ export function withPickableEdges(specs: readonly DiagramSpec[]): DiagramSpec[] 
 type EditingProps = Pick<
   DiagramViewProps,
   'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onMoveLabel' | 'onReorder' | 'onResize' | 'onEditContainer' | 'onMove'
+  | 'onEditSequence'
   | 'connectBodies' | 'canConnect' | 'portOptions' | 'ambient'
 >;
 
@@ -144,6 +146,7 @@ export function useDiagramEditing(
   const reorders = props.onReorder !== undefined;
   const resizes = props.onResize !== undefined;
   const regionEdits = props.onEditContainer !== undefined;
+  const sequences = props.onEditSequence !== undefined;
 
   const ports = useMemo(() => mode === 'connect'
     ? diagramPorts<RectPose>({
@@ -203,6 +206,10 @@ export function useDiagramEditing(
     [reorders, report],
   );
   const regions = useMemo(() => (regionEdits ? regionEditing(scene, selected, report) : null), [regionEdits, scene, selected, report]);
+  const sequence = useMemo(
+    () => (sequences ? diagramSequence({ scene, commit: (edit) => report.current.onEditSequence?.(edit) }) : null),
+    [sequences, scene, report],
+  );
   const actions = useMemo(() => ({
     ...NO_MARQUEE,
     ...(deletes ? { delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
@@ -213,17 +220,18 @@ export function useDiagramEditing(
 
   const portsLayer = ports?.layer ?? shown;
   const layers = useMemo(
-    // Edge ends last: an edge's end sits on a port and beside a route handle, and the last layer is hit first.
-    () => [regions?.layer, labelDrag?.layer, portsLayer, route?.layer, ends?.layer].filter((l): l is RenderLayer<unknown> => l != null),
-    [regions, labelDrag, portsLayer, route, ends],
+    // Edge ends after ports and routes: an edge's end sits on a port and beside a route handle, and the last layer is hit first.
+    () => [regions?.layer, labelDrag?.layer, portsLayer, route?.layer, ends?.layer, sequence?.layer]
+      .filter((l): l is RenderLayer<unknown> => l != null),
+    [regions, labelDrag, portsLayer, route, ends, sequence],
   );
   const extra = props.ambient;
   const ambient = useMemo(() => [
     ...AMBIENT,
-    ...[ports?.contribution, route?.contribution, ends?.contribution, labelDrag?.contribution, label, reorder]
+    ...[ports?.contribution, route?.contribution, ends?.contribution, labelDrag?.contribution, label, reorder, sequence?.contribution]
       .filter((c): c is Contribution => c != null),
     ...(regions?.contributions ?? []),
     ...(extra ?? []),
-  ], [ports, route, ends, labelDrag, label, reorder, regions, extra]);
+  ], [ports, route, ends, labelDrag, label, reorder, sequence, regions, extra]);
   return { layers, ambient, actions };
 }
