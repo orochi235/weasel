@@ -38,7 +38,7 @@ const noop = () => {};
 /** The app's own commands at rest: what the probe's copies of them read. */
 const IDLE_COMMANDS: AppCommands = {
   gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop,
-  pathDirection: false, togglePathDirection: noop, symmetryOn: false, toggleSymmetry: noop,
+  symmetryOn: false, toggleSymmetry: noop,
   canReleaseCompound: false, releaseCompound: noop, openPrefs: noop, openPalette: noop,
   chromeHidden: () => false, toggleChrome: noop,
 };

@@ -12,18 +12,16 @@ export interface ChromeItem {
 /** The chrome that is not a surface asset: always drawn in one place. */
 export const FIXED_CHROME = {
   tools: { id: 'tools', label: 'Tools' },
-  pathTools: { id: 'pathTools', label: 'Path tools' },
   statusBar: { id: 'statusBar', label: 'Status bar' },
 } as const satisfies Record<string, ChromeItem>;
 
 const item = ({ id, label }: ChromeItem): ChromeItem => ({ id, label });
 
-/** Everything the View menu toggles, in screen order: the toolbar dock's assets, the two left palettes, the right
+/** Everything the View menu toggles, in screen order: the toolbar dock's assets, the tools palette, the right
  *  sidebar's panels, then the status bar. The command row's assets are left out: their names are the menus'. */
 export const CHROME_ITEMS: readonly ChromeItem[] = [
   ...SURFACE_ASSETS.filter((a) => a.row !== 'command' && a.defaultSurface !== 'panel').map(item),
   FIXED_CHROME.tools,
-  FIXED_CHROME.pathTools,
   ...SURFACE_ASSETS.filter((a) => a.defaultSurface === 'panel').map(item),
   FIXED_CHROME.statusBar,
 ];

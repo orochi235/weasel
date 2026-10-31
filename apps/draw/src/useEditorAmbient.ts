@@ -18,7 +18,8 @@ export interface EditorAmbientArgs {
   /** The mode shortcuts and double-click entry, from `useCanvasModes`. */
   modes: readonly Contribution[];
   grid: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'>;
-  pathDirection: Pick<AppCommands, 'pathDirection' | 'togglePathDirection'>;
+  /** The entry sourcing the `chromeRules` dep path edit's overlay toggles write, from `usePathOverlays`. */
+  pathOverlays: Contribution;
   /** Live symmetry, from `useSymmetry`: its canvas entry and its toggle. */
   symmetry: {
     contribution: SurfaceContribution;
@@ -31,7 +32,8 @@ export interface EditorAmbientArgs {
 }
 
 /** Everything draw binds on the canvas whatever tool is active: the HUD, the mode keys, the
- *  color keys, the app's own commands, the Pathfinder keymap, the input recorder, and live symmetry. */
+ *  color keys, the app's own commands, the path-edit overlays' preferences, the Pathfinder keymap, the input
+ *  recorder, and live symmetry. */
 export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContribution[] {
   const { scene, selection, modes, view, setView } = args;
   const hudTool = useHudContribution();
@@ -42,7 +44,6 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const chrome = useChromeCommands();
   const appCommands: AppCommands = {
     ...args.grid,
-    ...args.pathDirection,
     ...args.symmetry.commands,
     ...chrome,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
@@ -58,16 +59,17 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   );
   // After the commit, so the dep reads what this render shows.
   const shown = [
-    appCommands.gridVisible, appCommands.snapToGrid, appCommands.pathDirection, appCommands.symmetryOn,
+    appCommands.gridVisible, appCommands.snapToGrid, appCommands.symmetryOn,
     appCommands.canReleaseCompound, ...CHROME_ITEMS.map(({ id }) => appCommands.chromeHidden(id)),
   ].join();
   useLayoutEffect(() => commandsChanged.emit(), [commandsChanged, shown]);
 
   const recordingKeys = useRecording({ scene, view: () => view, setView });
   const symmetry = args.symmetry.contribution;
+  const { pathOverlays } = args;
 
   return useMemo(
-    () => [hudTool, ...modes, colorKeys, appKeys, ...PATHFINDER_KEYMAP, recordingKeys, symmetry],
-    [hudTool, modes, colorKeys, appKeys, recordingKeys, symmetry],
+    () => [hudTool, ...modes, colorKeys, appKeys, pathOverlays, ...PATHFINDER_KEYMAP, recordingKeys, symmetry],
+    [hudTool, modes, colorKeys, appKeys, pathOverlays, recordingKeys, symmetry],
   );
 }

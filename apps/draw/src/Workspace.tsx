@@ -41,7 +41,7 @@ import { DRAW_TUNE } from './constraintKeys';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { DRAW_NODE_ROUTING } from './nodeKinds';
-import { usePathDirection } from './usePathDirection';
+import { usePathOverlays } from './usePathOverlays';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
 
@@ -94,7 +94,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const paperLayer = usePaperLayer(props.pages.placed, backgroundColor);
   const grid = useGrid(page, backgroundColor);
   const spacingHints = useSpacingHints();
-  const pathDirection = usePathDirection();
+  const pathOverlays = usePathOverlays();
   const symmetry = useSymmetry(scene, page);
   const group = useDrawEnteredGroup(scene);
   const groupLabel = useEnteredGroupLabel(group, scene);
@@ -120,7 +120,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     selection,
     modes: modes.ambient,
     grid: grid.commands,
-    pathDirection: pathDirection.commands,
+    pathOverlays: pathOverlays.contribution,
     symmetry,
     view,
     setView: onViewChange,
@@ -223,7 +223,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             enteredGroup={group.entered}
             modes={machine.registry}
             pathEdit={modes.pathEdit}
-            chromeVisibility={pathDirection.chromeVisibility}
+            chromeVisibility={pathOverlays.chromeVisibility}
             geometryProjection={{
               transform: (node, m) => {
                 const data = node.data as WeaselDrawData;

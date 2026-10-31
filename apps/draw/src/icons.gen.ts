@@ -4,7 +4,6 @@ import { scopedIcon } from '@weasel-js/icons';
 
 /** A glyph this package draws, by its bare name. */
 export type DrawIconName =
-  | 'pathDirection'
   | 'releaseCompound'
   | 'symmetry'
   | 'settings'
@@ -35,7 +34,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DrawIconName
   {
     "label": "Actions",
     "names": [
-      "pathDirection",
       "releaseCompound",
       "symmetry",
       "settings",
@@ -63,7 +61,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DrawIconName
 
 declare module '@weasel-js/icons' {
   interface IconName {
-    'draw:pathDirection': true;
     'draw:releaseCompound': true;
     'draw:symmetry': true;
     'draw:settings': true;

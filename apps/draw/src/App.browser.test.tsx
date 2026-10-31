@@ -177,6 +177,27 @@ describe('WeaselDraw', () => {
     await expect.poll(() => host.dataset.mode).toBe('normal');
   });
 
+  it('shows each mode only its tools, and the overlay toggles while in path edit', async () => {
+    const { host, canvas } = await mountApp();
+    const palette = (): string[] => [...document.querySelectorAll('[role="toolbar"][aria-label="Tools"] button')]
+      .map((b) => b.getAttribute('aria-label') ?? b.textContent ?? '');
+    const has = (label: string) => palette().some((name) => name.startsWith(label));
+    const overlays = () => document.querySelectorAll('.wd-path-overlays button').length;
+    await expect.poll(() => has('Select')).toBe(true);
+    expect(has('Anchors')).toBe(false);
+    expect(has('Girth')).toBe(true);
+    expect(overlays()).toBe(0);
+    doubleClick(canvas, starterCenter(host));
+    await expect.poll(() => host.dataset.mode).toBe('path-edit');
+    await expect.poll(() => has('Anchors')).toBe(true);
+    for (const label of ['Simplify brush', 'Lengthen', 'Hand', 'Measure']) expect(has(label), label).toBe(true);
+    for (const label of ['Select', 'Girth', 'Pen']) expect(has(label), label).toBe(false);
+    expect(overlays()).toBe(4);
+    key('Escape');
+    await expect.poll(() => has('Select')).toBe(true);
+    expect(has('Anchors')).toBe(false);
+  });
+
   it('leaves text-edit when Escape ends the edit', async () => {
     seedText();
     const { host, canvas } = await mountApp();
