@@ -9,6 +9,7 @@ import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@edi
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
+import { HostSized } from './HostSized';
 import { ImportExportCommands } from './importExport';
 import {
   CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
@@ -57,7 +58,7 @@ export function ChartWorkspace(): ReactElement {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const attachHost = useCallback((el: HTMLDivElement | null) => { hostRef.current = el; setHost(el); }, []);
   const dims = useCanvasSize(hostRef);
-  const { view, setView, fitTo } = useFittedView(scene, dims);
+  const { view, viewFor, setView, fitTo } = useFittedView(scene, dims);
   const pages = useChartPages(scene, view, dims, setView);
   useExportCommands(scene, pages);
   const shownRef = useLatest(pages.shown);
@@ -92,7 +93,7 @@ export function ChartWorkspace(): ReactElement {
         </Sidebar>
         <div className="wc-stage">
           <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
-            {dims.width > 0 && dims.height > 0 && (
+            <HostSized host={hostRef}>{(size) => size.width > 0 && size.height > 0 && (
               <SceneCanvas<ChartData, ChartLayer, ChartPose>
                 aria-label="Chart"
                 ref={setCanvas}
@@ -101,9 +102,9 @@ export function ChartWorkspace(): ReactElement {
                 claimKeys
                 scene={scene}
                 selection={selection}
-                width={dims.width}
-                height={dims.height}
-                view={view}
+                width={size.width}
+                height={size.height}
+                view={viewFor(size)}
                 onViewChange={setView}
                 viewport={{ recenter }}
                 tools={diagram.tools}
@@ -121,7 +122,7 @@ export function ChartWorkspace(): ReactElement {
                 <ContainerDropPublisher scene={scene} />
                 <TextEditDepPublisher edit={textEdit} />
               </SceneCanvas>
-            )}
+            )}</HostSized>
           </div>
           <ChartPageStrip pages={pages} />
         </div>

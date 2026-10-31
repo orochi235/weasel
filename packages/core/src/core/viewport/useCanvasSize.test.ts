@@ -64,7 +64,10 @@ describe('useCanvasSize', () => {
     (window as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = original;
   });
 
-  it('re-measures when ResizeObserver fires', () => {
+  it.each([
+    ['in a task after the callback', undefined],
+    ['inside the callback, with beforePaint', { beforePaint: true }],
+  ] as const)('re-measures when ResizeObserver fires, %s', async (_when, options) => {
     const original = window.ResizeObserver;
     MockResizeObserver.instances = [];
     (window as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver = MockResizeObserver;
@@ -77,7 +80,7 @@ describe('useCanvasSize', () => {
 
     const { result } = renderHook(() => {
       const ref = useRef<HTMLDivElement>(el);
-      return useCanvasSize(ref);
+      return useCanvasSize(ref, options);
     });
 
     expect(result.current.width).toBe(100);
@@ -85,6 +88,8 @@ describe('useCanvasSize', () => {
     act(() => {
       MockResizeObserver.instances[MockResizeObserver.instances.length - 1].trigger();
     });
+    expect(result.current.width).toBe(options ? 250 : 100);
+    await act(() => new Promise((r) => setTimeout(r, 0)));
     expect(result.current.width).toBe(250);
     expect(result.current.height).toBe(175);
 

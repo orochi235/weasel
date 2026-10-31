@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { CanvasSize } from 'core/viewport/clampView';
 import { useElementSize } from 'core/viewport/useCanvasSize';
@@ -18,6 +18,7 @@ export interface SurfaceSizeProps {
 }
 
 const NO_ELEMENT: RefObject<HTMLElement | null> = { current: null };
+const FILL = { beforePaint: true };
 
 /**
  * The CSS-pixel size a canvas host paints at: its `width` and `height`, with
@@ -25,13 +26,15 @@ const NO_ELEMENT: RefObject<HTMLElement | null> = { current: null };
  */
 export function useSurfaceSize(props: SurfaceSizeProps, element: RefObject<HTMLElement | null>): CanvasSize {
   const fills = props.width === undefined || props.height === undefined;
-  const measured = useElementSize(fills ? element : NO_ELEMENT);
+  // The canvas element is all a filling host lays out, so it can take its size inside the resize callback.
+  const measured = useElementSize(fills ? element : NO_ELEMENT, FILL);
   const width = props.width ?? measured.width;
   const height = props.height ?? measured.height;
 
   const onResize = useLatest(props.onResize);
   const reported = useRef<CanvasSize | null>(null);
-  useLayoutEffect(() => {
+  // Passive, so a consumer's state set from it renders after the resize callback rather than inside it.
+  useEffect(() => {
     // A filling axis reads 0 until measured, and that is no size to report.
     if (width === 0 || height === 0) return;
     const was = reported.current;
