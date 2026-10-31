@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest } from '@weasel-js/core';
-import { LENGTHEN_TOOL, lengthenPreset } from '@weasel-js/path-tools';
+import { lengthenPreset, useLengthenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
@@ -49,32 +49,28 @@ const createLabScene = () =>
   });
 
 /**
- * Path edit as a mode the trial holds, its target the open path, and the
- * path-edit tool as the trial palette's tool: picking Lengthen there turns
- * the tool on, and the canvas putting the tool down moves the palette back
- * to Select.
+ * Path edit as a mode the trial holds, its target the open path. The mode
+ * starts on the Anchors tool and leaving it puts back the tool it replaced;
+ * the trial palette and the canvas share one active tool.
  */
-function usePathEdit(ctx: RenderContext<State, Config>, seeded: string) {
+function usePathEdit(seeded: string) {
   const [modes] = useState(() => createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' }));
   const [target, setTarget] = useState<string | null>(seeded);
-  const trial = useLatest(ctx.trial);
-  const paletteTool = ctx.trial.activeToolId;
   const pathEdit = useMemo<PathEditHost>(() => ({
     editingId: () => (modes.current().id === 'path-edit' ? target : null),
     setEditingId: (id) => {
       setTarget(id);
       modes.setMode(id ? 'path-edit' : 'normal');
-      if (!id && trial.current.activeToolId === LENGTHEN_TOOL) trial.current.setActiveTool('select');
     },
-    tool: () => (paletteTool === LENGTHEN_TOOL ? LENGTHEN_TOOL : null),
-    setTool: (id) => trial.current.setActiveTool(id ?? 'select'),
-  }), [modes, target, paletteTool, trial]);
+  }), [modes, target]);
   return { modes, pathEdit };
 }
 
 function LengthenTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { modes, pathEdit } = usePathEdit(ctx, SEEDED_PATH_ID);
+  const { modes, pathEdit } = usePathEdit(SEEDED_PATH_ID);
+  const lengthen = useLengthenTool();
+  const tools = useMemo(() => ({ lengthen }), [lengthen]);
   const live = useLatest(ctx.config);
   // Thunked, so a change reaches a drag already under way.
   const tune = useMemo<ActionTunings>(() => ({
@@ -89,6 +85,7 @@ function LengthenTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       trial={ctx.trial}
       modes={modes}
       pathEdit={pathEdit}
+      tools={tools}
       tune={tune}
       selectionOptions={selectionOptions}
     />
@@ -103,9 +100,10 @@ const lengthenInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: LENGTHEN_TOOL, label: 'Lengthen', icon: icon('path-tools:lengthen') },
+      { id: 'anchors', label: 'Anchors', icon: icon('core:anchors'), shortcut: 'A' },
+      { id: 'lengthen', label: 'Lengthen', icon: icon('path-tools:lengthen') },
     ],
-    initial: LENGTHEN_TOOL,
+    initial: 'lengthen',
   },
   render: (ctx) => <LengthenTrial ctx={ctx} />,
 });
