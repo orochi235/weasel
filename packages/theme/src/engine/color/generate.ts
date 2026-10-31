@@ -117,9 +117,11 @@ function peakLightness(H: number): number {
   return bestL;
 }
 
-const PEAK: number[] = [];
-for (let H = 0; H < 360; H += 1) PEAK.push(peakLightness(H));
-const peakAt = (H: number) => PEAK[((Math.round(H) % 360) + 360) % 360];
+const PEAK: (number | undefined)[] = new Array(360);
+const peakAt = (H: number) => {
+  const i = ((Math.round(H) % 360) + 360) % 360;
+  return (PEAK[i] ??= peakLightness(i));
+};
 
 /** The default law: sit near this hue's chroma peak, pulled toward the target. */
 function place(H: number, c: Constraints): string {
