@@ -219,6 +219,13 @@ are not test runs and still go to the fleet, one job at a time. On 2026-10-30, s
 finishing with a branch run and then a run of `main` per merge put 2–3 suite-sized runs behind every
 change.
 
+**A failed fleet run is fixed locally, every failure of it, before the next one goes out.** Rerun each
+failing test file on its own here (`--maxWorkers=1`) until it passes, and each failing gate step as the
+step's own command, the whole of it: `lint -w <pkg>` is every check that script chains, not eslint on
+the files you touched. A failure that cannot run here (a `browser` test) goes back to the fleet alone,
+by its file, before the batch run does. On 2026-10-30 a batch took three suite-sized runs, the third
+for a design-token check inside labkit's `lint` that the local pass had skipped.
+
 **A fleet run tests a commit: `npm run test:fleet`, never a bare `onto test`.** `onto test` ships
 the working tree, so from a checkout someone else is editing it tests their half-finished files
 and blames the commit. `test:fleet` checks the commit out into a throwaway worktree first. Run
