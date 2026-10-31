@@ -7,6 +7,7 @@ import {
 import type { PrefAction } from '@weasel-js/prefs';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { BarAction, BarActionButton } from './BarAction';
+import { BarInMenuContext } from './barInMenu';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 function Host({ actions, children }: { actions: Action[]; children: React.ReactNode }) {
@@ -34,6 +35,25 @@ const leaf = (rest: Partial<PrefAction> = {}): PrefAction => ({
 });
 
 describe('BarAction', () => {
+  it("draws as a menu row in a bar's overflow: icon, label, and shortcut", () => {
+    render(
+      <Host actions={[action('text.bold', { label: 'Bold' })]}>
+        <BarInMenuContext.Provider value>
+          <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
+        </BarInMenuContext.Provider>
+      </Host>,
+    );
+    const row = screen.getByRole('button', { name: 'Bold' });
+    expect(row.textContent).toContain('Bold');
+  });
+
+  it('shows the shortcut beside the label only in a menu row', () => {
+    const { rerender } = render(<BarActionButton label="Join" shortcut="⌘J" icon={<i />} menu onPress={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Join' }).textContent).toBe('Join⌘J');
+    rerender(<BarActionButton label="Join" shortcut="⌘J" icon={<i />} onPress={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Join' }).textContent).toBe('');
+  });
+
   it('fires the registered action its leaf names', () => {
     const run = vi.fn();
     render(
