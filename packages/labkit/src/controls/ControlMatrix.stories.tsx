@@ -89,12 +89,12 @@ function useLooks() {
 /** Six primitives and their Defaults in a 360px sidebar. Click a cell to edit
  *  it, Option-click a pinned one to hand it back to Defaults. */
 export const Looks: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const { schema, shown, autoPaths, setConfig } = useLooks();
     const [focused, setFocused] = useState<string | null>(null);
     return (
       <div className="lk-control-matrix-story">
-        <ControlMatrix
+        <ControlMatrix {...args}
           title="Looks"
           schema={schema}
           columns={columns}
@@ -112,7 +112,7 @@ export const Looks: Story = {
 
 /** The matrix under the panel it sits beside, to check the two read as one family. */
 export const BesideControlPanel: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const { schema, shown, autoPaths, setConfig } = useLooks();
     return (
       <div className="lk-control-matrix-story">
@@ -122,7 +122,7 @@ export const BesideControlPanel: Story = {
           config={valueAtPath(shown, 'looks.defaults') as Record<string, unknown>}
           setConfig={(path, value) => setConfig(`looks.defaults.${path}`, value)}
         />
-        <ControlMatrix
+        <ControlMatrix {...args}
           title="Per primitive"
           schema={schema}
           columns={columns}
@@ -146,7 +146,7 @@ const timing = f.schema(Object.fromEntries(channels.map((c) => [c, f.group(chann
 /** A plain grid: every column its own, none inheriting. The `ease` row is a custom leaf, read through the
  *  row's summary. */
 export const PlainGrid: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const schema = useMemo(() => resolveConfigSchema(timing, []), []);
     const [values, setValues] = useState<Record<string, unknown>>(() => ({
       x: { delay: 0, ease: 'easeOut' },
@@ -155,7 +155,7 @@ export const PlainGrid: Story = {
     }));
     return (
       <div className="lk-control-matrix-story">
-        <ControlMatrix
+        <ControlMatrix {...args}
           title="Timing"
           inherit={false}
           schema={schema}

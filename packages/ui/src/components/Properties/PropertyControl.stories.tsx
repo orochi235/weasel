@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PropertyControl } from '@weasel-js/ui/components/Properties';
+import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import s from './PropertyField.stories.module.css';
 
 const meta: Meta<typeof PropertyControl> = {
@@ -10,10 +10,13 @@ const meta: Meta<typeof PropertyControl> = {
 export default meta;
 type Story = StoryObj<typeof PropertyControl>;
 
+// What every kind of field takes: each field the story draws sets its own kind and value.
+type Shared = Partial<Omit<PropertyControlProps, 'kind' | 'value' | 'onChange' | 'onInput' | 'control'>>;
+
 /** Controls with no row around them, several to a line — what a paired row or
  *  a tool options strip holds. A slider brings its readout beside the track. */
 export const Cells: Story = {
-  render: () => {
+  render: (args) => {
     function Line() {
       const [x, setX] = useState(24);
       const [y, setY] = useState(48);
@@ -23,15 +26,15 @@ export const Cells: Story = {
       return (
         <div className={s.column}>
           <div className={s.cell}>
-            <PropertyControl kind="number" name="X" value={x} onChange={setX} />
-            <PropertyControl kind="number" name="Y" value={y} onChange={setY} />
+            <PropertyControl {...(args as Shared)} kind="number" name="X" value={x} onChange={setX} />
+            <PropertyControl {...(args as Shared)} kind="number" name="Y" value={y} onChange={setY} />
           </div>
           <div className={s.cell}>
-            <PropertyControl kind="number" control="slider" name="Size" value={size} min={0} max={100} onChange={setSize} />
+            <PropertyControl {...(args as Shared)} kind="number" control="slider" name="Size" value={size} min={0} max={100} onChange={setSize} />
           </div>
           <div className={s.cell}>
-            <PropertyControl kind="boolean" control="toggle" name="Bold" glyph="B" value={bold} onChange={setBold} />
-            <PropertyControl kind="color" name="Fill" value={fill} onChange={setFill} />
+            <PropertyControl {...(args as Shared)} kind="boolean" control="toggle" name="Bold" glyph="B" value={bold} onChange={setBold} />
+            <PropertyControl {...(args as Shared)} kind="color" name="Fill" value={fill} onChange={setFill} />
           </div>
         </div>
       );
@@ -42,17 +45,17 @@ export const Cells: Story = {
 
 /** A multi-selection whose nodes disagree: every cell shows no value. */
 export const Mixed: Story = {
-  render: () => {
+  render: (args) => {
     const ignore = () => {};
     return (
       <div className={s.column}>
         <div className={s.cell}>
-          <PropertyControl kind="number" name="X" value={undefined} mixed onChange={ignore} />
-          <PropertyControl kind="boolean" control="switch" name="Visible" value={undefined} mixed onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="number" name="X" value={undefined} mixed onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="boolean" control="switch" name="Visible" value={undefined} mixed onChange={ignore} />
         </div>
         <div className={s.cell}>
-          <PropertyControl kind="color" name="Fill" value={undefined} mixed onChange={ignore} />
-          <PropertyControl
+          <PropertyControl {...(args as Shared)} kind="color" name="Fill" value={undefined} mixed onChange={ignore} />
+          <PropertyControl {...(args as Shared)}
             kind="number"
             control="slider"
            
@@ -72,7 +75,7 @@ export const Mixed: Story = {
 
 /** Every kind taking no input, each element of it disabled and still showing its value. */
 export const Disabled: Story = {
-  render: () => {
+  render: (args) => {
     const ignore = () => {};
     const options = [
       { value: 'a', label: 'Alpha' },
@@ -81,28 +84,28 @@ export const Disabled: Story = {
     return (
       <div className={s.column}>
         <div className={s.cell}>
-          <PropertyControl kind="number" name="X" value={24} steppers disabled onChange={ignore} />
-          <PropertyControl kind="string" name="Title" value="Untitled" disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="number" name="X" value={24} steppers disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="string" name="Title" value="Untitled" disabled onChange={ignore} />
         </div>
         <div className={s.cell}>
-          <PropertyControl kind="number" control="slider" name="Size" value={40} min={0} max={100} disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="number" control="slider" name="Size" value={40} min={0} max={100} disabled onChange={ignore} />
         </div>
         <div className={s.cell}>
-          <PropertyControl kind="boolean" name="Visible" value disabled onChange={ignore} />
-          <PropertyControl kind="boolean" control="switch" name="Snap" value disabled onChange={ignore} />
-          <PropertyControl kind="boolean" control="toggle" name="Bold" glyph="B" value disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="boolean" name="Visible" value disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="boolean" control="switch" name="Snap" value disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="boolean" control="toggle" name="Bold" glyph="B" value disabled onChange={ignore} />
         </div>
         <div className={s.cell}>
-          <PropertyControl kind="enum" name="Mode" value="a" options={options} disabled onChange={ignore} />
-          <PropertyControl kind="enum" control="menu" name="Menu" value="a" options={options} disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="enum" name="Mode" value="a" options={options} disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="enum" control="menu" name="Menu" value="a" options={options} disabled onChange={ignore} />
         </div>
         <div className={s.cell}>
-          <PropertyControl kind="enum" control="toggle" name="Segments" value="a" options={options} disabled onChange={ignore} />
-          <PropertyControl kind="enum" control="radio" name="Radios" value="a" options={options} disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="enum" control="toggle" name="Segments" value="a" options={options} disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="enum" control="radio" name="Radios" value="a" options={options} disabled onChange={ignore} />
         </div>
         <div className={s.cell}>
-          <PropertyControl kind="color" name="Fill" value="#7ec8e3" alpha disabled onChange={ignore} />
-          <PropertyControl kind="paint" name="Paint" value={{ color: '#7ec8e3' }} disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="color" name="Fill" value="#7ec8e3" alpha disabled onChange={ignore} />
+          <PropertyControl {...(args as Shared)} kind="paint" name="Paint" value={{ color: '#7ec8e3' }} disabled onChange={ignore} />
         </div>
       </div>
     );

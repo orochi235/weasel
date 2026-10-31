@@ -53,10 +53,10 @@ export const Ghost: Story = { args: { variant: 'ghost' } };
 
 /** `--wzl-gloss` at 1, the glass a theme opts into. The default theme sets 0 and draws these flat. */
 export const Glass: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', ['--wzl-gloss' as string]: 1 }}>
-      <Button stance="confirm">Save</Button>
-      <Button>Cancel</Button>
+      <Button {...args} stance="confirm">Save</Button>
+      <Button {...args}>Cancel</Button>
       <KitToggleBar
         ariaLabel="View"
         items={[
@@ -73,11 +73,11 @@ export const Glass: Story = {
 /** `link` takes its type from the surrounding text, so it sits inside a
  *  sentence or a table cell at whatever size that text is. */
 export const Link: Story = {
-  render: () => (
+  render: (args) => (
     <p style={{ maxWidth: 360, lineHeight: 1.5 }}>
-      Bound to <Button variant="link">editor.insert</Button>, which routes
-      through <Button variant="link">routeTarget:scene</Button> and falls back
-      to <Button variant="link" disabled>none</Button>.
+      Bound to <Button {...args} variant="link">editor.insert</Button>, which routes
+      through <Button {...args} variant="link">routeTarget:scene</Button> and falls back
+      to <Button {...args} variant="link" disabled>none</Button>.
     </p>
   ),
 };
@@ -85,11 +85,11 @@ export const Link: Story = {
 /** `grade` recolors a `link`, and `emphasis` mutes or sharpens it: accent unless told
  *  otherwise. */
 export const LinkGrades: Story = {
-  render: () => (
+  render: (args) => (
     <p style={{ maxWidth: 360, lineHeight: 1.8 }}>
       {BADGE_LOOKS.map((look) => (
         <span key={look}>
-          <Button variant="link" {...lookProps(look)}>{look}</Button>{' '}
+          <Button {...args} variant="link" {...lookProps(look)}>{look}</Button>{' '}
         </span>
       ))}
     </p>
@@ -99,19 +99,19 @@ export const LinkGrades: Story = {
 /** `tint` says which of its peers a button is: a confirming button takes it as its
  *  accent, a link as its text color. */
 export const PeerTints: Story = {
-  render: () => (
+  render: (args) => (
     <div>
       <p>
         {[0, 1, 2, 3].map((tint) => (
           <span key={tint}>
-            <Button stance="confirm" tint={tint}>{`Tint ${tint}`}</Button>{' '}
+            <Button {...args} stance="confirm" tint={tint}>{`Tint ${tint}`}</Button>{' '}
           </span>
         ))}
       </p>
       <p>
         {[0, 1, 2, 3].map((tint) => (
           <span key={tint}>
-            <Button variant="link" tint={tint}>{`tint ${tint}`}</Button>{' '}
+            <Button {...args} variant="link" tint={tint}>{`tint ${tint}`}</Button>{' '}
           </span>
         ))}
       </p>
@@ -120,20 +120,20 @@ export const PeerTints: Story = {
 };
 
 export const Sizes: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button size="sm" stance="confirm">Small</Button>
-      <Button size="md" stance="confirm">Medium</Button>
+      <Button {...args} size="sm" stance="confirm">Small</Button>
+      <Button {...args} size="md" stance="confirm">Medium</Button>
     </div>
   ),
 };
 
 export const WithIcons: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-      <Button stance="confirm" leadingIcon={<PlusIcon />}>Add layer</Button>
-      <Button trailingIcon={<ChevronIcon />}>Next</Button>
-      <Button variant="ghost" leadingIcon={<TrashIcon />} trailingIcon={<ChevronIcon />}>
+      <Button {...args} stance="confirm" leadingIcon={<PlusIcon />}>Add layer</Button>
+      <Button {...args} trailingIcon={<ChevronIcon />}>Next</Button>
+      <Button {...args} variant="ghost" leadingIcon={<TrashIcon />} trailingIcon={<ChevronIcon />}>
         Delete
       </Button>
     </div>
@@ -141,23 +141,23 @@ export const WithIcons: Story = {
 };
 
 export const IconOnly: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button iconOnly ariaLabel="Add" stance="confirm"><PlusIcon /></Button>
-      <Button iconOnly ariaLabel="Add"><PlusIcon /></Button>
-      <Button iconOnly ariaLabel="Add" variant="ghost"><PlusIcon /></Button>
-      <Button iconOnly ariaLabel="Delete" size="sm"><TrashIcon /></Button>
+      <Button {...args} iconOnly ariaLabel="Add" stance="confirm"><PlusIcon /></Button>
+      <Button {...args} iconOnly ariaLabel="Add"><PlusIcon /></Button>
+      <Button {...args} iconOnly ariaLabel="Add" variant="ghost"><PlusIcon /></Button>
+      <Button {...args} iconOnly ariaLabel="Delete" size="sm"><TrashIcon /></Button>
     </div>
   ),
 };
 
 /** `shortcut` puts `Name (⌘Z)` in a kit tooltip; `tooltip` replaces the text. */
 export const Tooltips: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button shortcut="⌘S">Save</Button>
-      <Button iconOnly ariaLabel="Add layer" shortcut="⇧⌘N"><PlusIcon /></Button>
-      <Button variant="ghost" leadingIcon={<TrashIcon />} tooltip="Removes the selection from the document">
+      <Button {...args} shortcut="⌘S">Save</Button>
+      <Button {...args} iconOnly ariaLabel="Add layer" shortcut="⇧⌘N"><PlusIcon /></Button>
+      <Button {...args} variant="ghost" leadingIcon={<TrashIcon />} tooltip="Removes the selection from the document">
         Delete
       </Button>
     </div>
@@ -169,11 +169,11 @@ export const Loading: Story = {
 };
 
 export const Disabled: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button stance="confirm" disabled>Confirm</Button>
-      <Button disabled>Solid</Button>
-      <Button variant="ghost" disabled>Ghost</Button>
+      <Button {...args} stance="confirm" disabled>Confirm</Button>
+      <Button {...args} disabled>Solid</Button>
+      <Button {...args} variant="ghost" disabled>Ghost</Button>
     </div>
   ),
 };
@@ -196,7 +196,7 @@ const SIZES: ButtonSize[] = ['sm', 'md'];
 
 export const Matrix: Story = {
   tags: ['gallery'],
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'grid', gridTemplateColumns: `auto repeat(${VARIANTS.length}, 1fr)`, gap: 12, alignItems: 'center' }}>
       <div />
       {VARIANTS.map((v) => (
@@ -208,8 +208,8 @@ export const Matrix: Story = {
         <div key={`lbl-${sz}`} style={{ fontSize: 11, color: 'var(--wzl-fg-muted)' }}>{sz}</div>,
         ...VARIANTS.map((v) => (
           <div key={`${sz}-${v}`} style={{ display: 'flex', gap: 8 }}>
-            <Button variant={v} size={sz}>Button</Button>
-            <Button variant={v} size={sz} disabled>Off</Button>
+            <Button {...args} variant={v} size={sz}>Button</Button>
+            <Button {...args} variant={v} size={sz} disabled>Off</Button>
           </div>
         )),
       ])}

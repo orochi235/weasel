@@ -21,13 +21,13 @@ const CASES = [
 
 /** Drag the box's corner: the segments step down together as it narrows. */
 export const InAToggleBar: Story = {
-  render: () => {
+  render: (args) => {
     const [v, setV] = useState<string | null>('none');
     return (
       <div className={s.room}>
         <ToggleBar
           ariaLabel="Case"
-          items={CASES.map((c) => ({ value: c.value, label: <FitLabel forms={c.forms} />, ariaLabel: c.forms[0] }))}
+          items={CASES.map((c) => ({ value: c.value, label: <FitLabel {...args} forms={c.forms} />, ariaLabel: c.forms[0] }))}
           value={v}
           onChange={setV}
         />

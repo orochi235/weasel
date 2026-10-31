@@ -19,12 +19,12 @@ type Story = StoryObj<typeof AssetEditor>;
  * The workspace holds a catalog of actions too: drag a row of the Actions list to sort it, and pick one for its attributes.
  */
 export const Default: Story = {
-  render: function DefaultStory() {
+  render: function DefaultStory(args) {
     const [workspace, setWorkspace] = useState(DEMO_WORKSPACE);
     const codec = useMemo(() => workspaceCodec([]), []);
     return (
       <div className={s.frame}>
-        <AssetEditor list workspace={workspace} codec={codec} actions={DEMO_ACTIONS} onChange={setWorkspace} onSubmit={() => {}} />
+        <AssetEditor {...args} list workspace={workspace} codec={codec} actions={DEMO_ACTIONS} onChange={setWorkspace} onSubmit={() => {}} />
       </div>
     );
   },

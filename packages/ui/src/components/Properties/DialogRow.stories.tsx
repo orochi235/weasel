@@ -11,11 +11,11 @@ type Story = StoryObj<typeof DialogRow>;
 
 /** The body edits the value as it goes; Done and Escape both just close. */
 export const Live: Story = {
-  render: () => {
+  render: (args) => {
     const [text, setText] = useState('a, b');
     return (
       <PropertyList>
-        <DialogRow label="Globs" summary={text}>
+        <DialogRow {...args} label="Globs" summary={text}>
           {() => <textarea aria-label="Globs" value={text} onChange={(e) => setText(e.target.value)} />}
         </DialogRow>
       </PropertyList>
@@ -25,12 +25,12 @@ export const Live: Story = {
 
 /** The body edits a draft: Done keeps it, and Cancel or Escape drops it. */
 export const Cancelable: Story = {
-  render: () => {
+  render: (args) => {
     const [text, setText] = useState('a, b');
     const [draft, setDraft] = useState(text);
     return (
       <PropertyList>
-        <DialogRow
+        <DialogRow {...args}
           label="Globs"
           summary={text}
           onOpen={() => setDraft(text)}

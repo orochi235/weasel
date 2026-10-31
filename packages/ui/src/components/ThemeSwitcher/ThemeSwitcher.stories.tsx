@@ -37,13 +37,13 @@ const SHAPES: ThemeSwitcherOption<'rect' | 'ellipse' | 'star'>[] = [
 /** Any ordered list of options cycles the same way, under its own name. */
 export const CustomOptions: Story = {
   tags: ['gallery'],
-  render: function Render() {
+  render: function Render(args) {
     const [shape, setShape] = useState<'rect' | 'ellipse' | 'star'>('rect');
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ThemeSwitcher value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" />
-        <ThemeSwitcher value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" size="md" />
-        <ThemeSwitcher value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" variant="solid" />
+        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" />
+        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" size="md" />
+        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" variant="solid" />
       </div>
     );
   },

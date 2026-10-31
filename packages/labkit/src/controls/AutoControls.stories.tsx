@@ -60,16 +60,16 @@ function Panel({
   );
 }
 
-function Pair() {
+function Pair({ args }: { args: Story['args'] }) {
   return (
     <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
       <div style={{ flex: '1 1 0', minWidth: 0 }}>
         <h3>Pinned</h3>
-        <Panel start={[]} />
+        <Panel {...args} start={[]} />
       </div>
       <div style={{ flex: '1 1 0', minWidth: 0 }}>
         <h3>Auto</h3>
-        <Panel start={EVERY_AUTO} />
+        <Panel {...args} start={EVERY_AUTO} />
       </div>
     </div>
   );
@@ -82,7 +82,7 @@ function Pair() {
  * the toggle. `Width` and `Seed` never said `.auto()`, and do not toggle.
  */
 export const BothStates: Story = {
-  render: () => <Pair />,
+  render: (args) => <Pair args={args} />,
 };
 
 /** One panel to click labels around in: the row must not resize as it toggles. */

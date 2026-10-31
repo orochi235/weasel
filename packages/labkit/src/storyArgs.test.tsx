@@ -3,7 +3,8 @@ import type { ReactElement, ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 
 // forge gives a story controls only when its `render` takes args, so a story whose harness holds state still has to
-// pass them through to the instance it draws. Each case sets a class and finds it in the DOM.
+// pass them through to the instance it draws, and a story drawing several applies them to each. Each case sets a class
+// and finds it in the DOM.
 
 type Render = (args: never, ctx: never) => ReactNode;
 type Story = { render?: Render; args?: object };
@@ -58,5 +59,18 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
       className: 'arg-here',
     });
     expect(document.querySelector('.arg-here')).not.toBeNull();
+  });
+});
+
+describe('a story drawing its component, once or several times, applies its args to each', { timeout: 60_000 }, () => {
+  it.each<[string, string, () => Promise<unknown>, number]>([
+    ['TileGrip', 'Reorderable', () => import('./lab/TileGrip.stories'), 3],
+    ['TileGrip', 'OutsideWorkspace', () => import('./lab/TileGrip.stories'), 1],
+    ['AutoControls', 'BothStates', () => import('./controls/AutoControls.stories'), 2],
+    ['ControlMatrix', 'Looks', () => import('./controls/ControlMatrix.stories'), 1],
+    ['PanelEditing', 'Drafts', () => import('./controls/PanelEditing.stories'), 1],
+  ])('%s %s', async (_, name, load, count) => {
+    draw(stories(await load())[name], { className: 'arg-here' });
+    expect(document.querySelectorAll('.arg-here')).toHaveLength(count);
   });
 });

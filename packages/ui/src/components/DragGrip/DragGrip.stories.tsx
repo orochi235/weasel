@@ -14,10 +14,10 @@ export const Default: Story = {
 
 /** Proofed large, where a dot off the grid shows; the right-hand one is the size it ships at. */
 export const Sizes: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
       {[128, 64, 32, 16].map((size) => (
-        <DragGrip key={size} size={size} />
+        <DragGrip {...args} key={size} size={size} />
       ))}
     </div>
   ),

@@ -19,11 +19,11 @@ export const Disabled: Story = { args: { label: 'Locked', isDisabled: true, defa
  *  default; the second field narrows that count through
  *  `--wzl-number-field-width`. The third is the default `fill`. */
 export const FitWidth: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 480 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <NumberField aria-label="Fit" width="fit" defaultValue={120} />
-        <NumberField
+        <NumberField {...args} aria-label="Fit" width="fit" defaultValue={120} />
+        <NumberField {...args}
           aria-label="Narrow fit"
           width="fit"
           hideSteppers
@@ -33,7 +33,7 @@ export const FitWidth: Story = {
         <span>tail</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <NumberField aria-label="Fills the row" defaultValue={120} />
+        <NumberField {...args} aria-label="Fills the row" defaultValue={120} />
         <span>tail</span>
       </div>
     </div>
@@ -43,11 +43,11 @@ export const FitWidth: Story = {
 /** `orientation='row'` sets the label beside the field. Filling, the field
  *  takes the rest of the row; fitted, it keeps its own width. */
 export const LabelBeside: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
-      <NumberField label="Width" orientation="row" defaultValue={120} />
-      <NumberField label="Width" orientation="row" width="fit" defaultValue={120} />
-      <NumberField label="Width" orientation="row" description="In document pixels." defaultValue={120} />
+      <NumberField {...args} label="Width" orientation="row" defaultValue={120} />
+      <NumberField {...args} label="Width" orientation="row" width="fit" defaultValue={120} />
+      <NumberField {...args} label="Width" orientation="row" description="In document pixels." defaultValue={120} />
     </div>
   ),
 };

@@ -42,16 +42,16 @@ export const Basic: StoryObj<typeof PropertyGroup> = {
  *  `collapsed` + `onCollapsedChange` hand that state to the consumer, which is
  *  how a panel remembers its sections. */
 export const Collapsible: StoryObj<typeof PropertyGroup> = {
-  render: () => {
+  render: (args) => {
     function Sections() {
       const [closed, setClosed] = useState(true);
       return (
         <PropertyPanel title="Fill">
           <PropertyList>
-            <PropertyGroup title="Aqua" defaultCollapsed>
+            <PropertyGroup {...args} title="Aqua" defaultCollapsed>
               <PropertyField kind="number" control="slider" label="Gloss" value={0.55} min={0} max={1} step={0.02} onChange={() => {}} />
             </PropertyGroup>
-            <PropertyGroup title="Bevel" collapsed={closed} onCollapsedChange={setClosed}>
+            <PropertyGroup {...args} title="Bevel" collapsed={closed} onCollapsedChange={setClosed}>
               <PropertyField kind="number" control="slider" label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
             </PropertyGroup>
           </PropertyList>
@@ -65,14 +65,14 @@ export const Collapsible: StoryObj<typeof PropertyGroup> = {
 /** `twisty="folded"` shows a container's twisty only while it is folded: open, a press on the title folds it, and
  *  the twisty comes back under keyboard focus. Bevel and Noise start folded, so theirs show. */
 export const FoldedTwisty: StoryObj<typeof PropertyGroup> = {
-  render: () => (
+  render: (args) => (
     <>
       <PropertyPanel title="Fill" twisty="folded" collapsible>
         <PropertyList>
-          <PropertyGroup title="Aqua" twisty="folded" collapsible>
+          <PropertyGroup {...args} title="Aqua" twisty="folded" collapsible>
             <PropertyField kind="number" control="slider" label="Gloss" value={0.55} min={0} max={1} step={0.02} onChange={() => {}} />
           </PropertyGroup>
-          <PropertyGroup title="Bevel" twisty="folded" defaultCollapsed>
+          <PropertyGroup {...args} title="Bevel" twisty="folded" defaultCollapsed>
             <PropertyField kind="number" control="slider" label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
           </PropertyGroup>
           <Subpanel title="Grain" twisty="folded" collapsible>
@@ -93,11 +93,11 @@ export const FoldedTwisty: StoryObj<typeof PropertyGroup> = {
 /** `leading` and `actions` share the title row with the title: a handle before it, a value and a remove button after
  *  it. A tint draws the group's edge in it, which tells like groups in a list apart. */
 export const HeaderSlots: StoryObj<typeof PropertyGroup> = {
-  render: () => (
+  render: (args) => (
     <PropertyPanel title="Effects">
       <PropertyList>
         {(['Glow', 'Drop shadow'] as const).map((name, i) => (
-          <PropertyGroup
+          <PropertyGroup {...args}
             key={name}
             title={name}
             tint={i}

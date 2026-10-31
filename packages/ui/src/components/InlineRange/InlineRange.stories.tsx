@@ -10,12 +10,13 @@ export default meta;
 
 type Story = StoryObj<typeof InlineRange>;
 
-function Row({ label, min, max, start }: { label: string; min: number; max: number; start: number }) {
+function Row({ args, label, min, max, start }: { args: Story['args']; label: string; min: number; max: number; start: number }) {
   const [v, setV] = useState(start);
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 8, width: 260 }}>
       <span style={{ width: 60, opacity: 0.75 }}>{label}</span>
       <InlineRange
+        {...args}
         aria-label={label}
         min={min}
         max={max}
@@ -29,10 +30,10 @@ function Row({ label, min, max, start }: { label: string; min: number; max: numb
 
 /** The two property-row uses: a bounded quantity and a percentage. */
 export const InAPropertyRow: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <Row label="Width" min={0} max={20} start={6} />
-      <Row label="Opacity" min={0} max={100} start={100} />
+      <Row args={args} label="Width" min={0} max={20} start={6} />
+      <Row args={args} label="Opacity" min={0} max={100} start={100} />
     </div>
   ),
 };
@@ -40,10 +41,10 @@ export const InAPropertyRow: Story = {
 /** The filled portion is painted, not left to `accent-color` — the unfilled
  *  remainder is a theme token at every value, including zero. */
 export const AcrossItsRange: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 260 }}>
       {[0, 25, 50, 75, 100].map((v) => (
-        <InlineRange key={v} aria-label={`${v} percent`} min={0} max={100} value={v} readOnly />
+        <InlineRange {...args} key={v} aria-label={`${v} percent`} min={0} max={100} value={v} readOnly />
       ))}
     </div>
   ),

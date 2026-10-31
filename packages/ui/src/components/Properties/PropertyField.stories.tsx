@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type ReactNode, useState } from 'react';
-import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
+import { PropertyField, PropertyList, type PropertyFieldProps } from '@weasel-js/ui/components/Properties';
 import { SideBySide } from './storyLayouts';
 import s from './PropertyField.stories.module.css';
 import { compact, decimal, endless, unit, type Display, type Endless } from '@weasel-js/quantity';
@@ -11,6 +11,9 @@ const meta: Meta<typeof PropertyField> = {
 };
 export default meta;
 type Story = StoryObj<typeof PropertyField>;
+
+// What every kind of field takes: each field the story draws sets its own kind and value.
+type Shared = Partial<Omit<PropertyFieldProps, 'kind' | 'value' | 'onChange' | 'onInput' | 'control'>>;
 
 const ALIGN = [
   { value: 'left', label: 'L' },
@@ -27,7 +30,7 @@ const BLEND = [
 type Blend = (typeof BLEND)[number]['value'];
 
 /** One of every kind, in the layout each takes by default. */
-function EveryKind({ layout }: { layout?: 'block' | 'inline' }) {
+function EveryKind({ args, layout }: { args: Story['args']; layout?: 'block' | 'inline' }) {
   const [visible, setVisible] = useState(true);
   const [snap, setSnap] = useState(false);
   const [opacity, setOpacity] = useState(0.65);
@@ -38,8 +41,8 @@ function EveryKind({ layout }: { layout?: 'block' | 'inline' }) {
   const [fill, setFill] = useState('#b08adb');
   return (
     <PropertyList pack="one-up">
-      <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} layout={layout} />
-      <PropertyField
+      <PropertyField {...(args as Shared)} kind="boolean" label="Visible" value={visible} onChange={setVisible} layout={layout} />
+      <PropertyField {...(args as Shared)}
         kind="boolean"
         control="switch"
         label="Snap"
@@ -47,7 +50,7 @@ function EveryKind({ layout }: { layout?: 'block' | 'inline' }) {
         onChange={setSnap}
         layout={layout}
       />
-      <PropertyField
+      <PropertyField {...(args as Shared)}
         kind="number"
         control="slider"
         label="Opacity"
@@ -58,10 +61,10 @@ function EveryKind({ layout }: { layout?: 'block' | 'inline' }) {
         onChange={setOpacity}
         layout={layout}
       />
-      <PropertyField kind="number" label="Radius" value={radius} unit="px" onChange={setRadius} layout={layout} />
-      <PropertyField kind="string" label="Name" value={name} onChange={setName} layout={layout} />
-      <PropertyField kind="enum" label="Blend" value={blend} options={BLEND} onChange={setBlend} layout={layout} />
-      <PropertyField
+      <PropertyField {...(args as Shared)} kind="number" label="Radius" value={radius} unit="px" onChange={setRadius} layout={layout} />
+      <PropertyField {...(args as Shared)} kind="string" label="Name" value={name} onChange={setName} layout={layout} />
+      <PropertyField {...(args as Shared)} kind="enum" label="Blend" value={blend} options={BLEND} onChange={setBlend} layout={layout} />
+      <PropertyField {...(args as Shared)}
         kind="enum"
         control="toggle"
         label="Align"
@@ -70,16 +73,17 @@ function EveryKind({ layout }: { layout?: 'block' | 'inline' }) {
         onChange={setAlign}
         layout={layout}
       />
-      <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} layout={layout} />
+      <PropertyField {...(args as Shared)} kind="color" label="Fill" value={fill} onChange={setFill} layout={layout} />
     </PropertyList>
   );
 }
 
 export const BothLayouts: Story = {
-  render: () => <SideBySide block={<EveryKind />} inline={<EveryKind layout="inline" />} />,
+  render: (args) => <SideBySide block={<EveryKind args={args} />} inline={<EveryKind args={args} layout="inline" />} />,
 };
 
-function Slider({ initial, ...rest }: {
+function Slider({ args, initial, ...rest }: {
+  args: Story['args'];
   initial: number;
   label: string;
   min: number;
@@ -90,18 +94,18 @@ function Slider({ initial, ...rest }: {
   endless?: Endless;
 }) {
   const [value, setValue] = useState(initial);
-  return <PropertyField kind="number" control="slider" value={value} onChange={setValue} {...rest} />;
+  return <PropertyField {...(args as Shared)} kind="number" control="slider" value={value} onChange={setValue} {...rest} />;
 }
 
 /** A slider's readout is editable, carries a unit, widens to the widest value
  *  its range can show, and abbreviates under `compact`. */
 export const SliderReadouts: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.column}>
-      <Slider initial={12} label="Radius" min={0} max={64} unit="px" />
-      <Slider initial={45} label="Angle" min={-180} max={180} unit={<sup>°</sup>} />
-      <Slider initial={200_000} label="Glyphs" min={0} max={200_000} step={1000} />
-      <Slider initial={2_000_000} label="Glyphs" min={0} max={2_000_000} step={1000} display={compact()} />
+      <Slider args={args} initial={12} label="Radius" min={0} max={64} unit="px" />
+      <Slider args={args} initial={45} label="Angle" min={-180} max={180} unit={<sup>°</sup>} />
+      <Slider args={args} initial={200_000} label="Glyphs" min={0} max={200_000} step={1000} />
+      <Slider args={args} initial={2_000_000} label="Glyphs" min={0} max={2_000_000} step={1000} display={compact()} />
     </div>
   ),
 };
@@ -110,12 +114,12 @@ export const SliderReadouts: Story = {
  *  `Infinity`, read as the display's word with no unit beside it — or `∞`
  *  when the display names none. Type the word, or `∞`, to set it. */
 export const EndlessEnd: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.column}>
-      <Slider initial={Infinity} label="Cut at" min={0} max={5000} step={50} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
-      <Slider initial={1200} label="Mute at" min={0} max={8000} step={100} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
-      <Slider initial={Infinity} label="Cap step" min={16} max={64} step={8} endless="max" display={endless(unit('ms'), 'uncapped')} />
-      <Slider initial={-Infinity} label="Floor" min={0} max={100} endless="min" />
+      <Slider args={args} initial={Infinity} label="Cut at" min={0} max={5000} step={50} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
+      <Slider args={args} initial={1200} label="Mute at" min={0} max={8000} step={100} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
+      <Slider args={args} initial={Infinity} label="Cap step" min={16} max={64} step={8} endless="max" display={endless(unit('ms'), 'uncapped')} />
+      <Slider args={args} initial={-Infinity} label="Floor" min={0} max={100} endless="min" />
     </div>
   ),
 };
@@ -123,7 +127,7 @@ export const EndlessEnd: Story = {
 /** `onInput` follows the drag and `onChange` fires once it ends. Drag the
  *  track, or type into the number, and watch the two counts diverge. */
 export const LiveAndCommitted: Story = {
-  render: () => {
+  render: (args) => {
     function Split() {
       const [value, setValue] = useState(40);
       const [text, setText] = useState('draft');
@@ -133,7 +137,7 @@ export const LiveAndCommitted: Story = {
       const settled = () => setCommits((c) => c + 1);
       return (
         <div className={s.column}>
-          <PropertyField
+          <PropertyField {...(args as Shared)}
             kind="number"
             control="slider"
             label="Samples"
@@ -146,7 +150,7 @@ export const LiveAndCommitted: Story = {
             }}
             onChange={settled}
           />
-          <PropertyField
+          <PropertyField {...(args as Shared)}
             kind="string"
             label="Title"
             value={text}
@@ -168,7 +172,7 @@ export const LiveAndCommitted: Story = {
 
 /** `alpha` as a number is a channel of its own; `true` keeps it in the hex. */
 export const ColorAlpha: Story = {
-  render: () => {
+  render: (args) => {
     function Alphas() {
       const [fill, setFill] = useState('#7ec8e3');
       const [fillAlpha, setFillAlpha] = useState(0.65);
@@ -176,7 +180,7 @@ export const ColorAlpha: Story = {
       return (
         <div className={s.wide}>
           <PropertyList>
-            <PropertyField
+            <PropertyField {...(args as Shared)}
               kind="color"
               label="Fill"
               value={fill}
@@ -184,9 +188,9 @@ export const ColorAlpha: Story = {
               alpha={fillAlpha}
               onAlphaChange={setFillAlpha}
             />
-            <PropertyField kind="color" label="Tint" value={tint} alpha onChange={setTint} />
+            <PropertyField {...(args as Shared)} kind="color" label="Tint" value={tint} alpha onChange={setTint} />
           </PropertyList>
-          <PropertyField
+          <PropertyField {...(args as Shared)}
             kind="color"
             label="Flat"
             value={fill}
@@ -204,14 +208,14 @@ export const ColorAlpha: Story = {
 /** What a field shows when its sources disagree, and when they agree on
  *  holding nothing: no value chosen, in whatever form each control has. */
 export const MixedAndUnset: Story = {
-  render: () => {
+  render: (args) => {
     const ignore = () => {};
     const column = (state: { mixed?: boolean; unset?: boolean }) => (
       <PropertyList pack="one-up">
-        <PropertyField kind="boolean" label="Visible" value={undefined} onChange={ignore} {...state} />
-        <PropertyField kind="boolean" control="switch" label="Snap" value={undefined} onChange={ignore} {...state} />
-        <PropertyField kind="number" label="Radius" value={undefined} onChange={ignore} {...state} />
-        <PropertyField
+        <PropertyField {...(args as Shared)} kind="boolean" label="Visible" value={undefined} onChange={ignore} {...state} />
+        <PropertyField {...(args as Shared)} kind="boolean" control="switch" label="Snap" value={undefined} onChange={ignore} {...state} />
+        <PropertyField {...(args as Shared)} kind="number" label="Radius" value={undefined} onChange={ignore} {...state} />
+        <PropertyField {...(args as Shared)}
           kind="number"
           control="slider"
           label="Opacity"
@@ -222,9 +226,9 @@ export const MixedAndUnset: Story = {
           onChange={ignore}
           {...state}
         />
-        <PropertyField kind="string" label="Name" value={undefined} onChange={ignore} {...state} />
-        <PropertyField kind="enum" label="Blend" value={undefined} options={BLEND} onChange={ignore} {...state} />
-        <PropertyField kind="color" label="Fill" value={undefined} onChange={ignore} {...state} />
+        <PropertyField {...(args as Shared)} kind="string" label="Name" value={undefined} onChange={ignore} {...state} />
+        <PropertyField {...(args as Shared)} kind="enum" label="Blend" value={undefined} options={BLEND} onChange={ignore} {...state} />
+        <PropertyField {...(args as Shared)} kind="color" label="Fill" value={undefined} onChange={ignore} {...state} />
       </PropertyList>
     );
     return (
@@ -245,7 +249,7 @@ export const MixedAndUnset: Story = {
 /** A number reading a unit typed into it (`15mm` here), a choice drawn as
  *  segments and as a radio list, and a color with its opacity track. */
 export const UnitsChoicesAlpha: Story = {
-  render: () => {
+  render: (args) => {
     function Kinds() {
       const [on, setOn] = useState(true);
       const [width, setWidth] = useState(2.5);
@@ -256,8 +260,8 @@ export const UnitsChoicesAlpha: Story = {
       return (
         <div className={s.column}>
           <PropertyList pack="one-up">
-            <PropertyField kind="boolean" label="Visible" value={on} onChange={setOn} layout="inline" />
-            <PropertyField
+            <PropertyField {...(args as Shared)} kind="boolean" label="Visible" value={on} onChange={setOn} layout="inline" />
+            <PropertyField {...(args as Shared)}
               kind="number"
               label="Width"
               value={width}
@@ -266,11 +270,11 @@ export const UnitsChoicesAlpha: Story = {
               onChange={setWidth}
               layout="inline"
             />
-            <PropertyField kind="string" label="Label" value={label} onChange={setLabel} layout="inline" />
-            <PropertyField kind="enum" label="Blend" value={blend} options={BLEND} onChange={setBlend} layout="inline" />
-            <PropertyField kind="enum" control="toggle" label="Align" value={align} options={ALIGN} onChange={setAlign} />
-            <PropertyField kind="enum" control="radio" label="Align, listed" value={align} options={ALIGN} onChange={setAlign} />
-            <PropertyField kind="color" label="Fill" value={fill} alpha onChange={setFill} />
+            <PropertyField {...(args as Shared)} kind="string" label="Label" value={label} onChange={setLabel} layout="inline" />
+            <PropertyField {...(args as Shared)} kind="enum" label="Blend" value={blend} options={BLEND} onChange={setBlend} layout="inline" />
+            <PropertyField {...(args as Shared)} kind="enum" control="toggle" label="Align" value={align} options={ALIGN} onChange={setAlign} />
+            <PropertyField {...(args as Shared)} kind="enum" control="radio" label="Align, listed" value={align} options={ALIGN} onChange={setAlign} />
+            <PropertyField {...(args as Shared)} kind="color" label="Fill" value={fill} alpha onChange={setFill} />
           </PropertyList>
         </div>
       );

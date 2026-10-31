@@ -12,11 +12,12 @@ export default meta;
 type Story = StoryObj<typeof PageTabs>;
 
 /** A document's pages, kept in the story's own state the way an editor keeps them in its document. */
-function Document({ initial, current: start = initial[0]?.id ?? null }: { initial: PageTabItem[]; current?: string | null }) {
+function Document({ args, initial, current: start = initial[0]?.id ?? null }: { args: Story['args']; initial: PageTabItem[]; current?: string | null }) {
   const [pages, setPages] = useState(initial);
   const [current, setCurrent] = useState<string | null>(start);
   return (
     <PageTabs
+      {...args}
       aria-label="Pages"
       pages={pages}
       current={current}
@@ -34,26 +35,26 @@ function Document({ initial, current: start = initial[0]?.id ?? null }: { initia
 
 /** Press a tab to light it, double-press to rename, drag to reorder, and + to add a page. */
 export const Editable: Story = {
-  render: () => <Document initial={[{ id: 'a', name: 'Overview' }, { id: 'b' }, { id: 'c', name: 'Appendix' }]} />,
+  render: (args) => <Document args={args} initial={[{ id: 'a', name: 'Overview' }, { id: 'b' }, { id: 'c', name: 'Appendix' }]} />,
 };
 
 /** With no page current, as when the view sits between pages, no tab is lit. */
 export const NoneLit: Story = {
-  render: () => <Document initial={[{ id: 'a' }, { id: 'b' }]} current={null} />,
+  render: (args) => <Document args={args} initial={[{ id: 'a' }, { id: 'b' }]} current={null} />,
 };
 
 /** Without the editing callbacks the strip only navigates: no + button, no rename, no drag. */
 export const NavigateOnly: Story = {
-  render: () => (
-    <PageTabs pages={[{ id: 'a' }, { id: 'b' }, { id: 'c' }]} current="b" onSelect={() => {}} />
+  render: (args) => (
+    <PageTabs {...args} pages={[{ id: 'a' }, { id: 'b' }, { id: 'c' }]} current="b" onSelect={() => {}} />
   ),
 };
 
 /** More pages than fit scroll sideways inside the strip. */
 export const ManyPages: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.narrow}>
-      <Document initial={Array.from({ length: 14 }, (_, i) => ({ id: `p${i}` }))} />
+      <Document args={args} initial={Array.from({ length: 14 }, (_, i) => ({ id: `p${i}` }))} />
     </div>
   ),
 };

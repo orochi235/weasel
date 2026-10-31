@@ -17,7 +17,7 @@ type Story = StoryObj<typeof SidebarPanes>;
 const lines = (n: number) =>
   Array.from({ length: n }, (_, i) => `line ${i + 1}`).map((text) => <p key={text}>{text}</p>);
 
-function Stack() {
+function Stack({ args }: { args: Story['args'] }) {
   const [collapsedSections, setFolds] = useState<Record<string, boolean>>({});
   const [heights, setHeights] = useState<Record<string, number>>({ long: 160 });
   const ctx: SidebarSlotContext = {
@@ -28,6 +28,7 @@ function Stack() {
     <LabRoot>
       <div className="lk-lab__aside" data-testid="pane" style={{ height: 400 }}>
         <SidebarPanes
+          {...args}
           ctx={ctx}
           heights={heights}
           onHeightsChange={setHeights}
@@ -44,7 +45,7 @@ function Stack() {
 
 // jsdom has no layout, so this runs in the browser story projects.
 export const SectionsScrollApart: Story = {
-  render: () => <Stack />,
+  render: (args) => <Stack args={args} />,
   play: async ({ canvasElement }) => {
     const pane = canvasElement.querySelector('[data-testid="pane"]') as HTMLElement;
     const sections = [...pane.querySelectorAll<HTMLElement>('.lk-sidebar-section')];

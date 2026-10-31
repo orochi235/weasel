@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 // forge gives a story controls only when its `render` takes args, so a story whose harness holds state still has to
-// pass them through to the instance it draws. Each case sets one arg and looks for it in the DOM.
+// pass them through to the instance it draws, and a story drawing several applies them to each, under each cell's own
+// props. Each case sets one arg and looks for it in the DOM.
 
 type Render = (args: never, ctx: never) => ReactNode;
 type Story = { render?: Render; args?: object };
@@ -117,5 +118,63 @@ describe('a story drawing one plain instance is args only', () => {
     const { Muted } = await import('./QuantityText/QuantityText.stories');
     expect(Muted.render).toBeUndefined();
     expect(Muted.args).toMatchObject({ mute: true });
+  });
+});
+
+type Load = () => Promise<unknown>;
+
+describe('a story drawing several instances applies its args to each', { timeout: 30_000 }, () => {
+  it.each<[string, string, Load, object, string, number]>([
+    ['Button', 'Matrix', () => import('./Button/Button.stories'), { 'data-arg': 'here' }, '[data-arg="here"]', 8],
+    ['Code', 'Diff', () => import('./Code/Code.stories'), { className: 'arg-here' }, '.arg-here', 3],
+    ['MotifFrame', 'Motifs', () => import('./MotifFrame/MotifFrame.stories'), { className: 'arg-here' }, '.arg-here', 6],
+    ['ToolPalette', 'Split', () => import('./ToolPalette/ToolPalette.stories'), { className: 'arg-here' }, '.arg-here', 2],
+    ['PropertyField', 'MixedAndUnset', () => import('./Properties/PropertyField.stories'), { rowClassName: 'arg-here' }, '.arg-here', 14],
+    ['PropertyControl', 'Cells', () => import('./Properties/PropertyControl.stories'), { className: 'arg-here' }, '.arg-here', 5],
+  ])('%s %s', async (_, name, load, args, selector, count) => {
+    draw((await load() as Record<string, Story>)[name], args);
+    expect(document.querySelectorAll(selector)).toHaveLength(count);
+  });
+
+  it.each<[string, string, Load, string, number]>([
+    ['NumberField', 'FitWidth', () => import('./NumberField/NumberField.stories'), 'textbox', 3],
+    ['Select', 'LabelBeside', () => import('./Select/Select.stories'), 'button', 3],
+  ])('%s %s', async (_, name, load, role, count) => {
+    draw((await load() as Record<string, Story>)[name], { isDisabled: true });
+    const fields = screen.getAllByRole(role);
+    expect(fields).toHaveLength(count);
+    for (const el of fields) expect(el).toBeDisabled();
+  });
+
+  it('a cell\'s own prop wins over the arg it varies', async () => {
+    const { States } = await import('./Disclosure/Disclosure.stories');
+    draw(States as Story, { label: 'From args', disabled: true });
+    const toggles = screen.getAllByRole('button');
+    expect(toggles.map((el) => el.getAttribute('aria-label'))).toEqual(['Shut', 'Open', 'Disabled']);
+    for (const el of toggles) expect(el).toBeDisabled();
+  });
+
+  it('BarField Kinds, one cell per field kind', async () => {
+    const { Kinds } = await import('./Bar/BarField.stories');
+    draw(Kinds as Story, { disabled: true });
+    const controls = [...document.querySelectorAll('input, button, select, textarea')];
+    expect(controls.length).toBeGreaterThan(5);
+    for (const el of controls) expect(el).toBeDisabled();
+  });
+});
+
+describe('a story drawing one instance of a generic or union-typed component passes its args to it', { timeout: 30_000 }, () => {
+  it.each<[string, string, Load]>([
+    ['DataGrid', 'Default', () => import('./DataGrid/DataGrid.stories')],
+    ['ListEditor', 'Default', () => import('./ListEditor/ListEditor.stories')],
+    ['ListEditor', 'EntryKinds', () => import('./ListEditor/ListEditor.stories')],
+    ['TokenField', 'Records', () => import('./TokenField/TokenField.stories')],
+    ['ActionBar', 'Default', () => import('./ActionBar/ActionBar.stories')],
+    ['PageTabs', 'Editable', () => import('./PageTabs/PageTabs.stories')],
+    ['PrefSchemaEditor', 'Default', () => import('./PrefSchemaEditor/PrefSchemaEditor.stories')],
+    ['Tree', 'Selectable', () => import('./Tree/Tree.stories')],
+  ])('%s %s', async (_, name, load) => {
+    draw((await load() as Record<string, Story>)[name], { className: 'arg-here' });
+    expect(document.querySelector('.arg-here')).not.toBeNull();
   });
 });

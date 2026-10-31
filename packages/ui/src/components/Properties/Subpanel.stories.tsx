@@ -48,14 +48,14 @@ export const InPairs: Story = {
 
 /** A stance, grade or tint colors the title and the rule. */
 export const Tinted: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ width: 320 }}>
       <PropertyPanel title="Stances">
         <PropertyList>
-          <Subpanel title="Tint 0" tint={0}>
+          <Subpanel {...args} title="Tint 0" tint={0}>
             <PropertyField kind="number" control="slider" label="Amount" value={0.5} min={0} max={1} step={0.05} onChange={() => {}} />
           </Subpanel>
-          <Subpanel title="Advanced" stance="advanced">
+          <Subpanel {...args} title="Advanced" stance="advanced">
             <PropertyField kind="number" control="slider" label="Amount" value={0.5} min={0} max={1} step={0.05} onChange={() => {}} />
           </Subpanel>
         </PropertyList>

@@ -72,11 +72,11 @@ export const Multiple: Story = {
  *  range is bold throughout, italic in part of it, and never underlined.
  *  Clicking the mixed segment turns it fully on. */
 export const MultipleWithMixed: Story = {
-  render: () => {
+  render: (args) => {
     const [v, setV] = useState<string[]>(['b']);
     const [mixed, setMixed] = useState<string[]>(['i']);
     return (
-      <ToggleBar
+      <ToggleBar {...args}
         mode="multiple"
         items={[
           { value: 'b', label: 'B' },
@@ -135,19 +135,22 @@ export const Minimal: Story = {
 };
 
 export const AllowDeselect: Story = {
-  render: () => {
+  render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} allowDeselect />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} allowDeselect ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
 /** `shortcut` shows in each segment's tooltip as `Name (key)`, named by
  *  `ariaLabel`; `tooltip` replaces that text outright. */
 export const Tooltips: Story = {
-  render: () => {
+  render: ({ height, size, variant }) => {
     const [v, setV] = useState<string[]>([]);
     return (
       <ToggleBar
+        height={height}
+        size={size}
+        variant={variant}
         mode="multiple"
         items={[
           { value: 'b', label: 'B', ariaLabel: 'Bold', shortcut: '⌘B' },

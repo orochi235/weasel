@@ -27,13 +27,13 @@ type Config = Record<string, unknown>;
  *  keystroke; Escape drops a text edit. A dialog writes on Done and drops its
  *  draft on Cancel or Escape. The write count is the number of undo steps. */
 export const Drafts: Story = {
-  render: () => {
+  render: (args) => {
     const [config, setConfig] = useState<Config>(baseline);
     const [draft, setDraft] = useState<string>('');
     const [writes, setWrites] = useState(0);
     return (
       <div>
-        <ControlPanel
+        <ControlPanel {...args}
           schema={schema}
           config={config}
           setConfig={(path, value) => {
@@ -53,12 +53,12 @@ export const Drafts: Story = {
 /** `errors` puts a message under the row it names; `changed` marks the rows
  *  that differ from a baseline. Clearing Seed leaves it unset. */
 export const ErrorsAndChanges: Story = {
-  render: () => {
+  render: (args) => {
     const [config, setConfig] = useState<Config>(baseline);
     const speed = config.speed as number;
     const changed = new Set(Object.keys(baseline).filter((k) => config[k] !== baseline[k]));
     return (
-      <ControlPanel
+      <ControlPanel {...args}
         schema={schema}
         config={config}
         setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}

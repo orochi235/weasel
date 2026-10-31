@@ -45,11 +45,11 @@ export const ExplicitChildren: Story = {
  *  "Vermilion" — needs and leaves the rest of the row to its neighbors; the
  *  default `fill` swallows the slack and squeezes them to min-content. */
 export const FitWidth: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 480 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button type="button">Add trial</button>
-        <Select
+        <Select {...args}
           aria-label="Fits its options"
           width="fit"
           placeholder="Pick one"
@@ -59,7 +59,7 @@ export const FitWidth: Story = {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button type="button">Add trial</button>
-        <Select
+        <Select {...args}
           aria-label="Fills the row"
           placeholder="Pick one"
           options={[...COLORS, { value: 'v', label: 'Vermilion' }]}
@@ -76,11 +76,11 @@ export const FitWidth: Story = {
  * description drops to a line of its own.
  */
 export const LabelBeside: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
-      <Select label="Bundle" orientation="row" defaultSelectedKey="g" options={COLORS} />
-      <Select label="Bundle" orientation="row" width="fit" defaultSelectedKey="g" options={COLORS} />
-      <Select
+      <Select {...args} label="Bundle" orientation="row" defaultSelectedKey="g" options={COLORS} />
+      <Select {...args} label="Bundle" orientation="row" width="fit" defaultSelectedKey="g" options={COLORS} />
+      <Select {...args}
         label="Bundle"
         orientation="row"
         description="Filters the tree to one bundle's members."
@@ -94,9 +94,9 @@ export const LabelBeside: Story = {
 /** Titled sections, from `options` entries with their own `title` and
  *  `options`, or from `<SelectSection>` in the children form. */
 export const Sections: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 240 }}>
-      <Select
+      <Select {...args}
         label="Font"
         defaultSelectedKey="inter"
         options={[
@@ -105,7 +105,7 @@ export const Sections: Story = {
           { title: 'Serif', options: [{ value: 'garamond', label: 'Garamond' }, { value: 'charter', label: 'Charter' }] },
         ]}
       />
-      <Select label="Blend" defaultSelectedKey="multiply">
+      <Select {...args} label="Blend" defaultSelectedKey="multiply">
         <SelectSection title="Darken">
           <SelectItem id="darken">Darken</SelectItem>
           <SelectItem id="multiply">Multiply</SelectItem>
@@ -145,17 +145,17 @@ export const Controlled: Story = {
  * pointer. The second row right-aligns its value, which the list follows.
  */
 export const InARow: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 260 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span>Wave</span>
-        <Select aria-label="Wave" variant="bare" defaultSelectedKey="g" options={COLORS} />
+        <Select {...args} aria-label="Wave" variant="bare" defaultSelectedKey="g" options={COLORS} />
       </div>
       <div
         style={{ display: 'flex', alignItems: 'center', gap: 8, ['--wzl-select-align' as string]: 'right' }}
       >
         <span>Wave</span>
-        <Select aria-label="Wave, right-aligned" variant="bare" defaultSelectedKey="g" options={COLORS} />
+        <Select {...args} aria-label="Wave, right-aligned" variant="bare" defaultSelectedKey="g" options={COLORS} />
       </div>
     </div>
   ),
@@ -167,10 +167,10 @@ export const InARow: Story = {
  * list under the trigger and takes its width.
  */
 export const PopupPlacement: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 24 }}>
-      <Select label="Over (default)" options={COLORS} defaultSelectedKey="g" />
-      <Select label="Below" popup="below" options={COLORS} defaultSelectedKey="g" />
+      <Select {...args} label="Over (default)" options={COLORS} defaultSelectedKey="g" />
+      <Select {...args} label="Below" popup="below" options={COLORS} defaultSelectedKey="g" />
     </div>
   ),
 };
@@ -178,10 +178,10 @@ export const PopupPlacement: Story = {
 /** `shortcut` hovers as `Name (⌘K)`; `tooltip` replaces that text with a
  *  longer hint for a trigger whose value alone doesn't say what it sets. */
 export const Tooltips: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 24 }}>
-      <Select aria-label="Color" shortcut="⌘K" width="fit" options={COLORS} defaultSelectedKey="g" />
-      <Select
+      <Select {...args} aria-label="Color" shortcut="⌘K" width="fit" options={COLORS} defaultSelectedKey="g" />
+      <Select {...args}
         aria-label="Color"
         tooltip="Channel the curve edits"
         width="fit"
@@ -203,9 +203,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export const AtTheTopEdge: Story = {
   // The premise is the window's edge: in the workshop document the list clamps to the page, not the trial.
   parameters: { forge: { isolate: 'asserts placement against the window edge' } },
-  render: () => (
+  render: (args) => (
     <div style={{ position: 'fixed', top: 4, left: 4 }}>
-      <Select aria-label="Month" width="fit" options={MONTHS} defaultSelectedKey="Nov" />
+      <Select {...args} aria-label="Month" width="fit" options={MONTHS} defaultSelectedKey="Nov" />
     </div>
   ),
   play: async ({ canvasElement }) => {

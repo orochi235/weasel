@@ -37,25 +37,25 @@ const CONIC: Paint = {
 
 /** A property row is the slot this control was shaped for: a fixed label
  *  column and a narrow control column. */
-function Row({ label, initial }: { label: string; initial: Paint | null }) {
+function Row({ args, label, initial }: { args: Story['args']; label: string; initial: Paint | null }) {
   const [paint, setPaint] = useState<Paint | null>(initial);
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 8, width: 260 }}>
       <span style={{ flex: '0 0 90px', fontSize: 12 }}>{label}</span>
       <span style={{ flex: '0 0 110px' }}>
-        <PaintField value={paint} onChange={setPaint} aria-label={label} />
+        <PaintField {...args} value={paint} onChange={setPaint} aria-label={label} />
       </span>
     </label>
   );
 }
 
 export const InAPropertyRow: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'grid', gap: 8, padding: 16 }}>
-      <Row label="Solid" initial={{ kind: 'solid', color: '#7a5af5ff' }} />
-      <Row label="Linear (OKLCh)" initial={LINEAR} />
-      <Row label="Conic" initial={CONIC} />
-      <Row label="No paint" initial={null} />
+      <Row args={args} label="Solid" initial={{ kind: 'solid', color: '#7a5af5ff' }} />
+      <Row args={args} label="Linear (OKLCh)" initial={LINEAR} />
+      <Row args={args} label="Conic" initial={CONIC} />
+      <Row args={args} label="No paint" initial={null} />
     </div>
   ),
 };

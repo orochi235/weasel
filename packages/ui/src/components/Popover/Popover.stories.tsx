@@ -15,7 +15,7 @@ type Story = StoryObj<typeof Popover>;
 
 /** A box drawn at twice its size, as a magnifier draws its copy: the popover opens against its button, at 2× too. */
 export const InAMagnifiedBox: Story = {
-  render: () => {
+  render: (args) => {
     function Magnified() {
       const [box, setBox] = useState<HTMLDivElement | null>(null);
       const { anchor, provide } = useOverlayPortal(box);
@@ -26,7 +26,7 @@ export const InAMagnifiedBox: Story = {
             <DialogTrigger>
               <Button>Open</Button>
               {provide(
-                <Popover placement="bottom" offset={8}>
+                <Popover {...args} placement="bottom" offset={8}>
                   <Dialog aria-label="Popover" className={s.panel}>
                     Opens under its button.
                   </Dialog>

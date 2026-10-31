@@ -26,14 +26,14 @@ export const WithPreferenceHook: Story = {
 
 export const SizesAndVariants: Story = {
   tags: ['gallery'],
-  render: function Render() {
+  render: function Render(args) {
     const { preference, setPreference } = useColorModePreference();
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'start' }}>
-        <ColorModeControl value={preference} onChange={setPreference} />
-        <ColorModeControl value={preference} onChange={setPreference} size="sm" />
-        <ColorModeControl value={preference} onChange={setPreference} variant="flat" />
-        <ColorModeControl value={preference} onChange={setPreference} variant="minimal" size="sm" />
+        <ColorModeControl {...args} value={preference} onChange={setPreference} />
+        <ColorModeControl {...args} value={preference} onChange={setPreference} size="sm" />
+        <ColorModeControl {...args} value={preference} onChange={setPreference} variant="flat" />
+        <ColorModeControl {...args} value={preference} onChange={setPreference} variant="minimal" size="sm" />
       </div>
     );
   },

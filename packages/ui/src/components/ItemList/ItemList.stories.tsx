@@ -25,11 +25,11 @@ export const Basic: Story = {
 /** Selectable rows make a listbox. Tab in, move with the arrows, pick with
  *  Enter or Space. */
 export const Selectable: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [current, setCurrent] = useState('b');
     return (
       <div style={{ width: 220 }}>
-        <ItemList
+        <ItemList {...args}
           selection="single"
           containerProps={{ 'aria-label': 'History' }}
           onActivate={setCurrent}
@@ -51,7 +51,7 @@ export const Selectable: Story = {
  *  Shift+Space adds to the selection; Shift+Up/Down and Shift+Home/End select
  *  a range through `onSelectRange`. */
 export const Reorder: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [items, setItems] = useState<ReorderItem[]>([
       { id: 'page', label: 'Page', locked: true },
       { id: 'a', label: 'Background' },
@@ -79,7 +79,7 @@ export const Reorder: Story = {
     });
     return (
       <div style={{ width: 220 }}>
-        <ItemList
+        <ItemList {...args}
           ref={drag.containerProps.ref}
           selection="multi"
           containerProps={{ 'aria-label': 'Layers' }}
@@ -104,7 +104,7 @@ export const Reorder: Story = {
 /** Rows with controls become a grid: Right steps into a row's toggles, Left or
  *  Escape steps back out, and a toggle's click never selects its row. */
 export const WithControls: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [selected, setSelected] = useState('a');
     const [hidden, setHidden] = useState<string[]>(['c']);
     const [locked, setLocked] = useState<string[]>([]);
@@ -112,7 +112,7 @@ export const WithControls: Story = {
       list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
     return (
       <div style={{ width: 260 }}>
-        <ItemList
+        <ItemList {...args}
           selection="single"
           containerProps={{ 'aria-label': 'Layers' }}
           onActivate={setSelected}

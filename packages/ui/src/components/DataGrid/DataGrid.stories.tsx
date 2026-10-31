@@ -40,18 +40,18 @@ const VERDICT_CLASS: Record<Route['verdict'], string | undefined> = {
 };
 
 export const Default: Story = {
-  render: () => <DataGrid<Route> rows={ROUTES} columns={COLUMNS} />,
+  render: (args) => <DataGrid<Route> {...args} rows={ROUTES} columns={COLUMNS} />,
 };
 
 /** `rowClassName` tints each row by its verdict. */
 export const RowClassName: Story = {
-  render: () => <DataGrid<Route> rows={ROUTES} columns={COLUMNS} rowClassName={(r) => VERDICT_CLASS[r.verdict]} />,
+  render: (args) => <DataGrid<Route> {...args} rows={ROUTES} columns={COLUMNS} rowClassName={(r) => VERDICT_CLASS[r.verdict]} />,
 };
 
 /** `renderDetail` adds a disclosure column; sorting keeps each detail row under its parent. */
 export const ExpandableDetail: Story = {
-  render: () => (
-    <DataGrid<Route>
+  render: (args) => (
+    <DataGrid<Route> {...args}
       rows={ROUTES}
       columns={COLUMNS}
       defaultExpandedIds={['1']}
@@ -67,10 +67,10 @@ export const ExpandableDetail: Story = {
 
 /** Controlled expansion driven by `onRowClick`: clicking (or Enter on) a row opens it and closes the rest. */
 export const ClickToExpand: Story = {
-  render: function ClickToExpand() {
+  render: function ClickToExpand(args) {
     const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
     return (
-      <DataGrid<Route>
+      <DataGrid<Route> {...args}
         rows={ROUTES}
         columns={COLUMNS}
         expandedIds={open}
@@ -84,10 +84,10 @@ export const ClickToExpand: Story = {
 
 /** `onReorder` adds a leading handle: drag it, or focus it and press Alt+ArrowUp/Down. `rowLabel` names each handle. */
 export const Reorderable: Story = {
-  render: function Reorderable() {
+  render: function Reorderable(args) {
     const [rows, setRows] = useState(ROUTES);
     return (
-      <DataGrid<Route>
+      <DataGrid<Route> {...args}
         rows={rows}
         columns={COLUMNS.map((c) => ({ ...c, sortable: false }))}
         rowLabel={(r) => r.action}

@@ -10,15 +10,15 @@ export default meta;
 type Story = StoryObj<typeof PropertyRow>;
 
 export const BothLayouts: Story = {
-  render: () => (
+  render: (args) => (
     <SideBySide
       block={
-        <PropertyRow label="Custom control">
+        <PropertyRow {...args} label="Custom control">
           <input type="text" placeholder="anything goes" defaultValue="foo" />
         </PropertyRow>
       }
       inline={
-        <PropertyRow label="Custom control" layout="inline">
+        <PropertyRow {...args} label="Custom control" layout="inline">
           <input type="text" placeholder="anything goes" defaultValue="foo" />
         </PropertyRow>
       }
@@ -41,15 +41,15 @@ export const WithReadout: Story = {
 
 /** A validation message sits under the control, across the row, in either layout. */
 export const WithError: Story = {
-  render: () => (
+  render: (args) => (
     <SideBySide
       block={
-        <PropertyRow label="Name" error="needs a name">
+        <PropertyRow {...args} label="Name" error="needs a name">
           <input type="text" />
         </PropertyRow>
       }
       inline={
-        <PropertyRow label="Name" layout="inline" error="needs a name">
+        <PropertyRow {...args} label="Name" layout="inline" error="needs a name">
           <input type="text" />
         </PropertyRow>
       }
@@ -59,15 +59,15 @@ export const WithError: Story = {
 
 export const Variants: Story = {
   tags: ['gallery'],
-  render: () => (
+  render: (args) => (
     <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <PropertyRow label="Default" readout="42">
+      <PropertyRow {...args} label="Default" readout="42">
         <input type="text" defaultValue="hello" />
       </PropertyRow>
-      <PropertyRow label="Color variant" variant="color">
+      <PropertyRow {...args} label="Color variant" variant="color">
         <input type="color" defaultValue="#b08adb" />
       </PropertyRow>
-      <PropertyRow label="Checkbox variant" variant="checkbox">
+      <PropertyRow {...args} label="Checkbox variant" variant="checkbox">
         <input type="checkbox" defaultChecked />
       </PropertyRow>
     </div>
@@ -78,10 +78,10 @@ export const Variants: Story = {
  *  description on a pinned row, and alone on a row with none. The second row is
  *  auto now, so its readout shows the same word. */
 export const AutoValue: Story = {
-  render: () => (
+  render: (args) => (
     // Headroom for the tooltip, which opens above its row.
     <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 80 }}>
-      <PropertyRow
+      <PropertyRow {...args}
         label="Gap"
         layout="inline"
         description="Space between tiles, in pixels."
@@ -90,7 +90,7 @@ export const AutoValue: Story = {
       >
         <input type="text" defaultValue="12" />
       </PropertyRow>
-      <PropertyRow label="Columns" layout="inline" auto readout="auto" autoValue="4" onAutoChange={() => {}}>
+      <PropertyRow {...args} label="Columns" layout="inline" auto readout="auto" autoValue="4" onAutoChange={() => {}}>
         <input type="text" defaultValue="3" />
       </PropertyRow>
     </div>

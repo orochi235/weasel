@@ -61,7 +61,7 @@ export const NoShortcut: Story = { args: { shortcut: undefined } };
 
 // Renders the button as toolbar consumers would: inside a ToolGroup, in a
 // toolbar that owns the roving tabindex.
-function InGroupExample() {
+function InGroupExample({ args }: { args: Story['args'] }) {
   const roving = useRovingTabIndex<HTMLDivElement>({ orientation: 'vertical' });
   const [active, setActive] = useState<'select' | 'rect' | 'ellipse'>('select');
   const tools: Array<{ id: 'select' | 'rect' | 'ellipse'; label: string; icon: React.ReactNode; shortcut: string }> = [
@@ -74,6 +74,7 @@ function InGroupExample() {
       <ToolGroup>
         {tools.map((t) => (
           <ToolButton
+            {...args}
             key={t.id}
             icon={t.icon}
             label={t.label}
@@ -88,5 +89,5 @@ function InGroupExample() {
 }
 
 export const InGroup: Story = {
-  render: () => <InGroupExample />,
+  render: (args) => <InGroupExample args={args} />,
 };

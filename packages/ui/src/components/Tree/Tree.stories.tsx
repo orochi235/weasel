@@ -50,11 +50,11 @@ export const Basic: Story = {
  *  toggle a row, Shift to extend over the visible rows between, and Cmd/Ctrl+A
  *  to select every visible row. */
 export const Selectable: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [selected, setSelected] = useState<ReadonlySet<string>>(new Set(['Tree.tsx']));
     return (
       <div style={{ width: 240 }}>
-        <Tree
+        <Tree {...args}
           aria-label="Files"
           nodes={FILES}
           defaultExpandedIds={['src', 'components']}
@@ -98,7 +98,7 @@ export const WithCounts: Story = {
  *  and `treeBranchIds` of the result opens every branch that holds one. With
  *  no filter the tree goes back to the rows the user had open. */
 export const Filtered: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [query, setQuery] = useState('');
     const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
     const q = query.trim().toLowerCase();
@@ -109,7 +109,7 @@ export const Filtered: Story = {
     return (
       <div style={{ width: 240 }}>
         <Input aria-label="Filter" placeholder="Filter…" value={query} onChange={setQuery} />
-        <Tree
+        <Tree {...args}
           aria-label="Registry"
           nodes={nodes}
           empty="No matches"
@@ -125,11 +125,11 @@ export const Filtered: Story = {
  *  to close or step out, Home/End, Enter/Space to activate, and type a name's
  *  first letters to jump to it. */
 export const Keyboard: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [last, setLast] = useState<string | null>(null);
     return (
       <div style={{ width: 240 }}>
-        <Tree aria-label="Files" nodes={FILES} selectionMode="single" onAction={setLast} />
+        <Tree {...args} aria-label="Files" nodes={FILES} selectionMode="single" onAction={setLast} />
         <p>Last activated: {last ?? 'nothing'}</p>
       </div>
     );
@@ -140,11 +140,11 @@ export const Keyboard: Story = {
  *  where the drop lands; moving the pointer left or right of it changes the
  *  level. `selectionMode="multiple"` drags every selected row together. */
 export const Reorderable: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
     return (
       <div style={{ width: 240 }}>
-        <Tree
+        <Tree {...args}
           aria-label="Files"
           nodes={nodes}
           defaultExpandedIds={['src', 'components']}
@@ -159,12 +159,12 @@ export const Reorderable: Story = {
 /** With `onCopy` too, a drag with Alt held leaves the rows where they are and lands copies of them. The rows
  *  are not dimmed while it is held, and the ghost carries a plus. */
 export const Copyable: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
     const made = useRef(0);
     return (
       <div style={{ width: 240 }}>
-        <Tree
+        <Tree {...args}
           aria-label="Files"
           nodes={nodes}
           defaultExpandedIds={['src', 'components']}
@@ -183,7 +183,7 @@ const NEW_FILES = ['Dialog.tsx', 'Menu.tsx', 'Tabs.tsx'];
  *  marks where a drop would land. At the release the drop asks `dropRef` where that point lands: the mark follows
  *  the pointer a render behind it, and the answer is read from the rows as they lie. */
 export const DropFromOutside: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
     const [at, setAt] = useState<{ x: number; y: number } | null>(null);
     const drop = useRef<TreeDropHandle>(null);
@@ -206,7 +206,7 @@ export const DropFromOutside: Story = {
         <ul className={css.shelf} aria-label="New files">
           {NEW_FILES.map((label) => <li key={label} onPointerDown={press(label)}>{label}</li>)}
         </ul>
-        <Tree aria-label="Files" nodes={nodes} defaultExpandedIds={['src', 'components']} externalDrag={at} dropRef={drop} />
+        <Tree {...args} aria-label="Files" nodes={nodes} defaultExpandedIds={['src', 'components']} externalDrag={at} dropRef={drop} />
       </div>
     );
   },
