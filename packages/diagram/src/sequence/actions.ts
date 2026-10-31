@@ -6,7 +6,8 @@
  */
 import type { Action, Contribution, InvocationCtx, OngoingHandle, RectPose, RenderLayer, Scene, Vec2 } from '@weasel-js/core';
 import { moveParticipant, moveStep, reconnectMessage } from './edit';
-import { commitSequence, type SequenceDrawOptions, type SequenceEdit } from './commit';
+import { sequenceCommitOf, type SequenceEditOptions } from './commit';
+import { SELECT_SEQUENCE_PART_ACTION_ID, selectSequencePartAction } from './select';
 import { SEQUENCE_AFFORDANCE_KIND, placedSequences, sequenceLayer, sequenceScratchOf, type PlacedSequence, type SequenceScratch } from './layer';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SequenceData } from './types';
@@ -15,13 +16,6 @@ import type { SequenceData } from './types';
 export const SEQUENCE_DRAG_ACTION_ID = 'diagram.sequence.drag';
 /** The action that absorbs the rest of a press on a sequence part, so it reaches neither marquee nor pan. */
 export const GRAB_SEQUENCE_ACTION_ID = 'diagram.sequence.grab';
-
-/** Options for {@link createSequenceDragAction} and {@link diagramSequence}. */
-export interface SequenceEditOptions extends SequenceDrawOptions {
-  /** Defaults to {@link commitSequence} against `deps.scene`, with the draw options. */
-  commit?: (edit: SequenceEdit, ctx: InvocationCtx) => void;
-  id?: string;
-}
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -42,8 +36,11 @@ function carries(s: SequenceScratch, part: NonNullable<ReturnType<typeof sequenc
     if (part.target !== undefined) return 'participant' in part.target && part.target.participant === s.id;
     return part.id === s.id && ['head', 'lifeline', 'destroy', 'activation'].includes(part.part);
   }
-  if (s.part === 'step') return part.id === s.id || (part.target !== undefined && 'step' in part.target && part.target.step === s.id);
-  return part.part === 'message' && part.id === s.id;
+  if (s.part === 'step') {
+    return part.id === s.id || (part.target !== undefined && (('step' in part.target && part.target.step === s.id)
+      || ('fragment' in part.target && part.target.fragment === s.id)));
+  }
+  return s.part === 'end' && part.part === 'message' && part.id === s.id;
 }
 
 function pressOf(ctx: InvocationCtx): Press | null {
@@ -71,6 +68,7 @@ function proposed(p: Press, at: Vec2): { data: SequenceData; label: string } {
   const { geometry, origin } = p.root;
   const local = { x: at.x - origin.x, y: at.y - origin.y };
   const { scratch } = p;
+  if (scratch.part === 'box' || scratch.part === 'mark') return { data: p.data, label: '' };
   if (scratch.part === 'head') {
     const index = geometry.columns.filter((c) => c.x < local.x).length;
     return { data: moveParticipant(p.data, scratch.id, index), label: 'Move participant' };
@@ -102,10 +100,7 @@ function previewOf(p: Press, id: string, pose: RectPose, at: Vec2): RectPose {
 
 /** The `diagram.sequence.drag` action: an ongoing drag of whatever sequence part was pressed. */
 export function createSequenceDragAction(opts: SequenceEditOptions = {}): Action {
-  const commit = opts.commit ?? ((edit: SequenceEdit, ctx: InvocationCtx) => {
-    const scene = ctx.deps.scene as AnyScene | undefined;
-    if (scene !== undefined) commitSequence(scene, edit.id, edit.data, edit.label, opts);
-  });
+  const commit = sequenceCommitOf(opts);
   return {
     id: opts.id ?? SEQUENCE_DRAG_ACTION_ID,
     label: 'Move sequence part',
@@ -165,11 +160,11 @@ export function diagramSequence(opts: SequenceEditOptions & { scene: Scene<unkno
     contribution: {
       id: 'weasel-diagram-sequence',
       eligibility: { claimed: true },
-      actions: [createSequenceDragAction({ ...opts, id: actionId }), grab],
+      actions: [createSequenceDragAction({ ...opts, id: actionId }), grab, selectSequencePartAction],
       bindings: [
         { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-sequence.drag' } },
         { spec: { kind: 'pointerDown', target }, actionId: GRAB_SEQUENCE_ACTION_ID, opts: { id: 'weasel-diagram-sequence.pointerDown' } },
-        { spec: { kind: 'click', target }, actionId: GRAB_SEQUENCE_ACTION_ID, opts: { id: 'weasel-diagram-sequence.click' } },
+        { spec: { kind: 'click', target, mods: { shift: 'optional' } }, actionId: SELECT_SEQUENCE_PART_ACTION_ID, opts: { id: 'weasel-diagram-sequence.click' } },
       ],
     },
   };

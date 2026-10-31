@@ -109,3 +109,9 @@ export type SeqTextTarget =
   | { step: string }
   | { fragment: string; section: number }
   | { box: string };
+
+/**
+ * What starts or ends an activation, or ends a lifeline: a mark step, by where
+ * it stands, or a message's `activate` or `deactivate` flag.
+ */
+export type SeqMarkRef = { place: StepPlace } | { message: string; flag: 'activate' | 'deactivate' };

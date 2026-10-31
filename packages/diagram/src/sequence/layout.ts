@@ -7,7 +7,7 @@ import type { MeasureRowText } from '../body';
 import { columnsOf } from './columns';
 import { SEQ, seqMeasure, type SeqRect } from './metrics';
 import { walkRows } from './rows';
-import type { SeqFragment, SequenceData, StepPlace } from './types';
+import type { SeqFragment, SeqMarkRef, SequenceData, StepPlace } from './types';
 
 export type { SeqRect };
 
@@ -21,13 +21,14 @@ export interface SequenceLayoutOptions {
 
 /** A head: at the top, or at its `create` row. */
 export interface SeqHeadPlace { id: string; box: SeqRect; created: boolean }
-/** A lifeline, from under its head to the foot, or to where it was destroyed. */
-export interface SeqLifelinePlace { id: string; x: number; y0: number; y1: number; destroyed: boolean }
+/** A lifeline, from under its head to the foot, or to where it was destroyed: by the `destroy` mark at `destroyedBy`. */
+export interface SeqLifelinePlace { id: string; x: number; y0: number; y1: number; destroyed: boolean; destroyedBy?: StepPlace }
 /** A message's line from `x1` (its `from` end) to `x2`, at `y`; a self-message loops down to `loopY`. */
 export interface SeqMessagePlace {
   id: string; y: number; x1: number; x2: number; loopY?: number; text?: SeqRect; number?: { n: number; box: SeqRect };
 }
-export interface SeqActivationPlace { participant: string; depth: number; box: SeqRect }
+/** An activation bar, with what opened it and what closed it; one the diagram's end closed has no `closer`. */
+export interface SeqActivationPlace { participant: string; depth: number; box: SeqRect; opener: SeqMarkRef; closer?: SeqMarkRef }
 export interface SeqNotePlace { id: string; box: SeqRect }
 /** A fragment's box, its type tab (none for a `region`), and each section's top and label. */
 export interface SeqFragmentPlace {

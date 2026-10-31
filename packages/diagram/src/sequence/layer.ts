@@ -1,6 +1,7 @@
 /**
- * What makes a sequence's parts grabbable: a head, a message or note, and
- * each end of a message, as regions over every sequence root in the scene.
+ * What makes a sequence's parts grabbable: a head, a message or note, a
+ * fragment's tab, a box's label strip, an activation bar, a destruction's
+ * cross, and each end of a message, as regions over every sequence root in the scene.
  * The parts themselves take no press, so these regions are the only way in.
  */
 import {
@@ -22,9 +23,9 @@ export interface SequenceScratch {
   targetId: string;
   /** The sequence root's id. */
   root: string;
-  /** A head, a message or note's row, or one end of a message. */
-  part: 'head' | 'step' | 'end';
-  /** The participant's or step's id. */
+  /** A head, a message's, note's or fragment's row, one end of a message, a box, or a part drawn for lifeline marks. */
+  part: 'head' | 'step' | 'end' | 'box' | 'mark';
+  /** The participant's, step's, or box's id; for a mark's part, the part's id under the root (`act:0`). */
   id: string;
   end?: 'from' | 'to';
 }
@@ -37,8 +38,8 @@ export function sequenceScratchOf(hit: { payload?: unknown } | null | undefined)
 
 type AnyScene = Scene<unknown, string, unknown>;
 
-/** One root an edit may touch: its id, its world origin, and the geometry its parts were built with. */
-export interface PlacedSequence { id: string; origin: Vec2; geometry: SequenceGeometry }
+/** One root an edit may touch: its id, its world origin and size, and the geometry its parts were built with. */
+export interface PlacedSequence { id: string; origin: Vec2; width: number; height: number; geometry: SequenceGeometry }
 
 /** Every sequence root in `scene` that is neither locked nor hidden. */
 export function placedSequences(scene: AnyScene): PlacedSequence[] {
@@ -48,7 +49,7 @@ export function placedSequences(scene: AnyScene): PlacedSequence[] {
     const root = sequenceRootOf(node);
     if (root === null || scene.isLocked(node.id) || scene.isHidden(node.id)) continue;
     const at = composeWorldPose(poses, node.id, scene.composition.compose as never) as RectPose;
-    out.push({ id: node.id, origin: { x: at.x, y: at.y }, geometry: root.geometry });
+    out.push({ id: node.id, origin: { x: at.x, y: at.y }, width: at.width, height: at.height, geometry: root.geometry });
   }
   return out;
 }
@@ -85,6 +86,9 @@ function regionsOf(all: readonly PlacedSequence[]): { parts: AffordanceRegion[];
   for (const { id: root, origin, geometry } of all) {
     const base = { targetId: root, root };
     for (const h of geometry.heads) parts.push(region(`${root}/head:${h.id}`, moved(h.box, origin), { ...base, part: 'head', id: h.id }, 'ew-resize'));
+    for (const m of geometry.marks ?? []) parts.push(region(`${root}/${m.id}`, moved(m.grip, origin), { ...base, part: 'mark', id: m.id }, 'default'));
+    for (const b of geometry.boxes ?? []) parts.push(region(`${root}/box:${b.id}`, moved(b.grip, origin), { ...base, part: 'box', id: b.id }, 'default'));
+    for (const f of geometry.fragments ?? []) parts.push(region(`${root}/frag:${f.id}`, moved(f.grip, origin), { ...base, part: 'step', id: f.id }, 'ns-resize'));
     for (const n of geometry.notes) parts.push(region(`${root}/note:${n.id}`, moved(n.box, origin), { ...base, part: 'step', id: n.id }, 'ns-resize'));
     for (const m of geometry.messages) {
       parts.push(region(`${root}/msg:${m.id}`, moved(messageReach(m), origin), { ...base, part: 'step', id: m.id }, 'ns-resize'));

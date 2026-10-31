@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { DiagramView, sequenceSpecs, type SequenceData, type SequenceEdit } from '@weasel-js/diagram';
+import type { ToolsApi } from '@weasel-js/core';
+import { DiagramView, sequenceSpecs, useSequenceTools, type SequenceData, type SequenceEdit } from '@weasel-js/diagram';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
 const DATA: SequenceData = {
@@ -29,11 +31,17 @@ const DATA: SequenceData = {
 
 export function SequenceDiagramDemo() {
   const [data, setData] = useState(DATA);
+  const [palette, setPalette] = useState<ToolsApi | null>(null);
   const specs = useMemo(() => sequenceSpecs(data, { id: 'checkout' }), [data]);
   const onEditSequence = (edit: SequenceEdit) => setData(edit.data);
+  // The data is the demo's, so the tools report their edits here too; with one sequence, a click off it starts nothing.
+  const tools = useSequenceTools({ commit: onEditSequence, start: null });
   return (
-    <DemoStage width={760} height={520}>
-      <DiagramView specs={specs} onEditSequence={onEditSequence} className="ckd-canvas" />
-    </DemoStage>
+    <div>
+      {palette && <ToolPalette tools={palette} orientation="horizontal" />}
+      <DemoStage width={760} height={420}>
+        <DiagramView specs={specs} onEditSequence={onEditSequence} tools={tools} onToolsCreated={setPalette} className="ckd-canvas" />
+      </DemoStage>
+    </div>
   );
 }

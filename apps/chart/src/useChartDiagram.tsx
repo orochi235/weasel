@@ -6,7 +6,8 @@ import {
   diagramLabelDrag, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeFont,
   themeLabelStyle, useAvoidRouting, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
-  useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
+  useSequenceTools, useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
+  type SequenceToolsOptions,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useAutoLayoutCommand } from './autoLayout';
@@ -48,9 +49,12 @@ export interface ChartDiagram {
 
 /** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, where they
  *  settle and dragging them, lanes, off-page tags, the connector and the stencils, a stencil carried in from the
- *  Shapes panel, a sequence diagram's parts dragged, and Arrange › Auto layout. What it inserts is drawn in
- *  `theme`, its connectors as `type` starts them. */
-export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme, type: DiagramType): ChartDiagram {
+ *  Shapes panel, a sequence diagram's parts dragged and its tools, and Arrange › Auto layout. What it inserts is
+ *  drawn in `theme`, its connectors as `type` starts them, its sequence parts as `sequence` reads them. */
+export function useChartDiagram(
+  scene: ChartScene, selection: SelectionApi, theme: DiagramTheme, type: DiagramType,
+  sequence: Pick<SequenceToolsOptions, 'participant' | 'arrow' | 'fragment' | 'mark'>,
+): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   useLabelPlacement<ChartPose>(scene as never, LABEL_PLACEMENT);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
@@ -72,18 +76,19 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
   const connector = useConnectorTool<ChartPose>({ participants, router, edgeStroke });
   const label = useMemo(() => edgeLabel(theme), [theme]);
   const drop = useMemo(() => stencilDrop(participants), [participants]);
-  const sequence = useMemo(() => diagramSequence({ scene: scene as never, measure: rendererMeasure }), [scene]);
+  const sequenceEdit = useMemo(() => diagramSequence({ scene: scene as never, measure: rendererMeasure }), [scene]);
+  const sequenceTools = useSequenceTools({ measure: rendererMeasure, ...sequence });
   useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
     // Edge ends after ports and routes: an edge's end sits on a port and beside a route handle, and a press on it must start
     // neither. A sequence's parts last: nothing else takes a press on them.
-    layers: [containers.layer, labelDrag.layer, ports.layer, route.layer, ends.layer, sequence.layer],
+    layers: [containers.layer, labelDrag.layer, ports.layer, route.layer, ends.layer, sequenceEdit.layer],
     ambient: [
       containers.contribution, labelDrag.contribution, ports.contribution, route.contribution, ends.contribution, label,
-      OFF_PAGE, drop, sequence.contribution,
+      OFF_PAGE, drop, sequenceEdit.contribution,
     ],
-    tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS },
-  }), [containers, labelDrag, ports, route, ends, connector, label, drop, sequence]);
+    tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS, ...sequenceTools },
+  }), [containers, labelDrag, ports, route, ends, connector, label, drop, sequenceEdit, sequenceTools]);
 }
 
 /**

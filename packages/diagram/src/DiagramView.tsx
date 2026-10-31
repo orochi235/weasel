@@ -73,7 +73,7 @@ function Inner({
   onEditSequence,
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
-  ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
+  ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, bounded, refit, background, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
@@ -166,6 +166,7 @@ function Inner({
         enableKeybindings={enableKeybindings ?? edits}
         ambient={ambient}
         actions={editing.actions}
+        {...(tools ? { tools } : {})} {...(onToolsCreated ? { onToolsCreated } : {})}
         onClick={onClick}
         {...(onHover ? { onHover } : {})}
         width={width}

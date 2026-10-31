@@ -31,6 +31,8 @@ import type { ContainerEdit } from './regionSync';
 import { dataKeyReader } from './trait';
 import type { DeleteReport, DiagramViewProps, NodeResize, ReconnectChange } from './diagramViewProps';
 import { diagramSequence } from './sequence/actions';
+import type { SequenceEdit } from './sequence/commit';
+import { createSequenceDeleteAction } from './sequence/select';
 
 const AMBIENT = [dragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
@@ -79,6 +81,19 @@ export function reportDeleteAction(report: (removed: DeleteReport) => void): Act
       if (deps.scene === undefined) return;
       const removed = removedData(deps.scene as Scene<unknown, string, unknown>, ids);
       if (removed.nodes.length > 0 || removed.edges.length > 0) report(removed);
+    },
+  });
+}
+
+/** Core's `delete` on a view drawing sequences: a sequence's parts are reported as its edit, anything else as `onDelete` would. */
+function sequenceDeleteAction(
+  scene: AnyScene, edit: (edit: SequenceEdit) => void, report: ((removed: DeleteReport) => void) | null,
+): Action {
+  return createSequenceDeleteAction({
+    commit: edit,
+    others: (ids) => {
+      const removed = removedData(scene, ids);
+      if (report !== null && (removed.nodes.length > 0 || removed.edges.length > 0)) report(removed);
     },
   });
 }
@@ -212,11 +227,13 @@ export function useDiagramEditing(
   );
   const actions = useMemo(() => ({
     ...NO_MARQUEE,
-    ...(deletes ? { delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
+    ...(sequences
+      ? { delete: sequenceDeleteAction(scene, (edit) => report.current.onEditSequence?.(edit), deletes ? (r) => report.current.onDelete?.(r) : null) }
+      : deletes ? { delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
     ...(resizes || regionEdits
       ? { resize: reportResizeAction((r) => report.current.onResize?.(r), (e) => report.current.onEditContainer?.(e)) }
       : {}),
-  }), [deletes, resizes, regionEdits, report]);
+  }), [deletes, sequences, scene, resizes, regionEdits, report]);
 
   const portsLayer = ports?.layer ?? shown;
   const layers = useMemo(

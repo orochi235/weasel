@@ -7,7 +7,8 @@ import type { SeqFragment, SeqStep, SeqTextTarget, SequenceData, StepPlace } fro
 
 type Steps = readonly SeqStep[];
 
-const hasId = (s: SeqStep): s is Extract<SeqStep, { id: string }> => 'id' in s;
+/** Whether `s` carries an id: a message, a note, or a fragment. */
+export const hasId = (s: SeqStep): s is Extract<SeqStep, { id: string }> => 'id' in s;
 
 /** The step list `parent` names: the top level, or one section of a fragment anywhere in `steps`. `null` when there is none. */
 export function stepListOf(steps: Steps, parent: StepPlace['parent']): Steps | null {
@@ -45,7 +46,7 @@ export function placeOf(steps: Steps, id: string, parent: StepPlace['parent'] = 
 }
 
 /** `steps` with every step `fn` maps, fragments' sections included, rebuilt only along changed paths. */
-function mapSteps(steps: Steps, fn: (s: SeqStep) => SeqStep): Steps {
+export function mapSteps(steps: Steps, fn: (s: SeqStep) => SeqStep): Steps {
   let changed = false;
   const out = steps.map((s) => {
     let next = fn(s);
@@ -63,8 +64,32 @@ function mapSteps(steps: Steps, fn: (s: SeqStep) => SeqStep): Steps {
   return changed ? out : steps;
 }
 
+/**
+ * `steps` with every step `fn` maps, at any depth, and those it maps to
+ * `null` dropped; a fragment is mapped after its sections are. Rebuilt only
+ * along changed paths.
+ */
+export function pruneSteps(steps: Steps, fn: (s: SeqStep) => SeqStep | null): Steps {
+  let changed = false;
+  const out: SeqStep[] = [];
+  for (const s of steps) {
+    let step: SeqStep = s;
+    if (s.kind === 'fragment') {
+      const sections = s.sections.map((sec) => {
+        const inner = pruneSteps(sec.steps, fn);
+        return inner === sec.steps ? sec : { ...sec, steps: inner };
+      });
+      if (sections.some((sec, k) => sec !== s.sections[k])) step = { ...s, sections };
+    }
+    const next = fn(step);
+    if (next !== s) changed = true;
+    if (next !== null) out.push(next);
+  }
+  return changed ? out : steps;
+}
+
 /** `steps` with the list at `parent` replaced by `fn` of it. */
-function withList(steps: Steps, parent: StepPlace['parent'], fn: (list: Steps) => Steps): Steps {
+export function withList(steps: Steps, parent: StepPlace['parent'], fn: (list: Steps) => Steps): Steps {
   if (parent === null) return fn(steps);
   return mapSteps(steps, (s) => {
     if (s.kind !== 'fragment' || s.id !== parent.fragment) return s;
