@@ -24,6 +24,7 @@ export {
 export type { Fields, FieldValues, Variants, VariantValues } from './compound';
 export { fromConfigFields } from './fromConfigField';
 export { configFromPrefs } from './fromPrefs';
+export { prefsFromConfig } from './toPrefs';
 export {
   fillConfigDefaults,
   hasConfigPath,

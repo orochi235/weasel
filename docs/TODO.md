@@ -560,19 +560,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has ruled on the slot's look, and an empty fragment takes a drop in the live
   preview or is ruled to take none.
 
-- **(P3) [agent] `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
-  `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
-  the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
-  export drops all four. A schema is sectioned rather than nested where `f.group` would move its
-  config paths. `ResolvedConfig` is labkit's and `@weasel-js/ui` cannot import labkit, so this
-  needs decisions before it is built: how a labkit section shows in the structure tree (a
-  `PrefSection` cannot sit in a `PrefGroup` root outside an `object` leaf, so either a new node
-  kind or a group marked to keep its config paths); what the export writes for a schema whose
-  source is `f.section(…)` calls rather than a literal; and whether labkit wraps `AssetEditor`
-  and converts both ways, or `@weasel-js/ui` gains the vocabulary itself.
-  Closes when a schema built with `f.section` opens in `PrefSchemaEditor` with its sections, and its
-  export keeps the sections, `showIf` rules, `.render` overrides, and `.dialog` rows.
-
 - **(P3) [maintainer] Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
   raised face, a well, or a button that stays down reads the `--wzl-bevel-*` hooks;

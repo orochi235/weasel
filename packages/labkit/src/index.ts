@@ -208,6 +208,7 @@ export {
   ValueNode,
 } from './config/builder';
 export { fromConfigFields } from './config/fromConfigField';
+export { prefsFromConfig } from './config/toPrefs';
 export {
   fillConfigDefaults,
   hasConfigPath,
