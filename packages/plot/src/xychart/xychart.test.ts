@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PLOT_THEME, seriesColor } from '../theme';
 import { compileXyChart, xyValueDomain } from './compile';
 import { setXyValue, xyValueAt } from './edit';
+import { handlesOf } from '../editing/editors';
 import { xyEditor } from './editor';
 import type { XyChartData } from './types';
 
@@ -104,7 +105,7 @@ describe('xychart edits', () => {
   it('the editor puts a handle on a bar\'s end and on each point, and a drag proposes the value under the pointer', () => {
     const { layout, get } = byKey(SALES);
     const bar = get('bar:0:1')!;
-    const handle = xyEditor.handle(SALES, { trait: bar.data.plotMark, pose: bar.pose })!;
+    const handle = handlesOf(xyEditor.handle(SALES, { trait: bar.data.plotMark, pose: bar.pose }))[0]!;
     expect(handle.at.y).toBeCloseTo(bar.pose.y);
     expect(handle.cursor).toBe('ns-resize');
     expect(xyEditor.handle(SALES, { trait: get('line:1')!.data.plotMark, pose: get('line:1')!.pose })).toBeNull();
