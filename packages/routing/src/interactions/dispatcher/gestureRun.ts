@@ -6,7 +6,7 @@ import type { Action } from '../actions/action';
 import type { ActionDeps, DragSample, InvocationCtx, OngoingHandle } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { platformRoleKeys, roleKeysOf } from '../actions/modifierRoles';
-import type { DispatcherContext } from './dispatcherApi';
+import type { DispatcherContext, KeyReach } from './dispatcherApi';
 import type { GestureFactsStore } from './gestureFacts';
 import { gestureIdFor, isMultiTouchGestureId } from './gestureIds';
 import { isEmptyOngoingHandle, type InFlightGestures } from './inFlightGestures';
@@ -113,14 +113,18 @@ export function endAllGestures(run: GestureRun, reason: Reason): void {
 
 /**
  * Feed `event` to the gesture it continues. `undefined` when it continues
- * none and may start one.
+ * none and may start one. A key's release that carries `reach` ends only a
+ * gesture whose binding that reach covers, as its press would have started one.
  */
-export function pumpGesture(run: GestureRun, event: InputEvent): Pumped | undefined {
+export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach): Pumped | undefined {
   const { inFlight } = run;
   const ended = (reason: Reason): Outcome =>
     (endGesture(run, gestureIdFor(event), event, reason) ? 'handled' : 'unhandled');
 
-  if (event.kind === 'key-held' && event.phase === 'up') return ended('commit');
+  if (event.kind === 'key-held' && event.phase === 'up') {
+    if (reach !== undefined && !(inFlight.openedOver(gestureIdFor(event)) ? reach.over : reach.held)) return 'unhandled';
+    return ended('commit');
+  }
 
   // A key-held DOWN for an already-engaged key is a no-op. Autorepeat
   // keydowns would otherwise fire `start()` again — each start pushes an
@@ -252,7 +256,7 @@ export function invokeAction(
       run.facts.drop(gestureId);
       return 'empty-handle';
     }
-    run.inFlight.open(gestureId, handle, match.ownerId, action);
+    run.inFlight.open(gestureId, handle, match.ownerId, action, match.binding.opts?.over === true);
     if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set() });
     return 'fired';
   }

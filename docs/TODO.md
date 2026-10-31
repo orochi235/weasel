@@ -439,16 +439,6 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
-## Animation
-
-### labkit presentation mode
-
-- **(P3) [maintainer] agnew plays from its own transport, not a lab clock.** agnew and rosee both mount
-  `<Lab>` on their `main`. agnew's three.js view advances the pen itself and holds a finished curve
-  before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
-  call.
-  Closes when agnew's owner has moved its pen onto a lab clock or ruled that it keeps its own transport.
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
@@ -546,14 +536,6 @@ Owner tags, after the priority (2026-10-26):
   theme's step toward `fg` would lighten it in dark mode.
   Closes when the maintainer has ruled on the three dark scenes and on whether the stage follows the
   mode, and the stage's labels and the code panel's header read in both modes.
-
-- **(P3) [maintainer] Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
-  (2026-10-19) the peek binding takes `opts: { over: true }`, so Alt goes to the loupe under the
-  pointer when it goes down and to none if the pointer is over no loupe; nothing re-sends a held key
-  when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
-  a held key when the pointer enters a host that binds it. Undecided whether the sweep-on gesture is
-  worth that.
-  Closes when the maintainer has ruled on re-sending a held peek key, and it is built or ruled out.
 
 - **(P3) [maintainer] Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`

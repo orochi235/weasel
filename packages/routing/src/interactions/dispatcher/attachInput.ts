@@ -5,7 +5,7 @@
  */
 import { heldPointers } from '@weasel-js/gestures';
 import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
-import { createDispatchCore, type DispatchCoreSources } from './dispatchCore';
+import { createDispatchCore, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
 import type { Dispatcher } from './dispatcherApi';
 import { dispatcherWatch } from './dispatcherWatch';
 import { carryInput } from './channels/carry';
@@ -13,7 +13,7 @@ import { contextMenuInput } from './channels/contextMenu';
 import { hoverCursorInput } from './channels/hoverCursor';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
 import { keyboardInput } from './channels/keyboard';
-import { listenerSet } from './channels/listeners';
+import { listenerSet, type ListenerSet } from './channels/listeners';
 import { pointerInput, type PointerInput, type PointerInputOptions } from './channels/pointer';
 import { webkitPinchInput } from './channels/webkitPinch';
 import { wheelInput } from './channels/wheel';
@@ -98,10 +98,7 @@ export function attachInput(
   // keys reach.
   listeners.on(canvas, 'pointerdown', () => { src.actions().activate(); });
   // Whether or not the pointer channel is on: it is what an `over` key binding asks.
-  const setOver = (on: boolean) => () => { core.setPointerOver(on); };
-  listeners.on(canvas, 'pointerenter', setOver(true));
-  listeners.on(canvas, 'pointermove', setOver(true));
-  listeners.on(canvas, 'pointerleave', setOver(false));
+  trackPointerOver(listeners, canvas, core, keys);
   if (channels.pointer) {
     // Separate from the key channel's listeners, so the cursor also tracks
     // modifiers when `keyboard: false` turns gesture key dispatch off.
@@ -157,4 +154,24 @@ export function attachInput(
     for (const d of src.dispatchers()) d.cancelAll('cancel');
     src.context().keymaps?.closeAll();
   };
+}
+
+/** Keep `core`'s pointer-over flag, pressing held keys as the pointer arrives and releasing them as it leaves. */
+function trackPointerOver(
+  listeners: ListenerSet,
+  canvas: HTMLElement | null,
+  core: Pick<DispatchCore, 'pointerOver' | 'setPointerOver'>,
+  keys: { arrive: (e: PointerEvent) => void; leave: () => void },
+): void {
+  const onOver = (e: PointerEvent): void => {
+    if (core.pointerOver()) return;
+    core.setPointerOver(true);
+    keys.arrive(e);
+  };
+  listeners.on(canvas, 'pointerenter', onOver);
+  listeners.on(canvas, 'pointermove', onOver);
+  listeners.on(canvas, 'pointerleave', () => {
+    core.setPointerOver(false);
+    keys.leave();
+  });
 }

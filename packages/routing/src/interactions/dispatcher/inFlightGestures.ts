@@ -11,9 +11,12 @@ export interface InFlightGestures {
   /**
    * Put `handle` in flight. `ownerId` is the entry whose binding opened it,
    * `null` for an ambient action or a UI-driven handle; `action` is whose
-   * handle it is, where a cursor may be read from it.
+   * handle it is, where a cursor may be read from it. `over`: its binding
+   * is live only while the pointer is over the surface (`BindingOpts.over`).
    */
-  open(gestureId: string, handle: OngoingHandle, ownerId: string | null, action?: Action): void;
+  open(gestureId: string, handle: OngoingHandle, ownerId: string | null, action?: Action, over?: boolean): void;
+  /** Whether the gesture in flight under `gestureId` was opened by an `over` binding. */
+  openedOver(gestureId: string): boolean;
   /** Take a gesture out of flight, returning its handle so the caller can end it. */
   take(gestureId: string): OngoingHandle | undefined;
   /** Take every gesture out of flight. */
@@ -31,20 +34,24 @@ export function createInFlightGestures(): InFlightGestures {
   const handles = new Map<string, OngoingHandle>();
   const owners = new Map<string, string | null>();
   const actions = new Map<string, Action>();
+  const over = new Set<string>();
 
   const forget = (gestureId: string): void => {
     handles.delete(gestureId);
     owners.delete(gestureId);
     actions.delete(gestureId);
+    over.delete(gestureId);
   };
 
   return {
     handles,
-    open(gestureId, handle, ownerId, action) {
+    open(gestureId, handle, ownerId, action, opensOver) {
       handles.set(gestureId, handle);
       owners.set(gestureId, ownerId);
       if (action) actions.set(gestureId, action);
+      if (opensOver) over.add(gestureId);
     },
+    openedOver: (gestureId) => over.has(gestureId),
     take(gestureId) {
       const handle = handles.get(gestureId);
       forget(gestureId);
@@ -55,6 +62,7 @@ export function createInFlightGestures(): InFlightGestures {
       handles.clear();
       owners.clear();
       actions.clear();
+      over.clear();
       return all;
     },
     engagedOwners() {

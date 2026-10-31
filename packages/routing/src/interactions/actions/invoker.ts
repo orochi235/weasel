@@ -230,6 +230,8 @@ export interface BindingOpts {
    * For a key binding: live while the pointer is over the surface, whichever
    * canvas holds the keys, and only then. For a key that means "here" — a
    * magnifier's peek — on a page with more than one surface that hears it.
+   * A held key follows the pointer: one already down when it arrives presses
+   * the binding, and leaving releases it.
    */
   over?: boolean;
   /**
