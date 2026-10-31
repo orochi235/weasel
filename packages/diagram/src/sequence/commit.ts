@@ -2,7 +2,7 @@
  * Writing a sequence edit into a scene: the root's data replaced and its parts
  * built again, as one undo entry.
  */
-import { composeWorldPose, scenePoseAdapter, type RectPose, type Scene } from '@weasel-js/core';
+import { composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
@@ -47,6 +47,26 @@ export function commitSequence(scene: AnyScene, id: string, data: SequenceData, 
   scene.batch(label, () => rebuild(scene, id, data, opts));
 }
 
+/**
+ * Adds a new sequence root drawing `data` with its top-left corner at `at`,
+ * as one undo entry under `label`, and returns its id. On `layer`, default
+ * the scene's first.
+ */
+export function startSequence(
+  scene: AnyScene, at: { x: number; y: number }, data: SequenceData, label: string, opts: SequenceDrawOptions & { layer?: string } = {},
+): string {
+  const id = scene.mintId() as string;
+  const layer = opts.layer ?? scene.layers[0]?.id ?? 'main';
+  const specs = sequenceSpecs(data, {
+    id, at, theme: opts.theme ?? diagramThemeOf(scene), layer, composition: scene.composition as never,
+    ...(opts.measure ? { measure: opts.measure } : {}),
+  });
+  scene.batch(label, () => {
+    for (const spec of specs) scene.add(spec as never);
+  });
+  return id;
+}
+
 /** Builds every sequence in `scene` again from its own data, in the batch the caller has open: after a theme change. */
 export function redrawSequences(scene: AnyScene, opts: SequenceDrawOptions = {}): void {
   for (const node of scene.renderOrderNodes()) {
@@ -82,4 +102,19 @@ export function foldSequenceText(scene: AnyScene, textId: string, commit: (edit:
   if (next === held.sequence) return;
   scene.undo();
   commit({ id: part.root, data: next, label: 'Edit text' });
+}
+
+/** Options for a sequence's editing actions: how an edit is committed and drawn. */
+export interface SequenceEditOptions extends SequenceDrawOptions {
+  /** Defaults to {@link commitSequence} against `deps.scene`, with the draw options. */
+  commit?: (edit: SequenceEdit, ctx: Pick<InvocationCtx, 'deps'>) => void;
+  id?: string;
+}
+
+/** `opts.commit`, or {@link commitSequence} against the scene the edit's deps hold, drawn with `opts`. */
+export function sequenceCommitOf(opts: SequenceEditOptions): (edit: SequenceEdit, ctx: Pick<InvocationCtx, 'deps'>) => void {
+  return opts.commit ?? ((edit, ctx) => {
+    const scene = ctx.deps.scene as AnyScene | undefined;
+    if (scene !== undefined) commitSequence(scene, edit.id, edit.data, edit.label, opts);
+  });
 }

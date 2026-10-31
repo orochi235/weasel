@@ -1,4 +1,4 @@
-import type { Contribution, Paint, PlacedPage, RectPose, View } from '@weasel-js/core';
+import type { Contribution, Paint, PlacedPage, RectPose, Tool, ToolsApi, View } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { CanConnect } from './connect';
 import type { CanReparent } from './containers/canDropInto';
@@ -136,9 +136,10 @@ export interface DiagramViewProps {
   onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
-  /** Set to edit the sequences `sequenceSpecs` drew: drag a message or note to another row, a head to
-   *  another column, a message end to another lifeline, and double-click text to edit it in place. Reports
-   *  each edit as the sequence's new data and draws nothing: rebuild its specs from it. */
+  /** Set to edit the sequences `sequenceSpecs` drew: drag a message, note, or fragment to another row, a head
+   *  to another column, a message end to another lifeline, double-click text to edit it in place, click a part
+   *  to select it, and press Delete to remove it. Reports each edit as the sequence's new data and draws
+   *  nothing: rebuild its specs from it. `useSequenceTools`, passed as `tools`, adds to a sequence. */
   onEditSequence?: (edit: SequenceEdit) => void;
   /** Set to let an edge's label be dragged along and beside it, and to enable
    *  Reset label for the selected edge. Reports the placement and draws
@@ -158,6 +159,10 @@ export interface DiagramViewProps {
   connectBodies?: boolean;
   /** Contributions to install after the view's own: a tool's bindings, a key. */
   ambient?: readonly Contribution[];
+  /** Tools the user can pick beside select, keyed by id, as `<SceneCanvas tools>` takes them: `useSequenceTools`'s, say. */
+  tools?: Record<string, Tool>;
+  /** Called with the canvas's tools, for a palette to pick them from. */
+  onToolsCreated?: (tools: ToolsApi) => void;
   /** Whether ports are drawn. `'connect'` draws them and lets one be dragged
    *  onto another; `'show'` only draws them. Default: `'connect'` when
    *  `onConnect` is set, else `'none'`. */

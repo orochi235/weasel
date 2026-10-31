@@ -196,6 +196,8 @@ function boxSpecs(out: PartSpecs, data: SequenceData, layout: SequenceLayout, th
 const geometryOf = (layout: SequenceLayout): SequenceGeometry => ({
   columns: layout.columns, slots: layout.slots, messages: layout.messages, notes: layout.notes,
   heads: layout.heads.map(({ id, box }) => ({ id, box })),
+  fragments: layout.fragments.map(({ id, box, tab }) => ({ id, grip: tab ?? { ...box, height: Math.min(box.height, SEQ.rowGap) } })),
+  boxes: layout.boxes.map(({ id, box, label }) => ({ id, grip: { ...box, height: (label?.height ?? 0) + SEQ.boxPad } })),
 });
 
 /**

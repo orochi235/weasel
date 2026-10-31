@@ -13,6 +13,10 @@ export interface SequenceGeometry {
   heads: readonly { id: string; box: SeqRect }[];
   messages: readonly SeqMessagePlace[];
   notes: readonly { id: string; box: SeqRect }[];
+  /** Where a fragment is taken hold of: its type tab, or a region's top edge. Absent on a root drawn before fragments could be. */
+  fragments?: readonly { id: string; grip: SeqRect }[];
+  /** Where a box is taken hold of: the strip above its heads that holds its label. Absent as for `fragments`. */
+  boxes?: readonly { id: string; grip: SeqRect }[];
 }
 
 /** The trait on a sequence's root. */
