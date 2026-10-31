@@ -27,7 +27,8 @@ export {
 export { SEQUENCE_AFFORDANCE_KIND, SEQUENCE_LAYER_ID, sequenceScratchOf, type SequenceScratch } from './layer';
 export { GRAB_SEQUENCE_ACTION_ID, SEQUENCE_DRAG_ACTION_ID, createSequenceDragAction, diagramSequence } from './actions';
 export {
-  ADD_NOTE_ACTION_ID, ADD_PARTICIPANT_ACTION_ID, NOTE_OVER_REACH, createAddNoteAction, createAddParticipantAction,
+  ADD_MARK_ACTION_ID, ADD_NOTE_ACTION_ID, ADD_PARTICIPANT_ACTION_ID, NOTE_OVER_REACH, createAddMarkAction, createAddNoteAction,
+  createAddParticipantAction,
   type SequenceAuthorOptions,
 } from './authorActions';
 export {
@@ -38,4 +39,5 @@ export {
   SELECT_SEQUENCE_PART_ACTION_ID, createSequenceDeleteAction, selectSequencePartAction, sequenceDeletes, sequencePartNodeOf,
   type SequenceDeleteOptions,
 } from './select';
+export { sequenceSelectionOf, type SequenceSelection } from './selected';
 export { SEQUENCE_TOOLS, sequenceTools, useSequenceTools, type SequenceToolId, type SequenceToolsOptions } from './tools';

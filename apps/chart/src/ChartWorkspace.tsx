@@ -112,7 +112,9 @@ export function ChartWorkspace(): ReactElement {
       <div className="wc-body">
         <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes">
           {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
-          {tools && <SequencePanel tools={tools} scene={scene} choices={sequence.choices} onChoose={sequence.set} />}
+          {tools && (
+            <SequencePanel tools={tools} scene={scene} selected={selection.current} choices={sequence.choices} onChoose={sequence.set} />
+          )}
         </Sidebar>
         <div className="wc-stage">
           <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>

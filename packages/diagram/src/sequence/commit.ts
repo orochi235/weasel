@@ -25,7 +25,7 @@ export interface SequenceDrawOptions {
 const worldPose = (scene: AnyScene, id: string): RectPose =>
   composeWorldPose(scenePoseAdapter(scene as never), id, scene.composition.compose as never) as RectPose;
 
-/** The parts of root `id` built from `data`, in the batch the caller has open. */
+/** The parts of root `id` built from `data`, in the batch the caller has open. A selected part still drawn stays selected. */
 function rebuild(scene: AnyScene, id: string, data: SequenceData, opts: SequenceDrawOptions): void {
   const root = scene.get(id as never)!;
   const at = worldPose(scene, id);
@@ -33,11 +33,14 @@ function rebuild(scene: AnyScene, id: string, data: SequenceData, opts: Sequence
     id, at, theme: opts.theme ?? diagramThemeOf(scene), layer: root.layer, composition: scene.composition as never,
     ...(opts.measure ? { measure: opts.measure } : {}),
   });
+  const selected = scene.getSelection();
   scene.removeMany([...scene.childrenOf(id as never)]);
   const pose = root.pose as RectPose;
   scene.update(id as never, { data: own!.data });
   scene.setPose(id as never, { ...pose, width: own!.pose.width, height: own!.pose.height } as never);
   for (const part of parts) scene.add(part as never);
+  const kept = selected.filter((s) => scene.get(s) !== undefined);
+  if (kept.length !== scene.getSelection().length) scene.setSelection(kept);
 }
 
 /** Replaces root `id`'s sequence with `data` and builds its parts again, as one undo entry under `label`. */

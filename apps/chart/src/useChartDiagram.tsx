@@ -53,7 +53,7 @@ export interface ChartDiagram {
  *  drawn in `theme`, its connectors as `type` starts them, its sequence parts as `sequence` reads them. */
 export function useChartDiagram(
   scene: ChartScene, selection: SelectionApi, theme: DiagramTheme, type: DiagramType,
-  sequence: Pick<SequenceToolsOptions, 'participant' | 'arrow' | 'fragment'>,
+  sequence: Pick<SequenceToolsOptions, 'participant' | 'arrow' | 'fragment' | 'mark'>,
 ): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   useLabelPlacement<ChartPose>(scene as never, LABEL_PLACEMENT);

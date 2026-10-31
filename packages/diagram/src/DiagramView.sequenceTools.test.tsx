@@ -26,7 +26,7 @@ function mount(tool: SequenceToolId | null, extra: Partial<DiagramViewProps> = {
   const edits: SequenceEdit[] = [];
   const onEditSequence = (e: SequenceEdit) => edits.push(e);
   let api: ToolsApi | null = null;
-  const tools = sequenceTools({ commit: onEditSequence, fragment: () => 'opt' });
+  const tools = sequenceTools({ commit: onEditSequence, fragment: () => 'opt', mark: () => 'destroy' });
   const { container } = render(
     <DiagramView
       specs={SPECS} width={layout.width} height={layout.height} view={VIEW} onViewChange={() => {}}
@@ -86,6 +86,12 @@ describe('sequence tools on a DiagramView', () => {
     drag(canvas, { x: col('b'), y: top[3]!.y }, { x: col('b'), y: top[5]!.y });
     expect(ids(edits[0]!)).toEqual(['m1', 'f1', 'n1', 'f2']);
     expect(findStep(edits[0]!.data.steps, 'f2')).toMatchObject({ type: 'opt' });
+  });
+
+  it('puts a lifeline mark where a Mark click lands', () => {
+    const { canvas, edits } = mount('diagram.sequence.mark');
+    click(canvas, col('c') + 4, layout.slots.at(-1)!.y);
+    expect(edits.map((e) => e.data.steps.at(-1))).toEqual([{ kind: 'destroy', participant: 'c' }]);
   });
 
   it('picks a message with a click and deletes it with the Delete key', async () => {

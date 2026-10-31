@@ -856,10 +856,3 @@ only story runner in the repo.
   new package") can only be read on npmjs.com.
   Closes when the maintainer has read both packages' settings on npmjs.com and registered any that was
   missing.
-- **(P2) [agent] Reach the rest of a sequence's model from the canvas.** The Sequence panel's tools add
-  participants, messages, notes, and fragments, and Delete removes them (2026-10-31), but the edits
-  `@weasel-js/diagram` has for an alt's next section (`addSection`, `removeSection`), a fragment's type
-  (`setFragmentType`), a message's arrow and activation (`setMessageArrow`, `setMessageActivation`),
-  lifeline marks (`insertMark`), boxes (`addBox`), and autonumber (`setAutonumber`) have no gesture or
-  command in weaselchart, so a sequence holding them can only be imported. Closes when each of those
-  edits is reachable in weaselchart from a tool, a command, or the Format panel.

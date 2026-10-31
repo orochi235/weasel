@@ -1,7 +1,7 @@
 import { createScene, type ActionDeps, type InvocationCtx, type OngoingHandle, type RectPose, type Vec2 } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { withDiagramRegistry } from '../edge';
-import { createAddNoteAction, createAddParticipantAction } from './authorActions';
+import { createAddMarkAction, createAddNoteAction, createAddParticipantAction } from './authorActions';
 import { createDrawMessageAction, createDrawNoteAction } from './authorDrags';
 import { findStep } from './edit';
 import { SEQ_FIXTURE as data } from './fixture';
@@ -101,6 +101,21 @@ describe('the Message and Note actions', () => {
     const y = AT.y + geometry(scene).slots[0]!.y;
     drag(createDrawNoteAction(), scene, { x: col(scene, 'c'), y }, { x: col(scene, 'a'), y });
     expect(dataOf(scene).steps[0]).toMatchObject({ kind: 'note', over: ['a', 'c'] });
+  });
+});
+
+describe('the Mark action', () => {
+  it('puts the chosen mark on the nearest lifeline at the nearest row, a creation once', () => {
+    const scene = sceneOf();
+    const y = AT.y + geometry(scene).slots[0]!.y;
+    run(createAddMarkAction(), { scene }, { world: { x: col(scene, 'c') + 3, y }, mark: 'destroy' });
+    expect(dataOf(scene).steps[0]).toEqual({ kind: 'destroy', participant: 'c' });
+    run(createAddMarkAction(), { scene }, { world: { x: col(scene, 'b'), y } });
+    expect(dataOf(scene).steps[0]).toEqual({ kind: 'activate', participant: 'b' });
+    const before = scene.historyIndex();
+    run(createAddMarkAction(), { scene }, { world: { x: col(scene, 'a'), y }, mark: 'create' });
+    run(createAddMarkAction(), { scene }, { world: { x: col(scene, 'a'), y }, mark: 'create' });
+    expect(scene.historyIndex()).toBe(before + 1);
   });
 });
 

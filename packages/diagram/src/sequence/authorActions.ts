@@ -7,16 +7,18 @@
 import type { Action, ActionDeps, Scene, Vec2 } from '@weasel-js/core';
 import { sequenceLayout } from './layout';
 import { addParticipant, newParticipant, type SeqParticipantKind } from './author';
-import { insertNote } from './authorSteps';
+import { insertMark, insertNote } from './authorSteps';
 import { columnIndexAt, columnNear, sequenceAt, slotNear, type SequenceHit } from './authorPlace';
 import { sequenceCommitOf, startSequence, type SequenceEditOptions } from './commit';
 
-import type { SequenceData } from './types';
+import type { SeqMark, SequenceData } from './types';
 
 /** The action a Participant tool's click runs. */
 export const ADD_PARTICIPANT_ACTION_ID = 'diagram.sequence.addParticipant';
 /** The action a Note tool's click runs. */
 export const ADD_NOTE_ACTION_ID = 'diagram.sequence.addNote';
+/** The action a Mark tool's click runs. */
+export const ADD_MARK_ACTION_ID = 'diagram.sequence.addMark';
 
 /** Options for the sequence authoring actions. */
 export interface SequenceAuthorOptions extends SequenceEditOptions {
@@ -113,6 +115,34 @@ export function createAddNoteAction(opts: SequenceEditOptions = {}): Action {
         if (hit === null) return 'pass';
         const data = noteAt(hit, hit.local.x, hit.local.y);
         if (data !== hit.data) commit({ id: hit.root.id, data, label: 'Add note' }, { deps });
+        return undefined;
+      },
+    },
+    enabled: () => true as const,
+  };
+}
+
+const MARKS: ReadonlySet<string> = new Set<SeqMark['kind']>(['activate', 'deactivate', 'create', 'destroy']);
+
+/**
+ * The Mark tool's click: a mark of `params.mark` (default `activate`) on the
+ * lifeline nearest the click, at the row slot nearest it: an activation
+ * starting or ending, the head created there, or the lifeline ended.
+ */
+export function createAddMarkAction(opts: SequenceEditOptions = {}): Action {
+  const commit = sequenceCommitOf(opts);
+  return {
+    id: ADD_MARK_ACTION_ID, label: 'Add lifeline mark', group: 'diagram', requires: ['scene'],
+    invoker: {
+      timing: 'immediate',
+      run(deps, params) {
+        const hit = clickOf(deps, params)?.hit ?? null;
+        const column = hit === null ? null : columnNear(hit.root, hit.local.x);
+        const slot = hit === null ? null : slotNear(hit.root, hit.local.y);
+        if (hit === null || column === null || slot === null) return 'pass';
+        const kind = MARKS.has(params?.mark as string) ? params!.mark as SeqMark['kind'] : 'activate';
+        const data = insertMark(hit.data, { kind, participant: column.id }, slot.place);
+        if (data !== hit.data) commit({ id: hit.root.id, data, label: 'Add lifeline mark' }, { deps });
         return undefined;
       },
     },

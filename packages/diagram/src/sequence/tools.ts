@@ -8,7 +8,10 @@
 import { defineTool, toolSet, useLatest, type BindingOpts, type GestureBinding, type Tool, type ToolSet } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { icon } from '../icons.gen';
-import { createAddNoteAction, createAddParticipantAction, ADD_NOTE_ACTION_ID, ADD_PARTICIPANT_ACTION_ID, type SequenceAuthorOptions } from './authorActions';
+import {
+  createAddMarkAction, createAddNoteAction, createAddParticipantAction, ADD_MARK_ACTION_ID, ADD_NOTE_ACTION_ID, ADD_PARTICIPANT_ACTION_ID,
+  type SequenceAuthorOptions,
+} from './authorActions';
 import {
   createDrawMessageAction, createDrawNoteAction, createWrapFragmentAction, DRAW_MESSAGE_ACTION_ID, DRAW_NOTE_ACTION_ID,
   WRAP_FRAGMENT_ACTION_ID,
@@ -16,14 +19,17 @@ import {
 import type { SeqParticipantKind } from './author';
 import type { SeqArrow, SeqArrowName } from './authorSteps';
 import { SEQUENCE_AFFORDANCE_KIND } from './layer';
-import type { SeqFragment } from './types';
+import type { SeqFragment, SeqMark } from './types';
 
 /** The ids `useSequenceTools` keys its tools by. */
-export type SequenceToolId = 'diagram.sequence.participant' | 'diagram.sequence.message' | 'diagram.sequence.note' | 'diagram.sequence.fragment';
+export type SequenceToolId =
+  | 'diagram.sequence.participant' | 'diagram.sequence.message' | 'diagram.sequence.note' | 'diagram.sequence.fragment'
+  | 'diagram.sequence.mark';
 
-/** The sequence authoring tools: lifelines, messages, notes, and fragments. */
+/** The sequence authoring tools: lifelines, messages, notes, fragments, and lifeline marks. */
 export const SEQUENCE_TOOLS: ToolSet<SequenceToolId> = toolSet('sequence', [
   'diagram.sequence.participant', 'diagram.sequence.message', 'diagram.sequence.note', 'diagram.sequence.fragment',
+  'diagram.sequence.mark',
 ]);
 
 /** Options for {@link sequenceTools} and {@link useSequenceTools}. */
@@ -34,6 +40,8 @@ export interface SequenceToolsOptions extends SequenceAuthorOptions {
   arrow?: () => SeqArrowName | SeqArrow;
   /** The type the Fragment tool wraps rows in, read as each drag moves. Default `'loop'`. */
   fragment?: () => SeqFragment['type'];
+  /** The mark the Mark tool puts on a lifeline, read at each click. Default `'activate'`. */
+  mark?: () => SeqMark['kind'];
 }
 
 const ON_SEQUENCE = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
@@ -51,14 +59,17 @@ function both(tool: string, kind: 'click' | 'drag', actionId: string, params?: B
  * Every tool in {@link SEQUENCE_TOOLS}, keyed by id, for `<SceneCanvas tools>`:
  * Participant clicks a lifeline in where the click falls (or starts a sequence
  * on empty canvas), Message drags from one lifeline to another at the row of
- * the press, Note clicks or drags across lifelines, and Fragment drags across
- * rows to wrap them. Each commits one undo entry through `commit`.
+ * the press, Note clicks or drags across lifelines, Fragment drags across
+ * rows to wrap them, and Mark clicks an activation's start or end, a
+ * creation, or a destruction onto a lifeline. Each commits one undo entry
+ * through `commit`.
  */
 export function sequenceTools(opts: SequenceToolsOptions = {}): Record<SequenceToolId, Tool> {
   const participant = 'diagram.sequence.participant';
   const message = 'diagram.sequence.message';
   const note = 'diagram.sequence.note';
   const fragment = 'diagram.sequence.fragment';
+  const mark = 'diagram.sequence.mark';
   return {
     [participant]: defineTool({
       id: participant, hookName: 'useSequenceTools', cursor: 'copy',
@@ -84,12 +95,18 @@ export function sequenceTools(opts: SequenceToolsOptions = {}): Record<SequenceT
       actions: [createWrapFragmentAction(opts)],
       bindings: both(fragment, 'drag', WRAP_FRAGMENT_ACTION_ID, () => ({ type: opts.fragment?.() ?? 'loop' })),
     }),
+    [mark]: defineTool({
+      id: mark, hookName: 'useSequenceTools', cursor: 'copy',
+      presentation: { label: 'Mark', icon: icon('task'), group: 'sequence' },
+      actions: [createAddMarkAction(opts)],
+      bindings: both(mark, 'click', ADD_MARK_ACTION_ID, () => ({ mark: opts.mark?.() ?? 'activate' })),
+    }),
   } as Record<SequenceToolId, Tool>;
 }
 
 /**
  * {@link sequenceTools}, built once per change of what draws an edit. The
- * commit and the participant, arrow, and fragment readers are read through a
+ * commit and the participant, arrow, fragment, and mark readers are read through a
  * ref, so a host can pass fresh closures every render.
  */
 export function useSequenceTools(opts: SequenceToolsOptions = {}): Record<SequenceToolId, Tool> {
@@ -104,5 +121,6 @@ export function useSequenceTools(opts: SequenceToolsOptions = {}): Record<Sequen
     participant: () => latest.current.participant?.() ?? 'participant',
     arrow: () => latest.current.arrow?.() ?? 'sync',
     fragment: () => latest.current.fragment?.() ?? 'loop',
+    mark: () => latest.current.mark?.() ?? 'activate',
   }), [latest, measure, theme, custom, starts]);
 }

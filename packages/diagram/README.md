@@ -996,7 +996,11 @@ a fragment and `addSection` for an alt's next branch, `removeStep`, `addBox`, an
 `SEQUENCE_TOOLS` that make them on the canvas: Participant clicks a lifeline in
 between two (or starts a sequence on empty canvas), Message drags from one
 lifeline to another, Note clicks or drags across lifelines, and Fragment drags
-across rows. Pass them as `tools` to `DiagramView` or `<SceneCanvas>`. A click
+across rows, and Mark clicks an activation's start or end, a creation, or a
+destruction onto a lifeline. Pass them as `tools` to `DiagramView` or
+`<SceneCanvas>`. `sequenceSelectionOf(scene, ids)` reads a selection as one
+sequence's participants, messages, notes, fragments, and boxes, for a panel
+that offers the edits fitting it. A click
 on a sequence's part selects it, and `createSequenceDeleteAction` (which
 `DiagramView` installs with `onEditSequence`) makes Delete remove it from the
 data.
