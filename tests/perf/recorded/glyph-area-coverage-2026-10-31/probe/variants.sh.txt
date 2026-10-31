@@ -1,0 +1,15 @@
+#!/bin/bash
+# Scratch probe runner, not committed: runs the glyph probe under each shader variant in .probe/.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; . "$NVM_DIR/nvm.sh"; nvm use >/dev/null
+if ! cmp -s package-lock.json node_modules/.package-lock.json.src 2>/dev/null; then
+  npm ci --no-audit --no-fund >/dev/null
+  cp package-lock.json node_modules/.package-lock.json.src
+fi
+npx playwright install chromium >/dev/null
+for v in "$@"; do
+  cp ".probe/textSdf.$v.ts" packages/font/src/textSdf.ts
+  echo "== variant $v"
+  npx vitest run --project=browser --maxWorkers=1 packages/core/src/canvas/glyphProbe.browser.test.ts 2>&1 | sed "s/GLYPHPROBE /GLYPHPROBE $v /"
+done
+cp .probe/textSdf.orig.ts packages/font/src/textSdf.ts
+echo "== done"

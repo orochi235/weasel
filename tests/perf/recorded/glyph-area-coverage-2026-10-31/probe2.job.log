@@ -1,0 +1,267 @@
+  waiting for room
+  base   3a764aca
+  delta  7 file(s), 0 deleted
+  sent   4 new file(s), 3 already there
+  updated weasel on teitou at 3a764aca + 7 uncommitted file(s)
+  job    4f3cb939 on teitou
+
+onto: glyph-area is already set up
+== variant orig
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+prebundle: serving 2738 module(s) of bundled packages from source, since source imports them by path
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+[2m11:20:36 AM[22m [36m[1m[vite][22m[39m (client) Forced re-optimization of dependencies
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+ [32m✓[39m [30m[42m browser (chromium) [49m[39m packages/core/src/canvas/glyphProbe.browser.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 276[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 11:20:36
+[2m   Duration [22m 1.44s[2m (worker 37%, tests 26%, setup 23%, import 14%)[22m
+
+== variant grid16
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+prebundle: serving 2738 module(s) of bundled packages from source, since source imports them by path
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+[2m11:20:45 AM[22m [36m[1m[vite][22m[39m (client) Forced re-optimization of dependencies
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+ [32m✓[39m [30m[42m browser (chromium) [49m[39m packages/core/src/canvas/glyphProbe.browser.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 234[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 11:20:45
+[2m   Duration [22m 1.31s[2m (worker 31%, setup 27%, tests 27%, import 15%)[22m
+
+== variant tap0
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+prebundle: serving 2738 module(s) of bundled packages from source, since source imports them by path
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+[2m11:20:51 AM[22m [36m[1m[vite][22m[39m (client) Forced re-optimization of dependencies
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+ [32m✓[39m [30m[42m browser (chromium) [49m[39m packages/core/src/canvas/glyphProbe.browser.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 247[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 11:20:51
+[2m   Duration [22m 1.32s[2m (worker 36%, tests 26%, setup 24%, import 14%)[22m
+
+== variant point
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+prebundle: serving 2738 module(s) of bundled packages from source, since source imports them by path
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+[2m11:20:57 AM[22m [36m[1m[vite][22m[39m (client) Forced re-optimization of dependencies
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+ [32m✓[39m [30m[42m browser (chromium) [49m[39m packages/core/src/canvas/glyphProbe.browser.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 190[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 11:20:57
+[2m   Duration [22m 1.28s[2m (worker 34%, setup 29%, tests 22%, import 15%)[22m
+
+== done

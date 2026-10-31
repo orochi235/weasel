@@ -35,6 +35,15 @@ export const GLYPH_AREA_FROM = 0.2;
 export const GLYPH_AREA_FULL = 0.3;
 
 /**
+ * Device pixels a glyph quad grows by on every side where its glyphs take area
+ * coverage. A pixel inks up to half a pixel past the outline, and a
+ * multisampled target scales a pixel the quad's edge crosses by the samples it
+ * covers, so a quad no wider than the glyph's padding (half a pixel for Inter
+ * at 7.2px) loses ink wherever an edge lands inside a pixel.
+ */
+export const GLYPH_AREA_MARGIN = 1;
+
+/**
  * Whether glyphs drawn `pxPerUv` screen pixels to a unit of texture coordinate
  * (along each axis) off an atlas of `fieldPerUv` need `GLYPH_COVERAGE_GLSL`'s
  * taps. Errs toward yes: a turned or sheared glyph's pixel spans a little more
@@ -56,11 +65,25 @@ const AREA_TAPS_GLSL = /* glsl */ `
     vec2 at = vec2(-0.375, -0.125);
     for (int i = 0; i < 4; i++) {
       float tap = glyphField(glyphTap(uv + at.x * du + at.y * dv), mode);
-      sum += clamp((tap - lo) / band, 0.0, 1.0);
+      sum += clamp((tap - lo) / band, 0.0, 1.0) * glyphInCell(cell + at.x * dcx + at.y * dcy, margin);
       at = vec2(-at.y, at.x);
     }
     coverage = mix(coverage, 0.25 * sum, area);
   }`;
+
+/** The grown quad's cell: 1 inside the glyph's own atlas cell, 0 in the margin
+ *  `GLYPH_AREA_MARGIN` added, where the atlas holds the neighboring glyph. */
+const IN_CELL_GLSL = /* glsl */ `
+float glyphInCell(vec2 c, vec2 margin) {
+  vec2 inside = step(margin, c) * step(c, 1.0 - margin);
+  return inside.x * inside.y;
+}
+`;
+
+const CELL_MARGIN_GLSL = /* glsl */ `
+  vec2 dcx = dFdx(cell);
+  vec2 dcy = dFdy(cell);
+  vec2 margin = ${GLYPH_AREA_MARGIN.toFixed(1)} * vec2(length(vec2(dcx.x, dcy.x)), length(vec2(dcx.y, dcy.y)));`;
 
 function glyphCoverageGlsl(area: boolean): string {
   return /* glsl */ `
@@ -71,15 +94,15 @@ float median(float r, float g, float b) {
 float glyphField(vec4 texel, float mode) {
   return mix(median(texel.r, texel.g, texel.b), texel.r, step(1.5, mode));
 }
-
-float glyphCoverage(vec4 texel, float mode, float synthBold, vec2 uv, vec2 fieldPerUv) {
+${area ? IN_CELL_GLSL : ''}
+float glyphCoverage(vec4 texel, float mode, float synthBold, vec2 uv, vec2 fieldPerUv${area ? ', vec2 cell' : ''}) {
   vec2 du = dFdx(uv);
-  vec2 dv = dFdy(uv);
+  vec2 dv = dFdy(uv);${area ? CELL_MARGIN_GLSL : ''}
   float fieldPerPx = 0.5 * (length(du * fieldPerUv) + length(dv * fieldPerUv));
   float aaW = max(0.5 * fieldPerPx, 0.0005);
   float threshold = 0.5 - synthBold;
   float field = glyphField(texel, mode);
-  float coverage = smoothstep(threshold - aaW, threshold + aaW, field);${area ? AREA_TAPS_GLSL : ''}
+  float coverage = smoothstep(threshold - aaW, threshold + aaW, field)${area ? ' * glyphInCell(cell, margin)' : ''};${area ? AREA_TAPS_GLSL : ''}
   return coverage;
 }
 `;
@@ -113,11 +136,17 @@ float glyphCoverage(vec4 texel, float mode, float synthBold, vec2 uv, vec2 field
  * either axis, each through a linear ramp a quarter pixel wide: a box filter
  * over the pixel, which keeps a stem's ink to its width wherever it lands. A
  * 2x2 grid would put only two taps along each axis, and a stem narrower than
- * half a pixel snaps between them; at 7.2px that left the centroid swinging
- * by 0.37px. The program defines
+ * half a pixel snaps between them. The program defines
  * `vec4 glyphTap(vec2 uv)` before pasting this in, returning the atlas sample
  * at `uv` with no implicit derivative (`textureLod` at level 0: an atlas has no
  * mipmaps), because it runs inside the branch.
+ *
+ * **A glyph taking area coverage draws on a grown quad.** Its quad grows by
+ * `GLYPH_AREA_MARGIN` device pixels on every side, and `cell` runs 0 to 1
+ * across the grown quad, corner to corner, so the shader can tell the glyph's
+ * own cell from the margin, where the atlas holds the next glyph over: what
+ * lands there reads as no ink. A quad that has not grown passes one constant
+ * `cell`, which reads as all cell.
  *
  * **Nothing before that branch may be skipped, and the caller must not branch
  * around this.** A derivative in non-uniform control flow is undefined, so both

@@ -15,11 +15,12 @@ import {
   GLYPH_MODE_R8,
   glyphFieldScale,
   glyphNeedsArea,
+  GLYPH_AREA_MARGIN,
   SYNTH_BOLD_AMOUNT,
 } from '@weasel-js/font';
 import { outlineGroupMesh, outlineGroupStrokeMesh } from '../glyphOutlineMesh';
 import type { BatchCut } from '../batchClip';
-import { glyphCorners } from '../glyphCorners';
+import { placeGlyph, type PlacedGlyph } from '../glyphCorners';
 import { QUAD_STRIDE, SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
@@ -153,17 +154,18 @@ function ruleMesh(x0: number, y0: number, x1: number, y1: number): Mesh {
 }
 
 /**
- * Whether a group's glyphs are small enough on screen to need the batch
- * program's area coverage, read from its first quad: every quad in a group
- * shares its font size and transform. Device pixels, not CSS ones.
+ * How far a group's glyph quads grow for area coverage, in screen units: 0
+ * unless its glyphs are small enough on screen to need it, read from its first
+ * quad, since every quad in a group shares its font size and transform. Device
+ * pixels decide it, not CSS ones.
  */
-function needsArea(
+function areaGrowth(
   ctx: DrawContext, quads: ArrayLike<number>, m: GlMat3, fieldScale: readonly [number, number],
-): boolean {
+): number {
   const dpr = (ctx.deviceWidth ?? ctx.widthCss) / (ctx.widthCss || 1);
   const pxPerU = (Math.hypot(m[0], m[1]) * dpr * (quads[2] - quads[0])) / Math.abs(quads[6] - quads[4]);
   const pxPerV = (Math.hypot(m[3], m[4]) * dpr * (quads[3] - quads[1])) / Math.abs(quads[7] - quads[5]);
-  return glyphNeedsArea(fieldScale, pxPerU, pxPerV);
+  return glyphNeedsArea(fieldScale, pxPerU, pxPerV) ? GLYPH_AREA_MARGIN / dpr : 0;
 }
 
 /**
@@ -207,7 +209,8 @@ function drawTextGroup(
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  const area = needsArea(ctx, group.quadData, m, fieldScale);
+  const grow = areaGrowth(ctx, group.quadData, m, fieldScale);
+  const area = grow > 0;
   let slot = stageGlyphs(ctx, atlasId, fieldScale, area);
   const rgba = foldColorInto(ctx, color[0], color[1], color[2], color[3] * opacity, glyphRgba);
 
@@ -218,7 +221,7 @@ function drawTextGroup(
       slot = stageGlyphs(ctx, atlasId, fieldScale, area);
     }
     let cut: BatchCut | null | undefined;
-    while (!batch.pushGlyph(quads, at, dx, dy, tanItalic, m, rgba, slot, mode, bold)) {
+    while (!batch.pushGlyph(quads, at, dx, dy, tanItalic, m, rgba, slot, mode, bold, grow)) {
       cut = enterUncut(ctx);
       slot = stageGlyphs(ctx, atlasId, fieldScale, area);
     }
@@ -270,13 +273,14 @@ function drawPaintedGlyphs(
   flushForOwnDraw(ctx);
   const fill = group.fill!.paint!;
   const m = ctx.state.transform;
+  const grow = areaGrowth(ctx, group.quadData, m, fieldScale);
   let bound: ShaderProgram | null;
   if (kind === 'pattern') {
     bound = bindPattern(ctx, prog, fill as TexturePaint, BATCH_MODEL);
   } else if (kind === 'gradient') {
     bound = bindGradient(ctx, prog, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, BATCH_MODEL);
   } else {
-    const painted = renderPaintToScratch(ctx, fill, glyphScreenBounds(group, dx, dy, tanItalic, m));
+    const painted = renderPaintToScratch(ctx, fill, glyphScreenBounds(group, dx, dy, tanItalic, m, grow));
     bound = painted && bindScratchPaint(ctx, prog, painted);
   }
   if (!bound) return;
@@ -294,7 +298,7 @@ function drawPaintedGlyphs(
   const quads = group.quadData;
   for (let at = 0; at < quads.length; at += QUAD_STRIDE) {
     if (batch.wouldOverflow(4)) drawStagedGlyphs(ctx);
-    batch.pushGlyph(quads, at, dx, dy, tanItalic, m, OPAQUE_WHITE, GLYPH_PAINT_ATLAS_UNIT, mode, 0);
+    batch.pushGlyph(quads, at, dx, dy, tanItalic, m, OPAQUE_WHITE, GLYPH_PAINT_ATLAS_UNIT, mode, 0, grow);
   }
   drawStagedGlyphs(ctx);
   batch.clip = cut;
@@ -309,25 +313,21 @@ function drawStagedGlyphs(ctx: DrawContext): void {
   batch.reset();
 }
 
-/** The screen-space box of a group's glyph quads, corner for corner as
- *  `DrawBatch.pushGlyph` places them. */
+/** The screen-space box of a group's glyph quads, grown by `grow`, corner
+ *  for corner as `DrawBatch.pushGlyph` places them. */
 function glyphScreenBounds(
-  group: LaidOutGroup, dx: number, dy: number, tanItalic: number, m: GlMat3,
+  group: LaidOutGroup, dx: number, dy: number, tanItalic: number, m: GlMat3, grow: number,
 ): ScreenRect {
   const b = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
-  const add = (x: number, y: number) => {
-    const sx = m[0] * x + m[3] * y + m[6];
-    const sy = m[1] * x + m[4] * y + m[7];
-    if (sx < b.x0) b.x0 = sx;
-    if (sx > b.x1) b.x1 = sx;
-    if (sy < b.y0) b.y0 = sy;
-    if (sy > b.y1) b.y1 = sy;
-  };
   const q = group.quadData;
-  const c: number[] = [];
+  const placed: PlacedGlyph = { xy: [], uv: [] };
   for (let at = 0; at < q.length; at += QUAD_STRIDE) {
-    glyphCorners(q, at, dx, dy, tanItalic, c);
-    for (let k = 0; k < 8; k += 2) add(c[k], c[k + 1]);
+    placeGlyph(q, at, dx, dy, tanItalic, m, grow, placed);
+    const c = placed.xy;
+    for (let k = 0; k < 8; k += 2) {
+      b.x0 = Math.min(b.x0, c[k]); b.x1 = Math.max(b.x1, c[k]);
+      b.y0 = Math.min(b.y0, c[k + 1]); b.y1 = Math.max(b.y1, c[k + 1]);
+    }
   }
   return b;
 }

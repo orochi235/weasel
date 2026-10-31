@@ -6,11 +6,12 @@ import { FLOATS_PER_VERTEX } from './drawBatch';
 import { createRecorderCtx, stagedVertices } from './testing/recorderCtx';
 
 describe('drawText synthetic-bold', () => {
-  /** The threshold shift each staged vertex carries, in `a_post`. */
+  /** The threshold shift each staged vertex carries, in `a_post` beside the
+   *  corner a quad grown for area coverage adds (`shaders/glyphCell.ts`). */
   const boldValues = (ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): number[] => {
     const v = stagedVertices(ctx, calls);
     const out: number[] = [];
-    for (let i = 0; i < v.length; i += FLOATS_PER_VERTEX) out.push(v[i + 8]);
+    for (let i = 0; i < v.length; i += FLOATS_PER_VERTEX) out.push(v[i + 8] - 2 * Math.floor(v[i + 8] / 2));
     return out;
   };
 

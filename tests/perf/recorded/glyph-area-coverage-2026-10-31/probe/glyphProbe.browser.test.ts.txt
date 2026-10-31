@@ -1,0 +1,33 @@
+/** Scratch probe: dumps the red channel of glyphCoverage's H at each x offset. Not committed. */
+import { it, afterAll, beforeAll } from 'vitest';
+import { registerFont } from '@weasel-js/font';
+import { createScene } from 'core/scene/scene';
+import type { RectPose } from 'core/scene/composePose';
+import { createRasterSession } from './renderSceneToPixels';
+import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
+import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
+
+const FAMILY = 'glyph-probe-inter';
+const session = createRasterSession();
+beforeAll(async () => { await registerFont(FAMILY, {}, metricsUrl, atlasUrl); });
+afterAll(() => session.dispose());
+
+const SIZES = (globalThis as { GLYPH_PROBE_SIZES?: number[] }).GLYPH_PROBE_SIZES ?? [7.2, 12, 16];
+
+it('dumps', () => {
+  for (const size of SIZES) {
+    for (let k = 0; k < 16; k++) {
+      const x = 4 + k / 16;
+      const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+      scene.add({
+        kind: 'mark', layer: 'main',
+        pose: { x, y: 4, width: 40, height: size * 1.2 },
+        data: { text: 'H', style: { fontFamily: FAMILY, fontSize: size, lineHeight: 1.2 }, fill: { paint: { kind: 'solid', color: '#ffffff' } } },
+      });
+      const img = session.render({ scene, sourceRect: { x: 0, y: 0, width: 32, height: 24 }, scale: { x: 1, y: 1 }, background: '#000000' });
+      const red: number[] = [];
+      for (let i = 0; i < img.width * img.height; i++) red.push(img.data[i * 4]);
+      console.log('GLYPHPROBE ' + JSON.stringify({ size, x, w: img.width, h: img.height, red }));
+    }
+  }
+});

@@ -354,22 +354,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has ruled between a WebKit DPR 1 bound in
   `overlayAlignment.browser.test.tsx` and a WebKit nudge in text-dom, and the chosen one is in the tree.
 
-- **(P3) [agent] Area coverage for small atlas glyphs: what is left.** Since 2026-10-30
-  `glyphCoverage` takes the mean of four field taps a pixel where a pixel spans more than
-  `GLYPH_AREA_FROM` field units, and the 12px and 16px `H`s of `glyphCoverage.browser.test.ts` keep
-  their ink centroid within 0.04px as `x` steps through a pixel (0.35 and 0.66 before). Only runs
-  holding such glyphs draw with the batch builds that have the taps, so other fragments pay nothing for
-  them (`fill-rate`'s `batch`, 8.27 and 8.39 ms a frame on `106f27060`, 7.70 and 7.86 after). One thing
-  remains, measured on teitou (`tests/perf/recorded/glyph-area-coverage-2026-10-30/`):
-  - **The 7.2px `H` still swings by 0.37px** (0.88 before), and the overlay's `dx` at DPR 1 by up to
-    0.29 Chromium, 0.37 Firefox, and 0.22 WebKit (0.51, 0.60, and 0.57 before). Exact area coverage
-    would leave about 0.16, since a stem inside one pixel keeps its centroid at that pixel's center
-    (a 1D model of this `H`'s two stems, not measured). Not tap spacing: a 2x2 grid and the rotated
-    grid that ships measured the same. The canvas's ink mass still varies 8.03 to 8.65 across the
-    pixel, so something loses or adds ink; unexplained.
-  Closes when the 7.2px `H` of `glyphCoverage.browser.test.ts` swings by 0.20px or less as `x` steps
-  through a pixel, measured on teitou.
-
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
   or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Open pieces:

@@ -2,7 +2,7 @@
  * The shipping batch program as `fill-rate.spec.ts` variants, run in the page.
  *
  * Every variant draws a full-viewport quad `layers` times with the real
- * `BATCH_VERT_SRC`; the attributes nothing varies are disabled and read as
+ * `BATCH_VERT_SRC` (`BATCH_AREA_VERT_SRC` under the build with the taps); the attributes nothing varies are disabled and read as
  * constants, so `a_texSlot` picks the slot, mode, and matrix for the whole
  * frame. `batch-chain8-*` is the batch program with the eight-slot chain of
  * compares it had before the tree, rebuilt here so the two can be timed in one
@@ -71,9 +71,9 @@ export function batchFragmentVariants(
   { layers, tex, quad }: { layers: number; tex: WebGLTexture; quad: WebGLBuffer },
 ): FillVariant[] {
   const L = mod.BATCH_ATTRIBUTE_LOCATIONS;
-  const build = (frag: string, slots: number, matrices: number, fieldScale = 1) => {
+  const build = (frag: string, slots: number, matrices: number, fieldScale = 1, vert = mod.BATCH_VERT_SRC) => {
     const vs = gl.createShader(gl.VERTEX_SHADER)!;
-    gl.shaderSource(vs, mod.BATCH_VERT_SRC); gl.compileShader(vs);
+    gl.shaderSource(vs, vert); gl.compileShader(vs);
     const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
     gl.shaderSource(fs, frag); gl.compileShader(fs);
     if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) throw new Error(`batch fragment: ${gl.getShaderInfoLog(fs)}`);
@@ -127,7 +127,10 @@ export function batchFragmentVariants(
   const scaleFor = (fieldPerPx: number) => fieldPerPx / (0.5 * (1 / w + 1 / h));
   const glyphLarge = build(mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.1));
   // A run holding glyphs that small draws with the build that has the taps.
-  const glyphSmall = build(mod.batchAreaFragSrc?.(false, false) ?? mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.5));
+  const glyphSmall = build(
+    mod.batchAreaFragSrc?.(false, false) ?? mod.BATCH_FRAG_SRC, slots, 1, scaleFor(0.5),
+    mod.BATCH_AREA_VERT_SRC ?? mod.BATCH_VERT_SRC,
+  );
   const chain = build(chainSource(mod, 8), 8, 1);
   const matrices = build(mod.BATCH_MATRICES_FRAG_SRC, slots, mod.BATCH_MATRIX_SLOTS);
   const parts = KNOCKOUTS;
