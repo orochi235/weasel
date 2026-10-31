@@ -26,12 +26,12 @@ beforeAll(() => {
 });
 
 describe('SURFACE_ASSETS', () => {
-  it('lists the command row, then Arrange, Pathfinder, Path, and Loupe as toolbars, then the four sidebar panels', () => {
+  it('lists the command row, then Arrange, Pathfinder, and Path as toolbars, Constraints as a menu, Loupe as a toolbar, then the four sidebar panels', () => {
     expect(SURFACE_ASSETS.filter((a) => a.row === 'command').map((a) => a.id)).toEqual([
       'file', 'undo', 'clipboard', 'edit', 'structure', 'view', 'pathCommands', 'corners', 'text', 'compound', 'record', 'app',
     ]);
     expect(SURFACE_ASSETS.filter((a) => a.row !== 'command').map((a) => [a.id, a.defaultSurface])).toEqual([
-      ['arrange', 'bar'], ['pathfinder', 'bar'], ['path', 'bar'], ['loupe', 'bar'],
+      ['arrange', 'bar'], ['pathfinder', 'bar'], ['path', 'bar'], ['constraints', 'menu'], ['loupe', 'bar'],
       ['properties', 'panel'], ['colors', 'panel'], ['layers', 'panel'], ['history', 'panel'],
     ]);
   });

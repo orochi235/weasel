@@ -45,7 +45,9 @@ export type PathToolsIconName =
   | 'spiroG4'
   | 'spiroCorner'
   | 'spiroLeft'
-  | 'spiroRight';
+  | 'spiroRight'
+  | 'constrainAnchors'
+  | 'unconstrainAnchors';
 
 /** This package's `icon()`: a bare name means `path-tools:<name>`. */
 export const icon = scopedIcon<PathToolsIconName>('path-tools');
@@ -113,6 +115,13 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "spiroLeft",
       "spiroRight"
     ]
+  },
+  {
+    "label": "Constraints",
+    "names": [
+      "constrainAnchors",
+      "unconstrainAnchors"
+    ]
   }
 ];
 
@@ -160,5 +169,7 @@ declare module '@weasel-js/icons' {
     'path-tools:spiroCorner': true;
     'path-tools:spiroLeft': true;
     'path-tools:spiroRight': true;
+    'path-tools:constrainAnchors': true;
+    'path-tools:unconstrainAnchors': true;
   }
 }

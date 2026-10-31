@@ -69,7 +69,7 @@ export { resamplePathAction, type ResamplePathParams } from './resample/resample
 export { addExtremeAnchorsAction } from './extremes/addExtremes';
 export { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
 export {
-  constrainAnchorsAction, constraintsForAnchors, deleteConstraintAction, unconstrainAnchorsAction,
+  CONSTRAINT_KIND_LABELS, constrainAnchorsAction, constraintsForAnchors, deleteConstraintAction, unconstrainAnchorsAction,
   type ConstrainAnchorsParams,
 } from './constraints/anchorConstraints';
 export {
