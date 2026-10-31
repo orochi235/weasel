@@ -16,15 +16,17 @@ vi.mock('@msb235/blits', async (importOriginal) => {
 });
 /** Per-subject records a mix still holds. Reads blits' internals: it has no public count. */
 const held = (m: unknown): number => {
-  type Store = { strong: Map<unknown, unknown> };
+  // A store keeps its first non-object key in `oneValue` until a second arrives.
+  type Store = { strong: Map<unknown, unknown>; oneValue: unknown };
   const x = m as {
     chains: Store;
-    pose: Store;
+    lastPoses: Store;
     named: Store;
     strays: Store;
     cued: { parted: Map<unknown, unknown> | null }[];
   };
-  const stores = x.chains.strong.size + x.pose.strong.size + x.named.strong.size + x.strays.strong.size;
+  const size = (s: Store) => s.strong.size + (s.oneValue === undefined ? 0 : 1);
+  const stores = size(x.chains) + size(x.lastPoses) + size(x.named) + size(x.strays);
   return stores + x.cued.reduce((n, v) => n + (v.parted?.size ?? 0), 0);
 };
 
@@ -248,6 +250,7 @@ describe('createCodec membership', () => {
     }
     b.frame(16);
     expect(mixes).toHaveLength(1);
+    expect(held(mixes[0])).toBeGreaterThan(0);
     expect(held(mixes[0])).toBeLessThan(10);
     expect((mixes[0] as { cued: unknown[] }).cued.length).toBeLessThan(10);
   });
