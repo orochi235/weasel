@@ -44,35 +44,6 @@ import and save in two.
 Engine surface: `DataEdge.endLabels?: { from?: string; to?: string }` through the label trait at
 `start`/`end`; outlines `start`, `end`, `bar`; `tree`'s two-sided option.
 
-## Sequence (`@weasel-js/diagram`)
-
-```ts
-interface SequenceData {
-  participants: readonly SeqParticipant[];
-  steps: readonly SeqStep[];               // top to bottom, one row each; a fragment holds a run
-  boxes?: readonly { id: string; label?: string; members: readonly string[]; colors?: Partial<NodeStyle> }[];
-  autonumber?: number;
-}
-interface SeqParticipant { id: string; label?: string; outline?: Outline; style?: string; colors?: Partial<NodeStyle> }
-type SeqStep =
-  | { kind: 'message'; id: string; from: string; to: string; text?: string; line: 'solid' | 'dashed';
-      head: 'arrow' | 'open' | 'cross' | 'none'; both?: boolean; async?: boolean;
-      activate?: 'to' | 'from'; deactivate?: 'to' | 'from' }
-  | { kind: 'note'; id: string; over: readonly string[]; side?: 'left' | 'right'; text: string }
-  | { kind: 'activate' | 'deactivate' | 'create' | 'destroy'; participant: string }
-  | { kind: 'fragment'; id: string; type: 'loop' | 'alt' | 'opt' | 'par' | 'critical' | 'break' | 'region';
-      sections: readonly { label?: string; steps: readonly SeqStep[] }[]; colors?: Partial<NodeStyle> };
-```
-
-`sequenceSpecs` spaces columns to the widest text between neighbors, gives each step a row sized to its
-text, loops self-messages, starts a head at its `create` row and ends a lifeline at `destroy`, offsets
-nested activations, and boxes a fragment over the participants its steps touch. Heads are nodes,
-messages are straight edges between lifeline anchors, notes use the `note` outline. New outlines:
-`actor`, `boundary`, `control`, `entity`, `collections`, `queue`; `database` is the cylinder.
-
-Edits, each an op on the data: drag a message to another row (into or out of a fragment), drag a head
-to reorder participants, drag a message end to another lifeline, edit text in place.
-
 ## Plot (`@weasel-js/plot`, new package)
 
 Lower layer: scales (`linear`, `log`, `band`, `time`, `ordinal`, later `polar`) with `ticks()` and
@@ -109,7 +80,7 @@ cannot hold the document.
 
 1. Document union.
 2. Graph kinds.
-3. Sequence.
+3. Sequence (built).
 4. Plot foundation.
 5. Plot kinds.
 6. `block` (graph, new `grid` layout with column spans), `architecture` (graph, side ports, icon table),

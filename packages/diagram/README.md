@@ -919,6 +919,51 @@ blank. The view opens fitted to the diagram and fits again when `width` or
 `height` changes or a layout run settles, until the user pans or zooms. `minScale` stops the fit from
 shrinking a wide diagram past readable; the rest is a pan away.
 
+### Sequence diagrams
+
+A `SequenceData` is participants left to right and steps top to bottom:
+messages, notes, activations, `create` and `destroy`, and fragments (`loop`,
+`alt`, `opt`, `par`, `critical`, `break`, and a colored `region`) holding runs
+of steps in sections. `boxes` draw around participants' columns, and
+`autonumber` numbers the messages from a start.
+
+```tsx
+const data: SequenceData = {
+  participants: [{ id: 'a', label: 'Alice', outline: 'actor' }, { id: 'b', label: 'Bob' }],
+  steps: [
+    { kind: 'message', id: 'm1', from: 'a', to: 'b', text: 'Hello', line: 'solid', head: 'arrow', activate: 'to' },
+    { kind: 'message', id: 'm2', from: 'b', to: 'a', text: 'Hi', line: 'dashed', head: 'arrow', deactivate: 'from' },
+  ],
+};
+const [seq, setSeq] = useState(data);
+const specs = useMemo(() => sequenceSpecs(seq, { id: 'hello' }), [seq]);
+<DiagramView specs={specs} onEditSequence={(edit) => setSeq(edit.data)} />;
+```
+
+`sequenceSpecs(data, { id, at, theme, measure })` lays the data out
+(`sequenceLayout` gives the geometry alone): lifelines spaced so the widest
+text between neighbors fits, a row per step sized to its text, self-messages
+looped, a head started at its `create` and a lifeline ended at its `destroy`,
+nested activations stepped right, and each fragment boxed over the lifelines
+its steps touch, with its type in a tab and a dashed line between sections. It
+returns one root node, `id`, holding the data, and every part as a child of it
+that takes no press. Heads wear the participant's outline: `actor`, `boundary`,
+`control`, `entity`, `cylinder` for a database, `collections`, and `queue`
+besides any other. Every part is drawn in the theme: a head and its
+activations in the participant's role, a message in the connector style, a
+note in `SEQUENCE_ROLES.note`, a fragment or a box as a container.
+
+The edits are pure functions of the data: `moveStep` (into or out of a
+fragment's section), `moveParticipant`, `reconnectMessage`, and
+`setSequenceText`. `DiagramView`'s `onEditSequence` turns them on as drags — a
+message or note to another row, a head sideways, a message end onto another
+lifeline — and double-click text editing, each reported as the sequence's new
+data. On a scene that is the document, `diagramSequence({ scene, measure })`
+gives the layer and contribution that commit each edit as one undo entry
+(`commitSequence`), and `foldSequenceText` turns a text edit on a part into one
+edit of the data. A theme applied with `applyDiagramTheme` draws every sequence
+again.
+
 ### Effect charts
 
 `@weasel-js/diagram/effect` draws an effects pipeline: the stages a signal
