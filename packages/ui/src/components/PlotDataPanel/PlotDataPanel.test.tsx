@@ -1,7 +1,8 @@
-import type { PieData, PlotData, TimelineData } from '@weasel-js/plot';
+import type { GanttData, PieData, PlotData, TimelineData } from '@weasel-js/plot';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { pick } from '../Properties/testing/selectRow';
 import { PlotDataPanel } from './PlotDataPanel';
 
 function Host({ initial, onChange }: { initial: PlotData; onChange?: (next: PlotData, label: string) => void }) {
@@ -31,6 +32,26 @@ describe('PlotDataPanel', () => {
     expect(onChange).toHaveBeenLastCalledWith({ kind: 'pie', slices: [{ label: 'Cats', value: 2 }] }, 'Remove slice');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show values' }));
     expect(onChange.mock.lastCall![0]).toMatchObject({ showData: true });
+  });
+
+  it('inserts a row after the one whose button is pressed', () => {
+    const onChange = vi.fn();
+    render(<Host initial={PIE} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Insert slice after Dogs' }));
+    expect(onChange.mock.lastCall![0].slices.map((s: { label: string }) => s.label)).toEqual(['Dogs', 'Slice 3', 'Cats']);
+    expect(onChange.mock.lastCall![1]).toBe('Add slice');
+  });
+
+  it('moves a gantt task to another section from its section picker', () => {
+    const onChange = vi.fn();
+    const gantt: GanttData = { kind: 'gantt', sections: [
+      { name: 'A', tasks: [{ name: 'one', start: { kind: 'previous' }, end: { kind: 'duration', amount: 1, unit: 'd' } }] },
+      { name: 'B', tasks: [] },
+    ] };
+    render(<Host initial={gantt} onChange={onChange} />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show details' })[0]!);
+    pick('Section of one', '2. B');
+    expect(onChange.mock.lastCall![0].sections.map((s: { tasks: unknown[] }) => s.tasks.length)).toEqual([0, 1]);
   });
 
   it('opens a row onto the tables it holds', () => {

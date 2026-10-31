@@ -26,6 +26,12 @@
   padding-inline-start: var(--wzl-space-4);
 }
 
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+}
+
 .add {
   align-self: flex-start;
 }

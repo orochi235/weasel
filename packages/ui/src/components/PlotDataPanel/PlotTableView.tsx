@@ -36,12 +36,24 @@ export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps):
       return <PropertyControl {...valueControl(spec, `${column.label} of ${rowName(index)}`, set)} className={s.cell} />;
     },
   }));
-  if (table.remove) {
-    const remove = table.remove;
+  const { insert, remove } = table;
+  if (insert || remove) {
     columns.push({
-      id: '__remove', header: '', sortable: false,
+      id: '__row', header: '', sortable: false,
       render: ({ index }) => (
-        <CloseButton ariaLabel={`Remove ${rowName(index)}`} onClick={() => edit((d) => remove(d, scope, index), `Remove ${table.item}`)} />
+        <span className={s.rowActions}>
+          {insert && (
+            <Button
+              size="sm" variant="ghost" ariaLabel={`Insert ${table.item} after ${rowName(index)}`}
+              onClick={() => edit((d) => insert(d, scope, index + 1), `Add ${table.item}`)}
+            >
+              +
+            </Button>
+          )}
+          {remove && (
+            <CloseButton ariaLabel={`Remove ${rowName(index)}`} onClick={() => edit((d) => remove(d, scope, index), `Remove ${table.item}`)} />
+          )}
+        </span>
       ),
     });
   }
@@ -68,8 +80,8 @@ export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps):
           </div>
         ))}
       />
-      {table.insert && (
-        <Button size="sm" variant="ghost" className={s.add} onClick={() => edit((d) => table.insert!(d, scope, table.count(d, scope)), `Add ${table.item}`)}>
+      {insert && (
+        <Button size="sm" variant="ghost" className={s.add} onClick={() => edit((d) => insert(d, scope, table.count(d, scope)), `Add ${table.item}`)}>
           {`Add ${table.item}`}
         </Button>
       )}
