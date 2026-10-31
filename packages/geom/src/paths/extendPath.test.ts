@@ -3,6 +3,9 @@ import type { PolygonPath } from '../path';
 import { PATH_C, PATH_L, PATH_M } from '../commands';
 import { pathFromD } from './pathFromD';
 import { extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds } from './extendPath';
+import { pathToAnchors } from './anchors';
+import { pathEndFrame } from './lengthenPathEnd';
+import { easeLength, extensionPieces } from './pathEndExtension';
 
 const coords = (p: PolygonPath) => Array.from(p.coords);
 const cmds = (p: PolygonPath) => Array.from(p.commands);
@@ -28,6 +31,53 @@ describe('extendToMeet', () => {
 
   it('declines when the tangent meets nothing', () => {
     expect(extendToMeet(pathFromD('M0 0 H5'), [pathFromD('M0 10 H30')], { sub: 0, end: 'last' })).toBeNull();
+  });
+});
+
+describe('extendToMeet along the eased curve', () => {
+  // An arc of radius 50 ending 30° in, heading (cos 30°, sin 30°) and still turning.
+  const arc = pathFromD('M0 0 A50 50 0 0 1 25 6.69872981');
+  const end = { sub: 0, end: 'last' } as const;
+  const frame = pathEndFrame(pathToAnchors(arc), end)!;
+  const ease = easeLength(frame);
+  /** A short wall across `dir` through `at`. */
+  const wallAcross = (at: { x: number; y: number }, dir: { x: number; y: number }) =>
+    pathFromD(`M${at.x - dir.y * 4} ${at.y + dir.x * 4} L${at.x + dir.y * 4} ${at.y - dir.x * 4}`);
+
+  it('reaches a stroke the eased curve runs into and the straight tangent passes by', () => {
+    const pieces = extensionPieces(frame, ease + 40, 'eased');
+    const [from, to] = pieces[pieces.length - 1].pts;
+    const dir = { x: (to.x - from.x) / 40, y: (to.y - from.y) / 40 };
+    const wall = wallAcross(to, dir);
+    expect(extendToMeet(arc, [wall], end, { mode: 'tangent' })).toBeNull();
+    const r = extendToMeet(arc, [wall], end)!;
+    expect(r.distance).toBeCloseTo(ease + 40, 3);
+    expect(Math.hypot(r.at.x - to.x, r.at.y - to.y)).toBeLessThan(1e-3);
+    expect(cmds(r.path).slice(-1)).toEqual([PATH_L]);
+  });
+
+  it('passes by a stroke the straight tangent would hit', () => {
+    const at = { x: frame.point.x + frame.tangent.x * 60, y: frame.point.y + frame.tangent.y * 60 };
+    const wall = wallAcross(at, frame.tangent);
+    expect(extendToMeet(arc, [wall], end, { mode: 'tangent' })!.distance).toBeCloseTo(60, 4);
+    expect(extendToMeet(arc, [wall], end)).toBeNull();
+  });
+
+  it('stops partway along the ease for a stroke nearer than its length', () => {
+    const pieces = extensionPieces(frame, ease / 3, 'eased');
+    const tip = pieces[pieces.length - 1].pts[3];
+    const wall = wallAcross(tip, { x: Math.cos(Math.PI / 4), y: Math.sin(Math.PI / 4) });
+    const r = extendToMeet(arc, [wall], end)!;
+    expect(r.distance).toBeCloseTo(ease / 3, 2);
+    expect(Math.hypot(r.at.x - tip.x, r.at.y - tip.y)).toBeLessThan(1e-2);
+    expect(cmds(r.path).slice(1).every((c) => c === PATH_C)).toBe(true);
+  });
+
+  it('turns by the ease cap it is given', () => {
+    const wall = pathFromD('M-200 120 H400');
+    const r = extendToMeet(arc, [wall], end, { easeTurn: Math.PI / 12 })!;
+    const tip = pathEndFrame(pathToAnchors(r.path), end)!;
+    expect(Math.atan2(tip.tangent.y, tip.tangent.x)).toBeCloseTo(Math.PI / 6 + Math.PI / 12, 6);
   });
 });
 

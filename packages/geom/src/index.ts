@@ -98,8 +98,9 @@ export {
 } from './paths/extendPath';
 export {
   lengthenPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
-  type LengthenMode, type PathEndFrame,
+  type EaseOptions, type LengthenMode, type PathEndFrame,
 } from './paths/lengthenPathEnd';
+export { easeLength, extensionPieces, type ExtensionPiece } from './paths/pathEndExtension';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';

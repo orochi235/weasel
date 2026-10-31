@@ -1,17 +1,17 @@
 /**
- * Growing an open end of a path along its tangent: by a distance, or until it
- * meets another stroke.
+ * Growing an open end of a path along the curve a `LengthenMode` draws: by a
+ * distance, or until it meets another stroke.
  */
 
 import type { Path, PolygonPath } from '../path';
 import type { Point } from './cubicMath';
-import type { Seg } from '../booleans/contourSegments';
 import { intersectSegments } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { editAnchorSetTracked } from './anchorOrigins';
 import { anchorsToPath, pathToAnchors } from './anchors';
 import { resolveCorners } from './corners';
 import { lengthenPathEnd, pathEndFrame } from './lengthenPathEnd';
+import { easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type LengthenMode } from './pathEndExtension';
 
 /** One end of an open subpath. `sub` counts subpaths as the path's anchor set
  *  (`pathToAnchors`) does, a bare `M` included. */
@@ -46,28 +46,31 @@ function segmentsBesideEnd(path: PolygonPath, end: OpenPathEnd): PathSegment[] {
 }
 
 /**
- * `path` with `end` carried `distance` further along its tangent, by
- * `lengthenPathEnd` in `'tangent'` mode: a straight end segment grows longer,
- * and a curved one gains a straight segment, which keeps the tangent
- * continuous. Null when the end is not open or has no direction, or
- * `distance` is not positive.
+ * `path` with `end` carried `distance` further, by `lengthenPathEnd` in `mode`
+ * (default `'tangent'`): a straight end grown straight gets longer, and
+ * anything else gains segments that keep the tangent continuous. Null when the
+ * end is not open or has no direction, or `distance` is not positive.
  */
-export function lengthenOpenEnd(path: Path, end: OpenPathEnd, distance: number): PolygonPath | null {
+export function lengthenOpenEnd(
+  path: Path, end: OpenPathEnd, distance: number, mode: LengthenMode = 'tangent', opts: EaseOptions = {},
+): PolygonPath | null {
   if (!(distance > 0) || path.kind !== 'polygon') return null;
-  return editAnchorSetTracked(path, (set) => lengthenPathEnd(set, end, distance, 'tangent'))?.path ?? null;
+  return editAnchorSetTracked(path, (set) => lengthenPathEnd(set, end, distance, mode, opts))?.path ?? null;
 }
 
 /** Options for {@link extendToMeet}. */
-export interface ExtendToMeetOptions {
-  /** The furthest the end may travel. Default: as far as any stroke reaches. */
+export interface ExtendToMeetOptions extends EaseOptions {
+  /** The furthest the end may travel, by arc length. Default: as far as any stroke reaches. */
   maxDistance?: number;
+  /** The curve the end travels along. Default `'eased'`. */
+  mode?: LengthenMode;
 }
 
 /**
- * Extend `end` of `path` along its tangent to the first stroke it meets —
- * one of `boundaries`, or `path`'s own other segments. Returns the extended
- * path, the point it now ends at and how far it went, or null when the
- * tangent meets nothing.
+ * Extend `end` of `path` along the curve `opts.mode` draws to the first stroke
+ * it meets — one of `boundaries`, or `path`'s own other segments. Returns the
+ * extended path, the point it now ends at and how far it went by arc length,
+ * or null when the curve meets nothing.
  */
 export function extendToMeet(
   path: Path,
@@ -75,26 +78,35 @@ export function extendToMeet(
   end: OpenPathEnd,
   opts: ExtendToMeetOptions = {},
 ): { path: PolygonPath; at: Point; distance: number } | null {
-  const ray = openEndRay(path, end);
-  if (!ray || path.kind !== 'polygon') return null;
+  if (path.kind !== 'polygon') return null;
+  const frame = pathEndFrame(pathToAnchors(path), end);
+  if (!frame) return null;
+  const mode = opts.mode ?? 'eased';
   const all = [...boundaries.flatMap((b) => pathSegments(b)), ...segmentsBesideEnd(path, end)];
   let reach = opts.maxDistance ?? 0;
   if (opts.maxDistance === undefined) {
     for (const s of all) {
-      for (const p of s.pts) reach = Math.max(reach, Math.hypot(p.x - ray.at.x, p.y - ray.at.y));
+      for (const p of s.pts) reach = Math.max(reach, Math.hypot(p.x - frame.point.x, p.y - frame.point.y));
     }
+    // A curve bends away before it runs straight: let the straight run cover the reach on its own.
+    if (mode === 'eased') reach += Math.min(easeLength(frame, opts), reach);
+    if (mode === 'curvature') reach = Infinity;
   }
   if (!(reach > 0)) return null;
-  const line: Seg = [ray.at, { x: ray.at.x + ray.dir.x * reach, y: ray.at.y + ray.dir.y * reach }];
-  let best = Infinity;
-  for (const s of all) {
-    for (const h of intersectSegments(line, s.pts)) {
-      const d = h.ta * reach;
-      if (d > 1e-6 && d < best) best = d;
+  let best: number | null = null;
+  let walked = 0;
+  for (const piece of extensionPieces(frame, reach, mode, opts)) {
+    for (const s of all) {
+      for (const h of intersectSegments(piece.pts, s.pts)) {
+        const d = walked + pieceLengthAt(piece, h.ta);
+        if (d > 1e-6 && (best === null || d < best)) best = d;
+      }
     }
+    if (best !== null) break;
+    walked += piece.length;
   }
-  if (!Number.isFinite(best)) return null;
-  const next = lengthenOpenEnd(path, end, best);
-  if (!next) return null;
-  return { path: next, at: { x: ray.at.x + ray.dir.x * best, y: ray.at.y + ray.dir.y * best }, distance: best };
+  if (best === null) return null;
+  const next = lengthenOpenEnd(path, end, best, mode, opts);
+  const at = next && pathEndFrame(pathToAnchors(next), end)?.point;
+  return next && at ? { path: next, at, distance: best } : null;
 }

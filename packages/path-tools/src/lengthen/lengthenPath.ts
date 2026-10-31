@@ -13,7 +13,8 @@ import {
 
 /** Params `lengthenPath` reads on every move. */
 export interface LengthenPathParams {
-  /** How an unmodified drag grows the end; Shift picks the other. Default `'tangent'`. */
+  /** How an unmodified drag grows the end. Shift picks `'curvature'` over
+   *  `'tangent'` and `'tangent'` over either curve. Default `'tangent'`. */
   mode?: LengthenMode;
 }
 
@@ -41,9 +42,9 @@ function endUnder(deps: ActionDeps | undefined, x: number, y: number): boolean {
 /** The `mode` param, or the other mode while `flip` is held. */
 function modeOf(opts: BindingOpts | undefined, flip: boolean): LengthenMode {
   const mode = (resolveParams(opts?.params) as LengthenPathParams | undefined)?.mode;
-  const base: LengthenMode = mode === 'curvature' ? 'curvature' : 'tangent';
+  const base: LengthenMode = mode === 'curvature' || mode === 'eased' ? mode : 'tangent';
   if (!flip) return base;
-  return base === 'curvature' ? 'tangent' : 'curvature';
+  return base === 'tangent' ? 'curvature' : 'tangent';
 }
 
 function pressedAnchor(ctx: InvocationCtx): number {
@@ -54,12 +55,13 @@ function pressedAnchor(ctx: InvocationCtx): number {
 /**
  * Lengthen: the drag `useLengthenTool`, a path-edit tool, binds. Dragging an
  * open path's end anchor lengthens the path from that end
- * (`lengthenPathEnd`): straight along its end tangent, or along an arc with
- * the curvature the end has. Dragging back into the path shortens it along
- * itself. The `mode` param (`'tangent'`, the default, or `'curvature'`) picks
- * which, and Shift picks the other; both are read on every move. One undo
- * step per drag. One it turns down, on an anchor that is no open end, falls
- * through to `editAnchors`, which moves the anchor.
+ * (`lengthenPathEnd`): straight along its end tangent, along an arc with
+ * the curvature the end has, or easing out of that curvature into a straight
+ * run. Dragging back into the path shortens it along itself. The `mode` param
+ * (`'tangent'`, the default, `'curvature'`, or `'eased'`) picks which, and
+ * Shift flips it (see {@link LengthenPathParams}); both are read on every move.
+ * One undo step per drag. One it turns down, on an anchor that is no open end,
+ * falls through to `editAnchors`, which moves the anchor.
  */
 export const lengthenPathAction: Action & { requires: string[] } = inPlane({
   id: 'lengthenPath',

@@ -1,14 +1,45 @@
-/** Extend to next path: carry an open end along its tangent until it meets a stroke. */
+/** Extend to next path: carry an open end on until it meets a stroke. */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   extendToMeet, openEndAt, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
-  type AnchorSet, type OpenPathEnd, type PolygonPath,
+  type AnchorSet, type ExtendToMeetOptions, type OpenPathEnd, type PolygonPath,
 } from '@weasel-js/geom';
+import { pref } from '@weasel-js/prefs';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import { pressOf, scenePathNodes, strokesBesides, type StrokePress } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 
 const EXTEND_LABEL = 'Extend to next path';
+const DEG = Math.PI / 180;
+
+/** What the `extendToMeet` action reads from its params. */
+export type ExtendToMeetParams = {
+  /** The curve an end travels along: easing out of its bend into a straight
+   *  run, or straight on along its tangent. Default `'eased'`. */
+  shape?: 'eased' | 'straight';
+  /** How far, in radians, an eased end turns before it runs straight. Default π/6. */
+  easeTurn?: number;
+};
+
+/** Extend to next path's params as a form, for the last-operation panel. */
+export const EXTEND_TO_MEET_PARAMS = pref.group(EXTEND_LABEL, {
+  shape: pref.enum<'eased' | 'straight'>('Shape', 'eased', [
+    { value: 'eased', label: 'Eased' },
+    { value: 'straight', label: 'Straight' },
+  ], { description: 'Ease a curved end out of its bend, or carry it straight on along its tangent.', control: 'radio' }),
+  easeTurn: pref.number('Ease turn', 30 * DEG, {
+    description: 'How far an eased end keeps turning before it runs straight.',
+    min: 5 * DEG, max: 90 * DEG, step: DEG, control: 'slider', unit: { scale: DEG, suffix: '°', precision: 0 },
+  }),
+});
+
+/** `params` as `extendToMeet` options. */
+function extendOptions(params: unknown): ExtendToMeetOptions {
+  const p = (params ?? {}) as ExtendToMeetParams;
+  if (p.shape === 'straight') return { mode: 'tangent' };
+  const turn = p.easeTurn;
+  return typeof turn === 'number' && Number.isFinite(turn) && turn > 0 ? { mode: 'eased', easeTurn: turn } : { mode: 'eased' };
+}
 
 /** The open ends of `path` whose anchors are in `anchors`, flat-indexed;
  *  every open end when none of the anchors is one. */
@@ -44,21 +75,23 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
   const all = scenePathNodes(deps);
   const editing = deps?.editAnchors?.editingId;
   const press = deps ? pressOf(deps, params) : null;
+  const opts = extendOptions(params);
   const subjects = press ? endNearPress(all, press) : editing
     ? all.filter((n) => n.id === editing).map((node) => ({ node, ends: endsAt(node.path, deps!.editAnchors!.selectedAnchors) }))
     : selectedPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
   for (const { node, ends } of subjects) {
     const boundaries = strokesBesides(deps, node.id);
     let path = node.path;
-    for (const end of ends) path = extendToMeet(path, boundaries, end)?.path ?? path;
+    for (const end of ends) path = extendToMeet(path, boundaries, end, opts)?.path ?? path;
     if (path !== node.path) out.set(node.id, { node, path });
   }
   return out;
 }
 
 /**
- * Extend to next path: carry each open end of the selected
- * paths along its tangent to the first stroke it meets (`extendToMeet`). In
+ * Extend to next path: carry each open end of the selected paths to the first
+ * stroke it meets (`extendToMeet`), easing a curved end out of its bend unless
+ * `params.shape` is `'straight'` ({@link ExtendToMeetParams}). In
  * path edit, the selected end anchors of the edited path, or all its open
  * ends when none is selected. Given a press (`press`, as a click
  * binding supplies), the open end nearest it of the topmost stroke within
@@ -72,6 +105,7 @@ export const extendToMeetAction: Action & { requires: string[] } = {
   group: 'path',
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps', 'editAnchors', 'view'],
+  params: EXTEND_TO_MEET_PARAMS,
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -80,7 +114,9 @@ export const extendToMeetAction: Action & { requires: string[] } = {
       commitOps(deps, ops, EXTEND_LABEL);
     },
   } satisfies ImmediateInvoker,
-  // A click's point arrives here without the binding's reach, so `run` decides there.
+  // A click's point arrives here without the binding's reach, so `run` decides there. `enabled` is not
+  // handed the params a run would use, so either shape reaching a stroke enables it.
   enabled: (deps?: ActionDeps, at?: { x: number; y: number }) =>
-    (at || planExtend(deps).size > 0 ? true : ActionDisabledReason.NotApplicable),
+    (at || planExtend(deps).size > 0 || planExtend(deps, { shape: 'straight' }).size > 0
+      ? true : ActionDisabledReason.NotApplicable),
 };
