@@ -41,7 +41,7 @@ function setup(selected: number[]) {
   return { run, select };
 }
 
-const keyword = (name: string) => screen.getByRole('radio', { name });
+const keyword = (name: string) => screen.getByRole('radio', { name: new RegExp(`^${name}$`, 'i') });
 const curvature = () => screen.getByRole('slider', { name: 'Curvature' }) as HTMLInputElement;
 
 describe('CornerShape', () => {
