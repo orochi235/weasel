@@ -4,7 +4,7 @@
  * `documentFromScene` and `documentSpecs` know scenes, so a codec is written
  * once for a chart and for a data-backed host alike.
  */
-import type { DataEdge, DiagramData, DiagramTheme, LayoutDirection, LayoutOptions } from '@weasel-js/diagram';
+import type { DataEdge, DiagramData, DiagramTheme, LayoutDirection, LayoutOptions, SequenceData } from '@weasel-js/diagram';
 import type { PlotData } from '@weasel-js/plot';
 
 /** What every page has: its sheet size. Ids share one namespace across the whole document. */
@@ -40,8 +40,14 @@ export interface PlotPage extends PageBase {
   data: PlotData;
 }
 
+/** A sequence diagram, laid out from its data whenever it is drawn. Its `name` is the diagram's title. */
+export interface SequencePage extends PageBase {
+  kind: 'sequence';
+  data: SequenceData;
+}
+
 /** One page of a document; `kind` says what its `data` is. */
-export type DocumentPage = GraphPage | PlotPage;
+export type DocumentPage = GraphPage | SequencePage | PlotPage;
 
 /** The kinds of page a document can hold. */
 export type PageKind = DocumentPage['kind'];
@@ -119,5 +125,10 @@ export function graphPagesOf(doc: DiagramDocument, format: string, warn: (messag
 
 /** Whether `format` can write every page of `doc`. */
 export function formatHolds(format: DiagramFormat, doc: DiagramDocument): boolean {
-  return doc.pages.every((p) => format.kinds.includes(p.kind));
+  return formatTakes(format, new Set(doc.pages.map((p) => p.kind)));
+}
+
+/** Whether `format` reads and writes every kind in `kinds`: what a menu asks of `scenePageKinds`. */
+export function formatTakes(format: DiagramFormat, kinds: ReadonlySet<PageKind>): boolean {
+  return [...kinds].every((k) => format.kinds.includes(k));
 }

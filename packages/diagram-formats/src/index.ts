@@ -6,9 +6,9 @@
  * @packageDocumentation
  */
 export {
-  formatHolds, graphPageOf, graphPagesOf, writtenPage,
-  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase, type PageLayout, type PlotPage,
-  type PageKind, type WriteOptions,
+  formatHolds, formatTakes, graphPageOf, graphPagesOf, writtenPage,
+  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase, type PageLayout,
+  type PageKind, type PlotPage, type SequencePage, type WriteOptions,
 } from './document';
 export { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';
 export { DIAGRAM_JSON } from './jsonFormat';
@@ -19,6 +19,7 @@ export { writeMermaidXychart } from './mermaid/xychart/write';
 export { plotThemeOf } from './plotPages';
 export { DIAGRAM_DOT } from './dot/format';
 export { documentFromScene, type DocumentFromSceneOptions } from './fromScene';
+export { scenePageKinds } from './pageKinds';
 export { documentSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';
 export { exportPageSvg, type ExportPageSvgOptions } from './pageSvg';
 export { exportPagePng, type ExportPagePngOptions } from './pagePng';

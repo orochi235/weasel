@@ -6,6 +6,7 @@ import {
   useSelection,
   WeaselProvider,
   type RectPose,
+  type RenderLayer,
   type CanvasSize,
   type Scene,
   type SceneCanvasApi,
@@ -31,6 +32,7 @@ import { registerMarkShape } from './marks';
 import { diagramResizable } from './resizable';
 import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
+import { useSequenceTextEdit } from './sequence/textEdit';
 
 export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 export type {
@@ -68,6 +70,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 
 function Inner({
   specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  onEditSequence,
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
@@ -133,21 +136,20 @@ function Inner({
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
     scene: scene as never, source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
-    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel, onReorder, onResize, onEditContainer, onMove,
+    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel, onReorder, onResize, onEditContainer, onMove, onEditSequence,
     connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
   const itemDrop = useItemDrop(source, { onDropItem, canDropItem });
   const ambient = useMemo(() => (itemDrop === null ? editing.ambient : [...editing.ambient, itemDrop]), [editing.ambient, itemDrop]);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas === null) return;
-    const disposers = editing.layers.map((layer) => canvas.registerLayer(layer));
-    return () => disposers.forEach((dispose) => dispose());
-  }, [editing.layers]);
+  useRegisteredLayers(canvasRef, editing.layers);
   const moves = onMove !== undefined || onEditContainer !== undefined;
   const resizes = onResize !== undefined || onEditContainer !== undefined;
-  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick;
-  const features = useMemo(() => ['view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : [])] as const, [moves, resizes]);
+  const sequences = onEditSequence !== undefined;
+  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick || sequences;
+  const features = useMemo(() => [
+    'view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : []), ...(sequences ? ['edit' as const] : []),
+  ] as const, [moves, resizes, sequences]);
+  const textEditor = useSequenceTextEdit(scene, onEditSequence);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
@@ -160,6 +162,7 @@ function Inner({
         selection={selection}
         features={features}
         {...(resizes ? { selectTool } : {})}
+        {...(textEditor ? { textEditor } : {})}
         enableKeybindings={enableKeybindings ?? edits}
         ambient={ambient}
         actions={editing.actions}
@@ -186,6 +189,16 @@ function Inner({
 }
 
 const NO_OVERLAYS: readonly never[] = [];
+
+/** Registers `layers` on the canvas, the only attach route that is hit-tested, in order: the last is hit first. */
+function useRegisteredLayers(canvasRef: RefObject<SceneCanvasApi | null>, layers: readonly RenderLayer<unknown>[]): void {
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas === null) return;
+    const disposers = layers.map((layer) => canvas.registerLayer(layer));
+    return () => disposers.forEach((dispose) => dispose());
+  }, [canvasRef, layers]);
+}
 
 /** Shapes drop only into containers and lanes, and lanes only into pools. A child of `<SceneCanvas>`, so its dep source registers after the canvas's own. */
 function DropRules({ scene, canReparent }: { scene: Scene<DiagramSceneData, 'main', RectPose>; canReparent: CanReparent | undefined }): null {

@@ -20,11 +20,16 @@ A `DiagramDocument` is a diagram's pages and its theme. Each page has an id,
 an optional name, a sheet size, and a `kind` saying what it holds. A `'graph'`
 page holds a `DiagramData` whose places, boxes, waypoints, and label points run
 from the page's top-left corner, and may name its `notation` (`'class'`,
-`'state'`, …) for a format that writes graphs in several notations. A `'plot'`
-page holds one chart, a `PlotData` from `@weasel-js/plot`, which fills the page. Ids share one
-namespace across the document. Every format lists the page `kinds` it holds; a
-writer leaves out a page of another kind with a warning, and `formatHolds`
-says whether a format can write a whole document. Edges whose ends are on different pages sit in
+`'state'`, …) for a format that writes graphs in several notations. A `'sequence'`
+page holds a `SequenceData` (see `@weasel-js/diagram`), which carries no places:
+it is laid out whenever it is drawn, and its `name` is the diagram's title. A
+`'plot'` page holds one chart, a `PlotData` from `@weasel-js/plot`, which fills
+the page. Ids share one namespace across the document. Every format lists the
+page `kinds` it holds; a writer leaves out a page of another kind with a
+warning, and `formatHolds` says whether a format can write a whole document.
+`scenePageKinds(scene)` says which kinds a scene would export as from its
+top-level nodes alone, and `formatTakes(format, kinds)` whether a format holds
+them: what a menu asks on every render. Edges whose ends are on different pages sit in
 `crossPageEdges`, with no waypoints, since they draw as two stubs and their
 off-page tags.
 
@@ -56,7 +61,10 @@ node has no `at`, or a pool has no box, is laid out first with the layout its
 result is kept as places and routes, a page that placed nothing is moved to sit
 40 inside its corner, and the page grows to hold it. Then one `diagramScene`
 call with no layout draws every page and the edges between them, so no layout
-runs again after an import. A plot page is one plot root filling the page, its
+runs again after an import. A sequence page is drawn by `sequenceSpecs` as one
+root holding its data, 40 inside its corner, and the page grows to hold it;
+`documentFromScene` reads a page holding such a root back as a sequence page and
+leaves out its parts. A plot page is one plot root filling the page, its
 id `<page id>/plot`, its marks under it, drawn in the theme's roles: text in the
 label color, axes in the connector stroke, grid lines in the container stroke,
 series in the theme's `series` (`plotThemeOf`).
@@ -172,8 +180,8 @@ to the kind it read; it writes a graph page in the kind its `notation` names,
 and as a flowchart when it names none (or one Mermaid has not, with a
 warning). Every kind reads front matter's `title` as the page name (else
 `accTitle`), skips `%%` comments, and drops `%%{…}%%` directives and
-`accDescr` with a warning. A Mermaid kind not read here (`sequenceDiagram`,
-`pie`, …) is refused with an error naming it. Each reader throws an error
+`accDescr` with a warning. A Mermaid kind not read here (`pie`,
+`gantt`, …) is refused with an error naming it. Each reader throws an error
 naming the line on text it cannot read, and warns of what it drops.
 
 `classDiagram`, notation `'class'`:
@@ -256,6 +264,34 @@ first root's tree.
 Reading drops other front matter, `%%{init}%%` directives, `accTitle` and
 `accDescr`, with a warning each, and warns of values past the last category.
 
+### Mermaid sequence diagrams
+
+A `sequenceDiagram` reads into one sequence page, and a sequence page writes
+back as one. The reader throws an error naming the line on what it cannot read,
+including an `end` that closes nothing and a fragment never closed.
+
+| Sequence | Mermaid |
+| --- | --- |
+| participant and label | `participant A as Text`, `actor A` |
+| outline | `participant A@{ "type" : "boundary" }`: `boundary`, `control`, `entity`, `database` (the cylinder), `collections`, `queue` |
+| message `line`, `head`, `both` | `->`, `-->`, `->>`, `-->>`, `-x`, `--x`, `-)`, `--)`, `<<->>`, `<<-->>` |
+| `activate: 'to'`, `deactivate: 'from'` | `A->>+B`, `B-->>-A` |
+| activate, deactivate | `activate A`, `deactivate A` |
+| note | `Note left of A`, `Note right of A`, `Note over A,B` |
+| fragment | `loop`, `alt`/`else`, `opt`, `par`/`and`, `critical`/`option`, `break`; `rect <color>` is a `region` |
+| box | `box <color> Label` … `end` |
+| create, destroy | `create participant B`, `destroy B` |
+| `autonumber` | `autonumber`, `autonumber 10` |
+| page name | `title`, or the front matter's `title` |
+
+A participant a message or note names before any declaration is added in the
+order it is first named. Configuration, accessibility text, participant menus
+(`link`, `links`, `properties`, `details`), and an autonumber step other than 1
+are dropped with a warning. Writing, colors and roles on participants and
+fragments, a region's label, and a second head on a message whose head is not
+an arrow are dropped with a warning; an activation Mermaid has no shorthand for
+is written as its own `activate` or `deactivate` line.
+
 ## Exporting a page
 
 A page is a rect in world space; a `PlacedPage` from core's `placedPagesOf` is
@@ -337,5 +373,6 @@ register, as for the PNG, and this needs WebGL2 and `OffscreenCanvas`.
 
 ## Scenes it reads
 
-Poses are read in world space: a diagram scene holds world-space `RectPose`s,
-and a plot root is a frame its marks are folded through.
+Poses are `RectPose`s. A child stores its pose in its parent's frame, and both
+the reader and the page exports fold it through that frame, so each sees a node
+where the canvas draws it.

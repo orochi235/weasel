@@ -5,6 +5,7 @@
 import type { Scene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
+import { redrawSequences } from '../sequence/commit';
 import { diagramThemeOf, themeDocValue } from './resolve';
 import { themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
@@ -72,6 +73,7 @@ export function applyDiagramTheme(
   scene.batch(label, () => {
     writeAll(scene, themeWrites(scene as unknown as ThemedScene, theme, undefined, from), opts.measure);
     scene.doc.set(DIAGRAM_THEME_KEY, themeDocValue(theme));
+    redrawSequences(scene, { theme, ...(opts.measure ? { measure: opts.measure } : {}) });
   }, opts.coalesceKey !== undefined ? { coalesceKey: opts.coalesceKey } : {});
 }
 

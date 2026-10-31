@@ -46,5 +46,5 @@ export const DIAGRAM_JSON: DiagramFormat = {
   detect: (text) => isDiagramJson(parsed(text)),
   read,
   write,
-  kinds: ['graph', 'plot'],
+  kinds: ['graph', 'sequence', 'plot'],
 };

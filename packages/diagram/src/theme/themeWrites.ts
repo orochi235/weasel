@@ -137,6 +137,8 @@ export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: Reado
     const data = node.data as Data | null;
     if (data === null || typeof data !== 'object') continue;
     const trait = traitOf(data);
+    // A sequence draws its parts from its data and the theme, and `applyDiagramTheme` draws them again.
+    if (trait !== null && ('seq' in trait || 'sequence' in trait)) continue;
     if (trait !== null && 'from' in trait && 'to' in trait) {
       if (ids !== undefined && !ids.has(node.id)) continue;
       const look = edgeLook(trait, theme);

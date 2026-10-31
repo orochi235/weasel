@@ -11,6 +11,7 @@ import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
 import type { ReorderChange } from './groupReorder';
 import type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
+import type { SequenceEdit } from './sequence/commit';
 
 /** One end of a data edge moved onto node `node`, at `port` or on its body. */
 export interface ReconnectChange {
@@ -135,6 +136,10 @@ export interface DiagramViewProps {
   onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
+  /** Set to edit the sequences `sequenceSpecs` drew: drag a message or note to another row, a head to
+   *  another column, a message end to another lifeline, and double-click text to edit it in place. Reports
+   *  each edit as the sequence's new data and draws nothing: rebuild its specs from it. */
+  onEditSequence?: (edit: SequenceEdit) => void;
   /** Set to let an edge's label be dragged along and beside it, and to enable
    *  Reset label for the selected edge. Reports the placement and draws
    *  nothing; store it as the data edge's `labelPlacement`, and delete that

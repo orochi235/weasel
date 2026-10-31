@@ -7,7 +7,7 @@ import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import {
   DEFAULT_PORTS, EDGE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
-  layoutOwnsRoute, poolAxisOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
+  layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
   type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type Row,
 } from '@weasel-js/diagram';
 
@@ -40,7 +40,9 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 const moved = (p: Vec2, by: Vec2): Vec2 => ({ x: p.x - by.x, y: p.y - by.y });
 
 /** What a scene node is to the document, or `null` for something drawn on another's behalf. */
-export function kindOf(node: ReadNode): 'shape' | 'region' | 'group' | 'edge' | null {
+export function kindOf(node: ReadNode): 'shape' | 'region' | 'group' | 'edge' | 'sequence' | null {
+  if (sequenceRootOf(node) !== null) return 'sequence';
+  if (sequencePartOf(node) !== null) return null;
   if (diagramEdgeOf(node) !== null) return 'edge';
   if (diagramContainerOf(node) !== null) return 'region';
   const trait = traitOf(node);

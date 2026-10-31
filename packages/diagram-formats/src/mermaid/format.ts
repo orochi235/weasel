@@ -1,5 +1,5 @@
 /** Mermaid as a {@link DiagramFormat}: one format, each diagram kind read and written by its own codec. */
-import type { DiagramDocument, DiagramFormat, ExportResult, ImportResult, PageKind, PlotPage, WriteOptions } from '../document';
+import type { DiagramDocument, DiagramFormat, DocumentPage, ExportResult, ImportResult, PageKind, WriteOptions } from '../document';
 import { writtenPage } from '../document';
 import { lineError } from '../lineError';
 import { readClassDiagram } from './class/read';
@@ -11,6 +11,8 @@ import { readFlowchart } from './flowchart/read';
 import { writeFlowchart } from './flowchart/write';
 import { readMindmap } from './mindmap/read';
 import { writeMindmap } from './mindmap/write';
+import { readMermaidSequence } from './sequence/read';
+import { writeMermaidSequence } from './sequence/write';
 import { readRequirementDiagram } from './requirement/read';
 import { writeRequirementDiagram } from './requirement/write';
 import { readStateDiagram } from './state/read';
@@ -42,13 +44,18 @@ const KINDS: readonly MermaidKind[] = [
   { name: 'erDiagram', header: /^erDiagram$/, page: 'graph', notation: 'er', read: readErDiagram, write: writeErDiagram },
   { name: 'mindmap', header: /^mindmap$/, page: 'graph', notation: 'mindmap', read: readMindmap, write: writeMindmap },
   { name: 'requirementDiagram', header: /^requirementDiagram$/, page: 'graph', notation: 'requirement', read: readRequirementDiagram, write: writeRequirementDiagram },
-  { name: 'xychart', header: /^xychart(?:-beta)?$/, page: 'plot', read: readMermaidXychart, write: (doc, opts) => writeMermaidXychart(plotPageOf(doc, opts)) },
+  {
+    name: 'sequenceDiagram', header: /^sequenceDiagram$/, page: 'sequence', read: readMermaidSequence,
+    write: (doc, opts) => writeMermaidSequence(pageOfKind(doc, opts, 'sequence')),
+  },
+  { name: 'xychart', header: /^xychart(?:-beta)?$/, page: 'plot', read: readMermaidXychart, write: (doc, opts) => writeMermaidXychart(pageOfKind(doc, opts, 'plot')) },
 ];
 
-function plotPageOf(doc: DiagramDocument, opts?: WriteOptions): PlotPage {
+/** The page `opts` names, which must be of `kind`. */
+function pageOfKind<K extends PageKind>(doc: DiagramDocument, opts: WriteOptions | undefined, kind: K): Extract<DocumentPage, { kind: K }> {
   const page = writtenPage(doc, opts);
-  if (page?.kind !== 'plot') throw new Error('Mermaid writes an xychart from a plot page only');
-  return page;
+  if (page?.kind !== kind) throw new Error(`Mermaid writes this diagram from a ${kind} page only`);
+  return page as Extract<DocumentPage, { kind: K }>;
 }
 
 const FLOWCHART_HEADER = /^(?:flowchart|graph|flowchart-elk)(?:\s+(?:TB|TD|BT|LR|RL|[<>^v]))?\s*(?:;|$)/i;
@@ -90,5 +97,5 @@ export const DIAGRAM_MERMAID: DiagramFormat = {
   read: (text) => kindOf(text).read(text),
   write: writeMermaid,
   onePage: true,
-  kinds: ['graph', 'plot'],
+  kinds: ['graph', 'sequence', 'plot'],
 };
