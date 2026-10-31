@@ -52,11 +52,17 @@ function diff(a: Uint8Array, b: Uint8Array): { worst: number; at: [number, numbe
   return { worst, at };
 }
 
-/** Every edge a cut can move: the outline `ring` (x, y pairs, closed) and
- *  each triangle of the ribbon it is cut from, as x0, y0, x1, y1. */
+/** Every edge a cut can move, as x0, y0, x1, y1: each edge of the outline
+ *  `ring` (x, y pairs, closed) run on as a line, since an outer stroke is cut
+ *  into pieces along those lines past the fill, and each triangle of the
+ *  ribbon it is cut from. */
 function edgesOf(ring: number[], width: number): number[] {
   const out: number[] = [];
-  for (let i = 0; i < ring.length; i += 2) out.push(ring[i], ring[i + 1], ring[(i + 2) % ring.length], ring[(i + 3) % ring.length]);
+  for (let i = 0; i < ring.length; i += 2) {
+    const ax = ring[i], ay = ring[i + 1], bx = ring[(i + 2) % ring.length], by = ring[(i + 3) % ring.length];
+    const len = Math.hypot(bx - ax, by - ay), ux = (bx - ax) / len, uy = (by - ay) / len;
+    out.push(ax - ux * 200, ay - uy * 200, bx + ux * 200, by + uy * 200);
+  }
   const ribbon = tessellateStroke(polygon(ring), { width: width * 2, join: 'miter' });
   const v = ribbon.vertices, idx = ribbon.indices;
   for (let t = 0; t < idx.length; t += 3) {
@@ -122,7 +128,11 @@ describe('an aligned stroke on a convex fill, cut on the CPU', () => {
           const near = antialias ? 0.75 : 1 / 16;
           const edges = edgesOf(pts, 5);
           const off = d.at.filter(([x, y]) => fromEdges(edges, x, y) > near);
-          expect(off.map(([x, y]) => `${x},${y} at ${fromEdges(edges, x, y).toFixed(3)}`)).toEqual([]);
+          const values = (px: Uint8Array, x: number, y: number) => {
+            const i = ((H - 1 - Math.floor(y)) * W + Math.floor(x)) * 4;
+            return Array.from(px.slice(i, i + 4)).join(',');
+          };
+          expect(off.map(([x, y]) => `${x},${y} at ${fromEdges(edges, x, y).toFixed(3)}: cut ${values(cut.px, x, y)} stencil ${values(stencil.px, x, y)}`)).toEqual([]);
           if (antialias) expect(d.worst).toBeLessThanOrEqual(72);
         });
       }

@@ -268,12 +268,10 @@ describe('tessellateStroke dash patterns', () => {
       }
       return false;
     };
-    // The seam corner is mitered, which only a run that spans it can produce.
+    // The seam corner is mitered, which only a run that spans it can produce,
+    // and its two segments meet inside the turn, which butt caps would not.
     expect(has(-1, -1)).toBe(true);
-    // And the two butt caps that would meet there are gone.
-    expect(has(1, 0)).toBe(true);
-    expect(has(0, -1)).toBe(true);
-    expect(has(0, 0)).toBe(true);
+    expect(has(1, 1)).toBe(true);
   });
 
   it('strokes a closed subpath the pattern never gaps as one closed ribbon', () => {
@@ -529,7 +527,10 @@ describe('tessellateStroke — vertexWidths (per-anchor)', () => {
       join: 'bevel',
       cap: 'butt',
     });
-    expect(Array.from(mesh.vertices.slice(0, 8))).toEqual([0, 1, 0, -1, 50, 3, 50, -3]);
+    // The outer edge (−n) is the stroke's own widths; the inner corners move
+    // to where the segments meet inside each turn.
+    expect(Array.from(mesh.vertices.slice(2, 4))).toEqual([0, -1]);
+    expect(Array.from(mesh.vertices.slice(6, 8))).toEqual([50, -3]);
   });
 
   it('threshold = Infinity suppresses the bevel fallback (miter stays even with width discontinuity)', () => {

@@ -19,14 +19,12 @@ const SQUARE = pathFromD('M 0 0 L 100 0 L 100 100 L 0 100 Z');
 const doubled = (d: string) => tessellateStroke(pathFromD(d), { width: 20, join: 'miter', miterLimit: 10 });
 
 describe('alignedRibbon', () => {
-  // The ribbon's triangles overlap where its segments meet on the inside of
-  // a turn, a 10 x 10 square at each corner here, and the cut keeps them.
   it('keeps the inside of a square for an inner stroke, and the outside for an outer one', () => {
     const ribbon = doubled('M 0 0 L 100 0 L 100 100 L 0 100 Z');
     const fill = tessellate(SQUARE);
     const inner = area(alignedRibbon(ribbon, fill, true)!);
     const outer = area(alignedRibbon(ribbon, fill, false)!);
-    expect(inner).toBeCloseTo(100 * 100 - 80 * 80 + 4 * 100, 3);
+    expect(inner).toBeCloseTo(100 * 100 - 80 * 80, 3);
     expect(outer).toBeCloseTo(120 * 120 - 100 * 100, 3);
     expect(inner + outer).toBeCloseTo(area(ribbon), 3);
   });
@@ -34,7 +32,7 @@ describe('alignedRibbon', () => {
   it('wound the other way, cuts the same', () => {
     const ribbon = doubled('M 0 0 L 0 100 L 100 100 L 100 0 Z');
     const fill = tessellate(pathFromD('M 0 0 L 0 100 L 100 100 L 100 0 Z'));
-    expect(area(alignedRibbon(ribbon, fill, true)!)).toBeCloseTo(4000, 3);
+    expect(area(alignedRibbon(ribbon, fill, true)!)).toBeCloseTo(3600, 3);
   });
 
   it('splits a ribbon into its two sides, along a curved outline too', () => {

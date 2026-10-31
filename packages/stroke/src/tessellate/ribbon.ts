@@ -126,6 +126,7 @@ export function emitJoin(
   anchorA: number[], anchorB: number[], anchorT: number[],
   segSrcIdx: number[],
   plA: Uint32Array, plB: Uint32Array, plT: Float32Array,
+  inner = -1,
 ): void {
   const a = segs[j];
   const b = segs[(j + 1) % segs.length];
@@ -167,7 +168,7 @@ export function emitJoin(
   const forceBevelForVarying = taperA > varyingThreshold || taperB > varyingThreshold;
 
   if (join === 'bevel' || forceBevelForVarying) {
-    emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
+    emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT, inner);
     return;
   }
 
@@ -179,12 +180,12 @@ export function emitJoin(
     const bOX = verts[bOuterStart * 2], bOY = verts[bOuterStart * 2 + 1];
     const apex = lineLineIntersect(aOX, aOY, adx, ady, bOX, bOY, -bdx, -bdy);
     if (!apex) {
-      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT, inner);
       return;
     }
     const miterLen = Math.hypot(apex[0] - a.bx, apex[1] - a.by);
     if (miterLen > miterLimit * halfAtCorner) {
-      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT, inner);
       return;
     }
     // A miter join's outer face is a kite quadrilateral with vertices
@@ -196,9 +197,7 @@ export function emitJoin(
     const apexIdx = verts.length / 2;
     verts.push(apex[0], apex[1]);
     anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
-    const jIdx = verts.length / 2;
-    verts.push(a.bx, a.by);
-    anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
+    const jIdx = inner >= 0 ? inner : cornerVertex(a, verts, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
     if (onPositive) {
       idx.push(aOuterEnd, apexIdx, bOuterStart);
       idx.push(aOuterEnd, bOuterStart, jIdx);
@@ -210,7 +209,7 @@ export function emitJoin(
   }
 
   if (join === 'round') {
-    emitRoundJoin(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
+    emitRoundJoin(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT, inner);
     return;
   }
 }
@@ -222,12 +221,12 @@ function emitRoundJoin(
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
   cornerA: number, cornerB: number, cornerT: number,
+  inner: number,
 ): void {
-  // Pivot = joint center; emit fresh vertex.
+  // The arc is about the joint; the fan is drawn from the inner corner the
+  // segments meet at, where they meet there, else from the joint itself.
   const cx = a.bx, cy = a.by;
-  const pivotIdx = verts.length / 2;
-  verts.push(cx, cy);
-  anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
+  const pivotIdx = inner >= 0 ? inner : cornerVertex(a, verts, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
 
   const startX = verts[aOuterEnd * 2] - cx;
   const startY = verts[aOuterEnd * 2 + 1] - cy;
@@ -272,12 +271,22 @@ function emitBevel(
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
   cornerA: number, cornerB: number, cornerT: number,
+  inner: number,
 ): void {
-  const jIdx = verts.length / 2;
-  verts.push(a.bx, a.by);
-  anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
+  const jIdx = inner >= 0 ? inner : cornerVertex(a, verts, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
   if (onPositive) idx.push(aOuterEnd, jIdx, bOuterStart);
   else            idx.push(aOuterEnd, bOuterStart, jIdx);
+}
+
+/** A fresh vertex at the joint, `a`'s end. */
+function cornerVertex(
+  a: Seg, verts: number[], anchorA: number[], anchorB: number[], anchorT: number[],
+  cornerA: number, cornerB: number, cornerT: number,
+): number {
+  const at = verts.length / 2;
+  verts.push(a.bx, a.by);
+  anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
+  return at;
 }
 
 /**
