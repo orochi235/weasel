@@ -23,7 +23,7 @@ export interface BarPopoverProps extends OverlayPortalProps {
   /** What the popover holds. */
   children: ReactNode;
   /** The button is dimmed and opens nothing. */
-  isDisabled?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -32,13 +32,13 @@ export interface BarPopoverProps extends OverlayPortalProps {
  * popover under it holding the thing itself. A leaf whose value is made of
  * others draws this way in a bar, and so does a text area.
  */
-export function BarPopover({ label, icon, children, isDisabled, className, portalContainer }: BarPopoverProps) {
+export function BarPopover({ label, icon, children, disabled, className, portalContainer }: BarPopoverProps) {
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const side = useContext(BarSideContext);
   return (
     <DialogTrigger>
       {anchor}
-      <RACButton isDisabled={isDisabled} className={[f.frame, s.popTrigger, className].filter(Boolean).join(' ')} {...popIconAttr(icon)}>
+      <RACButton isDisabled={disabled} className={[f.frame, s.popTrigger, className].filter(Boolean).join(' ')} {...popIconAttr(icon)}>
         <PopFace icon={icon} label={label} />
       </RACButton>
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
