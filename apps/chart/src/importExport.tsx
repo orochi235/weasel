@@ -1,14 +1,14 @@
 import { pageName, useCommand } from '@weasel-js/core';
 import { diagramThemeFrom, rendererMeasure } from '@weasel-js/diagram';
 import {
-  DIAGRAM_FORMATS, documentFromScene, documentSpecs, readDocument, writtenPage, type DiagramFormat,
+  DIAGRAM_FORMATS, documentFromScene, documentSpecs, formatTakes, readDocument, scenePageKinds, writtenPage, type DiagramFormat,
 } from '@weasel-js/diagram-formats';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { downloadBlob, pickFile, reportFileWarnings } from '@editor/index';
 import type { ReactElement } from 'react';
 import { chartDoc, type ChartScene } from './chartDocument';
 import { replaceChart } from './chartPersistence';
-import { run } from './menuBar';
+import { can, run } from './menuBar';
 import type { ChartPages } from './pages/useChartPages';
 import { CHART_DEFAULT_THEME, chartThemeOf } from './theme/themeCommands';
 
@@ -56,11 +56,12 @@ function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: Char
     const { blob, name, warnings } = exportChart(scene, format, pages);
     downloadBlob(blob, name);
     reportFileWarnings('Exported', warnings, 'chart-export-warnings');
-  });
+  }, { enabled: () => can(formatTakes(format, scenePageKinds(scene))) });
   return null;
 }
 
-/** Registers File › Import… and File › Export's command for every diagram format that writes. */
+/** Registers File › Import… and File › Export's command for every diagram format that writes, each off while the format cannot
+ *  hold every kind of page the chart has. */
 export function ImportExportCommands({ scene, pages }: { scene: ChartScene; pages: ChartPages }): ReactElement {
   useCommand(IMPORT_ACTION, 'Import…', () => {
     pickAndImport(scene).catch((err: unknown) => console.warn('weaselchart: could not import the file', err));

@@ -2,7 +2,7 @@ import {
   useDepSource, useTransformFollower, type Contribution, type RenderLayer, type SelectionApi, type Tool,
 } from '@weasel-js/core';
 import {
-  CONNECTOR_TOOL_ID, STENCIL_GROUPS, bodyFollower, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
+  CONNECTOR_TOOL_ID, STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
   diagramLabelDrag, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeFont,
   themeLabelStyle, useAvoidRouting, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
@@ -48,7 +48,8 @@ export interface ChartDiagram {
 
 /** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, where they
  *  settle and dragging them, lanes, off-page tags, the connector and the stencils, a stencil carried in from the
- *  Shapes panel, and Arrange › Auto layout. What it inserts is drawn in `theme`, its connectors as `type` starts them. */
+ *  Shapes panel, a sequence diagram's parts dragged, and Arrange › Auto layout. What it inserts is drawn in
+ *  `theme`, its connectors as `type` starts them. */
 export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme, type: DiagramType): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   useLabelPlacement<ChartPose>(scene as never, LABEL_PLACEMENT);
@@ -71,16 +72,18 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
   const connector = useConnectorTool<ChartPose>({ participants, router, edgeStroke });
   const label = useMemo(() => edgeLabel(theme), [theme]);
   const drop = useMemo(() => stencilDrop(participants), [participants]);
+  const sequence = useMemo(() => diagramSequence({ scene: scene as never, measure: rendererMeasure }), [scene]);
   useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
-    // Edge ends last: an edge's end sits on a port and beside a route handle, and a press on it must start neither.
-    layers: [containers.layer, labelDrag.layer, ports.layer, route.layer, ends.layer],
+    // Edge ends after ports and routes: an edge's end sits on a port and beside a route handle, and a press on it must start
+    // neither. A sequence's parts last: nothing else takes a press on them.
+    layers: [containers.layer, labelDrag.layer, ports.layer, route.layer, ends.layer, sequence.layer],
     ambient: [
       containers.contribution, labelDrag.contribution, ports.contribution, route.contribution, ends.contribution, label,
-      OFF_PAGE, drop,
+      OFF_PAGE, drop, sequence.contribution,
     ],
     tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS },
-  }), [containers, labelDrag, ports, route, ends, connector, label, drop]);
+  }), [containers, labelDrag, ports, route, ends, connector, label, drop, sequence]);
 }
 
 /**

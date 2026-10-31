@@ -2,7 +2,10 @@ import {
   SceneCanvas, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
   type SceneCanvasApi, type Tool, type ToolsApi,
 } from '@weasel-js/core';
-import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
+import {
+  commitSequence, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText, offPageTagOf, rendererMeasure,
+  sequencePartOf,
+} from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@editor/index';
@@ -11,7 +14,7 @@ import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
 import { ImportExportCommands } from './importExport';
 import {
-  CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
+  CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
 } from './chartDocument';
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
 import { NewChart } from './NewChartDialog';
@@ -34,8 +37,16 @@ import './workspace.css';
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
 
-/** Text a double-click edits: an off-page tag's is the pass's to write. */
-const isEditableText = (data: ChartData): boolean => isTextData(data) && offPageTagOf({ data }) === null;
+/** Text a double-click edits: an off-page tag's is the pass's to write, and a sequence's only where its data holds it. */
+const isEditableText = (data: ChartData): boolean =>
+  isTextData(data) && offPageTagOf({ data }) === null && (sequencePartOf({ data }) === null || isSequenceText(data));
+
+/** What closing a text edit writes besides the text: an emptied edge label removed, a sequence's text folded into its data. */
+function endTextEdit(scene: ChartScene, id: string): void {
+  dropEmptyEdgeLabel(scene, id);
+  const loose = scene as never;
+  foldSequenceText(loose, id, (edit) => commitSequence(loose, edit.id, edit.data, edit.label, { measure: rendererMeasure }));
+}
 
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
 const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool);
@@ -71,7 +82,7 @@ export function ChartWorkspace(): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
 
-  const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
+  const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => endTextEdit(scene, id) });
   const editingId = textEdit.editingId;
   const alphaFor = useCallback((id: string) => (id === editingId ? 0 : 1), [editingId]);
 

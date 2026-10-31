@@ -89,6 +89,35 @@ describe('File › Import…', () => {
     expect(at('b').x).toBeLessThan(at('c').x);
   });
 
+  it('imports a Mermaid sequence diagram as one root holding its data, and its parts', async () => {
+    io.picked = new File(['sequenceDiagram\n  Alice->>+Bob: Hello\n  Bob-->>-Alice: Hi\n'], 'hello.mmd');
+    mount();
+    choose('Import');
+    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
+    const root = stored()!.nodes.find((n) => n.id === 'page-1/sequence') as unknown as { data: { diagram: { sequence: { participants: { id: string }[] } } } };
+    expect(root.data.diagram.sequence.participants.map((p) => p.id)).toEqual(['Alice', 'Bob']);
+    expect(stored()!.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['page-1/sequence/head:Alice', 'page-1/sequence/msg:m1']));
+  });
+
+  it('turns off File › Export\'s formats that cannot hold a sequence page once the chart has one', async () => {
+    const offIn = (name: string) => {
+      choose('Export');
+      const row = rowsOf(screen.getAllByRole('menu').at(-1)!).find((el) => el.textContent?.startsWith(`As ${name}`));
+      const off = row?.getAttribute('aria-disabled') === 'true';
+      act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+      act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+      return off;
+    };
+    mount();
+    expect(offIn('Graphviz DOT')).toBe(false);
+    io.picked = new File(['sequenceDiagram\n  A->>B: x\n'], 'seq.mmd');
+    choose('Import');
+    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
+    expect(offIn('Graphviz DOT')).toBe(true);
+    expect(offIn('Mermaid')).toBe(false);
+    expect(offIn('Diagram JSON')).toBe(false);
+  });
+
   it('lists what the file had that a chart cannot hold in a toast', async () => {
     io.picked = new File([DIAGRAM_JSON.write!(DOC).text], 'flow.diagram.json');
     extra.warnings = ['A lost thing'];
