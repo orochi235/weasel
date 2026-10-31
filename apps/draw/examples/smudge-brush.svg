@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="816" height="1056" viewBox="0 0 816 1056">
 <text x="40" y="48" font-family="sans-serif" font-size="13" fill="#333">Smudge brush: press S and drag across paths and text. With a selection, only selected ones move.</text>
 <text x="40" y="64" font-family="sans-serif" font-size="13" fill="#333">[ and ] resize the brush, Shift+[ and Shift+] change its strength; the row above the canvas shows both.</text>
+<text x="40" y="80" font-family="sans-serif" font-size="13" fill="#333">After a stroke, the panel at the bottom left changes its Size and Strength and redoes it; the row above follows.</text>
 <text x="40" y="110" font-family="sans-serif" font-size="13" fill="#333">1. A straight line: start on it and</text>
 <text x="40" y="126" font-family="sans-serif" font-size="13" fill="#333">drag down to pull a smooth bump.</text>
 <path d="M 60 230 L 360 230" fill="none" stroke="#1d4e89" stroke-width="2"/>
