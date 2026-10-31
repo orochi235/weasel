@@ -847,17 +847,6 @@ only story runner in the repo.
   find a Node binding that provides WebGL2, or host the render in headless Chromium.
   Closes when a test renders a scene through `renderSceneToPixels` from a Node process and the pixels
   match the browser's.
-- **(P3) [maintainer] Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on
-  `WeaselRenderer` builds an image's mipmaps the first time a frame draws it at half size or
-  smaller, so only an image that is drawn small pays for them. `<Canvas imageMinification>`
-  (and `<SceneCanvas>` through it) opts a canvas in; the default is still `'linear'`. Making
-  `'auto'` the screen default changes the pixels of every
-  minified image, so it needs the visual baselines regenerated and a look at a sprite sheet drawn
-  small: trilinear filtering blends neighboring cells at the higher mip levels, which `'linear'`
-  does not. The cost of `generateMipmap` on a large sheet is not measured. Never mipmap
-  `GLTextureCache`; it holds MSDF atlases.
-  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when `'auto'` is the default
-  and the visual baselines are regenerated.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
