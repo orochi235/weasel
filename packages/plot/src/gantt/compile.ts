@@ -45,7 +45,7 @@ export function ganttTaskFill(tags: readonly GanttTag[] | undefined, theme: Plot
 
 /** The today line's color and width: the `todayMarker` style's `stroke` and `stroke-width` where it gives them. */
 function todayStroke(style: string | undefined, theme: PlotTheme): { color: string; width: number } {
-  const color = /(?:^|;)\s*stroke\s*:\s*([^;]+)/.exec(style ?? '')?.[1]?.trim();
+  const color = /(?:^|[;,])\s*stroke\s*:\s*([^;,]+)/.exec(style ?? '')?.[1]?.trim();
   const width = Number(/stroke-width\s*:\s*([\d.]+)/.exec(style ?? '')?.[1]);
   return { color: color || seriesColor(theme, 9), width: Number.isFinite(width) && width > 0 ? width : 2 };
 }

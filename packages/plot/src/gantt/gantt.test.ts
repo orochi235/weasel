@@ -155,7 +155,7 @@ describe('compileGantt', () => {
     expect(today.pose.x).toBeCloseTo(layout.time.map(at('2026-01-14')));
     expect(today.data.stroke?.paint.color).toBe(seriesColor(PLOT_THEME, 9));
     expect(byKey({ ...PLAN, todayMarker: 'off' }).get('today')).toBeUndefined();
-    expect(byKey({ ...PLAN, todayMarker: 'stroke-width:5px;stroke:#0f0' }).get('today')!.data.stroke).toMatchObject({ paint: { color: '#0f0' }, width: 5 });
+    expect(byKey({ ...PLAN, todayMarker: 'stroke-width:5px,stroke:#0f0,opacity:0.5' }).get('today')!.data.stroke).toMatchObject({ paint: { color: '#0f0' }, width: 5 });
     vi.setSystemTime(at('2027-01-01'));
     expect(byKey(PLAN).get('today')).toBeUndefined();
   });
