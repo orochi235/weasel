@@ -361,3 +361,4 @@ export type { BodyDivider, BodyLayout } from './types';
 export { bodyFollower } from './bodyFollower';
 export { UML_GROUP, UML_STENCILS } from './stencils/uml';
 export { ERD_GROUP, ERD_STENCILS } from './stencils/erd';
+export * from './sequence';

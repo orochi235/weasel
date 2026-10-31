@@ -22,9 +22,10 @@ import {
   type Inherit,
 } from '@weasel-js/core';
 import { bodyRules } from './bodyRules';
-import { outlineDetail, outlinePath } from './outline';
+import { outlineDetail, outlinePath, type Outline } from './outline';
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
+import { sequencePartOf } from './sequence/trait';
 
 /** Options for {@link diagramShape} and {@link registerDiagramShape}. */
 export interface DiagramShapeOptions<TPose> {
@@ -43,7 +44,7 @@ export function diagramShape<TPose>(
 ): NodeShapeEntry<unknown, TPose> {
   const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const outlineOf = (node: { id: string; kind: 'mark' | 'group'; data: unknown }) =>
-    diagramNodeOf(node, opts.read)?.outline ?? laneOutlineOf(node);
+    diagramNodeOf(node, opts.read)?.outline ?? laneOutlineOf(node) ?? sequenceOutlineOf(node);
 
   return {
     id: opts.id ?? 'diagram:outline',
@@ -77,6 +78,12 @@ export function diagramShape<TPose>(
       return outline === undefined ? null : outlinePath(outline, geometry.getBounds(pose));
     },
   };
+}
+
+/** A sequence part's outline: its head, note, or box, which the sequence draws and no connector meets. */
+function sequenceOutlineOf(node: { data: unknown }): Outline | undefined {
+  if (sequencePartOf(node) === null) return undefined;
+  return (node.data as { diagram?: { outline?: Outline } }).diagram?.outline;
 }
 
 type Box = { x: number; y: number; width: number; height: number };

@@ -7,13 +7,14 @@ import { FIGURE_OUTLINES } from './figures';
 import { FLOWCHART_OUTLINES } from './flowchart';
 import { NETWORK_OUTLINES } from './network';
 import { MODELING_OUTLINES } from './modeling';
+import { PARTICIPANT_OUTLINES } from './participants';
 import { STORAGE_OUTLINES } from './storage';
 import type { OutlineDef } from './types';
 
 export { outlineFromD } from './fromD';
 
 const BUILTINS = {
-  ...FLOWCHART_OUTLINES, ...FIGURE_OUTLINES, ...STORAGE_OUTLINES, ...NETWORK_OUTLINES, ...BPMN_OUTLINES, ...MODELING_OUTLINES,
+  ...FLOWCHART_OUTLINES, ...FIGURE_OUTLINES, ...STORAGE_OUTLINES, ...NETWORK_OUTLINES, ...BPMN_OUTLINES, ...MODELING_OUTLINES, ...PARTICIPANT_OUTLINES,
 };
 
 /** A name the kit itself registers. */
