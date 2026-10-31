@@ -1,4 +1,4 @@
-import { useContext, useRef, type ReactElement } from 'react';
+import { forwardRef, useContext, useRef, type Ref } from 'react';
 import { TabList as RACTabList, TabListStateContext, type TabListProps as RACTabListProps } from 'react-aria-components';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useRowRun } from '../Along/useRowRun';
@@ -17,7 +17,10 @@ export type TabListAlongProps = TabListProps<object> & { shape: TrackShape; alig
  * A tab list whose tabs lie along a curved track shape from its own start, on a rule drawn along the inside of the
  * bend. A row too long for the run scrolls along it, as a curved bar's does.
  */
-export function TabListAlong({ className, shape, align, slots, ...rest }: TabListAlongProps): ReactElement {
+export const TabListAlong = forwardRef(function TabListAlong(
+  { className, shape, align, slots, ...rest }: TabListAlongProps,
+  ref: Ref<HTMLDivElement>,
+) {
   const root = useRef<HTMLDivElement>(null);
   const run = useRowRun(root, shape);
   const gap = useRunGap(root);
@@ -29,9 +32,9 @@ export function TabListAlong({ className, shape, align, slots, ...rest }: TabLis
       <RunBand row={host} shape={shape} />
       <TabRule run={run} host={host} selected={selected} />
       <AlongContext.Provider value={null}>
-        <RACTabList {...(rest as RACTabListProps<object>)} className={[s.list, s.joined, className].filter(Boolean).join(' ')} />
+        <RACTabList {...(rest as RACTabListProps<object>)} ref={ref} className={[s.list, s.joined, className].filter(Boolean).join(' ')} />
       </AlongContext.Provider>
       <RunEnds row={host} run={run} />
     </div>
   );
-}
+});

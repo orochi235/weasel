@@ -1,4 +1,6 @@
-import { createContext, useContext, useMemo, type ReactNode, type Ref } from 'react';
+import {
+  createContext, forwardRef, useContext, useMemo, type ReactElement, type ReactNode, type Ref, type RefAttributes,
+} from 'react';
 import {
   Tabs as RACTabs,
   TabList as RACTabList,
@@ -44,7 +46,6 @@ export function Tabs({ children, className, ...rest }: TabsProps) {
 /** Props for {@link TabList}, on top of React Aria's `TabList` props. */
 export type TabListProps<T extends object> = Omit<RACTabListProps<T>, 'className'> & {
   className?: string;
-  ref?: Ref<HTMLDivElement>;
 };
 
 /**
@@ -52,17 +53,20 @@ export type TabListProps<T extends object> = Omit<RACTabListProps<T>, 'className
  * reading order, each tipped to its spot, and the rule under them follows it on the inside of the bend; such tabs need
  * an `id`.
  */
-export function TabList<T extends object>({ className, ...rest }: TabListProps<T>) {
+export const TabList = forwardRef(function TabList<T extends object>(
+  { className, ...rest }: TabListProps<T>,
+  ref: Ref<HTMLDivElement>,
+) {
   const along = useTrackShape();
   const slots = useContext(TabSlotsContext);
   // React Aria renders a tab list twice: once to collect its tabs, with no state, and once for real.
   const real = useContext(TabListStateContext) !== null;
-  if (slots?.held) return <RACTabList<T> {...rest} className={[s.list, s.joined, className].filter(Boolean).join(' ')} />;
+  if (slots?.held) return <RACTabList<T> {...rest} ref={ref} className={[s.list, s.joined, className].filter(Boolean).join(' ')} />;
   if (real && slots !== null && along !== null && along.shape.kind !== 'line') {
-    return <TabListAlong {...(rest as TabListProps<object>)} className={className} shape={along.shape} align={along.align} slots={slots} />;
+    return <TabListAlong {...(rest as TabListProps<object>)} ref={ref} className={className} shape={along.shape} align={along.align} slots={slots} />;
   }
-  return <RACTabList<T> {...rest} className={[s.list, className].filter(Boolean).join(' ')} />;
-}
+  return <RACTabList<T> {...rest} ref={ref} className={[s.list, className].filter(Boolean).join(' ')} />;
+}) as <T extends object>(props: TabListProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;
 
 /** Props for {@link Tab}, on top of React Aria's `Tab` props. */
 export type TabProps = Omit<RACTabProps, 'className' | 'children'> & {

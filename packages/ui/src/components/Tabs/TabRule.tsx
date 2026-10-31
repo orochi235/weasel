@@ -1,5 +1,5 @@
 import { clamp, runStationAt, type TrackRun } from '@weasel-js/geom';
-import type { ReactElement, Ref } from 'react';
+import { forwardRef, type Ref } from 'react';
 import { bendAt, runStretchD } from '../Along/runBend';
 import type { RunSlotHost } from '../Along/runSlots';
 import s from './Tabs.module.css';
@@ -12,7 +12,6 @@ export interface TabRuleProps {
   selected: string | null;
   /** Px along the run where a dragged tab would land, or null. */
   drop?: number | null;
-  ref?: Ref<SVGSVGElement>;
 }
 
 /** Which way a run's tabs stand off their rule: toward their up on a run bending that way, else away from it. */
@@ -25,7 +24,10 @@ export function ruleSide(run: TrackRun): 1 | -1 {
  * the line a straight tab list draws as its bottom border. The lit tab's marker lies on it across that tab's stretch,
  * and a drop mark stands across the row where a dragged tab would land.
  */
-export function TabRule({ run, host, selected, drop = null, ref }: TabRuleProps): ReactElement {
+export const TabRule = forwardRef(function TabRule(
+  { run, host, selected, drop = null }: TabRuleProps,
+  ref: Ref<SVGSVGElement>,
+) {
   const side = ruleSide(run);
   const half = host.thickness / 2;
   const place = selected === null ? undefined : host.placeOf(selected);
@@ -45,7 +47,7 @@ export function TabRule({ run, host, selected, drop = null, ref }: TabRuleProps)
       {drop !== null && <path className={s.ruleDrop} data-tab-drop="" d={dropD(run, drop, half)} />}
     </svg>
   );
-}
+});
 
 /** A mark standing across the row at `at` px along `run`, as thick as the row. */
 function dropD(run: TrackRun, at: number, half: number): string {
