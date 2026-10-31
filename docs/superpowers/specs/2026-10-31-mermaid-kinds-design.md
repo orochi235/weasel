@@ -1,0 +1,119 @@
+# Mermaid's other diagram kinds
+
+**Status: unbuilt (2026-10-31).** Being built in arcs; each arc's section is deleted as it merges, and
+this file goes when the last does.
+
+For whoever builds or reviews an arc. It says how weasel reads and writes every Mermaid diagram kind,
+not just flowcharts, and what engine surface that needs. Decided with Mike on 2026-10-31.
+
+## Pages have kinds
+
+`DocumentPage` (`@weasel-js/diagram-formats`) is a union on a required `kind`:
+
+```ts
+type DocumentPage = GraphPage | SequencePage | PlotPage;
+interface PageBase { id: string; name?: string; width: number; height: number }
+interface GraphPage    extends PageBase { kind: 'graph';    data: DiagramData;  direction?: LayoutDirection; notation?: string }
+interface SequencePage extends PageBase { kind: 'sequence'; data: SequenceData }
+interface PlotPage     extends PageBase { kind: 'plot';     data: PlotData }
+```
+
+- The JSON reader reads a page with no `kind` as `'graph'`; nothing else carries a compat path.
+- `crossPageEdges` joins graph pages only.
+- `documentSpecs` dispatches to `graphSpecs`, `sequenceSpecs`, `plotSpecs`, so SVG, PNG and PDF export
+  work for every kind.
+- `DiagramFormat.kinds` lists the page kinds a format reads and writes. A graph-only writer skips other
+  pages with a warning each, and throws when the page it was asked to write is not a graph.
+- `notation` names what a graph models (`'class'`, `'state'`, `'er'`, `'mindmap'`, `'requirement'`, …).
+  The Mermaid writer picks its diagram kind from it, `flowchart` when unset; other formats ignore it.
+
+Rejected (2026-10-31): lowering sequence and charts into pinned graph nodes, which loses messages and
+values on export and edits geometry instead of data; and a separate document per kind, which splits
+import and save in two.
+
+## Graph kinds
+
+| Mermaid | Nodes | Edges |
+| --- | --- | --- |
+| `classDiagram` | name row (`<<stereotype>>`, `~T~`), divider, attribute rows, divider, method rows; `namespace` → group; `note` → `note` outline | `<\|--` `triangle-hollow`, `*--` `diamond`, `o--` `diamond-hollow`, `-->`, `..>` dashed `arrow-open`, `..\|>` dashed `triangle-hollow`, `--`; cardinalities as end labels |
+| `stateDiagram-v2` | state rounded; `[*]` → `start` / `end` outline; `<<fork>>`/`<<join>>` → `bar`; `<<choice>>` → diamond; `state X { }` → container; `--` → lanes in it | labeled transitions |
+| `erDiagram` | name row, divider, one `field` row per attribute (type as label, name as value, keys and comment kept) | crow markers at both ends; `--` solid, `..` dashed |
+| `mindmap` | indentation tree, shapes `[]` `()` `(())` `))((` `{{}}` | unmarked links, two-sided `tree` |
+| `requirementDiagram` | requirement and element blocks as `field` rows | dashed arrow labeled `<<satisfies>>` etc. |
+
+Engine surface: `DataEdge.endLabels?: { from?: string; to?: string }` through the label trait at
+`start`/`end`; outlines `start`, `end`, `bar`; `tree`'s two-sided option.
+
+## Sequence (`@weasel-js/diagram`)
+
+```ts
+interface SequenceData {
+  participants: readonly SeqParticipant[];
+  steps: readonly SeqStep[];               // top to bottom, one row each; a fragment holds a run
+  boxes?: readonly { id: string; label?: string; members: readonly string[]; colors?: Partial<NodeStyle> }[];
+  autonumber?: number;
+}
+interface SeqParticipant { id: string; label?: string; outline?: Outline; style?: string; colors?: Partial<NodeStyle> }
+type SeqStep =
+  | { kind: 'message'; id: string; from: string; to: string; text?: string; line: 'solid' | 'dashed';
+      head: 'arrow' | 'open' | 'cross' | 'none'; both?: boolean; async?: boolean;
+      activate?: 'to' | 'from'; deactivate?: 'to' | 'from' }
+  | { kind: 'note'; id: string; over: readonly string[]; side?: 'left' | 'right'; text: string }
+  | { kind: 'activate' | 'deactivate' | 'create' | 'destroy'; participant: string }
+  | { kind: 'fragment'; id: string; type: 'loop' | 'alt' | 'opt' | 'par' | 'critical' | 'break' | 'region';
+      sections: readonly { label?: string; steps: readonly SeqStep[] }[]; colors?: Partial<NodeStyle> };
+```
+
+`sequenceSpecs` spaces columns to the widest text between neighbors, gives each step a row sized to its
+text, loops self-messages, starts a head at its `create` row and ends a lifeline at `destroy`, offsets
+nested activations, and boxes a fragment over the participants its steps touch. Heads are nodes,
+messages are straight edges between lifeline anchors, notes use the `note` outline. New outlines:
+`actor`, `boundary`, `control`, `entity`, `collections`, `queue`; `database` is the cylinder.
+
+Edits, each an op on the data: drag a message to another row (into or out of a fragment), drag a head
+to reorder participants, drag a message end to another lifeline, edit text in place.
+
+## Plot (`@weasel-js/plot`, new package)
+
+Lower layer: scales (`linear`, `log`, `band`, `time`, `ordinal`, later `polar`) with `ticks()` and
+`format()`; axes as scene nodes; marks `bar`, `span`, `line`, `area`, `point`, `arc`, `ribbon`, `rule`,
+`text`, each keeping its datum in scene data.
+
+Upper layer: `PlotData` is a union of chart specs that `plotSpecs` compiles to marks. Editing and export
+act on the spec.
+
+| Kind | Spec | Edits |
+| --- | --- | --- |
+| `gantt` | sections; tasks with date or `after` start, duration, `done`/`active`/`crit`/`milestone`; `dateFormat`, `excludes`, `todayMarker` | drag a span or its end; dependents follow |
+| `timeline` | periods with events | text, reorder |
+| `pie` | label and value; `showData` | value |
+| `xychart` | band or range x, y range, bar and line series | drag a bar top or line point |
+| `quadrant` | axis and quadrant labels, points in 0–1 | drag a point |
+| `journey` | sections, tasks with score 1–5 and actors | drag a score |
+| `gitgraph` | commits, branches, checkouts, merges, cherry-picks | tags; no commit reordering |
+| `sankey` | source, target, value | value |
+
+Colors come from theme roles. `PlotView` hosts plot pages.
+
+## Codec and app
+
+`mermaid/common/` holds front matter, `%%` comments, `accTitle`/`accDescr`, `classDef`/`style`; each kind
+has its own directory with lex, parse, read and write. `DIAGRAM_MERMAID` stays one format: `read`
+dispatches on the header keyword, `write` on page kind and `notation`, one page per file.
+
+apps/chart opens each page in its kind's editor (`DiagramView`, `DiagramView` with sequence ops,
+`PlotView`) under one page list, theme, undo and import/export; Save As greys out formats whose `kinds`
+cannot hold the document.
+
+## Arcs
+
+1. Document union.
+2. Graph kinds.
+3. Sequence.
+4. Plot foundation.
+5. Plot kinds.
+6. `block` (graph, new `grid` layout with column spans), `architecture` (graph, side ports, icon table),
+   `C4` (graph, `person` outline, boundaries as containers), `kanban` (graph, pool with `x` lanes),
+   `packet` (plot, band scale of bits), `radar` (plot, polar scale, `area` marks).
+
+Each lands with engine, codec, app support, tests and a site demo per kind. 2–4 depend only on 1.
