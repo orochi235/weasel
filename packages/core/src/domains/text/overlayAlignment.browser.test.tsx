@@ -30,10 +30,11 @@ const H = 160;
 const TEXT = 'H';
 
 /**
- * The overlay's text lands on whole CSS pixels — moving its `top` by 0.4px
- * moves its ink by 0 or 1px — while the canvas places a baseline anywhere, so
- * `dy` carries up to half a pixel of snapping on top of a steady ink bias,
- * measured at about -0.35px at DPR 1 across all three engines.
+ * The overlay's text lands on whole CSS pixels while the canvas places a
+ * baseline anywhere, so `dy` carries up to half a pixel of snapping, and
+ * Firefox and WebKit draw Inter up to 0.3px higher on the same baseline.
+ * Kept rather than snapping canvas text (ruled 2026-10-31); the measurements
+ * are in `tests/perf/recorded/overlay-baseline-2026-10-31/`.
  */
 const DY_TOLERANCE = 0.85;
 
