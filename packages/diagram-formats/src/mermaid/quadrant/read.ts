@@ -16,7 +16,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
   const warnings = new Warnings();
   let title: string | undefined;
   const axes: { x?: QuadrantAxis; y?: QuadrantAxis } = {};
-  const quadrants: (string | undefined)[] = [undefined, undefined, undefined, undefined];
+  const quadrants: [string?, string?, string?, string?] = [undefined, undefined, undefined, undefined];
   const points: QuadrantPoint[] = [];
   const classes: Record<string, QuadrantPointStyle> = {};
   for (const s of src.body) {
@@ -26,7 +26,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
     const quadrant = /^quadrant-([1-4])$/.exec(keyword);
     if (keyword === 'title') title = rest.trim() || undefined;
     else if (keyword === 'x-axis' || keyword === 'y-axis') axes[keyword[0] as 'x' | 'y'] = axisOf(rest);
-    else if (quadrant !== null) quadrants[Number(quadrant[1]) - 1] = textOf(rest) || undefined;
+    else if (quadrant !== null) quadrants[(Number(quadrant[1]) - 1) as 0 | 1 | 2 | 3] = textOf(rest) || undefined;
     else if (keyword === 'classDef') {
       const c = /^([\w-]+)\s*(.*)$/.exec(rest);
       if (c === null) throw lineError('Mermaid', s.line, 'a classDef needs a name');
@@ -49,7 +49,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
     ...(title !== undefined ? { title } : {}),
     ...(x !== undefined ? { x } : {}),
     ...(y !== undefined ? { y } : {}),
-    ...(quadrants.length > 0 ? { quadrants: quadrants as NonNullable<QuadrantData['quadrants']> } : {}),
+    ...(quadrants.length > 0 ? { quadrants } : {}),
     points,
     ...(Object.keys(classes).length > 0 ? { classes } : {}),
   };

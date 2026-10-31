@@ -30,9 +30,10 @@ export function setQuadrantAxisLabel(data: QuadrantData, axis: 'x' | 'y', end: '
 export function setQuadrantLabel(data: QuadrantData, quadrant: number, text: string): QuadrantData {
   if (![1, 2, 3, 4].includes(quadrant)) throw new Error(`setQuadrantLabel: there is no quadrant ${quadrant}`);
   if ((data.quadrants?.[quadrant - 1] ?? '') === text) return data;
-  const labels: (string | undefined)[] = [0, 1, 2, 3].map((i) => data.quadrants?.[i]);
-  labels[quadrant - 1] = text === '' ? undefined : text;
+  const q = data.quadrants;
+  const labels: [string?, string?, string?, string?] = [q?.[0], q?.[1], q?.[2], q?.[3]];
+  labels[(quadrant - 1) as 0 | 1 | 2 | 3] = text === '' ? undefined : text;
   const { quadrants: _, ...rest } = data;
   while (labels.length > 0 && labels[labels.length - 1] === undefined) labels.pop();
-  return labels.length === 0 ? rest : { ...rest, quadrants: labels as NonNullable<QuadrantData['quadrants']> };
+  return labels.length === 0 ? rest : { ...rest, quadrants: labels };
 }
