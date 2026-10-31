@@ -38,7 +38,7 @@ and an app that imports only some never loads the others:
 | `trimPreset`, `extendPreset`, `smudgePreset` | The actions `useTrimTool`, `useExtendTool`, and `useSmudgeBrushTool` bind |
 | `harmonizePreset` | Harmonize curvature |
 | `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
-| `resamplePreset` | Resample: anchors spread evenly by arc length, previewed live |
+| `resamplePreset` | Resample: anchors spread evenly by arc length, adjusted afterward in the last-operation panel |
 | `addExtremesPreset` | Add extremes: an anchor at each curve's leftmost, rightmost, top, and bottom |
 | `curvatureCombPreset` | The curvature comb over the open path, under chrome id `path-edit.comb` |
 | `balancePreset` | Balance handles and Equalize, from grips under chrome id `path-edit.balance` |

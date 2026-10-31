@@ -1,4 +1,4 @@
-import { cleanup } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { countPathAnchors, type Path } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
@@ -31,5 +31,24 @@ describe('AddExtremesLabDemo', () => {
     click(sceneCanvas(container), 330, 240);
     press('x', 'KeyX', { altKey: true });
     expect(anchors()).toBeGreaterThan(selected);
+  });
+
+  it('offers the run in the last-operation panel, and reruns it in place at the turns picked', async () => {
+    const { container } = await renderSettled(<StrictMode><AddExtremesLabDemo /></StrictMode>, { wrapper: withIcons });
+    giveKeys(container.querySelector('.lk-trial-scene canvas'));
+    const before = anchors();
+    press('x', 'KeyX', { altKey: true });
+    const both = anchors();
+    const panel = within(screen.getByRole('region', { name: 'Add extremes' }));
+    act(() => { fireEvent.click(panel.getByRole('radio', { name: 'Top and bottom' })); });
+    const ys = anchors();
+    act(() => { fireEvent.click(panel.getByRole('radio', { name: 'Left and right' })); });
+    const xs = anchors();
+    expect(ys).toBeLessThan(both);
+    expect(xs).toBeLessThan(both);
+    expect(ys - before + (xs - before)).toBe(both - before);
+    // Back to both: the same count as the first run, so each change replaced the last rather than adding to it.
+    act(() => { fireEvent.click(panel.getByRole('radio', { name: 'Both' })); });
+    expect(anchors()).toBe(both);
   });
 });

@@ -3,8 +3,8 @@
 For whoever builds or extends how a command's parameters reach the user. Answers: where a niche command's
 parameters live, given that a permanent bar slot per parameter does not scale.
 
-Status: chosen by the maintainer (2026-10-31) over a menu-only or inspector home; being built on branch
-`last-op-panel`.
+Status: chosen by the maintainer (2026-10-31) over a menu-only or inspector home; built on branch `last-op-panel`
+(2026-10-31).
 
 ## Behavior
 

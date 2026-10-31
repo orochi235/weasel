@@ -9,6 +9,7 @@ import type {
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { LengthenPathParams } from './lengthen/lengthenPath';
 import type { ResamplePathParams } from './resample/resample';
+import type { AddExtremesParams } from './extremes/addExtremes';
 import type { SimplifyBrushParams } from './simplifyBrush/simplifyBrush';
 import type { SmudgeBrushParams } from './smudge/smudgeBrush';
 import type { WarpKind, WarpSettings } from './warp/warpTargets';
@@ -50,6 +51,7 @@ declare module '@weasel-js/routing' {
     convertSegmentAt: { to?: SegmentType };
     selectEveryNthAnchor: { n?: number };
     resamplePath: ResamplePathParams;
+    addExtremeAnchors: AddExtremesParams;
     setCorners: SetCornersParams;
   }
 }

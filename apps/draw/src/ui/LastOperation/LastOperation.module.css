@@ -1,0 +1,7 @@
+/* Bottom-left of the workspace: toasts take the bottom-right and the measure readout the bottom center. */
+.corner {
+  position: absolute;
+  left: var(--wzl-space-6);
+  bottom: var(--wzl-space-6);
+  z-index: var(--wzl-z-overlay);
+}

@@ -25,6 +25,7 @@ import {
   useDepChangeNotices,
   useDispatcherDepSource,
   useEditAnchorsDepSource,
+  useSelectionSnapshotDepSource,
   useEnteredGroupApiSource,
   useIngestionDepSource,
   useInsertDepSource,
@@ -200,6 +201,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
+  useSelectionSnapshotDepSource();
   useDispatcherDepSource(dispatcher);
   usePoseDescriptorDepSource(poseDescriptor);
   useDepSource('boundsIncludeStroke', () => boundsIncludeStroke);

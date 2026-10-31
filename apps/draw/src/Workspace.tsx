@@ -37,6 +37,7 @@ import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
 import { useColorContext } from './tools/colorContext';
 import { DRAW_FEATURES } from './drawFeatures';
+import { LastOperation } from './ui/LastOperation';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { DRAW_NODE_ROUTING } from './nodeKinds';
@@ -237,6 +238,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         )}
         {/* In the workspace, not the viewport: a fixed region sits outside the theme and over the status bar. */}
         {hostRef.current && <ToastRegion portalContainer={hostRef.current} />}
+        <LastOperation />
         <SceneGradientHandles
           scene={scene}
           containerRef={hostRef}

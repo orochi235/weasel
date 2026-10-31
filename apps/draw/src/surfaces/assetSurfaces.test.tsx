@@ -46,7 +46,7 @@ function App({ docSelected = false }: { docSelected?: boolean }) {
   const host: SidebarHost = {
     scene, selection, measurements, filename: 'drawing', setFilename, backgroundColor: '#ffffff',
     setBackgroundColor: () => {}, paperSize: 'a4', setPaperSize: () => {}, docSelected, setDocSelected: () => {},
-    cornerSelection: NO_CORNERS, simplifyTolerance, setSimplifyTolerance, bridgeTension: 0.4, setBridgeTension: () => {},
+    cornerSelection: NO_CORNERS, simplifyTolerance, setSimplifyTolerance,
   };
   return (
     <ActionsProvider>
@@ -126,7 +126,7 @@ describe('the Colors, Layers, and History assets', () => {
   });
 });
 
-describe('the Simplify, Offset, and Bridge and Corner shape assets', () => {
+describe('the Simplify and Offset and Corner shape assets', () => {
   const popover = async (name: string) => {
     click(strip().getByRole('button', { name }));
     return within(await screen.findByRole('dialog', { name }));
@@ -152,7 +152,7 @@ describe('the Simplify, Offset, and Bridge and Corner shape assets', () => {
     click(screen.getByRole('menuitem', { name: 'Show as panel' }));
 
     expect(strip().queryByRole('button', { name: 'Simplify' })).toBeNull();
-    expect(sidebar().getByRole('button', { name: 'Simplify, Offset, and Bridge', expanded: true })).toBeDefined();
+    expect(sidebar().getByRole('button', { name: 'Simplify and Offset', expanded: true })).toBeDefined();
     expect(Number(sidebar().getByRole('slider', { name: 'Simplify tolerance' }).getAttribute('aria-valuenow'))).toBeCloseTo(1.1);
     expect(sidebar().getByRole('slider', { name: 'Offset distance' })).toBeDefined();
   });

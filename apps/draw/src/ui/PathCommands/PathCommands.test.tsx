@@ -13,7 +13,7 @@ vi.mock('@weasel-js/core', async (importOriginal) => ({
 
 import { useState } from 'react';
 import { ActionsProvider, useActionsRegistry, type Action, type ActionsRegistry } from '@weasel-js/core';
-import { BridgeSlider, OffsetSlider, SimplifySlider, useBridgeTension, useSimplifyTolerance } from './PathCommands';
+import { OffsetSlider, SimplifySlider, useSimplifyTolerance } from './PathCommands';
 
 function Simplify() {
   const [tolerance, setTolerance] = useState(1);
@@ -23,11 +23,6 @@ function Simplify() {
 function TunedSimplify() {
   const [tolerance, setTolerance] = useSimplifyTolerance();
   return <SimplifySlider tolerance={tolerance} onTolerance={setTolerance} />;
-}
-
-function TunedBridge() {
-  const [tension, setTension] = useBridgeTension();
-  return <BridgeSlider tension={tension} onTension={setTension} />;
 }
 
 afterEach(() => {
@@ -73,27 +68,5 @@ describe('the path command sliders', () => {
     if (tuned.invoker?.timing !== 'immediate') throw new Error('timing');
     tuned.invoker.run({}, undefined);
     expect(run.mock.calls[0][1]).toEqual({ tolerance: expect.closeTo(1.1, 5) });
-  });
-
-  it('tunes Bridge and Bridge anchors to the tension useBridgeTension holds', () => {
-    const runs = { bridgePaths: vi.fn(), bridgeAnchors: vi.fn() };
-    let registry: ActionsRegistry | null = null;
-    function Grab() {
-      registry = useActionsRegistry();
-      return null;
-    }
-    render(<ActionsProvider><Grab /><TunedBridge /></ActionsProvider>);
-    act(() => {
-      for (const [id, run] of Object.entries(runs)) registry!.register({ id, label: id, invoker: { timing: 'immediate', run } });
-    });
-    act(() => {
-      fireEvent.keyDown(screen.getByRole('slider', { name: 'Bridge tension' }), { key: 'ArrowRight' });
-    });
-    for (const [id, run] of Object.entries(runs)) {
-      const tuned = registry!.list().find((a) => a.id === id)!;
-      if (tuned.invoker?.timing !== 'immediate') throw new Error('timing');
-      tuned.invoker.run({}, undefined);
-      expect(run.mock.calls[0][1]).toEqual({ tension: expect.closeTo(0.45, 5) });
-    }
   });
 });

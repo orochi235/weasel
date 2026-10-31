@@ -46,9 +46,6 @@ export interface SidebarHost {
   /** What Simplify refits at, and the Simplify brush with it. */
   simplifyTolerance: number;
   setSimplifyTolerance: (v: number) => void;
-  /** What the next Bridge or Bridge anchors pulls its handles out by. */
-  bridgeTension: number;
-  setBridgeTension: (v: number) => void;
 }
 
 /** What a host binds an asset's leaves to, by dotted path within the asset's schema. Each surface reads and writes

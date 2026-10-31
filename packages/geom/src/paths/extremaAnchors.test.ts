@@ -76,4 +76,16 @@ describe('addExtremaAnchors', () => {
     const near = nearestOnCubic(50, -75, 0, 0, 0, -100, 100, -100, 100, 0);
     expect(near.dist).toBeLessThan(1e-6);
   });
+
+  it('splits at the turns along one axis alone', () => {
+    // The arch turns in y at its top, and nowhere in x.
+    expect(addExtremaAnchors(decode('M 0 0 C 0 -100 100 -100 100 0'), undefined, 'x')).toEqual([]);
+    expect(addExtremaAnchors(decode('M 0 0 C 0 -100 100 -100 100 0'), undefined, 'y')).toHaveLength(1);
+    const both = addExtremaAnchors(decode(BLOB)).length;
+    const xs = addExtremaAnchors(decode(BLOB), undefined, 'x').length;
+    const ys = addExtremaAnchors(decode(BLOB), undefined, 'y').length;
+    expect(xs).toBeGreaterThan(0);
+    expect(ys).toBeGreaterThan(0);
+    expect(xs + ys).toBe(both);
+  });
 });

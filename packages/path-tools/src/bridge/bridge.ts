@@ -7,11 +7,19 @@ import { type Action, ActionDisabledReason, type ImmediateInvoker } from '@wease
 import {
   anchorEditWouldChange, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
 } from '@weasel-js/core';
+import { pref } from '@weasel-js/prefs';
 import { icon } from '../icons.gen';
 
 /** How long Bridge makes each handle, as a fraction of the gap, when its
  *  params name no `tension`. */
 export const DEFAULT_BRIDGE_TENSION = 0.4;
+
+/** Bridge's params as a form, for the last-operation panel. */
+export const BRIDGE_PARAMS = pref.group('Bridge', {
+  tension: pref.number('Tension', DEFAULT_BRIDGE_TENSION, {
+    description: 'How long each handle is, as a fraction of the gap.', min: 0, max: 1.5, step: 0.05, control: 'slider',
+  }),
+});
 
 /** A bridge's `params.tension`, or the default. Negative reads as `0`. */
 export function bridgeTensionOf(params: Record<string, unknown> | undefined): number {
@@ -26,16 +34,19 @@ export function bridgeTensionOf(params: Record<string, unknown> | undefined): nu
  * {@link DEFAULT_BRIDGE_TENSION}). Two paths become one. In path edit,
  * `bridgeAnchors` bridges the two selected anchors instead.
  */
-export const bridgePathsAction = joinPathsCommand(
-  {
-    id: 'bridgePaths',
-    label: 'Bridge',
-    icon: icon('core:bridge'),
-    // `code` too: with Alt held on a Mac the key reads as another glyph.
-    defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } }, opts: { id: 'bridgePaths.key' } }],
-  },
-  (params) => ({ tension: bridgeTensionOf(params) }),
-);
+export const bridgePathsAction: Action & { requires: string[] } = {
+  ...joinPathsCommand(
+    {
+      id: 'bridgePaths',
+      label: 'Bridge',
+      icon: icon('core:bridge'),
+      // `code` too: with Alt held on a Mac the key reads as another glyph.
+      defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } }, opts: { id: 'bridgePaths.key' } }],
+    },
+    (params) => ({ tension: bridgeTensionOf(params) }),
+  ),
+  params: BRIDGE_PARAMS,
+};
 
 const join = joinSelectedAnchors({});
 
@@ -52,6 +63,7 @@ export const bridgeAnchorsAction: Action & { requires: string[] } = {
   tags: pathOperationTags('command'),
   icon: icon('core:bridge'),
   group: 'anchors',
+  params: BRIDGE_PARAMS,
   defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } }, opts: { id: 'bridgeAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],

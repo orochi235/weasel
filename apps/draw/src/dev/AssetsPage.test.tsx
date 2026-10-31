@@ -42,7 +42,7 @@ describe('AssetsPage', () => {
     expect(within(tree()).getByText('reorder')).toBeInTheDocument();
   });
 
-  it.each([['Colors', 'Colors'], ['Properties', 'Selection'], ['Simplify, Offset, and Bridge', 'Simplify']])(
+  it.each([['Colors', 'Colors'], ['Properties', 'Selection'], ['Simplify and Offset', 'Simplify']])(
     'previews %s with a note where the app draws a leaf itself',
     (label, leaf) => {
       renderWithIcons(<AssetsPage />);

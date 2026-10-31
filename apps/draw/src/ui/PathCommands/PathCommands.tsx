@@ -1,12 +1,10 @@
 /**
- * Simplify, Offset Path, and Bridge tension as sliders. Dragging a slider previews its command on the selection and releasing it
+ * Simplify and Offset Path as sliders. Dragging a slider previews its command on the selection and releasing it
  * commits one undo entry. The Simplify tolerance is also what the Simplify brush path edit refits at, so it lives
- * above whichever surface draws the slider (`useSimplifyTolerance`), as does Bridge's tension, which the next
- * Bridge or Bridge anchors uses (`useBridgeTension`).
+ * above whichever surface draws the slider (`useSimplifyTolerance`).
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import { useActionsRegistry, useLatest, useOngoingAction } from '@weasel-js/core';
-import { DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
@@ -22,19 +20,6 @@ export function useSimplifyTolerance(): [number, (tolerance: number) => void] {
     [registry, brushTolerance],
   );
   return [tolerance, setTolerance];
-}
-
-/** Bridge's tension and its setter, tuning `bridgePaths` and `bridgeAnchors` to it. */
-export function useBridgeTension(): [number, (tension: number) => void] {
-  const [tension, setTension] = useState(DEFAULT_BRIDGE_TENSION);
-  const registry = useActionsRegistry();
-  const latest = useLatest(tension);
-  useEffect(() => {
-    const params = () => ({ tension: latest.current });
-    const untune = ['bridgePaths', 'bridgeAnchors'].map((id) => registry?.tune(id, { params }));
-    return () => untune.forEach((u) => u?.());
-  }, [registry, latest]);
-  return [tension, setTension];
 }
 
 /** Sizes a slider; without it, it is a popover's width. */
@@ -90,28 +75,6 @@ export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactEl
       }}
       readoutPlacement="inline-after"
       renderReadout={readout}
-    />
-  );
-}
-
-export interface BridgeSliderProps extends PathSliderProps {
-  tension: number;
-  onTension: (tension: number) => void;
-}
-
-export function BridgeSlider({ tension, onTension, className = s.slider }: BridgeSliderProps): ReactElement {
-  return (
-    <Slider
-      className={className}
-      ariaLabel="Bridge tension"
-      min={0}
-      max={1.5}
-      step={0.05}
-      thumbs={[{ value: tension }]}
-      onInput={([t]) => onTension(t.value)}
-      onChange={([t]) => onTension(t.value)}
-      readoutPlacement="inline-after"
-      renderReadout={(t) => t.value.toFixed(2)}
     />
   );
 }

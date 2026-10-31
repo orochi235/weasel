@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
+import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId, type Op } from '@weasel-js/core';
-import { resamplePathAction } from './resample';
+import { RESAMPLE_PARAMS, resamplePathAction } from './resample';
 
 /** One selected node storing a 100-unit square as its pose. */
 function setup() {
@@ -17,39 +17,34 @@ function setup() {
   const selection = { get: () => ['a'], set: vi.fn() };
   const batches: Array<{ ops: Op[]; label: string }> = [];
   const applyOps = vi.fn((ops: Op[], label: string) => { batches.push({ ops, label }); });
-  return { deps: { scene, selection, applyOps } as unknown as InvocationCtx['deps'], batches };
+  return { deps: { scene, selection, applyOps } as unknown as ActionDeps, batches };
 }
 
-const ctx = (deps: InvocationCtx['deps'], params?: Record<string, unknown>): InvocationCtx => ({
-  world: { x: 0, y: 0 },
-  screen: { x: 0, y: 0 },
-  modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-  deps,
-  ...(params ? { params } : {}),
-});
-
-const ongoing = resamplePathAction.invoker as OngoingInvoker;
-const count = (p: unknown) => pathToAnchors(p as PolygonPath).anchors[0].length;
+const run = (resamplePathAction.invoker as ImmediateInvoker).run;
+/** The anchor count of the pose the one batch sets. */
+const committedCount = (batches: Array<{ ops: Op[] }>) => {
+  const op = batches[0].ops[0] as unknown as { args: { to: unknown } };
+  return pathToAnchors(op.args.to as PolygonPath).anchors[0].length;
+};
 
 describe('resamplePathAction', () => {
-  it('previews each change of params and commits the last as one entry', () => {
+  it('commits one entry at the count its params give', () => {
     const { deps, batches } = setup();
-    const handle = ongoing.start(ctx(deps, { count: 8, keepCorners: true }), {});
     // Every corner is held, so a count of 8 adds one anchor to each side.
-    expect(count(handle.previewPose!('a'))).toBe(8);
-    handle.onMove!(ctx(deps, { spacing: 20 }));
-    expect(count(handle.previewPose!('a'))).toBe(20);
-    handle.onMove!(ctx(deps, { keepCorners: false, spacing: 0, count: 6, tolerance: 1 }));
-    expect(count(handle.previewPose!('a'))).toBeGreaterThanOrEqual(6);
-    expect(batches).toHaveLength(0);
-    handle.onEnd!(ctx(deps), 'commit');
+    run(deps, { count: 8, keepCorners: true });
     expect(batches).toHaveLength(1);
     expect(batches[0].label).toBe('Resample');
+    expect(committedCount(batches)).toBe(8);
   });
 
-  it('reads params a tuning supplies as a thunk', () => {
-    const { deps } = setup();
-    const handle = ongoing.start(ctx(deps), { params: () => ({ count: 12 }) });
-    expect(count(handle.previewPose!('a'))).toBe(12);
+  it('lets spacing override count', () => {
+    const { deps, batches } = setup();
+    run(deps, { count: 8, spacing: 20 });
+    expect(committedCount(batches)).toBe(20);
+  });
+
+  it('declares a form for every param it reads', () => {
+    expect(resamplePathAction.params).toBe(RESAMPLE_PARAMS);
+    expect(Object.keys(RESAMPLE_PARAMS.children).sort()).toEqual(['count', 'keepCorners', 'spacing', 'tolerance']);
   });
 });

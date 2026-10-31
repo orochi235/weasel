@@ -152,15 +152,16 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven anchor selection along the path hands-on and the defaults and
   keys he picks are committed.
 - **(P2) [maintainer] Tune Resample hands-on, with the maintainer driving.** First-draft behavior: no key,
-  driven only as an ongoing action; a count of 0 keeps the path's anchor count, corners are held
-  by default, the refit tolerance is 0.5 and a piece that misses it is halved up to six times, so
-  the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
+  run as a command whose params are adjusted afterward in the last-operation panel; a count of 0 keeps
+  the path's anchor count, corners are held by default, the refit tolerance is 0.5 and a piece that
+  misses it is halved up to six times, so the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
   `packages/geom/src/paths/resamplePath.ts`).
   Closes when the maintainer has driven Resample hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune Add extremes hands-on, with the maintainer driving.** First-draft behavior and key:
   Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
-  is, so a selection reaching no whole segment does nothing; the new anchors join the selection
+  is, so a selection reaching no whole segment does nothing; the new anchors join the selection; its Turns param,
+  in the last-operation panel, picks x, y, or both, default both
   (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
   Closes when the maintainer has driven Add extremes hands-on and the defaults and keys he picks are
   committed.
