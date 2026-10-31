@@ -24,8 +24,8 @@
 .tabs[data-orientation="vertical"] .list {
   flex-direction: column;
   border-bottom: none;
-  border-right: 1px solid var(--wzl-border);
-  padding-right: var(--wzl-space-4);
+  border-inline-end: 1px solid var(--wzl-border);
+  padding-inline-end: var(--wzl-space-4);
 }
 
 .tab {
@@ -54,8 +54,13 @@
 }
 
 .tabs[data-orientation="vertical"] .tab::before {
-  inset: 0 calc(-1 * var(--_open)) 0 0;
+  inset-block: 0;
+  inset-inline: 0 calc(-1 * var(--_open));
   clip-path: inset(0 var(--_open) 0 0);
+}
+
+.tabs[data-orientation="vertical"] .tab:dir(rtl)::before {
+  clip-path: inset(0 0 0 var(--_open));
 }
 
 .tab[data-hovered]:not([data-disabled]) {
@@ -69,16 +74,15 @@
 .tab[data-selected]::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   bottom: -1px;
   height: 2px;
   background: var(--wzl-accent-strong);
 }
 
 .tabs[data-orientation="vertical"] .tab[data-selected]::after {
-  left: auto;
-  right: -9px;
+  inset-inline-start: auto;
+  inset-inline-end: calc(-1 * (var(--wzl-space-4) + 1px));
   top: 0;
   bottom: 0;
   width: 2px;

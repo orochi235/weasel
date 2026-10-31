@@ -42,7 +42,7 @@
   border: 0;
   line-height: inherit;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 :where(.titleButton:hover) {
   color: var(--wzl-fg);

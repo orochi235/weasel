@@ -30,7 +30,7 @@
   gap: var(--wzl-space-4);
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
-  border-left: 3px solid var(--toast-accent);
+  border-inline-start: 3px solid var(--toast-accent);
   border-radius: var(--wzl-radius-md);
   box-shadow: 0 8px 24px var(--wzl-shadow);
   color: var(--wzl-fg);
