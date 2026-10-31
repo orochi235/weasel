@@ -83,7 +83,8 @@
   display: flex;
   align-items: center;
   gap: var(--wzl-space-2);
-  padding: 0 var(--wzl-space-2) 0 var(--tree-gutter);
+  padding-block: 0;
+  padding-inline: var(--tree-gutter) var(--wzl-space-2);
   height: var(--wzl-tree-row-h, var(--wzl-control-h));
   font-size: var(--wzl-tree-font-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
@@ -94,7 +95,7 @@
 }
 
 .row:hover {
-  background: var(--wzl-surface);
+  background: var(--wzl-surface-hover);
 }
 
 .item:focus-visible > .row {
