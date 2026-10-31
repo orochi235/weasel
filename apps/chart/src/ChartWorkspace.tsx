@@ -1,11 +1,11 @@
 import {
   SceneCanvas, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
-  type SceneCanvasApi, type Tool, type ToolsApi, type View,
+  type SceneCanvasApi, type Tool, type ToolsApi,
 } from '@weasel-js/core';
 import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
-import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
+import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@editor/index';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
@@ -16,7 +16,8 @@ import {
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
 import { NewChart } from './NewChartDialog';
 import { ChartPageStrip } from './pages/ChartPageStrip';
-import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
+import { useChartPages } from './pages/useChartPages';
+import { useFittedView } from './pages/useFittedView';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { StylePanel } from './theme/StylePanel';
 import { ChartToolbar } from './toolbar/ChartToolbar';
@@ -31,7 +32,6 @@ import './workspace.css';
 
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
-const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
 
 /** Text a double-click edits: an off-page tag's is the pass's to write. */
@@ -57,17 +57,11 @@ export function ChartWorkspace(): ReactElement {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const attachHost = useCallback((el: HTMLDivElement | null) => { hostRef.current = el; setHost(el); }, []);
   const dims = useCanvasSize(hostRef);
-  const [view, setView] = useState<View>(NO_VIEW);
+  const { view, setView, fitTo } = useFittedView(scene, dims);
   const pages = useChartPages(scene, view, dims, setView);
   useExportCommands(scene, pages);
-  const fitted = useRef<View | null>(null);
-  const setFitted = useCallback((fit: View) => { fitted.current = fit; setView(fit); }, []);
-  const recenter = usePageFit(dims, 'chart', pages.shown ?? pages.placed[0] ?? CHART_PAGE, setFitted, PAGE_FIT_PADDING);
-  // The tool palette fills in after the first fit and shrinks the host: until the view is moved, keep the page fitted.
-  const viewRef = useLatest(view);
-  useEffect(() => {
-    if (fitted.current !== null && viewRef.current === fitted.current) recenter();
-  }, [dims.width, dims.height, recenter, viewRef]);
+  const shownRef = useLatest(pages.shown);
+  const recenter = useCallback(() => fitTo(shownRef.current?.id ?? null), [fitTo, shownRef]);
   const paperLayer = usePaperLayer(pages.placed, theme.page);
   const { gridLayer, snap, features } = useChartSnap(pages.shown ?? FALLBACK_PAGE, theme.page);
   const layers = useMemo(() => ({
