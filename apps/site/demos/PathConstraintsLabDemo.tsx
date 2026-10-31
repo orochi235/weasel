@@ -19,7 +19,7 @@ import { icon } from '../icons.gen';
 const FEATURES = ['draw', constraintsPreset] as const;
 
 const config = f.schema({
-  kind: f.enum<PathConstraintKind>('perpendicular', Object.entries(CONSTRAINT_KIND_LABELS).map(([value, label]) => ({ value, label })))
+  kind: f.enum<PathConstraintKind>('perpendicular', (Object.entries(CONSTRAINT_KIND_LABELS) as [PathConstraintKind, string][]).map(([value, label]) => ({ value, label })))
     .label('C adds'),
   length: f.number(160).range(20, 400).step(10).suffix('px').label('Length').showIf({ path: 'kind', is: 'length' }),
 });

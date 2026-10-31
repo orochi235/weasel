@@ -1,7 +1,7 @@
 import { compact } from '@weasel-js/quantity';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { auto } from './auto';
-import { f } from './builder';
+import { type EnumNode, f } from './builder';
 import type { ConfigOf, ConfigPath, ValueAtPath } from './types';
 
 describe('builder', () => {
@@ -58,6 +58,18 @@ describe('builder', () => {
   it('takes labeled enum options as given', () => {
     const n = f.enum('fast', [{ value: 'fast', label: 'Fast' }]);
     expect(n.annotations.options).toEqual([{ value: 'fast', label: 'Fast' }]);
+  });
+
+  it("types an enum by its choices, plain or labeled, and refuses a default that isn't one", () => {
+    expectTypeOf(f.enum('fast', ['fast', 'accurate'])).toEqualTypeOf<EnumNode<'fast' | 'accurate'>>();
+    expectTypeOf(
+      f.enum('fast', [
+        { value: 'fast', label: 'Fast' },
+        { value: 'accurate', label: 'Accurate' },
+      ]),
+    ).toEqualTypeOf<EnumNode<'fast' | 'accurate'>>();
+    // @ts-expect-error 'slow' is not one of the choices
+    f.enum('slow', ['fast', 'accurate']);
   });
 
   it('f.value carries no kind', () => {

@@ -25,8 +25,8 @@ import type { ReactNode } from 'react';
 export type ControlRenderer = PrefRenderer;
 
 /** One labeled choice in an `enum` leaf. */
-export interface ConfigOption {
-  value: string;
+export interface ConfigOption<V extends string = string> {
+  value: V;
   label: string;
   /** A qualified icon ref (`icon('ui:gradeSuccess')`) in the registry in scope. A segmented row draws it in
    *  place of `label`, which stays the accessible name and becomes the tooltip;
