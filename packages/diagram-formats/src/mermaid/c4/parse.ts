@@ -15,7 +15,7 @@ export type C4Stmt =
 /** A whole C4 diagram, and the header naming which of the five it is. */
 export interface C4Diagram {
   source: MermaidSource;
-  header: string;
+  header: C4Header;
   stmts: C4Stmt[];
 }
 
