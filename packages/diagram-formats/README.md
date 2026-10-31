@@ -72,6 +72,16 @@ id `<page id>/plot`, its marks under it, drawn in the theme's roles: text in the
 label color, axes in the connector stroke, grid lines in the container stroke,
 series in the theme's `series` (`plotThemeOf`).
 
+A graph page with no `notation` of its own takes the one its scene's diagram type writes (`diagramNotationOf`), and
+`documentSpecs` sets `diagram:type` when every graph page's notation names one type, so an imported class diagram
+opens with the UML stencils.
+
+`PAGE_TEMPLATES` holds a new page of every kind: an empty graph page per diagram type, in its notation; a small
+sequence diagram; and a small chart of each plot kind, each with the `group` a menu lists it under. `templateSpecs`
+draws one as a new one-page document, the diagram type it names included, and `addTemplatePage(scene, template)`
+adds one as another page, what it draws with it, as one undo entry. `pageSpecs` draws any one page placed where a
+page list would place it.
+
 ## Formats
 
 A `DiagramFormat` has an `id`, a `name`, its `extensions`, and `detect(text)`,

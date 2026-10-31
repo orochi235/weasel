@@ -527,6 +527,29 @@ useDepSource('canDropInto', () => diagramCanDropInto(scene));
 const containers = useMemo(() => diagramContainers({ scene, selected }), [scene, selected]);
 ```
 
+### Diagram types
+
+A `DiagramType` is a kind of diagram: the stencil groups (`STENCIL_GROUPS`) its Shapes panel opens with, how a new
+connector starts (`edge`: router, end markers, dash), the layout Auto layout runs, and the `notations` its graph
+pages are written in. `DIAGRAM_TYPES` ships these:
+
+| Type | Groups | Notation |
+| --- | --- | --- |
+| Flowchart | flowchart, containers | `FLOWCHART_NOTATION` |
+| Org chart, Network, BPMN | their own, containers | none: written as a flowchart |
+| UML class, Entity relationship, Mind map | their own (UML adds containers) | `class`, `er`, `mindmap` |
+| State | state: states, start, end, choice, fork or join, note, composite and concurrent states | `state` |
+| Requirement | requirement: requirements and elements, joined dashed | `requirement` |
+| C4 | C4: people, systems, containers, components, stores, queues, boundaries | `c4-context`, and the other levels on import |
+| Block | flowchart, containers, laid out on a grid | `block` |
+| Architecture | architecture: services by Mermaid's built-in icons, junctions, groups | `architecture` |
+| Kanban | kanban: a board of column lanes, cards | `kanban` |
+
+The type a scene holds is its `diagram:type` document value (`diagramTypeOf`, `setDiagramType`), and
+`diagramNotationOf(scene)` the notation a page of it is written in. A stencil's `themeRole` puts that theme role on
+the body it draws, as C4's outside elements are `muted`; `useStencilInsert` resolves its colors when given `theme`.
+A container stencil may name its `title` and the `lanes` a pool starts with.
+
 The layouts register by key through `withDiagramRegistry`, so a saved scene
 finds them again: `diagram:container`, `diagram:pool-rows`,
 `diagram:pool-columns`, `diagram:lane-rows`, and `diagram:lane-columns`.
