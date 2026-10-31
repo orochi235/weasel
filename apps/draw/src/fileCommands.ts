@@ -27,6 +27,7 @@ export interface FileCommandsTarget extends OpenSvgTarget, SavedDoc {
 const NEW_VARIANTS = PAPER_SIZES.map(({ key, label }) => ({ key, label, params: { size: key } }));
 
 const SAVE_KEY = { kind: 'key', key: 's', mods: { mod: true } } as const;
+const OPEN_KEY = { kind: 'key', key: 'o', mods: { mod: true } } as const;
 
 /** Register New, Open, Import and Save as actions on the nearest `<ActionsProvider>`. */
 export function useFileCommands(target: FileCommandsTarget): void {
@@ -41,7 +42,7 @@ export function useFileCommands(target: FileCommandsTarget): void {
     });
     target.showFirstPage();
   }, { variants: NEW_VARIANTS, tags: ['new', 'document'] });
-  useCommand(FILE_ACTIONS.open, 'Open…', () => { void openSvgFile(target); });
+  useCommand(FILE_ACTIONS.open, 'Open…', () => { void openSvgFile(target); }, { keys: OPEN_KEY });
   useCommand(FILE_ACTIONS.import, 'Import…', () => { void importSvgFile(scene); });
   useCommand(FILE_ACTIONS.save, 'Save', () => {
     const { filename, backgroundColor } = target;

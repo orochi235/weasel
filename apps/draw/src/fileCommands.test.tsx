@@ -141,6 +141,14 @@ describe('useFileCommands', () => {
     expect(e.defaultPrevented).toBe(true);
   });
 
+  it("mod+O opens draw's picker, and keeps the browser from opening its own", () => {
+    setup();
+    const e = new KeyboardEvent('keydown', { key: 'o', code: 'KeyO', ctrlKey: true, bubbles: true, cancelable: true });
+    act(() => { window.dispatchEvent(e); });
+    expect(openSvgFile).toHaveBeenCalledOnce();
+    expect(e.defaultPrevented).toBe(true);
+  });
+
   it('finds the paper sizes in the command palette by typing "new"', () => {
     Element.prototype.scrollIntoView = () => {};
     const scene = seededScene();
