@@ -16,7 +16,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
   const PATH: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
 
   /**
-   * The same square, even-odd with a touching contour — which tessellates to `requiresStencil` and so
+   * The same square, even-odd and too costly to resolve — which tessellates to `requiresStencil` and so
    * takes the two-pass stencil fill through `gradFill` rather than the batch.
    * That is the only route left to that program for an ordinary fill, and it is
    * how these tests reach `u_worldInv` at all.
@@ -136,7 +136,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
   });
 
   /**
-   * `gradFill` still paints a touching even-odd gradient, which cannot join a run: its
+   * `gradFill` still paints a stencilled even-odd gradient, which cannot join a run: its
    * mesh needs a stencil pass of its own. These pin the uniforms that route
    * takes.
    */

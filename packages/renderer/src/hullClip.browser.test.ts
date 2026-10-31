@@ -70,7 +70,7 @@ function turned(cx: number, cy: number, w: number, h: number, deg: number): Path
 const FULL = { kind: 'rect' as const, x: 0, y: 0, width: W, height: H };
 const solid = (color: string, path: Path = FULL): DrawCommand =>
   ({ kind: 'path', path, fill: { paint: { color } } });
-/** An even-odd fill whose outlines touch, which no run can take: it draws for
+/** An even-odd fill too costly to resolve, which no run can take: it draws for
  *  itself, through the stencil. One convex contour covers what a nonzero one would. */
 function ownDraw(path: Path, rgba: number[]): DrawCommand {
   const polygon = path.kind === 'rect'

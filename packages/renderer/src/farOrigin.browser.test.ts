@@ -29,7 +29,7 @@ afterEach(() => {
   _resetProgramRegistryForTests();
 });
 
-/** An even-odd square from `x0` one unit wide, with a touching contour so it
+/** An even-odd square from `x0` one unit wide, too costly to resolve so it
  *  draws through the path programs and not the batch. */
 function square(x0: number): PolygonPath {
   return stencilledEvenOdd({

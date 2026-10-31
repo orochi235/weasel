@@ -3,10 +3,10 @@
  *
  * - `vertices` is interleaved x,y in path-local coordinates.
  * - `indices` are triangle indices into `vertices`.
- * - `requiresStencil` is set for `'evenodd'` paths whose outlines touch or
- *   cross, or that hold a ring of no area. Their triangulation is a *naive*
- *   per-contour fan rather than a clean inside/outside triangulation. The renderer must use a stencil
- *   two-pass when this flag is true.
+ * - `requiresStencil` is set for `'evenodd'` paths whose crossings would
+ *   take longer to resolve than `MAX_EVENODD_RESOLVE_WORK` allows. Their
+ *   triangulation is a *naive* per-contour fan rather than a clean
+ *   inside/outside one, and the renderer must use a stencil two-pass for it.
  * - `anchorA` / `anchorB` / `anchorT` parameterize each mesh vertex by
  *   the two consecutive path anchors it lies between and the arc-length
  *   fraction along that segment (0 = at A, 1 = at B). Vertices that fall

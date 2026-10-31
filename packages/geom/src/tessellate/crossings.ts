@@ -1,4 +1,4 @@
-/** Rebuilding outlines as the non-crossing boundary of their nonzero fill. */
+/** Rebuilding outlines as the non-crossing boundary of their fill. */
 
 import { forEachCrossing } from './sweep';
 
@@ -40,10 +40,56 @@ const keyOf = (n: Node): string => `${n.x},${n.y}`;
  */
 export function resolveCrossings(flat: FlattenedContours, always = false): FlattenedContours | null {
   if (!always && !anyCrossing(flat)) return null;
+  return resolve(flat, (w) => w !== 0)!.contours;
+}
+
+/**
+ * How much work resolving an even-odd fill may take, as boundary pieces times
+ * edges: each piece is judged by a winding count over every edge. 2^20 of it
+ * took 10 ms on an Apple M-series core (1024 edges, 2026-10-31), and parity is
+ * what the stencil computes for free, so a fill past it keeps the stencil.
+ */
+export const MAX_EVENODD_RESOLVE_WORK = 2 ** 20;
+
+/**
+ * The boundary of `flat`'s even-odd fill as loops that neither cross nor
+ * overlap, each with the fill on its left, for outlines that cross or touch.
+ * `null` when resolving would pass {@link MAX_EVENODD_RESOLVE_WORK}, or a
+ * boundary piece would not close into a loop.
+ */
+export function resolveEvenOdd(flat: FlattenedContours): FlattenedContours | null {
+  const edges = edgeCount(flat);
+  const maxCrossings = Math.floor((MAX_EVENODD_RESOLVE_WORK / edges - edges) / 2);
+  if (!(maxCrossings >= 0)) return null;
+  const out = resolve(flat, (w) => (w & 1) !== 0, maxCrossings);
+  return out !== null && out.complete ? out.contours : null;
+}
+
+function resolve(
+  flat: FlattenedContours, filled: (winding: number) => boolean, maxCrossings = Infinity,
+): { contours: FlattenedContours; complete: boolean } | null {
   const edges = edgesOf(flat);
-  cutAtCrossings(edges);
-  const pieces = boundaryPieces(edges);
-  return loopsToContours(chainLoops(pieces));
+  const eps = contactTolerance(edges);
+  if (!cutAtCrossings(edges, maxCrossings)) return null;
+  cutAtContacts(edges, eps);
+  weld(edges, eps);
+  const pieces = boundaryPieces(edges, filled);
+  const { loops, complete } = chainLoops(pieces);
+  return { contours: loopsToContours(loops), complete };
+}
+
+function edgeCount(flat: FlattenedContours): number {
+  const { coords, contourStarts } = flat;
+  const total = coords.length / 2;
+  let n = 0;
+  contourStarts.forEach((start, c) => {
+    const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : total;
+    for (let i = start; i < end; i++) {
+      const j = i + 1 < end ? i + 1 : start;
+      if (coords[i * 2] !== coords[j * 2] || coords[i * 2 + 1] !== coords[j * 2 + 1]) n++;
+    }
+  });
+  return n;
 }
 
 /** Whether any two edges of `flat` cross. Every nonzero fill asks this, and
@@ -83,11 +129,14 @@ function edgesOf(flat: FlattenedContours): Edge[] {
   return edges;
 }
 
-/** Record every interior crossing on both edges it cuts. */
-function cutAtCrossings(edges: Edge[]): void {
+/** Record every interior crossing on both edges it cuts. `false`, having
+ *  stopped, when there are more than `max`. */
+function cutAtCrossings(edges: Edge[], max: number): boolean {
   const ends = new Float64Array(edges.length * 4);
   edges.forEach(({ from, to }, i) => ends.set([from.x, from.y, to.x, to.y], i * 4));
+  let count = 0;
   forEachCrossing(ends, edges.length, (ei, fi, s, u) => {
+    if (++count > max) return true;
     const e = edges[ei];
     const node = {
       x: e.from.x + (e.to.x - e.from.x) * s,
@@ -96,7 +145,78 @@ function cutAtCrossings(edges: Edge[]): void {
     };
     e.cuts.push({ s, node });
     edges[fi].cuts.push({ s: u, node });
+    return false;
   });
+  return count <= max;
+}
+
+/**
+ * Cut every edge where another's end lies inside it, so outlines that touch
+ * without crossing (a corner on an edge, a stretch of edge two contours share)
+ * meet at a node both name. The cut takes the touching end's own coordinates,
+ * so the two sides of a shared stretch come out as the same pieces.
+ */
+function cutAtContacts(edges: Edge[], eps: number): void {
+  const order = edges.map((_, i) => i);
+  const lo = (e: Edge): number => Math.min(e.from.x, e.to.x);
+  order.sort((a, b) => lo(edges[a]) - lo(edges[b]));
+  for (let a = 0; a < order.length; a++) {
+    const e = edges[order[a]];
+    const stop = Math.max(e.from.x, e.to.x) + eps;
+    for (let b = a + 1; b < order.length; b++) {
+      const f = edges[order[b]];
+      if (lo(f) > stop) break;
+      if (Math.max(e.from.y, e.to.y) + eps < Math.min(f.from.y, f.to.y)) continue;
+      if (Math.max(f.from.y, f.to.y) + eps < Math.min(e.from.y, e.to.y)) continue;
+      cutAt(e, f.from, eps); cutAt(e, f.to, eps);
+      cutAt(f, e.from, eps); cutAt(f, e.to, eps);
+    }
+  }
+}
+
+/** How near two points are to count as touching: the tolerance
+ *  `evenOddRings` judges contact by. */
+function contactTolerance(edges: Edge[]): number {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const { from: p } of edges) {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  }
+  return Math.max(maxX - minX, maxY - minY, Math.abs(minX), Math.abs(maxX), Math.abs(minY), Math.abs(maxY)) * 1e-9;
+}
+
+/** Move every node within `eps` of one before it onto that one, so loops
+ *  chain through points that differ only by rounding. */
+function weld(edges: Edge[], eps: number): void {
+  const nodes: Node[] = [];
+  for (const e of edges) {
+    nodes.push(e.from, e.to);
+    for (const c of e.cuts) nodes.push(c.node);
+  }
+  nodes.sort((p, q) => p.x - q.x);
+  for (let i = 0; i < nodes.length; i++) {
+    const p = nodes[i];
+    for (let j = i + 1; j < nodes.length && nodes[j].x - p.x <= eps; j++) {
+      const q = nodes[j];
+      if (q !== p && Math.abs(q.y - p.y) <= eps && (q.x !== p.x || q.y !== p.y)) {
+        q.x = p.x;
+        q.y = p.y;
+      }
+    }
+  }
+}
+
+/** Cut `e` at `p` when `p` lies within `eps` of its inside, away from its ends
+ *  and from any cut already there. */
+function cutAt(e: Edge, p: Node, eps: number): void {
+  const dx = e.to.x - e.from.x, dy = e.to.y - e.from.y;
+  const len2 = dx * dx + dy * dy;
+  const s = ((p.x - e.from.x) * dx + (p.y - e.from.y) * dy) / len2;
+  if (!(s > 0 && s < 1)) return;
+  if (Math.hypot(e.from.x + dx * s - p.x, e.from.y + dy * s - p.y) > eps) return;
+  const at = (q: Node): boolean => Math.abs(q.x - p.x) <= eps && Math.abs(q.y - p.y) <= eps;
+  if (at(e.from) || at(e.to) || e.cuts.some((c) => at(c.node))) return;
+  e.cuts.push({ s, node: p });
 }
 
 /** Anchors for a point `s` of the way along `e`: interpolated within one
@@ -108,17 +228,25 @@ function anchorsAlong(e: Edge, s: number): { a: number; b: number; t: number } {
   return { a: near.a, b: near.b, t: near.t };
 }
 
-/** The pieces between cuts that have fill on exactly one side, turned so it is on the left. */
-function boundaryPieces(edges: Edge[]): Piece[] {
+/** The pieces between cuts that have fill on exactly one side, turned so it
+ *  is on the left. A stretch two edges share comes out once. */
+function boundaryPieces(edges: Edge[], filledBy: (winding: number) => boolean): Piece[] {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const { from: p } of edges) {
     minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
     minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
   }
   const eps = Math.max(Math.hypot(maxX - minX, maxY - minY) * 1e-7, 1e-9);
-  const filled = (x: number, y: number) => windingAt(edges, x, y) !== 0;
+  const filled = (x: number, y: number) => filledBy(windingAt(edges, x, y));
 
   const out: Piece[] = [];
+  const seen = new Set<string>();
+  const keep = (from: Node, to: Node): void => {
+    const k = `${keyOf(from)}>${keyOf(to)}`;
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push({ from, to });
+  };
   for (const e of edges) {
     const stops = [e.from, ...e.cuts.sort((p, q) => p.s - q.s).map((c) => c.node), e.to];
     for (let k = 0; k + 1 < stops.length; k++) {
@@ -129,8 +257,8 @@ function boundaryPieces(edges: Edge[]): Piece[] {
       const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
       const nx = (-dy / len) * eps, ny = (dx / len) * eps;
       const left = filled(mx + nx, my + ny), right = filled(mx - nx, my - ny);
-      if (left && !right) out.push({ from: p, to: q });
-      else if (right && !left) out.push({ from: q, to: p });
+      if (left && !right) keep(p, q);
+      else if (right && !left) keep(q, p);
     }
   }
   return out;
@@ -148,7 +276,7 @@ function windingAt(edges: Edge[], x: number, y: number): number {
 
 /** Join pieces end to start into closed loops. Where a node has several ways
  *  on, take the sharpest left turn, which keeps to the face being traced. */
-function chainLoops(pieces: Piece[]): Node[][] {
+function chainLoops(pieces: Piece[]): { loops: Node[][]; complete: boolean } {
   const outgoing = new Map<string, Piece[]>();
   for (const p of pieces) {
     const k = keyOf(p.from);
@@ -158,6 +286,7 @@ function chainLoops(pieces: Piece[]): Node[][] {
   }
   const used = new Set<Piece>();
   const loops: Node[][] = [];
+  let complete = true;
   for (const first of pieces) {
     if (used.has(first)) continue;
     used.add(first);
@@ -171,9 +300,10 @@ function chainLoops(pieces: Piece[]): Node[][] {
       loop.push(next.from);
       cur = next;
     }
-    if (keyOf(cur.to) === startKey && loop.length >= 3) loops.push(loop);
+    if (keyOf(cur.to) !== startKey) complete = false;
+    else if (loop.length >= 3) loops.push(loop);
   }
-  return loops;
+  return { loops, complete };
 }
 
 function sharpestLeft(into: Piece, options: Piece[]): Piece | undefined {

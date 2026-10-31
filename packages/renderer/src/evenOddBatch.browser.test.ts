@@ -1,8 +1,9 @@
 /**
- * An even-odd fill whose outlines never meet is triangulated and joins the
- * run; one whose outlines cross or touch keeps the stencil. Only a real
- * rasterizer says whether the triangulation lands on the pixels the stencil's
- * parity passes did, edges and multisamples included.
+ * An even-odd fill is triangulated and joins the run, its crossings and
+ * contacts resolved first where its outlines meet; only one too costly to
+ * resolve keeps the stencil. Only a real rasterizer says whether the
+ * triangulation lands on the pixels the stencil's parity passes did, edges and
+ * multisamples included.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
@@ -78,16 +79,18 @@ const SIMPLE: [string, string][] = [
   ['a sliver a pixel wide', 'M 10 10 L 86 60 L 85.2 61.1 L 9.3 11.2 Z'],
 ];
 
-const STENCILLED: [string, string][] = [
+const MEETING: [string, string][] = [
   ['two squares that overlap', 'M 8 8 L 60 8 L 60 60 L 8 60 Z M 36 20 L 88 20 L 88 72 L 36 72 Z'],
   ['a star that crosses itself', 'M 48 4 L 69 70 L 13 29 L 83 29 L 27 70 Z'],
   ['a hole touching its outline', 'M 8 8 L 88 8 L 88 72 L 8 72 Z M 8 24 L 48 24 L 48 56 L 8 56 Z'],
   ['two squares sharing a corner', 'M 8 8 L 48 8 L 48 40 L 8 40 Z M 48 40 L 88 40 L 88 72 L 48 72 Z'],
+  ['a square on another\'s edge', 'M 8 8 L 48 8 L 48 72 L 8 72 Z M 48 24 L 88 24 L 88 56 L 48 56 Z'],
+  ['a figure eight', 'M 10 10 L 86 70 L 86 10 L 10 70 Z'],
 ];
 
-describe('an even-odd fill whose outlines never meet, in a real context', () => {
+describe('an even-odd fill, in a real context', () => {
   for (const antialias of [false, true]) {
-    for (const [name, d] of SIMPLE) {
+    for (const [name, d] of [...SIMPLE, ...MEETING]) {
       it(`joins the run and keeps the stencil's pixels: ${name}${antialias ? ', multisampled' : ''}`, () => {
         const batched = paint(frame(evenOdd(d)), antialias);
         const stencil = paint(frame(stencilledEvenOdd(evenOdd(d))), antialias);
@@ -98,14 +101,6 @@ describe('an even-odd fill whose outlines never meet, in a real context', () => 
       });
     }
   }
-});
-
-describe('an even-odd fill whose outlines cross or touch, in a real context', () => {
-  for (const [name, d] of STENCILLED) {
-    it(`keeps the stencil: ${name}`, () => {
-      expect(paint(frame(evenOdd(d)), false).draws).toBeGreaterThan(1);
-    });
-  }
 
   it('paints a translucent fill once where its fan overlaps itself', () => {
     // The fan from the arrow's tail covers its shaft three times over here.
@@ -115,7 +110,7 @@ describe('an even-odd fill whose outlines cross or touch, in a real context', ()
   });
 
   it('leaves the region two contours share empty', () => {
-    const { px } = paint([{ kind: 'path', path: evenOdd(STENCILLED[0][1]), fill: { paint: { color: '#ff0000' } } }], false);
+    const { px } = paint([{ kind: 'path', path: evenOdd(MEETING[0][1]), fill: { paint: { color: '#ff0000' } } }], false);
     const alpha = (x: number, y: number): number => px[((H - 1 - y) * W + x) * 4 + 3];
     expect(alpha(20, 14)).toBe(255);
     expect(alpha(48, 40)).toBe(0);

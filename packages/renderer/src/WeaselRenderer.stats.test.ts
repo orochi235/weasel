@@ -10,7 +10,7 @@ const rect = (x: number): DrawCommand => ({
   fill: { paint: { kind: 'solid', color: '#f00' } },
 });
 
-/** An even-odd fill whose outlines touch never joins the solid batch, so it draws where it stands,
+/** An even-odd fill too costly to resolve never joins the solid batch, so it draws where it stands,
  *  through the stencil — and closes any run staged before it. */
 const ownDrawFill = {
   kind: 'path',

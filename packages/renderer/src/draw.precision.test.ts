@@ -63,7 +63,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       kind: 'path',
       path: stencilledEvenOdd({ kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords }),
       fill: { paint: { kind: 'solid', color: '#fff' } },
-      // A touching even-odd fill keeps out of the batch, and per-vertex colors pick
+      // A stencilled even-odd fill keeps out of the batch, and per-vertex colors pick
       // the program this reads.
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
     } as unknown as DrawCommand;

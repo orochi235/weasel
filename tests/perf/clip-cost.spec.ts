@@ -9,8 +9,8 @@
  *     clipped rect cannot share a draw with its unclipped neighbors.
  *
  * Separating them needs contents that would not have batched anyway. An
- * even-odd fill whose outlines touch never joins the batch (one whose outlines
- * never meet has since 2026-10-30), so wrapping one in a clip adds the
+ * even-odd fill too costly to resolve never joins the batch (`kinds.ts`'s
+ * `stencil`; any other even-odd fill has since 2026-10-31), so wrapping one in a clip adds the
  * stencil and nothing else (the `pat-` frames are named for the pattern-filled
  * rect they used until 2026-10-30, when patterns joined the batch); wrapping a *solid* rect adds the stencil and the
  * break. The difference between those two deltas is the break's share. The
@@ -178,6 +178,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
 
       const px = (i: number) => 20 + ((i * 37) % (W - 160));
       const py = (i: number) => 20 + ((i * 53) % (H - 160));
+      /** `L a L b L a …`, 1026 edges of it: see `slantPath`. */
+      const stencilPad = (a: string, b: string) => {
+        let d = '';
+        for (let k = 0; k < 1026; k++) d += ` L ${k % 2 ? b : a}`;
+        return d;
+      };
 
       const solidLeaf = (i: number) => ({
         kind: 'path',
@@ -213,13 +219,14 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       });
       /** A 130 x 24 bar turned 20 degrees about the clip's center, so it
        *  crosses the clip's left and right edges. */
-      /** With `touch`, a second contour of no area lies along the first edge:
-       *  an even-odd fill whose outlines touch keeps the stencil, where one
-       *  whose outlines never meet would join the run. */
+      /** With `touch`, a second contour of no area runs back and forth along
+       *  the first edge, 1026 edges of it: an even-odd fill past what the
+       *  tessellator resolves (`MAX_EVENODD_RESOLVE_WORK`) keeps the stencil,
+       *  where any other would join the run. */
       const slantPath = (i: number, touch = false) => {
         const cx = px(i) + 44, cy = py(i) + 44, c = Math.cos(0.35), s = Math.sin(0.35);
         const pt = (x: number, y: number) => `${cx + x * c - y * s} ${cy + x * s + y * c}`;
-        const extra = touch ? ` M ${pt(-65, -12)} L ${pt(65, -12)} Z` : '';
+        const extra = touch ? ` M ${pt(-65, -12)}${stencilPad(pt(65, -12), pt(-65, -12))} Z` : '';
         return pathFromD(`M ${pt(-65, -12)} L ${pt(65, -12)} L ${pt(65, 12)} L ${pt(-65, 12)} Z${extra}`);
       };
       const slantLeaf = (i: number) => ({
@@ -295,7 +302,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
 
       /**
        * Each clip around a solid, which the shader clips, and around an
-       * even-odd fill whose outlines touch, which draws for itself through the stencil:
+       * even-odd fill too costly to resolve, which draws for itself through the stencil:
        * the two must keep the same pixels, exactly. Also counts the pixels
        * where the shader-decided frame differs from the stencil clipping the
        * unsnapped path, which a rasterizer finer than a sixteenth of a pixel
@@ -317,7 +324,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const red = (i: number, own: boolean) => ({
         kind: 'path',
         path: own
-          ? { ...pathFromD(`M ${px(i) - 10} ${py(i) - 10} h 120 v 120 h -120 Z h 120 Z`), fillRule: 'evenodd' }
+          ? { ...pathFromD(`M ${px(i) - 10} ${py(i) - 10} h 120 v 120 h -120 Z M ${px(i) - 10} ${py(i) - 10}${stencilPad(`${px(i) + 110} ${py(i) - 10}`, `${px(i) - 10} ${py(i) - 10}`)} Z`), fillRule: 'evenodd' }
           : { kind: 'rect', x: px(i) - 10, y: py(i) - 10, width: 120, height: 120 },
         fill: { paint: { kind: 'solid', color: '#ff0000' } },
       });

@@ -10,8 +10,9 @@ import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 /**
  * Per-vertex colors join the batch, so these exercise the vertex-color program
- * the way a fill or stroke still reaches it: an even-odd fill whose outlines
- * touch, or a ribbon past the most vertices a run takes (`meshBatching`).
+ * the way a fill or stroke still reaches it: an even-odd fill too costly to
+ * resolve (`stencilledEvenOdd`), or a ribbon past the most vertices a run
+ * takes (`meshBatching`).
  */
 const LONG = 1200;
 const zigzag = {

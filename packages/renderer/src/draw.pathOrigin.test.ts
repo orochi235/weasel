@@ -58,7 +58,7 @@ function batchedLefts(path: PolygonPath): number[] {
 function ownDrawLefts(path: PolygonPath): number[] {
   const cmd = {
     kind: 'path',
-    // A touching even-odd fill keeps out of the batch, and per-vertex colors pick the
+    // A stencilled even-odd fill keeps out of the batch, and per-vertex colors pick the
     // program this reads.
     path: stencilledEvenOdd(path),
     fill: { paint: { kind: 'solid', color: '#fff' } },

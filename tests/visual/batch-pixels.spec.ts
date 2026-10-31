@@ -453,12 +453,15 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
       fill: { paint: { kind: 'solid', color: '#ffffff' } },
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
     });
-    /** A contour of no area along its first edge keeps it on the stencil: an
-     *  even-odd fill whose outlines never meet joins the run. */
+    /** A contour of no area along its first edge, 1026 edges back and forth,
+     *  keeps it on the stencil: past what the tessellator resolves
+     *  (`MAX_EVENODD_RESOLVE_WORK`), where any other even-odd fill joins the run. */
     const evenOdd = (x: number, y: number, s: number, color: string) => {
       const t = tri(x, y, s, color);
-      const coords = new Float32Array([...t.path.coords, x, y, x + s, y + s * 0.4]);
-      const commands = new Uint8Array([...t.path.commands, PATH_M, PATH_L, PATH_Z]);
+      const pad: number[] = [];
+      for (let k = 0; k <= 1026; k++) pad.push(...(k % 2 ? [x + s, y + s * 0.4] : [x, y]));
+      const coords = new Float32Array([...t.path.coords, ...pad]);
+      const commands = new Uint8Array([...t.path.commands, PATH_M, ...new Array(1026).fill(PATH_L), PATH_Z]);
       return { ...t, path: { ...t.path, commands, coords, fillRule: 'evenodd' } };
     };
 

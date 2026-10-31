@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { RectPath, PolygonPath } from '../path';
 import { PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q as PQ, PATH_C as PC } from '../commands';
 import { tessellate } from './tessellate';
+import { MAX_EVENODD_RESOLVE_WORK } from './crossings';
 
 describe('tessellate (RectPath)', () => {
   it('emits 4 vertices and 2 triangles for a rect', () => {
@@ -183,29 +184,54 @@ describe('tessellate (PolygonPath, evenodd)', () => {
     expect(meshArea(apart)).toBeCloseTo(32);
   });
 
-  it('keeps a naive fan per contour, and the stencil, for crossing contours', () => {
+  it('triangulates contours that cross, leaving what two of them cover empty', () => {
     const mesh = tessellate(evenodd(square(0, 0, 10), square(5, 5, 10)));
-    expect(mesh.requiresStencil).toBe(true);
-    expect(Array.from(mesh.indices)).toEqual([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
+    expect(mesh.requiresStencil).toBeFalsy();
+    expect(meshArea(mesh)).toBeCloseTo(150);
   });
 
-  it('keeps the stencil for a contour that crosses itself', () => {
-    expect(tessellate(evenodd([0, 0, 10, 10, 10, 0, 0, 10])).requiresStencil).toBe(true);
+  it('triangulates a contour that crosses itself', () => {
+    const bowtie = tessellate(evenodd([0, 0, 10, 10, 10, 0, 0, 10]));
+    expect(bowtie.requiresStencil).toBeFalsy();
+    expect(meshArea(bowtie)).toBeCloseTo(50);
+    // A pentagram's middle is wound twice, so even-odd leaves it out.
+    const star = [0, 1, 2, 3, 4].map((k) => [Math.sin(k * 0.8 * Math.PI) * 10, -Math.cos(k * 0.8 * Math.PI) * 10]).flat();
+    const outer = tessellate({ ...evenodd(star), fillRule: 'nonzero' });
+    const parity = tessellate(evenodd(star));
+    expect(parity.requiresStencil).toBeFalsy();
+    expect(meshArea(parity)).toBeLessThan(meshArea(outer) * 0.75);
   });
 
-  it('keeps the stencil wherever outlines touch without crossing', () => {
-    const atCorner = evenodd(square(0, 0, 10), square(10, 10, 5));
-    const alongEdge = evenodd(square(0, 0, 10), square(10, 2, 5));
-    const holeOnEdge = evenodd(square(0, 0, 10), [0, 3, 4, 3, 4, 7, 0, 7]);
-    const pinched = evenodd([0, 0, 10, 0, 5, 5, 10, 10, 0, 10, 5, 5]);
-    const sameTwice = evenodd(square(0, 0, 10), square(0, 0, 10));
-    for (const p of [atCorner, alongEdge, holeOnEdge, pinched, sameTwice]) {
-      expect(tessellate(p).requiresStencil).toBe(true);
+  it('triangulates outlines that touch without crossing', () => {
+    const cases: [PolygonPath, number][] = [
+      [evenodd(square(0, 0, 10), square(10, 10, 5)), 125],
+      [evenodd(square(0, 0, 10), square(10, 2, 5)), 125],
+      [evenodd(square(0, 0, 10), [0, 3, 4, 3, 4, 7, 0, 7]), 84],
+      [evenodd([0, 0, 10, 0, 5, 5, 10, 10, 0, 10, 5, 5]), 50],
+      [evenodd(square(0, 0, 10), square(0, 0, 10)), 0],
+      [evenodd(square(0, 0, 10), square(0, 0, 5)), 75],
+    ];
+    for (const [path, area] of cases) {
+      const mesh = tessellate(path);
+      expect(mesh.requiresStencil).toBeFalsy();
+      expect(meshArea(mesh)).toBeCloseTo(area);
     }
   });
 
-  it('keeps the stencil for a contour of no area', () => {
-    expect(tessellate(evenodd(square(0, 0, 10), [2, 2, 6, 2])).requiresStencil).toBe(true);
+  it('ignores a contour of no area', () => {
+    const mesh = tessellate(evenodd(square(0, 0, 10), [2, 2, 6, 2]));
+    expect(mesh.requiresStencil).toBeFalsy();
+    expect(meshArea(mesh)).toBeCloseTo(100);
+  });
+
+  it('keeps a fan per contour, and the stencil, for crossing outlines it would take too long to resolve', () => {
+    const zigzag: number[] = [];
+    for (let i = 0; i <= Math.sqrt(MAX_EVENODD_RESOLVE_WORK); i++) zigzag.push(i, i % 2 ? 10 : 0);
+    const mesh = tessellate(evenodd(square(-1, 2, 6), zigzag));
+    expect(mesh.requiresStencil).toBe(true);
+    // Few edges, but each crossing nearly every other.
+    const star = Array.from({ length: 200 }, (_, k) => [Math.cos(k * 99 * Math.PI / 100), Math.sin(k * 99 * Math.PI / 100)]).flat();
+    expect(tessellate(evenodd(star)).requiresStencil).toBe(true);
   });
 });
 

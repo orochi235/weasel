@@ -204,7 +204,7 @@ describe('WeaselRenderer.render — frame isolation', () => {
     expect(() => r.render([tooDeep()])).toThrow(/clip nesting depth exceeded/);
 
     rec.reset();
-    // A touching even-odd fill keeps out of the solid batch, so the draw uploads
+    // A stencilled even-odd fill keeps out of the solid batch, so the draw uploads
     // `u_model` from the group state instead of folding it into vertices.
     r.render([{
       kind: 'path',
@@ -273,7 +273,7 @@ describe('dispose', () => {
       fill: { paint: { color: '#f00' } },
     }] as never);
     expect(links()).toBe(1);
-    // Per-vertex colors on a touching even-odd fill, which the batch cannot take, are
+    // Per-vertex colors on a stencilled even-odd fill, which the batch cannot take, are
     // the vertex-color program's, built on this frame.
     const vertexColored = {
       kind: 'path',
