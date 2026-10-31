@@ -9,7 +9,7 @@ import { ORG_GROUP } from '../stencils/org';
 import { ERD_GROUP } from '../stencils/erd';
 import { UML_GROUP } from '../stencils/uml';
 import type { DiagramStencil } from '../stencil';
-import type { DiagramType, StencilGroup } from './types';
+import { FLOWCHART_NOTATION, type DiagramType, type StencilGroup } from './types';
 
 const byId = <T extends { id: string }>(list: readonly T[]): Readonly<Record<string, T>> =>
   Object.freeze(Object.fromEntries(list.map((item) => [item.id, item])));
@@ -26,6 +26,7 @@ export const FLOWCHART_TYPE: DiagramType = {
   label: 'Flowchart',
   icon: icon('shape:diamond'),
   groups: [FLOWCHART_GROUP.id, CONTAINERS_GROUP.id],
+  notations: [FLOWCHART_NOTATION],
 };
 
 /** A network: devices joined by plain straight links. */
@@ -64,6 +65,7 @@ export const MIND_MAP_TYPE: DiagramType = {
   groups: [MIND_MAP_GROUP.id],
   edge: { router: 'bezier', markerEnd: null },
   layout: 'radial',
+  notations: ['mindmap'],
 };
 
 /** A UML class diagram: classes and their kin, connectors routed orthogonally to an open arrowhead. */
@@ -73,6 +75,7 @@ export const UML_CLASS_TYPE: DiagramType = {
   icon: icon('umlClass'),
   groups: [UML_GROUP.id, CONTAINERS_GROUP.id],
   edge: { router: 'orthogonal', markerEnd: 'arrow-open' },
+  notations: ['class'],
 };
 
 /** An entity-relationship diagram: connectors routed orthogonally, one at the start and many at the end. */
@@ -82,6 +85,7 @@ export const ERD_TYPE: DiagramType = {
   icon: icon('erdEntity'),
   groups: [ERD_GROUP.id],
   edge: { router: 'orthogonal', markerStart: 'crow-one', markerEnd: 'crow-many' },
+  notations: ['er'],
 };
 
 /** The diagram types this package ships, by id, in menu order. */

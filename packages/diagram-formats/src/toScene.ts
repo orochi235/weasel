@@ -1,8 +1,8 @@
 /** A {@link DiagramDocument} as scene specs and document values: what every import draws from. */
 import { PAGES_DOC_KEY, layoutPages, type Page, type PlacedPage, type SerializedDoc } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, diagramScene, diagramThemeFrom, themeDocValue, type DiagramData, type DiagramSpec, type DiagramTheme,
-  type MeasureRowText,
+  DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, diagramScene, diagramThemeFrom, diagramTypeDocValue, diagramTypeOfNotation, themeDocValue,
+  type DiagramData, type DiagramSpec, type DiagramTheme, type DiagramType, type MeasureRowText,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage } from './document';
 import { graphPageMeta } from './graphPageMeta';
@@ -21,7 +21,7 @@ export interface DocumentSpecsOptions<TLayer extends string = 'main'> {
   measure?: MeasureRowText;
 }
 
-/** What {@link documentSpecs} returns: the nodes, and the `core:pages` and `diagram:theme` document values. */
+/** What {@link documentSpecs} returns: the nodes, and the `core:pages`, `diagram:theme`, and `diagram:type` document values. */
 export interface DocumentScene<TLayer extends string = 'main'> {
   specs: DiagramSpec<TLayer>[];
   doc: SerializedDoc;
@@ -62,7 +62,9 @@ function graphSpecs(pages: readonly { page: GraphPage; at: PlacedPage }[], docum
  * grows to hold its layout. A plot page is one plot root filling its page, its
  * marks under it (`plotSpecs`), drawn in the theme's colors. A graph page's
  * notation, layout, and direction go on its `core:pages` page, under
- * `meta['diagram:graph']`, where `documentFromScene` reads them back.
+ * `meta['diagram:graph']`, where `documentFromScene` reads them back. When
+ * every graph page's notation is one a diagram type claims, the scene opens as
+ * that type (`diagram:type`), its stencils with it.
  */
 export function documentSpecs<TLayer extends string = 'main'>(
   document: DiagramDocument, opts: DocumentSpecsOptions<TLayer> = {},
@@ -86,5 +88,18 @@ export function documentSpecs<TLayer extends string = 'main'>(
   pages.forEach((page, i) => {
     if (page.kind === 'plot') specs.push(...(plotPageSpecs(page, placed[i]!, { layer, ...draw }) as unknown as DiagramSpec<TLayer>[]));
   });
-  return { specs, doc: { [PAGES_DOC_KEY]: { pages: pageList }, [DIAGRAM_THEME_KEY]: themeDocValue(theme) } };
+  const type = typeOfGraphs(pages);
+  return {
+    specs,
+    doc: {
+      [PAGES_DOC_KEY]: { pages: pageList }, [DIAGRAM_THEME_KEY]: themeDocValue(theme),
+      ...(type !== null ? { [DIAGRAM_TYPE_DOC_KEY]: diagramTypeDocValue(type.id) } : {}),
+    },
+  };
+}
+
+/** The diagram type every graph page's notation names, or `null` when there are none, they differ, or no type claims it. */
+function typeOfGraphs(pages: readonly DocumentPage[]): DiagramType | null {
+  const types = new Set(pages.flatMap((p) => (p.kind === 'graph' ? [diagramTypeOfNotation(p.notation)] : [])));
+  return types.size === 1 ? [...types][0]! : null;
 }

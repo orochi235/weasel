@@ -1,4 +1,5 @@
 /** Mermaid as a {@link DiagramFormat}: one format, each diagram kind read and written by its own codec. */
+import { FLOWCHART_NOTATION } from '@weasel-js/diagram';
 import type { DiagramDocument, DiagramFormat, DocumentPage, ExportResult, ImportResult, PageKind, WriteOptions } from '../document';
 import { writtenPage } from '../document';
 import { lineError } from '../lineError';
@@ -119,7 +120,7 @@ function kindOf(text: string): MermaidKind {
 function writeMermaid(doc: DiagramDocument, opts?: WriteOptions): ExportResult {
   const page = writtenPage(doc, opts);
   if (page === null) return FLOWCHART.write(doc, opts);
-  const notation = page.kind === 'graph' ? page.notation : undefined;
+  const notation = page.kind === 'graph' && page.notation !== FLOWCHART_NOTATION ? page.notation : undefined;
   const plot = page.kind === 'plot' ? page.data.kind : undefined;
   const kind = KINDS.find((k) => k.page === page.kind && k.notation === notation && k.plot === plot);
   if (kind !== undefined) return kind.write(doc, opts);

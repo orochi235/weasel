@@ -32,6 +32,10 @@ export interface DiagramType {
   edge?: DiagramTypeEdge;
   /** A key of `LAYOUTS`. Unset: no auto layout. */
   layout?: string;
+  /** The notations a graph page of this type is written in, as a document page's `notation` names them: the first
+   *  is the one a page authored as this type takes, and a page imported in any of them opens as this type. Unset,
+   *  a flowchart. */
+  notations?: readonly string[];
 }
 
 /** What {@link DIAGRAM_TYPE_DOC_KEY} holds: the diagram's type, and the groups its Shapes panel shows. */
@@ -39,6 +43,10 @@ export interface DiagramTypeDoc {
   type: string;
   groups: readonly string[];
 }
+
+/** The notation a flowchart's page names, where it must name one to say it is not of its chart's type: a document
+ *  page leaves `notation` unset for it. */
+export const FLOWCHART_NOTATION = 'flowchart';
 
 /** The document value a diagram's type and shown stencil groups are saved under. */
 export const DIAGRAM_TYPE_DOC_KEY = 'diagram:type';

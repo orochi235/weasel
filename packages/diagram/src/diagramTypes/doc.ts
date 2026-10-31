@@ -1,6 +1,6 @@
 /** Reading and writing a scene's {@link DIAGRAM_TYPE_DOC_KEY} value. Each write is one undo entry. */
 import { DIAGRAM_TYPES, FLOWCHART_TYPE } from './catalog';
-import { DIAGRAM_TYPE_DOC_KEY, type DiagramType, type DiagramTypeDoc } from './types';
+import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_NOTATION, type DiagramType, type DiagramTypeDoc } from './types';
 
 /** A scene as the type reader and writers use it. */
 export interface DiagramTypeScene {
@@ -36,6 +36,16 @@ export function diagramTypeDocOf(scene: Pick<DiagramTypeScene, 'doc'>, types: Ty
 /** The type a scene holds, as {@link diagramTypeDocOf} reads it. */
 export function diagramTypeOf(scene: Pick<DiagramTypeScene, 'doc'>, types: Types = DIAGRAM_TYPES): DiagramType {
   return types[diagramTypeDocOf(scene, types).type] ?? FLOWCHART_TYPE;
+}
+
+/** The notation a graph page of the scene's type is written in. */
+export const diagramNotationOf = (scene: Pick<DiagramTypeScene, 'doc'>, types: Types = DIAGRAM_TYPES): string =>
+  diagramTypeOf(scene, types).notations?.[0] ?? FLOWCHART_NOTATION;
+
+/** The type whose pages `notation` writes, unset read as a flowchart's; `null` when no type in `types` claims it. */
+export function diagramTypeOfNotation(notation: string | undefined, types: Types = DIAGRAM_TYPES): DiagramType | null {
+  const n = notation ?? FLOWCHART_NOTATION;
+  return Object.values(types).find((t) => (t.notations ?? []).includes(n)) ?? null;
 }
 
 function write(scene: DiagramTypeScene, value: DiagramTypeDoc, label: string): void {

@@ -3,7 +3,7 @@ import {
   composeWorldPose, pageHolding, placedPagesOf, scenePoseAdapter, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, endLabelIdOf, diagramThemeFrom, offPageSplits, sequenceRootOf, type DataContainer,
+  DIAGRAM_THEME_KEY, FLOWCHART_NOTATION, diagramLabelOf, diagramNotationOf, documentBoundsOf, endLabelIdOf, diagramThemeFrom, offPageSplits, sequenceRootOf, type DataContainer,
   type DataEdge, type DataGroup, type DataNode, type DiagramTheme, type SequenceData,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage, PlotPage } from './document';
@@ -52,7 +52,8 @@ function contentPage(scene: AnyScene): PlacedPage {
  * where the scene's theme would not give them: the author's own, and any a
  * theme never set. A page holding a sequence's root is a sequence page holding
  * its data; the parts drawn from it, and anything else on that page, are not read.
- * A graph page takes the notation, layout, and direction its scene page keeps.
+ * A graph page takes the notation, layout, and direction its scene page keeps; with no notation there, the one the
+ * scene's diagram type writes (`diagramNotationOf`).
  */
 export function documentFromScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, opts: DocumentFromSceneOptions = {},
@@ -135,10 +136,13 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
       const { nodes, edges: pageEdges, groups, containers, sequence } = buckets.get(p.id)!;
       const base = { id: p.id, ...(p.name !== undefined ? { name: p.name } : {}), width: p.width, height: p.height };
       if (sequence !== undefined) return { kind: 'sequence', ...base, data: sequence };
+      const { notation: own, ...settings } = graphPageSettingsOf(p);
+      const notation = own ?? diagramNotationOf(s);
       return {
         kind: 'graph',
         ...base,
-        ...graphPageSettingsOf(p),
+        ...settings,
+        ...(notation !== FLOWCHART_NOTATION ? { notation } : {}),
         data: { nodes, edges: pageEdges, ...(groups.length > 0 ? { groups } : {}), ...(containers.length > 0 ? { containers } : {}) },
       } satisfies GraphPage;
     }),
