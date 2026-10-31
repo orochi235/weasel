@@ -1,0 +1,22 @@
+---
+title: Request path
+---
+block-beta
+  columns 3
+  %% the entry row
+  client("Browser") space gateway{{"Gateway"}}
+  block:services:3
+    columns 2
+    api["API"] auth[("Users")]
+    queue>"Jobs"] worker
+  end
+  space:2 cache(("Cache"))
+  wide["Logs"]:3
+  client --> gateway
+  gateway -- "routes" --> api
+  api -.-> cache
+  worker --- queue
+  classDef hot fill:#ffeecc,stroke:#aa6600
+  class gateway hot
+  style cache fill:#ddffdd
+  click api "https://example.com"

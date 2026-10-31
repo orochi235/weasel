@@ -16,7 +16,7 @@ const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = {
   TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left', 'v': 'down', '^': 'up', '>': 'right', '<': 'left',
 };
 
-const SHAPE_OUTLINES: Readonly<Partial<Record<MermaidShape, Outline>>> = {
+export const SHAPE_OUTLINES: Readonly<Partial<Record<MermaidShape, Outline>>> = {
   rect: 'rect', rounded: 'roundRect', stadium: 'stadium', circle: 'ellipse', 'double-circle': 'doubleEllipse', diamond: 'diamond',
   cylinder: 'cylinder',
   hexagon: 'hexagon', 'lean-right': 'parallelogram', 'lean-left': 'parallelogram', trapezoid: 'trapezoid', 'inv-trapezoid': 'trapezoid',

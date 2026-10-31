@@ -6,7 +6,7 @@ import { styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TD', up: 'BT', right: 'LR', left: 'RL' };
-const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
+export const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
   rect: ['[', ']'], stadium: ['([', '])'], diamond: ['{', '}'], ellipse: ['((', '))'], hexagon: ['{{', '}}'],
   parallelogram: ['[/', '/]'], trapezoid: ['[/', '\\]'], cylinder: ['[(', ')]'], doubleEllipse: ['(((', ')))'], roundRect: ['(', ')'],
 };

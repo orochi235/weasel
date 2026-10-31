@@ -192,7 +192,7 @@ const SHOULDER = 18;
 const FOOT = 6;
 
 /** Where a person's head and body sit in `b`: a head as wide as its share of the height, narrowed for a thin box. */
-function personParts({ x, y, width: w, height: h }: Bounds) {
+function personParts({ y, width: w, height: h }: Bounds) {
   const d = Math.min(HEAD * h, 0.4 * w);
   const top = y + d + NECK * h;
   const body = y + h - top;

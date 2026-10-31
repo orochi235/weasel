@@ -32,8 +32,8 @@ const REST_KEYWORDS = new Set([
   'accTitle', 'accDescr',
 ]);
 
-/** Openers, longest first, and the closers each may end with. */
-const SHAPES: readonly (readonly [string, readonly (readonly [string, MermaidShape])[]])[] = [
+/** Each shape's openers, longest first, and the closers each may end with. */
+export const SHAPES: readonly (readonly [string, readonly (readonly [string, MermaidShape])[]])[] = [
   ['(((', [[')))', 'double-circle']]], ['([', [['])', 'stadium']]], ['((', [['))', 'circle']]], ['(', [[')', 'rounded']]],
   ['[[', [[']]', 'subroutine']]], ['[(', [[')]', 'cylinder']]],
   ['[/', [['/]', 'lean-right'], ['\\]', 'trapezoid']]], ['[\\', [['\\]', 'lean-left'], ['/]', 'inv-trapezoid']]],
