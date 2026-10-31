@@ -81,4 +81,16 @@ describe('runCreateOutlines', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'));
     warn.mockRestore();
   });
+
+  it("tells the user through the host's notices when it has them", async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notices = { warn: vi.fn() };
+    const { adapter } = makeAdapter({
+      t: { data: { text: 'H', style: { fontFamily: 'nowhere', fontSize: 40 } }, pose: { x: 0, y: 0, width: 100, height: 60 } },
+    });
+    await runCreateOutlines(adapter, notices);
+    expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'text-outlines' }));
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });

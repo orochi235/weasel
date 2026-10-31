@@ -322,6 +322,9 @@ declare module '@weasel-js/routing' {
      * in both its `enabled` predicate and its invoker.
      */
     createOutlinesAdapter?: import('./outlines/createOutlines').CreateOutlinesAdapter;
+    /** Where an action tells the user something went wrong, such as text it
+     *  could not outline. Optional: without it the message goes to the console. */
+    notices?: import('./notices').NoticesDep;
     /** Gesture dispatcher control surface, so an action can abort an
      *  in-flight handle (Escape cancels a drag, etc.). */
     dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };

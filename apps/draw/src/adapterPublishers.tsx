@@ -1,4 +1,5 @@
-import { type SelectionApi, useBooleansAdapter, useCreateOutlinesAdapter } from '@weasel-js/core';
+import { type NoticesDep, type SelectionApi, useBooleansAdapter, useCreateOutlinesAdapter, useNotices } from '@weasel-js/core';
+import { toast } from '@weasel-js/ui/components/Toast';
 import { useMemo } from 'react';
 import { drawBooleansAdapter } from './booleansAdapter';
 import type { DrawScene } from './drawDocument';
@@ -37,5 +38,14 @@ export function CreateOutlinesAdapterPublisher({
     [scene, selection],
   );
   useCreateOutlinesAdapter(adapter);
+  return null;
+}
+
+/** What a kit action tells the user, raised as a warning toast. */
+const DRAW_NOTICES: NoticesDep = { warn: (title, opts) => { toast.warn(title, opts); } };
+
+/** Publishes draw's toasts as the `notices` dep. */
+export function NoticesPublisher(): null {
+  useNotices(DRAW_NOTICES);
   return null;
 }

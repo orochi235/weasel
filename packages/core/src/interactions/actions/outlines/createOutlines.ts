@@ -81,16 +81,18 @@ export type CreateOutlinesResult =
   | { kind: 'failed'; reason: 'text-outlines'; error: TextOutlinesError };
 
 /**
- * Convert every text node in the selection to outlines, as one batch labeled
- * "Create Outlines". Other selected nodes are left alone and stay selected.
- * All or nothing: if any text node's face cannot supply outlines the scene is
- * untouched and the error comes back in the result.
+ * Convert every text node among `ids` — the selection, when not given — to
+ * outlines, as one batch labeled "Create Outlines". Other nodes are left
+ * alone, and the selection keeps them; a selected text node's replacement
+ * takes its place there. All or nothing: if any text node's face cannot
+ * supply outlines the scene is untouched and the error comes back in the
+ * result.
  */
-export function applyCreateOutlines(adapter: CreateOutlinesAdapter): CreateOutlinesResult {
+export function applyCreateOutlines(adapter: CreateOutlinesAdapter, ids?: readonly NodeId[]): CreateOutlinesResult {
   const sel = [...adapter.getSelection()] as NodeId[];
   const converted: { id: NodeId; paths: PaintedPath[] }[] = [];
   try {
-    for (const id of sel) {
+    for (const id of ids ?? sel) {
       const text = adapter.getTextSource(id);
       if (!text) continue;
       const paths = textToPathsByPaint(text.data, text.pose);

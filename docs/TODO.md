@@ -178,8 +178,11 @@ Owner tags, after the priority (2026-10-26):
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
   third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
-  reached outside the lab, that it pushes every unlocked, shown path while nothing is selected (only the selection
-  otherwise, a ruling of 2026-10-31), and its tool key, S (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
+  reached outside the lab, that it pushes every unlocked, shown path and text node while nothing is selected (only
+  the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
+  its drawn box, the conversion and the smudge landing as one undo entry (ruled 2026-10-31;
+  `packages/path-tools/src/shared/outlineSession.ts`), and its tool key, S
+  (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
   Closes when the maintainer has driven the Smudge brush hands-on and the defaults and keys he picks
   are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and

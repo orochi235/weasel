@@ -23,6 +23,9 @@ export interface OuterOpsEnv {
   driving(step: () => void): void;
   /** Where `applyBatch` looks for an open journal until an accessor is set. */
   getActiveJournal: (() => Journal | null) | null;
+  /** The innermost journal opened through `scene.history`, which edits go to
+   *  ahead of the accessor's: it is opened inside that one, if anything. */
+  openJournal(): Journal | null;
 }
 
 export interface OuterOps {
@@ -83,7 +86,7 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
     causing: (op) => causing(op),
     apply(engine, ops, label, adapter) {
       if (env.recorder().joins()) return env.recorder().join(ops, adapter);
-      const journal = activeJournal?.() ?? null;
+      const journal = env.openJournal() ?? activeJournal?.() ?? null;
       env.driving(() => {
         // Neither engine was built with an adapter, so an op is bound to
         // this call's before either applies or stores it.
@@ -98,6 +101,6 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
     setActiveJournalAccessor(fn) {
       activeJournal = fn;
     },
-    activeJournal: () => activeJournal?.() ?? null,
+    activeJournal: () => env.openJournal() ?? activeJournal?.() ?? null,
   };
 }

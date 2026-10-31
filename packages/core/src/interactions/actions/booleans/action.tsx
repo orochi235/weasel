@@ -6,6 +6,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
+import { warnTextOutlines } from '../notices';
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',
@@ -60,7 +61,7 @@ function makePathfinderAction(op: BooleanOp): Action {
     icon: ICON_FOR[op],
     group: 'pathfinder',
     eligible: { capability: 'creates-shapes' },
-    requires: ['selection', 'booleansAdapter', 'view', 'previewPaths'],
+    requires: ['selection', 'booleansAdapter', 'view', 'previewPaths', 'notices'],
     // No default keybindings — there's no industry-standard chord set for
     // boolean ops. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -69,7 +70,7 @@ function makePathfinderAction(op: BooleanOp): Action {
         const adapter = deps.booleansAdapter;
         if (!adapter) return;
         const result = applyBooleanOp(adapter, op, opOptions(deps));
-        if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
+        if (result.kind === 'failed') warnTextOutlines(deps.notices, 'pathfinder', result.error);
       },
     } satisfies ImmediateInvoker,
     preview: (deps) => {
