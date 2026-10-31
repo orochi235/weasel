@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { outlinePath } from '../outline';
 
 const NAMES = [
-  'server', 'router', 'switch', 'firewall', 'laptop', 'desktop', 'phone', 'printer', 'user', 'globe',
+  'server', 'router', 'switch', 'firewall', 'laptop', 'desktop', 'phone', 'printer', 'user', 'globe', 'disk',
   'event', 'intermediateEvent', 'exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventGateway', 'subprocess',
 ];
 

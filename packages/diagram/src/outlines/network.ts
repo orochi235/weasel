@@ -86,6 +86,12 @@ const globe = device(
     + 'M0.5 0.2A0.17 0.4 0 0 0 0.5 1A0.17 0.4 0 0 0 0.5 0.2',
 );
 
+/** A drive seen from above: its case, the platter on its spindle, and the arm swung over it from its pivot. */
+const disk = device(
+  'M0.1 0.42H0.9Q0.94 0.42 0.94 0.46V0.96Q0.94 1 0.9 1H0.1Q0.06 1 0.06 0.96V0.46Q0.06 0.42 0.1 0.42Z',
+  `${ring(0.42, 0.71, 0.22)}${ring(0.42, 0.71, 0.03)}${ring(0.8, 0.53, 0.03)}M0.78 0.55L0.5 0.8`,
+);
+
 export const NETWORK_OUTLINES = {
-  server, router, switch: switchDevice, firewall, laptop, desktop, phone, printer, user, globe,
+  server, router, switch: switchDevice, firewall, laptop, desktop, phone, printer, user, globe, disk,
 };

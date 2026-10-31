@@ -184,4 +184,48 @@ const doubleEllipse: OutlineDef = {
   boxForContent: (c) => ({ width: c.width * Math.SQRT2 + RING * 2, height: c.height * Math.SQRT2 + RING * 2 }),
 };
 
-export const FIGURE_OUTLINES = { roundRect, triangle, octagon, cloud, actor, doubleEllipse };
+/** A person's head, across, as a share of the height; and the gap under it. */
+const HEAD = 0.24;
+const NECK = 0.04;
+/** The shoulders' radius at most, and the body's foot corners'. */
+const SHOULDER = 18;
+const FOOT = 6;
+
+/** Where a person's head and body sit in `b`: a head as wide as its share of the height, narrowed for a thin box. */
+function personParts({ x, y, width: w, height: h }: Bounds) {
+  const d = Math.min(HEAD * h, 0.4 * w);
+  const top = y + d + NECK * h;
+  const body = y + h - top;
+  return { d, top, body, shoulder: Math.min(SHOULDER, w / 4, body / 2), foot: Math.min(FOOT, w / 6, body / 4) };
+}
+
+/** A head over a body whose rounded shoulders are wider than its foot's corners; the rows sit in the body. */
+const person: OutlineDef = {
+  path: (b) => {
+    const { x, y, width: w, height: h } = b;
+    const { d, top, shoulder: r, foot: f } = personParts(b);
+    const k = r * KAPPA;
+    const q = f * KAPPA;
+    const p = new PathBuilder()
+      .moveTo(x + r, top).lineTo(x + w - r, top)
+      .curveTo(x + w - r + k, top, x + w, top + r - k, x + w, top + r)
+      .lineTo(x + w, y + h - f)
+      .curveTo(x + w, y + h - f + q, x + w - f + q, y + h, x + w - f, y + h)
+      .lineTo(x + f, y + h)
+      .curveTo(x + f - q, y + h, x, y + h - f + q, x, y + h - f)
+      .lineTo(x, top + r)
+      .curveTo(x, top + r - k, x + r - k, top, x + r, top)
+      .close()
+      .moveTo(x + w / 2 + d / 2, y + d / 2);
+    arc(p, x + w / 2, y + d / 2, d / 2, 0, Math.PI * 2);
+    return p.close().build();
+  },
+  content: (b) => {
+    const { top, body, shoulder } = personParts(b);
+    const i = shoulder * BITE;
+    return { x: b.x + i, y: top + i, width: b.width - i * 2, height: body - i * 2 };
+  },
+  boxForContent: (c) => ({ width: c.width + SHOULDER * BITE * 2, height: (c.height + SHOULDER * BITE * 2) / (1 - HEAD - NECK) }),
+};
+
+export const FIGURE_OUTLINES = { roundRect, triangle, octagon, cloud, actor, doubleEllipse, person };
