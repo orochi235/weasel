@@ -2,6 +2,8 @@
 import type { DiagramDocument, DiagramFormat, DocumentPage, ExportResult, ImportResult, PageKind, WriteOptions } from '../document';
 import { writtenPage } from '../document';
 import { lineError } from '../lineError';
+import { readArchitecture } from './architecture/read';
+import { writeArchitecture } from './architecture/write';
 import { readBlockDiagram } from './block/read';
 import { writeBlockDiagram } from './block/write';
 import { readClassDiagram } from './class/read';
@@ -52,6 +54,7 @@ const KINDS: readonly MermaidKind[] = [
   },
   { name: 'xychart', header: /^xychart(?:-beta)?$/, page: 'plot', read: readMermaidXychart, write: (doc, opts) => writeMermaidXychart(pageOfKind(doc, opts, 'plot')) },
   { name: 'block-beta', header: /^block(?:-beta)?$/, page: 'graph', notation: 'block', read: readBlockDiagram, write: writeBlockDiagram },
+  { name: 'architecture-beta', header: /^architecture(?:-beta)?$/, page: 'graph', notation: 'architecture', read: readArchitecture, write: writeArchitecture },
 ];
 
 /** The page `opts` names, which must be of `kind`. */
