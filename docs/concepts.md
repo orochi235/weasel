@@ -604,7 +604,9 @@ The page list itself is a document value under `core:pages` (see
 read with `pagesOf` and `placedPagesOf`. `setPages` replaces it and moves each page's root nodes by however far
 their page moved, in one undo entry, so what is on a page stays put on that page; a node that derives from others
 follows them instead. `addPage`, `removePage` (which deletes what is on the page, and what derives from that),
-`movePage`, `resizePage`, and `renamePage` are built on it. `PageTabs` in `@weasel-js/ui` is a strip of tabs over
+`movePage`, `resizePage`, and `renamePage` are built on it. A page's `meta` holds what other packages keep on it, each
+under its owner's key (diagram-formats keeps a graph page's notation and layout under `'diagram:graph'`); every edit
+carries it with the page. `PageTabs` in `@weasel-js/ui` is a strip of tabs over
 any page list; weaselchart uses all of it.
 
 ## Affordance

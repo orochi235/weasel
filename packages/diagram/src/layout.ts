@@ -20,6 +20,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { planWithMargins } from './footprint';
 import type { Graph, GraphNode } from './graph';
+import type { GridOptions } from './grid';
 import type { Bounds } from './outline';
 
 /** Which way the ranks stack. `force` ignores it. */
@@ -51,6 +52,8 @@ export interface LayoutOptions {
   /** `chain` only: which side of the line everything else hangs on, along
    *  the cross axis. Default `'after'`. */
   chainSide?: 'after' | 'before';
+  /** `grid` only: its columns, and each item's span and the empty cells before it. */
+  grid?: GridOptions;
 }
 
 /** The new top-left for each node that moves. A node that is already there is

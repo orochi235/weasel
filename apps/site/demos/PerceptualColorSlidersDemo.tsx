@@ -6,6 +6,7 @@ import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { Dims, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { linearScale } from '@weasel-js/plot/scales';
 import s from './PerceptualColorSlidersDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -95,8 +96,8 @@ function plotIn(size: Dims) {
   return {
     plotW,
     plotH,
-    xAt: (L: number) => DIAGRAM_PAD.l + L * plotW,
-    yAt: (C: number) => DIAGRAM_PAD.t + (1 - C / MAX_C) * plotH,
+    xAt: linearScale({ domain: [0, 1], range: [DIAGRAM_PAD.l, DIAGRAM_PAD.l + plotW] }).map,
+    yAt: linearScale({ domain: [0, MAX_C], range: [DIAGRAM_PAD.t + plotH, DIAGRAM_PAD.t] }).map,
   };
 }
 

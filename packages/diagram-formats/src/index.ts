@@ -18,6 +18,7 @@ export { readMermaidXychart } from './mermaid/xychart/read';
 export { writeMermaidXychart } from './mermaid/xychart/write';
 export { plotThemeOf } from './plotPages';
 export { DIAGRAM_DOT } from './dot/format';
+export { GRAPH_PAGE_META_KEY, graphPageSettingsOf, type GraphPageSettings } from './graphPageMeta';
 export { documentFromScene, type DocumentFromSceneOptions } from './fromScene';
 export { scenePageKinds } from './pageKinds';
 export { documentSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';

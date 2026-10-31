@@ -2,12 +2,21 @@
 import type { DiagramDocument, DiagramFormat, DocumentPage, ExportResult, ImportResult, PageKind, WriteOptions } from '../document';
 import { writtenPage } from '../document';
 import { lineError } from '../lineError';
+import { readArchitecture } from './architecture/read';
+import { writeArchitecture } from './architecture/write';
+import { readBlockDiagram } from './block/read';
+import { writeBlockDiagram } from './block/write';
+import { C4_HEADERS } from './c4/parse';
+import { C4_NOTATIONS, readC4 } from './c4/read';
+import { writeC4 } from './c4/write';
 import { readClassDiagram } from './class/read';
 import { writeClassDiagram } from './class/write';
 import { MERMAID_KINDS, headerWord } from './common/header';
 import { readErDiagram } from './er/read';
 import { writeErDiagram } from './er/write';
 import { readFlowchart } from './flowchart/read';
+import { readKanban } from './kanban/read';
+import { writeKanban } from './kanban/write';
 import { writeFlowchart } from './flowchart/write';
 import { readMindmap } from './mindmap/read';
 import { writeMindmap } from './mindmap/write';
@@ -79,6 +88,10 @@ const KINDS: readonly MermaidKind[] = [
   { name: 'sankey-beta', header: /^sankey(?:-beta)?$/, page: 'plot', plot: 'sankey', read: readMermaidSankey, write: (doc, opts) => writeMermaidSankey(pageOfKind(doc, opts, 'plot')) },
   { name: 'packet-beta', header: /^packet(?:-beta)?$/, page: 'plot', plot: 'packet', read: readMermaidPacket, write: (doc, opts) => writeMermaidPacket(pageOfKind(doc, opts, 'plot')) },
   { name: 'radar-beta', header: /^radar(?:-beta)?$/, page: 'plot', plot: 'radar', read: readMermaidRadar, write: (doc, opts) => writeMermaidRadar(pageOfKind(doc, opts, 'plot')) },
+  { name: 'block-beta', header: /^block(?:-beta)?$/, page: 'graph', notation: 'block', read: readBlockDiagram, write: writeBlockDiagram },
+  { name: 'architecture-beta', header: /^architecture(?:-beta)?$/, page: 'graph', notation: 'architecture', read: readArchitecture, write: writeArchitecture },
+  ...C4_HEADERS.map((h): MermaidKind => ({ name: h, header: new RegExp(`^${h}$`), page: 'graph', notation: C4_NOTATIONS[h], read: readC4, write: writeC4 })),
+  { name: 'kanban', header: /^kanban$/, page: 'graph', notation: 'kanban', read: readKanban, write: writeKanban },
 ];
 
 /** The page `opts` names, which must be of `kind`. */

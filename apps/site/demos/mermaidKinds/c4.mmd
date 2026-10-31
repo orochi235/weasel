@@ -1,0 +1,11 @@
+C4Context
+  title Online shop
+  Person(shopper, "Shopper", "Buys things.")
+  System_Boundary(shop, "Shop") {
+    System(store, "Store", "Takes orders and payments.")
+    SystemDb(orders, "Orders", "Every order placed.")
+  }
+  System_Ext(mail, "Mail", "Sends receipts.")
+  Rel(shopper, store, "Orders from", "HTTPS")
+  Rel(store, orders, "Writes")
+  Rel(store, mail, "Sends receipts with")

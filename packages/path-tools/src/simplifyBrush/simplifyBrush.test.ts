@@ -159,6 +159,20 @@ describe('simplifyBrush', () => {
     expect(dep.selectedAnchors.size).toBe(0);
   });
 
+  it('replays the stroke from its samples with another Size and Tolerance, one edit each time', () => {
+    const { commits, at } = setup();
+    const h = start(at(150, 0), { radiusPx: 8, tolerance: 0.5 });
+    brushAlong(h, at, 150, 250);
+    const narrow = commits[0].path;
+    h.replay!({ radiusPx: 60, tolerance: 0.5 });
+    expect(commits).toHaveLength(2);
+    expect(anchorsOf(commits[1].path).length).toBeLessThan(anchorsOf(narrow).length);
+    h.replay!({ radiusPx: 8, tolerance: 0.5 });
+    expect(commits[2].path).toEqual(narrow);
+    expect(commits.map((c) => c.label)).toEqual(['Simplify brush', 'Simplify brush', 'Simplify brush']);
+    expect(simplifyBrushAction.params).toBeDefined();
+  });
+
   it('binds nothing itself, and is enabled only with a path open', () => {
     expect(simplifyBrushAction.defaultBinding).toBeUndefined();
     const closed = setup(wave(), '');

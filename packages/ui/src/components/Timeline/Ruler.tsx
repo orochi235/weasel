@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
-import { stepDecimals, type TickSet } from '../Plot2D/ticks';
-import { createTimeScale, panWindow, TICK_SPACING_PX, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
+import { decimalsOf, type TickSet } from '@weasel-js/plot/scales';
+import { panWindow, TICK_SPACING_PX, toPercent, windowScale, zoomWindow, type TimeWindow } from './timeScale';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
@@ -25,7 +25,7 @@ export interface RulerProps {
 function formatMs(ms: number, { step, decimals }: TickSet): string {
   if (ms >= 1000) {
     const whole = Math.abs(ms / 1000 - Math.round(ms / 1000)) < 1e-9;
-    return `${(ms / 1000).toFixed(whole ? 0 : Math.max(2, stepDecimals(step / 1000)))}s`;
+    return `${(ms / 1000).toFixed(whole ? 0 : Math.max(2, decimalsOf(step / 1000)))}s`;
   }
   return `${ms.toFixed(decimals)}ms`;
 }
@@ -55,8 +55,7 @@ export function Ruler(props: RulerProps): ReactElement {
   const msAt = (clientX: number): number => {
     const rect = trackRef.current?.getBoundingClientRect();
     if (!rect) return win.from;
-    const scale = createTimeScale(win, rect.width);
-    const raw = scale.toMs(clientX - rect.left);
+    const raw = windowScale(win, rect.width).invert(clientX - rect.left);
     return Math.min(win.to, Math.max(win.from, raw));
   };
 
@@ -101,7 +100,7 @@ export function Ruler(props: RulerProps): ReactElement {
     return () => el.removeEventListener('wheel', listener);
   }, [onWheel]);
 
-  const ticks = tickTimes(win, width, TICK_SPACING_PX);
+  const ticks = windowScale(win, width).spacedTicks({ minSpacing: TICK_SPACING_PX });
   const pct = (ms: number): string => toPercent(win, ms);
 
   return (

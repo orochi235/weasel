@@ -1,4 +1,3 @@
-/** Sequence diagrams: the data, its layout, its scene specs, and the edits it takes. */
 export type {
   SeqBox, SeqFragment, SeqIdStep, SeqMark, SeqMessage, SeqNote, SeqParticipant, SeqSection, SeqStep, SeqTextTarget, SequenceData,
   StepPlace,

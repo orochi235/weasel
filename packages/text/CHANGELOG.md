@@ -1,5 +1,35 @@
 # @weasel-js/text
 
+## 1.15.0
+
+### Patch Changes
+
+- 3f13a49: New `cachedFontVariant(family, weight, style)` in `@weasel-js/font` resolves a face as `resolveFontVariant` does,
+  but hands back one frozen result per face for an exact match rather than a new object every call. Text layout,
+  painting and run resolution now read faces through it, so a HUD readout rewritten every frame no longer
+  allocates a result per label. `resolveFontVariant` still returns an object of the caller's own on every call.
+- d40f593: `@weasel-js/ui` no longer depends on `@weasel-js/bidi`. `CurvedLabel` now reorders mixed-direction text with the engine given to `registerBidi` from `@weasel-js/text`, the same one text layout uses; with none registered it keeps the text's logical order and warns once if the text holds right-to-left letters. An app showing right-to-left text in a `CurvedLabel` installs `@weasel-js/bidi` and calls `registerBidi(bidi)` once at startup. `@weasel-js/text` now exports `registeredBidi` and `warnRtlWithoutEngine`, which takes the caller's name for its message.
+- d25ad30: A runs array can now be refilled in place. `clearRuns(runs)` in `@weasel-js/text` forgets what the layout and
+  paint caches hold for it while leaving it filed, `resolveRunsInto(out, runs, style)` resolves into an array the
+  caller owns, rewriting each run object whose optional fields match, and `textCommandFromRunsInto(cmd, …)` in
+  `@weasel-js/renderer` refills a text command and its runs. Core re-exports all three.
+  
+  A HUD text widget now keeps one command and one runs array for its life and refills them when its text, color
+  or family changes, so a readout rewritten every frame no longer allocates a command, its runs, or a cache
+  entry per label. What its `draw` returned shows the widget's current text rather than a snapshot of the
+  text it had then.
+- Updated dependencies [3f13a49]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [e05ddd3]
+- Updated dependencies [30bf607]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [fce0494]
+  - @weasel-js/font@1.15.0
+  - @weasel-js/geom@1.15.0
+  - @weasel-js/paint@1.15.0
+  - @weasel-js/registry@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

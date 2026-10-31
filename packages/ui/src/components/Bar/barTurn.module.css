@@ -1,0 +1,18 @@
+/* A field too wide for a side bar turns to read up it, its name before its control and each a control's height
+   across. Its own attributes join the class so it outranks the stacked layout `.field[data-orientation]` gives. */
+.turned[data-orientation='vertical'][data-turned] {
+  writing-mode: sideways-lr;
+  flex-direction: row;
+}
+
+/* A control sets its height for a line; turned, that is its width across the bar, and its length is its words'. */
+.turned[data-turned] :is(button, div) {
+  width: auto;
+  height: auto;
+  inline-size: auto;
+  block-size: var(--wzl-field-h);
+}
+
+.turned[data-turned] [data-caret] {
+  rotate: -90deg;
+}

@@ -109,6 +109,23 @@ describe('pages as a document value', () => {
     expect(x(scene, onB)).toBe(200);
   });
 
+  it('carries a page\'s meta through every edit, and undo restores it', () => {
+    const meta = { 'owner:key': { kept: true } };
+    const { scene } = setup({ pages: [{ id: 'a', width: 100, height: 100, meta }, TWO.pages[1]!], layout: { gap: 20 } });
+    const metaOfA = () => pagesOf(scene)!.pages.find((p) => p.id === 'a')!.meta;
+    movePage(scene, 'a', 1);
+    resizePage(scene, 'a', { width: 150, height: 100 });
+    renamePage(scene, 'a', 'First');
+    addPage(scene, { id: 'c', width: 50, height: 50 });
+    removePage(scene, 'b');
+    expect(metaOfA()).toEqual(meta);
+    expect(placedPagesOf(scene).find((p) => p.id === 'a')!.meta).toEqual(meta);
+    renamePage(scene, 'a', '');
+    expect(metaOfA()).toEqual(meta);
+    scene.undo();
+    expect(metaOfA()).toEqual(meta);
+  });
+
   it('writes a first pages doc on a scene that had none, moving nothing', () => {
     const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
     const id = scene.add({ kind: 'mark', layer: 'l', pose: { x: 5, y: 5, width: 1, height: 1 }, data: { n: '' } });

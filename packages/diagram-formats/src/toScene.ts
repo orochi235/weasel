@@ -5,6 +5,7 @@ import {
   type MeasureRowText,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage } from './document';
+import { graphPageMeta } from './graphPageMeta';
 import { laidOutPage, needsLayout } from './pageLayout';
 import { plotPageSpecs } from './plotPages';
 import { sequencePageSize, sequencePageSpecs } from './sequencePage';
@@ -59,7 +60,9 @@ function graphSpecs(pages: readonly { page: GraphPage; at: PlacedPage }[], docum
  * first, with `layered`, its placed nodes pinned (and grows to hold the
  * result). A sequence page is drawn from its data, one root holding it, and
  * grows to hold its layout. A plot page is one plot root filling its page, its
- * marks under it (`plotSpecs`), drawn in the theme's colors.
+ * marks under it (`plotSpecs`), drawn in the theme's colors. A graph page's
+ * notation, layout, and direction go on its `core:pages` page, under
+ * `meta['diagram:graph']`, where `documentFromScene` reads them back.
  */
 export function documentSpecs<TLayer extends string = 'main'>(
   document: DiagramDocument, opts: DocumentSpecsOptions<TLayer> = {},
@@ -67,7 +70,11 @@ export function documentSpecs<TLayer extends string = 'main'>(
   const theme = opts.theme ?? diagramThemeFrom(document.theme);
   const draw: Draw = { theme, ...(opts.measure ? { measure: opts.measure } : {}) };
   const pages = document.pages.map((p) => prepared(p, draw));
-  const pageList: Page[] = pages.map(({ id, name, width, height }) => ({ id, ...(name !== undefined ? { name } : {}), width, height }));
+  const pageList: Page[] = pages.map((page) => {
+    const { id, name, width, height } = page;
+    const meta = graphPageMeta(page);
+    return { id, ...(name !== undefined ? { name } : {}), width, height, ...(meta !== undefined ? { meta } : {}) };
+  });
   const placed = layoutPages(pageList);
   const layer = (opts.layer ?? 'main') as TLayer;
   const graphs = pages.flatMap((page, i) => (page.kind === 'graph' ? [{ page, at: placed[i]! }] : []));

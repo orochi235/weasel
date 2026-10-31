@@ -1,33 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { createTimeScale, panWindow, spanFraction, spanPercent, tickTimes, toFraction, toPercent, zoomWindow } from './timeScale';
+import { panWindow, spanFraction, spanPercent, toFraction, toPercent, windowScale, zoomWindow } from './timeScale';
 
-describe('createTimeScale', () => {
+describe('windowScale', () => {
   it('maps the window ends to the track ends', () => {
-    const s = createTimeScale({ from: 0, to: 1000 }, 500);
-    expect(s.toPx(0)).toBe(0);
-    expect(s.toPx(1000)).toBe(500);
-    expect(s.toPx(500)).toBe(250);
+    const s = windowScale({ from: 0, to: 1000 }, 500);
+    expect(s.map(0)).toBe(0);
+    expect(s.map(1000)).toBe(500);
+    expect(s.map(500)).toBe(250);
   });
 
   it('maps px back to ms', () => {
-    const s = createTimeScale({ from: 0, to: 1000 }, 500);
-    expect(s.toMs(250)).toBe(500);
-    expect(s.toMs(0)).toBe(0);
+    const s = windowScale({ from: 0, to: 1000 }, 500);
+    expect(s.invert(250)).toBe(500);
+    expect(s.invert(0)).toBe(0);
   });
 
   it('round-trips through a panned window', () => {
-    const s = createTimeScale({ from: 400, to: 900 }, 250);
-    expect(s.toMs(s.toPx(650))).toBeCloseTo(650, 9);
+    const s = windowScale({ from: 400, to: 900 }, 250);
+    expect(s.invert(s.map(650))).toBeCloseTo(650, 9);
   });
 
   it('survives a zero-width track without dividing by zero', () => {
-    const s = createTimeScale({ from: 0, to: 1000 }, 0);
-    expect(Number.isFinite(s.toMs(0))).toBe(true);
+    const s = windowScale({ from: 0, to: 1000 }, 0);
+    expect(Number.isFinite(s.invert(0))).toBe(true);
   });
 
   it('survives a zero-length window', () => {
-    const s = createTimeScale({ from: 500, to: 500 }, 200);
-    expect(Number.isFinite(s.toPx(500))).toBe(true);
+    const s = windowScale({ from: 500, to: 500 }, 200);
+    expect(Number.isFinite(s.map(500))).toBe(true);
   });
 });
 
@@ -70,9 +70,9 @@ describe('panWindow', () => {
   });
 });
 
-describe('tickTimes', () => {
+describe('spaced ticks across a window', () => {
   it('returns ticks inside the window, ascending', () => {
-    const ticks = tickTimes({ from: 0, to: 1000 }, 500, 50).values;
+    const ticks = windowScale({ from: 0, to: 1000 }, 500).spacedTicks({ minSpacing: 50 }).values;
     expect(ticks.length).toBeGreaterThan(1);
     expect(ticks[0]).toBeGreaterThanOrEqual(0);
     expect(ticks[ticks.length - 1]).toBeLessThanOrEqual(1000);
@@ -81,20 +81,20 @@ describe('tickTimes', () => {
 
   it('honours the minimum pixel spacing', () => {
     const w = { from: 0, to: 1000 };
-    const ticks = tickTimes(w, 200, 50).values;
-    const s = createTimeScale(w, 200);
+    const ticks = windowScale(w, 200).spacedTicks({ minSpacing: 50 }).values;
+    const s = windowScale(w, 200);
     for (let i = 1; i < ticks.length; i++) {
-      expect(s.toPx(ticks[i]) - s.toPx(ticks[i - 1])).toBeGreaterThanOrEqual(50 - 1e-9);
+      expect(s.map(ticks[i]) - s.map(ticks[i - 1])).toBeGreaterThanOrEqual(50 - 1e-9);
     }
   });
 
   it('uses round numbers, not arbitrary divisions', () => {
-    const ticks = tickTimes({ from: 0, to: 1000 }, 500, 90).values;
+    const ticks = windowScale({ from: 0, to: 1000 }, 500).spacedTicks({ minSpacing: 90 }).values;
     for (const t of ticks) expect(t % 100).toBeCloseTo(0, 9);
   });
 
   it('lands exactly on multiples of a fractional step', () => {
-    const { values, step, decimals } = tickTimes({ from: 0, to: 1 }, 640, 64);
+    const { values, step, decimals } = windowScale({ from: 0, to: 1 }, 640).spacedTicks({ minSpacing: 64 });
     expect(step).toBeCloseTo(0.1, 12);
     expect(decimals).toBe(1);
     expect(values).toContain(0.3);
@@ -102,7 +102,7 @@ describe('tickTimes', () => {
   });
 
   it('returns no ticks for a zero-width track', () => {
-    expect(tickTimes({ from: 0, to: 1000 }, 0, 50).values).toEqual([]);
+    expect(windowScale({ from: 0, to: 1000 }, 0).spacedTicks({ minSpacing: 50 }).values).toEqual([]);
   });
 });
 
@@ -132,10 +132,10 @@ describe('width-free positioning', () => {
     expect(toPercent(degenerate, 99)).toBe('0%');
   });
 
-  it('agrees with createTimeScale once a width is known', () => {
-    const scale = createTimeScale(win, 400);
+  it('agrees with windowScale once a width is known', () => {
+    const scale = windowScale(win, 400);
     for (const ms of [200, 450, 700, 1200]) {
-      expect(toFraction(win, ms) * 400).toBeCloseTo(scale.toPx(ms), 9);
+      expect(toFraction(win, ms) * 400).toBeCloseTo(scale.map(ms), 9);
     }
   });
 });

@@ -3,7 +3,7 @@ import { openPointerSession, pastDragThreshold, type PointerSession } from '@wea
 import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
-import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';
+import { spanPercent, toPercent, windowScale, type TimeWindow } from './timeScale';
 import { snapToNearest, useSnapRadiusPx } from '../../snap';
 import { arrowMove } from '@weasel-js/headless';
 import { LaneGraph } from './LaneGraph';
@@ -65,12 +65,12 @@ export function Lane(props: LaneProps): ReactElement {
   const msAt = (clientX: number): number => {
     const rect = trackRef.current?.getBoundingClientRect();
     if (!rect) return win.from;
-    return createTimeScale(win, rect.width).toMs(clientX - rect.left) - row.offset;
+    return windowScale(win, rect.width).invert(clientX - rect.left) - row.offset;
   };
 
   const snapPxToMs = (): number => {
-    const scale = createTimeScale(win, trackRef.current?.getBoundingClientRect().width ?? 0);
-    return scale.toMs(snapRadiusPx) - scale.toMs(0);
+    const scale = windowScale(win, trackRef.current?.getBoundingClientRect().width ?? 0);
+    return scale.invert(snapRadiusPx) - scale.invert(0);
   };
 
   // Only a numeric sampled row has an honest value axis to graph.

@@ -32,7 +32,8 @@ export interface LastOperationStore {
    * Undo the operation's entry, put back the selection it ran on, and run it again with `patch` laid over its
    * values (a gesture is replayed by its handle), keeping the entry that makes in place of the old one: the
    * history, or the journal open on it, still holds one entry for it. The merged values become the action's
-   * params for the rest of the session, under any tuning. Returns whether it ran.
+   * params for the rest of the session, under any tuning, and each tuning that keeps them is handed them
+   * (`ActionTuning.keep`). Returns whether it ran.
    */
   adjust(patch: Readonly<Record<string, unknown>>): boolean;
   /** Forget the operation; the scene and the history stay as they are. */
@@ -52,6 +53,8 @@ export interface LastOperationHost {
   paramsOf(id: string, given: Record<string, unknown> | undefined): Record<string, unknown>;
   /** Run the action live for `id` here with `params`, as `trigger` would. */
   rerun(id: string, params: Record<string, unknown>): void;
+  /** Hand `params`, which a panel change made `id`'s for the session, to each tuning of `id` that keeps them. */
+  keep(id: string, params: Readonly<Record<string, unknown>>): void;
 }
 
 /** Where an edit lands: the history, or the journal open on it. */
@@ -75,6 +78,8 @@ interface Held {
   /** Run the operation again with `values`, laid over what its first run was handed beyond them, such as the
    *  point a binding carried. */
   rerun: (values: Record<string, unknown>) => void;
+  /** Hand `values` to the tunings that keep the action's params. */
+  keep: (values: Readonly<Record<string, unknown>>) => void;
   unobserve: () => void;
 }
 
@@ -170,6 +175,7 @@ export class LastOperationKeeper implements LastOperationStore {
     }
     held.op = { ...held.op, values };
     this.remember(held.op.id, values);
+    held.keep(values);
     this.listeners.emit();
     return true;
   };
@@ -200,7 +206,8 @@ export class LastOperationKeeper implements LastOperationStore {
       if (entry !== null && out !== 'pass') {
         const rest = without(given, values);
         const op = { id: action.id, label: schema.name || action.label, schema, values };
-        this.hold({ op, entry, stack, history, restore, rerun: (v) => host.rerun(action.id, { ...rest, ...v }) });
+        const keep = (v: Readonly<Record<string, unknown>>) => host.keep(action.id, v);
+        this.hold({ op, entry, stack, history, restore, keep, rerun: (v) => host.rerun(action.id, { ...rest, ...v }) });
       }
       return out;
     };
@@ -213,10 +220,11 @@ export class LastOperationKeeper implements LastOperationStore {
     const start: OngoingInvoker['start'] = (ctx, opts) => {
       const history = this.busy ? null : host.history();
       const restore = history ? host.takeSelection() : null;
+      // Read before `start`, which may open a journal of its own that lands on this stack as one entry.
+      const stack = history ? editStackOf(history) : null;
       const handle = invoker.start(ctx, opts);
       const { onEnd, replay } = handle;
-      if (!history || !onEnd || !replay) return handle;
-      const stack = editStackOf(history);
+      if (!history || !stack || !onEnd || !replay) return handle;
       const watch = watchEntry(stack);
       const ended: OngoingHandle['onEnd'] = (endCtx, reason) => {
         let entry: number | null = null;
@@ -226,13 +234,14 @@ export class LastOperationKeeper implements LastOperationStore {
           entry = watch.stop();
         }
         if (reason !== 'commit' || entry === null) return;
-        const resolved = host.paramsOf(id, resolveParams(opts?.params));
+        const resolved = { ...host.paramsOf(id, resolveParams(opts?.params)), ...handle.params?.() };
         const schema = schemaOf(resolved);
         if (!schema) return;
         const values = formValues(schema, resolved);
         const rest = without(resolved, values);
         const op = { id, label: schema.name || label, schema, values };
-        this.hold({ op, entry, stack, history, restore, rerun: (v) => replay.call(handle, { ...rest, ...v }) });
+        const keep = (v: Readonly<Record<string, unknown>>) => host.keep(id, v);
+        this.hold({ op, entry, stack, history, restore, keep, rerun: (v) => replay.call(handle, { ...rest, ...v }) });
       };
       return { ...handle, onEnd: ended };
     };

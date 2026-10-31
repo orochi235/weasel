@@ -1,0 +1,11 @@
+block-beta
+  columns 3
+  client("Browser") space gateway{{"Gateway"}}
+  block:services:3
+    columns 2
+    api["API"] db[("Users")]
+  end
+  logs["Logs"]:3
+  client --> gateway
+  gateway --> api
+  api --> db

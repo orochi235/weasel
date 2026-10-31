@@ -6,7 +6,7 @@ import {
   applyKeyframeDrag, createKeyframeLayer, type KeyframeLayerState,
 } from '../CurveEditor/createKeyframeLayer';
 import s from './Timeline.module.css';
-import { TICK_SPACING_PX, tickTimes, type TimeWindow } from './timeScale';
+import { TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
 
 /** Keeps the extreme keys inside the lane: at the very edge a key centers on
  *  the lane's border and hangs half into its neighbor. As a percentage of
@@ -112,7 +112,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   };
 
   const [yLo, yHi] = valueRange(state.keys);
-  const ticks = tickTimes(win, size.width, TICK_SPACING_PX).values;
+  const ticks = windowScale(win, size.width).spacedTicks({ minSpacing: TICK_SPACING_PX }).values;
 
   return (
     <div ref={hostRef} className={s.graphHost}>

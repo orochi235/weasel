@@ -250,7 +250,7 @@ export interface DiagramSceneOptions<TLayer extends string = 'main'> {
   layer?: TLayer;
   /** A layout by name, or any `LayoutFn`. Default `'layered'`. `'none'`
    *  leaves every node at its `at`. */
-  layout?: 'layered' | 'tree' | 'force' | 'chain' | 'none' | LayoutFn;
+  layout?: 'layered' | 'tree' | 'force' | 'chain' | 'radial' | 'grid' | 'none' | LayoutFn;
   /** Merged over `{ order: 'barycenter' }`. */
   layoutOptions?: LayoutOptions;
   /** Default `'bezier'`. */

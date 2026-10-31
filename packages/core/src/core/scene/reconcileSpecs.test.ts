@@ -76,4 +76,37 @@ describe('reconcileSpecs', () => {
     reconcileSpecs(scene, prev, [box('a', 0, { kind: 'group' }), box('c', 0)]);
     expect(scene.getSelection()).toEqual([id('c'), id('a')]);
   });
+
+  it('puts a node added among its siblings where next lists it', () => {
+    const prev = [box('a', 0), box('c', 0)];
+    const scene = sceneOf(prev);
+    reconcileSpecs(scene, prev, [box('a', 0), box('b', 0), box('c', 0)]);
+    expect(ids(scene)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('follows a reorder in next, under a parent too', () => {
+    const group = (k: string): Spec => ({ ...box(k, 0), kind: 'group' });
+    const under = (k: string) => box(k, 0, { parent: id('g') });
+    const prev = [group('g'), under('a'), under('b'), under('c')];
+    const scene = sceneOf(prev);
+    reconcileSpecs(scene, prev, [group('g'), under('c'), under('a'), under('b')]);
+    expect(scene.childrenOf(id('g'))).toEqual(['c', 'a', 'b']);
+  });
+
+  it('keeps a reorder made in the scene while next lists the same order', () => {
+    const prev = [box('a', 0), box('b', 0)];
+    const scene = sceneOf(prev);
+    scene.reorder(id('b'), 0);
+    reconcileSpecs(scene, prev, [box('a', 5), box('b', 0)]);
+    expect(ids(scene)).toEqual(['b', 'a']);
+  });
+
+  it('leaves a node no spec names in its place among the ones it reorders', () => {
+    const prev = [box('a', 0), box('b', 0)];
+    const scene = sceneOf(prev);
+    scene.add(box('x', 0));
+    scene.reorder(id('x'), 1);
+    reconcileSpecs(scene, prev, [box('b', 0), box('a', 0)]);
+    expect(ids(scene)).toEqual(['b', 'x', 'a']);
+  });
 });

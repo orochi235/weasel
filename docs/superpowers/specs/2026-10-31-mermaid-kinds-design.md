@@ -61,7 +61,5 @@ cannot hold the document.
 3. Sequence (built).
 4. Plot foundation.
 5. Plot kinds (built).
-6. `block` (graph, new `grid` layout with column spans), `architecture` (graph, side ports, icon table),
-   `C4` (graph, `person` outline, boundaries as containers), `kanban` (graph, pool with `x` lanes).
 
 Each lands with engine, codec, app support, tests and a site demo per kind. 2–4 depend only on 1.

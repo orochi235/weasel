@@ -25,19 +25,17 @@ import {
   type NodeStyle,
 } from './dataTypes';
 import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
-import { force } from './force';
 import { grownBy } from './footprint';
 import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import { LABEL_PLACEMENT } from './labelTrait';
-import { chain } from './chain';
 import { rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
 import { layered } from './layered';
+import { LAYOUTS } from './layoutAction';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPlan } from './layout';
 import { markSpecs } from './marks';
 import { authoredOver } from './route';
 import { diagramThemeFrom, themeFont, themeLabelFont } from './theme/resolve';
 import { offPageTagLook } from './offPage/tag';
-import { tree } from './tree';
 import type { Vec2 } from '@weasel-js/core/math';
 
 export type { DiagramTextStyle };
@@ -54,7 +52,6 @@ export const DEFAULT_GROUP_STYLE: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)
 export { LABEL_PLACEMENT };
 const LINE = 1.4;
 const MIN_WIDTH = 64;
-const LAYOUTS = { layered, tree, force, chain } as const;
 
 export { edgeIdOf };
 
@@ -270,7 +267,7 @@ function layOut(
   const graph = graphOf(visible, expandGroupEdges(graphEdges, graphGroups), graphGroups);
   const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
-    : LAYOUTS[opts.layout ?? 'layered'];
+    : LAYOUTS[opts.layout ?? 'layered'] ?? layered;
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
   const plan = layout === null ? null : planOf(layout, graph, layoutOptions);
   const moved = plan?.moves ?? new Map<string, Vec2>();

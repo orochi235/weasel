@@ -7,7 +7,8 @@ import type {
 import { qty, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { edgeReach, scaleEdges, unitEdges, type Band, type RangeEdge } from './bands';
-import type { BandScale } from './scale';
+import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import { unitScale } from './scale';
 import { arrowStep, pct } from './track';
 
 /** A rescale of the whole range: the new ends and the bands refitted between them. `bands` is the committed
@@ -23,7 +24,7 @@ export interface RangeEdgeHandleProps<T> {
   /** Where this end is drawn right now: mid-drag, not yet `min` / `max`. */
   at: number;
   limits?: readonly [number, number];
-  scale: BandScale;
+  scale: ContinuousScaleFactory;
   display: Display;
   /** This end's value as the consumer tagged it, if it did. */
   tagged?: Quantity;
@@ -45,9 +46,10 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   const { edge, committed, min, max, at, limits, scale, display } = props;
   const edges = unitEdges(committed, scale, min, max);
   const locked = committed.map((b) => b.locked === true);
+  const unit = unitScale(scale, min, max);
   const toBase = (v: number): number => {
     if (!Number.isFinite(v)) return v;
-    const u = scale.toUnit(v, min, max);
+    const u = unit.map(v);
     return Number.isNaN(u) ? -Infinity : u;
   };
   const unitLimits: [number, number] | undefined = limits && [toBase(limits[0]), toBase(limits[1])];
@@ -55,7 +57,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   const fromBase = (u: number): number =>
     limits && unitLimits && u === unitLimits[0] ? limits[0]
       : limits && unitLimits && u === unitLimits[1] ? limits[1]
-        : scale.fromUnit(u, min, max);
+        : unit.invert(u);
   const [reachLo, reachHi] = edgeReach(edges, locked, edge, unitLimits);
 
   const fit = (to: number): RangeEdit<T> | null => {

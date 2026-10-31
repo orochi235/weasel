@@ -1,5 +1,60 @@
 # @weasel-js/geom
 
+## 1.15.0
+
+### Patch Changes
+
+- b7d362d: An even-odd fill whose contours neither cross nor touch now tessellates to an ordinary triangulation (`earcut`, rings
+  nested an odd number deep cut as holes) instead of a per-contour fan with `requiresStencil`, so the renderer stages it
+  into the batched run like a nonzero fill. Contours that cross, touch, or overlap are first rebuilt as the boundary of
+  their even-odd fill, the way crossing nonzero outlines already were, and a contour of no area is dropped; only a fill
+  whose crossings would cost more than `MAX_EVENODD_RESOLVE_WORK` (now exported from `@weasel-js/geom/tessellate`) to
+  resolve keeps the stencil fan.
+  
+  The stencil's cover pass now paints each pixel of an even-odd fill once: a translucent fill whose fan overlapped
+  itself, such as a concave outline, used to blend once per overlapping triangle and come out too opaque.
+- a95d3a4: Extend to next path now eases a curved end out of its bend instead of running it straight on: the
+  extension starts with the end's curvature, lets it fall linearly to zero (an Euler spiral) over the stretch
+  that turns it a further `easeTurn` (30° by default), then runs straight, so tangent and curvature both stay
+  continuous where it joins. `extendToMeet` searches along that curve for the first stroke it meets.
+  
+  geom: a new `'eased'` `LengthenMode` for `lengthenPathEnd` and `lengthToward`, `extensionPieces` and
+  `easeLength` for the curve an end grows along, and `mode` and `easeTurn` options on `extendToMeet`
+  (default `'eased'`) and `lengthenOpenEnd` (default `'tangent'`). `extendToMeet`'s `distance` is now arc
+  length along the curve.
+  
+  path-tools: the `extendToMeet` action declares `params` (`shape`: Eased or Straight, `easeTurn`), so its
+  settings appear in the last-operation panel after a click or the command; `lengthenPath` accepts
+  `mode: 'eased'`.
+- 30bf607: `harmonizeAnchors` no longer reports a change for a path that is already curvature-continuous. Stored in single
+  precision, such a path re-solved about 1e-4 away from itself, past the old 1e-6 threshold, so Harmonize curvature
+  stayed enabled and each run pushed an undo step that moved nothing visibly.
+- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
+  
+  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+  and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
+  operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
+  `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
+  over the values it used, and keeps the new entry in place of the old one, so the history still holds one entry. Any
+  other history step, an undo or redo, or `dismiss()` clears it. The values last used become the action's params for
+  the rest of the session, under any tuning. Core publishes a `selectionSnapshot` dep that captures the node selection
+  and the anchor selection together, which the rerun restores.
+  
+  `@weasel-js/ui` adds `<LastOperationPanel>`, which draws the last operation as a form titled with the command's label,
+  adjusting it on each change and dismissing it from its close button; it renders nothing while there is none.
+  
+  `bridgePaths` and `bridgeAnchors` declare their Tension (`BRIDGE_PARAMS`), `resamplePath` its count, spacing, corners,
+  and tolerance (`RESAMPLE_PARAMS`), and `addExtremeAnchors` a new Turns param (`ADD_EXTREMES_PARAMS`). `resamplePath`
+  is now an immediate command committing one entry, where it was an ongoing action previewed through `begin`: code
+  driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
+  default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
+  argument (`ExtremaAxes`).
+- fce0494: A node can now declare points of its own that a move snaps, through `<SceneCanvas snap={{ anchors }}>`
+  or `createSnapSession2d({ anchors })`: a function from a node id to points in that node's box frame,
+  such as a cabinet's hanger holes. Each becomes a probe of the new role `'anchor'`, offered only to a
+  source whose `roles` list it, so a grid can land the holes on a pegboard's while alignment and spacing
+  keep measuring the box.
+
 ## 1.14.2
 
 No changes in this release.

@@ -9,6 +9,18 @@ export function textLines(text: string): string[] {
   return lines.every((l) => l === '') ? [] : lines;
 }
 
+/** `text` broken at spaces into lines of at most `width` characters, a longer word on a line of its own: how a
+ *  kind whose renderer wraps its text reads it into rows. */
+export function wrapped(text: string, width = 32): string[] {
+  const out: string[] = [];
+  for (const word of text.split(/\s+/).filter((w) => w !== '')) {
+    const last = out.at(-1);
+    if (last !== undefined && last.length + 1 + word.length <= width) out[out.length - 1] = `${last} ${word}`;
+    else out.push(word);
+  }
+  return out;
+}
+
 /** `text` without the double quotes around it, if it has them. */
 export const unquote = (text: string): string => (/^".*"$/s.test(text) ? text.slice(1, -1) : text);
 

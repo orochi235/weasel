@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
-import { logScale } from './scale';
+import { logScale } from '@weasel-js/plot/scales';
 import { stubRect } from './testing/stubRect';
 import type { BoundsCtx, Thumb } from './types';
 
