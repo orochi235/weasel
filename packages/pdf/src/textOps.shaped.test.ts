@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
  * Text a shaper shaped, exported as the glyphs it shaped: Arabic and Devanagari in subsets of
- * Noto Sans (`packages/text-shaping/src/__fixtures__`), read back by pdf.js.
+ * Noto Sans (`packages/text-shaping/src/__fixtures__`), read back by pdf.js and poppler.
  */
 import { loadFontOutlines, registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
 import { bidi } from '@weasel-js/bidi';
@@ -10,8 +10,10 @@ import { loadShaper, type Shaper } from '@weasel-js/text-shaping';
 import { registerBidi, registerShaper, type ResolvedRun } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { type PdfFontSource, registryFontSource } from './fonts/fontSource';
 import { latin1 } from './latin1';
@@ -86,6 +88,33 @@ async function extracted(bytes: Uint8Array): Promise<string> {
   }
 }
 
+/** pdftotext, when this machine has it: poppler honors `/ActualText`, which pdf.js ignores. */
+const popplerAt = (() => {
+  try {
+    execFileSync('pdftotext', ['-v'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+/** The text poppler reads back, without the embedding marks it wraps right-to-left lines in. */
+function popplerText(bytes: Uint8Array): string {
+  const dir = mkdtempSync(join(tmpdir(), 'weasel-pdf-'));
+  try {
+    writeFileSync(join(dir, 'page.pdf'), bytes);
+    return execFileSync('pdftotext', [join(dir, 'page.pdf'), '-']).toString().replace(/[\u202a-\u202e\n\f]/g, '');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Text both readers read back as written. A mark on a word's last letter does not yet (docs/TODO.md). */
+const READ_BACK = [
+  ['किक', 'pdf-shaped-deva'], ['ककि कि', 'pdf-shaped-deva'], ['क्ष कितर्क', 'pdf-shaped-deva'],
+  ['بَب', 'pdf-shaped-ar'], ['بت بيت', 'pdf-shaped-ar'], ['السلام مسلم', 'pdf-shaped-ar'],
+] as const;
+
 // pdf.js reads `/ToUnicode` and ignores `/ActualText`.
 describe('writePdf with a shaper', () => {
   it('draws the conjunct क्ष as the one glyph the shaper formed, and reads it back as its three code points', async () => {
@@ -106,26 +135,39 @@ describe('writePdf with a shaper', () => {
     expect(content).toMatch(/\/Span <<\/ActualText <FEFF0915093F>>> BDC\n\[[^\n]*\] TJ\nEMC/);
   });
 
-  it('draws Arabic in its joining forms, and marks each letter with its text and its dots with none', async () => {
+  it('draws Arabic in its joining forms, each letter read from its body and its dots drawn last as nothing', async () => {
     const shaped = shaper.shape(ARABIC, 'بت');
     const { s, content, skipped } = await render('بت', 'pdf-shaped-ar');
     expect(skipped).toEqual([]);
     expect(drawnGids(content).sort()).toEqual(shaped.map((g) => hex4(g.gid)).sort());
-    // Each letter is a dotless body on the baseline and its dots set off it. Teh's body is
-    // beh's, so `/ToUnicode` cannot tell them apart: each body carries its letter in a span.
-    expect(content).toMatch(/<FEFF0628>>> BDC\n(?:[-\d.]+ Ts\n)?\[[^\n]*\] TJ\nEMC\n\/Span <<\/ActualText <>>> BDC/);
-    expect(content).toMatch(/<FEFF062A>>> BDC\n(?:[-\d.]+ Ts\n)?\[[^\n]*\] TJ\nEMC\n\/Span <<\/ActualText <>>> BDC/);
-    // The dots, drawn first, claim the letters; the shared body claims nothing.
-    const [dotBeh, body] = shaped;
-    expect(s).toContain(`<${hex4(dotBeh.gid)}> <0628>`);
-    expect(s).toContain(`<${hex4(body.gid)}> <2060>`);
+    // Each letter is a body on the baseline, which reads as the letter, and dots the shaper gave
+    // no advance, which read as nothing and are drawn after every body in one span.
+    const [dotBeh, bodyBeh, dotTeh, bodyTeh] = shaped;
+    expect(s).toContain(`<${hex4(bodyBeh.gid)}> <0628>`);
+    expect(s).toContain(`<${hex4(bodyTeh.gid)}> <062A>`);
+    expect(s).toContain(`<${hex4(dotBeh.gid)}> <2060>`);
+    expect(s).toContain(`<${hex4(dotTeh.gid)}> <2060>`);
+    expect([...content.matchAll(/BDC/g)]).toHaveLength(1);
+    expect(content).toMatch(new RegExp(`/Span <</ActualText <>>> BDC\\n(?:[-\\d.]+ Ts\\n)?\\[[^\\n]*${hex4(dotTeh.gid)}[^\\n]*\\] TJ`));
   });
 
-  it('reads back in pdf.js with no control character for a glyph that claims no text, and no space', async () => {
-    // pdf.js lists text in the order it is drawn, left to right.
-    expect(await extracted((await render('بت', 'pdf-shaped-ar')).bytes)).toBe('تب');
-    expect(await extracted((await render('بَب', 'pdf-shaped-ar')).bytes)).toBe('بَب');
-    expect(await extracted((await render('कि', 'pdf-shaped-deva')).bytes)).toBe('कि');
+  it('gives a glyph read back two ways a code for each, mapped to it', async () => {
+    // The ka under the i-matra reads as the pair; the lone ka after it reads as itself.
+    const [, ka] = shaper.shape(DEVANAGARI, 'किक');
+    const { s, content } = await render('किक', 'pdf-shaped-deva');
+    expect(s).toContain(`<${hex4(ka.gid)}> <0915093F>`);
+    const lone = new RegExp(`<([0-9A-F]{4})> <0915>`).exec(s)![1];
+    expect(lone).not.toBe(hex4(ka.gid));
+    expect(drawnGids(content).at(-1)).toBe(lone);
+    expect(s).toMatch(/\/CIDToGIDMap \d+ 0 R/);
+  });
+
+  it('reads back as written in pdf.js', async () => {
+    for (const [text, family] of READ_BACK) expect(await extracted((await render(text, family)).bytes)).toBe(text);
+  });
+
+  it.skipIf(!popplerAt)('reads back as written in poppler', async () => {
+    for (const [text, family] of READ_BACK) expect(popplerText((await render(text, family)).bytes)).toBe(text);
   });
 
   it('sets a mark where the shaper put it with Ts, and lowers it back after', async () => {

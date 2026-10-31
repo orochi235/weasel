@@ -110,14 +110,14 @@ function clusterSlot(
   shaper: TextShaper, face: ArrayBuffer, glyphs: readonly ShapedGlyph[], from: number, to: number, text: string,
   shift: number, advance: number,
 ): ShapedSlot {
-  const placed: { gid: number; x: number; y: number }[] = [];
+  const placed: ShapedCluster['glyphs'][number][] = [];
   let pen = shift;
   let d = '';
   let key = '';
   for (let k = from; k < to; k++) {
     const g = glyphs[k];
     const x = pen + g.dx, y = g.dy;
-    placed.push({ gid: g.gid, x, y });
+    placed.push({ gid: g.gid, x, y, advance: g.advance });
     d += shaper.glyphD(face, g.gid, x, y) ?? '';
     key += `${k === from ? '' : ';'}${g.gid}${x === 0 && y === 0 ? '' : `@${fmt(x)},${fmt(y)}`}`;
     pen += g.advance;

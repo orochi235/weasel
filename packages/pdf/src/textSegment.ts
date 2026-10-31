@@ -21,9 +21,9 @@ import { isSpace, outlineCommand, placedOutline, skipGlyph } from './textOutline
 /** What one placed code point draws in a text object. */
 export interface SegmentGlyph {
   g: PlacedGlyph;
-  /** Each glyph and where it sits, in ems from the code point's pen, y down: one at the pen
-   *  unless a shaper set its cluster. */
-  glyphs: readonly { gid: number; x: number; y: number }[];
+  /** Each glyph's code in the segment's font and where it sits, in ems from the code point's
+   *  pen, y down: one at the pen unless a shaper set its cluster. */
+  glyphs: readonly { code: number; x: number; y: number }[];
   /** Text a reader takes the glyphs for, in place of what `/ToUnicode` maps them to; set when
    *  that mapping cannot give back the code point's cluster. */
   actual?: string;
@@ -36,6 +36,7 @@ export interface TextSegment {
   glyphs: SegmentGlyph[];
 }
 
+const WHITESPACE = /^\s+$/;
 const FILL = 0;
 const STROKE = 1;
 const FILL_STROKE = 2;
@@ -68,8 +69,10 @@ function inkBox(seg: TextSegment, dx: number, dy: number): Path {
 /**
  * `BT … ET` for the segment: its glyphs at their laid-out x, the gap between what the font
  * advances and what the layout stepped written as a TJ adjustment. A glyph a shaper set off the
- * baseline is raised with `Ts`, and a cluster `/ToUnicode` cannot give back is marked with its
- * text as `/ActualText` (`spansOf`).
+ * baseline is raised with `Ts`. A left-to-right cluster of several glyphs is marked with its text
+ * as `/ActualText` (`spansOf`). A right-to-left one is not, since pdf.js ends a piece of text at
+ * every marked span and orders right-to-left text within a piece: its glyphs that read as nothing
+ * are drawn last, together, in one span that reads as nothing.
  */
 function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy: number): void {
   const { out } = ctx;
@@ -96,46 +99,56 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
     parts = [];
     hex = '';
   };
+  const emit = (code: number, to: number, y: number) => {
+    // Text space is y up, so a glyph the shaper moved down is a negative rise.
+    const at = num(-y);
+    if (at !== rise) {
+      flush();
+      out.op('Ts', (rise = at));
+    }
+    if (anchor && WHITESPACE.test(seg.font.readsAs(code) ?? '')) {
+      flush();
+      const step = num(to - line);
+      out.op('Td', step, 0);
+      pen = line += Number(step);
+      anchor = false;
+    }
+    const adjust = num((pen - to) * 1000);
+    if (adjust !== '0') {
+      if (hex) parts.push(`<${hex}>`);
+      hex = '';
+      parts.push(adjust);
+      pen -= Number(adjust) / 1000;
+    }
+    hex += code.toString(16).toUpperCase().padStart(4, '0');
+    pen += seg.font.widthOf(code) / 1000;
+    // pdf.js moves past no glyph that reads as nothing, and reads a gap after one as a
+    // space, so its pen is put back at the next space, where a gap is read as nothing new.
+    anchor ||= seg.font.readsAs(code) === '' && seg.font.widthOf(code) !== 0;
+  };
+  const span = (text: string, glyphs: readonly { code: number; to: number; y: number }[]) => {
+    flush();
+    out.op('BDC', '/Span', `<</ActualText <${text ? `FEFF${utf16Hex(text)}` : ''}>>>`);
+    for (const p of glyphs) emit(p.code, p.to, p.y);
+    flush();
+    out.op('EMC');
+  };
+  /** Right-to-left glyphs that read as nothing, drawn after the rest. */
+  const silent: { code: number; to: number; y: number }[] = [];
   for (const { g, glyphs, actual } of seg.glyphs) {
-    for (const span of spansOf(glyphs, actual)) {
-      if (span.text !== undefined) {
-        flush();
-        out.op('BDC', '/Span', `<</ActualText <${span.text ? `FEFF${utf16Hex(span.text)}` : ''}>>>`);
+    const placed = glyphs.map(({ code, x, y }) => ({ code, to: (g.x - first.x) / s + x, y }));
+    if (actual === undefined) {
+      for (const p of placed) emit(p.code, p.to, p.y);
+    } else if (g.shaped?.rtl) {
+      for (const p of placed) {
+        if (seg.font.readsAs(p.code) === '') silent.push(p);
+        else emit(p.code, p.to, p.y);
       }
-      for (const { gid, x, y } of span.glyphs) {
-        // Text space is y up, so a glyph the shaper moved down is a negative rise.
-        const at = num(-y);
-        if (at !== rise) {
-          flush();
-          out.op('Ts', (rise = at));
-        }
-        const to = (g.x - first.x) / s + x;
-        if (anchor) {
-          flush();
-          const step = num(to - line);
-          out.op('Td', step, 0);
-          pen = line += Number(step);
-          anchor = false;
-        }
-        const adjust = num((pen - to) * 1000);
-        if (adjust !== '0') {
-          if (hex) parts.push(`<${hex}>`);
-          hex = '';
-          parts.push(adjust);
-          pen -= Number(adjust) / 1000;
-        }
-        hex += gid.toString(16).toUpperCase().padStart(4, '0');
-        pen += seg.font.widthOf(gid) / 1000;
-        // pdf.js drops a glyph that reads as nothing without moving its own pen past it, so the
-        // glyph after one is placed afresh rather than from that pen.
-        anchor ||= seg.font.readsAs(gid) === undefined && seg.font.widthOf(gid) !== 0;
-      }
-      if (span.text !== undefined) {
-        flush();
-        out.op('EMC');
-      }
+    } else {
+      for (const { text, glyphs: some } of spansOf(placed, actual)) span(text, some);
     }
   }
+  if (silent.length > 0) span('', silent);
   flush();
   // Ts outlives ET, as all of the text state does.
   if (rise !== '0') out.op('Ts', 0);
@@ -235,16 +248,15 @@ export async function writeSegment(
   out.op('Q');
 }
 
-type Placed = SegmentGlyph['glyphs'][number];
+type Placed = { code: number; to: number; y: number };
 
 /**
- * A code point's glyphs in the spans its text is marked with. A cluster marked with its text
- * keeps it on its glyphs on the baseline, and its glyphs off the baseline are marked with no
- * text after them: an extractor sets a span's text from its first glyph's start to its last
- * one's end, and a raised mark at either end moves the text off its line.
+ * A left-to-right cluster's glyphs in the spans its text is marked with. A cluster keeps its text
+ * on its glyphs on the baseline, and its glyphs off the baseline are marked with no text after
+ * them: an extractor sets a span's text from its first glyph's start to its last one's end, and
+ * a raised mark at either end moves the text off its line.
  */
-function spansOf(glyphs: readonly Placed[], actual: string | undefined): { text?: string; glyphs: readonly Placed[] }[] {
-  if (actual === undefined) return [{ glyphs }];
+function spansOf(glyphs: readonly Placed[], actual: string): { text: string; glyphs: readonly Placed[] }[] {
   const on = glyphs.filter((p) => p.y === 0);
   if (on.length === 0 || on.length === glyphs.length) return [{ text: actual, glyphs }];
   return [{ text: actual, glyphs: on }, { text: '', glyphs: glyphs.filter((p) => p.y !== 0) }];

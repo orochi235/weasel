@@ -114,6 +114,11 @@ function writeSfnt(tables: Tables): Uint8Array {
   return out;
 }
 
+/** How many glyphs `sfnt` has. */
+export function glyphCount(sfnt: ArrayBuffer): number {
+  return viewOf(readTables(sfnt).get('maxp')!).getUint16(4);
+}
+
 /**
  * `sfnt`, a TrueType (`glyf`) face, holding only the outlines of `used`, `.notdef`, and the
  * components those glyphs are built from. Ids past the face's last glyph are ignored.
