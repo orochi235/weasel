@@ -90,8 +90,7 @@ via a tool's `bindings` or a `trigger` call.
 | `nudge.up` / `.down` / `.left` / `.right` | Arrow key (`magnitude: 'small'`), Shift+Arrow (`'big'`) |
 | `reorder.forward` | Mod+] (`distance: 'adjacent'`), Mod+Alt+] (`'extreme'`) |
 | `reorder.backward` | Mod+[ (`'adjacent'`), Mod+Alt+[ (`'extreme'`) |
-| `tool.modeDefault` | Escape (channel `*`, phase `initial`, hotkey tier) in a mode that names a `defaultTool` while another tool is on — makes the default tool active, so a second Escape leaves the mode; a mode shortcut's `exit` yields to it |
-| `exitPathEdit` | Escape |
+| `exitPathEdit` | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
 | `deleteAnchors` | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` | Arrow / Shift+Arrow, as `nudge` |
 

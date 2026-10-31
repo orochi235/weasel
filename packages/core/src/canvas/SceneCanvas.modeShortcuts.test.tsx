@@ -62,6 +62,14 @@ describe('mode shortcuts', () => {
     expect(t.selected()).toEqual([ID]);
   });
 
+  it('bind Escape once per mode, so no route conflict is reported for it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    setup('path-edit', { exit: vi.fn() });
+    const conflicts = warn.mock.calls.map((c) => String(c[0])).filter((m) => m.includes('route conflict') && m.includes('Escape'));
+    warn.mockRestore();
+    expect(conflicts).toEqual([]);
+  });
+
   it("return to the mode's default tool on Escape first, and leave on the next", () => {
     const exit = vi.fn();
     const t = setup('path-edit', { exit });

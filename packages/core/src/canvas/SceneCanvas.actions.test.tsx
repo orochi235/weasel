@@ -76,7 +76,7 @@ describe('SceneCanvas actions integration', () => {
     // `select.collapseDeferred` are the select tool's OWN actions: `actions={null}` opts out of the
     // kit's defaults, not out of the tools you passed.
     expect(seen.at(-1)).toEqual([
-      'tool.activate', 'tool.resetToDefault', 'tool.modeDefault', 'select.pick', 'select.deep', 'select.collapseDeferred',
+      'tool.activate', 'tool.resetToDefault', 'select.pick', 'select.deep', 'select.collapseDeferred',
     ]);
   });
 

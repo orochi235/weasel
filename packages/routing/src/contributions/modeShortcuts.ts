@@ -2,6 +2,7 @@ import { modeLabel, type ModeDefinition, type ModeRegistry } from '@weasel-js/mo
 import { key, type KeySpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
+import { returnToModeDefault } from '../tools/returnToModeDefault';
 import type { Rule } from '../eligibility';
 import type { Contribution } from './types';
 
@@ -52,9 +53,9 @@ export function modeShortcutSpec(shortcut: string): KeySpec {
  * The bindings ride the hotkey tier, so leaving a mode outranks what the same
  * key does otherwise (Escape clearing the selection), and they yield while a
  * gesture is in flight, so Escape mid-drag still cancels the drag first. Keys
- * typed into an editable element never reach them. A mode's `exit` also
- * yields while a tool other than its `defaultTool` is active, so that key
- * first returns to the default tool (core's `tool.modeDefault`).
+ * typed into an editable element never reach them. A mode's `exit` and
+ * `cancel`, pressed while a tool other than its `defaultTool` is active,
+ * return to that tool instead (`returnToModeDefault`), so the next press leaves.
  */
 export function modeShortcuts(
   registry: ModeRegistry,
@@ -74,18 +75,13 @@ export function modeShortcuts(
       const shortcut = mode[role]?.shortcut;
       const run = handlers[role];
       if (!shortcut || !run) continue;
+      const backsOut = role === 'exit' || role === 'cancel';
       actions.push(shortcutAction(mode, role, shortcut, { mode: mode.id },
-        (deps) => registry.current().id === mode.id && (role !== 'exit' || onDefaultTool(mode, deps)),
-        run, true));
+        () => registry.current().id === mode.id,
+        backsOut ? (deps) => { if (!returnToModeDefault(deps)) run(); } : run, true));
     }
   }
   return { id: 'modes.shortcuts', eligibility: { always: true }, actions };
-}
-
-/** Whether `mode` names no default tool, or it (or no tool) is the active one. */
-function onDefaultTool(mode: ModeDefinition, deps: ActionDeps | undefined): boolean {
-  const active = deps?.activeTool?.active ?? null;
-  return mode.defaultTool === undefined || active === null || active === mode.defaultTool;
 }
 
 function shortcutAction(
@@ -93,8 +89,8 @@ function shortcutAction(
   role: Role | 'entry',
   shortcut: string,
   eligible: Rule,
-  live: (deps: ActionDeps | undefined) => boolean,
-  run: () => void,
+  live: () => boolean,
+  run: (deps: ActionDeps) => void,
   yields: boolean,
 ): Action {
   return {
@@ -106,11 +102,11 @@ function shortcutAction(
       opts: { id: `mode.${mode.id}.${role}.key`, yields },
     }],
     eligible,
-    requires: ['activeTool'],
+    requires: ['activeTool', 'modeDefaultTool'],
     // `eligible` is the gate the dispatcher and palettes read, but a canvas
     // with no `modes` evaluates none; without this the key is
     // swallowed in every mode.
-    enabled: (deps) => (live(deps) ? true : ActionDisabledReason.NotApplicable),
-    invoker: { timing: 'immediate', run: () => run() },
+    enabled: () => (live() ? true : ActionDisabledReason.NotApplicable),
+    invoker: { timing: 'immediate', run: (deps) => run(deps) },
   };
 }

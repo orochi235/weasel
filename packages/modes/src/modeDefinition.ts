@@ -57,8 +57,8 @@ export interface ModeDefinition {
   discard?: { shortcut?: string };
   /**
    * The tool the mode starts on. Entering the mode activates it and leaving
-   * restores the tool active at entry; Escape with another tool on returns to
-   * it, and only then does Escape leave the mode. Ignored where the canvas
+   * restores the tool active at entry; the key that leaves the mode, pressed
+   * with another tool on, returns to it instead. Ignored where the canvas
    * mounts no tool by that id.
    */
   defaultTool?: string;

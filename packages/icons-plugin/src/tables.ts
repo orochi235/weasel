@@ -86,11 +86,29 @@ function packageTables(pkg: string): IconTable[] {
   return declares ? sources() : [];
 }
 
+/** The package directories a workspace root's `workspaces` field names: plain paths, and `dir/*`. */
+export function workspacePackageDirs(rootDir: string): string[] | undefined {
+  const file = join(rootDir, 'package.json');
+  if (!existsSync(file)) return undefined;
+  const field = (JSON.parse(readFileSync(file, 'utf8')) as { workspaces?: string[] | { packages?: string[] } }).workspaces;
+  const patterns = Array.isArray(field) ? field : field?.packages;
+  if (!patterns) return undefined;
+  return patterns.flatMap((pattern) => {
+    if (!pattern.endsWith('/*')) return [join(rootDir, pattern)];
+    const parent = join(rootDir, pattern.slice(0, -2));
+    return existsSync(parent) ? readdirSync(parent).map((d) => join(parent, d)) : [];
+  }).filter((d) => existsSync(join(d, 'package.json')));
+}
+
 /**
- * Every table the app at `root` can reach without a transform: its own source tables, and those
- * of each package in a `node_modules` at `root` or above it. Dev and vitest use this, since vite
- * pre-bundles dependencies with esbuild, skipping the plugin, and a virtual module can load
- * before the modules that would reveal a table are transformed.
+ * Every table the app at `root` can reach without a transform: its own source tables, those of
+ * each package in a `node_modules` at `root` or above it, and the source tables of the workspace
+ * packages of the nearest workspace root above it. Dev and vitest use this, since vite pre-bundles
+ * dependencies with esbuild, skipping the plugin, and a virtual module can load before the modules
+ * that would reveal a table are transformed.
+ *
+ * The walk stops at that workspace root. Past it lies another checkout's `node_modules` (a git
+ * worktree nests inside its main checkout), whose packages are not the ones the app is served from.
  */
 export function reachableTables(root: string): IconTable[] {
   const out = sourceTablesUnder(root);
@@ -101,6 +119,11 @@ export function reachableTables(root: string): IconTable[] {
         d.startsWith('@') ? readdirSync(join(nm, d)).map((s) => join(nm, d, s)) : d.startsWith('.') ? [] : [join(nm, d)],
       );
       for (const pkg of dirs) if (existsSync(join(pkg, 'package.json'))) out.push(...packageTables(pkg));
+    }
+    const workspace = workspacePackageDirs(dir);
+    if (workspace) {
+      for (const pkg of workspace) out.push(...sourceTablesUnder(existsSync(join(pkg, 'src')) ? join(pkg, 'src') : pkg));
+      return out;
     }
     if (dir === parse(dir).root) return out;
   }

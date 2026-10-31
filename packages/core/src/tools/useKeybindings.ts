@@ -2,14 +2,13 @@
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
-import { defaultToolOf, eligibleForMode, type ModeRegistry } from '@weasel-js/modes';
+import { eligibleForMode, type ModeRegistry } from '@weasel-js/modes';
 import {
   makeToolActivateAction,
   buildToolActivateBindings,
   type ToolActivateBindingSpec,
 } from 'interactions/actions/defaults/toolActivate';
 import { makeToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
-import { makeToolModeDefaultAction } from 'interactions/actions/defaults/toolModeDefault';
 import type { ToolsApi } from './overlayBinding';
 
 /** Options for `useKeybindings`. */
@@ -32,9 +31,8 @@ export interface UseKeybindingsOptions {
   modes?: ModeRegistry;
 }
 
-/** Wire the single-key tool-activation shortcuts (V, P, T, …), Escape to
- *  return to the active mode's `defaultTool`, and Escape to return to the
- *  default tool. Activation is gated on what the active mode
+/** Wire the single-key tool-activation shortcuts (V, P, T, …) and Escape to
+ *  return to the default tool. Activation is gated on what the active mode
  *  allows, so a key cannot reach a tool the palette greys out. */
 export function useKeybindings(
   tools: ToolsApi,
@@ -108,14 +106,6 @@ export function useKeybindings(
       const api = toolsRef.current;
       if (!api.has(target) || api.active === target) return null;
       return target;
-    })));
-
-    unregisters.push(registry.register(makeToolModeDefaultAction(() => {
-      const modes = optionsRef.current.modes;
-      if (!modes) return null;
-      const api = toolsRef.current;
-      const target = defaultToolOf(modes.current(), api.has);
-      return target !== null && api.active !== target ? target : null;
     })));
 
     return () => { for (const u of unregisters) u(); };
