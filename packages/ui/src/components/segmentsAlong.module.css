@@ -10,7 +10,7 @@
 }
 
 .root[data-size='sm'] {
-  --_h: calc(var(--wzl-font-size-sm) * 1.4 + 2px);
+  --_h: var(--tb-h, calc(var(--wzl-font-size-sm) * 1.4 + 2px));
   padding: 1px;
 }
 
