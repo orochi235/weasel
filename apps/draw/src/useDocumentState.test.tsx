@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { layoutPages } from '@weasel-js/core';
-import type { DocPages } from '@editor/index';
+import type { DocPages } from '@weasel-js/editor';
 import { useDocumentState } from './useDocumentState';
 
 afterEach(() => localStorage.clear());

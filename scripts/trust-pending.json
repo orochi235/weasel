@@ -1,5 +1,6 @@
 [
   "@weasel-js/clock",
+  "@weasel-js/editor",
   "@weasel-js/headless",
   "@weasel-js/plot",
   "@weasel-js/text-shaping"

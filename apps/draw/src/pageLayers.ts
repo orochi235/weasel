@@ -1,5 +1,5 @@
 import { buildSceneViewCommands, defaultDrawOne, type PlacedPage, type RenderLayer } from '@weasel-js/core';
-import { usePaperLayer } from '@editor/index';
+import { usePaperLayer } from '@weasel-js/editor';
 import { useMemo } from 'react';
 import type { DrawScene } from './drawDocument';
 

@@ -5,7 +5,7 @@ import type { Plugin, ViteDevServer } from 'vite';
 import { APP_SOURCES } from './lib/packageEntries.mjs';
 import { isPathImport, pathImportsIn, reachByPath, resolvePath } from './vite-prebundle-reach.ts';
 
-const SPECIFIER = /(?:from|import)\s*\(?\s*'((?:@weasel-js|@editor)\/[\w./-]+)'/g;
+const SPECIFIER = /(?:from|import)\s*\(?\s*'(@weasel-js\/[\w./-]+)'/g;
 const SOURCE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
 const STORY_FILE = /\.stories\.(ts|tsx)$/;
 
@@ -196,7 +196,7 @@ export function storyServing(
 /**
  * Pre-bundles the workspace packages an app imports, so a dev page load fetches bundles instead
  * of one request per source file: chart went from 2,009 requests to 135. `sourceDirs` are the
- * trees served from source, scanned for the `@weasel-js/*` and `@editor/*` specifiers they import.
+ * trees served from source, scanned for the `@weasel-js/*` specifiers they import.
  * Every one has to be listed, or a module the bundles also hold loads a second copy from source,
  * so an edit that adds a specifier re-bundles too. A package with a tree in `sourceDirs` stays
  * source, with every package that depends on it.

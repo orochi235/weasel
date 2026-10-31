@@ -1,5 +1,5 @@
 import type { View } from '@weasel-js/core';
-import { usePages, type DocPages } from '@editor/index';
+import { usePages, type DocPages } from '@weasel-js/editor';
 import type { ChartScene } from '../chartDocument';
 
 /** What fits the view to a page leaves around it, in screen pixels. */

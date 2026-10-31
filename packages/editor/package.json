@@ -1,0 +1,50 @@
+{
+  "name": "@weasel-js/editor",
+  "version": "1.15.0",
+  "description": "Session, file and page glue for a weasel editor app: autosave, session persistence, snapshot revival, file download and pick, pages, page fit, and the page's paper and grid.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "@weasel-js/core": "1.15.0",
+    "@weasel-js/geom": "1.15.0",
+    "@weasel-js/guides": "1.15.0",
+    "@weasel-js/ui": "1.15.0"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/editor"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -64,7 +64,7 @@ than emulated FCP — the timings vary too much between runs to compare.
 any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken over.
 
 **A dev server serves the packages pre-bundled, so a package edit reloads rather than patches.**
-`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` and `@editor/*` specifier an app imports,
+`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` specifier an app imports,
 re-bundling on a saved package file in a few seconds. forge keeps every package holding stories (ui,
 labkit, forge, diagram, devtools, diagram-elk) as source, so edits there still hot-update.
 `WEASEL_DEV_BUNDLE_STORIES=1` bundles ui and labkit, whose stories import through package specifiers:
@@ -76,3 +76,7 @@ the bundle and served from source, so it loads once. A stack trace into a bundle
 The `browser` vitest project bundles them the same way under `vitest run`, all but what its test files
 reach by path (`scripts/vitest-browser-prebundle.ts`); watch mode and `WEASEL_DEV_SOURCE=1` serve them
 from source.
+
+**`check:needs -- --write` redraws the README package table from every package's `dist/`.** Run in a
+tree with no fresh build, it strips real badges from core, routing and react; its own error suggests
+the flag. Add a new package's row by hand, matching a sibling's badges, and let the fleet check it.

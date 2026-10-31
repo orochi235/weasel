@@ -1,7 +1,7 @@
 import { pageName, useCommand, type PlacedPage } from '@weasel-js/core';
 import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { downloadBlob, reportFileWarnings } from '@editor/index';
+import { downloadBlob, reportFileWarnings } from '@weasel-js/editor';
 import type { ChartScene } from './chartDocument';
 import { FORMAT_EXPORT_RUN } from './importExport';
 import { run } from './menuBar';

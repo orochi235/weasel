@@ -52,6 +52,7 @@ export const BUILD_ORDER = [
   '@weasel-js/path-tools',
   '@weasel-js/rig',
   '@weasel-js/ui',
+  '@weasel-js/editor',
   '@weasel-js/hud',
   '@weasel-js/devtools',
   '@weasel-js/labkit',

@@ -1,6 +1,6 @@
 import { useMenuHost, useMenus } from '@weasel-js/core';
 import { PageTabs } from '@weasel-js/ui/components/PageTabs';
-import type { DocPages } from '@editor/index';
+import type { DocPages } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
 import { PAGE_TAB_MENU_ID, PAGE_TAB_MENUS, usePageCommands } from './pageCommands';
 import './pageStrip.css';

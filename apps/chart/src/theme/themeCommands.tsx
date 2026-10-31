@@ -4,7 +4,7 @@ import {
   type DiagramTheme,
 } from '@weasel-js/diagram';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { downloadBlob, pickFile } from '@editor/index';
+import { downloadBlob, pickFile } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
 import { run } from '../menuBar';

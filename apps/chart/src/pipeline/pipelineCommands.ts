@@ -1,7 +1,7 @@
 import { useCommand } from '@weasel-js/core';
 import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
-import { downloadBlob, pickFile } from '@editor/index';
+import { downloadBlob, pickFile } from '@weasel-js/editor';
 import { CHART_ACTIONS } from '../chartCommands';
 import { can, run, type ChartMenuContributions } from '../menuBar';
 import { ARRANGE_MENU } from './pipelineGroups';

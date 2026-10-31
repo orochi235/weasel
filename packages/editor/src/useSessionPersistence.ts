@@ -4,8 +4,11 @@ import { readStored } from './sessionStore';
 import { reviveTypedArrays, serializeReplacer } from './snapshot';
 import { useAutosave } from './useAutosave';
 
+/** Where `useSessionPersistence` keeps a scene and its undo stack, and what it reports after a save. */
 export interface SessionPersistenceOptions {
+  /** The local-storage key the scene is saved under. */
   sceneKey: string;
+  /** The local-storage key the undo stack is saved under. */
   historyKey: string;
   /** Read the saved undo snapshot; defaults to the parsed `historyKey` entry. Return null for none. */
   loadHistory?: () => unknown;

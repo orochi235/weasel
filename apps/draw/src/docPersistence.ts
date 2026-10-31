@@ -1,4 +1,4 @@
-import { readStored } from '@editor/index';
+import { readStored } from '@weasel-js/editor';
 import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, type PaperSizeKey } from './paperSizes';
 
 export { PAPER_PRESETS };

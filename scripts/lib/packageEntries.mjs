@@ -25,7 +25,7 @@ const BUILT_FROM = {
 };
 
 /** An app's source, importable from another app as `<alias>/<path>`. */
-export const APP_SOURCES = { '@draw': 'apps/draw/src', '@editor': 'apps/shared/editor/src' };
+export const APP_SOURCES = { '@draw': 'apps/draw/src' };
 
 /** In-repo test helpers every package may keep under `src/testing/`, importable here and never published. */
 export const TESTING = 'testing';

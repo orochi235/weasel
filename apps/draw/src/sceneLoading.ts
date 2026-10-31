@@ -9,7 +9,7 @@ import {
   solid,
   strokeOf
 } from '@weasel-js/core';
-import { docFromSnapshot, readStored } from '@editor/index';
+import { docFromSnapshot, readStored } from '@weasel-js/editor';
 import { loadDoc, PAPER_PRESETS } from './docPersistence';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { drawDoc } from './pages/drawPages';

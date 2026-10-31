@@ -14,8 +14,8 @@ const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unkn
 const warned = vi.hoisted(() => vi.fn());
 const noPages = vi.hoisted(() => ({ on: false }));
 
-vi.mock('@editor/index', async (actual) => ({
-  ...(await actual<typeof import('@editor/index')>()),
+vi.mock('@weasel-js/editor', async (actual) => ({
+  ...(await actual<typeof import('@weasel-js/editor')>()),
   downloadBlob: (blob: Blob, name: string) => { saved.push({ blob, name }); },
   reportFileWarnings: warned,
 }));

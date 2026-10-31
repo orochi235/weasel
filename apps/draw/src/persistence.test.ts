@@ -9,7 +9,7 @@ import {
 import {
   ANNOTATION_LAYER, DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose,
 } from './drawDocument';
-import { reviveTypedArrays, serializeReplacer } from '@editor/index';
+import { reviveTypedArrays, serializeReplacer } from '@weasel-js/editor';
 import { clipboardJsonReviver, nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 
 // These cover the new bit of App's localStorage autosave: the undo history is

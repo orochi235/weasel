@@ -12,8 +12,8 @@ import { withIcons } from './testIcons';
 const io = vi.hoisted(() => ({ saved: [] as { blob: Blob; name: string }[], picked: null as File | null }));
 const extra = vi.hoisted(() => ({ warnings: [] as string[] }));
 
-vi.mock('@editor/index', async (actual) => ({
-  ...(await actual<typeof import('@editor/index')>()),
+vi.mock('@weasel-js/editor', async (actual) => ({
+  ...(await actual<typeof import('@weasel-js/editor')>()),
   downloadBlob: (blob: Blob, name: string) => { io.saved.push({ blob, name }); },
   pickFile: async () => io.picked,
 }));
