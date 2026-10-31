@@ -24,6 +24,13 @@ describe('Powerline', () => {
     expect(container.querySelectorAll('[data-shape="compose"]').length).toBe(3);
   });
 
+  it('exposes a labeled row as a named group, and an unlabeled one as no group', () => {
+    const { getByRole, queryByRole, rerender } = render(<Powerline aria-label="route" segments={[{ text: 'a' }]} />);
+    expect(getByRole('group', { name: 'route' })).toBeTruthy();
+    rerender(<Powerline segments={[{ text: 'a' }]} />);
+    expect(queryByRole('group')).toBeNull();
+  });
+
   it('threads endCap of segment N to leftEdge of segment N+1', () => {
     const [, afterChevron] = fills([{ text: 'a', endCap: 'chevron' }, { text: 'b' }]);
     const [, afterFlat] = fills([{ text: 'a' }, { text: 'b' }]);

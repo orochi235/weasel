@@ -61,7 +61,12 @@ export function Powerline({
     ? { ['--powerline-gap' as never]: typeof gap === 'number' ? `${gap}px` : gap }
     : undefined;
   return (
-    <span className={cls} style={style} aria-label={rest['aria-label']}>
+    <span
+      className={cls}
+      style={style}
+      role={rest['aria-label'] === undefined ? undefined : 'group'}
+      aria-label={rest['aria-label']}
+    >
       {segments.map((seg, i) => {
         const leftEdge: EdgeCap = i === 0 ? startCap : (segments[i - 1].endCap ?? 'flat');
         const rightEdge: EdgeCap = seg.endCap ?? 'flat';
