@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react';
+import { act, cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
@@ -31,7 +31,8 @@ afterEach(() => {
 const nodes = () => window.__weaselTest!.getScene().nodes;
 const node = (id: string) => nodes().find((n) => n.id === id);
 const measurements = () => nodes().filter((n) => n.layer === 'annotations');
-const readout = () => screen.getAllByRole('status').map((el) => el.textContent);
+const readout = () =>
+  ['Distance', 'ΔX', 'ΔY', 'Angle'].map((name) => within(screen.getByRole('group', { name: 'Measurement' })).getByText(name).nextElementSibling?.textContent);
 
 // jsdom's canvas rect is all zeros and the view is identity, so client
 // coords are world coords.

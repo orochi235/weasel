@@ -21,11 +21,11 @@ const poses = () => window.__weaselTest!.getScene().nodes.map((n) => n.pose);
 describe('KeymapDemo', () => {
   it('opens its keymap on the leader, shows the hint, and takes a key from inside it', () => {
     render(<KeymapDemo />);
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
     leader();
     expect(screen.getByRole('status')).toHaveAccessibleName('Arrange');
     expect(press({ key: 'l', code: 'KeyL' }).defaultPrevented).toBe(true);
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
 
   // Its rects are plain unrotated boxes, which a flip about each one's own box leaves as they were.
