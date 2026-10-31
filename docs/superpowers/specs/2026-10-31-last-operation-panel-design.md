@@ -22,6 +22,18 @@ become that command's values for its next run in the session.
   is recorded with its params, the history entry it made, and the selection before it ran. Recording clears on
   any other history entry, on undo or redo, and on dismissal. Exposed as a subscribable store with
   `adjust(patch)` and `dismiss()`.
+- **A drag is recorded too, when it can be replayed** (2026-10-31): an ongoing action with `params` whose gesture
+  handle has `replay(params)` is recorded when its `onEnd('commit')` leaves one entry, the selection taken at the
+  press. `adjust` undoes that entry, restores the selection, and calls `replay` with the merged params, which
+  recomputes the commit from what the gesture recorded (start state, final pointer or every move, modifiers).
+  A gesture that cannot recompute faithfully omits `replay` and gets no panel. The contract is on
+  `OngoingHandle.replay`.
+- **`params` may be a function** of the params a run resolved, answering its form or `null` (2026-10-31): `insert`
+  shows a polygon's sides or a star's points and inner radius, and nothing for other kinds. The panel is titled
+  with the form's name.
+- **Edits inside a journal** (draw's path edit, by default) are recorded on that journal, through
+  `History.activeJournal()` and `Journal.observe` (2026-10-31); the journal committing, cancelling or suspending
+  ends the operation.
 - **`adjust(patch)`** undoes the recorded entry, restores the recorded selection, re-runs the action with the
   merged params, and records the new entry in its place, so undo history holds one entry.
 - **Last-used values**: the merged params become the action's session params, under any app `tune`.
@@ -32,5 +44,10 @@ become that command's values for its next run in the session.
 
 - Mounts `<LastOperationPanel>` inside the workspace (`.wd-canvas-host`), bottom-left.
 - Drops the Bridge popover and `useBridgeTension` added earlier the same day: Bridge's tension comes from the panel.
-- Every path-tools and core action that reads numeric or enum params gets a `params` group, starting with
-  `bridgePaths`, `bridgeAnchors`, `resamplePath`, and `addExtremes`; Simplify and Offset keep their live sliders.
+- Every path-tools and core action that reads numeric or enum params gets a `params` group: `bridgePaths`,
+  `bridgeAnchors`, `resamplePath`, `addExtremeAnchors`, `extendToMeet`, `trimPath`, `cycleCornerShape`, and the
+  drags `lengthenPath`, `girth.drag`, `editCorner`, `linkAnchor`, and `insert` (polygon and star). Simplify and
+  Offset keep their live sliders; variant-driven actions, live path effects (edited on the selection through
+  `editPathEffect`), `setCorners` (the corner controls' action), selection-only commands, and plain manipulation
+  drags (move, resize, rotate, anchor edits) get none. Not built yet: the Smudge brush, the Simplify brush, and the
+  warps (Distort, Envelope mesh, Puppet warp).

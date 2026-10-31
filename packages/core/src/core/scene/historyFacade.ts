@@ -45,11 +45,15 @@ export type SceneHistoryMethods = Pick<
   | 'jumpToHistoryIndex' | 'serializeHistory' | 'restoreHistory'
 >;
 
+/** Wrapped journal → the engine's own, for `resumeJournal`: the engine keys
+ *  resumability off journal identity, which a wrapper would not match. */
+const rawJournals = new WeakMap<Journal, Journal>();
+
 /** A journal drives adapter mutation itself, so its applies and undos
  *  re-enter scene mutation methods the way the facade's do. */
 function wrapJournal(raw: Journal, env: SceneHistoryEnv): Journal {
   const { replay, notify } = env;
-  return {
+  const wrapped: Journal = {
     targetId: raw.targetId,
     forkedAtEntryId: raw.forkedAtEntryId,
     applyBatch(ops, label) {
@@ -70,6 +74,7 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv): Journal {
     canRedo: () => raw.canRedo(),
     entries: () => raw.entries(),
     seal: () => raw.seal(),
+    observe: (listener) => raw.observe(listener),
     getVersion: () => raw.getVersion(),
     subscribe: (listener) => raw.subscribe(listener),
     commit(label) {
@@ -85,14 +90,13 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv): Journal {
     suspend: () => raw.suspend(),
     isActive: () => raw.isActive(),
   };
+  rawJournals.set(wrapped, raw);
+  return wrapped;
 }
 
 export function createSceneHistory(env: SceneHistoryEnv): { history: History; methods: SceneHistoryMethods } {
   const { engine, replay, notify, refuseUntracked, runArrivalEdit } = env;
 
-  /** Wrapped journal → the engine's own, for `resumeJournal`: the engine keys
-   *  resumability off journal identity, which a wrapper would not match. */
-  const rawJournals = new WeakMap<Journal, Journal>();
 
   function step(can: () => boolean, run: () => void): boolean {
     if (!can()) return false;
@@ -197,13 +201,9 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
     allForwardOps: () => engine.allForwardOps(),
     seal: () => engine.seal(),
     currentEntryId: () => engine.currentEntryId(),
-    beginJournal(opts) {
-      const raw = engine.beginJournal(opts);
-      const wrapped = wrapJournal(raw, env);
-      rawJournals.set(wrapped, raw);
-      return wrapped;
-    },
+    beginJournal: (opts) => wrapJournal(engine.beginJournal(opts), env),
     resumeJournal: (journal) => engine.resumeJournal(rawJournals.get(journal) ?? journal),
+    activeJournal: () => env.activeJournal(),
   };
   return { history, methods };
 }

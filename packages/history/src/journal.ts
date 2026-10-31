@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
-import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry } from './history';
+import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry, type HistoryStep } from './history';
 
 const RESUMERS = new WeakMap<Journal, () => void>();
 
@@ -52,6 +52,8 @@ export interface Journal {
   entries(): { undo: readonly HistoryEntry[]; redo: readonly HistoryEntry[] };
   /** As `History.seal`, for the journal's own entries. */
   seal(): void;
+  /** As `History.observe`, for the journal's own entries: each push, coalesce, undo and redo inside it. */
+  observe(listener: (step: HistoryStep) => void): () => void;
   /** Counter bumped on every change a reader of this journal could see: an
    *  apply, undo, redo or coalesce inside it, and every lifecycle transition
    *  (`isActive` changes). Pairs with `subscribe` for `useSyncExternalStore`. */
@@ -125,6 +127,7 @@ export function createJournalInternal(
     seal(): void {
       inner.seal();
     },
+    observe: (listener) => inner.observe(listener),
     getVersion: () => version,
     subscribe: changed.subscribe,
     commit(label: string): void {

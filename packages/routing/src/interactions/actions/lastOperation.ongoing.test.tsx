@@ -19,6 +19,13 @@ function setWidth(doc: Doc, to: number): Op {
 
 const STRETCH_PARAMS = pref.group('Stretch', { factor: pref.number('Factor', 1, { min: 0, max: 10, step: 1 }) });
 
+/** Apply `ops` where a scene would: the open journal, else the history. */
+function push(history: History, ops: Op[]): void {
+  const journal = history.activeJournal?.();
+  if (journal) journal.applyBatch(ops, 'Stretch');
+  else history.applyOps(ops, 'Stretch');
+}
+
 /** A drag that sets the width to its travel times `factor`, live through coalescing pushes when `live`. */
 function stretch(doc: Doc, history: History, opts: { replays: boolean; live?: boolean }): Action {
   return {
@@ -34,13 +41,13 @@ function stretch(doc: Doc, history: History, opts: { replays: boolean; live?: bo
         const factorOf = (p: Record<string, unknown> | undefined) => (typeof p?.factor === 'number' ? p.factor : 1);
         const commit = (factor: number) => {
           doc.ranOn.push(doc.selected);
-          history.applyOps([setWidth(doc, base + travel * factor)], 'Stretch');
+          push(history, [setWidth(doc, base + travel * factor)]);
           doc.selected = ['stretched'];
         };
         const handle: OngoingHandle = {
           onMove(m: InvocationCtx) {
             travel = m.world.x - from;
-            if (opts.live) history.applyOps([setWidth(doc, base + travel)], 'Stretch');
+            if (opts.live) push(history, [setWidth(doc, base + travel)]);
           },
           onEnd(_e, reason) {
             if (reason === 'commit' && !opts.live) commit(factorOf(resolveParams(bindingOpts?.params)));
@@ -142,5 +149,30 @@ describe('a gesture as the last operation', () => {
     drag(4);
     expect(history.undoDepth()).toBe(1);
     expect(store.get()).not.toBeNull();
+  });
+});
+
+describe('the last operation inside a journal', () => {
+  it('holds a run made in the open journal, adjusts it there, and ends when the journal commits', () => {
+    const { doc, history, store, drag } = setup({ replays: true });
+    const journal = history.beginJournal({ label: 'Edit' });
+    drag(4, { factor: 2 });
+    expect(store.get()).not.toBeNull();
+    act(() => { store.adjust({ factor: 3 }); });
+    expect(doc.width).toBe(22);
+    expect(journal.entries().undo).toHaveLength(1);
+    expect(history.undoDepth()).toBe(0);
+    act(() => { journal.commit('Edit'); });
+    expect(store.get()).toBeNull();
+    expect(history.undoDepth()).toBe(1);
+  });
+
+  it('ends when the journal is suspended', () => {
+    const { history, store, drag } = setup({ replays: true });
+    const journal = history.beginJournal({ label: 'Edit' });
+    drag(4);
+    act(() => { journal.suspend(); });
+    expect(store.adjust({ factor: 3 })).toBe(false);
+    expect(store.get()).toBeNull();
   });
 });

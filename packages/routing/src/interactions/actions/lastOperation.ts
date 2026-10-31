@@ -15,6 +15,7 @@ import type { ActionTuning } from './tuning';
 /** One operation that can still be adjusted. */
 export interface LastOperation {
   id: string;
+  /** What a panel titles it: the form's name, else the action's label. */
   label: string;
   /** The action's `params` form. */
   schema: PrefGroup;
@@ -29,9 +30,9 @@ export interface LastOperationStore {
   subscribe(listener: () => void): () => void;
   /**
    * Undo the operation's entry, put back the selection it ran on, and run it again with `patch` laid over its
-   * values (a gesture is replayed by its handle), keeping the entry that makes in place of the old one: the history still holds one entry for it. The
-   * merged values become the action's params for the rest of the session, under any tuning. Returns whether it
-   * ran.
+   * values (a gesture is replayed by its handle), keeping the entry that makes in place of the old one: the
+   * history, or the journal open on it, still holds one entry for it. The merged values become the action's
+   * params for the rest of the session, under any tuning. Returns whether it ran.
    */
   adjust(patch: Readonly<Record<string, unknown>>): boolean;
   /** Forget the operation; the scene and the history stay as they are. */
@@ -53,9 +54,22 @@ export interface LastOperationHost {
   rerun(id: string, params: Record<string, unknown>): void;
 }
 
+/** Where an edit lands: the history, or the journal open on it. */
+type EditStack = Pick<History, 'seal' | 'observe' | 'entries' | 'undo'>;
+
+/** The stack edits on `history` land on now: its active journal while one is open, which takes the entries an
+ *  edit makes until it commits them to `history` as one. */
+function editStackOf(history: History): EditStack {
+  const journal = history.activeJournal?.();
+  return journal?.isActive() ? journal : history;
+}
+
 interface Held {
   op: LastOperation;
   entry: number | null;
+  /** The stack the operation's entry is on. */
+  stack: EditStack;
+  /** The history that stack belongs to, any change on which ends the operation. */
   history: History;
   restore: (() => void) | null;
   /** Run the operation again with `values`, laid over what its first run was handed beyond them, such as the
@@ -64,14 +78,14 @@ interface Held {
   unobserve: () => void;
 }
 
-/** Watch `history` from now: `stop` answers the id of the entry pushed meanwhile when exactly one was, later
+/** Watch `stack` from now: `stop` answers the id of the entry pushed meanwhile when exactly one was, later
  *  pushes having coalesced into it, and nothing else changed the history. Seals first, so the entry stands alone
  *  rather than coalescing into the one before it. */
-function watchEntry(history: History): { stop(): number | null } {
-  history.seal();
+function watchEntry(stack: EditStack): { stop(): number | null } {
+  stack.seal();
   let entry: number | null = null;
   let clean = true;
-  const off = history.observe((step) => {
+  const off = stack.observe((step) => {
     if (step.kind === 'push' && entry === null && step.entries.length === 1) entry = step.entries[0]!.id;
     else if (!(step.kind === 'coalesce' && step.entries[0]?.id === entry && entry !== null)) clean = false;
   });
@@ -84,8 +98,8 @@ function watchEntry(history: History): { stop(): number | null } {
 }
 
 /** Run `run`, and the id of the entry it pushed as {@link watchEntry} counts it. */
-function soleEntry<T>(history: History, run: () => T): { out: T; entry: number | null } {
-  const watch = watchEntry(history);
+function soleEntry<T>(stack: EditStack, run: () => T): { out: T; entry: number | null } {
+  const watch = watchEntry(stack);
   let out: T;
   try {
     out = run();
@@ -133,17 +147,18 @@ export class LastOperationKeeper implements LastOperationStore {
   readonly adjust = (patch: Readonly<Record<string, unknown>>): boolean => {
     const held = this.held;
     if (!held || this.busy) return false;
-    const { history } = held;
-    if (held.entry !== null && history.entries().undo.at(-1)?.id !== held.entry) {
+    const { stack } = held;
+    const moved = editStackOf(held.history) !== stack;
+    if (moved || (held.entry !== null && stack.entries().undo.at(-1)?.id !== held.entry)) {
       this.dismiss();
       return false;
     }
     const values = formValues(held.op.schema, { ...held.op.values, ...patch });
     this.busy = true;
     try {
-      if (held.entry !== null) history.undo();
+      if (held.entry !== null) stack.undo();
       held.restore?.();
-      held.entry = soleEntry(history, () => {
+      held.entry = soleEntry(stack, () => {
         try {
           held.rerun(values);
         } catch (err) {
@@ -180,11 +195,12 @@ export class LastOperationKeeper implements LastOperationStore {
       if (!schema) return invoker.run(deps, given);
       const restore = host.takeSelection();
       const values = formValues(schema, resolved);
-      const { out, entry } = soleEntry(history, () => invoker.run(deps, given));
+      const stack = editStackOf(history);
+      const { out, entry } = soleEntry(stack, () => invoker.run(deps, given));
       if (entry !== null && out !== 'pass') {
         const rest = without(given, values);
-        const op = { id: action.id, label: action.label, schema, values };
-        this.hold({ op, entry, history, restore, rerun: (v) => host.rerun(action.id, { ...rest, ...v }) });
+        const op = { id: action.id, label: schema.name || action.label, schema, values };
+        this.hold({ op, entry, stack, history, restore, rerun: (v) => host.rerun(action.id, { ...rest, ...v }) });
       }
       return out;
     };
@@ -200,7 +216,8 @@ export class LastOperationKeeper implements LastOperationStore {
       const handle = invoker.start(ctx, opts);
       const { onEnd, replay } = handle;
       if (!history || !onEnd || !replay) return handle;
-      const watch = watchEntry(history);
+      const stack = editStackOf(history);
+      const watch = watchEntry(stack);
       const ended: OngoingHandle['onEnd'] = (endCtx, reason) => {
         let entry: number | null = null;
         try {
@@ -214,7 +231,8 @@ export class LastOperationKeeper implements LastOperationStore {
         if (!schema) return;
         const values = formValues(schema, resolved);
         const rest = without(resolved, values);
-        this.hold({ op: { id, label, schema, values }, entry, history, restore, rerun: (v) => replay.call(handle, { ...rest, ...v }) });
+        const op = { id, label: schema.name || label, schema, values };
+        this.hold({ op, entry, stack, history, restore, rerun: (v) => replay.call(handle, { ...rest, ...v }) });
       };
       return { ...handle, onEnd: ended };
     };
@@ -223,9 +241,12 @@ export class LastOperationKeeper implements LastOperationStore {
 
   private hold(held: Omit<Held, 'unobserve'>): void {
     this.held?.unobserve();
-    const unobserve = held.history.observe(() => {
+    const ended = () => {
       if (!this.busy) this.dismiss();
-    });
+    };
+    const offs = [held.stack.observe(ended)];
+    if (held.stack !== held.history) offs.push(held.history.observe(ended));
+    const unobserve = () => { for (const off of offs) off(); };
     this.held = { ...held, unobserve };
     this.remember(held.op.id, held.op.values);
     this.listeners.emit();

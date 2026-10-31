@@ -395,6 +395,14 @@ the `path-` prefix because gathering matches one tag exactly: a bare `brush` or
 `command` would gather any other feature's actions that chose the same word.
 `docs/path-operations.md` lists each family.
 
+The **last operation** is the latest run of an action declaring `params` (a
+`@weasel-js/prefs` form) that left one history entry: an immediate run, or a
+drag whose handle can `replay` it. A panel draws the form, and a change undoes
+that entry and runs the action again in its place, an immediate action with the
+new params and a drag through `OngoingHandle.replay`, which recomputes the
+commit from what the gesture recorded rather than the live pointer. See
+`packages/routing/src/interactions/actions/lastOperation.ts`.
+
 A **modifier role** is a modifier an ongoing action reads while it runs, named
 for what it does rather than the key: `handle.holdAngle`, `mirror.break`,
 `selection.add`. The action declares each with its default keys
