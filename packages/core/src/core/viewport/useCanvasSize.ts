@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useState } from 'react';
+import { type RefObject, useMemo, useSyncExternalStore } from 'react';
 import type { CanvasSize } from './clampView';
 import { useDeviceProfile } from '../device/useDeviceProfile';
 
@@ -21,31 +21,36 @@ export function useCanvasSize(containerRef: RefObject<HTMLElement | null>): Canv
   return { width, height, dpr };
 }
 
+const UNMEASURED: CanvasSize = { width: 0, height: 0 };
+
+/** `useSyncExternalStore`'s view of an element's size: measured when subscribed and on each resize. */
+function elementSizeStore(containerRef: RefObject<HTMLElement | null>) {
+  let size = UNMEASURED;
+  const measure = (el: HTMLElement) => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width !== size.width || rect.height !== size.height) size = { width: rect.width, height: rect.height };
+  };
+  return {
+    subscribe(changed: () => void): () => void {
+      const el = containerRef.current;
+      if (!el) return () => {};
+      measure(el);
+      // Absent under jsdom and in older embedders: one measurement is all there is.
+      if (typeof ResizeObserver === 'undefined') return () => {};
+      const observer = new ResizeObserver(() => { measure(el); changed(); });
+      observer.observe(el);
+      return () => observer.disconnect();
+    },
+    get: () => size,
+  };
+}
+
 /** An element's CSS-pixel size, `0 × 0` until it is mounted and measured.
- *  Re-measured whenever a `ResizeObserver` reports it resized. */
+ *  Re-measured whenever a `ResizeObserver` reports it resized, and committed
+ *  before the browser paints that frame: a store update renders on a
+ *  microtask, where state set in the observer's callback would wait for
+ *  React's scheduler and show the old size for a frame. */
 export function useElementSize(containerRef: RefObject<HTMLElement | null>): CanvasSize {
-  const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0 });
-
-  const measure = useCallback(() => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setSize((prev) =>
-      prev.width === rect.width && prev.height === rect.height
-        ? prev
-        : { width: rect.width, height: rect.height },
-    );
-  }, [containerRef]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    measure();
-    // Absent under jsdom and in older embedders: one measurement is all there is.
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [measure, containerRef]);
-
-  return size;
+  const store = useMemo(() => elementSizeStore(containerRef), [containerRef]);
+  return useSyncExternalStore(store.subscribe, store.get, store.get);
 }

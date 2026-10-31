@@ -1,8 +1,9 @@
 import { icons as diagramIcons } from '@weasel-js/diagram/icons';
 import { iconsWrapper, renderWithIcons as renderWithKitIcons } from '@weasel-js/ui/testing/withIcons';
+import { icons as chartIcons } from './icons.table';
 
 /** The tables WeaselChart draws from beyond the kit's, which `main.tsx` gets from `virtual:weasel-icons`. */
-export const CHART_ICONS = [diagramIcons];
+export const CHART_ICONS = [diagramIcons, chartIcons];
 
 /** A `render` wrapper with every table WeaselChart draws from registered. */
 export const withIcons = iconsWrapper(CHART_ICONS);

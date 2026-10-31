@@ -4,6 +4,7 @@ import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '
 import { App } from '../App';
 import { chartPrefs } from '../prefs';
 import { withIcons as WithIcons } from '../testIcons';
+import { frames } from './pointer';
 
 let root: Root | null = null;
 let mountPoint: HTMLDivElement | null = null;
@@ -29,9 +30,22 @@ export async function mountChartApp(): Promise<{ host: HTMLElement; canvas: HTML
   );
   await expect.poll(() => document.querySelector('.wc-host canvas')).not.toBeNull();
   const host = document.querySelector<HTMLElement>('.wc-host')!;
-  // The page is fitted on the first measured size; wait for that frame.
-  await new Promise((r) => setTimeout(r, 100));
+  await canvasSettled(host);
   return { host, canvas: host.querySelector('canvas')! };
+}
+
+/**
+ * Waits until the workspace's canvas has caught up with the host's layout, then for the frames that refit and draw
+ * it. The host shrinks once the toolbar's palette fills in, but the canvas learns that from a `ResizeObserver`,
+ * which a long first frame can hold back past any fixed wait.
+ */
+export async function canvasSettled(host: HTMLElement): Promise<void> {
+  await expect.poll(() => {
+    const canvas = host.querySelector('canvas')?.getBoundingClientRect();
+    const box = host.getBoundingClientRect();
+    return canvas !== undefined && Math.abs(canvas.width - box.width) < 0.5 && Math.abs(canvas.height - box.height) < 0.5;
+  }).toBe(true);
+  await frames(2);
 }
 
 export function unmountChartApp(): void {

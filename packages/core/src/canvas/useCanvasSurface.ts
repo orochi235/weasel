@@ -22,6 +22,10 @@ export interface CanvasSurfaceOptions extends FrameLoopOptions {
    *  first commit in place, in the caller's stack, so the first frame shown is
    *  the content and not a blank canvas. */
   onCommit?: 'redraw' | 'paint';
+  /** The size the surface paints at. A commit that changes it paints in place: React has written the element's
+   *  new size, which clears its buffer, and a resize committed from a `ResizeObserver` callback has no frame
+   *  left before the browser paints. */
+  size?: { width: number; height: number };
 }
 
 /** A surface's frame loop and the renderer lease its paint draws through. */
@@ -49,19 +53,36 @@ export function useCanvasSurface(
   useLateContentRedraw(requestRedraw);
   useRedrawOnShaderSource(options.shaders, requestRedraw);
   useRedrawOn(options.redrawOn, requestRedraw);
-  useRedrawOnCommit(options.onCommit, () => paint(lease), requestRedraw);
+  const resized = usePaintOnResize(options.size, loop.paintNow);
+  useRedrawOnCommit(options.onCommit, () => paint(lease), requestRedraw, resized);
   return { ...loop, lease };
+}
+
+/** Paints a commit that resized the surface in place. Returns whether this commit did. */
+function usePaintOnResize(size: CanvasSurfaceOptions['size'], paintNow: () => void): { readonly current: boolean } {
+  const last = useRef<{ width: number; height: number } | null>(null);
+  const resized = useRef(false);
+  const width = size?.width ?? 0;
+  const height = size?.height ?? 0;
+  useLayoutEffect(() => {
+    const was = last.current;
+    last.current = { width, height };
+    resized.current = was !== null && (was.width !== width || was.height !== height);
+    if (resized.current) paintNow();
+  });
+  return resized;
 }
 
 function useRedrawOnCommit(
   mode: CanvasSurfaceOptions['onCommit'],
   paintNow: () => boolean,
   requestRedraw: () => void,
+  resized: { readonly current: boolean },
 ): void {
   const paintedRef = useRef(false);
   // No dependency array: the paint reads whatever the render did.
   useLayoutEffect(() => {
-    if (!mode) return;
+    if (!mode || resized.current) return;
     if (mode === 'redraw' || paintedRef.current) { requestRedraw(); return; }
     paintedRef.current = paintNow();
     if (!paintedRef.current) requestRedraw();
