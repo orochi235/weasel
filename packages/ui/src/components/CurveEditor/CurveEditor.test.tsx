@@ -6,6 +6,13 @@ import { CurveEditor, type ControlPoint } from './CurveEditor';
 import { handleSize } from '../../handles';
 
 describe('CurveEditor — rendering', () => {
+  it('names the plot from aria-label', () => {
+    const { getByRole } = render(
+      <CurveEditor value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} onInput={() => {}} width={200} height={100} aria-label="Falloff" />,
+    );
+    expect(getByRole('group', { name: 'Falloff' })).toBeTruthy();
+  });
+
   it('renders an SVG with the configured width and height', () => {
     const { container } = render(
       <CurveEditor

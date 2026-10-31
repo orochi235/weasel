@@ -67,6 +67,8 @@ export interface CurveEditorProps {
   renderAnchor?: (info: AnchorRenderProps) => ReactNode;
   /** Extra SVG content rendered behind the curve and anchors. */
   decorations?: ReactNode;
+  /** Accessible name for the plot. */
+  'aria-label'?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -141,6 +143,7 @@ export function CurveEditor(props: CurveEditorProps) {
       xTicks={xTicks}
       yTicks={yTicks}
       history={history}
+      aria-label={props['aria-label']}
       className={className}
       style={style}
     >
