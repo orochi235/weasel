@@ -1,0 +1,83 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/paint-staging.spec.ts
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Paint staging — 800x600, dpr 1, 512 rects a frame, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+
+   1/9  run 1  solid      0.240 ms/frame    0.355 ms to issue
+   2/9  run 1  gradient   1.055 ms/frame    1.635 ms to issue
+   3/9  run 1  pattern    1.090 ms/frame    1.795 ms to issue
+   4/9  run 2  solid      0.165 ms/frame    0.355 ms to issue
+   5/9  run 2  gradient   1.370 ms/frame    1.825 ms to issue
+   6/9  run 2  pattern    1.185 ms/frame    0.640 ms to issue
+   7/9  run 3  solid      0.145 ms/frame    0.340 ms to issue
+   8/9  run 3  gradient   1.965 ms/frame    0.540 ms to issue
+   9/9  run 3  pattern    1.590 ms/frame    0.775 ms to issue
+
+| kind | us/command, frame | us/command, issue | draws |
+|---|---:|---:|---:|
+| solid |   0.32 |   0.69 |   1 |
+| gradient |   2.68 |   3.19 |   1 |
+| pattern |   2.31 |   1.51 |   1 |
+
+solid: self time per command under the profiler, us (200 frames)
+    1.514  (program) (:0)
+    1.211  readPixels (:0)
+    0.775  (idle) (:0)
+    0.069  visitNode (:274)
+    0.027  pushRect (batch.ts:164)
+    0.022  pushRect (drawBatch.ts:120)
+    0.017  drawPathFill (pathPaint.ts:28)
+    0.016  visitChild (:329)
+    0.010  runTakes (batchRun.ts:47)
+    0.009  render (WeaselRenderer.ts:433)
+    0.005  checkAndReturn (:303)
+    0.004  bufferSubData (:0)
+    0.004  fitQuad (batchStage.ts:86)
+    0.004  now (WeaselRenderer.ts:51)
+
+gradient: self time per command under the profiler, us (200 frames)
+    1.204  readPixels (:0)
+    0.693  (idle) (:0)
+    0.510  (program) (:0)
+    0.303  stageRamps (batch.ts:125)
+    0.231  drawPathFill (pathPaint.ts:28)
+    0.209  multiply (src-BFefYC_9.js:8249)
+    0.079  (garbage collector) (:0)
+    0.079  visitNode (:274)
+    0.061  pushRampRect (batch.ts:175)
+    0.033  pushGradientRect (drawBatch.ts:210)
+    0.028  corner (drawBatch.ts:217)
+    0.017  linearRampUV (gradient.ts:69)
+    0.014  visitChild (:329)
+    0.008  dispatch (draw.ts:11)
+
+pattern: self time per command under the profiler, us (200 frames)
+    1.207  readPixels (:0)
+    0.761  (idle) (:0)
+    0.398  (program) (:0)
+    0.319  create (src-BFefYC_9.js:8233)
+    0.186  patternTileSpace (patternSpace.ts:12)
+    0.078  tileExtent (patternBatch.ts:52)
+    0.068  visitNode (:274)
+    0.058  drawPathFill (pathPaint.ts:28)
+    0.050  stagePattern (patternBatch.ts:63)
+    0.047  gradientSpaceInverse (gradient.ts:151)
+    0.041  pushGradientRect (drawBatch.ts:210)
+    0.031  multiply (src-BFefYC_9.js:8249)
+    0.028  patternBatchPaint (patternBatch.ts:23)
+    0.019  writeVertex (batchStage.ts:36)
+perf result: tests/perf/recorded/pattern-tile-space-2026-10-31/Mac/after-1/paint-staging-2026-10-31T06-09-11Z.json
+  ✓  1 tests/perf/paint-staging.spec.ts:58:1 › paint staging: where a solid, a gradient and a pattern command spend their time (10.1s)
+
+  1 passed (11.3s)

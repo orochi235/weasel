@@ -1,0 +1,172 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/fill-rate.spec.ts
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+  run  1/8  plain          3.125 ms/frame  0.0072 ns/fragment
+  run  1/8  glyph-math     4.370 ms/frame  0.0101 ns/fragment
+  run  1/8  gradient-uv    6.305 ms/frame  0.0146 ns/fragment
+  run  1/8  split-sample   4.715 ms/frame  0.0109 ns/fragment
+  run  1/8  batch         13.455 ms/frame  0.0311 ns/fragment
+  run  1/8  batch-no-gradient  13.070 ms/frame  0.0303 ns/fragment
+  run  1/8  batch-no-tree  12.355 ms/frame  0.0286 ns/fragment
+  run  1/8  batch-no-straight  12.425 ms/frame  0.0288 ns/fragment
+  run  1/8  batch-no-glyph  10.855 ms/frame  0.0251 ns/fragment
+  run  1/8  batch-no-matrix  12.440 ms/frame  0.0288 ns/fragment
+  run  1/8  batch-bare     6.650 ms/frame  0.0154 ns/fragment
+  run  1/8  batch-chain8-1  13.305 ms/frame  0.0308 ns/fragment
+  run  1/8  batch-chain8-7  13.550 ms/frame  0.0314 ns/fragment
+  run  1/8  batch-glyph-large  13.610 ms/frame  0.0315 ns/fragment
+  run  1/8  batch-glyph-small  28.010 ms/frame  0.0648 ns/fragment
+  run  1/8  batch-8-matrices  15.595 ms/frame  0.0361 ns/fragment
+  run  2/8  plain          3.045 ms/frame  0.0070 ns/fragment
+  run  2/8  glyph-math     4.310 ms/frame  0.0100 ns/fragment
+  run  2/8  gradient-uv    6.255 ms/frame  0.0145 ns/fragment
+  run  2/8  split-sample   4.625 ms/frame  0.0107 ns/fragment
+  run  2/8  batch         13.405 ms/frame  0.0310 ns/fragment
+  run  2/8  batch-no-gradient  13.110 ms/frame  0.0303 ns/fragment
+  run  2/8  batch-no-tree  12.380 ms/frame  0.0287 ns/fragment
+  run  2/8  batch-no-straight  12.540 ms/frame  0.0290 ns/fragment
+  run  2/8  batch-no-glyph  10.870 ms/frame  0.0252 ns/fragment
+  run  2/8  batch-no-matrix  12.520 ms/frame  0.0290 ns/fragment
+  run  2/8  batch-bare     6.325 ms/frame  0.0146 ns/fragment
+  run  2/8  batch-chain8-1  13.055 ms/frame  0.0302 ns/fragment
+  run  2/8  batch-chain8-7  13.475 ms/frame  0.0312 ns/fragment
+  run  2/8  batch-glyph-large  13.415 ms/frame  0.0311 ns/fragment
+  run  2/8  batch-glyph-small  28.030 ms/frame  0.0649 ns/fragment
+  run  2/8  batch-8-matrices  15.475 ms/frame  0.0358 ns/fragment
+  run  3/8  plain          3.200 ms/frame  0.0074 ns/fragment
+  run  3/8  glyph-math     4.470 ms/frame  0.0103 ns/fragment
+  run  3/8  gradient-uv    6.510 ms/frame  0.0151 ns/fragment
+  run  3/8  split-sample   4.790 ms/frame  0.0111 ns/fragment
+  run  3/8  batch         13.685 ms/frame  0.0317 ns/fragment
+  run  3/8  batch-no-gradient  13.175 ms/frame  0.0305 ns/fragment
+  run  3/8  batch-no-tree  12.360 ms/frame  0.0286 ns/fragment
+  run  3/8  batch-no-straight  12.660 ms/frame  0.0293 ns/fragment
+  run  3/8  batch-no-glyph  11.010 ms/frame  0.0255 ns/fragment
+  run  3/8  batch-no-matrix  12.695 ms/frame  0.0294 ns/fragment
+  run  3/8  batch-bare     6.620 ms/frame  0.0153 ns/fragment
+  run  3/8  batch-chain8-1  13.330 ms/frame  0.0309 ns/fragment
+  run  3/8  batch-chain8-7  13.705 ms/frame  0.0317 ns/fragment
+  run  3/8  batch-glyph-large  13.655 ms/frame  0.0316 ns/fragment
+  run  3/8  batch-glyph-small  28.365 ms/frame  0.0657 ns/fragment
+  run  3/8  batch-8-matrices  15.590 ms/frame  0.0361 ns/fragment
+  run  4/8  plain         13.100 ms/frame  0.0303 ns/fragment
+  run  4/8  glyph-math    19.190 ms/frame  0.0444 ns/fragment
+  run  4/8  gradient-uv   27.265 ms/frame  0.0631 ns/fragment
+  run  4/8  split-sample  20.770 ms/frame  0.0481 ns/fragment
+  run  4/8  batch         51.340 ms/frame  0.1188 ns/fragment
+  run  4/8  batch-no-gradient  49.970 ms/frame  0.1157 ns/fragment
+  run  4/8  batch-no-tree  46.910 ms/frame  0.1086 ns/fragment
+  run  4/8  batch-no-straight  47.560 ms/frame  0.1101 ns/fragment
+  run  4/8  batch-no-glyph  40.860 ms/frame  0.0946 ns/fragment
+  run  4/8  batch-no-matrix  47.420 ms/frame  0.1098 ns/fragment
+  run  4/8  batch-bare    23.155 ms/frame  0.0536 ns/fragment
+  run  4/8  batch-chain8-1  51.180 ms/frame  0.1185 ns/fragment
+  run  4/8  batch-chain8-7  52.680 ms/frame  0.1219 ns/fragment
+  run  4/8  batch-glyph-large  51.435 ms/frame  0.1191 ns/fragment
+  run  4/8  batch-glyph-small 106.705 ms/frame  0.2470 ns/fragment
+  run  4/8  batch-8-matrices  54.410 ms/frame  0.1259 ns/fragment
+  run  5/8  plain          5.015 ms/frame  0.0116 ns/fragment
+  run  5/8  glyph-math     7.805 ms/frame  0.0181 ns/fragment
+  run  5/8  gradient-uv   13.635 ms/frame  0.0316 ns/fragment
+  run  5/8  split-sample  16.085 ms/frame  0.0372 ns/fragment
+  run  5/8  batch         51.295 ms/frame  0.1187 ns/fragment
+  run  5/8  batch-no-gradient  49.605 ms/frame  0.1148 ns/fragment
+  run  5/8  batch-no-tree  41.305 ms/frame  0.0956 ns/fragment
+  run  5/8  batch-no-straight  31.275 ms/frame  0.0724 ns/fragment
+  run  5/8  batch-no-glyph  22.150 ms/frame  0.0513 ns/fragment
+  run  5/8  batch-no-matrix  29.365 ms/frame  0.0680 ns/fragment
+  run  5/8  batch-bare    15.740 ms/frame  0.0364 ns/fragment
+  run  5/8  batch-chain8-1  35.280 ms/frame  0.0817 ns/fragment
+  run  5/8  batch-chain8-7  30.385 ms/frame  0.0703 ns/fragment
+  run  5/8  batch-glyph-large  29.840 ms/frame  0.0691 ns/fragment
+  run  5/8  batch-glyph-small  48.030 ms/frame  0.1112 ns/fragment
+  run  5/8  batch-8-matrices  21.000 ms/frame  0.0486 ns/fragment
+  run  6/8  plain          5.335 ms/frame  0.0123 ns/fragment
+  run  6/8  glyph-math     8.045 ms/frame  0.0186 ns/fragment
+  run  6/8  gradient-uv   14.765 ms/frame  0.0342 ns/fragment
+  run  6/8  split-sample  13.880 ms/frame  0.0321 ns/fragment
+  run  6/8  batch         48.930 ms/frame  0.1133 ns/fragment
+  run  6/8  batch-no-gradient  42.305 ms/frame  0.0979 ns/fragment
+  run  6/8  batch-no-tree  30.205 ms/frame  0.0699 ns/fragment
+  run  6/8  batch-no-straight  30.975 ms/frame  0.0717 ns/fragment
+  run  6/8  batch-no-glyph  24.255 ms/frame  0.0561 ns/fragment
+  run  6/8  batch-no-matrix  25.445 ms/frame  0.0589 ns/fragment
+  run  6/8  batch-bare    12.230 ms/frame  0.0283 ns/fragment
+  run  6/8  batch-chain8-1  27.700 ms/frame  0.0641 ns/fragment
+  run  6/8  batch-chain8-7  31.485 ms/frame  0.0729 ns/fragment
+  run  6/8  batch-glyph-large  26.395 ms/frame  0.0611 ns/fragment
+  run  6/8  batch-glyph-small  48.745 ms/frame  0.1128 ns/fragment
+  run  6/8  batch-8-matrices  20.955 ms/frame  0.0485 ns/fragment
+  run  7/8  plain          5.145 ms/frame  0.0119 ns/fragment
+  run  7/8  glyph-math     7.770 ms/frame  0.0180 ns/fragment
+  run  7/8  gradient-uv   14.465 ms/frame  0.0335 ns/fragment
+  run  7/8  split-sample  16.500 ms/frame  0.0382 ns/fragment
+  run  7/8  batch         49.540 ms/frame  0.1147 ns/fragment
+  run  7/8  batch-no-gradient  38.420 ms/frame  0.0889 ns/fragment
+  run  7/8  batch-no-tree  30.055 ms/frame  0.0696 ns/fragment
+  run  7/8  batch-no-straight  30.275 ms/frame  0.0701 ns/fragment
+  run  7/8  batch-no-glyph  21.995 ms/frame  0.0509 ns/fragment
+  run  7/8  batch-no-matrix  25.950 ms/frame  0.0601 ns/fragment
+  run  7/8  batch-bare    11.970 ms/frame  0.0277 ns/fragment
+  run  7/8  batch-chain8-1  29.010 ms/frame  0.0672 ns/fragment
+  run  7/8  batch-chain8-7  29.885 ms/frame  0.0692 ns/fragment
+  run  7/8  batch-glyph-large  26.020 ms/frame  0.0602 ns/fragment
+  run  7/8  batch-glyph-small  51.825 ms/frame  0.1200 ns/fragment
+  run  7/8  batch-8-matrices  21.295 ms/frame  0.0493 ns/fragment
+  run  8/8  plain          5.150 ms/frame  0.0119 ns/fragment
+  run  8/8  glyph-math     7.585 ms/frame  0.0176 ns/fragment
+  run  8/8  gradient-uv   13.625 ms/frame  0.0315 ns/fragment
+  run  8/8  split-sample  16.285 ms/frame  0.0377 ns/fragment
+  run  8/8  batch         49.830 ms/frame  0.1153 ns/fragment
+  run  8/8  batch-no-gradient  37.325 ms/frame  0.0864 ns/fragment
+  run  8/8  batch-no-tree  29.950 ms/frame  0.0693 ns/fragment
+  run  8/8  batch-no-straight  30.250 ms/frame  0.0700 ns/fragment
+  run  8/8  batch-no-glyph  22.305 ms/frame  0.0516 ns/fragment
+  run  8/8  batch-no-matrix  28.120 ms/frame  0.0651 ns/fragment
+  run  8/8  batch-bare    14.400 ms/frame  0.0333 ns/fragment
+  run  8/8  batch-chain8-1  33.135 ms/frame  0.0767 ns/fragment
+  run  8/8  batch-chain8-7  28.535 ms/frame  0.0661 ns/fragment
+  run  8/8  batch-glyph-large  24.830 ms/frame  0.0575 ns/fragment
+  run  8/8  batch-glyph-small  49.930 ms/frame  0.1156 ns/fragment
+  run  8/8  batch-8-matrices  21.405 ms/frame  0.0495 ns/fragment
+
+Fill rate — 1200x900, 400 full-viewport layers (432.0M fragments/frame) on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+
+  plain through finish   0.050 ms/frame, through a readPixels 15.320  (far apart means finish does not wait for the GPU)
+
+  fastest  plain         5.015 ms/frame   spread 161.2%
+  fastest  glyph-math    7.585 ms/frame   spread 153.0%
+  fastest  gradient-uv  13.625 ms/frame   spread 100.1%
+  glyph math costs    51.2% of a fragment
+  fastest  split-sample  13.880 ms/frame  spread 49.6%
+  a computed uv costs 79.6% more  (against glyph-math, its only difference)
+  splitting the sample 83.0% more  (the form that ships)
+
+  the batch program as it ships, against what it replaced:
+  fastest  batch             48.930 ms/frame  spread   4.9%     0.0% against batch
+  fastest  batch-chain8-1    27.700 ms/frame  spread  84.8%   -43.4% against batch
+  fastest  batch-chain8-7    28.535 ms/frame  spread  84.6%   -41.7% against batch
+  fastest  batch-8-matrices  20.955 ms/frame  spread 159.7%   -57.2% against batch
+  fastest  batch-glyph-large  24.830 ms/frame  spread 107.1%   -49.3% against batch
+  fastest  batch-glyph-small  48.030 ms/frame  spread 122.2%    -1.8% against batch
+  fastest  batch-no-gradient  37.325 ms/frame  spread  33.9%   -23.7% against batch
+  fastest  batch-no-tree     29.950 ms/frame  spread  56.6%   -38.8% against batch
+  fastest  batch-no-straight  30.250 ms/frame  spread  57.2%   -38.2% against batch
+  fastest  batch-no-glyph    21.995 ms/frame  spread  85.8%   -55.0% against batch
+  fastest  batch-no-matrix   25.445 ms/frame  spread  86.4%   -48.0% against batch
+  fastest  batch-bare        11.970 ms/frame  spread  93.4%   -75.5% against batch
+
+perf result: tests/perf/recorded/paint-and-fragment-2026-10-31/Mac/fill-rate-2026-10-31T06-04-03Z.json
+  ✓  1 tests/perf/fill-rate.spec.ts:40:1 › fill rate: what the batch shader costs a fragment it is not for (1.7m)
+
+  1 passed (1.7m)
