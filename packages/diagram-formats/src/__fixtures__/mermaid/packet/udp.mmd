@@ -1,0 +1,8 @@
+packet
+  title UDP Packet
+  +16: "Source Port"
+  +16: "Destination Port"
+  32-47: "Length"
+  52: 'Flag'
+  +11: "Checksum tail"
+  64-95: "Data (variable length)"
