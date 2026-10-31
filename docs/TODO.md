@@ -744,6 +744,14 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) [recheck] Three visual baselines fail on studio at bab3c623e.** `hud-context-menu` light and dark
+  ("the open menu highlights the hovered row": pixel diff 3.84% and 4.64% against a 2% threshold) and
+  `stroke-markers` ("Canvas width changed vs baseline"), on studio's headless Chromium over
+  SwiftShader, 2026-10-31, with nothing of the branch then under test applied. Whether CI fails them
+  too, or studio's run differs from the one the baselines came from, is not known.
+  Closes when CI's visual run is read for the three: fixed if CI fails them, else the reason studio
+  differs is written into `docs/fleet.md`.
+
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"
   (`packages/ui/src/components/ToggleBar/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
