@@ -439,16 +439,6 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
-## Animation
-
-### labkit presentation mode
-
-- **(P3) [maintainer] agnew plays from its own transport, not a lab clock.** agnew and rosee both mount
-  `<Lab>` on their `main`. agnew's three.js view advances the pen itself and holds a finished curve
-  before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
-  call.
-  Closes when agnew's owner has moved its pen onto a lab clock or ruled that it keeps its own transport.
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
