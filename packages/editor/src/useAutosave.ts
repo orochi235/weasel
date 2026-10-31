@@ -8,6 +8,7 @@ export interface SessionWrite {
   dependents?: readonly SessionEntry[];
 }
 
+/** When `useAutosave` saves, and what it reports after. */
 export interface AutosaveOptions {
   /** How long after a change the save runs. Defaults to 300 ms. */
   delayMs?: number;

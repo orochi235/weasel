@@ -1,3 +1,5 @@
+import { useDepSource, useLatest, type UseSceneTextEditReturn } from '@weasel-js/core';
+
 /**
  * Publishes the app's live text-edit session as the `textEdit` dep, replacing
  * `SceneCanvas`'s warn-only stub.
@@ -8,8 +10,6 @@
  * SceneCanvas's tree, after the internal component that registers the stub —
  * so a child registration overrides it, and a *parent* one would not.
  */
-import { useDepSource, useLatest, type UseSceneTextEditReturn } from '@weasel-js/core';
-
 export function TextEditDepPublisher({ edit }: { edit: UseSceneTextEditReturn }): null {
   const editRef = useLatest(edit);
 
