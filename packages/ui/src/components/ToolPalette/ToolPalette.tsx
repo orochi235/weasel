@@ -30,12 +30,15 @@ export interface ToolPaletteProps {
   lookupShortcut?: (toolId: string) => ShortcutInput | undefined;
   /**
    * Optional mode registry. When provided, tools whose
-   * `eligibility.capabilities` do not match the current mode are rendered
-   * greyed-out, aria-disabled, and their onClick is suppressed. When omitted,
-   * all tools are treated as eligible (preserves existing behavior in
-   * consumers that haven't wired a registry).
+   * `eligibility.capabilities` do not match the current mode are shown as
+   * `ineligible` says. When omitted, all tools are treated as eligible
+   * (preserves existing behavior in consumers that haven't wired a registry).
    */
   modeRegistry?: ModeRegistry;
+  /** What a tool the current mode does not allow looks like: `'dim'`, the
+   *  default, greys it out, aria-disabled and inert; `'hide'` leaves it out, so
+   *  the palette holds only the tools the mode allows. */
+  ineligible?: 'dim' | 'hide';
   /**
    * Presentation-group display order. Groups not listed keep their registry
    * insertion order after the listed ones; `misc` always renders last.
@@ -88,18 +91,20 @@ const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.t
  * share one button, which opens a menu of them.
  *
  * Given a `modeRegistry`, tools whose capabilities the current mode does not
- * allow render greyed out and inert rather than disappearing.
+ * allow render greyed out and inert, or with `ineligible="hide"` not at all.
  */
 export function ToolPalette(props: ToolPaletteProps) {
   const {
-    tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
+    tools, orientation = 'vertical', className, lookupShortcut, modeRegistry, ineligible = 'dim',
     groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
     columns, onToolDragStart, carryTool, carryGhost,
   } = props;
   const carry = useToolCarry(carryTool, carryGhost);
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
-  const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && shows(t));
+  const allowed = (t: Tool): boolean => !modeRegistry || eligibleContribution(modeRegistry, t);
+  const list = Object.values(tools.registry)
+    .filter((t) => !t.presentation?.hide && shows(t) && (ineligible === 'dim' || allowed(t)));
   const horizontal = !columns && orientation === 'horizontal';
   const cls = [s.palette, horizontal && s.horizontal, className].filter(Boolean).join(' ');
 
@@ -115,7 +120,7 @@ export function ToolPalette(props: ToolPaletteProps) {
     return {
       tool, label, keys,
       shortcut: tool.presentation?.shortcut ?? formatShortcut(keys),
-      enabled: modeRegistry ? eligibleContribution(modeRegistry, tool) : true,
+      enabled: allowed(tool),
     };
   };
 
