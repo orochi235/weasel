@@ -8,13 +8,13 @@ import {
 } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
-import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
 import f from '../field.module.css';
 import { DockBarContext } from '../ToolbarDock/dockContext';
 import { useBarLead } from './barLeadHandle';
 import { BarSideContext } from './barSide';
+import { PopFace, popIconAttr } from './popFace';
 import s from './Bar.module.css';
 
 /** Where a bar's menu reads and writes the values its rows show: the bar's own. */
@@ -78,6 +78,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
           id={trigger.id}
           type="button"
           className={`${f.frame} ${s.popTrigger}`}
+          {...popIconAttr(icon)}
           aria-haspopup="menu"
           aria-expanded={trigger.open}
           onPointerDown={trigger.press}
@@ -86,9 +87,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
             trigger.click(e, resolve, side);
           }}
         >
-          {icon}
-          <span>{label}</span>
-          <Caret className={s.caret} />
+          <PopFace icon={icon} label={label} />
         </button>
       </SegmentTooltip>
       {trigger.portal}

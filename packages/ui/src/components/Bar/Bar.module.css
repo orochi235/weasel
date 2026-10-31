@@ -218,9 +218,33 @@
   flex: none;
   align-items: center;
   gap: var(--wzl-space-3);
-  padding: 0 var(--wzl-space-3) 0 var(--wzl-space-4);
+  padding-block: 0;
+  padding-inline: var(--wzl-space-4) var(--wzl-space-3);
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* Down a side, a button with a glyph shows the glyph alone, and one without turns to read along the bar. */
+.bar[data-orientation='vertical'] .popTrigger[data-icon] {
+  position: relative;
+}
+
+.bar[data-orientation='vertical'] .popTrigger[data-icon] > .popLabel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.bar[data-orientation='vertical'] .popTrigger:not([data-icon]) {
+  writing-mode: vertical-rl;
+  height: auto;
+  block-size: var(--_frame-h, var(--wzl-field-h, var(--wzl-control-h)));
+}
+
+.bar[data-orientation='vertical'] .popTrigger:not([data-icon]) > .caret {
+  rotate: 90deg;
 }
 
 .caret {

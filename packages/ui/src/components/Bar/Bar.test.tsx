@@ -147,6 +147,15 @@ describe('Bar', () => {
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeInTheDocument();
   });
 
+  it("marks a vertical bar's buttons that have a glyph, which it shows them by alone, keeping their names", () => {
+    const sized = { ...schema, children: { ...schema.children, size: { ...schema.children.size!, icon: icon('close') } as PrefLeaf } };
+    renderWithIcons(<Bar schema={sized} values={{ size: 12 }} orientation="vertical" label="Text" />);
+    const size = screen.getByRole('button', { name: 'Size' });
+    expect(size).toHaveAttribute('data-icon');
+    expect(size.querySelector('svg[viewBox="0 0 20 20"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Spacing' })).not.toHaveAttribute('data-icon');
+  });
+
   it('is no toolbar of its own with no label, for a host that is one', () => {
     renderWithIcons(<Bar schema={schema} />);
     expect(screen.queryByRole('toolbar')).toBeNull();

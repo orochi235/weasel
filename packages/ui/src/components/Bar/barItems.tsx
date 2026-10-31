@@ -42,7 +42,7 @@ export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; 
             if (node.leaf.kind === 'action' || node.leaf.kind === 'actions') return cells([node]);
             const body = row(node);
             if (body == null) return [];
-            return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)}>{body}</BarPopover> }];
+            return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)} icon={resolveIcon(node.leaf.icon)}>{body}</BarPopover> }];
           })
         : cells(pending);
       for (const cell of drawn) items.push({ path: cell.path, leaf: true, content: cell.content, ...into });

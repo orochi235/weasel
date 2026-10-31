@@ -6,11 +6,11 @@ import {
 } from 'react-aria-components';
 import { Popover } from '../Popover';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
-import { Caret } from '../Caret';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import { BarMarkContext } from './barOrder';
 import { BarSideContext } from './barSide';
+import { PopFace, popIconAttr } from './popFace';
 import s from './Bar.module.css';
 
 /** Props for {@link BarPopover}. */
@@ -37,10 +37,8 @@ export function BarPopover({ label, icon, children, isDisabled, className, porta
   return (
     <DialogTrigger>
       {anchor}
-      <RACButton isDisabled={isDisabled} className={[f.frame, s.popTrigger, className].filter(Boolean).join(' ')}>
-        {icon}
-        <span>{label}</span>
-        <Caret className={s.caret} />
+      <RACButton isDisabled={isDisabled} className={[f.frame, s.popTrigger, className].filter(Boolean).join(' ')} {...popIconAttr(icon)}>
+        <PopFace icon={icon} label={label} />
       </RACButton>
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
