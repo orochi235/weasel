@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
-import { DIAGRAM_TYPES } from '@weasel-js/diagram';
+import { PAGE_TEMPLATES } from '@weasel-js/diagram-formats';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
 import { chartPrefs } from './prefs';
@@ -220,6 +220,7 @@ describe('App', () => {
     const tabs = () => screen.getAllByRole('tab').map((t) => t.textContent);
     expect(tabs()).toEqual(['Page 1']);
     choose('Page', 'Add Page');
+    act(() => { fireEvent.click(within(screen.getByRole('dialog', { name: 'Add Page' })).getByRole('button', { name: 'Add' })); });
     expect(tabs()).toEqual(['Page 1', 'Page 2']);
     choose('Page', 'Delete Page');
     expect(tabs()).toHaveLength(1);
@@ -279,7 +280,8 @@ describe('App', () => {
     expect(panels()).not.toContain('Flowchart');
     choose('File', 'New…');
     const dialog = screen.getByRole('dialog', { name: 'New Chart' });
-    expect(within(dialog).getAllByRole('option').map((o) => o.textContent)).toEqual(Object.values(DIAGRAM_TYPES).map((t) => t.label));
+    expect(within(dialog).getAllByRole('option').map((o) => o.textContent)).toEqual(Object.values(PAGE_TEMPLATES).map((t) => t.label));
+    expect(within(dialog).getAllByRole('listbox').map((l) => l.getAttribute('aria-label'))).toEqual(['Diagrams', 'Sequence', 'Charts']);
     act(() => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })); });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(panels()).not.toContain('Flowchart');
@@ -287,6 +289,31 @@ describe('App', () => {
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'Create' })); });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(panels()).toEqual(expect.arrayContaining(['Flowchart', 'Containers']));
+  });
+
+  it('starts a chart from a chart template, and adds a sequence page beside it from Page › Add Page…', () => {
+    mount();
+    const exportable = (format: string) => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'File' })); });
+      const exp = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')].find((el) => el.textContent?.startsWith('Export'))!;
+      act(() => { fireEvent.click(exp); });
+      const row = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')].find((el) => el.textContent?.startsWith(`As ${format}`));
+      act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+      return row!.getAttribute('aria-disabled') !== 'true';
+    };
+    expect(exportable('Graphviz DOT')).toBe(true);
+    choose('File', 'New…');
+    act(() => { fireEvent.click(within(screen.getByRole('dialog', { name: 'New Chart' })).getByRole('option', { name: 'Pie' })); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Create' })); });
+    expect(exportable('Graphviz DOT')).toBe(false);
+    expect(exportable('Mermaid')).toBe(true);
+    choose('Page', 'Add Page');
+    const dialog = screen.getByRole('dialog', { name: 'Add Page' });
+    act(() => { fireEvent.click(within(dialog).getByRole('option', { name: 'Sequence' })); });
+    act(() => { fireEvent.click(within(dialog).getByRole('button', { name: 'Add' })); });
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toHaveLength(2);
+    choose('Edit', 'Undo');
+    expect(screen.getAllByRole('tab')).toHaveLength(1);
   });
 
   it("offers Arrange › Auto layout, off for a flowchart, which has no layout", () => {

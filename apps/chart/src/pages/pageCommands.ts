@@ -36,13 +36,13 @@ function targetOf(pages: ChartPages, params?: Readonly<Record<string, unknown>>)
   return pages.current ?? pages.placed[0]?.id ?? null;
 }
 
-/** Registers the Page menu's commands. `openSetup` opens Page Setup on a page. */
-export function usePageCommands(pages: ChartPages, openSetup: (id: string) => void): void {
+/** Registers the Page menu's commands. `openSetup` opens Page Setup on a page, and `openAdd` the page templates. */
+export function usePageCommands(pages: ChartPages, openSetup: (id: string) => void, openAdd: () => void): void {
   useCommand(PAGE_ACTIONS.setup, 'Page Setup…', (params) => {
     const id = targetOf(pages, params);
     if (id !== null) openSetup(id);
   });
-  useCommand(PAGE_ACTIONS.add, 'Add Page', () => pages.add());
+  useCommand(PAGE_ACTIONS.add, 'Add Page…', openAdd);
   useCommand(PAGE_ACTIONS.remove, 'Delete Page', (params) => {
     const id = targetOf(pages, params);
     if (id !== null) pages.remove(id);

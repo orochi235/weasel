@@ -141,7 +141,7 @@ export function ChartWorkspace(): ReactElement {
               </SceneCanvas>
             )}
           </div>
-          <ChartPageStrip pages={pages} />
+          <ChartPageStrip scene={scene} pages={pages} theme={theme} />
         </div>
         <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
           <StylePanel scene={scene} selected={selection.current} theme={theme} />

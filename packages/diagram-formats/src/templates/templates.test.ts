@@ -5,6 +5,7 @@ import type { PlotKind } from '@weasel-js/plot';
 import type { DiagramDocument, GraphPage } from '../document';
 import { documentFromScene } from '../fromScene';
 import { DIAGRAM_MERMAID } from '../mermaid/format';
+import { scenePageKinds } from '../pageKinds';
 import { MEASURE, THEME } from '../testing/docScene';
 import { PAGE_TEMPLATES, type PageTemplate } from './catalog';
 import { PLOT_STARTERS, SEQUENCE_STARTER } from './starters';
@@ -33,6 +34,13 @@ describe('page templates', () => {
   it.each(Object.keys(PLOT_STARTERS) as PlotKind[])('draws a %s chart and reads it back as one', (kind) => {
     const page = documentFromScene(sceneOf(PAGE_TEMPLATES[`plot:${kind}`]!)).pages[0]!;
     expect(page.kind === 'plot' && page.data.kind).toBe(kind);
+  });
+
+  it('tells a chart\'s page kinds apart without reading it, a plot page among them', () => {
+    const scene = sceneOf(PAGE_TEMPLATES['plot:pie']!);
+    expect([...scenePageKinds(scene)]).toEqual(['plot']);
+    addTemplatePage(scene, PAGE_TEMPLATES.flowchart!, { theme: THEME });
+    expect([...scenePageKinds(scene)].sort()).toEqual(['graph', 'plot']);
   });
 
   it('draws a sequence diagram and reads it back as one', () => {

@@ -1,43 +1,23 @@
 import { useCommand } from '@weasel-js/core';
-import { DIAGRAM_TYPES, FLOWCHART_TYPE } from '@weasel-js/diagram';
-import { Button } from '@weasel-js/ui/components/Button';
-import { Dialog } from '@weasel-js/ui/components/Dialog';
-import { Icon } from '@weasel-js/ui/components/Icon';
-import { ItemList, type ItemListRow } from '@weasel-js/ui/components/ItemList';
+import { FLOWCHART_TYPE, rendererMeasure } from '@weasel-js/diagram';
+import { templateSpecs, type PageTemplate } from '@weasel-js/diagram-formats';
 import { useState, type ReactElement } from 'react';
 import { CHART_ACTIONS } from './chartCommands';
-import type { ChartScene } from './chartDocument';
-import { emptyChart, replaceChart } from './chartPersistence';
+import { CHART_PAGE, chartDoc, type ChartScene } from './chartDocument';
+import { replaceChart } from './chartPersistence';
+import { TemplateDialog } from './templates/TemplateDialog';
+import { chartThemeOf } from './theme/themeCommands';
 
-/** File › New…: a dialog listing the diagram types, which replaces the chart with an empty one of the type chosen. */
+/** File › New…: a dialog listing every page template, which replaces the chart with a one-page chart made from the
+ *  template chosen, in the chart's theme. */
 export function NewChart({ scene }: { scene: ChartScene }): ReactElement | null {
   const [open, setOpen] = useState(false);
   useCommand(CHART_ACTIONS.new, 'New…', () => setOpen(true));
   if (!open) return null;
-  const create = (type: string) => {
-    replaceChart(scene, emptyChart(type), 'New chart');
+  const create = (template: PageTemplate) => {
+    const { specs, doc } = templateSpecs(template, { layer: 'shapes', theme: chartThemeOf(scene), measure: rendererMeasure, size: CHART_PAGE });
+    replaceChart(scene, { specs, doc: chartDoc(doc) }, 'New chart');
     setOpen(false);
   };
-  return <NewChartDialog onCreate={create} onClose={() => setOpen(false)} />;
-}
-
-function NewChartDialog({ onCreate, onClose }: { onCreate(type: string): void; onClose(): void }): ReactElement {
-  const [chosen, setChosen] = useState(FLOWCHART_TYPE.id);
-  const rows: ItemListRow[] = Object.values(DIAGRAM_TYPES).map((type) => ({
-    id: type.id,
-    label: type.label,
-    selected: type.id === chosen,
-    ...(type.icon ? { leading: <Icon name={type.icon} size={16} /> } : {}),
-  }));
-  const footer = (
-    <>
-      <Button onClick={onClose}>Cancel</Button>
-      <Button stance="confirm" onClick={() => onCreate(chosen)}>Create</Button>
-    </>
-  );
-  return (
-    <Dialog isOpen onOpenChange={(isOpen) => { if (!isOpen) onClose(); }} title="New Chart" isDismissable footer={footer}>
-      <ItemList rows={rows} selection="single" onActivate={setChosen} containerProps={{ 'aria-label': 'Chart type' }} />
-    </Dialog>
-  );
+  return <TemplateDialog title="New Chart" action="Create" initial={FLOWCHART_TYPE.id} onChoose={create} onClose={() => setOpen(false)} />;
 }
