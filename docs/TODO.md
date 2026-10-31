@@ -167,15 +167,6 @@ Owner tags, after the priority (2026-10-26):
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
   Closes when the maintainer has driven Blend, Bend along a path, and Repeat along a path hands-on and
   the defaults and keys he picks are committed.
-- **(P2) [maintainer] Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
-  (the same 6 screen px as Trim segment, `packages/path-tools/src/shared/scenePaths.ts`); a curved end eases out
-  of its bend, its curvature falling linearly to zero over the stretch that turns it a further 30°, then runs
-  straight (`'eased'` in `packages/geom/src/paths/pathEndExtension.ts`, approved 2026-10-31), with Shape
-  (Eased/Straight) and Ease turn (5–90°) in the last-operation panel after a click; no preview of where an end will land, its tool key, U
-  (`packages/path-tools/src/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
-  lab binds E through `tune`.
-  Closes when the maintainer has driven Extend to next path hands-on and the defaults and keys he picks
-  are committed.
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
   path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
   curvature (the `mode` param flips which, and `'eased'` makes the plain drag ease out of the bend as
