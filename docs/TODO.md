@@ -167,12 +167,6 @@ Owner tags, after the priority (2026-10-26):
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
   Closes when the maintainer has driven Blend, Bend along a path, and Repeat along a path hands-on and
   the defaults and keys he picks are committed.
-- **(P2) [maintainer] Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
-  screen px, `DEFAULT_STROKE_REACH_PX` in `packages/path-tools/src/shared/scenePaths.ts`), the preview's look (the
-  `cut` overlay role's red dash at width 3, `packages/path-tools/src/trim/piecePreview.ts`), and its tool key,
-  Y (`packages/path-tools/src/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
-  Closes when the maintainer has driven Trim segment hands-on and the defaults and keys he picks are
-  committed.
 - **(P2) [maintainer] Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
   (the same 6 screen px as Trim segment, `packages/path-tools/src/shared/scenePaths.ts`), that a curved end grows a
   straight run rather than following its curvature (`lengthenOpenEnd`, which is Lengthen's
