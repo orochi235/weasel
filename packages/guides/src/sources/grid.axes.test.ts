@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, RIGID_POSE_COMPOSITION, type Bounds, type NodeId, type Scene } from '@weasel-js/core';
-import type { GridSpacing } from '../grid/axes';
 import { gridSnapSource } from './grid';
 import { expectNear, moveBy } from './testing/session';
 
@@ -34,8 +33,8 @@ describe('gridSnapSource — a rule per axis', () => {
   });
 });
 
-/** A container at `pose` with its own grid, holding `child`. */
-function container(pose: Bounds & { transform?: readonly number[] }, own: GridSpacing | null, child: Bounds) {
+/** A container at `pose`, holding `child`. */
+function container(pose: Bounds & { transform?: readonly number[] }, child: Bounds) {
   const scene = createScene<object, 'default', Bounds>({
     systemLayers: [{ id: 'default', visible: true, locked: false }], composition: RIGID_POSE_COMPOSITION,
   });
@@ -46,7 +45,7 @@ function container(pose: Bounds & { transform?: readonly number[] }, own: GridSp
 
 describe('gridSnapSource — a container\'s own grid', () => {
   it('snaps a child on its container\'s grid, from the container\'s corner', () => {
-    const { scene, g, inside } = container({ x: 3, y: 3, width: 100, height: 100 }, 10, { x: 10, y: 10, width: 4, height: 4 });
+    const { scene, g, inside } = container({ x: 3, y: 3, width: 100, height: 100 }, { x: 10, y: 10, width: 4, height: 4 });
     const grid = gridSnapSource({ spacing: 7, gridOf: (id) => (id === g ? 10 : undefined) });
     // Lines run 3, 13, 23…: the child's center, at world 15 moved by 8.5, is half a unit off 23.
     expectNear(moveBy({ sources: [grid], scene, ids: [inside] }).by(8.5, 8.5).point, { x: 8, y: 8 });
@@ -55,7 +54,7 @@ describe('gridSnapSource — a container\'s own grid', () => {
   it('runs the grid through a scaled container, scale and all', () => {
     // Scaled 2× about its center: its corner lands at (-50, -50), and its 10-unit pitch is 20 in world.
     const { scene, g, inside } = container(
-      { x: 0, y: 0, width: 100, height: 100, transform: [2, 0, 0, 2] }, 10, { x: 10, y: 10, width: 5, height: 5 },
+      { x: 0, y: 0, width: 100, height: 100, transform: [2, 0, 0, 2] }, { x: 10, y: 10, width: 5, height: 5 },
     );
     const grid = gridSnapSource({ spacing: 7, gridOf: (id) => (id === g ? 10 : undefined) });
     // The child's world corner (-30, -30), moved by (18, 19), is near the line at -10.
@@ -63,13 +62,13 @@ describe('gridSnapSource — a container\'s own grid', () => {
   });
 
   it('gives no grid inside a container whose grid is null', () => {
-    const { scene, g, inside } = container({ x: 0, y: 0, width: 100, height: 100 }, null, { x: 10, y: 10, width: 4, height: 4 });
+    const { scene, g, inside } = container({ x: 0, y: 0, width: 100, height: 100 }, { x: 10, y: 10, width: 4, height: 4 });
     const grid = gridSnapSource({ spacing: 10, gridOf: (id) => (id === g ? null : undefined) });
     expectNear(moveBy({ sources: [grid], scene, ids: [inside] }).by(3.3, 4.4).point, { x: 3.3, y: 4.4 });
   });
 
   it('leaves a container with no grid of its own to the one around it', () => {
-    const { scene, inside } = container({ x: 3, y: 3, width: 100, height: 100 }, 10, { x: 10, y: 10, width: 4, height: 4 });
+    const { scene, inside } = container({ x: 3, y: 3, width: 100, height: 100 }, { x: 10, y: 10, width: 4, height: 4 });
     const grid = gridSnapSource({ spacing: 10, gridOf: () => undefined });
     // On the root's lattice from world zero: the child's corner (13, 13) moved by 6 lands on 20.
     expectNear(moveBy({ sources: [grid], scene, ids: [inside] }).by(6, 6).point, { x: 7, y: 7 });
