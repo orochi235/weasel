@@ -55,3 +55,26 @@ it("serves a linked workspace package's source table over a stale built one", ()
   const fx = reachableTables(join(root, 'app')).filter((t) => t.namespace === 'fx');
   expect(fx.map((t) => Object.keys(t.icons))).toEqual([['added']]);
 });
+
+it("serves a worktree's own workspace tables, not the enclosing checkout's", () => {
+  const outer = temp();
+  const table = (icons: Record<string, { body: string }>) => JSON.stringify({ namespace: 'fx', owner: 'pkg', icons });
+  const workspace = (root: string, icons: Record<string, { body: string }>) => {
+    const pkg = join(root, 'packages', 'pkg');
+    mkdirSync(join(pkg, 'src'), { recursive: true });
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'repo', workspaces: ['packages/*'] }));
+    writeFileSync(join(pkg, 'package.json'), JSON.stringify({ name: 'pkg', weaselIcons: { table: './dist/icons.table.json' } }));
+    writeFileSync(join(pkg, 'src', 'icons.gen.ts'), `export const icon = scopedIcon<'a'>('fx');\n`);
+    writeFileSync(join(pkg, 'src', 'icons.table.json'), table(icons));
+    mkdirSync(join(root, 'apps', 'app'), { recursive: true });
+  };
+  // The main checkout, installed, with the glyph drawn its old way and no glyph added since.
+  workspace(outer, { kept: { body: 'old' } });
+  mkdirSync(join(outer, 'node_modules'));
+  symlinkSync(join(outer, 'packages', 'pkg'), join(outer, 'node_modules', 'pkg'));
+  // A worktree nested in it, with no node_modules of its own.
+  const inner = join(outer, '.claude', 'worktrees', 'branch');
+  workspace(inner, { kept: { body: 'new' }, added: { body: '' } });
+  const fx = reachableTables(join(inner, 'apps', 'app')).filter((t) => t.namespace === 'fx');
+  expect(fx.map((t) => t.icons)).toEqual([{ kept: { body: 'new' }, added: { body: '' } }]);
+});
