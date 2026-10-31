@@ -15,7 +15,7 @@
   gap: var(--wzl-space-4);
 }
 
-.title > h4 {
+.heading {
   flex: 0 0 auto;
   margin: 0;
   font: inherit;
