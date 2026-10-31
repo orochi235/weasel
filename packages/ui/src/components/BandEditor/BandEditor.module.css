@@ -102,13 +102,39 @@
   height: var(--be-band-height, 34px);
 }
 
-.band {
+/* The box the strip runs in: the whole track, but for the stretch an end pulled inward vacated. */
+.stripBox {
   position: absolute;
   top: 0;
   bottom: 0;
   left: var(--be-from);
   width: calc(var(--be-to) - var(--be-from));
+}
+
+/* The bands are a `Slider`: its track is bare and as tall as the strip, its
+ * regions are the bands, and its thumbs are the seams. Its direction is held
+ * to ltr because the ruler, the ghosts and the edges are laid out ltr. */
+.strip {
+  --rp-track-height: var(--be-band-height, 34px);
+  direction: ltr;
+}
+
+.strip [data-slider-track] {
+  background: none;
+  border: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+.strip [data-slider-track]::before {
+  content: none;
+}
+
+.band {
+  position: absolute;
+  inset: 0;
   display: flex;
+  unicode-bidi: plaintext;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -137,8 +163,11 @@
 
 /* First and last bands are pinned to `min` / `max`, so their bodies do not
  * translate — the cursor should not promise otherwise. */
-.band:first-of-type,
-.band:last-of-type {
+.pinned {
+  cursor: default;
+}
+
+.pinned:active {
   cursor: default;
 }
 
@@ -193,10 +222,11 @@
   pointer-events: none;
 }
 
-/* Wider than the line it draws: a 1px seam is unhittable. */
-.seam {
+/* Wider than the line it draws: a 1px seam is unhittable. A seam is one of
+ * the strip's thumbs, whose own look is undone here, and a range edge. */
+.seam,
+.strip [role='slider'] {
   position: absolute;
-  left: var(--be-at);
   top: -3px;
   bottom: -3px;
   width: 11px;
@@ -205,9 +235,23 @@
   cursor: ew-resize;
   background: none;
   border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-.seam::before {
+.seam {
+  left: var(--be-at);
+}
+
+/* A thumb's slop is drawn in its `::before`; the seam needs no more than its own width. */
+.strip [role='slider']::before {
+  content: none;
+}
+
+.seam::after,
+.strip [role='slider']::after {
   content: '';
   position: absolute;
   top: 0;
@@ -217,13 +261,16 @@
   background: var(--wzl-border-strong);
 }
 
-.seam:hover::before,
-.seam:focus-visible::before {
+.seam:hover::after,
+.seam:focus-visible::after,
+.strip [role='slider']:hover::after,
+.strip [role='slider']:focus-visible::after {
   background: var(--wzl-accent);
   width: 2px;
 }
 
-.seam:focus-visible {
+.seam:focus-visible,
+.strip [role='slider']:focus-visible {
   outline: 2px solid var(--wzl-accent);
   outline-offset: 0;
   border-radius: var(--wzl-radius-sm);
@@ -231,12 +278,12 @@
 
 /* An end of the whole range. Drawn heavier than a seam so it reads as the
  * boundary the bands live inside rather than one more division. */
-.edge::before {
+.edge::after {
   width: 2px;
   left: 4px;
 }
 
-.edge:hover::before,
-.edge:focus-visible::before {
+.edge:hover::after,
+.edge:focus-visible::after {
   width: 3px;
 }

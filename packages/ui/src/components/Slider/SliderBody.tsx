@@ -6,6 +6,7 @@ import { ReadoutsAlong } from './ReadoutsAlong';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
 import { SliderBand } from './SliderBand';
+import { useSliderRegions } from './SliderRegion';
 import { SliderStopLabels, SliderTicks, labeledStopsOf } from './SliderMarks';
 import { SliderThumb } from './SliderThumb';
 import { READOUT } from './stops';
@@ -61,9 +62,10 @@ export function SliderBody<T extends Thumb = Thumb>(
     shape, thumbFit: props.thumbFit ?? 'inside', thumbLength, direction,
     rail: () => railRef.current, railFrame: () => railFrameRef.current, band: () => bandRef.current,
   });
-  const scale = useScale(span, strict, step);
+  const scale = useScale(span, strict, step, { scale: props.scale, stopSnapPx: props.stopSnapPx });
   const { valueToFraction, valueAt } = scale;
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
+  const regionAt = useSliderRegions<T>({ props, min, max, scale, geometry, direction });
 
   const pointer = useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, onInput: props.onInput, drags });
   const keyDown = onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange, direction });
@@ -83,9 +85,11 @@ export function SliderBody<T extends Thumb = Thumb>(
       {labeled.length > 0 && (
         <SliderStopLabels labeled={labeled} last={stopList.length - 1} selected={thumbs.map(t => t.value)} valueToFraction={valueToFraction} geometry={geometry} />
       )}
-      {thumbs.map((thumb, i) => (
+      {/* One keyed list, so a region keeps its element, and its focus, as thumbs come and go after it. */}
+      {[...thumbs.flatMap((thumb, i) => [
+        regionAt(i),
         <SliderThumb<T>
-          key={i}
+          key={`thumb-${i}`}
           thumb={thumb}
           shape={thumb.shape ?? props.thumbShape}
           fraction={valueToFraction(thumb.value)}
@@ -101,8 +105,8 @@ export function SliderBody<T extends Thumb = Thumb>(
           onPointerDown={pointer.onThumbPointerDown(i)}
           onKeyDown={keyDown(i)}
           onContextMenu={pointer.onThumbContextMenu(i)}
-        />
-      ))}
+        />,
+      ]), regionAt(thumbs.length)]}
     </>
   );
 
@@ -123,7 +127,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   return (
     <div className={rootClass} style={rootVarsOf(props)}>
       <div className={s.row}>
-      <div className={s.track} ref={trackRef} onPointerDown={pointer.onTrackPointerDown}>
+      <div className={s.track} ref={trackRef} onPointerDown={pointer.onTrackPointerDown} data-slider-track>
         {props.renderTrack && <div className={s.trackInner} ref={paintRef}>{painted}</div>}
         <div className={s.rail} ref={railRef} data-slider-rail>
           <svg className={s.railFrame} ref={railFrameRef} aria-hidden="true" />

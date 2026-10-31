@@ -1,37 +1,16 @@
 import { isDev } from '@weasel-js/registry';
-/** Maps a domain value onto its position along the track, and back. */
-export interface BandScale {
-  /** Domain → position in [0,1]. Must be monotonic increasing. */
-  toUnit(value: number, min: number, max: number): number;
-  /** Inverse of `toUnit`. */
-  fromUnit(unit: number, min: number, max: number): number;
-}
+import { linearScale, logScale, type SliderScale } from '../Slider/scale';
+
+export { linearScale, logScale };
+
+/** A `BandEditor`'s axis: the same mapping a `Slider` takes as its `scale`. */
+export type BandScale = SliderScale;
 
 export function clamp01(u: number): number {
   return u < 0 ? 0 : u > 1 ? 1 : u;
 }
 
-/** Even domain steps take even track steps. */
-export const linearScale: BandScale = {
-  toUnit: (value, min, max) => (max === min ? 0 : (value - min) / (max - min)),
-  fromUnit: (unit, min, max) => min + unit * (max - min),
-};
-
-/** Even *ratios* take even track steps. Requires `min > 0`. */
-export const logScale: BandScale = {
-  toUnit: (value, min, max) => {
-    const lo = Math.log(min);
-    const hi = Math.log(max);
-    return hi === lo ? 0 : (Math.log(value) - lo) / (hi - lo);
-  },
-  fromUnit: (unit, min, max) => {
-    const lo = Math.log(min);
-    return Math.exp(lo + unit * (Math.log(max) - lo));
-  },
-};
-
 let warnedNonPositiveMin = false;
-
 
 /**
  * Resolves the `scale` prop, substituting `linearScale` for a `logScale`
@@ -58,4 +37,16 @@ export function resolveScale(
     );
   }
   return linearScale;
+}
+
+/**
+ * `scale` laid over a stretch `[lo, hi]` of the axis `[min, max]`, for a box
+ * drawn across only that stretch: a value lands where it would on the whole axis.
+ */
+export function withinAxis(scale: BandScale, min: number, max: number): BandScale {
+  const u = (v: number) => scale.toUnit(v, min, max);
+  return {
+    toUnit: (value, lo, hi) => (u(hi) === u(lo) ? 0 : (u(value) - u(lo)) / (u(hi) - u(lo))),
+    fromUnit: (unit, lo, hi) => scale.fromUnit(u(lo) + unit * (u(hi) - u(lo)), min, max),
+  };
 }

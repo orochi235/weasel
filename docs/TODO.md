@@ -528,21 +528,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has pinched a canvas in real Safari and seen it zoom once per sample with no
   page zoom.
 
-- **(P3) [agent] Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an
-  axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on
-  an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a
-  contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an
-  ordered thumb list — and they were kept separate deliberately: bridging them means teaching
-  `Slider` about the region *between* thumbs (payload, hit-testing, selection). The other trigger
-  is `Slider` needing a non-linear axis. A third option is `windease`: its `LayoutStrategy` is
-  public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag
-  into strategy state — so a band control is a strategy you write rather than a control you
-  build, and it brings widened gutter grab targets, `affects` for lock suppression, and
-  keyboard-operable gutters with it. It ships no band strategy of its own, and mapping domain
-  values onto seams is still the consumer's.
-  Closes when `BandEditor`'s seams are a `Slider` thumb list or a windease strategy, and it keeps no
-  seam-drag code of its own.
-
 - **(P3) [maintainer] `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
   browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
   every segment sits inside its track at one height, none clips its label, and a focused segment

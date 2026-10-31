@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { TrackRun, TrackShape } from '@weasel-js/geom';
 import type { SliderStop as Stop } from '@weasel-js/headless';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
+import type { SliderScale } from './scale';
 
 /**
  * Passed to a custom thumb renderer: the thumb box in CSS px as it is laid
@@ -80,6 +81,17 @@ export type TrackCtx = {
   along: boolean;
 };
 
+/**
+ * Passed to `renderRegion`: one stretch of track between neighboring thumbs,
+ * as values. Region `i` runs from thumb `i - 1` to thumb `i` in list order, so
+ * region 0 starts at `min` and region `thumbs.length` ends at `max`.
+ */
+export type SliderRegionCtx = {
+  index: number;
+  from: number;
+  to: number;
+};
+
 /** A {@link Slider} stop that carries a label, drawn under the track at the stop. */
 export type SliderStop = Stop<ReactNode>;
 
@@ -117,6 +129,19 @@ export type SliderStop = Stop<ReactNode>;
  * both callbacks can decline by returning `null`/`false`. `allowShiftAll`
  * makes shift-drag translate every thumb together.
  *
+ * `renderRegion` draws something across each stretch of track between
+ * neighboring thumbs, and before the first and after the last, in the tab
+ * order between the thumbs either side of it. It suits thumbs kept in order,
+ * by `constraint: 'ordered'` or by their `bounds`, and is drawn only on a
+ * straight track. `regionDrag` makes a drag on a region between two thumbs
+ * move both of them, keeping the span between them; a press that does not
+ * travel past the drag threshold is left as a click on what the region drew,
+ * and a press on a region is never a track press.
+ *
+ * `scale` maps values onto the track some other way than linearly — the
+ * `logScale` it ships with gives even ratios even steps. The arrow keys still
+ * step by value; pass `keyStep` to step along the track instead.
+ *
  * `thumbFit: 'inside'`, the default, runs the value span half a thumb short of
  * each end of the track, so a thumb at `min` or `max` sits flush with the
  * track's edge. `'overhang'` runs the span edge to edge and centers an end
@@ -135,6 +160,10 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
   keyStep?: (thumb: T, steps: number, index: number) => number;
   stops?: readonly (number | SliderStop)[];
   showStops?: boolean;
+  /** How close a drag has to come to a stop, in px, to land on it. Default the
+   *  `targets.sliderStopSnapPx` kit setting. Holding alt through a drag
+   *  defeats a magnetic stop. */
+  stopSnapPx?: number;
   stopLabels?: 'all' | 'ends' | 'none';
   snap?: 'magnetic' | 'strict';
   spacing?: 'linear' | 'even';
@@ -144,6 +173,14 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
   onRemoveThumb?: (index: number) => boolean;
   allowShiftAll?: boolean;
   renderTrack?: (ctx: TrackCtx) => ReactNode;
+  renderRegion?: (ctx: SliderRegionCtx) => ReactNode;
+  regionDrag?: boolean;
+  /** Not under `spacing: 'even'`, which places values by its stops. Default linear. */
+  scale?: SliderScale;
+  /** A drag ended without a release — a canceled pointer, a lost origin, an
+   *  unmount — and commits nothing. The thumbs are where its last `onInput`
+   *  left them; a consumer holding that preview drops it here. */
+  onCancel?: () => void;
   thumbFit?: 'inside' | 'overhang';
   /** The track to lie along, in the coordinates of the slider's containing
    *  block; it wins over an enclosing `Along`'s. A line is laid where its

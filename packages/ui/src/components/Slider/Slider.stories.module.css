@@ -5,3 +5,13 @@
   border: 1px solid var(--wzl-border-strong);
   border-radius: 50%;
 }
+
+.region {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-fg-muted);
+  cursor: grab;
+}

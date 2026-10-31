@@ -4,6 +4,7 @@ import { clamp } from '@weasel-js/geom';
 import { useKitSetting } from '@weasel-js/react';
 import { attract, usableStops } from '@weasel-js/headless';
 import { STOP_SNAP_PX } from './stops';
+import type { SliderScale } from './scale';
 import type { SliderProps } from './types';
 
 /** The reachable stops and the value span the track runs over: the first stop
@@ -15,43 +16,51 @@ export function useSpan(props: Pick<SliderProps, 'stops' | 'min' | 'max' | 'spac
   return { stopList, stops, even, min: even ? stops[0] : props.min, max: even ? stops[stops.length - 1] : props.max };
 }
 
+/** What else steers the map: a non-linear `scale`, and a stop snap distance that wins over the kit setting. */
+export interface ScaleOptions {
+  scale?: SliderScale;
+  stopSnapPx?: number;
+}
+
 /** The two-way map between a value and its 0..1 place along `span`, and the
  *  value a pointer at a place chooses once step and stops have had their say. */
-export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step: number | undefined) {
+export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step: number | undefined, options: ScaleOptions = {}) {
   const { stops, even, min, max } = span;
-  const stopSnapPx = useKitSetting('targets.sliderStopSnapPx') ?? STOP_SNAP_PX;
+  const { scale } = options;
+  const kitSnapPx = useKitSetting('targets.sliderStopSnapPx');
+  const stopSnapPx = options.stopSnapPx ?? kitSnapPx ?? STOP_SNAP_PX;
 
   const valueToFraction = useCallback(
     (v: number): number => {
       if (max === min) return 0;
-      if (!even) return clamp((v - min) / (max - min), 0, 1);
+      if (!even) return clamp(scale ? scale.toUnit(v, min, max) : (v - min) / (max - min), 0, 1);
       const gaps = stops.length - 1;
       const x = clamp(v, min, max);
       let i = 0;
       while (i < gaps - 1 && x > stops[i + 1]) i++;
       return (i + (x - stops[i]) / (stops[i + 1] - stops[i])) / gaps;
     },
-    [min, max, even, stops],
+    [min, max, even, stops, scale],
   );
 
   const fractionToValue = useCallback(
     (f: number): number => {
       const c = clamp(f, 0, 1);
-      if (!even) return min + c * (max - min);
+      if (!even) return scale ? scale.fromUnit(c, min, max) : min + c * (max - min);
       const gaps = stops.length - 1;
       const i = Math.min(gaps - 1, Math.floor(c * gaps));
       return stops[i] + (c * gaps - i) * (stops[i + 1] - stops[i]);
     },
-    [min, max, even, stops],
+    [min, max, even, stops, scale],
   );
 
-  /** The value a pointer at track fraction `f` chooses, before bounds. */
+  /** The value a pointer at track fraction `f` chooses, before bounds. `free` passes magnetic stops by. */
   const valueAt = useCallback(
-    (f: number, length: number): number => {
+    (f: number, length: number, free = false): number => {
       const v = fractionToValue(f);
       if (strict) return attract(v, stops, Infinity, valueToFraction);
       const q = clamp(snapToStep(v, step, min), min, max);
-      return stops.length > 0 ? attract(q, stops, stopSnapPx / length, valueToFraction) : q;
+      return stops.length > 0 && !free ? attract(q, stops, stopSnapPx / length, valueToFraction) : q;
     },
     [fractionToValue, valueToFraction, strict, stops, step, min, max, stopSnapPx],
   );
