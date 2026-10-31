@@ -929,6 +929,12 @@ only story runner in the repo.
   which runs no Linux, has never seen it fail. Waiting on a second sighting.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
+- **(P1) [agent] `ci.yml` has failed on every push to `main` since 2026-10-29 04:30.** The last 10 runs are red.
+  The two on 2026-10-30 (41117256616 on 2cbd23b28, 41118526156 on b6d8ba184) both end in the `browser` project
+  with `Serialized Error: { code: 'VITEST_BROWSER_CONNECTION_CLOSED' }`: the Chromium the project drives dropped
+  its socket mid-run. The earlier runs were not read. Filed rather than fixed in the 2026-10-30 close pass,
+  which changed docs only. Closes when `ci.yml` passes on a push to `main`.
+
 - **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
   `ubuntu-latest`, while every fleet node is a Mac, so a browser test that leans on the OS fails only in CI.
   The 11 that failed every `main` run from 2026-10-15 were fixed on 2026-10-29, passing in the lane below:
