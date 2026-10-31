@@ -52,9 +52,6 @@ export { insertAction } from '../interactions/actions/insert/action';
 export { placeAction } from '../interactions/actions/insert/placeAction';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
-export {
-  exitPathEditToolAction, pathEditToolAction, pathEditToolActive,
-} from '../interactions/actions/defaults/pathEditTools';
 export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';

@@ -70,7 +70,7 @@ const KIT_IDS = [
   'resize', 'rotate', 'areaSelect', 'insert', 'place', 'insert.adjustRotation', 'insert.reposition', 'clone',
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
-  'deleteAnchors', 'cutPathAtAnchor', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
+  'deleteAnchors', 'cutPathAtAnchor', 'retractHandles', 'makeHandlesSymmetric',
   'averageAnchors', 'joinAnchors', 'setAnchorField', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
   'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',

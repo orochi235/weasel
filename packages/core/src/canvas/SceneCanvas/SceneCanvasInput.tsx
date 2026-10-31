@@ -1,6 +1,7 @@
 import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { RuleCtx } from 'domains/chrome-caps';
@@ -15,6 +16,7 @@ import { dlog } from '../../debug/flag';
 import { useDeviceProfile } from '../../core/device/useDeviceProfile';
 import { useTestHook } from '../../test-hook/useTestHook';
 import type { CanvasExtensionApi } from '../canvasExtension';
+import type { ChromeRulesDep } from '../deps/chromeRules';
 import { useHitObserver } from '../useHitObserver';
 import type { CanvasViewState } from '../useCanvasView';
 import { GeometryProjectionRegistrar, ResizePolicyRegistrar } from './poseRegistrars';
@@ -58,7 +60,11 @@ export interface SceneCanvasInputProps {
   pathEdit: {
     state: SceneStandardActionsInputs['editAnchorsExternalState'];
   };
-  chrome: { getIsVisible: () => (id: string) => boolean; getRuleCtx: () => RuleCtx | undefined };
+  chrome: {
+    getIsVisible: () => (id: string) => boolean;
+    getRuleCtx: () => RuleCtx | undefined;
+    chromeRules: ChromeRulesDep;
+  };
   /** The selection overlay's rotate badge, and where the dispatcher reports the affordances
    *  it hit-tests, for the slops overlay. */
   overlay: {
@@ -99,6 +105,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     return () => dlog('scene-canvas', 'unmount');
   }, []);
   usePointerPublisher(canvas.elementRef, canvas.apiRef);
+  useDepSource('chromeRules', () => chrome.chromeRules);
   useSceneStandardActions({
     props, viewOn: p.viewOn,
     selection, enteredGroup: picking.enteredGroup, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,

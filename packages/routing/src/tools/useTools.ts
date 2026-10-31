@@ -9,6 +9,7 @@ import { useContributions } from '../contributions/useContributions';
 import type { Contribution, Eligibility, OverlayPosition } from '../contributions/types';
 import type { KernelOverlay } from '../index';
 import { sameList, useLatest, useStableByContent } from '@weasel-js/react';
+import { useModeDefaultTool } from './useModeDefaultTool';
 
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */
@@ -23,8 +24,10 @@ export interface UseToolsOptions<TOverlay = KernelOverlay> {
   /** Always-on entries — tools or other contributions, live regardless of
    *  the active slot. */
   ambient?: readonly Contribution<TOverlay>[];
-  /** The modes the canvas can be in, read by the dev-time route-conflict
-   *  check; without a registry it checks against the kit's `DEFAULT_MODES`. */
+  /** The modes the canvas can be in. A mode's `defaultTool` becomes active
+   *  as the mode is entered, and the tool it replaced comes back as the mode
+   *  is left. The dev-time route-conflict check reads them too; without a
+   *  registry it checks against the kit's `DEFAULT_MODES`. */
   modes?: ModeRegistry;
 }
 
@@ -184,6 +187,8 @@ export function useTools<TOverlay = KernelOverlay>(
       || slotted.ambient.some((t) => t.id === id),
     [slotted],
   );
+
+  useModeDefaultTool(opts.modes, { active: contributions.focused, setActive, has });
 
   // Memoized: a consumer using `tools` as an effect dep loops infinitely on
   // identity churn when it setStates from inside that effect.

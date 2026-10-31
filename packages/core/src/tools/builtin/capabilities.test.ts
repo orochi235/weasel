@@ -15,6 +15,7 @@ import { createMeasurements } from 'domains/measure/measurements';
 describe('built-in tool capabilities', () => {
   const cases: Array<[string, () => { eligibility?: { capabilities?: readonly string[] } } | null, readonly string[]]> = [
     ['hand', () => builtins.useHandTool({}), ['navigation']],
+    ['anchors', () => builtins.anchorsTool, ['edits-anchors']],
     ['select', () => builtins.useSelectTool({} as never, {} as never), ['creates-selection']],
     ['lasso', () => builtins.useLassoTool(), ['creates-selection']],
     ['rect', () => builtins.useRectTool(), ['creates-shapes']],

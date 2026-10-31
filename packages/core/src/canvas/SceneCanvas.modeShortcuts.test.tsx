@@ -8,6 +8,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES, NORMAL, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 import { modeShortcuts, type ModeShortcutHandlers } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
+import type { ToolsApi } from 'tools/overlayBinding';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 
@@ -36,9 +37,10 @@ function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = tru
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
+  const tools: { current?: ToolsApi } = {};
   const { container } = render(
     <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
-      ambient={[modeShortcuts(registry, handlers)]}
+      ambient={[modeShortcuts(registry, handlers)]} onToolsCreated={(t) => { tools.current = t; }}
       {...(wireMode ? { modes: registry } : {})} />,
   );
   const key = (key: string, init: KeyboardEventInit = {}) => act(() => {
@@ -48,7 +50,7 @@ function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = tru
   const pointer = (type: string, x: number, y: number) => act(() => {
     canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1 }));
   });
-  return { registry, scene, key, pointer, selected: () => scene.getSelection() };
+  return { registry, scene, key, pointer, tools, selected: () => scene.getSelection() };
 }
 
 describe('mode shortcuts', () => {
@@ -58,6 +60,18 @@ describe('mode shortcuts', () => {
     t.key('Escape');
     expect(exit).toHaveBeenCalledOnce();
     expect(t.selected()).toEqual([ID]);
+  });
+
+  it("return to the mode's default tool on Escape first, and leave on the next", () => {
+    const exit = vi.fn();
+    const t = setup('path-edit', { exit });
+    expect(t.tools.current?.active).toBe('anchors');
+    act(() => t.tools.current!.setActive('hand'));
+    t.key('Escape');
+    expect(exit).not.toHaveBeenCalled();
+    expect(t.tools.current?.active).toBe('anchors');
+    t.key('Escape');
+    expect(exit).toHaveBeenCalledOnce();
   });
 
   it('leave Escape to the rest of the ladder in a mode that declares nothing for it', () => {

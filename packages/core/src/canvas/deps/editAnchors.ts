@@ -83,7 +83,6 @@ export function useEditAnchorsDepSource(
     // hand them out alongside an empty id.
     const selectedAnchors = effectiveId ? state.getSelectedAnchors() : EMPTY_ANCHOR_SELECTION;
     const marquee = effectiveId ? state.getMarquee() : null;
-    const tool = effectiveId ? state.getTool() : null;
     return {
       editingId: effectiveId,
       setEditingId(id: string | null) {
@@ -125,11 +124,6 @@ export function useEditAnchorsDepSource(
       setHandleLocks(next) {
         state.setHandleLocks(next);
         registry.changed?.();
-      },
-      tool,
-      setTool(id) {
-        if (!effectiveId) return;
-        state.setTool(id);
       },
       ...pathAccess(sc, ad, state.getExtensions()),
     };

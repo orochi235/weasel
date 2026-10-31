@@ -20,7 +20,6 @@ import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
 import { representationOf, type PathRepresentation } from 'domains/paths/pathRepresentation';
-import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
 import { icon } from '../../../icons.gen';
 
@@ -78,7 +77,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: (deps, at) => {
-    if (!deps?.editAnchors?.editingId || pathEditToolActive(deps)) return ActionDisabledReason.NotApplicable;
+    if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
     const represented = representedPress(deps);
     const hit = (p: { x: number; y: number }) =>
       (represented ? represented(deps, p) : segmentUnder(deps, p.x, p.y)) !== null;

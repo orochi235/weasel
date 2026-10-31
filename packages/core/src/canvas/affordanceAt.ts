@@ -106,7 +106,6 @@ export function anchorStateFrom(
     if (!dep) return null;
     return {
       editingId: dep.editingId ?? null,
-      tool: dep.tool ?? null,
       // The hit-test reads world-coord anchor positions, so route through
       // `getEditablePath`: both pose-as-polygon and `data.path` consumers
       // resolve correctly.

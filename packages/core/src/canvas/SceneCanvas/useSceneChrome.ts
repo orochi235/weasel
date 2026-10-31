@@ -16,6 +16,7 @@ import { presetChromeRules, type EnabledPresets } from './features';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
 import type { NodeAtPoint } from './useNodeAtPoint';
 import { worldPointAt } from './worldPointAt';
+import { useChromeRulesDep } from '../deps/chromeRules';
 
 /**
  * The node under the pointer, for `RuleCtx.hover`. One lookup, not a
@@ -112,8 +113,8 @@ export function useSurfaceChromeCaps(args: {
 }
 
 /**
- * The surface's chrome: hover tracking, the visibility rules, and the chrome-caps answers they
- * feed. `source` is the chrome-caps source minus the parts built here.
+ * The surface's chrome: hover tracking, the visibility rules with the `chromeRules` dep that sets
+ * them at run time, and the chrome-caps answers they feed. `source` is the chrome-caps source minus the parts built here.
  */
 export function useSceneCanvasChrome(args: {
   source: Omit<ChromeCapsSource, 'rules' | 'getHover'>;
@@ -127,12 +128,12 @@ export function useSceneCanvasChrome(args: {
   const { getHover, canvasRef: trackHoverOn } = useSceneHover({
     ...args.hover, viewRef, enabled: rules.chromeVisibility !== undefined || args.hover.onChange !== undefined,
   });
-  const chromeRules = useChromeRules(rules);
+  const chromeRules = useChromeRulesDep(useChromeRules(rules));
   const caps = useSurfaceChromeCaps({
-    source: { rules: chromeRules, getHover, ...args.source },
+    source: { rules: chromeRules.rules, getHover, ...args.source },
     selection: args.selection,
     viewRef,
     dispatcher: args.dispatcher,
   });
-  return { ...caps, trackHoverOn };
+  return { ...caps, trackHoverOn, chromeRules: chromeRules.dep };
 }

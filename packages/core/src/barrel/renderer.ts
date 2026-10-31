@@ -146,7 +146,7 @@ export { describePresets, isAtom, type PresetDescription } from '../canvas/Scene
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
 export {
   BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
-  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
+  SELECT_TOOLS, ANCHOR_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
 } from '../canvas/SceneCanvas';
 export { BASELINE_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_PRESETS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
 export { BASELINE_ACTIONS } from '../canvas/SceneCanvas/presets/baseline';
