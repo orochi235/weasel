@@ -48,10 +48,9 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
   flattenTolerance?: FlattenTolerance;
 
   /** How images drawn smaller than their pixels are filtered, forwarded to
-   *  `WeaselRendererOptions.imageMinification`. Default `'linear'`, one tap,
-   *  which aliases an image drawn at half size or less; `'auto'` builds an
-   *  image's mipmaps the first time a frame draws it that small. Changing it
-   *  re-uploads every image. */
+   *  `WeaselRendererOptions.imageMinification`. Default `'auto'`, which builds
+   *  an image's mipmaps the first time a frame draws it at half size or less;
+   *  `'linear'`, one tap, aliases it. Changing it re-uploads every image. */
   imageMinification?: ImageMinification;
 
   /** Which unchanged layers the renderer keeps as pixels between frames and

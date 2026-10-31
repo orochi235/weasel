@@ -122,9 +122,9 @@ When work merges, retire its entry here in the same change.
 
   Two axes move together across that ladder and want separating. Holding the cell at 16px and
   drawing fewer of them varies command count at a fixed 2:1 minification; drawing 24px cells until
-  the count reaches 2,700 varies the sampling ratio at a fixed count. `GLImageCache` sets
-  MIN_FILTER to LINEAR and generates no mipmaps on the screen path, so a minified draw scatters its
-  taps, and 16px is where a 32px tile is minified hardest by anything drawing that many of them.
+  the count reaches 2,700 varies the sampling ratio at a fixed count. A cell drawn from a sheet
+  never samples mipmaps, so a minified draw scatters its taps, and 16px is where a 32px tile is
+  minified hardest by anything drawing that many of them.
 
   **The control has to run in their harness.** Every number in it is canvas2d on a page that also
   holds a WebGL2 context. Nobody has measured that rung with no GL context at all, so "the batch

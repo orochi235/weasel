@@ -134,22 +134,36 @@ describe('maxImageTextureSide', () => {
 });
 
 describe('minification: mipmap', () => {
-  it('uploads with LINEAR_MIPMAP_LINEAR and generates mipmaps', () => {
+  const minFilters = (rec: ReturnType<typeof makeGLRecorder>): unknown[] => rec.calls
+    .filter((c) => c.name === 'texParameteri' && c.args[1] === rec.gl.TEXTURE_MIN_FILTER)
+    .map((c) => c.args[2]);
+
+  it('generates mipmaps at upload, and a draw that asks for them samples through them', () => {
     const rec = makeGLRecorder();
     const cache = new GLImageCache(rec.gl, 'mipmap');
-    cache.upload({}, {} as ImageBitmap);
-    const names = rec.calls.map((c) => c.name);
-    expect(names).toContain('generateMipmap');
-    const minFilter = rec.calls.find(
-      (c) => c.name === 'texParameteri' && c.args[1] === rec.gl.TEXTURE_MIN_FILTER,
-    );
-    expect(minFilter?.args[2]).toBe(rec.gl.LINEAR_MIPMAP_LINEAR);
+    const key = {};
+    cache.upload(key, {} as ImageBitmap);
+    expect(rec.calls.map((c) => c.name)).toContain('generateMipmap');
+    cache.setMinFilter(key, true);
+    expect(minFilters(rec).at(-1)).toBe(rec.gl.LINEAR_MIPMAP_LINEAR);
   });
 
-  it("default 'linear' behavior is unchanged (no mipmap calls)", () => {
+  it('a draw that does not ask for them keeps one bilinear tap', () => {
     const rec = makeGLRecorder();
-    const cache = new GLImageCache(rec.gl);
-    cache.upload({}, {} as ImageBitmap);
+    const cache = new GLImageCache(rec.gl, 'mipmap');
+    const key = {};
+    cache.upload(key, {} as ImageBitmap);
+    cache.setMinFilter(key, true);
+    cache.setMinFilter(key, false);
+    expect(minFilters(rec).at(-1)).toBe(rec.gl.LINEAR);
+  });
+
+  it("'linear' never builds them, whatever a draw asks", () => {
+    const rec = makeGLRecorder();
+    const cache = new GLImageCache(rec.gl, 'linear');
+    const key = {};
+    cache.upload(key, {} as ImageBitmap);
+    cache.setMinFilter(key, true);
     expect(rec.calls.map((c) => c.name)).not.toContain('generateMipmap');
     const minFilter = rec.calls.find(
       (c) => c.name === 'texParameteri' && c.args[1] === rec.gl.TEXTURE_MIN_FILTER,

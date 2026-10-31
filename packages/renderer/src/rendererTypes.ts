@@ -70,9 +70,12 @@ export interface WeaselRendererOptions {
   /** Device pixels per CSS pixel. */
   dpr: number;
   /** MIN_FILTER strategy for image textures (`GLImageCache`). Default
-   *  `'linear'`. `'mipmap'` builds mipmaps for every image at upload, as
-   *  the headless `renderSceneToPixels` path does; `'auto'` builds them
-   *  for an image the first time a frame draws it at half size or smaller. */
+   *  `'auto'`, which builds an image's mipmaps the first time a frame draws
+   *  the whole of it at half size or smaller. `'mipmap'` builds them for every
+   *  image at upload, as the headless `renderSceneToPixels` path does;
+   *  `'linear'` never does, and aliases an image drawn that small. Whatever the
+   *  mode, a draw with `source` and a `sprites` run never sample mipmaps, which
+   *  would blend in the cells around the rect. */
   imageMinification?: ImageMinification;
   /** How far a flattened curve may stray: in world units, or `{ px }` in
    *  device pixels, which follows each path's transform so a zoom keeps

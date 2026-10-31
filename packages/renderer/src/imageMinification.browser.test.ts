@@ -60,3 +60,39 @@ describe('an image drawn at an eighth of its size', () => {
     expect(red).toBeLessThan(135);
   });
 });
+
+/** A sheet of two 32-texel cells, red on the left and blue on the right, with
+ *  no gutter between: the case a mipmap would bleed across. */
+async function twoCellSheet(): Promise<ImageBitmap> {
+  const w = 64, h = 32;
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      data[i] = x < 32 ? 255 : 0;
+      data[i + 2] = x < 32 ? 0 : 255;
+      data[i + 3] = 255;
+    }
+  }
+  return createImageBitmap(new ImageData(data, w, h));
+}
+
+describe('a sheet cell drawn at an eighth of its size', () => {
+  it.each(['auto', 'mipmap'] as const)("takes none of its neighbor's color under '%s'", async (mode) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const gl = canvas.getContext('webgl2', { stencil: true })!;
+    renderer = new WeaselRenderer({ gl, width: 4, height: 4, dpr: 1, imageMinification: mode });
+    const sheet = await twoCellSheet();
+    // The whole sheet first, so its mipmaps exist before the cell is drawn.
+    renderer.render([
+      { kind: 'image', image: sheet, x: 0, y: 0, w: 2, h: 1 },
+      { kind: 'image', image: sheet, x: 0, y: 0, w: 4, h: 4, source: { x: 0, y: 0, w: 32, h: 32 } },
+    ]);
+    const px = new Uint8Array(4);
+    gl.readPixels(3, 2, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    expect(px[0]).toBeGreaterThan(240);
+    expect(px[2]).toBeLessThan(16);
+  });
+});

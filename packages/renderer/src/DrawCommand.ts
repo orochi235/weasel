@@ -195,7 +195,9 @@ export interface ImageDrawCommand {
    *  Omitted draws the whole bitmap. Not range-checked: a rect past the edge
    *  samples outside [0..1], which CLAMP_TO_EDGE smears. With
    *  `sampling: 'linear'` the filter reaches half a texel beyond `source`, so
-   *  atlas frames need a gutter (see `SpriteSheet.spacing`) or `'nearest'`. */
+   *  atlas frames need a gutter (see `SpriteSheet.spacing`) or `'nearest'`.
+   *  A draw with `source` never samples mipmaps, so a frame drawn small aliases
+   *  rather than blending in its neighbors. */
   source?: { x: number; y: number; w: number; h: number };
   /** Mirror the sampled region within the destination rect. The quad does not
    *  move — a flipped draw covers exactly the pixels an unflipped one does. */

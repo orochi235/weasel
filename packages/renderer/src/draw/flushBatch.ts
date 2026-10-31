@@ -77,6 +77,7 @@ export function flushBatch(ctx: DrawContext): void {
       entry.image,
       entry.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
     );
+    ctx.imageCache.setMinFilter(entry.image, entry.mips);
   }
   if (staged.ramps) ctx.gradRamps.bind(RAMP_SLOT);
   gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);

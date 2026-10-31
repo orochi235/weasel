@@ -174,7 +174,7 @@ export class WeaselRenderer {
     this.widthCss = opts.width;
     this.heightCss = opts.height;
     this.dpr = opts.dpr;
-    this.imageMinification = opts.imageMinification ?? 'linear';
+    this.imageMinification = opts.imageMinification ?? 'auto';
     this.flattenTolerance = opts.flattenTolerance;
     this.bakeBudget = opts.bakeBudget ?? DEFAULT_BAKE_BUDGET;
     this.textOutlineMinScreenSize = opts.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
@@ -587,7 +587,7 @@ export class WeaselRenderer {
   /** Change `imageMinification` after construction; `undefined` restores the
    *  default. A change frees every image texture, and each re-uploads when next drawn. */
   setImageMinification(mode: ImageMinification | undefined): void {
-    const next = mode ?? 'linear';
+    const next = mode ?? 'auto';
     if (next === this.imageMinification) return;
     this.imageMinification = next;
     this.imageCache.dispose();
