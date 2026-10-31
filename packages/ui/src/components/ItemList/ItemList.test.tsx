@@ -163,6 +163,15 @@ describe('ItemList', () => {
       expect(cells[1]).toContainElement(screen.getByRole('button', { name: 'Hide a' }));
     });
 
+    it('gives every row the same cells when only some rows carry controls', () => {
+      render(<ItemList
+        selection="multi"
+        rows={ROWS.map((r, i) => (i === 1 ? r : { ...r, trailing: <button type="button">Hide {r.id}</button> }))}
+      />);
+      const counts = screen.getAllByRole('row').map((r) => r.querySelectorAll('[role="gridcell"]').length);
+      expect(counts).toEqual([2, 2, 2]);
+    });
+
     it('is a grid with no selection state for an activate-only list', () => {
       render(<ItemList rows={ROWS} onActivate={() => {}} />);
       expect(screen.getByRole('grid')).toBeInTheDocument();

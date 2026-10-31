@@ -247,6 +247,7 @@ export const ItemList = forwardRef(function ItemList(
   };
 
   const roles = ROLES[mode];
+  const trailingColumn = mode === 'grid' && rows.some((row) => row.trailing != null);
   return (
     <div
       className={cls}
@@ -295,7 +296,7 @@ export const ItemList = forwardRef(function ItemList(
                 <div role="gridcell" className={s.cell} ref={targetRef(row.id)} tabIndex={tabIndex}>
                   {content}
                 </div>
-                {row.trailing != null && (
+                {trailingColumn && (
                   <div role="gridcell" className={s.trailing}>{row.trailing}</div>
                 )}
               </>
