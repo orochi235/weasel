@@ -112,5 +112,8 @@ export function outlineBox(outline: readonly Point[]): Rect {
 export function intersect(a: Rect, b: Rect): Rect {
   const x = Math.max(a.x, b.x);
   const y = Math.max(a.y, b.y);
-  return { x, y, width: Math.min(a.x + a.width, b.x + b.width) - x, height: Math.min(a.y + a.height, b.y + b.height) - y };
+  return { x, y, width: Math.min(end(a.x, a.width), end(b.x, b.width)) - x, height: Math.min(end(a.y, a.height), end(b.y, b.height)) - y };
 }
+
+// A rect without end on an axis starts at -Infinity and is Infinity wide, which do not sum.
+const end = (start: number, size: number): number => (size === Infinity ? Infinity : start + size);
