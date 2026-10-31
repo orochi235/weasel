@@ -27,7 +27,7 @@
 }
 
 .row:hover {
-  background: var(--wzl-surface);
+  background: var(--wzl-surface-hover);
 }
 
 .row:focus-visible,

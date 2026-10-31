@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref } from 'react';
+import { forwardRef, useLayoutEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import { nudgeOf } from '@weasel-js/headless';
 import { DragGrip } from '../DragGrip';
@@ -18,11 +18,13 @@ export interface ReorderHandleProps {
   disabled?: boolean;
   /** The owner's sizing and placement. */
   className?: string;
-  ref?: Ref<HTMLButtonElement>;
 }
 
 /** The button a reorderable item is dragged by, which Alt+Up/Down also move it from. */
-export function ReorderHandle({ label, onPointerDown, onNudge, badge, size = 13, disabled = false, className, ref }: ReorderHandleProps) {
+export const ReorderHandle = forwardRef(function ReorderHandle(
+  { label, onPointerDown, onNudge, badge, size = 13, disabled = false, className }: ReorderHandleProps,
+  ref: Ref<HTMLButtonElement>,
+) {
   const button = useRef<HTMLButtonElement | null>(null);
   const refocus = useRef(false);
 
@@ -59,4 +61,4 @@ export function ReorderHandle({ label, onPointerDown, onNudge, badge, size = 13,
       {badge ?? <DragGrip size={size} />}
     </button>
   );
-}
+});
