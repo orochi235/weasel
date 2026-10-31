@@ -36,8 +36,9 @@ export interface ActionBarOptions {
    */
   icons?: Record<string, IconRef>;
   /**
-   * Per-entry label overrides, keyed like `icons`. Drives both `aria-label`
-   * and `title`. When omitted, the entry's own `label` is used.
+   * Per-entry label overrides, keyed like `icons`. Drives `aria-label`, and
+   * the tooltip of an action with no `description`. When omitted, the
+   * entry's own `label` is used.
    */
   labels?: Record<string, string>;
   /** Only these of the entries `group` or `tag` picks, each an action id — every variant of
