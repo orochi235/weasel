@@ -3,7 +3,7 @@ import type { DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
 import { writeDot } from './dot/write';
 import { DRAW_XML } from './drawXml/format';
-import { writeMermaid } from './mermaid/write';
+import { writeFlowchart } from './mermaid/flowchart/write';
 
 const CLASS: DataNode = {
   id: 'c',
@@ -14,7 +14,7 @@ const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 400, hei
 describe('a shape with divider rows, written to a text format', () => {
   it.each([
     ['DOT', () => writeDot(doc)],
-    ['Mermaid', () => writeMermaid(doc)],
+    ['Mermaid', () => writeFlowchart(doc)],
     ['draw-style XML', () => DRAW_XML.write!(doc)],
   ])('keeps its text and drops its dividers without a warning in %s', (_name, write) => {
     const { text, warnings } = write();

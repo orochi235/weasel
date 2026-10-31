@@ -1,5 +1,6 @@
 /** A Mermaid flowchart's tokens: ids, node shapes, links, and the raw rest of keyword lines. */
-import { lineError } from '../lineError';
+import { lineError } from '../../lineError';
+import { frontMatter } from '../common/header';
 
 /** A node shape's syntax, by the brackets around its text. */
 export type MermaidShape =
@@ -45,13 +46,6 @@ const CLOSERS: Readonly<Record<string, RegExp>> = { '-': /\s*(--+[>ox]|---+)/y, 
 
 const fail = (line: number, message: string) => lineError('Mermaid', line, message);
 
-function jsonString(quoted: string): string {
-  try {
-    return JSON.parse(quoted) as string;
-  } catch {
-    return quoted.slice(1, -1);
-  }
-}
 const strokeOf = (body: string) => (body.startsWith('~') ? 'invisible' : body.startsWith('=') ? 'thick' : body.includes('.') ? 'dotted' : 'normal');
 
 
@@ -89,12 +83,10 @@ class MermaidLexer {
   }
 
   frontMatter(): void {
-    const front = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/.exec(this.text);
-    if (front === null) return;
-    const t = /^title:[ \t]*(.*)$/m.exec(front[1]!)?.[1]?.trim();
-    if (t !== undefined) this.title = /^".*"$/.test(t) ? jsonString(t) : /^'.*'$/.test(t) ? t.slice(1, -1).replace(/''/g, "'") : t;
-    this.i = front[0].length;
-    this.line += front[0].split('\n').length - (front[0].endsWith('\n') ? 1 : 0);
+    const front = frontMatter(this.text);
+    this.title = front.title;
+    this.i = front.length;
+    this.line += front.lines;
   }
 
   run(): MermaidLex {
@@ -258,6 +250,6 @@ class MermaidLexer {
 }
 
 /** Splits a Mermaid flowchart into tokens. Throws, naming the line, on text it cannot read. */
-export function lexMermaid(source: string): MermaidLex {
+export function lexFlowchart(source: string): MermaidLex {
   return new MermaidLexer(source).run();
 }

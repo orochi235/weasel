@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { DataNode, DiagramData } from '@weasel-js/diagram';
-import { readMermaid } from './read';
+import { readFlowchart } from './read';
 
-const FLOW = readFileSync(join(__dirname, '..', '__fixtures__', 'flow.mmd'), 'utf8');
-const page = (text: string) => readMermaid(text).document.pages[0]!;
+const FLOW = readFileSync(join(__dirname, '..', '..', '__fixtures__', 'mermaid', 'flowchart', 'flow.mmd'), 'utf8');
+const page = (text: string) => readFlowchart(text).document.pages[0]!;
 const node = (data: DiagramData, id: string) => data.nodes.find((n) => n.id === id) as DataNode;
 
 describe('reading Mermaid', () => {
@@ -18,14 +18,14 @@ describe('reading Mermaid', () => {
   });
 
   it('reads each shape of the table, and the rest as rects with a warning', () => {
-    const { document, warnings } = readMermaid(FLOW);
+    const { document, warnings } = readFlowchart(FLOW);
     const outlines = Object.fromEntries(document.pages[0]!.data.nodes.map((n) => [n.id, n.outline]));
     expect(outlines).toEqual({
       start: 'stadium', check: 'diamond', pick: 'rect', wait: 'ellipse', pack: 'hexagon', label: 'parallelogram',
       ship: 'trapezoid', done: 'rect', db: 'cylinder',
     });
     expect(warnings.some((w) => w.startsWith('Mermaid shapes read as rectangles'))).toBe(false);
-    const meta = readMermaid('flowchart TD\nA(round) & B@{ shape: diam, label: "Meta" } & C@{ shape: cloud } & D@{ shape: bolt }');
+    const meta = readFlowchart('flowchart TD\nA(round) & B@{ shape: diam, label: "Meta" } & C@{ shape: cloud } & D@{ shape: bolt }');
     expect(meta.document.pages[0]!.data.nodes.map((n) => [n.outline, n.lines]))
       .toEqual([['roundRect', ['round']], ['diamond', ['Meta']], ['cloud', ['C']], ['rect', ['D']]]);
     expect(meta.warnings).toContain('Mermaid shapes read as rectangles: bolt.');
@@ -83,18 +83,14 @@ describe('reading Mermaid', () => {
   });
 
   it('warns for each construct a diagram does not hold', () => {
-    expect(readMermaid(FLOW).warnings).toEqual([
+    expect(readFlowchart(FLOW).warnings).toEqual([
       'Mermaid configuration directives were dropped.',
       'Mermaid statements a diagram does not hold were dropped: click.',
       'Mermaid subgraph directions were dropped; the page runs one way.',
       'Mermaid style properties a diagram does not hold were dropped: font-size.',
     ]);
-    expect(readMermaid('flowchart TD\nA ~~~ B\nA --x B').warnings).toEqual([
+    expect(readFlowchart('flowchart TD\nA ~~~ B\nA --x B').warnings).toEqual([
       'Mermaid invisible links were dropped.', 'Mermaid cross ends read as arrows.',
     ]);
-  });
-
-  it('refuses other diagram kinds, naming the kind and the line', () => {
-    expect(() => readMermaid('%% a comment\npie title Pets\n"Dogs" : 386')).toThrow('Mermaid, line 2: pie diagrams are not read; only flowcharts are');
   });
 });

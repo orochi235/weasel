@@ -4,11 +4,13 @@
  * Mermaid holds no geometry, so the page is laid out on import.
  */
 import type { MarkerRef } from '@weasel-js/core';
-import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, NodeStyle, Outline } from '@weasel-js/diagram';
-import type { ImportResult } from '../document';
-import { Membership, Warnings, graphPage, markupLines } from '../graphRead';
+import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Outline } from '@weasel-js/diagram';
+import type { ImportResult } from '../../document';
+import { Membership, Warnings, graphPage } from '../../graphRead';
+import { checkProps, dashOf, nodeColors, px } from '../common/styles';
+import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
-import { parseMermaid, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
+import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = {
   TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left', 'v': 'down', '^': 'up', '>': 'right', '<': 'left',
@@ -34,16 +36,6 @@ const META_OUTLINES: Readonly<Record<string, Outline>> = {
 interface NodeDraft { lines: string[]; outline: Outline; classes: string[] }
 interface EdgeDraft { edge: DataEdge; index: number }
 
-const px = (v: string) => Number(v.replace(/px$/, ''));
-const dashOf = (v: string) => v.split(/[\s,]+/).filter((s) => s !== '').map(px);
-
-/** Mermaid's text: markdown string quotes and bold dropped, entities and `<br>` read. */
-function textLines(text: string): string[] {
-  const md = /^`([\s\S]*)`$/.exec(text);
-  const plain = md !== null ? md[1]!.replace(/\*\*|__/g, '') : text;
-  const lines = markupLines(plain, true);
-  return lines.every((l) => l === '') ? [] : lines;
-}
 
 class MermaidReader {
   readonly warnings = new Warnings();
@@ -150,11 +142,7 @@ class MermaidReader {
   }
 
   checkProps(props: StyleProps): void {
-    for (const [key] of props) {
-      if (!['fill', 'stroke', 'color', 'stroke-width', 'stroke-dasharray'].includes(key)) {
-        this.warnings.list('Mermaid style properties a diagram does not hold were dropped', key);
-      }
-    }
+    checkProps(props, this.warnings);
   }
 
   propsOf(id: string, isNode: boolean): Map<string, string> {
@@ -165,16 +153,6 @@ class MermaidReader {
   }
 }
 
-function nodeColors(props: ReadonlyMap<string, string>): Partial<NodeStyle> | undefined {
-  const colors: Partial<NodeStyle> = {
-    ...(props.has('fill') ? { fill: props.get('fill')! } : {}),
-    ...(props.has('stroke') ? { stroke: props.get('stroke')! } : {}),
-    ...(props.has('color') ? { text: props.get('color')! } : {}),
-    ...(props.has('stroke-width') ? { strokeWidth: px(props.get('stroke-width')!) } : {}),
-    ...(props.has('stroke-dasharray') ? { dash: dashOf(props.get('stroke-dasharray')!) } : {}),
-  };
-  return Object.keys(colors).length > 0 ? colors : undefined;
-}
 
 function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps): Partial<EdgeStyle> | undefined {
   const colors: Partial<EdgeStyle> = { ...base };
@@ -192,9 +170,9 @@ function subgraphIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): 
   return out;
 }
 
-/** Reads a Mermaid flowchart into a one-page document. Throws, naming the line, on text that is not one. */
-export function readMermaid(text: string): ImportResult {
-  const chart = parseMermaid(text);
+/** Reads a Mermaid flowchart into a one-page document, its `notation` unset. Throws, naming the line, on text that is not one. */
+export function readFlowchart(text: string): ImportResult {
+  const chart = parseFlowchart(text);
   const r = new MermaidReader(subgraphIdsOf(chart.stmts));
   if (chart.directives > 0) r.warnings.add('Mermaid configuration directives were dropped.');
   r.walk(chart.stmts, null);

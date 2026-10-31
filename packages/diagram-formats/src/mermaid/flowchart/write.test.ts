@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { DiagramData } from '@weasel-js/diagram';
-import type { DiagramDocument, GraphPage } from '../document';
-import { documentFromScene } from '../fromScene';
-import { docScene } from '../testing/docScene';
-import { readMermaid } from './read';
-import { writeMermaid } from './write';
+import type { DiagramDocument, GraphPage } from '../../document';
+import { documentFromScene } from '../../fromScene';
+import { docScene } from '../../testing/docScene';
+import { readFlowchart } from './read';
+import { writeFlowchart } from './write';
 
 const pageOf = (data: DiagramData, extra: Partial<Omit<GraphPage, 'kind'>> = {}): DiagramDocument =>
   ({ pages: [{ kind: 'graph', id: 'p', width: 400, height: 300, data, ...extra }], theme: 'paper' });
-const back = (doc: DiagramDocument, page?: string) => readMermaid(writeMermaid(doc, page !== undefined ? { page } : {}).text).document.pages[0]!;
+const back = (doc: DiagramDocument, page?: string) => readFlowchart(writeFlowchart(doc, page !== undefined ? { page } : {}).text).document.pages[0]!;
 const topology = (data: DiagramData) => data.edges.map((e) => [e.from, e.to, e.label]);
 const shapes = (data: DiagramData) => Object.fromEntries(data.nodes.map((n) => [n.id, [n.outline ?? 'rect', n.lines]]));
 
@@ -44,9 +44,9 @@ describe('writing Mermaid', () => {
 
   it('writes a flowchart titled for its page, running the way the page does', () => {
     const doc = pageOf(FLOW, { name: 'My: flow', direction: 'right' });
-    expect(writeMermaid(doc).text).toMatch(/^---\ntitle: "My: flow"\n---\nflowchart LR\n/);
+    expect(writeFlowchart(doc).text).toMatch(/^---\ntitle: "My: flow"\n---\nflowchart LR\n/);
     expect(back(doc)).toMatchObject({ name: 'My: flow', direction: 'right' });
-    expect(writeMermaid(pageOf(FLOW)).text).toMatch(/^flowchart TD\n/);
+    expect(writeFlowchart(pageOf(FLOW)).text).toMatch(/^flowchart TD\n/);
   });
 
   it('renames ids Mermaid cannot read, keeping their text', () => {
@@ -67,7 +67,7 @@ describe('writing Mermaid', () => {
       edges: [{ from: 'a', to: 'b', colors: { stroke: '#00ff00' } }, { from: 'b', to: 'c' }],
       containers: [{ id: 'k', role: 'container', members: ['c'], colors: { stroke: '#0000ff' } }],
     };
-    const { text } = writeMermaid(pageOf(data));
+    const { text } = writeFlowchart(pageOf(data));
     expect(text).toMatch(/classDef default fill:#[0-9a-f]+,stroke:#[0-9a-f]+,color:#[0-9a-f]+\n/);
     expect(text).toMatch(/classDef s1 fill:#ff000080\n {2}class a,b s1\n/);
     const p = back(pageOf(data));
@@ -87,7 +87,7 @@ describe('writing Mermaid', () => {
         { id: '5', from: 'a', to: 'b', colors: { width: 3 } },
       ],
     };
-    expect(writeMermaid(pageOf(data)).text).toMatch(/a --- b\n {2}a o--o b\n {2}a <--> b\n {2}a -.-> b\n {2}a ==> b\n/);
+    expect(writeFlowchart(pageOf(data)).text).toMatch(/a --- b\n {2}a o--o b\n {2}a <--> b\n {2}a -.-> b\n {2}a ==> b\n/);
     const strokes = (e: DiagramData['edges'][number]) =>
       [e.colors?.markerStart, e.colors?.markerEnd, e.colors?.dash !== undefined, (e.colors?.width ?? 0) >= 3];
     expect(back(pageOf(data)).data.edges.map(strokes)).toEqual(data.edges.map(strokes));
@@ -95,7 +95,7 @@ describe('writing Mermaid', () => {
 
   it('writes the page in view, and warns for what Mermaid cannot hold', () => {
     const doc = documentFromScene(docScene());
-    const { warnings } = writeMermaid(doc, { page: 'p2' });
+    const { warnings } = writeFlowchart(doc, { page: 'p2' });
     expect(back(doc, 'p2').data.containers?.map((c) => [c.id, c.members])).toEqual([['p', ['l1', 'l2']], ['l1', ['d']], ['l2', undefined]]);
     expect(warnings).toEqual([
       'Mermaid has no pools or lanes; they were written as nested subgraphs.',
@@ -109,7 +109,7 @@ describe('writing Mermaid', () => {
       nodes: [{ id: 'a' }, { id: 'b' }],
       edges: [{ from: 'a', to: 'b', fromPort: 'e' }, { from: 'a', to: 'b', colors: { markerStart: 'circle' } }],
     };
-    expect(writeMermaid(pageOf(data)).warnings).toEqual([
+    expect(writeFlowchart(pageOf(data)).warnings).toEqual([
       'Mermaid has no ports; connectors\' ports were dropped.',
       'Mermaid draws a link\'s two heads alike; some ends were changed.',
     ]);
@@ -125,8 +125,8 @@ describe('writing Mermaid', () => {
       ],
       edges: [],
     };
-    const { text, warnings } = writeMermaid(pageOf(data));
-    expect(shapes(readMermaid(text).document.pages[0]!.data)).toEqual({
+    const { text, warnings } = writeFlowchart(pageOf(data));
+    expect(shapes(readFlowchart(text).document.pages[0]!.data)).toEqual({
       a: ['cylinder', ['Store']], b: ['doubleEllipse', ['Event']], c: ['rect', ['Fold']], d: ['roundRect', ['Round']],
     });
     expect(warnings).toContain('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
@@ -142,8 +142,8 @@ describe('writing Mermaid', () => {
       ],
       edges: [],
     };
-    const { text, warnings } = writeMermaid(pageOf(data));
-    expect(shapes(readMermaid(text).document.pages[0]!.data)).toEqual({
+    const { text, warnings } = writeFlowchart(pageOf(data));
+    expect(shapes(readFlowchart(text).document.pages[0]!.data)).toEqual({
       a: ['ellipse', ['Start']], b: ['doubleEllipse', ['Wait']], c: ['diamond', ['Which']], d: ['roundRect', ['Sub']],
     });
     expect(warnings).toEqual([expect.stringMatching(/^Mermaid has no BPMN figures; .*gateways as diamonds without their markers/)]);
