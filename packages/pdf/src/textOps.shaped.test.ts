@@ -3,7 +3,10 @@
  * Text a shaper shaped, exported as the glyphs it shaped: Arabic and Devanagari in subsets of
  * Noto Sans (`packages/text-shaping/src/__fixtures__`), read back by pdf.js and poppler.
  */
-import { loadFontOutlines, registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
+import {
+  loadFontOutlines, registerCanvasFont, registerFontOutlines, unregisterCanvasFont, unregisterFontOutlines,
+} from '@weasel-js/font';
+import { __setGlyphRasterizerForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import type { TextDrawCommand } from '@weasel-js/renderer';
 import { loadShaper, type Shaper } from '@weasel-js/text-shaping';
@@ -177,6 +180,27 @@ describe('writePdf with a shaper', () => {
     expect(rises).toContain(Number((-fatha.dy).toFixed(4)));
     expect(rises.at(-1)).toBe(0);
     expect(drawnGids(content)).toContain(hex4(fatha.gid));
+  });
+
+  it('exports a canvas face shaped through its registered font file, and reads it back', async () => {
+    const box = { width: 20, height: 24, alpha: new Uint8ClampedArray(480), left: -8, top: 30 };
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({ ...box, advance: 22 }),
+      rasterizePath: () => ({ ...box, advance: 0 }),
+    });
+    registerCanvasFont('pdf-canvas-deva');
+    registerFontOutlines('pdf-canvas-deva', {}, DEVANAGARI);
+    try {
+      await loadFontOutlines('pdf-canvas-deva', {});
+      const { bytes, skipped } = await render('किक', 'pdf-canvas-deva');
+      expect(skipped).toEqual([]);
+      expect(await extracted(bytes)).toBe('किक');
+    } finally {
+      unregisterCanvasFont('pdf-canvas-deva');
+      unregisterFontOutlines('pdf-canvas-deva', {});
+      __setGlyphRasterizerForTests(null);
+    }
   });
 
   it('draws a face it cannot embed from its shaped outlines, once a cluster', async () => {

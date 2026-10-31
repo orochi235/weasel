@@ -128,16 +128,17 @@ export interface PaintedRuns {
 /**
  * Em-space outline for `g` and the key its tessellation is cached by, or
  * `null` to leave it on its SDF tier. Decided per glyph, so a face the
- * resolver reports as atlas or canvas can still serve it.
+ * resolver reports as atlas or canvas can still serve it. `ungated` skips the
+ * size gate, for a glyph its SDF tier cannot draw.
  */
 export function glyphOutlineD(
-  g: PlacedGlyph, run: ResolvedRun, minSize: number | undefined,
+  g: PlacedGlyph, run: ResolvedRun, minSize: number | undefined, ungated = false,
 ): { d: string; key: string } | null {
   // An outline-only run has no atlas behind it. Every gate below trades one
   // rendering for another; here there is no other, so gating would paint
   // nothing at all.
   const outlineOnly = g.resolved.source === 'outline';
-  if (!outlineOnly) {
+  if (!outlineOnly && !ungated) {
     if (minSize === undefined) return null;
     // A stroked run ignores the size gate: the SDF tiers have no geometry to
     // stroke, so leaving it below the threshold drops the outline asked for.
@@ -167,6 +168,17 @@ export function faceOutlineD(g: PlacedGlyph): string | null {
   const { family, weight, style } = g.resolved.resolved;
   if (g.resolved.source !== 'outline' && g.glyph === null) return null;
   return glyphOutline(family, weight, style, g.cp);
+}
+
+/** `g`, a shaped cluster on the canvas tier, as a glyph drawing its whole cluster from one baked
+ *  tile; null until the tile has baked, and on any other tier. */
+function shapedQuadGlyph(g: PlacedGlyph): PlacedGlyph | null {
+  const face = g.resolved.dynamicFace;
+  const shaped = g.shaped!;
+  if (!face || shaped.d === null) return null;
+  const glyph = face.requestShaped(shaped.key, shaped.d);
+  if (!glyph || glyph.page < 0 || glyph.width === 0) return null;
+  return { ...g, font: face.font, glyph };
 }
 
 /** Each run's own face, which places its rules: a glyph's `resolved` may be a
@@ -247,7 +259,15 @@ export function paintRunsInto(
       const inks = cols !== null ? cols.drawsInk(start, pos) : line.cells[g.cell].drawsInk;
       // Asked before the quad: a dynamic glyph still waiting for its bake has
       // no atlas rect, but its outline is available right now.
-      const outline = inks ? glyphOutlineD(g, run, opts.outlineMinSize) : null;
+      let outline = inks ? glyphOutlineD(g, run, opts.outlineMinSize) : null;
+      let q = g;
+      if (inks && outline === null && g.shaped) {
+        // An atlas cannot look a shaped cluster up by code point: the canvas tier bakes it whole,
+        // and it draws from its outline until that lands, and always on a baked atlas.
+        const baked = shapedQuadGlyph(g);
+        if (baked) q = baked;
+        else outline = glyphOutlineD(g, run, opts.outlineMinSize, true);
+      }
       // An unfilled run paints through its stroke, and only tessellated
       // geometry can carry one. An atlas quad would paint the fill that was
       // refused, so it gets none.
@@ -258,8 +278,8 @@ export function paintRunsInto(
         groupFor(runs, g, 'outline').glyphs.push(placed);
         continue;
       }
-      if (!hasGlyphQuad(g)) continue;
-      const group = groupFor(runs, g, g.glyph!.color ? 'color' : g.resolved.source);
+      if (!hasGlyphQuad(q)) continue;
+      const group = groupFor(runs, q, q.glyph!.color ? 'color' : q.resolved.source);
       if (sized === null) {
         sized = group;
         group.quadData = buf;
@@ -267,12 +287,12 @@ export function paintRunsInto(
       let quads = group.quadData as number[];
       if (quads === NO_QUADS) group.quadData = quads = [];
       if (group === sized) {
-        writeGlyphQuad(g, quads, sizedAt);
+        writeGlyphQuad(q, quads, sizedAt);
         sizedAt += QUAD_STRIDE;
       } else {
-        writeGlyphQuad(g, quads, quads.length);
+        writeGlyphQuad(q, quads, quads.length);
       }
-      (group.colorGlyphs as BmFontChar[] | undefined)?.push(g.glyph!);
+      (group.colorGlyphs as BmFontChar[] | undefined)?.push(q.glyph!);
     }
     if (!rules) continue;
     for (const rule of rules.end()) {

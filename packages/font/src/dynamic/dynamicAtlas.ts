@@ -56,10 +56,18 @@ export interface DynamicFace {
    * not in `font.charMap`, which holds one code point each.
    */
   requestCluster(text: string): BmFontChar | null;
+  /**
+   * The record for glyphs a shaper chose, which `fillText` cannot draw: `d`, em-space path data
+   * with y down and its origin at the pen on the baseline, filled and baked as `requestGlyph`'s
+   * are. `key` names `d` among this face's shaped glyphs, and `d` is read only on its first
+   * request. Null where the platform has no `Path2D` to fill with. Not in `font.charMap`.
+   */
+  requestShaped(key: string, d: string): BmFontChar | null;
 }
 
 interface Face extends DynamicFace {
   clusters: Map<string, BmFontChar | null>;
+  shaped: Map<string, BmFontChar | null>;
 }
 
 /** One family served by the dynamic canvas-SDF tier. See `listCanvasFonts`. */
@@ -83,6 +91,7 @@ function forgetGlyphs(face: Face): void {
   face.font.charMap.clear();
   face.font.chars.length = 0;
   face.clusters.clear();
+  face.shaped.clear();
 }
 
 onPagesEmptied(() => {
@@ -205,9 +214,10 @@ export function getDynamicFace(
     page: -1,
   });
   const clusters = new Map<string, BmFontChar | null>();
+  const shaped = new Map<string, BmFontChar | null>();
 
   const face: Face = {
-    family, weight, style, font, clusters,
+    family, weight, style, font, clusters, shaped,
     requestGlyph(cp: number): BmFontChar {
       const cached = font.charMap.get(cp);
       if (cached) return cached;
@@ -228,6 +238,15 @@ export function getDynamicFace(
         requestBake(char, raster);
         addSharpSource(char, font.common.base, (size) => r.rasterizeColor?.(family, weight, style, text, size) ?? null);
       }
+      return char;
+    },
+    requestShaped(key: string, d: string): BmFontChar | null {
+      const cached = shaped.get(key);
+      if (cached !== undefined) return cached;
+      const raster = typeof Path2D === 'undefined' ? null : r.rasterizePath?.(d) ?? null;
+      const char = raster && record(0, raster);
+      shaped.set(key, char);
+      if (char && raster) requestBake(char, raster);
       return char;
     },
   };
@@ -267,6 +286,7 @@ function refreshFamilies(families: readonly string[] | null): void {
   for (const face of faces.values()) {
     if (keys && !face.family.split(',').some((name) => keys.has(familyKey(name)))) continue;
     for (const char of face.font.chars) dropped.add(char);
+    for (const char of face.shaped.values()) if (char) dropped.add(char);
     for (const char of face.clusters.values()) {
       if (!char) continue;
       dropped.add(char);

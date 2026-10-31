@@ -106,7 +106,7 @@ export async function writeText(ctx: PageCtx, cmd: TextDrawCommand, state: DrawS
       const space = isSpace(g.cp);
       if (!space && BLANK.test(String.fromCodePoint(g.cp))) continue;
       // A slot the layout left empty has no width, so drawing into it would land on its neighbor.
-      if (!space && (g.glyph?.color || (g.resolved.source !== 'outline' && g.glyph === null))) {
+      if (!space && (g.glyph?.color || (g.resolved.source !== 'outline' && g.glyph === null && !g.shaped))) {
         skipGlyph(ctx, g, 'has no glyph to draw');
         continue;
       }

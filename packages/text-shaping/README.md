@@ -21,10 +21,14 @@ registerBidi(bidi);
 registerShaper(await loadShaper());   // once, at startup, before text is laid out
 ```
 
-Shaping reaches text set in a face registered with `registerFontOutlines` from TrueType or
-OpenType bytes: its glyphs are drawn from the outlines by index, so any glyph a shaping
-produces can be drawn. Text served by a baked or canvas atlas looks glyphs up by character
-and is laid out as before; so is a face loaded from WOFF, whose bytes HarfBuzz cannot read.
+Shaping reaches text set in a face whose TrueType or OpenType bytes are registered with
+`registerFontOutlines`. That face can also be a baked atlas (`registerFont`) or a canvas face
+(`registerCanvasFont`): register the same family and variant with `registerFontOutlines` too,
+and its text is shaped from that file. A baked atlas must be cut from the same file, or its
+advances disagree with the shaper's. On an atlas face, a letter the shaping leaves as its own
+glyph still draws from the atlas; a shaped cluster (a conjunct, a joining form, a placed mark)
+draws from its outline, and on a canvas face below the outline size from a tile baked from that
+outline. A face loaded from WOFF, whose bytes HarfBuzz cannot read, is laid out as before.
 Right-to-left text also needs the bidi engine, which puts its letters in visual order.
 
 With a shaper registered, `fontVariantCaps: 'small-caps'` on a face that has an `smcp`
