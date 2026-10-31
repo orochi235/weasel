@@ -249,6 +249,8 @@ Owner tags, after the priority (2026-10-26):
   (2026-10-29). It passed in every other run found. Whether a tile seam can round differently, or
   `max: 0` is stricter than the GPU guarantees, is not known; read the failure screenshot at the
   next sighting.
+  Closes when a second sighting's failure screenshot names the cause and it is fixed or the bound set to
+  what the GPU guarantees, or on 2026-12-01 with no second sighting.
 
 ---
 
@@ -269,6 +271,8 @@ Owner tags, after the priority (2026-10-26):
   for Inter 16px, -0.07 for Arial 40px, and -0.14 for Georgia 23px. Not checked in WebKit,
   Firefox, or at DPR 2. What is left is a ruling: snap the canvas's text baseline to device pixels
   as browsers do, which moves all canvas text, or keep the half pixel.
+  Closes when the maintainer has ruled between snapping the canvas baseline and keeping the half pixel,
+  and the tree does what he ruled.
 
 - **(P3) [maintainer] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
   and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
@@ -288,6 +292,8 @@ Owner tags, after the priority (2026-10-26):
   sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
   0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
   WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
+  Closes when the maintainer has ruled between a WebKit DPR 1 bound in
+  `overlayAlignment.browser.test.tsx` and a WebKit nudge in text-dom, and the chosen one is in the tree.
 
 - **(P3) [agent] Area coverage for small atlas glyphs: what is left.** Since 2026-10-30
   `glyphCoverage` takes the mean of four field taps a pixel where a pixel spans more than
@@ -302,6 +308,8 @@ Owner tags, after the priority (2026-10-26):
     (a 1D model of this `H`'s two stems, not measured). Not tap spacing: a 2x2 grid and the rotated
     grid that ships measured the same. The canvas's ink mass still varies 8.03 to 8.65 across the
     pixel, so something loses or adds ink; unexplained.
+  Closes when the 7.2px `H` of `glyphCoverage.browser.test.ts` swings by 0.20px or less as `x` steps
+  through a pixel, measured on teitou.
 
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
@@ -331,6 +339,8 @@ Owner tags, after the priority (2026-10-26):
     Folding the fatha's text into its letter's span (`/ActualText` `بَ`) reads `َبب` instead, since poppler reverses
     a right-to-left span only when every character in it is right to left (the same span written `َب` reads right);
     measured on 2026-10-30 and left as separate spans.
+  Closes when Devanagari set in a canvas-atlas face draws shaped, and `किक` and `بَب` read back as
+  written from an exported PDF in both pdf.js and poppler.
 
 ---
 
@@ -347,6 +357,8 @@ Owner tags, after the priority (2026-10-26):
   unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
+  Closes when the maintainer reopens the 2026-10-12 ruling and the direct calls reach the open journal,
+  or rules today's split final.
 
 ### Symmetry follow-ups
 
@@ -360,6 +372,7 @@ Owner tags, after the priority (2026-10-26):
   `<Lab>` on their `main`. agnew's three.js view advances the pen itself and holds a finished curve
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
+  Closes when agnew's owner has moved its pen onto a lab clock or ruled that it keeps its own transport.
 
 ## Audio
 
@@ -368,12 +381,16 @@ Owner tags, after the priority (2026-10-26):
   the bed replaced, and `platformerBed.browser.test.ts` holds it there. What is
   left is the bus gain chosen by ear, or `createCompressorEffect` on the music
   bus in its place.
+  Closes when the maintainer has listened to the side-scroller and set the music bus by ear, as a gain or
+  a compressor.
 
 - **(P3) [maintainer] Nobody has listened to the generative score.** Every number
   `scoreParams` maps a mood through was chosen from descriptions of the four
   cues and is tested as structure only. Whether dread reads as dread is for
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
+  Closes when the maintainer has listened to all four cues in the `score` demo and kept or retuned their
+  `scoreParams`.
 
 ---
 
@@ -384,19 +401,26 @@ Owner tags, after the priority (2026-10-26):
   the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
   override that `segmentedRow`, `ButtonBar` and `Bar` could pass from the run; `Tabs` and `RadioGroup` take their
   arrows from React Aria's locale. `SwatchGrid` rings already step by screen direction (`ringStep`).
+  Closes when Right moves to the item on the screen's right along a clockwise bottom arc in `ButtonBar`,
+  `Bar`, and `segmentedRow`, or the maintainer rules that arrows follow the run.
 
 - **(P3) [maintainer] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
   (2026-10-30); whether a slider's values should too, so a counterclockwise arc reads as a counterclockwise dial, is
   undecided (`useSliderGeometry`).
+  Closes when the maintainer has ruled whether an arc slider's values follow the arc's direction, and
+  `useSliderGeometry` does what he ruled.
 
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
+  Closes when the maintainer has pressed Alt and Alt+F with the menu bar mounted in Chrome on Windows and
+  seen which menu opens.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
+  Closes when Shift+F10 on a real Windows or Linux Chrome opens the menu once.
 
 - **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** `@weasel-js/headless` (added
   2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type (`rovingKey`,
@@ -410,26 +434,32 @@ Owner tags, after the priority (2026-10-26):
   Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a
   button and a list onto it. A page that has both DOM controls and a hud canvas still joins the two at `attach.ts`'s
   `wireFocus`, not through `FocusScope`.
+  Closes when a button and a list each implement one measure/draw contract as both a DOM component and a
+  hud widget.
 
 - **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.
+  Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
+  delete it.
 
 - **(P3) [maintainer] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
+  Closes when the maintainer has chosen disabled's second cue and every control that fades when disabled
+  draws it.
 
-- **(P3) [recheck] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
+- **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
   `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
-  `SidebarRegion`'s section head and undock button against `SidebarPanel`, which takes no
-  `actions`, no undock control, no stance, and no `fill`; `LabHeader`'s bare "Add trial" button,
-  which sets its own baseline so its label lines up with the title and would lose that as a
-  `Button` with a leading icon; the theme editor's swatch tabs against `ToggleBar`'s flat variant
-  and its hex and number inputs against `Input` and `NumberField`.
+  `LabHeader`'s bare "Add trial" button, which sets its own baseline so its label lines up with the
+  title and would lose that as a `Button` with a leading icon; and the theme editor's number inputs
+  against `NumberField`.
+  Closes when those three are drawn by `Button` and `NumberField`, or the maintainer has ruled that each
+  stays hand-built.
 
-- **(P3) [recheck] Some site demos still draw a dark look in light mode.** Every demo now sits under a
+- **(P3) [maintainer] Some site demos still draw a dark look in light mode.** Every demo now sits under a
   theme in the reader's mode, and a scene reads a theme color with `useColorHex`
   (`ViewportDemo`'s background). Left after the 2026-10-21 pass through every demo in light mode:
   `Kernel3dDemo`'s room, `ScoreDemo`'s roll and `EffectChartDemo`'s ground stay dark in both
@@ -439,13 +469,16 @@ Owner tags, after the priority (2026-10-26):
   whether the stage follows the mode is undecided, and the labels follow from that. The code
   panel's header still darkens with `rgba(0, 0, 0, 0.18)`: it sits on a sunken panel, and the
   theme's step toward `fg` would lighten it in dark mode.
+  Closes when the maintainer has ruled on the three dark scenes and on whether the stage follows the
+  mode, and the stage's labels and the code panel's header read in both modes.
 
-- **(P3) [recheck] Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
+- **(P3) [maintainer] Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
   (2026-10-19) the peek binding takes `opts: { over: true }`, so Alt goes to the loupe under the
   pointer when it goes down and to none if the pointer is over no loupe; nothing re-sends a held key
   when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
   a held key when the pointer enters a host that binds it. Undecided whether the sweep-on gesture is
   worth that.
+  Closes when the maintainer has ruled on re-sending a held peek key, and it is built or ruled out.
 
 - **(P3) [maintainer] Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`
@@ -455,8 +488,10 @@ Owner tags, after the priority (2026-10-26):
   sample zooms once through the wheel binding), and that preventing
   `gesturestart` / `gesturechange` stops the page zoom in the Safari versions
   that send both channels.
+  Closes when the maintainer has pinched a canvas in real Safari and seen it zoom once per sample with no
+  page zoom.
 
-- **(P3) [recheck] Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an
+- **(P3) [agent] Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an
   axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on
   an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a
   contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an
@@ -468,26 +503,34 @@ Owner tags, after the priority (2026-10-26):
   build, and it brings widened gutter grab targets, `affects` for lock suppression, and
   keyboard-operable gutters with it. It ships no band strategy of its own, and mapping domain
   values onto seams is still the consumer's.
+  Closes when `BandEditor`'s seams are a `Slider` thumb list or a windease strategy, and it keeps no
+  seam-drag code of its own.
 
 - **(P3) [maintainer] `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
   browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
   every segment sits inside its track at one height, none clips its label, and a focused segment
   draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
   size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
+  Closes when the maintainer has looked at every variant at `md` and `sm` in a browser and called it
+  done.
 
-- **(P3) [recheck] A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
+- **(P3) [agent] A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
   with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
   condition on its setting. Every surface reads `over`'s values from the config it is handed, and
   a trial's config holds its instrument's alone: where a lab keeps another schema's values (each
   trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
   would need them too.
+  Closes when an instrument's config schema resolves with an `over`, and a condition on another schema's
+  setting shows and hides its row in a trial.
 
-- **(P3) [recheck] An empty fragment takes no drop in the live preview.** It draws nothing
+- **(P3) [maintainer] An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
+  Closes when the maintainer has ruled on the slot's look, and an empty fragment takes a drop in the live
+  preview or is ruled to take none.
 
-- **(P3) [recheck] `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
+- **(P3) [agent] `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
   the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
@@ -497,6 +540,8 @@ Owner tags, after the priority (2026-10-26):
   kind or a group marked to keep its config paths); what the export writes for a schema whose
   source is `f.section(…)` calls rather than a literal; and whether labkit wraps `AssetEditor`
   and converts both ways, or `@weasel-js/ui` gains the vocabulary itself.
+  Closes when a schema built with `f.section` opens in `PrefSchemaEditor` with its sections, and its
+  export keeps the sections, `showIf` rules, `.render` overrides, and `.dialog` rows.
 
 - **(P3) [maintainer] Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -508,22 +553,28 @@ Owner tags, after the priority (2026-10-26):
   strips keep their own 1px border inside the bevel, where the field frame drops its border
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
+  Closes when the maintainer has looked at every beveled control under both themes and kept or retuned
+  its hooks.
 
-- **(P3) [recheck] Two control choices are labkit's alone, and two controls draw an enum their own way.**
+- **(P3) [maintainer] Two control choices are labkit's alone, and two controls draw an enum their own way.**
   Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
   segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
   `MatrixEditor` always lists an enum as radios.
+  Closes when the maintainer has ruled on both labkit rows, and `BarField` and `MatrixEditor` take their
+  enum control from `PARAMS_CONTROLS`.
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) [recheck] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
+- **(P3) [waiting] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
   line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
   layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
   draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
   another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
   and the file format waits on that.
+  Closes when draw can add a second layer and its SVG files round-trip the layer list, or on 2026-12-31
+  with draw still on one layer, delete it.
 
 - **(P2) [maintainer] Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
   asset, each one's default surface, and where switching lives were picked without anyone using
@@ -532,6 +583,8 @@ Owner tags, after the priority (2026-10-26):
   switches it from a menu button showing its surface, and a toolbar or menu button switches from its
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
+  Closes when the maintainer has driven a tuning session through draw's surface assets and their groups,
+  defaults, and switching are what he settled on.
 
 ---
 
@@ -550,6 +603,8 @@ Owner tags, after the priority (2026-10-26):
     The bundle itself is not to be built yet (decided 2026-10-17). apps/draw leaves `sticky` out
     of its tools: its `TextObj` and SVG round trip carry no text `background` or `padding`, and
     SVG import reads a written note back as a rect and a text node.
+  Closes when the maintainer has ruled what weasel contributes to a presentation and whether the
+  whiteboard bundle is built, and each is built or its bullet deleted.
 ### d3 integration plugin
 
 - **(P3) [maintainer] `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
@@ -557,6 +612,8 @@ Owner tags, after the priority (2026-10-26):
   `useViewAnimation`; `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —
   none identified yet.
+  Closes when a d3 zoom or drag behavior the kit lacks is named and adapted, or on 2026-12-31 with none,
+  delete it.
 
 ---
 
