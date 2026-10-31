@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider, PAGES_DOC_KEY } from '@weasel-js/core';
-import { DIAGRAM_JSON, type DiagramDocument } from '@weasel-js/diagram-formats';
+import { DIAGRAM_JSON, DIAGRAM_MERMAID, type DiagramDocument } from '@weasel-js/diagram-formats';
 import { defaultToastQueue } from '@weasel-js/ui/components/Toast';
 import { App } from './App';
 import { CHART_SCENE_KEY } from './chartPersistence';
@@ -115,6 +115,31 @@ describe('File › Import…', () => {
     await vi.waitFor(() => expect(io.saved).toHaveLength(1));
     expect(io.saved[0]!.name).toBe('Sales.mmd');
     expect(await io.saved[0]!.blob.text()).toBe('xychart-beta\n  title "Sales"\n  x-axis [jan, feb]\n  bar [3, 7]\n');
+  });
+
+  it.each([
+    ['gantt', 'gantt\n  dateFormat YYYY-MM-DD\n  section A\n  Plan :a1, 2024-01-01, 3d\n  Build :after a1, 2d', { sections: [{ name: 'A' }] }],
+    ['timeline', 'timeline\n  title History\n  2002 : LinkedIn\n  2004 : Facebook : Google', { title: 'History' }],
+    ['pie', 'pie showData\n  title Pets\n  "Dogs" : 386\n  "Cats" : 85', { showData: true, slices: [{ label: 'Dogs', value: 386 }, { label: 'Cats', value: 85 }] }],
+    ['quadrant', 'quadrantChart\n  x-axis Low --> High\n  quadrant-1 Expand\n  A: [0.3, 0.6]', { points: [{ name: 'A', x: 0.3, y: 0.6 }] }],
+    ['journey', 'journey\n  title Day\n  section Work\n    Make tea: 5: Me', { sections: [{ name: 'Work', tasks: [{ name: 'Make tea', score: 5, actors: ['Me'] }] }] }],
+    ['gitgraph', 'gitGraph\n  commit id: "a"\n  branch dev\n  commit tag: "v1"\n  checkout main\n  merge dev', { commands: [{ kind: 'commit', id: 'a' }] }],
+    ['sankey', 'sankey-beta\nA,B,10\nB,C,4\n', { links: [{ source: 'A', target: 'B', value: 10 }, { source: 'B', target: 'C', value: 4 }] }],
+    ['packet', 'packet-beta\n  0-15: "Source Port"\n  16-31: "Destination Port"', { fields: [{ start: 0, end: 15, label: 'Source Port' }, { start: 16, end: 31, label: 'Destination Port' }] }],
+    ['radar', 'radar-beta\n  axis m["Math"], s["Science"]\n  curve a["Alice"]{85, 90}', { curves: [{ id: 'a', label: 'Alice', values: [85, 90] }] }],
+  ])('opens a Mermaid %s as a plot page and exports it back as the same chart', async (kind, text, expected) => {
+    io.picked = new File([text], 'chart.mmd');
+    mount();
+    choose('Import');
+    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
+    const root = stored()!.nodes.find((n) => n.id === 'page-1/plot') as unknown as { data: { plot: { data: { kind: string } } } };
+    expect(root.data.plot.data).toMatchObject({ kind, ...expected });
+    expect(stored()!.nodes.filter((n) => n.id.startsWith('page-1/plot/')).length).toBeGreaterThan(0);
+
+    choose('Export', 'As Mermaid');
+    await vi.waitFor(() => expect(io.saved).toHaveLength(1));
+    const { document } = await DIAGRAM_MERMAID.read!(await io.saved[0]!.blob.text());
+    expect((document.pages[0] as { data: unknown }).data).toEqual(root.data.plot.data);
   });
 
   it('imports a Mermaid sequence diagram as one root holding its data, and its parts', async () => {

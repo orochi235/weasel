@@ -6,7 +6,7 @@ import {
   commitSequence, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText, offPageTagOf, rendererMeasure,
   sequencePartOf,
 } from '@weasel-js/diagram';
-import { plotEditing } from '@weasel-js/plot';
+import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@editor/index';
@@ -38,15 +38,19 @@ import './workspace.css';
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
 
-/** Text a double-click edits: an off-page tag's is the pass's to write, and a sequence's only where its data holds it. */
+/** Text a double-click edits: an off-page tag's is the pass's to write, and a sequence's or a chart's only where its
+ *  data holds it. */
 const isEditableText = (data: ChartData): boolean =>
-  isTextData(data) && offPageTagOf({ data }) === null && (sequencePartOf({ data }) === null || isSequenceText(data));
+  isTextData(data) && offPageTagOf({ data }) === null && (sequencePartOf({ data }) === null || isSequenceText(data))
+  && (plotMarkOf({ data }) === null || isPlotText(data));
 
-/** What closing a text edit writes besides the text: an emptied edge label removed, a sequence's text folded into its data. */
+/** What closing a text edit writes besides the text: an emptied edge label removed, a sequence's or a chart's text folded
+ *  into its data. */
 function endTextEdit(scene: ChartScene, id: string): void {
   dropEmptyEdgeLabel(scene, id);
   const loose = scene as never;
   foldSequenceText(loose, id, (edit) => commitSequence(loose, edit.id, edit.data, edit.label, { measure: rendererMeasure }));
+  foldPlotText(loose, id, (edit) => replacePlotData(scene, edit.rootId, edit.data, { label: edit.label }));
 }
 
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */

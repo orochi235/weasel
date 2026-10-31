@@ -1,0 +1,12 @@
+gantt
+  title Release
+  dateFormat YYYY-MM-DD
+  excludes weekends
+  todayMarker off
+  section Build
+    Design      :done, des, 2024-01-08, 4d
+    Implement   :active, imp, after des, 8d
+    Review      :crit, rev, after imp, 2d
+  section Ship
+    Release     :milestone, rel, after rev, 0d
+    Announce    :ann, after rel, 3d

@@ -1350,6 +1350,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PlotXyChartDemo.tsx',
   },
   {
+    id: 'plot-kinds',
+    title: 'Plot: chart kinds',
+    package: 'plot',
+    description: "Nine of Mermaid's chart kinds read by DIAGRAM_MERMAID into plot pages, each a PlotData spec PlotView compiles to marks: a Gantt chart on a time scale, a timeline, a pie, a quadrant chart, a user journey, a git graph, a sankey diagram, a packet diagram on a band scale of bits, and a radar chart on a polar scale. Each edit is one change to the spec: a drag on a handle goes through the plot.dragValue action, and text a double-click opens folds into the spec when it closes.",
+    hint: "Gantt: drag a task, or its right end. Quadrant and radar: drag a point. Journey: drag a score. Double-click a title, a label, a pie or sankey value, a tag or an event to edit it. Timeline: drag a period's label to reorder.",
+    load: () => import('./demos/PlotKindsDemo').then((m) => m.PlotKindsDemo),
+    path: 'apps/site/demos/PlotKindsDemo.tsx',
+  },
+  {
     id: 'parallax',
     title: 'Parallax',
     package: 'parallax',
