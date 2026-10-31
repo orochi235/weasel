@@ -18,7 +18,6 @@
  */
 import { packClusters, rankGaps } from './cluster';
 import type { Graph, GraphNode } from './graph';
-import { twoSidedSlots } from './treeSides';
 import {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
@@ -125,9 +124,7 @@ const treeOnce: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
-  const forest = forestOf(graph, axes.cross);
-  if (opts.treeSides === 'both') return settle(graph, twoSidedSlots(graph, forest, axes, nodeGap, rankGap), opts);
-  const { roots, children, depth } = forest;
+  const { roots, children, depth } = forestOf(graph, axes.cross);
 
   const bands = new Map<number, number>();
   for (const node of graph.nodes) {

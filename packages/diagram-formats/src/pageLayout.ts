@@ -6,7 +6,7 @@
 import { IDENTITY_POSE_COMPOSITION } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import {
-  diagramScene, edgeIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
+  LAYOUTS, diagramScene, edgeIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
   type DiagramTheme, type MeasureRowText,
 } from '@weasel-js/diagram';
 import type { GraphPage } from './document';
@@ -63,7 +63,7 @@ export function laidOutPage(page: GraphPage, opts: { theme: DiagramTheme; measur
   // Read as laid out, in world.
   const layoutOptions = { ...page.layout?.options, ...(page.direction ? { direction: page.direction } : {}) };
   const specs = diagramScene(pinned, {
-    layout: page.layout?.name ?? 'layered', theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
+    layout: LAYOUTS[page.layout?.name ?? 'layered'], theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
     ...(Object.keys(layoutOptions).length > 0 ? { layoutOptions } : {}),
   });
   const byId = new Map(specs.map((s) => [s.id as string, s]));

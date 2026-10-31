@@ -27,10 +27,10 @@ export interface GraphPage extends PageBase {
   notation?: string;
 }
 
-/** A layout by name, and the options a file can carry for it. */
+/** A layout by its name in `@weasel-js/diagram`'s `LAYOUTS`, and the options a file can carry for it. */
 export interface PageLayout {
-  name: 'layered' | 'tree' | 'force' | 'chain';
-  options?: Pick<LayoutOptions, 'nodeGap' | 'rankGap' | 'order' | 'chainSide' | 'treeSides'>;
+  name: 'layered' | 'tree' | 'force' | 'chain' | 'radial';
+  options?: Pick<LayoutOptions, 'nodeGap' | 'rankGap' | 'order' | 'chainSide'>;
 }
 
 /** One page of a document; `kind` says what its `data` is. */

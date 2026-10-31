@@ -10,10 +10,8 @@ const LAUNCH = readFileSync(join(__dirname, '..', '..', '__fixtures__', 'mermaid
 const page = (text: string) => onlyPage(readMindmap(text).document);
 
 describe('reading a Mermaid mind map', () => {
-  it('reads a page of notation mindmap, laid out as a tree to both sides', () => {
-    expect(page(LAUNCH)).toMatchObject({
-      name: 'Product launch', notation: 'mindmap', direction: 'right', layout: { name: 'tree', options: { treeSides: 'both' } },
-    });
+  it('reads a page of notation mindmap, laid out radially', () => {
+    expect(page(LAUNCH)).toMatchObject({ name: 'Product launch', notation: 'mindmap', layout: { name: 'radial' } });
   });
 
   it('reads each node with its shape, its own id or one from its place', () => {

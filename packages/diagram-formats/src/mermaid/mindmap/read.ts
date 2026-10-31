@@ -1,7 +1,7 @@
 /**
  * A Mermaid mind map as a one-page document: each node a shape joined to its
- * parent by an unmarked edge, laid out on import as a `tree` spreading to both
- * sides of the root.
+ * parent by an unmarked edge, laid out on import by `radial`, the root in the
+ * middle and its branches to both sides.
  */
 import type { DataEdge, DataNode, Outline } from '@weasel-js/diagram';
 import type { ImportResult, PageLayout } from '../../document';
@@ -15,8 +15,8 @@ export const SHAPE_OUTLINES: Readonly<Record<Exclude<MindmapShape, 'plain'>, Out
   square: 'rect', rounded: 'roundRect', circle: 'ellipse', bang: 'cloud', cloud: 'cloud', hexagon: 'hexagon',
 };
 
-/** How a mind map lays out: a tree, spreading to both sides of its root. */
-export const MINDMAP_LAYOUT: PageLayout = { name: 'tree', options: { treeSides: 'both' } };
+/** How a mind map lays out: the root in the middle, its branches balanced to its right and left. */
+export const MINDMAP_LAYOUT: PageLayout = { name: 'radial' };
 
 /** The ids a mind map's nodes take, in order: its own where it gives one, else `n` and its place, made unique. */
 export function mindmapIds(nodes: readonly { id?: string }[]): string[] {
@@ -55,6 +55,6 @@ export function readMindmap(text: string): ImportResult {
     from: idOf.get(parents.get(n)!)!, to: idOf.get(n)!, colors: { markerEnd: null },
   }));
   const name = pageNameOf(source, warnings);
-  const page = graphPage({ ...(name !== undefined ? { name } : {}), direction: 'right', nodes, edges, containers: [] });
+  const page = graphPage({ ...(name !== undefined ? { name } : {}), nodes, edges, containers: [] });
   return { document: { pages: [{ ...page, layout: MINDMAP_LAYOUT, notation: 'mindmap' }] }, warnings: warnings.all() };
 }
