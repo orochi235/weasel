@@ -9,7 +9,7 @@
   background: var(--_s-fill);
   border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
   border-radius: var(--_s-radius);
-  box-shadow: 0 12px 40px var(--wzl-shadow);
+  box-shadow: var(--wzl-bevel-raised, 0 12px 40px var(--wzl-shadow));
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
   max-width: 320px;

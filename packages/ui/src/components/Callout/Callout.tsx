@@ -1,6 +1,7 @@
 import { useContext, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  composeRenderProps,
   DialogTrigger,
   OverlayArrow,
   Dialog as RACDialog,
@@ -167,6 +168,7 @@ export function Callout(props: CalloutProps) {
             aria-labelledby={popoverAriaLabelledby}
             className={[s.popover, className].filter(Boolean).join(' ')}
             {...appearance}
+            style={appearance.style ? composeRenderProps(rest.style, (own) => ({ ...appearance.style, ...own })) : rest.style}
             data-weasel-overlay=""
           >
             <OverlayArrow className={s.arrow}>

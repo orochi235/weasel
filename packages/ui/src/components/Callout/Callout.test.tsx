@@ -139,6 +139,17 @@ describe('Callout', () => {
     expect(popover.style.position).not.toBe('');
   });
 
+  it('keeps a consumer style beside its tint', () => {
+    renderWithIcons(
+      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tint={cssColorLiteral('#224a63')} style={{ outlineColor: 'red' }} aria-label="Styled">
+        !
+      </Callout>,
+    );
+    const popover = screen.getByRole('dialog').parentElement!;
+    expect(popover.style.getPropertyValue('--wzl-tint')).toBe('#224a63');
+    expect(popover.style.outlineColor).toBe('red');
+  });
+
   it('names the grade it is given', () => {
     renderWithIcons(
       <Callout

@@ -7,7 +7,7 @@
   padding: 1px;
   border-radius: var(--wzl-radius-sm);
   background: var(--wzl-surface-raised);
-  box-shadow: 0 4px 12px var(--wzl-shadow);
+  box-shadow: var(--wzl-bevel-raised, 0 4px 12px var(--wzl-shadow));
   opacity: 0.85;
   pointer-events: none;
 }
