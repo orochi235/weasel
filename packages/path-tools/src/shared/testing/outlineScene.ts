@@ -13,7 +13,7 @@ import {
   asNodeId, type CreateOutlinesAdapter, createScene, defaultCommitAdapter, type NodeId, type TextOutlineSource,
 } from '@weasel-js/core';
 
-const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
+const INTER_TTF = resolve(import.meta.dirname, '../../../../../assets/fonts/inter/inter.ttf');
 
 /** Register the test face, `sm-inter`, with its outlines loaded. */
 export async function loadTestFont(): Promise<void> {

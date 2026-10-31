@@ -21,7 +21,8 @@ describe('tuneToolOptions', () => {
     const done = tuneToolOptions(registry, deps as never, tools);
     expect([...tunings.keys()]).toEqual(['brush']);
     const params = tunings.get('brush')!.params as () => Record<string, unknown>;
-    expect(params()).toEqual({ radiusPx: 40 });
+    // Nothing held: the action's own default, or another tuning, stands.
+    expect(params()).toEqual({});
     values.set('b', 'radiusPx', 25);
     expect(params()).toEqual({ radiusPx: 25 });
     done();

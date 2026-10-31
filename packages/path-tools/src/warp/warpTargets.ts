@@ -26,7 +26,7 @@ import {
   heldWarpResult, rememberWarpResult, resolvePathWarp, warpFrameFor, type HeldPathWarp,
 } from './pathWarp';
 import { type PathNode, resolveEditablePathOf, type SceneNode, withPath } from '@weasel-js/core';
-import { selectedWarpLeaves, textsBox, unionBox, type WarpLeaves } from './warpSelection';
+import { selectedWarpPaths, textsBox, unionBox, type WarpLeaves } from './warpSelection';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -192,7 +192,7 @@ export function freshWarpBox(
 export function warpTargets(
   deps: ActionDeps | undefined, kind: WarpKind, settings: WarpSettings, over?: WarpBox | null,
 ): WarpTarget[] {
-  const { held: out, bare, box: around } = splitByWarp(selectedWarpLeaves(deps).paths, kind);
+  const { held: out, bare, box: around } = splitByWarp(selectedWarpPaths(deps), kind);
   const box = bare.length > 0 ? (over ?? around) : null;
   if (!box) return out;
   const id = freshWarpId();

@@ -15,7 +15,7 @@ import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
   freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
 } from './warpTargets';
-import { selectedWarpLeaves } from './warpSelection';
+import { selectedWarpLeaves, selectedWarpPaths } from './warpSelection';
 import { outlineSession, type OutlineSession } from '../shared/outlineSession';
 import { icon } from '../icons.gen';
 import { warpSettingsForm } from './warpSettingsForm';
@@ -238,7 +238,7 @@ export function createWarpGrabAction(kind: WarpKind): Action {
 
 /** Whether a selected path holds a warp: what both actions below work on. */
 function holdsWarp(deps?: ActionDeps): true | ActionDisabledReason {
-  return selectedWarpLeaves(deps).paths.some(({ node }) => heldPathWarpOf(node.data))
+  return selectedWarpPaths(deps).some(({ node }) => heldPathWarpOf(node.data))
     ? true
     : ActionDisabledReason.NotApplicable;
 }
@@ -258,7 +258,7 @@ export const expandWarpAction: Action = {
     timing: 'immediate',
     run: (deps) => {
       const ops: Op[] = [];
-      for (const { node } of selectedWarpLeaves(deps).paths) {
+      for (const { node } of selectedWarpPaths(deps)) {
         if (!heldPathWarpOf(node.data)) continue;
         ops.push(createSetDataOp({ id: node.id, from: node.data, to: withoutPathWarp(node.data), label: 'Expand Warp' }));
       }
@@ -289,7 +289,7 @@ export const configureWarpAction: Action = {
     run: (deps, params) => {
       const settings = (params ?? {}) as WarpSettings & { kind?: WarpKind };
       const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
-      for (const node of selectedWarpLeaves(deps).paths) {
+      for (const node of selectedWarpPaths(deps)) {
         const resolved = resolvePathWarp(node.node);
         if (!resolved || (settings.kind && resolved.held.warp.kind !== settings.kind)) continue;
         const held = withWarpSettings(resolved.held, settings);

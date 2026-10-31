@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { applyCreateOutlines, asNodeId } from '@weasel-js/core';
-import { loadTestFont, outlineScene as setup, TEXT, type Data } from '../shared/outlineScene.testing';
+import { loadTestFont, outlineScene as setup, TEXT, type Data } from '../shared/testing/outlineScene';
 import { smudgeBrushAction } from './smudgeBrush';
 
 const at = (deps: never, x: number, y: number) => ({ deps, world: { x, y } }) as unknown as InvocationCtx;

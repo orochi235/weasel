@@ -7,9 +7,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { PathBuilder } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId } from '@weasel-js/core';
-import { loadTestFont, outlineScene, TEXT } from '../shared/outlineScene.testing';
+import { loadTestFont, outlineScene, TEXT } from '../shared/testing/outlineScene';
 import { heldPathWarpOf } from './pathWarp';
-import { createAddPinAction, createWarpDragAction, type WarpHandleScratch } from './warpActions';
+import {
+  configureWarpAction, createAddPinAction, createRemovePinAction, createWarpDragAction, expandWarpAction, type WarpHandleScratch,
+} from './warpActions';
+import { buildDepsFromRequires, type Action } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
+import { smudgeBrushAction } from '../smudge/smudgeBrush';
 import { freshWarpBox } from './warpTargets';
 import { selectedWarpLeaves } from './warpSelection';
 import { useDistortTool } from './useWarpTool';
@@ -118,5 +123,18 @@ describe('a warp tool', () => {
   it("hides the selection's transform handles while it is active", () => {
     const { result } = renderHook(() => useDistortTool());
     expect(result.current.hides).toEqual(['selection.resize-handles', 'selection.rotation-handle']);
+  });
+});
+
+describe('the actions that read the selection through groups and text', () => {
+  it('declare every dep they read', () => {
+    const { deps } = outlineScene();
+    const registry = { get: (name: string) => (deps as Record<string, unknown>)[name] } as unknown as DepRegistry;
+    const actions: Action[] = [createAddPinAction(), createRemovePinAction(), expandWarpAction, configureWarpAction, smudgeBrushAction];
+    for (const action of actions) {
+      const declared = buildDepsFromRequires(action, registry);
+      expect(() => action.enabled?.(declared)).not.toThrow();
+      if (action.invoker?.timing === 'immediate') expect(() => (action.invoker as ImmediateInvoker).run(declared, {})).not.toThrow();
+    }
   });
 });
