@@ -123,6 +123,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         const deps = depsFor(a, this.deps());
         if (evaluateEnabled(a, deps, pointOf(params)).enabled) a.invoker.run(deps, params);
       },
+      keep: (id, params) => { for (const t of this.tuningsOf(id)) t.keep?.(params); },
     };
   }
 

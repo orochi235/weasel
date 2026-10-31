@@ -7,6 +7,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { selectedWarpPaths } from './warpSelection';
 import { resolvePathWarp } from './pathWarp';
 import { SettingsFields } from '../settingsFields';
+import { WARP_SETTING_FIELDS } from './warpParams';
 
 /** The warp settings as a prefs schema: a section per kind the selection
  *  holds, and the tolerance every kind refits at. */
@@ -19,32 +20,15 @@ export const WARP_SETTINGS_SCHEMA: PrefGroup = {
       name: 'Distort',
       as: 'section',
       showIf: { path: 'distorts', above: 0 },
-      children: {
-        mode: {
-          kind: 'enum', name: 'Mode', description: 'Free bends the box bilinearly; Perspective keeps every line straight.',
-          default: 'free', control: 'toggle',
-          options: [{ value: 'free', label: 'Free' }, { value: 'perspective', label: 'Perspective' }],
-        },
-      },
+      children: { mode: WARP_SETTING_FIELDS.mode },
     },
     envelope: {
       name: 'Envelope',
       as: 'section',
       showIf: { path: 'envelopes', above: 0 },
-      children: {
-        rows: { kind: 'number', name: 'Rows', description: 'Patches down the mesh.', default: 3, min: 1, max: 16, step: 1, control: 'input' },
-        cols: { kind: 'number', name: 'Columns', description: 'Patches across the mesh.', default: 3, min: 1, max: 16, step: 1, control: 'input' },
-        mapping: {
-          kind: 'enum', name: 'Mapping', description: 'How the mesh interpolates between its points.',
-          default: 'bicubic', control: 'toggle',
-          options: [{ value: 'bicubic', label: 'Bicubic' }, { value: 'coons', label: 'Coons' }],
-        },
-      },
+      children: { rows: WARP_SETTING_FIELDS.rows, cols: WARP_SETTING_FIELDS.cols, mapping: WARP_SETTING_FIELDS.mapping },
     },
-    tolerance: {
-      kind: 'number', name: 'Tolerance', description: 'How far, in world units, the refitted paths may stray from the exact warp.',
-      default: 0.5, min: 0.05, max: 5, step: 0.05, control: 'slider',
-    },
+    tolerance: WARP_SETTING_FIELDS.tolerance,
   },
 };
 

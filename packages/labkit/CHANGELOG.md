@@ -1,5 +1,75 @@
 # @weasel-js/labkit
 
+## 1.15.0
+
+### Patch Changes
+
+- 3ae7cda: New `prefsFromConfig(resolved)` turns a resolved config into the property schema `PrefSchemaEditor` opens:
+  each `.section()` a `PrefSection` over the nodes it heads, each `f.group` an `object` leaf at its key, so
+  the editor's structure tree shows the sections and every config path stays where it was. `f.prefs` reads
+  the editor's export back as that schema. A node's `.render`, `.dialog`, and function `.showIf` or
+  `.enableIf`, a group's `as`, `overflow`, `.resettable()`, and motif, and a section's `collapsed`, `layout`,
+  `pack`, `className`, and motif ride on the node beside its prefs fields, so they survive an edit and print
+  in the export, code as `KEEP_FROM_SOURCE`.
+- 0a20b06: An instrument's config schema can be drawn over another schema: `f.schema(nodes, { over })`. Its aliases may
+  show a leaf of that schema and its conditions may read a setting of it, in a trial's settings panel as in a
+  bare `ControlPanel`, which now takes the resolved schema's `over` when given none. The lab keeps that schema's
+  values, not the trial: `<Lab over={{ values, set }}>` hands it the app's, and a lab given none keeps them in
+  memory, shared by every trial. A write to one of its paths goes to `over.set` rather than the trial's config,
+  and an instrument reads them through `ctx.over.read(path)` in `render` and in a canvas layer's `draw`.
+- 8a3f058: labkit's `Toolbar` is gone: labkit now re-exports `@weasel-js/ui`'s, which gains what labkit's added. `size="sm"`
+  gives the compact control height a trial's chrome uses, `framed` draws a strip of its own, `Toolbar.Title` sets the
+  toolbar's name as a bar's is, and `Toolbar.Button` is the ghost button labkit drew (also exported as
+  `ToolbarButton`). A labkit toolbar no longer frames itself: a trial's toolbar region passes `size="sm" framed`, the
+  lab header's does not, and the `lk-toolbar` and `lk-toolbar-title` classes no longer exist.
+- 2e2f76c: A key held for an `over` binding now follows the pointer: a key already down when the pointer comes over a surface presses that surface's `over` key-held bindings, and leaving releases them. A single-press `key` binding is not repeated on arrival. Holding a loupe's peek key and then moving onto a loupe raises it again, and the peek carries from one loupe to the next.
+- 23ca95b: A trial's status strip is its final height on the first layout, whatever face its readouts draw in,
+  so a new trial's view is placed once rather than refit when the numeric face arrives. The strip keeps
+  the height the face gave it at the default density; the scale readout now centers on the row like
+  the frame-rate readout, about 1.5 px higher than before.
+- Updated dependencies [c08f919]
+- Updated dependencies [8461e7b]
+- Updated dependencies [41dbc7b]
+- Updated dependencies [332b8e5]
+- Updated dependencies [70a64a3]
+- Updated dependencies [f77e789]
+- Updated dependencies [d40f593]
+- Updated dependencies [41a5648]
+- Updated dependencies [81a1b94]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [30bf607]
+- Updated dependencies [0e60598]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [e838373]
+- Updated dependencies [a1cb281]
+- Updated dependencies [8a3f058]
+- Updated dependencies [2e2f76c]
+- Updated dependencies [c41c917]
+- Updated dependencies [fada838]
+- Updated dependencies [d25ad30]
+- Updated dependencies [1de1aab]
+- Updated dependencies [fce0494]
+- Updated dependencies [f2e728e]
+- Updated dependencies [746fab0]
+  - @weasel-js/ui@1.15.0
+  - @weasel-js/core@1.15.0
+  - @weasel-js/routing@1.15.0
+  - @weasel-js/geom@1.15.0
+  - @weasel-js/theme@1.15.0
+  - @weasel-js/kernel3d@1.15.0
+  - @weasel-js/loupe@1.15.0
+  - @weasel-js/minimap@1.15.0
+  - @weasel-js/svg@1.15.0
+  - @weasel-js/clock@1.15.0
+  - @weasel-js/animator@1.15.0
+  - @weasel-js/icons@1.15.0
+  - @weasel-js/prefs@1.15.0
+  - @weasel-js/quantity@1.15.0
+  - @weasel-js/react@1.15.0
+  - @weasel-js/registry@1.15.0
+  - @weasel-js/storage@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

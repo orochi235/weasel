@@ -1,5 +1,23 @@
 # @weasel-js/font
 
+## 1.15.0
+
+### Patch Changes
+
+- 3f13a49: New `cachedFontVariant(family, weight, style)` in `@weasel-js/font` resolves a face as `resolveFontVariant` does,
+  but hands back one frozen result per face for an exact match rather than a new object every call. Text layout,
+  painting and run resolution now read faces through it, so a HUD readout rewritten every frame no longer
+  allocates a result per label. `resolveFontVariant` still returns an object of the caller's own on every call.
+- e05ddd3: Small atlas text keeps its weight and position as it moves between pixels. A glyph small enough for area
+  coverage now draws on a quad grown by `GLYPH_AREA_MARGIN` (one device pixel, new in `@weasel-js/font`) on
+  every side, and the shader reads the margin as empty rather than as the next glyph in the atlas. The quad
+  used to be the glyph's atlas cell, whose padding is narrower than the ink area coverage puts down past an
+  outline, so on a multisampled canvas the pixels its edges crossed were dimmed by the samples they missed:
+  a 7.2px Inter `H` swung 0.37px as it stepped through a pixel, and 0.10px now. `glyphCoverage` in
+  `GLYPH_COVERAGE_GLSL` takes a sixth argument, `cell`, which runs 0 to 1 across the grown quad; a program
+  pasting it in passes it, or a constant where its quads do not grow.
+- @weasel-js/registry@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

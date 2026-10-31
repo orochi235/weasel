@@ -1,25 +1,13 @@
 import { useMemo } from 'react';
-import { DEFAULT_SIMPLIFY_TOLERANCE, defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
+import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
 import { icon } from '../icons.gen';
-import { SIMPLIFY_BRUSH_RADIUS_PX } from './simplifyBrush';
+import { SIMPLIFY_BRUSH_PARAMS } from './simplifyBrush';
 
-/** The Simplify brush's size and tolerance: the `simplifyBrush` action's params. */
+/** The Simplify brush's size and tolerance: the `simplifyBrush` action's params, the same form its
+ *  last-operation panel shows. */
 export const SIMPLIFY_BRUSH_OPTIONS = {
   actionId: 'simplifyBrush',
-  prefs: {
-    name: 'Simplify brush',
-    description: 'The size of the Simplify brush and how far its refit may stray.',
-    children: {
-      radiusPx: {
-        kind: 'number', name: 'Size', description: 'The brush radius, in screen pixels.',
-        default: SIMPLIFY_BRUSH_RADIUS_PX, min: 2, max: 400, step: 1, control: 'slider',
-      },
-      tolerance: {
-        kind: 'number', name: 'Tolerance', description: 'How far the refit outline may stray from the anchors it replaces.',
-        default: DEFAULT_SIMPLIFY_TOLERANCE, min: 0.1, max: 20, step: 0.1, control: 'slider',
-      },
-    },
-  },
+  prefs: SIMPLIFY_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
   strength: { option: 'tolerance', times: 1.25 },
 } satisfies ToolOptions;

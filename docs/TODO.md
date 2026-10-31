@@ -179,9 +179,9 @@ Owner tags, after the priority (2026-10-26):
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
   third of the radius (`packages/geom/src/paths/smudgePath.ts`), the size and strength steps (`[` `]` ×1.25,
-  `Shift+[` `Shift+]` ±0.1) and their bounds (`SMUDGE_BRUSH_OPTIONS` in `useSmudgeBrushTool.ts`; draw's options row
-  draws them), that it pushes every unlocked, shown path and text node while nothing is selected (only
-  the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
+  `Shift+[` `Shift+]` ±0.1) and their bounds (`SMUDGE_BRUSH_PARAMS` in `smudgeBrush.ts`; draw's options row draws
+  them, and the last-operation panel after a stroke, which replays it and writes back to the row), that it pushes
+  every unlocked, shown path and text node while nothing is selected (only the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
   its drawn box, the conversion and the smudge landing as one undo entry (ruled 2026-10-31;
   `packages/path-tools/src/shared/outlineSession.ts`), and its tool key, S
   (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
@@ -204,7 +204,8 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
   corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
   new distort starts Free rather than Perspective, the refit tolerance (0.5,
-  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), that a selected group warps as
+  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`; Mode and Tolerance are in the
+  last-operation panel after a drag, which replays it, `warpParams.ts`), that a selected group warps as
   one under a single quad around its paths, and that selected text converts to outlines when the drag begins,
   conversion and warp one undo step (both ruled 2026-10-31; `warpSelection.ts`,
   `packages/path-tools/src/shared/outlineSession.ts`), that the selection's resize and rotation handles hide
@@ -215,16 +216,17 @@ Owner tags, after the priority (2026-10-26):
   he picks are committed.
 - **(P2) [maintainer] Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
   mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
-  between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
-  through `configureWarp`, and its tool key, Shift+F beside Distort's F, since draw's crop mode holds C
-  (`packages/path-tools/src/warp/useWarpTool.ts`).
+  between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change through
+  `configureWarp` or the last-operation panel after a drag, which resamples the mesh the drag bent, and its tool
+  key, Shift+F beside Distort's F, since draw's crop mode holds C (`packages/path-tools/src/warp/useWarpTool.ts`).
   Closes when the maintainer has driven Envelope mesh hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
   400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
   (`ARAP_ROUNDS` and `ARAP_INJECTIVE_ROUNDS` in `packages/geom/src/warp/arap.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
-  `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
+  `packages/path-tools/src/warp/warpHandles.ts`), the refit tolerance (in the last-operation panel after a pin
+  drag), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
   Closes when the maintainer has driven Puppet warp hands-on and the defaults and keys he picks are
   committed.

@@ -1,5 +1,19 @@
 # @weasel-js/text-dom
 
+## 1.15.0
+
+### Patch Changes
+
+- Updated dependencies [3f13a49]
+- Updated dependencies [d40f593]
+- Updated dependencies [e05ddd3]
+- Updated dependencies [d25ad30]
+  - @weasel-js/font@1.15.0
+  - @weasel-js/text@1.15.0
+  - @weasel-js/headless@1.15.0
+  - @weasel-js/paint@1.15.0
+  - @weasel-js/react@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes
