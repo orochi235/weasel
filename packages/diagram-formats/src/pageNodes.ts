@@ -8,6 +8,7 @@ import {
   derivedDepOf,
   derivedPartsOf,
   documentOf,
+  effectivePose,
   INHERIT,
   resolvePartPaint,
   isAnnotationLayer,

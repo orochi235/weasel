@@ -213,7 +213,7 @@ describe('writing what the format cannot carry', () => {
     } }] };
     const text = DRAW_XML.write!(doc).text;
     expect(geometry(xml(text), 'ab/label:from').x).toBe(-1);
-    const back = (await DRAW_XML.read!(text)).document.pages[0]!.data.edges[0]!;
+    const back = asGraph((await DRAW_XML.read!(text)).document.pages[0]!).data.edges[0]!;
     expect(back).toMatchObject({ label: 'owns', endLabels: { from: '1', to: '0..*' } });
   });
 });
