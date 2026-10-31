@@ -1,7 +1,8 @@
-/* A bar's or a toolbar's own name: a field label's face and case, one step heavier, so it reads above its fields' names. */
+/* A bar's or a toolbar's own name: a field label's face and case, one step up the weight scale from a label's light,
+   so it reads above its fields' names. */
 .label {
   font-family: var(--wzl-font-display);
-  font-weight: calc(var(--wzl-font-weight-light) + 100);
+  font-weight: var(--wzl-font-weight-normal);
   font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
   text-transform: var(--wzl-params-label-case, uppercase);
