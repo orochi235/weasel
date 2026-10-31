@@ -30,8 +30,8 @@ export interface GraphPage extends PageBase {
 
 /** A layout by its name in `@weasel-js/diagram`'s `LAYOUTS`, and the options a file can carry for it. */
 export interface PageLayout {
-  name: 'layered' | 'tree' | 'force' | 'chain' | 'radial';
-  options?: Pick<LayoutOptions, 'nodeGap' | 'rankGap' | 'order' | 'chainSide'>;
+  name: 'layered' | 'tree' | 'force' | 'chain' | 'radial' | 'grid';
+  options?: Pick<LayoutOptions, 'nodeGap' | 'rankGap' | 'order' | 'chainSide' | 'grid'>;
 }
 
 /** A page holding one chart, which fills it. */

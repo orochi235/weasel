@@ -1,0 +1,22 @@
+C4Container
+  title Internet banking
+  Person(customer, "Customer", "A customer of the bank, with personal bank accounts.")
+  System_Ext(mail, "E-mail system", "The internal Microsoft Exchange system.")
+  Enterprise_Boundary(bank, "Bank") {
+    System_Boundary(ibs, "Internet Banking") {
+      Container(spa, "Single-Page App", "JavaScript, Angular", "Provides all the banking functions in the browser.")
+      ContainerDb(db, "Database", "SQL Database", "Stores users and accounts.")
+      ContainerQueue_Ext(events, "Events", "Kafka")
+    }
+    Boundary(ops, "Operations", "team") {
+      Component(audit, "Audit")
+    }
+  }
+  Rel(customer, spa, "Uses", "HTTPS")
+  Rel_D(spa, db, "Reads from and writes to", "JDBC", "every request")
+  BiRel(spa, events, "Streams")
+  Rel_Back(audit, db, "Reads")
+  Rel(spa, mail, "Sends e-mail", $tags="async")
+  UpdateElementStyle(customer, $bgColor="gray", $fontColor="white", $borderColor="black")
+  UpdateRelStyle(customer, spa, $textColor="blue", $lineColor="blue", $offsetX="5")
+  UpdateLayoutConfig($c4ShapeInRow="3")

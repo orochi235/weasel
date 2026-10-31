@@ -28,6 +28,7 @@ import { type EasingFn } from '@weasel-js/animator';
 import { isPromise } from './footprint';
 import { buildGraph, type Graph, type GraphSource } from './graph';
 import { chain } from './chain';
+import { grid } from './grid';
 import { layered } from './layered';
 import { LAYOUTS, layoutPoses } from './layoutAction';
 import { planOf, plannerPlan, type LayoutFn, type LayoutOptions, type LayoutPlan, type LayoutPlanner } from './layout';
@@ -264,4 +265,5 @@ export const EASED_LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
   layered,
   tree,
   chain,
+  grid,
 });

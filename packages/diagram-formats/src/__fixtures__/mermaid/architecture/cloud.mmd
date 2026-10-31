@@ -1,0 +1,20 @@
+---
+title: Hosting
+---
+architecture-beta
+  group api(cloud)[API]
+  group private[Private] in api
+
+  service gateway(internet)[Gateway]
+  service server(server)[Server] in api
+  service db(database)[Database] in private
+  service disk1(disk)[Storage] in private
+  service fn(logos:aws-lambda)[Function] in api
+  service web[Web App]
+  junction mid in api
+
+  gateway:R --> L:server
+  server:B -- T:mid
+  mid:R -- L:fn
+  db:L <-- R:disk1
+  server{group}:R <--> L:web

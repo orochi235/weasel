@@ -89,4 +89,5 @@ export type { PortsOptions } from './ports';
 export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export { forestOf, subtreeBlocks, tree } from './tree';
 export { radial } from './radial';
+export { grid, type GridOptions } from './grid';
 export type { DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';

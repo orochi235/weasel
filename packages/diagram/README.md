@@ -591,7 +591,7 @@ dragged undoes in one step; `scene.history.seal()` ends the run. `parseDiagramTh
 
 ### Laying it out
 
-`layered`, `tree`, `force`, `chain`, and `radial` are plain functions of the graph. Each
+`layered`, `tree`, `force`, `chain`, `radial`, and `grid` are plain functions of the graph. Each
 hands back the new top-left for every node that **moves** — a node already
 standing where the layout wants it is absent, so re-running a layout on an
 unchanged diagram writes nothing at all.
@@ -685,6 +685,16 @@ sides are dealt in graph order and each side keeps the order its branches stand 
 moves nothing. Further trees lay out the same way, stacked below the first. `direction` and groups
 are ignored.
 
+`grid` stands nodes in rows of a fixed number of columns, left to right and top to bottom, as a
+block diagram does. Its `grid` option gives the top level's `columns` (unset, everything in one
+row), each group's own under `groupColumns`, how many columns an item `spans`, and how many empty
+cells it `skips` before it, all by id. Items fill their cells in graph order, a group where its
+first member would stand. Every column of one grid is as wide as its widest item needs, a spanning
+item sharing its width over its columns, and every row as tall as its tallest item; an item is
+centered in its cells. A group (or a container fitted to what it holds) is a grid of its own in
+its cells, its inset kept around it. Columns are `nodeGap` apart and rows `rankGap`, or `nodeGap`
+when `rankGap` is unset. Edges and `direction` are ignored, so a second run moves nothing.
+
 ### From data
 
 `diagramScene` turns plain `{ nodes, edges }` into a laid-out scene, and
@@ -726,8 +736,9 @@ over the box, so it follows its node as marks do. The built-in names are the
 flowchart shapes `'rect'`, `'diamond'`, `'stadium'`, `'ellipse'`, `'parallelogram'`,
 `'trapezoid'` (a demultiplexer: tall at the right, short at the left), and
 `'hexagon'` (pointed at the left and right, its rows kept between the points);
-`'roundRect'`, `'triangle'`, `'octagon'`, `'cloud'`, `'doubleEllipse'`, and
-`'actor'` (a stick figure, its label in the strip beneath it); and `'cylinder'`,
+`'roundRect'`, `'triangle'`, `'octagon'`, `'cloud'`, `'doubleEllipse'`,
+`'actor'` (a stick figure, its label in the strip beneath it), and `'person'` (a head over a body
+with rounded shoulders, its rows in the body); and `'cylinder'`,
 `'document'`, `'note'`, `'folder'`, and `'cube'`. Each keeps its rows inside the
 visible shape, clear of a cylinder's cap or a note's fold. Some draw a detail,
 stroked over the fill: a cylinder's rim, a note's fold, a cube's front edges.

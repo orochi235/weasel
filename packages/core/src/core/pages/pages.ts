@@ -6,6 +6,9 @@ export interface Page {
   readonly name?: string;
   readonly width: number;
   readonly height: number;
+  /** What other packages keep on the page, each under its owner's key (`'diagram:graph'`). Every page edit
+   *  carries it, and the page's placement copies it. */
+  readonly meta?: Readonly<Record<string, unknown>>;
 }
 
 /** A page and where it sits in world space. */

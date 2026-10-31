@@ -19,6 +19,7 @@ import {
 import { force } from './force';
 import { buildGraph, type GraphSource } from './graph';
 import { chain } from './chain';
+import { grid } from './grid';
 import { layered } from './layered';
 import { radial } from './radial';
 import { tree } from './tree';
@@ -33,6 +34,7 @@ export const LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
   force,
   chain,
   radial,
+  grid,
 });
 
 /** Options for {@link applyLayout}. */

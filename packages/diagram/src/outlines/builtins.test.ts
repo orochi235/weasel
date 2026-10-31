@@ -4,7 +4,7 @@ import { boxForContent, contentBox, outlineDetail, outlinePath, type Bounds } fr
 
 const ADDED = [
   'roundRect', 'cylinder', 'document', 'note', 'cloud', 'triangle', 'octagon', 'folder', 'cube', 'actor', 'doubleEllipse',
-  'component', 'doubleRect',
+  'component', 'doubleRect', 'person',
 ] as const;
 const WITH_DETAIL = new Set(['cylinder', 'note', 'folder', 'cube', 'doubleEllipse', 'component', 'doubleRect']);
 
