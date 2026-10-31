@@ -135,14 +135,6 @@ Owner tags, after the priority (2026-10-26):
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
   Closes when the maintainer has driven handle locks hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
-  it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
-  selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
-  `packages/path-tools/src/harmonize/harmonize.tsx`). It has no key of its own; its lab tunes H onto it,
-  which the Hand tool also answers wherever that tool is mounted
-  (`apps/site/demos/HarmonizeLabDemo.tsx`).
-  Closes when the maintainer has driven Harmonize curvature hands-on and the defaults and keys he picks
-  are committed.
 - **(P2) [maintainer] Tune anchor selection along the path hands-on, with the maintainer driving.**
   First-draft behavior and keys: `]` grows and `[` shrinks by one anchor, Alt+N selects every Nth
   (N defaults to 2, counted from the first selected anchor, with no UI for N outside the lab's
