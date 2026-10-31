@@ -469,6 +469,12 @@ describe('findConflicts — `mod` against the key it resolves to', () => {
     expect(findConflicts([zoom])).toHaveLength(1);
   });
 
+  it('names such an action once beside a binding both its copies meet, in one conflict', () => {
+    const zoom = tool('zoom', [wheel({ mod: true }, 'zoom', { kind: 'wheel' }), wheel({ ctrl: true }, 'zoom', { kind: 'wheel' })]);
+    const dolly = tool('dolly', [wheel({ ctrl: true }, 'dolly')]);
+    expect(findConflicts([zoom, dolly]).map((x) => x.ownerIds.join(','))).toEqual(['zoom,dolly']);
+  });
+
   it('flags the same pair on two actions of one owner', () => {
     const t = tool('t', [wheel({ mod: true }, 'zoom'), wheel({ ctrl: true }, 'pan')]);
     expect(findConflicts([t])).toHaveLength(1);

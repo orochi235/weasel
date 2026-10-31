@@ -99,7 +99,7 @@ function findConflictsKeyed(
     // declaration order, and a pair led by a binding that yields is ordered on purpose.
     const ties = (e: RegistryEntry, i: number, f: RegistryEntry, j: number): boolean =>
       i !== j && !(i < j ? e : f).yields && tie(e, f);
-    const bucket = members.filter((e, i) => members.some((f, j) => ties(e, i, f, j)));
+    const bucket = foldPlatformCopies(members.filter((e, i) => members.some((f, j) => ties(e, i, f, j))));
     if (bucket.length < 2) continue;
     const first = bucket[0];
     // Two specs that tie in one modifier state usually tie in several, and on
@@ -126,6 +126,28 @@ function findConflictsKeyed(
     // action binds a key that `mod` covers there and not on the other.
     .filter(([, c]) => c.platforms.size === PLATFORMS.length || !sameOutcome(c.bucket))
     .map(([key, { conflict }]) => ({ key, conflict }));
+}
+
+/** Whether `mod` in an entry's spec makes it a different press on each platform. */
+function platformBound(e: RegistryEntry): boolean {
+  return modifierTieKeys(e, 'mac').join() !== modifierTieKeys(e, 'other').join();
+}
+
+/**
+ * A bucket with each `mod`-against-`ctrl` pair of one binding's copies — the
+ * tie a lone action is excused for — folded to the copy that means the same
+ * press on every platform. Off a Mac, `viewport.zoom`'s Cmd/Ctrl+wheel and
+ * ctrl+wheel bindings would otherwise both be named beside a binding they
+ * collide with, and the conflict would read as a second one per platform.
+ */
+function foldPlatformCopies(bucket: RegistryEntry[]): RegistryEntry[] {
+  const out: RegistryEntry[] = [];
+  for (const e of bucket) {
+    const i = out.findIndex((k) => sameOutcome([k, e]) && (platformBound(k) || platformBound(e)));
+    if (i === -1) out.push(e);
+    else if (platformBound(out[i]!)) out[i] = e;
+  }
+  return out;
 }
 
 /** The tool scopes as the dispatcher sees them. */
