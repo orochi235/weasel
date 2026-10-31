@@ -62,10 +62,10 @@ export interface KeyCapProps {
    *  `--key-legend-scale`. */
   style?: CSSProperties;
   /** Override the chip's font-family. Accepts any CSS font-family
-   *  string. When omitted, the chip inherits from the design-system
-   *  UI font token (`--wzl-font-ui`). Useful for one-off cases where
-   *  a different face is desired — though the canonical move is to
-   *  override the CSS variable at the consumer's scope, not the prop. */
+   *  string. When omitted, the chip is set in a neutral sans stack rather
+   *  than the UI font (`--wzl-font-ui`), so its legends read like real key
+   *  legends; a rule on the chip's `className` does the same without an
+   *  inline style. */
   font?: string;
   /** Inside a `KeyBank`, lets this key print a two-line spelling,
    *  overriding the bank's `wrap`. No effect outside a bank. */
