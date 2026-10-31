@@ -19,6 +19,7 @@ import { selectedWarpLeaves, selectedWarpPaths } from './warpSelection';
 import { outlineSession, type OutlineSession } from '../shared/outlineSession';
 import { icon } from '../icons.gen';
 import { warpSettingsForm } from './warpSettingsForm';
+import { configureWarpParams, settingsOfWarp, warpDragParams } from './warpParams';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What a press on a warp control hands the drag that follows. */
@@ -81,12 +82,50 @@ function commitTargets(deps: ActionDeps, next: ReadonlyMap<string, { target: War
   commitOps(deps, ops, label);
 }
 
+type Shapes = Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>;
+
+/** What a press on control `scratch` of the selection's `kind` warp takes hold of: text converted for a fresh
+ *  warp, the targets sharing the warp, and the control's place in world space. Null where there is none. */
+function grabControl(deps: ActionDeps, kind: WarpKind, label: string, scratch: WarpHandleScratch, settings: WarpSettings) {
+  // Only a fresh warp's controls stand over text: a held warp is on paths already.
+  const { session, box } = scratch.warpId === null
+    ? beginOnText(deps, kind, label)
+    : { session: outlineSession(deps, [], label), box: undefined };
+  const targets = warpTargets(deps, kind, settings, box)
+    .filter((t) => (scratch.warpId === null ? t.fresh : t.held.id === scratch.warpId));
+  const first = targets[0];
+  const control = first && warpControls(first.held.warp)[scratch.index];
+  if (!control) {
+    session.cancel();
+    return null;
+  }
+  const [x, y] = applyToPoint(first.toWorld, control.x, control.y);
+  return { session, targets, control: { x, y } };
+}
+
+/** Each target with its warp's control `index` moved to `world`, then remade under `tuned` when given. */
+function shapesWith(targets: readonly WarpTarget[], index: number, world: Point, tuned?: WarpSettings): Shapes {
+  const out: Shapes = new Map();
+  for (const target of targets) {
+    const back = invert(target.toWorld);
+    if (!back) continue;
+    const [lx, ly] = applyToPoint(back, world.x, world.y);
+    const moved = { ...target.held, warp: moveWarpControl(target.held.warp, index, { x: lx, y: ly }) };
+    const shape = storeWarp(target.node.node, tuned ? withWarpSettings(moved, tuned) : moved, target.toWorld);
+    if (shape) out.set(target.node.id, { target, shape });
+  }
+  return out;
+}
+
 /**
  * Drag one control of the selection's `kind` warp: a distort's corner, an
  * envelope's mesh point, a puppet's pin. Every selected path sharing that warp
  * follows the control. A press on the controls shown over a selection with no
  * warp of this kind yet makes one, from the binding's params
- * ({@link WarpSettings}), and the drag is its first edit. One undo step.
+ * ({@link WarpSettings}), and the drag is its first edit. One undo step, which
+ * the last-operation panel replays with the warp remade under other settings
+ * (`warpDragParams`): the control moved as it was, then the warp remade, so an
+ * envelope's new grid is resampled from the mesh the drag bent.
  */
 export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
   const label = WARP_LABELS[kind];
@@ -95,6 +134,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
     label: `${label} — drag control`,
     tags: pathOperationTags(kind === 'puppet' ? 'brush' : 'box'),
     requires: [...BEGINS],
+    params: warpDragParams(kind),
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -102,40 +142,22 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
         if (!scratch) return {};
         const deps = ctx.deps;
         const settings = (resolveParams(opts?.params) ?? {}) as WarpSettings;
-        // Only a fresh warp's controls stand over text: a held warp is on paths already.
-        const { session, box } = scratch.warpId === null
-          ? beginOnText(deps, kind, label)
-          : { session: outlineSession(deps, [], label), box: undefined };
-        const targets = warpTargets(deps, kind, settings, box)
-          .filter((t) => (scratch.warpId === null ? t.fresh : t.held.id === scratch.warpId));
-        const first = targets[0];
-        const control = first && warpControls(first.held.warp)[scratch.index];
-        if (!control) {
-          session.cancel();
-          return {};
-        }
-        const [cx, cy] = applyToPoint(first.toWorld, control.x, control.y);
+        const grabbed = grabControl(deps, kind, label, scratch, settings);
+        if (!grabbed) return {};
+        const { session, targets, control } = grabbed;
         const press = ctx.drag?.start ?? ctx.world;
-        let current = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
+        let current: Shapes = new Map();
         const publish = () => live?.set(new Map([...current].map(([id, e]) => [id, e.shape])));
         // Where the last move put the control: a move that leaves it there keeps the previews it made.
-        let last: { x: number; y: number } | null = null;
+        let last: Point | null = null;
         return {
           kind: `${kind}.drag`,
           onMove(m: InvocationCtx): void {
             const at = m.drag?.current ?? m.world;
-            const world = { x: cx + at.x - press.x, y: cy + at.y - press.y };
+            const world = { x: control.x + at.x - press.x, y: control.y + at.y - press.y };
             if (last !== null && last.x === world.x && last.y === world.y) return;
             last = world;
-            current = new Map();
-            for (const target of targets) {
-              const back = invert(target.toWorld);
-              if (!back) continue;
-              const [lx, ly] = applyToPoint(back, world.x, world.y);
-              const held = { ...target.held, warp: moveWarpControl(target.held.warp, scratch.index, { x: lx, y: ly }) };
-              const shape = storeWarp(target.node.node, held, target.toWorld);
-              if (shape) current.set(target.node.id, { target, shape });
-            }
+            current = shapesWith(targets, scratch.index, world);
             publish();
           },
           onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -144,6 +166,14 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             live?.set(null);
             if (reason === 'cancel') session.cancel();
             else session.commit(() => { if (done.size > 0) commitTargets(deps, done, label); }, label);
+          },
+          params: () => settingsOfWarp(targets[0].held) as Record<string, unknown>,
+          replay(params: Record<string, unknown>): void {
+            const to = last;
+            const again = to && grabControl(deps, kind, label, scratch, settings);
+            if (!to || !again) return;
+            const done = shapesWith(again.targets, scratch.index, to, params as WarpSettings);
+            again.session.commit(() => { if (done.size > 0) commitTargets(deps, done, label); }, label);
           },
           previewIds: () => (current.size > 0 ? [...current.keys()] : null),
           previewPose: (id: string) => current.get(id)?.shape.pose ?? null,
@@ -273,7 +303,8 @@ export const expandWarpAction: Action = {
  * {@link WarpSettings}, plus an optional `kind` limiting it to one kind of
  * warp): switch a distort between free and perspective, an envelope between
  * its mappings or to a finer grid, or refit at another tolerance. One undo
- * step. Its settings form shows what the selection holds.
+ * step. Its settings form shows what the selection holds, and the
+ * last-operation panel the settings a run changed (`configureWarpParams`).
  */
 export const configureWarpAction: Action = {
   id: 'configureWarp',
@@ -283,6 +314,7 @@ export const configureWarpAction: Action = {
   group: 'path',
   requires: REQUIRES,
   settings: warpSettingsForm,
+  params: configureWarpParams,
   enabled: holdsWarp,
   invoker: {
     timing: 'immediate',

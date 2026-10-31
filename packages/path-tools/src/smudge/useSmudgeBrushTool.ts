@@ -2,25 +2,13 @@ import { useMemo } from 'react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
 import { icon } from '../icons.gen';
-import { DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH } from './smudgeBrush';
+import { SMUDGE_BRUSH_PARAMS } from './smudgeBrush';
 
-/** The Smudge brush's size and strength: the `smudgeBrush` action's params. */
+/** The Smudge brush's size and strength: the `smudgeBrush` action's params, the same form its last-operation
+ *  panel shows. */
 export const SMUDGE_BRUSH_OPTIONS = {
   actionId: 'smudgeBrush',
-  prefs: {
-    name: 'Smudge brush',
-    description: 'The size and strength of the Smudge brush.',
-    children: {
-      radiusPx: {
-        kind: 'number', name: 'Size', description: 'The brush radius, in screen pixels.',
-        default: DEFAULT_SMUDGE_RADIUS_PX, min: 2, max: 400, step: 1, control: 'slider',
-      },
-      strength: {
-        kind: 'number', name: 'Strength', description: 'How closely the outline under the brush follows the pointer.',
-        default: DEFAULT_SMUDGE_STRENGTH, min: 0.05, max: 1, step: 0.05, control: 'slider',
-      },
-    },
-  },
+  prefs: SMUDGE_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
   strength: { option: 'strength', plus: 0.1 },
 } satisfies ToolOptions;

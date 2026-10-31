@@ -27,7 +27,9 @@ function push(history: History, ops: Op[]): void {
 }
 
 /** A drag that sets the width to its travel times `factor`, live through coalescing pushes when `live`. */
-function stretch(doc: Doc, history: History, opts: { replays: boolean; live?: boolean }): Action {
+interface StretchOpts { replays: boolean; live?: boolean; reports?: number; journals?: boolean }
+
+function stretch(doc: Doc, history: History, opts: StretchOpts): Action {
   return {
     id: 'stretch',
     label: 'Stretch',
@@ -39,9 +41,13 @@ function stretch(doc: Doc, history: History, opts: { replays: boolean; live?: bo
         const base = doc.width;
         let travel = 0;
         const factorOf = (p: Record<string, unknown> | undefined) => (typeof p?.factor === 'number' ? p.factor : 1);
+        // A gesture that, like one converting text as it begins, journals its edits from the press.
+        const own = () => (opts.journals ? history.beginJournal({ label: 'Stretch' }) : null);
+        let journal = own();
         const commit = (factor: number) => {
           doc.ranOn.push(doc.selected);
           push(history, [setWidth(doc, base + travel * factor)]);
+          journal?.commit('Stretch');
           doc.selected = ['stretched'];
         };
         const handle: OngoingHandle = {
@@ -53,7 +59,8 @@ function stretch(doc: Doc, history: History, opts: { replays: boolean; live?: bo
             if (reason === 'commit' && !opts.live) commit(factorOf(resolveParams(bindingOpts?.params)));
           },
         };
-        if (opts.replays) handle.replay = (params) => commit(factorOf(params));
+        if (opts.replays) handle.replay = (params) => { journal = own(); commit(factorOf(params)); };
+        if (opts.reports !== undefined) handle.params = () => ({ factor: opts.reports });
         return handle;
       },
     },
@@ -62,7 +69,7 @@ function stretch(doc: Doc, history: History, opts: { replays: boolean; live?: bo
 
 const ctxAt = (x: number): InvocationCtx => ({ world: { x, y: 0 }, modifiers: { shift: false, alt: false, ctrl: false, meta: false }, deps: {} });
 
-function setup(opts: { replays: boolean; live?: boolean }) {
+function setup(opts: StretchOpts) {
   const doc: Doc = { width: 10, selected: ['a'], ranOn: [] };
   const history = createHistory(doc, { coalesceWindowMs: 1000 });
   let registry: ActionsRegistry | null = null;
@@ -126,6 +133,22 @@ describe('a gesture as the last operation', () => {
     expect(doc.width).toBe(35);
   });
 
+  it("shows the params the handle reports it took from what it edited, over the binding's", () => {
+    const { store, drag } = setup({ replays: true, reports: 4 });
+    drag(4, { factor: 2 });
+    expect(store.get()?.values).toEqual({ factor: 4 });
+  });
+
+  it('hands a panel change to each tuning that keeps the params, and only a change', () => {
+    const { registry, store, drag } = setup({ replays: true });
+    const kept: Record<string, unknown>[] = [];
+    act(() => { registry.tune('stretch', { keep: (p) => { kept.push({ ...p }); } }); });
+    drag(4, { factor: 2 });
+    expect(kept).toEqual([]);
+    act(() => { store.adjust({ factor: 3 }); });
+    expect(kept).toEqual([{ factor: 3 }]);
+  });
+
   it('holds nothing for a drag whose handle cannot replay', () => {
     const { store, drag } = setup({ replays: false });
     drag(4);
@@ -164,6 +187,15 @@ describe('the last operation inside a journal', () => {
     expect(history.undoDepth()).toBe(0);
     act(() => { journal.commit('Edit'); });
     expect(store.get()).toBeNull();
+    expect(history.undoDepth()).toBe(1);
+  });
+
+  it('holds a gesture that opens its own journal at the press, as the one entry that journal lands', () => {
+    const { doc, history, store, drag } = setup({ replays: true, journals: true });
+    drag(4, { factor: 2 });
+    expect(store.get()).not.toBeNull();
+    act(() => { store.adjust({ factor: 3 }); });
+    expect(doc.width).toBe(22);
     expect(history.undoDepth()).toBe(1);
   });
 

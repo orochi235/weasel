@@ -43,7 +43,7 @@ export type { ActionParamSchema } from './actionParamSchema';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export {
-  brushRingCursor, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
+  brushRingCursor, SIMPLIFY_BRUSH_PARAMS, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
 } from './simplifyBrush/simplifyBrush';
 export { SIMPLIFY_BRUSH_OPTIONS, useSimplifyBrushTool } from './simplifyBrush/useSimplifyBrushTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
@@ -59,7 +59,7 @@ export {
   showOverlayAction,
 } from './overlays/showOverlay';
 export {
-  DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, smudgeBrushAction, type SmudgeBrushParams,
+  DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, SMUDGE_BRUSH_PARAMS, smudgeBrushAction, type SmudgeBrushParams,
 } from './smudge/smudgeBrush';
 export { harmonizeAnchorsAction } from './harmonize/harmonize';
 export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
@@ -86,6 +86,7 @@ export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
 } from './warp/warpActions';
 export { WARP_SETTINGS_SCHEMA, warpSettingsForm } from './warp/warpSettingsForm';
+export { configureWarpParams, settingsOfWarp, WARP_SETTING_FIELDS, warpDragParams } from './warp/warpParams';
 export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
 export {
   CORNER_SHAPE_OPTIONS, DEFAULT_CORNER_SHAPE, EDIT_CORNER_PARAMS, editCornerAction, type EditCornerParams,
