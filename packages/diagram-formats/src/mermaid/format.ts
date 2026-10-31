@@ -6,6 +6,9 @@ import { readArchitecture } from './architecture/read';
 import { writeArchitecture } from './architecture/write';
 import { readBlockDiagram } from './block/read';
 import { writeBlockDiagram } from './block/write';
+import { C4_HEADERS } from './c4/parse';
+import { C4_NOTATIONS, readC4 } from './c4/read';
+import { writeC4 } from './c4/write';
 import { readClassDiagram } from './class/read';
 import { writeClassDiagram } from './class/write';
 import { MERMAID_KINDS, headerWord } from './common/header';
@@ -55,6 +58,7 @@ const KINDS: readonly MermaidKind[] = [
   { name: 'xychart', header: /^xychart(?:-beta)?$/, page: 'plot', read: readMermaidXychart, write: (doc, opts) => writeMermaidXychart(pageOfKind(doc, opts, 'plot')) },
   { name: 'block-beta', header: /^block(?:-beta)?$/, page: 'graph', notation: 'block', read: readBlockDiagram, write: writeBlockDiagram },
   { name: 'architecture-beta', header: /^architecture(?:-beta)?$/, page: 'graph', notation: 'architecture', read: readArchitecture, write: writeArchitecture },
+  ...C4_HEADERS.map((h): MermaidKind => ({ name: h, header: new RegExp(`^${h}$`), page: 'graph', notation: C4_NOTATIONS[h], read: readC4, write: writeC4 })),
 ];
 
 /** The page `opts` names, which must be of `kind`. */
