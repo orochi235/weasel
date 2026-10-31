@@ -193,6 +193,11 @@ export interface SceneCanvasSnap {
    *  turned container's lattice: a pose neither a rect nor a `Path` needs
    *  its own. Default `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
+  /** Points of node `id` a move snaps, in its own box frame (`sceneBoxFrames`:
+   *  from its box corner, through its pose transform, scale included), such as
+   *  a cabinet's hanger holes. Read once when a move begins; each becomes a
+   *  probe of role `'anchor'`, offered only to a source whose `roles` list it. */
+  anchors?: SnapAnchors;
   /** Whether the canvas draws the snap marks. Default `true`. With `false`
    *  the marks are still written to the `snapReadout` dep's store, for a
    *  layer of the consumer's own. */
@@ -200,6 +205,9 @@ export interface SceneCanvasSnap {
   /** The readout's default colors and line width, for a mark that sets no `color`. */
   readoutStyle?: SnapReadoutStyle;
 }
+
+/** Node `id`'s snap anchors in its own box frame; none for null or undefined. */
+export type SnapAnchors = (id: string) => readonly Point[] | null | undefined;
 
 /** The snap readout's colors and line width, for a mark that sets no `color`. */
 export interface SnapReadoutStyle {

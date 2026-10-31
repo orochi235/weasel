@@ -60,4 +60,24 @@ describe('createSnapSession2d', () => {
     expect(back.y).toBeCloseTo(7, 9);
     expect(seen[0].frameOf?.('nowhere')).toBeUndefined();
   });
+
+  it('offers a node\'s anchors, in world, only to a source listing the anchor role', () => {
+    const { scene, a } = fixture();
+    const anchorSeen: SnapCollect[] = [];
+    const boxSeen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move', press: { x: 0, y: 0 }, ids: [a],
+      anchors: (id) => (id === a ? [{ x: 25, y: 10 }, { x: 75, y: 10 }] : null),
+      sources: [
+        { id: 'pegs', roles: ['anchor'], collect(q) { anchorSeen.push(q); return []; } },
+        { id: 'boxes', roles: ['box'], collect(q) { boxSeen.push(q); return []; } },
+      ],
+    }).at({ x: 10, y: 20 }, { suspend: false, constrain: false });
+    expect(anchorSeen[0].probes).toEqual([
+      { id: `anchor:${a}:0`, at: { x: 35, y: 30 }, role: 'anchor' },
+      { id: `anchor:${a}:1`, at: { x: 85, y: 30 }, role: 'anchor' },
+    ]);
+    expect(boxSeen[0].probes.some((p) => p.role === 'anchor')).toBe(false);
+  });
 });
+

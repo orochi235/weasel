@@ -5,8 +5,9 @@ import { closestOnFlat, flatDim, intersectFlats, solveLeastSquares, type Flat, t
 
 /** A `fallback` candidate holds only the axes no `target` claims. */
 export type SnapTier = 'target' | 'fallback';
-/** What a probe stands for on the subject; sources match probes by role. */
-export type ProbeRole = 'origin' | 'box' | 'geometry' | 'pointer';
+/** What a probe stands for on the subject; sources match probes by role.
+ *  `'anchor'` is a point a node declares in its own box frame. */
+export type ProbeRole = 'origin' | 'box' | 'geometry' | 'pointer' | 'anchor';
 
 /** A point on the subject that should land on a locus. `role` says which
  *  sources may match it. */

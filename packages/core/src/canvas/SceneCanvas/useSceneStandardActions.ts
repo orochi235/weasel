@@ -189,6 +189,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
       ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
       ...(props.snap?.omit ? { omit: props.snap.omit } : {}),
       ...(props.snap?.originProjection ? { originProjection: props.snap.originProjection } : {}),
+      ...(props.snap?.anchors ? { anchors: props.snap.anchors } : {}),
       poseDescriptor,
       debug: () => canvasApiRef.current?.getDebug(),
     },

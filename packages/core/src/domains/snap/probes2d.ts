@@ -15,6 +15,8 @@ export interface ProbeReads {
   origin(pose: unknown): Point;
   /** The point of the subject's own geometry nearest `press`, or null. */
   geometryAt?(press: Point, ids: readonly string[]): Point | null;
+  /** `id`'s declared snap anchors, in world. */
+  anchors?(id: string): readonly Point[];
 }
 
 /** The union drawn box of the subjects, or null when none is left. */
@@ -66,6 +68,11 @@ function moveProbes(press: Point, ids: readonly string[], reads: ProbeReads, box
   for (const id of ids) {
     const pose = reads.pose(id);
     if (pose !== undefined) out.push({ id: `origin:${id}`, at: reads.origin(pose), role: 'origin' });
+  }
+  if (reads.anchors) {
+    for (const id of ids) {
+      reads.anchors(id).forEach((at, i) => out.push({ id: `anchor:${id}:${i}`, at, role: 'anchor' }));
+    }
   }
   if (box) {
     out.push(

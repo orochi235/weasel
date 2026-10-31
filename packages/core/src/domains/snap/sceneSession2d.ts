@@ -11,7 +11,7 @@ import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectOf } from './probes2d';
 import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from './sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
-import type { SnapGesture, SnapSource } from './types';
+import type { SnapAnchors, SnapGesture, SnapSource } from './types';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -30,6 +30,8 @@ export interface SceneSessionInputs {
   originProjection?: OriginProjection<unknown>;
   /** How a node's rotation is read. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<unknown>;
+  /** Each node's snap anchors, in its box frame: `SceneCanvasSnap.anchors`. */
+  anchors?: SnapAnchors;
   /** Where each frame's candidates are recorded. */
   debug?: DebugSink;
 }
@@ -40,6 +42,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
     scene: i.scene, boxes: i.boxes,
     ...(i.geometryAt ? { geometryAt: i.geometryAt } : {}),
     ...(i.originProjection ? { originProjection: i.originProjection } : {}),
+    ...(i.anchors ? { anchors: i.anchors } : {}),
   });
   const subject = subjectOf(i.req, reads);
   return createSession2d({
@@ -101,6 +104,9 @@ export interface SnapSession2dOptions {
   /** How a pose's origin, the point a grid or a guide snaps, is read.
    *  Default `AUTO_ORIGIN_PROJECTION`: a rect's `{x, y}`, a path's bounds. */
   originProjection?: OriginProjection<unknown>;
+  /** Points of each node a move snaps, in its own box frame, as
+   *  `SceneCanvasSnap.anchors`. */
+  anchors?: SnapAnchors;
   /** How `view`'s world maps into the parallax plane the gesture's points
    *  are in. Default: they are in `view`'s own world. */
   plane?: PlaneMap | null;
@@ -144,5 +150,6 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     store: opts.store ?? createSnapOutcomeStore(),
     ...(opts.originProjection ? { originProjection: opts.originProjection } : {}),
     ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
+    ...(opts.anchors ? { anchors: opts.anchors } : {}),
   });
 }

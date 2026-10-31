@@ -7,7 +7,7 @@ import { sceneBoxFrames, scenePoseFrame } from 'interactions/actions/poseFrame';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_ORIGIN_PROJECTION, type OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { ProbeReads } from './probes2d';
-import type { SnapFrame } from './types';
+import type { SnapAnchors, SnapFrame } from './types';
 
 /** {@link ProbeReads} over a canvas's scene, read when a session begins.
  *  `boxes` is the canvas's `drawnBoxes`, which alignment measures with too. */
@@ -17,14 +17,27 @@ export function sceneProbeReads(args: {
   geometryAt?: (press: WorldPoint, ids: readonly string[]) => WorldPoint | null;
   /** How a pose's origin is read. Default `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
+  /** Each node's snap anchors, in its box frame. */
+  anchors?: SnapAnchors;
 }): ProbeReads {
   const { scene } = args;
   const frame = scenePoseFrame(scene);
+  const anchors = args.anchors;
   return {
     pose: (id) => (scene.get(id as NodeId) === undefined ? undefined : frame.world(id as NodeId)),
     drawnBox: (id, pose) => args.boxes.aabb(id, pose),
     origin: (pose) => (args.originProjection ?? AUTO_ORIGIN_PROJECTION).getOrigin(pose),
     ...(args.geometryAt ? { geometryAt: args.geometryAt } : {}),
+    ...(anchors ? { anchors: worldAnchors(scene, anchors) } : {}),
+  };
+}
+
+function worldAnchors(scene: Scene<unknown, string, unknown>, anchors: SnapAnchors): (id: string) => readonly Point[] {
+  const frames = sceneSnapFrames(scene);
+  return (id) => {
+    const local = anchors(id);
+    const frame = local?.length ? frames(id) : undefined;
+    return local && frame ? local.map((p) => frame.toWorld(p)) : [];
   };
 }
 

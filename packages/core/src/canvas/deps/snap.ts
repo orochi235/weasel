@@ -21,7 +21,7 @@ import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import type { SnapReadoutDep } from 'domains/snap/readoutDep';
 import { rotationSnapSource } from 'domains/snap/rotationSource';
 import { pathSnapSource } from 'domains/paths/pathSnap/pathSnapSource';
-import type { SnapSource } from 'domains/snap/types';
+import type { SnapAnchors, SnapSource } from 'domains/snap/types';
 
 /** What `begin` reads: the scene its probes come from and the sources it asks. */
 export interface SnapSessionSources {
@@ -40,6 +40,8 @@ export interface SnapSessionSources {
   poseDescriptor?: PoseDescriptor<unknown>;
   /** How a pose's origin is read, for the `origin` probe. */
   originProjection?: OriginProjection<unknown>;
+  /** Each node's snap anchors, for the `anchor` probes of a move. */
+  anchors?: SnapAnchors;
   /** The canvas's debug sink, read when a session begins: each frame's
    *  candidates are recorded into it. */
   debug?: () => DebugSink | null | undefined;
@@ -95,6 +97,7 @@ export function useSnapDepSource(
         reachPx,
         ...(s.poseDescriptor ? { poseDescriptor: s.poseDescriptor } : {}),
         ...(s.originProjection ? { originProjection: s.originProjection } : {}),
+        ...(s.anchors ? { anchors: s.anchors } : {}),
         ...(debug ? { debug } : {}),
         store,
       });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import { buildProbes } from './probes2d';
@@ -65,5 +66,43 @@ describe('buildProbes', () => {
       { id: 'pointer', at: { x: 100, y: 0 }, role: 'pointer' },
       { id: 'box.0', at: { x: 100, y: 0 }, role: 'box' },
     ]);
+  });
+
+  describe('anchors', () => {
+    function anchored(pose: RectPose) {
+      const sc = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RIGID_POSE_COMPOSITION });
+      sc.add({ id: ID, kind: 'mark', layer: 'main', data: {}, pose });
+      const scene = sc as unknown as Scene<unknown, string, unknown>;
+      const boxes = drawnBoxes({ scene } as Parameters<typeof drawnBoxes>[0]);
+      const r = sceneProbeReads({ scene, boxes, anchors: (id) => (id === ID ? [{ x: 0, y: 0 }, { x: 10, y: 5 }] : null) });
+      return buildProbes({ gesture: 'move', press: { x: 0, y: 0 }, ids: [ID] }, r).filter((p) => p.role === 'anchor');
+    }
+
+    it('puts a move\'s anchors in world, through a turned box frame', () => {
+      // A 40×20 box centered on (30, 30), a quarter turn: its corner lands at (40, 10), x along +y.
+      const probes = anchored({ x: 10, y: 20, width: 40, height: 20, rotation: Math.PI / 2 });
+      expect(probes.map((p) => p.id)).toEqual([`anchor:${ID}:0`, `anchor:${ID}:1`]);
+      expect(probes[0].at.x).toBeCloseTo(40, 9);
+      expect(probes[0].at.y).toBeCloseTo(10, 9);
+      expect(probes[1].at.x).toBeCloseTo(35, 9);
+      expect(probes[1].at.y).toBeCloseTo(20, 9);
+    });
+
+    it('puts a move\'s anchors in world, through a scaled box frame', () => {
+      // Scaled 2×3 about the center (30, 30): the corner (10, 20) lands at (-10, 0).
+      const probes = anchored({ x: 10, y: 20, width: 40, height: 20, transform: [2, 0, 0, 3] } as RectPose);
+      expect(probes[0].at.x).toBeCloseTo(-10, 9);
+      expect(probes[0].at.y).toBeCloseTo(0, 9);
+      expect(probes[1].at.x).toBeCloseTo(10, 9);
+      expect(probes[1].at.y).toBeCloseTo(15, 9);
+    });
+
+    it('offers no anchor probes to a gesture other than a move', () => {
+      const scene = strokedRect();
+      const boxes = drawnBoxes({ scene } as Parameters<typeof drawnBoxes>[0]);
+      const r = sceneProbeReads({ scene, boxes, anchors: () => [{ x: 0, y: 0 }] });
+      const probes = buildProbes({ gesture: 'resize', press: { x: 114, y: 40 }, ids: [ID], handle: { x: 'min', y: 'free' } }, r);
+      expect(probes.some((p) => p.role === 'anchor')).toBe(false);
+    });
   });
 });
