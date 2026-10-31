@@ -1,0 +1,12 @@
+radar-beta
+  title Restaurant comparison
+  %% keyed values, a polygon graticule, no legend
+  axis food["Food"], service["Service"], price
+  axis ambience["Ambience"]
+  curve a["Curry house"]{ food: 4, price: 3,
+    service: 3.5, ambience: 2 }
+  curve b{ ambience: 4, food: 3, service: 4, price: 2 }
+  graticule polygon
+  ticks 4
+  showLegend false
+  max 5
