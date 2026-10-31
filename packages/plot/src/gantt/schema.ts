@@ -5,8 +5,8 @@ import { parseGanttDate } from './dates';
 import { setGanttSectionName, setGanttTaskName } from './edit';
 import { dateFormatOf } from './schedule';
 import {
-  insertGanttSection, insertGanttTask, moveGanttSection, removeGanttSection, removeGanttTask, reorderGanttTask, setGanttExcludes,
-  setGanttSetting, setGanttTaskEnd, setGanttTaskId, setGanttTaskStart, setGanttTaskTags,
+  insertGanttSection, insertGanttTask, moveGanttSection, moveGanttTaskToSection, removeGanttSection, removeGanttTask, reorderGanttTask,
+  setGanttExcludes, setGanttSetting, setGanttTaskEnd, setGanttTaskId, setGanttTaskStart, setGanttTaskTags,
 } from './structure';
 import { formatGanttEnd, formatGanttStart, parseGanttEnd, parseGanttStart } from './text';
 import type { GanttData, GanttTag, GanttTask } from './types';
@@ -30,6 +30,19 @@ const tagColumn = (tag: GanttTag, label: string): PlotColumn<GanttData> => ({
     const tags = taskOf(d, s, r)?.tags ?? [];
     if (typeof v !== 'boolean') return d;
     return setGanttTaskTags(d, s[0]!, r, v ? [...tags, tag] : tags.filter((t) => t !== tag));
+  },
+});
+
+/** Each section as a choice: its number and name, so two sections of one name stay apart. */
+const sectionChoices = (d: GanttData): string[] => d.sections.map((s, i) => `${i + 1}. ${s.name ?? 'Untitled section'}`);
+
+/** The section a task sits in; choosing another moves the task to its end. */
+const sectionColumn = (d: GanttData): PlotColumn<GanttData> => ({
+  key: 'section', label: 'Section', type: { kind: 'enum', options: sectionChoices(d) },
+  get: (data, s) => sectionChoices(data)[s[0]!],
+  set: (data, s, r, v) => {
+    const to = typeof v === 'string' ? sectionChoices(data).indexOf(v) : -1;
+    return to < 0 || to === s[0] ? data : moveGanttTaskToSection(data, s[0]!, r, to);
   },
 });
 
@@ -99,7 +112,7 @@ export const ganttSchema: PlotSchema<GanttData> = {
     children: [{
       key: 'tasks', label: 'Tasks', item: 'task',
       count: (d, s) => d.sections[s[0]!]?.tasks.length ?? 0,
-      columns: () => TASK_COLUMNS,
+      columns: (d) => [...TASK_COLUMNS, sectionColumn(d)],
       insert: (d, s, at) => insertGanttTask(d, s[0]!, at),
       remove: (d, s, r) => removeGanttTask(d, s[0]!, r),
       move: (d, s, from, to) => reorderGanttTask(d, s[0]!, from, to),

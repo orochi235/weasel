@@ -85,8 +85,8 @@ export {
   setXyRangeBound, setXySeriesKind, setXySeriesName, setXyValueBound, setXyXKind,
 } from './xychart/structure';
 export {
-  insertGanttSection, insertGanttTask, moveGanttSection, removeGanttSection, removeGanttTask, reorderGanttTask, setGanttExcludes,
-  setGanttSetting, setGanttTaskEnd, setGanttTaskId, setGanttTaskStart, setGanttTaskTags,
+  insertGanttSection, insertGanttTask, moveGanttSection, moveGanttTaskToSection, removeGanttSection, removeGanttTask, reorderGanttTask,
+  setGanttExcludes, setGanttSetting, setGanttTaskEnd, setGanttTaskId, setGanttTaskStart, setGanttTaskTags,
 } from './gantt/structure';
 export { formatGanttEnd, formatGanttStart, parseGanttEnd, parseGanttStart } from './gantt/text';
 export {

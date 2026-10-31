@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { compilePlot } from '../plotData';
+import { ganttSchema } from './schema';
 import { PLOT_THEME } from '../theme';
 import {
-  insertGanttSection, insertGanttTask, moveGanttSection, removeGanttSection, removeGanttTask, reorderGanttTask, setGanttExcludes,
-  setGanttSetting, setGanttTaskEnd, setGanttTaskId, setGanttTaskStart, setGanttTaskTags,
+  insertGanttSection, insertGanttTask, moveGanttSection, moveGanttTaskToSection, removeGanttSection, removeGanttTask, reorderGanttTask,
+  setGanttExcludes, setGanttSetting, setGanttTaskEnd, setGanttTaskId, setGanttTaskStart, setGanttTaskTags,
 } from './structure';
 import { formatGanttEnd, formatGanttStart, parseGanttEnd, parseGanttStart } from './text';
 import type { GanttData } from './types';
@@ -50,6 +51,27 @@ describe('gantt structure', () => {
     expect(d.sections[1]!.tasks[0]).toMatchObject({ start: { kind: 'after', ids: ['first'] }, end: { kind: 'until', ids: ['first'] } });
     expect(() => setGanttTaskId(setGanttTaskId(CHAIN, 1, 0, 'b'), 1, 1, 'b')).toThrow(/already has id "b"/);
     expect(() => setGanttTaskId(CHAIN, 1, 0, 'a b')).toThrow(/no spaces/);
+  });
+
+  it('moves a task into another section, keeping its id and the dependencies on it', () => {
+    const d = moveGanttTaskToSection(CHAIN, 0, 0, 1, 1);
+    expect(d.sections.map((s) => s.tasks.map((t) => t.name))).toEqual([[], ['two', 'one', 'three']]);
+    expect(d.sections[1]!.tasks[1]!.id).toBe('a1');
+    expect(d.sections[1]!.tasks[0]!.start).toEqual({ kind: 'after', ids: ['a1'] });
+    expect(moveGanttTaskToSection(CHAIN, 1, 0, 0).sections.map((s) => s.tasks.map((t) => t.name))).toEqual([['one', 'two'], ['three']]);
+    expect(moveGanttTaskToSection(CHAIN, 1, 0, 1).sections[1]!.tasks.map((t) => t.name)).toEqual(['three', 'two']);
+    expect(() => moveGanttTaskToSection(CHAIN, 0, 0, 5)).toThrow(/no section 5/);
+    compiles(d);
+  });
+
+  it('offers each section as a choice on a task row, choosing one moving the task there', () => {
+    const tasks = ganttSchema.tables[0]!.children![0]!;
+    const section = tasks.columns(CHAIN, [1]).find((c) => c.key === 'section')!;
+    expect(section.type).toEqual({ kind: 'enum', options: ['1. A', '2. B'] });
+    expect(section.get(CHAIN, [1], 0)).toBe('2. B');
+    const d = section.set(CHAIN, [1], 0, '1. A');
+    expect(d.sections.map((s) => s.tasks.map((t) => t.name))).toEqual([['one', 'two'], ['three']]);
+    expect(section.set(CHAIN, [1], 0, 'nowhere')).toBe(CHAIN);
   });
 
   it('moves sections and tasks', () => {

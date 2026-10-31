@@ -76,6 +76,17 @@ export function removeGanttTask(data: GanttData, section: number, task: number):
 export const reorderGanttTask = (data: GanttData, section: number, from: number, to: number): GanttData =>
   (from === to ? data : withTasks(data, section, (tasks) => moveAt(tasks, from, to, 'reorderGanttTask'), 'reorderGanttTask'));
 
+/** `data` with task `task` of section `from` moved into section `to` before its task `at` (absent, last). Its id and
+ *  every dependency on it are kept. Throws on a task or section it does not hold. */
+export function moveGanttTaskToSection(data: GanttData, from: number, task: number, to: number, at?: number): GanttData {
+  const moving = data.sections[from]?.tasks[task];
+  if (moving === undefined) throw new Error(`moveGanttTaskToSection: the gantt holds no task ${task} in section ${from}`);
+  if (data.sections[to] === undefined) throw new Error(`moveGanttTaskToSection: the gantt holds no section ${to}`);
+  if (from === to) return reorderGanttTask(data, from, task, at ?? data.sections[from]!.tasks.length - 1);
+  const taken = withTasks(data, from, (tasks) => removeAt(tasks, task, 'moveGanttTaskToSection'), 'moveGanttTaskToSection');
+  return withTasks(taken, to, (tasks) => insertAt(tasks, at ?? tasks.length, moving, 'moveGanttTaskToSection'), 'moveGanttTaskToSection');
+}
+
 /** `data` with one task changed by `change`; `data` itself when nothing changes. */
 function withTask(data: GanttData, section: number, task: number, change: (t: GanttTask) => GanttTask, who: string): GanttData {
   const target = data.sections[section]?.tasks[task];
