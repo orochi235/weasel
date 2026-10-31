@@ -1,5 +1,12 @@
 # @weasel-js/clock
 
+## 1.14.3
+
+### Patch Changes
+
+- @weasel-js/react@1.14.3
+  - @weasel-js/registry@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

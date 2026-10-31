@@ -1,5 +1,29 @@
 # @weasel-js/renderer
 
+## 1.14.3
+
+### Patch Changes
+
+- b7d362d: An even-odd fill whose contours neither cross nor touch now tessellates to an ordinary triangulation (`earcut`, rings
+  nested an odd number deep cut as holes) instead of a per-contour fan with `requiresStencil`, so the renderer stages it
+  into the batched run like a nonzero fill. Contours that cross, touch, overlap or have no area keep the stencil fan.
+  
+  The stencil's cover pass now paints each pixel of an even-odd fill once: a translucent fill whose fan overlapped
+  itself, such as a concave outline, used to blend once per overlapping triangle and come out too opaque.
+- fbc7ebf: A pattern fill (`kind: 'texture'`) on a path, a stroke or an outline glyph now joins the renderer's batched run instead
+  of drawing for itself: its tile takes a texture slot in the run and each vertex carries its tile coordinate, so a
+  pattern no longer flushes the solids, gradients, images and text around it. What it paints is unchanged, opacity and
+  group color matrix included.
+- Updated dependencies [3f13a49]
+- Updated dependencies [d40f593]
+- Updated dependencies [b7d362d]
+  - @weasel-js/font@1.14.3
+  - @weasel-js/text@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/stroke@1.14.3
+  - @weasel-js/paint@1.14.3
+  - @weasel-js/registry@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

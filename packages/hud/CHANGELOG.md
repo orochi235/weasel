@@ -1,5 +1,29 @@
 # @weasel-js/hud
 
+## 1.14.3
+
+### Patch Changes
+
+- 3f13a49: New `cachedFontVariant(family, weight, style)` in `@weasel-js/font` resolves a face as `resolveFontVariant` does,
+  but hands back one frozen result per face for an exact match rather than a new object every call. Text layout,
+  painting and run resolution now read faces through it, so a HUD readout rewritten every frame no longer
+  allocates a result per label. `resolveFontVariant` still returns an object of the caller's own on every call.
+- Updated dependencies [8461e7b]
+- Updated dependencies [3f13a49]
+- Updated dependencies [b7d362d]
+- Updated dependencies [f2e728e]
+  - @weasel-js/core@1.14.3
+  - @weasel-js/font@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/theme@1.14.3
+  - @weasel-js/loupe@1.14.3
+  - @weasel-js/headless@1.14.3
+  - @weasel-js/menu@1.14.3
+  - @weasel-js/gestures@1.14.3
+  - @weasel-js/icons@1.14.3
+  - @weasel-js/paint@1.14.3
+  - @weasel-js/registry@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

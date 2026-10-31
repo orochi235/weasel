@@ -1,5 +1,64 @@
 # @weasel-js/ui
 
+## 1.14.3
+
+### Patch Changes
+
+- c08f919: Rows of items along a shape now start at the shape's own start and run its direction, instead of always reading left
+  to right. This changes the default layout of curved rows: a `Bar`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `Tabs`,
+  `PageTabs`, `RadioGroup` or `SwatchGrid` ring on a clockwise bottom arc, or a counterclockwise top one, now lays its
+  first item at the right. Each item still stands upright wherever it sits. Under `rtl` a row starts from the shape's
+  end. Text (`CurvedLabel`), a slider's values and a `Jog`'s transport still run in reading order.
+- d40f593: `@weasel-js/ui` no longer depends on `@weasel-js/bidi`. `CurvedLabel` now reorders mixed-direction text with the engine given to `registerBidi` from `@weasel-js/text`, the same one text layout uses; with none registered it keeps the text's logical order and warns once if the text holds right-to-left letters. An app showing right-to-left text in a `CurvedLabel` installs `@weasel-js/bidi` and calls `registerBidi(bidi)` once at startup. `@weasel-js/text` now exports `registeredBidi` and `warnRtlWithoutEngine`, which takes the caller's name for its message.
+- 41a5648: A row laid along a shape (a curved `Bar`, segments, swatch rings, run slots) that runs at most `RUN_SLACK` (8px)
+  past its track no longer scrolls: it is drawn whole, centered on the track. A curved `Bar` in `'menu'` mode keeps an
+  item on its line under the same allowance rather than sending it to More.
+  
+  In a vertical `Bar`, a button that opens a popover or menu shows its glyph alone when it has one, keeping its name as
+  its accessible name; one without turns 90 degrees and reads along the bar.
+- e838373: `ListEditor`'s own text entries (no `renderEntry`) now hold what is typed until blur or Enter, or until typing rests where `typing.settleWhenIdle` is on, like every other typed field, instead of calling `onChange` on every keystroke. In `PrefsForm` and `SelectionPanel` list leaves a typed entry is now one write, and in a panel one undo step. Enter writes the typed entry and the new one as a single change, Backspace in an entry typed empty removes it, Escape drops the draft, and a move carries the typed text with its entry. A new `settleWhenIdle` prop overrides the kit setting.
+- 8a3f058: labkit's `Toolbar` is gone: labkit now re-exports `@weasel-js/ui`'s, which gains what labkit's added. `size="sm"`
+  gives the compact control height a trial's chrome uses, `framed` draws a strip of its own, `Toolbar.Title` sets the
+  toolbar's name as a bar's is, and `Toolbar.Button` is the ghost button labkit drew (also exported as
+  `ToolbarButton`). A labkit toolbar no longer frames itself: a trial's toolbar region passes `size="sm" framed`, the
+  lab header's does not, and the `lk-toolbar` and `lk-toolbar-title` classes no longer exist.
+- fada838: Overlays resolve their portal host (the nearest themed ancestor) once per mount instead of on every render, so a page of closed tooltips no longer walks the DOM each time it re-renders. An ancestor themed imperatively after the overlay mounted is no longer picked up until the overlay remounts.
+- f2e728e: A vertical `Bar`, and a `Bar` along a shape, now draw each field the way a horizontal bar does, instead of opening
+  every field but an action from a dropdown. Only a group that opens, a text area, and a field made of other fields
+  still drop down. In a vertical bar a field's parts stack and stay upright: a box sits under its name, a switch or a
+  checkbox above its words, a segmented control runs top to bottom, and a slider stands on end. `ToggleBar` takes an
+  `orientation`, and every segmented row follows the new `OrientationContext` when it sets none. `BarLayout` no longer
+  takes `row`.
+  
+  Every control on a bar now stands at one height, so boxes, selects, segments, dropdown buttons and action buttons
+  line up; action buttons are 24px square rather than 32px, and show a pointer. A bar's label is set like a field
+  label, in capitals, one weight heavier. A flat segmented control draws the same border a text box does, and the
+  default `--wzl-field-border` is a little stronger.
+- Updated dependencies [8461e7b]
+- Updated dependencies [3f13a49]
+- Updated dependencies [d40f593]
+- Updated dependencies [b7d362d]
+- Updated dependencies [f2e728e]
+  - @weasel-js/core@1.14.3
+  - @weasel-js/font@1.14.3
+  - @weasel-js/text@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/theme@1.14.3
+  - @weasel-js/svg@1.14.3
+  - @weasel-js/clock@1.14.3
+  - @weasel-js/animator@1.14.3
+  - @weasel-js/headless@1.14.3
+  - @weasel-js/menu@1.14.3
+  - @weasel-js/gestures@1.14.3
+  - @weasel-js/icons@1.14.3
+  - @weasel-js/modes@1.14.3
+  - @weasel-js/paint@1.14.3
+  - @weasel-js/prefs@1.14.3
+  - @weasel-js/quantity@1.14.3
+  - @weasel-js/react@1.14.3
+  - @weasel-js/registry@1.14.3
+  - @weasel-js/select@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

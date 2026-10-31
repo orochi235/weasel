@@ -1,5 +1,21 @@
 # @weasel-js/pdf
 
+## 1.14.3
+
+### Patch Changes
+
+- 8612dd7: A shaped cluster's glyphs that stand for no text of their own (an Arabic letter's dotless body, the consonant under a Devanagari i-matra) now map to U+2060 WORD JOINER in `/ToUnicode`, and the glyph after one is placed with `Td`. pdf.js, which ignores `/ActualText`, read such a glyph as a control character (`بت` came back as `\u0007ت ب`) and now reads `تب`; readers that honor `/ActualText` read the same text as before.
+- Updated dependencies [3f13a49]
+- Updated dependencies [d40f593]
+- Updated dependencies [b7d362d]
+- Updated dependencies [fbc7ebf]
+  - @weasel-js/font@1.14.3
+  - @weasel-js/text@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/renderer@1.14.3
+  - @weasel-js/stroke@1.14.3
+  - @weasel-js/paint@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

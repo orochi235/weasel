@@ -1,5 +1,47 @@
 # @weasel-js/labkit
 
+## 1.14.3
+
+### Patch Changes
+
+- 8a3f058: labkit's `Toolbar` is gone: labkit now re-exports `@weasel-js/ui`'s, which gains what labkit's added. `size="sm"`
+  gives the compact control height a trial's chrome uses, `framed` draws a strip of its own, `Toolbar.Title` sets the
+  toolbar's name as a bar's is, and `Toolbar.Button` is the ghost button labkit drew (also exported as
+  `ToolbarButton`). A labkit toolbar no longer frames itself: a trial's toolbar region passes `size="sm" framed`, the
+  lab header's does not, and the `lk-toolbar` and `lk-toolbar-title` classes no longer exist.
+- 2e2f76c: A key held for an `over` binding now follows the pointer: a key already down when the pointer comes over a surface presses that surface's `over` key-held bindings, and leaving releases them. A single-press `key` binding is not repeated on arrival. Holding a loupe's peek key and then moving onto a loupe raises it again, and the peek carries from one loupe to the next.
+- 23ca95b: A trial's status strip is its final height on the first layout, whatever face its readouts draw in,
+  so a new trial's view is placed once rather than refit when the numeric face arrives. The strip keeps
+  the height the face gave it at the default density; the scale readout now centers on the row like
+  the frame-rate readout, about 1.5 px higher than before.
+- Updated dependencies [c08f919]
+- Updated dependencies [8461e7b]
+- Updated dependencies [d40f593]
+- Updated dependencies [41a5648]
+- Updated dependencies [b7d362d]
+- Updated dependencies [e838373]
+- Updated dependencies [8a3f058]
+- Updated dependencies [2e2f76c]
+- Updated dependencies [fada838]
+- Updated dependencies [f2e728e]
+  - @weasel-js/ui@1.14.3
+  - @weasel-js/core@1.14.3
+  - @weasel-js/geom@1.14.3
+  - @weasel-js/routing@1.14.3
+  - @weasel-js/theme@1.14.3
+  - @weasel-js/kernel3d@1.14.3
+  - @weasel-js/loupe@1.14.3
+  - @weasel-js/minimap@1.14.3
+  - @weasel-js/svg@1.14.3
+  - @weasel-js/clock@1.14.3
+  - @weasel-js/animator@1.14.3
+  - @weasel-js/icons@1.14.3
+  - @weasel-js/prefs@1.14.3
+  - @weasel-js/quantity@1.14.3
+  - @weasel-js/react@1.14.3
+  - @weasel-js/registry@1.14.3
+  - @weasel-js/storage@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @weasel-js/select
 
+## 1.14.3
+
+### Patch Changes
+
+- @weasel-js/registry@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

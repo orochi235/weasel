@@ -1,5 +1,16 @@
 # @weasel-js/diagram-formats
 
+## 1.14.3
+
+### Patch Changes
+
+- Updated dependencies [8461e7b]
+- Updated dependencies [8612dd7]
+  - @weasel-js/core@1.14.3
+  - @weasel-js/pdf@1.14.3
+  - @weasel-js/diagram@1.14.3
+  - @weasel-js/svg@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes
