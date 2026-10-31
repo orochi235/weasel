@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/diagram-formats",
-  "version": "1.14.2",
+  "version": "1.15.0",
   "description": "Converts @weasel-js/diagram scenes to and from files: an interchange document every format reads and writes, and one page as an SVG document or a PNG image.",
   "license": "MIT",
   "type": "module",
@@ -37,12 +37,12 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/pdf": "1.14.2"
+    "@weasel-js/pdf": "1.15.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.14.2",
-    "@weasel-js/diagram": "1.14.2",
-    "@weasel-js/svg": "1.14.2"
+    "@weasel-js/core": "1.15.0",
+    "@weasel-js/diagram": "1.15.0",
+    "@weasel-js/svg": "1.15.0"
   },
   "publishConfig": {
     "access": "public",

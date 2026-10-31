@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/select",
-  "version": "1.14.2",
+  "version": "1.15.0",
   "description": "Selection as a value: which ids a press selects, with toggle, range and anchor rules a surface configures. No React, no DOM.",
   "license": "MIT",
   "type": "module",
@@ -16,7 +16,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/registry": "1.14.2"
+    "@weasel-js/registry": "1.15.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
