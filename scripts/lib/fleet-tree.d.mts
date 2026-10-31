@@ -8,11 +8,19 @@ export interface TreeMarker {
   select?: string[];
   /** The paths in `select` the branch adds or deletes. */
   reshaped?: string[];
+  /** When `select` holds the lockfile: the workspace directories its change touches, or null when it can reach any. */
+  lockScope?: string[] | null;
 }
 export interface BranchChanges {
   changed: string[];
   reshaped: string[];
+  /** What the run selects tests from: `changed`, with each scoped trigger replaced by its package's files. */
+  seed: string[];
 }
+interface Lockfile {
+  packages?: Record<string, { link?: boolean; resolved?: string } & Record<string, unknown>>;
+}
+export function lockScope(before: Lockfile, after: Lockfile): string[] | null;
 export interface TreeCheck {
   armed: boolean;
   commit: string | undefined;
@@ -34,10 +42,10 @@ export function fleetBranch(root: string, env: Record<string, string | undefined
 export function branchChanges(
   root: string,
   env: Record<string, string | undefined>,
-  opts: { triggers: string[] },
+  opts: { triggers: string[]; scoped?: string[] },
 ): BranchChanges | undefined;
 export function selection(
   root: string,
   env: Record<string, string | undefined>,
-  opts: { always: string[]; triggers: string[] },
+  opts: { always: string[]; triggers: string[]; scoped?: string[] },
 ): string[] | undefined;

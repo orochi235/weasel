@@ -5,8 +5,12 @@ fleet"). For anyone running or reading a fleet job.
 
 **On a branch, a fleet run tests only what the branch reaches.** The test files whose imports lead to
 a changed path run, and the gate runs all but the slow checks whose inputs the branch leaves alone
-(below); `main` and a bare commit run everything, and so does `--full`. A change to a manifest, a tsconfig, a setup file, or anything `vitest.config.ts` loads
-runs everything too — the `triggers` list there. A file read at build time rather than imported,
+(below); `main` and a bare commit run everything, and so does `--full`. A change to a root manifest or
+tsconfig, a setup file, or anything `vitest.config.ts` loads runs everything too — the `triggers` list
+there. A trigger one package owns — its `package.json`, a `tsconfig`, its vite or vitest config — runs
+that package's tests and its dependents' instead (`SCOPED` beside `triggers`), and so does a lockfile
+change that touches only workspace entries, such as a version bump; one that changes an external
+package runs everything. A file read at build time rather than imported,
 such as an icon definition a plugin generates from, selects nothing on a branch and is caught only by
 the full run on `main` after the merge. Add such a path to `triggers` once it has slipped through.
 A changed path is one the branch adds to local `main`, or to `origin/main` when that is newer: the

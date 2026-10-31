@@ -12,6 +12,7 @@ import {
   changedFiles,
   checkTree,
   fleetBranch,
+  lockScope,
   selection,
   stampReport,
   stepEnv,
@@ -250,7 +251,7 @@ describe('branchChanges', () => {
 
   it('is the changed paths and the ones the branch adds or deletes, relative', () => {
     marked({ reshaped: ['src/new.ts'] });
-    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, none)).toEqual({ changed: ['src/a.ts', 'src/new.ts'], reshaped: ['src/new.ts'] });
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, none)).toEqual({ changed: ['src/a.ts', 'src/new.ts'], reshaped: ['src/new.ts'], seed: ['src/a.ts', 'src/new.ts'] });
   });
 
   it('counts every changed path as reshaped for a marker that does not say', () => {
@@ -263,6 +264,69 @@ describe('branchChanges', () => {
     expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, { triggers: ['src/a.ts'] })).toBeUndefined();
     expect(branchChanges(root, { [COMMIT_ENV]: OTHER }, none)).toBeUndefined();
     expect(branchChanges(root, stepEnv({ [COMMIT_ENV]: COMMIT }), none)).toBeUndefined();
+  });
+});
+
+describe('scoped triggers', () => {
+  const marked = (select: string[], extra: object = {}) => put(MARKER, JSON.stringify({ commit: COMMIT, files: {}, select, ...extra }));
+  const opts = { triggers: ['**/package.json', 'package-lock.json', 'vitest.config.ts'], scoped: ['packages/*/package.json'] };
+
+  it("seeds a package's own files in place of its manifest, rather than running everything", () => {
+    put('packages/leaf/src/index.ts', 'x');
+    put('packages/leaf/src/deep/a.tsx', 'x');
+    put('packages/leaf/package.json', '{}');
+    put('packages/leaf/node_modules/dep/index.js', 'x');
+    put('packages/leaf/dist/index.js', 'x');
+    put('packages/other/src/index.ts', 'x');
+    marked(['packages/leaf/package.json', 'src/a.ts']);
+    const changes = branchChanges(root, { [COMMIT_ENV]: COMMIT }, opts);
+    expect(changes?.changed).toEqual(['packages/leaf/package.json', 'src/a.ts']);
+    expect(changes?.seed.sort()).toEqual(['packages/leaf/package.json', 'packages/leaf/src/deep/a.tsx', 'packages/leaf/src/index.ts', 'src/a.ts']);
+    expect(selection(root, { [COMMIT_ENV]: COMMIT }, { ...opts, always: [] })).toContain(join(root, 'packages/leaf/src/index.ts'));
+  });
+
+  it('still runs everything for a trigger no package owns', () => {
+    marked(['packages/leaf/package.json', 'vitest.config.ts']);
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, opts)).toBeUndefined();
+    marked(['package.json']);
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, opts)).toBeUndefined();
+  });
+
+  it('scopes the lockfile to the workspaces the marker says it touched, and runs everything when it says nothing', () => {
+    put('packages/ui/src/index.ts', 'x');
+    marked(['package-lock.json'], { lockScope: ['packages/ui'] });
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, opts)?.seed).toEqual(['packages/ui/src/index.ts']);
+    marked(['package-lock.json'], { lockScope: null });
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, opts)).toBeUndefined();
+    marked(['package-lock.json']);
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, opts)).toBeUndefined();
+  });
+});
+
+describe('lockScope', () => {
+  const lock = (packages: Record<string, object>) => ({ lockfileVersion: 3, packages });
+  const base = {
+    '': { name: 'root', workspaces: ['packages/*'] },
+    'packages/ui': { name: '@weasel-js/ui', version: '1.0.0', dependencies: { '@weasel-js/core': '1.0.0' } },
+    'packages/core': { name: '@weasel-js/core', version: '1.0.0' },
+    'node_modules/@weasel-js/ui': { resolved: 'packages/ui', link: true },
+    'node_modules/react': { version: '19.0.0' },
+  };
+
+  it('is the workspaces whose entries changed, when only workspace entries did', () => {
+    const after = { ...base, 'packages/ui': { ...base['packages/ui'], version: '1.0.1' }, 'packages/core': { ...base['packages/core'], version: '1.0.1' } };
+    expect(lockScope(lock(base), lock(after))).toEqual(['packages/core', 'packages/ui']);
+  });
+
+  it('follows a workspace link added or removed to the workspace it points at', () => {
+    const after = { ...base, 'node_modules/@weasel-js/core': { resolved: 'packages/core', link: true } };
+    expect(lockScope(lock(base), lock(after))).toEqual(['packages/core']);
+  });
+
+  it('is null when an external package or the root entry changed', () => {
+    expect(lockScope(lock(base), lock({ ...base, 'node_modules/react': { version: '19.1.0' } }))).toBeNull();
+    expect(lockScope(lock(base), lock({ ...base, 'packages/ui/node_modules/x': { version: '1.0.0' } }))).toBeNull();
+    expect(lockScope(lock(base), lock({ ...base, '': { name: 'root', devDependencies: { x: '1' } } }))).toBeNull();
   });
 });
 

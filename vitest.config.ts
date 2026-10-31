@@ -78,14 +78,18 @@ const TRIGGERS = [
   'packages/forge/src/vite/**',
   'packages/icons-plugin/**',
 ];
+// The triggers one workspace or app owns: a branch changing one runs that package's tests and its
+// dependents' instead of everything. No config here loads them; the root and `packages/` ones stay global.
+const SCOPED = ['packages/*/package.json', 'packages/*/tsconfig*.json', '{packages,apps}/*/{vitest,vite}.config.*', 'apps/*/tsconfig*.json'];
 // A branch's fleet run seeds vitest's `related` with what the branch changes, so only the test files
 // importing it run. Every path seeded counts as affected, which is how the gate project always runs;
 // the gate itself skips the slow checks whose inputs the branch leaves alone (`scripts/lib/gate-inputs.mjs`).
 const related = selection(import.meta.dirname, process.env, {
   always: readdirSync(join(import.meta.dirname, 'scripts')).filter((f) => f.endsWith('.gate.ts')).map((f) => `scripts/${f}`),
   triggers: TRIGGERS,
+  scoped: SCOPED,
 });
-const changes = branchChanges(import.meta.dirname, process.env, { triggers: TRIGGERS });
+const changes = branchChanges(import.meta.dirname, process.env, { triggers: TRIGGERS, scoped: SCOPED });
 
 export default defineConfig({
   plugins: [timeoutRetries(), devWatch()],

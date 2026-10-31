@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, matchesGlob } from 'node:path';
 
 /** Untracked and not ignored, so `onto test` sends it with the tree and the next sync cleans it away. */
@@ -71,19 +71,63 @@ export const checkTree = (root, env) => {
   return { armed: true, commit: marker.commit, checked: entries.length, problems };
 };
 
+const LOCKFILE = 'package-lock.json';
+const UNSOURCED = new Set(['node_modules', 'dist']);
+
+const filesUnder = (root, dir) =>
+  readdirSync(join(root, dir), { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => join(entry.parentPath, entry.name).slice(root.length + 1))
+    .filter((path) => !path.split('/').some((part) => UNSOURCED.has(part)));
+
 /**
- * What a branch run changes, as repo paths: `changed`, the marker's `select` list, and `reshaped`, the
- * ones in it the branch adds or deletes. Undefined, so everything runs, unless the marker carries that
- * list and is this run's, and when a listed path matches one of `triggers`.
+ * The workspace directories a lockfile change touches, from the `packages` maps before and after: null
+ * when it changes an external package or the root entry, which can reach any workspace.
  */
-export const branchChanges = (root, env, { triggers }) => {
+export const lockScope = (before, after) => {
+  const was = before.packages ?? {};
+  const now = after.packages ?? {};
+  const dirs = new Set();
+  for (const key of new Set([...Object.keys(was), ...Object.keys(now)])) {
+    if (JSON.stringify(was[key]) === JSON.stringify(now[key])) continue;
+    const link = now[key]?.link ? now[key] : was[key]?.link ? was[key] : undefined;
+    if (link) dirs.add(link.resolved);
+    else if (/^packages\/[^/]+$/.test(key)) dirs.add(key);
+    else return null;
+  }
+  return [...dirs].sort();
+};
+
+/**
+ * What a branch run changes, as repo paths: `changed`, the marker's `select` list, `reshaped`, the
+ * ones in it the branch adds or deletes, and `seed`, what the run selects tests from. Undefined, so
+ * everything runs, unless the marker carries that list and is this run's, and when a listed path
+ * matches one of `triggers`. A path matching `scoped` belongs to the workspace or app its first two
+ * segments name, and so does the lockfile when the marker's `lockScope` lists what it touched: in
+ * `seed` such a path is replaced by every file of what it belongs to, which reaches that package's
+ * tests and its dependents' without running everything.
+ */
+export const branchChanges = (root, env, { triggers, scoped = [] }) => {
   const at = join(root, MARKER);
   if (!existsSync(at)) return undefined;
   const marker = JSON.parse(readFileSync(at, 'utf8'));
   if (!Array.isArray(marker.select) || env[STEP_ENV] || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
   const changed = marker.select;
-  if (changed.some((path) => triggers.some((glob) => matchesGlob(path, glob)))) return undefined;
-  return { changed, reshaped: Array.isArray(marker.reshaped) ? marker.reshaped : changed };
+  const scopeOf = (path) => {
+    if (path === LOCKFILE) return Array.isArray(marker.lockScope) ? marker.lockScope : undefined;
+    return scoped.some((glob) => matchesGlob(path, glob)) ? [path.split('/').slice(0, 2).join('/')] : undefined;
+  };
+  const dirs = new Set();
+  const direct = [];
+  for (const path of changed) {
+    const scope = scopeOf(path);
+    if (scope) scope.forEach((dir) => dirs.add(dir));
+    else if (triggers.some((glob) => matchesGlob(path, glob))) return undefined;
+    else direct.push(path);
+  }
+  const owned = [...dirs].filter((dir) => existsSync(join(root, dir))).flatMap((dir) => filesUnder(root, dir));
+  const seed = [...new Set([...direct, ...owned])];
+  return { changed, reshaped: Array.isArray(marker.reshaped) ? marker.reshaped : changed, seed };
 };
 
 /** The branch a fleet run tests, when the marker is this run's and names one other than main. */
@@ -96,9 +140,9 @@ export const fleetBranch = (root, env) => {
 };
 
 /** The paths a branch run limits the suite to, absolute, for vitest's `related`: `branchChanges` plus `always`. */
-export const selection = (root, env, { always, triggers }) => {
-  const changes = branchChanges(root, env, { triggers });
-  return changes && [...changes.changed, ...always].map((path) => join(root, path));
+export const selection = (root, env, { always, triggers, scoped }) => {
+  const changes = branchChanges(root, env, { triggers, scoped });
+  return changes && [...changes.seed, ...always].map((path) => join(root, path));
 };
 
 /**

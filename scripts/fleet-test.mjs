@@ -19,7 +19,7 @@
  */
 import { fileURLToPath } from 'node:url';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
-import { armTree, changedFiles } from './lib/fleet-tree.mjs';
+import { armTree, changedFiles, lockScope } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -60,9 +60,12 @@ try {
   const reshaped = branchRun
     ? git('diff', '--name-only', '--no-renames', '--diff-filter=AD', '-z', newer, commit).split('\0').filter(Boolean)
     : undefined;
-  armTree(tree, { commit, branch: branch || undefined, files, select, reshaped }, { plan: true });
+  const lockAt = (ref) => JSON.parse(git('show', `${ref}:package-lock.json`));
+  const locked = select?.includes('package-lock.json') ? lockScope(lockAt(newer), lockAt(commit)) : undefined;
+  armTree(tree, { commit, branch: branch || undefined, files, select, reshaped, ...(locked !== undefined && { lockScope: locked }) }, { plan: true });
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
   if (select) console.log(`fleet-test: selecting from the ${select.length} path(s) the branch changes against ${newer.slice(0, 9)}`);
+  if (locked !== undefined) console.log(`fleet-test: the lockfile change reaches ${locked ? locked.join(', ') || 'no workspace' : 'external packages, so everything runs'}`);
   console.log(
     select
       ? "fleet-test: running the tests the branch reaches, or all of them if it changes one of vitest.config.ts's triggers; --full runs them all"
