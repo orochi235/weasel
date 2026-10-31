@@ -32,7 +32,8 @@ function sectionOf(spec: SectionSpec): PrefSection {
 
 /** `out` with `extra`'s defined entries set on it. */
 function withExtras<T extends object>(out: T, extra: Record<string, unknown>): T {
-  for (const [k, v] of Object.entries(extra)) if (v !== undefined) (out as Record<string, unknown>)[k] = v;
+  for (const [k, v] of Object.entries(extra))
+    if (v !== undefined) (out as Record<string, unknown>)[k] = v;
   return out;
 }
 
@@ -62,12 +63,28 @@ function groupOf(resolved: ResolvedConfig, group: PrefGroup, path: string): Pref
   const { children: _children, name, description, showIf, enableIf, as, overflow } = group;
   const children = membersOf(resolved, group, path);
   const leaf = withExtras(
-    { kind: 'object', name, description: description ?? '', default: defaultsOf(children), children },
-    { showIf, enableIf, showWhen: resolved.showIf.get(path), enableWhen: resolved.enableIf?.get(path) },
+    {
+      kind: 'object',
+      name,
+      description: description ?? '',
+      default: defaultsOf(children),
+      children,
+    },
+    {
+      showIf,
+      enableIf,
+      showWhen: resolved.showIf.get(path),
+      enableWhen: resolved.enableIf?.get(path),
+    },
   );
   const look = withExtras(
     {},
-    { as, overflow, resettable: resolved.resettable?.has(path) || undefined, motif: resolved.motifs?.get(path) },
+    {
+      as,
+      overflow,
+      resettable: resolved.resettable?.has(path) || undefined,
+      motif: resolved.motifs?.get(path),
+    },
   );
   return { ...(leaf as PrefObject), group: look } as PrefLeaf;
 }

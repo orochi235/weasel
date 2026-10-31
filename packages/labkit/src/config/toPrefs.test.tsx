@@ -35,7 +35,10 @@ describe('prefsFromConfig', () => {
     const grid = prefs.members.grid as PrefSection;
     expect(grid.name).toBe('Grid');
     expect(Object.keys(grid.members)).toEqual(['showGrid', 'cell']);
-    const view = prefs.members.view as PrefLeaf & { children: Record<string, unknown>; group: unknown };
+    const view = prefs.members.view as PrefLeaf & {
+      children: Record<string, unknown>;
+      group: unknown;
+    };
     expect(view.kind).toBe('object');
     expect(view.group).toEqual({ resettable: true });
     expect(Object.keys((view.children.camera as PrefSection).members)).toEqual(['zoom']);
@@ -63,7 +66,8 @@ describe('a sectioned config in PrefSchemaEditor', () => {
     renderWithIcons(<Live />);
     const tree = screen.getByRole('tree', { name: 'Schema structure' });
     const row = (id: string) => tree.querySelector(`[data-tree-id="${id}"]`);
-    for (const id of ['grid', 'grid/showGrid', 'grid/cell', 'tint', 'view']) expect(row(id)).not.toBeNull();
+    for (const id of ['grid', 'grid/showGrid', 'grid/cell', 'tint', 'view'])
+      expect(row(id)).not.toBeNull();
   });
 
   it('exports its sections, conditions, renderers, and dialog rows', async () => {

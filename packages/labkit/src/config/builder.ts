@@ -1,4 +1,10 @@
-import type { PrefCondition, PrefGroup, PrefLeaf, PrefNumberUnit, PrefSection } from '@weasel-js/prefs';
+import type {
+  PrefCondition,
+  PrefGroup,
+  PrefLeaf,
+  PrefNumberUnit,
+  PrefSection,
+} from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { BaseNode, conditioned } from './baseNode';
@@ -354,6 +360,8 @@ export const f = {
     options: { over?: PrefGroup | PrefSection } = {},
   ): ConfigSchema<InferConfig<S>> {
     const defaults = () => shapeDefaults(nodes) as InferConfig<S>;
-    return options.over === undefined ? { nodes, defaults } : { nodes, defaults, over: options.over };
+    return options.over === undefined
+      ? { nodes, defaults }
+      : { nodes, defaults, over: options.over };
   },
 };

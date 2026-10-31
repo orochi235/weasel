@@ -28,7 +28,13 @@ const encoded = (leaf: PrefLeaf): boolean =>
 /** The options `prefsFromConfig` put on a node beside its prefs fields, and those fields without them. */
 function optionsOn(node: Record<string, unknown>): [Record<string, unknown>, NodeOptions] {
   const { render, dialog, showWhen, enableWhen, autoResolve, ...rest } = node;
-  const options: Record<string, unknown> = { render, dialog, showIf: showWhen, enableIf: enableWhen, autoResolve };
+  const options: Record<string, unknown> = {
+    render,
+    dialog,
+    showIf: showWhen,
+    enableIf: enableWhen,
+    autoResolve,
+  };
   for (const k of Object.keys(options)) if (options[k] === undefined) delete options[k];
   return [rest, options as NodeOptions];
 }
@@ -36,7 +42,12 @@ function optionsOn(node: Record<string, unknown>): [Record<string, unknown>, Nod
 function nodeOf(leaf: PrefLeaf, given: NodeOptions): ConfigNode {
   const [fields, own] = optionsOn(leaf as unknown as Record<string, unknown>);
   const { kind, default: def, ...annotations } = fields as PrefLeaf & Record<string, unknown>;
-  return { kind, default: def, annotations: annotations as Annotations, options: { ...given, ...own } };
+  return {
+    kind,
+    default: def,
+    annotations: annotations as Annotations,
+    options: { ...given, ...own },
+  };
 }
 
 /** What `prefsFromConfig` marks a group's `object` leaf with: the branch fields a leaf has none for. */
@@ -49,13 +60,23 @@ interface GroupLook {
 
 const lookOf = (leaf: PrefLeaf): GroupLook | undefined => {
   const { group } = leaf as { group?: unknown };
-  return leaf.kind === 'object' && typeof group === 'object' && group !== null ? (group as GroupLook) : undefined;
+  return leaf.kind === 'object' && typeof group === 'object' && group !== null
+    ? (group as GroupLook)
+    : undefined;
 };
 
 /** A section's heading, with what `prefsFromConfig` kept of it beside its prefs fields. */
 function sectionOption(section: PrefSection): SectionOption {
-  const { collapsed, layout, pack, className, frame } = section as PrefSection & Omit<SectionOption, 'label' | 'motif'> & { frame?: SectionOption['motif'] };
-  const out: Record<string, unknown> = { label: section.name, collapsed, layout, pack, className, motif: frame };
+  const { collapsed, layout, pack, className, frame } = section as PrefSection &
+    Omit<SectionOption, 'label' | 'motif'> & { frame?: SectionOption['motif'] };
+  const out: Record<string, unknown> = {
+    label: section.name,
+    collapsed,
+    layout,
+    pack,
+    className,
+    motif: frame,
+  };
   for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k];
   return out as unknown as SectionOption;
 }
@@ -116,7 +137,14 @@ function branchOf(
 ): ConfigBranch {
   const [fields, own] = optionsOn(leaf as unknown as Record<string, unknown>);
   const { name, description, showIf, enableIf } = fields as unknown as PrefObject;
-  const annotations: Record<string, unknown> = { name, description: description || undefined, showIf, enableIf, as: look.as, overflow: look.overflow };
+  const annotations: Record<string, unknown> = {
+    name,
+    description: description || undefined,
+    showIf,
+    enableIf,
+    as: look.as,
+    overflow: look.overflow,
+  };
   for (const k of Object.keys(annotations)) if (annotations[k] === undefined) delete annotations[k];
   const options: BranchOptions = { ...given, ...own };
   if (look.resettable) options.resettable = true;
@@ -126,12 +154,19 @@ function branchOf(
 
 /** `members` as a config shape, each key under `at`: whole dotted paths at the top, a key relative to its group's
  *  `object` leaf below it. Each leaf holding a value goes in `leaves` at its path. */
-function shapeOf(members: PrefSection['members'], at: string, leaves: Array<[string, PrefLeaf]>): OpenShape {
+function shapeOf(
+  members: PrefSection['members'],
+  at: string,
+  leaves: Array<[string, PrefLeaf]>,
+): OpenShape {
   const shape: OpenShape = {};
   const add = (key: string, leaf: PrefLeaf, options: NodeOptions): void => {
     const path = at === '' ? key : `${at}.${key}`;
     const look = lookOf(leaf);
-    if (look) return place(shape, key, branchOf(leaf as PrefObject, look, options, path, leaves));
+    if (look) {
+      place(shape, key, branchOf(leaf as PrefObject, look, options, path, leaves));
+      return;
+    }
     place(shape, key, nodeOf(leaf, options));
     leaves.push([path, leaf]);
   };

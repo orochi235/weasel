@@ -15,7 +15,10 @@ const flag = (name: string, def: boolean): PrefLeaf =>
 // The app's preferences: the schema the instrument's config is drawn over.
 const prefs: PrefGroup = {
   name: 'Preferences',
-  children: { on: flag('On', true), view: { name: 'View', children: { grid: flag('Show grid', true) } } },
+  children: {
+    on: flag('On', true),
+    view: { name: 'View', children: { grid: flag('Show grid', true) } },
+  },
 };
 
 const seen: { on?: unknown; tight?: unknown } = {};
