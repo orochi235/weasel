@@ -11,7 +11,16 @@ import { createScene, SceneCanvas } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext } from 'react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 import { LabStoreContext } from '../state/context';
@@ -66,9 +75,9 @@ function Body({ withCanvas }: { withCanvas: boolean }) {
   const orbit = useTrialOrbit();
   return (
     <>
-      <div className="pane" ref={orbit?.viewportRef} />
+      <div className="lk-test-pane" ref={orbit?.viewportRef} />
       {withCanvas ? (
-        <div className="diagram">
+        <div className="lk-test-diagram">
           <SceneCanvas scene={diagram} viewport={{}} width={200} height={100} />
         </div>
       ) : null}
@@ -81,7 +90,10 @@ const orbitOnly = (withCanvas: boolean) =>
     name: withCanvas ? 'WithCanvas' : 'Bare',
     defaultConfig: () => ({}),
     initialState: () => ({}),
-    orbit: { initialView: { distance: 20, pitch: 0.4 }, limits: { minDistance: 2, maxDistance: 80 } },
+    orbit: {
+      initialView: { distance: 20, pitch: 0.4 },
+      limits: { minDistance: 2, maxDistance: 80 },
+    },
     render: () => <Body withCanvas={withCanvas} />,
   });
 
@@ -100,7 +112,7 @@ async function mount(withCanvas: boolean) {
     { wrapper: withIcons },
   );
   const view = () => as3DView(store?.getState().trials[0]?.view);
-  const orbitHost = out.container.querySelector('.pane') as HTMLElement;
+  const orbitHost = out.container.querySelector('.lk-test-pane') as HTMLElement;
   return { ...out, view, orbitHost };
 }
 
@@ -122,11 +134,13 @@ describe('an orbit-only trial', () => {
   it('keeps a scene canvas inside it out of the camera’s gestures', async () => {
     const { view, orbitHost, container } = await mount(true);
     expect(conflicts()).toEqual([]);
-    const canvas = container.querySelector('.diagram canvas') as HTMLElement;
+    const canvas = container.querySelector('.lk-test-diagram canvas') as HTMLElement;
     const before = view()!;
     act(() => drag(canvas));
     await act(async () => {
-      canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 200 }));
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 200 }),
+      );
     });
     expect(view()).toEqual(before);
     act(() => drag(orbitHost));
