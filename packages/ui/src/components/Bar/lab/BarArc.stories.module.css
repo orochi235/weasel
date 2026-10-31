@@ -3,7 +3,7 @@
   position: relative;
   width: var(--box);
   height: var(--box);
-  outline: 1px dashed var(--wzl-border);
+  outline: 1px dotted var(--wzl-border);
   outline-offset: -1px;
   border-radius: 50%;
   margin: var(--wzl-space-8);
