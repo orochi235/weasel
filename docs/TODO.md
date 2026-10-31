@@ -36,6 +36,8 @@ Owner tags, after the priority (2026-10-26):
   start a real OS drag, so the ghost has not been seen: check that it follows the pointer, clears on Esc, on
   leave and on drop, and looks right in WeaselDraw. A handler-supplied ghost (a handler naming its own
   preview size or shape per MIME) is not built.
+  Closes when the maintainer has watched a real OS drag in WeaselDraw and the ghost follows the
+  pointer, clears on Esc, on leave and on drop, and looks right.
 
 - **(P3) [maintainer] The image and SVG drop handlers could leave core.** `kitImageHandler` /
   `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in
@@ -44,8 +46,10 @@ Owner tags, after the priority (2026-10-26):
   canvas's own content runs through them. Moving them makes a file drop do nothing on a bare
   `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
   2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
+  Closes when the maintainer revisits the 2026-10-11 ruling: the handlers move to an `images` package,
+  or he keeps them in core and this entry is deleted.
 
-- **(P3) [recheck] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
+- **(P3) [maintainer] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
   the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
   PaletteLab's page *is* the shell body, and the `#/theme` workbench beside it is a second bare
@@ -53,6 +57,8 @@ Owner tags, after the priority (2026-10-26):
   with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
+  Closes when the maintainer has ruled whether labkit supports a lab with no trials, and
+  `apps/theme-editor` either runs as a `<Lab>` or the ruling keeps it a bare `LabShell`.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -60,6 +66,8 @@ Owner tags, after the priority (2026-10-26):
   with a hand-sent event (`useGestureDispatcher.nativeLongPress.test.tsx`). Left: hold a finger on
   a canvas with a `contextMenu` binding in Android Chrome and confirm one menu, and that the event
   really arrives while the pointer is still held rather than after a `pointercancel`.
+  Closes when a held finger on a canvas with a `contextMenu` binding in Android Chrome opens exactly
+  one menu, with the event arriving before any `pointercancel`.
 
 - **(P3) [maintainer] AltGr matching is unchecked in a real browser.** The keyboard channel
   (`packages/routing/src/interactions/dispatcher/channels/keyboard.ts`) dispatches the chord as
@@ -67,6 +75,8 @@ Owner tags, after the priority (2026-10-26):
   without Ctrl and Alt. Only jsdom has seen it. Left to check on Windows, with a layout that has
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
+  Closes when, on Windows with an AltGr layout, Chrome and Firefox both type the AltGr character and a
+  plain Ctrl+Alt+letter still runs its chord binding.
 
 ### Cursor package follow-ups
 
@@ -78,6 +88,8 @@ Owner tags, after the priority (2026-10-26):
   run drew the crosshair even for the arrow — with the page frontmost, over HTTP (`--page http`) as
   well as `data:`, stepping by reload as well as by hash. Safari's cursor is not following the page
   under this driver, and why is the open question. A finding lands in `bake.ts`.
+  Closes when two Safari probe runs in a row draw each case's own cursor and the reading is recorded in
+  the probe README and `bake.ts`, or on 2027-01-31 with no driver Safari's cursor follows, delete it.
 
 ---
 
@@ -85,23 +97,35 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [maintainer] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it would change the output of saved documents.
+  Closes when the maintainer rules on it: Repeat Along moves onto `placeAlongRun` and saved output
+  changes, or it keeps its own semantics and this entry is deleted.
 
 - **(P3) [maintainer] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
   Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is Mike's call.
+  Closes when the maintainer has ruled whether `bendAlongPath` measures its spine with `keepCorners`,
+  and the code does what he ruled.
 
-- **(P3) [recheck] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
+- **(P3) [maintainer] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
+  Closes when the maintainer has ruled whether path edit lights a text-along effect's text, and the
+  code does what he ruled.
 
 ### Path editing tricks
 
 - **(P1) [maintainer] Rename the path tools the maintainer deferred to the end of the adoption pass.**
   Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. They live in
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
+  Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
+  Envelope mesh as Cloth warp among them.
 - **(P2) [maintainer] Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
   audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
   applies, and how it shows what it will remove (`packages/path-tools/src/simplifyBrush/simplifyBrush.ts`).
+  Closes when the maintainer has driven the Simplify brush hands-on and the defaults and keys he picks
+  are committed.
 - **(P2) [maintainer] Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
   scale and density, when it shows, and no key to toggle it (`packages/path-tools/src/comb/comb.ts`).
+  Closes when the maintainer has driven the curvature comb hands-on and the defaults and keys he picks
+  are committed.
 - **(P2) [maintainer] Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
@@ -110,32 +134,46 @@ Owner tags, after the priority (2026-10-26):
   them on a press (`packages/path-tools/src/balance/balanceMarks.ts`). Off by
   default under `path-edit.balance`, with no key to show it, and Equalize handles has only the
   grip's double-click (`apps/site/demos/BalanceHandlesLabDemo.tsx`).
+  Closes when the maintainer has driven Balance handles hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
+  Closes when the maintainer has driven handle locks hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
   `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Alt+J binding
   it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
+  Closes when the maintainer has driven Bridge hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
   it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
   selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
   `packages/path-tools/src/harmonize/harmonize.tsx`). It has no key of its own; its lab tunes H onto it,
   which the Hand tool also answers wherever that tool is mounted
   (`apps/site/demos/HarmonizeLabDemo.tsx`).
+  Closes when the maintainer has driven Harmonize curvature hands-on and the defaults and keys he picks
+  are committed.
 - **(P2) [maintainer] Tune anchor selection along the path hands-on, with the maintainer driving.**
   First-draft behavior and keys: `]` grows and `[` shrinks by one anchor, Alt+N selects every Nth
   (N defaults to 2, counted from the first selected anchor, with no UI for N outside the lab's
   `tune`), Alt+C corners, Alt+M smooth anchors, and Alt+I the complement; grow and shrink stay
   within a subpath, and none of them is an undo step
   (`packages/path-tools/src/anchorSelect/anchorSelect.ts`, `packages/geom/src/paths/anchorSelection.ts`).
+  Closes when the maintainer has driven anchor selection along the path hands-on and the defaults and
+  keys he picks are committed.
 - **(P2) [maintainer] Tune Resample hands-on, with the maintainer driving.** First-draft behavior: no key,
   driven only as an ongoing action; a count of 0 keeps the path's anchor count, corners are held
   by default, the refit tolerance is 0.5 and a piece that misses it is halved up to six times, so
   the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
   `packages/geom/src/paths/resamplePath.ts`).
+  Closes when the maintainer has driven Resample hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune Add extremes hands-on, with the maintainer driving.** First-draft behavior and key:
   Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
   is, so a selection reaching no whole segment does nothing; the new anchors join the selection
   (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
+  Closes when the maintainer has driven Add extremes hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
   a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
   within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
@@ -146,19 +184,27 @@ Owner tags, after the priority (2026-10-26):
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
+  Closes when the maintainer has driven corner shape hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
+  Closes when the maintainer has driven Blend, Bend along a path, and Repeat along a path hands-on and
+  the defaults and keys he picks are committed.
 - **(P2) [maintainer] Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
   screen px, `DEFAULT_STROKE_REACH_PX` in `packages/path-tools/src/shared/scenePaths.ts`), the preview's look (the
   `cut` overlay role's red dash at width 3, `packages/path-tools/src/trim/piecePreview.ts`), and its tool key,
   Y (`packages/path-tools/src/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
+  Closes when the maintainer has driven Trim segment hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
   (the same 6 screen px as Trim segment, `packages/path-tools/src/shared/scenePaths.ts`), that a curved end grows a
   straight run rather than following its curvature (`lengthenOpenEnd`, which is Lengthen's
   `lengthenPathEnd` in tangent mode, `packages/geom/src/paths/lengthenPathEnd.ts`), no preview of where an end will land, its tool key, U
   (`packages/path-tools/src/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
+  Closes when the maintainer has driven Extend to next path hands-on and the defaults and keys he picks
+  are committed.
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
   tool toggle has no key; a plain drag grows along the end tangent and Shift along the end
   curvature (the `mode` param flips which); a curvature arc stops at a full turn, and a trim always
@@ -167,11 +213,15 @@ Owner tags, after the priority (2026-10-26):
   before it starts, and the end anchor is left selected after a drag
   (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `path-tools:lengthen`, has
   not been proofed large.
+  Closes when the maintainer has driven Lengthen hands-on, the defaults and keys he picks are
+  committed, and `path-tools:lengthen` has been proofed large.
 - **(P2) [maintainer] Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
   third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
   reached outside the lab, and its tool key, S (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
+  Closes when the maintainer has driven the Smudge brush hands-on and the defaults and keys he picks
+  are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
   keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
   Shift+C through `tune`), and which kind C adds is a param with no UI outside the lab
@@ -182,50 +232,70 @@ Owner tags, after the priority (2026-10-26):
   yields to the rest (`HELD_MOBILITY` in `packages/geom/src/constraints/solve.ts`); and that the
   whole-path commands drop the list rather than keep what still applies
   (`pathCommands/pathNodes.ts`).
+  Closes when the maintainer has driven path constraints hands-on and the defaults and keys he picks
+  are committed.
 - **(P2) [maintainer] Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
   corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
   new distort starts Free rather than Perspective, the refit tolerance (0.5,
   `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), and its tool key, F
   (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
   name may change.
+  Closes when the maintainer has driven Perspective and free distort hands-on and the defaults and keys
+  he picks are committed.
 - **(P2) [maintainer] Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
   mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
   through `configureWarp`, and its tool key, Shift+F beside Distort's F, since draw's crop mode holds C
   (`packages/path-tools/src/warp/useWarpTool.ts`).
+  Closes when the maintainer has driven Envelope mesh hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
   400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
   (`ARAP_ROUNDS` and `ARAP_INJECTIVE_ROUNDS` in `packages/geom/src/warp/arap.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
+  Closes when the maintainer has driven Puppet warp hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
+  Closes when the maintainer has driven draw's Symmetry toggle hands-on and the defaults and keys he
+  picks are committed.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
   readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
+  Closes when the maintainer has driven the Measure tool hands-on and the defaults and keys he picks
+  are committed.
 - **(P2) [maintainer] Tune path start and direction hands-on, with the maintainer driving.** First-draft
   behavior and keys: `setPathStart` and `reversePath` have no default keys, an open subpath's
   interior anchor cannot become its start, and the direction marks' look (a 9 px orange arrow per
   segment and an 8 px start ring, `DIRECTION_DEFAULTS`), off by default under
   `path-edit.direction` with draw's View toggle as the only switch
   (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathDirection.ts`).
+  Closes when the maintainer has driven path start and direction hands-on and the defaults and keys he
+  picks are committed.
 - **(P2) [maintainer] Tune segment type hands-on, with the maintainer driving.** First-draft behavior and keys:
   a curved segment's handles start at its thirds, Shift+C with no `to` flips the lot by whether
   any is straight, and Shift+double-click flips one segment
   (`packages/path-tools/src/segmentType/convertSegments.ts`). Shift+C is also what the path
   constraints lab tunes onto `unconstrainAnchors`.
+  Closes when the maintainer has driven segment type hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune anchor fields hands-on, with the maintainer driving.** First-draft behavior: the
   panel shows X and Y for any selection and handles only for a lone anchor, a typed handle mirrors
   on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
   top of Properties in points (`packages/ui/src/components/AnchorFields/`,
   `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
+  Closes when the maintainer has driven anchor fields hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune the Girth tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
   and Alt-click clearing a width point; and whether a press between anchors should insert one
   (`packages/path-tools/src/girth/`).
+  Closes when the maintainer has driven the Girth tool hands-on and the defaults and keys he picks are
+  committed.
 - **(P2) [maintainer] Tune snapping hands-on, with the maintainer driving.** First-draft behavior: one
   `targets.snapPx` reach of 8; every canvas snapping point gestures to other nodes' anchors through
   a default `'path-snap'` source; every path kind on, `nearest` included, once a consumer registers
@@ -233,13 +303,20 @@ Owner tags, after the priority (2026-10-26):
   suspend; and that draw turns on the grid, measurement ends and anchors but not the other path kinds
   ([`docs/snapping.md`](./snapping.md), `packages/core/src/domains/snap/`,
   `packages/core/src/domains/paths/pathSnap/`).
-- **(P3) [recheck] Are the snap readout's drawing helpers public API?** Decision for the maintainer
+  Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
+  committed.
+- **(P3) [maintainer] Are the snap readout's drawing helpers public API?** Decision for the maintainer
   (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
   public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
   which `audit:jsdoc` treats as a sibling-package surface.
-- **(P3) [recheck] WeaselDraw binds no constraint action.** It needs keys or a bar group for
+  Closes when the maintainer has ruled, and `tickedSegment`, `pillCommands` and
+  `measuredSegmentCommands` either stay on core's barrel as designed surface or have moved to an
+  `internal` entry.
+- **(P3) [agent] WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
+  Closes when WeaselDraw runs `constrainAnchors` and `unconstrainAnchors` from keys or a bar group,
+  each with an icon of its own.
 
 ## Rendering & paint
 
