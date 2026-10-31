@@ -4,6 +4,7 @@
 "@weasel-js/core": patch
 "@weasel-js/path-tools": patch
 "@weasel-js/ui": patch
+"@weasel-js/icons-plugin": patch
 ---
 
 Path edit's tools are ordinary tools, and a mode can name the tool it starts on.
@@ -17,8 +18,9 @@ includes them), each carrying `edits-anchors`. Their bindings sit at the active 
 editing's ambient drags; a Lengthen drag on an anchor that is no open end falls through to moving it.
 
 `ModeDefinition.defaultTool` names the tool a mode starts on: entering the mode activates it, leaving restores the
-tool active at entry, and Escape with another tool on returns to it (`tool.modeDefault`, on the hotkey tier) before
-a mode shortcut's `exit` leaves. `PATH_EDIT` names core's new `anchors` tool (key A, glyph `core:anchors`), which the
+tool active at entry, and Escape with another tool on returns to it before a second Escape leaves: a mode shortcut's
+`exit` and `cancel` and core's `exitPathEdit` each call `returnToModeDefault` first, reading the new `modeDefaultTool`
+dep `<SceneCanvas>` sources. `PATH_EDIT` names core's new `anchors` tool (key A, glyph `core:anchors`), which the
 `pathEdit` preset mounts and `ANCHOR_TOOLS` names; it binds nothing and holds path edit's active slot. The pointer
 cursor over an anchor or handle is now `editAnchors`' own `cursor`, so a path-edit tool's cursor shows there.
 
@@ -28,3 +30,8 @@ between `always` and `never`, and come with the preset that draws it.
 
 `ToolPalette` takes `ineligible: 'dim' | 'hide'`, default `dim`; `hide` leaves out every tool the current mode does
 not allow. The Girth tool's palette group is now `path`, beside Trim, Extend, and the Smudge brush.
+
+In the dev server and under vitest, `weaselIcons` in app mode stops looking for tables at the nearest workspace root
+above the app, and reads that workspace's packages' source tables. It used to walk on into an enclosing checkout's
+`node_modules` (a git worktree sits inside its main checkout), so a worktree served that checkout's glyphs: a glyph
+added on the branch drew as "?", and one redrawn there drew as before.

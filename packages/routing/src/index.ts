@@ -47,6 +47,9 @@ export interface DepSchema {
   dispatchTrace?: import('./interactions/dispatcher/dispatchTrace').DispatchTrace;
   /** The keymaps open on the canvas: what a leader opens and a hint reads. */
   keymaps?: import('./keymaps/keymapStack').KeymapStack;
+  /** The tool the active mode starts on (`ModeDefinition.defaultTool`), when the canvas mounts it;
+   *  else null. `<SceneCanvas>` sources it. */
+  modeDefaultTool?: () => string | null;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -198,6 +201,7 @@ export type {
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
+export { returnToModeDefault } from './tools/returnToModeDefault';
 export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas } from './tools/toolSet';
 export type { ToolSet, ToolEntry } from './tools/toolSet';
 export { isTool } from './tools/types';

@@ -17,6 +17,7 @@ import { useDeviceProfile } from '../../core/device/useDeviceProfile';
 import { useTestHook } from '../../test-hook/useTestHook';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { ChromeRulesDep } from '../deps/chromeRules';
+import { useModeDefaultToolDepSource } from '../deps/modeDefaultTool';
 import { useHitObserver } from '../useHitObserver';
 import type { CanvasViewState } from '../useCanvasView';
 import { GeometryProjectionRegistrar, ResizePolicyRegistrar } from './poseRegistrars';
@@ -106,6 +107,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   }, []);
   usePointerPublisher(canvas.elementRef, canvas.apiRef);
   useDepSource('chromeRules', () => chrome.chromeRules);
+  useModeDefaultToolDepSource(props.modes, p.tools.tools);
   useSceneStandardActions({
     props, viewOn: p.viewOn,
     selection, enteredGroup: picking.enteredGroup, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,
