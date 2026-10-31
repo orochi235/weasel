@@ -46,10 +46,17 @@ cannot express" wants a registered paint kind (`testing/ownDrawPaint.ts` in the
 renderer), or for a solid that draws for itself an even-odd fill too costly to
 resolve (`testing/stencilledEvenOdd.ts`; every other even-odd fill batches since
 2026-10-31), and should count draws to pin that premise. Tests written against the old
-behavior went on passing for the wrong reason, twice. A clip or an aligned stroke
-reaching for the stencil wants a shape that is not convex: a convex clip is cut on
-the CPU wherever the shader decides no hulls, and an aligned stroke on a convex
-fill everywhere (since 2026-10-31).
+behavior went on passing for the wrong reason, twice. A clip reaching for the
+stencil wants one that is curved, not convex, or of more than 8 edges: a convex clip
+is cut on the CPU wherever the shader decides no hulls. An aligned stroke reaching
+for it wants per-vertex colors or a fill that draws through the stencil itself
+(`stencilledEvenOdd`): on any other fill it is cut on the CPU, to a convex fill's
+outline or to the triangles of any other (`draw/triangleCut.ts`, both since
+2026-10-31), unless that cut would pass `MAX_TRIANGLE_CUT_WORK`. Beyond those, a run
+ends at a sixteenth texture, a ninth color matrix, nested convex clips past 16
+planes on a target without hulls (past 8 facing ways where the shader decides
+them), a mesh past the vertex cap (`meshBatching`), a custom shader command, and a
+registered paint kind (`registerPaintDrawKind`).
 
 **A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
 disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any

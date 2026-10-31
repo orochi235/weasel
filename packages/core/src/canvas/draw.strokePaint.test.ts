@@ -93,6 +93,8 @@ describe('renderer — non-solid stroke paint', () => {
    *  which at clip depth 0 disables the stencil test outright — the stroke
    *  then paints at double width, centred, and nothing throws. */
   it('keeps the alignment stencil test for a gradient ribbon', () => {
+    // Off, an aligned stroke is cut on the CPU rather than stencilled.
+    Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
     for (const [align, keepRef] of [['inner', 0x01], ['outer', 0x00]] as const) {
       render({ width: 10, align, paint: GRADIENT });
       const draws = statesAtDraws(recorder);

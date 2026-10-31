@@ -43,57 +43,6 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) [agent] What still breaks the batch: a clip or an aligned stroke that is not convex.** Staged
-  quads are cut on the CPU to an axis-aligned rect clip (`batchClip.ts`), and, where the batch shader
-  decides no hulls, to a convex clip's half-planes; an aligned stroke on a convex fill is cut to its
-  side of the fill (`draw/alignedRibbon.ts`); an even-odd fill whose outlines cross or touch is
-  resolved into rings (`resolveEvenOdd`, `@weasel-js/geom/tessellate`).
-
-  - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`, 2026-10-17: 21.41), and 17.4 of it
-    goes when the vertex `bufferSubData` is dropped, leaving 3.4 for the bind and the draw. No other
-    call in `flushBatch` moves it by more than 0.4 us. What still ends a run, as of 2026-10-31: a
-    sixteenth texture, a ninth color matrix, a clip that is curved, not convex, or of more than 8
-    edges, nested convex clips past 16 planes between them on a target without hulls (past 8 facing
-    ways where the shader decides them), an inside- or outside-aligned stroke on a fill that is not
-    one convex ring or that carries per-vertex colors, an even-odd fill whose crossings would cost
-    more than `MAX_EVENODD_RESOLVE_WORK` to resolve, a mesh past the vertex cap (`meshBatching`), a
-    custom shader command, and a registered paint kind (`registerPaintDrawKind`).
-  - **The three that left the stencil on 2026-10-31**, msb-uai (Apple M3 Max), `clip-cost` and
-    `transition-matrix` timed against bab3c623e in ABBA order, the two passes of each side shown
-    (`tests/perf/recorded/batch-breakers-2026-10-31/`, `digest.py` there):
-
-    | what | before | after |
-    |---|---:|---:|
-    | a slanted convex clip on the multisampled canvas, us a clip | 41.90–43.19 | -0.05–0.08 |
-    | a turned rect across a rect clip there, us a clip | 18.03–24.46 | 2.61–2.63 |
-    | an inner stroke on a turned quad over a centered one, us a stroke | 21.31–28.37 | 0.55–0.58 |
-    | an even-odd ring a contour of no area touches, us a command | 6.06–8.00 | 0.72–0.84 |
-    | that ring beside a solid, us a boundary | 14.16–17.73 | 0.06–0.11 |
-
-    Each of the first four frames fell from 1536 draws to 1. A cut point on a slanted edge is not
-    one the rasterizer can hold, so a pixel center or sample within its snapping distance of a cut
-    edge can land the other way from the stencil's; `planeClip.browser.test.ts` and
-    `alignedStroke.browser.test.ts` pin that it is only there, and `evenOddBatch.browser.test.ts` the
-    same for a crossing.
-  - **The shipping batch fragment's cost is no one part of it.** `fill-rate`'s `batch-no-*` variants cut
-    one part out of `BATCH_FRAG_SRC` each: the gradient branch saves 23.7%, the slot tree 38.8%,
-    straight alpha 38.2%, the color matrix and clamp 48.0%, glyph coverage 55.0%, and all five
-    together 75.5%, which leaves 11.97 ms a frame against `split-sample`'s 13.88 (msb-uai, one pass,
-    2026-10-31; `tests/perf/recorded/paint-and-fragment-2026-10-31/`). The savings overlap, summing
-    to twice what all of them save, so the fragment is not paying for each part's arithmetic in
-    turn; that it is bound by something they share, such as registers per fragment, is inferred and
-    not measured.
-  - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
-    reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and
-    made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.
-    The cause was not found. The run's color matrices are cached the same way now
-    (`uploadBatchMatrices`), where `setColorMatrixUniforms` cached the one before.
-
-  Closes when an aligned stroke on a fill that is not convex stays in the run, pinned by draw count
-  in a `*.browser.test.ts`, or is deleted as accepted at the boundary it costs now, with the batch
-  fragment's shared cost located (a variant that names what the knockouts share) or accepted at the
-  figures above.
-
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
   *canvas2d* side went from ~8.8 ms to 102-160 ms, and only when the page also held a build with

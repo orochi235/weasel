@@ -80,6 +80,8 @@ export function flushBatch(ctx: DrawContext): void {
     ctx.imageCache.setMinFilter(entry.image, entry.mips);
   }
   if (staged.ramps) ctx.gradRamps.bind(RAMP_SLOT);
+  // Caching these two per program was tried (2026-10): about 0.1 us a flush
+  // saved, and 20,000 stroked rects a frame 30% slower, cause not found.
   gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
   gl.uniform2fv(prog.uniform('u_fieldScale')!, FIELD_SCALES);
   if (hulls) uploadHulls(gl, prog, staged);

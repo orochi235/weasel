@@ -14,6 +14,7 @@ import { makeGLRecorder, type GLCall } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerTexture } from './textures/registerTexture';
 import { registerOwnDrawPaint, ownDrawRect } from './testing/ownDrawPaint';
+import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 import type { DrawCommand } from './DrawCommand';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, pathFromD, type PolygonPath } from '@weasel-js/geom';
 
@@ -359,17 +360,16 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   it('gives a stroke its own draw when the run cannot carry it', () => {
-    // Inner-aligned on a polygon that is not convex needs the stencil two-pass.
+    // Inner-aligned on a fill that draws through the stencil needs the stencil two-pass.
     r.render([
       rect(0),
       {
         kind: 'path',
-        path: {
+        path: stencilledEvenOdd({
           kind: 'polygon',
           commands: new Uint8Array([0, 1, 1, 1, 4]),
           coords: new Float32Array([20, 0, 30, 0, 24, 4, 20, 10]),
-        },
-        fill: { paint: { color: '#ff0000' } },
+        }),
         stroke: { width: 2, align: 'inner', paint: { color: '#000' } },
       } as unknown as DrawCommand,
       rect(40),
@@ -378,15 +378,18 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(draws()).toHaveLength(4);
   });
 
-  it('keeps an aligned stroke on a convex polygon in the run, cut to its side of the fill', () => {
+  it('keeps an aligned stroke on a polygon in the run, cut to its side of the fill', () => {
     const triangle = {
       kind: 'polygon', commands: new Uint8Array([0, 1, 1, 4]), coords: new Float32Array([20, 0, 30, 0, 20, 10]),
     };
-    for (const align of ['inner', 'outer']) {
+    const notched = {
+      kind: 'polygon', commands: new Uint8Array([0, 1, 1, 1, 4]), coords: new Float32Array([20, 0, 30, 0, 24, 4, 20, 10]),
+    };
+    for (const [path, align] of [triangle, notched].flatMap((p) => [[p, 'inner'], [p, 'outer']] as const)) {
       recorder.reset();
       r.render([
         rect(0),
-        { kind: 'path', path: triangle, fill: { paint: { color: '#ff0000' } }, stroke: { width: 2, align, paint: { color: '#000' } } } as unknown as DrawCommand,
+        { kind: 'path', path, fill: { paint: { color: '#ff0000' } }, stroke: { width: 2, align, paint: { color: '#000' } } } as unknown as DrawCommand,
         rect(40),
       ]);
       expect(draws()).toHaveLength(1);

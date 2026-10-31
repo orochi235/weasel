@@ -28,7 +28,9 @@
  * `astroke-inner` fills each rect again as a quad turned a little and strokes
  * it inside; `astroke-center` strokes it centered, which always joined the
  * run. An inner stroke on a convex fill is cut on the CPU since 2026-10-31,
- * where it used to flush the run and draw through a stencil pass.
+ * where it used to flush the run and draw through a stencil pass. The
+ * `astroke-notch-` frames are the same with a notch in each quad's bottom
+ * edge, so the stroke is cut to the fill's triangles rather than its outline.
  *
  * `cmbreak` is a second, independent estimate of one flush: a group whose color
  * matrix differs from the one before it breaks the run without touching the
@@ -82,6 +84,9 @@ const VARIANTS = [
   { id: 'slant-rectclip',  groups: N,     note: 'a turned rect across each rect clip' },
   { id: 'astroke-center',  groups: 0,     note: 'N turned quads, filled and stroked centered' },
   { id: 'astroke-inner',   groups: 0,     note: 'the same, stroked inside' },
+  { id: 'astroke-notch-center', groups: 0, note: 'N turned quads notched below, filled and stroked centered' },
+  { id: 'astroke-notch-inner',  groups: 0, note: 'the same, stroked inside' },
+  { id: 'astroke-notch-outer',  groups: 0, note: 'the same, stroked outside' },
   { id: 'pat-plain',       groups: 0,     note: 'N even-odd rects, never batched' },
   { id: 'pat-clipped',     groups: N,     note: 'each even-odd rect in its own clip' },
   { id: 'pat-cmbreak',     groups: N,     note: 'each even-odd rect in its own color-matrix break' },
@@ -229,14 +234,15 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
         return pathFromD(`M ${x} ${y} L ${x + 100} ${y + 2} L ${x + 100} ${y + 100} L ${x + 50} ${y + 98} L ${x} ${y + 100} Z`);
       };
       /** A 36px square turned by 0.2 radians about its center, as a polygon. */
-      const turnedQuad = (i: number) => {
+      const turnedQuad = (i: number, notch = false) => {
         const cx = px(i) + 18, cy = py(i) + 18, c = Math.cos(0.2), s = Math.sin(0.2);
         const pt = (x: number, y: number) => `${cx + x * c - y * s} ${cy + x * s + y * c}`;
-        return pathFromD(`M ${pt(-18, -18)} L ${pt(18, -18)} L ${pt(18, 18)} L ${pt(-18, 18)} Z`);
+        const below = notch ? ` L ${pt(0, 4)}` : '';
+        return pathFromD(`M ${pt(-18, -18)} L ${pt(18, -18)} L ${pt(18, 18)}${below} L ${pt(-18, 18)} Z`);
       };
-      const strokedLeaf = (i: number, align: 'center' | 'inner') => ({
+      const strokedLeaf = (i: number, align: 'center' | 'inner' | 'outer', notch = false) => ({
         kind: 'path',
-        path: turnedQuad(i),
+        path: turnedQuad(i, notch),
         fill: { paint: { kind: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' } },
         stroke: { width: 3, align, paint: { kind: 'solid', color: '#202020' } },
       });
@@ -299,9 +305,11 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const slants: unknown[] = [];
       const strokedCenter: unknown[] = [];
       const strokedInner: unknown[] = [];
+      const notched: Record<string, unknown[]> = { center: [], inner: [], outer: [] };
       for (let i = 0; i < n; i++) {
         solids.push(solidLeaf(i)); pats.push(patLeaf(i)); slants.push(slantLeaf(i));
         strokedCenter.push(strokedLeaf(i, 'center')); strokedInner.push(strokedLeaf(i, 'inner'));
+        for (const align of ['center', 'inner', 'outer'] as const) notched[align].push(strokedLeaf(i, align, true));
       }
 
       function chunk(leaves: unknown[], size: number, wrap: (i: number, kids: unknown[]) => unknown) {
@@ -315,6 +323,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       function buildVariant(id: string): unknown[] {
         if (id === 'astroke-center') return strokedCenter;
         if (id === 'astroke-inner') return strokedInner;
+        if (id.startsWith('astroke-notch-')) return notched[id.slice('astroke-notch-'.length)];
         if (id === 'slant-plain' || id === 'ss-slant-plain') return slants;
         if (id === 'slant-rectclip') {
           return chunk(slants, 1, (i, kids) => ({ kind: 'group', clip: rectClip(i), children: kids }));
@@ -498,6 +507,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   const convexClipK8 = deltaUs('rect-convexclip-k8', 'rect-plain', N / K);
   const slantRectCut = deltaUs('slant-rectclip', 'slant-plain', N);
   const innerStroke = deltaUs('astroke-inner', 'astroke-center', N);
+  const notchInner = deltaUs('astroke-notch-inner', 'astroke-notch-center', N);
+  const notchOuter = deltaUs('astroke-notch-outer', 'astroke-notch-center', N);
 
   const num = (x: number) => x.toFixed(2);
   const lines = [
@@ -526,6 +537,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     `| ...at ${K} leaves | ${num(convexClipK8)} | rect-convexclip-k8 − rect-plain, per clip |`,
     `| a rect clip a turned rect crosses, multisampled | ${num(slantRectCut)} | slant-rectclip − slant-plain, per clip |`,
     `| an inner stroke over a centered one | ${num(innerStroke)} | astroke-inner − astroke-center, per stroke |`,
+    `| ...on a notched quad | ${num(notchInner)} | astroke-notch-inner − astroke-notch-center, per stroke |`,
+    `| an outer stroke there | ${num(notchOuter)} | astroke-notch-outer − astroke-notch-center, per stroke |`,
     `| a slanted clip, decided in the shader | ${num(hullClip)} | ss-rect-hullclip − ss-rect-plain, per clip |`,
     `| ...at ${K} leaves | ${num(hullClipK8)} | ss-rect-hullclip-k8 − ss-rect-plain, per clip |`,
     `| the same clip on the stencil, single-sampled | ${num(ssStencilClip)} | ss-rect-stencilclip − ss-rect-plain, per clip |`,
@@ -589,6 +602,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.item(`slanted convex clip, multisampled, at ${K} leaves`, { perClip: metric(convexClipK8, 'us', `${derived}, rect-convexclip-k8 - rect-plain`) });
   run.item('rect clip a turned rect crosses, multisampled', { perClip: metric(slantRectCut, 'us', `${derived}, slant-rectclip - slant-plain`) });
   run.item('inner stroke over centered', { perStroke: metric(innerStroke, 'us', `${derived}, astroke-inner - astroke-center`) });
+  run.item('inner stroke over centered, notched', { perStroke: metric(notchInner, 'us', `${derived}, astroke-notch-inner - astroke-notch-center`) });
+  run.item('outer stroke over centered, notched', { perStroke: metric(notchOuter, 'us', `${derived}, astroke-notch-outer - astroke-notch-center`) });
   run.item('slanted clip decided in the shader', { perClip: metric(hullClip, 'us', `${derived}, ss-rect-hullclip - ss-rect-plain`) });
   run.item(`slanted clip decided in the shader at ${K} leaves`, { perClip: metric(hullClipK8, 'us', `${derived}, ss-rect-hullclip-k8 - ss-rect-plain`) });
   run.item('slanted clip on the stencil, single-sampled', { perClip: metric(ssStencilClip, 'us', `${derived}, ss-rect-stencilclip - ss-rect-plain`) });

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { pathFromD } from '@weasel-js/geom';
+import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from '@weasel-js/stroke';
+import { stencilledEvenOdd } from '../testing/stencilledEvenOdd';
 import { alignedRibbon } from './alignedRibbon';
 
 function area(mesh: Mesh): number {
@@ -45,11 +46,21 @@ describe('alignedRibbon', () => {
     expect(area(inner!) + area(outer!)).toBeCloseTo(area(ribbon), 1);
   });
 
-  it('refuses a fill that is not one convex ring', () => {
-    const notch = 'M 0 0 L 100 0 L 100 100 L 50 50 L 0 100 Z';
-    expect(alignedRibbon(doubled(notch), tessellate(pathFromD(notch)), true)).toBeNull();
+  it('cuts a fill that is not one convex ring to its triangles', () => {
     const ring = 'M 0 0 L 100 0 L 100 100 L 0 100 Z M 20 20 L 20 80 L 80 80 L 80 20 Z';
-    expect(alignedRibbon(doubled(ring), tessellate(pathFromD(ring)), true)).toBeNull();
+    const ribbon = doubled(ring);
+    const fill = tessellate(pathFromD(ring));
+    const inner = area(alignedRibbon(ribbon, fill, true)!);
+    // 10 inside the outer square's edge, and 10 inside the hole's, which is outside it.
+    expect(inner).toBeCloseTo(100 * 100 - 80 * 80 + 80 * 80 - 60 * 60, 3);
+    expect(inner + area(alignedRibbon(ribbon, fill, false)!)).toBeCloseTo(area(ribbon), 3);
+  });
+
+  it('refuses a fill that draws through the stencil itself', () => {
+    const notch = pathFromD('M 0 0 L 100 0 L 100 100 L 50 50 L 0 100 Z');
+    const fill = tessellate(stencilledEvenOdd(notch as PolygonPath));
+    expect(fill.requiresStencil).toBe(true);
+    expect(alignedRibbon(doubled('M 0 0 L 100 0 L 100 100 L 50 50 L 0 100 Z'), fill, true)).toBeNull();
   });
 
   it('returns the same mesh while its inputs hold', () => {

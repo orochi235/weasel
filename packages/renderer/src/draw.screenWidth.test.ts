@@ -2,8 +2,8 @@
  * A `{ px }` stroke width resolves against the accumulated group transform, so
  * the tessellated ribbon narrows as the scale it is drawn under grows.
  *
- * Every stroke here is `align: 'inner'`, which renders through the stencil
- * pass and so uploads its ribbon unbatched, in local units — a center-aligned
+ * Every stroke here is `align: 'inner'` with the CPU cut turned off, which
+ * renders through the stencil pass and so uploads its ribbon unbatched, in local units — a center-aligned
  * one is staged into the solid batch with the group transform already baked
  * in, and its vertices no longer report the width it was tessellated at. The
  * stencil pass tessellates at twice the width, hence the doubled expectations.
@@ -57,6 +57,7 @@ describe('renderer — screen-pixel stroke widths', () => {
     _resetStrokeMeshCacheForTests();
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
   });
 
   const paint = { color: '#222222' };

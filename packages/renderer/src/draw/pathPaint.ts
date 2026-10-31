@@ -200,9 +200,9 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spac
   drawRibbon(ctx, cmd, strokeMesh(cmd.path, cmd.stroke, flattenToleranceOf(ctx), spaces));
 }
 
-/** An aligned stroke's ribbon cut to its side of a convex fill on the CPU, or
- *  `null` where only the stencil can cut it: a fill that is not one convex
- *  ring, or per-vertex colors, which the cut has no anchors to carry. */
+/** An aligned stroke's ribbon cut to its side of the fill on the CPU, or
+ *  `null` where only the stencil can cut it (`alignedRibbon`), or with
+ *  per-vertex colors, which the cut has no anchors to carry. */
 function cutAlignedRibbon(
   ctx: DrawContext, cmd: StrokedPathCommand, align: 'inner' | 'outer', spaces: StrokeSpaces,
 ): Mesh | null {
