@@ -217,7 +217,7 @@
     "longestFunction": 127
   },
   "packages/ui/src/components/BandEditor/BandEditor.tsx": {
-    "longestFunction": 264
+    "longestFunction": 232
   },
   "packages/ui/src/components/Callout/Callout.tsx": {
     "longestFunction": 136
@@ -270,7 +270,7 @@
     "longestFunction": 132
   },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
-    "longestFunction": 136
+    "longestFunction": 133
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
     "longestFunction": 199

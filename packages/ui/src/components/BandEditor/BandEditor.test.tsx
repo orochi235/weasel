@@ -53,6 +53,18 @@ function setup(overrides: Partial<Parameters<typeof BandEditor<string>>[0]> = {}
   return { ...result, onInput, onChange, onSelect, seams, bodies, ruler };
 }
 
+/** Where a band body's region starts and ends along the track, as the strip lays it out. */
+function from(body: HTMLElement): string {
+  return body.parentElement!.style.left;
+}
+/** The box the strip runs in, which an end pulled inward narrows. */
+function strip(root: HTMLElement): CSSStyleDeclaration {
+  return root.querySelector<HTMLElement>('[data-band-strip]')!.style;
+}
+function to(body: HTMLElement): string {
+  return `${100 - Number.parseFloat(body.parentElement!.style.right)}%`;
+}
+
 /** `x` is a client coordinate; the stubbed track runs 0…400. */
 function drag(el: Element, x: number, moves: number[], init: MouseEventInit = {}): void {
   fireEvent.pointerDown(el, { clientX: x, clientY: 20, button: 0, ...init });
@@ -70,7 +82,7 @@ describe('BandEditor rendering', () => {
 
   it('normalizes the first band to min on read', () => {
     const { bodies } = setup({ value: [{ from: 42, data: 'a' }, { from: 60, data: 'b' }] });
-    expect(bodies()[0].style.getPropertyValue('--be-from')).toBe('0%');
+    expect(from(bodies()[0])).toBe('0%');
   });
 
   it('renders each payload through renderBand', () => {
@@ -81,9 +93,9 @@ describe('BandEditor rendering', () => {
 
   it('positions bands and seams through the scale', () => {
     const { bodies, seams } = setup();
-    expect(bodies()[1].style.getPropertyValue('--be-from')).toBe('20%');
-    expect(bodies()[1].style.getPropertyValue('--be-to')).toBe('60%');
-    expect(seams()[0].style.getPropertyValue('--be-at')).toBe('20%');
+    expect(from(bodies()[1])).toBe('20%');
+    expect(to(bodies()[1])).toBe('60%');
+    expect(seams()[0].style.left).toBe('20%');
   });
 });
 
@@ -94,7 +106,7 @@ describe('drag in flight', () => {
     const { container, seams } = setup({ onInput: undefined });
     fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0 });
     fireEvent.pointerMove(document, { clientX: 160, clientY: 20 });
-    expect(seams()[0].style.getPropertyValue('--be-at')).toBe('40%');
+    expect(seams()[0].style.left).toBe('40%');
     expect(ghosts(container).map((g) => g.style.getPropertyValue('--be-at'))).toEqual(['20%']);
     fireEvent.pointerUp(document, { clientX: 160, clientY: 20 });
     expect(ghosts(container)).toHaveLength(0);
@@ -104,7 +116,7 @@ describe('drag in flight', () => {
     const { container, bodies } = setup({ onInput: undefined });
     fireEvent.pointerDown(bodies()[1], { clientX: 120, clientY: 20, button: 0 });
     fireEvent.pointerMove(document, { clientX: 140, clientY: 20 });
-    expect(bodies()[1].style.getPropertyValue('--be-from')).toBe('25%');
+    expect(from(bodies()[1])).toBe('25%');
     const [ghost] = ghosts(container);
     expect(ghost?.style.getPropertyValue('--be-from')).toBe('20%');
     expect(ghost?.style.getPropertyValue('--be-to')).toBe('60%');
@@ -488,8 +500,8 @@ describe('range edges', () => {
     const { container, bodies } = setup({ onRangeChange: () => {} });
     fireEvent.pointerDown(edges(container).max, { clientX: 400, clientY: 20, button: 0 });
     fireEvent.pointerMove(document, { clientX: 500, clientY: 20 });
-    expect(bodies()[2].style.getPropertyValue('--be-to')).toBe('100%');
-    expect(container.querySelector<HTMLElement>('[data-seam-index="1"]')!.style.getPropertyValue('--be-at')).toBe('60%');
+    expect(to(bodies()[2])).toBe('100%');
+    expect(container.querySelector<HTMLElement>('[aria-label="Seam 2"]')!.style.left).toBe('60%');
     expect(container.querySelector<HTMLElement>('[data-band-ghost]')!.style.getPropertyValue('--be-at')).toBe('80%');
   });
 
@@ -498,7 +510,8 @@ describe('range edges', () => {
     const { container, bodies } = setup({ onRangeChange });
     fireEvent.pointerDown(edges(container).min, { clientX: 0, clientY: 20, button: 0 });
     fireEvent.pointerMove(document, { clientX: 40, clientY: 20 });
-    expect(bodies()[0].style.getPropertyValue('--be-from')).toBe('10%');
+    expect(strip(container).getPropertyValue('--be-from')).toBe('10%');
+    expect(from(bodies()[0])).toBe('0%');
     fireEvent.pointerUp(document, { clientX: 40, clientY: 20 });
     const [lo, hi, next] = onRangeChange.mock.calls[0];
     expect([lo, hi]).toEqual([10, 100]);
@@ -537,12 +550,12 @@ describe('range edges', () => {
   it('puts an end dragged away and back where it started, and commits nothing', () => {
     const onRangeInput = vi.fn();
     const onRangeChange = vi.fn();
-    const { container, bodies } = setup({ onRangeInput, onRangeChange });
+    const { container } = setup({ onRangeInput, onRangeChange });
     fireEvent.pointerDown(edges(container).max, { clientX: 400, clientY: 20, button: 0 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 20 });
-    expect(bodies()[2].style.getPropertyValue('--be-to')).toBe('75%');
+    expect(strip(container).getPropertyValue('--be-to')).toBe('75%');
     fireEvent.pointerMove(document, { clientX: 400, clientY: 20 });
-    expect(bodies()[2].style.getPropertyValue('--be-to')).toBe('100%');
+    expect(strip(container).getPropertyValue('--be-to')).toBe('100%');
     expect(onRangeInput.mock.calls.at(-1)!.slice(0, 2)).toEqual([0, 100]);
     fireEvent.pointerUp(document, { clientX: 400, clientY: 20 });
     expect(onRangeChange).not.toHaveBeenCalled();
@@ -633,7 +646,7 @@ describe('log scale', () => {
       />,
     );
     const seam = container.querySelector<HTMLElement>('[role="slider"]')!;
-    expect(seam.style.getPropertyValue('--be-at')).toBe('60%');
+    expect(seam.style.left).toBe('60%');
   });
 
   it('falls back to a linear scale rather than NaN positions when min is not positive', () => {
@@ -646,7 +659,7 @@ describe('log scale', () => {
         onChange={() => {}}
       />,
     );
-    expect(container.querySelector<HTMLElement>('[role="slider"]')!.style.getPropertyValue('--be-at')).toBe('25%');
+    expect(container.querySelector<HTMLElement>('[role="slider"]')!.style.left).toBe('25%');
     warn.mockRestore();
   });
 });

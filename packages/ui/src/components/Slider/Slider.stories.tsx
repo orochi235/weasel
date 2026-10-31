@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
 import { endless, unit } from '@weasel-js/quantity';
 import { Along } from '@weasel-js/ui/components/Along';
-import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import { Slider, logScale, type Thumb } from '@weasel-js/ui/components/Slider';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { oklchToHex } from '@weasel-js/ui/color';
 import st from './Slider.stories.module.css';
@@ -49,6 +49,8 @@ const meta: Meta<typeof Slider> = {
     onRemoveThumb: { table: { disable: true } },
     renderTrack: { table: { disable: true } },
     renderReadout: { table: { disable: true } },
+    renderRegion: { table: { disable: true } },
+    scale: { table: { disable: true } },
     className: { table: { disable: true } },
     thumbCount: {
       name: 'Thumb count',
@@ -247,6 +249,19 @@ function ActiveRangeHatchStory({ args }: { args: Omit<Parameters<typeof Slider>[
 export const ActiveRangeHatch: Story = {
   args: { step: 0.001, trackHeight: 20, constraint: 'ordered' },
   render: (args) => <ActiveRangeHatchStory args={args} />,
+};
+
+/** Regions between ordered thumbs on a log track: drag the middle one to carry both of its thumbs. */
+export const RegionsOnALogScale: Story = {
+  args: { min: 1, max: 1000, step: 0, constraint: 'ordered', trackHeight: 28, regionDrag: true, readoutPlacement: 'below-thumb' } as never,
+  render: (args) => (
+    <Wrapper
+      {...args}
+      scale={logScale}
+      initial={[{ value: 10 }, { value: 100 }]}
+      renderRegion={({ from, to }) => <span className={st.region}>{`${Math.round(from)}–${Math.round(to)}`}</span>}
+    />
+  ),
 };
 
 export const NotchedThumbs: Story = {

@@ -40,35 +40,9 @@ export function bandBounds<T>(
   return [from, to];
 }
 
-/** How far seam `index` can travel before it would cross a neighbour. */
-export function seamBounds<T>(
-  bands: readonly Band<T>[],
-  index: number,
-  min: number,
-  max: number,
-): [number, number] {
-  const lo = index === 0 ? min : bands[index].from;
-  const hi = index + 2 <= bands.length - 1 ? bands[index + 2].from : max;
-  return [lo, hi];
-}
-
-/** Clamps a target position for seam `index` to its neighbours, inclusive. */
-export function clampSeamTo<T>(
-  bands: readonly Band<T>[],
-  index: number,
-  to: number,
-  min: number,
-  max: number,
-): number {
-  const [lo, hi] = seamBounds(bands, index, min, max);
-  return Math.max(lo, Math.min(hi, to));
-}
-
-export function setSeam<T>(bands: readonly Band<T>[], index: number, to: number): Band<T>[] {
-  if (bands[index + 1] === undefined || bands[index + 1].from === to) return bands as Band<T>[];
-  const next = bands.map((b) => ({ ...b }));
-  next[index + 1].from = to;
-  return next;
+/** `bands` with seam *k* moved to `seams[k]`, each band keeping its payload and lock. */
+export function withSeams<T>(bands: readonly Band<T>[], seams: readonly number[]): Band<T>[] {
+  return bands.map((b, i) => (i === 0 ? { ...b } : { ...b, from: seams[i - 1]! }));
 }
 
 /** Band edges as track positions: `length + 1` values from 0 to 1. */
@@ -81,33 +55,6 @@ export function unitEdges<T>(
   const edges = bands.map((b, i) => (i === 0 ? 0 : clamp01(scale.toUnit(b.from, min, max))));
   edges.push(1);
   return edges;
-}
-
-/**
- * Largest part of `shift` band `index` can take without pushing a neighbour's
- * far edge past it. Zero for the first and last band, whose outer edges are
- * `min` and `max` and do not move.
- */
-export function clampBandShift(edges: readonly number[], index: number, shift: number): number {
-  const isFirst = index === 0;
-  const isLast = index === edges.length - 2;
-  if (isFirst || isLast) return 0;
-  const lo = edges[index - 1] - edges[index];
-  const hi = edges[index + 2] - edges[index + 1];
-  return Math.max(lo, Math.min(hi, shift));
-}
-
-/** Moves both edges of band `index`, which is the same as moving two seams. */
-export function moveBandEdges<T>(
-  bands: readonly Band<T>[],
-  index: number,
-  from: number,
-  to: number,
-): Band<T>[] {
-  const next = bands.map((b) => ({ ...b }));
-  next[index].from = from;
-  if (next[index + 1] !== undefined) next[index + 1].from = to;
-  return next;
 }
 
 /**

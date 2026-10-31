@@ -1,15 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   bandBounds,
-  clampBandShift,
-  clampSeamTo,
   edgeReach,
   mergeBand,
   scaleEdges,
-  moveBandEdges,
   normalizeBands,
-  seamBounds,
-  setSeam,
   splitBands,
   toggleLock,
   unitEdges,
@@ -54,70 +49,6 @@ describe('bandBounds', () => {
     expect(bandBounds(bands, 0, MIN, MAX)).toEqual([0, 20]);
     expect(bandBounds(bands, 1, MIN, MAX)).toEqual([20, 60]);
     expect(bandBounds(bands, 2, MIN, MAX)).toEqual([60, 100]);
-  });
-});
-
-describe('seam clamping', () => {
-  const bands = normalizeBands(fixture(), MIN);
-
-  it('bounds a seam by the edges either side of it', () => {
-    expect(seamBounds(bands, 0, MIN, MAX)).toEqual([0, 60]);
-    expect(seamBounds(bands, 1, MIN, MAX)).toEqual([20, 100]);
-  });
-
-  it('stops a seam dragged past its right neighbour, at the neighbour', () => {
-    expect(clampSeamTo(bands, 0, 95, MIN, MAX)).toBe(60);
-    const next = setSeam(bands, 0, clampSeamTo(bands, 0, 95, MIN, MAX));
-    expect(next.map((b) => b.from)).toEqual([0, 60, 60]);
-  });
-
-  it('stops a seam dragged past its left neighbour, at the neighbour', () => {
-    expect(clampSeamTo(bands, 1, -30, MIN, MAX)).toBe(20);
-    const next = setSeam(bands, 1, clampSeamTo(bands, 1, -30, MIN, MAX));
-    expect(next.map((b) => b.from)).toEqual([0, 20, 20]);
-  });
-
-  it('never reorders and never drops a band', () => {
-    for (const target of [-1000, -1, 0, 19, 21, 60, 61, 1000]) {
-      for (const index of [0, 1]) {
-        const next = setSeam(bands, index, clampSeamTo(bands, index, target, MIN, MAX));
-        const froms = next.map((b) => b.from);
-        expect(next).toHaveLength(bands.length);
-        expect([...froms].sort((a, b) => a - b)).toEqual(froms);
-      }
-    }
-  });
-
-  it('returns the same list when the seam does not move', () => {
-    expect(setSeam(bands, 0, 20)).toBe(bands);
-  });
-});
-
-describe('clampBandShift', () => {
-  // Bands at [0, .2], [.2, .6], [.6, 1].
-  const edges = [0, 0.2, 0.6, 1];
-
-  it('refuses to move the first or last band, whose outer edges are pinned', () => {
-    expect(clampBandShift(edges, 0, 0.3)).toBe(0);
-    expect(clampBandShift(edges, 2, -0.3)).toBe(0);
-  });
-
-  it('passes a shift that keeps both neighbours alive', () => {
-    expect(clampBandShift(edges, 1, 0.1)).toBeCloseTo(0.1, 12);
-  });
-
-  it('stops when a neighbour would be squeezed past its own far edge', () => {
-    expect(clampBandShift(edges, 1, 5)).toBeCloseTo(0.4, 12);
-    expect(clampBandShift(edges, 1, -5)).toBeCloseTo(-0.2, 12);
-  });
-});
-
-describe('moveBandEdges', () => {
-  it('moves both seams of a band, preserving its span', () => {
-    const bands = normalizeBands(fixture(), MIN);
-    const next = moveBandEdges(bands, 1, 30, 70);
-    expect(next.map((b) => b.from)).toEqual([0, 30, 70]);
-    expect(next.map((b) => b.data)).toEqual(['a', 'b', 'c']);
   });
 });
 

@@ -197,7 +197,7 @@ describe('BandEditor mid-drag', () => {
         <BandEditor value={THREE} min={0} max={100} scale="linear" onChange={() => {}} />
       </div>,
     );
-    const target = view.container.querySelector<HTMLElement>(start === 'seam' ? '[data-seam-index="0"]' : '[data-band-index="1"]')!;
+    const target = view.container.querySelector<HTMLElement>(start === 'seam' ? '[aria-label="Seam 1"]' : '[data-band-index="1"]')!;
     const box = target.getBoundingClientRect();
     const y = box.top + box.height / 2;
     fireEvent.pointerDown(target, { clientX: box.left + box.width / 2, clientY: y, button: 0, pointerId: 1 });

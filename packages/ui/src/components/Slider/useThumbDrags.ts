@@ -24,7 +24,7 @@ export interface ThumbDragArgs<T extends Thumb> {
 /** A slider's two pointer gestures: one thumb dragged along the rail, and every thumb moved together. */
 export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }: ThumbDragArgs<T>) {
   const { thumbs, step, constraint } = props;
-  const { onInput, onChange } = useLatestHandlers(props);
+  const { onInput, onChange, onCancel: canceled } = useLatestHandlers(props);
   const { even, min, max } = span;
   const { valueToFraction, fractionToValue, valueAt } = scale;
   // In-flight thumb buffer during a drag; null when not dragging.
@@ -50,7 +50,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         const m = geometry.measure(ev.clientX, ev.clientY);
         const buffer = dragBufferRef.current;
         if (!m || !buffer) return;
-        let v = valueAt(m.g, m.length);
+        let v = valueAt(m.g, m.length, ev.altKey);
 
         const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
         v = clamp(v, bLo, bHi);
@@ -63,12 +63,13 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      // A drag that ends without a release — cancelled pointer, lost capture,
+      // A drag that ends without a release — canceled pointer, lost capture,
       // an unmount — drops the buffer without committing.
       const onCancel = () => {
         sessionRef.current = null;
         dragBufferRef.current = null;
         setDragged(null);
+        canceled();
       };
 
       const onEnd = () => {
@@ -93,7 +94,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, valueAt, min, max, step, constraint, props, geometry],
+    [thumbs, onInput, onChange, canceled, valueAt, min, max, step, constraint, props, geometry],
   );
 
   const beginShiftAllDrag = useCallback(
@@ -109,9 +110,9 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         const buffer = dragBufferRef.current;
         if (!m || !buffer) return;
         const dxFraction = m.gRaw - anchorG;
-        // Evenly spaced gaps span different amounts of value, so equal value
-        // offsets would pull the thumbs apart; move them by track distance.
-        if (even) {
+        // Evenly spaced gaps, or a scale, span different amounts of value, so
+        // equal value offsets would pull the thumbs apart; move them by track distance.
+        if (even || props.scale) {
           const starts = startValues.map(valueToFraction);
           const df = clamp(dxFraction, -Math.min(...starts), 1 - Math.max(...starts));
           for (let i = 0; i < buffer.length; i++) {
@@ -139,11 +140,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      const onCancel = () => {
-        sessionRef.current = null;
-        dragBufferRef.current = null;
-      };
-
+      const onCancel = () => { sessionRef.current = null; dragBufferRef.current = null; canceled(); };
       const onEnd = () => {
         sessionRef.current = null;
         const buffer = dragBufferRef.current;
@@ -153,7 +150,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, min, max, step, even, valueToFraction, fractionToValue, geometry],
+    [thumbs, onInput, onChange, canceled, min, max, step, even, props.scale, valueToFraction, fractionToValue, geometry],
   );
 
   return { beginThumbDrag, beginShiftAllDrag, dragged };

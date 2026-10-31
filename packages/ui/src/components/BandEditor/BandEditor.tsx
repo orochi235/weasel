@@ -1,41 +1,37 @@
 import {
-  Fragment,
   useEffect,
   useId,
   useRef,
   useState,
-  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
 import { snapToNearest, useSnapRadiusPx } from '../../snap';
-import { clamp01, resolveScale, type BandScale } from './scale';
-import { bandName, retagBands, untag } from './retag';
-import { pct } from './track';
+import { clamp01, resolveScale, withinAxis, type BandScale } from './scale';
+import { retagBands, untag } from './retag';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { DraftGhost, type DraftGhostAt } from './DraftGhost';
 import { Ruler, rulerDisplay, type BandTick } from './Ruler';
-import { SeamHandle } from './SeamHandle';
+import { BandStrip } from './BandStrip';
 import {
   bandBounds,
-  clampBandShift,
   mergeBand,
-  moveBandEdges,
   normalizeBands,
   splitBands,
   toggleLock,
-  unitEdges,
+  withSeams,
   type Band,
   type RangeEdge,
 } from './bands';
+import { sameSeams, seamGhost } from './seamGhost';
 
 export type { Band, BandScale, RangeEdge, BandTick };
 
@@ -144,7 +140,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const labelId = useId();
-  const [draft, setDraft] = useState<Draft<T> | null>(null);
+  const [draft, setDraftState] = useState<Draft<T> | null>(null);
+  // Read by the handlers: a second pointermove can land before the render the first one scheduled.
+  const draftRef = useRef<Draft<T> | null>(null);
+  const setDraft = (next: Draft<T> | null): void => {
+    draftRef.current = next;
+    setDraftState(next);
+  };
   const value = tagged.map(untag);
   const retagged = (next: Band<T>[]): Band<T, F>[] => retagBands(tagged, next);
   const onInput = props.onInput && ((next: Band<T>[]) => props.onInput?.(retagged(next)));
@@ -180,9 +182,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     return width === 0 ? unit : snapToNearest(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
   };
 
-  // No pointer capture: a band body is a `<button>` whose content the consumer
-  // renders, and capture would retarget pointerup and kill the click on it.
-  // A drag that ends without a release commits nothing.
+  // An edge drag. One that ends without a release commits nothing.
   const drag = (
     down: ReactPointerEvent<HTMLElement>,
     onMove: (ev: PointerEvent) => void,
@@ -196,40 +196,24 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     }, { capture: false });
   };
 
-  const seamInput = (next: Band<T>[], ghost: number): void => {
-    setDraft({ bands: next, ghost: { at: ghost } });
+  const seamInput = (seams: number[]): void => {
+    const next = withSeams(committed, seams);
+    const current = draftRef.current;
+    if (sameSeams(next, current?.bands ?? committed)) return;
+    const ghost = current?.ghost ?? seamGhost(committed, next, min, max);
+    if (!ghost) return;
+    setDraft({ bands: next, ghost });
     onInput?.(next);
+  };
+  const seamCommit = (seams: number[]): void => {
+    setDraft(null);
+    const next = withSeams(committed, seams);
+    if (!sameSeams(next, committed)) onChange(next);
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
     if (typeof e.button === 'number' && e.button > 0) return;
     if (index !== selectedIndex) onSelect?.(index);
-    // The first and last bands' outer edges are `min` and `max`, which do not
-    // move, so their bodies have nothing to translate.
-    if (index === 0 || index === committed.length - 1) return;
-    const base = committed;
-    const edges = unitEdges(base, sc, min, max);
-    const startUnit = unitAt(e.clientX);
-    const press = { clientX: e.clientX, clientY: e.clientY };
-    let dragging = false;
-    let latest = base;
-    drag(
-      e,
-      (ev) => {
-        if (!dragging && !pastDragThreshold(press, ev)) return;
-        dragging = true;
-        const shift = clampBandShift(edges, index, unitAt(ev.clientX) - startUnit);
-        latest = shift === 0
-          ? base
-          : moveBandEdges(base, index, fromUnit(edges[index] + shift), fromUnit(edges[index + 1] + shift));
-        const [from, to] = bandBounds(base, index, min, max);
-        setDraft({ bands: latest, ghost: { from, to } });
-        onInput?.(latest);
-      },
-      () => {
-        if (latest !== base) onChange(latest);
-      },
-    );
   };
 
   const onBandFocus = (index: number) => (): void => {
@@ -340,46 +324,26 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       />
       <div className={s.bands}>
         {props.onRangeChange && edgeHandle('min')}
-        {bands.map((_, i) => {
-          const [from, to] = bandBounds(bands, i, lo, hi);
-          const isSelected = selectedIndex === i;
-          return (
-            <Fragment key={i}>
-              <button
-                type="button"
-                className={[s.band, isSelected ? s.selected : null, bands[i].locked ? s.locked : null]
-                  .filter(Boolean)
-                  .join(' ')}
-                style={{ '--be-from': pct(toUnit(from)), '--be-to': pct(toUnit(to)) } as CSSProperties}
-                aria-label={bandName(shown, i, from, to, display)}
-                aria-pressed={isSelected}
-                data-band-index={i}
-                onPointerDown={onBandPointerDown(i)}
-                onFocus={onBandFocus(i)}
-                onContextMenu={onBandContextMenu(i)}
-              >
-                <span className={s.bandContent}>{renderBand?.(shown[i]!, i)}</span>
-              </button>
-              {i < bands.length - 1 && (
-                <SeamHandle
-                  index={i}
-                  committed={committed}
-                  bands={bands}
-                  min={lo}
-                  max={hi}
-                  display={display}
-                  tagged={shown[i + 1]!.from}
-                  toUnit={toUnit}
-                  fromUnit={fromUnit}
-                  pointerUnit={(clientX, altKey) => snapped(unitAt(clientX), altKey)}
-                  drag={drag}
-                  onInput={seamInput}
-                  onCommit={onChange}
-                />
-              )}
-            </Fragment>
-          );
-        })}
+        <BandStrip
+          bands={bands}
+          shown={shown}
+          lo={lo}
+          hi={hi}
+          scale={lo === axisMin && hi === axisMax ? sc : withinAxis(sc, axisMin, axisMax)}
+          toUnit={toUnit}
+          fromUnit={fromUnit}
+          snapTo={snap && ticks && ticks.length > 0 ? ticks.map((tick) => tick.at) : undefined}
+          snapPx={snapRadiusPx}
+          display={display}
+          selectedIndex={selectedIndex}
+          renderBand={renderBand}
+          onBandPointerDown={onBandPointerDown}
+          onBandFocus={onBandFocus}
+          onBandContextMenu={onBandContextMenu}
+          onInput={seamInput}
+          onChange={seamCommit}
+          onCancel={() => setDraft(null)}
+        />
         {props.onRangeChange && edgeHandle('max')}
         {draft && <DraftGhost ghost={draft.ghost} toUnit={toUnit} />}
       </div>

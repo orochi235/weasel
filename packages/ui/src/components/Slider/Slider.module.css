@@ -331,3 +331,10 @@
 .readoutsAlong > .readoutAlong {
   transform: var(--on-run) translateY(calc(var(--rp-band-reach) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh)) var(--upright);
 }
+
+/* One stretch of track between neighboring thumbs, under the thumbs either side of it. */
+.region {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}

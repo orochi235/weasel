@@ -7,7 +7,7 @@ import { retagThumb, thumbDisplay, untagThumb, type PlainThumb } from './tagged'
 import type { SliderProps, Thumb } from './types';
 import { useSpan } from './useSpan';
 
-export type { BoundsCtx, SliderProps, SliderStop, Thumb, ThumbRenderCtx, ThumbShape, TrackCtx } from './types';
+export type { BoundsCtx, SliderProps, SliderRegionCtx, SliderStop, Thumb, ThumbRenderCtx, ThumbShape, TrackCtx } from './types';
 
 /**
  * Multi-thumb slider over a shared track. The thumb list is fully controlled:
@@ -32,7 +32,7 @@ export function Slider<T extends Thumb<Quantity>>(props: SliderProps<T>): ReactE
 // Last, so `Parameters<typeof Slider>` and `ComponentProps` read the props of a slider of bare numbers.
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement;
 export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>): ReactElement {
-  const { endless, display, renderReadout, onInput, onChange, keyStep, onAddThumb } = props;
+  const { endless, display, renderReadout, renderRegion, onInput, onChange, keyStep, onAddThumb } = props;
   const span = useSpan(props);
   const { stopList } = span;
   // Evenly spaced stops are a stop apart whatever their values, so the added
@@ -73,6 +73,7 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
       onChange={onChange && (next => onChange(outward(next)))}
       keyStep={keyStep && ((t, steps, i) => keyStep(retagThumb<T>(t), steps, i))}
       onAddThumb={onAddThumb && (at => { const made = onAddThumb(at); return made && untagThumb(made); })}
+      renderRegion={renderRegion && endless !== undefined ? (r => renderRegion({ ...r, from: fromTrack(r.from), to: fromTrack(r.to) })) : renderRegion}
       renderReadout={(t, i) => (renderReadout ? renderReadout(shown(t), i) : <QuantityText value={shown(t).value} display={display ?? READOUT} mute />)}
       spokenAt={(v, t) => {
         const at = endless === undefined ? v : fromTrack(v);

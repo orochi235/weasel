@@ -12,12 +12,12 @@ const THUMB = '[role="slider"]';
 /** What the presses read: the thumbs and the props that steer them, the geometry and scale that turn a pointer into a value, and the drags they hand off to. */
 export interface SliderPointerArgs<T extends Thumb> {
   thumbs: readonly T[];
-  props: Pick<SliderProps<T>, 'trackClick' | 'onAddThumb' | 'onRemoveThumb' | 'allowShiftAll' | 'onChange' | 'constraint' | 'step'>;
+  props: Pick<SliderProps<T>, 'trackClick' | 'onAddThumb' | 'onRemoveThumb' | 'allowShiftAll' | 'onChange' | 'constraint' | 'step' | 'regionDrag'>;
   min: number;
   max: number;
   trackRef: RefObject<HTMLDivElement | null>;
   geometry: SliderGeometry;
-  valueAt: (f: number, length: number) => number;
+  valueAt: (f: number, length: number, free?: boolean) => number;
   onInput: (next: T[]) => void;
   drags: Pick<ReturnType<typeof useThumbDrags<T>>, 'beginThumbDrag' | 'beginShiftAllDrag'>;
 }
@@ -59,11 +59,12 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
     if (!props.onAddThumb && !wantsMove) return;
     // If the event originated on a thumb, the thumb's own handler ran first; this is a track click.
     if ((e.target as Element).closest(THUMB)) return;
+    if (props.regionDrag && (e.target as Element).closest('[data-slider-region]')) return;
     e.preventDefault();
     const track = trackRef.current;
     const m = geometry.measure(e.clientX, e.clientY);
     if (!track || !m) return;
-    const v = valueAt(m.g, m.length);
+    const v = valueAt(m.g, m.length, e.altKey);
 
     if (props.onAddThumb) {
       const created = props.onAddThumb(v);
