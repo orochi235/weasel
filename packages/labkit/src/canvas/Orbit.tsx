@@ -135,16 +135,20 @@ export function Orbit({
     return () => ro.disconnect();
   }, [areaEl, onResizeRef, surface]);
 
+  // The scene sits outside the camera's input scope: a canvas drawn in it — a
+  // diagram beside the viewport — would otherwise hear the camera's bindings.
   return (
-    <CameraScope yoke={yoke}>
-      <OrbitInput
-        hostRef={area}
-        view={view}
-        onViewChange={onViewChange}
-        limits={limits}
-        home={home}
-        gestures={gestures}
-      />
+    <>
+      <CameraScope yoke={yoke}>
+        <OrbitInput
+          hostRef={area}
+          view={view}
+          onViewChange={onViewChange}
+          limits={limits}
+          home={home}
+          gestures={gestures}
+        />
+      </CameraScope>
       <div
         ref={(el) => {
           host.current = el;
@@ -155,7 +159,7 @@ export function Orbit({
         {children}
         {overlay}
       </div>
-    </CameraScope>
+    </>
   );
 }
 
