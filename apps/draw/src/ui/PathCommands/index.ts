@@ -1,1 +1,4 @@
-export { OffsetSlider, SimplifySlider, useSimplifyTolerance, type PathSliderProps, type SimplifySliderProps } from './PathCommands';
+export {
+  BridgeSlider, OffsetSlider, SimplifySlider, useBridgeTension, useSimplifyTolerance,
+  type BridgeSliderProps, type PathSliderProps, type SimplifySliderProps,
+} from './PathCommands';

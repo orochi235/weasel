@@ -135,11 +135,6 @@ Owner tags, after the priority (2026-10-26):
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
   Closes when the maintainer has driven handle locks hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
-  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Alt+J binding
-  it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
-  Closes when the maintainer has driven Bridge hands-on and the defaults and keys he picks are
-  committed.
 - **(P2) [maintainer] Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
   it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
   selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
