@@ -848,6 +848,14 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
+- **(P2) [agent] A graph page's `notation` and `layout` do not survive the chart's scene.** `documentFromScene`
+  builds each graph page from the scene's pages and nodes only, so a Mermaid class, state, block, C4, kanban, or
+  other notation page opened in the chart exports back as a flowchart, and a block diagram loses its `columns`,
+  spans, and spaces (read in `packages/diagram-formats/src/fromScene.ts`, 2026-10-31). Keeping both needs a place on
+  the scene's page to hold them, written by `documentSpecs` and read back by `documentFromScene`.
+  Closes when a Mermaid C4 file and a block file imported into the chart export back as the same kind, with the
+  block file's columns.
+
 - **(P3) [maintainer] Check `@weasel-js/rig`'s and `@weasel-js/diagram-formats`' trusted-publisher
   registration.** Both are on the registry at 1.11.1 under `latest` and `pre` (`npm view`,
   2026-10-21); whether each is registered as a trusted publisher (`docs/releasing.md`, "Setting up a
