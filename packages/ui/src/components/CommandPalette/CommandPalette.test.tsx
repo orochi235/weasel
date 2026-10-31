@@ -45,12 +45,24 @@ function Sizes() {
   return null;
 }
 
-function Harness({ sizes = false }: { sizes?: boolean }) {
+function Spelled() {
+  useAction({
+    id: 'zoom',
+    label: 'Zoom',
+    shortcut: 'Z then drag',
+    defaultBinding: { kind: 'key', key: 'z' },
+    invoker: { timing: 'immediate' as const, run: () => {} },
+  });
+  return null;
+}
+
+function Harness({ sizes = false, spelled = false }: { sizes?: boolean; spelled?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <ActionsProvider>
       <Actions />
       {sizes && <Sizes />}
+      {spelled && <Spelled />}
       <button type="button" onClick={() => setOpen(true)}>open</button>
       <CommandPalette open={open} onClose={() => setOpen(false)} />
     </ActionsProvider>
@@ -63,8 +75,8 @@ const options = () => screen.getAllByRole('option');
 const selected = () => options().find((o) => o.getAttribute('aria-selected') === 'true');
 // The palette snapshots the registry when it opens, so open it the way a
 // user does: after the actions have registered.
-const openPalette = (sizes = false) => {
-  renderWithIcons(<Harness sizes={sizes} />);
+const openPalette = (sizes = false, spelled = false) => {
+  renderWithIcons(<Harness sizes={sizes} spelled={spelled} />);
   fireEvent.click(screen.getByText('open'));
 };
 const flush = () => act(async () => { await Promise.resolve(); });
@@ -121,6 +133,13 @@ describe('CommandPalette', () => {
     const caps = row.querySelectorAll('kbd[data-kind]');
     expect(caps.length).toBeGreaterThan(0);
     expect(within(row).getByText('D')).toBeTruthy();
+  });
+
+  it('shows an action’s own shortcut text in place of its binding', () => {
+    openPalette(false, true);
+    const row = options().find((o) => o.textContent?.includes('Zoom'))!;
+    expect(row.textContent).toBe('ZoomZ then drag');
+    expect(row.querySelector('kbd')).toBeNull();
   });
 
   it('shows why a disabled action is disabled', () => {

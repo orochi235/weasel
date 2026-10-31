@@ -20,10 +20,11 @@ import { describeSelection } from './selectionSummary';
 import { usePaletteItems, type PaletteItems } from './usePaletteItems';
 import styles from './CommandPalette.module.css';
 
-/** Every shortcut an entry answers to, as chip groups. An entry can be
+/** The action's own `shortcut` text when it has one, else every shortcut it answers to, as chip groups. An entry can be
  *  bound more than once — Bring to Front has two — so each binding gets its
  *  own group rather than one being picked as canonical. */
 function ShortcutChips({ item }: { item: ActionItem }) {
+  if (item.action.shortcut) return <span className={styles.shortcuts}>{item.action.shortcut}</span>;
   const shortcuts = actionShortcuts(item.action, item.params);
   if (shortcuts.length === 0) return null;
   return (
