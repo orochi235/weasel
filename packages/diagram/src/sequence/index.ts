@@ -5,6 +5,15 @@ export type {
 export {
   findStep, moveParticipant, moveStep, placeOf, reconnectMessage, sequenceTextOf, setSequenceText, stepListOf,
 } from './edit';
+export {
+  addBox, addParticipant, freshSeqId, newParticipant, removeBox, removeParticipant, seqIdTaken, setAutonumber, setParticipantOutline,
+  type SeqParticipantKind,
+} from './author';
+export {
+  SEQ_ARROWS, SEQ_MULTI_SECTION, addSection, insertMark, insertMessage, insertNote, insertStep, removeSection, removeStep, removeStepAt,
+  setFragmentType, setMessageActivation, setMessageArrow, unwrapFragment, wrapSteps,
+  type NewSeqFragment, type NewSeqMessage, type NewSeqNote, type SeqArrow, type SeqArrowName,
+} from './authorSteps';
 export { sequenceLayout, type SeqRect, type SequenceLayout, type SequenceLayoutOptions, type SeqSlot } from './layout';
 export { SEQUENCE_ROLES, sequenceSpecs, type SequenceSpecsOptions } from './specs';
 export {
