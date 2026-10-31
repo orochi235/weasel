@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { FocusScope, useOverlay } from 'react-aria';
 import { OverlayTriggerStateContext } from 'react-aria-components';
@@ -18,11 +18,13 @@ export interface ContainedModalProps {
   children: ReactNode;
 }
 
-/** Open state, controlled by `isOpen` when it is given, in the shape React Aria's dialog reads its `close` from. */
-function useOpenState({ isOpen, defaultOpen = false, onOpenChange }: ContainedModalProps) {
-  const [own, setOwn] = useState(defaultOpen);
+/** Open state, controlled by `isOpen` when it is given, in the shape React Aria's dialog reads its `close` from.
+ *  Given neither `isOpen` nor `defaultOpen`, an enclosing `<DialogTrigger>`'s state, as React Aria's modal reads it. */
+function useOpenState({ isOpen, defaultOpen, onOpenChange }: ContainedModalProps) {
+  const trigger = useContext(OverlayTriggerStateContext);
+  const [own, setOwn] = useState(defaultOpen ?? false);
   const open = isOpen ?? own;
-  return useMemo(() => {
+  const local = useMemo(() => {
     const setOpen = (next: boolean) => {
       if (isOpen === undefined) setOwn(next);
       if (next !== open) onOpenChange?.(next);
@@ -37,6 +39,7 @@ function useOpenState({ isOpen, defaultOpen = false, onOpenChange }: ContainedMo
       setPoint: () => {},
     };
   }, [open, isOpen, onOpenChange]);
+  return isOpen === undefined && defaultOpen === undefined && trigger ? trigger : local;
 }
 
 /**

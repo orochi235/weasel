@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
+import { Button, DialogTrigger } from 'react-aria-components';
 import { renderWithIcons } from '../../testing/withIcons';
 import { OverlayPortalProvider } from '../../overlays/portalHost';
 import { Dialog } from './Dialog';
@@ -59,5 +60,27 @@ describe('Dialog in a contained portal', () => {
     renderWithIcons(<Page open onOpenChange={onOpenChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Close dialog' }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('opens from an enclosing DialogTrigger when given no isOpen', () => {
+    function Triggered() {
+      const [box, setBox] = useState<HTMLDivElement | null>(null);
+      return (
+        <div ref={setBox}>
+          {box ? (
+            <OverlayPortalProvider container={box} contained>
+              <DialogTrigger>
+                <Button>open</Button>
+                <Dialog title="Prefs"><button type="button">inside</button></Dialog>
+              </DialogTrigger>
+            </OverlayPortalProvider>
+          ) : null}
+        </div>
+      );
+    }
+    renderWithIcons(<Triggered />);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'open' }));
+    expect(screen.getByRole('dialog', { name: 'Prefs' })).toBeTruthy();
   });
 });
