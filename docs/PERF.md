@@ -43,71 +43,56 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) [agent] What still breaks the batch, now that a rect clip does not.** `batchClip.ts` cuts staged
-  quads to an axis-aligned clip rect on the CPU.
-
-  The figures below dated 2026-10-17 are one pass of each spec on teitou, with the specs as of
-  `539738293`; result files in `tests/perf/recorded/batch-specs-2026-10-17/` (they name onto's
-  base commit, `f32b06842`, marked dirty). What is left:
+- **(P2) [agent] What still breaks the batch: a clip or an aligned stroke that is not convex.** Staged
+  quads are cut on the CPU to an axis-aligned rect clip (`batchClip.ts`), and, where the batch shader
+  decides no hulls, to a convex clip's half-planes; an aligned stroke on a convex fill is cut to its
+  side of the fill (`draw/alignedRibbon.ts`); an even-odd fill whose outlines cross or touch is
+  resolved into rings (`resolveEvenOdd`, `@weasel-js/geom/tessellate`).
 
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`, 2026-10-17: 21.41), and 17.4 of it
     goes when the vertex `bufferSubData` is dropped, leaving 3.4 for the bind and the draw. No other
-    call in `flushBatch` moves it by more than 0.4 us. A stencil clip around a solid rect costs
-    24.4 us a clip, 22.2 of it the break; an axis-aligned rect clip, cut on the CPU, costs 0.09
-    (`clip-cost.spec.ts`). What still ends a run, as of 2026-10-30: a sixteenth texture, a ninth
-    color matrix, a clip only the stencil expresses (see the convex-clip item below), an even-odd
-    fill whose outlines cross or touch, an inside- or outside-aligned stroke on a polygon, a mesh
-    past the vertex cap (`meshBatching`), a custom shader command, and a registered paint kind (`registerPaintDrawKind`).
-    No built-in paint ends one any more. The small-glyph program (`batchAreaFragSrc`) is chosen per
-    run and breaks nothing.
-  - **Why a staged pattern costs more than a staged gradient is not known.** A pattern command cost
-    2.58–2.76 us after patterns joined the run, against 0.36–0.48 for a solid and 1.46–1.95 for a
-    linear gradient in the same passes (msb-uai, `tests/perf/recorded/pattern-batch-2026-10-30/`).
-  - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
-    `batch` variant draws `BATCH_FRAG_SRC` through `BATCH_VERT_SRC` (`tests/perf/lib/batchFragments.ts`);
-    it cost 2.95–2.98 times `split-sample`, the hand-written fragment the spec's older variants
-    price the glyph math and the gradient split against, on msb-uai and keiei, and 4.7 (M3 Max) and 5.9
-    (M2) times a plain textured fragment. So those variants' percentages are shares of a fragment
-    a third as dear as the real one. What the rest is spent on (the color matrix and clamp,
-    `straightRgb`, the flat varyings) is not broken down. On msb-uai the last two of eight runs
-    ran 2.5–4 times slower in both passes, every variant alike; the spec keeps the fastest run,
-    so they do not reach a figure. Result files: `tests/perf/recorded/fill-rate-batch-2026-10-19/`.
-  - **A convex clip stays in the run only on a single-sampled target** (`batchHull.ts`, 2026-10-27): a
-    turned rect or a convex polygon of up to 8 edges is tested per fragment against half-planes snapped to
-    1/16 px, and the stencil, when needed, is drawn from the same corners. `hullClip.browser.test.ts`
-    (SwiftShader) and `clip-cost.spec.ts` (teitou, ANGLE Metal, 0 differing pixels) pin the agreement. 512
-    slanted clips on a single-sampled canvas: 32 draws and 0.46 ms a frame, against 1536 draws and 14.93 ms on
-    the stencil (`tests/perf/recorded/hull-clip-2026-10-27/`). A rect clip there is snapped to the same grid
-    and carries itself as a hull, so a slanted item across it stays in the run too: 512 such clips, 32 draws
-    and 0.78 ms against 1536 draws and 6.01 ms on the stencil, 0 differing pixels
-    (`tests/perf/recorded/rect-clip-hull-2026-10-27/`). Nested clips keep only the tighter of two planes
-    facing the same way (`meetHulls`), so nested rect clips stay at four planes however deep: 512 slanted
-    items each across three nested rect clips, 32 draws and 2.97–3.17 ms a frame, against 3584 draws and
-    13.32–13.81 ms before, 0 differing pixels (msb-uai, Apple M3 Max, solo, two alternating passes each,
-    2026-10-29; `tests/perf/recorded/nested-rect-hull-2026-10-29/`). What still flushes: every such clip
-    on a multisampled target, which is the browser default (WebGL2 has no `gl_SampleMask`, and scaling
-    alpha by sample coverage leaves the color beneath showing at the clip edge where layers stack, inferred
-    from the blend math); a non-convex or curved clip; nested clips facing more than 8 ways between them,
-    such as a rect clip and two clips turned to different angles (turned clips merge only where their
-    snapped edges come out exactly parallel); and a clip inside a retained or effect target.
+    call in `flushBatch` moves it by more than 0.4 us. What still ends a run, as of 2026-10-31: a
+    sixteenth texture, a ninth color matrix, a clip that is curved, not convex, or of more than 8
+    edges, nested convex clips past 16 planes between them on a target without hulls (past 8 facing
+    ways where the shader decides them), an inside- or outside-aligned stroke on a fill that is not
+    one convex ring or that carries per-vertex colors, an even-odd fill whose crossings would cost
+    more than `MAX_EVENODD_RESOLVE_WORK` to resolve, a mesh past the vertex cap (`meshBatching`), a
+    custom shader command, and a registered paint kind (`registerPaintDrawKind`).
+  - **The three that left the stencil on 2026-10-31**, msb-uai (Apple M3 Max), `clip-cost` and
+    `transition-matrix` timed against bab3c623e in ABBA order, the two passes of each side shown
+    (`tests/perf/recorded/batch-breakers-2026-10-31/`, `digest.py` there):
+
+    | what | before | after |
+    |---|---:|---:|
+    | a slanted convex clip on the multisampled canvas, us a clip | 41.90–43.19 | -0.05–0.08 |
+    | a turned rect across a rect clip there, us a clip | 18.03–24.46 | 2.61–2.63 |
+    | an inner stroke on a turned quad over a centered one, us a stroke | 21.31–28.37 | 0.55–0.58 |
+    | an even-odd ring a contour of no area touches, us a command | 6.06–8.00 | 0.72–0.84 |
+    | that ring beside a solid, us a boundary | 14.16–17.73 | 0.06–0.11 |
+
+    Each of the first four frames fell from 1536 draws to 1. A cut point on a slanted edge is not
+    one the rasterizer can hold, so a pixel center or sample within its snapping distance of a cut
+    edge can land the other way from the stencil's; `planeClip.browser.test.ts` and
+    `alignedStroke.browser.test.ts` pin that it is only there, and `evenOddBatch.browser.test.ts` the
+    same for a crossing.
+  - **The shipping batch fragment's cost is no one part of it.** `fill-rate`'s `batch-no-*` variants cut
+    one part out of `BATCH_FRAG_SRC` each: the gradient branch saves 23.7%, the slot tree 38.8%,
+    straight alpha 38.2%, the color matrix and clamp 48.0%, glyph coverage 55.0%, and all five
+    together 75.5%, which leaves 11.97 ms a frame against `split-sample`'s 13.88 (msb-uai, one pass,
+    2026-10-31; `tests/perf/recorded/paint-and-fragment-2026-10-31/`). The savings overlap, summing
+    to twice what all of them save, so the fragment is not paying for each part's arithmetic in
+    turn; that it is bound by something they share, such as registers per fragment, is inferred and
+    not measured.
   - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
     reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and
     made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.
     The cause was not found. The run's color matrices are cached the same way now
     (`uploadBatchMatrices`), where `setColorMatrixUniforms` cached the one before.
-  - **A boundary costs 20.9–24.8 us when one side draws for itself, and nothing otherwise**
-    (`transition-matrix.spec.ts`, `tests/perf/recorded/vertex-color-batch-2026-10-30/`). Between two
-    kinds that batch it sits within ±0.4 us; between two that draw for themselves it is at most 1.0,
-    since the run is already closed. Per command, a shader panel costs 3.77–4.59 us and an even-odd
-    fill 7.84–8.13, against 0.43–0.49 for a solid rect (the pattern and the simple even-odd fill,
-    which these passes also priced, batch now). An even-odd fill whose outlines cross or touch still
-    takes the stencil two-pass (`tessellateEvenoddWithAnchors`); batching it would need its
-    crossings resolved into rings first, as `resolveCrossings` does for nonzero, but by parity.
 
-  Closes when an even-odd fill whose outlines cross or touch, an inside- or outside-aligned stroke on a
-  polygon, and a convex clip on a multisampled target each stay in the run, pinned by draw count in a
-  `*.browser.test.ts`, or are each deleted as accepted at the boundary they cost now, with the batch
-  fragment's and the staged pattern's costs broken down or accepted at the figures above.
+  Closes when an aligned stroke on a fill that is not convex stays in the run, pinned by draw count
+  in a `*.browser.test.ts`, or is deleted as accepted at the boundary it costs now, with the batch
+  fragment's shared cost located (a variant that names what the knockouts share) or accepted at the
+  figures above.
 
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
