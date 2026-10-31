@@ -17,7 +17,7 @@
 }
 
 .readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   align-self: center;
-  font-variant-numeric: tabular-nums;
   min-width: 10ch;
 }

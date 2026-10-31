@@ -4,7 +4,7 @@ import { SceneCanvas, useScene } from '@weasel-js/core';
 import { fixedWidth, IDLE_PRESS } from '@weasel-js/headless';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { useThemeOptional } from '@weasel-js/theme/react';
-import { hudButton, hudMeasureEnv } from '@weasel-js/hud';
+import { DEFAULT_FONT_FAMILY, hudButton, hudMeasureEnv } from '@weasel-js/hud';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import s from './widgets.stories.module.css';
@@ -18,14 +18,14 @@ interface ButtonWidgetArgs {
 /** A HUD button beside the DOM `Button` it shares one measure with, at the same width. Press either. */
 function ButtonWidget({ label, size, width }: ButtonWidgetArgs) {
   const hud = useHud();
-  const entry = useHudContribution(hud, { font: 'sans-serif' });
+  const entry = useHudContribution(hud);
   const scene = useScene<{ id: string }>({ items: [] });
   const [presses, setPresses] = useState(0);
   const tokens = useThemeOptional()?.resolved;
 
   useEffect(() => {
     // The widget takes its height from the shared measure, as the DOM button takes it from CSS.
-    const env = hudMeasureEnv({ tokens: tokens ?? resolveTheme(weaselTheme), defaultFont: 'sans-serif' });
+    const env = hudMeasureEnv({ tokens: tokens ?? resolveTheme(weaselTheme), defaultFont: DEFAULT_FONT_FAMILY });
     const { height } = hudButton.measure({ label, size, press: IDLE_PRESS }, fixedWidth(width), env);
     const b = hud.button({ id: 'b', x: 16, y: 16, w: width, h: height, label, size });
     const onPress = () => setPresses((n) => n + 1);

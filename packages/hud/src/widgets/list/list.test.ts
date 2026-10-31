@@ -89,6 +89,14 @@ describe('list widget', () => {
     ]);
   });
 
+  it('resolves the subtle color against the foreground, for muted rows and the empty state', () => {
+    const colors = (cmds: DrawCommand[]) => cmds.filter((c): c is TextDrawCommand => c.kind === 'text')
+      .map((c) => JSON.stringify(c.runs[0]!.fill));
+    const empty = createList({ id: 'e', x: 0, y: 0, w: 200, rows: [] });
+    const muted = createList({ id: 'm', x: 0, y: 0, w: 200, rows: [{ id: 'a', label: 'A', muted: true }] });
+    for (const c of [...colors(empty.draw(ctx)), ...colors(muted.draw(ctx))]) expect(c).not.toContain('currentColor');
+  });
+
   it('takes no focus and no keys when it neither selects nor activates', () => {
     const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows });
     expect(l.focusable).toBe(false);

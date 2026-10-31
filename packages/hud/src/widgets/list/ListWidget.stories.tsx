@@ -18,7 +18,7 @@ const LABELS = ['Background', 'Sketch', 'Ink', 'Highlights', 'Shadows', 'Notes',
  *  move with the arrows or by typing, pick with Enter or a press. */
 function ListWidget({ selection, rowCount, width }: ListWidgetArgs) {
   const hud = useHud();
-  const entry = useHudContribution(hud, { font: 'sans-serif' });
+  const entry = useHudContribution(hud);
   const scene = useScene<{ id: string }>({ items: [] });
   const [current, setCurrent] = useState('b');
   const rows = LABELS.slice(0, rowCount).map((label, i): HudListRow => {

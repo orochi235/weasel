@@ -5,6 +5,7 @@ import {
   envPx, exactly, measureRowList,
   type HeadlessComponent, type ListMode, type RowFace, type RowListLayout,
 } from '@weasel-js/headless';
+import { resolveCurrentColor } from '@weasel-js/theme';
 import { hudMeasureEnv } from '../../measureEnv';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
 
@@ -53,6 +54,8 @@ export const hudList: HeadlessComponent<HudListState, RowListLayout, HudListTarg
   draw(state, target) {
     const { bounds: b, ctx } = target;
     const t = ctx.tokens;
+    const fg = t['--wzl-fg'];
+    const subtle = resolveCurrentColor(t['--wzl-fg-subtle'], fg);
     const env = hudMeasureEnv(ctx, target.fontFamily);
     const { layout } = measureRowList(state, exactly(b.w, b.h), env);
     const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
@@ -60,7 +63,7 @@ export const hudList: HeadlessComponent<HudListState, RowListLayout, HudListTarg
       textCommandFromRuns(x, y, [{ text: s, fill: solid(color) }], font, undefined, h, 'center');
     if (layout.empty) {
       const e = layout.empty;
-      return [text(state.empty ?? '—', b.x + e.x, b.y + e.y, e.height, t['--wzl-fg-subtle'])];
+      return [text(state.empty ?? '—', b.x + e.x, b.y + e.y, e.height, subtle)];
     }
     const radius = envPx(env, '--wzl-radius-sm', 0);
     const out: DrawCommand[] = [];
@@ -79,7 +82,7 @@ export const hudList: HeadlessComponent<HudListState, RowListLayout, HudListTarg
           stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
         });
       }
-      out.push(text(row.label, b.x + box.label.x, y, r.height, row.muted ? t['--wzl-fg-subtle'] : t['--wzl-fg']));
+      out.push(text(row.label, b.x + box.label.x, y, r.height, row.muted ? subtle : fg));
       // ItemList's `outline: 2px; outline-offset: -2px`: a ring just inside the row.
       if (state.ring && state.active === i) {
         const inset = RING_WIDTH / 2;
