@@ -20,7 +20,8 @@ A `DiagramDocument` is a diagram's pages and its theme. Each page has an id,
 an optional name, a sheet size, and a `kind` saying what it holds. A `'graph'`
 page holds a `DiagramData` whose places, boxes, waypoints, and label points run
 from the page's top-left corner, and may name its `notation` (`'class'`,
-`'state'`, …) for a format that writes graphs in several notations. Ids share one
+`'state'`, …) for a format that writes graphs in several notations. A `'plot'`
+page holds one chart, a `PlotData` from `@weasel-js/plot`, which fills the page. Ids share one
 namespace across the document. Every format lists the page `kinds` it holds; a
 writer leaves out a page of another kind with a warning, and `formatHolds`
 says whether a format can write a whole document. Edges whose ends are on different pages sit in
@@ -43,7 +44,8 @@ hand (the trait's `ownStyle`) and any that differ from the theme, as `colors`.
 A route or a port that layout chose, and an avoiding connector's computed
 route, are read as `routed` and `routedPorts`, not as waypoints, so they stay
 layout's. `theme` is what colors are compared against when the scene names
-none.
+none. A page holding a plot root (one `plotSpecs` made) is a plot page of the
+spec the root holds, edits included; anything else on that page is left out.
 
 `documentSpecs(doc, { layer, theme, measure })` is the way back. Pages are
 placed with core's `layoutPages`, as `core:pages` places them. A page where a
@@ -52,7 +54,10 @@ running the way its `direction` says, with whatever it places pinned; the
 result is kept as places and routes, a page that placed nothing is moved to sit
 40 inside its corner, and the page grows to hold it. Then one `diagramScene`
 call with no layout draws every page and the edges between them, so no layout
-runs again after an import.
+runs again after an import. A plot page is one plot root filling the page, its
+id `<page id>/plot`, its marks under it, drawn in the theme's roles: text in the
+label color, axes in the connector stroke, grid lines in the container stroke,
+series in the theme's `series` (`plotThemeOf`).
 
 ## Formats
 
@@ -70,9 +75,9 @@ with it and rejects on a file nothing reads.
 
 | Format | Extensions | Reads | Writes |
 | --- | --- | --- | --- |
-| `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes | the whole document |
+| `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes, graph and plot pages | the whole document |
 | `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
-| `DIAGRAM_MERMAID`, a Mermaid flowchart | `.mmd`, `.mermaid` | yes | one page |
+| `DIAGRAM_MERMAID`, a Mermaid flowchart or xychart | `.mmd`, `.mermaid` | yes | one page, a graph or an xychart |
 | `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
 Not read, by decision (2026-10-20): packaged office-suite drawing formats,
@@ -142,7 +147,7 @@ cannot read.
 | ports | — | `node:compass`, `n`, `e`, `s`, and `w` only |
 
 A Mermaid shape with no outline here reads as a rect, with a warning; a
-Mermaid diagram of another kind is refused with an error naming the kind. DOT
+Mermaid diagram of a kind not read here is refused with an error naming the kind. DOT
 reads its whole grammar: `strict`, `graph` and `digraph`, attribute
 statements and their scoping, edge chains, and subgraphs as edge ends. Its
 HTML labels read as their text, and the attributes it does not read are
@@ -157,6 +162,24 @@ written as nested clusters or subgraphs and read back as containers. Mermaid
 ids that are keywords or not plain names are renamed, keeping their text.
 Bends, connectors to other pages, drawn outlines, and ports a format lacks
 are dropped with a warning.
+
+### Mermaid xychart
+
+`xychart-beta`, or `xychart`, reads onto one 800 by 500 plot page holding an
+`xychart` (`readMermaidXychart`), and a plot page holding one writes back as
+`xychart-beta` (`writeMermaidXychart`). Errors name the line.
+
+| `XyChartData` | Mermaid |
+| --- | --- |
+| `orientation: 'horizontal'` | `xychart-beta horizontal` |
+| `title`, and the page name | `title "…"`, else the front matter's `title` |
+| `x`, a band axis | `x-axis "title" [a, "b c"]` |
+| `x`, a range axis | `x-axis "title" 1 --> 10` |
+| `y` | `y-axis "title" 0 --> 100`; one end alone is dropped on writing, with a warning |
+| a series | `bar "name" [1, 2]`, `line [1, 2]` |
+
+Reading drops other front matter, `%%{init}%%` directives, `accTitle` and
+`accDescr`, with a warning each, and warns of values past the last category.
 
 ## Exporting a page
 
@@ -191,6 +214,7 @@ annotation layers are left out.
 | A shape's outline (`diagram.outline`) | A path of that outline in the shape's box, with its fill and stroke; a container's divider under its header as a second path. A container's members follow inside its group. |
 | A connector, or any node that derives its path | One path along the route, with its stroke and its `marker-start` and `marker-end`. A path made of parts writes one path per part. |
 | A drawn mark | Its unit-square path stretched over its box. |
+| A plot's mark | Its path or its text, in the plot root's frame. |
 | Rows, labels, text marks, and off-page tags | Text, laid out in the lines the canvas lays it into; a tag's background is a rect behind it. |
 | Anything else | What `@weasel-js/svg`'s `svgLeafFromKit` writes for it. |
 
@@ -238,5 +262,5 @@ register, as for the PNG, and this needs WebGL2 and `OffscreenCanvas`.
 
 ## Scenes it reads
 
-Poses are read as world-space `RectPose`s, which is what a diagram scene
-holds. A scene that composes child poses into a parent's frame is not one.
+Poses are read in world space: a diagram scene holds world-space `RectPose`s,
+and a plot root is a frame its marks are folded through.

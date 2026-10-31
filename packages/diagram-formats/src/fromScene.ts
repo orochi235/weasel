@@ -6,7 +6,8 @@ import {
   DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
   type DataNode, type DiagramTheme,
 } from '@weasel-js/diagram';
-import type { DiagramDocument, GraphPage } from './document';
+import type { DiagramDocument, DocumentPage, GraphPage, PlotPage } from './document';
+import { plotPageOf } from './plotPages';
 import { kindOf, readEdge, readGroup, readRegion, readShape, type ReadNode, type ReadScene } from './sceneReaders';
 
 /** Options for {@link documentFromScene}. */
@@ -37,7 +38,8 @@ function contentPage(scene: AnyScene): PlacedPage {
  * Reads a diagram scene into a document: one page per page in its `core:pages`
  * (one page around everything when it has none), each holding the shapes,
  * connectors, containers and pools, and groups on it, in coordinates from the
- * page's corner. A shape belongs to the page its outermost container does, and
+ * page's corner; a page holding a plot root is a plot page of its spec, and
+ * whatever else is on it is left out. A shape belongs to the page its outermost container does, and
  * that is the one its box overlaps most, or the nearest one when it overlaps
  * none. A connector the scene splits off-page, or whose ends export to
  * different pages, goes in `crossPageEdges`: without waypoints when split,
@@ -62,6 +64,12 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
     if (!pageCache.has(root.id)) pageCache.set(root.id, pageHolding(pages, boxOf(root))!);
     return pageCache.get(root.id)!;
   };
+
+  const plots = new Map<string, PlotPage>();
+  for (const node of s.renderOrderNodes()) {
+    const page = plotPageOf(pageOf(node), node);
+    if (page !== null && !plots.has(page.id)) plots.set(page.id, page);
+  }
 
   const labels = new Map<string, ReadNode>();
   const edges: ReadNode[] = [];
@@ -103,7 +111,9 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   }
 
   return {
-    pages: pages.map((p): GraphPage => {
+    pages: pages.map((p): DocumentPage => {
+      const plot = plots.get(p.id);
+      if (plot !== undefined) return plot;
       const { nodes, edges: pageEdges, groups, containers } = buckets.get(p.id)!;
       return {
         kind: 'graph',
@@ -112,7 +122,7 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
         width: p.width,
         height: p.height,
         data: { nodes, edges: pageEdges, ...(groups.length > 0 ? { groups } : {}), ...(containers.length > 0 ? { containers } : {}) },
-      };
+      } satisfies GraphPage;
     }),
     ...(crossPageEdges.length > 0 ? { crossPageEdges } : {}),
     ...(themeValue !== undefined ? { theme: themeValue } : {}),

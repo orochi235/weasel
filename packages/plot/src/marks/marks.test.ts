@@ -11,7 +11,7 @@ describe('box marks', () => {
   it('bar: spans from its baseline to its end, either way round, keeping its datum', () => {
     const up = barMark({ key: 'b', x: 10, width: 20, from: 100, to: 40, color: '#f00', datum: { value: 6 } });
     expect(up.pose).toEqual({ x: 10, y: 40, width: 20, height: 60 });
-    expect(up.data).toMatchObject({ plotMark: { kind: 'bar', datum: { value: 6 } }, shape: 'rect', fill: { paint: { color: '#f00' } } });
+    expect(up.data).toMatchObject({ plotMark: { kind: 'bar', datum: { value: 6 } }, path: { kind: 'rect', ...up.pose }, fill: { paint: { color: '#f00' } } });
     const down = barMark({ key: 'b', x: 10, width: 20, from: 100, to: 130, color: '#f00' });
     expect(down.pose).toEqual({ x: 10, y: 100, width: 20, height: 30 });
     expect(down.data.plotMark.datum).toBeUndefined();
@@ -31,7 +31,8 @@ describe('box marks', () => {
   it('point: an ellipse centered on its point', () => {
     const p = pointMark({ key: 'p', x: 50, y: 60, radius: 4, color: '#00f', datum: { index: 2 } });
     expect(p.pose).toEqual({ x: 46, y: 56, width: 8, height: 8 });
-    expect(p.data).toMatchObject({ plotMark: { kind: 'point', datum: { index: 2 } }, shape: 'ellipse' });
+    expect(p.data).toMatchObject({ plotMark: { kind: 'point', datum: { index: 2 } } });
+    expect(boundsOfPath(p.data.path!)).toMatchObject(p.pose);
   });
 });
 

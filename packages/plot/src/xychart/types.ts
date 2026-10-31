@@ -1,4 +1,4 @@
-/** A category axis: one band per label, in order. */
+/** A category axis: one band per label, in order; with none, bands numbered from 1. */
 export interface XyBandAxis {
   kind: 'band';
   title?: string;

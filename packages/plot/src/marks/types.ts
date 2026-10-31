@@ -28,12 +28,11 @@ export interface SolidStroke {
 
 /**
  * A mark's scene data: the trait under `plotMark`, and the fields the kit's
- * painters draw it from — `shape` for a box, `path` for a line or a region,
- * `text` for a label.
+ * painters draw it from — `path` for a shape, a line or a region, `text` for
+ * a label.
  */
 export interface PlotMarkData {
   plotMark: PlotMarkTrait;
-  shape?: 'rect' | 'ellipse';
   path?: Path;
   fill?: SolidFill;
   stroke?: SolidStroke;

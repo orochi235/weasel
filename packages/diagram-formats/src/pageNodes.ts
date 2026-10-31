@@ -4,13 +4,14 @@
  */
 import {
   boundsOfPath,
+  composeWorldPose,
   derivedDepOf,
   derivedPartsOf,
   documentOf,
   INHERIT,
   resolvePartPaint,
-  effectivePose,
   isAnnotationLayer,
+  scenePoseAdapter,
   type DrawCommand,
   type NodeShapeEntry,
   type Paint,
@@ -98,9 +99,11 @@ export function pageSvgNodes(live: PageExportScene, page: PageRect): SvgNode[] {
   const painters = [diagramShape<RectPose>(), markShape<RectPose>()];
   const shown = new Set(scene.layers.filter((l) => l.visible && !isAnnotationLayer(l)).map((l) => l.id));
   const poseCache = new Map<string, RectPose>();
+  const poses = scenePoseAdapter(scene as never);
+  // In world: a container whose pose is a frame, as a plot's root is, carries its children.
   const pose = (node: SceneNode): RectPose => {
     let p = poseCache.get(node.id);
-    if (p === undefined) poseCache.set(node.id, (p = effectivePose(scene, node)));
+    if (p === undefined) poseCache.set(node.id, (p = composeWorldPose(poses, node.id, scene.composition.compose as never) as RectPose));
     return p;
   };
   const pathOf = (node: SceneNode) => (node.kind === 'mark' ? derivedDepOf(scene, node.id)?.path ?? null : null);

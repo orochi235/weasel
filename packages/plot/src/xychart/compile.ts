@@ -31,9 +31,9 @@ const BAND_PADDING = 0.2;
 /** How many values the longest series holds. */
 export const xyLength = (data: XyChartData): number => Math.max(0, ...data.series.map((s) => s.values.length));
 
-/** The labels of the category bands: the axis's own, else numbers from 1. */
+/** The labels of the category bands: the axis's own, else numbers from 1, one per value of the longest series. */
 function categoriesOf(data: XyChartData): string[] {
-  if (data.x?.kind === 'band') return [...data.x.categories];
+  if (data.x?.kind === 'band' && data.x.categories.length > 0) return [...data.x.categories];
   return Array.from({ length: xyLength(data) }, (_, i) => String(i + 1));
 }
 

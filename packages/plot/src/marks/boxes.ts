@@ -1,5 +1,8 @@
-/** Marks drawn as a box: bars, spans and points. */
-import type { PlotDatum, PlotMark } from './types';
+/** Marks drawn as a box: bars, spans and points. Each carries its outline as `path`, which every export writes. */
+import { ellipsePath, type Path } from '@weasel-js/geom';
+import type { PlotBox, PlotDatum, PlotMark } from './types';
+
+const rectOf = (b: PlotBox): Path => ({ kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height });
 
 const fillOf = (color: string, opacity?: number) => ({ paint: { color, ...(opacity !== undefined ? { opacity } : {}) } });
 
@@ -29,7 +32,7 @@ export function barMark(opts: BarMarkOptions): PlotMark {
   return {
     key: opts.key,
     pose,
-    data: { plotMark: { kind: 'bar', ...(opts.datum ? { datum: opts.datum } : {}) }, shape: 'rect', fill: fillOf(opts.color) },
+    data: { plotMark: { kind: 'bar', ...(opts.datum ? { datum: opts.datum } : {}) }, path: rectOf(pose), fill: fillOf(opts.color) },
   };
 }
 
@@ -49,12 +52,13 @@ export interface SpanMarkOptions {
 
 /** A span across x, as a task's bar on a timeline is. */
 export function spanMark(opts: SpanMarkOptions): PlotMark {
+  const pose = { x: Math.min(opts.x0, opts.x1), y: opts.y, width: Math.abs(opts.x1 - opts.x0), height: opts.height };
   return {
     key: opts.key,
-    pose: { x: Math.min(opts.x0, opts.x1), y: opts.y, width: Math.abs(opts.x1 - opts.x0), height: opts.height },
+    pose,
     data: {
       plotMark: { kind: 'span', ...(opts.datum ? { datum: opts.datum } : {}) },
-      shape: 'rect',
+      path: rectOf(pose),
       fill: fillOf(opts.color, opts.opacity),
     },
   };
@@ -74,9 +78,10 @@ export interface PointMarkOptions {
 /** A dot centered on `x`, `y`. */
 export function pointMark(opts: PointMarkOptions): PlotMark {
   const r = opts.radius ?? 3;
+  const pose = { x: opts.x - r, y: opts.y - r, width: 2 * r, height: 2 * r };
   return {
     key: opts.key,
-    pose: { x: opts.x - r, y: opts.y - r, width: 2 * r, height: 2 * r },
-    data: { plotMark: { kind: 'point', ...(opts.datum ? { datum: opts.datum } : {}) }, shape: 'ellipse', fill: fillOf(opts.color) },
+    pose,
+    data: { plotMark: { kind: 'point', ...(opts.datum ? { datum: opts.datum } : {}) }, path: ellipsePath(pose), fill: fillOf(opts.color) },
   };
 }
