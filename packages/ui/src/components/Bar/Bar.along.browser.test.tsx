@@ -245,7 +245,8 @@ test('the wheel and a drag along the band scroll; a still press on an action fir
   await settle();
   const scrolled = wheels.reduce((a, b) => a + b, 0);
   expect(scrolled).toBeGreaterThan(0);
-  expect(Math.abs(third() - dragged + ((scrolled / RADIUS) * 180) / Math.PI)).toBeLessThanOrEqual(1);
+  // The wheel glides, and settle() can return mid-glide when a frame passes before React draws the next step.
+  await expect.poll(() => Math.abs(third() - dragged + ((scrolled / RADIUS) * 180) / Math.PI)).toBeLessThanOrEqual(1);
 
   const target = items().find((el) => el.getAttribute('data-clipped') === 'none')!;
   const name = target.querySelector('button')!.getAttribute('aria-label')!;
