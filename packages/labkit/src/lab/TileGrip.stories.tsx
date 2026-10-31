@@ -3,7 +3,7 @@ import { TileGrip, Workspace } from '@weasel-js/labkit';
 import { useState } from 'react';
 
 const meta: Meta<typeof TileGrip> = {
-  title: 'labkit/Lab/TileGrip',
+  title: 'labkit/Lab/Workspace/TileGrip',
   component: TileGrip,
 };
 export default meta;

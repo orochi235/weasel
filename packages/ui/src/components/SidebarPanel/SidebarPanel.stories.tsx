@@ -5,7 +5,7 @@ import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 
 const meta: Meta<typeof SidebarPanel> = {
-  title: 'ui/SidebarPanel',
+  title: 'ui/Sidebar/SidebarPanel',
   component: SidebarPanel,
   args: {
     title: 'Properties',
