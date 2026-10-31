@@ -15,6 +15,8 @@ import { MERMAID_KINDS, headerWord } from './common/header';
 import { readErDiagram } from './er/read';
 import { writeErDiagram } from './er/write';
 import { readFlowchart } from './flowchart/read';
+import { readKanban } from './kanban/read';
+import { writeKanban } from './kanban/write';
 import { writeFlowchart } from './flowchart/write';
 import { readMindmap } from './mindmap/read';
 import { writeMindmap } from './mindmap/write';
@@ -59,6 +61,7 @@ const KINDS: readonly MermaidKind[] = [
   { name: 'block-beta', header: /^block(?:-beta)?$/, page: 'graph', notation: 'block', read: readBlockDiagram, write: writeBlockDiagram },
   { name: 'architecture-beta', header: /^architecture(?:-beta)?$/, page: 'graph', notation: 'architecture', read: readArchitecture, write: writeArchitecture },
   ...C4_HEADERS.map((h): MermaidKind => ({ name: h, header: new RegExp(`^${h}$`), page: 'graph', notation: C4_NOTATIONS[h], read: readC4, write: writeC4 })),
+  { name: 'kanban', header: /^kanban$/, page: 'graph', notation: 'kanban', read: readKanban, write: writeKanban },
 ];
 
 /** The page `opts` names, which must be of `kind`. */

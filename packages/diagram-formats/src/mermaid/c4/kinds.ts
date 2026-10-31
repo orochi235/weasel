@@ -3,6 +3,7 @@
  * its outline, theme role, and the `<<kind>>` row that names it again on write.
  */
 import type { Outline, Row, RowTextStyle } from '@weasel-js/diagram';
+import { wrapped } from '../common/text';
 
 /** An element: what it is, whether it is a store or a queue of that, and whether it is outside the system. */
 export interface C4Kind {
@@ -53,21 +54,7 @@ export const roleOf = (kind: C4Kind): string => (kind.external ? 'muted' : 'acce
 
 /** An element's box is at least this wide, so a description wraps rather than stretching it. */
 export const ELEMENT_WIDTH = 200;
-/** A description's rows wrap at this many characters. */
-const WRAP = 32;
-
 const SMALL: RowTextStyle = { fontSize: 10 };
-
-/** `text` broken at spaces into lines of at most {@link WRAP} characters, a longer word on a line of its own. */
-export function wrapped(text: string): string[] {
-  const out: string[] = [];
-  for (const word of text.split(/\s+/).filter((w) => w !== '')) {
-    const last = out.at(-1);
-    if (last !== undefined && last.length + 1 + word.length <= WRAP) out[out.length - 1] = `${last} ${word}`;
-    else out.push(word);
-  }
-  return out;
-}
 
 /** An element's rows: its `<<kind>>`, its name in bold, its `[technology]`, and its description, wrapped. */
 export function elementRows(kind: C4Kind, name: string, technology: string | undefined, description: string | undefined): Row[] {
