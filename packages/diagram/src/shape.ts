@@ -62,7 +62,8 @@ export function diagramShape<TPose>(
       const detailPath = stroke ? outlineDetail(outline, box) : null;
       const detail = stroke && detailPath ? [{ kind: 'path' as const, path: detailPath, stroke }] : [];
       const solidPath = declaredStroke ? outlineSolid(outline, box) : null;
-      const solid = declaredStroke && solidPath ? [{ kind: 'path' as const, path: solidPath, fill: commandFill({ paint: declaredStroke.paint }, box) }] : [];
+      const solidFill = declaredStroke && solidPath ? commandFill({ paint: declaredStroke.paint }, box) : null;
+      const solid = solidPath && solidFill ? [{ kind: 'path' as const, path: solidPath, fill: solidFill }] : [];
       const trait = diagramNodeOf(node, opts.read);
       const rules = stroke && trait !== null ? bodyRules(trait, box).map((path) => ({ kind: 'path' as const, path, stroke })) : [];
       return [{

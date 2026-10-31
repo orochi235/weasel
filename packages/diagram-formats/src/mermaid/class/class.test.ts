@@ -57,7 +57,7 @@ describe('reading a Mermaid class diagram', () => {
     expect(readClassDiagram(SHOP).warnings).toEqual([
       'Mermaid statements a diagram does not hold were dropped: click.', 'Mermaid accessible titles were dropped; the page is named by the title.',
     ]);
-    expect(readClassDiagram('---\ntitle: T\n---\nclassDiagram\naccTitle: A\naccDescr: D\nA').warnings).toEqual([
+    expect(readClassDiagram('---\ntitle: T\n---\nclassDiagram\naccTitle: A\naccDescr: D\nclass A').warnings).toEqual([
       'Mermaid accessible descriptions were dropped.', 'Mermaid accessible titles were dropped; the page is named by the title.',
     ]);
   });
