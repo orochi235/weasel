@@ -16,9 +16,19 @@
  * break. The difference between those two deltas is the break's share. The
  * spec checks that premise by counting draws.
  *
- * The `-clipped` frames clip to a quad with one slanted edge, because an
- * axis-aligned rect clip takes no stencil and breaks nothing: staged geometry
- * is cut to it on the CPU (`batchClip.ts`). `rect-rectclip` prices that cut.
+ * The `-clipped` frames clip to a quad with one slanted edge and a notch in
+ * another, because an axis-aligned rect clip takes no stencil and breaks
+ * nothing: staged geometry is cut to it on the CPU (`batchClip.ts`), and so,
+ * since 2026-10-31, is a convex clip on this multisampled canvas. Until then
+ * the quad had no notch. `rect-rectclip` prices the rect cut, `rect-convexclip`
+ * the same quad without its notch, cut to its half-planes, and
+ * `slant-rectclip` a turned rect across each rect clip, cut along the clip's
+ * edges where it used to go on the stencil.
+ *
+ * `astroke-inner` fills each rect again as a quad turned a little and strokes
+ * it inside; `astroke-center` strokes it centered, which always joined the
+ * run. An inner stroke on a convex fill is cut on the CPU since 2026-10-31,
+ * where it used to flush the run and draw through a stencil pass.
  *
  * `cmbreak` is a second, independent estimate of one flush: a group whose color
  * matrix differs from the one before it breaks the run without touching the
@@ -66,6 +76,12 @@ const VARIANTS = [
   { id: 'rect-cmbreak',    groups: N,     note: 'each rect in its own color-matrix break' },
   { id: 'rect-clipped-k8', groups: N / K, note: `${K} rects per clip` },
   { id: 'rect-rectclip',   groups: N,     note: 'each rect in its own axis-aligned rect clip, cut on the CPU' },
+  { id: 'rect-convexclip',  groups: N,    note: 'each rect in its own slanted convex clip' },
+  { id: 'rect-convexclip-k8', groups: N / K, note: `${K} rects per slanted convex clip` },
+  { id: 'slant-plain',     groups: 0,     note: 'N turned rects, one batch' },
+  { id: 'slant-rectclip',  groups: N,     note: 'a turned rect across each rect clip' },
+  { id: 'astroke-center',  groups: 0,     note: 'N turned quads, filled and stroked centered' },
+  { id: 'astroke-inner',   groups: 0,     note: 'the same, stroked inside' },
   { id: 'pat-plain',       groups: 0,     note: 'N even-odd rects, never batched' },
   { id: 'pat-clipped',     groups: N,     note: 'each even-odd rect in its own clip' },
   { id: 'pat-cmbreak',     groups: N,     note: 'each even-odd rect in its own color-matrix break' },
@@ -171,8 +187,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const variantsOf = ssRenderer._batchVariants();
       const hullsOffered = variantsOf.hulls;
       Object.defineProperty(variantsOf, 'hulls', { value: true, writable: true });
+      // With the shader clip off, the CPU cut that stands in for it goes too,
+      // so the `stencil` frames are on the stencil.
+      Object.defineProperty(variantsOf, 'cuts', { value: true, writable: true });
       const ssRender = (tree: unknown[], hulls: boolean) => {
-        (variantsOf as { hulls: boolean }).hulls = hulls;
+        (variantsOf as { hulls: boolean; cuts: boolean }).hulls = hulls;
+        (variantsOf as { hulls: boolean; cuts: boolean }).cuts = hulls;
         ssRenderer.render(tree, identity);
       };
 
@@ -195,12 +215,31 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
         W, H, bitmaps: [], pattern: registerTexture(await checkerBitmap()), shader: null,
       }).stencil;
 
-      /** Its top edge slants by 2px, so only the stencil can express it. */
+      /** Its top edge slants by 2px, so it is no rect: convex, so the shader
+       *  or the CPU cut can take it. */
       const clipPath = (i: number) => {
         const x = px(i) - 6;
         const y = py(i) - 6;
         return pathFromD(`M ${x} ${y} L ${x + 100} ${y + 2} L ${x + 100} ${y + 100} L ${x} ${y + 100} Z`);
       };
+      /** The same with a notch in its bottom edge, so only the stencil can express it. */
+      const stencilClipPath = (i: number) => {
+        const x = px(i) - 6;
+        const y = py(i) - 6;
+        return pathFromD(`M ${x} ${y} L ${x + 100} ${y + 2} L ${x + 100} ${y + 100} L ${x + 50} ${y + 98} L ${x} ${y + 100} Z`);
+      };
+      /** A 36px square turned by 0.2 radians about its center, as a polygon. */
+      const turnedQuad = (i: number) => {
+        const cx = px(i) + 18, cy = py(i) + 18, c = Math.cos(0.2), s = Math.sin(0.2);
+        const pt = (x: number, y: number) => `${cx + x * c - y * s} ${cy + x * s + y * c}`;
+        return pathFromD(`M ${pt(-18, -18)} L ${pt(18, -18)} L ${pt(18, 18)} L ${pt(-18, 18)} Z`);
+      };
+      const strokedLeaf = (i: number, align: 'center' | 'inner') => ({
+        kind: 'path',
+        path: turnedQuad(i),
+        fill: { paint: { kind: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' } },
+        stroke: { width: 3, align, paint: { kind: 'solid', color: '#202020' } },
+      });
       const rectClip = (i: number) => ({
         kind: 'rect', x: px(i) - 6, y: py(i) - 6, width: 100, height: 100,
       });
@@ -258,7 +297,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const solids: unknown[] = [];
       const pats: unknown[] = [];
       const slants: unknown[] = [];
-      for (let i = 0; i < n; i++) { solids.push(solidLeaf(i)); pats.push(patLeaf(i)); slants.push(slantLeaf(i)); }
+      const strokedCenter: unknown[] = [];
+      const strokedInner: unknown[] = [];
+      for (let i = 0; i < n; i++) {
+        solids.push(solidLeaf(i)); pats.push(patLeaf(i)); slants.push(slantLeaf(i));
+        strokedCenter.push(strokedLeaf(i, 'center')); strokedInner.push(strokedLeaf(i, 'inner'));
+      }
 
       function chunk(leaves: unknown[], size: number, wrap: (i: number, kids: unknown[]) => unknown) {
         const out: unknown[] = [];
@@ -269,18 +313,29 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       }
 
       function buildVariant(id: string): unknown[] {
-        if (id === 'ss-slant-plain') return slants;
+        if (id === 'astroke-center') return strokedCenter;
+        if (id === 'astroke-inner') return strokedInner;
+        if (id === 'slant-plain' || id === 'ss-slant-plain') return slants;
+        if (id === 'slant-rectclip') {
+          return chunk(slants, 1, (i, kids) => ({ kind: 'group', clip: rectClip(i), children: kids }));
+        }
+        if (id === 'rect-convexclip') {
+          return chunk(solids, 1, (i, kids) => ({ kind: 'group', clip: clipPath(i), children: kids }));
+        }
+        if (id === 'rect-convexclip-k8') {
+          return chunk(solids, k, (i, kids) => ({ kind: 'group', clip: clipPath(i), children: kids }));
+        }
         if (id.startsWith('ss-slant-nest3')) return chunk(slants, 1, (i, kids) => nest3(i, kids));
         if (id.startsWith('ss-slant-rect')) {
           return chunk(slants, 1, (i, kids) => ({ kind: 'group', clip: rectClip(i), children: kids }));
         }
         if (id.startsWith('ss-')) {
-          return buildVariant(id.slice(3).replace('hullclip', 'clipped').replace('stencilclip', 'clipped'));
+          return buildVariant(id.slice(3).replace('hullclip', 'convexclip').replace('stencilclip', 'convexclip'));
         }
         const leaves = id.startsWith('pat') ? pats : solids;
         if (id.endsWith('-plain')) return leaves;
         if (id.endsWith('-k8')) {
-          return chunk(leaves, k, (i, kids) => ({ kind: 'group', clip: clipPath(i), children: kids }));
+          return chunk(leaves, k, (i, kids) => ({ kind: 'group', clip: stencilClipPath(i), children: kids }));
         }
         if (id.endsWith('-rectclip')) {
           return chunk(leaves, 1, (i, kids) => ({ kind: 'group', clip: rectClip(i), children: kids }));
@@ -288,7 +343,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
         if (id.endsWith('-cmbreak')) {
           return chunk(leaves, 1, (i, kids) => ({ kind: 'group', colorMatrix: cm(i), children: kids }));
         }
-        return chunk(leaves, 1, (i, kids) => ({ kind: 'group', clip: clipPath(i), children: kids }));
+        return chunk(leaves, 1, (i, kids) => ({ kind: 'group', clip: stencilClipPath(i), children: kids }));
       }
 
       const built: Record<string, unknown[]> = {};
@@ -439,6 +494,10 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   const slantRectStencil = deltaUs('ss-slant-rectstencil', 'ss-slant-plain', N);
   const slantNest = deltaUs('ss-slant-nest3', 'ss-slant-plain', N);
   const slantNestStencil = deltaUs('ss-slant-nest3stencil', 'ss-slant-plain', N);
+  const convexClip = deltaUs('rect-convexclip', 'rect-plain', N);
+  const convexClipK8 = deltaUs('rect-convexclip-k8', 'rect-plain', N / K);
+  const slantRectCut = deltaUs('slant-rectclip', 'slant-plain', N);
+  const innerStroke = deltaUs('astroke-inner', 'astroke-center', N);
 
   const num = (x: number) => x.toFixed(2);
   const lines = [
@@ -463,6 +522,10 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     `| clip entry at ${K} leaves | ${num(clipEntryK8)} | rect-clipped-k8 − rect-plain, per clip |`,
     `| stencil at ${K} leaves | ${num(stencilEntryK8)} | pat-clipped-k8 − pat-plain, per clip |`,
     `| a rect clip cut on the CPU | ${num(cpuCut)} | rect-rectclip − rect-plain, per clip |`,
+    `| a slanted convex clip, multisampled | ${num(convexClip)} | rect-convexclip − rect-plain, per clip |`,
+    `| ...at ${K} leaves | ${num(convexClipK8)} | rect-convexclip-k8 − rect-plain, per clip |`,
+    `| a rect clip a turned rect crosses, multisampled | ${num(slantRectCut)} | slant-rectclip − slant-plain, per clip |`,
+    `| an inner stroke over a centered one | ${num(innerStroke)} | astroke-inner − astroke-center, per stroke |`,
     `| a slanted clip, decided in the shader | ${num(hullClip)} | ss-rect-hullclip − ss-rect-plain, per clip |`,
     `| ...at ${K} leaves | ${num(hullClipK8)} | ss-rect-hullclip-k8 − ss-rect-plain, per clip |`,
     `| the same clip on the stencil, single-sampled | ${num(ssStencilClip)} | ss-rect-stencilclip − ss-rect-plain, per clip |`,
@@ -522,6 +585,10 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.item(`clip entry at ${K} leaves`, { perClip: metric(clipEntryK8, 'us', `${derived}, rect-clipped-k8 - rect-plain`) });
   run.item(`stencil at ${K} leaves`, { perClip: metric(stencilEntryK8, 'us', `${derived}, pat-clipped-k8 - pat-plain`) });
   run.item('rect clip cut on the CPU', { perClip: metric(cpuCut, 'us', `${derived}, rect-rectclip - rect-plain`) });
+  run.item('slanted convex clip, multisampled', { perClip: metric(convexClip, 'us', `${derived}, rect-convexclip - rect-plain`) });
+  run.item(`slanted convex clip, multisampled, at ${K} leaves`, { perClip: metric(convexClipK8, 'us', `${derived}, rect-convexclip-k8 - rect-plain`) });
+  run.item('rect clip a turned rect crosses, multisampled', { perClip: metric(slantRectCut, 'us', `${derived}, slant-rectclip - slant-plain`) });
+  run.item('inner stroke over centered', { perStroke: metric(innerStroke, 'us', `${derived}, astroke-inner - astroke-center`) });
   run.item('slanted clip decided in the shader', { perClip: metric(hullClip, 'us', `${derived}, ss-rect-hullclip - ss-rect-plain`) });
   run.item(`slanted clip decided in the shader at ${K} leaves`, { perClip: metric(hullClipK8, 'us', `${derived}, ss-rect-hullclip-k8 - ss-rect-plain`) });
   run.item('slanted clip on the stencil, single-sampled', { perClip: metric(ssStencilClip, 'us', `${derived}, ss-rect-stencilclip - ss-rect-plain`) });
