@@ -1,0 +1,7 @@
+Every run: HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_CAMERAS=fixed,moving HVD_APPROACHES=hud,dom
+HVD_GLYPHS=2500,5000 WEASEL_PERF_PORT=33531 npm run test:perf -- perf/hud-vs-dom.spec.ts, through
+onto do --solo --node msb-uai in the weasel-perf-hudtext tree, one run each, on 2026-10-31.
+
+1-before   bab3c623e, main; msb-uai (Apple M3 Max, 14 cores); load 3.8 at start
+2-after    d25ad30b2: the text widget refills its command and runs in place (clearRuns,
+           resolveRunsInto, textCommandFromRunsInto); msb-uai; load 3.0 at start

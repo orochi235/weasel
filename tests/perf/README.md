@@ -520,14 +520,35 @@ Measured on msb-uai on 2026-10-30, one run of each tree, at `6adbd4e5b` and `997
 the run between them at `1f1653419`, before the rect's color went over as one array; the runs are in
 `recorded/hud-alloc-2026-10-30/`.
 
-What is left, at 5,000 glyphs on the fixed camera, self KB a frame: the spec's own `step` (73),
-which builds each label's string, the widget's revision and the frame's command list; the resolved
-runs a new text's command carries (`resolveRuns`, 42) and the command itself, charged to
-`cachedCommands` (36); the layout and paint caches' shared `WeakMap` set and delete for every new
-runs array (24), V8 reallocating the table as entries are filed and unfiled; and the HUD layer's
-command list (`draw`, 6). Refilling a widget's runs array in place, once `dropRuns` let it go,
-could cut the runs, the command and the `WeakMap` traffic, but a command drawn again after its
-runs were dropped would then draw the wrong text, where now it only misses the cache.
+A ninth round stopped a label's new text allocating anything of its own. A text widget keeps one
+command and one runs array for its life and refills them in place (`textCommandFromRunsInto`,
+`resolveRunsInto`); before writing, it calls `clearRuns`, which empties what the layout and paint caches
+hold for the array but leaves it filed in their shared `WeakMap`, takes the structural entry it filled out
+of matching, and builds the key of any painting that would later have been built from its runs. So what a
+text widget's `draw` returned shows its current text, not the text it had then; nothing in the HUD keeps a
+command past its widget's next `draw` (decided 2026-10-31). Self KB a frame at 5,000 glyphs on the fixed
+camera:
+
+| Function | before | after |
+|---|---:|---:|
+| `resolveRuns`, a label's resolved run and its array | 43.4 | 0.0 |
+| `cachedCommands`, the command, inlined into it | 35.5 | 0.0 |
+| `set` and `delete`, the runs entry's `WeakMap` | 24.1 | 0.0 |
+
+KB allocated a frame and renderer main thread in ms a frame, median [min–max] of 4 samples:
+
+| Camera | Glyphs | HUD before | HUD after | DOM after |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 | 103, 1.60 [1.54–1.62] |  52, 1.55 [1.45–1.72] |  42, 2.16 [2.08–2.26] |
+| fixed  | 5,000 | 194, 2.10 [2.02–2.17] |  91, 2.36 [1.89–2.42] |  73, 3.24 [2.67–3.59] |
+| moving | 2,500 | 153, 1.47 [1.09–1.85] |  93, 1.32 [1.05–1.60] |  75, 2.12 [2.09–2.14] |
+| moving | 5,000 | 292, 2.17 [2.07–2.45] | 171, 2.23 [2.00–2.47] | 139, 3.61 [3.41–3.69] |
+
+Allocation fell 39–53% in every cell; main-thread time moved inside its spread. What is left at 5,000
+glyphs on the fixed camera is the spec's own `step` (72.5 KB a frame: each label's string, the widget's
+revision, the frame's command list) and the HUD layer's command list (`draw`, 5.7). Measured on msb-uai
+on 2026-10-31, one run of each tree, at `bab3c623e` and `d25ad30b2`; the runs are in
+`recorded/hud-alloc-2026-10-31/`.
 
 ### A still HUD through `drawLayers`
 
