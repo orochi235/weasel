@@ -96,7 +96,7 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
       {cells.map(([name, value]) => (
         <span key={name} className={s.cell}>
           <span className={s.name}>{name}</span>
-          <output className={s.value}>{value}</output>
+          <span className={s.value}>{value}</span>
         </span>
       ))}
     </div>

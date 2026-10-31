@@ -14,6 +14,7 @@ import { IDENTITY_POSE_COMPOSITION,
   type Scene,
 } from '@weasel-js/core';
 import { MeasureReadout } from './MeasureReadout';
+import s from './MeasureReadout.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -44,7 +45,7 @@ function setup() {
   return { scene, ms, add, view };
 }
 
-const values = () => screen.getAllByRole('status').map((el) => el.textContent);
+const values = () => [...document.querySelectorAll(`.${s.value}`)].map((el) => el.textContent);
 const button = (name: string) => screen.getByRole('button', { name }) as HTMLButtonElement;
 
 describe('MeasureReadout', () => {
@@ -60,6 +61,7 @@ describe('MeasureReadout', () => {
     rig.add('a', { x: 10, y: 10 }, { x: 40, y: -30 });
     rig.add('b', { x: 0, y: 0 }, { x: 5, y: 0 });
     expect(values()).toEqual(['5.00', '5.00', '0.00', '0.00°']);
+    expect(screen.queryByRole('status')).toBeNull();
     act(() => rig.ms.picked.set('a' as NodeId));
     expect(values()).toEqual(['50.00', '30.00', '−40.00', '53.13°']);
   });
