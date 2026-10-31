@@ -1,5 +1,5 @@
 /** Mermaid as a {@link DiagramFormat}: one format, each diagram kind read and written by its own codec. */
-import type { DiagramDocument, DiagramFormat, ExportResult, ImportResult, PageKind, WriteOptions } from '../document';
+import type { DiagramDocument, DiagramFormat, ExportResult, ImportResult, PageKind, PlotPage, WriteOptions } from '../document';
 import { writtenPage } from '../document';
 import { lineError } from '../lineError';
 import { readClassDiagram } from './class/read';
@@ -15,6 +15,8 @@ import { readRequirementDiagram } from './requirement/read';
 import { writeRequirementDiagram } from './requirement/write';
 import { readStateDiagram } from './state/read';
 import { writeStateDiagram } from './state/write';
+import { readMermaidXychart } from './xychart/read';
+import { writeMermaidXychart } from './xychart/write';
 
 /** A Mermaid diagram kind this format reads and writes. */
 interface MermaidKind {
@@ -40,7 +42,14 @@ const KINDS: readonly MermaidKind[] = [
   { name: 'erDiagram', header: /^erDiagram$/, page: 'graph', notation: 'er', read: readErDiagram, write: writeErDiagram },
   { name: 'mindmap', header: /^mindmap$/, page: 'graph', notation: 'mindmap', read: readMindmap, write: writeMindmap },
   { name: 'requirementDiagram', header: /^requirementDiagram$/, page: 'graph', notation: 'requirement', read: readRequirementDiagram, write: writeRequirementDiagram },
+  { name: 'xychart', header: /^xychart(?:-beta)?$/, page: 'plot', read: readMermaidXychart, write: (doc, opts) => writeMermaidXychart(plotPageOf(doc, opts)) },
 ];
+
+function plotPageOf(doc: DiagramDocument, opts?: WriteOptions): PlotPage {
+  const page = writtenPage(doc, opts);
+  if (page?.kind !== 'plot') throw new Error('Mermaid writes an xychart from a plot page only');
+  return page;
+}
 
 const FLOWCHART_HEADER = /^(?:flowchart|graph|flowchart-elk)(?:\s+(?:TB|TD|BT|LR|RL|[<>^v]))?\s*(?:;|$)/i;
 
@@ -81,5 +90,5 @@ export const DIAGRAM_MERMAID: DiagramFormat = {
   read: (text) => kindOf(text).read(text),
   write: writeMermaid,
   onePage: true,
-  kinds: ['graph'],
+  kinds: ['graph', 'plot'],
 };

@@ -4,6 +4,7 @@ import { DIAGRAM_THEMES, DIAGRAM_THEME_KEY, edgeIdOf, type DiagramEdge, type Dia
 import type { DiagramDocument } from './document';
 import { documentSpecs } from './toScene';
 import { MEASURE } from './testing/docScene';
+import { asGraph } from './testing/asGraph';
 
 const at = (specs: readonly DiagramSpec<string>[], id: string) => {
   const { x, y } = specs.find((s) => s.id === id)!.pose;
@@ -40,7 +41,7 @@ describe('documentSpecs', () => {
   });
 
   it('moves boxes and waypoints with their page', () => {
-    const moved: DiagramDocument = { pages: [{ ...DOC.pages[1]!, data: { nodes: [] , edges: [] } }, DOC.pages[0]!] };
+    const moved: DiagramDocument = { pages: [{ ...DOC.pages.map(asGraph)[1]!, data: { nodes: [] , edges: [] } }, DOC.pages.map(asGraph)[0]!] };
     const { specs } = documentSpecs(moved, { measure: MEASURE });
     expect(boxOf(specs, 'k')).toEqual({ x: 440 + 180, y: 10, width: 150, height: 120 });
     expect(edgeTrait(specs, 'ab').waypoints).toEqual([{ x: 440 + 150, y: 100 }]);
@@ -113,7 +114,7 @@ describe('documentSpecs on a page with nodes that have no place', () => {
   it('leaves the nodes that have a place where they are', () => {
     const doc = graph();
     const pinned: DiagramDocument = {
-      pages: [{ ...doc.pages[0]!, data: { ...doc.pages[0]!.data, nodes: doc.pages[0]!.data.nodes.map((n) => (n.id === 'c' ? { ...n, at: { x: 500, y: 20 } } : n)) } }],
+      pages: [{ ...doc.pages.map(asGraph)[0]!, data: { ...doc.pages.map(asGraph)[0]!.data, nodes: doc.pages.map(asGraph)[0]!.data.nodes.map((n) => (n.id === 'c' ? { ...n, at: { x: 500, y: 20 } } : n)) } }],
     };
     expect(at(documentSpecs(pinned, { measure: MEASURE }).specs, 'c')).toEqual({ x: 500, y: 20 });
   });

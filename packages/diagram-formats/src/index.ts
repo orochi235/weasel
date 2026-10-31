@@ -7,13 +7,16 @@
  */
 export {
   formatHolds, graphPageOf, graphPagesOf, writtenPage,
-  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase, type PageLayout,
+  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase, type PageLayout, type PlotPage,
   type PageKind, type WriteOptions,
 } from './document';
 export { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';
 export { DIAGRAM_JSON } from './jsonFormat';
 export { DRAW_XML } from './drawXml/format';
 export { DIAGRAM_MERMAID } from './mermaid/format';
+export { readMermaidXychart } from './mermaid/xychart/read';
+export { writeMermaidXychart } from './mermaid/xychart/write';
+export { plotThemeOf } from './plotPages';
 export { DIAGRAM_DOT } from './dot/format';
 export { documentFromScene, type DocumentFromSceneOptions } from './fromScene';
 export { documentSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';

@@ -1,0 +1,52 @@
+{
+  "name": "@weasel-js/plot",
+  "version": "1.14.2",
+  "description": "Charts on weasel's scene graph: scales, axes, and marks that keep their data, and chart specs compiled to them, edited by dragging the marks.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/plot"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@weasel-js/geom": "1.14.2",
+    "@weasel-js/text": "1.14.2",
+    "@weasel-js/theme": "1.14.2"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.14.2",
+    "react": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -4,6 +4,7 @@ import { DIAGRAM_THEMES, dataNodeStyle, type DiagramData } from '@weasel-js/diag
 import type { DiagramDocument } from '../document';
 import { DRAW_XML } from './format';
 import { parseStyle, shapeOf } from './style';
+import { asGraph } from '../testing/asGraph';
 
 const THEME = DIAGRAM_THEMES.paper!;
 
@@ -173,7 +174,7 @@ describe('writing what the format cannot carry', () => {
       nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 80, height: 60 })),
       edges: MARKERS.map((m, i) => ({ id: m, from: OUTLINES[i]!, to: OUTLINES[i + 1]!, colors: { markerEnd: m } })),
     } }] };
-    const back = (await DRAW_XML.read!(DRAW_XML.write!(doc).text)).document.pages[0]!.data;
+    const back = (await DRAW_XML.read!(DRAW_XML.write!(doc).text)).document.pages.map(asGraph)[0]!.data;
     expect(back.nodes.map((n) => n.outline)).toEqual([...OUTLINES]);
     expect(back.edges.map((e) => e.colors?.markerEnd)).toEqual([...MARKERS]);
   });
@@ -189,7 +190,7 @@ describe('writing what the format cannot carry', () => {
     } }] };
     const written = DRAW_XML.write!(doc);
     expect(written.warnings).toEqual([]);
-    const back = (await DRAW_XML.read!(written.text)).document.pages[0]!.data;
+    const back = (await DRAW_XML.read!(written.text)).document.pages.map(asGraph)[0]!.data;
     expect(back.nodes.map((n) => n.outline)).toEqual([...OUTLINES]);
     expect(back.nodes.filter((n) => n.verticalAlign !== undefined)).toEqual([]);
   });
@@ -201,7 +202,7 @@ describe('writing what the format cannot carry', () => {
       cell('end', 'shape=mxgraph.bpmn.event;outline=end;symbol=terminate;')}${
       cell('complex', 'shape=mxgraph.bpmn.gateway2;gwType=complex;')}${
       cell('task', 'shape=mxgraph.bpmn.task;taskMarker=user;rounded=1;')}</root></mxGraphModel></diagram></mxfile>`;
-    const back = (await DRAW_XML.read!(text)).document.pages[0]!.data;
+    const back = (await DRAW_XML.read!(text)).document.pages.map(asGraph)[0]!.data;
     expect(back.nodes.map((n) => [n.id, n.outline])).toEqual([['end', 'event'], ['complex', 'diamond'], ['task', 'roundRect']]);
   });
 

@@ -1332,6 +1332,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/MinimapDemo.tsx',
   },
   {
+    id: 'plot-xychart',
+    title: 'Plot: xychart',
+    package: 'plot',
+    description: "An xychart spec, bar and line series over month bands, compiled by plotSpecs into one root node holding the spec and its marks under it. Each bar and point keeps its series, index and value in scene data. A drag on a bar's end or a line's point is a binding to the plot.dragValue action, which previews the marks the new value redraws and commits one edit of the root's spec, so undo takes it back in one step. PlotView reports the spec each edit leaves.",
+    hint: "Drag a bar's top or a line's point up or down; the readout above follows the bars.",
+    load: () => import('./demos/PlotXyChartDemo').then((m) => m.PlotXyChartDemo),
+    path: 'apps/site/demos/PlotXyChartDemo.tsx',
+  },
+  {
     id: 'parallax',
     title: 'Parallax',
     package: 'parallax',

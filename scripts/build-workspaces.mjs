@@ -42,6 +42,7 @@ export const BUILD_ORDER = [
   '@weasel-js/d3',
   '@weasel-js/diagram',
   '@weasel-js/diagram-elk',
+  '@weasel-js/plot',
   '@weasel-js/diagram-formats',
   '@weasel-js/guides',
   '@weasel-js/kernel3d',

@@ -6,6 +6,7 @@ import { documentFromScene } from '../fromScene';
 import { documentSpecs } from '../toScene';
 import { MEASURE, THEME, docScene, type DocScene } from '../testing/docScene';
 import { DRAW_XML } from './format';
+import { asGraph } from '../testing/asGraph';
 
 /** The scene `scene` comes back as through draw-style XML, and the warnings both ways. */
 async function throughXml(scene: DocScene): Promise<{ back: DocScene; doc: DiagramDocument; warnings: string[] }> {
@@ -51,9 +52,9 @@ describe('a chart through draw-style XML and back', () => {
   });
 
   it('keeps the pool, its lanes, and their members', () => {
-    const pool = result.doc.pages[1]!.data.containers!.find((c) => c.id === 'p')!;
+    const pool = result.doc.pages.map(asGraph)[1]!.data.containers!.find((c) => c.id === 'p')!;
     expect(pool).toMatchObject({ role: 'pool', axis: 'y', lanes: [{ id: 'l1', label: 'One', members: ['d'] }, { id: 'l2', label: 'Two' }] });
-    expect(result.doc.pages[0]!.data.containers!.find((c) => c.id === 'k')).toMatchObject({ role: 'container', label: 'Box', members: ['m'] });
+    expect(result.doc.pages.map(asGraph)[0]!.data.containers!.find((c) => c.id === 'k')).toMatchObject({ role: 'container', label: 'Box', members: ['m'] });
   });
 
   it('keeps edges\' ends, routers, waypoints, and labels', () => {

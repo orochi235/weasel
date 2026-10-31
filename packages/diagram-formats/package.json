@@ -42,6 +42,7 @@
   "peerDependencies": {
     "@weasel-js/core": "1.14.2",
     "@weasel-js/diagram": "1.14.2",
+    "@weasel-js/plot": "1.14.2",
     "@weasel-js/svg": "1.14.2"
   },
   "publishConfig": {

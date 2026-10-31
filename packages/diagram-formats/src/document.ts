@@ -5,6 +5,7 @@
  * once for a chart and for a data-backed host alike.
  */
 import type { DataEdge, DiagramData, DiagramTheme, LayoutDirection, LayoutOptions } from '@weasel-js/diagram';
+import type { PlotData } from '@weasel-js/plot';
 
 /** What every page has: its sheet size. Ids share one namespace across the whole document. */
 export interface PageBase {
@@ -33,8 +34,14 @@ export interface PageLayout {
   options?: Pick<LayoutOptions, 'nodeGap' | 'rankGap' | 'order' | 'chainSide'>;
 }
 
+/** A page holding one chart, which fills it. */
+export interface PlotPage extends PageBase {
+  kind: 'plot';
+  data: PlotData;
+}
+
 /** One page of a document; `kind` says what its `data` is. */
-export type DocumentPage = GraphPage;
+export type DocumentPage = GraphPage | PlotPage;
 
 /** The kinds of page a document can hold. */
 export type PageKind = DocumentPage['kind'];
