@@ -10,6 +10,7 @@ import type { Node } from 'core/scene/types';
 import { findNodeShape } from './NodeShape';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { WeaselRenderer } from '@weasel-js/renderer';
+import { MAX_EVENODD_RESOLVE_WORK } from '@weasel-js/geom/tessellate';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { _resetStrokeMeshCacheForTests } from '@weasel-js/renderer/test-seams';
 
@@ -117,12 +118,17 @@ function uploadedRamps(rec: Recorder): readonly unknown[][] {
 /** Even-odd, it carries a second contour of no area along its first edge: an
  *  even-odd fill whose outlines never meet is triangulated and batches, and
  *  these need one that keeps the stencil. */
+/** Even-odd, it carries a contour of no area running back and forth along its
+ *  first edge, enough edges of it to put the fill past what the tessellator
+ *  resolves, so it keeps the stencil fan. */
+const PAD = Math.ceil(Math.sqrt(MAX_EVENODD_RESOLVE_WORK)) + 1;
 function square(fillRule: 'nonzero' | 'evenodd'): PolygonPath {
   const touch = fillRule === 'evenodd';
+  const pad = touch ? Array.from({ length: PAD + 1 }, (_, k) => (k % 2 ? [100, 0] : [0, 0])).flat() : [];
   return {
     kind: 'polygon',
-    commands: new Uint8Array(touch ? [M, L, L, L, Z, M, L, Z] : [M, L, L, L, Z]),
-    coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100, ...(touch ? [0, 0, 100, 0] : [])]),
+    commands: new Uint8Array(touch ? [M, L, L, L, Z, M, ...new Array(PAD).fill(L), Z] : [M, L, L, L, Z]),
+    coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100, ...pad]),
     fillRule,
   };
 }
