@@ -166,8 +166,7 @@ function Inner({
         enableKeybindings={enableKeybindings ?? edits}
         ambient={ambient}
         actions={editing.actions}
-        {...(tools ? { tools } : {})}
-        {...(onToolsCreated ? { onToolsCreated } : {})}
+        {...(tools ? { tools } : {})} {...(onToolsCreated ? { onToolsCreated } : {})}
         onClick={onClick}
         {...(onHover ? { onHover } : {})}
         width={width}

@@ -987,6 +987,20 @@ gives the layer and contribution that commit each edit as one undo entry
 edit of the data. A theme applied with `applyDiagramTheme` draws every sequence
 again.
 
+A sequence is built from nothing with more pure edits: `addParticipant` and
+`removeParticipant` (which takes every message, mark, and note naming it),
+`insertMessage` with an arrow from `SEQ_ARROWS`, `insertNote`, `insertMark` for
+activations, creations, and destructions, `wrapSteps` to put a run of steps in
+a fragment and `addSection` for an alt's next branch, `removeStep`, `addBox`, and
+`setAutonumber`, among others. `useSequenceTools` builds the tools in
+`SEQUENCE_TOOLS` that make them on the canvas: Participant clicks a lifeline in
+between two (or starts a sequence on empty canvas), Message drags from one
+lifeline to another, Note clicks or drags across lifelines, and Fragment drags
+across rows. Pass them as `tools` to `DiagramView` or `<SceneCanvas>`. A click
+on a sequence's part selects it, and `createSequenceDeleteAction` (which
+`DiagramView` installs with `onEditSequence`) makes Delete remove it from the
+data.
+
 ### Effect charts
 
 `@weasel-js/diagram/effect` draws an effects pipeline: the stages a signal
