@@ -41,6 +41,9 @@ import type { ActionTuning } from './interactions/actions/tuning';
 export interface DepSchema {
   /** Currently active tool id + hotkey-hold stack. */
   activeTool: ActiveToolContextValue;
+  /** Where the host keeps its tools' option values (`ToolDef.options`).
+   *  Absent: every option is its default, and the step actions do nothing. */
+  toolOptionValues?: import('./tools/toolOptions').ToolOptionValues;
   /** The menu host of the `ActionsProvider` in scope. */
   menuHost?: import('./menus/menuHost').MenuHost;
   /** The canvas's dispatch trace, for a dep to record a mode switch into. */
@@ -204,6 +207,8 @@ export type {
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
+export { createToolOptionValues, steppedOption, toolOptionParams, toolOptionSteps } from './tools/toolOptions';
+export type { ToolOptions, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
 export { returnToModeDefault } from './tools/returnToModeDefault';
 export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas } from './tools/toolSet';
 export type { ToolSet, ToolEntry } from './tools/toolSet';

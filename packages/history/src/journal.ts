@@ -54,6 +54,10 @@ export interface Journal {
   seal(): void;
   /** As `History.observe`, for the journal's own entries: each push, coalesce, undo and redo inside it. */
   observe(listener: (step: HistoryStep) => void): () => void;
+  /** Open a journal inside this one, as `History.beginJournal` does on a
+   *  history: its commit lands here as one entry, and its cancel leaves this
+   *  journal as it was. */
+  beginJournal(opts: BeginJournalOptions): Journal;
   /** Counter bumped on every change a reader of this journal could see: an
    *  apply, undo, redo or coalesce inside it, and every lifecycle transition
    *  (`isActive` changes). Pairs with `subscribe` for `useSyncExternalStore`. */
@@ -128,6 +132,10 @@ export function createJournalInternal(
       inner.seal();
     },
     observe: (listener) => inner.observe(listener),
+    beginJournal(nested: BeginJournalOptions): Journal {
+      if (state !== 'active') throw new Error('Journal is not active');
+      return inner.beginJournal(nested);
+    },
     getVersion: () => version,
     subscribe: changed.subscribe,
     commit(label: string): void {

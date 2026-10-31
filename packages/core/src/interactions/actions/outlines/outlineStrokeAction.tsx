@@ -16,14 +16,14 @@ export const outlineStrokeAction: Action = {
   icon: icon('outlineStroke'),
   group: 'pathfinder',
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'createOutlinesAdapter', 'view'],
+  requires: ['selection', 'createOutlinesAdapter', 'view', 'notices'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
       const adapter = deps.createOutlinesAdapter;
       if (!adapter) return;
       const scale = deps.view?.get().scale;
-      void withTextOutlines(adapter, () => applyOutlineStroke(adapter, scale ? { scale } : {}), 'outlineStroke');
+      void withTextOutlines(adapter, () => applyOutlineStroke(adapter, scale ? { scale } : {}), 'outlineStroke', deps.notices);
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {

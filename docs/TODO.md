@@ -178,9 +178,13 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
-  third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
-  reached outside the lab, that it pushes every unlocked, shown path while nothing is selected (only the selection
-  otherwise, a ruling of 2026-10-31), and its tool key, S (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
+  third of the radius (`packages/geom/src/paths/smudgePath.ts`), the size and strength steps (`[` `]` ×1.25,
+  `Shift+[` `Shift+]` ±0.1) and their bounds (`SMUDGE_BRUSH_OPTIONS` in `useSmudgeBrushTool.ts`; draw's options row
+  draws them), that it pushes every unlocked, shown path and text node while nothing is selected (only
+  the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
+  its drawn box, the conversion and the smudge landing as one undo entry (ruled 2026-10-31;
+  `packages/path-tools/src/shared/outlineSession.ts`), and its tool key, S
+  (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
   Closes when the maintainer has driven the Smudge brush hands-on and the defaults and keys he picks
   are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
@@ -200,7 +204,11 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
   corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
   new distort starts Free rather than Perspective, the refit tolerance (0.5,
-  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), and its tool key, F
+  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), that a selected group warps as
+  one under a single quad around its paths, and that selected text converts to outlines when the drag begins,
+  conversion and warp one undo step (both ruled 2026-10-31; `warpSelection.ts`,
+  `packages/path-tools/src/shared/outlineSession.ts`), that the selection's resize and rotation handles hide
+  while a warp tool is active (`hides` in `useWarpTool.ts`), and its tool key, F
   (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
   name may change.
   Closes when the maintainer has driven Perspective and free distort hands-on and the defaults and keys

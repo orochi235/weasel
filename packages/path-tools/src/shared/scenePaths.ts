@@ -44,6 +44,18 @@ function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {
   return scene?.renderOrderNodes?.() ?? [];
 }
 
+/** `ids` with every container among them replaced by its leaves, depth first. */
+export function leavesOf(scene: { childrenOf?(id: NodeId): readonly NodeId[] }, ids: readonly string[]): NodeId[] {
+  const out: NodeId[] = [];
+  const visit = (id: NodeId) => {
+    const kids = scene.childrenOf?.(id) ?? [];
+    if (kids.length === 0) out.push(id);
+    else kids.forEach(visit);
+  };
+  ids.forEach((id) => visit(id as NodeId));
+  return out;
+}
+
 /** Every leaf of the scene holding an editable path, back to front. */
 export function scenePathNodes(deps: ActionDeps | undefined): PathNode[] {
   const out: PathNode[] = [];

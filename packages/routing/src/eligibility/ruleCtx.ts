@@ -59,6 +59,9 @@ export interface RuleCtx {
    *  for the surface's own camera. The dispatcher fills it; absent anywhere
    *  else a rule is evaluated. */
   readonly viewId?: string | null;
+  /** Chrome ids the active tool hides (`ToolDef.hides`): never visible,
+   *  whatever their rules say. Absent hides nothing. */
+  readonly hiddenChrome?: ReadonlySet<string>;
 }
 
 /** The live state a `RuleCtx` is assembled from — the chrome context plus
@@ -80,6 +83,8 @@ export interface BuildRuleCtxArgs {
   editingAnchors?: boolean;
   /** Optional — omitted means {@link DEFAULT_DEVICE_PROFILE}. */
   device?: DeviceProfile;
+  /** Optional — omitted hides nothing. See {@link RuleCtx.hiddenChrome}. */
+  hiddenChrome?: ReadonlySet<string>;
 }
 
 /**
@@ -111,5 +116,6 @@ export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
     selectionResizable: args.selectionResizable,
     editingAnchors: args.editingAnchors,
     device: args.device,
+    ...(args.hiddenChrome ? { hiddenChrome: args.hiddenChrome } : {}),
   };
 }

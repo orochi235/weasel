@@ -38,7 +38,7 @@ import { useAddedViews, useSceneCanvasHandle } from './SceneCanvas/useSceneCanva
 import { useSceneCanvasLayers } from './SceneCanvas/useSceneCanvasLayers';
 import { useSceneCanvasPathEdit } from './SceneCanvas/useSceneCanvasPathEdit';
 import { useSceneCanvasTools, type SceneCanvasToolProps } from './SceneCanvas/useSceneCanvasTools';
-import { useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
+import { hiddenChromeOf, useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
 import { useDevtoolsOverride } from '../devtools/useDevtoolsRoot';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
@@ -115,8 +115,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     source: {
       getMode: getActiveMode, getFocused: props.getFocused, getModifiers: heldModifiers.get,
       resizable: selectToolOpts?.resize?.resizable,
-      editingAnchors: () => pathEditState.getEditingId() !== '',
-      device: deviceProfile,
+      editingAnchors: () => pathEditState.getEditingId() !== '', device: deviceProfile,
+      getHiddenChrome: () => hiddenChromeOf(tools.tools),
     },
     rules: { enabled, selectable, chromeVisibility: props.chromeVisibility },
     hover: { canvasApiRef, nodeAtPointRef: getNodeAtPointRef, ...(props.onHover ? { onChange: props.onHover } : {}) },

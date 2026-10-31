@@ -80,6 +80,17 @@ export function useChromeRules(args: {
   }, [chromeVisibility, selectable, enabled]);
 }
 
+const hiddenSets = new WeakMap<readonly string[], ReadonlySet<string>>();
+
+/** The chrome the active tool hides (`ToolDef.hides`), or undefined. */
+export function hiddenChromeOf(tools: { active: string | null; registry: Readonly<Record<string, { hides?: readonly string[] }>> }): ReadonlySet<string> | undefined {
+  const hides = tools.active ? tools.registry[tools.active]?.hides : undefined;
+  if (!hides) return undefined;
+  let set = hiddenSets.get(hides);
+  if (!set) hiddenSets.set(hides, (set = new Set(hides)));
+  return set;
+}
+
 /** The chrome-caps answers for the surface's own view. */
 export function useSurfaceChromeCaps(args: {
   source: ChromeCapsSource;

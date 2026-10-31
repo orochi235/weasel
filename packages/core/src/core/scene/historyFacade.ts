@@ -12,6 +12,7 @@ import type { History, Journal } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { dwarn } from 'debug/flag';
 import { SCENE_HISTORY_FORM, type SerializedSceneHistory } from './historyForm';
+import { createSceneJournals } from './sceneJournals';
 import type { Scene } from './types';
 
 /** What the facade needs from the scene it fronts. */
@@ -45,58 +46,15 @@ export type SceneHistoryMethods = Pick<
   | 'jumpToHistoryIndex' | 'serializeHistory' | 'restoreHistory'
 >;
 
-/** Wrapped journal → the engine's own, for `resumeJournal`: the engine keys
- *  resumability off journal identity, which a wrapper would not match. */
-const rawJournals = new WeakMap<Journal, Journal>();
-
-/** A journal drives adapter mutation itself, so its applies and undos
- *  re-enter scene mutation methods the way the facade's do. */
-function wrapJournal(raw: Journal, env: SceneHistoryEnv): Journal {
-  const { replay, notify } = env;
-  const wrapped: Journal = {
-    targetId: raw.targetId,
-    forkedAtEntryId: raw.forkedAtEntryId,
-    applyBatch(ops, label) {
-      env.labeled(label, () => env.runArrivalEdit(ops, (all) => {
-        env.applying(() => raw.applyBatch(all.map(env.causing), label));
-        notify();
-      }));
-    },
-    undo() {
-      replay(() => raw.undo());
-      notify();
-    },
-    redo() {
-      replay(() => raw.redo());
-      notify();
-    },
-    canUndo: () => raw.canUndo(),
-    canRedo: () => raw.canRedo(),
-    entries: () => raw.entries(),
-    seal: () => raw.seal(),
-    observe: (listener) => raw.observe(listener),
-    getVersion: () => raw.getVersion(),
-    subscribe: (listener) => raw.subscribe(listener),
-    commit(label) {
-      // Flushes the session's net ops to the parent stack — no apply, but
-      // the parent's undo depth changes and listeners read that.
-      raw.commit(label);
-      notify();
-    },
-    cancel() {
-      replay(() => raw.cancel());
-      notify();
-    },
-    suspend: () => raw.suspend(),
-    isActive: () => raw.isActive(),
-  };
-  rawJournals.set(wrapped, raw);
-  return wrapped;
-}
-
-export function createSceneHistory(env: SceneHistoryEnv): { history: History; methods: SceneHistoryMethods } {
+export function createSceneHistory(env: SceneHistoryEnv): {
+  history: History;
+  methods: SceneHistoryMethods;
+  /** The innermost active journal opened through `history`, or null. */
+  openJournal(): Journal | null;
+} {
   const { engine, replay, notify, refuseUntracked, runArrivalEdit } = env;
 
+  const journals = createSceneJournals(env);
 
   function step(can: () => boolean, run: () => void): boolean {
     if (!can()) return false;
@@ -201,9 +159,9 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
     allForwardOps: () => engine.allForwardOps(),
     seal: () => engine.seal(),
     currentEntryId: () => engine.currentEntryId(),
-    beginJournal: (opts) => wrapJournal(engine.beginJournal(opts), env),
-    resumeJournal: (journal) => engine.resumeJournal(rawJournals.get(journal) ?? journal),
+    beginJournal: journals.begin,
+    resumeJournal: journals.resume,
     activeJournal: () => env.activeJournal(),
   };
-  return { history, methods };
+  return { history, methods, openJournal: journals.innermost };
 }

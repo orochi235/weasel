@@ -80,7 +80,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     // Deferred rather than muted, so a throwing op cannot strand subscribers
     // after earlier ops in the batch already mutated state.
     driving: (step) => notifier.deferred(() => mode.during('engine', () => atomically(step, () => true))),
-    getActiveJournal: config.getActiveJournal ?? null,
+    getActiveJournal: config.getActiveJournal ?? null, openJournal: () => openJournal(),
   });
 
   // The scene's undo/redo engine. Its recorded ops close over their payloads,
@@ -127,7 +127,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     if (mode.untracked()) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
   }
 
-  const { history, methods } = createSceneHistory({
+  const { history, methods, openJournal } = createSceneHistory({
     engine,
     applying: (step) => atomically(() => engineDriven(step), () => true),
     causing: outer.causing,
