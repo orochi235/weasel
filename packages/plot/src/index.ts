@@ -25,7 +25,7 @@ export { textMeasure, type PlotMeasure } from './measure';
 export { compilePlot, type PlotCompiler, type PlotData, type PlotKind } from './plotData';
 export type { XyBandAxis, XyChartData, XyRangeAxis, XySeries, XyValueAxis } from './xychart/types';
 export { compileXyChart, xyLength, xyValueDomain, type XyLayout } from './xychart/compile';
-export { setXyValue, xyValueAt } from './xychart/edit';
+export { setXyValue, xyRows, xyValueAt } from './xychart/edit';
 export type { GanttData, GanttEnd, GanttSection, GanttStart, GanttTag, GanttTask, GanttUnit } from './gantt/types';
 export { compileGantt, type GanttLayout } from './gantt/compile';
 export { scheduleGantt, type GanttSchedule, type GanttSpan } from './gantt/schedule';
@@ -62,7 +62,7 @@ export { setRadarAxisLabel, setRadarCurveLabel, setRadarValue } from './radar/ed
 export { CHART_PAD, chartTitle, withTitle } from './chartTitle';
 
 export {
-  markSpecs, plotMarkId, plotMarkOf, plotRootOf, plotRootsIn, plotSpecs, replacePlotData,
+  markSpecs, plotMarkId, plotMarkOf, plotRootContaining, plotRootOf, plotRootsIn, plotSpecs, replacePlotData,
   type PlotRootData, type PlotRootTrait, type PlotSceneData, type PlotSpec, type PlotSpecsOptions, type ReplacePlotOptions,
 } from './plotScene';
 
@@ -75,3 +75,41 @@ export {
 export { PLOT_DRAG_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';
 export { GRAB_PLOT_HANDLE_ACTION_ID, plotEditing } from './editing/plotEditing';
 export { PlotView, type PlotViewProps } from './PlotView';
+
+export type {
+  PlotColumn, PlotField, PlotSchema, PlotScope, PlotTable, PlotValue, PlotValueType,
+} from './editing/schemaTypes';
+export { plotSchemaOf, plotTablesIn } from './editing/schemas';
+export {
+  insertXyRow, insertXySeries, moveXyRow, moveXySeries, removeXyRow, removeXySeries, setXyAxisTitle, setXyCategory, setXyOrientation,
+  setXyRangeBound, setXySeriesKind, setXySeriesName, setXyValueBound, setXyXKind,
+} from './xychart/structure';
+export {
+  insertGanttSection, insertGanttTask, moveGanttSection, moveGanttTaskToSection, removeGanttSection, removeGanttTask, reorderGanttTask,
+  setGanttExcludes, setGanttSetting, setGanttTaskEnd, setGanttTaskId, setGanttTaskStart, setGanttTaskTags,
+} from './gantt/structure';
+export { formatGanttEnd, formatGanttStart, parseGanttEnd, parseGanttStart } from './gantt/text';
+export {
+  insertTimelineEvent, insertTimelinePeriod, insertTimelineSection, moveTimelineEvent, moveTimelineSection, removeTimelineEvent,
+  removeTimelinePeriod, removeTimelineSection, reorderTimelinePeriod, timelineFlatIndex,
+} from './timeline/structure';
+export { insertPieSlice, movePieSlice, removePieSlice, setPieShowData } from './pie/structure';
+export {
+  insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassNames, removeQuadrantClass,
+  removeQuadrantPoint, renameQuadrantClass, setQuadrantClassStyle, setQuadrantPointClass, setQuadrantPointStyle,
+} from './quadrant/structure';
+export {
+  insertJourneySection, insertJourneyTask, moveJourneySection, moveJourneyTask, removeJourneySection, removeJourneyTask, setJourneyActors,
+} from './journey/structure';
+export {
+  GIT_COMMAND_FIELDS, GIT_COMMAND_KINDS, gitBranchNames, insertGitCommand, moveGitCommand, removeGitCommand, setGitCommand,
+  setGitCommandField, setGitCommandKind, setGitMainBranch, setGitOrientation, type GitCommandField,
+} from './gitgraph/structure';
+export { insertSankeyLink, moveSankeyLink, removeSankeyLink, removeSankeyNode, setSankeyEnd } from './sankey/structure';
+export {
+  insertPacketField, movePacketField, removePacketField, setPacketBits, setPacketBitsPerRow, setPacketRelative, setPacketStart,
+} from './packet/structure';
+export {
+  insertRadarAxis, insertRadarCurve, moveRadarAxis, moveRadarCurve, removeRadarAxis, removeRadarCurve, setRadarAxisId, setRadarCurveId,
+  setRadarOption,
+} from './radar/structure';

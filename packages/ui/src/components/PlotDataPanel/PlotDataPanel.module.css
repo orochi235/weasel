@@ -1,0 +1,37 @@
+.table {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wzl-space-2);
+  /* A grid wider than its sidebar scrolls inside it rather than stretching the panel. */
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+.cell {
+  min-inline-size: 4rem;
+  inline-size: 100%;
+}
+
+.heading {
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+  color: var(--wzl-fg-muted);
+}
+
+.nested {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  padding-inline-start: var(--wzl-space-4);
+}
+
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+}
+
+.add {
+  align-self: flex-start;
+}

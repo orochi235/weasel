@@ -19,6 +19,7 @@ import {
 } from './chartDocument';
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
 import { NewChart } from './NewChartDialog';
+import { PlotDataSection } from './PlotDataSection';
 import { ChartPageStrip } from './pages/ChartPageStrip';
 import { useChartPages } from './pages/useChartPages';
 import { useFittedView } from './pages/useFittedView';
@@ -153,6 +154,7 @@ export function ChartWorkspace(): ReactElement {
           <ChartPageStrip scene={scene} pages={pages} theme={theme} />
         </div>
         <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
+          <PlotDataSection scene={scene} selected={selection.current} />
           <StylePanel scene={scene} selected={selection.current} theme={theme} />
           {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
         </Sidebar>

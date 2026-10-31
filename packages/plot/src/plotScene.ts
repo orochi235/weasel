@@ -112,6 +112,15 @@ export function replacePlotData<TData, TLayer extends string, TPose>(
   });
 }
 
+/** The id of the plot root `id` is, or is a mark of; `null` for a node outside every plot. */
+export function plotRootContaining(scene: Scene<unknown, string, unknown>, id: string): NodeId | null {
+  const node = scene.get(id as NodeId);
+  if (node === undefined) return null;
+  if (plotRootOf(node) !== null) return node.id;
+  const parent = plotMarkOf(node) !== null ? node.parent : null;
+  return parent !== null && parent !== undefined && plotRootOf(scene.get(parent)) !== null ? parent : null;
+}
+
 /** Every plot root in `scene`, in render order. */
 export function plotRootsIn(scene: Scene<unknown, string, unknown>): NodeId[] {
   return scene.renderOrderNodes().filter((n) => plotRootOf(n) !== null).map((n) => n.id);

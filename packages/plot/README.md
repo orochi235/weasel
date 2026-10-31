@@ -58,6 +58,16 @@ turns a text edit of it into one edit of the spec, and `usePlotTextEdit` gives
 a `SceneCanvas` the options that do so. `PlotView` hosts one chart on a canvas
 of its own with all of it wired.
 
+Every collection a spec holds can be authored from nothing: each kind has
+pure edits that insert, remove, and reorder its slices, series, rows, tasks,
+commits, links, fields or axes (`insertPieSlice`, `removeGanttTask`,
+`moveRadarAxis`, …), and set the fields a drag cannot reach. `plotSchemaOf`
+describes a spec of any kind as fields and tables of rows, some holding tables
+of their own under each row, every read and write going through those edits,
+so a host builds a form or a grid with no knowledge of kinds.
+`@weasel-js/ui`'s `PlotDataPanel` is that form. Commit what it proposes with
+`replacePlotData`, one undo entry per edit.
+
 Colors come from a `PlotTheme`, by role: `text`, `axis`, `grid`, and `series`,
 which series take in turn. `plotThemeFrom` builds one from a resolved
 `@weasel-js/theme` theme; `PLOT_THEME` is the weasel theme's dark mode.

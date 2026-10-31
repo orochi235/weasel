@@ -2,7 +2,9 @@ import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { plotHandles } from './editing/handleLayer';
 import { compilePlot } from './plotData';
-import { plotMarkOf, plotRootOf, plotRootsIn, plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec } from './plotScene';
+import {
+  plotMarkOf, plotRootContaining, plotRootOf, plotRootsIn, plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec,
+} from './plotScene';
 import { PLOT_THEME } from './theme';
 import { setXyValue } from './xychart/edit';
 import type { XyChartData } from './xychart/types';
@@ -38,6 +40,7 @@ describe('a plot in a scene', () => {
   it('draws its marks in the root\'s frame, so moving the root moves the chart', () => {
     const scene = sceneOf();
     expect(plotRootsIn(scene as never)).toEqual(['p']);
+    expect([plotRootContaining(scene as never, 'p'), plotRootContaining(scene as never, 'p/bar:0:1'), plotRootContaining(scene as never, 'nope')]).toEqual(['p', 'p', null]);
     const handles = [...plotHandles(scene as never)];
     const bar = handles.find((h) => h.markId === 'p/bar:0:0')!;
     const local = scene.get('p/bar:0:0' as NodeId)!.pose;
