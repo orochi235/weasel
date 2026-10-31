@@ -21,8 +21,20 @@ describe('Plot2D — rendering', () => {
     const { container } = render(
       <Plot2D width={200} height={100} grid={{ color: { ref: 'accent' } }} axes={{ color: { space: 'srgb', coords: [1, 0, 0] } }} />,
     );
-    expect(container.querySelector('[data-plot-element="grid"]')!.getAttribute('stroke')).toBe('var(--wzl-accent)');
-    expect(container.querySelector('[data-plot-element="axis"]')!.getAttribute('stroke')).toBe('#ff0000');
+    // A `stroke` attribute would lose to the `.grid`/`.axis` rules; the color has to reach the
+    // custom property those rules read. Plot2D.browser.test.tsx checks the painted stroke.
+    const grid = container.querySelector('[data-plot-element="grid"]')!;
+    const axis = container.querySelector('[data-plot-element="axis"]')!;
+    expect((grid.parentElement as unknown as SVGGElement).style.getPropertyValue('--plot-grid')).toBe('var(--wzl-accent)');
+    expect((axis.parentElement as unknown as SVGGElement).style.getPropertyValue('--plot-axis')).toBe('#ff0000');
+    expect(grid.hasAttribute('stroke')).toBe(false);
+    expect(axis.hasAttribute('stroke')).toBe(false);
+  });
+
+  it('leaves the plot-* defaults in force when no color is given', () => {
+    const { container } = render(<Plot2D width={200} height={100} grid={{}} />);
+    expect((container.querySelector('[data-plot-element="grid"]')!.parentElement as unknown as SVGGElement).style.getPropertyValue('--plot-grid')).toBe('');
+    expect((container.querySelector('[data-plot-element="axis"]')!.parentElement as unknown as SVGGElement).style.getPropertyValue('--plot-axis')).toBe('');
   });
 
   it('honors grid.divisions', () => {
