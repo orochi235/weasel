@@ -180,9 +180,9 @@ reason and the dispatcher falls through to the zoom. Outside a camera — the DO
 input scope of its own so two loupes never stack `loupe.peek` on one id.
 
 **The peek key goes to the loupe under the pointer.** Its binding carries
-`over: true`, so it is live on whichever host the pointer is over when the key
-goes down, not on the canvas last pressed in. A key held before the pointer
-enters raises nothing.
+`over: true`, so it is live on whichever host the pointer is over, not on the
+canvas last pressed in. A held key follows the pointer: moving onto a loupe
+with it down raises that one, and leaving puts it away.
 
 **The aim is a hover that a held button does not stand down.** `loupe.aim`
 binds `{ kind: 'hover', held: 'optional' }`, so the lens follows a drag as it

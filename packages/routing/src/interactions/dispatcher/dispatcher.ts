@@ -84,7 +84,7 @@ export function createDispatcher(opts?: {
     routedView = ctx.viewId;
     routedIsMac = ctx.isMac;
     routedToLocal = ctx.toLocal;
-    const pumped = pumpGesture(run, event);
+    const pumped = pumpGesture(run, event, ctx.keyReach);
     if (pumped === 'pass') return handOff(run, event, ctx, invoking, inFlight.engagedOwners);
     if (pumped !== undefined) return pumped;
 

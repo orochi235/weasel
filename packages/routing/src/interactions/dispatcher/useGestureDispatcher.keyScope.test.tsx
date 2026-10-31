@@ -12,6 +12,7 @@ import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import { InputScope } from '../actions/inputScope';
 import type { Action } from '../actions/action';
+import { heldKeySpec } from '../actions/toolOffhand';
 
 const NO_ENTRIES = new Map();
 const NO_POINTER = { pointer: false } as const;
@@ -35,6 +36,26 @@ function Canvas({ name, run, claimKeys, noCanvas, noPointer, over }: {
   return noCanvas ? null : <canvas ref={canvasRef} data-name={name} />;
 }
 
+/** A canvas whose `over` binding peeks while Alt is held, as a loupe's does. */
+function PeekCanvas({ name, peeking }: { name: string; peeking: (on: boolean) => void }): ReactNode {
+  const registry = useActionsRegistry()!;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => registry.register({
+    id: 'test.peek',
+    label: 'Peek',
+    defaultBinding: [{ spec: heldKeySpec('Alt'), opts: { over: true } }],
+    invoker: {
+      timing: 'ongoing',
+      start: () => {
+        peeking(true);
+        return { onEnd: () => peeking(false) };
+      },
+    },
+  } satisfies Action), [registry, peeking]);
+  useGestureDispatcher({ canvasRef, actions: registry, entriesById: NO_ENTRIES });
+  return <canvas ref={canvasRef} data-name={name} />;
+}
+
 function Root({ children }: { children: ReactNode }): ReactNode {
   return (
     <DepRegistryProvider>
@@ -53,6 +74,12 @@ const hover = (name: string): void => {
 };
 const leave = (name: string): void => {
   act(() => { canvas(name).dispatchEvent(new PointerEvent('pointerleave')); });
+};
+const alt = (type: 'keydown' | 'keyup'): void => {
+  act(() => { window.dispatchEvent(new KeyboardEvent(type, { key: 'Alt', code: 'AltLeft', altKey: type === 'keydown', cancelable: true })); });
+};
+const enter = (name: string, altKey = true): void => {
+  act(() => { canvas(name).dispatchEvent(new PointerEvent('pointerenter', { altKey })); });
 };
 const canvas = (name: string): Element => document.querySelector(`canvas[data-name="${name}"]`)!;
 
@@ -189,5 +216,57 @@ describe('a key bound with `over`', () => {
     hover('b');
     press();
     expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
+  });
+});
+
+describe('a key held for an `over` binding', () => {
+  it('presses it when the pointer arrives with the key already down', () => {
+    const peeking = vi.fn();
+    render(<Root><InputScope><PeekCanvas name="a" peeking={peeking} /></InputScope></Root>);
+    alt('keydown');
+    expect(peeking).not.toHaveBeenCalled();
+    enter('a');
+    expect(peeking.mock.calls).toEqual([[true]]);
+    alt('keyup');
+    expect(peeking.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it('follows the pointer from one canvas to the next while held', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><PeekCanvas name="a" peeking={a} /></InputScope>
+        <InputScope><PeekCanvas name="b" peeking={b} /></InputScope>
+      </Root>,
+    );
+    enter('a', false);
+    alt('keydown');
+    leave('a');
+    enter('b');
+    expect(a.mock.calls).toEqual([[true], [false]]);
+    expect(b.mock.calls).toEqual([[true]]);
+    leave('b');
+    enter('a');
+    alt('keyup');
+    expect(a.mock.calls).toEqual([[true], [false], [true], [false]]);
+    expect(b.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it('presses nothing once the key is up', () => {
+    const peeking = vi.fn();
+    render(<Root><InputScope><PeekCanvas name="a" peeking={peeking} /></InputScope></Root>);
+    alt('keydown');
+    alt('keyup');
+    enter('a', false);
+    expect(peeking).not.toHaveBeenCalled();
+  });
+
+  it('does not repeat a single-press binding when the pointer arrives', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} over /></InputScope></Root>);
+    press();
+    hover('a');
+    expect(run).not.toHaveBeenCalled();
   });
 });

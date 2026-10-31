@@ -1,9 +1,10 @@
 /** The keyboard channel: window keydown and keyup as `key` and `key-held` input. */
 import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
-import type { Dispatcher, KeyReach } from '../dispatcherApi';
+import type { KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
 import { keymapKeys } from './keymapKeys';
+import { followPointer, type HeldKey } from './overKeys';
 
 /**
  * True when AltGr typed the character `e` reports. A layout that types `[` with
@@ -35,18 +36,26 @@ export function keyboardInput(core: DispatchCore): {
   onKeyUp: (e: KeyboardEvent) => void;
   /** End every held key, as a window that lost focus must: it never delivers the keyup. */
   releaseAll: () => void;
+  /** The pointer came over the canvas: press the keys already held for its `over` bindings. */
+  arrive: (e: PointerEvent) => void;
+  /** The pointer left the canvas: release what its `over` bindings hold. */
+  leave: () => void;
 } {
   const { dispatch, dispatcherNow } = core;
 
   // Held keys by physical key, mapped to the `key` they went down as (Shift
   // pressed mid-hold makes the keyup of an 'o' press report 'O') and the
   // dispatcher that took the down, which hover may have routed away from.
-  const heldKeys = new Map<string, { key: string; code?: string; on: Dispatcher }>();
+  const heldKeys = new Map<string, HeldKey>();
+  // Every key down on the page, taken or not, for `arrive` to press again.
+  const downKeys = new Map<string, Omit<HeldKey, 'on'>>();
   const keymaps = keymapKeys(core.keymaps);
   const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
   const onKeyDown = (e: KeyboardEvent) => {
+    // Before the filters: a key another surface took is still down.
+    downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e) });
     if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
     // does the one under the pointer, for its `over` bindings alone.
@@ -101,6 +110,7 @@ export function keyboardInput(core: DispatchCore): {
 
   const onKeyUp = (e: KeyboardEvent) => {
     const physical = physicalKey(e);
+    downKeys.delete(physical);
     keymaps.up(e, physical);
     const down = heldKeys.get(physical);
     if (down === undefined) return;
@@ -119,6 +129,7 @@ export function keyboardInput(core: DispatchCore): {
   };
 
   const releaseAll = (): void => {
+    downKeys.clear();
     keymaps.clear();
     const releasing = [...heldKeys.values()];
     heldKeys.clear();
@@ -137,5 +148,5 @@ export function keyboardInput(core: DispatchCore): {
     }
   };
 
-  return { onKeyDown, onKeyUp, releaseAll };
+  return { onKeyDown, onKeyUp, releaseAll, ...followPointer(core, downKeys, heldKeys) };
 }

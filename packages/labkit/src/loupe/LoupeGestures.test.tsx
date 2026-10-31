@@ -82,11 +82,26 @@ describe('<LoupeGestures> with two loupes on the page', () => {
     expect(visible('b')).toBe('false');
   });
 
-  it('peeks the loupe under the pointer as the key goes down, not one entered later', () => {
+  it('peeks a loupe the pointer moves onto with the key already held', () => {
     render(<Wall id="a" wrap={isolated} />);
     giveKeys(screen.getByTestId('a'));
     peek();
     fireEvent.pointerMove(screen.getByTestId('a'), { clientX: 10, clientY: 10 });
+    expect(visible('a')).toBe('true');
+  });
+
+  it('carries a held peek from one loupe to the next', () => {
+    render(
+      <>
+        <Wall id="a" wrap={isolated} />
+        <Wall id="b" wrap={isolated} />
+      </>,
+    );
+    fireEvent.pointerMove(screen.getByTestId('a'), { clientX: 10, clientY: 10 });
+    peek();
+    fireEvent.pointerLeave(screen.getByTestId('a'));
+    fireEvent.pointerMove(screen.getByTestId('b'), { clientX: 10, clientY: 10 });
     expect(visible('a')).toBe('false');
+    expect(visible('b')).toBe('true');
   });
 });
