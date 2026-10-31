@@ -168,7 +168,7 @@ const TOOLBAR: PrefGroup = {
       },
     },
     size: { kind: 'number', name: 'Size', description: 'Type size.', default: 12, min: 1 },
-    bold: { kind: 'boolean', name: 'Bold', description: 'Heavier weight.', short: ['B'], default: false },
+    bold: { kind: 'boolean', name: 'Bold', icon: icon('core:bold'), description: 'Heavier weight.', short: ['B'], default: false },
     color: { kind: 'color', name: 'Color', description: 'Text color.', default: '#7ec8e3' },
     flatten: { kind: 'action', name: 'Flatten', description: '', default: undefined, action: 'layers.flatten' },
   },

@@ -3,6 +3,7 @@ import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { type DistributiveOmit, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { PropertyReadout } from '../Properties/PropertyReadout';
 import { BarPopover } from './BarPopover';
+import { useOrientation } from '../orientation';
 import s from './Bar.module.css';
 
 /** What {@link BarField} adds to the field it draws. */
@@ -30,10 +31,11 @@ export type BarFieldProps<T extends string = string> = DistributiveOmit<Property
  */
 export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
   const { icon, ...p } = typed as unknown as PropertyControlProps & BarFieldCellProps;
+  const o = useOrientation();
   if (p.readOnly) {
     // A value alone does not say what it is a value of, so a readout is always named.
     return (
-      <span className={s.field}>
+      <span className={s.field} data-orientation={o}>
         <BarLabel name={p.name} short={p.short} icon={icon} />
         <PropertyReadout {...p} />
       </span>
@@ -42,7 +44,7 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
   switch (p.kind) {
     case 'number':
       return (
-        <span className={p.control === 'slider' ? s.field : `${s.field} ${s.number}`}>
+        <span className={p.control === 'slider' ? s.field : `${s.field} ${s.number}`} data-orientation={o}>
           <BarLabel name={p.name} short={p.short} icon={icon} />
           <PropertyControl {...p} />
         </span>
@@ -56,7 +58,7 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
         );
       }
       return (
-        <span className={`${s.field} ${s.text}`}>
+        <span className={`${s.field} ${s.text}`} data-orientation={o}>
           <BarLabel name={p.name} short={p.short} icon={icon} />
           <PropertyControl {...p} />
         </span>
@@ -64,7 +66,7 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
     case 'boolean':
       if (p.control === 'switch') {
         return (
-          <span className={s.field}>
+          <span className={s.field} data-orientation={o}>
             <PropertyControl {...p} />
             <span className={s.after} aria-hidden="true">{p.name}</span>
           </span>
@@ -72,32 +74,32 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
       }
       if (p.control === 'checkbox') {
         return (
-          <label className={s.field}>
+          <label className={s.field} data-orientation={o}>
             <PropertyControl {...p} />
             <span className={s.after} aria-hidden="true">{p.name}</span>
           </label>
         );
       }
       return (
-        <span className={s.field}>
+        <span className={s.field} data-orientation={o}>
           <PropertyControl {...p} control="toggle" />
         </span>
       );
     case 'enum':
       return (
-        <span className={s.field}>
+        <span className={s.field} data-orientation={o}>
           <PropertyControl {...p} control={p.control === 'radio' ? 'toggle' : p.control} />
         </span>
       );
     case 'paint':
       return (
-        <span className={`${s.field} ${s.paint}`}>
+        <span className={`${s.field} ${s.paint}`} data-orientation={o}>
           <PropertyControl {...p} control="swatch" />
         </span>
       );
     default:
       return (
-        <span className={s.field}>
+        <span className={s.field} data-orientation={o}>
           <PropertyControl {...p} />
         </span>
       );

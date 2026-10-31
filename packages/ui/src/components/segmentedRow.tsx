@@ -1,6 +1,7 @@
 import { Fragment, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import type { RovingTabIndex } from '../useRovingTabIndex';
 import { useTrackShape } from './Along/alongContext';
+import { useOrientation, type Orientation } from './orientation';
 import { SegmentsAlong } from './segmentsAlong';
 import type { SegmentedSize, SegmentedVariant } from './segmentedVariant';
 import s from './segmentedControl.module.css';
@@ -36,6 +37,8 @@ export interface SegmentedRowProps {
   size?: SegmentedSize;
   variant?: SegmentedVariant;
   segments: readonly Segment[];
+  /** Which way the row runs. Defaults to the way the row it sits in runs. */
+  orientation?: Orientation;
   /** Wraps the segments, for a context they read. */
   wrap?: (segments: ReactNode) => ReactNode;
 }
@@ -59,13 +62,15 @@ export function segmentPlaceProps(place: SegmentPlace | undefined): Partial<Omit
  */
 export function SegmentedRow(props: SegmentedRowProps): ReactElement {
   const along = useTrackShape();
+  const sitting = useOrientation();
   if (along !== null && along.shape.kind !== 'line') return <SegmentsAlong {...props} shape={along.shape} align={along.align} />;
   const { roving, role, ariaLabel, className, height, size, variant, segments, wrap } = props;
   const style = height !== undefined ? ({ '--tb-h': `${height}px` } as CSSProperties) : undefined;
   const rootCls = [s.root, size && s[`size_${size}`], variant && s[`variant_${variant}`], className].filter(Boolean).join(' ');
+  const orientation = props.orientation ?? sitting;
   const drawn = segments.map((segment) => <Fragment key={segment.key}>{segment.draw(undefined)}</Fragment>);
   return (
-    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} className={rootCls} role={role} aria-label={ariaLabel} style={style}>
+    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} className={rootCls} role={role} aria-label={ariaLabel} data-orientation={orientation} style={style}>
       {wrap ? wrap(drawn) : drawn}
     </div>
   );

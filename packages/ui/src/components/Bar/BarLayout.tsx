@@ -13,10 +13,11 @@ import { useBarReorderKeys } from './useBarReorderKeys';
 import { BAR_MORE, useBarOverflow } from './useBarOverflow';
 import { useBarLead } from './barLeadHandle';
 import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
+import { OrientationContext, type Orientation } from '../orientation';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
-export type BarOrientation = 'horizontal' | 'vertical';
+export type BarOrientation = Orientation;
 
 /** What a bar does with cells its line has no room for. */
 export type BarOverflowMode = PrefBarOverflow;
@@ -70,8 +71,6 @@ export interface BarLayoutProps {
   /** Leaves that sit side by side, as the cells they make. Fewer cells than
    *  leaves come back where a surface fuses neighbors, as a run of flags. */
   cells: (leaves: readonly BarLeafNode[]) => readonly BarCell[];
-  /** A leaf as a labeled row, which a vertical bar opens from a button. */
-  row: (leaf: BarLeafNode) => ReactNode;
   /** Attributes for the element drawn for the leaf or group at `path`. */
   attrs?: (path: string, leaf: boolean) => Record<string, string | undefined>;
   /** Attributes for the bar's own element. */
@@ -136,11 +135,11 @@ export function BarLayout(props: BarLayoutProps) {
 }
 
 function BarLine(props: BarLayoutProps) {
-  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, framed, className } = props;
+  const { nodes, orientation = 'horizontal', cells, attrs, rootAttrs, label, framed, className } = props;
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
   // A vertical bar has no room beside a field, so only a button stays on it.
-  const shown = barItems(nodes, { popLeaves: vertical, cells, row, mark: props.onReorder !== undefined });
+  const shown = barItems(nodes, { cells, mark: props.onReorder !== undefined });
   const leading = useBarLead(barLead(props));
 
   const menu = overflow === 'menu';
@@ -165,6 +164,7 @@ function BarLine(props: BarLayoutProps) {
       aria-orientation={label === undefined ? undefined : orientation}
     >
       <DockBarContext.Provider value={null}>
+        <OrientationContext.Provider value={orientation}>
         {props.onReorder && <span aria-live="polite" aria-atomic="true" data-bar-announce="" className={s.status}>{keys.announcement}</span>}
         {leading && <span className={s.lead} {...leading.attrs}>{leading.content}</span>}
         {line.map((item) => drawBarItem(item, vertical, attrs))}
@@ -173,6 +173,7 @@ function BarLine(props: BarLayoutProps) {
             <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
           </span>
         )}
+        </OrientationContext.Provider>
       </DockBarContext.Provider>
     </div>
   );

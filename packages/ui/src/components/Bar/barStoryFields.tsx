@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import type { Paint } from '@weasel-js/core';
 import type { PropertyControlProps } from '@weasel-js/ui/components/Properties';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { icon } from '../../icons.gen';
 
 const ALIGN = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
+  { value: 'left', label: 'Left', glyph: <Icon name={icon('core:textAlignLeft')} size={16} /> },
+  { value: 'center', label: 'Center', glyph: <Icon name={icon('core:textAlignCenter')} size={16} /> },
+  { value: 'right', label: 'Right', glyph: <Icon name={icon('core:textAlignRight')} size={16} /> },
 ] as const;
 
 /** One field of every kind and control, each holding its own value, for the stories and the layout test. */
@@ -30,7 +32,7 @@ export function useStoryFields(): { id: string; field: PropertyControlProps }[] 
     },
     { id: 'string', field: { kind: 'string', name: 'Title', value: title, onChange: setTitle } },
     { id: 'string textarea', field: { kind: 'string', control: 'textarea', name: 'Notes', value: notes, onChange: setNotes } },
-    { id: 'boolean', field: { kind: 'boolean', name: 'Bold', short: ['B'], value: bold, onChange: setBold } },
+    { id: 'boolean', field: { kind: 'boolean', name: 'Bold', short: ['B'], glyph: <Icon name={icon('core:bold')} size={16} />, value: bold, onChange: setBold } },
     { id: 'boolean switch', field: { kind: 'boolean', control: 'switch', name: 'Snap', value: snap, onChange: setSnap } },
     { id: 'boolean checkbox', field: { kind: 'boolean', control: 'checkbox', name: 'Grid', value: grid, onChange: setGrid } },
     { id: 'enum', field: { kind: 'enum', name: 'Align', value: align, options: ALIGN, onChange: setAlign } },

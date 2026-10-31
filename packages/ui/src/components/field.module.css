@@ -70,7 +70,7 @@
 .frame {
   height: var(--_frame-h, var(--wzl-field-h, var(--wzl-control-h)));
   background: var(--_frame-bg, var(--wzl-input-surface, var(--wzl-surface-sunken)));
-  border: var(--_frame-border, var(--wzl-field-border, 1px solid var(--wzl-border)));
+  border: var(--_frame-border, var(--wzl-field-border, 1px solid color-mix(in srgb, var(--wzl-border), var(--wzl-border-strong) 30%)));
   border-radius: var(--wzl-radius-sm);
   box-shadow: var(--wzl-bevel-sunken, none);
   color: var(--_frame-fg, var(--wzl-fg));

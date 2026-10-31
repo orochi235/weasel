@@ -10,6 +10,18 @@
   color: var(--wzl-fg);
 }
 
+/* The same stand-in, run down the side. */
+.column {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-4) var(--wzl-space-3);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  color: var(--wzl-fg);
+}
+
 .matrix {
   display: grid;
   grid-template-columns: 96px 280px auto;

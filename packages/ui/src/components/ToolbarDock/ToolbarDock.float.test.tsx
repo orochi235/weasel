@@ -71,7 +71,6 @@ function bar(id: string, extra: Partial<DockBar> = {}): DockBar {
         orientation={orientation}
         nodes={[{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => ran(id)}>{`${label} go`}</button> }]}
         cells={() => []}
-        row={() => null}
       />
     ),
     ...extra,
@@ -342,7 +341,7 @@ describe('a bar that moves', () => {
   function Draft({ orientation }: { orientation: BarOrientation }) {
     const [text, setText] = useState('');
     const field = <input aria-label="File draft" value={text} onChange={(e) => setText(e.target.value)} />;
-    return <BarLayout label="File" lead="label" orientation={orientation} nodes={[{ kind: 'cell', path: 'file.draft', content: field }]} cells={() => []} row={() => null} />;
+    return <BarLayout label="File" lead="label" orientation={orientation} nodes={[{ kind: 'cell', path: 'file.draft', content: field }]} cells={() => []} />;
   }
   const drafted: DockBar = { ...bar('file'), render: (o) => <Draft orientation={o} /> };
   function Drafting({ initial }: { initial: ToolbarLayout }) {

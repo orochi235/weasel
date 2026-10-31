@@ -173,7 +173,7 @@
    padding and font. Sized for dense surfaces (lab control panels, inline
    filters, etc.). */
 .size_sm {
-  height: calc(var(--wzl-font-size-sm) * 1.4 + 2px);
+  height: var(--tb-h, calc(var(--wzl-font-size-sm) * 1.4 + 2px));
   padding: 1px;
 }
 
@@ -246,7 +246,8 @@
 }
 
 .variant_flat .segment {
-  border: 1px solid var(--wzl-border-strong);
+  /* The same faint rule a text box draws, so a field's segments and its boxes read as one family. */
+  border: var(--wzl-field-border, 1px solid color-mix(in srgb, var(--wzl-border), var(--wzl-border-strong) 30%));
   border-radius: 0;
   /* Sunken, so an unselected cell sits below the panel and the selected one
      reads as raised without needing the glass treatment back. */
@@ -290,4 +291,44 @@
 
 .variant_flat .segmentSelected::before {
   content: none;
+}
+
+/* A vertical row: the well and its segments turned a quarter turn, each label still upright. */
+.root[data-orientation='vertical'] {
+  flex-direction: column;
+  height: auto;
+  min-width: 0;
+}
+
+.root[data-orientation='vertical'] .segment {
+  min-height: calc(var(--tb-h, var(--wzl-control-h)) - 2 * var(--wzl-space-1));
+}
+
+.size_sm[data-orientation='vertical'] .segment {
+  min-height: calc(var(--tb-h, calc(var(--wzl-font-size-sm) * 1.4 + 2px)) - 2px);
+}
+
+.root[data-orientation='vertical']:not(.variant_minimal, .variant_flat) .segment:first-of-type {
+  border-radius: var(--wzl-radius-pill) var(--wzl-radius-pill) 0 0;
+}
+
+.root[data-orientation='vertical']:not(.variant_minimal, .variant_flat) .segment:last-of-type {
+  border-radius: 0 0 var(--wzl-radius-pill) var(--wzl-radius-pill);
+}
+
+.root[data-orientation='vertical']:not(.variant_minimal, .variant_flat) .segment:only-of-type {
+  border-radius: var(--wzl-radius-pill);
+}
+
+.variant_flat[data-orientation='vertical'] .segment ~ .segment {
+  margin-inline-start: 0;
+  margin-block-start: -1px;
+}
+
+.variant_flat[data-orientation='vertical'] .segment:first-of-type {
+  border-radius: var(--wzl-radius-sm) var(--wzl-radius-sm) 0 0;
+}
+
+.variant_flat[data-orientation='vertical'] .segment:last-of-type {
+  border-radius: 0 0 var(--wzl-radius-sm) var(--wzl-radius-sm);
 }

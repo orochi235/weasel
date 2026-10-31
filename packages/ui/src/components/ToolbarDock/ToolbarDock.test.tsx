@@ -23,7 +23,6 @@ function bar(id: string, label: string, lead?: PrefBarLead, vertical?: boolean):
         orientation={orientation}
         nodes={[{ kind: 'cell', path: `${id}.go`, content: <button type="button">{`${label} go`}</button> }]}
         cells={() => []}
-        row={() => null}
       />
     ),
   };

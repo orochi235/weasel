@@ -34,12 +34,12 @@ const barKeyOf = (child: Element): string | null =>
  * centered; in `'scroll'` mode the run scrolls along itself.
  */
 export function BarAlong(props: BarAlongProps): ReactElement {
-  const { nodes, cells, row, attrs, rootAttrs, label, className, shape, align } = props;
+  const { nodes, cells, attrs, rootAttrs, label, className, shape, align } = props;
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const menu = overflow === 'menu';
   const root = useRef<HTMLDivElement>(null);
   const run = useRowRun(root, shape);
-  const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.onReorder !== undefined });
+  const items = barItems(nodes, { cells, mark: props.onReorder !== undefined });
   const leading = useBarLead(barLead(props));
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);
   const gap = useRunGap(root);

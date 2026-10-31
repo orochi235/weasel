@@ -113,7 +113,6 @@ export function Bar(props: BarProps) {
       keysOf={(container) => childKeysAt(orderPrefGroup(schema, props.order), container)}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
-      row={(node) => <PropertyList>{leafRow(node, draw)}</PropertyList>}
     />
   );
 }

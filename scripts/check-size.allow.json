@@ -149,7 +149,7 @@
     "longestFunction": 181
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 871,
+    "lines": 864,
     "longestFunction": 130
   },
   "packages/labkit/src/state/bindLabStore.ts": {

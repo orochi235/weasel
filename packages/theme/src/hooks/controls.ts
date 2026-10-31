@@ -5,7 +5,7 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
   {
     name: 'field-border',
     type: 'border',
-    value: '1px solid var(--wzl-border)',
+    value: '1px solid color-mix(in srgb, var(--wzl-border), var(--wzl-border-strong) 30%)',
     description: 'Border of a field’s frame. A theme whose --wzl-bevel-sunken draws the edge sets it to a border of no width.',
   },
   {

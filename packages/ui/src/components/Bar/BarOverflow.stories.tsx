@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
 import s from './BarOverflow.stories.module.css';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof Bar> = {
   title: 'ui/Bar/Overflow',
@@ -29,9 +30,9 @@ const TYPE: PrefGroup = {
       default: 'left',
       control: 'toggle',
       options: [
-        { value: 'left', label: 'Left' },
-        { value: 'center', label: 'Center' },
-        { value: 'right', label: 'Right' },
+        { value: 'left', label: 'Left', icon: icon('core:textAlignLeft') },
+        { value: 'center', label: 'Center', icon: icon('core:textAlignCenter') },
+        { value: 'right', label: 'Right', icon: icon('core:textAlignRight') },
       ],
     },
     color: { kind: 'color', name: 'Color', description: '', default: '#7ec8e3' },

@@ -5,6 +5,7 @@ import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import type { Orientation } from '../orientation';
 
 /** One segment of a {@link ToggleBar}, identified by its `value`. */
 export type ToggleBarItem<V extends string | number = string> = {
@@ -27,6 +28,8 @@ export type ToggleBarCommonProps = {
   /** Size variant. `sm` is ~60% of the default height with reduced padding
    *  and font size — sized for dense surfaces like lab control panels. */
   size?: ToggleBarSize;
+  /** Which way the segments run. Defaults to the way the row the bar sits in runs; a vertical bar keeps its labels upright. */
+  orientation?: Orientation;
   /** Visual variant. `minimal` strips the pill track and glass treatment;
    *  selection becomes a flat accent. For dense diagnostic surfaces. */
   variant?: ToggleBarVariant;
@@ -70,7 +73,7 @@ export type ToggleBarProps<V extends string | number = string> =
  * focus; Space and Enter flip the focused segment.
  */
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {
-  const { items, ariaLabel, className, height, size, variant } = props;
+  const { items, ariaLabel, className, height, size, variant, orientation } = props;
   const mode = props.mode ?? 'single';
 
   const isSelected = (value: V): boolean => {
@@ -133,6 +136,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
       height={height}
       size={size}
       variant={variant}
+      orientation={orientation}
       wrap={(segments) => <FitScope value={fit}>{segments}</FitScope>}
       segments={items.map((item, i) => {
         const selected = isSelected(item.value);

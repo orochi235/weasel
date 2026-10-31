@@ -3,6 +3,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { useState } from 'react';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Button } from '@weasel-js/ui/components/Button';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof ToolOptionsBar> = {
   title: 'ui/Foundations/ToolOptionsBar',
@@ -74,6 +75,7 @@ const TEXT_OPTIONS: PrefGroup = {
     bold: {
       kind: 'boolean',
       name: 'Bold',
+      icon: icon('core:bold'),
       description: 'Heavier weight.',
       short: ['B'],
       control: 'toggle',
@@ -83,6 +85,7 @@ const TEXT_OPTIONS: PrefGroup = {
     italic: {
       kind: 'boolean',
       name: 'Italic',
+      icon: icon('core:italic'),
       description: 'Sloped face.',
       short: ['I'],
       control: 'toggle',
@@ -102,9 +105,9 @@ const TEXT_OPTIONS: PrefGroup = {
       default: 'left',
       control: 'select',
       options: [
-        { value: 'left', label: 'Left' },
-        { value: 'center', label: 'Center' },
-        { value: 'right', label: 'Right' },
+        { value: 'left', label: 'Left', icon: icon('core:textAlignLeft') },
+        { value: 'center', label: 'Center', icon: icon('core:textAlignCenter') },
+        { value: 'right', label: 'Right', icon: icon('core:textAlignRight') },
       ],
     },
     color: { kind: 'color', name: 'Color', description: 'Ink.', alpha: true, default: '#3b82f6' },

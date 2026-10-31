@@ -64,6 +64,7 @@ import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { Split } from '../primitives/Split';
 import { Toolbar } from '../primitives/Toolbar';
 import { ZoomControl } from '../primitives/ZoomControl';
+import { ALIGN_ITEMS } from './alignItems';
 
 /** The specimen's sections, in page order. */
 export const SPECIMEN_SECTIONS = [
@@ -232,22 +233,14 @@ function ButtonsAndToggles() {
           ariaLabel="Align"
           value={align}
           onChange={setAlign}
-          items={[
-            { value: 'left', label: 'Left' },
-            { value: 'center', label: 'Center' },
-            { value: 'right', label: 'Right' },
-          ]}
+          items={ALIGN_ITEMS}
         />
         <ToggleBar
           ariaLabel="Align, flat"
           variant="flat"
           value={align}
           onChange={setAlign}
-          items={[
-            { value: 'left', label: 'Left' },
-            { value: 'center', label: 'Center' },
-            { value: 'right', label: 'Right' },
-          ]}
+          items={ALIGN_ITEMS}
         />
       </Cell>
       <Cell label="OptionsBar, ButtonBar">

@@ -51,7 +51,6 @@ function barSection(section: PanelSection, scope: PanelCellScope, marks: PanelMa
       label={section.name === '' ? undefined : section.name}
       nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.hidden ? <>{cell.content}<HiddenBadge /></> : cell.content }))}
       cells={() => []}
-      row={() => null}
       attrs={(at, leaf) => selectionAttrs(at, marks, leaf)}
     />
   );

@@ -59,7 +59,6 @@ function bar(id: string, extra: Partial<DockBar> = {}, nodes?: readonly BarNode[
         orientation={orientation}
         nodes={nodes ?? [{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => ran(id)}>{`${label} go`}</button> }]}
         cells={() => []}
-        row={() => null}
         onReorder={onReorder}
       />
     ),
@@ -451,7 +450,7 @@ describe('a bar nested inside a docked bar', () => {
       path: 'more',
       name: 'More things',
       body: () => (
-        <BarLayout label="Inner" lead="label" nodes={[{ kind: 'cell', path: 'x', content: <button type="button">x</button> }]} cells={() => []} row={() => null} />
+        <BarLayout label="Inner" lead="label" nodes={[{ kind: 'cell', path: 'x', content: <button type="button">x</button> }]} cells={() => []} />
       ),
     };
     setup(start([['outer']]), [bar('outer', {}, [nested])]);

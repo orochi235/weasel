@@ -28,7 +28,6 @@ const bar = (id: string, label: string, float = false, extra: Partial<DockBar> =
       framed
       nodes={[{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => presses.push(id)}>{`${label} go`}</button> }]}
       cells={() => []}
-      row={() => null}
     />
   ),
 });
@@ -196,7 +195,6 @@ const menuBar = (id: string, label: string, count: number): DockBar => ({
       overflow="menu"
       nodes={Array.from({ length: count }, (_, i) => ({ kind: 'cell' as const, path: `${id}.${i}`, content: <button type="button">{`${label} ${i}`}</button> }))}
       cells={() => []}
-      row={() => null}
     />
   ),
 });

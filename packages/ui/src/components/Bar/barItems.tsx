@@ -8,7 +8,7 @@ import { BarSideContext, type BarSide } from './barSide';
 import type { RunSpot } from '@weasel-js/geom';
 import { BAR_IN, BAR_UNIT, barUnitKey } from './barOrder';
 import { BAR_ITEM } from './useBarOverflow';
-import { barLeafName, type BarCell, type BarLayoutProps, type BarLeafNode, type BarNode } from './BarLayout';
+import { type BarLayoutProps, type BarLeafNode, type BarNode } from './BarLayout';
 import s from './Bar.module.css';
 
 /** One thing on a bar's line, keyed: a divider, or a cell drawn for the leaf or group at `path`. */
@@ -26,26 +26,17 @@ export interface BarItem {
 
 /**
  * `nodes` as the items of a bar's line: cells in order, a divider on each side of a run, and a button for each
- * group that opens. With `popLeaves`, every leaf but an action opens from a button, as a bar with no room beside
- * a field draws it.
+ * group that opens.
  */
-export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; cells: BarLayoutProps['cells']; row: BarLayoutProps['row']; mark?: boolean }): BarItem[] {
-  const { popLeaves, cells, row, mark } = opts;
+export function barItems(nodes: readonly BarNode[], opts: { cells: BarLayoutProps['cells']; mark?: boolean }): BarItem[] {
+  const { cells, mark } = opts;
   const items: Omit<BarItem, 'key'>[] = [];
 
   const walk = (list: readonly BarNode[], container: string): void => {
     const into = mark ? { in: container } : {};
     let pending: BarLeafNode[] = [];
     const flush = (): void => {
-      const drawn = popLeaves
-        ? pending.flatMap((node): readonly BarCell[] => {
-            if (node.leaf.kind === 'action' || node.leaf.kind === 'actions') return cells([node]);
-            const body = row(node);
-            if (body == null) return [];
-            return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)}>{body}</BarPopover> }];
-          })
-        : cells(pending);
-      for (const cell of drawn) items.push({ path: cell.path, leaf: true, content: cell.content, ...into });
+      for (const cell of cells(pending)) items.push({ path: cell.path, leaf: true, content: cell.content, ...into });
       pending = [];
     };
     for (const node of list) {

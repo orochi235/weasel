@@ -43,13 +43,14 @@ const TEXT: PrefGroup = {
         bold: {
           kind: 'boolean',
           name: 'Bold',
+          icon: icon('core:bold'),
           description: 'Heavier weight.',
           short: ['B'],
           control: 'toggle',
           pair: { with: ['style.italic'], label: 'Style' },
           default: false,
         },
-        italic: { kind: 'boolean', name: 'Italic', description: 'Sloped face.', short: ['I'], control: 'toggle', default: false },
+        italic: { kind: 'boolean', name: 'Italic', icon: icon('core:italic'), description: 'Sloped face.', short: ['I'], control: 'toggle', default: false },
       },
     },
     align: {
@@ -59,9 +60,9 @@ const TEXT: PrefGroup = {
       default: 'left',
       control: 'toggle',
       options: [
-        { value: 'left', label: 'Left' },
-        { value: 'center', label: 'Center' },
-        { value: 'right', label: 'Right' },
+        { value: 'left', label: 'Left', icon: icon('core:textAlignLeft') },
+        { value: 'center', label: 'Center', icon: icon('core:textAlignCenter') },
+        { value: 'right', label: 'Right', icon: icon('core:textAlignRight') },
       ],
     },
     color: { kind: 'color', name: 'Color', description: 'Text color.', default: '#7ec8e3' },

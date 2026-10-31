@@ -6,6 +6,7 @@ import { useOverlayPortal } from '../../overlays/portalHost';
 import listbox from '../listbox.module.css';
 import { BarMarkContext } from './barOrder';
 import type { BarSide } from './barSide';
+import { OrientationContext } from '../orientation';
 import s from './Bar.module.css';
 import { icon } from '../../icons.gen';
 
@@ -21,7 +22,7 @@ export function BarOverflow({ label, children, side }: { label: string; children
       {ready && provide(
         <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.menu}`} aria-label={label}>
-            <BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider>
+            <OrientationContext.Provider value="horizontal"><BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider></OrientationContext.Provider>
           </RACDialog>
         </Popover>
       )}

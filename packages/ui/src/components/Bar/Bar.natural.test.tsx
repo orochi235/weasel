@@ -18,13 +18,13 @@ afterEach(cleanup);
 const nodes: BarNode[] = ['a', 'b', 'c'].map((key) => ({ kind: 'cell', path: key, content: <button type="button">{key}</button> }));
 
 it('asks for the length that holds its lead and every item, though its line holds fewer', () => {
-  render(<BarLayout label="Tools" lead="label" overflow="menu" nodes={nodes} cells={() => []} row={() => null} />);
+  render(<BarLayout label="Tools" lead="label" overflow="menu" nodes={nodes} cells={() => []} />);
   const bar = screen.getByRole('toolbar', { name: 'Tools' });
   expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
   expect(bar.style.getPropertyValue('--bar-natural')).toBe('110px');
 });
 
 it('asks for nothing when it scrolls instead', () => {
-  render(<BarLayout label="Tools" lead="label" nodes={nodes} cells={() => []} row={() => null} />);
+  render(<BarLayout label="Tools" lead="label" nodes={nodes} cells={() => []} />);
   expect(screen.getByRole('toolbar', { name: 'Tools' }).style.getPropertyValue('--bar-natural')).toBe('');
 });

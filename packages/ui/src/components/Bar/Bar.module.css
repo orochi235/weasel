@@ -5,6 +5,10 @@
   align-items: center;
   gap: var(--bar-gap, var(--wzl-space-3));
   min-inline-size: 0;
+  /* Every control on the line stands at one height, so their edges line up: boxes, selects, segments and buttons. */
+  --wzl-field-h: var(--wzl-control-h-sm);
+  --wzl-select-h: var(--wzl-field-h);
+  --tb-h: var(--wzl-field-h);
 }
 
 .bar[data-orientation='vertical'] {
@@ -157,8 +161,13 @@
   align-items: center;
   flex: none;
   padding-inline: var(--wzl-space-2);
-  font-size: var(--wzl-font-size-sm);
+  /* A field label's face and case, one step heavier, so the bar's name reads above its fields' names. */
+  font-family: var(--wzl-font-display);
+  font-weight: calc(var(--wzl-font-weight-light) + 100);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   white-space: nowrap;
 }
 
@@ -253,8 +262,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--wzl-space-2);
-  width: var(--wzl-tb-height);
-  height: var(--wzl-tb-height);
+  width: var(--wzl-field-h, var(--wzl-tb-height));
+  height: var(--wzl-field-h, var(--wzl-tb-height));
   padding: 0;
   background: transparent;
   border: 0;
@@ -264,7 +273,7 @@
   font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-bold);
   white-space: nowrap;
-  cursor: default;
+  cursor: pointer;
 }
 
 .actionLabeled {
@@ -293,6 +302,7 @@
 .action[aria-disabled='true'],
 .popTrigger[data-disabled] {
   opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .action > svg {
@@ -368,4 +378,15 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* In a vertical row a field's parts stack, each upright: its name over its box, a switch over its words. */
+.field[data-orientation='vertical'] {
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+}
+
+.field[data-orientation='vertical'] input[type='range'] {
+  writing-mode: vertical-lr;
+  direction: rtl;
 }

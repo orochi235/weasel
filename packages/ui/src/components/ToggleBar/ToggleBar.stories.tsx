@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof ToggleBar> = {
   title: 'ui/Foundations/ToggleBar',
@@ -11,10 +13,10 @@ export default meta;
 type Story = StoryObj<typeof ToggleBar>;
 
 const alignItems = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
-  { value: 'justify', label: 'Justify' },
+  { value: 'left', label: <Icon name={icon('core:textAlignLeft')} size={16} />, ariaLabel: 'Left', tooltip: 'Left' },
+  { value: 'center', label: <Icon name={icon('core:textAlignCenter')} size={16} />, ariaLabel: 'Center', tooltip: 'Center' },
+  { value: 'right', label: <Icon name={icon('core:textAlignRight')} size={16} />, ariaLabel: 'Right', tooltip: 'Right' },
+  { value: 'justify', label: <Icon name={icon('core:textAlignJustify')} size={16} />, ariaLabel: 'Justify', tooltip: 'Justify' },
 ];
 
 export const Single: Story = {

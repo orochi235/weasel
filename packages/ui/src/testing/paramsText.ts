@@ -1,4 +1,5 @@
 import type { PrefGroup, PrefKind, PrefLeaf } from '@weasel-js/prefs';
+import { icon } from '../icons.gen';
 
 /** A row label on any params surface: PropertyRow's and SelectionPanel's, and labkit's paired cell. */
 const LABEL = '[class*="rowLabel"], .lk-pair-label';
@@ -92,7 +93,7 @@ export const LEAVES_BY_KIND: Record<PrefKind, Record<string, PrefLeaf>> = {
   boolean: {
     visible: { kind: 'boolean', name: 'Visible', description: '', default: true },
     snap: { kind: 'boolean', name: 'Snap', description: '', default: false, control: 'switch' },
-    bold: { kind: 'boolean', name: 'Bold', description: '', default: false, control: 'toggle' },
+    bold: { kind: 'boolean', name: 'Bold', icon: icon('core:bold'), description: '', default: false, control: 'toggle' },
   },
   string: {
     title: { kind: 'string', name: 'Title', description: '', default: 'Untitled' },

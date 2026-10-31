@@ -9,6 +9,8 @@ import { Switch } from '@weasel-js/ui/components/Switch';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { useState, type MouseEvent, type SyntheticEvent } from 'react';
 import styles from './ThemeEditor.module.css';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { icon } from './icons.gen';
 
 export interface PreviewVariant {
   readonly label: string;
@@ -24,9 +26,9 @@ export interface ThemePreviewProps {
 }
 
 const ALIGN = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
+  { value: 'left', label: <Icon name={icon('core:textAlignLeft')} size={16} />, ariaLabel: 'Left', tooltip: 'Left' },
+  { value: 'center', label: <Icon name={icon('core:textAlignCenter')} size={16} />, ariaLabel: 'Center', tooltip: 'Center' },
+  { value: 'right', label: <Icon name={icon('core:textAlignRight')} size={16} />, ariaLabel: 'Right', tooltip: 'Right' },
 ];
 
 function Specimen({ caption }: { caption: string }) {
