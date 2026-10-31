@@ -246,7 +246,7 @@
 }
 
 .bar[data-orientation='vertical'] .popTrigger:not([data-icon]) > .caret {
-  rotate: 90deg;
+  rotate: -90deg;
 }
 
 .caret {
