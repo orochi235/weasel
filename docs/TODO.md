@@ -345,8 +345,13 @@ Owner tags, after the priority (2026-10-26):
   two decimals, with and without `will-change: transform`. The steady ink bias of about -0.35px
   the matrix rows suggested did not show: stepping the pose's `y` through a pixel in eighths gave
   a rounding sawtooth (Inter 40px from +0.43 to -0.42) whose mean was -0.01 for Inter 40px, -0.02
-  for Inter 16px, -0.07 for Arial 40px, and -0.14 for Georgia 23px. Not checked in WebKit,
-  Firefox, or at DPR 2. What is left is a ruling: snap the canvas's text baseline to device pixels
+  for Inter 16px, -0.07 for Arial 40px, and -0.14 for Georgia 23px. In all three engines and at
+  DPR 2 (sixteenths of a pixel, eight cases, 2026-10-31, `tests/perf/recorded/overlay-baseline-2026-10-31/`):
+  Chromium snaps to whole CSS pixels at DPR 2 too, Firefox and WebKit to device pixels, and the
+  overlay's layout baseline, read from an empty inline-block, is the same in all three to 0.04px.
+  Firefox and WebKit draw Inter higher on that baseline than Chromium does, by 0.1px at 12px and
+  0.3px at 72px; Arial draws alike in all three. So the worst `dy` (0.755, Firefox DPR 1, Inter
+  72px) is the snap plus a glyph-drawing offset no layout measurement sees. What is left is a ruling: snap the canvas's text baseline to device pixels
   as browsers do, which moves all canvas text, or keep the half pixel.
   Closes when the maintainer has ruled between snapping the canvas baseline and keeping the half pixel,
   and the tree does what he ruled.

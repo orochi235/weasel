@@ -1,0 +1,312 @@
+/**
+ * The edit overlay against the canvas it stands in for, compared as pixels:
+ * the same text node is painted by the GL renderer and set by the overlay, and
+ * the two inks' intensity-weighted centroids must land in the same place.
+ *
+ * `scripts/measure-overlay-alignment.config.ts` runs the full matrix — every
+ * family, size and script across Chromium, WebKit and Firefox at DPR 1 and 2 —
+ * and writes one TSV per browser to `node_modules/.cache/overlay-alignment/`.
+ */
+import { describe, it, expect, beforeAll, afterAll, inject } from 'vitest';
+import { page, commands, userEvent } from 'vitest/browser';
+import { createElement, useEffect } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { flushSync } from 'react-dom';
+import { registerFont, registerCanvasFont, registerFontOutlines } from '@weasel-js/font';
+import { resolveTextStyle, type TextStyle } from '@weasel-js/text';
+import { createScene } from 'core/scene/scene';
+import type { RectPose } from 'core/scene/composePose';
+import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
+import { useTextEdit, type TextEditScreenPose } from '@weasel-js/text-dom';
+import { baselineDrop } from '@weasel-js/text-dom/testing/baselineDrop';
+import { overlayReady } from '@weasel-js/text-dom/testing/overlayReady';
+import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
+import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
+import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
+
+const W = 360;
+const H = 160;
+/** One glyph, so the centroid measures placement alone; cases with `text` measure advances. */
+const TEXT = 'H';
+
+/**
+ * The overlay's text lands on whole CSS pixels — moving its `top` by 0.4px
+ * moves its ink by 0 or 1px — while the canvas places a baseline anywhere, so
+ * `dy` carries up to half a pixel of snapping on top of a steady ink bias,
+ * measured at about -0.35px at DPR 1 across all three engines.
+ */
+const DY_TOLERANCE = 0.85;
+
+interface Ink { cx: number; cy: number; mass: number; right: number; spans: Array<[number, number]> }
+
+/** Share of the ink `right` leaves beyond it: deep enough in the last glyph to be subpixel-smooth. */
+const TAIL = 0.03;
+
+/** Ink a column needs, in fully lit pixels, to count toward a span. */
+const SPAN_INK = 0.5;
+
+/**
+ * Intensity-weighted centroid of light ink on black and its mass, plus where
+ * the line's ink ends: the column all but {@link TAIL} of the ink lies left
+ * of, interpolated within the column. `spans` are the runs of inked columns,
+ * one per glyph where glyphs do not touch. CSS px.
+ */
+function inkOf(img: RasterImage, dpr: number): Ink {
+  let mass = 0, sx = 0, sy = 0;
+  const cols = new Float64Array(img.width);
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < img.width; x++) {
+      const i = (y * img.width + x) * 4;
+      const v = (img.data[i] + img.data[i + 1] + img.data[i + 2]) / (3 * 255);
+      mass += v; sx += v * (x + 0.5); sy += v * (y + 0.5);
+      cols[x] += v;
+    }
+  }
+  let right = img.width;
+  for (let x = 0, acc = 0; x < img.width; x++) {
+    const goal = mass * (1 - TAIL);
+    if (acc + cols[x] >= goal) { right = x + (goal - acc) / cols[x]; break; }
+    acc += cols[x];
+  }
+  const spans: Array<[number, number]> = [];
+  for (let x = 0; x < img.width; x++) {
+    if (cols[x] < SPAN_INK) continue;
+    const last = spans[spans.length - 1];
+    if (last && last[1] === x / dpr) last[1] = (x + 1) / dpr;
+    else spans.push([x / dpr, (x + 1) / dpr]);
+  }
+  return { cx: sx / mass / dpr, cy: sy / mass / dpr, mass, right: right / dpr, spans };
+}
+
+async function decodePng(base64: string): Promise<RasterImage> {
+  const img = new Image();
+  img.src = `data:image/png;base64,${base64}`;
+  await img.decode();
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(img, 0, 0);
+  return ctx.getImageData(0, 0, c.width, c.height);
+}
+
+interface Case {
+  family: string; fontSize: number; script?: 'super' | 'sub'; x: number; y: number; text?: string;
+  /** Justified and wrapped at the 200px box, over this many lines. */
+  justifyLines?: number;
+  smallCaps?: boolean;
+}
+
+function styleOf(c: Case): TextStyle {
+  return {
+    fontFamily: c.family, fontSize: c.fontSize, lineHeight: 1.2,
+    ...(c.script ? { script: c.script } : {}),
+    ...(c.justifyLines ? { align: 'justify' as const, wrap: true } : {}),
+    ...(c.smallCaps ? { fontVariantCaps: 'small-caps' as const } : {}),
+  };
+}
+
+const boxHeight = (c: Case): number => c.fontSize * 1.2 * (c.justifyLines ?? 1);
+
+const WHITE = { kind: 'solid' as const, color: '#ffffff' };
+
+function renderCanvas(c: Case, dpr: number): RasterImage {
+  const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  scene.add({
+    kind: 'mark', layer: 'main',
+    pose: { x: c.x, y: c.y, width: 200, height: boxHeight(c) },
+    data: { text: c.text ?? TEXT, style: styleOf(c), fill: { paint: WHITE } },
+  });
+  return renderSceneToPixels({
+    scene,
+    sourceRect: { x: 0, y: 0, width: W, height: H },
+    scale: { x: dpr, y: dpr },
+    background: '#000000',
+  });
+}
+
+/** Render until two passes agree: atlases and outlines land asynchronously. */
+async function settledCanvas(c: Case, dpr: number): Promise<RasterImage> {
+  let prev = -1;
+  for (let i = 0; i < 40; i++) {
+    const img = renderCanvas(c, dpr);
+    const m = inkOf(img, dpr).mass;
+    if (m > 0 && Math.abs(m - prev) < 1e-6) return img;
+    prev = m;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error(`canvas never settled for ${JSON.stringify(c)}`);
+}
+
+let host: HTMLDivElement;
+let root: Root;
+
+const poseOf = (c: Case): TextEditScreenPose => ({
+  x: c.x, y: c.y, width: 200, height: boxHeight(c), fontSize: c.fontSize, zoom: 1,
+});
+
+function Editor({ c }: { c: Case }) {
+  const edit = useTextEdit({
+    container: host,
+    getText: () => c.text ?? TEXT,
+    getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
+    getPaint: () => ({ fill: { paint: WHITE } }),
+    getScreenPose: () => poseOf(c),
+    setText: () => {},
+  });
+  const { startEdit } = edit;
+  const caret = (c.text ?? TEXT).length;
+  useEffect(() => { startEdit('n', { caret }); }, [startEdit, caret]);
+  return null;
+}
+
+async function renderOverlay(c: Case): Promise<RasterImage> {
+  flushSync(() => root.render(createElement(Editor, { key: JSON.stringify(c), c })));
+  await overlayReady(host);
+  // Unsaved, it answers with the base64 PNG.
+  return decodePng(await page.screenshot({ element: host, save: false }));
+}
+
+beforeAll(async () => {
+  host = document.createElement('div');
+  Object.assign(host.style, {
+    position: 'fixed', left: '0px', top: '0px', width: `${W}px`, height: `${H}px`,
+    background: '#000', overflow: 'hidden',
+  });
+  document.body.style.margin = '0';
+  document.body.appendChild(host);
+  root = createRoot(document.createElement('div'));
+
+  // No FontFace of its own: the overlay must get the face from the registration.
+  await registerFont('Inter', {}, metricsUrl, atlasUrl);
+  await registerFont('sans-serif', {}, metricsUrl, atlasUrl);
+  registerFontOutlines('Inter', {}, ttfUrl);
+  registerFontOutlines('sans-serif', {}, ttfUrl);
+  registerCanvasFont('Georgia');
+  registerCanvasFont('Arial');
+});
+
+afterAll(() => {
+  root.unmount();
+  host.remove();
+});
+
+function browserName(): string {
+  const ua = navigator.userAgent;
+  return ua.includes('Firefox') ? 'firefox' : ua.includes('Chrome') ? 'chromium' : 'webkit';
+}
+
+function profiles(img: RasterImage): { cols: number[]; rows: number[] } {
+  const cols = new Array(img.width).fill(0), rows = new Array(img.height).fill(0);
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) {
+    const i = (y * img.width + x) * 4;
+    const v = (img.data[i] + img.data[i + 1] + img.data[i + 2]) / (3 * 255);
+    cols[x] += v; rows[y] += v;
+  }
+  const r = (a: number[]) => a.map((v) => Math.round(v * 1000) / 1000);
+  return { cols: r(cols), rows: r(rows) };
+}
+
+function toPng(img: RasterImage): string {
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  c.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(img.data), img.width, img.height), 0, 0);
+  return c.toDataURL('image/png').split(',')[1];
+}
+
+const OUT = 'node_modules/.cache/overlay-probe';
+
+describe('overlay probe', () => {
+  it('sweeps', async () => {
+    const dpr = window.devicePixelRatio;
+    const tag = `${browserName()}-dpr${dpr}`;
+    const records: unknown[] = [];
+    const steps = Array.from({ length: 16 }, (_, k) => k / 16);
+    const bases: Array<Omit<Case, 'x' | 'y'> & { sweep: 'x' | 'y' }> = [
+      { family: 'Inter', fontSize: 12, script: 'super', sweep: 'y' },
+      { family: 'Inter', fontSize: 12, sweep: 'y' },
+      { family: 'Inter', fontSize: 16, sweep: 'y' },
+      { family: 'Inter', fontSize: 40, text: 'Hxgd', sweep: 'y' },
+      { family: 'Inter', fontSize: 72, sweep: 'y' },
+      { family: 'Inter', fontSize: 72, text: 'Hgd', smallCaps: true, sweep: 'y' },
+      { family: 'Arial', fontSize: 16, sweep: 'y' },
+      { family: 'Arial', fontSize: 72, sweep: 'y' },
+    ];
+    let done = 0;
+    for (const b of bases) {
+      for (const s of steps) {
+        console.log(`onto: progress ${done++}/${bases.length * steps.length} ${tag}`);
+        const { sweep, ...rest } = b;
+        const c: Case = { ...rest, x: 20 + (sweep === 'x' ? s : 0), y: 20 + (sweep === 'y' ? s : 0) };
+        const ci = await settledCanvas(c, dpr);
+        const oi = await renderOverlay(c);
+        const a = inkOf(ci, dpr), o = inkOf(oi, dpr);
+        const el = host.querySelector<HTMLElement>('[contenteditable]')!;
+        const hr = host.getBoundingClientRect();
+        const boxes = [el, ...el.querySelectorAll('span')].map((n) => {
+          const r = n.getBoundingClientRect();
+          return { tag: n.tagName, text: n.textContent, left: r.left - hr.left, top: r.top - hr.top, width: r.width, height: r.height };
+        });
+        const cs = getComputedStyle(el);
+        // Layout baseline: an empty inline-block sits with its bottom on it.
+        const first = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode()!;
+        const mark = document.createElement('span');
+        mark.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+        first.parentNode!.insertBefore(mark, first);
+        const domBaseline = mark.getBoundingClientRect().bottom - hr.top;
+        mark.remove();
+        const rec = {
+          domBaseline,
+          tag, dpr, case: c, dx: o.cx - a.cx, dy: o.cy - a.cy, dRight: o.right - a.right,
+          canvasInk: { cx: a.cx, cy: a.cy, mass: a.mass, right: a.right, spans: a.spans },
+          overlayInk: { cx: o.cx, cy: o.cy, mass: o.mass, right: o.right, spans: o.spans },
+          el: { left: cs.left, top: cs.top, fontSize: cs.fontSize, lineHeight: cs.lineHeight, transform: cs.transform },
+          boxes,
+          canvasProf: profiles(ci), overlayProf: profiles(oi),
+        };
+        records.push(rec);
+        console.log(`${tag} ${JSON.stringify(c)} dx ${rec.dx.toFixed(3)} dy ${rec.dy.toFixed(3)} dRight ${rec.dRight.toFixed(3)}`);
+        if (false) {
+          const name = `${tag}-${c.family}${c.fontSize}${c.script ?? ''}${c.smallCaps ? 'sc' : ''}-${c.x}-${c.y}`;
+          await commands.writeFile(`${OUT}/png/${name}-canvas.png`, toPng(ci), 'base64');
+          await commands.writeFile(`${OUT}/png/${name}-overlay.png`, toPng(oi), 'base64');
+        }
+      }
+    }
+    await commands.writeFile(`${OUT}/${tag}.json`, JSON.stringify(records));
+  }, 900_000);
+
+  it.skip('variants', async () => {
+    const dpr = window.devicePixelRatio;
+    const tag = `${browserName()}-dpr${dpr}`;
+    const variants: Array<[string, Record<string, string>]> = [
+      ['none', {}],
+      ['nudge6', { translate: `${1 / (6 * window.devicePixelRatio)}px 0` }],
+    ];
+    const records: unknown[] = [];
+    const bases: Array<Omit<Case, 'x' | 'y'>> = [
+      { family: 'Inter', fontSize: 16 },
+      { family: 'Inter', fontSize: 40, text: 'Hxgd' },
+      { family: 'Arial', fontSize: 72 },
+      { family: 'Inter', fontSize: 72, text: 'Hgd', smallCaps: true },
+    ];
+    for (const b of bases) {
+      for (const s of [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]) {
+        const c: Case = { ...b, x: 20 + s, y: 20 };
+        const a = inkOf(await settledCanvas(c, dpr), dpr);
+        for (const [name, style] of variants) {
+          flushSync(() => root.render(createElement(Editor, { key: JSON.stringify(c) + name, c })));
+          const el = await overlayReady(host);
+          Object.assign(el.style, style);
+          await new Promise((r) => requestAnimationFrame(r));
+          await new Promise((r) => requestAnimationFrame(r));
+          const o = inkOf(await decodePng(await page.screenshot({ element: host, save: false })), dpr);
+          const rec = { tag, variant: name, case: c, dx: o.cx - a.cx, dRight: o.right - a.right, ocx: o.cx, ccx: a.cx, ospans: o.spans, cspans: a.spans };
+          records.push(rec);
+          console.log(`${tag} ${name} ${c.fontSize} x ${c.x} dx ${rec.dx.toFixed(3)} dRight ${rec.dRight.toFixed(3)} ocx ${o.cx.toFixed(3)}`);
+        }
+      }
+    }
+    await commands.writeFile(`${OUT}/variants-${tag}.json`, JSON.stringify(records));
+  }, 900_000);
+});
