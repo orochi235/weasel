@@ -21,7 +21,7 @@ import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/han
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
 import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 import { harmonizeAnchorsAction } from './harmonize/harmonize';
-import { lengthenPathAction, lengthenToolAction } from './lengthen/lengthenPath';
+import { lengthenPathAction } from './lengthen/lengthenPath';
 import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
 import { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 import { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
@@ -37,16 +37,17 @@ import {
 } from './pathEffects/actions';
 import { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
-import { simplifyBrushAction, simplifyBrushToolAction } from './simplifyBrush/simplifyBrush';
+import { simplifyBrushAction } from './simplifyBrush/simplifyBrush';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
 import { spiroPreset } from './spiro/spiroPreset';
 import { trimPathAction } from './trim/trimSegment';
+import { showBalanceAction, showCombAction, showCornersAction, showDirectionAction } from './overlays/showOverlay';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
-/** The Simplify brush, a path-edit tool that refits the curve it passes over. */
+/** `simplifyBrush`, which `useSimplifyBrushTool`, a path-edit tool, binds. */
 export const simplifyBrushPreset: FeaturePreset = {
   id: 'simplifyBrush',
-  actions: [simplifyBrushAction, simplifyBrushToolAction],
+  actions: [simplifyBrushAction],
 };
 
 /** The `handleLock.angle` and `handleLock.length` toggles. */
@@ -89,11 +90,10 @@ export const trimPreset: FeaturePreset = { id: 'trim', actions: [trimPathAction]
 /** `extendToMeet`, which `useExtendTool` binds. */
 export const extendPreset: FeaturePreset = { id: 'extend', actions: [extendToMeetAction] };
 
-/** Lengthen, a path-edit tool whose drag on an open end grows or trims the
- *  path from that end, and its toggle. */
+/** `lengthenPath`, which `useLengthenTool`, a path-edit tool, binds. */
 export const lengthenPreset: FeaturePreset = {
   id: 'lengthen',
-  actions: [lengthenPathAction, lengthenToolAction],
+  actions: [lengthenPathAction],
 };
 
 /** `smudgeBrush`, which `useSmudgeBrushTool` binds. */
@@ -119,10 +119,12 @@ export const resamplePreset: FeaturePreset = { id: 'resample', actions: [resampl
 export const addExtremesPreset: FeaturePreset = { id: 'addExtremes', actions: [addExtremeAnchorsAction] };
 
 /** The curvature comb over the open path, drawn as `options` says, read every
- *  frame. Off until chrome-caps shows `path-edit.comb`. */
+ *  frame. Off until chrome-caps shows `path-edit.comb`, which its toggle,
+ *  `pathEdit.show.comb`, does. */
 export function createCurvatureCombPreset(options: () => PathEditCombOptions | undefined = () => undefined): FeaturePreset {
   return {
     id: 'curvatureComb',
+    actions: [showCombAction],
     chromeRules: { [PATH_COMB_CHROME_ID]: never },
     pathEdit: [createCombExtension(options)],
   };
@@ -134,14 +136,15 @@ export const curvatureCombPreset: FeaturePreset = createCurvatureCombPreset();
 /**
  * Balance handles: a line between each curved segment's handle tips with a
  * grip to drag (`balanceHandles`) or double-click (`equalizeHandles`), drawn
- * in `style`. Off until chrome-caps shows `path-edit.balance`. It refines
- * `paths`, so a grip's double-click goes ahead of entering path edit.
+ * in `style`. Off until chrome-caps shows `path-edit.balance`, which its toggle,
+ * `pathEdit.show.balance`, does. It refines `paths`, so a grip's double-click
+ * goes ahead of entering path edit.
  */
 export function createBalancePreset(style: PathEditBalanceStyle = {}): FeaturePreset {
   return {
     id: 'balance',
     refines: ['paths'],
-    actions: [equalizeHandlesAction, balanceHandlesAction],
+    actions: [equalizeHandlesAction, balanceHandlesAction, showBalanceAction],
     chromeRules: { [PATH_BALANCE_CHROME_ID]: never },
     pathEdit: [createBalanceExtension(style)],
   };
@@ -171,13 +174,14 @@ export const constraintsPreset: FeaturePreset = createConstraintsPreset();
  * `style`, whose drag sets the corner's radius (`editCorner`), and the
  * commands on the selected corners (`setCorners`, `cycleCornerShape`). The
  * widgets show while chrome-caps shows `path-edit.corners`, which is on by
- * default. It refines `paths`, so a widget's drag goes ahead of the marquee.
+ * default; `pathEdit.show.corners` toggles it. It refines `paths`, so a
+ * widget's drag goes ahead of the marquee.
  */
 export function createCornerShapePreset(style: CornerWidgetStyle = {}): FeaturePreset {
   return {
     id: 'cornerShape',
     refines: ['paths'],
-    actions: [editCornerAction, setCornersAction, cycleCornerShapeAction],
+    actions: [editCornerAction, setCornersAction, cycleCornerShapeAction, showCornersAction],
     pathEdit: [createCornerWidgetsExtension(style)],
   };
 }
@@ -188,12 +192,13 @@ export const cornerShapePreset: FeaturePreset = createCornerShapePreset();
 /**
  * Where a path starts and which way it runs: `setPathStart` and
  * `reversePath`, and arrows and start rings over the open path, drawn in
- * `style`. The marks are off until chrome-caps shows `path-edit.direction`.
+ * `style`. The marks are off until chrome-caps shows `path-edit.direction`,
+ * which their toggle, `pathEdit.show.direction`, does.
  */
 export function createPathStructurePreset(style: PathDirectionStyle = {}): FeaturePreset {
   return {
     id: 'pathStructure',
-    actions: [setPathStartAction, reversePathAction],
+    actions: [setPathStartAction, reversePathAction, showDirectionAction],
     chromeRules: { [PATH_DIRECTION_CHROME_ID]: never },
     pathEdit: [createDirectionExtension(style)],
   };

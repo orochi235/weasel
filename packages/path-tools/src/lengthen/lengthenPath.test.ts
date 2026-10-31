@@ -3,7 +3,7 @@ import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
-import { LENGTHEN_TOOL, lengthenPathAction, lengthenToolAction } from './lengthenPath';
+import { lengthenPathAction } from './lengthenPath';
 
 /** Open path (0, 0) → (100, 0) → (100, 50): anchors 0, 1, 2. */
 function elbow(): PolygonPath {
@@ -22,18 +22,17 @@ function curl(): PolygonPath {
   return b.build();
 }
 
-function setup(path: PolygonPath = elbow(), tool: string | null = LENGTHEN_TOOL) {
+function setup(path: PolygonPath = elbow(), editingId = 'p1') {
   const commits: Array<{ path: PolygonPath; label: string }> = [];
   let current = path;
   const dep = makeEditAnchorsDep({
-    editingId: 'p1',
+    editingId,
     getEditablePath: () => current,
     applyEdit: (_id, worldPath, label) => {
       current = worldPath as PolygonPath;
       commits.push({ path: current, label });
     },
   });
-  dep.setTool(tool);
   const view = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) };
   return { dep, deps: { editAnchors: dep, view } as unknown as InvocationCtx['deps'], commits };
 }
@@ -131,20 +130,13 @@ describe('lengthenPathAction', () => {
     expect(lengthenPathAction.enabled!(deps, { x: 50, y: 30 })).toBe(ActionDisabledReason.NotApplicable);
   });
 
-  it('drags only while the Lengthen tool is active', () => {
-    const { deps } = setup(elbow(), null);
+  it('drags only with a path open', () => {
+    const { deps } = setup(elbow(), '');
     expect(ongoing.start(at(deps, 100, 50, 2), {})).toEqual({});
     expect(lengthenPathAction.enabled!(deps, { x: 100, y: 52 })).toBe(ActionDisabledReason.NotApplicable);
   });
 
-  it('has a bar toggle, `pathEditTool.lengthen`', () => {
-    expect(lengthenToolAction.id).toBe('pathEditTool.lengthen');
-  });
-
-  it('binds a plain drag on an anchor, Shift optional', () => {
-    expect(lengthenPathAction.defaultBinding).toEqual([{
-      spec: { kind: 'drag', target: expect.anything(), mods: { shift: 'optional' } },
-      opts: { id: 'lengthenPath.drag' },
-    }]);
+  it('binds nothing itself: the Lengthen tool binds it', () => {
+    expect(lengthenPathAction.defaultBinding).toBeUndefined();
   });
 });

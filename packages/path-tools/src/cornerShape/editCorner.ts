@@ -18,7 +18,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  editingLayer, inPlane, pathEditPreview, pathEditToolActive, pathOperationTags, type EditAnchorsDep,
+  editingLayer, inPlane, pathEditPreview, pathOperationTags, type EditAnchorsDep,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
@@ -51,9 +51,9 @@ function withRadius(path: PolygonPath, targets: readonly CornerTarget[], radius:
   return out;
 }
 
-/** Enabled while a path is open and no path-edit tool has the pointer. */
+/** Enabled while a path is open. */
 function widgetEnabled(deps: ActionDeps | undefined): true | ActionDisabledReason {
-  if (!deps?.editAnchors?.editingId || pathEditToolActive(deps)) return ActionDisabledReason.NotApplicable;
+  if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
   return true;
 }
 

@@ -33,7 +33,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, HANDLE_LOCK_ROLES, inPlane, locksInForce, pathEditPreview, pathEditToolActive, pathOperationTags,
+  commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, HANDLE_LOCK_ROLES, inPlane, locksInForce, pathEditPreview, pathOperationTags,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
@@ -53,9 +53,9 @@ function gripTarget(
 
 const NO_LOCKS = { angle: false, length: false };
 
-/** Enabled while a path is open and no path-edit tool has the pointer. */
+/** Enabled while a path is open. */
 function gripEnabled(deps: ActionDeps | undefined): true | ActionDisabledReason {
-  if (!deps?.editAnchors?.editingId || pathEditToolActive(deps)) return ActionDisabledReason.NotApplicable;
+  if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
   return true;
 }
 

@@ -43,18 +43,21 @@ export type { ActionParamSchema } from './actionParamSchema';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export {
-  brushRingCursor, SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, simplifyBrushAction, simplifyBrushToolAction,
-  type SimplifyBrushParams,
+  brushRingCursor, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
 } from './simplifyBrush/simplifyBrush';
+export { useSimplifyBrushTool } from './simplifyBrush/useSimplifyBrushTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 export {
   bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
 export { planTrim, trimPathAction } from './trim/trimSegment';
 export { extendToMeetAction } from './extend/extendToMeet';
+export { lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
+export { useLengthenTool } from './lengthen/useLengthenTool';
 export {
-  LENGTHEN_TOOL, lengthenPathAction, lengthenToolAction, type LengthenPathParams,
-} from './lengthen/lengthenPath';
+  overlayShown, PATH_OVERLAYS_GROUP, showBalanceAction, showCombAction, showCornersAction, showDirectionAction,
+  showOverlayAction,
+} from './overlays/showOverlay';
 export {
   DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, smudgeBrushAction, type SmudgeBrushParams,
 } from './smudge/smudgeBrush';
@@ -162,4 +165,7 @@ export {
 // Carries path-tools' IconName augmentation into the published declarations.
 export type { PathToolsIconName } from './icons.gen';
 
-export { WARP_TOOLS, RESHAPE_TOOLS, PATH_TOOLS_TOOLS, usePathToolsTools, type PathToolId } from './toolSets';
+export {
+  WARP_TOOLS, RESHAPE_TOOLS, PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, usePathEditTools, usePathToolsTools,
+  type PathEditToolId, type PathToolId,
+} from './toolSets';
