@@ -59,6 +59,7 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
    * schema's defaults where `config` holds nothing. A condition of this
    * schema's own may read a setting of that one the same way: hand
    * `resolveConfigSchema` that schema too, or it refuses the condition.
+   * Defaults to the schema's own `over`.
    */
   over?: PrefGroup | PrefSection;
   /** How rows pack into the two-column grid, which drops to one column where
@@ -162,7 +163,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   draftConfig,
   errors,
   renderers,
-  over,
+  over: overGiven,
   pack = 'pairs',
   layout = 'inline',
   motif,
@@ -183,6 +184,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
   const choices = useFieldChoicesOf(resolved.group);
+  const over = overGiven ?? resolved.over;
 
   const { auto, setRowAuto } = usePanelAuto(given, setConfig);
 

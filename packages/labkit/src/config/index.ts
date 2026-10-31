@@ -24,6 +24,7 @@ export {
 export type { Fields, FieldValues, Variants, VariantValues } from './compound';
 export { fromConfigFields } from './fromConfigField';
 export { configFromPrefs } from './fromPrefs';
+export type { LabOver, OverAccess } from './over';
 export {
   fillConfigDefaults,
   hasConfigPath,
@@ -34,6 +35,7 @@ export {
 export { resolveConfigSchema } from './resolve';
 export { applyRules, builtinRules, titleCase } from './rules';
 export { type SectionTree, sectionTree } from './sectionTree';
+export { prefsFromConfig } from './toPrefs';
 export type {
   Annotations,
   BranchAnnotations,

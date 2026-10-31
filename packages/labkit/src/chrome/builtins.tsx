@@ -1,5 +1,6 @@
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
+import { withOverValues } from '../config/over';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
@@ -30,6 +31,12 @@ function groupFolds(
 
 /** How the Settings panel writes a trial's config. The trial's writes already run together into one undo step
  *  per gesture, so its drafts go there too, and the instrument follows every keystroke. */
+/** What the settings panel reads: the trial's config, and the lab's values for a schema it is drawn over. */
+function settingsConfig(ctx: TrialChromeContext): Record<string, unknown> {
+  const own = ctx.config as Record<string, unknown>;
+  return ctx.configSchema.over && ctx.overValues ? withOverValues(own, ctx.overValues) : own;
+}
+
 function settingsWrites(ctx: TrialChromeContext) {
   const write = (path: string, value: unknown): void => ctx.setConfig(path, value);
   return { setConfig: write, draftConfig: write };
@@ -205,7 +212,7 @@ export function builtinContributions(
         body: (
           <ControlPanel
             schema={ctx.configSchema}
-            config={ctx.config as Record<string, unknown>}
+            config={settingsConfig(ctx)}
             auto={ctx.auto}
             {...settingsWrites(ctx)}
             renderers={controls}

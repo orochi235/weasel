@@ -1,4 +1,10 @@
-import type { PrefCondition, PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
+import type {
+  PrefCondition,
+  PrefGroup,
+  PrefLeaf,
+  PrefNumberUnit,
+  PrefSection,
+} from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { BaseNode, conditioned } from './baseNode';
@@ -348,8 +354,14 @@ export const f = {
   /** A property schema (`PrefSection`) as an instrument's config: see {@link configFromPrefs}. */
   prefs: configFromPrefs,
 
-  /** Collect leaves and groups into an instrument's config. */
-  schema<S extends ConfigShape>(nodes: S): ConfigSchema<InferConfig<S>> {
-    return { nodes, defaults: () => shapeDefaults(nodes) as InferConfig<S> };
+  /** Collect leaves and groups into an instrument's config, drawn over `options.over` where given. */
+  schema<S extends ConfigShape>(
+    nodes: S,
+    options: { over?: PrefGroup | PrefSection } = {},
+  ): ConfigSchema<InferConfig<S>> {
+    const defaults = () => shapeDefaults(nodes) as InferConfig<S>;
+    return options.over === undefined
+      ? { nodes, defaults }
+      : { nodes, defaults, over: options.over };
   },
 };

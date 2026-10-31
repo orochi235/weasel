@@ -536,34 +536,12 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every variant at `md` and `sm` in a browser and called it
   done.
 
-- **(P3) [agent] A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
-  with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
-  condition on its setting. Every surface reads `over`'s values from the config it is handed, and
-  a trial's config holds its instrument's alone: where a lab keeps another schema's values (each
-  trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
-  would need them too.
-  Closes when an instrument's config schema resolves with an `over`, and a condition on another schema's
-  setting shows and hides its row in a trial.
-
 - **(P3) [maintainer] An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
   Closes when the maintainer has ruled on the slot's look, and an empty fragment takes a drop in the live
   preview or is ruled to take none.
-
-- **(P3) [agent] `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
-  `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
-  the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
-  export drops all four. A schema is sectioned rather than nested where `f.group` would move its
-  config paths. `ResolvedConfig` is labkit's and `@weasel-js/ui` cannot import labkit, so this
-  needs decisions before it is built: how a labkit section shows in the structure tree (a
-  `PrefSection` cannot sit in a `PrefGroup` root outside an `object` leaf, so either a new node
-  kind or a group marked to keep its config paths); what the export writes for a schema whose
-  source is `f.section(…)` calls rather than a literal; and whether labkit wraps `AssetEditor`
-  and converts both ways, or `@weasel-js/ui` gains the vocabulary itself.
-  Closes when a schema built with `f.section` opens in `PrefSchemaEditor` with its sections, and its
-  export keeps the sections, `showIf` rules, `.render` overrides, and `.dialog` rows.
 
 - **(P3) [maintainer] Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -825,6 +803,14 @@ only story runner in the repo.
   chose.
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] `typecheck:packages` checks nothing of labkit.** labkit's `tsconfig.json` is
+  solution-style (`"files": []` beside a reference to `tsconfig.lib.json`), and the script runs
+  `tsc -p <pkg>/tsconfig.json --noEmit`, which builds an empty program and prints `labkit ok`. Run on
+  `tsconfig.lib.json` instead (2026-10-31), it reports 191 errors: that config does not extend the root
+  one, so it has none of its `paths` and reads siblings through `node_modules` as published, where
+  `@weasel-js/*/testing/*` does not exist (139 TS2307) and types lag source (`Toolbar.Button`, `PrefAuto`).
+  Closes when the script follows a solution config's references and labkit's program passes under it.
 
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone

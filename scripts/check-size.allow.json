@@ -134,7 +134,7 @@
     "longestFunction": 209
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 192
+    "longestFunction": 191
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -162,11 +162,11 @@
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 448,
-    "longestFunction": 337
+    "lines": 432,
+    "longestFunction": 320
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 217
+    "longestFunction": 209
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439

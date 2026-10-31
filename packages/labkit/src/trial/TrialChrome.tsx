@@ -13,6 +13,7 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
+import { useLabOverValues } from '../config/over';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
@@ -30,6 +31,7 @@ import { TrialTitleBar } from './TrialTitleBar';
 import { TrialTitleContext } from './trialTitle';
 import { UndockedSections } from './UndockedSections';
 import { useTrialKeys } from './useTrialKeys';
+import { useTrialPanels } from './useTrialPanels';
 import { useTrialWrites } from './useTrialWrites';
 
 /** The trial's loupe as its chrome sees it: a switch and its position. */
@@ -123,16 +125,7 @@ export function TrialChrome({
   const updateTrialSidebarWidth = useStore(storeCtx.store, (s) => s.updateTrialSidebarWidth);
   const setTrialTitle = useStore(storeCtx.store, (s) => s.setTrialTitle);
   const setTrialSectionCollapsed = useStore(storeCtx.store, (s) => s.setTrialSectionCollapsed);
-  const undockPanelAction = useStore(storeCtx.store, (s) => s.undockPanel);
-  const dockPanelAction = useStore(storeCtx.store, (s) => s.dockPanel);
-  const undockedPanels = useStore(storeCtx.store, (s) => s.undockedPanels);
-  const undockedIds = useMemo(
-    () =>
-      Object.values(undockedPanels)
-        .filter((p) => p.trialId === trialId)
-        .map((p) => p.sectionId),
-    [undockedPanels, trialId],
-  );
+  const panels = useTrialPanels(storeCtx.store, trialId);
 
   // The view is opaque to labkit: a trial's camera reads its zoom; without one, a 2D view has it.
   const view2d = chromeView(record.view);
@@ -146,6 +139,7 @@ export function TrialChrome({
     schema: configSchema,
   });
   const setConfig = setConfigProp ?? ownWrites.setConfig;
+  const overValues = useLabOverValues();
 
   const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
@@ -188,11 +182,12 @@ export function TrialChrome({
       config: record.config,
       auto,
       setConfig,
+      overValues,
       collapsedSections,
       setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
-      undockedPanels: undockedIds,
-      undockPanel: (sectionId, as) => undockPanelAction(trialId, sectionId, as),
-      dockPanel: (sectionId) => dockPanelAction(trialId, sectionId),
+      undockedPanels: panels.undocked,
+      undockPanel: panels.undockPanel,
+      dockPanel: panels.dockPanel,
       savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
       saveSnapshot: (name) => lab.saveSnapshot(trialId, name),
       loadSnapshot: (snapshotId) => lab.loadSnapshot(trialId, snapshotId),
@@ -219,9 +214,8 @@ export function TrialChrome({
     setActiveTool,
     configSchema,
     auto,
-    undockedIds,
-    undockPanelAction,
-    dockPanelAction,
+    overValues,
+    panels,
     setTrialTitle,
     setTrialSectionCollapsed,
     collapsedSections,
@@ -298,7 +292,7 @@ export function TrialChrome({
                 <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
                 <UndockedSections
                   trialId={trialId}
-                  sections={inRegion('sidebar').filter((c) => undockedIds.includes(c.id))}
+                  sections={inRegion('sidebar').filter((c) => panels.undocked.includes(c.id))}
                   onDock={ctx.dockPanel}
                 />
               </>

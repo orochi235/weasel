@@ -195,6 +195,9 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
    *  it sits at the value un-pinning writes back. */
   auto: ReadonlySet<string>;
   setConfig: (key: string, value: unknown) => void;
+  /** The lab's values for the schema `configSchema` is drawn over, which `config` does not hold.
+   *  `setConfig` writes a path of that schema there. */
+  overValues?: Readonly<Record<string, unknown>>;
 
   /** Which of this trial's collapsible sections are folded. A sidebar
    *  section's key is its contribution id; a section *inside* a contribution —

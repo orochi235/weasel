@@ -208,6 +208,7 @@ export {
   ValueNode,
 } from './config/builder';
 export { fromConfigFields } from './config/fromConfigField';
+export type { LabOver, OverAccess } from './config/over';
 export {
   fillConfigDefaults,
   hasConfigPath,
@@ -218,6 +219,7 @@ export {
 export { resolveConfigSchema } from './config/resolve';
 export { applyRules, builtinRules, titleCase } from './config/rules';
 export { type SectionTree, sectionTree } from './config/sectionTree';
+export { prefsFromConfig } from './config/toPrefs';
 export type {
   Annotations,
   BranchAnnotations,

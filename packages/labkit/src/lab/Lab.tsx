@@ -154,6 +154,7 @@ function LabRuntime({
   tools,
   configRules,
   controls,
+  over,
   gestures,
   transport = true,
   messages = true,
@@ -197,9 +198,7 @@ function LabRuntime({
   const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');
 
   useEffect(() => {
-    if (mode && mode !== store.getState().mode) {
-      store.getState().setMode(mode);
-    }
+    if (mode && mode !== store.getState().mode) store.getState().setMode(mode);
   }, [mode, store]);
 
   const commands = useStoreCommands(store, {
@@ -240,7 +239,7 @@ function LabRuntime({
   );
 
   return (
-    <LabProviders store={store} commands={commands} contextMenus={contextMenus}>
+    <LabProviders store={store} commands={commands} contextMenus={contextMenus} over={over}>
       <LabCommands contributions={labChromeAll} addTrial={addTrial ?? true} />
       <PersistenceContext.Provider value={opened.records}>
         <AnnotationPreloadContext.Provider value={opened.marks}>

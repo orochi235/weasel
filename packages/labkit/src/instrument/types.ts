@@ -6,6 +6,7 @@ import type { CameraGestures } from '../canvas/cameraGestures';
 import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
+import type { OverAccess } from '../config/over';
 import type { ConfigPath, ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
@@ -21,6 +22,9 @@ export interface RenderContext<TS = unknown, TC = unknown> {
   /** Write one config value, by dotted path — `'grid.size'` for a leaf under
    *  an `f.group`, `'cellSize'` for one at the root. */
   setConfig: (path: ConfigPath<TC>, value: unknown) => void;
+  /** The settings of the schema the instrument's config is drawn over (`f.schema(nodes, { over })`),
+   *  which the lab keeps rather than the trial. Absent where it is drawn over none. */
+  over?: OverAccess;
   /** labkit persists `view` and restores it on Reset without ever reading
    *  into it. */
   trial: TrialInfo & {
@@ -73,6 +77,8 @@ export interface CanvasLayer<TS = unknown, TC = unknown> {
     args: {
       state: TS;
       config: TC;
+      /** As `RenderContext.over`. */
+      over?: OverAccess;
       zoom: number;
       /** The trial clock's, as `TrialClock` has them; 0 with no clock. */
       elapsed: number;
