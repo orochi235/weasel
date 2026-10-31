@@ -1,0 +1,7 @@
+/* Handles draw white-on-dark over artwork, so the stage stands in for artwork rather than for app chrome. */
+.stage {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  background: #5a6270;
+}
