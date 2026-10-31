@@ -246,14 +246,13 @@ export const ItemList = forwardRef(function ItemList(
     else targets.current.delete(id);
   };
 
-  const roles = ROLES[mode];
   const trailingColumn = mode === 'grid' && rows.some((row) => row.trailing != null);
   return (
     <div
       className={cls}
       ref={setRefs}
       {...containerProps}
-      role={roles.container}
+      role={ROLES[mode].container}
       aria-multiselectable={selection === 'multi' && mode !== 'list' ? true : undefined}
     >
       {overlay}
@@ -278,7 +277,7 @@ export const ItemList = forwardRef(function ItemList(
               row.className,
             ].filter(Boolean).join(' ')}
             {...row.rowProps}
-            role={roles.row}
+            role={ROLES[mode].row}
             aria-selected={selection && mode !== 'list' ? !!row.selected : undefined}
             ref={(el) => {
               nav.rowRef(row.id)(el);

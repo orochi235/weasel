@@ -126,7 +126,6 @@ export function Callout(props: CalloutProps) {
   // it stamps. Upstream: react-spectrum Popover.mjs querySelector('[role=dialog]').
   const popoverAriaLabelledby =
     modal && title !== undefined ? titleId : ariaLabelledby;
-  const popoverAriaLabel = modal ? ariaLabel : undefined;
   return (
     <>
       {portalAnchor}
@@ -164,7 +163,7 @@ export function Callout(props: CalloutProps) {
             shouldCloseOnInteractOutside={
               shouldCloseOnInteractOutside ?? (modal ? () => false : undefined)
             }
-            aria-label={popoverAriaLabel}
+            aria-label={modal ? ariaLabel : undefined}
             aria-labelledby={popoverAriaLabelledby}
             className={[s.popover, className].filter(Boolean).join(' ')}
             {...appearance}
