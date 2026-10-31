@@ -1,6 +1,7 @@
 # Overlay baseline probe, 2026-10-31
 
-The measurements behind the `docs/TODO.md` entry on the edit overlay landing on whole CSS pixels.
+The measurements behind `DY_TOLERANCE` in `overlayAlignment.browser.test.tsx`: how far the text edit
+overlay's ink sits from the canvas's, and whether the gap is layout or glyph drawing (glyph drawing).
 Taken on teitou in Chromium, WebKit and Firefox, at DPR 1 and 2.
 
 - `*.json`: one file per engine and DPR. Each record is one case at one pose `y`, stepped through a
