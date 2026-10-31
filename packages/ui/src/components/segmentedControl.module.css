@@ -67,11 +67,15 @@
 }
 
 .segment:first-of-type {
-  border-radius: var(--wzl-radius-pill) 0 0 var(--wzl-radius-pill);
+  border-radius: 0;
+  border-start-start-radius: var(--wzl-radius-pill);
+  border-end-start-radius: var(--wzl-radius-pill);
 }
 
 .segment:last-of-type {
-  border-radius: 0 var(--wzl-radius-pill) var(--wzl-radius-pill) 0;
+  border-radius: 0;
+  border-start-end-radius: var(--wzl-radius-pill);
+  border-end-end-radius: var(--wzl-radius-pill);
 }
 
 .segment:only-of-type {
@@ -79,8 +83,18 @@
 }
 
 .segment:focus-visible {
-  outline: 2px solid var(--wzl-accent);
+  outline: 2px solid var(--wzl-focus-ring);
   outline-offset: -2px;
+}
+
+/* The track clips, so the ring stays inset, where a selected segment's
+   accent fill would swallow it. */
+.segmentSelected:focus-visible {
+  outline-color: var(--wzl-fg-on-accent);
+}
+
+.variant_minimal .segmentSelected:focus-visible {
+  outline-color: var(--wzl-focus-ring);
 }
 
 .segment:disabled {

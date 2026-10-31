@@ -21,8 +21,8 @@
   color: var(--wzl-fg);
 }
 .button:focus-visible {
-  outline: 2px solid var(--wzl-accent);
-  outline-offset: -2px;
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
 }
 .button.active {
   background: var(--wzl-surface-pressed);
@@ -46,10 +46,14 @@
 /* The corner triangle that says the button holds more tools. */
 .menuMark {
   position: absolute;
-  right: 2px;
-  bottom: 2px;
+  inset-inline-end: 2px;
+  inset-block-end: 2px;
   width: 5px;
   height: 5px;
   background: var(--wzl-fg-muted);
   clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.menuMark:dir(rtl) {
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
 }
