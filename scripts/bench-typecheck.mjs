@@ -12,11 +12,11 @@ import { cpus, hostname } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { sampleLoad } from './lib/node-load.mjs';
+import { tscArgv } from './lib/tsc.mjs';
 
 const { values } = parseArgs({ options: { out: { type: 'string', default: '.bench/typecheck' }, states: { type: 'string' } } });
 mkdirSync(values.out, { recursive: true });
 const node = hostname().split('.')[0];
-const TSC = 'node_modules/.bin/tsc';
 const PROGRAMS = { root: [], browser: ['-p', 'packages'] };
 const INFO_FILES = { root: 'main.tsbuildinfo', browser: 'browser-tests.tsbuildinfo' };
 /** Under `seeded`, each program reads a copy of main's build info, as a fleet branch's first run does. */
@@ -30,7 +30,7 @@ const IMPORTERS = /packages\/core\/src\/domains\/viewports\/aim\.ts/;
 const tsc = (args) =>
   new Promise((resolve) => {
     const started = Date.now();
-    execFile(TSC, ['--noEmit', '--extendedDiagnostics', ...args], { maxBuffer: 1 << 26 }, (error, stdout, stderr) =>
+    execFile(process.execPath, tscArgv(['--noEmit', '--extendedDiagnostics', ...args]), { maxBuffer: 1 << 26 }, (error, stdout, stderr) =>
       resolve({ code: error ? (error.code ?? 1) : 0, wallSeconds: (Date.now() - started) / 1000, text: `${stdout}${stderr}` }),
     );
   });

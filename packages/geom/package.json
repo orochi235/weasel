@@ -40,7 +40,7 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "earcut": "3.2.3",
+    "earcut": "3.2.4",
     "polygon-clipping": "^0.15.7"
   },
   "peerDependenciesMeta": {
@@ -52,7 +52,7 @@
     }
   },
   "devDependencies": {
-    "earcut": "3.2.3",
+    "earcut": "3.2.4",
     "polygon-clipping": "^0.15.7"
   },
   "scripts": {

@@ -114,7 +114,7 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@msb235/blits": "0.12.0",
+    "@msb235/blits": "0.16.1",
     "@weasel-js/animator": "1.15.0",
     "@weasel-js/cursor": "1.15.0",
     "@weasel-js/geom": "1.15.0",
@@ -135,7 +135,7 @@
     "@weasel-js/stroke": "1.15.0",
     "@weasel-js/text": "1.15.0",
     "@weasel-js/text-dom": "1.15.0",
-    "earcut": "3.2.3",
+    "earcut": "3.2.4",
     "polygon-clipping": "^0.15.7"
   },
   "publishConfig": {

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
   "files": {
     "includes": [
       "**",
@@ -10,7 +10,9 @@
       "!examples",
       "!tsconfig.docs.json",
       "!docs/.vitepress/dist",
-      "!docs/.vitepress/cache"
+      "!docs/.vitepress/cache",
+      // The repo writes tables unpadded; biome's formatter pads them, so one edit reflows a table.
+      "!**/*.md"
     ]
   },
   "formatter": {
@@ -35,6 +37,14 @@
       }
     }
   },
+  "overrides": [
+    {
+      // A test's harness component is defined once per test, so it never remounts the way
+      // the rule guards against, and hoisting it would thread the test's locals through props.
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": { "rules": { "correctness": { "noComponentHookFactories": "off" } } }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "single",

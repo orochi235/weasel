@@ -80,8 +80,8 @@
     "@weasel-js/text": "1.15.0",
     "@weasel-js/theme": "1.15.0",
     "prism-react-renderer": "^2.4.1",
-    "react-aria": "3.52.1",
-    "react-aria-components": "1.21.1",
+    "react-aria": "3.53.1",
+    "react-aria-components": "1.22.1",
     "windease": "^2.0.0"
   },
   "peerDependencies": {

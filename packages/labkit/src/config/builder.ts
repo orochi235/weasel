@@ -306,6 +306,22 @@ const expand = <T extends string>(
 ): readonly ConfigOption[] =>
   options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
 
+function enumLeaf<const T extends string>(def: NoInfer<T>, options: readonly T[]): EnumNode<T>;
+function enumLeaf<const T extends string>(
+  def: NoInfer<T>,
+  options: readonly ConfigOption<T>[],
+): EnumNode<T>;
+function enumLeaf<const T extends string>(
+  def: NoInfer<T>,
+  options: readonly T[] | readonly ConfigOption<T>[],
+): EnumNode<T>;
+function enumLeaf<T extends string>(
+  def: T,
+  options: readonly T[] | readonly ConfigOption<T>[],
+): EnumNode<T> {
+  return new EnumNode<T>(def, { options: expand(options) });
+}
+
 /**
  * Builds an instrument's config: the values, their types, and how each is
  * edited, in one declaration.
@@ -327,13 +343,10 @@ export const f = {
   color: (def: string): ColorNode => new ColorNode(def),
   ...compound,
 
-  /** A fixed set of choices. The default's literal type flows into the config
-   *  type, so `f.enum('fast', ['fast', 'accurate'])` gives
-   *  `'fast' | 'accurate'` with no `as const`. */
-  enum: <const T extends string>(
-    def: T,
-    options: readonly T[] | readonly ConfigOption[],
-  ): EnumNode<T> => new EnumNode<T>(def, { options: expand(options) }),
+  /** A fixed set of choices. The choices' literal types flow into the config
+   *  type, so `f.enum('fast', ['fast', 'accurate'])` and the same choices as
+   *  `{ value, label }` options both give `'fast' | 'accurate'`, with no `as const`. */
+  enum: enumLeaf,
 
   /** A leaf with no declared kind: the rule chain decides, which is how a lab
    *  states a convention like "every `*Color` key is a color picker". */
