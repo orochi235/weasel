@@ -52,7 +52,10 @@ layout's. An edge's end labels read back as `endLabels`, and a `field` row as
 a field while its text still starts with its label. `theme` is what colors are
 compared against when the scene names none. A page holding a plot root (one
 `plotSpecs` made) is a plot page of the spec the root holds, edits included;
-anything else on that page is left out.
+anything else on that page is left out. A graph page takes the `notation`, `layout`, and
+`direction` its `core:pages` page keeps under `meta['diagram:graph']`
+(`GRAPH_PAGE_META_KEY`, read with `graphPageSettingsOf`), where `documentSpecs`
+writes them.
 
 `documentSpecs(doc, { layer, theme, measure })` is the way back. Pages are
 placed with core's `layoutPages`, as `core:pages` places them. A page where a
