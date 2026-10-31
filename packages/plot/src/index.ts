@@ -12,6 +12,7 @@ export { logScale, type LogScale, type LogScaleOptions } from './scales/log';
 export { bandScale, type BandScale, type BandScaleOptions } from './scales/band';
 export { timeScale, formatInstant, type TimeScale, type TimeScaleOptions } from './scales/time';
 export { ordinalScale, type OrdinalScale, type OrdinalScaleOptions } from './scales/ordinal';
+export { polarScale, type PolarScale, type PolarScaleOptions } from './scales/polar';
 
 export type {
   MarkKind, PlotBox, PlotDatum, PlotMark, PlotMarkData, PlotMarkTrait, PlotPoint, SolidFill, SolidStroke,
@@ -43,6 +44,7 @@ export type { JourneyData, JourneySection, JourneyTask } from './journey/types';
 export { compileJourney } from './journey/compile';
 export type { GitCommand, GitCommitType, GitGraphData } from './gitgraph/types';
 export { compileGitGraph } from './gitgraph/compile';
+export { replayGitGraph, type GitBranch, type GitCommit, type GitHistory } from './gitgraph/replay';
 export type { SankeyData, SankeyLink } from './sankey/types';
 export { compileSankey } from './sankey/compile';
 export type { PacketData, PacketField } from './packet/types';
