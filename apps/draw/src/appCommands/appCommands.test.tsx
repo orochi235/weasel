@@ -23,8 +23,6 @@ function setup(over: Partial<AppCommands> = {}) {
     toggleGrid: vi.fn(),
     snapToGrid: false,
     toggleSnap: vi.fn(),
-    pathDirection: false,
-    togglePathDirection: vi.fn(),
     symmetryOn: false,
     toggleSymmetry: vi.fn(),
     canReleaseCompound: true,

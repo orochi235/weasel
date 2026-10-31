@@ -2,11 +2,6 @@
   "namespace": "draw",
   "owner": "apps/draw",
   "icons": {
-    "pathDirection": {
-      "body": "<path d=\"M1.875 9.375H18.125\"/><path d=\"M5.63 6.88 8.13 9.38 5.63 11.88\"/><path d=\"M13.13 6.88 15.63 9.38 13.13 11.88\"/>",
-      "group": "Actions",
-      "tags": []
-    },
     "releaseCompound": {
       "body": "<g stroke-linecap=\"butt\" stroke-linejoin=\"miter\"><rect x=\"2\" y=\"5\" width=\"6\" height=\"10\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"12\" y=\"5\" width=\"6\" height=\"10\"/><line x1=\"10\" y1=\"3\" x2=\"10\" y2=\"17\" stroke-dasharray=\"1.5 1.5\"/></g>",
       "group": "Actions",

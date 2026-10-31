@@ -30,7 +30,6 @@ export {
   anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
 } from './anchorEditing';
 export { setAnchorFieldAction, type SetAnchorFieldParams } from './anchorFields';
-export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
 export {
   retractHandlesAction, makeHandlesSymmetricAction, makeHandleCommand, type HandleEdit, type HandleScope,
 } from './anchorHandles';

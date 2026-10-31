@@ -28,13 +28,13 @@ and an app that imports only some never loads the others:
 
 | Preset | What it adds |
 |---|---|
-| `simplifyBrushPreset` | The Simplify brush, a path-edit tool that refits the curve it passes over |
+| `simplifyBrushPreset` | `simplifyBrush`, which `useSimplifyBrushTool` binds: the Simplify brush, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
 | `createSoftSelectionPreset` | Soft selection: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
 | `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools` |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
-| `lengthenPreset` | Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
+| `lengthenPreset` | `lengthenPath`, which `useLengthenTool` binds: Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
 | `trimPreset`, `extendPreset`, `smudgePreset` | The actions `useTrimTool`, `useExtendTool`, and `useSmudgeBrushTool` bind |
 | `harmonizePreset` | Harmonize curvature |
 | `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
@@ -48,6 +48,10 @@ and an app that imports only some never loads the others:
 | `cornerShapePreset` | Corner shape: a widget in each corner anchor whose drag sets its radius (`editCorner`), and `setCorners` and `cycleCornerShape` on the selected corners; `CORNER_CONTROLS` and `useCornerControls` are a panel over them |
 | `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` bring their own drags |
+
+`PATH_EDIT_TOOLS` names the path-edit tools, the Simplify brush and Lengthen, and `usePathEditTools` builds them,
+beside `RESHAPE_TOOLS` and `usePathToolsTools`. Each carries `edits-anchors`, so only path edit allows it, and its
+binding outranks anchor editing's; path edit starts on core's `anchors` tool.
 
 ## Text Along Path
 
@@ -71,7 +75,9 @@ Double-clicking the curved text edits the hidden text in place; Enter path edit 
 
 The comb, balance lines, constraint marks, and direction arrows are off until
 chrome-caps shows them; the corner widgets show until it hides
-`path-edit.corners`. `createCurvatureCombPreset`, `createBalancePreset`,
+`path-edit.corners`. The toggles `pathEdit.show.direction`, `.comb`,
+`.balance`, and `.corners` (group `pathOverlays`) come with their presets and
+flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `createBalancePreset`,
 `createConstraintsPreset`, `createPathStructurePreset`, and
 `createCornerShapePreset` take their look. They reach path edit through core's
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks

@@ -64,6 +64,14 @@ describe('openDrawPrefs', () => {
     expect(backing.has(`${PREFS_PREFIX}ui.panels`)).toBe(false);
   });
 
+  it("drops the folded path tools palette's hidden flag from the surface map", () => {
+    const backing = new Map<string, unknown>([
+      [`${PREFS_PREFIX}ui.surfaces`, { pathTools: { hidden: true }, layers: { collapsed: true } }],
+      [`${PREFS_PREFIX}${VERSION_RECORD}`, 1],
+    ]);
+    expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.surfaces')).toEqual({ layers: { collapsed: true } });
+  });
+
   it('keeps a surface map already stored over an old panel map', () => {
     const backing = new Map<string, unknown>([
       [`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true } }],
@@ -84,7 +92,7 @@ describe('openDrawPrefs', () => {
     const store = openDrawPrefs(createMemoryAdapter(backing));
     store.set('tools.pen.autoCommitOnClose', false);
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 1, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 2, value: false });
   });
 
   it('holds any tool id as the last tool', () => {
@@ -129,7 +137,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 1, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 2, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -164,7 +172,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 1, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 2, value: 40 });
     await store.close();
     warn.mockRestore();
   });

@@ -21,9 +21,6 @@ export interface AnchorState {
   getNode?(id: string): { pose: unknown; data: unknown } | null;
   /** The path-edit extensions whose parts are pressed, in order. */
   extensions?: readonly PathEditExtension[];
-  /** The active path-edit tool, if any. While one is set, anchors and controls
-   *  carry no cursor of their own, so the tool's action shows its own. */
-  tool?: string | null;
   /** The path whose outline counts as a segment press, when it is not
    *  `getPose`'s: a path drawn from a form, edited through the form's edit
    *  path. */
@@ -34,8 +31,9 @@ export interface AnchorState {
 export interface PathAnchorAffordanceOptions {
   /** Hit radius (screen-px) for anchor and control points. Default 8. */
   hitRadius?: number;
-  /** Cursor while hovering an anchor or control, with no path-edit tool
-   *  active. Defaults to `'pointer'`. */
+  /** Cursor while hovering a part a path-edit extension adds. Defaults to
+   *  `'pointer'`. Anchors and controls carry none: the action a drag on one
+   *  would start shows its own, `editAnchors`' pointer or a path-edit tool's. */
   cursor?: CursorSpec;
 }
 
@@ -100,7 +98,6 @@ export function createPathAnchorAffordances(
     targetId: null,
     shape: { kind: 'point', x, y, hitRadiusPx: hitRadius },
     hitKind,
-    ...(getAnchorState()?.tool ? {} : { cursor }),
     bind: (): AffordanceBinding => ({ initialScratch: { ...scratch, targetId } }),
   });
 

@@ -36,7 +36,7 @@ function App() {
   const chrome = useChromeCommands();
   const commands: AppCommands = {
     gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop,
-    pathDirection: false, togglePathDirection: noop, symmetryOn: false, toggleSymmetry: noop,
+    symmetryOn: false, toggleSymmetry: noop,
     canReleaseCompound: false, releaseCompound: noop, openPrefs: noop, openPalette: noop,
     ...chrome,
   };

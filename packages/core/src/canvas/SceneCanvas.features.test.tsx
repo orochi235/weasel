@@ -271,7 +271,7 @@ describe('<SceneCanvas features>', () => {
   it("'draw' registers every kit action a bare canvas leaves out", () => {
     const { seen, tools } = mount({ features: ['draw'] });
     expect(tools().active).toBe('select');
-    expect(Object.keys(tools().registry).sort()).toEqual(['hand', 'lasso', 'select']);
+    expect(Object.keys(tools().registry).sort()).toEqual(['anchors', 'hand', 'lasso', 'select']);
     const missing = KIT_STANDARD_ACTION_IDS.filter((i) => !seen.actionIds.includes(i));
     // The actions that belong to insert and text tools stay out, and so does
     // the paste `edit` binds, because `ingest` answers the same event.

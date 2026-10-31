@@ -38,7 +38,7 @@ describe('registryData static collectors', () => {
     const bundles = collectBundles();
     expect(bundles.map((b) => b.id)).toEqual([...Weasel.SCENE_CANVAS_FEATURES]);
     const draw = bundles.find((b) => b.id === 'draw')!;
-    expect([...draw.tools].sort()).toEqual(['hand', 'lasso', 'select']);
+    expect([...draw.tools].sort()).toEqual(['anchors', 'hand', 'lasso', 'select']);
     expect(draw.atom).toBe(false);
     expect(bundles.find((b) => b.id === 'resize')!.atom).toBe(true);
     expect(bundles.find((b) => b.id === 'tools:shape')!.tools).toContain('rect');

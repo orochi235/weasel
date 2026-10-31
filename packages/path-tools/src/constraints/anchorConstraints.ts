@@ -1,10 +1,11 @@
 /**
  * Add and remove geometric constraints on the anchors selected in path edit.
  * Neither has a default binding: a consumer binds each kind it offers, with
- * the kind as a param (see `<SceneCanvas tune>`).
+ * the kind as a param (see `<SceneCanvas tune>`). A bar, menu or palette lists
+ * `constrainAnchors` once per kind.
  */
 
-import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { type Action, type ActionDeps, ActionDisabledReason, type ActionVariant, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   constraintAnchors,
   pathAnchorPoints,
@@ -18,6 +19,21 @@ import { depOf, deleteSelectedMark, type EditAnchorsDep, pathOperationTags } fro
 import { constraintsOf } from './pathConstraints';
 import { editedPath, selectedConstraintOf, setConstraints } from './constraintsExtension';
 import { icon } from '../icons.gen';
+import type { IconRef } from '@weasel-js/icons';
+
+/** Every constraint kind's name, in the order a menu lists them. */
+export const CONSTRAINT_KIND_LABELS: Readonly<Record<PathConstraintKind, string>> = {
+  horizontal: 'Horizontal',
+  vertical: 'Vertical',
+  parallel: 'Parallel',
+  perpendicular: 'Perpendicular',
+  equalLength: 'Equal length',
+  length: 'Length',
+  coincident: 'Coincident',
+  fixed: 'Fixed',
+  tangent: 'Tangent',
+  onPath: 'On path',
+};
 
 /** Params for `constrainAnchors`. */
 export interface ConstrainAnchorsParams {
@@ -102,7 +118,9 @@ function withRemoved(dep: EditAnchorsDep, kind: PathConstraintKind | undefined):
 function constraintCommand(
   id: string,
   label: string,
+  glyph: IconRef,
   next: (dep: EditAnchorsDep, params: Record<string, unknown> | undefined) => PathConstraint[] | null,
+  variants?: readonly ActionVariant[],
 ): Action & { requires: string[] } {
   const ready = (deps: ActionDeps | undefined) => {
     const dep = depOf(deps);
@@ -111,7 +129,9 @@ function constraintCommand(
   return {
     id,
     label,
-    group: 'anchors',
+    icon: glyph,
+    group: 'constraints',
+    ...(variants ? { variants } : {}),
     tags: pathOperationTags('drag'),
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
@@ -136,6 +156,7 @@ export const deleteConstraintAction: Action & { requires: string[] } = {
   id: 'deleteConstraint',
   label: 'Delete constraint',
   icon: icon('core:delete'),
+  group: 'constraints',
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
@@ -160,7 +181,10 @@ export const deleteConstraintAction: Action & { requires: string[] } = {
 export const constrainAnchorsAction = constraintCommand(
   'constrainAnchors',
   'Constrain anchors',
+  icon('constrainAnchors'),
   (dep, params) => withAdded(dep, params as Partial<ConstrainAnchorsParams> | undefined),
+  (Object.entries(CONSTRAINT_KIND_LABELS) as [PathConstraintKind, string][])
+    .map(([kind, label]) => ({ key: kind, label, params: { kind } })),
 );
 
 /**
@@ -170,5 +194,6 @@ export const constrainAnchorsAction = constraintCommand(
 export const unconstrainAnchorsAction = constraintCommand(
   'unconstrainAnchors',
   'Remove constraints',
+  icon('unconstrainAnchors'),
   (dep, params) => withRemoved(dep, params?.kind as PathConstraintKind | undefined),
 );

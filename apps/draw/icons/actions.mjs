@@ -1,14 +1,6 @@
-import { chevron } from '../../../packages/icons/scripts/lib/base.mjs';
-
 // WeaselDraw's own controls.
-/** The center of pixel `k` at 16px 1x. */
-const px = (k) => 0.625 + 1.25 * k;
-const HEAD = [2.5 * Math.SQRT2, 45];
 
 export const ACTIONS = {
-  // A path with heads along it, the marks the toggle shows on every path.
-  pathDirection: `<path d="M${px(1)} ${px(7)}H${px(14)}"/>`
-    + `<path d="${chevron([px(6), px(7)], [1, 0], ...HEAD)}"/><path d="${chevron([px(12), px(7)], [1, 0], ...HEAD)}"/>`,
   releaseCompound: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <rect x="2" y="5" width="6" height="10" fill="currentColor" stroke="none"/>

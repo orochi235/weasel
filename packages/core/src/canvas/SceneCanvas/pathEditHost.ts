@@ -21,12 +21,6 @@ export interface PathEditHost {
   /** The canvas changing the anchor selection: a click, a marquee, an edit that
    *  renumbers anchors, or a path opening or closing. */
   setSelectedAnchors?(next: ReadonlySet<number>): void;
-  /**
-   * The path-edit tool in use — see `PathEditState.getTool` — for a host that keeps it, such as
-   * a palette showing it as a tool. Give both or neither; without them the canvas keeps its own.
-   */
-  tool?(): string | null;
-  setTool?(id: string | null): void;
 }
 
 /** A path a canvas opens in anchor edit as it mounts (`defaultPathEdit`), as though it had been

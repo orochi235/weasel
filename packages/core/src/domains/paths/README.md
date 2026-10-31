@@ -140,7 +140,8 @@ frame the constraints cannot hold in is dropped. A constraint that does not
 hold when an edit starts conflicts with the rest: it is left out of the solve,
 and the overlay draws its mark (`constraintGlyphs.ts`) in the conflict color.
 `constrainAnchors` and `unconstrainAnchors` add and remove constraints on the
-selected anchors through the dep's `setConstraints`. Horizontal and vertical
+selected anchors through the dep's `setConstraints`; `constrainAnchors` has a
+variant per kind, so a bar, menu or palette lists each. Horizontal and vertical
 read a `data.path` node's rotation as their frame (`pathConstraints.ts`).
 
 A click on a mark selects that constraint (the anchor selection and the

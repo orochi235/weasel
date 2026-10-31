@@ -211,6 +211,21 @@
       "body": "<path d=\"M1.875 4.375C1.875 10.625 4.375 14.375 9.375 14.375H16.875\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"14.375\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Spiro points",
       "tags": []
+    },
+    "constrainAnchors": {
+      "body": "<path d=\"M4.375 3.125V15.625H16.875\"/><path d=\"M4.375 10.625H9.375V15.625\" stroke-width=\"1\"/><rect x=\"2.5\" y=\"1.25\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"2.5\" y=\"13.75\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15\" y=\"13.75\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Constraints",
+      "tags": []
+    },
+    "unconstrainAnchors": {
+      "body": "<path d=\"M4.375 2.5V13.75\" stroke-width=\"1\" stroke-linecap=\"butt\" stroke-dasharray=\"2.5 1.25\"/><path d=\"M14.375 5.625L4.375 15.625H16.875\"/><rect x=\"12.5\" y=\"3.75\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"2.5\" y=\"13.75\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15\" y=\"13.75\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Constraints",
+      "tags": []
+    },
+    "pathDirection": {
+      "body": "<path d=\"M1.875 9.375H18.125\"/><path d=\"M5.63 6.88 8.13 9.38 5.63 11.88\"/><path d=\"M13.13 6.88 15.63 9.38 13.13 11.88\"/>",
+      "group": "Overlays",
+      "tags": []
     }
   }
 }

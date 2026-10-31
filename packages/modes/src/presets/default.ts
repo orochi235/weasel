@@ -21,7 +21,8 @@ export const NORMAL: ModeDefinition = {
 };
 
 /** Editing the anchors of a path. Scoped to the target, entered by
- *  double-clicking a `path` or with Enter, left with Escape. */
+ *  double-clicking a `path` or with Enter, left with Escape. It starts on
+ *  core's `anchors` tool. */
 export const PATH_EDIT: ModeDefinition = {
   id: 'path-edit',
   label: 'Path Edit',
@@ -33,6 +34,7 @@ export const PATH_EDIT: ModeDefinition = {
   entry: { trigger: 'double-click-target', targets: ['path'], shortcut: 'Enter' },
   exit: { shortcut: 'Escape' },
   discard: { shortcut: 'Meta+Escape' },
+  defaultTool: 'anchors',
 };
 
 /** A transaction that transforms the selection: the whole session is one undo

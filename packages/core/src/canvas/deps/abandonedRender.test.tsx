@@ -104,8 +104,6 @@ describe('dep sources after an abandoned render', () => {
       getExtensions: () => [],
       getHandleLocks: () => null,
       setHandleLocks: vi.fn(),
-      getTool: () => null,
-      setTool: vi.fn(),
     });
     const a = ext();
     const b = ext();

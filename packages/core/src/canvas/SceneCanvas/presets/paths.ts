@@ -11,7 +11,6 @@ import { enterPathEditAction } from 'interactions/actions/defaults/enterPathEdit
 import { exitPathEditAction } from 'interactions/actions/defaults/exitPathEdit';
 import { editAnchorsAction } from 'interactions/actions/edit-anchors/action';
 import { insertPathAnchorAction } from 'interactions/actions/defaults/insertPathAnchor';
-import { exitPathEditToolAction } from 'interactions/actions/defaults/pathEditTools';
 import {
   pathfinderCropAction, pathfinderDivideAction, pathfinderExcludeAction, pathfinderIntersectAction,
   pathfinderMergeAction, pathfinderSubtractAction, pathfinderTrimAction, pathfinderUnionAction,
@@ -26,8 +25,8 @@ import type { FeaturePreset } from '../features';
 
 /**
  * The path-edit keys that share a key with a node-level action: anchor nudging
- * and deleting, and Escape out of path edit or its tool. Each is tried ahead of
- * its twin, which is enabled whenever anything is selected.
+ * and deleting, and Escape out of path edit. Each is tried ahead of its twin,
+ * which is enabled whenever anything is selected.
  */
 export const anchorKeysPreset: FeaturePreset = {
   id: 'anchorKeys',
@@ -35,7 +34,7 @@ export const anchorKeysPreset: FeaturePreset = {
   refines: ['nudge', 'delete', 'escape'],
   actions: [
     nudgeAnchorsUpAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
-    deleteAnchorsAction, exitPathEditAction, exitPathEditToolAction,
+    deleteAnchorsAction, exitPathEditAction,
   ],
 };
 
@@ -55,10 +54,12 @@ export const outlinesPreset: FeaturePreset = {
   id: 'outlines', label: 'Outlines', actions: [createOutlinesAction, outlineStrokeAction],
 };
 
-/** Entering path edit, and editing anchors, handles, and segments in it. */
+/** Entering path edit, and editing anchors, handles, and segments in it, with
+ *  the `anchors` tool path edit starts on. */
 export const pathEditPreset: FeaturePreset = {
   id: 'pathEdit',
   label: 'Path edit',
+  tools: ['anchors'],
   actions: [
     editAnchorsAction, enterPathEditAction, insertPathAnchorAction, bendSegmentAction, cutPathAtAnchorAction,
     retractHandlesAction, makeHandlesSymmetricAction, averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,

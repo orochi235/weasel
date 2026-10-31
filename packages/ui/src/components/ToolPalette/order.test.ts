@@ -51,8 +51,8 @@ describe('groupTools', () => {
 });
 
 describe('the natural order', () => {
-  it('names the built-in tool sets, selection then navigation first', () => {
-    expect(TOOL_GROUP_ORDER).toEqual(['select', 'view', 'shape', 'draw', 'type', 'page']);
-    expect(BUILTIN_TOOL_IDS.slice(0, 3)).toEqual(['select', 'lasso', 'hand']);
+  it('names the built-in tool sets, selection and anchor editing then navigation first', () => {
+    expect(TOOL_GROUP_ORDER).toEqual(['select', 'path-edit', 'view', 'shape', 'draw', 'type', 'page']);
+    expect(BUILTIN_TOOL_IDS.slice(0, 4)).toEqual(['select', 'lasso', 'anchors', 'hand']);
   });
 });

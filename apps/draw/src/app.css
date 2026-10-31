@@ -108,12 +108,6 @@
   margin-top: var(--wzl-space-2);
 }
 
-/* path-tools' strip, beside the main one: as wide as its buttons. */
-.wd-app .wd-sidebar.left.path {
-  width: 56px;
-  padding: 0 var(--wzl-space-2);
-}
-
 /* The workspace over the page tabs, in the body's row. */
 .wd-stage {
   display: flex;

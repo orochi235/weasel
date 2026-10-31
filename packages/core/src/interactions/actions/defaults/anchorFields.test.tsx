@@ -39,8 +39,6 @@ function setup(path: PolygonPath = polygonFromPoints(SQUARE)) {
     getExtensions: () => [],
     getHandleLocks: () => null,
     setHandleLocks: () => {},
-    getTool: () => null,
-    setTool: () => {},
   };
   const loose = scene as unknown as Scene<unknown, string, unknown>;
   const applyOps = (ops: Parameters<typeof scene.applyBatch>[0], label = '') => {

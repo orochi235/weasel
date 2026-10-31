@@ -176,7 +176,7 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven Extend to next path hands-on and the defaults and keys he picks
   are committed.
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
-  tool toggle has no key; a plain drag grows along the end tangent and Shift along the end
+  path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
   curvature (the `mode` param flips which); a curvature arc stops at a full turn, and a trim always
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
@@ -194,8 +194,10 @@ Owner tags, after the priority (2026-10-26):
   are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
   keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
-  Shift+C through `tune`), and which kind C adds is a param with no UI outside the lab
-  (`packages/path-tools/src/constraints/anchorConstraints.ts`); the marks' look, their 12 px offset and 8 px click
+  Shift+C through `tune`); WeaselDraw binds Alt+Shift+H, V, L, P, C and F to horizontal, vertical,
+  parallel, perpendicular, coincident and fixed, Alt+Shift+U to remove, and lists every kind in a
+  Constraints menu (`apps/draw/src/constraintKeys.ts`, `apps/draw/src/surfaces/assets.tsx`); the two
+  actions' glyphs (`packages/path-tools/icons/constraints.mjs`); the marks' look, their 12 px offset and 8 px click
   reach, and their teal and red (`packages/path-tools/src/constraints/constraintGlyphs.ts`,
   `packages/path-tools/src/constraints/constraintsExtension.ts`); a drag frame the constraints cannot hold in is dropped, so
   the path sticks rather than giving way (`edit-anchors/action.ts`); how far a dragged anchor
@@ -242,8 +244,8 @@ Owner tags, after the priority (2026-10-26):
   behavior and keys: `setPathStart` and `reversePath` have no default keys, an open subpath's
   interior anchor cannot become its start, and the direction marks' look (a 9 px orange arrow per
   segment and an 8 px start ring, `DIRECTION_DEFAULTS`), off by default under
-  `path-edit.direction` with draw's View toggle as the only switch
-  (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathDirection.ts`).
+  `path-edit.direction`, switched by the `pathEdit.show.direction` toggle, which draw keeps as a View
+  preference (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathOverlays.ts`).
   Closes when the maintainer has driven path start and direction hands-on and the defaults and keys he
   picks are committed.
 - **(P2) [maintainer] Tune segment type hands-on, with the maintainer driving.** First-draft behavior and keys:
@@ -283,10 +285,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has ruled, and `tickedSegment`, `pillCommands` and
   `measuredSegmentCommands` either stay on core's barrel as designed surface or have moved to an
   `internal` entry.
-- **(P3) [agent] WeaselDraw binds no constraint action.** It needs keys or a bar group for
-  `constrainAnchors` and `unconstrainAnchors`, and icons for them.
-  Closes when WeaselDraw runs `constrainAnchors` and `unconstrainAnchors` from keys or a bar group,
-  each with an icon of its own.
 
 ## Rendering & paint
 
