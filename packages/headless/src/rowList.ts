@@ -1,6 +1,6 @@
 import type { Rect } from '@weasel-js/geom';
 import {
-  centeredBaseline, clampTo, envPx,
+  centeredBaseline, clampTo, envNumber, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured,
 } from './measure';
 
@@ -67,16 +67,20 @@ export interface RowListMetrics {
   /** The empty state's inset from top and bottom. */
   readonly emptyPadY: number;
   readonly font: FontSpec;
+  /** A line of text's height: the font size times `--wzl-leading-snug`, which `.list` sets. */
+  readonly lineHeight: number;
 }
 
 /** The tokens a row list is sized by: the ones `ItemList.module.css` lays it out with. */
 export function rowListMetrics(env: MeasureEnv): RowListMetrics {
+  const size = envPx(env, '--wzl-font-size-sm');
   return {
     rowHeight: envPx(env, '--wzl-control-h'),
     padX: envPx(env, '--wzl-space-4'),
     gap: envPx(env, '--wzl-space-4'),
     emptyPadY: envPx(env, '--wzl-space-6'),
-    font: { family: env.token('--wzl-font-ui'), size: envPx(env, '--wzl-font-size-sm'), weight: 400 },
+    font: { family: env.token('--wzl-font-ui'), size, weight: 400 },
+    lineHeight: size * envNumber(env, '--wzl-leading-snug', 1.2),
   };
 }
 
@@ -106,11 +110,11 @@ export function measureRowList(face: RowListFace, c: Constraints, env: MeasureEn
   const m = rowListMetrics(env);
   if (face.rows.length === 0) {
     const t = env.text(face.empty ?? '—', m.font);
-    const line = t.ascent + t.descent;
+    const line = m.lineHeight;
     const width = clampTo(t.width + m.padX * 2, c.minWidth, c.maxWidth);
     const height = clampTo(line + m.emptyPadY * 2, c.minHeight, c.maxHeight);
     const empty = { x: m.padX, y: m.emptyPadY, width: Math.max(0, width - m.padX * 2), height: line };
-    return { width, height, baseline: m.emptyPadY + t.ascent, layout: { rows: [], empty, metrics: m } };
+    return { width, height, baseline: m.emptyPadY + centeredBaseline(line, line, t), layout: { rows: [], empty, metrics: m } };
   }
 
   const extents = face.rows.map((r) => env.text(r.label, m.font));
@@ -124,7 +128,7 @@ export function measureRowList(face: RowListFace, c: Constraints, env: MeasureEn
   const rows = face.rows.map((r, i): RowBox => {
     const y = i * (m.rowHeight + ROW_GAP);
     const h = m.rowHeight;
-    const line = extents[i]!.ascent + extents[i]!.descent;
+    const line = m.lineHeight;
     let x = m.padX;
     let right = width - m.padX;
     const box = { x: 0, y, width, height: h };
@@ -135,9 +139,7 @@ export function measureRowList(face: RowListFace, c: Constraints, env: MeasureEn
     const label = { x, y: y + (h - line) / 2, width: Math.max(0, right - x), height: line };
     return { id: r.id, rect: box, label, ...(leading ? { leading } : {}), ...(trailing ? { trailing } : {}) };
   });
-  // A row's label is set at `line-height: normal`, which is its face's ascent plus descent.
-  const first = extents[0]!;
-  const baseline = centeredBaseline(m.rowHeight, first.ascent + first.descent, first);
+  const baseline = centeredBaseline(m.rowHeight, m.lineHeight, extents[0]!);
   return { width, height, baseline, layout: { rows, metrics: m } };
 }
 

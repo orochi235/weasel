@@ -3,7 +3,7 @@ import { dropSide, listMode, measureRowList, rowAtY } from './rowList';
 import { exactly, UNBOUNDED, type MeasureEnv } from './measure';
 
 const TOKENS: Record<string, string> = {
-  '--wzl-control-h': '24px', '--wzl-space-4': '8px', '--wzl-space-6': '12px', '--wzl-font-size-sm': '11px',
+  '--wzl-control-h': '24px', '--wzl-space-4': '8px', '--wzl-space-6': '12px', '--wzl-font-size-sm': '10px', '--wzl-leading-snug': '1.3',
 };
 const env: MeasureEnv = {
   token: (n) => TOKENS[n],
@@ -40,6 +40,7 @@ describe('measureRowList', () => {
     // Alpha: 8 + 12 + 8 + 25 + 8 = 61; Be: 8 + 10 + 8 + 20 + 8 = 54.
     expect([m.width, m.height]).toEqual([61, 49]);
     expect(m.layout.rows[1]!.rect).toEqual({ x: 0, y: 25, width: 61, height: 24 });
+    // Line 13 tall (10px × 1.3) in a 24px row: 5.5 down, and the 13px face fills it.
     expect(m.baseline).toBeCloseTo(5.5 + 10);
   });
 
@@ -54,8 +55,10 @@ describe('measureRowList', () => {
 
   it('measures the empty state as its padded line', () => {
     const m = measureRowList({ rows: [] }, UNBOUNDED, env);
-    expect([m.width, m.height]).toEqual([5 + 16, 13 + 24]);
-    expect(m.layout.empty).toEqual({ x: 8, y: 12, width: 5, height: 13 });
+    expect(m.width).toBe(5 + 16);
+    expect(m.height).toBeCloseTo(13 + 24);
+    expect(m.layout.empty).toMatchObject({ x: 8, y: 12, width: 5 });
+    expect(m.layout.empty!.height).toBeCloseTo(13);
   });
 
   it('finds the row under a point, and none in the gap between rows', () => {
