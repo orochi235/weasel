@@ -42,7 +42,9 @@ export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
       && isMinified(minifiedLimits(ctx), cmd.image.width, cmd.image.height, cmd.w, cmd.h)) {
     ctx.imageCache.buildMipmaps(cmd.image);
   }
-  const { slot, tint } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear', whole);
+  // Without mipmaps a whole draw samples as a sub-rect one does, so it stays in their run.
+  const mips = whole && ctx.imageCache.hasMipmaps(cmd.image);
+  const { slot, tint } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear', mips);
 
   // Sampling window: the whole bitmap unless `source` narrows it, with the
   // flips applied by swapping the ends rather than moving the quad.

@@ -186,6 +186,11 @@ export class GLImageCache {
     return this.minification === 'auto' && !this.mipped.has(key);
   }
 
+  /** Whether `key`'s mipmaps are built. */
+  hasMipmaps(key: object): boolean {
+    return this.mipped.has(key);
+  }
+
   /** Build `key`'s mipmaps, which a draw then samples through
    *  {@link setMinFilter}. Its texture must be uploaded. Leaves no texture bound. */
   buildMipmaps(key: object): void {
