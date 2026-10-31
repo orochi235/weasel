@@ -165,5 +165,6 @@
 }
 
 .shortcut .key {
+  font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-normal);
 }

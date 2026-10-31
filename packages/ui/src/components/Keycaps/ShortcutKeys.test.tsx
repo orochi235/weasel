@@ -27,6 +27,11 @@ describe('ShortcutKeys', () => {
     expect(container.textContent).toBe('View▸Loupe▸⌘2');
   });
 
+  it('sets its keys in the UI font from the stylesheet, not an inline style', () => {
+    const { container } = renderWithIcons(<ShortcutKeys legend="⌘2" />);
+    for (const key of container.querySelectorAll('kbd')) expect((key as HTMLElement).style.fontFamily).toBe('');
+  });
+
   it('draws a legend with no leader as keys alone', () => {
     const { container } = renderWithIcons(<ShortcutKeys legend="Ctrl+Shift+Z" />);
     expect(chips(container)).toEqual(['Ctrl', 'Shift', 'Z']);

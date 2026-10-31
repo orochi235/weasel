@@ -21,5 +21,5 @@ function partsFromLegend(legend: string) {
  */
 export function ShortcutKeys({ legend, shortcut, className }: ShortcutKeysProps) {
   const parts = legend !== undefined ? partsFromLegend(legend) : formatShortcutParts(shortcut);
-  return <KeySequence keys={parts?.keys} leader={parts?.leader} joins="none" font="var(--wzl-font-ui)" className={[s.shortcut, className].filter(Boolean).join(' ')} />;
+  return <KeySequence keys={parts?.keys} leader={parts?.leader} joins="none" className={[s.shortcut, className].filter(Boolean).join(' ')} />;
 }
