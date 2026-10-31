@@ -65,6 +65,19 @@ at the top: the one that used to live there drifted to listing 21 of 41 P2s, thr
 of them P3s, because nothing recomputes a hand-maintained copy. `grep '(P2)'` is
 the index.
 
+**The list exists to shrink: finish entries, don't narrow them.** Open entries fell from 222 to
+109 between 2026-09-01 and 2026-10-01, then were back at 219 by 2026-10-16, because work kept
+filing about as much as it retired. So:
+
+- **Finish what you pick up.** A minor follow-up on an entry is done in the same pass, never
+  appended to it. "Rewrite around what is left" is not done; it is a reason to keep going.
+- **Fix what you find.** A bug or gap met along the way is fixed then. File one only when it is
+  genuinely too big for the pass, and the report says why for each.
+- **An audit produces fixes, not entries.** Never file a sweep's findings wholesale.
+- **Every entry says when it closes**: a number or a condition. Meet it and retire the entry.
+  An improvement that falls short leaves the entry as it was, apart from its new measurement.
+- **A report leads with the net count**: "TODO 121 → 108".
+
 **Weight the last open items in a mostly-done section above their P-number.**
 When a section is mostly landed work kept as context for a few open entries,
 finishing those lets the whole section be deleted, so rank them ahead of
