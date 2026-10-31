@@ -191,6 +191,12 @@ describe('prefDisplayBounds', () => {
       min: 0, max: 10, step: 2, unit: remaining,
     };
     expect(prefDisplayBounds(leaf)).toEqual({ min: 90, max: 100, step: 2 });
+    expect(prefDisplayBounds({ ...leaf, stops: [0, 4] }).stops).toEqual([100, 96]);
+  });
+
+  it('carries stops through unchanged without a unit', () => {
+    const leaf: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0, min: -1, max: 1, stops: [0] };
+    expect(prefDisplayBounds(leaf)).toEqual({ min: -1, max: 1, step: 1, stops: [0] });
   });
 
   it('leaves an omitted bound omitted', () => {

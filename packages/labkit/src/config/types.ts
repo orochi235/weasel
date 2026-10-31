@@ -59,6 +59,8 @@ export interface Annotations {
   /** Display-unit conversion for a number stored in a canonical unit — the
    *  value, its bounds and its step all convert at the control's edge. */
   unit?: PrefNumberUnit;
+  /** The values a number's slider catches on, in the stored unit. */
+  stops?: readonly number[];
   /** Which end of a number's slider gets a stop for infinity, one step beyond the range. */
   endless?: 'min' | 'max' | 'both';
   /** The word a number's infinity shows as — `'never'`. Default `∞`. */

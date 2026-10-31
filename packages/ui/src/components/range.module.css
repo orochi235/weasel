@@ -112,3 +112,13 @@
 .alpha:disabled::-moz-range-thumb {
   background: transparent;
 }
+
+/* A track with stops draws them in the box's background, behind the track and the
+   thumb; `useTrackStops` sets one layer per stop and where each sits. */
+.range.stops {
+  background-image: var(--wzl-range-stop-marks);
+  background-position: var(--wzl-range-stop-at);
+  background-size: 1px 75%;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+}

@@ -97,6 +97,10 @@ export interface PropertyNumberFieldProps extends FieldBase {
    *  there. The readout shows `display`'s word for it — `endless(unit('ms'),
    *  'never')` reads `never` — else `∞`, and drops `unit` beside it. */
   endless?: Endless;
+  /** Values a slider catches on, drawn on its track: a drag passing within
+   *  the `targets.sliderStopSnapPx` kit setting of one lands on it unless alt
+   *  is held, and an arrow key stepping across one stops there. */
+  stops?: readonly number[];
   /**
    * Suffix after the value. A string becomes a dim word unit (`px`); pass JSX
    * like `<sup>°</sup>` for a symbol. Display only — the value stays a number.

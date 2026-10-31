@@ -13,14 +13,14 @@ import { resolvePrefUnit } from './unit';
  * slider's track, a step of 1 — is a display-space number already. `min` and
  * `max` are points, so they convert the way the value does; `step` is a
  * distance, and a unit with an offset maps zero somewhere else, so converting
- * it as a point would scale it wrong. A decreasing conversion swaps which end
- * is the lower one, and which end is `endless`.
+ * it as a point would scale it wrong; `stops` are points. A decreasing
+ * conversion swaps which end is the lower one, and which end is `endless`.
  */
 export function prefDisplayBounds(
   p: PrefNumber,
-): { min?: number; max?: number; step: number; endless?: Endless } {
+): { min?: number; max?: number; step: number; endless?: Endless; stops?: readonly number[] } {
   const ends = p.endless === undefined ? {} : { endless: p.endless };
-  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends };
+  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
   const { toDisplay } = resolvePrefUnit(p.unit);
   const backward = toDisplay(1) < toDisplay(0);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
@@ -31,7 +31,14 @@ export function prefDisplayBounds(
     : Math.abs(toDisplay(p.step) - toDisplay(0)) || p.step;
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
-  return { min: flipped ? hi : lo, max: flipped ? lo : hi, step, ...(endless === undefined ? {} : { endless }) };
+  const stops = p.stops?.map(toDisplay);
+  return {
+    min: flipped ? hi : lo,
+    max: flipped ? lo : hi,
+    step,
+    ...(endless === undefined ? {} : { endless }),
+    ...(stops ? { stops } : {}),
+  };
 }
 
 /** Distinguishes a leaf from a group or a section while walking a schema tree. */

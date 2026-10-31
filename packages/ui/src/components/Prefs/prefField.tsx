@@ -84,6 +84,36 @@ function fieldRefProps(leaf: PrefField, state: PrefFieldState): PropertyControlP
   return { kind: 'enum', control: 'select', value: current, mixed, unset, options, onChange: setValue };
 }
 
+/** A number leaf as its field, in the unit it shows: the value, its bounds, step and stops convert from the
+ *  stored unit, and what is set converts back. */
+function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyControlProps {
+  const { value, mixed = false, unset = false, setValue } = state;
+  const unit = leaf.unit && resolvePrefUnit(leaf.unit);
+  // ±Infinity is a value only where an end of the leaf stands for it.
+  const stored =
+    typeof value === 'number' && (Number.isFinite(value) || endlessAllows(leaf.endless, value)) ? value : undefined;
+  const bounds = prefDisplayBounds(leaf);
+  const clamp = (n: number) => clampToBounds(n, bounds);
+  const store = (shown: number) => setValue(unit ? unit.fromDisplay(clamp(shown)) : clamp(shown));
+  return {
+    kind: 'number',
+    control: leaf.control,
+    value: stored === undefined ? undefined : unit ? unit.toDisplay(stored) : stored,
+    mixed,
+    unset,
+    min: bounds.min,
+    max: bounds.max,
+    step: bounds.step,
+    unit: unit?.suffix,
+    accepts: unit ? prefUnitAccepts(unit) : undefined,
+    display:
+      leaf.infinity === undefined ? leaf.display : withInfinity(leaf.display ?? stepDisplay(bounds.step), leaf.infinity),
+    endless: bounds.endless,
+    stops: bounds.stops,
+    onChange: store,
+  };
+}
+
 function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
   const { value, mixed = false, unset = false, siblings, setValue } = state;
   if (leaf.kind === 'font-weight') {
@@ -125,34 +155,8 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         onChange: coded ? coded.write : setValue,
       };
     }
-    case 'number': {
-      const unit = leaf.unit && resolvePrefUnit(leaf.unit);
-      // ±Infinity is a value only where an end of the leaf stands for it.
-      const stored =
-        typeof value === 'number' && (Number.isFinite(value) || endlessAllows(leaf.endless, value)) ? value : undefined;
-      // `min`/`max`/`step` are declared in the stored unit, like the value, so
-      // they convert with it.
-      // and so do the ends that stand for infinity, under a unit that runs backward.
-      const bounds = prefDisplayBounds(leaf);
-      const clamp = (n: number) => clampToBounds(n, bounds);
-      const store = (shown: number) => setValue(unit ? unit.fromDisplay(clamp(shown)) : clamp(shown));
-      return {
-        kind: 'number',
-        control: leaf.control,
-        value: stored === undefined ? undefined : unit ? unit.toDisplay(stored) : stored,
-        mixed,
-        unset,
-        min: bounds.min,
-        max: bounds.max,
-        step: bounds.step,
-        unit: unit?.suffix,
-        accepts: unit ? prefUnitAccepts(unit) : undefined,
-        display:
-          leaf.infinity === undefined ? leaf.display : withInfinity(leaf.display ?? stepDisplay(bounds.step), leaf.infinity),
-        endless: bounds.endless,
-        onChange: store,
-      };
-    }
+    case 'number':
+      return numberFieldProps(leaf, state);
     case 'string':
       return {
         kind: 'string',

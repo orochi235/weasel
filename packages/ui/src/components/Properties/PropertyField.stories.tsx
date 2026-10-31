@@ -92,6 +92,7 @@ function Slider({ args, initial, ...rest }: {
   display?: Display;
   unit?: ReactNode;
   endless?: Endless;
+  stops?: readonly number[];
 }) {
   const [value, setValue] = useState(initial);
   return <PropertyField {...(args as Shared)} kind="number" control="slider" value={value} onChange={setValue} {...rest} />;
@@ -120,6 +121,20 @@ export const EndlessEnd: Story = {
       <Slider args={args} initial={1200} label="Mute at" min={0} max={8000} step={100} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
       <Slider args={args} initial={Infinity} label="Cap step" min={16} max={64} step={8} endless="max" display={endless(unit('ms'), 'uncapped')} />
       <Slider args={args} initial={-Infinity} label="Floor" min={0} max={100} endless="min" />
+    </div>
+  ),
+};
+
+/** Stops a drag catches on, drawn on the track: pass near one and the thumb
+ *  lands there, hold alt to pass it by. The readout's arrow keys stop on one
+ *  they cross. How near is the `targets.sliderStopSnapPx` kit setting. */
+export const SliderStops: Story = {
+  args: { disabled: false },
+  render: (args) => (
+    <div className={s.column}>
+      <Slider args={args} initial={0.04} label="Level" min={-0.12} max={0.12} step={0.001} stops={[0]} />
+      <Slider args={args} initial={30} label="Wall depth" min={0} max={100} unit="%" stops={[50]} />
+      <Slider args={args} initial={60} label="Corner mix" min={0} max={100} step={5} unit="%" stops={[0, 25, 75, 100]} />
     </div>
   ),
 };
