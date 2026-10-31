@@ -78,20 +78,20 @@ export function stagePlain(
  * and their tint.
  */
 export function stageImage(
-  ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
+  ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest', mips: boolean,
 ): { slot: number; tint: Tint } {
   const under = texturedUnder(ctx, false);
   const open = ctx.batchState;
   if (open !== undefined
       && (!runTakes(ctx, open, under.colorMatrix, under.alpha)
-          || slotForBitmap(open, image, sampling) < 0)) {
+          || slotForBitmap(open, image, sampling, mips) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
   const staged = openRun(ctx);
-  let slot = slotForBitmap(staged, image, sampling);
+  let slot = slotForBitmap(staged, image, sampling, mips);
   if (slot > staged.textures.length) {
-    staged.textures.push({ kind: 'bitmap', image, sampling });
+    staged.textures.push({ kind: 'bitmap', image, sampling, mips });
     slot = staged.textures.length;
   }
   under.slot = takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)));

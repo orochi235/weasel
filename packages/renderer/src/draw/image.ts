@@ -30,14 +30,19 @@ function minifiedLimits(ctx: DrawContext): [number, number] {
 const isMinified = (limit: [number, number], sw: number, sh: number, dw: number, dh: number): boolean =>
   sw * sw >= limit[0] * dw * dw || sh * sh >= limit[1] * dh * dh;
 
+/** Whether a draw samples all of `image`, so mipmaps cannot pull in texels
+ *  from outside what it shows. */
+const drawsWhole = (image: ImageBitmap, src: ImageDrawCommand['source']): boolean =>
+  !src || (src.x <= 0 && src.y <= 0 && src.x + src.w >= image.width && src.y + src.h >= image.height);
+
 export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
-  if (ctx.imageCache.lacksMipmaps(cmd.image)) {
-    const sw = cmd.source?.w ?? cmd.image.width;
-    const sh = cmd.source?.h ?? cmd.image.height;
-    if (isMinified(minifiedLimits(ctx), sw, sh, cmd.w, cmd.h)) ctx.imageCache.buildMipmaps(cmd.image);
+  const whole = drawsWhole(cmd.image, cmd.source);
+  if (whole && ctx.imageCache.lacksMipmaps(cmd.image)
+      && isMinified(minifiedLimits(ctx), cmd.image.width, cmd.image.height, cmd.w, cmd.h)) {
+    ctx.imageCache.buildMipmaps(cmd.image);
   }
-  const { slot, tint } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
+  const { slot, tint } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear', whole);
 
   // Sampling window: the whole bitmap unless `source` narrows it, with the
   // flips applied by swapping the ends rather than moving the quad.
@@ -74,16 +79,10 @@ export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
   if (count === 0) return;
 
   ctx.imageCache.upload(cmd.image, cmd.image);
-  if (ctx.imageCache.lacksMipmaps(cmd.image)) {
-    const limit = minifiedLimits(ctx);
-    for (let i = 0; i < count * SPRITE_STRIDE; i += SPRITE_STRIDE) {
-      if (!isMinified(limit, data[i + 6], data[i + 7], data[i + 2], data[i + 3])) continue;
-      ctx.imageCache.buildMipmaps(cmd.image);
-      break;
-    }
-  }
   const sampling = cmd.sampling ?? 'linear';
-  let { slot, tint } = stageImage(ctx, cmd.image, sampling);
+  // Sprites sample cells of a sheet, which mipmaps would blend with their neighbors.
+  const stage = () => stageImage(ctx, cmd.image, sampling, false);
+  let { slot, tint } = stage();
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
@@ -93,7 +92,7 @@ export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
   for (let s = 0, i = 0; s < count; s++, i += SPRITE_STRIDE) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      ({ slot, tint } = stageImage(ctx, cmd.image, sampling));
+      ({ slot, tint } = stage());
     }
     const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
     let cut: ClipRect | null | undefined;
@@ -103,11 +102,11 @@ export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
       data[i + 8] * tint[3], slot, tint[0], tint[1], tint[2],
     )) {
       cut = enterUncut(ctx);
-      ({ slot, tint } = stageImage(ctx, cmd.image, sampling));
+      ({ slot, tint } = stage());
     }
     if (cut !== undefined) {
       leaveUncut(ctx, cut);
-      ({ slot, tint } = stageImage(ctx, cmd.image, sampling));
+      ({ slot, tint } = stage());
     }
   }
 }

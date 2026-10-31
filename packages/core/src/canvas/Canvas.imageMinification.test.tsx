@@ -46,9 +46,16 @@ describe('Canvas imageMinification prop', () => {
     expect(mipmaps()).toBe(1);
   });
 
-  it("builds none by default", async () => {
+  it('builds them by default', async () => {
     recorder.reset();
     render(el(smallImageLayer(), undefined));
+    await waitForFrame();
+    expect(mipmaps()).toBe(1);
+  });
+
+  it("builds none under 'linear'", async () => {
+    recorder.reset();
+    render(el(smallImageLayer(), 'linear'));
     await waitForFrame();
     expect(mipmaps()).toBe(0);
   });

@@ -58,27 +58,56 @@ describe("imageMinification: 'auto'", () => {
     expect(mipmaps()).toBe(1);
   });
 
-  it('measures a source rect against the part of the bitmap it shows', () => {
+  it('builds none for a source rect drawn small, which would blend in the cells around it', () => {
     const { renderer, mipmaps } = setup();
     const cmd: DrawCommand = {
-      kind: 'image', image: bitmap(64), x: 0, y: 0, w: 16, h: 16, source: { x: 0, y: 0, w: 16, h: 16 },
+      kind: 'image', image: bitmap(64), x: 0, y: 0, w: 4, h: 4, source: { x: 0, y: 0, w: 16, h: 16 },
     };
     renderer.render([cmd]);
     expect(mipmaps()).toBe(0);
   });
 
-  it('builds them for a sprite run with one sprite drawn small', () => {
+  it('treats a source rect covering the whole bitmap as the whole bitmap', () => {
     const { renderer, mipmaps } = setup();
-    const sprites = new Float32Array(2 * SPRITE_STRIDE);
-    sprites.set([0, 0, 16, 16, 0, 0, 16, 16, 1], 0);
-    sprites.set([20, 0, 4, 4, 0, 0, 16, 16, 1], SPRITE_STRIDE);
-    renderer.render([{ kind: 'sprites', image: bitmap(64), sprites }]);
+    renderer.render([{
+      kind: 'image', image: bitmap(64), x: 0, y: 0, w: 8, h: 8, source: { x: 0, y: 0, w: 64, h: 64 },
+    }]);
     expect(mipmaps()).toBe(1);
   });
 
-  it("builds none under the default 'linear'", () => {
+  it('builds none for a sprite run, however small its sprites', () => {
+    const { renderer, mipmaps } = setup();
+    const sprites = new Float32Array(SPRITE_STRIDE);
+    sprites.set([20, 0, 4, 4, 0, 0, 16, 16, 1], 0);
+    renderer.render([{ kind: 'sprites', image: bitmap(64), sprites }]);
+    expect(mipmaps()).toBe(0);
+  });
+
+  it('samples a mipmapped bitmap through one tap where a later draw shows only part of it', () => {
+    const { recorder, renderer } = setup();
+    const img = bitmap(64);
+    renderer.render([image(img, 8)]);
+    renderer.render([{ kind: 'image', image: img, x: 0, y: 0, w: 4, h: 4, source: { x: 0, y: 0, w: 16, h: 16 } }]);
+    const gl = recorder.gl;
+    const mins = recorder.calls
+      .filter((c) => c.name === 'texParameteri' && c.args[1] === gl.TEXTURE_MIN_FILTER)
+      .map((c) => c.args[2]);
+    expect(mins.at(-1)).toBe(gl.LINEAR);
+    expect(mins).toContain(gl.LINEAR_MIPMAP_LINEAR);
+  });
+
+  it('is the default', () => {
     const recorder = makeGLRecorder();
     const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1 });
+    renderer.render([image(bitmap(64), 8)]);
+    expect(recorder.calls.map((c) => c.name)).toContain('generateMipmap');
+  });
+});
+
+describe("imageMinification: 'linear'", () => {
+  it('builds none', () => {
+    const recorder = makeGLRecorder();
+    const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1, imageMinification: 'linear' });
     renderer.render([image(bitmap(64), 8)]);
     expect(recorder.calls.map((c) => c.name)).not.toContain('generateMipmap');
   });
@@ -87,7 +116,7 @@ describe("imageMinification: 'auto'", () => {
 describe('setImageMinification', () => {
   it("switches a 'linear' renderer to 'auto' from the next draw", () => {
     const recorder = makeGLRecorder();
-    const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1 });
+    const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1, imageMinification: 'linear' });
     const img = bitmap(64);
     renderer.render([image(img, 8)]);
     renderer.setImageMinification('auto');
@@ -96,7 +125,9 @@ describe('setImageMinification', () => {
   });
 
   it('frees the textures uploaded under the old strategy, and undefined restores the default', () => {
-    const { recorder, renderer, mipmaps } = setup();
+    const recorder = makeGLRecorder();
+    const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1, imageMinification: 'linear' });
+    const mipmaps = (): number => recorder.calls.filter((c) => c.name === 'generateMipmap').length;
     const img = bitmap(64);
     renderer.render([image(img, 8)]);
     const deletes = (): number => recorder.calls.filter((c) => c.name === 'deleteTexture').length;

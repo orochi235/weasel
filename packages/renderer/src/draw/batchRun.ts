@@ -60,24 +60,24 @@ export interface StagedBatchState {
 
 /** One entry in a run's slot list. */
 type BatchTexture =
-  | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest' }
+  | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest'; mips: boolean }
   | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] };
 
 /**
  * The slot `image` would sample from in this run, or -1 if it cannot join.
  *
- * A bitmap already in the run reuses its slot — but only at the filter it went
- * in under, since MAG_FILTER belongs to the texture object and one draw cannot
+ * A bitmap already in the run reuses its slot — but only at the filters it went
+ * in under, since MAG_ and MIN_FILTER belong to the texture object and one draw cannot
  * have it both ways. Otherwise it takes the next free slot, and a run with none
  * left is a run this quad has to break.
  */
 export function slotForBitmap(
-  staged: StagedBatchState, image: ImageBitmap, sampling: 'linear' | 'nearest',
+  staged: StagedBatchState, image: ImageBitmap, sampling: 'linear' | 'nearest', mips: boolean,
 ): number {
   for (let i = 0; i < staged.textures.length; i++) {
     const entry = staged.textures[i];
     if (entry.kind !== 'bitmap' || entry.image !== image) continue;
-    return entry.sampling === sampling ? i + 1 : -1;
+    return entry.sampling === sampling && entry.mips === mips ? i + 1 : -1;
   }
   return nextFreeSlot(staged);
 }

@@ -51,7 +51,7 @@ test(`${DEMO_ID} — pixel mode magnifies with hard edges`, async ({ page }) => 
   // loupe freezes its aim while the pointer is over itself.
   const box = (await page.locator('canvas').first().boundingBox())!;
   await page.mouse.move(box.x + 430, box.y + 310);
-  await page.getByLabel('pixel').check();
+  await page.getByRole('radio', { name: 'pixel' }).click();
   await page.mouse.move(box.x + 431, box.y + 311);
   await page.waitForTimeout(600);   // readback → createImageBitmap → redraw
 

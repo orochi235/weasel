@@ -16,8 +16,10 @@ export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat'
 
 /**
  * MIN_FILTER strategy for uploaded textures: `'linear'` never mipmaps,
- * `'mipmap'` does at upload, and `'auto'` uploads linear and builds a
- * texture's mipmaps the first time a frame draws it at half size or smaller.
+ * `'mipmap'` does at upload, and `'auto'` builds a texture's mipmaps the
+ * first time a frame draws the whole of it at half size or smaller. Only a
+ * draw of the whole bitmap samples them: a sub-rect draw would blend in the
+ * cells around its rect.
  */
 export type ImageMinification = 'linear' | 'mipmap' | 'auto';
 
@@ -66,6 +68,8 @@ export class GLImageCache {
    * write to a live texture for no reason.
    */
   private readonly magFilters = new WeakMap<object, number>();
+  /** MIN_FILTER each texture carries, kept for the same reason. */
+  private readonly minFilters = new WeakMap<object, number>();
   private readonly finalizer: FinalizationRegistry<WebGLTexture>;
   private readonly pendingDeletes: WebGLTexture[] = [];
   /** Under `'auto'`, the sources whose mipmaps are built. */
@@ -120,6 +124,7 @@ export class GLImageCache {
     this.finalizer.unregister(key);
     this.map.delete(key);
     this.magFilters.delete(key);
+    this.minFilters.delete(key);
     this.lastDrawn.delete(key);
     this.mipped.delete(key);
   }
@@ -155,18 +160,18 @@ export class GLImageCache {
 
     gl.bindTexture(gl.TEXTURE_2D, tex);
     uploadPremultiplied(gl, source);
-    gl.texParameteri(
-      gl.TEXTURE_2D,
-      gl.TEXTURE_MIN_FILTER,
-      this.minification === 'mipmap' ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR,
-    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    this.minFilters.set(key, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     this.magFilters.set(key, gl.LINEAR);
 
     const [wrapS, wrapT] = wrapModes(gl, repetition);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapS);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapT);
-    if (this.minification === 'mipmap') gl.generateMipmap(gl.TEXTURE_2D);
+    if (this.minification === 'mipmap') {
+      gl.generateMipmap(gl.TEXTURE_2D);
+      this.mipped.add(key);
+    }
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     this.map.set(key, tex);
@@ -181,17 +186,27 @@ export class GLImageCache {
     return this.minification === 'auto' && !this.mipped.has(key);
   }
 
-  /** Build `key`'s mipmaps and filter minification through them from here
-   *  on. Its texture must be uploaded. Leaves no texture bound. */
+  /** Build `key`'s mipmaps, which a draw then samples through
+   *  {@link setMinFilter}. Its texture must be uploaded. Leaves no texture bound. */
   buildMipmaps(key: object): void {
     const tex = this.map.get(key);
     if (!tex || this.mipped.has(key)) return;
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.bindTexture(gl.TEXTURE_2D, null);
     this.mipped.add(key);
+  }
+
+  /** Minify the texture bound for `key` through its mipmaps when `mips` asks
+   *  and it has them, else with one bilinear tap. Per flush, like
+   *  {@link setMagFilter}: one bitmap can be drawn whole and by sub-rect in a frame. */
+  setMinFilter(key: object, mips: boolean): void {
+    const gl = this.gl;
+    const filter = mips && this.mipped.has(key) ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR;
+    if (this.minFilters.get(key) === filter) return;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    this.minFilters.set(key, filter);
   }
 
   bind(key: object, unit: number): void {
