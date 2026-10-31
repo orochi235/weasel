@@ -101,7 +101,7 @@ Owner tags, after the priority (2026-10-26):
   changes, or it keeps its own semantics and this entry is deleted.
 
 - **(P3) [maintainer] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
-  Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is Mike's call.
+  Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is the maintainer's call.
   Closes when the maintainer has ruled whether `bendAlongPath` measures its spine with `keepCorners`,
   and the code does what he ruled.
 
