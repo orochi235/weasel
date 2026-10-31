@@ -3,8 +3,8 @@ import {
   type SceneCanvasApi, type Tool, type ToolsApi,
 } from '@weasel-js/core';
 import {
-  commitSequence, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText, offPageTagOf, rendererMeasure,
-  sequencePartOf,
+  commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
+  offPageTagOf, rendererMeasure, sequencePartOf,
 } from '@weasel-js/diagram';
 import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
@@ -22,6 +22,7 @@ import { NewChart } from './NewChartDialog';
 import { ChartPageStrip } from './pages/ChartPageStrip';
 import { useChartPages } from './pages/useChartPages';
 import { useFittedView } from './pages/useFittedView';
+import { isSequenceTool, SequencePanel, useSequenceChoices } from './SequencePanel';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { StylePanel } from './theme/StylePanel';
 import { ChartToolbar } from './toolbar/ChartToolbar';
@@ -37,6 +38,8 @@ import './workspace.css';
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
+/** Delete takes a selected sequence part out of its sequence's data, and anything else out of the scene. */
+const ACTIONS = { delete: createSequenceDeleteAction({ measure: rendererMeasure }) };
 
 /** Text a double-click edits: an off-page tag's is the pass's to write, and a sequence's or a chart's only where its
  *  data holds it. */
@@ -53,8 +56,9 @@ function endTextEdit(scene: ChartScene, id: string): void {
   foldPlotText(loose, id, (edit) => replacePlotData(scene, edit.rootId, edit.data, { label: edit.label }));
 }
 
-/** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
-const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool);
+/** The palette's tools: select, hand and the connector; the stencils have the Shapes panel, the sequence tools the
+ *  Sequence panel. */
+const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool) && !isSequenceTool(tool);
 
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {
@@ -66,7 +70,8 @@ export function ChartWorkspace(): ReactElement {
   useSessionPersistence(scene, SESSION);
   useChartCommands(scene);
   const theme = chartThemeOf(scene);
-  const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene));
+  const sequence = useSequenceChoices();
+  const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene), sequence.readers);
   const plot = useMemo(() => plotEditing({ scene: scene as never }), [scene]);
   const ambient = useMemo(() => [...diagram.ambient, plot.contribution], [diagram.ambient, plot]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
@@ -107,6 +112,7 @@ export function ChartWorkspace(): ReactElement {
       <div className="wc-body">
         <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes">
           {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
+          {tools && <SequencePanel tools={tools} scene={scene} choices={sequence.choices} onChoose={sequence.set} />}
         </Sidebar>
         <div className="wc-stage">
           <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
@@ -127,6 +133,7 @@ export function ChartWorkspace(): ReactElement {
                 tools={diagram.tools}
                 selectTool={selectTool}
                 ambient={ambient}
+                actions={ACTIONS}
                 onToolsCreated={setTools}
                 alphaFor={alphaFor}
                 layers={layers}
