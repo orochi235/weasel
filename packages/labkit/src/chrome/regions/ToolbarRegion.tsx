@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Icon } from '../../passthrough/weasel-ui';
-import { Toolbar } from '../../primitives/Toolbar';
+import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import type { RegionContribution, ToolbarItem, TrialChromeContext } from '../types';
 import { groupsOf } from './groupsOf';
 
@@ -46,8 +46,10 @@ export function ToolbarRegion<TCtx = TrialChromeContext>({
 }: ToolbarRegionProps<TCtx>) {
   if (contributions.length === 0) return null;
   const groups = groupsOf(contributions);
+  // A trial's bar is a compact strip of its own; the lab's sits in the shell header, which draws the strip.
+  const strip = region !== 'header';
   return (
-    <Toolbar aria-label={label}>
+    <Toolbar aria-label={label} size={strip ? 'sm' : 'md'} framed={strip}>
       {groups.map((g) => (
         <Toolbar.Group key={g.key} end={g.end} aria-label={g.key}>
           {g.entries.map((c) => renderEntry(c, ctx, region))}

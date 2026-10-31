@@ -37,3 +37,21 @@
 }
 
 .spacer { flex: 1; }
+
+.sm {
+  --wzl-control-h: 22px;
+  --wzl-button-icon-size: 16px;
+  --wzl-button-pad-x: var(--wzl-space-sm);
+  --wzl-button-font-weight: var(--wzl-font-weight-normal);
+}
+
+.framed {
+  min-height: calc(var(--wzl-control-h) + 4px);
+  background: var(--wzl-surface-raised);
+  border-bottom: 1px solid var(--wzl-border);
+}
+
+.title {
+  composes: label from '../barLabel.module.css';
+  margin-inline-end: var(--wzl-space-sm);
+}

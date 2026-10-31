@@ -15,7 +15,7 @@ A map of the library so agents can find what they need quickly.
 | The lab body and its shared surface's layers | `src/lab/LabSurface.tsx` |
 | Presentation mode: `usePresentation`, `?present`, the seed and its store, the refit and the play controls | `src/lab/presentation.tsx`, `src/lab/openLab.ts`, `src/lab/presentation.less`, `src/lab/PresentedTransport.tsx`, `src/trial/useViewPlacement.ts` |
 | A still for a poster (`<Lab still>`, `?still`), and the host page's `postMessage` play and pause | `src/lab/still.ts`, `src/lab/presentationMessages.ts`, `src/clock/transportHold.ts` |
-| `<Toolbar>` + subcomponents | `src/primitives/Toolbar.tsx` |
+| `<Toolbar>` + subcomponents | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<StatusBar>`, `<StatusBarItem>`, `<StatusBarSpacer>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
 | `<ScaleIndicator>` | `src/primitives/ScaleIndicator.tsx` |
@@ -250,7 +250,7 @@ visible from the code:
 ## Conventions
 
 - All DOM classes start with `lk-` (enforced by `scripts/check-class-prefix.ts`)
-- Component CSS lives in a sibling `.less` file (e.g., `Toolbar.less` next to `Toolbar.tsx`)
+- Component CSS lives in a sibling `.less` file (e.g., `Legend.less` next to `Legend.tsx`)
 - Each primitive ships with a `.test.tsx` and a `.stories.tsx`
 - Design tokens are `--wzl-*` custom properties, from `@weasel-js/theme`; use them in component CSS, never hardcode colors. No `--lk-*` custom property is ever declared, so `var(--lk-…)` silently takes its fallback
 - Capability types live in `src/instrument/types.ts`; do not redefine them in capability-specific modules

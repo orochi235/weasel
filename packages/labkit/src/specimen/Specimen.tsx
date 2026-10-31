@@ -62,7 +62,7 @@ import { JobProgress } from '../primitives/JobProgress';
 import { Legend, type LegendEntry } from '../primitives/Legend';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { Split } from '../primitives/Split';
-import { Toolbar } from '../primitives/Toolbar';
+import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { ZoomControl } from '../primitives/ZoomControl';
 import { ALIGN_ITEMS } from './alignItems';
 
@@ -798,7 +798,7 @@ function LabChrome() {
   return (
     <Section title="Lab chrome">
       <Cell label="Toolbar" wide>
-        <Toolbar aria-label="Trial actions">
+        <Toolbar aria-label="Trial actions" size="sm" framed>
           <Toolbar.Title>My Trial</Toolbar.Title>
           <Toolbar.Group>
             <Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button>

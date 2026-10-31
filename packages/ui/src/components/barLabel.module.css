@@ -1,0 +1,10 @@
+/* A bar's or a toolbar's own name: a field label's face and case, one step heavier, so it reads above its fields' names. */
+.label {
+  font-family: var(--wzl-font-display);
+  font-weight: calc(var(--wzl-font-weight-light) + 100);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
+  color: var(--wzl-fg);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  white-space: nowrap;
+}

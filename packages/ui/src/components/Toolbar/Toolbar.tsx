@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { ToolbarButton } from './ToolbarButton';
 import s from './Toolbar.module.css';
 
 /** Props for {@link Toolbar}. */
@@ -12,21 +13,27 @@ export interface ToolbarProps {
   roving?: boolean;
   /** Lets the controls run onto a second line rather than overflow. */
   wrap?: boolean;
+  /** `sm` is the compact height, for chrome around a working surface rather than a page's own strip. It lowers
+   *  the control height itself, so a slider or a number box inside keeps step with the buttons. */
+  size?: 'md' | 'sm';
+  /** Draws its own strip, a raised surface ruled off below, where the host paints none. */
+  framed?: boolean;
   className?: string;
 }
 
 /**
  * A horizontal run of controls: `role="toolbar"`, filled with any controls and
- * with {@link ToolbarGroup}s and {@link ToolbarSpacer}s. It lays them out and
- * draws no strip of its own; the host paints that. Its gap and padding sit in
+ * with {@link ToolbarGroup}s, {@link ToolbarSpacer}s, a {@link ToolbarTitle} and
+ * {@link ToolbarButton}s. It lays them out and draws no strip of its own unless
+ * `framed`; otherwise the host paints that. Its gap and padding sit in
  * `:where()`, so a host class overrides them.
  */
-export function Toolbar({ children, 'aria-label': ariaLabel, roving = true, wrap, className }: ToolbarProps) {
+export function Toolbar({ children, 'aria-label': ariaLabel, roving = true, wrap, size = 'md', framed, className }: ToolbarProps) {
   const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
   return (
     <div
       ref={roving ? rootRef : undefined}
-      className={[s.toolbar, wrap && s.wrap, className].filter(Boolean).join(' ')}
+      className={[s.toolbar, wrap && s.wrap, size === 'sm' && s.sm, framed && s.framed, className].filter(Boolean).join(' ')}
       role="toolbar"
       aria-label={ariaLabel}
       onKeyDown={roving ? onKeyDown : undefined}
@@ -65,7 +72,16 @@ export function ToolbarSpacer() {
   return <span className={s.spacer} aria-hidden="true" />;
 }
 
+/** The toolbar's own name, set as a bar's is. */
+export function ToolbarTitle({ children }: { children: ReactNode }) {
+  return <span className={s.title}>{children}</span>;
+}
+
 /** A ruled-off run of related controls. */
 Toolbar.Group = ToolbarGroup;
 /** Flexible space that pushes what follows to the far end. */
 Toolbar.Spacer = ToolbarSpacer;
+/** The toolbar's own name. */
+Toolbar.Title = ToolbarTitle;
+/** A ghost button at the toolbar's height. */
+Toolbar.Button = ToolbarButton;

@@ -80,7 +80,7 @@ surface to the expanded trial so no other tile paints over it.
 ```tsx
 import { Toolbar } from "@weasel-js/labkit";
 
-<Toolbar>
+<Toolbar aria-label="Trial actions" size="sm" framed>
   <Toolbar.Title>My Trial</Toolbar.Title>
   <Toolbar.Button onClick={onUndo} disabled={!canUndo}>
     Undo

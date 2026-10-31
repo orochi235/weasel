@@ -43,6 +43,24 @@ export const Spacer: Story = {
   ),
 };
 
+/** `size="sm"` and `framed`: a compact strip of its own, as chrome around a working surface, with a title. */
+export const CompactStrip: Story = {
+  render: () => (
+    <Toolbar aria-label="Trial actions" size="sm" framed>
+      <Toolbar.Title>My Trial</Toolbar.Title>
+      <Toolbar.Group aria-label="History">
+        <Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button>
+        <Toolbar.Button onClick={() => {}} disabled>
+          Redo
+        </Toolbar.Button>
+      </Toolbar.Group>
+      <Toolbar.Group end aria-label="File">
+        <Toolbar.Button onClick={() => {}}>Save</Toolbar.Button>
+      </Toolbar.Group>
+    </Toolbar>
+  ),
+};
+
 /** `wrap` lets a long run take a second line rather than overflow. */
 export const Wrapping: Story = {
   render: () => (

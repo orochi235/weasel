@@ -157,18 +157,11 @@
 
 /* The bar's own name or glyph at the start of its line. */
 .lead {
+  composes: label from '../barLabel.module.css';
   display: flex;
   align-items: center;
   flex: none;
   padding-inline: var(--wzl-space-2);
-  /* A field label's face and case, one step heavier, so the bar's name reads above its fields' names. */
-  font-family: var(--wzl-font-display);
-  font-weight: calc(var(--wzl-font-weight-light) + 100);
-  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
-  color: var(--wzl-fg);
-  text-transform: var(--wzl-params-label-case, uppercase);
-  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
-  white-space: nowrap;
 }
 
 /* A lead that moves its bar in a dock. */
