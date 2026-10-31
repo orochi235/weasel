@@ -25,7 +25,8 @@ import {
 import {
   heldWarpResult, rememberWarpResult, resolvePathWarp, warpFrameFor, type HeldPathWarp,
 } from './pathWarp';
-import { type PathNode, resolveEditablePathOf, type SceneNode, selectedPathNodes, withPath } from '@weasel-js/core';
+import { type PathNode, resolveEditablePathOf, type SceneNode, withPath } from '@weasel-js/core';
+import { selectedWarpLeaves, textsBox, unionBox, type WarpLeaves } from './warpSelection';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -174,14 +175,25 @@ export function splitByWarp(
   return { held, bare, box: worldBoxOf(bare) };
 }
 
+/** The box a fresh warp of `kind` over `leaves` is laid on: around the paths
+ *  holding no such warp, and the text that converts when the warp begins. */
+export function freshWarpBox(
+  scene: Parameters<typeof textsBox>[0], leaves: WarpLeaves, kind: WarpKind,
+): WarpBox | null {
+  return unionBox(splitByWarp(leaves.paths, kind).box, textsBox(scene, leaves.texts));
+}
+
 /**
- * The selected paths' warps of `kind`. A path holding one that still matches
- * its geometry keeps it; the rest get one fresh warp shared between them,
- * laid over the box around them all, so dragging one of its controls warps
- * them together.
+ * The selected paths' warps of `kind`, a selected group's paths among them. A
+ * path holding one that still matches its geometry keeps it; the rest get one
+ * fresh warp shared between them, laid over the box around them all — or over
+ * `box` when given — so dragging one of its controls warps them together.
  */
-export function warpTargets(deps: ActionDeps | undefined, kind: WarpKind, settings: WarpSettings): WarpTarget[] {
-  const { held: out, bare, box } = splitByWarp(selectedPathNodes(deps), kind);
+export function warpTargets(
+  deps: ActionDeps | undefined, kind: WarpKind, settings: WarpSettings, over?: WarpBox | null,
+): WarpTarget[] {
+  const { held: out, bare, box: around } = splitByWarp(selectedWarpLeaves(deps).paths, kind);
+  const box = bare.length > 0 ? (over ?? around) : null;
   if (!box) return out;
   const id = freshWarpId();
   const warp = freshWarp(kind, box, settings);

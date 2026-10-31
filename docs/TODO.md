@@ -203,7 +203,11 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
   corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
   new distort starts Free rather than Perspective, the refit tolerance (0.5,
-  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), and its tool key, F
+  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), that a selected group warps as
+  one under a single quad around its paths, and that selected text converts to outlines when the drag begins,
+  conversion and warp one undo step (both ruled 2026-10-31; `warpSelection.ts`,
+  `packages/path-tools/src/shared/outlineSession.ts`), that the selection's resize and rotation handles hide
+  while a warp tool is active (`hides` in `useWarpTool.ts`), and its tool key, F
   (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
   name may change.
   Closes when the maintainer has driven Perspective and free distort hands-on and the defaults and keys

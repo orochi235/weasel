@@ -57,6 +57,7 @@ export function defineTool<TOverlay = KernelOverlay>(
     },
     actions,
     ...(def.options ? { options: def.options } : {}),
+    ...(def.hides ? { hides: def.hides } : {}),
     menus: def.menus,
     def,
     presentation: def.presentation,

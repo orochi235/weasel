@@ -43,6 +43,9 @@ export interface ToolDef<TOverlay = KernelOverlay> {
    * the active tool. See {@link import('./toolOptions').ToolOptions}.
    */
   options?: import('./toolOptions').ToolOptions;
+  /** Chrome ids (`'selection.resize-handles'`) hidden, and not hit-tested,
+   *  while this is the active tool: chrome its own controls stand in for. */
+  hides?: readonly string[];
 
   /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored

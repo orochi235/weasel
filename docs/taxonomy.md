@@ -174,6 +174,11 @@ gives the tool step actions on `[` `]` and `Shift+[` `Shift+]`, bound at active
 scope so they hold those keys only while it is the active tool. See
 `packages/routing/src/tools/toolOptions.ts`.
 
+A tool **hides** chrome its own controls stand in for (`ToolDef.hides`, a list
+of chrome ids): while it is the active tool those ids are neither drawn nor
+hit-tested, whatever their visibility rules say. The warp tools hide the
+selection's resize and rotation handles this way.
+
 A rail holds tools and **commands**. A command takes a rail slot and runs once
 when pressed; it holds no focus and binds no input, so it is not a Tool and
 `isTool` never sees it. labkit's `CommandItem` is one beside its `ToolItem`,

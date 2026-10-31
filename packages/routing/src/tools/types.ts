@@ -42,6 +42,8 @@ export interface Tool<TOverlay = KernelOverlay> extends Contribution<TOverlay> {
   keybinding?: ToolKeybinding;
   /** The settings its user adjusts while it is active; see `ToolDef.options`. */
   options?: import('./toolOptions').ToolOptions;
+  /** Chrome hidden while this is the active tool; see `ToolDef.hides`. */
+  hides?: readonly string[];
   cursor?: CursorSpec | (() => CursorSpec);
   /** The tool became live: it took the active slot, or its `hotkey` went
    *  down, while it held neither. A lifecycle moment has no pointer, hit or

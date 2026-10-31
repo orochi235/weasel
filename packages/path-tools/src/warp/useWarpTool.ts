@@ -84,6 +84,7 @@ function createWarpToolState() {
     live,
     active: () => active,
     scene: () => deps?.get('scene') as never,
+    outlines: () => deps?.get('createOutlinesAdapter'),
     /** What an invocation of `actionId` passing `given` starts with here,
      *  its tunings included. */
     paramsOf: (actionId: string, given: Record<string, unknown>) => deps?.get('actionParams')?.(actionId, given) ?? given,
@@ -109,6 +110,7 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
       active: state.active,
       settings: () => state.paramsOf(`${kind}.drag`, definedOf(settingsRef.current)) as WarpSettings,
       scene: state.scene,
+      outlines: state.outlines,
       live: state.live,
     });
     return (api: CanvasExtensionApi, deps: ContributionDepReader) => {
@@ -138,6 +140,8 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
       cursor: kind === 'puppet' ? 'crosshair' : 'default',
       actions,
       presentation: { label: label ?? WARP_LABELS[kind], group: 'warp', icon: WARP_ICONS[kind] },
+      // Its controls stand in for the selection's transform handles.
+      hides: ['selection.resize-handles', 'selection.rotation-handle'],
       onActivate: () => state.setActive(true),
       onDeactivate: () => state.setActive(false),
       bindings: bindingsFor(kind, () => definedOf(settingsRef.current)),

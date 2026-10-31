@@ -3,57 +3,11 @@
  * conversion, its slot, and the one undo entry are scene surgery a stub would
  * let slide.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { loadFontOutlines, registerFontOutlines } from '@weasel-js/font';
-import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { boundsOfPath, type Path, type Rect } from '@weasel-js/geom';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import {
-  applyCreateOutlines, asNodeId, type CreateOutlinesAdapter, createScene, defaultCommitAdapter, type NodeId, type TextOutlineSource,
-} from '@weasel-js/core';
+import { applyCreateOutlines, asNodeId } from '@weasel-js/core';
+import { loadTestFont, outlineScene as setup, TEXT, type Data } from '../shared/outlineScene.testing';
 import { smudgeBrushAction } from './smudgeBrush';
-
-const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
-
-interface Data extends Partial<TextOutlineSource> { path?: Path }
-type Pose = { x: number; y: number; width: number; height: number };
-
-const TEXT = (family = 'sm-inter'): Data =>
-  ({ text: 'Hi', style: { fontFamily: family, fontSize: 100 }, fill: { paint: { kind: 'solid', color: '#c00' } } });
-
-function setup({ outlines = true } = {}) {
-  const scene = createScene<Data, 'default', Pose>({ systemLayers: [{ id: 'default' }] });
-  let nextId = 0;
-  const add = (id: string, data: Data, extra: Record<string, unknown> = {}) =>
-    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 200, height: 120 }, data, ...extra });
-  const adapter: CreateOutlinesAdapter = {
-    ...defaultCommitAdapter(scene),
-    getSelection: () => [...scene.getSelection()],
-    setSelection: (ids) => { scene.setSelection(ids.map(asNodeId)); },
-    getTextSource: (id) => {
-      const n = scene.get(asNodeId(id));
-      if (!n || n.kind !== 'mark' || n.data.text == null) return undefined;
-      return { data: n.data as TextOutlineSource, pose: n.pose };
-    },
-    createPathNode: (path, _source, { fill, parent }) => {
-      const b = boundsOfPath(path);
-      return { id: `p-${nextId++}`, kind: 'mark', layer: 'default', parent, pose: { x: b.x, y: b.y, width: b.width, height: b.height }, data: { path, fill } } as { id: string };
-    },
-    createContainerNode: (_s: NodeId, { parent, bounds }: { parent: string | null; bounds: Rect }) =>
-      ({ id: `g-${nextId++}`, kind: 'group', layer: 'default', parent, pose: bounds, data: {} }) as { id: string },
-    applyOps: (ops, label) => { scene.applyBatch(ops, label ?? 'Create Outlines', { ...defaultCommitAdapter(scene), ...adapter }); },
-  };
-  const notices = { warn: vi.fn() };
-  const selection = { get: () => scene.getSelection(), set: (ids: readonly string[]) => scene.setSelection(ids.map(asNodeId)) };
-  const deps = {
-    scene, selection, history: scene.history, notices,
-    view: { get: () => ({ scale: { x: 1, y: 1 } }) },
-    ...(outlines ? { createOutlinesAdapter: adapter } : {}),
-  } as never;
-  return { scene, add, deps, notices, adapter };
-}
 
 const at = (deps: never, x: number, y: number) => ({ deps, world: { x, y } }) as unknown as InvocationCtx;
 const invoker = smudgeBrushAction.invoker as OngoingInvoker;
@@ -67,12 +21,7 @@ function stroke(deps: never, x: number, y0: number, y1: number, reason: 'commit'
   return handle;
 }
 
-beforeEach(async () => {
-  _resetFontRegistryForTests();
-  _resetFontOutlinesForTests();
-  registerFontOutlines('sm-inter', {}, new Uint8Array(readFileSync(INTER_TTF)).buffer);
-  await loadFontOutlines('sm-inter');
-});
+beforeEach(loadTestFont);
 
 describe('smudgeBrushAction over text', () => {
   it('converts text the brush reaches to outlines and smudges them, as one undo entry', () => {

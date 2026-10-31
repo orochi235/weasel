@@ -4,7 +4,7 @@
  */
 import type { ActionDeps, ActionSettings, ActionSettingsState } from '@weasel-js/routing';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { selectedPathNodes } from '@weasel-js/core';
+import { selectedWarpLeaves } from './warpSelection';
 import { resolvePathWarp } from './pathWarp';
 import { SettingsFields } from '../settingsFields';
 
@@ -53,7 +53,7 @@ export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
   const fields = new SettingsFields();
   let distorts = 0;
   let envelopes = 0;
-  for (const { node } of selectedPathNodes(deps)) {
+  for (const { node } of selectedWarpLeaves(deps).paths) {
     const resolved = resolvePathWarp(node);
     if (!resolved) continue;
     const { warp, tolerance } = resolved.held;
