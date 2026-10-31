@@ -117,10 +117,6 @@ Owner tags, after the priority (2026-10-26):
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
   Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
   Envelope mesh as Cloth warp among them.
-- **(P2) [maintainer] Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
-  scale and density, when it shows, and no key to toggle it (`packages/path-tools/src/comb/comb.ts`).
-  Closes when the maintainer has driven the curvature comb hands-on and the defaults and keys he picks
-  are committed.
 - **(P2) [maintainer] Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
