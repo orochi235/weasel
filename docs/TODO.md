@@ -577,8 +577,10 @@ only story runner in the repo.
   served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
   stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
   fsevents reports a path's next change about 100 ms after its last, and median 113 → 115 ms (p90 118 → 148).
+  Closes when the maintainer has ruled whether `forge()` waits for writes to settle off macOS, and either
+  it does, with `replacedFile.test.ts` no longer rewriting until served, or the entry is deleted.
 
-- **(P3) [recheck] A story whose `render` takes no args has no controls.** forge reads a
+- **(P3) [agent] A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
   would read them. `grep 'render: () =>'` lists them. Every story that draws one
@@ -589,14 +591,18 @@ only story runner in the repo.
   `<Strip>` every field kind), a generic component (`DataGrid<Route>`), or one whose
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
+  Closes when every story that draws several instances of its meta's component takes `args` and applies
+  them to each cell, with a case in `storyArgs.test.tsx`.
 
 - **(P3) [maintainer] Whether the workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
   opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
   turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
   up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
+  Closes when the maintainer has ruled on it: on a no, delete the entry; on a yes, when the workshop
+  draws marks on the trial while Report is open.
 
-- **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
+- **(P3) [maintainer] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
   component, or a literal semantic, in the branch the trial's globals read
   (`applyTokenEdits`, `packages/forge/src/shell/cssVars/saveTokens.ts`). One
@@ -605,6 +611,8 @@ only story runner in the repo.
   a value written over it would drop the derivation for every mode and density
   the branch covers. Not decided: whether such an edit should save at all, and
   if so as a pin over the one step or as a change to what it follows.
+  Closes when the maintainer has ruled, and a derived token edited in the panel either saves as he chose,
+  with a case in `saveTokens`' tests, or the panel says it will not be saved.
 
 - **(P3) [agent] windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders
@@ -616,6 +624,8 @@ only story runner in the repo.
   unreleased: layout now places only `visible` children. Once a release carries
   it, raise labkit's `windease` range to it, leave the sidebar unshown when
   `hasSidebar` is false, and retire this entry.
+  Closes when labkit's `windease` range names a release that lays out only `visible` children and
+  `Split.tsx` no longer shows and hides the sidebar node.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
@@ -625,12 +635,16 @@ only story runner in the repo.
   and the one test that needs a real watcher skips. Since 2026-10-30 the symptom is covered: dev
   servers find unreported edits by modification time (`watchRecovery`, beside `watchProbe`), so a
   page gets the edit within seconds rather than never. The cause needs the machine in that state.
+  Closes when a capture of `fseventsd` in that state (a `sample` or `spindump`) names what holds it, or
+  on 2026-12-31 with no sighting, delete it.
 
 ---
 
 - **(P3) [maintainer] Icons for the package pages.** Said to be specced (gray and blue React icons, an orange
   window, and three others), but no spec has been found in the repo or in either account's weasel transcripts.
   Ask where it lives before drawing anything (2026-10-21).
+  Closes when the maintainer has said where the spec lives and the icons are on the package pages, or
+  said there is none and the entry is deleted.
 
 ## Demos & visual regression
 
@@ -640,11 +654,13 @@ only story runner in the repo.
   ± 0.5 in a full run on teitou on 2026-10-24 (at the features-to-domains rename, which touches no ToggleBar code),
   then passed 3 of 3 alone on the same node and tree (job e82589ab). Seen once; a measurement taken
   before a face or a layout settles is the first thing to look for.
+  Closes when it fails again, which makes it a fix, or on 2026-11-30 with no second sighting, delete it.
 
 - **(P3) [waiting] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case failed
   intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
   for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
   reproduced. Delete the entry if the next full runs pass it.
+  Closes when 10 full fleet runs after 2026-10-26 pass it, or at its next failure, which makes it a fix.
 - **(P3) [waiting] `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
@@ -656,12 +672,15 @@ only story runner in the repo.
   viewport under 20× CDP CPU throttling (36 runs) — and six tabs of contention, where 12 copies
   of the file at 4× throttling settled all 540 cases within 321 ms. The lab has no `storageKey`
   here, so no persisted sidebar width carries between tests or files.
+  Closes when the next failure's stdout names the problem it saw, which makes it a fix, or on 2026-11-30
+  with no second sighting, delete it.
 
 - **(P3) [waiting] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" failed once
   in a full fleet run.** At 98d525569 on 2026-10-28 (teitou) the browser project read 534.3125 against
   533.078125 (tolerance 0.5); the same file passed 3 of 3 alone on the fleet at that commit and 3 of 3 at
   its parent. A 1.23 px miss suggests layout read before a reflow settled under load (inferred). Delete the
   entry if the next full runs pass it.
+  Closes when 10 full fleet runs after 2026-10-28 pass it, or at its next failure, which makes it a fix.
 
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
@@ -673,10 +692,14 @@ only story runner in the repo.
   Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
   (Playwright's Linux image under Docker, arm64 rather than CI's x86), not yet run end to end because
   Docker is not running on studio (2026-10-26).
+  Closes when the test saves its typed text in two consecutive Linux CI runs, or the Linux lane
+  reproduces the failure and the fix lands.
 
 - **(P3) [waiting] `effect-chart.spec.ts`'s `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`.** Its
   baselines were first captured on 2026-10-26 (CI run 40266349908); once a few CI runs have compared
   against them, set the ratio from the diffs they report.
+  Closes when `maxDiffRatio` in `tests/visual/effect-chart.spec.ts` is set from the largest diff five CI
+  runs report against these baselines.
 
 - **(P3) [waiting] A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
@@ -687,24 +710,30 @@ only story runner in the repo.
   read, on each request and after two quiet seconds, and logs `[watch] <file> changed with no file
   event` when it fixes one. What is left is the cause: the next time that line appears for a file in
   a checkout, note the server, the file, and whether `fseventsd` was busy, here.
+  Closes when such a line is recorded here with its server, file, and `fseventsd` state, or on 2026-12-31
+  with none, delete it.
 
 - **(P3) [waiting] `npm pack` died with SIGABRT and no output in the consumer smoke step.** A
   `test:fleet:postbuild` run of d9f7bb7ba's predecessor 570d272b7 on 2026-10-24 failed
   `test:smoke:consumer` at `scripts/smoke-consumer-bundle.mjs:271` with `signal: 'SIGABRT'` and empty
   stdout and stderr; a rerun of the same commit passed every step. Seen once. A second sighting
   says it is not load.
+  Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
 ---
 
 ## Backends (WebGL future)
 
 - **(P3) [agent] WebGPU backend.** Separate future spec.
+  Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
 - **(P3) [agent] Headless server-side rendering in Node.** `renderSceneToPixels`
   (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`, which has to
   be WebGL2. `headless-gl` cannot supply one: `gl@8.1.6` (read 2026-10-17) implements WebGL 1.0.3
   only, vertex arrays through `OES_vertex_array_object`, and Node has no `OffscreenCanvas`. Left:
   find a Node binding that provides WebGL2, or host the render in headless Chromium.
-- **(P3) [recheck] Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on
+  Closes when a test renders a scene through `renderSceneToPixels` from a Node process and the pixels
+  match the browser's.
+- **(P3) [maintainer] Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on
   `WeaselRenderer` builds an image's mipmaps the first time a frame draws it at half size or
   smaller, so only an image that is drawn small pays for them. `<Canvas imageMinification>`
   (and `<SceneCanvas>` through it) opts a canvas in; the default is still `'linear'`. Making
@@ -713,8 +742,12 @@ only story runner in the repo.
   small: trilinear filtering blends neighboring cells at the higher mip levels, which `'linear'`
   does not. The cost of `generateMipmap` on a large sheet is not measured. Never mipmap
   `GLTextureCache`; it holds MSDF atlases.
+  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when `'auto'` is the default
+  and the visual baselines are regenerated.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
+  Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
+  on 2027-01-01 with none, delete it.
 
 (WebGL1 fallback explicitly rejected — WebGL2 only.)
 
@@ -726,6 +759,8 @@ only story runner in the repo.
   `apps/devtools-extension/scripts/gen-icons.ts` renders the full mark at every size, and at 16 px
   1x it reads as an orange and dark blob. A crop to the head for the 16 and 32 px sizes would read
   better; that is a call on the mark, not made (2026-10-19).
+  Closes when the maintainer has ruled on the crop and `gen-icons.ts` draws the 16 and 32 px sizes as he
+  chose.
 
 ## Release-gate & build hygiene
 
@@ -748,15 +783,19 @@ only story runner in the repo.
   that line (2026-10-29). Sighted on teitou on 2026-10-30 in the `hud-alloc` branch's run at `9b0c6ee91`, which
   touches only text layout: `press at 553.1,365.0 hovered with cursor "default"; connector where at() expects:
   false; during the drag: nothing else`. The press missed the label, and the view was not the fit `at()` assumes.
+  Closes when the view at the press matches the fit `at()` assumes and the test passes in 50 consecutive
+  fleet runs after that fix.
 
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
+  Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
 - **(P3) [waiting] `Bar.along.browser.test.tsx`'s wheel-and-drag test failed once in Linux CI.** "the wheel and a drag
   along the band scroll; a still press on an action fires it" missed by 13° (`expected 13.05 to be less than or equal
   to 1`, line 247) in CI run 40818081756 on 76adffe24 (2026-10-29), and passed when that job was rerun. The fleet,
   which runs no Linux, has never seen it fail. Waiting on a second sighting.
+  Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
 - **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
   `ubuntu-latest`, while every fleet node is a Mac, so a browser test that leans on the OS fails only in CI.
@@ -767,6 +806,8 @@ only story runner in the repo.
   Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
   (Playwright's Linux image under Docker, arm64 rather than CI's x86; it reproduced CI's numbers exactly).
   Studio's Docker Desktop has to be running (`open -g -a Docker` there).
+  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when the fleet runs the
+  Linux lane on its own.
 
 - **(P3) [maintainer] Whether to find what a long-lived vitest vm worker builds up that crashed V8.**
   Fleet runs on teitou died from a worker SIGSEGV (a jump to address 0 under `PromiseConstructor`
@@ -779,6 +820,8 @@ only story runner in the repo.
   aged worker accumulates, and why only teitou crashed, are unknown. The cost of not knowing is that
   raising or removing the limit would bring it back. Whether that is worth a heap-snapshot hunt is
   the open call.
+  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when a heap snapshot names
+  what an aged worker accumulates.
 
 - **(P2) [maintainer] Browser test files fail to load when the node's network changes.** A file
   fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
@@ -808,10 +851,14 @@ only story runner in the repo.
     events and leaves the LAN-wide ones, or have `scripts/vitest-overlap.mjs` run again only the
     files that loaded no tests when the run logged `ERR_NETWORK_CHANGED`. The second is a rerun the
     suite does on its own, which nothing in it does today.
+    Closes when studio's Wi-Fi is off while it has Ethernet, or `scripts/vitest-overlap.mjs` reruns the
+    files that loaded no tests in a run that logged `ERR_NETWORK_CHANGED`.
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
   factories, shape kinds, and the `features` presets; the rest of the public exports are uncovered.
+  Closes when the maintainer has said whether he wants the inventory: on a no, delete the entry; on a
+  yes, when the barrel test covers every public export.
 
 ---
 
@@ -823,3 +870,5 @@ only story runner in the repo.
   registration.** Both are on the registry at 1.11.1 under `latest` and `pre` (`npm view`,
   2026-10-21); whether each is registered as a trusted publisher (`docs/releasing.md`, "Setting up a
   new package") can only be read on npmjs.com.
+  Closes when the maintainer has read both packages' settings on npmjs.com and registered any that was
+  missing.
