@@ -21,11 +21,11 @@ export const LabelAlone: Story = { args: { pref: { ...note, description: '' } } 
 
 /** A `separator` leaf between two labels. */
 export const Separator: Story = {
-  render: () => (
+  render: (args) => (
     <>
-      <PrefLabelLine pref={{ ...note, description: '' }} />
+      <PrefLabelLine {...args} pref={{ ...note, description: '' }} />
       <PrefRule />
-      <PrefLabelLine pref={{ ...note, name: 'Angles are in degrees.', description: '' }} />
+      <PrefLabelLine {...args} pref={{ ...note, name: 'Angles are in degrees.', description: '' }} />
     </>
   ),
 };

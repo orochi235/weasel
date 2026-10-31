@@ -1,7 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Input } from '@weasel-js/ui/components/Input';
-import { TokenField } from '@weasel-js/ui/components/TokenField';
+import { TokenField, type TokenFieldProps } from '@weasel-js/ui/components/TokenField';
 
 const meta: Meta<typeof TokenField> = {
   title: 'ui/TokenField',
@@ -11,24 +11,24 @@ export default meta;
 
 type Story = StoryObj<typeof TokenField>;
 
-function Strings({ reorder }: { reorder?: boolean }): ReactElement {
+function Strings({ args, reorder }: { args: Story['args']; reorder?: boolean }): ReactElement {
   const [value, setValue] = useState(['*.ts', '*.tsx', '!*.test.ts', 'src/**', 'packages/*/src/**']);
-  return <TokenField aria-label="Glob" value={value} onChange={setValue} reorder={reorder} placeholder="Add a pattern" />;
+  return <TokenField {...(args as TokenFieldProps)} aria-label="Glob" value={value} onChange={setValue} reorder={reorder} placeholder="Add a pattern" />;
 }
 
 /** Type and press Enter or a comma to add; click a chip to edit it. Left, Right and Backspace move through them. */
 export const Default: Story = {
-  render: () => <Strings />,
+  render: (args) => <Strings args={args} />,
 };
 
 /** Drag a chip into place, across lines as they wrap, or press Alt+Left / Alt+Right on one. */
 export const Reorder: Story = {
-  render: () => <Strings reorder />,
+  render: (args) => <Strings args={args} reorder />,
 };
 
 type Option = { value: string; label: string };
 
-function Options(): ReactElement {
+function Options({ args }: { args: Story['args'] }): ReactElement {
   const [value, setValue] = useState<Option[]>([
     { value: 'sm', label: 'Small' },
     { value: 'md', label: 'Medium' },
@@ -37,6 +37,7 @@ function Options(): ReactElement {
   ]);
   return (
     <TokenField<Option>
+      {...args}
       aria-label="Option"
       reorder
       value={value}
@@ -57,5 +58,5 @@ function Options(): ReactElement {
 
 /** Tokens that are not strings: the chip shows a label, its tooltip the value, and a popover edits both. */
 export const Records: Story = {
-  render: () => <Options />,
+  render: (args) => <Options args={args} />,
 };

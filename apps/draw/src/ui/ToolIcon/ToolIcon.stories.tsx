@@ -18,11 +18,11 @@ export const Default: Story = { args: { tool: 'rect', size: 20 } };
  *  outside `KIT_SHAPE_KINDS`; `custom` stands in for a consumer-defined tool. */
 export const EveryTool: Story = {
   tags: ['gallery'],
-  render: () => (
+  render: (args) => (
     <div className={s.sheet}>
       {[...KIT_SHAPE_KINDS, 'image', 'custom'].map((tool) => (
         <figure key={tool}>
-          <ToolIcon tool={tool} />
+          <ToolIcon {...args} tool={tool} />
           <figcaption>{tool}</figcaption>
         </figure>
       ))}

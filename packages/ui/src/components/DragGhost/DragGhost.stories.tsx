@@ -12,7 +12,7 @@ type Story = StoryObj<typeof DragGhost>;
 /** Drag the chip: it stays where it is, and its ghost follows the pointer, keeping the point it was picked up by under
  *  it. `useReorderDragList` computes the same point for a list. */
 export const FollowsThePointer: Story = {
-  render: () => {
+  render: (args) => {
     function Chip() {
       const [ghost, setGhost] = useState<{ left: number; top: number; width: number } | null>(null);
       const [from, setFrom] = useState<HTMLElement | null>(null);
@@ -36,7 +36,7 @@ export const FollowsThePointer: Story = {
         >
           Drag me
           {ghost && from ? (
-            <DragGhost at={ghost} from={from}>
+            <DragGhost {...args} at={ghost} from={from}>
               <div style={{ padding: '6px 10px' }}>Drag me</div>
             </DragGhost>
           ) : null}

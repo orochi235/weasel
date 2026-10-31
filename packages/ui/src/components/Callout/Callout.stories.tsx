@@ -30,7 +30,7 @@ export const Composed: Story = {
 };
 
 export const Grades: Story = {
-  render: () => {
+  render: (args) => {
     function Row() {
       const infoRef = useRef<HTMLButtonElement>(null);
       const warnRef = useRef<HTMLButtonElement>(null);
@@ -41,9 +41,9 @@ export const Grades: Story = {
           <button ref={infoRef} type="button" onClick={() => setOpen('info')}>info</button>
           <button ref={warnRef} type="button" onClick={() => setOpen('warning')}>warning</button>
           <button ref={dangerRef} type="button" onClick={() => setOpen('danger')}>danger</button>
-          <Callout triggerRef={infoRef} isOpen={open === 'info'} onOpenChange={(o) => !o && setOpen(null)} grade="info" title="Info">Neutral guidance.</Callout>
-          <Callout triggerRef={warnRef} isOpen={open === 'warning'} onOpenChange={(o) => !o && setOpen(null)} grade="warn" title="Warning">Something needs attention.</Callout>
-          <Callout triggerRef={dangerRef} isOpen={open === 'danger'} onOpenChange={(o) => !o && setOpen(null)} grade="danger" title="Danger">Destructive consequence ahead.</Callout>
+          <Callout {...args} triggerRef={infoRef} isOpen={open === 'info'} onOpenChange={(o) => !o && setOpen(null)} grade="info" title="Info">Neutral guidance.</Callout>
+          <Callout {...args} triggerRef={warnRef} isOpen={open === 'warning'} onOpenChange={(o) => !o && setOpen(null)} grade="warn" title="Warning">Something needs attention.</Callout>
+          <Callout {...args} triggerRef={dangerRef} isOpen={open === 'danger'} onOpenChange={(o) => !o && setOpen(null)} grade="danger" title="Danger">Destructive consequence ahead.</Callout>
         </>
       );
     }

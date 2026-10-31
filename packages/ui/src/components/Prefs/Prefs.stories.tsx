@@ -188,10 +188,10 @@ const STORY_RENDERERS = {
 };
 
 export const Form: Story = {
-  render: function FormStory() {
+  render: function FormStory(args) {
     const { values, onChange } = useStoryValues();
     return (
-      <PrefsForm schema={SCHEMA} values={values} onChange={onChange} renderers={STORY_RENDERERS} />
+      <PrefsForm {...args} schema={SCHEMA} values={values} onChange={onChange} renderers={STORY_RENDERERS} />
     );
   },
 };
@@ -202,11 +202,11 @@ const MIXED: ReadonlySet<string> = new Set(['canvas.zoomStep']);
 /** Two rows marked as selected, one of them standing for several values that disagree. Cmd or Ctrl on a
  *  press reports a toggle, which this story takes as adding the row or taking it out. */
 export const SeveralSelected: Story = {
-  render: function SeveralSelectedStory() {
+  render: function SeveralSelectedStory(args) {
     const { values, onChange } = useStoryValues();
     const [selected, setSelected] = useState<readonly string[]>(SEVERAL);
     return (
-      <PrefsForm schema={SCHEMA} values={values} onChange={onChange} renderers={STORY_RENDERERS} mixed={MIXED}
+      <PrefsForm {...args} schema={SCHEMA} values={values} onChange={onChange} renderers={STORY_RENDERERS} mixed={MIXED}
         selected={selected}
         onSelect={(path, how) => setSelected((cur) =>
           !how.toggle ? [path] : cur.includes(path) ? cur.filter((p) => p !== path) : [...cur, path])} />
@@ -286,11 +286,11 @@ export const Rail: Story = {
       expect(pane.clientHeight).toBe(layout.clientHeight);
     });
   },
-  render: function RailStory() {
+  render: function RailStory(args) {
     const { values, onChange } = useStoryValues();
     return (
       <div style={{ height: 520, border: '1px solid var(--wzl-border)', borderRadius: 6, overflow: 'hidden' }}>
-        <PrefsForm
+        <PrefsForm {...args}
           layout="rail"
           schema={DEEP_SCHEMA}
           values={values}
@@ -303,11 +303,11 @@ export const Rail: Story = {
 };
 
 export const RailFilterable: Story = {
-  render: function RailFilterableStory() {
+  render: function RailFilterableStory(args) {
     const { values, onChange } = useStoryValues();
     return (
       <div style={{ height: 520, border: '1px solid var(--wzl-border)', borderRadius: 6, overflow: 'hidden' }}>
-        <PrefsForm
+        <PrefsForm {...args}
           layout="rail"
           filterable
           schema={DEEP_SCHEMA}
@@ -376,8 +376,8 @@ const CONDITIONS_SCHEMA: PrefGroup = {
 
 /** `enableIf` and `showIf`: with Snap off, two rows are drawn disabled and the spacing row is not drawn at all. */
 export const Conditions: Story = {
-  render: function ConditionsStory() {
+  render: function ConditionsStory(args) {
     const { values, onChange } = useStoryValues();
-    return <PrefsForm layout="list" schema={CONDITIONS_SCHEMA} values={values} onChange={onChange} />;
+    return <PrefsForm {...args} layout="list" schema={CONDITIONS_SCHEMA} values={values} onChange={onChange} />;
   },
 };

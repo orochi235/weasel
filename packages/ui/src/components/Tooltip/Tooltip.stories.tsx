@@ -26,14 +26,14 @@ export const Basic: Story = {
 };
 
 export const Placements: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
       {(['top', 'bottom', 'left', 'right'] as const).map((p) => (
         <TooltipTrigger key={p}>
           <Focusable>
             <button type="button">{p}</button>
           </Focusable>
-          <Tooltip placement={p}>Placement: {p}</Tooltip>
+          <Tooltip {...args} placement={p}>Placement: {p}</Tooltip>
         </TooltipTrigger>
       ))}
     </div>

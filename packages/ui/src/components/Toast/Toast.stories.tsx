@@ -13,7 +13,7 @@ type Story = StoryObj<typeof ToastRegion>;
 const queue = createToastQueue();
 
 export const Interactive: Story = {
-  render: () => (
+  render: (args) => (
     <>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Button onClick={() => queue.add('info', 'Heads up', { description: 'Neutral information.' })}>info</Button>
@@ -22,7 +22,7 @@ export const Interactive: Story = {
         <Button onClick={() => queue.add('danger', 'Export failed', { ttlMs: null, description: 'Sticky until dismissed.' })}>danger (sticky)</Button>
         <Button variant="ghost" onClick={() => queue.add('info', 'Deduped', { id: 'dedupe-demo', description: 'Re-click: replaces, never stacks.' })}>deduped id</Button>
       </div>
-      <ToastRegion queue={queue} />
+      <ToastRegion {...args} queue={queue} />
     </>
   ),
 };

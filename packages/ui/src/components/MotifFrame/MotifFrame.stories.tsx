@@ -27,24 +27,24 @@ function Jacks({ names }: { names: readonly string[] }) {
 const VIDEO = ['Y', 'PB', 'PR'];
 
 export const Motifs: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.wall}>
-      <MotifFrame title="Rule" motif={rule()}>
+      <MotifFrame {...args} title="Rule" motif={rule()}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Component" motif={stereo()} tint={0}>
+      <MotifFrame {...args} title="Component" motif={stereo()} tint={0}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Notch" motif={notch()}>
+      <MotifFrame {...args} title="Notch" motif={notch()}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Tab" motif={tab()} tint={2}>
+      <MotifFrame {...args} title="Tab" motif={tab()} tint={2}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Plaque" motif={plaque()} tint={4}>
+      <MotifFrame {...args} title="Plaque" motif={plaque()} tint={4}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Titlebar" motif={titlebar()}>
+      <MotifFrame {...args} title="Titlebar" motif={titlebar()}>
         <Jacks names={VIDEO} />
       </MotifFrame>
     </div>
@@ -52,15 +52,15 @@ export const Motifs: Story = {
 };
 
 export const StereoSides: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.wall}>
       {(['left', 'right', 'top', 'bottom'] as const).map((side, i) => (
-        <MotifFrame key={side} title={`Audio ${side}`} motif={stereo({ side })} tint={i}>
+        <MotifFrame {...args} key={side} title={`Audio ${side}`} motif={stereo({ side })} tint={i}>
           <Jacks names={['L', 'R']} />
         </MotifFrame>
       ))}
       {(['start', 'center', 'end'] as const).map((labelAlign) => (
-        <MotifFrame key={labelAlign} title={labelAlign} motif={stereo({ labelAlign })} tint={5}>
+        <MotifFrame {...args} key={labelAlign} title={labelAlign} motif={stereo({ labelAlign })} tint={5}>
           <Jacks names={['L', 'R', 'SUB']} />
           <Jacks names={['L', 'R', 'SUB']} />
         </MotifFrame>
@@ -70,10 +70,10 @@ export const StereoSides: Story = {
 };
 
 export const HeadingParts: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.wall}>
       {[rule(), stereo({ side: 'top' }), notch(), tab(), plaque(), titlebar()].map((motif, i) => (
-        <MotifFrame
+        <MotifFrame {...args}
           key={motif.id}
           title={motif.id}
           motif={motif}
@@ -92,10 +92,10 @@ export const HeadingParts: Story = {
 };
 
 export const PlaqueMix: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.wall}>
       {[100, 60, 30].map((mix) => (
-        <MotifFrame key={mix} title={`${mix}%`} motif={plaque({ mix })} tint={1}>
+        <MotifFrame {...args} key={mix} title={`${mix}%`} motif={plaque({ mix })} tint={1}>
           <Jacks names={VIDEO} />
         </MotifFrame>
       ))}

@@ -20,10 +20,10 @@ export const Open: Story = {
 /** Proofed large, because an off-center bar is a blurry pixel at 13px and
  *  obviously wrong at 104. The right-hand column is the size it actually ships. */
 export const Sizes: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
       {[104, 52, 26, 13].map((size) => (
-        <Disclosure key={size} open={false} onToggle={() => {}} label={`${size}px`} size={size} />
+        <Disclosure {...args} key={size} open={false} onToggle={() => {}} label={`${size}px`} size={size} />
       ))}
     </div>
   ),
@@ -81,11 +81,11 @@ export const FacetTree: Story = {
 
 /** Every state side by side: shut, open, and disabled. */
 export const States: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 16 }}>
-      <Disclosure open={false} onToggle={() => {}} label="Shut" />
-      <Disclosure open onToggle={() => {}} label="Open" />
-      <Disclosure open={false} onToggle={() => {}} label="Disabled" disabled />
+      <Disclosure {...args} open={false} onToggle={() => {}} label="Shut" />
+      <Disclosure {...args} open onToggle={() => {}} label="Open" />
+      <Disclosure {...args} open={false} onToggle={() => {}} label="Disabled" disabled />
     </div>
   ),
 };

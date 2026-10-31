@@ -20,7 +20,7 @@ const STYLE_TOGGLES = [
 ] as const;
 
 export const OneControlGroup: Story = {
-  render: () => {
+  render: (args) => {
     const [on, setOn] = useState<ReadonlySet<string>>(new Set());
     const toggle = (key: string) =>
       setOn((prev) => {
@@ -29,7 +29,7 @@ export const OneControlGroup: Story = {
         return next;
       });
     return (
-      <ToolOptionsBar label="Text">
+      <ToolOptionsBar {...args} label="Text">
         {STYLE_TOGGLES.map(({ key, label, ariaLabel }) => (
           <Button
             key={key}
@@ -53,9 +53,9 @@ export const OneControlGroup: Story = {
 // row's fixed height) or clipping (which would strand controls with
 // no way to reach them).
 export const ManyControlsOverflow: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ width: 360, border: '1px dashed var(--wzl-border)' }}>
-      <ToolOptionsBar label="Text">
+      <ToolOptionsBar {...args} label="Text">
         {Array.from({ length: 16 }, (_, i) => (
           <Button key={i} size="sm" variant="ghost">
             {`Opt ${i + 1}`}

@@ -50,10 +50,10 @@ export const ReadsItsValue: Story = {
 /** `shortcut` hovers as `New (⌘N)`; `tooltip` replaces that text with a
  *  longer hint for a label too terse to say what the menu holds. */
 export const Tooltips: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', gap: 12 }}>
-      <MenuButton label="New" shortcut="⌘N" items={INSTRUMENTS} onAction={() => {}} />
-      <MenuButton label="Debug" tooltip="Debug surfaces" items={INSTRUMENTS} onAction={() => {}} />
+      <MenuButton {...args} label="New" shortcut="⌘N" items={INSTRUMENTS} onAction={() => {}} />
+      <MenuButton {...args} label="Debug" tooltip="Debug surfaces" items={INSTRUMENTS} onAction={() => {}} />
     </div>
   ),
 };
@@ -67,9 +67,9 @@ const PAGES = [
 /** A row with an `href` is a link, and `isCurrent` marks the page that is
  *  open. `bare` drops the field frame, so a heading can be the trigger. */
 export const HeadingOfLinks: Story = {
-  render: () => (
+  render: (args) => (
     <h1>
-      <MenuButton bare label="Dashboard" items={PAGES} />
+      <MenuButton {...args} bare label="Dashboard" items={PAGES} />
     </h1>
   ),
 };

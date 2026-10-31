@@ -28,9 +28,9 @@ const Tile = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const OneTile: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ height: 400 }}>
-      <Workspace>
+      <Workspace {...args}>
         <Tile>1</Tile>
       </Workspace>
     </div>
@@ -38,9 +38,9 @@ export const OneTile: Story = {
 };
 
 export const ThreeTiles: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ height: 400 }}>
-      <Workspace>
+      <Workspace {...args}>
         <Tile>1</Tile>
         <Tile>2</Tile>
         <Tile>3</Tile>
@@ -50,9 +50,9 @@ export const ThreeTiles: Story = {
 };
 
 export const SevenTiles: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ height: 600 }}>
-      <Workspace>
+      <Workspace {...args}>
         {Array.from({ length: 7 }).map((_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static demo list
           <Tile key={i}>{i + 1}</Tile>
@@ -65,9 +65,9 @@ export const SevenTiles: Story = {
 /** Draggable seams. Drag a tile edge, or Tab to a seam and press an arrow —
  *  a grid moves extents a whole cell at a time. */
 export const Resizable: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ height: 500 }}>
-      <Workspace ids={['a', 'b', 'c', 'd', 'e']} resizable>
+      <Workspace {...args} ids={['a', 'b', 'c', 'd', 'e']} resizable>
         <Tile>1</Tile>
         <Tile>2</Tile>
         <Tile>3</Tile>
@@ -83,9 +83,9 @@ export const Resizable: Story = {
  *  remounted; Escape, the close button, or a click in the margin puts it back.
  *  Tile 1 also opens on a double-click, through `expandOnDoubleClick`. */
 export const Lightbox: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ height: 500 }}>
-      <Workspace ids={['a', 'b', 'c']} resizable expandOnDoubleClick={(id) => id === 'a'}>
+      <Workspace {...args} ids={['a', 'b', 'c']} resizable expandOnDoubleClick={(id) => id === 'a'}>
         <Tile>1</Tile>
         <Tile>2</Tile>
         <Tile>3</Tile>

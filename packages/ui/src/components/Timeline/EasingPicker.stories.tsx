@@ -19,15 +19,15 @@ function Held(props: Partial<EasingPickerProps>): ReactElement {
 
 /** Standing alone, it names its menu `Easing`. */
 export const Default: Story = {
-  render: () => <Held />,
+  render: (args) => <Held {...args} />,
 };
 
 /** In a property row the row's label names the menu, so the picker draws none of its own. */
 export const InARow: Story = {
-  render: () => (
+  render: (args) => (
     <PropertyList pack="one-up">
       <PropertyRow group label="Fade ease">
-        <Held />
+        <Held {...args} />
       </PropertyRow>
     </PropertyList>
   ),

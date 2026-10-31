@@ -674,20 +674,6 @@ only story runner in the repo.
   Closes when the maintainer has ruled whether `forge()` waits for writes to settle off macOS, and either
   it does, with `replacedFile.test.ts` no longer rewriting until served, or the entry is deleted.
 
-- **(P3) [agent] A story whose `render` takes no args has no controls.** forge reads a
-  control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
-  and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. `grep 'render: () =>'` lists them. Every story that draws one
-  instance of the meta's component, plain or inside a harness holding state, now
-  takes `args` and passes them on (`storyArgs.test.tsx` in `packages/ui/src/components`
-  and `packages/labkit/src`). What is left draws several instances, something other
-  than the meta's component (`Timeline`'s `Live` draws `AnimatedTimeline`, `BarField`'s
-  `<Strip>` every field kind), a generic component (`DataGrid<Route>`), or one whose
-  props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
-  whether a matrix story should take args and apply them to every cell.
-  Closes when every story that draws several instances of its meta's component takes `args` and applies
-  them to each cell, with a case in `storyArgs.test.tsx`.
-
 - **(P3) [maintainer] Whether the workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
   opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop

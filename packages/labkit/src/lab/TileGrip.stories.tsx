@@ -10,7 +10,7 @@ export default meta;
 
 type Story = StoryObj<typeof TileGrip>;
 
-const Tile = ({ label }: { label: string }) => (
+const Tile = ({ args, label }: { args: Story['args']; label: string }) => (
   <div
     style={{
       background: 'var(--wzl-surface-raised)',
@@ -23,6 +23,7 @@ const Tile = ({ label }: { label: string }) => (
     }}
   >
     <TileGrip
+      {...args}
       style={{
         padding: 'var(--wzl-space-sm) var(--wzl-space-md)',
         borderBottom: '1px solid var(--wzl-border)',
@@ -34,13 +35,13 @@ const Tile = ({ label }: { label: string }) => (
   </div>
 );
 
-function ReorderableTiles() {
+function ReorderableTiles({ args }: { args: Story['args'] }) {
   const [ids, setIds] = useState(['a', 'b', 'c']);
   return (
     <div style={{ height: 400 }}>
       <Workspace ids={ids} reorderable onReorder={setIds}>
         {ids.map((id) => (
-          <Tile key={id} label={id} />
+          <Tile key={id} args={args} label={id} />
         ))}
       </Workspace>
     </div>
@@ -50,14 +51,14 @@ function ReorderableTiles() {
 /** Plain tiles, each with a grip for a header. Drag a header to move its tile;
  *  the workspace reports the new order and the story commits it. */
 export const Reorderable: Story = {
-  render: () => <ReorderableTiles />,
+  render: (args) => <ReorderableTiles args={args} />,
 };
 
 /** Outside a reorderable workspace a grip is a plain `div`. */
 export const OutsideWorkspace: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ height: 160, width: 240 }}>
-      <Tile label="a" />
+      <Tile args={args} label="a" />
     </div>
   ),
 };

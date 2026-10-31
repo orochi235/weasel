@@ -35,30 +35,30 @@ const immediate = { timing: 'immediate', run } as const;
 
 /** A registered action fired by key, under the leaf's own name and icon. */
 export const Enabled: Story = {
-  render: () => (
+  render: (args) => (
     <Host actions={[{ id: 'edit.undo', label: 'Undo', shortcut: '⌘Z', invoker: immediate }]}>
-      <BarAction leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo' })} path="undo" />
+      <BarAction {...args} leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo' })} path="undo" />
     </Host>
   ),
 };
 
 /** The action says it cannot run now. */
 export const Disabled: Story = {
-  render: () => (
+  render: (args) => (
     <Host actions={[{ id: 'edit.undo', label: 'Undo', invoker: immediate, enabled: () => 'not-applicable' }]}>
-      <BarAction leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo' })} path="undo" />
+      <BarAction {...args} leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo' })} path="undo" />
     </Host>
   ),
 };
 
 /** An action that reports `active` holds its button down. */
 export const Pressed: Story = {
-  render: () => {
+  render: (args) => {
     function Snap() {
       const [on, setOn] = useState(true);
       return (
         <Host actions={[{ id: 'view.snap', label: 'Snap', invoker: { timing: 'immediate', run: () => setOn((v) => !v) }, active: () => on }]}>
-          <BarAction leaf={leaf({ name: 'Snap', action: 'view.snap', control: 'button' })} path="snap" />
+          <BarAction {...args} leaf={leaf({ name: 'Snap', action: 'view.snap', control: 'button' })} path="snap" />
         </Host>
       );
     }
@@ -68,9 +68,9 @@ export const Pressed: Story = {
 
 /** A `run` leaf waits out the promise it returned. */
 export const Pending: Story = {
-  render: () => (
+  render: (args) => (
     <Host actions={[]}>
-      <BarAction
+      <BarAction {...args}
         leaf={leaf({ name: 'Export', control: 'button', run: () => new Promise((done) => setTimeout(done, 1500)) })}
         path="export"
       />
@@ -80,18 +80,18 @@ export const Pending: Story = {
 
 /** `control: 'button'` reads the label beside the icon. */
 export const Labeled: Story = {
-  render: () => (
+  render: (args) => (
     <Host actions={[{ id: 'edit.undo', label: 'Undo', invoker: immediate }]}>
-      <BarAction leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo', control: 'button' })} path="undo" />
+      <BarAction {...args} leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo', control: 'button' })} path="undo" />
     </Host>
   ),
 };
 
 /** A key nothing registered answers to: a dead button whose tooltip names the key. */
 export const UnknownKey: Story = {
-  render: () => (
+  render: (args) => (
     <Host actions={[]}>
-      <BarAction leaf={leaf({ name: 'Flatten', action: 'layers.flatten' })} path="flatten" />
+      <BarAction {...args} leaf={leaf({ name: 'Flatten', action: 'layers.flatten' })} path="flatten" />
     </Host>
   ),
 };

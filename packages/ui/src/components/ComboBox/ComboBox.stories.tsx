@@ -53,11 +53,11 @@ export const Controlled: Story = {
  *  "Vermilion" — needs and leaves the rest of the row to its neighbors; the
  *  default `fill` swallows the slack and squeezes them to min-content. */
 export const FitWidth: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 480 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button type="button">Add trial</button>
-        <ComboBox
+        <ComboBox {...args}
           aria-label="Fits its options"
           width="fit"
           placeholder="Filter…"
@@ -67,7 +67,7 @@ export const FitWidth: Story = {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button type="button">Add trial</button>
-        <ComboBox
+        <ComboBox {...args}
           aria-label="Fills the row"
           placeholder="Filter…"
           options={[...COLORS, { value: 'v', label: 'Vermilion' }]}
@@ -88,7 +88,7 @@ const PARTS = [
 ];
 
 export const AsyncOptions: Story = {
-  render: () => {
+  render: (args) => {
     const [committed, setCommitted] = useState<string>('—');
     const async = useAsyncOptions<string>({
       debounceMs: 150,
@@ -102,7 +102,7 @@ export const AsyncOptions: Story = {
     });
     return (
       <div style={{ display: 'grid', gap: 12 }}>
-        <ComboBox
+        <ComboBox {...(args as ComboBoxProps<string>)}
           label="Part"
           placeholder="Type a part number…"
           allowsCustomValue
@@ -123,13 +123,13 @@ export const AsyncOptions: Story = {
 };
 
 export const LoadFailed: Story = {
-  render: () => {
+  render: (args) => {
     const async = useAsyncOptions<string>({
       debounceMs: 0,
       load: () => Promise.reject(new Error('offline')),
     });
     return (
-      <ComboBox
+      <ComboBox {...args}
         label="Part"
         placeholder="Type anything…"
         filter="none"

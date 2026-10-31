@@ -17,10 +17,11 @@ const ctx: SidebarSlotContext = { collapsedSections: {}, setSectionCollapsed: ()
 
 // jsdom has no layout, so this runs in the browser story projects.
 export const LastSectionFillsItsPane: Story = {
-  render: () => (
+  render: (args) => (
     <LabRoot>
       <div className="lk-lab__aside" data-testid="pane" style={{ height: 400 }}>
         <SidebarRegion
+          {...args}
           ctx={ctx}
           contributions={[
             { id: 'first', region: 'sidebar', item: { title: 'First', body: <p>one</p> } },

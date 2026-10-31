@@ -13,8 +13,8 @@ type Story = StoryObj<typeof Toolbar>;
 
 /** Groups rule themselves off; an `end` group sits at the far end, unruled. */
 export const Groups: Story = {
-  render: () => (
-    <Toolbar aria-label="Document">
+  render: (args) => (
+    <Toolbar {...args} aria-label="Document">
       <Toolbar.Group aria-label="History">
         <Button variant="ghost">Undo</Button>
         <Button variant="ghost">Redo</Button>
@@ -33,8 +33,8 @@ export const Groups: Story = {
 
 /** A spacer pushes what follows to the far end. */
 export const Spacer: Story = {
-  render: () => (
-    <Toolbar aria-label="Trial">
+  render: (args) => (
+    <Toolbar {...args} aria-label="Trial">
       <Button variant="ghost">Undo</Button>
       <Button variant="ghost" pressed>Grid</Button>
       <Toolbar.Spacer />
@@ -45,8 +45,8 @@ export const Spacer: Story = {
 
 /** `size="sm"` and `framed`: a compact strip of its own, as chrome around a working surface, with a title. */
 export const CompactStrip: Story = {
-  render: () => (
-    <Toolbar aria-label="Trial actions" size="sm" framed>
+  render: (args) => (
+    <Toolbar {...args} aria-label="Trial actions" size="sm" framed>
       <Toolbar.Title>My Trial</Toolbar.Title>
       <Toolbar.Group aria-label="History">
         <Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button>
@@ -63,9 +63,9 @@ export const CompactStrip: Story = {
 
 /** `wrap` lets a long run take a second line rather than overflow. */
 export const Wrapping: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.narrow}>
-      <Toolbar aria-label="Many" wrap>
+      <Toolbar {...args} aria-label="Many" wrap>
         {['One', 'Two', 'Three', 'Four', 'Five', 'Six'].map((n) => (
           <Toolbar.Group key={n}>
             <Button variant="ghost">{n}</Button>

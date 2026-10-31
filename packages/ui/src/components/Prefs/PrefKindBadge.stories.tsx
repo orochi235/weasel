@@ -15,10 +15,10 @@ export const Default: Story = {};
 
 /** Every built-in kind, then a custom kind and a group, which are drawn muted. */
 export const AllKinds: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.row}>
       {['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object', 'field', 'registry-enum', 'group'].map((k) => (
-        <PrefKindBadge key={k} kind={k} />
+        <PrefKindBadge {...args} key={k} kind={k} />
       ))}
     </div>
   ),

@@ -4,7 +4,7 @@ import {
   ActionsProvider,
   type Action,
 } from '@weasel-js/core';
-import { ActionBar } from '@weasel-js/ui/components/ActionBar';
+import { ActionBar, type ActionBarOptions } from '@weasel-js/ui/components/ActionBar';
 import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
@@ -54,37 +54,37 @@ export default meta;
 type Story = StoryObj<typeof ActionBar>;
 
 export const Default: Story = {
-  render: () => (
+  render: (args) => (
     <ActionsProvider>
       <RegisterActions actions={alignActions} />
-      <ActionBar group="align" />
+      <ActionBar {...(args as ActionBarOptions)} group="align" />
     </ActionsProvider>
   ),
 };
 
 export const Vertical: Story = {
-  render: () => (
+  render: (args) => (
     <ActionsProvider>
       <RegisterActions actions={alignActions} />
-      <ActionBar group="align" orientation="vertical" />
+      <ActionBar {...(args as ActionBarOptions)} group="align" orientation="vertical" />
     </ActionsProvider>
   ),
 };
 
 export const MixedEnabledState: Story = {
-  render: () => (
+  render: (args) => (
     <ActionsProvider>
       <RegisterActions actions={mixedEnabled} />
-      <ActionBar group="mix" />
+      <ActionBar {...(args as ActionBarOptions)} group="mix" />
     </ActionsProvider>
   ),
 };
 
 export const WithIconAndLabelOverrides: Story = {
-  render: () => (
+  render: (args) => (
     <ActionsProvider>
       <RegisterActions actions={alignActions} />
-      <ActionBar
+      <ActionBar {...(args as ActionBarOptions)}
         group="align"
         icons={{ 'align.center': icon('fit') }}
         labels={{ 'align.center': 'Center on canvas' }}
@@ -94,10 +94,10 @@ export const WithIconAndLabelOverrides: Story = {
 };
 
 export const EmptyGroup: Story = {
-  render: () => (
+  render: (args) => (
     <ActionsProvider>
       <RegisterActions actions={alignActions} />
-      <ActionBar group="this-group-has-no-actions" />
+      <ActionBar {...(args as ActionBarOptions)} group="this-group-has-no-actions" />
     </ActionsProvider>
   ),
 };

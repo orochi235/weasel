@@ -50,13 +50,11 @@ export const EveryCapInOneRow: Story = {
 
 export const CapMatrix: Story = {
   tags: ['gallery'],
-  render: () => (
+  render: (args) => (
     <div className={s.matrix}>
       {ALL_CAPS.map((cap) => (
-        <Powerline
+        <Powerline {...args}
           key={String(cap)}
-          variant="solid"
-          size="sm"
           segments={[
             { text: String(cap), emphasis: 'high', endCap: cap },
             { text: 'next', grade: 'info' },

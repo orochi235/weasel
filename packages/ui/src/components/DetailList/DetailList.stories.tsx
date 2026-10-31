@@ -67,9 +67,9 @@ export const Figures: Story = {
 /** One `--wzl-params-label-width` on an ancestor puts a detail list's labels and a
  *  property list's inline labels on the same rail. */
 export const SharesThePropertyRail: Story = {
-  render: () => (
+  render: (args) => (
     <div className={s.rail}>
-      <DetailList title="Read-only">
+      <DetailList {...args} title="Read-only">
         <DetailRow label="id"><Code>rect-12</Code></DetailRow>
         <DetailRow label="kind"><Badge size="xs">shape</Badge></DetailRow>
       </DetailList>

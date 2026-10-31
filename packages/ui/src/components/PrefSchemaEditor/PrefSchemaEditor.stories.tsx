@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ActionsProvider, defaultNodeProperties, solid, type Action } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
+import { PrefSchemaEditor, type PrefSchemaEditorProps } from '@weasel-js/ui/components/PrefSchemaEditor';
 import s from './PrefSchemaEditor.stories.module.css';
 import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
@@ -15,6 +15,8 @@ const meta: Meta<typeof PrefSchemaEditor> = {
 export default meta;
 
 type Story = StoryObj<typeof PrefSchemaEditor>;
+// The story supplies the schema, and `original` is typed by it.
+type Options = Partial<Omit<PrefSchemaEditorProps, 'schema' | 'onChange' | 'original'>>;
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -78,11 +80,11 @@ const SCHEMA: PrefGroup = {
 };
 
 export const Default: Story = {
-  render: function DefaultStory() {
+  render: function DefaultStory(args) {
     const [schema, setSchema] = useState(SCHEMA);
     return (
       <div className={s.frame}>
-        <PrefSchemaEditor schema={schema} onChange={setSchema} />
+        <PrefSchemaEditor {...(args as Options)} schema={schema} onChange={setSchema} />
       </div>
     );
   },
@@ -121,11 +123,11 @@ const TYPED: PrefGroup = {
  * the entry of a list or a map, shows as one row in the tree, and prints as its name in the literal.
  */
 export const Types: Story = {
-  render: function TypesStory() {
+  render: function TypesStory(args) {
     const [schema, setSchema] = useState(TYPED);
     return (
       <div className={s.frame}>
-        <PrefSchemaEditor schema={schema} onChange={setSchema} types={[GradientStop]} />
+        <PrefSchemaEditor {...(args as Options)} schema={schema} onChange={setSchema} types={[GradientStop]} />
       </div>
     );
   },
@@ -133,11 +135,11 @@ export const Types: Story = {
 
 /** With somewhere to send them, the Changes pane offers to submit what was edited. */
 export const Submitting: Story = {
-  render: function SubmittingStory() {
+  render: function SubmittingStory(args) {
     const [schema, setSchema] = useState(SCHEMA);
     return (
       <div className={s.frame}>
-        <PrefSchemaEditor schema={schema} onChange={setSchema} onSubmit={() => new Promise((resolve) => { setTimeout(resolve, 800); })} />
+        <PrefSchemaEditor {...(args as Options)} schema={schema} onChange={setSchema} onSubmit={() => new Promise((resolve) => { setTimeout(resolve, 800); })} />
       </div>
     );
   },
@@ -145,11 +147,11 @@ export const Submitting: Story = {
 
 /** A node's property schema: sections for headings, each leaf keyed by its node path, previewed as a properties panel. */
 export const NodeProperties: Story = {
-  render: function NodePropertiesStory() {
+  render: function NodePropertiesStory(args) {
     const [schema, setSchema] = useState(defaultNodeProperties.find((e) => e.name === 'rect')!.schema);
     return (
       <div className={s.frame}>
-        <PrefSchemaEditor schema={schema} onChange={setSchema} />
+        <PrefSchemaEditor {...(args as Options)} schema={schema} onChange={setSchema} />
       </div>
     );
   },
@@ -189,13 +191,13 @@ const SAMPLE_ACTIONS: Action[] = [
  * a key nothing registered answers to, so its row is marked and its button is dead.
  */
 export const Toolbar: Story = {
-  render: function ToolbarStory() {
+  render: function ToolbarStory(args) {
     const [schema, setSchema] = useState(TOOLBAR);
     return (
       <ActionsProvider>
         <RegisterActions actions={SAMPLE_ACTIONS} />
         <div className={s.frame}>
-          <PrefSchemaEditor schema={schema} onChange={setSchema} />
+          <PrefSchemaEditor {...(args as Options)} schema={schema} onChange={setSchema} />
         </div>
       </ActionsProvider>
     );
