@@ -9,12 +9,12 @@ import type {
   SeqActivationPlace, SeqFragmentPlace, SeqHeadPlace, SeqMessagePlace, SeqNotePlace, SeqSlot,
 } from './layout';
 import { SEQ, type SeqMeasure, type SeqRect } from './metrics';
-import type { SeqFragment, SeqMark, SeqMessage, SeqNote, SeqStep, SequenceData, StepPlace } from './types';
+import type { SeqFragment, SeqMark, SeqMarkRef, SeqMessage, SeqNote, SeqStep, SequenceData, StepPlace } from './types';
 
 /** What {@link walkRows} places; a lifeline's `y1` is `null` when it runs to the foot. */
 export interface Rows {
   heads: SeqHeadPlace[];
-  lifelines: { id: string; x: number; y0: number; y1: number | null }[];
+  lifelines: Lifeline[];
   messages: SeqMessagePlace[];
   activations: SeqActivationPlace[];
   notes: SeqNotePlace[];
@@ -23,6 +23,9 @@ export interface Rows {
   /** Below the last row. */
   bottom: number;
 }
+
+/** A lifeline as the walk tracks it; `y1` is `null` while it runs to the foot. */
+type Lifeline = { id: string; x: number; y0: number; y1: number | null; destroyedBy?: StepPlace };
 
 const spanOf = (rects: readonly SeqRect[]) => {
   const x0 = Math.min(...rects.map((r) => r.x));
@@ -33,8 +36,8 @@ class RowWalk {
   readonly out: Rows = { heads: [], lifelines: [], messages: [], activations: [], notes: [], fragments: [], slots: [], bottom: 0 };
   readonly index: Map<string, number>;
   readonly created: Set<string>;
-  readonly lifeline = new Map<string, { id: string; x: number; y0: number; y1: number | null }>();
-  readonly bars = new Map<string, number[]>();
+  readonly lifeline = new Map<string, Lifeline>();
+  readonly bars = new Map<string, { y: number; opener: SeqMarkRef }[]>();
   /** Lifelines a `destroy` ends at the next message to them, each with where it ends if none comes. */
   readonly destroying = new Map<string, number | null>();
   readonly frames: SeqRect[][] = [];
@@ -81,19 +84,21 @@ class RowWalk {
     return this.cx(id) + side * (SEQ.barWidth / 2) + (depth - 1) * SEQ.barStep;
   }
 
-  open(id: string, y: number): void {
+  open(id: string, y: number, opener: SeqMarkRef): void {
     const stack = this.bars.get(id) ?? [];
-    stack.push(y);
+    stack.push({ y, opener });
     this.bars.set(id, stack);
   }
 
-  close(id: string, y: number): void {
+  close(id: string, y: number, closer?: SeqMarkRef): void {
     const stack = this.bars.get(id);
-    const start = stack?.pop();
-    if (start === undefined) return;
+    const bar = stack?.pop();
+    if (bar === undefined) return;
+    const start = bar.y;
     const depth = stack!.length;
     const x = this.cx(id) - SEQ.barWidth / 2 + depth * SEQ.barStep;
-    this.out.activations.push({ participant: id, depth, box: { x, y: start, width: SEQ.barWidth, height: Math.max(y, start + 8) - start } });
+    const box = { x, y: start, width: SEQ.barWidth, height: Math.max(y, start + 8) - start };
+    this.out.activations.push({ participant: id, depth, box, opener: bar.opener, ...(closer ? { closer } : {}) });
   }
 
   steps(list: readonly SeqStep[], parent: StepPlace['parent']): void {
@@ -102,7 +107,7 @@ class RowWalk {
       if (step.kind === 'message') this.message(step);
       else if (step.kind === 'note') this.note(step);
       else if (step.kind === 'fragment') this.fragment(step);
-      else this.mark(step);
+      else this.mark(step, { parent, index });
     });
     this.out.slots.push({ y: this.y, place: { parent, index: list.length } });
   }
@@ -112,7 +117,7 @@ class RowWalk {
     this.y += SEQ.rowGap;
     const text = (s.text ?? '') === '' ? null : this.m.text(s.text!);
     const lineY = this.y + Math.max(text === null ? 0 : text.height + SEQ.textGap, 6);
-    if (s.activate !== undefined) this.open(s[s.activate], lineY);
+    if (s.activate !== undefined) this.open(s[s.activate], lineY, { message: s.id, flag: 'activate' });
     const self = s.from === s.to;
     const dir = self ? 1 : Math.sign(this.cx(s.to) - this.cx(s.from)) as 1 | -1;
     const x1 = this.endX(s.from, dir);
@@ -133,7 +138,7 @@ class RowWalk {
     this.touch(this.headRect(s.from));
     this.touch(this.headRect(s.to));
     if (self) this.touch({ x: x1, y: lineY, width: SEQ.loopWidth, height: 0 });
-    if (s.deactivate !== undefined) this.close(s[s.deactivate], self ? place.loopY! : lineY);
+    if (s.deactivate !== undefined) this.close(s[s.deactivate], self ? place.loopY! : lineY, { message: s.id, flag: 'deactivate' });
     for (const id of new Set([s.from, s.to])) {
       if (!this.destroying.delete(id)) continue;
       const line = this.lifeline.get(id);
@@ -164,14 +169,16 @@ class RowWalk {
     this.last = null;
   }
 
-  mark(s: SeqMark): void {
+  mark(s: SeqMark, at: StepPlace): void {
     if (!this.index.has(s.participant)) return;
     this.touch(this.headRect(s.participant));
-    const at = this.last?.ends.includes(s.participant) ? this.last.y : this.y + SEQ.rowGap / 2;
-    if (s.kind === 'activate') this.open(s.participant, at);
-    else if (s.kind === 'deactivate') this.close(s.participant, at);
+    const y = this.last?.ends.includes(s.participant) ? this.last.y : this.y + SEQ.rowGap / 2;
+    if (s.kind === 'activate') this.open(s.participant, y, { place: at });
+    else if (s.kind === 'deactivate') this.close(s.participant, y, { place: at });
     else if (s.kind === 'destroy') {
       this.destroying.set(s.participant, this.last?.ends.includes(s.participant) ? this.last.y : null);
+      const line = this.lifeline.get(s.participant);
+      if (line !== undefined) line.destroyedBy = at;
     } else if (this.out.heads.every((h) => h.id !== s.participant)) {
       this.y = this.placeHead(s.participant, this.y + SEQ.rowGap, true);
       this.last = null;

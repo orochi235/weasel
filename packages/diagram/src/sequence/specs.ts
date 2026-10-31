@@ -15,7 +15,7 @@ import type { DiagramTheme } from '../theme/types';
 import { sequenceLayout, type SequenceLayout } from './layout';
 import { SEQ, type SeqRect } from './metrics';
 import type { SeqPartKind, SeqPartTrait, SequenceGeometry } from './trait';
-import type { SeqStep, SeqTextTarget, SequenceData } from './types';
+import type { SeqMarkRef, SeqStep, SeqTextTarget, SequenceData } from './types';
 import { flatSteps } from './columns';
 
 /** The theme role each kind of part is drawn in, where its data names none. */
@@ -76,6 +76,12 @@ class PartSpecs {
     });
   }
 
+  /** The marks the part just pushed draws, onto its trait. */
+  marks(refs: readonly SeqMarkRef[]): void {
+    const seq = (this.specs.at(-1)!.data as { diagram: { seq: SeqPartTrait } }).diagram.seq;
+    seq.marks = refs;
+  }
+
   text(id: string, r: SeqRect, text: string, color: string, target?: SeqTextTarget, face: { fontSize?: number; fontWeight?: number } = {}, centered = true): void {
     // A hair wider than measured, so the painter never breaks a line the layout kept whole.
     const box = { ...r, x: r.x - 1, width: r.width + 2 };
@@ -96,11 +102,13 @@ function participantSpecs(out: PartSpecs, data: SequenceData, layout: SequenceLa
       const c = SEQ.cross;
       out.line(`destroy:${l.id}`, 'destroy', l.id, { x: l.x - c / 2, y: l.y1 - c / 2, width: c, height: c }, 'M0 0L1 1M1 0L0 1',
         { paint: { color: style.stroke }, width: 2 });
+      if (l.destroyedBy) out.marks([{ place: l.destroyedBy }]);
     }
   }
   for (const [i, a] of layout.activations.entries()) {
     const p = data.participants.find((q) => q.id === a.participant)!;
     out.body(`act:${i}`, 'activation', a.participant, a.box, 'rect', withColors(roleStyle(theme, p.style), p.colors));
+    out.marks(a.closer ? [a.opener, a.closer] : [a.opener]);
   }
 }
 
@@ -198,7 +206,17 @@ const geometryOf = (layout: SequenceLayout): SequenceGeometry => ({
   heads: layout.heads.map(({ id, box }) => ({ id, box })),
   fragments: layout.fragments.map(({ id, box, tab }) => ({ id, grip: tab ?? { ...box, height: Math.min(box.height, SEQ.rowGap) } })),
   boxes: layout.boxes.map(({ id, box, label }) => ({ id, grip: { ...box, height: (label?.height ?? 0) + SEQ.boxPad } })),
+  marks: [
+    ...layout.activations.map((a, i) => ({ id: `act:${i}`, grip: a.box })),
+    ...layout.lifelines.flatMap((l) => (l.destroyedBy === undefined ? [] : [{ id: `destroy:${l.id}`, grip: crossGrip(l.x, l.y1) }])),
+  ],
 });
+
+/** A destruction's cross, grown to a size a pointer can take. */
+const crossGrip = (x: number, y: number): SeqRect => {
+  const c = Math.max(SEQ.cross, 12);
+  return { x: x - c / 2, y: y - c / 2, width: c, height: c };
+};
 
 /**
  * The root and parts of a sequence diagram: its root at `at`, sized to the

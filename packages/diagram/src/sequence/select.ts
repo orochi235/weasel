@@ -9,11 +9,11 @@ import {
   commitDeleteToScene, createDeleteAction, type Action, type ActionDeps, type NodeId, type Scene, type SelectionApi,
 } from '@weasel-js/core';
 import { removeBox, removeParticipant } from './author';
-import { removeStep } from './authorSteps';
+import { removeMarks, removeStep } from './authorSteps';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { sequenceScratchOf, type SequenceScratch } from './layer';
 import { sequencePartOf, sequenceRootOf } from './trait';
-import type { SequenceData } from './types';
+import type { SeqMarkRef, SequenceData } from './types';
 
 /** The action a click on a sequence part runs. */
 export const SELECT_SEQUENCE_PART_ACTION_ID = 'diagram.sequence.select';
@@ -22,6 +22,7 @@ type AnyScene = Scene<unknown, string, unknown>;
 
 /** The id of the node that draws what `s` names, among its root's parts: a head, a message, a note, a fragment's box, a box. */
 export function sequencePartNodeOf(scene: AnyScene, s: Pick<SequenceScratch, 'root' | 'part' | 'id'>): string | null {
+  if (s.part === 'mark') return scene.get(`${s.root}/${s.id}` as never) === undefined ? null : `${s.root}/${s.id}`;
   const names = s.part === 'head' ? [`head:${s.id}`]
     : s.part === 'box' ? [`box:${s.id}`]
     : s.part === 'end' ? [`msg:${s.id}`]
@@ -58,11 +59,13 @@ function removing(data: SequenceData, part: { part: string; id: string }): Seque
 
 /**
  * `ids` split into the sequence edits deleting them make, one per root, and
- * the ids that are no sequence's part. A part that draws nothing an edit can
- * remove (an activation bar, a number, a section label) is dropped.
+ * the ids that are no sequence's part. An activation bar or a destruction's
+ * cross removes the marks and message flags that draw it. A part that draws
+ * nothing an edit can remove (a number, a section label) is dropped.
  */
 export function sequenceDeletes(scene: AnyScene, ids: readonly string[]): { edits: { id: string; data: SequenceData }[]; rest: string[] } {
-  const byRoot = new Map<string, SequenceData>();
+  // Marks go by place, so they come out of each root's data as it was, before anything else shifts them.
+  const byRoot = new Map<string, { was: SequenceData; marks: SeqMarkRef[]; parts: { part: string; id: string }[] }>();
   const rest: string[] = [];
   for (const id of ids) {
     const node = scene.get(id as never);
@@ -73,12 +76,14 @@ export function sequenceDeletes(scene: AnyScene, ids: readonly string[]): { edit
     }
     const root = scene.get(part.root as never);
     const held = root === undefined ? null : sequenceRootOf(root);
-    if (held === null || part.id === undefined) continue;
-    const data = byRoot.get(part.root) ?? held.sequence;
-    byRoot.set(part.root, removing(data, { part: part.part, id: part.id }));
+    if (held === null) continue;
+    const at = byRoot.get(part.root) ?? { was: held.sequence, marks: [], parts: [] };
+    byRoot.set(part.root, at);
+    if (part.marks !== undefined) at.marks.push(...part.marks);
+    else if (part.id !== undefined) at.parts.push({ part: part.part, id: part.id });
   }
-  const edits = [...byRoot].flatMap(([id, data]) => {
-    const was = sequenceRootOf(scene.get(id as never)!)!.sequence;
+  const edits = [...byRoot].flatMap(([id, { was, marks, parts }]) => {
+    const data = parts.reduce(removing, removeMarks(was, marks));
     return data === was ? [] : [{ id, data }];
   });
   return { edits, rest };

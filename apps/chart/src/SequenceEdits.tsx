@@ -1,5 +1,6 @@
 import {
-  SEQ_ARROWS, SEQ_MULTI_SECTION, addBox, addSection, commitSequence, findStep, freshSeqId, removeBox, removeSection, rendererMeasure,
+  SEQ_ARROWS, SEQ_MULTI_SECTION, addBox, addSection, commitSequence, findStep, freshSeqId, removeBox, removeMarksOf, removeSection,
+  rendererMeasure,
   setAutonumber, setMessageActivation, type SeqArrowName, type SequenceData, type SequenceSelection,
 } from '@weasel-js/diagram';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -32,12 +33,14 @@ const ENDS: readonly { value: End; label: string }[] = [
 ];
 
 /** The edits that act on what is selected in a sequence: numbering its messages, a message's activations, a fragment's
- *  sections, and boxing participants. */
+ *  sections, boxing participants, and drawing a created head at the top again. An activation bar or a destruction is
+ *  selected and deleted on the canvas. */
 export function SequenceEdits({ scene, sel }: { scene: ChartScene; sel: SequenceSelection }): ReactElement {
   const { data } = sel;
   const commit = (next: SequenceData, label: string) => commitSelected(scene, sel, next, label);
   const message = sel.messages[0] === undefined ? null : findStep(data.steps, sel.messages[0]);
   const fragment = sel.fragments[0] === undefined ? null : findStep(data.steps, sel.fragments[0]);
+  const uncreated = foldEach(data, sel.participants, (d, id) => removeMarksOf(d, 'create', id));
   const boxed = (data.boxes ?? []).filter((b) => sel.boxes.includes(b.id) || b.members.some((m) => sel.participants.includes(m)));
   const activation = (key: 'activate' | 'deactivate', end: End) => commit(
     foldEach(data, sel.messages, (d, id) => setMessageActivation(d, id, { [key]: end === 'none' ? undefined : end })),
@@ -78,6 +81,7 @@ export function SequenceEdits({ scene, sel }: { scene: ChartScene; sel: Sequence
           Box participants
         </Button>
       )}
+      {uncreated !== data && <Button onClick={() => commit(uncreated, 'Draw head at top')}>Draw head at top</Button>}
       {boxed.length > 0 && (
         <Button onClick={() => commit(foldEach(data, boxed.map((b) => b.id), removeBox), 'Remove box')}>Remove box</Button>
       )}

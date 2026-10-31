@@ -114,6 +114,17 @@ describe('SequencePanel', () => {
     expect(dataOf(scene).participants.slice(0, 2).map((p) => p.outline)).toEqual(['actor', 'actor']);
   });
 
+  it('draws a selected created head at the top again', () => {
+    const scene = createScene<ChartData, ChartLayer, ChartPose>({
+      systemLayers: CHART_LAYERS, registry: CHART_REGISTRY,
+      initial: sequenceSpecs({ ...DATA, steps: [{ kind: 'create', participant: 'c' }, ...DATA.steps] }, { id: 'seq', layer: 'shapes' }) as never,
+    });
+    panel(scene, ['seq/head:c']);
+    press('Draw head at top');
+    expect(dataOf(scene)).toEqual(DATA);
+    expect(screen.queryByRole('button', { name: 'Draw head at top' })).toBeNull();
+  });
+
   it('numbers the only sequence\'s messages with nothing selected', () => {
     const scene = sceneOf();
     panel(scene);

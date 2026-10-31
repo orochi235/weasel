@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addSection, insertMark, insertMessage, insertNote, insertStep, removeSection, removeStep, removeStepAt, setFragmentType,
+  addSection, insertMark, insertMessage, insertNote, insertStep, removeMarks, removeMarksOf, removeSection, removeStep, removeStepAt,
+  setFragmentType,
   setMessageActivation, setMessageArrow, unwrapFragment, wrapSteps,
 } from './authorSteps';
 import { findStep } from './edit';
@@ -59,6 +60,22 @@ describe('removing steps', () => {
     const marked = insertStep(data, { kind: 'deactivate', participant: 'b' }, { parent: { fragment: 'f1', section: 0 }, index: 1 });
     expect(removeStepAt(marked, { parent: { fragment: 'f1', section: 0 }, index: 1 })).toEqual(data);
     expect(removeStepAt(data, top(9))).toBe(data);
+  });
+});
+
+describe('removing marks', () => {
+  it('removes marks by their places as given, skips a place holding a step, and clears message flags', () => {
+    let d = insertMark(data, { kind: 'activate', participant: 'c' }, top(0));
+    d = insertMark(d, { kind: 'deactivate', participant: 'c' }, top(3));
+    const next = removeMarks(d, [{ place: top(0) }, { place: top(3) }, { place: top(1) }, { message: 'm1', flag: 'activate' }]);
+    expect(ids(next.steps)).toEqual(ids(data.steps));
+    expect('activate' in findStep(next.steps, 'm1')!).toBe(false);
+  });
+
+  it('removes every mark of a kind naming a participant', () => {
+    const created = insertMark(data, { kind: 'create', participant: 'c' }, { parent: { fragment: 'f1', section: 0 }, index: 0 });
+    expect(removeMarksOf(created, 'create', 'c')).toEqual(data);
+    expect(removeMarksOf(data, 'create', 'c')).toBe(data);
   });
 });
 

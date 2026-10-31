@@ -6,7 +6,7 @@
  */
 import { freshSeqId, seqIdTaken } from './author';
 import { findStep, hasId, mapSteps, placeOf, pruneSteps, stepListOf, withList } from './edit';
-import type { SeqFragment, SeqMark, SeqMessage, SeqNote, SeqStep, SequenceData, StepPlace } from './types';
+import type { SeqFragment, SeqMark, SeqMarkRef, SeqMessage, SeqNote, SeqStep, SequenceData, StepPlace } from './types';
 
 /** How a message is drawn: its line, its head, and whether it has a head at both ends or is sent without waiting. */
 export type SeqArrow = Pick<SeqMessage, 'line' | 'head'> & Pick<Partial<SeqMessage>, 'both' | 'async'>;
@@ -117,6 +117,30 @@ export function removeStepAt(data: SequenceData, at: StepPlace): SequenceData {
   const list = stepListOf(data.steps, at.parent);
   if (list === null || at.index < 0 || at.index >= list.length) return data;
   return { ...data, steps: withList(data.steps, at.parent, (l) => l.filter((_, i) => i !== at.index)) };
+}
+
+/**
+ * What `refs` name removed: each mark step at its place, and each message
+ * flag cleared. The places are read against `data` as given, so removing one
+ * does not shift the next. A place holding anything but a mark is left alone.
+ */
+export function removeMarks(data: SequenceData, refs: readonly SeqMarkRef[]): SequenceData {
+  const key = (p: StepPlace['parent']) => (p === null ? '' : `${p.fragment}/${p.section}`);
+  const places = refs.flatMap((r) => ('place' in r ? [r.place] : []))
+    .filter((p) => {
+      const s = stepListOf(data.steps, p.parent)?.[p.index];
+      return s !== undefined && !hasId(s);
+    })
+    .sort((a, b) => (key(a.parent) === key(b.parent) ? b.index - a.index : key(a.parent) < key(b.parent) ? -1 : 1));
+  let next = places.reduce((d, p) => removeStepAt(d, p), data);
+  for (const r of refs) if ('message' in r) next = setMessageActivation(next, r.message, { [r.flag]: undefined });
+  return next;
+}
+
+/** Every `kind` mark naming `participant` removed, at any depth: a created head drawn at the top again, say. */
+export function removeMarksOf(data: SequenceData, kind: SeqMark['kind'], participant: string): SequenceData {
+  const steps = pruneSteps(data.steps, (s) => (s.kind === kind && (s as SeqMark).participant === participant ? null : s));
+  return steps === data.steps ? data : { ...data, steps };
 }
 
 /** What {@link wrapSteps} takes. */

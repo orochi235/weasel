@@ -1,5 +1,5 @@
 export type {
-  SeqBox, SeqFragment, SeqIdStep, SeqMark, SeqMessage, SeqNote, SeqParticipant, SeqSection, SeqStep, SeqTextTarget, SequenceData,
+  SeqBox, SeqFragment, SeqIdStep, SeqMark, SeqMarkRef, SeqMessage, SeqNote, SeqParticipant, SeqSection, SeqStep, SeqTextTarget, SequenceData,
   StepPlace,
 } from './types';
 export {
@@ -10,7 +10,8 @@ export {
   type SeqParticipantKind,
 } from './author';
 export {
-  SEQ_ARROWS, SEQ_MULTI_SECTION, addSection, insertMark, insertMessage, insertNote, insertStep, removeSection, removeStep, removeStepAt,
+  SEQ_ARROWS, SEQ_MULTI_SECTION, addSection, insertMark, insertMessage, insertNote, insertStep, removeMarks, removeMarksOf, removeSection,
+  removeStep, removeStepAt,
   setFragmentType, setMessageActivation, setMessageArrow, unwrapFragment, wrapSteps,
   type NewSeqFragment, type NewSeqMessage, type NewSeqNote, type SeqArrow, type SeqArrowName,
 } from './authorSteps';

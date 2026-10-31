@@ -68,7 +68,7 @@ function proposed(p: Press, at: Vec2): { data: SequenceData; label: string } {
   const { geometry, origin } = p.root;
   const local = { x: at.x - origin.x, y: at.y - origin.y };
   const { scratch } = p;
-  if (scratch.part === 'box') return { data: p.data, label: '' };
+  if (scratch.part === 'box' || scratch.part === 'mark') return { data: p.data, label: '' };
   if (scratch.part === 'head') {
     const index = geometry.columns.filter((c) => c.x < local.x).length;
     return { data: moveParticipant(p.data, scratch.id, index), label: 'Move participant' };

@@ -107,6 +107,20 @@ describe('sequence tools on a DiagramView', () => {
     expect(findStep(edits[0]!.data.steps, 'm5')).toBeNull();
   });
 
+  it('picks an activation bar with a click and deletes the flags that draw it', async () => {
+    const { canvas, edits } = mount(null);
+    const bar = layout.activations[0]!;
+    const m1 = layout.messages.find((m) => m.id === 'm1')!;
+    click(canvas, bar.box.x + bar.box.width / 2, m1.y + 9);
+    await act(async () => {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', code: 'Delete', bubbles: true, cancelable: true }));
+      document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Delete', code: 'Delete', bubbles: true }));
+    });
+    expect(edits).toHaveLength(1);
+    expect(findStep(edits[0]!.data.steps, 'm1')).not.toHaveProperty('activate');
+    expect(findStep(edits[0]!.data.steps, 'm4')).not.toHaveProperty('deactivate');
+  });
+
   it('reports a click on empty canvas with no start as nothing', () => {
     const onSelect = vi.fn();
     const { canvas, edits } = mount('diagram.sequence.participant', { onSelect, width: layout.width + 400 });

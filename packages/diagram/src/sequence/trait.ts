@@ -4,7 +4,7 @@
  * it draws.
  */
 import type { SeqMessagePlace, SeqRect, SeqSlot } from './layout';
-import type { SeqTextTarget, SequenceData } from './types';
+import type { SeqMarkRef, SeqTextTarget, SequenceData } from './types';
 
 /** Where a root's parts stand, in its own frame: what a drag reads to place a drop without laying the data out again. */
 export interface SequenceGeometry {
@@ -17,6 +17,9 @@ export interface SequenceGeometry {
   fragments?: readonly { id: string; grip: SeqRect }[];
   /** Where a box is taken hold of: the strip above its heads that holds its label. Absent as for `fragments`. */
   boxes?: readonly { id: string; grip: SeqRect }[];
+  /** Where a part drawn for lifeline marks is taken hold of, by the part's id under the root: an activation bar, a
+   *  destruction's cross. Absent as for `fragments`. */
+  marks?: readonly { id: string; grip: SeqRect }[];
 }
 
 /** The trait on a sequence's root. */
@@ -37,6 +40,8 @@ export interface SeqPartTrait {
   id?: string;
   /** For text an edit can set. */
   target?: SeqTextTarget;
+  /** For an activation bar or a destruction's cross: the marks and message flags that draw it, which deleting it removes. */
+  marks?: readonly SeqMarkRef[];
 }
 
 const traitOf = (node: { data: unknown }): Record<string, unknown> | null => {
