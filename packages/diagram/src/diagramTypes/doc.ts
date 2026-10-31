@@ -2,7 +2,12 @@
 import { DIAGRAM_TYPES, FLOWCHART_TYPE } from './catalog';
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_NOTATION, type DiagramType, type DiagramTypeDoc } from './types';
 
-/** A scene as the type reader and writers use it. */
+/** A scene as the type readers use it. */
+export interface DiagramTypeReadable {
+  doc: { get(key: string): unknown };
+}
+
+/** A scene as the type writers use it. */
 export interface DiagramTypeScene {
   doc: { get(key: string): unknown; set(key: string, value: unknown): void };
   batch<T>(label: string, fn: () => T): T;
@@ -25,7 +30,7 @@ export function diagramTypeDocValue(id: string, types: Types = DIAGRAM_TYPES): D
 
 /** The type and shown groups a scene holds. A scene holding none, or naming a type `types` lacks,
  *  reads as flowchart with its groups. */
-export function diagramTypeDocOf(scene: Pick<DiagramTypeScene, 'doc'>, types: Types = DIAGRAM_TYPES): DiagramTypeDoc {
+export function diagramTypeDocOf(scene: DiagramTypeReadable, types: Types = DIAGRAM_TYPES): DiagramTypeDoc {
   const value = scene.doc.get(DIAGRAM_TYPE_DOC_KEY) as Partial<DiagramTypeDoc> | null | undefined;
   const id = typeof value?.type === 'string' && types[value.type] !== undefined ? value.type : null;
   if (id === null) return diagramTypeDocValue(FLOWCHART_TYPE.id, types);
@@ -34,12 +39,12 @@ export function diagramTypeDocOf(scene: Pick<DiagramTypeScene, 'doc'>, types: Ty
 }
 
 /** The type a scene holds, as {@link diagramTypeDocOf} reads it. */
-export function diagramTypeOf(scene: Pick<DiagramTypeScene, 'doc'>, types: Types = DIAGRAM_TYPES): DiagramType {
+export function diagramTypeOf(scene: DiagramTypeReadable, types: Types = DIAGRAM_TYPES): DiagramType {
   return types[diagramTypeDocOf(scene, types).type] ?? FLOWCHART_TYPE;
 }
 
 /** The notation a graph page of the scene's type is written in. */
-export const diagramNotationOf = (scene: Pick<DiagramTypeScene, 'doc'>, types: Types = DIAGRAM_TYPES): string =>
+export const diagramNotationOf = (scene: DiagramTypeReadable, types: Types = DIAGRAM_TYPES): string =>
   diagramTypeOf(scene, types).notations?.[0] ?? FLOWCHART_NOTATION;
 
 /** The type whose pages `notation` writes, unset read as a flowchart's; `null` when no type in `types` claims it. */
