@@ -1,0 +1,150 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/clip-cost.spec.ts
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Clip cost — 800x600, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+collected between measurements: true
+every variant paints something: true
+512 leaves per frame; 72 cells
+
+   1/72  run 1  rect-plain            0.235 ms/frame
+   2/72  run 1  rect-clipped          24.220 ms/frame
+   3/72  run 1  rect-cmbreak          15.345 ms/frame
+   4/72  run 1  rect-clipped-k8       0.505 ms/frame
+   5/72  run 1  rect-rectclip         -0.105 ms/frame
+   6/72  run 1  rect-convexclip       0.020 ms/frame
+   7/72  run 1  rect-convexclip-k8    -0.040 ms/frame
+   8/72  run 1  slant-plain           0.335 ms/frame
+   9/72  run 1  slant-rectclip        1.635 ms/frame
+  10/72  run 1  astroke-center        1.325 ms/frame
+  11/72  run 1  astroke-inner         1.720 ms/frame
+  12/72  run 1  pat-plain             5.055 ms/frame
+  13/72  run 1  pat-clipped           7.660 ms/frame
+  14/72  run 1  pat-cmbreak           2.765 ms/frame
+  15/72  run 1  pat-clipped-k8        4.395 ms/frame
+  16/72  run 1  ss-rect-plain         0.210 ms/frame
+  17/72  run 1  ss-rect-hullclip      1.365 ms/frame
+  18/72  run 1  ss-rect-stencilclip   23.535 ms/frame
+  19/72  run 1  ss-rect-hullclip-k8   0.270 ms/frame
+  20/72  run 1  ss-slant-plain        0.265 ms/frame
+  21/72  run 1  ss-slant-rectclip     1.085 ms/frame
+  22/72  run 1  ss-slant-rectstencil  9.875 ms/frame
+  23/72  run 1  ss-slant-nest3        3.130 ms/frame
+  24/72  run 1  ss-slant-nest3stencil 12.505 ms/frame
+  25/72  run 2  rect-plain            0.195 ms/frame
+  26/72  run 2  rect-clipped          25.135 ms/frame
+  27/72  run 2  rect-cmbreak          19.975 ms/frame
+  28/72  run 2  rect-clipped-k8       1.130 ms/frame
+  29/72  run 2  rect-rectclip         0.175 ms/frame
+  30/72  run 2  rect-convexclip       0.255 ms/frame
+  31/72  run 2  rect-convexclip-k8    0.015 ms/frame
+  32/72  run 2  slant-plain           0.410 ms/frame
+  33/72  run 2  slant-rectclip        1.630 ms/frame
+  34/72  run 2  astroke-center        1.105 ms/frame
+  35/72  run 2  astroke-inner         1.330 ms/frame
+  36/72  run 2  pat-plain             4.055 ms/frame
+  37/72  run 2  pat-clipped           6.735 ms/frame
+  38/72  run 2  pat-cmbreak           3.675 ms/frame
+  39/72  run 2  pat-clipped-k8        4.070 ms/frame
+  40/72  run 2  ss-rect-plain         0.080 ms/frame
+  41/72  run 2  ss-rect-hullclip      1.215 ms/frame
+  42/72  run 2  ss-rect-stencilclip   23.930 ms/frame
+  43/72  run 2  ss-rect-hullclip-k8   0.295 ms/frame
+  44/72  run 2  ss-slant-plain        0.310 ms/frame
+  45/72  run 2  ss-slant-rectclip     1.115 ms/frame
+  46/72  run 2  ss-slant-rectstencil  12.080 ms/frame
+  47/72  run 2  ss-slant-nest3        3.205 ms/frame
+  48/72  run 2  ss-slant-nest3stencil 14.725 ms/frame
+  49/72  run 3  rect-plain            0.230 ms/frame
+  50/72  run 3  rect-clipped          25.775 ms/frame
+  51/72  run 3  rect-cmbreak          19.360 ms/frame
+  52/72  run 3  rect-clipped-k8       1.140 ms/frame
+  53/72  run 3  rect-rectclip         0.205 ms/frame
+  54/72  run 3  rect-convexclip       0.285 ms/frame
+  55/72  run 3  rect-convexclip-k8    0.020 ms/frame
+  56/72  run 3  slant-plain           0.465 ms/frame
+  57/72  run 3  slant-rectclip        1.610 ms/frame
+  58/72  run 3  astroke-center        1.090 ms/frame
+  59/72  run 3  astroke-inner         1.360 ms/frame
+  60/72  run 3  pat-plain             4.140 ms/frame
+  61/72  run 3  pat-clipped           6.670 ms/frame
+  62/72  run 3  pat-cmbreak           3.725 ms/frame
+  63/72  run 3  pat-clipped-k8        4.135 ms/frame
+  64/72  run 3  ss-rect-plain         0.130 ms/frame
+  65/72  run 3  ss-rect-hullclip      1.160 ms/frame
+  66/72  run 3  ss-rect-stencilclip   24.405 ms/frame
+  67/72  run 3  ss-rect-hullclip-k8   0.245 ms/frame
+  68/72  run 3  ss-slant-plain        0.290 ms/frame
+  69/72  run 3  ss-slant-rectclip     1.100 ms/frame
+  70/72  run 3  ss-slant-rectstencil  11.895 ms/frame
+  71/72  run 3  ss-slant-nest3        3.120 ms/frame
+  72/72  run 3  ss-slant-nest3stencil 14.120 ms/frame
+
+Clip cost — 800x600, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+512 leaves per frame, 3 runs; median across runs, range in parens.
+
+| variant | ms/frame | draws | what it holds |
+|---|---:|---:|---|
+| rect-plain | 0.23 (0.20–0.23) |    1 | N solid rects, one batch |
+| rect-clipped | 25.14 (24.22–25.77) | 1536 | each rect in its own clip |
+| rect-cmbreak | 19.36 (15.35–19.98) |  512 | each rect in its own color-matrix break |
+| rect-clipped-k8 | 1.13 (0.51–1.14) |  192 | 8 rects per clip |
+| rect-rectclip | 0.17 (-0.10–0.20) |    1 | each rect in its own axis-aligned rect clip, cut on the CPU |
+| rect-convexclip | 0.26 (0.02–0.28) |    1 | each rect in its own slanted convex clip |
+| rect-convexclip-k8 | 0.01 (-0.04–0.02) |    1 | 8 rects per slanted convex clip |
+| slant-plain | 0.41 (0.34–0.47) |    1 | N turned rects, one batch |
+| slant-rectclip | 1.63 (1.61–1.64) |    1 | a turned rect across each rect clip |
+| astroke-center | 1.10 (1.09–1.32) |    1 | N turned quads, filled and stroked centered |
+| astroke-inner | 1.36 (1.33–1.72) |    1 | the same, stroked inside |
+| pat-plain | 4.14 (4.05–5.05) | 1024 | N even-odd rects, never batched |
+| pat-clipped | 6.74 (6.67–7.66) | 2048 | each even-odd rect in its own clip |
+| pat-cmbreak | 3.67 (2.77–3.73) | 1024 | each even-odd rect in its own color-matrix break |
+| pat-clipped-k8 | 4.13 (4.07–4.39) | 1152 | 8 even-odd rects per clip |
+| ss-rect-plain | 0.13 (0.08–0.21) |    1 | rect-plain on a single-sampled canvas |
+| ss-rect-hullclip | 1.22 (1.16–1.36) |   32 | rect-clipped there, each clip decided in the batch shader |
+| ss-rect-stencilclip | 23.93 (23.54–24.41) | 1536 | the same with the shader clip off: the stencil |
+| ss-rect-hullclip-k8 | 0.27 (0.24–0.29) |    4 | 8 rects per shader-decided clip |
+| ss-slant-plain | 0.29 (0.27–0.31) |    1 | N turned rects on a single-sampled canvas, one batch |
+| ss-slant-rectclip | 1.10 (1.08–1.11) |   32 | a turned rect across each rect clip, the rect tested as a hull |
+| ss-slant-rectstencil | 11.89 (9.88–12.08) | 1536 | the same with the shader clip off: the stencil |
+| ss-slant-nest3 | 3.13 (3.12–3.21) |   32 | a turned rect across three nested rect clips |
+| ss-slant-nest3stencil | 14.12 (12.51–14.72) | 3584 | the same with the shader clip off: the stencil |
+
+| what | us | how |
+|---|---:|---|
+| stencil push + pop | 5.09 | pat-clipped − pat-plain, per clip |
+| clip entry, all in | 48.71 | rect-clipped − rect-plain, per clip |
+| ...of which the batch break | 43.62 | the difference between those two |
+| one solid-batch flush | 38.17 | rect-cmbreak − pat-cmbreak, both net of plain |
+| clip entry at 8 leaves | 14.22 | rect-clipped-k8 − rect-plain, per clip |
+| stencil at 8 leaves | -0.08 | pat-clipped-k8 − pat-plain, per clip |
+| a rect clip cut on the CPU | -0.05 | rect-rectclip − rect-plain, per clip |
+| a slanted convex clip, multisampled | 0.11 | rect-convexclip − rect-plain, per clip |
+| ...at 8 leaves | -3.28 | rect-convexclip-k8 − rect-plain, per clip |
+| a rect clip a turned rect crosses, multisampled | 2.38 | slant-rectclip − slant-plain, per clip |
+| an inner stroke over a centered one | 0.53 | astroke-inner − astroke-center, per stroke |
+| a slanted clip, decided in the shader | 2.22 | ss-rect-hullclip − ss-rect-plain, per clip |
+| ...at 8 leaves | 1.80 | ss-rect-hullclip-k8 − ss-rect-plain, per clip |
+| the same clip on the stencil, single-sampled | 46.58 | ss-rect-stencilclip − ss-rect-plain, per clip |
+| a rect clip a slanted item crosses, as a hull | 1.58 | ss-slant-rectclip − ss-slant-plain, per clip |
+| the same on the stencil | 22.67 | ss-slant-rectstencil − ss-slant-plain, per clip |
+| three nested rect clips a slanted item crosses | 5.60 | ss-slant-nest3 − ss-slant-plain, per nest |
+| the same on the stencil | 27.01 | ss-slant-nest3stencil − ss-slant-plain, per nest |
+
+single-sampled canvas offers the shader clip: true; pixels where a shader-clipped solid and a stencil-clipped fill differ: 0; pixels where the shader clip differs from the stencil of the unsnapped path: 0; pixels where rect clips, cut and shader-tested, differ from the stencil: 0; the same under three nested rect clips: 0
+
+stencil is 10% of clip entry; the batch break is 90%.
+perf result: tests/perf/recorded/stroke-inner-joins-2026-10-31/Mac/after-2/clip-cost-2026-10-31T06-26-13Z.json
+  ✓  1 tests/perf/clip-cost.spec.ts:106:1 › clip cost: stencil versus batch break (42.4s)
+
+  1 passed (43.7s)
