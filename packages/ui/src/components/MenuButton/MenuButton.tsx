@@ -66,13 +66,13 @@ export function MenuButton<T extends string = string>({
   buttonRef,
 }: MenuButtonProps<T>) {
   const trigger = useMenuTrigger(portalContainer);
-  const triggerButton = trigger.button;
+  const triggerButtonRef = trigger.button;
   const setButton = useCallback(
     (el: HTMLButtonElement | null) => {
-      triggerButton.current = el;
+      triggerButtonRef.current = el;
       assignRef(buttonRef, el);
     },
-    [triggerButton, buttonRef],
+    [triggerButtonRef, buttonRef],
   );
   const entries = useMemo(
     (): MenuEntry[] => items.map((item) => ({
