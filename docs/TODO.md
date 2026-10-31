@@ -150,12 +150,6 @@ Owner tags, after the priority (2026-10-26):
   `packages/geom/src/paths/resamplePath.ts`).
   Closes when the maintainer has driven Resample hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Add extremes hands-on, with the maintainer driving.** First-draft behavior and key:
-  Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
-  is, so a selection reaching no whole segment does nothing; the new anchors join the selection
-  (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
-  Closes when the maintainer has driven Add extremes hands-on and the defaults and keys he picks are
-  committed.
 - **(P2) [maintainer] Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
   a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
   within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
