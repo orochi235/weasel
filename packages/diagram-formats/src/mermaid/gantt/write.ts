@@ -1,5 +1,5 @@
 /** A plot page holding a gantt as Mermaid `gantt` text. */
-import type { GanttData, GanttEnd, GanttStart, GanttTask } from '@weasel-js/plot';
+import { formatGanttEnd, formatGanttStart, type GanttData, type GanttTask } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 
@@ -9,22 +9,14 @@ function oneLine(s: string, warnings: Warnings): string {
   return s.replace(/\s*[\r\n]+\s*/g, ' ').replace(/:/g, '#58;');
 }
 
-const startText = (s: Exclude<GanttStart, { kind: 'previous' }>): string => (s.kind === 'date' ? s.date : `after ${s.ids.join(' ')}`);
-
-function endText(e: GanttEnd): string {
-  if (e.kind === 'date') return e.date;
-  if (e.kind === 'until') return `until ${e.ids.join(' ')}`;
-  return `${e.amount}${e.unit}`;
-}
-
 /**
  * A task's items after the colon. Mermaid names no task that starts where the one before it ends, so such a task
  * with an id starts `after` that task's id, and loses its own id when that task has none.
  */
 function taskItems(task: GanttTask, before: GanttTask | undefined, warnings: Warnings): string[] {
   const items: string[] = [...(task.tags ?? [])];
-  const end = endText(task.end);
-  if (task.start.kind !== 'previous') return [...items, ...(task.id !== undefined ? [task.id] : []), startText(task.start), end];
+  const end = formatGanttEnd(task.end);
+  if (task.start.kind !== 'previous') return [...items, ...(task.id !== undefined ? [task.id] : []), formatGanttStart(task.start), end];
   if (task.id === undefined) return [...items, end];
   if (before?.id !== undefined) return [...items, task.id, `after ${before.id}`, end];
   warnings.add('Mermaid gives no id to a first task, or one after a task with none, unless it has a start of its own; those ids were dropped.');
