@@ -1,6 +1,6 @@
 // WeaselDraw's persistence: the legacy-paint migration layered over the shared snapshot helpers.
 
-import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@editor/index';
+import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@weasel-js/editor';
 import type {
   AddNodeSpec, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';

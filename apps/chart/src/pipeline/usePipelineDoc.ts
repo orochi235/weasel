@@ -1,4 +1,4 @@
-import { readStored, useAutosave } from '@editor/index';
+import { readStored, useAutosave } from '@weasel-js/editor';
 import type { EffectDoc } from '@weasel-js/diagram/effect';
 import { createHistory, swapOp } from '@weasel-js/history';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';

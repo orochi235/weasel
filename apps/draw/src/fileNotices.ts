@@ -1,5 +1,5 @@
 import { defaultToastQueue, toast } from '@weasel-js/ui/components/Toast';
-import { reportFileWarnings } from '@editor/index';
+import { reportFileWarnings } from '@weasel-js/editor';
 
 /** Tells the user what an SVG Open, Import, or Save left out. One toast: the next one replaces it. */
 export function reportSvgWarnings(did: 'Opened' | 'Imported' | 'Saved', warnings: readonly string[]): void {

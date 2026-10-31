@@ -1,5 +1,5 @@
 import { PAGES_DOC_KEY, pagesOf, type PagesDoc, type Scene, type SerializedDoc } from '@weasel-js/core';
-import type { PageSize } from '@editor/index';
+import type { PageSize } from '@weasel-js/editor';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS, PAPER_SIZES, type PaperSizeKey } from '../paperSizes';
 
 /** A document of one page of `size`: a new document, and one saved before draw had pages. */

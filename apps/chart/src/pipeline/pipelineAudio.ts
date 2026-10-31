@@ -4,7 +4,7 @@ import {
   AUDIO_STAGE_TYPES, createLiveAudioRunner, useFollowAudioRunner,
   type AudioPreview, type AudioSources, type LiveAudioRunner,
 } from '@weasel-js/diagram/effect-audio';
-import { pickFile } from '@editor/index';
+import { pickFile } from '@weasel-js/editor';
 import { useLatest } from '@weasel-js/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 

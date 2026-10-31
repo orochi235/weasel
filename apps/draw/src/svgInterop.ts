@@ -31,7 +31,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
-import { downloadBlob, pickFile } from '@editor/index';
+import { downloadBlob, pickFile } from '@weasel-js/editor';
 import { onePage, paperSizeOf } from './pages/drawPages';
 import { isPaperSize, PAPER_PRESETS } from './paperSizes';
 import { pageElements, pagesOfParsed } from './svgPages';

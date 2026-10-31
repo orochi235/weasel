@@ -1,7 +1,7 @@
 import type { FeatureEntry, RenderLayer, SceneCanvasSnap, SceneNode } from '@weasel-js/core';
 import { diagramEdgeOf, diagramLabelOf } from '@weasel-js/diagram';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
-import { usePageGrid, type PageSize } from '@editor/index';
+import { usePageGrid, type PageSize } from '@weasel-js/editor';
 import { useMemo } from 'react';
 import { useChartPref } from './prefs';
 

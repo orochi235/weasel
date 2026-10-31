@@ -19,11 +19,11 @@ describe('specifiersIn', () => {
     const code = [
       "import { a } from '@weasel-js/core';",
       "export { b } from '@weasel-js/ui/components/Icon';",
-      "const c = await import('@editor/index');",
+      "const c = await import('@weasel-js/editor');",
       "import '@weasel-js/theme/tokens.css';",
       "import React from 'react';",
     ].join('\n');
-    expect(specifiersIn(code)).toEqual(['@weasel-js/core', '@weasel-js/ui/components/Icon', '@editor/index']);
+    expect(specifiersIn(code)).toEqual(['@weasel-js/core', '@weasel-js/ui/components/Icon', '@weasel-js/editor']);
   });
 
   it('takes no specifier out of a template string', () => {
@@ -86,13 +86,12 @@ describe('bundledDirs', () => {
       '/repo/packages/ui',
       '/repo/packages/labkit',
       '/repo/apps/draw/src',
-      '/repo/apps/shared/editor/src',
     ]);
   });
 
   it('leaves out the app itself and the packages served from source', () => {
     const dirs = bundledDirs('/repo', ['/repo/apps/draw/src'], ws, new Set(['@weasel-js/ui', '@weasel-js/labkit']));
-    expect(dirs).toEqual(['/repo/packages/geom', '/repo/packages/core', '/repo/apps/shared/editor/src']);
+    expect(dirs).toEqual(['/repo/packages/geom', '/repo/packages/core']);
   });
 });
 

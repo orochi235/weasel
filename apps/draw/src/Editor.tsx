@@ -24,7 +24,7 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
-import { usePageFit, usePages } from '@editor/index';
+import { usePageFit, usePages } from '@weasel-js/editor';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS } from './paperSizes';
 import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
 import { EditorStatusBar } from './EditorStatusBar';

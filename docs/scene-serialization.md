@@ -113,7 +113,7 @@ A `set` is a scene edit like any other: it is undoable, joins an enclosing `scen
 skipped when the new value is deep-equal to the current one, and notifies `subscribe`. Values are JSON and are not
 to be mutated once set. `toJSON()` writes them under `doc`; `sceneFromJSON` and `loadState` read them back, and
 `createScene` or `useScene` take `doc` for the values a scene starts with, outside history. An app that loads node
-specs itself reads a snapshot's values with `docFromSnapshot` (`apps/shared/editor`).
+specs itself reads a snapshot's values with `docFromSnapshot` (`@weasel-js/editor`).
 
 ## Function fields and the registry
 

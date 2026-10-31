@@ -4,7 +4,7 @@ import {
   DIAGRAM_FORMATS, documentFromScene, documentSpecs, readDocument, writtenPage, type DiagramFormat,
 } from '@weasel-js/diagram-formats';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { downloadBlob, pickFile, reportFileWarnings } from '@editor/index';
+import { downloadBlob, pickFile, reportFileWarnings } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
 import { chartDoc, type ChartScene } from './chartDocument';
 import { replaceChart } from './chartPersistence';

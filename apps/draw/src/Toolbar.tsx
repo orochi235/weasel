@@ -25,7 +25,7 @@ import { useDebugCommands } from './dev/devRoutes';
 import { useFileCommands } from './fileCommands';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
-import { serializeReplacer } from '@editor/index';
+import { serializeReplacer } from '@weasel-js/editor';
 import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
