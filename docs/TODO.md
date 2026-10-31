@@ -876,23 +876,13 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
-- **(P3) [waiting] `Bar.along.browser.test.tsx`'s wheel-and-drag test failed once in Linux CI.** "the wheel and a drag
-  along the band scroll; a still press on an action fires it" missed by 13° (`expected 13.05 to be less than or equal
-  to 1`, line 247) in CI run 40818081756 on 76adffe24 (2026-10-29), and passed when that job was rerun. The fleet,
-  which runs no Linux, has never seen it fail. Waiting on a second sighting.
-  Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
-
-- **(P1) [agent] `ci.yml` has failed on every push to `main` since 2026-10-29 04:30.** The last 10 runs are red.
-  The two on 2026-10-30 (41117256616 on 2cbd23b28, 41118526156 on b6d8ba184) both end in the `browser` project
-  with `Serialized Error: { code: 'VITEST_BROWSER_CONNECTION_CLOSED' }`: the Chromium the project drives dropped
-  its socket mid-run. The earlier runs were not read. Filed rather than fixed in the 2026-10-30 close pass,
-  which changed docs only. Closes when `ci.yml` passes on a push to `main`.
-
 - **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
   `ubuntu-latest`, while every fleet node is a Mac, so a browser test that leans on the OS fails only in CI.
   The 11 that failed every `main` run from 2026-10-15 were fixed on 2026-10-29, passing in the lane below:
   they read Mac shortcut glyphs or the Apple word-delete key, measured text in the OS's fallback font
-  instead of the kit's Oswald, or held WebGL rounding to 1 where CI's SwiftShader reaches 2. Open: whether
+  instead of the kit's Oswald, or held WebGL rounding to 1 where CI's SwiftShader reaches 2. Likewise
+  `forge-stories` dropped its browser connection only on Linux, failing CI from 2026-10-29 until it ran
+  with isolate off (2026-10-31). Open: whether
   the fleet should run that lane routinely, so the next one is caught before CI.
   Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
   (Playwright's Linux image under Docker, arm64 rather than CI's x86; it reproduced CI's numbers exactly).
