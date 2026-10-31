@@ -23,8 +23,8 @@ afterEach(cleanup);
 
 const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
 const run = trackRun(shape);
-const number = (name: string) => ({ kind: 'number', name, description: '', default: 4 }) as PrefLeaf;
-const fields: PrefGroup = { name: 'Tools', children: Object.fromEntries(['n1', 'n2', 'n3', 'n4', 'n5', 'n6'].map((n) => [n, number(n)])) };
+const action = (name: string) => ({ kind: 'action', name, description: '', default: undefined, action: `edit.${name}` }) as PrefLeaf;
+const fields: PrefGroup = { name: 'Tools', children: Object.fromEntries(['n1', 'n2', 'n3', 'n4', 'n5', 'n6'].map((n) => [n, action(n)])) };
 const values = Object.fromEntries(Object.keys(fields.children).map((n) => [n, 4]));
 
 const docks: DockSpec[] = [{ id: 'top', edge: 'top' }];

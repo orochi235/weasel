@@ -52,6 +52,7 @@ import { Timeline } from '@weasel-js/ui/components/Timeline';
 import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { ToolButton } from '@weasel-js/ui/components/ToolButton';
+import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
@@ -62,7 +63,6 @@ import { JobProgress } from '../primitives/JobProgress';
 import { Legend, type LegendEntry } from '../primitives/Legend';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { Split } from '../primitives/Split';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { ZoomControl } from '../primitives/ZoomControl';
 import { ALIGN_ITEMS } from './alignItems';
 
@@ -229,12 +229,7 @@ function ButtonsAndToggles() {
         </RadioGroup>
       </Cell>
       <Cell label="ToggleBar">
-        <ToggleBar
-          ariaLabel="Align"
-          value={align}
-          onChange={setAlign}
-          items={ALIGN_ITEMS}
-        />
+        <ToggleBar ariaLabel="Align" value={align} onChange={setAlign} items={ALIGN_ITEMS} />
         <ToggleBar
           ariaLabel="Align, flat"
           variant="flat"

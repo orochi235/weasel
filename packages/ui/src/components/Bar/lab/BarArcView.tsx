@@ -22,7 +22,7 @@ function placedRows(m: BarReading): Readout[] {
 }
 
 /**
- * A bar along an arc built from knobs — how many actions and fields, a section, a lead — in scroll or menu overflow,
+ * A bar along an arc built from knobs — how many actions and fields, a panel, a lead — in scroll or menu overflow,
  * aligned and swept as asked. The readouts are read off the page: where each item sits along the run and whether it
  * is clipped, how far a scrolled run is laid back, where More landed, and which side the last popover opened on
  * beside the side the arc's outward normal says it should.

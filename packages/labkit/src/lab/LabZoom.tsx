@@ -9,6 +9,7 @@ import {
   type ViewApi,
 } from '@weasel-js/core';
 import { Icon } from '@weasel-js/ui/components/Icon';
+import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';
@@ -16,7 +17,6 @@ import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { atScale, viewMiddle } from '../canvas/cameraZoom';
 import { icon } from '../icons.gen';
 import { formatShortcut } from '../passthrough/weasel-ui';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { LabStoreContext } from '../state/context';
 import { LabActions, useInLabActions } from './LabActions';
 import { useLabCommands } from './LabContext';

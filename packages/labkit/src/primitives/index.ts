@@ -1,6 +1,10 @@
 export type { StatusBarItemProps, StatusBarProps } from '@weasel-js/ui/components/StatusBar';
 export { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
-export type { ToolbarButtonProps, ToolbarGroupProps, ToolbarProps } from '@weasel-js/ui/components/Toolbar';
+export type {
+  ToolbarButtonProps,
+  ToolbarGroupProps,
+  ToolbarProps,
+} from '@weasel-js/ui/components/Toolbar';
 export { Toolbar } from '@weasel-js/ui/components/Toolbar';
 export type { FloatingPanelProps } from './FloatingPanel';
 export { FloatingPanel } from './FloatingPanel';

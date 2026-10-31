@@ -25,9 +25,10 @@ const SIX: PrefGroup = {
   children: Object.fromEntries(KEYS.map((key, i) => [key, { kind: 'action', name: NAMES[i]!, description: '', default: undefined, action: `lens.${key}`, icon: GLYPHS[i] } as PrefLeaf])),
 };
 const FIELD_NAMES = ['Gain', 'Gamma', 'Blur', 'Grain', 'Tint', 'Fade'];
+// Groups that open, so each item is a popover trigger.
 const FIELDS: PrefGroup = {
   name: 'Lens',
-  children: Object.fromEntries(FIELD_NAMES.map((name) => [name.toLowerCase(), { kind: 'number', name, description: '', default: 1 } as PrefLeaf])),
+  children: Object.fromEntries(FIELD_NAMES.map((name) => [name.toLowerCase(), { name, as: 'panel', children: { v: { kind: 'number', name: `${name} value`, description: '', default: 1 } as PrefLeaf } } as PrefGroup])),
 };
 const VALUES = Object.fromEntries(FIELD_NAMES.map((name) => [name.toLowerCase(), 1]));
 

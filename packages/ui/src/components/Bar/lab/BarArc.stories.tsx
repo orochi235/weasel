@@ -12,7 +12,7 @@ export const OnAnArc = story({
     items: f.group({
       actions: f.number(D.items.actions).range(0, LAB_ACTIONS.length).step(1).label('Actions'),
       fields: f.number(D.items.fields).range(0, 4).step(1).label('Fields'),
-      section: f.boolean(D.items.section).label('Fields in a section of their own'),
+      panel: f.boolean(D.items.panel).label('Fields in a panel of their own'),
       lead: f.enum(D.items.lead, ['none', 'label', 'icon']).radio().label('Lead'),
     }).label('Items'),
     layout: f.group({

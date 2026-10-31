@@ -110,10 +110,10 @@ test("a field's popover on the bottom rim opens downward, and one on the right s
   cleanup();
 
   await mount('Right side, start');
-  screen.getByRole('button', { name: /Gain/ }).click();
+  screen.getByRole('button', { name: /Tune/ }).click();
   await screen.findByRole('dialog');
   await settle();
-  expect(cell('popover')).toBe('Gain: right');
+  expect(cell('popover')).toBe('Tune: right');
 });
 
 test('align start sets the run against its start, align end against its end', async () => {

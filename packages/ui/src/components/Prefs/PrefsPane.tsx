@@ -208,7 +208,6 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
           return [{ path: own, content: marks || marksHidden(ctx.hidden, own) ? <>{content}{marks}{marksHidden(ctx.hidden, own) && <HiddenBadge />}</> : content }];
         })
       }
-      row={({ path: own, leaf, at }) => <PrefRow ctx={ctx} path={own} pref={leaf} at={at} />}
       attrs={(at, leaf) => selectionAttrs(at, ctx, leaf)}
     />
   );

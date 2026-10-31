@@ -45,14 +45,13 @@ function expectAt(el: Element, shape: TrackShape, g: number) {
 }
 
 describe('Bar along a curve', () => {
-  test('on a shape every leaf but an action opens from a button', () => {
+  test('on a shape a field sits on the run, as on a straight bar', () => {
     const schema: PrefGroup = { name: 'Tools', children: { width: { kind: 'number', name: 'Width', description: '', default: 4 }, undo: action('Undo') } };
     render(<Bar schema={schema} values={{ width: 4 }} shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })} label="Tools" />);
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-shape', 'arc');
-    expect(screen.queryByRole('spinbutton')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Width' }));
     expect(screen.getByRole('spinbutton', { name: 'Width' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Width' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
   });
 
   test('a separator on the line stands across the run', () => {
@@ -168,7 +167,7 @@ describe('Bar along a curve: popovers open away from the center', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Width' }));
     return document.querySelector('[data-weasel-overlay]')!.getAttribute('data-placement');
   };
-  const width: PrefGroup = { name: 'Tools', children: { width: { kind: 'number', name: 'Width', description: '', default: 4 } } };
+  const width: PrefGroup = { name: 'Tools', children: { width: { name: 'Width', as: 'panel', children: { w: { kind: 'number', name: 'W', description: '', default: 4 } as PrefLeaf } } } };
 
   test('an item on the top of a ring opens its popover upward', () => {
     render(<Bar schema={width} values={{ width: 4 }} shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })} label="Tools" />);
@@ -271,8 +270,9 @@ describe('Bar along a curve: scroll mode', () => {
 describe('Bar along a curve: dragging the run', () => {
   const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
   const run = trackRun(shape);
-  const number = (name: string) => ({ kind: 'number', name, description: '', default: 4 }) as PrefLeaf;
-  const fields: PrefGroup = { name: 'Tools', children: Object.fromEntries(['n1', 'n2', 'n3', 'n4', 'n5', 'n6'].map((n) => [n, number(n)])) };
+  // Groups that open, so each item is a popover trigger.
+  const panel = (name: string): PrefGroup => ({ name, as: 'panel', children: { v: { kind: 'number', name: `${name} value`, description: '', default: 4 } as PrefLeaf } });
+  const fields: PrefGroup = { name: 'Tools', children: Object.fromEntries(['n1', 'n2', 'n3', 'n4', 'n5', 'n6'].map((n) => [n, panel(n)])) };
   const values = Object.fromEntries(Object.keys(fields.children).map((n) => [n, 4]));
 
   afterEach(() => {

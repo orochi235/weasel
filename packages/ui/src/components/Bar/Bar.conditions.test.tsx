@@ -65,9 +65,8 @@ describe('Bar conditions', () => {
     expect(leading.closest('[data-property-row][data-disabled]')).not.toBeNull();
   });
 
-  it('disables the row a vertical bar opens for a leaf', () => {
+  it('disables a field a vertical bar draws', () => {
     renderWithIcons(<Bar schema={schema} values={{ on: false }} orientation="vertical" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Size' }));
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
   });
 });

@@ -15,16 +15,17 @@ const SCHEMA: PrefGroup = {
   children: { size: num('Size'), again: pointer('size'), named: pointer('size', 'Size here'), lost: pointer('nowhere') },
 };
 
-const buttons = (): string[] => within(screen.getByRole('toolbar')).getAllByRole('button').map((b) => b.textContent ?? '');
+const fields = (): string[] =>
+  within(screen.getByRole('toolbar')).getAllByRole('spinbutton').map((f) => f.getAttribute('aria-label') ?? '');
 
-describe('a vertical bar\'s popover for an alias', () => {
-  it('is named for the leaf the alias shows where the alias gives no name, in a form as in a Bar', () => {
+describe('an alias on a vertical bar', () => {
+  it('draws as the field it shows, named for that leaf where the alias gives no name, in a form as in a Bar', () => {
     render(<PrefsForm schema={SCHEMA} orientation="vertical" values={{}} onChange={() => {}} />);
-    const inForm = buttons();
-    expect(inForm).toEqual(['Size', 'Size', 'Size here', 'Alias']);
+    const inForm = fields();
+    expect(inForm).toEqual(['Size', 'Size', 'Size here']);
     cleanup();
     render(<Bar schema={SCHEMA} orientation="vertical" label="Tools" values={{}} />);
-    expect(buttons()).toEqual(inForm);
+    expect(fields()).toEqual(inForm);
   });
 
   it('says so in a cell for an alias of nothing on a bar that runs across, in a form as in a Bar', () => {
@@ -36,11 +37,10 @@ describe('a vertical bar\'s popover for an alias', () => {
     expect(within(screen.getByRole('toolbar')).getByText('(alias: no pref at nowhere)')).toBeInTheDocument();
   });
 
-  it('opens the row of that leaf, which writes at its path', () => {
+  it('writes at the path of the leaf it shows', () => {
     const onChange = vi.fn();
     render(<PrefsForm schema={SCHEMA} orientation="vertical" values={{ size: 7 }} onChange={onChange} />);
-    fireEvent.click(within(screen.getByRole('toolbar')).getAllByRole('button', { name: 'Size' })[1]!);
-    const field = within(screen.getByRole('dialog', { name: 'Size' })).getByRole('spinbutton', { name: 'Size' });
+    const field = within(screen.getByRole('toolbar')).getAllByRole('spinbutton', { name: 'Size' })[1]!;
     expect(field).toHaveValue('7');
     fireEvent.change(field, { target: { value: '9' } });
     fireEvent.blur(field);

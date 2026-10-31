@@ -55,9 +55,9 @@ describe('PrefSchemaEditor over a root drawn as a bar', () => {
     fireEvent.click(within(preview()).getByRole('switch', { name: 'Vertical' }));
     const bar = within(preview()).getByRole('toolbar', { name: 'Text tools' });
     expect(bar).toHaveAttribute('aria-orientation', 'vertical');
-    // A field has no room beside it there, so it opens from a button.
-    expect(within(bar).queryByRole('spinbutton')).toBeNull();
-    expect(within(bar).getByRole('button', { name: 'Size' })).toBeInTheDocument();
+    // A field sits on it as on a bar that runs across, stacked.
+    expect(within(bar).getByRole('spinbutton', { name: 'Size' })).toBeInTheDocument();
+    expect(within(bar).queryByRole('button', { name: 'Size' })).toBeNull();
   });
 
   it('makes a value set in the preview that pref’s default', () => {

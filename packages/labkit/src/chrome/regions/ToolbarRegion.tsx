@@ -1,6 +1,6 @@
+import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import type { ReactNode } from 'react';
 import { Icon } from '../../passthrough/weasel-ui';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import type { RegionContribution, ToolbarItem, TrialChromeContext } from '../types';
 import { groupsOf } from './groupsOf';
 

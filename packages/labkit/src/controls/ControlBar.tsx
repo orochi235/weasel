@@ -68,7 +68,6 @@ export function ControlBar(props: ControlBarProps) {
             ),
           }))
       }
-      row={({ path: at }) => (visible(at) ? row(at) : null)}
     />
   );
 }

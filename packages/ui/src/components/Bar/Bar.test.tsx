@@ -138,13 +138,13 @@ describe('Bar', () => {
     expect(screen.getByRole('separator')).toHaveAttribute('aria-orientation', 'horizontal');
   });
 
-  it('opens every field from a button when vertical, and keeps actions on the bar', () => {
+  it('draws its fields on the bar when vertical, as a horizontal bar does, each stacked', () => {
     renderWithIcons(<Bar schema={schema} values={{ size: 12 }} orientation="vertical" label="Text" />);
     expect(screen.getByRole('toolbar')).toHaveAttribute('aria-orientation', 'vertical');
-    expect(screen.queryByLabelText('Size')).toBeNull();
+    const size = screen.getByRole('spinbutton', { name: 'Size' });
+    expect(size.closest('[data-orientation="vertical"]')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Size' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Size' }));
-    expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeInTheDocument();
   });
 
   it('is no toolbar of its own with no label, for a host that is one', () => {
