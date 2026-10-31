@@ -6,8 +6,9 @@
  * @packageDocumentation
  */
 export {
-  writtenPage,
-  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type ImportResult, type WriteOptions,
+  formatHolds, graphPageOf, graphPagesOf, writtenPage,
+  type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase,
+  type PageKind, type WriteOptions,
 } from './document';
 export { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';
 export { DIAGRAM_JSON } from './jsonFormat';

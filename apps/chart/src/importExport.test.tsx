@@ -47,8 +47,8 @@ afterEach(() => {
 
 const DOC: DiagramDocument = {
   pages: [
-    { id: 'one', name: 'First', width: 500, height: 400, data: { nodes: [{ id: 'a', lines: ['Alpha'], outline: 'diamond', at: { x: 40, y: 50 } }], edges: [] } },
-    { id: 'two', width: 500, height: 400, data: { nodes: [{ id: 'b', lines: ['Beta'] }], edges: [] } },
+    { kind: 'graph', id: 'one', name: 'First', width: 500, height: 400, data: { nodes: [{ id: 'a', lines: ['Alpha'], outline: 'diamond', at: { x: 40, y: 50 } }], edges: [] } },
+    { kind: 'graph', id: 'two', width: 500, height: 400, data: { nodes: [{ id: 'b', lines: ['Beta'] }], edges: [] } },
   ],
   crossPageEdges: [{ id: 'ab', from: 'a', to: 'b' }],
 };

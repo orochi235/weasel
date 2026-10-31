@@ -4,7 +4,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import {
   diagramScene, type ContainerHeader, type DataContainer, type DiagramData, type DiagramTheme,
 } from '@weasel-js/diagram';
-import type { DocumentPage } from '../document';
+import type { GraphPage } from '../document';
 import { laidOutPage, needsLayout } from '../pageLayout';
 import type { Box } from './pageCells';
 import type { Warn } from './readStyle';
@@ -93,7 +93,7 @@ function vertices(data: DiagramData, theme: DiagramTheme, headerOf: (id: string)
  * size it states, which is its drawn size in a document read from a scene;
  * anything else the size `diagramScene` gives it with estimated text.
  */
-export function writePage(page: DocumentPage, index: number, theme: DiagramTheme, warn: Warn): string {
+export function writePage(page: GraphPage, index: number, theme: DiagramTheme, warn: Warn): string {
   const laid = needsLayout(page) ? laidOutPage(page, { theme }) : page;
   const { data } = laid;
   // In world: the tree below makes each box relative to the cell holding it.

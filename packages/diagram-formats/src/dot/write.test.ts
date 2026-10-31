@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { DataNode, DiagramData } from '@weasel-js/diagram';
-import type { DiagramDocument, DocumentPage } from '../document';
+import type { DiagramDocument, GraphPage } from '../document';
 import { documentFromScene } from '../fromScene';
 import { docScene } from '../testing/docScene';
 import { readDot } from './read';
 import { writeDot } from './write';
 
-const pageOf = (data: DiagramData, extra: Partial<DocumentPage> = {}): DiagramDocument =>
-  ({ pages: [{ id: 'p', width: 400, height: 300, data, ...extra }], theme: 'paper' });
+const pageOf = (data: DiagramData, extra: Partial<Omit<GraphPage, 'kind'>> = {}): DiagramDocument =>
+  ({ pages: [{ kind: 'graph', id: 'p', width: 400, height: 300, data, ...extra }], theme: 'paper' });
 const back = (doc: DiagramDocument, page?: string) => readDot(writeDot(doc, page !== undefined ? { page } : {}).text).document.pages[0]!;
 const topology = (data: DiagramData) => data.edges.map((e) => [e.from, e.to, e.label]);
 const shapes = (data: DiagramData) => Object.fromEntries(data.nodes.map((n) => [n.id, [n.outline ?? 'rect', n.lines]]));

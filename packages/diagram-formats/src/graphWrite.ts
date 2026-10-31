@@ -7,7 +7,7 @@ import {
   dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
   type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
-import { writtenPage, type DiagramDocument, type DocumentPage, type WriteOptions } from './document';
+import { graphPageOf, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
 import { Warnings, hex2 } from './graphRead';
 import { rowLines } from './rowLines';
 
@@ -23,7 +23,7 @@ export interface Cluster {
 
 /** One page as a graph format writes it. */
 export interface GraphOut {
-  page: DocumentPage;
+  page: GraphPage;
   theme: DiagramTheme;
   /** Nodes and clusters at the top level, in order. */
   nodes: DataNode[];
@@ -40,7 +40,7 @@ export function nodeLines(node: DataNode, warnings: Warnings, format: string): s
   return rowLines(node, () => warnings.add(`${format} holds only text in a shape; its port rows and slots were dropped.`));
 }
 
-function clusterTree(page: DocumentPage, theme: DiagramTheme, warnings: Warnings, format: string) {
+function clusterTree(page: GraphPage, theme: DiagramTheme, warnings: Warnings, format: string) {
   const parent = new Map<string, string>();
   const claim = (member: string, owner: string) => { if (!parent.has(member) && member !== owner) parent.set(member, owner); };
   const all: Cluster[] = [];
@@ -77,8 +77,9 @@ function clusterTree(page: DocumentPage, theme: DiagramTheme, warnings: Warnings
 
 /** The page `opts` names, ready to write, with the warnings every graph format shares. `null` for a document with no pages. */
 export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, format: string): GraphOut | null {
-  const page = writtenPage(doc, opts);
-  if (page === null) return null;
+  const written = writtenPage(doc, opts);
+  if (written === null) return null;
+  const page = graphPageOf(written, format);
   const warnings = new Warnings();
   const theme = diagramThemeFrom(doc.theme);
   const byId = new Map(page.data.nodes.map((n) => [n.id, n]));

@@ -152,5 +152,5 @@ export function readPage(model: Element, src: PageSource, ids: IdSpace, warn: Wa
     ...(containers.length > 0 ? { containers } : {}),
   };
   const fit = fitted(data, src);
-  return { id: src.id, ...optional('name', src.name), width: fit.width, height: fit.height, data: fit.data };
+  return { kind: 'graph', id: src.id, ...optional('name', src.name), width: fit.width, height: fit.height, data: fit.data };
 }

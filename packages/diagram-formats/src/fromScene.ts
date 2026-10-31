@@ -6,7 +6,7 @@ import {
   DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
   type DataNode, type DiagramTheme,
 } from '@weasel-js/diagram';
-import type { DiagramDocument, DocumentPage } from './document';
+import type { DiagramDocument, GraphPage } from './document';
 import { kindOf, readEdge, readGroup, readRegion, readShape, type ReadNode, type ReadScene } from './sceneReaders';
 
 /** Options for {@link documentFromScene}. */
@@ -103,9 +103,10 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   }
 
   return {
-    pages: pages.map((p): DocumentPage => {
+    pages: pages.map((p): GraphPage => {
       const { nodes, edges: pageEdges, groups, containers } = buckets.get(p.id)!;
       return {
+        kind: 'graph',
         id: p.id,
         ...(p.name !== undefined ? { name: p.name } : {}),
         width: p.width,

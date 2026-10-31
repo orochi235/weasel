@@ -15,4 +15,5 @@ export const DIAGRAM_DOT: DiagramFormat = {
   read: readDot,
   write: writeDot,
   onePage: true,
+  kinds: ['graph'],
 };

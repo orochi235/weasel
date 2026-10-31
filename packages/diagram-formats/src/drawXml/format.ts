@@ -18,4 +18,5 @@ export const DRAW_XML: DiagramFormat = {
   detect: (text) => ROOT.test(text),
   read: readDrawXml,
   write: writeDrawXml,
+  kinds: ['graph'],
 };

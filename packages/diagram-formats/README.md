@@ -17,9 +17,13 @@ npm install @weasel-js/diagram-formats
 ## The interchange document
 
 A `DiagramDocument` is a diagram's pages and its theme. Each page has an id,
-an optional name, a sheet size, and a `DiagramData` whose places, boxes,
-waypoints, and label points run from the page's top-left corner. Ids share one
-namespace across the document. Edges whose ends are on different pages sit in
+an optional name, a sheet size, and a `kind` saying what it holds. A `'graph'`
+page holds a `DiagramData` whose places, boxes, waypoints, and label points run
+from the page's top-left corner, and may name its `notation` (`'class'`,
+`'state'`, …) for a format that writes graphs in several notations. Ids share one
+namespace across the document. Every format lists the page `kinds` it holds; a
+writer leaves out a page of another kind with a warning, and `formatHolds`
+says whether a format can write a whole document. Edges whose ends are on different pages sit in
 `crossPageEdges`, with no waypoints, since they draw as two stubs and their
 off-page tags.
 

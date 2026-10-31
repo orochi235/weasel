@@ -9,7 +9,7 @@ const CLASS: DataNode = {
   id: 'c',
   rows: [{ kind: 'label', text: 'Order' }, { kind: 'divider' }, { kind: 'field', label: 'id', value: 'int' }, { kind: 'divider', inset: 4 }],
 };
-const doc: DiagramDocument = { pages: [{ id: 'p', width: 400, height: 300, data: { nodes: [CLASS], edges: [] } }], theme: 'paper' };
+const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 400, height: 300, data: { nodes: [CLASS], edges: [] } }], theme: 'paper' };
 
 describe('a shape with divider rows, written to a text format', () => {
   it.each([

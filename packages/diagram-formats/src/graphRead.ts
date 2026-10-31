@@ -3,7 +3,7 @@
  * clusters' membership, its edges' ids, and the one page it reads into.
  */
 import type { DataContainer, DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
-import type { DocumentPage } from './document';
+import type { GraphPage } from './document';
 import { PAGE_MARGIN } from './pageLayout';
 
 /** Collects warnings, each once, in the order first met. */
@@ -106,7 +106,7 @@ export function withEdgeIds(edges: readonly DataEdge[], taken: Iterable<string>)
 }
 
 /** What a graph format read, as the one page it becomes. */
-export interface GraphPage {
+export interface GraphRead {
   name?: string;
   direction?: LayoutDirection;
   nodes: DataNode[];
@@ -117,9 +117,10 @@ export interface GraphPage {
 }
 
 /** The page a graph format reads into. */
-export function graphPage(g: GraphPage): DocumentPage {
+export function graphPage(g: GraphRead): GraphPage {
   const ids = [...g.nodes.map((n) => n.id), ...g.containers.map((c) => c.id)];
   return {
+    kind: 'graph',
     id: 'page-1',
     ...(g.name !== undefined && g.name !== '' ? { name: g.name } : {}),
     width: g.size?.width ?? 2 * PAGE_MARGIN,

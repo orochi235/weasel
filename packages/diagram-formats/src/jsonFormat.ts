@@ -1,5 +1,5 @@
 /** The native format: a {@link DiagramDocument} written out as JSON, which carries everything the model holds. */
-import type { DiagramDocument, DiagramFormat, ExportResult, ImportResult } from './document';
+import type { DiagramDocument, DiagramFormat, DocumentPage, ExportResult, ImportResult } from './document';
 
 const FORMAT = 'weasel-diagram';
 const VERSION = 1;
@@ -28,7 +28,9 @@ function read(text: string): ImportResult {
   }
   if (!Array.isArray(json.pages)) throw new Error('A weasel diagram document with no pages list');
   const { format: _f, version: _v, ...document } = json as DiagramJson;
-  return { document, warnings: [] };
+  // Files written before pages had kinds hold only graphs.
+  const pages = document.pages.map((p) => ({ ...p, kind: p.kind ?? 'graph' }) as DocumentPage);
+  return { document: { ...document, pages }, warnings: [] };
 }
 
 function write(doc: DiagramDocument): ExportResult {
@@ -44,4 +46,5 @@ export const DIAGRAM_JSON: DiagramFormat = {
   detect: (text) => isDiagramJson(parsed(text)),
   read,
   write,
+  kinds: ['graph'],
 };

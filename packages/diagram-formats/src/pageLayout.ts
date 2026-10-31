@@ -9,7 +9,7 @@ import {
   diagramScene, edgeIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
   type DiagramTheme, type MeasureRowText,
 } from '@weasel-js/diagram';
-import type { DocumentPage } from './document';
+import type { GraphPage } from './document';
 import { shiftData } from './shiftData';
 
 /** Room kept between a laid-out page's edges and what is on it. */
@@ -21,7 +21,7 @@ type Rect = { x: number; y: number; width: number; height: number };
 const unplacedRegion = (c: DataContainer): boolean => c.box === undefined && (c.role === 'pool' || (c.members ?? []).length === 0);
 
 /** Whether `page` has a node with no `at`, or a region only layout places. */
-export function needsLayout(page: DocumentPage): boolean {
+export function needsLayout(page: GraphPage): boolean {
   return page.data.nodes.some((n) => n.at === undefined) || (page.data.containers ?? []).some(unplacedRegion);
 }
 
@@ -52,7 +52,7 @@ const boxOf = (spec: DiagramSpec | undefined): Rect | undefined =>
  * When the page placed nothing, what layout placed is moved to sit
  * {@link PAGE_MARGIN} inside its corner. The page grows to hold it all.
  */
-export function laidOutPage(page: DocumentPage, opts: { theme: DiagramTheme; measure?: MeasureRowText }): DocumentPage {
+export function laidOutPage(page: GraphPage, opts: { theme: DiagramTheme; measure?: MeasureRowText }): GraphPage {
   const { data } = page;
   const placedAny = data.nodes.some((n) => n.at !== undefined) || (data.containers ?? []).some((c) => c.box !== undefined);
   const pinned = {

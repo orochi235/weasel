@@ -21,4 +21,5 @@ export const DIAGRAM_MERMAID: DiagramFormat = {
   read: readMermaid,
   write: writeMermaid,
   onePage: true,
+  kinds: ['graph'],
 };
