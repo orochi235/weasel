@@ -131,9 +131,9 @@ describe('createGridLayer', () => {
     it('keeps lines on the world lattice when the view is panned off it', () => {
       const layer = createGridLayer({ spacing: 10 });
       const tree = layer.draw(undefined, { x: 3, y: -4, scale: { x: 1, y: 1 } }, { width: 20, height: 20, dpr: 1 });
-      expect(verticalXs(tree)).toEqual([0, 10, 20, 30]);
+      expect(verticalXs(tree)).toEqual([10, 20]);
       for (const c of coords(tree)) {
-        if (c[0] === c[2]) expect([c[1], c[3]]).toEqual([-10, 20]);
+        if (c[0] === c[2]) expect([c[1], c[3]]).toEqual([-5, 17]);
       }
     });
 

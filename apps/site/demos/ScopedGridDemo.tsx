@@ -29,7 +29,7 @@ export function ScopedGridDemo() {
     spacing: 20,
     scopes: SCOPES,
     accentEvery: 5,
-    regions: () => sceneGridRegions(scene, ROOT),
+    regions: () => sceneGridRegions(scene, { root: ROOT }),
   }), [scene]);
   const snap = useMemo(() => ({ sources: [gridSnapSource({ spacing: 20, scopes: SCOPES })] }), []);
 

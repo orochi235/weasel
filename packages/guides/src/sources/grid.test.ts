@@ -9,8 +9,11 @@ type Point = { x: number; y: number };
 const point = (source: ReturnType<typeof gridSnapSource>, p: Point) => drive({ sources: [source] }).at(p).point;
 
 describe('gridSnapSource', () => {
-  it('is an unlimited-reach fallback over box, origin and pointer probes', () => {
-    expect(gridSnapSource({ spacing: 10 })).toMatchObject({ tier: 'fallback', reachPx: Infinity, roles: ['box', 'origin', 'pointer'] });
+  it('is an unlimited-reach fallback over box, origin, pointer and anchor probes', () => {
+    expect(gridSnapSource({ spacing: 10 })).toMatchObject({
+      id: 'grid', tier: 'fallback', reachPx: Infinity, roles: ['box', 'origin', 'pointer', 'anchor'],
+    });
+    expect(gridSnapSource({ spacing: 10, id: 'holes' }).id).toBe('holes');
   });
 
   it('offers the grid line on either side of a probe on each axis', () => {

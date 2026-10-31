@@ -48,6 +48,8 @@ interface DriveOpts {
   reachPx?: number;
   plane?: PlaneMap;
   originProjection?: OriginProjection<unknown>;
+  /** Each node's snap anchors, in its box frame. */
+  anchors?: (id: string) => readonly Point[] | null;
 }
 
 /** A snap session over `opts.scene`, as a host without `<SceneCanvas>` runs one. */
@@ -65,6 +67,7 @@ export function drive(opts: DriveOpts) {
     ...(opts.reachPx !== undefined ? { reachPx: opts.reachPx } : {}),
     ...(opts.plane ? { plane: opts.plane } : {}),
     ...(opts.originProjection ? { originProjection: opts.originProjection } : {}),
+    ...(opts.anchors ? { anchors: opts.anchors } : {}),
   });
   return { session, at: (p: Point, mods: SnapMods = FREE): SnapOutcome => session.at(p, mods) };
 }

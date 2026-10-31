@@ -1,79 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { createCellHighlightLayer } from './cellHighlight';
-import { IMPERIAL_INCHES } from '@weasel-js/core';
+
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+const DIMS = { width: 200, height: 200, dpr: 1 };
+const box = (x: number, y: number, width: number, height: number) => ({ col: 0, row: 0, box: { x, y, width, height } });
 
 describe('createCellHighlightLayer', () => {
   it('exposes id and label', () => {
-    const layer = createCellHighlightLayer({ spacing: 10, getCell: () => null });
+    const layer = createCellHighlightLayer({ getCell: () => null });
     expect(layer.id).toBe('cell-highlight');
     expect(layer.label).toBe('Cell highlight');
   });
 
-  it('draw emits one rect path command at the cell coords', () => {
-    const layer = createCellHighlightLayer({
-      spacing: 20,
-      getCell: () => ({ col: 2, row: 3 }),
-    });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200, dpr: 1 });
+  it('draw emits one rect path command at the cell\'s box', () => {
+    const layer = createCellHighlightLayer({ getCell: () => box(40, 60, 20, 5) });
+    const tree = layer.draw(undefined, VIEW, DIMS);
     expect(tree).toHaveLength(1);
-    expect(tree[0]).toMatchObject({
-      kind: 'path',
-      path: { kind: 'rect', x: 40, y: 60, width: 20, height: 20 },
-    });
+    expect(tree[0]).toMatchObject({ kind: 'path', path: { kind: 'rect', x: 40, y: 60, width: 20, height: 5 } });
   });
 
   it('draw returns [] when getCell returns null', () => {
-    const layer = createCellHighlightLayer({ spacing: 20, getCell: () => null });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
-    expect(tree).toEqual([]);
-  });
-
-  it('honors custom origin', () => {
-    const layer = createCellHighlightLayer({
-      spacing: 10,
-      origin: () => ({ x: 5, y: 7 }),
-      getCell: () => ({ col: 1, row: 1 }),
-    });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
-    expect(tree[0]).toMatchObject({
-      kind: 'path',
-      path: { kind: 'rect', x: 15, y: 17, width: 10, height: 10 },
-    });
+    expect(createCellHighlightLayer({ getCell: () => null }).draw(undefined, VIEW, DIMS)).toEqual([]);
   });
 
   it('honors a custom solid Paint fill', () => {
-    const layer = createCellHighlightLayer({
-      spacing: 10,
-      getCell: () => ({ col: 0, row: 0 }),
-      fill: { paint: { kind: 'solid', color: '#123456' } },
-    });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
-    expect(tree[0]).toMatchObject({
-      kind: 'path',
-      fill: { paint: { kind: 'solid', color: '#123456' } },
-    });
+    const layer = createCellHighlightLayer({ getCell: () => box(0, 0, 10, 10), fill: { paint: { kind: 'solid', color: '#123456' } } });
+    expect(layer.draw(undefined, VIEW, DIMS)[0]).toMatchObject({ kind: 'path', fill: { paint: { kind: 'solid', color: '#123456' } } });
   });
 
-  it('resolves a tagged spacing value via the unit system', () => {
-    const layer = createCellHighlightLayer({
-      spacing: { value: 1, unit: 'ft' },
-      unitSystem: IMPERIAL_INCHES,
-      getCell: () => ({ col: 2, row: 1 }),
-    });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
-    // 1ft = 12in -> rect at (24, 12, 12, 12).
-    expect(tree[0]).toMatchObject({
-      kind: 'path',
-      path: { kind: 'rect', x: 24, y: 12, width: 12, height: 12 },
-    });
-  });
-
-  it('sizes the cell by each axis of a per-axis spacing', () => {
-    const layer = createCellHighlightLayer({
-      spacing: { x: 20, y: 5 },
-      getCell: () => ({ col: 2, row: 3 }),
-    });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200, dpr: 1 });
-    expect(tree[0]).toMatchObject({ path: { kind: 'rect', x: 40, y: 15, width: 20, height: 5 } });
+  it('fills what the canvas shows of a cell without end', () => {
+    const layer = createCellHighlightLayer({ getCell: () => box(-Infinity, 20, Infinity, 10) });
+    expect(layer.draw(undefined, VIEW, DIMS)[0]).toMatchObject({ path: { kind: 'rect', x: 0, y: 20, width: 200, height: 10 } });
   });
 });

@@ -4,28 +4,15 @@
  * a layer sequence.
  */
 
-import {
-  type DrawCommand,
-  type RenderLayer,
-  type CommandFill,
-  resolveAxes,
-  type PlaneUnits,
-  type PlaneValue,
-} from '@weasel-js/core';
+import { type DrawCommand, type RenderLayer, type CommandFill, viewportWorldRect } from '@weasel-js/core';
 import { mat3 } from '@weasel-js/geom';
+import { hasArea, intersect } from './lattice';
 import type { GridCell } from './pointToGridCell';
 
 /** Options for `createCellHighlightLayer`. */
 export interface CellHighlightLayerOpts {
-  /** Cell size in world units (matches the grid's `spacing`). */
-  spacing: PlaneValue;
-  /** Optional unit system for resolving tagged `spacing` values. */
-  unitSystem?: PlaneUnits;
-  /** Origin the cell grid is anchored to, in world units. Defaults to (0,0). */
-  origin?: () => { x: number; y: number };
-  /** Cell to highlight, or `null` to skip drawing. A cell carrying its
-   *  lattice's `pitch` (`useGridCellHover` with `scopes`) is drawn at it,
-   *  and one carrying a `frame` is drawn in it, from its origin. */
+  /** Cell to highlight, or `null` to skip drawing: its `box`, in its
+   *  `frame` where it has one (`pointToGridCell`, `useGridCellHover`). */
   getCell: () => GridCell | null;
   /** Fill for the highlighted cell. Defaults to a soft green. */
   fill?: CommandFill;
@@ -39,20 +26,13 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
   return {
     id: 'cell-highlight',
     label: 'Cell highlight',
-    draw: () => {
+    draw: (_data, view, dims) => {
       const cell = opts.getCell();
       if (!cell) return [];
-      const spacing = cell.pitch ?? resolveAxes(opts.spacing, opts.unitSystem);
-      const o = cell.frame || !opts.origin ? { x: 0, y: 0 } : opts.origin();
-      const x = o.x + cell.col * spacing.x;
-      const y = o.y + cell.row * spacing.y;
-      const children: DrawCommand[] = [
-        {
-          kind: 'path',
-          path: { kind: 'rect', x, y, width: spacing.x, height: spacing.y },
-          fill,
-        },
-      ];
+      // A root cell on an axis with no lines runs without end: fill what the canvas shows of it.
+      const box = cell.frame ? cell.box : intersect(cell.box, viewportWorldRect(view, dims));
+      if (!hasArea(box)) return [];
+      const children: DrawCommand[] = [{ kind: 'path', path: { kind: 'rect', ...box }, fill }];
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       return cell.frame ? [{ kind: 'group', transform: mat3.fromAffine(cell.frame), children }] : children;
     },

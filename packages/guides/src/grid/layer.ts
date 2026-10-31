@@ -13,39 +13,39 @@ import {
   type RenderLayer,
   type CommandStroke,
   type PlaneUnits,
-  type PlaneValue,
   viewportWorldRect,
   type Dims,
   type View,
 } from '@weasel-js/core';
 import { applyToPoint, invert, mat3, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
-import { hasArea, lattice, onLattice, type LatticeStyles, type Rect } from './lattice';
+import { mapLines, type GridLines, type GridSpacing } from './axes';
+import { hasArea, intersect, lattice, outlineBox, type LatticeStyles, type Rect } from './lattice';
 import type { GridRegion } from './regions';
-import { gridPitch, type GridScopes } from './scopedPitch';
+import { containerLines, gridLines, type GridScopes } from './reading';
 
 /** Options for `createGridLayer`. */
 export interface GridLayerOpts {
   /**
-   * Distance between adjacent grid lines (also known as grid pitch),
-   * in world (base) units. Accepts a bare number or a tagged
-   * `{ value, unit }`. Tagged values require `unitSystem` to be supplied.
-   * Either may be per axis — `{ x, y }`.
+   * The grid's lines: a pitch for both axes, or a rule per axis (`{ x, y }`,
+   * see `GridAxis`), an axis left out drawing none. Lengths are a bare
+   * number in world (base) units or a tagged `{ value, unit }`, which needs
+   * `unitSystem`.
    */
-  spacing: PlaneValue;
+  spacing: GridSpacing;
   /** Optional unit system for resolving tagged `spacing` values. */
   unitSystem?: PlaneUnits;
   /** Read `spacing` in these scopes, in place of `unitSystem`: the root's
    *  system outside every region, and each region's own scope inside it. */
   scopes?: GridScopes;
-  /** The containers drawing their own scope's lattice, read every paint,
-   *  each cut out of the lattice around it and drawn in its own `frame`.
-   *  Read only with `scopes`; `sceneGridRegions` builds them from a scene. */
+  /** The containers drawing a lattice of their own, read every paint, each
+   *  cut out of the lattice around it and drawn in its own `frame`:
+   *  `sceneGridRegions` builds them from a scene. */
   regions?: () => readonly GridRegion[];
   /**
    * The area to cover, in world units, read every paint with that paint's
    * view and canvas size. Lines start at its own `x`/`y`. Omitted, the grid
-   * covers whatever the canvas shows, with its lines on world multiples of
-   * `spacing` so they stay put as the view pans.
+   * covers whatever the canvas shows, with its lines measured from world
+   * zero so they stay put as the view pans.
    */
   bounds?: (view: View, dims: Dims) => Rect;
   /** Lines every N cells get the accent style. 0/undef = no accent. */
@@ -91,23 +91,20 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
     id: 'grid',
     label: 'Grid',
     draw: (_data, view, dims) => {
-      const every = opts.accentEvery && opts.accentEvery > 0 ? opts.accentEvery : 1;
-      const spacing = gridPitch(opts.spacing, opts.unitSystem, opts.scopes);
-      const shown = viewportWorldRect(view, dims);
-      const b = opts.bounds ? opts.bounds(view, dims) : onLattice(shown, spacing, every, { x: 0, y: 0 });
+      const b = opts.bounds ? opts.bounds(view, dims) : padded(viewportWorldRect(view, dims), view);
       if (!hasArea(b)) return [];
-      const root = lattice(b, spacing, opts, view, styles);
-      const regions = opts.scopes && opts.regions ? opts.regions() : [];
+      // The root's lines run from the bounds' corner, else from world zero, as snapping reads them.
+      const anchor = opts.bounds ? { x: b.x, y: b.y } : { x: 0, y: 0 };
+      const root = lattice(b, placed(gridLines(opts.spacing, opts.unitSystem, opts.scopes), anchor), opts, view, styles);
+      const regions = opts.regions?.() ?? [];
       if (regions.length === 0) return root;
 
-      // A region with no frame runs through the root's anchor, as snapping reads it.
-      const anchor = opts.bounds ? { x: b.x, y: b.y } : { x: 0, y: 0 };
-      const area = opts.bounds ? b : shown;
       const children: DrawCommand[] = [{ kind: 'group', clip: withHoles(rectOutline(b), regions), children: root }];
       const visit = (r: GridRegion): void => {
-        const pitch = gridPitch(opts.spacing, opts.unitSystem, opts.scopes, r.chain);
-        const lines = regionLattice(r, area, (box, frame) =>
-          lattice(onLattice(box, pitch, every, frame ? { x: 0, y: 0 } : anchor), pitch, opts, view, styles, frame));
+        const own = containerLines(r.spacing, opts.spacing, opts.unitSystem, opts.scopes, r.chain);
+        const lines = own
+          ? regionLattice(r, b, (box, frame) => lattice(box, placed(own, frame ? { x: 0, y: 0 } : anchor), opts, view, styles, frame))
+          : [];
         if (lines.length) children.push({ kind: 'group', clip: withHoles(r.outline, r.regions ?? []), children: lines });
         for (const inner of r.regions ?? []) visit(inner);
       };
@@ -116,6 +113,19 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       return children;
     },
   };
+}
+
+/** `r` grown by a screen pixel each way, so a line just off the canvas
+ *  still draws the half of it that is on. */
+function padded(r: Rect, view: View): Rect {
+  const px = 1 / Math.abs(view.scale.x);
+  const py = 1 / Math.abs(view.scale.y);
+  return { x: r.x - px, y: r.y - py, width: r.width + 2 * px, height: r.height + 2 * py };
+}
+
+/** `lines` moved to run from `anchor`. */
+function placed(lines: GridLines, anchor: Point): GridLines {
+  return { x: lines.x && mapLines(lines.x, 1, anchor.x), y: lines.y && mapLines(lines.y, 1, anchor.y) };
 }
 
 function rectOutline(r: Rect): Point[] {
@@ -164,18 +174,4 @@ function regionLattice(
   if (!hasArea(box)) return [];
   const lines = draw(box, r.frame);
   return lines.length ? [{ kind: 'group', transform: mat3.fromAffine(r.frame), children: lines }] : [];
-}
-
-function outlineBox(outline: readonly Point[]): Rect {
-  const xs = outline.map((p) => p.x);
-  const ys = outline.map((p) => p.y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
-  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
-}
-
-function intersect(a: Rect, b: Rect): Rect {
-  const x = Math.max(a.x, b.x);
-  const y = Math.max(a.y, b.y);
-  return { x, y, width: Math.min(a.x + a.width, b.x + b.width) - x, height: Math.min(a.y + a.height, b.y + b.height) - y };
 }

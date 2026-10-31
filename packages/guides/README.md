@@ -42,9 +42,25 @@ source it is built from, `createGridLayer` and `gridSnapSource`, go to
 `<SceneCanvas layers>` and `snap.sources` on their own where a canvas wants
 only one of them.
 
+`spacing` is a pitch for both axes, or a rule per axis. An axis left out has
+no lines, so it neither draws nor snaps:
+
+```ts
+createGridPreset({ spacing: { y: 25 } });                                  // slatwall: rows only
+createGridPreset({ spacing: { x: { at: [0, 40, 55, 100] }, y: 10 } });     // uneven bays
+createGridPreset({ spacing: { x: { pitch: 25.4, offset: 12.7, from: 12.7, to: 600 }, y: 25.4 } });
+```
+
+A container can run a grid of its own, which its children snap to in its frame
+(from its corner, turned and scaled as it is): pass `gridOf` to the snap source
+(or the preset's `snap`), and the same `gridOf` to `sceneGridRegions` for the
+layer's `regions`. A node declaring snap anchors (`<SceneCanvas snap={{ anchors }}>`)
+lands those on the grid instead of its box, and `gridFit` checks whether a set of
+points sits on its crossings.
+
 | Area | Exports |
 |---|---|
-| Grid | `createGridPreset`, `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `pointToGridCell`, `roundToCell` |
+| Grid | `createGridPreset`, `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `pointToGridCell`, `roundToCell`, `sceneGridRegions`, `gridLines`, `gridFit` |
 | Guides | `useGuides`, `createGuidesLayer`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
 | Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
 | Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |

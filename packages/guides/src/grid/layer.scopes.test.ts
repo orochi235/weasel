@@ -82,7 +82,7 @@ describe('createGridLayer — unit scopes', () => {
       bounds: () => ({ x: 3, y: 3, width: 90, height: 90 }),
     });
     const [, inner] = layer.draw(undefined, VIEW, DIMS);
-    expect(verticals(inner!)).toEqual([18, 23, 28, 33, 38, 43]);
+    expect(verticals(inner!)).toEqual([23, 28, 33, 38]);
   });
 
   it('draws one flat lattice with no regions, as it always has', () => {
@@ -105,7 +105,7 @@ describe('sceneGridRegions', () => {
     const inner = scene.add({ kind: 'group', layer: 'default', parent: plain, pose, data: {}, units: TENTH });
     scene.add({ kind: 'group', layer: 'default', pose, data: {} });
 
-    const regions = sceneGridRegions(scene, ROOT, (id) => square(id === inner ? 1 : 0, 0, 1));
+    const regions = sceneGridRegions(scene, { root: ROOT }, (id) => square(id === inner ? 1 : 0, 0, 1));
     expect(regions).toHaveLength(1);
     expect(regions[0]!.chain).toEqual([ROOT, HALF]);
     expect(regions[0]!.regions).toHaveLength(1);
@@ -117,23 +117,18 @@ describe('sceneGridRegions', () => {
     const pose = { x: 0, y: 0, width: 10, height: 10 };
     const outer = scene.add({ kind: 'group', layer: 'default', pose, data: {}, units: HALF });
     scene.add({ kind: 'group', layer: 'default', parent: outer, pose, data: {}, units: TENTH });
-    expect(sceneGridRegions(scene, ROOT, () => null)).toEqual([]);
+    expect(sceneGridRegions(scene, { root: ROOT }, () => null)).toEqual([]);
   });
 });
 
 describe('a hovered cell in a scoped grid', () => {
   const regions: GridRegion[] = [{ outline: square(20, 20, 40), chain: [ROOT, HALF] }];
 
-  it('is on the lattice of the region under it, and names its pitch', () => {
+  it('is on the lattice of the region under it, at its size', () => {
     expect(pointToGridCell({ x: 31, y: 26 }, 10, undefined, undefined, { scopes: { root: ROOT }, regions }))
-      .toEqual({ col: 6, row: 5, pitch: { x: 5, y: 5 } });
+      .toEqual({ col: 6, row: 5, box: { x: 30, y: 25, width: 5, height: 5 } });
     expect(pointToGridCell({ x: 71, y: 26 }, 10, undefined, undefined, { scopes: { root: ROOT }, regions }))
-      .toEqual({ col: 7, row: 2, pitch: { x: 10, y: 10 } });
-  });
-
-  it('is highlighted at its own lattice\'s size', () => {
-    const layer = createCellHighlightLayer({ spacing: 10, getCell: () => ({ col: 6, row: 5, pitch: { x: 5, y: 5 } }) });
-    expect(layer.draw(undefined, VIEW, DIMS)[0]).toMatchObject({ path: { kind: 'rect', x: 30, y: 25, width: 5, height: 5 } });
+      .toEqual({ col: 7, row: 2, box: { x: 70, y: 20, width: 10, height: 10 } });
   });
 });
 
@@ -197,7 +192,7 @@ describe('sceneGridRegions — frames', () => {
       systemLayers: [{ id: 'default', visible: true, locked: false }], composition: RIGID_POSE_COMPOSITION,
     });
     scene.add({ kind: 'group', layer: 'default', pose: { x: 20, y: 20, width: 40, height: 40, rotation: TURN } as Bounds, data: {}, units: HALF });
-    const [region] = sceneGridRegions(scene, ROOT);
+    const [region] = sceneGridRegions(scene, { root: ROOT });
     const frame = multiply(rotateAboutPoint(40, 40, TURN), translate(20, 20));
     region!.frame!.forEach((v, i) => expect(v).toBeCloseTo(frame[i]!, 9));
     squareIn(frame, 0, 0, 40).forEach((p, i) => {
@@ -214,11 +209,11 @@ describe('a hovered cell in a turned region', () => {
   it('is counted in the region\'s frame, and carries it', () => {
     const [x, y] = applyToPoint(frame, 12, 7);
     expect(pointToGridCell({ x, y }, 10, undefined, undefined, { scopes: { root: ROOT }, regions }))
-      .toEqual({ col: 2, row: 1, pitch: { x: 5, y: 5 }, frame });
+      .toEqual({ col: 2, row: 1, box: { x: 10, y: 5, width: 5, height: 5 }, frame });
   });
 
   it('is highlighted in its frame', () => {
-    const layer = createCellHighlightLayer({ spacing: 10, getCell: () => ({ col: 2, row: 1, pitch: { x: 5, y: 5 }, frame }) });
+    const layer = createCellHighlightLayer({ getCell: () => ({ col: 2, row: 1, box: { x: 10, y: 5, width: 5, height: 5 }, frame }) });
     expect(layer.draw(undefined, VIEW, DIMS)[0]).toMatchObject({
       kind: 'group',
       transform: mat3.fromAffine(frame),

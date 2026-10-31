@@ -7,9 +7,11 @@ export interface GridPresetOptions extends GridLayerOpts {
   /** Preset id. Default `'grid'`. */
   id?: string;
   /** Snap gestures to the grid's lines, on its `spacing`, `unitSystem` and
-   *  `scopes`; `origin` is where the snap lattice starts. `false` draws the
-   *  grid without snapping to it. Default on, from `(0, 0)`. */
-  snap?: false | Pick<GridSnapSourceOptions, 'origin'>;
+   *  `scopes`; `origin` is where the snap lattice starts, and `gridOf` gives
+   *  containers their own (pair it with `regions` from `sceneGridRegions`
+   *  with the same `gridOf`, so what is drawn is what snaps). `false` draws
+   *  the grid without snapping to it. Default on, from `(0, 0)`. */
+  snap?: false | Pick<GridSnapSourceOptions, 'origin' | 'gridOf'>;
 }
 
 /**
@@ -23,6 +25,7 @@ export function createGridPreset(opts: GridPresetOptions): FeaturePreset {
     id,
     layers: { grid: { layer: createGridLayer(layer) } },
     snapSources: snap === false ? [] : [gridSnapSource({
+      id,
       spacing,
       ...(unitSystem === undefined ? {} : { unitSystem }),
       ...(scopes === undefined ? {} : { scopes }),

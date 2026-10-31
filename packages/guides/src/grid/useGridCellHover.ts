@@ -12,11 +12,11 @@ import {
   screenToWorld,
   type ViewTransform,
   type PlaneUnits,
-  type PlaneValue,
 } from '@weasel-js/core';
+import type { GridSpacing } from './axes';
 import { pointToGridCell, type GridCell } from './pointToGridCell';
 import type { GridRegion } from './regions';
-import type { GridScopes } from './scopedPitch';
+import type { GridScopes } from './reading';
 
 /** Options for `useGridCellHover`. */
 export interface UseGridCellHoverOptions {
@@ -25,17 +25,16 @@ export interface UseGridCellHoverOptions {
   /** Read the current view transform. Called on every pointermove so it can
    *  reflect live pan/zoom without a re-binding step. */
   view: () => ViewTransform;
-  /** Cell spacing in world units. Same value you pass to `createGridLayer`
-   *  and `createCellHighlightLayer`. */
-  spacing: PlaneValue;
+  /** The grid's lines. Same value you pass to `createGridLayer`. */
+  spacing: GridSpacing;
   /** Required if `spacing` is tagged (e.g. `{ value: 1, unit: 'ft' }`). */
   unitSystem?: PlaneUnits;
   /** Origin the cell grid is anchored to, in world units. Default `(0, 0)`. */
   origin?: { x: number; y: number };
-  /** Read `spacing` in these scopes, as `createGridLayer` does: a cell inside
-   *  one of `regions` is on its scope's lattice and carries that `pitch`. */
+  /** Read `spacing` in these scopes, as `createGridLayer` does. */
   scopes?: GridScopes;
-  /** The containers declaring scopes, read on every pointermove. */
+  /** The containers running lattices of their own, read on every
+   *  pointermove: a cell inside one is on its lattice, in its frame. */
   regions?: () => readonly GridRegion[];
   /** Fires when the hovered cell changes (including to/from `null`). Use it
    *  to invalidate your layer renderer. */
@@ -59,7 +58,8 @@ function cellsEqual(
 ): boolean {
   if (a === b) return true;
   if (a === null || b === null) return false;
-  return a.col === b.col && a.row === b.row && a.pitch?.x === b.pitch?.x && a.pitch?.y === b.pitch?.y
+  return a.col === b.col && a.row === b.row
+    && a.box.x === b.box.x && a.box.y === b.box.y && a.box.width === b.box.width && a.box.height === b.box.height
     && (a.frame === b.frame || (!!a.frame && !!b.frame && a.frame.every((v, i) => v === b.frame![i])));
 }
 
@@ -90,7 +90,7 @@ export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHove
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
       const [wx, wy] = screenToWorld(sx, sy, o.view());
-      const scoped = o.scopes ? { scopes: o.scopes, ...(o.regions ? { regions: o.regions() } : {}) } : undefined;
+      const scoped = { ...(o.scopes ? { scopes: o.scopes } : {}), ...(o.regions ? { regions: o.regions() } : {}) };
       update(pointToGridCell({ x: wx, y: wy }, o.spacing, o.unitSystem, o.origin, scoped));
     };
     const onLeave = () => update(null);

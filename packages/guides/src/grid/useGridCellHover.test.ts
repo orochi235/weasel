@@ -38,8 +38,8 @@ describe('useGridCellHover', () => {
       useGridCellHover({ ref, view: () => identityView, spacing: 10 }),
     );
     act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 7 }); });
-    expect(result.current.cell).toEqual({ col: 2, row: 0 });
-    expect(result.current.getCell()).toEqual({ col: 2, row: 0 });
+    expect(result.current.cell).toMatchObject({ col: 2, row: 0 });
+    expect(result.current.getCell()).toMatchObject({ col: 2, row: 0 });
   });
 
   it('only updates state when the cell actually changes', () => {
@@ -57,11 +57,11 @@ describe('useGridCellHover', () => {
       fire(el, 'pointermove', { clientX: 29, clientY: 9 });
     });
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith({ col: 2, row: 0 });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ col: 2, row: 0 }));
     // Cross into col 3 — onChange fires again.
     act(() => { fire(el, 'pointermove', { clientX: 31, clientY: 5 }); });
     expect(onChange).toHaveBeenCalledTimes(2);
-    expect(onChange).toHaveBeenLastCalledWith({ col: 3, row: 0 });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ col: 3, row: 0 }));
   });
 
   it('resets to null on pointerleave', () => {
@@ -73,7 +73,7 @@ describe('useGridCellHover', () => {
       useGridCellHover({ ref, view: () => identityView, spacing: 10, onChange }),
     );
     act(() => { fire(el, 'pointermove', { clientX: 5, clientY: 5 }); });
-    expect(result.current.cell).toEqual({ col: 0, row: 0 });
+    expect(result.current.cell).toMatchObject({ col: 0, row: 0 });
     act(() => { fire(el, 'pointerleave'); });
     expect(result.current.cell).toBeNull();
     expect(onChange).toHaveBeenLastCalledWith(null);
@@ -89,7 +89,7 @@ describe('useGridCellHover', () => {
       useGridCellHover({ ref, view: () => view, spacing: 10 }),
     );
     act(() => { fire(el, 'pointermove', { clientX: 30, clientY: 30 }); });
-    expect(result.current.cell).toEqual({ col: 1, row: 1 });
+    expect(result.current.cell).toMatchObject({ col: 1, row: 1 });
   });
 
   it('subtracts the element bounding rect so layout offsets do not leak in', () => {
@@ -101,7 +101,7 @@ describe('useGridCellHover', () => {
     );
     act(() => { fire(el, 'pointermove', { clientX: 75, clientY: 117 }); });
     // local: (25, 17) → cell (2, 1)
-    expect(result.current.cell).toEqual({ col: 2, row: 1 });
+    expect(result.current.cell).toMatchObject({ col: 2, row: 1 });
   });
 
   it('does not attach listeners when enabled is false', () => {
@@ -128,7 +128,7 @@ describe('useGridCellHover — abandoned renders', () => {
     }
     renderThenAbandon(10, 100, (spacing) => createElement(Probe, { spacing }));
     act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 7 }); });
-    expect(getCell!()).toEqual({ col: 2, row: 0 });
+    expect(getCell!()).toMatchObject({ col: 2, row: 0 });
   });
 
   it('reports a move between two regions whose cells share a column and row', () => {
