@@ -118,6 +118,23 @@ describe('ListEditor', () => {
     expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
   });
 
+  it('moves focus to the add menu when the last entry is removed from a list of several kinds', () => {
+    function Kinds() {
+      const [value, setValue] = useState(['a']);
+      return (
+        <ListEditor
+          aria-label="Glob"
+          value={value}
+          onChange={setValue}
+          newEntry={[{ label: 'Empty', make: () => '' }, { label: 'Star', make: () => '*' }]}
+        />
+      );
+    }
+    renderWithIcons(<Kinds />);
+    press('Remove Glob 1');
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
+  });
+
   it('leaves focus on the add button after adding to a list that draws its own entries', () => {
     renderWithIcons(<Numbers initial={[1]} />);
     press('Add');

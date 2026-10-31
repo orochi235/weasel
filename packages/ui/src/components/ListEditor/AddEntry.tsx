@@ -28,6 +28,7 @@ export function AddEntry<T>({
   if (kinds.length > 1) {
     return (
       <MenuButton
+        buttonRef={buttonRef}
         label={label}
         isDisabled={disabled}
         items={kinds.map((kind, i) => ({ value: String(i), label: kind.label }))}

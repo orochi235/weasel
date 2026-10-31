@@ -1,4 +1,5 @@
-import { useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode, type Ref } from 'react';
+import { assignRef } from '@weasel-js/react';
 import type { MenuEntry } from '@weasel-js/menu';
 import { type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
@@ -37,6 +38,8 @@ export type MenuButtonProps<T extends string = string> = {
   isDisabled?: boolean;
   className?: string;
   'aria-label'?: string;
+  /** Receives the trigger `<button>`, to move focus to it. */
+  buttonRef?: Ref<HTMLButtonElement>;
 } & SegmentTooltipFields & OverlayPortalProps;
 
 /**
@@ -60,8 +63,17 @@ export function MenuButton<T extends string = string>({
   portalContainer,
   shortcut,
   tooltip,
+  buttonRef,
 }: MenuButtonProps<T>) {
   const trigger = useMenuTrigger(portalContainer);
+  const triggerButton = trigger.button;
+  const setButton = useCallback(
+    (el: HTMLButtonElement | null) => {
+      triggerButton.current = el;
+      assignRef(buttonRef, el);
+    },
+    [triggerButton, buttonRef],
+  );
   const entries = useMemo(
     (): MenuEntry[] => items.map((item) => ({
       kind: 'item',
@@ -83,7 +95,7 @@ export function MenuButton<T extends string = string>({
         disabled={isDisabled}
       >
         <button
-          ref={trigger.button}
+          ref={setButton}
           id={trigger.id}
           type="button"
           className={[bare ? s.bare : f.frame, s.trigger, className].filter(Boolean).join(' ')}
