@@ -21,3 +21,10 @@ export interface ContinuousScale extends Scale<number> {
   /** The value at `at` along the range. */
   invert(at: number): number;
 }
+
+/** What builds a continuous scale from its two ends: `linearScale`, `logScale`, `timeScale`, or one of your own.
+ *  A control that places values along its track takes one and calls it with a range of `[0, 1]`. */
+export type ContinuousScaleFactory = (opts: {
+  domain: readonly [number, number];
+  range: readonly [number, number];
+}) => ContinuousScale;

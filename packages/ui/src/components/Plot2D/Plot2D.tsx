@@ -13,9 +13,9 @@ import {
   type ModelRange, type Point,
 } from './geometry';
 import {
-  formatTick, niceTicks, tickDecimals,
+  formatTick, linearScale, tickDecimals,
   type TickFormatCtx, type TickFormatter,
-} from './ticks';
+} from '@weasel-js/plot/scales';
 import s from './Plot2D.module.css';
 import { dlog } from '../../dlog';
 
@@ -151,7 +151,7 @@ function resolveTicks(
     const even = gaps.length > 0 && gaps.every((g) => Math.abs(g - gaps[0]) <= Math.abs(gaps[0]) * 1e-9);
     ctx = { decimals: tickDecimals(values), step: even ? gaps[0] : 0 };
   } else {
-    const set = niceTicks(range, pixels, {
+    const set = linearScale({ domain: range, range: [0, pixels] }).spacedTicks({
       minSpacing: settings.minSpacing ?? TICK_SPACING_PX[axis],
       inset: settings.inset ?? TICK_INSET_PX[axis],
     });

@@ -1,4 +1,4 @@
-import { niceTicks, type TickSet } from '../Plot2D/ticks';
+import { linearScale, type LinearScale } from '@weasel-js/plot/scales';
 
 /** A visible span of timeline time, in ms. */
 export interface TimeWindow {
@@ -6,31 +6,17 @@ export interface TimeWindow {
   to: number;
 }
 
-export interface TimeScale {
-  window: TimeWindow;
-  widthPx: number;
-  toPx(ms: number): number;
-  toMs(px: number): number;
-}
-
 /** Narrowest window the user can zoom to, in ms. Below this the playhead and
  *  the keys it sits between stop being separable at any sane track width. */
 const MIN_SPAN_MS = 1;
 
-export function createTimeScale(window: TimeWindow, widthPx: number): TimeScale {
-  const span = window.to - window.from;
-  const perMs = span === 0 ? 0 : widthPx / span;
-  const perPx = widthPx === 0 ? 0 : span / widthPx;
-  return {
-    window,
-    widthPx,
-    toPx: (ms) => (ms - window.from) * perMs,
-    toMs: (px) => window.from + px * perPx,
-  };
+/** The window laid across a track `widthPx` wide: ms to px along it, and back. */
+export function windowScale(window: TimeWindow, widthPx: number): LinearScale {
+  return linearScale({ domain: [window.from, window.to], range: [0, widthPx] });
 }
 
 /** Where `ms` sits in the window, as a fraction. The width-free half of
- *  `createTimeScale` — a CSS `left: %` needs no pixel width, and asking for one
+ *  `windowScale` — a CSS `left: %` needs no pixel width, and asking for one
  *  is what drove three copies of this arithmetic into the lane and the ruler. */
 export function toFraction(window: TimeWindow, ms: number): number {
   const span = window.to - window.from;
@@ -81,8 +67,3 @@ export function panWindow(w: TimeWindow, byMs: number, bounds: TimeWindow): Time
 
 /** Minimum gap between time ticks, in px — the ruler's and the graph grid's. */
 export const TICK_SPACING_PX = 64;
-
-/** Ruler tick times inside `w`, spaced at least `minSpacingPx` apart, with their step and shared decimals. */
-export function tickTimes(w: TimeWindow, widthPx: number, minSpacingPx: number): TickSet {
-  return niceTicks([w.from, w.to], widthPx, { minSpacing: minSpacingPx });
-}

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { TrackRun, TrackShape } from '@weasel-js/geom';
 import type { SliderStop as Stop } from '@weasel-js/headless';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
-import type { SliderScale } from './scale';
+import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
 
 /**
  * Passed to a custom thumb renderer: the thumb box in CSS px as it is laid
@@ -138,8 +138,9 @@ export type SliderStop = Stop<ReactNode>;
  * travel past the drag threshold is left as a click on what the region drew,
  * and a press on a region is never a track press.
  *
- * `scale` maps values onto the track some other way than linearly — the
- * `logScale` it ships with gives even ratios even steps. The arrow keys still
+ * `scale` maps values onto the track some other way than linearly: it is
+ * called with `{ domain: [min, max], range: [0, 1] }`, so `logScale` from
+ * `@weasel-js/plot/scales` gives even ratios even steps. The arrow keys still
  * step by value; pass `keyStep` to step along the track instead.
  *
  * `thumbFit: 'inside'`, the default, runs the value span half a thumb short of
@@ -176,7 +177,7 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
   renderRegion?: (ctx: SliderRegionCtx) => ReactNode;
   regionDrag?: boolean;
   /** Not under `spacing: 'even'`, which places values by its stops. Default linear. */
-  scale?: SliderScale;
+  scale?: ContinuousScaleFactory;
   /** A drag ended without a release — a canceled pointer, a lost origin, an
    *  unmount — and commits nothing. The thumbs are where its last `onInput`
    *  left them; a consumer holding that preview drops it here. */

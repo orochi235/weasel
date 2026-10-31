@@ -9,18 +9,6 @@ export {
 } from './Plot2D';
 
 export {
-  niceStep,
-  niceTicks,
-  stepDecimals,
-  tickDecimals,
-  formatTick,
-  type NiceTickOptions,
-  type TickFormatCtx,
-  type TickFormatter,
-  type TickSet,
-} from './ticks';
-
-export {
   modelToPlot,
   plotToModel,
   type Point,

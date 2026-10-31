@@ -114,6 +114,7 @@
       "@weasel-js/pdf": ["../pdf/src/index.ts"],
       "@weasel-js/pdf/testing/*": ["../pdf/src/testing/*"],
       "@weasel-js/plot": ["../plot/src/index.ts"],
+      "@weasel-js/plot/scales": ["../plot/src/scales.entry.ts"],
       "@weasel-js/prefs": ["../prefs/src/index.ts"],
       "@weasel-js/prefs/react": ["../prefs/src/react.ts"],
       "@weasel-js/prefs/vite": ["../prefs/src/vite.ts"],
