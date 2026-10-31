@@ -1,10 +1,12 @@
 ---
 '@weasel-js/routing': patch
-'@weasel-js/core': patch
+'@weasel-js/core': minor
 '@weasel-js/ui': patch
 '@weasel-js/path-tools': patch
 '@weasel-js/geom': patch
 ---
+
+<!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
 
 An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
 and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
