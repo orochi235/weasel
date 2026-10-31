@@ -5,10 +5,11 @@ import { documentFromScene } from '../fromScene';
 import { docScene } from '../testing/docScene';
 import { readDot } from './read';
 import { writeDot } from './write';
+import { asGraph } from '../testing/asGraph';
 
 const pageOf = (data: DiagramData, extra: Partial<Omit<GraphPage, 'kind'>> = {}): DiagramDocument =>
   ({ pages: [{ kind: 'graph', id: 'p', width: 400, height: 300, data, ...extra }], theme: 'paper' });
-const back = (doc: DiagramDocument, page?: string) => readDot(writeDot(doc, page !== undefined ? { page } : {}).text).document.pages[0]!;
+const back = (doc: DiagramDocument, page?: string) => readDot(writeDot(doc, page !== undefined ? { page } : {}).text).document.pages.map(asGraph)[0]!;
 const topology = (data: DiagramData) => data.edges.map((e) => [e.from, e.to, e.label]);
 const shapes = (data: DiagramData) => Object.fromEntries(data.nodes.map((n) => [n.id, [n.outline ?? 'rect', n.lines]]));
 
@@ -124,7 +125,7 @@ describe('writing DOT', () => {
       edges: [],
     };
     const { text, warnings } = writeDot(pageOf(data));
-    expect(Object.fromEntries(readDot(text).document.pages[0]!.data.nodes.map((n) => [n.id, n.outline ?? 'rect']))).toEqual({
+    expect(Object.fromEntries(readDot(text).document.pages.map(asGraph)[0]!.data.nodes.map((n) => [n.id, n.outline ?? 'rect']))).toEqual({
       cylinder: 'cylinder', note: 'note', folder: 'folder', octagon: 'octagon', triangle: 'triangle', cube: 'cube',
       doubleEllipse: 'doubleEllipse', document: 'document',
     });
@@ -140,7 +141,7 @@ describe('writing DOT', () => {
     expect(text).toMatch(/"stadium".*style="rounded,filled".*weasel_outline=stadium/);
     expect(text).toMatch(/"server".*weasel_outline=server/);
     expect(text).not.toMatch(/"roundRect".*weasel_outline/);
-    expect(Object.fromEntries(readDot(text).document.pages[0]!.data.nodes.map((n) => [n.id, n.outline]))).toEqual({
+    expect(Object.fromEntries(readDot(text).document.pages.map(asGraph)[0]!.data.nodes.map((n) => [n.id, n.outline]))).toEqual({
       stadium: 'stadium', roundRect: 'roundRect', server: 'server', exclusiveGateway: 'exclusiveGateway',
     });
   });

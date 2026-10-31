@@ -5,10 +5,11 @@ import { documentFromScene } from '../fromScene';
 import { docScene } from '../testing/docScene';
 import { readMermaid } from './read';
 import { writeMermaid } from './write';
+import { asGraph } from '../testing/asGraph';
 
 const pageOf = (data: DiagramData, extra: Partial<Omit<GraphPage, 'kind'>> = {}): DiagramDocument =>
   ({ pages: [{ kind: 'graph', id: 'p', width: 400, height: 300, data, ...extra }], theme: 'paper' });
-const back = (doc: DiagramDocument, page?: string) => readMermaid(writeMermaid(doc, page !== undefined ? { page } : {}).text).document.pages[0]!;
+const back = (doc: DiagramDocument, page?: string) => readMermaid(writeMermaid(doc, page !== undefined ? { page } : {}).text).document.pages.map(asGraph)[0]!;
 const topology = (data: DiagramData) => data.edges.map((e) => [e.from, e.to, e.label]);
 const shapes = (data: DiagramData) => Object.fromEntries(data.nodes.map((n) => [n.id, [n.outline ?? 'rect', n.lines]]));
 
@@ -126,7 +127,7 @@ describe('writing Mermaid', () => {
       edges: [],
     };
     const { text, warnings } = writeMermaid(pageOf(data));
-    expect(shapes(readMermaid(text).document.pages[0]!.data)).toEqual({
+    expect(shapes(readMermaid(text).document.pages.map(asGraph)[0]!.data)).toEqual({
       a: ['cylinder', ['Store']], b: ['doubleEllipse', ['Event']], c: ['rect', ['Fold']], d: ['roundRect', ['Round']],
     });
     expect(warnings).toContain('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
@@ -143,7 +144,7 @@ describe('writing Mermaid', () => {
       edges: [],
     };
     const { text, warnings } = writeMermaid(pageOf(data));
-    expect(shapes(readMermaid(text).document.pages[0]!.data)).toEqual({
+    expect(shapes(readMermaid(text).document.pages.map(asGraph)[0]!.data)).toEqual({
       a: ['ellipse', ['Start']], b: ['doubleEllipse', ['Wait']], c: ['diamond', ['Which']], d: ['roundRect', ['Sub']],
     });
     expect(warnings).toEqual([expect.stringMatching(/^Mermaid has no BPMN figures; .*gateways as diamonds without their markers/)]);
