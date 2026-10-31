@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent }
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import { COARSE_STEPS } from '@weasel-js/headless';
 import { snapToStep } from '@weasel-js/quantity';
+import type { Orientation } from '../orientation';
 import s from './ResizeHandle.module.css';
 
 /**
@@ -16,7 +17,7 @@ export interface ResizeHandleProps {
    * side-by-side panes and drags horizontally. `horizontal` is the
    * stacked case (a bar between rows, dragged up and down).
    */
-  orientation?: 'vertical' | 'horizontal';
+  orientation?: Orientation;
   /** Current size of the pane being resized, in pixels. */
   value: number;
   min: number;

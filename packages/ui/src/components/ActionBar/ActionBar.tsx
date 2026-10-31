@@ -4,6 +4,7 @@ import type { IconRef } from '@weasel-js/icons';
 import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
+import type { Orientation } from '../orientation';
 import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
@@ -26,7 +27,7 @@ export type ActionBarProps = ActionBarSource & ActionBarOptions;
 /** What an {@link ActionBar} takes besides its {@link ActionBarSource}. */
 export interface ActionBarOptions {
   /** Layout direction. Defaults to `'horizontal'`. */
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: Orientation;
   /**
    * Per-entry icon overrides, keyed by `ActionItem.key` — the action id, or
    * `id:variant` for one variant of a parametric action. Each names a glyph

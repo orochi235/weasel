@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import type { Orientation } from '../orientation';
 import s from './ToolGroup.module.css';
 
 /** Props for {@link ToolGroup}. */
@@ -9,7 +10,7 @@ export interface ToolGroupProps {
    * a column; `'horizontal'` lays them in a row. Independent of the
    * parent toolbar's own orientation.
    */
-  orientation?: 'vertical' | 'horizontal';
+  orientation?: Orientation;
   /** Lays children in a grid this many across, in place of `orientation`'s single line. */
   columns?: number;
   /**

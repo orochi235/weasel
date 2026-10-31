@@ -210,6 +210,29 @@ describe('ToolPalette — shortcuts', () => {
     act(() => btn.focus());
     expect(screen.getByRole('tooltip').textContent).toBe('Select');
   });
+
+  it('leaves the shortcut chip out of the button name', () => {
+    const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
+    renderWithIcons(<ToolPalette tools={tools} />);
+    expect(screen.getByRole('button', { name: 'select' })).toBeTruthy();
+  });
+});
+
+describe('ToolPalette — orientation', () => {
+  const tools = () => fakeTools([fakeTool('select'), fakeTool('hand')]);
+
+  it('tells assistive tech which way the toolbar runs', () => {
+    const { unmount } = renderWithIcons(<ToolPalette tools={tools()} />);
+    expect(screen.getByRole('toolbar').getAttribute('aria-orientation')).toBe('vertical');
+    unmount();
+    renderWithIcons(<ToolPalette tools={tools()} orientation="horizontal" />);
+    expect(screen.getByRole('toolbar').getAttribute('aria-orientation')).toBe('horizontal');
+  });
+
+  it('claims no single direction for a grid', () => {
+    renderWithIcons(<ToolPalette tools={tools()} columns={2} />);
+    expect(screen.getByRole('toolbar').hasAttribute('aria-orientation')).toBe(false);
+  });
 });
 
 describe('ToolPalette — keyboard nav', () => {

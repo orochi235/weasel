@@ -5,6 +5,7 @@ import {
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
+import type { Orientation } from '../orientation';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import s from './ToolPalette.module.css';
 import { formatShortcut, type ShortcutInput } from '@weasel-js/gestures';
@@ -22,7 +23,7 @@ function toolGlyph(tool: Tool): ReactNode {
 /** Props for {@link ToolPalette}. */
 export interface ToolPaletteProps {
   tools: ToolsApi;
-  orientation?: 'vertical' | 'horizontal';
+  orientation?: Orientation;
   className?: string;
   /** Derive the keyboard shortcut for a tool button from the action registry.
    *  Called with the tool's id; return `undefined` to suppress a chip. When
@@ -141,6 +142,7 @@ export function ToolPalette(props: ToolPaletteProps) {
       className={cls}
       role="toolbar"
       aria-label={ariaLabel}
+      aria-orientation={columns ? undefined : orientation}
     >
       {slotGroups.map(({ key, slots }, i) => (
         <Fragment key={key}>

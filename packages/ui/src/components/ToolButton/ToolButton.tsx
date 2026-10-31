@@ -74,7 +74,7 @@ export function ToolButton(props: ToolButtonProps) {
       >
         <span className={s.icon} aria-hidden="true">{icon}</span>
         <span className={s.label}>{label}</span>
-        {shortcut && <span className={s.shortcut}>{shortcut}</span>}
+        {shortcut && <span className={s.shortcut} aria-hidden="true">{shortcut}</span>}
         {menu && <span className={s.menuMark} aria-hidden="true" />}
       </button>
     </SegmentTooltip>
