@@ -1,7 +1,29 @@
 import { useMemo } from 'react';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import { defineTool, type Tool } from '@weasel-js/core';
+import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import { DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH } from './smudgeBrush';
+
+/** The Smudge brush's size and strength: the `smudgeBrush` action's params. */
+export const SMUDGE_BRUSH_OPTIONS = {
+  actionId: 'smudgeBrush',
+  prefs: {
+    name: 'Smudge brush',
+    description: 'The size and strength of the Smudge brush.',
+    children: {
+      radiusPx: {
+        kind: 'number', name: 'Size', description: 'The brush radius, in screen pixels.',
+        default: DEFAULT_SMUDGE_RADIUS_PX, min: 2, max: 400, step: 1, control: 'slider',
+      },
+      strength: {
+        kind: 'number', name: 'Strength', description: 'How closely the outline under the brush follows the pointer.',
+        default: DEFAULT_SMUDGE_STRENGTH, min: 0.05, max: 1, step: 0.05, control: 'slider',
+      },
+    },
+  },
+  size: { option: 'radiusPx', times: 1.25 },
+  strength: { option: 'strength', plus: 0.1 },
+} satisfies ToolOptions;
 
 /** Options for `useSmudgeBrushTool`. */
 export interface UseSmudgeBrushToolOptions {
@@ -13,10 +35,12 @@ const SMUDGE_KEY: ToolKeybinding = { key: 'S' };
 
 /**
  * Smudge brush tool. A round brush that pushes the outline of the selected
- * paths along with the pointer — a declarative shell whose one binding routes a
+ * paths, or of every path while none is selected, along with the pointer — a declarative shell whose one binding routes a
  * drag to the `smudgeBrush` action, which owns the stroke, its preview, its ring
  * cursor, and its one undo entry. The brush's radius (screen px) and strength are
- * that action's params: `tune={{ smudgeBrush: { params: () => ({ radiusPx, strength }) } }}`.
+ * its options ({@link SMUDGE_BRUSH_OPTIONS}): `[` and `]` resize it, `Shift+[` and
+ * `Shift+]` weaken and strengthen it, and a host keeps their values in the
+ * `toolOptionValues` dep.
  */
 export function useSmudgeBrushTool(options: UseSmudgeBrushToolOptions = {}): Tool {
   const { keybinding = SMUDGE_KEY } = options;
@@ -28,5 +52,6 @@ export function useSmudgeBrushTool(options: UseSmudgeBrushToolOptions = {}): Too
     cursor: 'crosshair',
     presentation: { label: 'Smudge brush', group: 'path', icon: icon('smudgeBrush') },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'smudgeBrush', opts: { id: 'smudgeBrush.drag' } }],
+    options: SMUDGE_BRUSH_OPTIONS,
   }), [keybinding]);
 }

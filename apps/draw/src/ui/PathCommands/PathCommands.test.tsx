@@ -12,7 +12,8 @@ vi.mock('@weasel-js/core', async (importOriginal) => ({
 }));
 
 import { useState } from 'react';
-import { ActionsProvider, useActionsRegistry, type Action, type ActionsRegistry } from '@weasel-js/core';
+import { drawPrefs } from '../../prefs';
+import { drawToolOptionValues } from '../../toolOptions';
 import { OffsetSlider, SimplifySlider, useSimplifyTolerance } from './PathCommands';
 
 function Simplify() {
@@ -28,6 +29,7 @@ function TunedSimplify() {
 afterEach(() => {
   cleanup();
   edits.clear();
+  drawPrefs().reset('tools.simplifyBrush');
 });
 
 describe('the path command sliders', () => {
@@ -51,22 +53,11 @@ describe('the path command sliders', () => {
     expect(edits.get('offsetPath')!.commit).toHaveBeenCalledWith({ distance: -0.5 });
   });
 
-  it("tunes the Simplify brush to the tolerance useSimplifyTolerance holds", () => {
-    const run = vi.fn();
-    const brush: Action = { id: 'simplifyBrush', label: 'Simplify brush', invoker: { timing: 'immediate', run } };
-    let registry: ActionsRegistry | null = null;
-    function Grab() {
-      registry = useActionsRegistry();
-      return null;
-    }
-    render(<ActionsProvider><Grab /><TunedSimplify /></ActionsProvider>);
-    act(() => { registry!.register(brush); });
+  it("keeps the tolerance as the Simplify brush's tolerance option", () => {
+    render(<TunedSimplify />);
     act(() => {
       fireEvent.keyDown(screen.getByRole('slider', { name: 'Simplify tolerance' }), { key: 'ArrowRight' });
     });
-    const tuned = registry!.list().find((a) => a.id === 'simplifyBrush')!;
-    if (tuned.invoker?.timing !== 'immediate') throw new Error('timing');
-    tuned.invoker.run({}, undefined);
-    expect(run.mock.calls[0][1]).toEqual({ tolerance: expect.closeTo(1.1, 5) });
+    expect(drawToolOptionValues().get('simplifyBrush').tolerance).toBeCloseTo(1.1, 5);
   });
 });

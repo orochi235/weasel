@@ -11,6 +11,7 @@ import {
   type SurfaceRuleInputs,
   type ViewRuleInputs,
 } from './useChromeCaps';
+import { hiddenChromeOf } from '../../canvas/SceneCanvas/useSceneChrome';
 
 const A = asNodeId('a');
 const B = asNodeId('b');
@@ -107,5 +108,27 @@ describe('useChromeCaps', () => {
 
     rerender(source({ getMode: () => EDIT, getFocused: () => false }));
     expect(result.current.ruleCtx(view())!.focused).toBe(false);
+  });
+
+  it('hides the chrome the active tool hides, whatever its rules say, in paint and hit-test alike', () => {
+    let hidden: ReadonlySet<string> | undefined;
+    const { result } = renderHook(() => useChromeCaps(source({ getHiddenChrome: () => hidden })));
+    const visible = () => result.current.isVisible(view({ selection: [A] }));
+    expect(visible()('selection.resize-handles')).toBe(true);
+    hidden = new Set(['selection.resize-handles']);
+    expect(visible()('selection.resize-handles')).toBe(false);
+    expect(visible()('selection.outline')).toBe(true);
+  });
+});
+
+describe('hiddenChromeOf', () => {
+  it("reads the active tool's hides, as one set per list", () => {
+    const hides = ['selection.resize-handles'];
+    const tools = { active: 'warp', registry: { warp: { hides }, select: {} } };
+    const set = hiddenChromeOf(tools)!;
+    expect([...set]).toEqual(hides);
+    expect(hiddenChromeOf(tools)).toBe(set);
+    expect(hiddenChromeOf({ ...tools, active: 'select' })).toBeUndefined();
+    expect(hiddenChromeOf({ ...tools, active: null })).toBeUndefined();
   });
 });

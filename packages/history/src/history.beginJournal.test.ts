@@ -18,3 +18,21 @@ describe('history.beginJournal — at-most-one-active invariant', () => {
     expect(() => parent.beginJournal({ label: 'b' })).not.toThrow();
   });
 });
+
+describe('history.activeJournal and journal.observe', () => {
+  it('answers the open journal while it is active, and reports its pushes to its observers', () => {
+    const adapter = { n: 0 };
+    const parent = createHistory(adapter);
+    expect(parent.activeJournal?.()).toBeNull();
+    const j = parent.beginJournal({ label: 'a' });
+    expect(parent.activeJournal?.()).toBe(j);
+    const steps: string[] = [];
+    j.observe((step) => steps.push(step.kind));
+    const op = { apply: () => { adapter.n++; }, invert: () => ({ apply: () => { adapter.n--; } }) } as never;
+    j.applyBatch([op], 'bump');
+    j.undo();
+    expect(steps).toEqual(['push', 'undo']);
+    j.suspend();
+    expect(parent.activeJournal?.()).toBeNull();
+  });
+});

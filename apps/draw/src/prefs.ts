@@ -2,6 +2,7 @@
 // localStorage that holds them, one record per leaf.
 
 import { usePenTool } from '@weasel-js/core';
+import { SIMPLIFY_BRUSH_OPTIONS, SMUDGE_BRUSH_OPTIONS } from '@weasel-js/path-tools';
 import {
   flattenPrefValues,
   openPrefsSync,
@@ -257,6 +258,8 @@ export const PREFS = {
         lastTool: LAST_TOOL,
         ...composeToolPrefs({
           pen: usePenTool.prefs,
+          smudgeBrush: SMUDGE_BRUSH_OPTIONS.prefs,
+          simplifyBrush: SIMPLIFY_BRUSH_OPTIONS.prefs,
         }),
       },
     },

@@ -57,7 +57,7 @@ function click(canvas: Element, x: number, y: number, shiftKey = false) {
 const tilePath = () =>
   (window.__weaselTest!.getScene().nodes.find((n) => n.id === 'tile')!.data as { path: PolygonPath }).path;
 const radiusField = () => screen.getByRole('spinbutton', { name: 'Radius' }) as HTMLInputElement;
-const styleButton = (name: string) => screen.getByRole('radio', { name });
+const styleButton = (name: string) => screen.getByRole('radio', { name: new RegExp(`^${name}$`, 'i') });
 const curvature = () => screen.getByRole('slider', { name: 'Curvature' }) as HTMLInputElement;
 
 async function mount() {

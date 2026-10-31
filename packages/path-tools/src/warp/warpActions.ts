@@ -10,11 +10,13 @@ import {
 import { createEmitter } from '@weasel-js/registry';
 import { applyToPoint, invert, type Point } from '@weasel-js/geom';
 import { moveWarpControl, pathWarpMap, unwarpPoint, warpControls } from '@weasel-js/geom/warp';
-import { commitOps, createSetDataOp, type Op, reshapeTo, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
+import { commitOps, createSetDataOp, type Op, type Scene, reshapeTo, pathOperationTags } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
-  storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
+  freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
 } from './warpTargets';
+import { selectedWarpLeaves, selectedWarpPaths } from './warpSelection';
+import { outlineSession, type OutlineSession } from '../shared/outlineSession';
 import { icon } from '../icons.gen';
 import { warpSettingsForm } from './warpSettingsForm';
 import type { ImmediateParams } from '@weasel-js/routing';
@@ -56,6 +58,22 @@ export function warpHandleScratchOf(hit: unknown): WarpHandleScratch | null {
 }
 
 const REQUIRES: ('selection' | 'scene' | 'applyOps')[] = ['selection', 'scene', 'applyOps'];
+/** What an action that begins a warp reads besides: text it converts first goes through these. */
+const BEGINS = [...REQUIRES, 'history', 'createOutlinesAdapter', 'notices'] as const;
+
+/**
+ * Convert the selected text to outlines for a warp beginning on it, in a
+ * journal under `label`, and answer the box a fresh warp goes over: the one its
+ * controls were shown on, around the text as it was.
+ */
+function beginOnText(deps: ActionDeps, kind: WarpKind, label: string): { session: OutlineSession; box: ReturnType<typeof freshWarpBox> } {
+  const leaves = selectedWarpLeaves(deps);
+  const scene = deps.scene as Pick<Scene<unknown, string, unknown>, 'get' | 'childrenOf'> | undefined;
+  const box = scene ? freshWarpBox(scene, leaves, kind) : null;
+  const session = outlineSession(deps, leaves.texts, label);
+  session.convert();
+  return { session, box };
+}
 
 function commitTargets(deps: ActionDeps, next: ReadonlyMap<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>, label: string): void {
   const ops: Op[] = [];
@@ -76,19 +94,26 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
     id: `${kind}.drag`,
     label: `${label} — drag control`,
     tags: pathOperationTags(kind === 'puppet' ? 'brush' : 'box'),
-    requires: REQUIRES,
+    requires: [...BEGINS],
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
         const scratch = warpHandleScratchOf(ctx.drag?.affordance);
         if (!scratch) return {};
+        const deps = ctx.deps;
         const settings = (resolveParams(opts?.params) ?? {}) as WarpSettings;
-        const targets = warpTargets(ctx.deps, kind, settings)
+        // Only a fresh warp's controls stand over text: a held warp is on paths already.
+        const { session, box } = scratch.warpId === null
+          ? beginOnText(deps, kind, label)
+          : { session: outlineSession(deps, [], label), box: undefined };
+        const targets = warpTargets(deps, kind, settings, box)
           .filter((t) => (scratch.warpId === null ? t.fresh : t.held.id === scratch.warpId));
         const first = targets[0];
         const control = first && warpControls(first.held.warp)[scratch.index];
-        if (!control) return {};
-        const deps = ctx.deps;
+        if (!control) {
+          session.cancel();
+          return {};
+        }
         const [cx, cy] = applyToPoint(first.toWorld, control.x, control.y);
         const press = ctx.drag?.start ?? ctx.world;
         let current = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
@@ -117,7 +142,8 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             const done = current;
             current = new Map();
             live?.set(null);
-            if (reason === 'commit' && done.size > 0) commitTargets(deps, done, label);
+            if (reason === 'cancel') session.cancel();
+            else session.commit(() => { if (done.size > 0) commitTargets(deps, done, label); }, label);
           },
           previewIds: () => (current.size > 0 ? [...current.keys()] : null),
           previewPose: (id: string) => current.get(id)?.shape.pose ?? null,
@@ -145,14 +171,15 @@ export function createAddPinAction(): Action {
     id: 'puppet.addPin',
     label: `${WARP_LABELS.puppet} — add pin`,
     tags: pathOperationTags('brush'),
-    requires: REQUIRES,
+    requires: [...BEGINS],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
         const at = clickPoint(params);
         if (!at) return;
+        const { session, box } = beginOnText(deps, 'puppet', 'Add Pin');
         const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
-        for (const target of warpTargets(deps, 'puppet', (params ?? {}) as WarpSettings)) {
+        for (const target of warpTargets(deps, 'puppet', (params ?? {}) as WarpSettings, box)) {
           const { warp } = target.held;
           const back = invert(target.toWorld);
           if (warp.kind !== 'puppet' || !back) continue;
@@ -163,10 +190,13 @@ export function createAddPinAction(): Action {
           const shape = storeWarp(target.node.node, held, target.toWorld);
           if (shape) next.set(target.node.id, { target, shape });
         }
-        commitTargets(deps, next, 'Add Pin');
+        session.commit(() => commitTargets(deps, next, 'Add Pin'), 'Add Pin');
       },
     } satisfies ImmediateInvoker,
-    enabled: (deps) => (selectedPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
+    enabled: (deps) => {
+      const { paths, texts } = selectedWarpLeaves(deps);
+      return paths.length > 0 || texts.length > 0 ? true : ActionDisabledReason.SelectionRequired;
+    },
   };
 }
 
@@ -208,7 +238,7 @@ export function createWarpGrabAction(kind: WarpKind): Action {
 
 /** Whether a selected path holds a warp: what both actions below work on. */
 function holdsWarp(deps?: ActionDeps): true | ActionDisabledReason {
-  return selectedPathNodes(deps ?? {}).some(({ node }) => heldPathWarpOf(node.data))
+  return selectedWarpPaths(deps).some(({ node }) => heldPathWarpOf(node.data))
     ? true
     : ActionDisabledReason.NotApplicable;
 }
@@ -228,7 +258,7 @@ export const expandWarpAction: Action = {
     timing: 'immediate',
     run: (deps) => {
       const ops: Op[] = [];
-      for (const { node } of selectedPathNodes(deps)) {
+      for (const { node } of selectedWarpPaths(deps)) {
         if (!heldPathWarpOf(node.data)) continue;
         ops.push(createSetDataOp({ id: node.id, from: node.data, to: withoutPathWarp(node.data), label: 'Expand Warp' }));
       }
@@ -259,7 +289,7 @@ export const configureWarpAction: Action = {
     run: (deps, params) => {
       const settings = (params ?? {}) as WarpSettings & { kind?: WarpKind };
       const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
-      for (const node of selectedPathNodes(deps)) {
+      for (const node of selectedWarpPaths(deps)) {
         const resolved = resolvePathWarp(node.node);
         if (!resolved || (settings.kind && resolved.held.warp.kind !== settings.kind)) continue;
         const held = withWarpSettings(resolved.held, settings);

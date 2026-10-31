@@ -6,6 +6,7 @@ import {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult,
 } from './createOutlines';
 import { icon } from '../../../icons.gen';
+import { warnTextOutlines, type NoticesDep } from '../notices';
 
 /** What an outline conversion answers when a text face had no outlines. */
 type OutlinesFailure = { kind: 'failed'; error: TextOutlinesError };
@@ -14,13 +15,14 @@ type OutlinesFailure = { kind: 'failed'; error: TextOutlinesError };
  * Run `apply`, an outline conversion of `adapter`'s selection, waiting first
  * for any face whose outlines are registered but not yet loaded — a face is
  * parsed on first use, so the first conversion in a session would otherwise
- * fail. Warns under `tag` with the reason when the selection still cannot be
- * converted.
+ * fail. Warns the user through `notices` (under `tag` on the console without
+ * it) when the selection still cannot be converted.
  */
 export async function withTextOutlines<R extends { kind: string } | OutlinesFailure>(
   adapter: CreateOutlinesAdapter,
   apply: () => R,
   tag: string,
+  notices?: NoticesDep,
 ): Promise<R> {
   const failure = (r: R): TextOutlinesError | null => (r.kind === 'failed' ? (r as OutlinesFailure).error : null);
   let result = apply();
@@ -32,13 +34,13 @@ export async function withTextOutlines<R extends { kind: string } | OutlinesFail
     result = apply();
   }
   const error = failure(result);
-  if (error) console.warn(`[${tag}] ${error.message}`);
+  if (error) warnTextOutlines(notices, tag, error);
   return result;
 }
 
 /** {@link applyCreateOutlines} through {@link withTextOutlines}. */
-export function runCreateOutlines(adapter: CreateOutlinesAdapter): Promise<CreateOutlinesResult> {
-  return withTextOutlines(adapter, () => applyCreateOutlines(adapter), 'createOutlines');
+export function runCreateOutlines(adapter: CreateOutlinesAdapter, notices?: NoticesDep): Promise<CreateOutlinesResult> {
+  return withTextOutlines(adapter, () => applyCreateOutlines(adapter), 'createOutlines', notices);
 }
 
 /**
@@ -54,12 +56,12 @@ export const createOutlinesAction: Action = {
   // Affinity's Convert to Curves; Illustrator's Mod+Shift+O is Chrome's bookmark manager.
   defaultBinding: [{ spec: { kind: 'key', key: 'Enter', mods: { mod: true } }, opts: { id: 'createOutlines.key' } }],
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'createOutlinesAdapter'],
+  requires: ['selection', 'createOutlinesAdapter', 'notices'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
       const adapter = deps.createOutlinesAdapter;
-      if (adapter) void runCreateOutlines(adapter);
+      if (adapter) void runCreateOutlines(adapter, deps.notices);
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {

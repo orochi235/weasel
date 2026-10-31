@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
-import { pressOf, scenePathNodes, strokesBesides, type StrokePress } from '../shared/scenePaths';
+import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 
 const EXTEND_LABEL = 'Extend to next path';
@@ -19,6 +19,8 @@ export type ExtendToMeetParams = {
   shape?: 'eased' | 'straight';
   /** How far, in radians, an eased end turns before it runs straight. Default π/6. */
   easeTurn?: number;
+  /** How far, in screen px, a click reaches for the stroke it extends. Default 6. */
+  radiusPx?: number;
 };
 
 /** Extend to next path's params as a form, for the last-operation panel. */
@@ -31,6 +33,7 @@ export const EXTEND_TO_MEET_PARAMS = pref.group(EXTEND_LABEL, {
     description: 'How far an eased end keeps turning before it runs straight.',
     min: 5 * DEG, max: 90 * DEG, step: DEG, control: 'slider', unit: { scale: DEG, suffix: '°', precision: 0 },
   }),
+  radiusPx: strokeReachPref(),
 });
 
 /** `params` as `extendToMeet` options. */

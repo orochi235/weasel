@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
+import type { DragSample, InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
@@ -11,6 +11,7 @@ import { scenePaintedPoseOf } from 'canvas/derivedPath';
 import { cancelInsert, commitInsert } from './commit';
 import { carryStart, nextFrame } from './frame';
 import type { InsertLiveGesture } from './live';
+import { insertParams } from './params';
 import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
 
@@ -32,6 +33,10 @@ export const INSERT_DRAG_THRESHOLD_PX = 8;
  * The new node has no scene id until commit, so the live preview is the
  * `overlay()` surface with `kind: 'insertPreview'`. A consumer-defined kind
  * the kit cannot draw skips the preview and still commits on release.
+ *
+ * A polygon's or a star's insert is the last operation once it commits, so a
+ * panel can change its sides, or its points and inner radius, by replaying the
+ * drag (`insertParams`); a drag that behaviors answered does not replay.
  */
 export const insertAction: Action & { requires: string[] } = inPlane({
   id: 'insert',
@@ -40,6 +45,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
   requires: ['insert', 'insertLive', 'insertInto', 'canDropInto', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view', 'kitSettings'],
+  params: insertParams,
   invoker: {
     timing: 'ongoing',
     dragThresholdPx: INSERT_DRAG_THRESHOLD_PX,
@@ -49,6 +55,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       const { session, readers } = begun;
       let frame = begun.frame;
       const gesture: InsertLiveGesture = { open: true, userRotation: 0, repositioning: false };
+      let trail: readonly DragSample[] | null = null;
       const live = ctx.deps.insertLive;
       if (live) live.gesture = gesture;
       // Where the shape will land decides the copies it will be drawn in.
@@ -85,12 +92,21 @@ export const insertAction: Action & { requires: string[] } = inPlane({
           let committed = false;
           try {
             if (reason === 'cancel') cancelInsert(session);
-            else committed = commitInsert(session, frame, endCtx.drag?.points ?? frame.points, gesture.userRotation);
+            else {
+              trail = endCtx.drag?.points ?? frame.points;
+              committed = commitInsert(session, frame, trail, gesture.userRotation);
+            }
           } finally {
             session.snap.close();
             runBehaviorSettled(session.behaviors, session.gestureCtx, committed);
           }
         },
+        // A behavior's answer is its own to make once, so only a plain insert replays.
+        ...(session.behaviors.length === 0 ? {
+          replay(params: Record<string, unknown>): void {
+            commitInsert({ ...session, opts: { ...session.opts, params } }, frame, trail, gesture.userRotation);
+          },
+        } : {}),
       };
     },
   },

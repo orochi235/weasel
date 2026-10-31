@@ -59,7 +59,7 @@ function setup() {
     page: placedPagesOf(scene)[1]!,
     backgroundColor: '#ffffff',
     setFilename: vi.fn(),
-    showFirstPage: vi.fn(),
+    showFirstPage: vi.fn(), leaveMode: vi.fn(),
     setBackgroundColor: vi.fn(),
   };
   let registry: ActionsRegistry | null = null;
@@ -91,7 +91,9 @@ describe('useFileCommands', () => {
 
   it('New at a size empties the document to one page of that size, in one undo entry, and shows it', () => {
     const { registry, scene, target } = setup();
+    vi.mocked(target.leaveMode).mockImplementation(() => { expect(scene.renderOrder()).toHaveLength(2); });
     act(() => { registry.trigger('file.new', { size: 'a4' }); });
+    expect(target.leaveMode).toHaveBeenCalledOnce();
     expect(scene.renderOrder()).toEqual([]);
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 794, height: 1123 }]);
     expect(target.showFirstPage).toHaveBeenCalledOnce();
@@ -152,7 +154,7 @@ describe('useFileCommands', () => {
   it('finds the paper sizes in the command palette by typing "new"', () => {
     Element.prototype.scrollIntoView = () => {};
     const scene = seededScene();
-    const target = { scene, filename: 'a', paperSize: 'letter', page: null, backgroundColor: '#fff', setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
+    const target = { scene, filename: 'a', paperSize: 'letter', page: null, backgroundColor: '#fff', setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
     // The palette snapshots the registry when it opens, so open it after the commands register.
     function Host() {
       useFileCommands(target);

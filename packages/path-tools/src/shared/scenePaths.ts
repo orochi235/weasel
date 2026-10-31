@@ -7,11 +7,18 @@ import type { ActionDeps } from '@weasel-js/routing';
 import type { Path } from '@weasel-js/geom';
 import { type NodeId, nodeOutline, type PathNode, resolveEditablePathOf, type SceneNode } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
+import { pref } from '@weasel-js/prefs';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
 /** Default reach of a click from the stroke it acts on, in screen pixels. */
 export const DEFAULT_STROKE_REACH_PX = 6;
+
+/** The `radiusPx` leaf of a click command's params form: how far its click reaches. */
+export const strokeReachPref = () => pref.number('Reach', DEFAULT_STROKE_REACH_PX, {
+  description: 'How near a stroke the click has to land to act on it.',
+  min: 1, max: 30, step: 1, control: 'slider', unit: { scale: 1, suffix: 'px' },
+});
 
 type PressParams = (ImmediateParams & { radiusPx?: number }) | undefined;
 
@@ -35,6 +42,18 @@ export function pressOf(deps: ActionDeps, params: unknown): StrokePress | null {
 function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {
   const scene = deps?.scene as { renderOrderNodes?(): readonly AnyNode[] } | undefined;
   return scene?.renderOrderNodes?.() ?? [];
+}
+
+/** `ids` with every container among them replaced by its leaves, depth first. */
+export function leavesOf(scene: { childrenOf?(id: NodeId): readonly NodeId[] }, ids: readonly string[]): NodeId[] {
+  const out: NodeId[] = [];
+  const visit = (id: NodeId) => {
+    const kids = scene.childrenOf?.(id) ?? [];
+    if (kids.length === 0) out.push(id);
+    else kids.forEach(visit);
+  };
+  ids.forEach((id) => visit(id as NodeId));
+  return out;
 }
 
 /** Every leaf of the scene holding an editable path, back to front. */

@@ -23,6 +23,23 @@ function counter(journalSoftModes?: () => boolean) {
 }
 
 describe('createModeMachine', () => {
+  it('leaveMode closes a soft or a strict mode, keeping its work, and does nothing in normal', () => {
+    const { state, history, m, bump } = counter();
+    m.leaveMode();
+    expect(m.registry.current().id).toBe('normal');
+    m.enterMode('path-edit', { targetId: 'p' });
+    bump(1);
+    m.leaveMode();
+    expect(m.registry.current().id).toBe('normal');
+    expect(state.n).toBe(1);
+    m.enterMode('free-transform', { targetId: 'p' });
+    bump(10);
+    m.leaveMode();
+    expect(m.registry.current().id).toBe('normal');
+    expect(state.n).toBe(11);
+    expect(history.undoDepth()).toBe(2);
+  });
+
   it('starts in normal mode with no active journal', () => {
     const { m } = counter();
     expect(m.registry.current().id).toBe('normal');

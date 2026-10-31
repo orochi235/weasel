@@ -40,6 +40,10 @@ export interface Tool<TOverlay = KernelOverlay> extends Contribution<TOverlay> {
    *  `opts.params.toolId` set so the invoker knows which tool to switch to).
    *  A tool with none has no activation key. */
   keybinding?: ToolKeybinding;
+  /** The settings its user adjusts while it is active; see `ToolDef.options`. */
+  options?: import('./toolOptions').ToolOptions;
+  /** Chrome hidden while this is the active tool; see `ToolDef.hides`. */
+  hides?: readonly string[];
   cursor?: CursorSpec | (() => CursorSpec);
   /** The tool became live: it took the active slot, or its `hotkey` went
    *  down, while it held neither. A lifecycle moment has no pointer, hit or

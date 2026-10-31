@@ -35,6 +35,17 @@ export interface ToolDef<TOverlay = KernelOverlay> {
   actions?: import('../interactions/actions/action').Action[];
   /** Menus this tool adds while it is active. */
   menus?: import('../menus/types').MenuDef[];
+  /**
+   * The settings its user adjusts while it is active, as params of the action
+   * it binds: a brush's size and strength. `<SceneCanvas>` tunes that action
+   * from the `toolOptionValues` dep, and `defineTool` adds step actions for the
+   * size and strength, keyed to `[` `]` and `Shift+[` `Shift+]` while this is
+   * the active tool. See {@link import('./toolOptions').ToolOptions}.
+   */
+  options?: import('./toolOptions').ToolOptions;
+  /** Chrome ids (`'selection.resize-handles'`) hidden, and not hit-tested,
+   *  while this is the active tool: chrome its own controls stand in for. */
+  hides?: readonly string[];
 
   /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored

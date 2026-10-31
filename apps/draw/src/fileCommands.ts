@@ -35,6 +35,7 @@ export function useFileCommands(target: FileCommandsTarget): void {
   useCommand(FILE_ACTIONS.new, 'New', (params) => {
     const size = params?.size;
     const paper = PAPER_PRESETS[isPaperSize(size) ? size : target.paperSize];
+    target.leaveMode();
     // The batch is what names the entry and captures the prior selection.
     scene.batch('New document', () => {
       scene.removeMany([...scene.renderOrder()]);

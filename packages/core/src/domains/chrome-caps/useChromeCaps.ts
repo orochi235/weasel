@@ -41,6 +41,8 @@ export interface SurfaceRuleInputs {
   resizable: ((id: string) => boolean) | undefined;
   editingAnchors: boolean;
   device: DeviceProfile;
+  /** Chrome the active tool hides. Absent hides nothing. */
+  hiddenChrome?: ReadonlySet<string> | undefined;
 }
 
 const NO_MODIFIERS = { alt: false, ctrl: false, meta: false, shift: false };
@@ -64,6 +66,7 @@ export function surfaceRuleCtx(surface: SurfaceRuleInputs, view: ViewRuleInputs)
     selectionResizable: resizable ? view.selection.every((id) => resizable(id)) : undefined,
     editingAnchors: surface.editingAnchors,
     device: surface.device,
+    ...(surface.hiddenChrome ? { hiddenChrome: surface.hiddenChrome } : {}),
   });
 }
 
@@ -82,6 +85,8 @@ export interface ChromeCapsSource {
   resizable: ((id: string) => boolean) | undefined;
   editingAnchors: () => boolean;
   device: DeviceProfile;
+  /** The chrome the active tool hides (`ToolDef.hides`). Absent hides nothing. */
+  getHiddenChrome?: (() => ReadonlySet<string> | undefined) | undefined;
 }
 
 /**
@@ -112,6 +117,7 @@ export function useChromeCaps(source: ChromeCapsSource): ChromeCaps {
         resizable: now.resizable,
         editingAnchors: now.editingAnchors(),
         device: now.device,
+        hiddenChrome: now.getHiddenChrome?.(),
       }, inputs);
     };
     return {

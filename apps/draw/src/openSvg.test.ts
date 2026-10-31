@@ -173,14 +173,16 @@ describe('openSvgFile', () => {
   const target = (scene = sceneWithOneShape()) => ({
     scene,
     setFilename: vi.fn(),
-    showFirstPage: vi.fn(),
+    showFirstPage: vi.fn(), leaveMode: vi.fn(),
     setBackgroundColor: vi.fn(),
   });
 
   it('replaces the document with the picked file and names it after the file', async () => {
     pick(new File([svg(TWO, 'wd:paperSize="a4"')], 'art.svg', { type: 'image/svg+xml' }));
     const t = target();
+    t.leaveMode.mockImplementation(() => { expect(t.scene.get(asNodeId('old'))).toBeDefined(); });
     await openSvgFile(t);
+    expect(t.leaveMode).toHaveBeenCalledOnce();
     expect(t.scene.get(asNodeId('old'))).toBeUndefined();
     expect(t.scene.roots).toHaveLength(2);
     expect(t.setFilename).toHaveBeenCalledWith('art.svg');
@@ -196,5 +198,6 @@ describe('openSvgFile', () => {
     expect(t.scene.roots).toEqual([asNodeId('old')]);
     expect(t.setFilename).not.toHaveBeenCalled();
     expect(t.showFirstPage).not.toHaveBeenCalled();
+    expect(t.leaveMode).not.toHaveBeenCalled();
   });
 });

@@ -51,6 +51,7 @@ export { createResizeAction, resizeAction, type ResizeActionOptions } from '../i
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';
+export { insertParams, POLYGON_INSERT_PARAMS, STAR_INSERT_PARAMS } from '../interactions/actions/insert/params';
 export { placeAction } from '../interactions/actions/insert/placeAction';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';

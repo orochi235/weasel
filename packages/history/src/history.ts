@@ -399,9 +399,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       }
       return out;
     },
-    currentEntryId(): number {
-      return nextEntryId;
-    },
+    currentEntryId: () => nextEntryId,
     beginJournal(opts: BeginJournalOptions): Journal {
       if (activeJournal !== null && activeJournal.isActive()) {
         throw new Error('A journal is already active — commit, cancel, or suspend it first');
@@ -416,6 +414,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       activeJournal = j;
       return j;
     },
+    activeJournal: () => (activeJournal?.isActive() ? activeJournal : null),
     resumeJournal(journal: Journal): void {
       if (activeJournal !== null && activeJournal !== journal && activeJournal.isActive()) {
         throw new Error('A journal is already active — commit, cancel, or suspend it first');

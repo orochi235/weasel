@@ -165,6 +165,20 @@ owned by the selection (`selectionMoveContribution`,
 `tools/builtin/select`), so they are live
 under any tool that leaves the gesture unclaimed.
 
+A tool's **options** (`ToolDef.options`) are the settings its user adjusts while
+it is active — a brush's size and strength — declared as a prefs group of the
+params of the one action it binds. The host keeps their values (the
+`toolOptionValues` dep), `<SceneCanvas>` tunes the action from them, and a host draws
+the active tool's options row from the same schema. Naming a size or a strength
+gives the tool step actions on `[` `]` and `Shift+[` `Shift+]`, bound at active
+scope so they hold those keys only while it is the active tool. See
+`packages/routing/src/tools/toolOptions.ts`.
+
+A tool **hides** chrome its own controls stand in for (`ToolDef.hides`, a list
+of chrome ids): while it is the active tool those ids are neither drawn nor
+hit-tested, whatever their visibility rules say. The warp tools hide the
+selection's resize and rotation handles this way.
+
 A rail holds tools and **commands**. A command takes a rail slot and runs once
 when pressed; it holds no focus and binds no input, so it is not a Tool and
 `isTool` never sees it. labkit's `CommandItem` is one beside its `ToolItem`,
@@ -394,6 +408,14 @@ sharing a tag are the candidates for one tool's variants. The family tags carry
 the `path-` prefix because gathering matches one tag exactly: a bare `brush` or
 `command` would gather any other feature's actions that chose the same word.
 `docs/path-operations.md` lists each family.
+
+The **last operation** is the latest run of an action declaring `params` (a
+`@weasel-js/prefs` form) that left one history entry: an immediate run, or a
+drag whose handle can `replay` it. A panel draws the form, and a change undoes
+that entry and runs the action again in its place, an immediate action with the
+new params and a drag through `OngoingHandle.replay`, which recomputes the
+commit from what the gesture recorded rather than the live pointer. See
+`packages/routing/src/interactions/actions/lastOperation.ts`.
 
 A **modifier role** is a modifier an ongoing action reads while it runs, named
 for what it does rather than the key: `handle.holdAngle`, `mirror.break`,

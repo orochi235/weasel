@@ -150,8 +150,9 @@ Owner tags, after the priority (2026-10-26):
   a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
   within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
   pointer's travel along the bisector, every selected corner's when its anchor is selected, and a
-  corner with no spec takes `round`. Giving a sharp corner a shape cuts a quarter of its room
-  (`DEFAULT_CORNER_TRIM_SHARE`). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
+  corner with no spec takes `round` (Shape for sharp corners in the last-operation panel after a drag). Giving a
+  sharp corner a shape cuts a quarter of its room (`DEFAULT_CORNER_TRIM_SHARE`, Size for sharp corners in the panel
+  after Next corner shape). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
   Slice tool's key elsewhere), `setCorners` is reached only through the panel, the
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
@@ -165,8 +166,8 @@ Owner tags, after the priority (2026-10-26):
   the defaults and keys he picks are committed.
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
   path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
-  curvature (the `mode` param flips which, and `'eased'` makes the plain drag ease out of the bend as
-  Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
+  curvature (the `mode` param, Shape in the last-operation panel after a drag, flips which, and `'eased'` makes the
+  plain drag ease out of the bend as Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
@@ -177,8 +178,13 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
-  third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
-  reached outside the lab, and its tool key, S (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
+  third of the radius (`packages/geom/src/paths/smudgePath.ts`), the size and strength steps (`[` `]` ×1.25,
+  `Shift+[` `Shift+]` ±0.1) and their bounds (`SMUDGE_BRUSH_OPTIONS` in `useSmudgeBrushTool.ts`; draw's options row
+  draws them), that it pushes every unlocked, shown path and text node while nothing is selected (only
+  the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
+  its drawn box, the conversion and the smudge landing as one undo entry (ruled 2026-10-31;
+  `packages/path-tools/src/shared/outlineSession.ts`), and its tool key, S
+  (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
   Closes when the maintainer has driven the Smudge brush hands-on and the defaults and keys he picks
   are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
@@ -198,7 +204,11 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
   corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
   new distort starts Free rather than Perspective, the refit tolerance (0.5,
-  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), and its tool key, F
+  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), that a selected group warps as
+  one under a single quad around its paths, and that selected text converts to outlines when the drag begins,
+  conversion and warp one undo step (both ruled 2026-10-31; `warpSelection.ts`,
+  `packages/path-tools/src/shared/outlineSession.ts`), that the selection's resize and rotation handles hide
+  while a warp tool is active (`hides` in `useWarpTool.ts`), and its tool key, F
   (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
   name may change.
   Closes when the maintainer has driven Perspective and free distort hands-on and the defaults and keys
@@ -252,8 +262,9 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven anchor fields hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune the Girth tool hands-on, with the maintainer driving.** First-draft behavior and
-  keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
-  and Alt-click clearing a width point; and whether a press between anchors should insert one
+  keys: Shift+W in draw; how near an edge a press must land to grab it (6 px, Grab reach in the last-operation
+  panel after a drag); Alt moving one edge alone (One edge only in that panel flips it) and Alt-click clearing a
+  width point; and whether a press between anchors should insert one
   (`packages/path-tools/src/girth/`).
   Closes when the maintainer has driven the Girth tool hands-on and the defaults and keys he picks are
   committed.

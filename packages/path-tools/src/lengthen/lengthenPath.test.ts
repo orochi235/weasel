@@ -112,6 +112,19 @@ describe('lengthenPathAction', () => {
     expect(endX()).toBeCloseTo(100, 3);
   });
 
+  it('replays the drag from where it started with another mode, Shift as it was held', () => {
+    const { deps, commits } = setup(curl());
+    const handle = ongoing.start(at(deps, 100, 100, 1), {});
+    handle.onMove!(at(deps, 100, 120, 1));
+    handle.onMove!(at(deps, 100, 140, 1));
+    handle.onEnd!(at(deps, 100, 140, 1), 'commit');
+    expect(pathToAnchors(commits[0].path).anchors[0].at(-1)!.x).toBeCloseTo(100, 3);
+    handle.replay!({ mode: 'curvature' });
+    expect(commits).toHaveLength(2);
+    expect(pathToAnchors(commits[1].path).anchors[0]).toHaveLength(pathToAnchors(commits[0].path).anchors[0].length);
+    expect(pathToAnchors(commits[1].path).anchors[0].at(-1)!.x).toBeLessThan(99);
+  });
+
   it('commits nothing on cancel', () => {
     const { deps, commits } = setup();
     const handle = ongoing.start(at(deps, 100, 50, 2), {});

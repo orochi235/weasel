@@ -104,6 +104,26 @@ describe('useGirthTool', () => {
     expect(t.widths()).toEqual([NaN, 4]);
   });
 
+  it('replays the drag, once undone, moving only the grabbed edge when asked to', () => {
+    const t = setup();
+    let handle: OngoingHandle | null = null;
+    t.drag([[100, 2], [100, 10]], { peek: (h) => { handle = h; } });
+    expect(t.widths()).toEqual([NaN, 20]);
+    t.scene.undo();
+    handle!.replay!({ oneSided: true });
+    expect(t.widths()).toEqual([NaN, { left: 2, right: 10 }]);
+  });
+
+  it('replays the drag with a smaller grab reach, adding a width point instead of taking the anchor', () => {
+    const t = setup();
+    let handle: OngoingHandle | null = null;
+    t.drag([[96, 2], [96, 10]], { peek: (h) => { handle = h; } });
+    expect(t.widths()).toEqual([NaN, 20]);
+    t.scene.undo();
+    handle!.replay!({ reach: 2 });
+    expect(t.widths()).toHaveLength(3);
+  });
+
   it('inserts an anchor where an edge is grabbed between two, without changing the shape', () => {
     const t = setup(ARC);
     const world = () => resolveEditablePathOf(t.scene.get(t.line) as never)!;

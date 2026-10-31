@@ -6,11 +6,12 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
-  SceneCanvas, asNodeId, createScene, pathFromD, pathInWorld, type PolygonPath, type ToolsApi,
+  SceneCanvas, asNodeId, createScene, createToolOptionValues, pathFromD, pathInWorld, type PolygonPath, type ToolsApi,
+  useActionsRegistry, useToolOptionValues, type ActionsRegistry,
 } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
-import { lengthenPreset, simplifyBrushPreset } from './presets';
+import { anchorSelectionPreset, lengthenPreset, simplifyBrushPreset } from './presets';
 import { usePathEditTools } from './toolSets';
 
 beforeAll(() => {
@@ -19,7 +20,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', lengthenPreset, simplifyBrushPreset] as const;
+const FEATURES = ['draw', lengthenPreset, simplifyBrushPreset, anchorSelectionPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup(d: string, width: number, height: number) {
@@ -31,12 +32,21 @@ function setup(d: string, width: number, height: number) {
   scene.setSelection([A]);
   const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
   const tools: { current?: ToolsApi } = {};
+  const options = createToolOptionValues();
+  const actions: { current?: ActionsRegistry | null } = {};
+  function Values() {
+    useToolOptionValues(options);
+    actions.current = useActionsRegistry();
+    return null;
+  }
   function Harness() {
     const pathEditTools = usePathEditTools();
     return (
       <SceneCanvas features={FEATURES} scene={scene} layers={{}} width={256} height={256}
         modes={modes} tools={pathEditTools} defaultPathEdit={{ id: A }}
-        onToolsCreated={(t) => { tools.current = t; }} />
+        onToolsCreated={(t) => { tools.current = t; }}>
+        <Values />
+      </SceneCanvas>
     );
   }
   const { container } = render(<Harness />);
@@ -47,7 +57,7 @@ function setup(d: string, width: number, height: number) {
     return Array.from((pathInWorld(node.data.path, node.pose as never) as PolygonPath).coords);
   };
   const anchorCount = () => pathToAnchors(scene.get(A)!.data.path).anchors[0].length;
-  return { canvas, tools, use, coords, anchorCount };
+  return { canvas, tools, use, coords, anchorCount, options, actions };
 }
 
 // jsdom's canvas rect is all zeros and the view is identity, so client coords are world coords.
@@ -85,5 +95,24 @@ describe('path-edit tools on a canvas', () => {
     t.use('simplifyBrush');
     drag(t.canvas, Array.from({ length: 21 }, (_, i): [number, number] => [i * 5, 0]));
     expect(t.anchorCount()).toBeLessThan(before);
+  });
+
+  it('grows and strengthens the Simplify brush on [ ] and Shift+[ ] while it is the active tool', () => {
+    const t = setup(ELBOW, 20, 20);
+    t.use('simplifyBrush');
+    const key = (key: string, code: string, shiftKey = false) =>
+      act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key, code, shiftKey, bubbles: true })); });
+    key(']', 'BracketRight');
+    key('}', 'BracketRight', true);
+    expect(t.options.get('simplifyBrush')).toEqual({ radiusPx: 15, tolerance: 1.3 });
+    key('[', 'BracketLeft');
+    expect(t.options.get('simplifyBrush').radiusPx).toBe(12);
+    expect(t.actions.current!.paramsOf('simplifyBrush')).toEqual({ radiusPx: 12, tolerance: 1.3 });
+  });
+
+  it('leaves [ and ] to anchor selection under another tool', () => {
+    const t = setup(ELBOW, 20, 20);
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ']', code: 'BracketRight', bubbles: true })); });
+    expect(t.options.get('simplifyBrush')).toEqual({});
   });
 });

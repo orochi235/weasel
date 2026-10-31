@@ -5,17 +5,19 @@
  * the kind, the controls of a fresh one are shown where it would start.
  */
 import {
-  applyToPoint, ellipsePath, polylineFromPoints, type Affine, type Point, type PolygonPath,
+  applyToPoint, ellipsePath, pathFromD, polylineFromPoints, type Affine, type Point, type PolygonPath,
 } from '@weasel-js/geom';
 import { pathWarpMap, warpControls, type PathWarp } from '@weasel-js/geom/warp';
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
-  type Affordance, type AffordanceRegion, type ChromeState, composeAffordanceLayer, DEFAULT_OVERLAY_STYLE, pathNodesOf, type RenderLayer, type Scene, type View, viewToTransform, worldToScreen,
+  type Affordance, type AffordanceRegion, type ChromeState, composeAffordanceLayer, type CreateOutlinesAdapter, DEFAULT_OVERLAY_STYLE, type RenderLayer, type Scene, type View, viewToTransform, worldToScreen,
 } from '@weasel-js/core';
+import { warpLeavesOf } from './warpSelection';
 import type { WarpHandleScratch, WarpLive } from './warpActions';
 import {
-  freshWarp, splitByWarp, type WarpKind, type WarpSettings,
+  freshWarp, freshWarpBox, splitByWarp, type WarpKind, type WarpSettings,
 } from './warpTargets';
+import type { WarpBox } from '@weasel-js/geom/warp';
 
 /** The id of the layer showing a `kind` warp's controls. A binding reaches
  *  its controls through `affordance:layer:<id>`. */
@@ -28,7 +30,9 @@ export interface WarpHandleLayerSource {
   active(): boolean;
   /** What a fresh warp is made with. */
   settings(): WarpSettings;
-  scene(): Pick<Scene<unknown, string, unknown>, 'get'> | undefined;
+  scene(): Pick<Scene<unknown, string, unknown>, 'get' | 'childrenOf'> | undefined;
+  /** What tells text from other nodes; absent, text gets no controls. */
+  outlines?(): Pick<CreateOutlinesAdapter, 'getTextSource'> | undefined;
   live: WarpLive;
 }
 
@@ -48,13 +52,19 @@ const LINE = { paint: { kind: 'solid' as const, color: ACCENT }, width: 1 };
 const LINE_SAMPLES = 12;
 const IDENTITY: Affine = [1, 0, 0, 1, 0, 0];
 
+/** A closed polygon around `box`: what a fresh warp over text alone is laid on. */
+const boxPath = (b: WarpBox): PolygonPath =>
+  pathFromD(`M ${b.x} ${b.y} H ${b.x + b.width} V ${b.y + b.height} H ${b.x} Z`) as PolygonPath;
+
 /** One group per warp the selection shares, then one for a fresh warp over
- *  whatever selected paths hold none. */
+ *  whatever selected paths hold none and the selected text. */
 function groupsOf(src: WarpHandleLayerSource, state: ChromeState): ControlGroup[] {
   const scene = src.scene();
   if (!scene || !src.active()) return [];
-  const nodes = pathNodesOf(scene, state.selection, (id) => src.live.get(id));
-  const { held, bare, box } = splitByWarp(nodes, src.kind);
+  const outlines = src.outlines?.();
+  const leaves = warpLeavesOf(scene, state.selection, outlines, (id) => src.live.get(id));
+  const { held, bare } = splitByWarp(leaves.paths, src.kind);
+  const box = freshWarpBox(scene, leaves, src.kind);
   const out: ControlGroup[] = [];
   const seen = new Set<string>();
   for (const t of held) {
@@ -62,7 +72,7 @@ function groupsOf(src: WarpHandleLayerSource, state: ChromeState): ControlGroup[
     seen.add(t.held.id);
     out.push({ warpId: t.held.id, warp: t.held.warp, source: t.held.source, toWorld: t.toWorld });
   }
-  if (box) out.push({ warpId: null, warp: freshWarp(src.kind, box, src.settings()), source: bare[0].path, toWorld: IDENTITY });
+  if (box) out.push({ warpId: null, warp: freshWarp(src.kind, box, src.settings()), source: bare[0]?.path ?? boxPath(box), toWorld: IDENTITY });
   return out;
 }
 

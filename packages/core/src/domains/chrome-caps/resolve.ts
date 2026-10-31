@@ -29,6 +29,7 @@ export function resolveVisibility(
       allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES,
     };
   return (id) => {
+    if (ruleCtx.hiddenChrome?.has(id)) return false;
     const entry = merged[id];
     if (entry === undefined) return true;
     if (typeof entry === 'function') return entry(ruleCtx);

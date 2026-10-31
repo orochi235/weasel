@@ -1,5 +1,6 @@
-import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import type { Action, ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
+import { pref } from '@weasel-js/prefs';
 import { meanScale, pathToAnchors, pxExtent, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
 import { commitOps, reshapeTo, type Scene } from '@weasel-js/core';
@@ -33,6 +34,27 @@ export interface GirthEnv {
   reachPx(): number;
 }
 
+/** What `girth.drag` reads from its params. */
+export interface GirthDragParams {
+  /** Screen px around a stroke's edge within which a press takes hold of it, and along the path within which it
+   *  takes the anchor there rather than inserting one. Default: the tool's `reach`. */
+  reach?: number;
+  /** Move only the grabbed edge, writing a `{ left, right }` pair; Alt flips it. Default `false`. */
+  oneSided?: boolean;
+}
+
+/** Default {@link GirthDragParams.reach}. */
+export const DEFAULT_GIRTH_REACH_PX = 6;
+
+/** A Girth drag's params as a form, for the last-operation panel. */
+export const GIRTH_DRAG_PARAMS = pref.group('Stroke width', {
+  reach: pref.number('Grab reach', DEFAULT_GIRTH_REACH_PX, {
+    description: 'How near the edge, and how near an anchor along the path, a press has to land to take the anchor there rather than add a width point.',
+    min: 1, max: 30, step: 1, control: 'slider', unit: { scale: 1, suffix: 'px' },
+  }),
+  oneSided: pref.boolean('One edge only', false, { description: 'Move only the edge you dragged, leaving the other where it was. Alt during the drag flips it.' }),
+});
+
 /** Id of the action that drags a stroke's edge. */
 export const GIRTH_DRAG_ID = 'girth.drag';
 /** Id of the action that clears the width point under a click. */
@@ -44,11 +66,11 @@ export const GIRTH_UNHOVER_ID = 'girth.unhover';
 const LABEL = 'Stroke width';
 const REQUIRES = ['scene', 'view', 'selection', 'applyOps'] as const;
 
-const found = (deps: ActionDeps, env: GirthEnv) => {
+const found = (deps: ActionDeps, env: GirthEnv, reachPx = env.reachPx()) => {
   const scene = deps.scene as AnyScene | undefined;
   if (!scene) return null;
   const s = deps.view?.get().scale ?? { x: 1, y: 1 };
-  const e = pxExtent(env.reachPx(), s);
+  const e = pxExtent(reachPx, s);
   return { scene, scale: meanScale(s), reach: Math.max(e.x, e.y) };
 };
 
@@ -82,28 +104,46 @@ const edgeOf = (grip: WidthGrip, moved: number): Point => ({
   y: grip.at.y + grip.normal.y * moved * grip.factor,
 });
 
+const reachOf = (params: GirthDragParams | undefined, env: GirthEnv): number =>
+  typeof params?.reach === 'number' && params.reach > 0 ? params.reach : env.reachPx();
+
+/** The grip a press at `press` takes with `params`, read against the scene and view as they are now. */
+function gripFor(deps: ActionDeps, env: GirthEnv, press: Point, params: GirthDragParams | undefined): WidthGrip | null {
+  const at = found(deps, env, reachOf(params, env));
+  const hit = at && widthEdgeAt(at.scene, press.x, press.y, at.scale, at.reach);
+  return hit ? gripAt(hit) : null;
+}
+
+/** The widths `grip` leaves with the pointer at `p`, one-sided when `params` says so, Alt flipping that. */
+function widthsAt(grip: WidthGrip, press: Point, p: Point, alt: boolean, params: GirthDragParams | undefined) {
+  const moved = movedSide(grip, (p.x - press.x) * grip.normal.x + (p.y - press.y) * grip.normal.y);
+  const widths = [...grip.widths];
+  widths[grip.index] = draggedWidth(grip, moved, (params?.oneSided === true) !== alt);
+  return { widths, moved };
+}
+
 function dragAction(env: GirthEnv): Action['invoker'] {
   return {
     timing: 'ongoing',
-    start: ({ deps, drag, world }: InvocationCtx) => {
+    start: ({ deps, drag, world }: InvocationCtx, opts?: BindingOpts) => {
       const press = drag?.start ?? world;
-      const at = found(deps, env);
-      const hit = at && widthEdgeAt(at.scene, press.x, press.y, at.scale, at.reach);
-      const grip = hit && gripAt(hit);
+      const read = () => resolveParams(opts?.params) as GirthDragParams | undefined;
+      const grip = gripFor(deps, env, press, read());
       if (!grip) return {};
       const { fallback } = grip.target;
       let widths: VertexWidth[] | null = null;
       let preview: { pose: unknown; data: unknown } | null = null;
+      let last: { p: Point; alt: boolean } | null = null;
       env.setFocus(focusOf(grip.path, grip.widths, fallback, { edge: edgeOf(grip, grip.start[grip.side]), at: grip.at }));
       return {
         kind: GIRTH_DRAG_ID,
         onMove: (move: InvocationCtx) => {
           const p = move.drag?.current ?? move.world;
-          const moved = movedSide(grip, (p.x - press.x) * grip.normal.x + (p.y - press.y) * grip.normal.y);
-          widths = [...grip.widths];
-          widths[grip.index] = draggedWidth(grip, moved, move.modifiers.alt);
+          last = { p, alt: move.modifiers.alt };
+          const next = widthsAt(grip, press, p, move.modifiers.alt, read());
+          widths = next.widths;
           preview = storedWith(grip, widths);
-          env.setFocus(focusOf(grip.path, widths, fallback, { edge: edgeOf(grip, moved), at: grip.at }));
+          env.setFocus(focusOf(grip.path, widths, fallback, { edge: edgeOf(grip, next.moved), at: grip.at }));
         },
         // The dispatcher hands `onEnd` a context with empty deps.
         onEnd: (_end: InvocationCtx, reason: 'commit' | 'cancel') => {
@@ -116,6 +156,13 @@ function dragAction(env: GirthEnv): Action['invoker'] {
           }
           commit(deps, grip, done);
           env.setFocus(focusOf(grip.path, done, fallback));
+        },
+        replay: (params: Record<string, unknown>) => {
+          const again = last && gripFor(deps, env, press, params);
+          if (!last || !again) return;
+          const { widths: done } = widthsAt(again, press, last.p, last.alt, params);
+          commit(deps, again, done);
+          env.setFocus(focusOf(again.path, done, again.target.fallback));
         },
         previewIds: () => (preview ? [grip.target.id] : null),
         previewPose: (id: string) => (preview && id === grip.target.id ? preview.pose : null),
@@ -131,7 +178,9 @@ function dragAction(env: GirthEnv): Action['invoker'] {
  * there or at one it inserts, shape kept, between two. The edge follows the
  * pointer along the path's normal, the other edge mirroring it so the width
  * stays centered; with Alt held only the grabbed edge moves, which writes a
- * `{ left, right }` pair. Either is live, and one undo entry. `girth.clear`
+ * `{ left, right }` pair (the `oneSided` param flips which, {@link GirthDragParams}).
+ * Either is live, and one undo entry, which the last-operation panel replays
+ * with other params. `girth.clear`
  * clears the width point under a click, so it takes the stroke's own width
  * again. `girth.hover` and `girth.unhover` show and hide the grab point under
  * the pointer.
@@ -141,7 +190,7 @@ export function createGirthActions(env: GirthEnv): Action[] {
   const hasScene = (deps?: ActionDeps) => (deps?.scene ? true : ActionDisabledReason.NotApplicable);
   const base = { eligible, requires: REQUIRES, enabled: hasScene };
   return [
-    { id: GIRTH_DRAG_ID, label: 'Girth — drag a stroke\'s edge', ...base, invoker: dragAction(env) },
+    { id: GIRTH_DRAG_ID, label: LABEL, ...base, params: GIRTH_DRAG_PARAMS, invoker: dragAction(env) },
     {
       id: GIRTH_CLEAR_ID,
       label: 'Girth — clear the width point under the pointer',
