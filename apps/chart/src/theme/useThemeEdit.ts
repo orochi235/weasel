@@ -1,9 +1,10 @@
 import { useVisibleRaf } from '@weasel-js/core';
 import {
-  applyDiagramTheme, editableTheme, rendererMeasure, setThemeValue, themeValue, type DiagramTheme, type ThemePath,
+  editableTheme, rendererMeasure, setThemeValue, themeValue, type DiagramTheme, type ThemePath,
 } from '@weasel-js/diagram';
 import { useRef } from 'react';
 import type { ChartScene } from '../chartDocument';
+import { applyChartTheme } from './applyChartTheme';
 import { chartThemeOf } from './themeCommands';
 
 /** The label every theme value edit is undone under. */
@@ -29,7 +30,7 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
   const apply = (path: ThemePath, value: string | number) => {
     const current = chartThemeOf(scene);
     if (themeValue(current, path) === value) return;
-    applyDiagramTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current, measure: rendererMeasure });
+    applyChartTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current, measure: rendererMeasure });
   };
   const flush = () => {
     const next = pending.current;
@@ -54,7 +55,7 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
       const current = chartThemeOf(scene);
       const base = editableTheme(current);
       const next = edit(base);
-      if (next !== base) applyDiagramTheme(scene, next, label, { from: current, measure: rendererMeasure });
+      if (next !== base) applyChartTheme(scene, next, label, { from: current, measure: rendererMeasure });
     },
   };
 }

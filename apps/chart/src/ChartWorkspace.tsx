@@ -3,6 +3,7 @@ import {
   type SceneCanvasApi, type Tool, type ToolsApi,
 } from '@weasel-js/core';
 import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
+import { plotEditing } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@editor/index';
@@ -51,6 +52,8 @@ export function ChartWorkspace(): ReactElement {
   useChartCommands(scene);
   const theme = chartThemeOf(scene);
   const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene));
+  const plot = useMemo(() => plotEditing({ scene: scene as never }), [scene]);
+  const ambient = useMemo(() => [...diagram.ambient, plot.contribution], [diagram.ambient, plot]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -79,9 +82,9 @@ export function ChartWorkspace(): ReactElement {
   const [canvas, setCanvas] = useState<SceneCanvasApi | null>(null);
   useEffect(() => {
     if (canvas === null) return;
-    const disposers = diagram.layers.map((layer) => canvas.registerLayer(layer));
+    const disposers = [plot.layer, ...diagram.layers].map((layer) => canvas.registerLayer(layer));
     return () => disposers.forEach((dispose) => dispose());
-  }, [canvas, diagram.layers]);
+  }, [canvas, diagram.layers, plot]);
 
   return (
     <div className="wc-workspace">
@@ -108,7 +111,7 @@ export function ChartWorkspace(): ReactElement {
                 viewport={{ recenter }}
                 tools={diagram.tools}
                 selectTool={selectTool}
-                ambient={diagram.ambient}
+                ambient={ambient}
                 onToolsCreated={setTools}
                 alphaFor={alphaFor}
                 layers={layers}

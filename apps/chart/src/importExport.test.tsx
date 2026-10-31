@@ -89,6 +89,21 @@ describe('File › Import…', () => {
     expect(at('b').x).toBeLessThan(at('c').x);
   });
 
+  it('opens a Mermaid xychart as a plot page, and exports it back as one', async () => {
+    io.picked = new File(['xychart-beta\n  title "Sales"\n  x-axis [jan, feb]\n  bar [3, 7]\n'], 'sales.mmd');
+    mount();
+    choose('Import');
+    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
+    const root = stored()!.nodes.find((n) => n.id === 'page-1/plot') as unknown as { data: { plot: { data: unknown } } };
+    expect(root.data.plot.data).toMatchObject({ kind: 'xychart', title: 'Sales', series: [{ kind: 'bar', values: [3, 7] }] });
+    expect(stored()!.nodes.map((n) => n.id)).toContain('page-1/plot/bar:0:1');
+
+    choose('Export', 'As Mermaid');
+    await vi.waitFor(() => expect(io.saved).toHaveLength(1));
+    expect(io.saved[0]!.name).toBe('Sales.mmd');
+    expect(await io.saved[0]!.blob.text()).toBe('xychart-beta\n  title "Sales"\n  x-axis [jan, feb]\n  bar [3, 7]\n');
+  });
+
   it('lists what the file had that a chart cannot hold in a toast', async () => {
     io.picked = new File([DIAGRAM_JSON.write!(DOC).text], 'flow.diagram.json');
     extra.warnings = ['A lost thing'];
