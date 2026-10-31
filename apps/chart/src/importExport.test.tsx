@@ -127,7 +127,12 @@ describe('File › Import…', () => {
     ['pie', 'pie showData\n  title Pets\n  "Dogs" : 386\n  "Cats" : 85', { showData: true, slices: [{ label: 'Dogs', value: 386 }, { label: 'Cats', value: 85 }] }],
     ['quadrant', 'quadrantChart\n  x-axis Low --> High\n  quadrant-1 Expand\n  A: [0.3, 0.6]', { points: [{ name: 'A', x: 0.3, y: 0.6 }] }],
     ['journey', 'journey\n  title Day\n  section Work\n    Make tea: 5: Me', { sections: [{ name: 'Work', tasks: [{ name: 'Make tea', score: 5, actors: ['Me'] }] }] }],
-    ['gitgraph', 'gitGraph\n  commit id: "a"\n  branch dev\n  commit tag: "v1"\n  checkout main\n  merge dev', { commands: [{ kind: 'commit', id: 'a' }] }],
+    ['gitgraph', 'gitGraph\n  commit id: "a"\n  branch dev\n  commit tag: "v1"\n  checkout main\n  merge dev', {
+      commands: [
+        { kind: 'commit', id: 'a' }, { kind: 'branch', name: 'dev' }, { kind: 'commit', tag: 'v1' }, { kind: 'checkout', name: 'main' },
+        { kind: 'merge', branch: 'dev' },
+      ],
+    }],
     ['sankey', 'sankey-beta\nA,B,10\nB,C,4\n', { links: [{ source: 'A', target: 'B', value: 10 }, { source: 'B', target: 'C', value: 4 }] }],
     ['packet', 'packet-beta\n  0-15: "Source Port"\n  16-31: "Destination Port"', { fields: [{ start: 0, end: 15, label: 'Source Port' }, { start: 16, end: 31, label: 'Destination Port' }] }],
     ['radar', 'radar-beta\n  axis m["Math"], s["Science"]\n  curve a["Alice"]{85, 90}', { curves: [{ id: 'a', label: 'Alice', values: [85, 90] }] }],
