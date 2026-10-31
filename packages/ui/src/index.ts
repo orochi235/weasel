@@ -33,6 +33,7 @@ export * from './components/ThemeSwitcher';
 export * from './components/OptionsBar';
 export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';
+export * from './components/LastOperationPanel';
 export * from './components/CharacterOptions';
 export * from './components/Bar';
 export * from './components/Toolbar';

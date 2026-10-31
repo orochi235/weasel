@@ -30,6 +30,8 @@ import { pushOwner, ScopeNode } from './scopeNode';
 import { tuneAction, tunedParams, type ActionTuning } from './tuning';
 import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { isDev } from '@weasel-js/react';
+import { LastOperationKeeper, type LastOperationHost } from './lastOperation';
+import type { History } from '@weasel-js/history';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
 export const ActionsContext = createContext<ActionsRegistry | null>(null);
@@ -67,6 +69,9 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   private host: MenuHost | null = null;
   /** Called on `activate`, so a scope's dep and tool nodes move with it. */
   readonly onActivate: (() => void)[] = [];
+  /** The tree's last operation, kept at its root. */
+  readonly lastOperation: LastOperationKeeper;
+  private opHost: LastOperationHost | null = null;
 
   constructor(
     parent: ActionsNode | null,
@@ -74,6 +79,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     private readonly contextDeps: () => DepRegistry | null,
   ) {
     super(parent, descends);
+    this.lastOperation = parent ? parent.lastOperation : new LastOperationKeeper(() => this.changed());
     NODES.set(this.registry, this);
   }
 
@@ -93,13 +99,31 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const stack = n.tunings.get(id);
       if (stack) tunings.unshift(...stack);
     }
+    const session = this.lastOperation.sessionTuning(id);
+    if (session) tunings.unshift(session);
     return tunings;
   }
 
   /** `a` under every tuning for its id from the root down to here. */
   private tuned(a: Action): Action {
     const tunings = this.tuningsOf(a.id);
-    return overrideActionBindings(tunings.length ? tuneAction(a, tunings) : a, this.overridesHere());
+    const tuned = overrideActionBindings(tunings.length ? tuneAction(a, tunings) : a, this.overridesHere());
+    return this.lastOperation.wrap(tuned, this.opHost ??= this.lastOperationHost());
+  }
+
+  /** How the last operation reads and reruns what ran in this scope. */
+  private lastOperationHost(): LastOperationHost {
+    return {
+      history: () => (this.deps()?.get('history' as DepName) as History | undefined) ?? null,
+      takeSelection: () => this.deps()?.get('selectionSnapshot')?.take() ?? null,
+      paramsOf: (id, given) => tunedParams(this.tuningsOf(id), given),
+      rerun: (id, params) => {
+        const a = this.resolve(id);
+        if (a?.invoker?.timing !== 'immediate') return;
+        const deps = depsFor(a, this.deps());
+        if (evaluateEnabled(a, deps, pointOf(params)).enabled) a.invoker.run(deps, params);
+      },
+    };
   }
 
   /** Every binding override from the root down to here, read into specs. */

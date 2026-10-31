@@ -81,6 +81,12 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(screen.getByRole('toolbar', { name: 'Pen' })).toBeInTheDocument();
   });
 
+  it('LastOperationPanel AfterACommand', async () => {
+    const { AfterACommand } = await import('./LastOperationPanel/LastOperationPanel.stories');
+    draw(AfterACommand as Story, { closeLabel: 'Dismiss here' });
+    expect(screen.getByRole('button', { name: 'Dismiss here' })).toBeInTheDocument();
+  });
+
   it('TokenPanel Default', async () => {
     const { Default } = await import('./TokenPanel/TokenPanel.stories');
     draw(Default as Story, { className: 'tokens-here' });

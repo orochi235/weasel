@@ -930,7 +930,7 @@ const DEMO_META: DemoMeta[] = [
     title: 'Add extremes',
     package: 'path-tools',
     description:
-      'Add extremes splits each curved segment where it turns in x or in y, so every leftmost, rightmost, top, and bottom point gets an anchor with a level or upright tangent, and the shape does not move. It works on the segments whose two ends are selected, or on the whole path while no anchor is. The blob’s anchors sit at none of its extremes; it opens in path edit with the segment that closes it selected. The action is `addExtremeAnchors`, from `@weasel-js/path-tools`’s `addExtremesPreset`, and the bar is the `anchors` group it joins.',
+      'Add extremes splits each curved segment where it turns in x or in y, so every leftmost, rightmost, top, and bottom point gets an anchor with a level or upright tangent, and the shape does not move. It works on the segments whose two ends are selected, or on the whole path while no anchor is. The blob’s anchors sit at none of its extremes; it opens in path edit with the segment that closes it selected. The action is `addExtremeAnchors`, from `@weasel-js/path-tools`’s `addExtremesPreset`, and the bar is the `anchors` group it joins. Once it has run, `<LastOperationPanel>` offers its Turns param, which reruns it splitting at the left and right turns only, or the top and bottom.',
     hint: 'Press <kbd>Alt+X</kbd> or Add extremes in the bar to add extremes to the selected segment, then click away from the anchors to clear the selection and press it again for the whole path. <kbd>Mod+Z</kbd> undoes each.',
     load: () => import('./demos/AddExtremesLabDemo').then((m) => m.AddExtremesLabDemo),
     path: 'apps/site/demos/AddExtremesLabDemo.tsx',
@@ -940,7 +940,7 @@ const DEMO_META: DemoMeta[] = [
     title: 'Resample a path',
     package: 'path-tools',
     description:
-      'Resample spreads a path’s anchors evenly along it by arc length, to a count or at a spacing, and refits the curves through them. Corner anchors stay where they are unless Keep corners is off, so each run between them is resampled on its own. Each new anchor heads the way the original does there, so it is smooth, and a piece that cannot follow the original within Tolerance is halved, which can add anchors past the count. The `resamplePath` action, from `@weasel-js/path-tools`’s `resamplePreset`, is ongoing: the panel drives it through `useOngoingAction`, every change previews on the canvas, Apply commits one undo step, and Cancel drops the preview.',
+      'Resample spreads a path’s anchors evenly along it by arc length, to a count or at a spacing, and refits the curves through them. Corner anchors stay where they are unless Keep corners is off, so each run between them is resampled on its own. Each new anchor heads the way the original does there, so it is smooth, and a piece that cannot follow the original within Tolerance is halved, which can add anchors past the count. The `resamplePath` action, from `@weasel-js/path-tools`’s `resamplePreset`, commits one undo step; once it has run, `<LastOperationPanel>` shows its params, and each change reruns it in place, still as one undo step.',
     hint: 'The wave opens previewing 12 anchors. Drag Anchors, switch Resample by to spacing, or turn Keep corners off, and watch the anchors move. Press Apply to keep it, or Cancel; <kbd>Mod+Z</kbd> undoes an Apply.',
     load: () => import('./demos/ResampleLabDemo').then((m) => m.ResampleLabDemo),
     path: 'apps/site/demos/ResampleLabDemo.tsx',

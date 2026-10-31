@@ -9,6 +9,7 @@ import type { IconRef } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
 import type { ActionSettings } from './actionSettings';
+import type { PrefGroup } from '@weasel-js/prefs';
 import type { BindingSource } from './binding';
 import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';
@@ -74,6 +75,11 @@ export interface ActionPresentation {
    *  triggers it with the params `settings.params` makes. Not combined with
    *  `variants`. */
   settings?: ActionSettings;
+  /** The params `invoker.run` reads, as a form: one leaf per param, keyed by its name, with its label, range,
+   *  step, and default. An immediate run that commits one history entry is kept as the tree's last operation,
+   *  which a panel draws as this form so the params can be changed after the fact. `ActionParamSchema` stays
+   *  what types a tuning; this is what a person sees. */
+  params?: PrefGroup;
 }
 
 /**

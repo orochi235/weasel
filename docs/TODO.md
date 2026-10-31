@@ -144,9 +144,9 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven anchor selection along the path hands-on and the defaults and
   keys he picks are committed.
 - **(P2) [maintainer] Tune Resample hands-on, with the maintainer driving.** First-draft behavior: no key,
-  driven only as an ongoing action; a count of 0 keeps the path's anchor count, corners are held
-  by default, the refit tolerance is 0.5 and a piece that misses it is halved up to six times, so
-  the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
+  run as a command whose params are adjusted afterward in the last-operation panel; a count of 0 keeps
+  the path's anchor count, corners are held by default, the refit tolerance is 0.5 and a piece that
+  misses it is halved up to six times, so the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
   `packages/geom/src/paths/resamplePath.ts`).
   Closes when the maintainer has driven Resample hands-on and the defaults and keys he picks are
   committed.

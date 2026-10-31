@@ -48,7 +48,7 @@ export {
 } from './simplifyBrush/simplifyBrush';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 export {
-  bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
+  BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
 export { planTrim, trimPathAction } from './trim/trimSegment';
 export { extendToMeetAction } from './extend/extendToMeet';
@@ -65,8 +65,8 @@ export {
   ANCHOR_SELECTION_GROUP, growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
 } from './anchorSelect/anchorSelect';
-export { resamplePathAction, type ResamplePathParams } from './resample/resample';
-export { addExtremeAnchorsAction } from './extremes/addExtremes';
+export { RESAMPLE_PARAMS, resamplePathAction, type ResamplePathParams } from './resample/resample';
+export { ADD_EXTREMES_PARAMS, addExtremeAnchorsAction, type AddExtremesParams } from './extremes/addExtremes';
 export { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
 export {
   constrainAnchorsAction, constraintsForAnchors, deleteConstraintAction, unconstrainAnchorsAction,
