@@ -28,3 +28,24 @@ it("turns a vertical bar's button with no glyph to read along the bar, and shows
   const glyph = screen.getByRole('button', { name: 'Type size' }).getBoundingClientRect();
   expect(glyph.width).toBeLessThan(turned.height / 2);
 });
+
+it('keeps a vertical bar to a toolbar\'s width, turning a field too wide for it and leaving one that fits upright', async () => {
+  const fields: PrefGroup = {
+    name: 'Type',
+    as: 'bar',
+    children: {
+      size: { kind: 'number', name: 'Size', description: '', default: 12 } as PrefLeaf,
+      align: {
+        kind: 'enum', name: 'Align', description: '', default: 'left',
+        options: ['Left', 'Center', 'Right', 'Justify'].map((label) => ({ value: label.toLowerCase(), label })),
+      } as PrefLeaf,
+    },
+  };
+  const { container } = renderWithIcons(<Bar schema={fields} values={{}} orientation="vertical" label="Type" />);
+  await new Promise((r) => requestAnimationFrame(r));
+  const bar = container.querySelector<HTMLElement>('div[data-orientation="vertical"]')!;
+  expect(bar.getBoundingClientRect().width).toBeLessThanOrEqual(40);
+  const turned = [...bar.querySelectorAll('[data-turned]')];
+  expect(turned).toHaveLength(1);
+  expect(turned[0]!.textContent).toContain('Left');
+});

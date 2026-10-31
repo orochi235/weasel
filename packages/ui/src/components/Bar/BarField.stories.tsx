@@ -5,6 +5,7 @@ import { BarField, type BarFieldProps } from '@weasel-js/ui/components/Bar';
 import { OrientationContext } from '../orientation';
 import { useStoryFields } from './barStoryFields';
 import s from './Bar.stories.module.css';
+import bar from './Bar.module.css';
 
 const meta: Meta<typeof BarField> = {
   title: 'ui/Bar/BarField',
@@ -20,7 +21,10 @@ function Strip({ args, only, vertical = false }: { args: Story['args']; only: (i
   const fields = useStoryFields().filter(({ id }) => only(id));
   return (
     <OrientationContext.Provider value={vertical ? 'vertical' : 'horizontal'}>
-      <div className={vertical ? s.column : s.strip}>
+      <div
+        className={vertical ? `${bar.bar} ${s.column}` : s.strip}
+        data-orientation={vertical ? 'vertical' : undefined}
+      >
         {fields.map(({ id, field }) => (
           <BarField key={id} {...(args as Shared)} {...field} />
         ))}
@@ -34,7 +38,7 @@ const kind = (name: string) => (id: string) => id.split(' ')[0] === name;
 /** Every kind in the form it takes with no `control` named. */
 export const Kinds: Story = { render: (args) => <Strip args={args} only={(id) => !id.includes(' ')} /> };
 
-/** Every kind and control as a vertical bar holds it: its parts stacked and turned, each upright. */
+/** Every kind and control as a vertical bar holds it: stacked, and turned to read down the bar where too wide for it. */
 export const Vertical: Story = { render: (args) => <Strip args={args} only={() => true} vertical /> };
 
 /** A box of digits behind its name, or a short track with its readout. */

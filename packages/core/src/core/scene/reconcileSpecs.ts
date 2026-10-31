@@ -11,7 +11,9 @@ import type { AddNodeSpec, NodeId, Scene } from './types';
  * outside data is not an undo step.
  *
  * Every spec needs an `id`, and `next` must be in an order `createScene` would
- * accept — parents and dependencies before what names them. A node whose
+ * accept — parents and dependencies before what names them. Siblings stand in
+ * `next`'s order wherever a parent's children in it differ from `prev`'s, by an
+ * addition or a reorder; elsewhere a reorder made in the scene stays. A node whose
  * `kind` or derive functions change is removed and added again, along with
  * everything its removal takes with it, and stays selected if it was.
  */
@@ -55,10 +57,40 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if ((spec.hidden === true) !== (before.hidden === true)) scene.setHidden(id, spec.hidden === true);
       if (spec.locked === true && before.locked !== true) scene.setLocked(id, true);
     }
+    reorderToSpecs(scene, prev, next);
     if (selected.some((id) => removed.has(id))) {
       scene.setSelection(selected.filter((id) => scene.get(id) !== undefined));
     }
   });
+}
+
+/** Each parent whose spec children `next` lists differently from `prev` gets
+ *  them in `next`'s order, in the slots they hold among its children now, so
+ *  a child no spec names keeps its place. */
+function reorderToSpecs<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  prev: readonly AddNodeSpec<TData, TLayer, TPose>[],
+  next: readonly AddNodeSpec<TData, TLayer, TPose>[],
+): void {
+  const before = childLists(prev);
+  for (const [parent, wanted] of childLists(next)) {
+    if (same(wanted, before.get(parent))) continue;
+    const named = new Set(wanted);
+    const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
+    const slots = siblings.flatMap((id, i) => (named.has(id) ? [i] : []));
+    const order = wanted.filter((id) => siblings.includes(id));
+    // Filling the slots left to right, each move leaves every earlier slot as it should end.
+    order.forEach((id, k) => scene.reorder(id, slots[k]!));
+  }
+}
+
+function childLists<T extends { id?: NodeId; parent?: NodeId | null }>(specs: readonly T[]): Map<NodeId | null, NodeId[]> {
+  const out = new Map<NodeId | null, NodeId[]>();
+  for (const spec of specs) {
+    const parent = spec.parent ?? null;
+    out.set(parent, [...(out.get(parent) ?? []), spec.id!]);
+  }
+  return out;
 }
 
 function byId<T extends { id?: NodeId }>(specs: readonly T[]): Map<NodeId, T> {
