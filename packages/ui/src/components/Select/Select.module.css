@@ -78,6 +78,7 @@
 
 .value[data-placeholder] {
   color: var(--wzl-fg-subtle);
+  text-decoration-color: var(--wzl-fg-subtle);
 }
 
 .chevron {
@@ -94,10 +95,6 @@
    rest of the underline's look sits on `.value`, shared with the hook. */
 .underlined .value {
   text-decoration-line: underline;
-}
-
-.value[data-placeholder] {
-  text-decoration-color: var(--wzl-fg-subtle);
 }
 
 /* Nothing sits beside the value, so the row's gap and the padding kept for a
