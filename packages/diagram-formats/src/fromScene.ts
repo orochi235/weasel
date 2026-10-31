@@ -7,6 +7,7 @@ import {
   type DataEdge, type DataGroup, type DataNode, type DiagramTheme, type SequenceData,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage, PlotPage } from './document';
+import { graphPageSettingsOf } from './graphPageMeta';
 import { plotPageOf } from './plotPages';
 import { kindOf, readEdge, readGroup, readRegion, readShape, type EndLabelNodes, type ReadNode, type ReadScene } from './sceneReaders';
 
@@ -51,6 +52,7 @@ function contentPage(scene: AnyScene): PlacedPage {
  * where the scene's theme would not give them: the author's own, and any a
  * theme never set. A page holding a sequence's root is a sequence page holding
  * its data; the parts drawn from it, and anything else on that page, are not read.
+ * A graph page takes the notation, layout, and direction its scene page keeps.
  */
 export function documentFromScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, opts: DocumentFromSceneOptions = {},
@@ -136,6 +138,7 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
       return {
         kind: 'graph',
         ...base,
+        ...graphPageSettingsOf(p),
         data: { nodes, edges: pageEdges, ...(groups.length > 0 ? { groups } : {}), ...(containers.length > 0 ? { containers } : {}) },
       } satisfies GraphPage;
     }),

@@ -121,6 +121,22 @@ describe('File › Import…', () => {
     expect(await io.saved[0]!.blob.text()).toBe('xychart-beta\n  title "Sales"\n  x-axis [jan, feb]\n  bar [3, 7]\n');
   });
 
+  it.each([
+    ['class', 'classDiagram\n  Animal <|-- Dog\n', 'classDiagram', ['Animal', 'Dog']],
+    ['C4', 'C4Context\n  Person(u, "User")\n  System(s, "Store")\n  Rel(u, s, "Uses")\n', 'C4Context', ['u', 's']],
+    ['block', 'block-beta\n  columns 2\n  a b\n  c:2\n', 'block-beta', ['a', 'b', 'c']],
+  ])('exports a Mermaid %s diagram it imported back as the same kind', async (_kind, text, header, ids) => {
+    io.picked = new File([text], 'diagram.mmd');
+    mount();
+    choose('Import');
+    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
+    choose('Export', 'As Mermaid');
+    await vi.waitFor(() => expect(io.saved).toHaveLength(1));
+    const lines = (await io.saved[0]!.blob.text()).split('\n').map((l) => l.trim());
+    expect(lines).toContain(header);
+    if (header === 'block-beta') expect(lines).toEqual(expect.arrayContaining(['columns 2', 'c:2']));
+  });
+
   it('imports a Mermaid sequence diagram as one root holding its data, and its parts', async () => {
     io.picked = new File(['sequenceDiagram\n  Alice->>+Bob: Hello\n  Bob-->>-Alice: Hi\n'], 'hello.mmd');
     mount();
