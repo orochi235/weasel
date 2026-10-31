@@ -85,11 +85,6 @@
   display: contents;
 }
 
-.row:focus-visible {
-  outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: -2px;
-}
-
 /* A child's twisty sits under its parent's grip. */
 .children {
   padding-left: calc(var(--wzl-disclosure-target, var(--wzl-control-h-sm)) + var(--wzl-space-4));
@@ -201,7 +196,7 @@
   color: var(--wzl-fg);
 }
 
-/* An unlocked layer's padlock shows only on a hovered row, or once focused.
+/* An unlocked layer's padlock shows only on a hovered row or card, or once focused.
    Hidden by opacity, so it keeps its column and its place in the tab order. */
 @media (hover: hover) {
   .lockToggle[aria-pressed='false'] {
@@ -209,6 +204,7 @@
   }
 
   .row:hover .lockToggle,
+  .card:hover .lockToggle,
   .lockToggle:focus-visible {
     opacity: 1;
   }
