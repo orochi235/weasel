@@ -10,7 +10,7 @@ import { PAGE_MARGIN } from '../../pageLayout';
 import { FRAGMENTS, parseSequence, type SeqStmt } from './parse';
 import { TYPE_OUTLINES, plainText } from './syntax';
 
-type Draft = SeqFragment & { sections: { label?: string; steps: SeqStep[] }[] };
+type Draft = Omit<SeqFragment, 'sections'> & { sections: { label?: string; steps: SeqStep[] }[] };
 type Open = { kind: 'fragment'; frag: Draft; line: number } | { kind: 'box'; box: SeqBox & { members: string[] }; line: number };
 
 /** A box's or a rect's color, and the box's label after it. */
