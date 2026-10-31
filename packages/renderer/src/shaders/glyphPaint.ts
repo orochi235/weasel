@@ -21,6 +21,7 @@
 
 import { GLYPH_COVERAGE_GLSL } from '@weasel-js/font';
 import { BATCH_ATTRIBUTE_LOCATIONS, BATCH_TEXTURE_SLOTS } from './batchFill';
+import { GLYPH_CELL_VERT_GLSL } from './glyphCell';
 import { GRAD_FILL_UNIFORMS, GRAD_PAINT_GLSL } from './gradFill';
 import { PATTERN_FILL_UNIFORMS, PATTERN_PAINT_GLSL } from './patternFill';
 
@@ -29,6 +30,7 @@ const L = BATCH_ATTRIBUTE_LOCATIONS;
 export const GLYPH_PAINT_VERT_SRC = /* glsl */ `#version 300 es
 layout(location = ${L.a_position}) in vec2 a_position;
 layout(location = ${L.a_uv}) in vec2 a_uv;
+layout(location = ${L.a_post}) in float a_post;
 layout(location = ${L.a_texSlot}) in float a_texSlot;
 uniform mat3 u_proj;
 uniform mat3 u_model;
@@ -36,6 +38,8 @@ uniform mat3 u_worldInv;
 out vec2 v_world;
 out vec2 v_uv;
 flat out float v_glyphMode;
+out vec2 v_cell;
+${GLYPH_CELL_VERT_GLSL}
 void main() {
   vec3 screen = u_model * vec3(a_position, 1.0);
   vec3 clip = u_proj * vec3(screen.xy, 1.0);
@@ -43,6 +47,7 @@ void main() {
   v_world = (u_worldInv * vec3(screen.xy, 1.0)).xy;
   v_uv = a_uv;
   v_glyphMode = float(int(a_texSlot + 0.5) / ${BATCH_TEXTURE_SLOTS});
+  v_cell = glyphCellOf(a_post).xy;
 }
 `;
 
@@ -52,6 +57,7 @@ precision highp float;
 in vec2 v_world;
 in vec2 v_uv;
 flat in float v_glyphMode;
+in vec2 v_cell;
 uniform sampler2D u_atlas;
 uniform float u_synthBold;
 uniform vec2 u_fieldScale;
@@ -62,7 +68,7 @@ vec4 glyphTap(vec2 uv) {
 ${GLYPH_COVERAGE_GLSL}
 out vec4 outColor;
 void main() {
-  float coverage = glyphCoverage(texture(u_atlas, v_uv), v_glyphMode, u_synthBold, v_uv, u_fieldScale);
+  float coverage = glyphCoverage(texture(u_atlas, v_uv), v_glyphMode, u_synthBold, v_uv, u_fieldScale, v_cell);
   outColor = shadePaint(v_world) * coverage;
 }
 `;
@@ -98,4 +104,4 @@ export const GLYPH_GRAD_UNIFORMS: readonly string[] = [
 export const GLYPH_TEXTURE_UNIFORMS = [
   'u_proj', 'u_model', 'u_worldInv', 'u_sampler', ...GLYPH_UNIFORMS,
 ] as const;
-export const GLYPH_PAINT_ATTRIBUTES = ['a_position', 'a_uv', 'a_texSlot'] as const;
+export const GLYPH_PAINT_ATTRIBUTES = ['a_position', 'a_uv', 'a_post', 'a_texSlot'] as const;

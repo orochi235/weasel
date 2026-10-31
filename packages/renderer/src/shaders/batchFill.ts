@@ -67,6 +67,7 @@ import { GLYPH_COVERAGE_GLSL, GLYPH_POINT_COVERAGE_GLSL } from '@weasel-js/font'
 import { STRAIGHT_RGB_GLSL } from './straightRgb';
 import { HULL_COVERAGE_GLSL } from './hullCoverage';
 import { HULL_PLANES } from '../batchHull';
+import { GLYPH_CELL_VERT_GLSL } from './glyphCell';
 
 /**
  * Texture units the batch program samples, slot 0 being the white texel.
@@ -180,7 +181,10 @@ function sampleTree(lo: number, hi: number, fetch: string, indent = '  '): strin
   ].join('\n');
 }
 
-export const BATCH_VERT_SRC = /* glsl */ `#version 300 es
+/** The vertex stage; `area`'s reads a grown glyph's corner out of `a_post`
+ *  (`glyphCell.ts`) for the fragment stage built with the taps. */
+function batchVertSrc(area: boolean): string {
+  return /* glsl */ `#version 300 es
 layout(location = ${L.a_position}) in vec2 a_position;
 layout(location = ${L.a_vertexColor}) in vec4 a_vertexColor;
 layout(location = ${L.a_uv}) in vec2 a_uv;
@@ -195,7 +199,7 @@ flat out int v_texSlot;
 flat out float v_paintMode;
 flat out int v_matrix;
 flat out int v_hullStart;
-flat out int v_hullCount;
+flat out int v_hullCount;${area ? `\nout vec2 v_cell;${GLYPH_CELL_VERT_GLSL}` : ''}
 void main() {
   vec3 screen = u_model * vec3(a_position, 1.0);
   vec3 clip = u_proj * vec3(screen.xy, 1.0);
@@ -211,9 +215,21 @@ void main() {
   v_matrix = (packed / ${MATRIX_STRIDE}) % ${BATCH_MATRIX_SLOTS};
   int hull = packed / ${HULL_STRIDE};
   v_hullStart = hull == 0 ? 0 : (hull - 1) / ${HULL_PLANES};
-  v_hullCount = hull == 0 ? 0 : (hull - 1) % ${HULL_PLANES} + 1;
+  v_hullCount = hull == 0 ? 0 : (hull - 1) % ${HULL_PLANES} + 1;${area ? AREA_VERT_TAIL : ''}
 }
 `;
+}
+
+const AREA_VERT_TAIL = /* glsl */ `
+  bool glyph = v_paintMode > 0.5 && v_paintMode < 2.5;
+  vec3 cell = glyph ? glyphCellOf(a_post) : vec3(0.0, 0.0, a_post);
+  v_cell = cell.xy;
+  v_post = cell.z;`;
+
+export const BATCH_VERT_SRC = batchVertSrc(false);
+
+/** The vertex stage of every program built with `batchAreaFragSrc`. */
+export const BATCH_AREA_VERT_SRC = batchVertSrc(true);
 
 /** A glyph's taps, which run inside a branch and so take no derivative. Slot 0
  *  is the white texel, never an atlas. */
@@ -240,7 +256,7 @@ in vec2 v_uv;
 in float v_post;
 flat in int v_texSlot;
 flat in float v_paintMode;
-flat in int v_matrix;
+flat in int v_matrix;${area ? '\nin vec2 v_cell;' : ''}
 uniform sampler2D u_samplers[${BATCH_TEXTURE_SLOTS}];
 uniform vec4 u_color;
 uniform float u_alpha[${matrices}];
@@ -288,7 +304,7 @@ void main() {
   // see the file header. A glyph's a_post is its synthetic-bold shift. A slot
   // that is not an atlas keeps a stale field scale, which would send its
   // fragments through the glyph taps.
-  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot]${area ? ' * isGlyph' : ''});
+  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot]${area ? ' * isGlyph, v_cell' : ''});
   // A glyph's texel is a distance field, so it takes no part in the color; a
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;

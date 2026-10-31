@@ -87,9 +87,10 @@ describe('atlas glyph coverage at small sizes', () => {
   });
 
   // Read at each pixel's center alone, the offsets swung by 0.88, 0.35 and
-  // 0.66px. A stem inside one pixel keeps its centroid at that pixel's center
-  // even under exact area coverage, which at 7.2px is about 0.16px of swing.
-  it.each([[7.2, 0.5], [12, 0.1], [16, 0.1]])('keeps a %spx H\'s ink centroid where it moves to', (size, bound) => {
+  // 0.66px. With area coverage on a quad no wider than its atlas cell, the
+  // 7.2px one swung by 0.37: a multisampled target scaled the pixels the
+  // quad's edge crossed by the samples it covered (see GLYPH_AREA_MARGIN).
+  it.each([[7.2, 0.2], [12, 0.1], [16, 0.1]])('keeps a %spx H\'s ink centroid where it moves to', (size, bound) => {
     // The centroid's offset from x, as x steps through a pixel in eighths.
     const offsets: number[] = [];
     for (let k = 0; k < 8; k++) {
@@ -106,6 +107,7 @@ describe('atlas glyph coverage at small sizes', () => {
       masses.push(columns(render(4 + k / 8, 7.2)).reduce((a, b) => a + b, 0));
     }
     const spread = Math.min(...masses) / Math.max(...masses);
-    expect(spread, masses.map((m) => m.toFixed(2)).join(' ')).toBeGreaterThan(0.88);
+    // 0.93 on a quad that clipped its edge pixels' samples, 0.97 on a grown one (teitou).
+    expect(spread, masses.map((m) => m.toFixed(2)).join(' ')).toBeGreaterThan(0.95);
   });
 });

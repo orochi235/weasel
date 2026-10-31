@@ -10,6 +10,7 @@ import {
 } from './pathFill';
 import {
   BATCH_VERT_SRC,
+  BATCH_AREA_VERT_SRC,
   BATCH_FRAG_SRC,
   BATCH_MATRICES_FRAG_SRC,
   BATCH_HULL_FRAG_SRC,
@@ -143,7 +144,7 @@ export class BatchVariantPrograms implements BatchVariants {
     this.hull = new LazyProgram(gl, BATCH_FILL_HULL_SPEC);
     this.matricesHull = new LazyProgram(gl, BATCH_FILL_MATRICES_HULL_SPEC);
     this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gl, {
-      vert: BATCH_VERT_SRC,
+      vert: BATCH_AREA_VERT_SRC,
       frag: batchAreaFragSrc(matrices, hulls),
       uniforms: hulls ? BATCH_HULL_UNIFORMS : BATCH_FILL_UNIFORMS,
       attributes: BATCH_FILL_ATTRIBUTES,

@@ -1,9 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { registerFont, FIXTURE_FONT, GLYPH_AREA_MARGIN } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetDynamicFontsForTests } from '@weasel-js/font/test-seams';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch, flushBatch } from './draw';
 import { createRecorderCtx } from './testing/recorderCtx';
+import { FLOATS_PER_VERTEX } from './drawBatch';
+
+const ARRAY_BUFFER = 0x8892;
+/** Float offset of `a_post` within a vertex. */
+const POST_OFFSET = 8;
 
 /**
  * The batch program's glyph taps cost every fragment of a program that has
@@ -63,6 +68,28 @@ describe('drawText — which batch build a run of atlas glyphs draws with', () =
   it('draws a run holding small text with the taps, whatever else shares it', () => {
     const { out, area } = programsFor(rect, text(72), text(12, 200));
     expect(out).toEqual([area]);
+  });
+
+  /** Each staged glyph vertex's `a_post` and position, after drawing `cmd`. */
+  function stagedGlyphs(cmd: DrawCommand) {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, cmd);
+    flushBatch(ctx);
+    const upload = calls.find((c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER)!;
+    const data = upload.args[2] as Float32Array, n = upload.args[4] as number;
+    const out: { x: number; post: number }[] = [];
+    for (let at = 0; at < n; at += FLOATS_PER_VERTEX) out.push({ x: data[at], post: data[at + POST_OFFSET] });
+    return out;
+  }
+
+  it('grows small text\'s quads by a margin and tells each vertex its corner', () => {
+    const small = stagedGlyphs(text(12)), large = stagedGlyphs(text(72));
+    expect(small.map((v) => v.post)).toEqual([0, 2, 6, 4, 0, 2, 6, 4]);
+    expect(large.map((v) => v.post)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+    // At DPR 1 the quad is GLYPH_AREA_MARGIN device pixels wider on each side than its atlas cell.
+    const a = FIXTURE_FONT.chars.find((c) => c.id === 65)!;
+    const cellPx = (a.width * 12) / FIXTURE_FONT.info.size;
+    expect(small[1].x - small[0].x).toBeCloseTo(cellPx + 2 * GLYPH_AREA_MARGIN, 6);
   });
 
   it('starts the next run without them', () => {

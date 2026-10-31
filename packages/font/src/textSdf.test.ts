@@ -90,7 +90,13 @@ describe('glyph coverage — area taps', () => {
   it('has a build without the taps that is otherwise the same', () => {
     expect(GLYPH_POINT_COVERAGE_GLSL).not.toMatch(/\bif\s*\(|glyphTap/);
     const taps = GLYPH_COVERAGE_GLSL.slice(GLYPH_COVERAGE_GLSL.indexOf('  float area'), GLYPH_COVERAGE_GLSL.indexOf('  return coverage;'));
-    expect(GLYPH_COVERAGE_GLSL.replace(taps, '')).toBe(GLYPH_POINT_COVERAGE_GLSL);
+    // Besides the taps, the area build reads the grown quad's cell (see GLYPH_AREA_MARGIN).
+    const withoutCell = GLYPH_COVERAGE_GLSL.replace(taps, '')
+      .replace(/\nfloat glyphInCell[\s\S]*?\n}\n/, '')
+      .replace(', vec2 cell)', ')')
+      .replace(/\n {2}vec2 dcx[^\n]*\n {2}vec2 dcy[^\n]*\n {2}vec2 margin[^\n]*/, '')
+      .replace(' * glyphInCell(cell, margin)', '');
+    expect(withoutCell).toBe(GLYPH_POINT_COVERAGE_GLSL);
   });
 
   it('tells a caller its glyphs need the taps from where the shader starts mixing them in', () => {

@@ -238,7 +238,7 @@ describe('batch program — glyph coverage is unconditional', () => {
   it('keeps a fragment that is not a glyph out of the glyph taps', () => {
     // A slot that is not an atlas keeps a stale field scale, so only a zero
     // stands between an image fragment and four wasted fetches.
-    expect(batchAreaFragSrc(false, false)).toMatch(/glyphCoverage\([^;]*u_fieldScale\[v_texSlot\]\s*\*\s*isGlyph\)/);
+    expect(batchAreaFragSrc(false, false)).toMatch(/glyphCoverage\([^;]*u_fieldScale\[v_texSlot\]\s*\*\s*isGlyph,\s*v_cell\)/);
   });
 
   it('fetches a glyph tap at an explicit level, from every slot but the white texel', () => {

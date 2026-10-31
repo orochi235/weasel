@@ -21,7 +21,8 @@ import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, packSlot } from './shaders/batchFill';
 import { BatchStage, FLOATS_PER_VERTEX, doubledTo } from './batchStage';
-import { glyphCorners } from './glyphCorners';
+import { placeGlyph, type PlacedGlyph } from './glyphCorners';
+import { GLYPH_CORNER_POST } from './shaders/glyphCell';
 
 /** Vertices per flush. Caps staging memory; a longer run flushes in chunks,
  *  which stays correct because painter's order survives a flush. */
@@ -32,8 +33,9 @@ export { FLOATS_PER_VERTEX };
 /** Float offset of `a_texSlot` within a vertex, which carries the paint mode
  *  packed alongside the slot — `paintModeOf` unpacks it. */
 export const TEX_SLOT_OFFSET = 9;
-/** The corners `pushGlyph` maps, read before the next glyph's are written. */
-const CORNERS: number[] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+/** The quad `pushGlyph` places, read before the next glyph's is written. */
+const PLACED: PlacedGlyph = { xy: new Array<number>(8).fill(0), uv: [0, 0, 0, 0] };
+const NO_CORNERS: readonly number[] = [0, 0, 0, 0];
 
 /** UV of the white texel bound at slot 0. Its texture is 1x1, so any
  *  coordinate lands on it; the center is the one that stays on it under either
@@ -234,29 +236,26 @@ export class DrawBatch extends BatchStage {
    * field's threshold, in `a_post`: a glyph has no use for an alpha factor there.
    *
    * A synthetic oblique is sheared and the glyph's turn applied here, before
-   * `m` (`glyphCorners`); `tanItalic` is 0 for an upright face. Corners wind
-   * as `pushQuad`'s do.
+   * `m` (`placeGlyph`); `tanItalic` is 0 for an upright face. `grow` is the
+   * screen distance the quad grows by for area coverage, and a grown quad's
+   * corners ride `a_post` too (`shaders/glyphCell.ts`). Corners wind as
+   * `pushQuad`'s do.
    */
   pushGlyph(
     quads: ArrayLike<number>, at: number, ox: number, oy: number, tanItalic: number, m: GlMat3,
-    rgba: ArrayLike<number>, slot: number, mode: number, synthBold: number,
+    rgba: ArrayLike<number>, slot: number, mode: number, synthBold: number, grow = 0,
   ): boolean {
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
-    const u0 = quads[at + 4], v0 = quads[at + 5], u1 = quads[at + 6], v1 = quads[at + 7];
+    placeGlyph(quads, at, ox, oy, tanItalic, m, grow, PLACED);
+    const c = PLACED.xy, t = PLACED.uv;
     const r = rgba[0], g = rgba[1], b = rgba[2], a = rgba[3];
-    const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
-    const c = CORNERS;
-    glyphCorners(quads, at, ox, oy, tanItalic, c);
-    const ax = ma * c[0] + mc * c[1] + mtx, ay = mb * c[0] + md * c[1] + mty;
-    const bx = ma * c[2] + mc * c[3] + mtx, by = mb * c[2] + md * c[3] + mty;
-    const cx = ma * c[4] + mc * c[5] + mtx, cy = mb * c[4] + md * c[5] + mty;
-    const dx = ma * c[6] + mc * c[7] + mtx, dy = mb * c[6] + md * c[7] + mty;
     const P = packSlot(slot, mode);
-    i = this.writeVertex(i, ax, ay, r, g, b, a, u0, v0, synthBold, P);
-    i = this.writeVertex(i, bx, by, r, g, b, a, u1, v0, synthBold, P);
-    i = this.writeVertex(i, cx, cy, r, g, b, a, u1, v1, synthBold, P);
-    this.writeVertex(i, dx, dy, r, g, b, a, u0, v1, synthBold, P);
+    const k = grow > 0 ? GLYPH_CORNER_POST : NO_CORNERS;
+    i = this.writeVertex(i, c[0], c[1], r, g, b, a, t[0], t[1], synthBold + k[0], P);
+    i = this.writeVertex(i, c[2], c[3], r, g, b, a, t[2], t[1], synthBold + k[1], P);
+    i = this.writeVertex(i, c[4], c[5], r, g, b, a, t[2], t[3], synthBold + k[2], P);
+    this.writeVertex(i, c[6], c[7], r, g, b, a, t[0], t[3], synthBold + k[3], P);
     this.pushQuadIndices();
     return this.fitQuad(this.nVerts - 4, this.nIdx - 6);
   }

@@ -1,0 +1,270 @@
+  waiting for room
+  waiting: teitou unknown (its weasel tree is promised to nonconvex-patternpicker-alone)
+  waiting: teitou ~3s (its weasel tree is held by job 33c40e0a, nonconvex-patternpicker-alone by its past runs)
+  waiting: teitou unknown (its weasel tree is promised to nonconvex-patternpicker-alone)
+  base   3a764aca
+  delta  18 file(s), 0 deleted
+  sent   14 new file(s), 4 already there
+  updated weasel on teitou at 3a764aca + 18 uncommitted file(s)
+  job    f4092e55 on teitou
+
+onto: glyph-area is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Export "ColorList" of module "src/colorListItems.ts" was reexported through module "src/colorList.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/react.tsx" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Generated an empty chunk: "internal".
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+"PATH_C" and "PATH_Q" are imported from external module "@weasel-js/core" but never used in "dist/index.js".
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Generated an empty chunk: "chunk-WDIE35AK".
+Export "DiagramData" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/draw.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSceneOptions" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/draw.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "NodeStyle" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/draw.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DataEdge" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/draw.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "EdgeStyle" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/draw.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "NodeStyle" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/symbolParts.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DataNode" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/symbolParts.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramRouter" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/compact.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramRouter" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/lanes.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramRouter" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/nodeGraph.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSpec" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/lookRoutes.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSpec" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/effect/run.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DataEdge" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/edgeId.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "NodeStyle" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/stencil.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "NodeStyle" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/stencilTool.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSpec" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/avoid/specRoutes.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSpec" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/hops/specHops.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSpec" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/labels/specLabels.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSpec" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/sceneSync.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DiagramSpec" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/diagramViewProps.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "DataEdge" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/diagramViewProps.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "EdgeStyle" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/theme/resolve.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+Export "NodeStyle" of module "src/dataTypes.ts" was reexported through module "src/fromData.ts" while both modules are dependencies of each other and will end up in different chunks by current Rollup settings. This scenario is not well supported at the moment as it will produce a circular dependency between chunks and will likely lead to broken execution order.
+Either change the import in "src/theme/resolve.ts" to point directly to the exporting module or reconfigure "output.manualChunks" to ensure these modules end up in the same chunk.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m/Users/mike/.config/onto/work/weasel/packages/path-tools/src/anchorSelect/anchorSelect.ts: 1 icon() call(s) with a computed name resolve only from a loaded variant[0m [1m[35m[plugin weasel-icons][0m
+
+    src/index.ts:67:7:
+[37m      67 │ } from [32m'./anchorSelect/anchorSelect'[37m;
+         ╵        [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+
+
+ WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m/Users/mike/.config/onto/work/weasel/packages/path-tools/src/spiro/spiroCommands.ts: 1 icon() call(s) with a computed name resolve only from a loaded variant[0m [1m[35m[plugin weasel-icons][0m
+
+    src/spiro/index.ts:10:55:
+[37m      10 │ ...{ releaseSpiroAction, setSpiroKindAction } from [32m'./spiroCommands'[37m;
+         ╵                                                    [32m~~~~~~~~~~~~~~~~~[0m
+
+
+
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[plugin weasel-icons] /Users/mike/.config/onto/work/weasel/packages/ui/src/components/LayerList/RowParts.tsx: 1 icon() call(s) with a computed name resolve only from a loaded variant
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Generated an empty chunk: "index".
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn install-scripts 3 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   esbuild@0.27.7 (postinstall: node install.js)
+npm warn install-scripts   fsevents@2.3.3 (install: (install scripts present))
+npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+prebundle: serving 2739 module(s) of bundled packages from source, since source imports them by path
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+[2m11:34:54 AM[22m [36m[1m[vite][22m[39m (client) Forced re-optimization of dependencies
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+ [32m✓[39m [30m[42m browser (chromium) [49m[39m packages/core/src/canvas/glyphCoverage.browser.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 394[2mms[22m[39m
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+[90mstdout[2m | packages/core/src/canvas/glyphProbe.browser.test.ts[2m > [22m[2mdumps
+ [32m✓[39m [30m[42m browser (chromium) [49m[39m packages/core/src/canvas/glyphProbe.browser.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 198[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 11:34:54
+[2m   Duration [22m 1.88s[2m (worker 58%, tests 22%, setup 11%, import 9%)[22m
+
+== exit 0
