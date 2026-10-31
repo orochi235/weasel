@@ -19,7 +19,7 @@ function level(c: MenuController, at: number, swatchOf?: (e: MenuEntry) => strin
     const checkable = e.kind === 'item' && e.checked !== undefined;
     const open = e.kind === 'submenu' && stack[at] === i && stack.length > at + 1;
     return {
-      role: checkable ? 'menuitemcheckbox' : 'menuitem',
+      role: !checkable ? 'menuitem' : e.radio ? 'menuitemradio' : 'menuitemcheckbox',
       key: e.key,
       label: labelOf(c, e, swatchOf),
       ...(deepest && stack[at] === i ? { active: true } : {}),

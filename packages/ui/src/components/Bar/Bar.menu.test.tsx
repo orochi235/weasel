@@ -44,7 +44,7 @@ describe('Bar menu group', () => {
     expect(screen.getByRole('menu')).toBeDefined();
     expect(screen.getByRole('menuitem', { name: 'Bring to front' })).toBeDefined();
     expect(screen.getByRole('menuitemcheckbox', { name: /Snap/ })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('menuitemcheckbox', { name: /Right/ })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: /Right/ })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('menuitem', { name: /Gap/ })).toContainElement(screen.getByRole('spinbutton', { name: 'Gap' }));
   });
 

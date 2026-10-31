@@ -84,21 +84,21 @@ describe('globalsMenu', () => {
     mount(config());
     await open('Globals');
     await press(await screen.findByRole('menuitem', { name: 'Theme' }));
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Auto (OS)' })).toHaveAttribute('aria-checked', 'true');
-    await press(screen.getByRole('menuitemcheckbox', { name: 'Dark' }));
+    expect(screen.getByRole('menuitemradio', { name: 'Auto (OS)' })).toHaveAttribute('aria-checked', 'true');
+    await press(screen.getByRole('menuitemradio', { name: 'Dark' }));
     const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
     await waitFor(() => expect(toolbar.getByRole('button', { name: /Theme/ })).toHaveTextContent('Dark'));
     await open('Globals');
     await press(await screen.findByRole('menuitem', { name: 'Theme' }));
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it("leaves out an option its declaration's shows hides", async () => {
     mount(config({ shows: (value) => value !== 'dark' }));
     await open('Globals');
     await press(await screen.findByRole('menuitem', { name: 'Theme' }));
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Auto (OS)' })).toBeInTheDocument();
-    expect(screen.queryByRole('menuitemcheckbox', { name: 'Dark' })).toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Auto (OS)' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitemradio', { name: 'Dark' })).toBeNull();
   });
 
   it('keeps the active global selected as another global changes what shows', async () => {
@@ -125,19 +125,19 @@ describe('globalsMenu', () => {
     const choose = async (menu: string, row: string) => {
       await open('Globals');
       await press(await screen.findByRole('menuitem', { name: menu }));
-      await press(screen.getByRole('menuitemcheckbox', { name: row }));
+      await press(screen.getByRole('menuitemradio', { name: row }));
     };
     await choose('Contrast', 'High');
     await choose('Theme', 'Light');
     await open('Globals');
     await press(await screen.findByRole('menuitem', { name: 'Theme' }));
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
-    await press(screen.getByRole('menuitemcheckbox', { name: 'Light' }));
+    expect(screen.getByRole('menuitemradio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
+    await press(screen.getByRole('menuitemradio', { name: 'Light' }));
     await choose('Contrast', 'Low');
     await open('Globals');
     await press(await screen.findByRole('menuitem', { name: 'Theme' }));
-    expect(screen.queryByRole('menuitemcheckbox', { name: 'Light' })).toBeNull();
-    const checked = screen.getAllByRole('menuitemcheckbox').filter((el) => el.getAttribute('aria-checked') === 'true');
+    expect(screen.queryByRole('menuitemradio', { name: 'Light' })).toBeNull();
+    const checked = screen.getAllByRole('menuitemradio').filter((el) => el.getAttribute('aria-checked') === 'true');
     expect(checked).toHaveLength(1);
   });
 });

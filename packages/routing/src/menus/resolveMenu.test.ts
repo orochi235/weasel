@@ -127,7 +127,7 @@ describe('resolveSchemaMenu: values', () => {
     const src = valued({ 'view.leaf': 'c' });
     const es = resolveSchemaMenu(view(mode), src);
     expect(labels(es)).toEqual(['Cut', '---', 'A', 'B', 'C']);
-    expect(es.slice(2).map((e) => e.kind === 'item' && [e.checked, e.disabled])).toEqual([[false, false], [false, true], [true, false]]);
+    expect(es.slice(2).map((e) => e.kind === 'item' && [e.checked, e.disabled, e.radio])).toEqual([[false, false, true], [false, true, true], [true, false, true]]);
     run(es[2]);
     expect(src.onChange).toHaveBeenCalledWith('view.leaf', 'a');
   });

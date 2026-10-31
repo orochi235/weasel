@@ -149,11 +149,11 @@ describe('the lab’s menu bar', () => {
     });
     await mount({ menus: { schema, values: { 'tools.units': 'mm' }, onChange } });
     await open('Tools');
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Mm' })).toHaveAttribute(
+    expect(screen.getByRole('menuitemradio', { name: 'Mm' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    await press(screen.getByRole('menuitemcheckbox', { name: 'Px' }));
+    await press(screen.getByRole('menuitemradio', { name: 'Px' }));
     expect(onChange).toHaveBeenCalledWith('tools.units', 'px');
   });
 

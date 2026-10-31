@@ -43,7 +43,7 @@ export function MenuRow(props: {
   };
   const common = {
     id,
-    role: checkable ? 'menuitemcheckbox' : 'menuitem',
+    role: !checkable ? 'menuitem' : e.radio ? 'menuitemradio' : 'menuitemcheckbox',
     className: current ? `${s.row} ${s.current}` : s.row,
     'data-highlighted': highlighted || undefined,
     'aria-disabled': e.disabled || (e.kind === 'color' && !e.set) || undefined,

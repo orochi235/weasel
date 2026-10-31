@@ -128,7 +128,7 @@ describe('the loupe asset', () => {
     act(() => { drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), loupe: { surface: 'menu' } }); });
     click(strip().getByRole('button', { name: 'Loupe' }));
     expect(screen.getByRole('menuitemcheckbox', { name: 'Loupe' })).toHaveAttribute('aria-checked', 'true');
-    click(screen.getByRole('menuitemcheckbox', { name: 'Vector' }));
+    click(screen.getByRole('menuitemradio', { name: 'Vector' }));
     expect(lens.settings?.mode).toBe('vector');
   });
 

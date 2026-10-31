@@ -180,8 +180,8 @@ describe('resolveSchemaMenu: a union leaf', () => {
   it('is a submenu of its variants, checked for the one held, then that variant’s fields', () => {
     const { src, onChange } = store({ g: { type: 'radial', radius: 4 } });
     const rows = rowsOf(only(resolveSchemaMenu(menu({ g: gradient }), src)));
-    expect(rows.map((r) => [(r as { label: string }).label, (r as { checked?: boolean }).checked])).toEqual([
-      ['Linear', false], ['Radial', true], ['Radius', undefined],
+    expect(rows.map((r) => [(r as { label: string }).label, (r as { checked?: boolean }).checked, (r as { radio?: true }).radio])).toEqual([
+      ['Linear', false, true], ['Radial', true, true], ['Radius', undefined, undefined],
     ]);
     (rows[2] as MenuNumberEntry).set(6);
     expect(onChange).toHaveBeenLastCalledWith('g', { type: 'radial', radius: 6 });
@@ -197,7 +197,7 @@ describe('resolveSchemaMenu: a field leaf', () => {
     const schema = menu({ a: pref.number('A', 0), b: pref.number('B', 0), c: pref.string('C', ''), target });
     const e = resolveSchemaMenu(schema, src).find((x) => x.key === 'target')!;
     const rows = rowsOf(e) as MenuItemEntry[];
-    expect(rows.map((r) => [r.label, r.checked])).toEqual([['A', false], ['B', true]]);
+    expect(rows.map((r) => [r.label, r.checked, r.radio])).toEqual([['A', false, true], ['B', true, true]]);
     rows[0]!.run();
     expect(onChange).toHaveBeenLastCalledWith('target', 'a');
   });

@@ -160,6 +160,14 @@ describe('createMenuWidget', () => {
     expect(more.children![0]!.children![0]).toMatchObject({ role: 'menuitem', label: 'Inner', disabled: true, active: true });
   });
 
+  it('describes a radio row as a menuitemradio', () => {
+    const { w } = widget({
+      ...open, source: 'keyboard',
+      entries: [{ kind: 'item', key: 'a', label: 'A', checked: false, radio: true, run }],
+    });
+    expect(w.accessibleTree!.read().children![0]).toMatchObject({ role: 'menuitemradio', checked: false });
+  });
+
   it('draws every color from a real theme as a concrete value', () => {
     const { w } = widget();
     w.onPointer({ type: 'hovermove', x: 110, y: 110, native: null });

@@ -174,7 +174,7 @@ export function unionRows(draw: MenuDraw, leaf: PrefUnion, key: string, path: st
   const current = prefVariantOf(leaf, draw.access.values(path)) ?? prefVariantOf(leaf, leaf.default);
   const { onChange } = draw.access;
   const choices = Object.entries(leaf.variants).map(([v, variant]): MenuEntry => ({
-    kind: 'item', key: `${path}/${v}`, label: variant.name, checked: v === current?.[0],
+    kind: 'item', key: `${path}/${v}`, label: variant.name, checked: v === current?.[0], radio: true,
     disabled: frozen || !onChange,
     run: onChange ? () => onChange(path, prefVariantDefault(leaf, v)) : noop,
   }));
@@ -196,7 +196,7 @@ export function fieldRows(draw: MenuDraw, leaf: PrefField, key: string, path: st
   for (const [p, l] of prefLeaves(draw.root)) {
     if (p === path || !prefHoldsValue(l) || (leaf.kinds && !leaf.kinds.includes(l.kind))) continue;
     rows.push({
-      kind: 'item', key: `${path}/${p}`, label: l.name || p, checked: held === p,
+      kind: 'item', key: `${path}/${p}`, label: l.name || p, checked: held === p, radio: true,
       disabled: off || leaf.readout === true || !onChange,
       run: onChange ? () => onChange(path, p) : noop,
     });

@@ -26,6 +26,8 @@ export interface MenuItemEntry {
   disabled?: boolean;
   /** `undefined` for a row with no on/off state. */
   checked?: boolean;
+  /** A checked row that is one of a set held by exactly one, as an enum's options are: read as a radio row. */
+  radio?: true;
   /** Letter that chooses this row from the keyboard, compared ignoring case. */
   access?: string;
   /** Where choosing the row goes; see `withLinks`. */
