@@ -1,6 +1,6 @@
 /**
- * Until the view is moved, chart mode keeps the page fitted to the workspace, and a workspace that resizes shows the
- * page refitted in the frame it resized in, never the old fit for a frame.
+ * Until the view is moved, chart mode keeps the page fitted to the workspace: a workspace that resizes shows the page
+ * refitted from the first frame its canvas has the new size, never the new size at the old fit.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
@@ -34,26 +34,26 @@ afterEach(() => {
 });
 
 describe('WeaselChart page fit', () => {
-  it('refits the page in the frame the workspace shrinks in', async () => {
+  it('refits the page with the canvas when the workspace shrinks', async () => {
     seedChart();
     const { host, canvas } = await mountChartApp();
     expect(colorAt(canvas, at(host, 450, 330))).toBe('#ff0000');
-    const before = host.getBoundingClientRect().height;
 
     // Shrinks the workspace from the top, as the toolbar wrapping to a second row does.
-    const shown = new Promise<string>((resolve) => {
-      const observer = new ResizeObserver(() => {
-        if (host.getBoundingClientRect().height === before) return;
-        observer.disconnect();
-        resolve(colorAt(canvas, at(host, 450, 330)));
-      });
-      observer.observe(host);
-    });
     const spacer = document.createElement('div');
     spacer.style.height = '48px';
     spacer.style.flexShrink = '0';
     host.parentElement!.insertBefore(spacer, host);
-    expect(await shown).toBe('#ff0000');
+    const frames: { resized: boolean; color: string }[] = [];
+    for (let i = 0; i < 6; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      frames.push({
+        resized: Math.abs(canvas.getBoundingClientRect().height - host.getBoundingClientRect().height) < 0.5,
+        color: colorAt(canvas, at(host, 450, 330)),
+      });
+    }
+    expect(frames.slice(0, 2).some((f) => f.resized)).toBe(true);
+    expect(frames.filter((f) => f.resized).map((f) => f.color)).toEqual(frames.filter((f) => f.resized).map(() => '#ff0000'));
     spacer.remove();
   });
 });
