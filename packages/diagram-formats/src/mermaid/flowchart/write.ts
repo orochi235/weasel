@@ -1,10 +1,11 @@
 /** One page of a document as a Mermaid flowchart: regions as subgraphs, colors as classes and styles. */
-import type { DataEdge, DataNode, LayoutDirection, NodeStyle, Outline } from '@weasel-js/diagram';
-import type { DiagramDocument, ExportResult, WriteOptions } from '../document';
-import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../graphWrite';
+import type { DataEdge, DataNode, LayoutDirection, Outline } from '@weasel-js/diagram';
+import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
+import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../../graphWrite';
+import { styleProps } from '../common/styles';
+import { mermaidIds, mermaidText } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TD', up: 'BT', right: 'LR', left: 'RL' };
-const RESERVED = new Set(['end', 'subgraph', 'graph', 'flowchart', 'style', 'classdef', 'class', 'click', 'linkstyle', 'direction', 'default', 'call', 'href']);
 const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
   rect: ['[', ']'], stadium: ['([', '])'], diamond: ['{', '}'], ellipse: ['((', '))'], hexagon: ['{{', '}}'],
   parallelogram: ['[/', '/]'], trapezoid: ['[/', '\\]'], cylinder: ['[(', ')]'], doubleEllipse: ['(((', ')))'], roundRect: ['(', ')'],
@@ -16,42 +17,7 @@ const NEAREST: Readonly<Record<string, string>> = {
   inclusiveGateway: 'diamond', eventGateway: 'diamond', subprocess: 'roundRect',
 };
 
-const valid = (id: string) => /^[A-Za-z_]\w*$/.test(id) && !RESERVED.has(id.toLowerCase());
-
-/** An id Mermaid reads for each of `ids`: itself where it can be, else a cleaned spelling no other id takes. */
-export function mermaidIds(ids: readonly string[]): Map<string, string> {
-  const out = new Map<string, string>();
-  const taken = new Set(ids.filter(valid));
-  for (const id of ids) {
-    if (valid(id)) { out.set(id, id); continue; }
-    let base = id.replace(/\W+/g, '_').replace(/^_+(?=\w)|(?<=\w)_+$/g, '') || 'n';
-    if (/^\d/.test(base)) base = `n${base}`;
-    if (!valid(base)) base = `${base}_`;
-    let pick = base;
-    for (let n = 2; taken.has(pick); n++) pick = `${base}_${n}`;
-    taken.add(pick);
-    out.set(id, pick);
-  }
-  return out;
-}
-
-/** Text as Mermaid quotes it: the characters it reads as syntax spelled as entities, lines joined by `<br>`. */
-export function mermaidText(lines: readonly string[]): string {
-  const text = lines.map((l) => l.replace(/#/g, '#35;').replace(/"/g, '#quot;').replace(/</g, '#lt;').replace(/>/g, '#gt;')).join('<br>');
-  return `"${text === '' ? ' ' : text}"`;
-}
-
 const px = (n: number) => `${n}px`;
-
-function styleProps(style: Partial<NodeStyle>): string {
-  return [
-    style.fill !== undefined ? `fill:${hexColor(style.fill)}` : null,
-    style.stroke !== undefined ? `stroke:${hexColor(style.stroke)}` : null,
-    style.text !== undefined ? `color:${hexColor(style.text)}` : null,
-    style.strokeWidth !== undefined ? `stroke-width:${px(style.strokeWidth)}` : null,
-    style.dash !== undefined ? `stroke-dasharray:${style.dash.join(' ')}` : null,
-  ].filter((p) => p !== null).join(',');
-}
 
 class MermaidWriter {
   readonly lines: string[] = [];
@@ -107,6 +73,7 @@ class MermaidWriter {
   edges(): void {
     for (const e of this.out.edges) {
       if (e.fromPort !== undefined || e.toPort !== undefined) this.out.warnings.add('Mermaid has no ports; connectors\' ports were dropped.');
+      if (e.endLabels !== undefined) this.out.warnings.add('Mermaid flowcharts have no labels at a connector\'s ends; they were dropped.');
       const label = e.label !== undefined && e.label !== '' ? `|${mermaidText([e.label])}|` : '';
       this.lines.push(`  ${this.id(e.from)} ${this.link(e)}${label} ${this.id(e.to)}`);
     }
@@ -144,7 +111,7 @@ class MermaidWriter {
 }
 
 /** Writes the page `opts.page` names, else the first, as a Mermaid flowchart. */
-export function writeMermaid(doc: DiagramDocument, opts?: WriteOptions): ExportResult {
+export function writeFlowchart(doc: DiagramDocument, opts?: WriteOptions): ExportResult {
   const out = graphOut(doc, opts, 'Mermaid');
   if (out === null) return { text: 'flowchart TD\n', warnings: [] };
   if (out.page.data.nodes.some((n) => n.at !== undefined)) out.warnings.add('Mermaid holds no positions; the page is laid out again when read.');

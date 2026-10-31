@@ -27,7 +27,9 @@ export interface ReadScene {
 }
 
 type Paint = { paint?: { color?: unknown }; width?: unknown; dash?: unknown; markerStart?: unknown; markerEnd?: unknown };
-type Data = { diagram?: Record<string, unknown>; fill?: Paint; stroke?: Paint; text?: unknown; bodyRow?: unknown; style?: { fontSize?: unknown } };
+type Data = {
+  diagram?: Record<string, unknown>; fill?: Paint; stroke?: Paint; text?: unknown; bodyRow?: unknown; bodyField?: unknown; style?: { fontSize?: unknown };
+};
 
 const ROUTERS: readonly DiagramRouter[] = ['straight', 'bezier', 'orthogonal', 'avoid'];
 
@@ -69,6 +71,16 @@ function withDividers(text: readonly { index: number; row: Row }[], dividers: re
   return all.sort((a, b) => a.index - b.index).map((e) => e.row);
 }
 
+/** A text row as built: a `field` while its text still starts with its label, else a `label`. */
+function textRow(data: Data, ownSize: boolean): Row {
+  const text = data.text as string;
+  const style = ownSize ? { style: { fontSize: data.style?.fontSize as number } } : {};
+  const prefix = typeof data.bodyField === 'string' ? `${data.bodyField}: ` : null;
+  return prefix !== null && text.startsWith(prefix)
+    ? { kind: 'field', label: data.bodyField as string, value: text.slice(prefix.length), ...style }
+    : { kind: 'label', text, ...style };
+}
+
 /** A shape: its outline, text rows, box, role, colors, and the body layout and ports it was built with. */
 export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: DiagramTheme): DataNode {
   const trait = traitOf(node)!;
@@ -85,14 +97,12 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
   }, { ...themed, strokeWidth: themed.strokeWidth ?? NODE_STROKE_WIDTH }, trait.ownStyle);
   const body = trait.body as BodyLayout | undefined;
   const dividers = body?.dividers ?? [];
+  const fields = rows.some((r) => typeof dataOf(r).bodyField === 'string');
   return {
     id: node.id,
     outline: trait.outline as DataNode['outline'],
-    ...(ownSize || dividers.length > 0
-      ? { rows: withDividers(rows.map((r) => ({
-          index: dataOf(r).bodyRow as number,
-          row: { kind: 'label' as const, text: dataOf(r).text as string, ...(ownSize ? { style: { fontSize: dataOf(r).style?.fontSize as number } } : {}) },
-        })), dividers) }
+    ...(ownSize || fields || dividers.length > 0
+      ? { rows: withDividers(rows.map((r) => ({ index: dataOf(r).bodyRow as number, row: textRow(dataOf(r), ownSize) })), dividers) }
       : { lines: rows.map((r) => dataOf(r).text as string) }),
     at: moved(pose, page),
     width: pose.width,
@@ -110,7 +120,23 @@ function placementOf(trait: Record<string, unknown> | null, page: Vec2): Diagram
   const label = trait?.label as DiagramLabel | undefined;
   if (label === undefined) return undefined;
   const at = typeof label.at === 'object' ? { near: moved(label.at.near, page) } : label.at;
-  return { at, ...(label.offset !== undefined ? { offset: label.offset } : {}), ...(label.dodge === false ? { dodge: false } : {}) };
+  return {
+    at, ...(label.offset !== undefined ? { offset: label.offset } : {}), ...(label.inset !== undefined ? { inset: label.inset } : {}),
+    ...(label.dodge === false ? { dodge: false } : {}),
+  };
+}
+
+/** The label nodes at a connector's ends. */
+export interface EndLabelNodes { from?: ReadNode; to?: ReadNode }
+
+/** The text of the labels at a connector's ends, `undefined` for none. */
+function endLabelsOf(ends: EndLabelNodes | undefined): DataEdge['endLabels'] {
+  const text = (n: ReadNode | undefined) => {
+    const t = dataOf(n).text;
+    return typeof t === 'string' && t !== '' ? t : undefined;
+  };
+  const out = { ...optional('from', text(ends?.from)), ...optional('to', text(ends?.to)) };
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 /**
@@ -119,7 +145,11 @@ function placementOf(trait: Record<string, unknown> | null, page: Vec2): Diagram
  * colors. `page` is `null` for one whose ends sit on different pages, which
  * keeps no route.
  */
-export function readEdge(node: ReadNode, label: ReadNode | undefined, page: Vec2 | null, theme: DiagramTheme): DataEdge {
+export function readEdge(
+  node: ReadNode, labels: { label?: ReadNode | undefined; ends?: EndLabelNodes | undefined }, page: Vec2 | null, theme: DiagramTheme,
+): DataEdge {
+  const { label } = labels;
+  const endLabels = endLabelsOf(labels.ends);
   const trait = diagramEdgeOf(node)!;
   const [from, to] = node.dependsOn as readonly string[];
   const router = ROUTERS.find((r) => r === trait.router) ?? 'straight';
@@ -151,6 +181,7 @@ export function readEdge(node: ReadNode, label: ReadNode | undefined, page: Vec2
     ...(page !== null && routed !== undefined && routed.length > 0 ? { routed: routed.map((p) => moved(p, page)) } : {}),
     ...(typeof text === 'string' && text !== '' ? { label: text } : {}),
     ...(placement !== undefined ? { labelPlacement: placement } : {}),
+    ...(endLabels !== undefined ? { endLabels } : {}),
     ...(trait.style !== undefined ? { style: trait.style } : {}),
     ...(colors !== undefined ? { colors } : {}),
   };

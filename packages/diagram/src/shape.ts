@@ -22,7 +22,7 @@ import {
   type Inherit,
 } from '@weasel-js/core';
 import { bodyRules } from './bodyRules';
-import { outlineDetail, outlinePath } from './outline';
+import { outlineDetail, outlinePath, outlineSolid } from './outline';
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
 
@@ -61,6 +61,9 @@ export function diagramShape<TPose>(
       const divider = header === null || !stroke ? [] : [{ kind: 'path' as const, path: dividerPath(box, header), stroke }];
       const detailPath = stroke ? outlineDetail(outline, box) : null;
       const detail = stroke && detailPath ? [{ kind: 'path' as const, path: detailPath, stroke }] : [];
+      const solidPath = declaredStroke ? outlineSolid(outline, box) : null;
+      const solidFill = declaredStroke && solidPath ? commandFill({ paint: declaredStroke.paint }, box) : null;
+      const solid = solidPath && solidFill ? [{ kind: 'path' as const, path: solidPath, fill: solidFill }] : [];
       const trait = diagramNodeOf(node, opts.read);
       const rules = stroke && trait !== null ? bodyRules(trait, box).map((path) => ({ kind: 'path' as const, path, stroke })) : [];
       return [{
@@ -68,7 +71,7 @@ export function diagramShape<TPose>(
         path: outlinePath(outline, box),
         ...(fill ? { fill } : {}),
         ...(stroke ? { stroke } : {}),
-      }, ...detail, ...rules, ...divider];
+      }, ...solid, ...detail, ...rules, ...divider];
     },
     // The drawn boundary, so picking and clipping follow the diamond rather
     // than its bounding box.

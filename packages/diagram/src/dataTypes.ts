@@ -66,6 +66,10 @@ export interface DataEdge {
   fromPort?: string;
   toPort?: string;
   label?: string;
+  /** Text at either end, beside where the edge leaves `from` and meets `to`: a
+   *  multiplicity, a role. Drawn as labels at `'start'` and `'end'`
+   *  (`END_LABEL_PLACEMENT`), with ids from `endLabelIdOf`. */
+  endLabels?: { from?: string; to?: string };
   /** Where along the edge the label sits. Unset or at `'mid'`, under
    *  `layered` the label sits in the room layout leaves it beside its wire,
    *  at this placement's offset, else `DiagramSceneOptions.labelPlacement`'s;
@@ -230,6 +234,8 @@ export interface DiagramSceneData {
   image?: { src: string; opacity?: number };
   /** A body's text row: its place among the body's rows (see `DiagramNode.body`). */
   bodyRow?: number;
+  /** A body's `field` row: the label its `text` starts with, as `"label: value"`. */
+  bodyField?: string;
   /** An off-page tag's box, behind its text, and the room between them. */
   background?: { paint: { color: string } };
   padding?: number;

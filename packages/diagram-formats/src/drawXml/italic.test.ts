@@ -3,7 +3,7 @@ import type { DiagramDocument } from '../document';
 import { DRAW_XML } from './format';
 
 const doc = (style: { bold?: boolean; italic?: boolean }): DiagramDocument => ({
-  pages: [{ id: 'p', width: 400, height: 300, data: { nodes: [{ id: 'n', rows: [{ kind: 'label', text: 'Shape', style: { fontSize: 14, ...style } }] }], edges: [] } }],
+  pages: [{ kind: 'graph', id: 'p', width: 400, height: 300, data: { nodes: [{ id: 'n', rows: [{ kind: 'label', text: 'Shape', style: { fontSize: 14, ...style } }] }], edges: [] } }],
   theme: 'paper',
 });
 

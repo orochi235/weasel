@@ -1,0 +1,30 @@
+---
+title: Orders schema
+---
+%% Every cardinality, identifying and not, keys, comments, and an alias
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE_ITEM : contains
+    PRODUCT |o..o{ LINE_ITEM : "appears in"
+    CUSTOMER }|..|| ADDRESS : "ships to"
+    CUSTOMER {
+        string name
+        string email UK "login address"
+        int id PK
+    }
+    ORDER {
+        int id PK
+        int customerId FK
+        date placed
+    }
+    LINE_ITEM {
+        int orderId PK, FK
+        int productId PK, FK "the product sold"
+        int quantity
+    }
+    PRODUCT["Catalog product"] {
+        string sku PK
+        decimal price
+    }
+    ADDRESS
+    style ORDER fill:#eeeeff,stroke:#333366

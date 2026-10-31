@@ -23,6 +23,8 @@ export interface OutlineDef {
   path(bounds: Bounds): Path;
   /** Stroked only, over the fill: a cylinder's front rim, a note's fold. */
   detail?(bounds: Bounds): Path;
+  /** Filled in the stroke's color, over the fill: a start state's dot, a fork's bar. */
+  solid?(bounds: Bounds): Path;
   /** The largest box rows can occupy without leaving the shape. Default the bounds. */
   content?(bounds: Bounds): Bounds;
   /** The inverse of `content`: a box whose content is at least `content`. Default the content size. */

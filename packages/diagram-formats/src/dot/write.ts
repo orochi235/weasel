@@ -91,6 +91,8 @@ function edgeLine(out: GraphOut, edge: DataEdge): string | null {
   const own = changed(edgeStyleIn(out, edge), edgeStyleIn(out));
   return `${endOf(out, edge.from, edge.fromPort)} -> ${endOf(out, edge.to, edge.toPort)}${attrList([
     edge.label !== undefined ? `label=${quoteLabel([edge.label])}` : null,
+    edge.endLabels?.from ? `taillabel=${quoteLabel([edge.endLabels.from])}` : null,
+    edge.endLabels?.to ? `headlabel=${quoteLabel([edge.endLabels.to])}` : null,
     color('color', own.stroke), color('fontcolor', own.label),
     own.width !== undefined ? `penwidth=${own.width}` : null,
     own.dash !== undefined ? 'style=dashed' : null,

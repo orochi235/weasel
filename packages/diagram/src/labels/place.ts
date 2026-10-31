@@ -132,8 +132,8 @@ function arcNearest(points: readonly Vec2[], p: Vec2): number {
 /** The label's preferred station, then stations a label-width-and-`spacing`
  *  apart along the route each way, each on both sides of the line. */
 function candidatesOf(label: PlaceLabel, route: Route, tries: number, spacing: number): Candidate[] {
-  const { at, offset = 0 } = label.placement;
-  const out: Candidate[] = [{ placement: { at, offset }, spot: null }];
+  const { at, offset = 0, inset } = label.placement;
+  const out: Candidate[] = [{ placement: { at, offset, ...(inset !== undefined ? { inset } : {}) }, spot: null }];
   const length = route.length;
   if (length === 0) return out;
   const start = typeof at === 'object' ? arcNearest(route.points, at.near) : (typeof at === 'number' ? at : NAMED[at] ?? 0.5) * length;

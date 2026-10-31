@@ -174,4 +174,21 @@ describe('documentFromScene', () => {
     ]);
     expect(nodeOf(scene, 'p1', 'u').lines).toBeUndefined();
   });
+
+  it('reads a field row back as a field, and as text once its label is edited away', () => {
+    const rows: DataNode['rows'] = [{ kind: 'label', text: 'Order' }, { kind: 'divider' }, { kind: 'field', label: 'int', value: 'id PK' }];
+    const scene = docScene({ ...DOC_DATA, nodes: [...DOC_DATA.nodes, { id: 'u', rows, at: { x: 600, y: 300 } }] });
+    expect(nodeOf(scene, 'p1', 'u').rows).toEqual(rows);
+    const row = scene.childrenOf('u' as never).find((id) => (scene.get(id)!.data as { bodyField?: string }).bodyField === 'int')!;
+    scene.update(row, { data: { ...(scene.get(row)!.data as object), text: 'renamed' } });
+    expect(nodeOf(scene, 'p1', 'u').rows![2]).toEqual({ kind: 'label', text: 'renamed' });
+  });
+
+  it('reads the labels at an edge\'s ends', () => {
+    const edges = DOC_DATA.edges.map((e, i) => (i === 0 ? { ...e, endLabels: { from: '1', to: '0..*' } } : e));
+    const scene = docScene({ ...DOC_DATA, edges });
+    const id = DOC_DATA.edges[0]!.id!;
+    expect(edgeOf(scene, id).endLabels).toEqual({ from: '1', to: '0..*' });
+    expect(edgeOf(scene, id).label).toBe(DOC_DATA.edges[0]!.label);
+  });
 });

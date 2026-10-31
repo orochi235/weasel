@@ -1,0 +1,47 @@
+---
+title: Shop model
+---
+%% Every relation kind, members both ways, generics, notes, and namespaces
+classDiagram
+    direction LR
+    accTitle: The shop's classes
+    class Customer {
+        +String name
+        +String email
+        +placeOrder(cart Cart) Order
+    }
+    class Order {
+        <<entity>>
+        +int id
+        -Date placed
+        +total() Money
+    }
+    class Repository~T~ {
+        <<interface>>
+        +find(id int) T
+        +save(item T) void
+    }
+    class Money["Money value"]
+    Money : +int cents
+    Money : +add(other Money) Money
+    <<value>> Money
+    namespace billing {
+        class Invoice
+        class Payment {
+            +Money amount
+        }
+    }
+    Customer "1" --> "0..*" Order : places
+    Order *-- LineItem
+    Order o-- Address
+    Repository <|.. OrderRepository
+    Entity <|-- Order
+    Invoice ..> Order : bills
+    Payment -- Invoice
+    Order .. Money
+    note "Prices are in cents"
+    note for Customer "Registered\nshoppers only"
+    style Customer fill:#ffeecc,stroke:#aa6600
+    cssClass "Invoice,Payment" money
+    classDef money fill:#ddffdd
+    click Customer href "https://example.com"

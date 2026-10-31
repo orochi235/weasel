@@ -1,6 +1,6 @@
 /** Writing a document as draw-style XML: every page, uncompressed, its colors spelled out under the document's theme. */
 import { diagramThemeFrom } from '@weasel-js/diagram';
-import type { DiagramDocument, ExportResult } from '../document';
+import { graphPagesOf, type DiagramDocument, type ExportResult } from '../document';
 import { writePage } from './writePage';
 
 /**
@@ -14,7 +14,7 @@ export function writeDrawXml(doc: DiagramDocument): ExportResult {
   const theme = diagramThemeFrom(doc.theme);
   const warnings = new Set<string>();
   const warn = (message: string): void => { warnings.add(message); };
-  const pages = doc.pages.map((page, i) => writePage(page, i, theme, warn)).join('');
+  const pages = graphPagesOf(doc, 'Draw-style XML', warn).map((page, i) => writePage(page, i, theme, warn)).join('');
   if ((doc.crossPageEdges ?? []).length > 0) warn('Connectors between pages were left out: a page\'s cells cannot reach another\'s.');
   return { text: `<mxfile>\n${pages}</mxfile>\n`, warnings: [...warnings] };
 }

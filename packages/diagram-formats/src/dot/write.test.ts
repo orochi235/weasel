@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { DataNode, DiagramData } from '@weasel-js/diagram';
-import type { DiagramDocument, DocumentPage } from '../document';
+import type { DiagramDocument, GraphPage } from '../document';
 import { documentFromScene } from '../fromScene';
 import { docScene } from '../testing/docScene';
 import { readDot } from './read';
 import { writeDot } from './write';
 
-const pageOf = (data: DiagramData, extra: Partial<DocumentPage> = {}): DiagramDocument =>
-  ({ pages: [{ id: 'p', width: 400, height: 300, data, ...extra }], theme: 'paper' });
+const pageOf = (data: DiagramData, extra: Partial<Omit<GraphPage, 'kind'>> = {}): DiagramDocument =>
+  ({ pages: [{ kind: 'graph', id: 'p', width: 400, height: 300, data, ...extra }], theme: 'paper' });
 const back = (doc: DiagramDocument, page?: string) => readDot(writeDot(doc, page !== undefined ? { page } : {}).text).document.pages[0]!;
 const topology = (data: DiagramData) => data.edges.map((e) => [e.from, e.to, e.label]);
 const shapes = (data: DiagramData) => Object.fromEntries(data.nodes.map((n) => [n.id, [n.outline ?? 'rect', n.lines]]));
@@ -152,5 +152,11 @@ describe('writing DOT', () => {
       edges: heads.map((h) => ({ from: 'a', to: 'b', colors: { markerEnd: h } })),
     };
     expect(back(pageOf(data)).data.edges.map((e) => e.colors?.markerEnd)).toEqual([...heads]);
+  });
+
+  it('writes the labels at an edge\'s ends as its tail and head labels, and reads them back', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', endLabels: { from: '1', to: '0..*' } }] };
+    expect(writeDot(pageOf(data)).text).toContain('taillabel="1"');
+    expect(back(pageOf(data)).data.edges[0]!.endLabels).toEqual({ from: '1', to: '0..*' });
   });
 });

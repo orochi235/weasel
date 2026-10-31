@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lexMermaid, type MermaidToken } from './lex';
+import { lexFlowchart, type MermaidToken } from './lex';
 
 const brief = (t: MermaidToken) => {
   switch (t.kind) {
@@ -9,11 +9,11 @@ const brief = (t: MermaidToken) => {
     default: return `${t.kind}:${t.value}`;
   }
 };
-const lex = (text: string) => lexMermaid(text).tokens.map(brief);
+const lex = (text: string) => lexFlowchart(text).tokens.map(brief);
 
-describe('lexMermaid', () => {
+describe('lexFlowchart', () => {
   it('reads front matter, directives, and comments apart from the statements', () => {
-    const out = lexMermaid('---\ntitle: "A: b"\n---\n%%{init: {}}%%\nflowchart TD\n%% note\nA');
+    const out = lexFlowchart('---\ntitle: "A: b"\n---\n%%{init: {}}%%\nflowchart TD\n%% note\nA');
     expect(out.title).toBe('A: b');
     expect(out.directives).toBe(1);
     expect(out.tokens.map((t) => [brief(t), t.line])).toEqual([['word:flowchart', 5], ['rest:TD', 5], [';', 5], ['word:A', 7]]);
@@ -50,7 +50,7 @@ describe('lexMermaid', () => {
   });
 
   it('names the line of what it cannot read', () => {
-    expect(() => lexMermaid('flowchart TD\nA[open\nB')).toThrow(/Mermaid, line 2/);
-    expect(() => lexMermaid('flowchart TD\n\nA --> B ^ C')).toThrow(/line 3.*"\^"/);
+    expect(() => lexFlowchart('flowchart TD\nA[open\nB')).toThrow(/Mermaid, line 2/);
+    expect(() => lexFlowchart('flowchart TD\n\nA --> B ^ C')).toThrow(/line 3.*"\^"/);
   });
 });

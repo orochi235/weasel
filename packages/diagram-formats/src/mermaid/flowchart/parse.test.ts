@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { parseMermaid } from './parse';
+import { parseFlowchart } from './parse';
 
-describe('parseMermaid', () => {
+describe('parseFlowchart', () => {
   it('reads the header\'s direction, defaulting to top down', () => {
-    expect(parseMermaid('flowchart LR\nA')).toMatchObject({ direction: 'LR' });
-    expect(parseMermaid('graph\nA')).toMatchObject({ direction: 'TB' });
-    expect(parseMermaid('---\ntitle: T\n---\ngraph TD;A')).toMatchObject({ title: 'T', direction: 'TD' });
+    expect(parseFlowchart('flowchart LR\nA')).toMatchObject({ direction: 'LR' });
+    expect(parseFlowchart('graph\nA')).toMatchObject({ direction: 'TB' });
+    expect(parseFlowchart('---\ntitle: T\n---\ngraph TD;A')).toMatchObject({ title: 'T', direction: 'TD' });
   });
 
   it('reads a chain with & groups, link text, shapes, classes, and metadata', () => {
-    const { stmts } = parseMermaid('flowchart TD\nA[a] & B:::hot -->|x| C{c} -.- D@{ shape: hex, label: "d" }');
+    const { stmts } = parseFlowchart('flowchart TD\nA[a] & B:::hot -->|x| C{c} -.- D@{ shape: hex, label: "d" }');
     expect(stmts).toEqual([{
       kind: 'chain', line: 2,
       groups: [
@@ -22,7 +22,7 @@ describe('parseMermaid', () => {
   });
 
   it('reads subgraphs, nested, in each of their spellings', () => {
-    const { stmts } = parseMermaid('flowchart TD\nsubgraph one [First]\n direction LR\n a\n subgraph two\n b\n end\nend\nsubgraph "Quoted title"\nend\nsubgraph s3["Bracket"]\nend');
+    const { stmts } = parseFlowchart('flowchart TD\nsubgraph one [First]\n direction LR\n a\n subgraph two\n b\n end\nend\nsubgraph "Quoted title"\nend\nsubgraph s3["Bracket"]\nend');
     expect(stmts).toMatchObject([
       { kind: 'subgraph', id: 'one', title: 'First', stmts: [{ kind: 'direction', value: 'LR' }, { kind: 'chain' }, { kind: 'subgraph', id: 'two', stmts: [{ kind: 'chain' }] }] },
       { kind: 'subgraph', id: 'Quoted title', title: 'Quoted title', stmts: [] },
@@ -31,7 +31,7 @@ describe('parseMermaid', () => {
   });
 
   it('reads style, classDef, class, and linkStyle statements', () => {
-    const { stmts } = parseMermaid('flowchart TD\nclassDef a,b fill:#f00, stroke:rgb(1, 2, 3)\nclass x,y a\nstyle x color:#fff\nlinkStyle 0,2 stroke:#0f0\nlinkStyle default color:red');
+    const { stmts } = parseFlowchart('flowchart TD\nclassDef a,b fill:#f00, stroke:rgb(1, 2, 3)\nclass x,y a\nstyle x color:#fff\nlinkStyle 0,2 stroke:#0f0\nlinkStyle default color:red');
     expect(stmts).toEqual([
       { kind: 'classDef', names: ['a', 'b'], props: [['fill', '#f00'], ['stroke', 'rgb(1, 2, 3)']], line: 2 },
       { kind: 'class', ids: ['x', 'y'], className: 'a', line: 3 },
@@ -41,14 +41,13 @@ describe('parseMermaid', () => {
     ]);
   });
 
-  it('refuses other diagram kinds by name, and text with no header', () => {
-    expect(() => parseMermaid('sequenceDiagram\nA->>B: hi')).toThrow(/Mermaid, line 1: .*sequenceDiagram.*flowcharts/);
-    expect(() => parseMermaid('A --> B')).toThrow(/line 1.*flowchart/);
+  it('refuses text with no flowchart header', () => {
+    expect(() => parseFlowchart('A --> B')).toThrow(/line 1.*flowchart/);
   });
 
   it('names the line of an unexpected token and of an unclosed subgraph', () => {
-    expect(() => parseMermaid('flowchart TD\nA -->\nB')).toThrow(/line 2/);
-    expect(() => parseMermaid('flowchart TD\nsubgraph s\nA')).toThrow(/line 2.*"end"/);
-    expect(() => parseMermaid('flowchart TD\nA\nend')).toThrow(/line 3/);
+    expect(() => parseFlowchart('flowchart TD\nA -->\nB')).toThrow(/line 2/);
+    expect(() => parseFlowchart('flowchart TD\nsubgraph s\nA')).toThrow(/line 2.*"end"/);
+    expect(() => parseFlowchart('flowchart TD\nA\nend')).toThrow(/line 3/);
   });
 });

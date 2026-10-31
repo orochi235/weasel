@@ -99,15 +99,23 @@ function readEdge({ page, idOf, warn }: Reader, cell: RawCell, byCellId: Readonl
   }
   const origin = page.originOf(cell.parent);
   const points = pointsOf(cell).map((p) => moved(p, origin));
-  const labels = page.childrenOf(cell.id).filter((c) => labelOf(c) !== undefined);
+  const children = page.childrenOf(cell.id).filter((c) => labelOf(c) !== undefined);
+  const endOf = (c: RawCell) => {
+    const g = geometryOf(c);
+    return !g.relative ? null : g.x === -1 ? 'from' : g.x === 1 ? 'to' : null;
+  };
+  const ends = children.filter((c) => endOf(c) !== null);
+  const labels = children.filter((c) => endOf(c) === null);
   const holder = labelOf(cell) !== undefined ? cell : labels[0];
   if (labels.length + (holder === cell ? 1 : 0) > 1) warn('Connectors with more than one label kept only the first.');
+  const endLabels = Object.fromEntries(ends.map((c) => [endOf(c)!, labelOf(c)!]));
   return {
     id: idOf.get(cell)!, from, to, router: routerOf(cell.style),
     ...optional('fromPort', portAt(cell.style, 'exit')),
     ...optional('toPort', portAt(cell.style, 'entry')),
     ...(points.length > 0 ? { waypoints: points } : {}),
     ...(holder !== undefined ? { label: labelOf(holder)!, ...optional('labelPlacement', labelPlacementOf(holder, geometryOf(holder))) } : {}),
+    ...(ends.length > 0 ? { endLabels } : {}),
     ...optional('colors', edgeColorsOf(cell.style, warn)),
   };
 }
@@ -152,5 +160,5 @@ export function readPage(model: Element, src: PageSource, ids: IdSpace, warn: Wa
     ...(containers.length > 0 ? { containers } : {}),
   };
   const fit = fitted(data, src);
-  return { id: src.id, ...optional('name', src.name), width: fit.width, height: fit.height, data: fit.data };
+  return { kind: 'graph', id: src.id, ...optional('name', src.name), width: fit.width, height: fit.height, data: fit.data };
 }

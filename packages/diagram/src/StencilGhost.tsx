@@ -2,7 +2,7 @@ import { pathToD } from '@weasel-js/geom';
 import type { ReactElement } from 'react';
 import type { ContainerStencil } from './containers/containerStencils';
 import { NODE_STROKE_WIDTH, type NodeStyle } from './dataTypes';
-import { outlineDetail, outlinePath } from './outline';
+import { outlineDetail, outlinePath, outlineSolid } from './outline';
 import type { DiagramStencil } from './stencil';
 
 /** Props for {@link StencilGhost}. */
@@ -24,6 +24,7 @@ export function StencilGhost({ stencil, style, scale = 1 }: StencilGhostProps): 
   const bounds = { x: width / 2, y: width / 2, ...stencil.size };
   const outline = 'outline' in stencil ? stencil.outline : 'rect';
   const detail = outlineDetail(outline, bounds);
+  const solid = outlineSolid(outline, bounds);
   const box = { width: stencil.size.width + width, height: stencil.size.height + width };
   const stroke = { stroke: own.stroke, strokeWidth: width, strokeDasharray: own.dash?.join(' ') };
   return (
@@ -32,6 +33,7 @@ export function StencilGhost({ stencil, style, scale = 1 }: StencilGhostProps): 
       aria-hidden="true" overflow="visible" data-stencil={stencil.id}
     >
       <path d={pathToD(outlinePath(outline, bounds))} fill={own.fill} {...stroke} />
+      {solid && <path d={pathToD(solid)} fill={own.stroke} />}
       {detail && <path d={pathToD(detail)} fill="none" {...stroke} />}
     </svg>
   );

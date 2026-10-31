@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { GraphPage } from '../document';
 import { DIAGRAM_MERMAID } from './format';
+
+const read = (text: string) => DIAGRAM_MERMAID.read!(text) as Awaited<ReturnType<NonNullable<typeof DIAGRAM_MERMAID.read>>>;
+const pageOf = (text: string) => read(text).document.pages[0] as GraphPage;
 
 describe('DIAGRAM_MERMAID', () => {
   it('recognizes a flowchart by its header, past front matter and comments', () => {
@@ -8,12 +12,42 @@ describe('DIAGRAM_MERMAID', () => {
     expect(DIAGRAM_MERMAID.detect('graph TD\n A{x}')).toBe(true);
   });
 
-  it('recognizes another Mermaid kind, so reading it can name the kind', () => {
+  it('recognizes every other Mermaid kind, so reading one it does not read can name the kind', () => {
     expect(DIAGRAM_MERMAID.detect('sequenceDiagram\nA->>B: hi')).toBe(true);
+    expect(DIAGRAM_MERMAID.detect('%%{init: {}}%%\nclassDiagram\nA <|-- B')).toBe(true);
   });
 
   it('refuses a DOT graph that starts the same way', () => {
     expect(DIAGRAM_MERMAID.detect('graph { a -- b }')).toBe(false);
     expect(DIAGRAM_MERMAID.detect('graph G {\n a\n}')).toBe(false);
+  });
+
+  it('reads each kind by its header, setting the notation it models', () => {
+    expect(pageOf('flowchart TD\nA --> B').notation).toBeUndefined();
+    expect(pageOf('classDiagram\nA <|-- B').notation).toBe('class');
+    expect(pageOf('stateDiagram-v2\n[*] --> A').notation).toBe('state');
+    expect(pageOf('stateDiagram\n[*] --> A').notation).toBe('state');
+    expect(pageOf('erDiagram\nA ||--o{ B : has').notation).toBe('er');
+    expect(pageOf('mindmap\n  root').notation).toBe('mindmap');
+    expect(pageOf('requirementDiagram\nelement e {\n}').notation).toBe('requirement');
+  });
+
+  it('refuses a kind it does not read, naming the kind and the line', () => {
+    expect(() => read('%% a comment\npie title Pets\n"Dogs" : 386'))
+      .toThrow('Mermaid, line 2: pie diagrams are not read; only flowchart, classDiagram, stateDiagram, erDiagram, mindmap, requirementDiagram are');
+    expect(() => read('A --> B')).toThrow(/line 1.*flowchart/);
+  });
+
+  it('writes a graph page in the kind its notation names, and a flowchart when it names none or one it has not', () => {
+    const write = (notation: string | undefined) => DIAGRAM_MERMAID.write!({
+      pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, ...(notation !== undefined ? { notation } : {}), data: { nodes: [{ id: 'a' }], edges: [] } }],
+    });
+    expect(write(undefined).text).toMatch(/^flowchart TD\n/);
+    expect(write('class').text).toMatch(/^classDiagram\n/);
+    expect(write('state').text).toMatch(/^stateDiagram-v2\n/);
+    expect(write('er').text).toMatch(/^erDiagram\n/);
+    expect(write('mindmap').text).toMatch(/^mindmap\n/);
+    expect(write('requirement').text).toMatch(/^requirementDiagram\n/);
+    expect(write('bpmn').warnings[0]).toBe('Mermaid has no bpmn diagram; the page was written as a flowchart.');
   });
 });

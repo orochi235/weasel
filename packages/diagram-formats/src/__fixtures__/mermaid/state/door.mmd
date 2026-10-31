@@ -1,0 +1,47 @@
+---
+title: Door controller
+---
+%% Starts, ends, composites, concurrent regions, forks, choices, and notes
+stateDiagram-v2
+    [*] --> Closed
+    state "Door closed" as Closed
+    Closed --> Opening : open
+    Opening --> Open
+    Open : Door open
+    Open : Light on
+    Open --> Check : timer
+    state Check <<choice>>
+    Check --> Closing : clear
+    Check --> Open : blocked
+    Closing --> Closed
+    Closed --> Locked : lock
+    state Locked {
+        [*] --> Armed
+        Armed --> Alarm : forced
+        Alarm --> [*]
+    }
+    Locked --> Service
+    state Service {
+        [*] --> Diagnose
+        Diagnose --> [*]
+        --
+        [*] --> Notify
+        Notify --> [*]
+    }
+    state split <<fork>>
+    state merge <<join>>
+    Service --> split
+    split --> Clean
+    split --> Oil
+    Clean --> merge
+    Oil --> merge
+    merge --> [*]
+    note right of Locked : Only a key unlocks it
+    note left of Alarm
+        Sounds for
+        five minutes
+    end note
+    classDef warn fill:#ffdddd,stroke:#cc0000
+    class Alarm warn
+    Opening:::warn
+    hide empty description

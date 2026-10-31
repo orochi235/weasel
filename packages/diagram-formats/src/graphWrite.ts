@@ -7,7 +7,7 @@ import {
   dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
   type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
-import { writtenPage, type DiagramDocument, type DocumentPage, type WriteOptions } from './document';
+import { graphPageOf, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
 import { Warnings, hex2 } from './graphRead';
 import { rowLines } from './rowLines';
 
@@ -23,7 +23,7 @@ export interface Cluster {
 
 /** One page as a graph format writes it. */
 export interface GraphOut {
-  page: DocumentPage;
+  page: GraphPage;
   theme: DiagramTheme;
   /** Nodes and clusters at the top level, in order. */
   nodes: DataNode[];
@@ -40,14 +40,14 @@ export function nodeLines(node: DataNode, warnings: Warnings, format: string): s
   return rowLines(node, () => warnings.add(`${format} holds only text in a shape; its port rows and slots were dropped.`));
 }
 
-function clusterTree(page: DocumentPage, theme: DiagramTheme, warnings: Warnings, format: string) {
+function clusterTree(page: GraphPage, theme: DiagramTheme, warnings: Warnings, format: string, holdsPools: boolean) {
   const parent = new Map<string, string>();
   const claim = (member: string, owner: string) => { if (!parent.has(member) && member !== owner) parent.set(member, owner); };
   const all: Cluster[] = [];
   for (const c of page.data.containers ?? []) {
     all.push({ id: c.id, ...(c.label !== undefined ? { label: c.label } : {}), style: dataRegionStyle(c, theme), nodes: [], clusters: [] });
     for (const m of c.members ?? []) claim(m, c.id);
-    if (c.role === 'pool') warnings.add(`${format} has no pools or lanes; they were written as nested ${format === 'DOT' ? 'clusters' : 'subgraphs'}.`);
+    if (c.role === 'pool' && !holdsPools) warnings.add(`${format} has no pools or lanes; they were written as nested ${format === 'DOT' ? 'clusters' : 'subgraphs'}.`);
     (c.lanes ?? []).forEach((lane, i) => {
       const { fill: _fill, ...style } = dataRegionStyle({ role: 'lane', ...(lane.colors ? { colors: lane.colors } : {}) }, theme, i);
       all.push({ id: lane.id, ...(lane.label !== undefined ? { label: lane.label } : {}), style, nodes: [], clusters: [] });
@@ -75,14 +75,16 @@ function clusterTree(page: DocumentPage, theme: DiagramTheme, warnings: Warnings
   return { nodes, clusters: roots, clusterIds: new Set(byId.keys()) };
 }
 
-/** The page `opts` names, ready to write, with the warnings every graph format shares. `null` for a document with no pages. */
-export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, format: string): GraphOut | null {
-  const page = writtenPage(doc, opts);
-  if (page === null) return null;
+/** The page `opts` names, ready to write, with the warnings every graph format shares. `null` for a document with no pages.
+ *  `holdsPools` says the writer has a form of its own for a pool and its lanes, which are then written without a warning. */
+export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, format: string, holdsPools = false): GraphOut | null {
+  const written = writtenPage(doc, opts);
+  if (written === null) return null;
+  const page = graphPageOf(written, format);
   const warnings = new Warnings();
   const theme = diagramThemeFrom(doc.theme);
   const byId = new Map(page.data.nodes.map((n) => [n.id, n]));
-  const tree = clusterTree(page, theme, warnings, format);
+  const tree = clusterTree(page, theme, warnings, format, holdsPools);
   if ((doc.crossPageEdges ?? []).some((e) => byId.has(e.from) || byId.has(e.to))) {
     warnings.add(`${format} holds one page; connectors to other pages were dropped.`);
   }

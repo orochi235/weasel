@@ -1,0 +1,12 @@
+import { describe, expect, it } from 'vitest';
+import { DIAGRAM_JSON } from './jsonFormat';
+
+describe('DIAGRAM_JSON', () => {
+  it('reads a page written before pages had kinds as a graph', () => {
+    const text = JSON.stringify({
+      format: 'weasel-diagram', version: 1,
+      pages: [{ id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['A'] }], edges: [] } }],
+    });
+    expect(DIAGRAM_JSON.read!(text)).toMatchObject({ document: { pages: [{ id: 'p', kind: 'graph' }] } });
+  });
+});

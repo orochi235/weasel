@@ -17,7 +17,7 @@ const edgeTrait = (specs: readonly DiagramSpec<string>[], id: string) => specs.f
 
 const DOC: DiagramDocument = {
   pages: [
-    {
+    { kind: 'graph',
       id: 'one', width: 400, height: 300,
       data: {
         nodes: [{ id: 'a', lines: ['A'], at: { x: 20, y: 30 } }, { id: 'b', lines: ['B'], at: { x: 200, y: 30 } }],
@@ -25,7 +25,7 @@ const DOC: DiagramDocument = {
         containers: [{ id: 'k', role: 'container', members: ['b'], box: { x: 180, y: 10, width: 150, height: 120 } }],
       },
     },
-    { id: 'two', name: 'Two', width: 400, height: 300, data: { nodes: [{ id: 'c', lines: ['C'], at: { x: 50, y: 60 } }], edges: [] } },
+    { kind: 'graph', id: 'two', name: 'Two', width: 400, height: 300, data: { nodes: [{ id: 'c', lines: ['C'], at: { x: 50, y: 60 } }], edges: [] } },
   ],
   crossPageEdges: [{ id: 'ac', from: 'a', to: 'c' }],
   theme: 'paper',
@@ -74,7 +74,7 @@ describe('documentSpecs', () => {
 
 describe('documentSpecs on a page with nodes that have no place', () => {
   const graph = (direction?: 'down' | 'right'): DiagramDocument => ({
-    pages: [{
+    pages: [{ kind: 'graph',
       id: 'p', width: 300, height: 200, ...(direction ? { direction } : {}),
       data: {
         nodes: ['a', 'b', 'c', 'd'].map((id) => ({ id, lines: [`Node ${id}`] })),

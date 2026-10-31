@@ -20,7 +20,7 @@ const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', Read
   cluster: new Set(['label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor']),
   plain: new Set(),
   node: new Set([OUTLINE_ATTR, 'label', 'shape', 'style', 'color', 'fillcolor', 'fontcolor', 'penwidth', 'width', 'height', 'pos']),
-  edge: new Set(['label', 'color', 'fontcolor', 'penwidth', 'style', 'dir', 'arrowhead', 'arrowtail', 'tailport', 'headport']),
+  edge: new Set(['label', 'taillabel', 'headlabel', 'color', 'fontcolor', 'penwidth', 'style', 'dir', 'arrowhead', 'arrowtail', 'tailport', 'headport']),
 };
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = { TB: 'down', BT: 'up', LR: 'right', RL: 'left' };
@@ -187,13 +187,19 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
   };
   const fromPort = portOf(r, e.tail, str(e.attrs, 'tailport'));
   const toPort = portOf(r, e.head, str(e.attrs, 'headport'));
-  const text = e.attrs.get('label');
-  const lines = text === undefined ? [] : labelLines(text, '', r.graph.id ?? '');
+  const textOf = (key: string) => {
+    const value = e.attrs.get(key);
+    const joined = value === undefined ? '' : labelLines(value, '', r.graph.id ?? '').join(' ');
+    return joined === '' ? undefined : joined;
+  };
+  const lines = [textOf('label')].filter((l) => l !== undefined);
+  const endLabels = { ...(textOf('taillabel') ? { from: textOf('taillabel') } : {}), ...(textOf('headlabel') ? { to: textOf('headlabel') } : {}) };
   return {
     from: e.tail.id, to: e.head.id,
     ...(fromPort !== undefined ? { fromPort } : {}),
     ...(toPort !== undefined ? { toPort } : {}),
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),
+    ...(Object.keys(endLabels).length > 0 ? { endLabels } : {}),
     ...(Object.keys(colors).length > 0 ? { colors } : {}),
   };
 }

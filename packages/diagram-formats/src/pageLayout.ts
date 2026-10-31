@@ -6,10 +6,10 @@
 import { IDENTITY_POSE_COMPOSITION } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import {
-  diagramScene, edgeIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
+  LAYOUTS, diagramScene, edgeIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
   type DiagramTheme, type MeasureRowText,
 } from '@weasel-js/diagram';
-import type { DocumentPage } from './document';
+import type { GraphPage } from './document';
 import { shiftData } from './shiftData';
 
 /** Room kept between a laid-out page's edges and what is on it. */
@@ -21,7 +21,7 @@ type Rect = { x: number; y: number; width: number; height: number };
 const unplacedRegion = (c: DataContainer): boolean => c.box === undefined && (c.role === 'pool' || (c.members ?? []).length === 0);
 
 /** Whether `page` has a node with no `at`, or a region only layout places. */
-export function needsLayout(page: DocumentPage): boolean {
+export function needsLayout(page: GraphPage): boolean {
   return page.data.nodes.some((n) => n.at === undefined) || (page.data.containers ?? []).some(unplacedRegion);
 }
 
@@ -46,13 +46,13 @@ const boxOf = (spec: DiagramSpec | undefined): Rect | undefined =>
   spec === undefined ? undefined : { x: spec.pose.x, y: spec.pose.y, width: spec.pose.width, height: spec.pose.height };
 
 /**
- * `page` laid out with `layered`, the way its `direction` says, every node and
+ * `page` laid out with its `layout` (default `layered`), the way its `direction` says, every node and
  * box it already places pinned there: each node gets an `at`, each pool and
  * empty container a box, and each edge the route layout chose as `routed`.
  * When the page placed nothing, what layout placed is moved to sit
  * {@link PAGE_MARGIN} inside its corner. The page grows to hold it all.
  */
-export function laidOutPage(page: DocumentPage, opts: { theme: DiagramTheme; measure?: MeasureRowText }): DocumentPage {
+export function laidOutPage(page: GraphPage, opts: { theme: DiagramTheme; measure?: MeasureRowText }): GraphPage {
   const { data } = page;
   const placedAny = data.nodes.some((n) => n.at !== undefined) || (data.containers ?? []).some((c) => c.box !== undefined);
   const pinned = {
@@ -61,9 +61,10 @@ export function laidOutPage(page: DocumentPage, opts: { theme: DiagramTheme; mea
     ...(data.containers ? { containers: data.containers.map((c) => (c.box !== undefined ? { ...c, pinned: true } : c)) } : {}),
   };
   // Read as laid out, in world.
+  const layoutOptions = { ...page.layout?.options, ...(page.direction ? { direction: page.direction } : {}) };
   const specs = diagramScene(pinned, {
-    layout: 'layered', theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
-    ...(page.direction ? { layoutOptions: { direction: page.direction } } : {}),
+    layout: LAYOUTS[page.layout?.name ?? 'layered'], theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
+    ...(Object.keys(layoutOptions).length > 0 ? { layoutOptions } : {}),
   });
   const byId = new Map(specs.map((s) => [s.id as string, s]));
   const boxed = (c: DataContainer): DataContainer => {

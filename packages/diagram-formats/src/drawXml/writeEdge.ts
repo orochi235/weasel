@@ -1,13 +1,13 @@
 /** One edge of a page as a draw-style edge cell. */
 import type { Vec2 } from '@weasel-js/core/math';
 import {
-  DEFAULT_PORTS, edgeIdOf, type DataEdge, type DataNode, type DiagramLabel, type DiagramTheme,
+  DEFAULT_PORTS, edgeIdOf, endLabelIdOf, type DataEdge, type DataNode, type DiagramLabel, type DiagramTheme,
 } from '@weasel-js/diagram';
 import type { Box } from './pageCells';
 import type { Warn } from './readStyle';
 import { writeStyle, type StylePart } from './style';
 import { edgeStyle } from './writeStyle';
-import { edgeXml } from './writeXml';
+import { edgeXml, endLabelXml } from './writeXml';
 
 /** What an edge needs of the page it is on. */
 export interface EdgePage {
@@ -70,8 +70,9 @@ export function writeEdge(edge: DataEdge, page: EdgePage): string | null {
     ...portParts(page, edge.to, edge.toPort ?? edge.routedPorts?.to, 'entry'),
   ]);
   const label = labelGeometry(edge.labelPlacement, [center(from), ...points, center(to)]);
-  return edgeXml(
-    { id: edge.id ?? edgeIdOf(edge), value: edge.label ?? '', style, parent: page.layer, source: edge.from, target: edge.to },
-    label, points,
-  );
+  const id = edge.id ?? edgeIdOf(edge);
+  const ends = (['from', 'to'] as const).filter((end) => edge.endLabels?.[end])
+    .map((end) => endLabelXml({ id: endLabelIdOf(id, end), value: edge.endLabels![end]!, parent: id }, end === 'from' ? -1 : 1));
+  return edgeXml({ id, value: edge.label ?? '', style, parent: page.layer, source: edge.from, target: edge.to }, label, points)
+    + ends.join('');
 }

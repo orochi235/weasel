@@ -24,8 +24,8 @@ const DATA: DiagramData = {
 
 const DOC: DiagramDocument = {
   pages: [
-    { id: 'p1', width: 600, height: 400, data: DATA },
-    {
+    { kind: 'graph', id: 'p1', width: 600, height: 400, data: DATA },
+    { kind: 'graph',
       id: 'p2', name: 'Pools', width: 600, height: 400,
       data: {
         nodes: [{ id: 'x', lines: ['X'], at: { x: 100, y: 60 } }],
@@ -129,7 +129,7 @@ describe('writing draw-style XML', () => {
   });
 
   it('keeps the root and layer cells clear of the items\' ids', () => {
-    const taken: DiagramDocument = { pages: [{ id: 'p', width: 100, height: 100, data: { nodes: [{ id: '1', lines: ['One'], at: { x: 0, y: 0 } }], edges: [] } }] };
+    const taken: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: '1', lines: ['One'], at: { x: 0, y: 0 } }], edges: [] } }] };
     const one = xml(DRAW_XML.write!(taken).text);
     expect(cell(one, '1').getAttribute('vertex')).toBe('1');
     expect(cell(one, '1').getAttribute('parent')).toBe('1-2');
@@ -139,7 +139,7 @@ describe('writing draw-style XML', () => {
 describe('writing what the format cannot carry', () => {
   it('warns of outline paths and marks, and writes the shape as a rect', () => {
     const doc: DiagramDocument = {
-      pages: [{
+      pages: [{ kind: 'graph',
         id: 'p', width: 300, height: 200,
         data: {
           nodes: [{
@@ -157,7 +157,7 @@ describe('writing what the format cannot carry', () => {
 
   it('lays out a page whose nodes have no place, and writes where they went', () => {
     const doc: DiagramDocument = {
-      pages: [{ id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['A'] }, { id: 'b', lines: ['B'] }], edges: [{ from: 'a', to: 'b' }] } }],
+      pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['A'] }, { id: 'b', lines: ['B'] }], edges: [{ from: 'a', to: 'b' }] } }],
     };
     const out = xml(DRAW_XML.write!(doc).text);
     expect(geometry(out, 'a').width).toBeGreaterThan(0);
@@ -165,9 +165,11 @@ describe('writing what the format cannot carry', () => {
   });
 
   it('round-trips the storage and figure outlines, and the crow\'s-foot and hollow-triangle heads', async () => {
-    const OUTLINES = ['roundRect', 'cylinder', 'document', 'note', 'cloud', 'triangle', 'cube', 'folder', 'actor', 'doubleEllipse'] as const;
+    const OUTLINES = [
+      'roundRect', 'cylinder', 'document', 'note', 'cloud', 'triangle', 'cube', 'folder', 'actor', 'doubleEllipse', 'start', 'end', 'bar',
+    ] as const;
     const MARKERS = ['triangle-hollow', 'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many'] as const;
-    const doc: DiagramDocument = { pages: [{ id: 'p', width: 900, height: 200, data: {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 1400, height: 200, data: {
       nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 80, height: 60 })),
       edges: MARKERS.map((m, i) => ({ id: m, from: OUTLINES[i]!, to: OUTLINES[i + 1]!, colors: { markerEnd: m } })),
     } }] };
@@ -181,7 +183,7 @@ describe('writing what the format cannot carry', () => {
       'event', 'intermediateEvent', 'exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventGateway', 'subprocess',
       'server', 'router', 'switch', 'firewall', 'laptop', 'desktop', 'phone', 'printer', 'user',
     ] as const;
-    const doc: DiagramDocument = { pages: [{ id: 'p', width: 1700, height: 200, data: {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 1700, height: 200, data: {
       nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 90, height: 80 })),
       edges: [],
     } }] };
@@ -201,5 +203,16 @@ describe('writing what the format cannot carry', () => {
       cell('task', 'shape=mxgraph.bpmn.task;taskMarker=user;rounded=1;')}</root></mxGraphModel></diagram></mxfile>`;
     const back = (await DRAW_XML.read!(text)).document.pages[0]!.data;
     expect(back.nodes.map((n) => [n.id, n.outline])).toEqual([['end', 'event'], ['complex', 'diamond'], ['task', 'roundRect']]);
+  });
+
+  it('round-trips the labels at an edge\'s ends as labels at its source and target', async () => {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 400, height: 200, data: {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 0, y: 0 } }, { id: 'b', lines: ['B'], at: { x: 200, y: 0 } }],
+      edges: [{ id: 'ab', from: 'a', to: 'b', label: 'owns', endLabels: { from: '1', to: '0..*' } }],
+    } }] };
+    const text = DRAW_XML.write!(doc).text;
+    expect(geometry(xml(text), 'ab/label:from').x).toBe(-1);
+    const back = (await DRAW_XML.read!(text)).document.pages[0]!.data.edges[0]!;
+    expect(back).toMatchObject({ label: 'owns', endLabels: { from: '1', to: '0..*' } });
   });
 });

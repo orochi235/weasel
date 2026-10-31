@@ -1,0 +1,56 @@
+---
+title: Brake requirements
+---
+%% Every requirement kind, elements, and both directions of relationship
+requirementDiagram
+    requirement stop_distance {
+        id: 1
+        text: The car stops within 40 m from 100 km/h.
+        risk: high
+        verifymethod: test
+    }
+    functionalRequirement abs {
+        id: 1.1
+        text: "Wheels never lock under braking."
+        risk: medium
+        verifymethod: test
+    }
+    performanceRequirement pedal_feel {
+        id: 1.2
+        text: Pedal travel under 50 mm.
+        risk: low
+        verifymethod: inspection
+    }
+    interfaceRequirement can_bus {
+        id: 2
+        text: Reports wheel speed on the CAN bus.
+        risk: low
+        verifymethod: analysis
+    }
+    physicalRequirement weight {
+        id: 3
+        text: Caliper under 2 kg.
+        risk: low
+        verifymethod: inspection
+    }
+    designConstraint "fluid type" {
+        id: 4
+        text: Uses DOT 4 fluid.
+        risk: low
+        verifymethod: demonstration
+    }
+    element brake_ecu {
+        type: hardware
+        docref: ecu/spec.pdf
+    }
+    element test_rig {
+        type: test bench
+    }
+    stop_distance - contains -> abs
+    stop_distance - contains -> pedal_feel
+    abs - derives -> can_bus
+    brake_ecu - satisfies -> abs
+    test_rig - verifies -> stop_distance
+    weight <- refines - "fluid type"
+    can_bus - traces -> brake_ecu
+    pedal_feel - copies -> weight

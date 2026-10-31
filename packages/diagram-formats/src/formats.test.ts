@@ -12,11 +12,11 @@ import { documentSpecs } from './toScene';
 import { DRAW_XML } from './drawXml/format';
 
 const DOC: DiagramDocument = {
-  pages: [{ id: 'p1', name: 'One', width: 300, height: 200, data: { nodes: [{ id: 'a', lines: ['A'], at: { x: 10, y: 20 } }], edges: [] } }],
+  pages: [{ kind: 'graph', id: 'p1', name: 'One', width: 300, height: 200, data: { nodes: [{ id: 'a', lines: ['A'], at: { x: 10, y: 20 } }], edges: [] } }],
   theme: 'paper',
 };
 
-const fake = (id: string, extensions: string[], detect: (t: string) => boolean): DiagramFormat => ({ id, name: id, extensions, detect });
+const fake = (id: string, extensions: string[], detect: (t: string) => boolean): DiagramFormat => ({ id, name: id, extensions, detect, kinds: ['graph'] });
 
 describe('detectFormat', () => {
   const formats = [fake('x1', ['.xml'], (t) => t.startsWith('<a')), fake('x2', ['.xml', '.x2'], (t) => t.startsWith('<'))];

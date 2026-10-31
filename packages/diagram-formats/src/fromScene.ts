@@ -3,11 +3,11 @@ import {
   composeWorldPose, pageHolding, placedPagesOf, scenePoseAdapter, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
+  DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, endLabelIdOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
   type DataNode, type DiagramTheme,
 } from '@weasel-js/diagram';
-import type { DiagramDocument, DocumentPage } from './document';
-import { kindOf, readEdge, readGroup, readRegion, readShape, type ReadNode, type ReadScene } from './sceneReaders';
+import type { DiagramDocument, GraphPage } from './document';
+import { kindOf, readEdge, readGroup, readRegion, readShape, type EndLabelNodes, type ReadNode, type ReadScene } from './sceneReaders';
 
 /** Options for {@link documentFromScene}. */
 export interface DocumentFromSceneOptions {
@@ -64,13 +64,18 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   };
 
   const labels = new Map<string, ReadNode>();
+  const endLabels = new Map<string, EndLabelNodes>();
   const edges: ReadNode[] = [];
   const itemPage = new Map<string, PlacedPage>();
   for (const node of s.renderOrderNodes()) {
     const kind = kindOf(node);
     if (kind === null) {
       const deps = node.dependsOn;
-      if (diagramLabelOf(node) !== null && Array.isArray(deps) && deps.length === 1) labels.set(deps[0]!, node);
+      if (diagramLabelOf(node) === null || !Array.isArray(deps) || deps.length !== 1) continue;
+      const edge = deps[0]!;
+      const end = node.id === endLabelIdOf(edge, 'from') ? 'from' : node.id === endLabelIdOf(edge, 'to') ? 'to' : null;
+      if (end === null) labels.set(edge, node);
+      else endLabels.set(edge, { ...endLabels.get(edge), [end]: node });
       continue;
     }
     if (kind === 'edge') {
@@ -98,14 +103,17 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
     const toPage = itemPage.get(to ?? '');
     if (fromPage === undefined || toPage === undefined) continue;
     const split = (splits.get(node.id) ?? null) !== null;
-    if (fromPage === toPage && !split) buckets.get(fromPage.id)!.edges.push(readEdge(node, labels.get(node.id), fromPage, theme));
-    else crossPageEdges.push(readEdge(node, labels.get(node.id), split ? null : { x: 0, y: 0 }, theme));
+    const read = (page: PlacedPage | { x: number; y: number } | null) =>
+      readEdge(node, { label: labels.get(node.id), ends: endLabels.get(node.id) }, page, theme);
+    if (fromPage === toPage && !split) buckets.get(fromPage.id)!.edges.push(read(fromPage));
+    else crossPageEdges.push(read(split ? null : { x: 0, y: 0 }));
   }
 
   return {
-    pages: pages.map((p): DocumentPage => {
+    pages: pages.map((p): GraphPage => {
       const { nodes, edges: pageEdges, groups, containers } = buckets.get(p.id)!;
       return {
+        kind: 'graph',
         id: p.id,
         ...(p.name !== undefined ? { name: p.name } : {}),
         width: p.width,

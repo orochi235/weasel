@@ -1,0 +1,15 @@
+requirementDiagram
+  requirement login {
+    id: 1
+    text: Users sign in.
+    risk: low
+    verifymethod: test
+  }
+  element auth_service {
+    type: service
+  }
+  element e2e_suite {
+    type: test
+  }
+  auth_service - satisfies -> login
+  e2e_suite - verifies -> login

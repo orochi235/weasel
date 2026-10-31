@@ -38,11 +38,11 @@ import and save in two.
 | `classDiagram` | name row (`<<stereotype>>`, `~T~`), divider, attribute rows, divider, method rows; `namespace` → group; `note` → `note` outline | `<\|--` `triangle-hollow`, `*--` `diamond`, `o--` `diamond-hollow`, `-->`, `..>` dashed `arrow-open`, `..\|>` dashed `triangle-hollow`, `--`; cardinalities as end labels |
 | `stateDiagram-v2` | state rounded; `[*]` → `start` / `end` outline; `<<fork>>`/`<<join>>` → `bar`; `<<choice>>` → diamond; `state X { }` → container; `--` → lanes in it | labeled transitions |
 | `erDiagram` | name row, divider, one `field` row per attribute (type as label, name as value, keys and comment kept) | crow markers at both ends; `--` solid, `..` dashed |
-| `mindmap` | indentation tree, shapes `[]` `()` `(())` `))((` `{{}}` | unmarked links, two-sided `tree` |
+| `mindmap` | indentation tree, shapes `[]` `()` `(())` `))((` `{{}}` | unmarked links, laid out by `radial` |
 | `requirementDiagram` | requirement and element blocks as `field` rows | dashed arrow labeled `<<satisfies>>` etc. |
 
 Engine surface: `DataEdge.endLabels?: { from?: string; to?: string }` through the label trait at
-`start`/`end`; outlines `start`, `end`, `bar`; `tree`'s two-sided option.
+`start`/`end`; outlines `start`, `end`, `bar`. Mind maps lay out with the existing `radial`, which already is a two-sided tree (decided in arc 2, 2026-10-31, over a second two-sided option on `tree`).
 
 ## Sequence (`@weasel-js/diagram`)
 
