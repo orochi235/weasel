@@ -20,6 +20,9 @@ When work merges, retire its entry here in the same change.
   after it. No one of these stands out in a CPU profile (`profile-599/`). Runs, profiles and the script
   that times any commit against the synced tree: `tests/perf/recorded/core-regress-2026-10-30/`; the
   earlier bisect is in `tests/perf/recorded/scene-roundtrip-2026-10-29/`.
+  Closes when the round trip is within 0.02 µs of 43a827165 and `setPose` within 0.01 µs, on msb-uai
+  with 9 interleaved runs of `core-regress-2026-10-30/run.sh`, or once each of those three costs is timed
+  alone and none exceeds 0.02 µs, delete it as accepted.
 
 - **(P3) [agent] The unindexed area walk still costs 1.6 times what it did on 2026-10-11.** The 25%
   marquee over 10,000 rect nodes (`walk.bench.ts`, the `full walk` row) takes 0.86 ms on msb-uai;
@@ -32,25 +35,16 @@ When work merges, retire its entry here in the same change.
   profile is `tests/perf/recorded/core-regress-2026-10-30/profile-base/`. Bisect with
   `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (`bisect <good> <bad> native`), or
   time commits side by side with `core-regress-2026-10-30/run.sh`.
+  Closes when the `full walk` row is within 0.05 ms of 43a827165's on msb-uai, 7 interleaved runs with
+  native imports, or once each per-node read named above is timed alone and none exceeds 0.02 ms over
+  the 10,000 nodes, delete it as accepted.
 
 ---
 
 ## Renderer and the batch
 
 - **(P2) [agent] What still breaks the batch, now that a rect clip does not.** `batchClip.ts` cuts staged
-  quads to an axis-aligned clip rect on the CPU. Measured on teitou (Apple M5 Max, ANGLE Metal),
-  2026-10-06, one frame a task, each sample ending in a one-pixel `readPixels` so the GPU's own
-  time counts; result files in `tests/perf/recorded/render-cost-2026-10-06/`.
-
-  | at 60 Hz, `frame-budget.spec.ts` | before | now |
-  |---|---:|---:|
-  | clipped groups, depth 1 | 3,424 | 83,968 |
-  | clipped groups, depth 4 | 2,080 | 42,496 |
-
-  The before column was measured through `gl.finish()`, which does not wait for the GPU
-  (`tests/perf/README.md`, "Timing a frame"); its files are in
-  `tests/perf/recorded/render-cost-2026-10-04/before/`. Re-measuring it means that renderer under
-  today's timing, so the size of the gain is not settled.
+  quads to an axis-aligned clip rect on the CPU.
 
   The figures below dated 2026-10-17 are one pass of each spec on teitou, with the specs as of
   `539738293`; result files in `tests/perf/recorded/batch-specs-2026-10-17/` (they name onto's
@@ -66,65 +60,13 @@ When work merges, retire its entry here in the same change.
     past the vertex cap (`meshBatching`), a custom shader command, and a registered paint kind (`registerPaintDrawKind`).
     No built-in paint ends one any more. The small-glyph program (`batchAreaFragSrc`) is chosen per
     run and breaks nothing.
-  - **What joined the run since is checked in a browser.** Each is pinned
-    by draw count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium
-    (run 2026-10-17):
-    - Synthetic bold: the threshold shift rides a glyph's `a_post` (`syntheticBold.browser.test.ts`).
-    - Fifteen textures where a run held seven, fetched through a tree of four compares where the
-      chain took up to seven (`batchSlots.browser.test.ts`). The tree costs a fragment what the
-      chain's deepest slot did: `fill-rate.spec.ts`'s `batch` came within 1.2% of
-      `batch-chain8-7` on msb-uai (Apple M3 Max) and keiei (Apple M2), two passes each with no
-      other onto job on the node, 2026-10-19; the chain's slot 1 was 2–4% cheaper. The wider
-      `u_samplers` and `u_fieldScale` uploads are under `flush-anatomy`'s noise: dropping them
-      saved 0.06 us a flush on teitou (2026-10-17), and 0.1–1.9 us in four passes on msb-uai
-      (2026-10-19) where a flush cost 31–34 (result files with the ring measurement below).
-    - A gradient or an image under any color matrix: each vertex names one of up to eight
-      (matrix, group alpha) pairs the run draws under, `u_colorMatrix[i]`, packed into `a_texSlot`
-      (`draw/batchMatrices.ts`, `colorMatrixFold.browser.test.ts`). A gradient under a matrix that
-      only scales channels down rides a vertex tint, as an image does. The program such a run
-      draws with costs each of its fragments 12–13% more than the one-matrix program on msb-uai
-      and 22–23% on keiei (`batch-8-matrices`, the same runs). The matrix uploads are under the
-      same noise as the sampler uploads (`-colormatrix`: 0.08 us on teitou, 0.3–2.2 on msb-uai).
-    - Per-vertex colors (2026-10-30): a fill or centered stroke with `vertexColors` carries them in
-      the batch vertices (`draw/vertexColors.ts`, `vertexColorBatch.browser.test.ts`). They are
-      mapped on the CPU when no corner leaves 0..1 under the group's matrix, and otherwise under a
-      run entry for it, so the shader's per-fragment clamp still decides. Each used to end the run
-      and create and delete a color buffer. On studio (Apple M1 Max, ANGLE Metal), solo, ABBA,
-      `transition-matrix.spec.ts`: a vertex-colored rect fell from 4.22–4.57 to 0.88–0.89 us a
-      command, and its boundary with a solid, gradient, image, text or rect clip from 21.7–24.3 us
-      to between −0.09 and 0.35 (`tests/perf/recorded/vertex-color-batch-2026-10-30/`). Its boundary
-      with a pattern, a shader or an even-odd fill, before patterns batched, rose from at most 0.9 us to 7.7–8.3,
-      which is still a third of what a solid rect pays beside the same kinds; why it is less is not
-      known. An even-odd
-      fill, an inside- or outside-aligned stroke on a polygon, and a mesh past the vertex cap still
-      draw for themselves.
-    - Patterns (2026-10-30): a `kind: 'texture'` fill or stroke carries its tile coordinate, in
-      tiles, in the batch vertices, and its tile takes a run slot the way a font atlas does, uploaded
-      to repeat (`draw/patternBatch.ts`, `patternBatch.browser.test.ts`). The coordinate is taken out
-      to whole tiles in doubles at the shape, so a pattern 10^7 units from the origin keeps its
-      texels. On msb-uai (Apple M3 Max), solo, ABBA, `transition-matrix.spec.ts`: a pattern's
-      boundary with a solid, gradient, image, text, per-vertex-colored or rect-clipped neighbor fell
-      from 7.9–18.3 us to between −0.71 and 0.36, and with a shader or an even-odd fill rose from at
-      most 0.54 to 12.9–16.0, as every batched kind's does. A pattern command cost 2.76–3.48 us
-      before and 2.58–2.76 after, against 0.36–0.48 for a solid and 1.46–1.95 for a linear gradient
-      in the same passes; why a staged pattern costs more than a staged gradient is not known
-      (`tests/perf/recorded/pattern-batch-2026-10-30/`).
-    - Even-odd fills whose outlines never meet (2026-10-30): with no contact between edges but at
-      the vertex two neighbors share, each ring is filled or a hole by how many rings enclose it,
-      so `tessellate` triangulates it with `earcut` as a nonzero fill and it stages into the run
-      (`geom/tessellate/evenOdd.ts`, `evenOddBatch.browser.test.ts`, pixel-equal to the stencil
-      with and without multisampling). Contact is judged with a tolerance, so a near miss keeps
-      the stencil. On studio (Apple M1 Max), solo, ABBA, `transition-matrix.spec.ts` with its
-      `stencil` kind then a square ring: the ring fell from 8.05–8.37 us a command to 0.81–0.90,
-      and its boundary with a solid, gradient, pattern, image, text or rect clip from 21.4–24.1 us
-      to between −0.15 and 0.37 (`tests/perf/recorded/evenodd-batch-2026-10-30/`). The spec's
-      `stencil` kind carries a touching contour since, so it still prices the stencil.
-    - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
-      (`draw/foldColor.ts`), and an image's tint.
+  - **Why a staged pattern costs more than a staged gradient is not known.** A pattern command cost
+    2.58–2.76 us after patterns joined the run, against 0.36–0.48 for a solid and 1.46–1.95 for a
+    linear gradient in the same passes (msb-uai, `tests/perf/recorded/pattern-batch-2026-10-30/`).
   - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
     `batch` variant draws `BATCH_FRAG_SRC` through `BATCH_VERT_SRC` (`tests/perf/lib/batchFragments.ts`);
     it cost 2.95–2.98 times `split-sample`, the hand-written fragment the spec's older variants
-    price the glyph math and the gradient split against, on both nodes, and 4.7 (M3 Max) and 5.9
+    price the glyph math and the gradient split against, on msb-uai and keiei, and 4.7 (M3 Max) and 5.9
     (M2) times a plain textured fragment. So those variants' percentages are shares of a fragment
     a third as dear as the real one. What the rest is spent on (the color matrix and clamp,
     `straightRgb`, the flat varyings) is not broken down. On msb-uai the last two of eight runs
@@ -154,13 +96,18 @@ When work merges, retire its entry here in the same change.
     The cause was not found. The run's color matrices are cached the same way now
     (`uploadBatchMatrices`), where `setColorMatrixUniforms` cached the one before.
   - **A boundary costs 20.9–24.8 us when one side draws for itself, and nothing otherwise**
-    (`transition-matrix.spec.ts`, the four passes above). Between two kinds that batch it sits
-    within ±0.4 us; between two that draw for themselves it is at most 1.0, since the run is
-    already closed. Per command, a shader panel costs 3.77–4.59 us and an even-odd fill 7.84–8.13,
-    against 0.43–0.49 for a solid rect (the pattern and the simple even-odd fill, which these
-    passes also priced, batch now; see above). An even-odd fill whose outlines cross or touch
-    still takes the stencil two-pass (`tessellateEvenoddWithAnchors`); batching it would need its
+    (`transition-matrix.spec.ts`, `tests/perf/recorded/vertex-color-batch-2026-10-30/`). Between two
+    kinds that batch it sits within ±0.4 us; between two that draw for themselves it is at most 1.0,
+    since the run is already closed. Per command, a shader panel costs 3.77–4.59 us and an even-odd
+    fill 7.84–8.13, against 0.43–0.49 for a solid rect (the pattern and the simple even-odd fill,
+    which these passes also priced, batch now). An even-odd fill whose outlines cross or touch still
+    takes the stencil two-pass (`tessellateEvenoddWithAnchors`); batching it would need its
     crossings resolved into rings first, as `resolveCrossings` does for nonzero, but by parity.
+
+  Closes when an even-odd fill whose outlines cross or touch, an inside- or outside-aligned stroke on a
+  polygon, and a convex clip on a multisampled target each stay in the run, pinned by draw count in a
+  `*.browser.test.ts`, or are each deleted as accepted at the boundary they cost now, with the batch
+  fragment's and the staged pattern's costs broken down or accepted at the figures above.
 
 - **(P3) [waiting] `SOLID_RING_SIZE` is measured only on Metal.** The ring (64 slots) exists so a flush never
   writes a buffer a draw is still reading. On 2026-10-06 a ring of 64 measured 24% slower than a
@@ -182,6 +129,8 @@ When work merges, retire its entry here in the same change.
   not drift: it ran `image-quad` at its defaults, 512 quads of 48 px. Left: a D3D or Vulkan
   backend, where an in-flight buffer write would stall if anywhere; no fleet node has one. Result
   files: `tests/perf/recorded/ring-size-2026-10-19/`.
+  Closes when the same ABBA comparison runs on a D3D or Vulkan backend, or on 2026-12-31 with no fleet
+  node that has one, delete it.
 
 - **(P3) [waiting] The mesh batching caps are measured on one GPU.** A mesh joins a run up to
   `MAX_BATCHED_MESH_VERTICES_IN_RUN` (1,024) vertices when one is open, and up to
@@ -199,6 +148,8 @@ When work merges, retire its entry here in the same change.
   on teitou (Apple M5 Max, ANGLE Metal), 2026-10-07, two passes 20 minutes apart; result files in
   `tests/perf/recorded/mesh-batch-2026-10-07/`. Left: the same run on a D3D or Vulkan backend,
   where the break-evens may sit elsewhere.
+  Closes when `mesh-batch.spec.ts` has run on a D3D or Vulkan backend and both caps still sit below its
+  break-evens there (or are moved to), or on 2026-12-31 with no fleet node that has one, delete it.
 
 - **(P3) [waiting] A consumer's `sampling: 'nearest'` costing up to 8x does not reproduce here.** They drew a
   5652px atlas (~122MB) and saw nearest cost 8.11x linear at 2:1 minification, 5.98x at 1.33:1,
@@ -221,6 +172,8 @@ When work merges, retire its entry here in the same change.
   texture already holds. Result files: `tests/perf/recorded/atlas-wall-sheet-2026-10-07/`. What is
   left is their side: whether their build predates `fee0c98db` (which stopped re-asserting
   MAG_FILTER per flush), their GPU and backend, and their dpr. Only their harness can answer it.
+  Closes when the consumer reports a run from a build past `fee0c98db`, or on 2026-12-01 with none,
+  delete it.
 
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
@@ -246,6 +199,7 @@ When work merges, retire its entry here in the same change.
   `tests/perf/` draws with canvas2d, and `atlas-wall.spec.ts`, which builds walls of this shape,
   draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
+  Closes when the consumer reports that run, or on 2026-12-01 with none, delete it.
 
 - **(P3) [agent] Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is drawn once into
   its own texture and composited (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the policy is
@@ -269,8 +223,10 @@ When work merges, retire its entry here in the same change.
     to the drawing buffer), and effects with no `reach`.
   - **An effects layer uses the same 250-command threshold** as any other, though its passes cost far more than
     its commands. Measure before changing it.
-  - **The threshold** was left at 250 after measurement (`tests/perf/layer-dispatch.spec.ts`; result files in
-    `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`).
+
+  Closes when a tiled redraw of the 4 margined layers at 2560x1600 is within 1 ms of the untiled 9 ms on
+  one node, each opt-out above either retains through a pan or is deleted as accepted, and an effects
+  layer's threshold has been measured with `layer-dispatch.spec.ts`.
 
 ---
 
@@ -289,6 +245,9 @@ When work merges, retire its entry here in the same change.
   The rest is the spec's own `step` (73: label strings, the widget's revision, the frame's command list) and the HUD
   layer's command list (`draw` 6). A still HUD drawn through `drawLayers` costs the main thread what the DOM does
   (README, "A still HUD through `drawLayers`").
+  Closes when `resolveRuns`, `cachedCommands` and the runs entry's `WeakMap` together allocate under 20 KB
+  a frame at 5,000 glyphs (msb-uai, `HVD_ALLOC=1`), or once the runs-key decision is made and each is
+  accepted at its figure, delete it.
 
 ---
 
@@ -296,6 +255,8 @@ When work merges, retire its entry here in the same change.
 
 - **(P3) [agent] GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts. Deferred from
   `docs/specs/2026-05-04-animation-primitive-design.md`.
+  Closes when a running animation can be handed to `Element.animate` and a spec shows that path holding
+  60 fps at a concurrent count where the main-thread path drops frames.
 
 ---
 
@@ -305,12 +266,14 @@ When work merges, retire its entry here in the same change.
   significant API complexity. Defer until measured pain on the single-thread pipeline. The
   main-thread `OffscreenCanvas` that rasterizes pattern tiles in
   `packages/renderer/src/patterns/` is not worker offload.
+  Closes when a scene draws into a canvas handed to a worker with `transferControlToOffscreen`, the main
+  thread sending only scene changes, pinned by a browser test.
 
 ---
 
 ## Benchmarks in CI
 
-- **(P3) The pull request benchmark job has never run on GitHub.** All 46 `perf-pr.yml` runs from 2026-10-11
+- **(P3) [maintainer] The pull request benchmark job has never run on GitHub.** All 46 `perf-pr.yml` runs from 2026-10-11
   to 2026-10-29 were on changesets' release pull request (`changeset-release/main`, opened by
   `github-actions[bot]`), the only pull requests this repo gets. Each waited for a maintainer's approval
   and none got it: 36 sit at "action required", and 10 failed with no jobs once the approval expired
@@ -319,6 +282,8 @@ When work merges, retire its entry here in the same change.
   unmeasured, as is whether the base, measured first, reads differently from the head for that alone.
   Approve one run of the release pull request, or open a pull request from a branch, to get a first
   reading. Checked 2026-10-29.
+  Closes when one `perf-pr.yml` run finishes its jobs on GitHub and its run time is recorded, or on
+  2026-12-01 with none, delete it.
 
 ---
 
@@ -330,6 +295,8 @@ When work merges, retire its entry here in the same change.
   Splitting the project across 2 or 3 Chromium processes (vitest `--shard` per process) is untested:
   run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
   every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
+  Closes when those runs are recorded: if neither 2 nor 3 processes is faster than 1 by 5% on either
+  node, delete it as accepted; otherwise the faster split becomes the default.
 
 - **(P3) [agent] The `browser` project still spends about a second per file outside its tests.** Alone on
   teitou (2026-10-30, 332 files, six tabs), serving the workspace packages pre-bundled under `vitest run`
@@ -341,6 +308,9 @@ When work merges, retire its entry here in the same change.
   a request per file; moving the tests onto package specifiers, as forge's stories did (2026-10-21), is
   the next step (inferred, not tried). `--no-isolate`, which would reuse one page, failed every file at
   about 5 s with its tests skipped (2026-10-20).
+  Closes when the tests import their packages by specifier and the project alone on teitou spends under
+  0.5 s a file outside its tests (`bench-browser-project.mjs`, three alternating runs), or if that move
+  saves under 5% of the project's time, delete it as accepted.
 
 ---
 
@@ -354,6 +324,7 @@ When work merges, retire its entry here in the same change.
   159 of the 1,270 requests are Badge's `shapes/`, `bases/` and `effects/`, which the Badge story and
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
+  Closes when the maintainer has ruled on making the flag forge's default and the ruling is in place.
 
 - **(P3) [agent] A forge dev server's native memory climbs with every forced re-bundle, and rolldown holds it.** A
   saved package file restarts the server and forces the dep optimizer to re-bundle the workspace packages
@@ -369,3 +340,5 @@ When work merges, retire its entry here in the same change.
   emptying the outgoing config left 24 native plugin wrappers after 6 restarts against 44 after 4, and RSS where it
   was. Records:
   `scripts/probe-dev-restarts.runs.jsonl`.
+  Closes when `probe-optimize-deps.ts` grows RSS under 50 MB a run over 16 forced runs on teitou, from a
+  newer rolldown or a workaround in `scripts/vite-prebundle.ts`.
