@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { exactly } from '@weasel-js/headless';
+import { exactly, measureRowList } from '@weasel-js/headless';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createList } from './list';
-import { hudList } from './drawList';
 import { hudMeasureEnv } from '../../measureEnv';
 import type { HudKeyEvent } from '../../widget';
 
@@ -39,7 +38,7 @@ describe('list widget', () => {
 
   it('lays its parts where the shared measure puts them', () => {
     const l = createList({ id: 'l', x: 5, y: 7, w: 180, rows });
-    const m = hudList.measure({ rows: [...rows.slice(0, 2), { ...rows[2]!, leadingWidth: 12 }] }, exactly(180, l.bounds.h), hudMeasureEnv(ctx));
+    const m = measureRowList({ rows: [...rows.slice(0, 2), { ...rows[2]!, leadingWidth: 12 }] }, exactly(180, l.bounds.h), hudMeasureEnv(ctx));
     const cherry = l.draw(ctx).filter((c): c is TextDrawCommand => c.kind === 'text')[2]!;
     expect(cherry.x).toBe(5 + m.layout.rows[2]!.label.x);
     expect(cherry.y).toBe(7 + m.layout.rows[2]!.rect.y);

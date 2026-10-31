@@ -1,5 +1,5 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { LIST_ROLES, fixedWidth, listMode, rowAtY, type ListMode, type RowListLayout } from '@weasel-js/headless';
+import { LIST_ROLES, fixedWidth, listMode, measureRowList, rowAtY, type ListMode, type RowListLayout } from '@weasel-js/headless';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
 import { createRevision } from '../../widget';
 import type {
@@ -80,7 +80,7 @@ export function createList(opts: ListOptions): ListWidget {
   const assertLive = () => { if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.'); };
   const measure = (): RowListLayout & { height: number } => {
     const ctx = lastCtx ?? { tokens: (builtIn ??= resolveTheme(weaselTheme)), defaultFont: DEFAULT_FONT_FAMILY };
-    const m = hudList.measure(
+    const m = measureRowList(
       { rows, empty: opts.empty }, fixedWidth(bounds.w),
       hudMeasureEnv(ctx, opts.fontFamily),
     );

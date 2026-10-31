@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
-import type { ListWidget as HudListWidget } from '@weasel-js/hud';
+import type { HudListRow, ListWidget as HudListWidget } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import s from '../widgets.stories.module.css';
 
@@ -21,7 +21,7 @@ function ListWidget({ selection, rowCount, width }: ListWidgetArgs) {
   const entry = useHudContribution(hud, { font: 'sans-serif' });
   const scene = useScene<{ id: string }>({ items: [] });
   const [current, setCurrent] = useState('b');
-  const rows = LABELS.slice(0, rowCount).map((label, i) => {
+  const rows = LABELS.slice(0, rowCount).map((label, i): HudListRow => {
     const id = String.fromCharCode(97 + i);
     return { id, label, selected: id === current, ...(i === 0 ? { swatch: '#3b82f6' } : {}) };
   });

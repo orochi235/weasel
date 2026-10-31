@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import { fixedWidth } from '@weasel-js/headless';
+import { fixedWidth, IDLE_PRESS } from '@weasel-js/headless';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { hudButton, hudMeasureEnv } from '@weasel-js/hud';
@@ -26,7 +26,7 @@ function ButtonWidget({ label, size, width }: ButtonWidgetArgs) {
   useEffect(() => {
     // The widget takes its height from the shared measure, as the DOM button takes it from CSS.
     const env = hudMeasureEnv({ tokens: tokens ?? resolveTheme(weaselTheme), defaultFont: 'sans-serif' });
-    const { height } = hudButton.measure({ label, size }, fixedWidth(width), env);
+    const { height } = hudButton.measure({ label, size, press: IDLE_PRESS }, fixedWidth(width), env);
     const b = hud.button({ id: 'b', x: 16, y: 16, w: width, h: height, label, size });
     const onPress = () => setPresses((n) => n + 1);
     b.on('press', onPress);
