@@ -60,7 +60,7 @@
   width: 240px;
   height: 240px;
   margin: 120px;
-  border: 1px solid var(--wzl-border-strong);
+  border: 1px dotted var(--wzl-border-strong);
   border-radius: 50%;
 }
 

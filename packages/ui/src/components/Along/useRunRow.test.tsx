@@ -14,9 +14,9 @@ const run = trackRun(shape);
 const keyOf = (el: Element): string | null => el.getAttribute('data-chip');
 
 /** A row that is not a bar: chips 20 long, 10 apart, keyed by an attribute of its own. */
-function Chips({ count, overflow }: { count: number; overflow?: RunOverflow }) {
+function Chips({ count, overflow, length = 20 }: { count: number; overflow?: RunOverflow; length?: number }) {
   const root = useRef<HTMLDivElement>(null);
-  const row = useRunRow({ root, keyOf, run, lengths: Array.from({ length: count }, () => 20), gap: 10, align: 'start', overflow });
+  const row = useRunRow({ root, keyOf, run, lengths: Array.from({ length: count }, () => length), gap: 10, align: 'start', overflow });
   return (
     <div ref={root} data-testid="row" {...row.rootProps}>
       <RunBand row={row} shape={shape} />
@@ -55,6 +55,19 @@ describe('useRunRow', () => {
     expect(xs(root)).toEqual(['0px', '0px', '30px', '60px', '90px']);
     expect(root.querySelector('[data-more-past="start"]')).not.toBeNull();
     expect(root.querySelector('[data-more-past="end"]')).toBeNull();
+  });
+
+  test('a row over its run by no more than RUN_SLACK is drawn whole, centered, and does not scroll', () => {
+    const { getByTestId } = render(<Chips count={3} length={28} />);
+    const root = getByTestId('row');
+    expect(root).not.toHaveAttribute('data-scrolls');
+    expect(root.querySelector('[data-more-past]')).toBeNull();
+    // 104 of chips on a run 100 long: laid back by half the 4 over, none faded or clipped.
+    expect(xs(root)).toEqual(['12px', '50px', '88px']);
+    for (const chip of root.querySelectorAll<HTMLElement>('[data-chip]')) {
+      expect(chip.style.getPropertyValue('--along-shown')).toBe('');
+      expect(chip).not.toHaveAttribute('data-clipped');
+    }
   });
 
   test("with overflow 'center' a row too long sits centered and does not scroll", () => {

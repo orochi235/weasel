@@ -80,18 +80,19 @@ describe('Bar along a curve', () => {
     expect(bar.querySelector('[style*="--at-x"]')).toBeNull();
   });
 
-  test('menu mode keeps what fits along the arc and puts More last along the run', () => {
+  test('menu mode keeps what fits along the arc, give or take RUN_SLACK, and puts More last along the run', () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
     expect(shape.length).toBeCloseTo(157.08, 2);
     render(<Bar schema={six} shape={shape} overflow="menu" label="Tools" />);
     const kept = items();
-    expect(kept.map((el) => el.getAttribute('data-bar-item'))).toEqual(['a', 'b']);
+    // Three items and More take 160, under 3 over the arc.
+    expect(kept.map((el) => el.getAttribute('data-bar-item'))).toEqual(['a', 'b', 'c']);
     const xs = kept.map((el) => placed(el).x);
     expect(placed(more()).x).toBeGreaterThan(Math.max(...xs));
     expect(xs[0]!).toBeLessThan(xs[1]!);
     fireEvent.click(within(more() as HTMLElement).getByRole('button', { name: 'More' }));
     const menu = screen.getByRole('dialog', { name: 'More' });
-    expect(within(menu).getAllByRole('button').map((b) => b.textContent)).toEqual(['c', 'd', 'e', 'f']);
+    expect(within(menu).getAllByRole('button').map((b) => b.textContent)).toEqual(['d', 'e', 'f']);
   });
 
   test('right to left, menu mode starts the run at its right end and puts More at its left', () => {

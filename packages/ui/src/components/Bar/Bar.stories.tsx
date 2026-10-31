@@ -11,7 +11,7 @@ import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof Bar> = {
-  title: 'ui/Bar/Bar',
+  title: 'ui/Bar',
   component: Bar,
 };
 export default meta;
