@@ -1,4 +1,4 @@
-export { Button } from './Button';
+export { Button, buttonFaceOf, domButton } from './Button';
 export type {
   ButtonBase, ButtonIconOnly, ButtonProps, ButtonRegular, ButtonVariant, ButtonSize,
 } from './Button';

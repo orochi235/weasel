@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import { assignRef } from '@weasel-js/react';
+import { dropSide, LIST_ROLES, listMode } from '@weasel-js/headless';
 import { modsOf, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
 import { DragGhost } from '../DragGhost';
@@ -90,14 +91,6 @@ export interface ItemListProps {
   ghost?: ReorderGhost | null;
 }
 
-type Mode = 'list' | 'listbox' | 'grid';
-
-const ROLES: Record<Mode, { container: string; row: string }> = {
-  list: { container: 'list', row: 'listitem' },
-  listbox: { container: 'listbox', row: 'option' },
-  grid: { container: 'grid', row: 'row' },
-};
-
 /**
  * The row chrome behind a sidebar list — anything that is a flat column of
  * selectable rows in a panel.
@@ -130,9 +123,7 @@ export const ItemList = forwardRef(function ItemList(
   ref: Ref<HTMLDivElement>,
 ) {
   const hasTrailing = rows.some((r) => r.trailing != null);
-  const mode: Mode = hasTrailing || (onActivate && !selection)
-    ? 'grid'
-    : selection ? 'listbox' : 'list';
+  const mode = listMode({ selection, activatable: onActivate !== undefined, controls: hasTrailing });
   const interactive = mode !== 'list';
 
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
@@ -246,7 +237,7 @@ export const ItemList = forwardRef(function ItemList(
     else targets.current.delete(id);
   };
 
-  const roles = ROLES[mode];
+  const roles = LIST_ROLES[mode];
   return (
     <div
       className={cls}
@@ -317,16 +308,4 @@ function GhostRows({ rows, ids }: { rows: readonly ItemListRow[]; ids: readonly 
         <span className={s.label}>{row.label}</span>
       </div>
     ));
-}
-
-/** Which edge of row `i` carries the seam for `dropIndex`, if any. */
-function dropSide(
-  dropIndex: number | null | undefined,
-  i: number,
-  count: number,
-): 'before' | 'after' | undefined {
-  if (dropIndex == null) return undefined;
-  if (dropIndex === i) return 'before';
-  if (dropIndex >= count && i === count - 1) return 'after';
-  return undefined;
 }

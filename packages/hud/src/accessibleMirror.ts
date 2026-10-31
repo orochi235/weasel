@@ -31,6 +31,8 @@ function build(doc: Document, node: HudAccessibleNode, id: string): HTMLElement 
   el.id = id;
   el.setAttribute('role', node.role);
   if (node.checked !== undefined) el.setAttribute('aria-checked', String(node.checked));
+  if (node.selected !== undefined) el.setAttribute('aria-selected', String(node.selected));
+  if (node.multiselectable) el.setAttribute('aria-multiselectable', 'true');
   if (node.disabled) el.setAttribute('aria-disabled', 'true');
   if (node.expanded !== undefined) {
     el.setAttribute('aria-haspopup', 'menu');

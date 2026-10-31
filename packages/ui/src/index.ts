@@ -141,6 +141,8 @@ export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollS
 export { rovingGridTarget, rovingTarget, useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingDirection, RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
 export { domFocusScope } from './domFocusScope';
+export { domMeasureEnv, type DomTarget } from './domMeasureEnv';
+export { nodeText } from './nodeText';
 export type {
   ReorderItem,
   UseReorderDragListOptions,

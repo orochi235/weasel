@@ -9,6 +9,7 @@ export const stories = [
   'packages/forge/src/**/*.stories.{ts,tsx}',
   'packages/diagram/src/**/*.stories.{ts,tsx}',
   'packages/devtools/src/**/*.stories.{ts,tsx}',
+  'packages/hud/src/**/*.stories.{ts,tsx}',
 ];
 
 export const frameConfig = 'apps/forge/forge.frame.tsx';

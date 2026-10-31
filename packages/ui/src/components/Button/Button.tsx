@@ -1,4 +1,10 @@
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactElement, type ReactNode, type Ref } from 'react';
+import {
+  buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart, type ButtonSize as HeadlessButtonSize,
+  type HeadlessComponent,
+} from '@weasel-js/headless';
+import { nodeText } from '../../nodeText';
+import type { DomTarget } from '../../domMeasureEnv';
 import s from './Button.module.css';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import { type AppearanceProps, useAppearance } from '../appearance';
@@ -9,7 +15,7 @@ import { type AppearanceProps, useAppearance } from '../appearance';
  *  confirming button is `stance="confirm"` on a `solid` one. */
 export type ButtonVariant = 'solid' | 'ghost' | 'link';
 /** Button height and type scale. */
-export type ButtonSize = 'sm' | 'md';
+export type ButtonSize = HeadlessButtonSize;
 
 /** What every {@link Button} takes. */
 export type ButtonBase = {
@@ -103,8 +109,6 @@ export const Button = forwardRef(function Button(
     pressed,
     disabled,
     loading,
-    leadingIcon,
-    trailingIcon,
     fullWidth,
     iconOnly,
     ariaLabel,
@@ -132,7 +136,7 @@ export const Button = forwardRef(function Button(
     .filter(Boolean)
     .join(' ');
 
-  const showLeading = !iconOnly && (loading || leadingIcon);
+  const face = buttonFaceOf(props);
   const appearance = useAppearance({ stance, grade, emphasis, tint });
 
   return (
@@ -154,18 +158,40 @@ export const Button = forwardRef(function Button(
         aria-label={ariaLabel}
         onClick={onClick}
       >
-        {showLeading && (
-          <span className={s.iconSlot}>{loading ? <Spinner /> : leadingIcon}</span>
-        )}
-        {iconOnly ? (
-          loading ? <Spinner /> : <span className={s.iconSlot}>{children}</span>
-        ) : (
-          children !== undefined && <span className={s.label}>{children}</span>
-        )}
-        {!iconOnly && trailingIcon && (
-          <span className={s.iconSlot}>{trailingIcon}</span>
-        )}
+        {buttonParts(face).map((part) => <ButtonPartSlot key={part} part={part} face={face} label={children} />)}
       </button>
     </SegmentTooltip>
   );
 });
+
+/** What a {@link Button} with `props` shows, as the shared measure reads it: its children are the label, or the
+ *  icon when `iconOnly`, and a label that is not text is measured by its text content. */
+export function buttonFaceOf(props: ButtonProps): ButtonFace<ReactNode> {
+  const { children, size = 'md', iconOnly, loading, leadingIcon, trailingIcon } = props;
+  return iconOnly
+    ? { size, iconOnly: true, icon: children, loading }
+    : { size, label: children === undefined ? undefined : nodeText(children), leadingIcon, trailingIcon, loading };
+}
+
+/** One part of a button as the DOM draws it: a slot `Button.module.css` lays out from the tokens `measureButton`
+ *  reads. */
+function ButtonPartSlot(
+  { part, face, label }: { part: ButtonPart; face: ButtonFace<ReactNode>; label: ReactNode },
+): ReactNode {
+  switch (part) {
+    case 'spinner': return face.iconOnly ? <Spinner /> : <span className={s.iconSlot}><Spinner /></span>;
+    case 'icon': return <span className={s.iconSlot}>{face.icon}</span>;
+    case 'leading': return <span className={s.iconSlot}>{face.leadingIcon}</span>;
+    case 'trailing': return <span className={s.iconSlot}>{face.trailingIcon}</span>;
+    case 'label': return <span className={s.label}>{label}</span>;
+  }
+}
+
+/**
+ * {@link Button} on the measure/draw contract a HUD button implements too: `measure` is `@weasel-js/headless`'s
+ * `measureButton` (pass `domMeasureEnv(el)` for any element in the themed root), and `draw` renders the button.
+ */
+export const domButton: HeadlessComponent<ButtonProps, ButtonLayout, DomTarget<HTMLButtonElement>, ReactElement> = {
+  measure: (props, c, env) => measureButton(buttonFaceOf(props), c, env),
+  draw: (props, target) => <Button ref={target.ref} {...props} />,
+};

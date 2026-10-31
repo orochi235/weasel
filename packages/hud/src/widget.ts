@@ -223,6 +223,10 @@ export interface HudAccessibleNode {
   /** The node the keyboard is on. At most one in a tree. */
   active?: boolean;
   checked?: boolean;
+  /** Set on an option of a list that selects: whether it is selected. */
+  selected?: boolean;
+  /** Set on a list that selects: whether it selects more than one row at once. */
+  multiselectable?: boolean;
   disabled?: boolean;
   /** Set on a node that opens a menu: whether it is open. */
   expanded?: boolean;

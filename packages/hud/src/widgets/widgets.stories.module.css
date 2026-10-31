@@ -1,0 +1,23 @@
+.pair {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wzl-space-6);
+}
+
+.dom {
+  padding: 16px 0;
+}
+
+.swatch {
+  display: block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: #3b82f6;
+}
+
+.readout {
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 10ch;
+}
