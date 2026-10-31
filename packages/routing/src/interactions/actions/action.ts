@@ -75,11 +75,15 @@ export interface ActionPresentation {
    *  triggers it with the params `settings.params` makes. Not combined with
    *  `variants`. */
   settings?: ActionSettings;
-  /** The params `invoker.run` reads, as a form: one leaf per param, keyed by its name, with its label, range,
-   *  step, and default. An immediate run that commits one history entry is kept as the tree's last operation,
-   *  which a panel draws as this form so the params can be changed after the fact. `ActionParamSchema` stays
-   *  what types a tuning; this is what a person sees. */
-  params?: PrefGroup;
+  /** The params the invoker reads, as a form: one leaf per param, keyed by its name, with its label, range,
+   *  step, and default. A run that commits one history entry is kept as the tree's last operation, which a panel
+   *  draws as this form so the params can be changed after the fact: any immediate run, and a gesture whose
+   *  handle can `replay` (see `OngoingHandle.replay`). `ActionParamSchema` stays what types a tuning; this is
+   *  what a person sees.
+   *
+   *  A function answers the form for one run from the params it resolved, for an action whose params depend
+   *  on what it was asked to do (`insert`'s on the kind of shape), or `null` for a run with none to show. */
+  params?: PrefGroup | ((params: Readonly<Record<string, unknown>>) => PrefGroup | null);
 }
 
 /**

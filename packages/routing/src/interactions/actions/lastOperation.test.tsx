@@ -159,6 +159,22 @@ describe('the last operation', () => {
     expect(store.get()).toBeNull();
   });
 
+  it('takes the form a function answers for the run, and holds nothing for a run it answers none for', () => {
+    const { doc, history, registry, store } = setup();
+    const byKind: Action = {
+      ...widen(doc, history),
+      id: 'widenBy',
+      params: (p) => (p.kind === 'shown' ? WIDEN_PARAMS : null),
+    };
+    act(() => { registry.register(byKind); });
+    act(() => { registry.trigger('widenBy', { kind: 'hidden', by: 2 }); });
+    expect(store.get()).toBeNull();
+    act(() => { registry.trigger('widenBy', { kind: 'shown', by: 2 }); });
+    expect(store.get()).toMatchObject({ id: 'widenBy', schema: WIDEN_PARAMS, values: { by: 2 } });
+    act(() => { store.adjust({ by: 4 }); });
+    expect(doc.width).toBe(16);
+  });
+
   it('clears on dismiss and tells its listeners', () => {
     const { registry, store } = setup();
     const heard = vi.fn();

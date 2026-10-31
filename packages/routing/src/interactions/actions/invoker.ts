@@ -296,6 +296,22 @@ export interface OngoingHandle {
   onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void;
 
   /**
+   * Commit this gesture again, as it ended, with `params` in place of the ones it read. This is what makes a
+   * drag the tree's last operation, so a panel can change its params after the fact: an action that declares
+   * `params` and returns a handle with `replay` is kept when its `onEnd('commit')` leaves exactly one history
+   * entry.
+   *
+   * The keeper calls it only after undoing that entry and putting back the selection the gesture started on,
+   * so the scene is as the gesture found it. It recomputes the commit from what the gesture recorded (its start
+   * state and the pointer as it ended, or every move when the result depends on the path taken, and the
+   * modifiers held), never from the live pointer, and commits one entry as `onEnd` did. `params` holds every
+   * param the gesture resolved at its end, with the panel's values laid over them; read them here instead of
+   * resolving `opts.params` again. It may run any number of times. Omit it on a gesture that cannot be
+   * recomputed faithfully, and the action gets no panel.
+   */
+  replay?(params: Record<string, unknown>): void;
+
+  /**
    * Optional preview surface: the in-flight state the canvas's preview-ghost
    * layer renders on top of the committed scene during the gesture.
    *
