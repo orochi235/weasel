@@ -11,7 +11,7 @@ import {
   SceneCanvas, asNodeId, createScene, pathFromD, solid, useSelection, workspaceTintLayer,
   type PolygonPath, type SelectionApi,
 } from '@weasel-js/core';
-import { TextEditDepPublisher } from '@editor/index';
+import { TextEditDepPublisher } from '@weasel-js/editor';
 import type { DrawScene } from '../drawDocument';
 import { useTextEditSession } from '../useTextEditSession';
 import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';

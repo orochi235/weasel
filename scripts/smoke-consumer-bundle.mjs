@@ -307,6 +307,7 @@ await writeFile(
     `import * as guides from '@weasel-js/guides';\n` +
     // rig, built on core, ships tools and its own icon table.
     `import * as rig from '@weasel-js/rig';\n` +
+    `import * as editor from '@weasel-js/editor';\n` +
     `import * as theme from '@weasel-js/theme';\n` +
     // ui and hud are built with Vite library mode because they ship assets: ui
     // its bundled stylesheet and hud its data-URI font atlas.
@@ -344,7 +345,7 @@ await writeFile(
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
-    `  guides, devtools, rig,\n` +
+    `  guides, devtools, rig, editor,\n` +
     `  toolPalette, prefs, callout, icon, paintValue, appearance, portalHost, color, paintGradientTrack, kitSettings, floating,\n` +
     `  toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +

@@ -32,7 +32,7 @@ import { useModeId } from './modality/useModeId';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { DrawPageStrip } from './pages/DrawPageStrip';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
-import { type DocPages, TextEditDepPublisher, usePaperLayer } from '@editor/index';
+import { type DocPages, TextEditDepPublisher, usePaperLayer } from '@weasel-js/editor';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
 import { useColorContext } from './tools/colorContext';

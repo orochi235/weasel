@@ -3,6 +3,7 @@ import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import { useMemo } from 'react';
 import type { PageSize } from './paperLayer';
 
+/** The page a `usePageGrid` grid covers, its pitch and look, and whether it shows and snaps. */
 export interface PageGridOptions {
   /** The page the grid covers; its lines start at the page's corner, default world `(0, 0)`. */
   page: PageSize & { x?: number; y?: number };

@@ -1,6 +1,7 @@
 import { pagesLayer, type PlacedPage, type RenderLayer } from '@weasel-js/core';
 import { useMemo } from 'react';
 
+/** A page's size, in world units. */
 export interface PageSize { width: number; height: number }
 
 /** The document's pages: world-space rects filled with the document's background color, so the

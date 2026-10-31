@@ -1,5 +1,5 @@
 import { ActionDisabledReason, useCommand, type MenuDef } from '@weasel-js/core';
-import type { DocPages } from '@editor/index';
+import type { DocPages } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
 
 export const PAGE_ACTIONS = {

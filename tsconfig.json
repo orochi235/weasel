@@ -66,6 +66,7 @@
       "@weasel-js/diagram-elk": ["./packages/diagram-elk/src/index.ts"],
       "@weasel-js/diagram-formats": ["./packages/diagram-formats/src/index.ts"],
       "@weasel-js/diagram-formats/testing/*": ["./packages/diagram-formats/src/testing/*"],
+      "@weasel-js/editor": ["./packages/editor/src/index.ts"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
       "@weasel-js/font/metrics": ["./packages/font/src/metrics.entry.ts"],
       "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
@@ -193,8 +194,7 @@
       "tools/*": ["./packages/core/src/tools/*"],
       "canvas/*": ["./packages/core/src/canvas/*"],
       "debug/*": ["./packages/core/src/debug/*"],
-      "@draw/*": ["./apps/draw/src/*"],
-      "@editor/*": ["./apps/shared/editor/src/*"]
+      "@draw/*": ["./apps/draw/src/*"]
     }
   },
   // `tests/perf/bench` is in here and the rest of `tests/` is not: the benches

@@ -1,4 +1,4 @@
-import { useAutosave, type DocPages } from '@editor/index';
+import { useAutosave, type DocPages } from '@weasel-js/editor';
 import { useCallback, useMemo, useState } from 'react';
 import { DOC_KEY, loadDoc } from './docPersistence';
 import { paperSizeOf } from './pages/drawPages';

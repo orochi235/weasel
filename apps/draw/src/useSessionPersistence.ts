@@ -1,4 +1,4 @@
-import { useSessionPersistence as useEditorSession } from '@editor/index';
+import { useSessionPersistence as useEditorSession } from '@weasel-js/editor';
 import type { DrawScene } from './drawDocument';
 import { reportSessionSave } from './fileNotices';
 import { LEGACY_HISTORY_KEY, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';

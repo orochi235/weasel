@@ -9,7 +9,7 @@ import {
 import { plotEditing } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
-import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@editor/index';
+import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';

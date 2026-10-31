@@ -1,6 +1,6 @@
 import { isSerializedScene, type AddNodeSpec, type SerializedDoc } from '@weasel-js/core';
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue } from '@weasel-js/diagram';
-import { docFromSnapshot, nodeSpecsFromSnapshot, readStored, serializeReplacer } from '@editor/index';
+import { docFromSnapshot, nodeSpecsFromSnapshot, readStored, serializeReplacer } from '@weasel-js/editor';
 import { CHART_REGISTRY, chartDoc, type ChartData, type ChartLayer, type ChartPose, type ChartScene } from './chartDocument';
 
 export const CHART_SCENE_KEY = 'weaselchart:scene-v1';

@@ -53,6 +53,7 @@
       "@weasel-js/diagram-elk": ["../diagram-elk/src/index.ts"],
       "@weasel-js/diagram-formats": ["../diagram-formats/src/index.ts"],
       "@weasel-js/diagram-formats/testing/*": ["../diagram-formats/src/testing/*"],
+      "@weasel-js/editor": ["../editor/src/index.ts"],
       "@weasel-js/font": ["../font/src/index.ts"],
       "@weasel-js/font/metrics": ["../font/src/metrics.entry.ts"],
       "@weasel-js/font/test-seams": ["../font/src/test-seams.ts"],
@@ -180,8 +181,7 @@
       "tools/*": ["./src/tools/*"],
       "canvas/*": ["./src/canvas/*"],
       "debug/*": ["./src/debug/*"],
-      "@draw/*": ["../../apps/draw/src/*"],
-      "@editor/*": ["../../apps/shared/editor/src/*"]
+      "@draw/*": ["../../apps/draw/src/*"]
     }
   },
   "include": ["src"],

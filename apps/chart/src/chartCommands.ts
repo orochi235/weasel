@@ -3,7 +3,7 @@ import {
   RELEASE_MEMBERS_ACTION_ID, RESET_LABEL_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS,
 } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
-import { downloadBlob, pickFile } from '@editor/index';
+import { downloadBlob, pickFile } from '@weasel-js/editor';
 import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
 import { EXPORT_MENU } from './exportCommands';

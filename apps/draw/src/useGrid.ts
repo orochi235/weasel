@@ -1,4 +1,4 @@
-import { usePageGrid, type PageGridOptions } from '@editor/index';
+import { usePageGrid, type PageGridOptions } from '@weasel-js/editor';
 import type { AppCommands } from './appCommands';
 import { usePref } from './prefs';
 

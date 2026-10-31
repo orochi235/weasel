@@ -2,7 +2,7 @@ import { useCommand } from '@weasel-js/core';
 import {
   imageEvaluators, imageValueKinds, testCard, useEffectRunner, type EffectPipeline, type EffectRun, type RunRowOptions,
 } from '@weasel-js/diagram/effect';
-import { pickFile } from '@editor/index';
+import { pickFile } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
 import { useMemo, useState } from 'react';
 import { can, run, type MenuRuns } from '../menuBar';

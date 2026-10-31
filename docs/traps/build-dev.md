@@ -64,7 +64,7 @@ than emulated FCP — the timings vary too much between runs to compare.
 any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken over.
 
 **A dev server serves the packages pre-bundled, so a package edit reloads rather than patches.**
-`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` and `@editor/*` specifier an app imports,
+`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` specifier an app imports,
 re-bundling on a saved package file in a few seconds. forge keeps every package holding stories (ui,
 labkit, forge, diagram, devtools, diagram-elk) as source, so edits there still hot-update.
 `WEASEL_DEV_BUNDLE_STORIES=1` bundles ui and labkit, whose stories import through package specifiers:

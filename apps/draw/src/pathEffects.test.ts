@@ -15,7 +15,7 @@ import {
   layoutPages,
 } from '@weasel-js/core';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-import { serializeReplacer } from '@editor/index';
+import { serializeReplacer } from '@weasel-js/editor';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 import { importSvgText, openSvgText } from './openSvg';
 import { sceneToSvgString, selectionToSvgString } from './svgExport';
