@@ -1,6 +1,6 @@
 /**
- * The Smudge brush's drag: the selected paths' outlines under a round brush
- * follow the pointer, as one undo entry per stroke.
+ * The Smudge brush's drag: the outlines under a round brush follow the pointer,
+ * as one undo entry per stroke.
  */
 import {
   type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type InvocationCtx, type OngoingHandle, resolveParams,
@@ -8,6 +8,7 @@ import {
 import { pxExtent, smudgePath, type PolygonPath } from '@weasel-js/geom';
 import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
 import { commitOps, reshapeOps, selectedPathNodes, withPath, type PathNode, type SceneNode, pathOperationTags } from '@weasel-js/core';
+import { scenePathNodes } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
@@ -19,6 +20,14 @@ export const DEFAULT_SMUDGE_RADIUS_PX = 40;
 export const DEFAULT_SMUDGE_STRENGTH = 0.6;
 
 const LABEL = 'Smudge brush';
+
+/** The selected paths, or with none selected, every path that is neither locked nor hidden. */
+function smudgeTargets(deps: ActionDeps | undefined): PathNode[] {
+  const selected = selectedPathNodes(deps);
+  if (selected.length > 0) return selected;
+  const scene = deps?.scene as { isLocked?(id: string): boolean; isHidden?(id: string): boolean } | undefined;
+  return scenePathNodes(deps).filter((n) => !scene?.isLocked?.(n.id) && !scene?.isHidden?.(n.id));
+}
 
 /** The params `smudgeBrush` reads, each on every pointer move. */
 export interface SmudgeBrushParams {
@@ -45,8 +54,8 @@ function worldRadius(deps: ActionDeps, radiusPx: number): number {
 }
 
 /**
- * A drag that pushes the outline of every selected path along with
- * the pointer (`smudgePath` in `@weasel-js/geom`). Each pointer move is one dab from
+ * A drag that pushes the outline of the selected paths, or of every unlocked, shown
+ * path while none is selected, along with the pointer (`smudgePath` in `@weasel-js/geom`). Each pointer move is one dab from
  * where the last one ended: points under the brush move with it, most at its center
  * and not at all at its rim, and a long segment the brush meets gets anchors added
  * so it can bend there. `params.radiusPx` is the brush's radius on screen, so it
@@ -67,7 +76,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      const nodes = selectedPathNodes(ctx.deps);
+      const nodes = smudgeTargets(ctx.deps);
       if (nodes.length === 0) return {};
       const { deps } = ctx;
       const params = (move: InvocationCtx): SmudgeBrushParams =>
@@ -108,5 +117,5 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
       };
     },
   },
-  enabled: (deps) => (selectedPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
+  enabled: (deps) => (smudgeTargets(deps).length > 0 ? true : ActionDisabledReason.NotApplicable),
 };

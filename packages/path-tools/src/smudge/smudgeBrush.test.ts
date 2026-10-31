@@ -64,4 +64,21 @@ describe('smudgeBrushAction', () => {
     handle.onMove!(at(deps, 50, -2));
     expect(handle.cursor!()).toEqual(brushRingCursor(30));
   });
+
+  it('with nothing selected, pushes every path under the brush but locked and hidden ones', () => {
+    const mk = (id: string) => ({ id: asNodeId(id), kind: 'mark', layer: 'main', pose: pathFromD('M0 0 H100 V100 H0 Z'), data: {}, parent: null });
+    const nodes = [mk('free'), mk('locked'), mk('hidden')];
+    const scene = {
+      get: (id: NodeId) => nodes.find((n) => n.id === id),
+      childrenOf: () => [],
+      renderOrderNodes: () => nodes,
+      isLocked: (id: string) => id === 'locked',
+      isHidden: (id: string) => id === 'hidden',
+    };
+    const deps = { scene, selection: { get: () => [], set: vi.fn() }, view: { get: () => ({ scale: { x: 1, y: 1 } }) }, applyOps: vi.fn() } as never;
+    expect(smudgeBrushAction.enabled!(deps)).toBe(true);
+    const handle = invoker.start(at(deps, 50, 0), { params: { radiusPx: 20, strength: 1 } });
+    handle.onMove!(at(deps, 50, -10));
+    expect(handle.previewIds!()).toEqual(['free']);
+  });
 });

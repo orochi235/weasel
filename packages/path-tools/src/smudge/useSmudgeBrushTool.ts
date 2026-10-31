@@ -13,7 +13,7 @@ const SMUDGE_KEY: ToolKeybinding = { key: 'S' };
 
 /**
  * Smudge brush tool. A round brush that pushes the outline of the selected
- * paths along with the pointer — a declarative shell whose one binding routes a
+ * paths, or of every path while none is selected, along with the pointer — a declarative shell whose one binding routes a
  * drag to the `smudgeBrush` action, which owns the stroke, its preview, its ring
  * cursor, and its one undo entry. The brush's radius (screen px) and strength are
  * that action's params: `tune={{ smudgeBrush: { params: () => ({ radiusPx, strength }) } }}`.
