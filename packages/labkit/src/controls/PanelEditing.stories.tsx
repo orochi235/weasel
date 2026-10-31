@@ -33,7 +33,8 @@ export const Drafts: Story = {
     const [writes, setWrites] = useState(0);
     return (
       <div>
-        <ControlPanel {...args}
+        <ControlPanel
+          {...args}
           schema={schema}
           config={config}
           setConfig={(path, value) => {
@@ -58,7 +59,8 @@ export const ErrorsAndChanges: Story = {
     const speed = config.speed as number;
     const changed = new Set(Object.keys(baseline).filter((k) => config[k] !== baseline[k]));
     return (
-      <ControlPanel {...args}
+      <ControlPanel
+        {...args}
         schema={schema}
         config={config}
         setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}

@@ -62,7 +62,9 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
   });
 });
 
-describe('a story drawing its component, once or several times, applies its args to each', { timeout: 60_000 }, () => {
+describe('a story drawing its component applies its args to each instance', {
+  timeout: 60_000,
+}, () => {
   it.each<[string, string, () => Promise<unknown>, number]>([
     ['TileGrip', 'Reorderable', () => import('./lab/TileGrip.stories'), 3],
     ['TileGrip', 'OutsideWorkspace', () => import('./lab/TileGrip.stories'), 1],

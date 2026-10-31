@@ -20,7 +20,8 @@ export const LastSectionFillsItsPane: Story = {
   render: (args) => (
     <LabRoot>
       <div className="lk-lab__aside" data-testid="pane" style={{ height: 400 }}>
-        <SidebarRegion {...args}
+        <SidebarRegion
+          {...args}
           ctx={ctx}
           contributions={[
             { id: 'first', region: 'sidebar', item: { title: 'First', body: <p>one</p> } },

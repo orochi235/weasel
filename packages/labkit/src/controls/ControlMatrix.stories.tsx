@@ -94,7 +94,8 @@ export const Looks: Story = {
     const [focused, setFocused] = useState<string | null>(null);
     return (
       <div className="lk-control-matrix-story">
-        <ControlMatrix {...args}
+        <ControlMatrix
+          {...args}
           title="Looks"
           schema={schema}
           columns={columns}
@@ -122,7 +123,8 @@ export const BesideControlPanel: Story = {
           config={valueAtPath(shown, 'looks.defaults') as Record<string, unknown>}
           setConfig={(path, value) => setConfig(`looks.defaults.${path}`, value)}
         />
-        <ControlMatrix {...args}
+        <ControlMatrix
+          {...args}
           title="Per primitive"
           schema={schema}
           columns={columns}
@@ -155,7 +157,8 @@ export const PlainGrid: Story = {
     }));
     return (
       <div className="lk-control-matrix-story">
-        <ControlMatrix {...args}
+        <ControlMatrix
+          {...args}
           title="Timing"
           inherit={false}
           schema={schema}
