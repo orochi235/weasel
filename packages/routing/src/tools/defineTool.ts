@@ -4,6 +4,7 @@ import type { ToolDef } from './routeTypes';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { KernelOverlay } from '../index';
+import { toolOptionSteps } from './toolOptions';
 
 /** Validate that `id` is usable as a tool / channel id in the route
  *  grammar. Rejects ids that start with a reserved sigil (would shadow
@@ -41,6 +42,12 @@ export function defineTool<TOverlay = KernelOverlay>(
     return typeof def.cursor === 'function' ? def.cursor() : def.cursor;
   };
 
+  const steps = def.options
+    ? toolOptionSteps(def.id, def.presentation?.label ?? def.id, def.options)
+    : { actions: [], bindings: [] };
+  const actions = steps.actions.length > 0 ? [...(def.actions ?? []), ...steps.actions] : def.actions;
+  const bindings = steps.bindings.length > 0 ? [...(def.bindings ?? []), ...steps.bindings] : def.bindings;
+
   return {
     id: def.id,
     eligibility: {
@@ -48,7 +55,8 @@ export function defineTool<TOverlay = KernelOverlay>(
       capabilities: def.capabilities,
       ...(def.hotkey ? { offhand: def.hotkey } : {}),
     },
-    actions: def.actions,
+    actions,
+    ...(def.options ? { options: def.options } : {}),
     menus: def.menus,
     def,
     presentation: def.presentation,
@@ -56,7 +64,7 @@ export function defineTool<TOverlay = KernelOverlay>(
     onActivate: def.onActivate,
     onDeactivate: def.onDeactivate,
     cursor: resolveCursor,
-    bindings: def.bindings,
+    bindings,
     overlay: def.overlay,
     overlayPosition: def.overlayPosition,
   };

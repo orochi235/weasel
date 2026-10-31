@@ -165,6 +165,15 @@ owned by the selection (`selectionMoveContribution`,
 `tools/builtin/select`), so they are live
 under any tool that leaves the gesture unclaimed.
 
+A tool's **options** (`ToolDef.options`) are the settings its user adjusts while
+it is active — a brush's size and strength — declared as a prefs group of the
+params of the one action it binds. The host keeps their values (the
+`toolOptionValues` dep), `<SceneCanvas>` tunes the action from them, and a host draws
+the active tool's options row from the same schema. Naming a size or a strength
+gives the tool step actions on `[` `]` and `Shift+[` `Shift+]`, bound at active
+scope so they hold those keys only while it is the active tool. See
+`packages/routing/src/tools/toolOptions.ts`.
+
 A rail holds tools and **commands**. A command takes a rail slot and runs once
 when pressed; it holds no focus and binds no input, so it is not a Tool and
 `isTool` never sees it. labkit's `CommandItem` is one beside its `ToolItem`,

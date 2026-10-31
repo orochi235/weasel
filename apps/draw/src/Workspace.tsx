@@ -21,7 +21,7 @@ import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useMemo } from 'react';
-import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher, NoticesPublisher } from './adapterPublishers';
+import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher, NoticesPublisher, ToolOptionsPublisher } from './adapterPublishers';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { useInsertPaint } from './insertPaint';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
@@ -236,6 +236,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             <BooleansAdapterPublisher scene={scene} selection={selection} />
             <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />
             <NoticesPublisher />
+            <ToolOptionsPublisher />
             <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
         )}

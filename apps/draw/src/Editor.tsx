@@ -13,6 +13,8 @@ import {
 import { PATH_OVERLAYS_GROUP } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
+import { ActiveToolOptions } from './ui/ToolOptions';
+import { drawToolOptionValues } from './toolOptions';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
@@ -113,7 +115,9 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   const inPathEdit = useModeId(modality.machine) === 'path-edit';
   // The character strip shows only during a text edit, and moves the workspace as it comes and goes.
   const optionsRef = useRef<HTMLDivElement | null>(null);
-  useHoldContentUnderChrome(optionsRef, setView, textEdit.effectiveStyle != null);
+  const activeTool = tools?.active ? tools.registry[tools.active] : undefined;
+  const toolOptions = useMemo(() => drawToolOptionValues(), []);
+  useHoldContentUnderChrome(optionsRef, setView, textEdit.effectiveStyle != null || activeTool?.options !== undefined);
 
   return (
     <ActiveToolContextProvider>
@@ -140,6 +144,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
               <div className="wd-dock-main">
                 <div ref={optionsRef}>
                   <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
+                  <ActiveToolOptions tool={activeTool} values={toolOptions} />
                 </div>
                 <div className="wd-body">
                   <ShowChrome id={FIXED_CHROME.tools.id}>

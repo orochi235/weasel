@@ -1,25 +1,20 @@
 /**
  * Simplify and Offset Path as sliders. Dragging a slider previews its command on the selection and releasing it
- * commits one undo entry. The Simplify tolerance is also what the Simplify brush path edit refits at, so it lives
- * above whichever surface draws the slider (`useSimplifyTolerance`).
+ * commits one undo entry. The Simplify tolerance is also the Simplify brush's tolerance option, so the slider
+ * reads and writes that pref (`useSimplifyTolerance`), and the brush's options row moves with it.
  */
-import { useEffect, useState, type ReactElement } from 'react';
-import { useActionsRegistry, useLatest, useOngoingAction } from '@weasel-js/core';
+import { useState, type ReactElement } from 'react';
+import { useOngoingAction } from '@weasel-js/core';
+import { usePref } from '../../prefs';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
 const readout = (t: { value: number }): string => t.value.toFixed(1);
 
-/** The Simplify tolerance and its setter, tuning the `simplifyBrush` path edit to it. */
+/** The Simplify tolerance and its setter: the Simplify brush's `tolerance` option. */
 export function useSimplifyTolerance(): [number, (tolerance: number) => void] {
-  const [tolerance, setTolerance] = useState(1);
-  const registry = useActionsRegistry();
-  const brushTolerance = useLatest(tolerance);
-  useEffect(
-    () => registry?.tune('simplifyBrush', { params: () => ({ tolerance: brushTolerance.current }) }),
-    [registry, brushTolerance],
-  );
-  return [tolerance, setTolerance];
+  const [tolerance, setTolerance] = usePref('tools.simplifyBrush.tolerance');
+  return [tolerance ?? 1, setTolerance];
 }
 
 /** Sizes a slider; without it, it is a popover's width. */
