@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/minimap",
-  "version": "1.14.2",
+  "version": "1.15.0",
   "description": "A minimap for a weasel canvas: a read-only overview with a viewport indicator you drag to pan, fit math, and a linked crosshair between surfaces.",
   "license": "MIT",
   "type": "module",
@@ -37,12 +37,12 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/react": "1.14.2",
-    "@weasel-js/routing": "1.14.2"
+    "@weasel-js/react": "1.15.0",
+    "@weasel-js/routing": "1.15.0"
   },
   "peerDependencies": {
-    "@weasel-js/animator": "1.14.2",
-    "@weasel-js/core": "1.14.2",
+    "@weasel-js/animator": "1.15.0",
+    "@weasel-js/core": "1.15.0",
     "react": ">=18"
   },
   "publishConfig": {

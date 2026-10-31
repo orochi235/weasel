@@ -1,5 +1,75 @@
 # @weasel-js/renderer
 
+## 1.15.0
+
+### Patch Changes
+
+- 2bdba7b: An inside- or outside-aligned stroke on a fill that is not convex now stays in the batch: its ribbon
+  is cut on the CPU against the fill's triangles, where it used to end the run and draw through a
+  stencil pass. A fill that draws through the stencil itself, a fill whose triangles would take too long
+  to cut against (a many-pointed star of a few hundred edges, say), and a stroke with per-vertex colors
+  still take the stencil.
+- 719d457: A convex clip of up to eight straight edges no longer breaks the batched run on a target where the batch shader cannot
+  clip it: a multisampled canvas (the browser default), a retained surface, or an effect's target. Staged geometry is cut
+  to the clip's half-planes on the CPU instead of the clip going on the stencil, and a turned item across a rect clip
+  there is cut too rather than sent to the stencil. A cut point on a slanted edge is not one the rasterizer can hold, so
+  a sample within its snapping distance of the clip's edge can land the other way from the stencil's.
+  
+  An inner or outer stroke on a fill that is one convex ring, curved or straight, is cut to its side of the fill on the
+  CPU and joins the run, where it used to flush the run and draw itself through a stencil pass. A stroke with per-vertex
+  colors, or on a fill that is not convex, keeps the stencil.
+- b7d362d: An even-odd fill whose contours neither cross nor touch now tessellates to an ordinary triangulation (`earcut`, rings
+  nested an odd number deep cut as holes) instead of a per-contour fan with `requiresStencil`, so the renderer stages it
+  into the batched run like a nonzero fill. Contours that cross, touch, or overlap are first rebuilt as the boundary of
+  their even-odd fill, the way crossing nonzero outlines already were, and a contour of no area is dropped; only a fill
+  whose crossings would cost more than `MAX_EVENODD_RESOLVE_WORK` (now exported from `@weasel-js/geom/tessellate`) to
+  resolve keeps the stencil fan.
+  
+  The stencil's cover pass now paints each pixel of an even-odd fill once: a translucent fill whose fan overlapped
+  itself, such as a concave outline, used to blend once per overlapping triangle and come out too opaque.
+- e05ddd3: Small atlas text keeps its weight and position as it moves between pixels. A glyph small enough for area
+  coverage now draws on a quad grown by `GLYPH_AREA_MARGIN` (one device pixel, new in `@weasel-js/font`) on
+  every side, and the shader reads the margin as empty rather than as the next glyph in the atlas. The quad
+  used to be the glyph's atlas cell, whose padding is narrower than the ink area coverage puts down past an
+  outline, so on a multisampled canvas the pixels its edges crossed were dimmed by the samples they missed:
+  a 7.2px Inter `H` swung 0.37px as it stepped through a pixel, and 0.10px now. `glyphCoverage` in
+  `GLYPH_COVERAGE_GLSL` takes a sixth argument, `cell`, which runs 0 to 1 across the grown quad; a program
+  pasting it in passes it, or a constant where its quads do not grow.
+- a1cb281: Images drawn at half their size or smaller are now smoothed through mipmaps by default: `imageMinification` defaults
+  to `'auto'` on `WeaselRenderer` and `<Canvas>`, which builds an image's mipmaps the first time a frame draws the whole of
+  it that small. This changes the pixels of every image drawn small; pass `imageMinification: 'linear'` for the old
+  single-tap look. A draw with `source` and a `sprites` run never sample mipmaps, under any mode, so a sprite-sheet cell
+  drawn small no longer takes color from the cells beside it under `'mipmap'` or `'auto'`.
+- fbc7ebf: A pattern fill (`kind: 'texture'`) on a path, a stroke or an outline glyph now joins the renderer's batched run instead
+  of drawing for itself: its tile takes a texture slot in the run and each vertex carries its tile coordinate, so a
+  pattern no longer flushes the solids, gradients, images and text around it. What it paints is unchanged, opacity and
+  group color matrix included.
+- d25ad30: A runs array can now be refilled in place. `clearRuns(runs)` in `@weasel-js/text` forgets what the layout and
+  paint caches hold for it while leaving it filed, `resolveRunsInto(out, runs, style)` resolves into an array the
+  caller owns, rewriting each run object whose optional fields match, and `textCommandFromRunsInto(cmd, …)` in
+  `@weasel-js/renderer` refills a text command and its runs. Core re-exports all three.
+  
+  A HUD text widget now keeps one command and one runs array for its life and refills them when its text, color
+  or family changes, so a readout rewritten every frame no longer allocates a command, its runs, or a cache
+  entry per label. What its `draw` returned shows the widget's current text rather than a snapshot of the
+  text it had then.
+- Updated dependencies [3f13a49]
+- Updated dependencies [d40f593]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [e05ddd3]
+- Updated dependencies [30bf607]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [d25ad30]
+- Updated dependencies [fce0494]
+- Updated dependencies [51ca29e]
+  - @weasel-js/font@1.15.0
+  - @weasel-js/text@1.15.0
+  - @weasel-js/geom@1.15.0
+  - @weasel-js/stroke@1.15.0
+  - @weasel-js/paint@1.15.0
+  - @weasel-js/registry@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

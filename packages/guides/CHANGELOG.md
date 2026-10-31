@@ -1,5 +1,42 @@
 # @weasel-js/guides
 
+## 1.15.0
+
+### Patch Changes
+
+- 41b1382: A grid's `spacing` can now give each axis its own rule: a pitch, a pitch with an `offset` limited to
+  `from`..`to`, or lines at explicit positions (`{ at: [...] }`) for uneven bays. An axis left out has no
+  lines, so it neither draws nor snaps. The layer, the snap source, the preset, `pointToGridCell` and
+  `useGridCellHover` all read the new shape.
+  
+  A container can run a grid of its own through `gridOf` on `gridSnapSource` (or the preset's `snap`) and
+  `sceneGridRegions`, which its children snap to in its frame, scale included; `null` gives a container
+  no grid. The grid source lands a node's snap anchors instead of its box, and `gridFit` reports whether
+  a set of points sits on a grid's crossings. `gridSnapSource` takes an `id`, so two grids can snap on
+  one canvas.
+  
+  Breaking: `sceneGridRegions` takes `{ root, gridOf }` in place of the root scope. A `GridCell` carries
+  its `box` in place of `pitch`, and `pointToGridCell` returns `null` off the lines.
+  `createCellHighlightLayer` draws the cell's `box`, so it no longer takes `spacing`, `unitSystem` or
+  `origin`. `gridPitch` and `scopedGridPitch` are replaced by `gridLines`, which resolves every axis's
+  lines.
+- Updated dependencies [8461e7b]
+- Updated dependencies [70a64a3]
+- Updated dependencies [f77e789]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [30bf607]
+- Updated dependencies [0e60598]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [a1cb281]
+- Updated dependencies [c41c917]
+- Updated dependencies [d25ad30]
+- Updated dependencies [1de1aab]
+- Updated dependencies [fce0494]
+- Updated dependencies [746fab0]
+  - @weasel-js/core@1.15.0
+  - @weasel-js/geom@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes
