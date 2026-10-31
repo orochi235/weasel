@@ -42,13 +42,14 @@ It keeps the colors the scene's theme would not give: those the author set by
 hand (the trait's `ownStyle`) and any that differ from the theme, as `colors`.
 A route or a port that layout chose, and an avoiding connector's computed
 route, are read as `routed` and `routedPorts`, not as waypoints, so they stay
-layout's. `theme` is what colors are compared against when the scene names
-none.
+layout's. An edge's end labels read back as `endLabels`, and a `field` row as
+a field while its text still starts with its label. `theme` is what colors are
+compared against when the scene names none.
 
 `documentSpecs(doc, { layer, theme, measure })` is the way back. Pages are
 placed with core's `layoutPages`, as `core:pages` places them. A page where a
-node has no `at`, or a pool has no box, is laid out first with `layered`,
-running the way its `direction` says, with whatever it places pinned; the
+node has no `at`, or a pool has no box, is laid out first with the layout its
+`layout` names (`{ name, options }`, a key of `LAYOUTS`, default `layered`), running the way its `direction` says, with whatever it places pinned; the
 result is kept as places and routes, a page that placed nothing is moved to sit
 40 inside its corner, and the page grows to hold it. Then one `diagramScene`
 call with no layout draws every page and the edges between them, so no layout
@@ -72,7 +73,7 @@ with it and rejects on a file nothing reads.
 | --- | --- | --- | --- |
 | `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes | the whole document |
 | `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
-| `DIAGRAM_MERMAID`, a Mermaid flowchart | `.mmd`, `.mermaid` | yes | one page |
+| `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, or requirement diagram | `.mmd`, `.mermaid` | yes | one page |
 | `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
 Not read, by decision (2026-10-20): packaged office-suite drawing formats,
@@ -91,13 +92,13 @@ The file is known by its root element, not its `.xml` extension.
 
 | Diagram | Draw-style XML |
 | --- | --- |
-| Outline | `rhombus` diamond, `ellipse`, `hexagon`, `parallelogram`, `trapezoid`; `rounded=1` with `arcSize` 50 or more is a stadium; any other shape reads as a rect, with a warning |
+| Outline | `rhombus` diamond, `ellipse`, `hexagon`, `parallelogram`, `trapezoid`; `startState`, `endState`, and `line` as `start`, `end`, and `bar`; `rounded=1` with `arcSize` 50 or more is a stadium; any other shape reads as a rect, with a warning |
 | Colors and font | `fillColor` (`none` is transparent), `strokeColor`, `fontColor`, `strokeWidth`, `dashed`; `fontSize`, `fontFamily`, and bold in `fontStyle` as label rows' style |
 | Text | `value`; with `html=1`, tags stripped and `<br>` and blocks kept as line breaks. Written plain. |
 | Router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, else straight; `avoid` writes as orthogonal along its route |
 | Route | the edge geometry's points: `waypoints`, else `routed`, read back as `waypoints` |
 | Ports | `exitX`/`exitY` and `entryX`/`entryY`, read as the nearest compass port |
-| Edge label | the edge's `value`, or a label cell on it; its geometry `x` (-1 to 1) is where along, `y` how far off the line |
+| Edge label | the edge's `value`, or a label cell on it; its geometry `x` (-1 to 1) is where along, `y` how far off the line. A label cell at `x` -1 or 1 is an end label (`endLabels`) |
 | Arrowheads | `startArrow`/`endArrow` and their `Fill` |
 | Container, pool, lane | `container=1` or a `swimlane` is a container; a swimlane whose swimlanes span its body is a pool of lanes, stacked in rows with `horizontal=0` |
 | Group | a `group` cell around its members |
@@ -134,6 +135,7 @@ cannot read.
 | parallelogram | `A[/text/]` | `shape=parallelogram` |
 | trapezoid | `A[/text\]` | `shape=trapezium` |
 | edge and label | `A -->\|text\| B`, `A -- text --> B` | `A -> B [label=…]` |
+| end labels | — | `taillabel`, `headlabel` |
 | no arrowhead, dashed, thick | `---`, `-.->`, `==>` | `dir`, `arrowhead`, `style=dashed`, `penwidth` |
 | container | `subgraph` | `subgraph cluster_*` |
 | page name | front matter `title` | the graph's `label`, else its name |
@@ -141,8 +143,7 @@ cannot read.
 | colors | `classDef`, `class`, `:::`, `style`, `linkStyle` | `fillcolor` with `style=filled`, `color`, `fontcolor` |
 | ports | — | `node:compass`, `n`, `e`, `s`, and `w` only |
 
-A Mermaid shape with no outline here reads as a rect, with a warning; a
-Mermaid diagram of another kind is refused with an error naming the kind. DOT
+A Mermaid shape with no outline here reads as a rect, with a warning. DOT
 reads its whole grammar: `strict`, `graph` and `digraph`, attribute
 statements and their scoping, edge chains, and subgraphs as edge ends. Its
 HTML labels read as their text, and the attributes it does not read are
@@ -157,6 +158,80 @@ written as nested clusters or subgraphs and read back as containers. Mermaid
 ids that are keywords or not plain names are renamed, keeping their text.
 Bends, connectors to other pages, drawn outlines, and ports a format lacks
 are dropped with a warning.
+
+### Mermaid's other kinds
+
+`DIAGRAM_MERMAID` reads a diagram by its header and sets the page's `notation`
+to the kind it read; it writes a graph page in the kind its `notation` names,
+and as a flowchart when it names none (or one Mermaid has not, with a
+warning). Every kind reads front matter's `title` as the page name (else
+`accTitle`), skips `%%` comments, and drops `%%{…}%%` directives and
+`accDescr` with a warning. A Mermaid kind not read here (`sequenceDiagram`,
+`pie`, …) is refused with an error naming it. Each reader throws an error
+naming the line on text it cannot read, and warns of what it drops.
+
+`classDiagram`, notation `'class'`:
+
+| Mermaid | Diagram |
+| --- | --- |
+| `class A`, `class A~T~`, `class A["Label"]` | a box: `<<annotation>>` rows, the name row (`A<T>`), a divider, attribute rows, a divider, method rows |
+| members in `class A { … }`, or `A : +member` | a member with parentheses is a method |
+| `<<interface>> A`, or inside the braces | an annotation row |
+| `<\|--` `*--` `o--` `-->` `--` | `triangle-hollow`, `diamond`, `diamond-hollow`, `arrow`, none, at the end the head is on |
+| `..>` `..\|>` `..` | dashed, with `arrow-open`, `triangle-hollow`, none |
+| `A "1" --> "*" B : label` | `endLabels` `{ from: '1', to: '*' }`, and the label |
+| `namespace N { … }` | a container |
+| `note "text"`, `note for A "text"` | a `note` shape, joined to `A` by a dashed unmarked edge |
+| `direction LR` | the page's `direction` |
+| `style`, `classDef`, `cssClass`, `:::` | colors |
+
+`stateDiagram-v2` and `stateDiagram`, notation `'state'`:
+
+| Mermaid | Diagram |
+| --- | --- |
+| `A`, `state "Name" as A`, `A : description` | a `roundRect` with the name, then each description, as lines |
+| `[*]` | a `start` where a transition leaves it and an `end` where one arrives, one each per scope |
+| `state A <<fork>>`, `<<join>>`, `<<choice>>` | a `bar` across the way the page runs, and an empty diamond |
+| `A --> B : label` | an edge and its label |
+| `state X { … }` | a container; divided by `--` into concurrent regions, a pool with a lane per region |
+| `note right of A : text`, `note left of A … end note` | a `note` shape joined to `A`; the side is dropped |
+| `classDef`, `class`, `:::` | colors |
+
+`erDiagram`, notation `'er'`:
+
+| Mermaid | Diagram |
+| --- | --- |
+| `A`, `A["Label"]` | a box of its name row |
+| `A { type name PK, FK "comment" }` | a divider, then a `field` row per attribute: the type as its label; the name, keys, and comment as its value |
+| `\|o` `\|\|` `}o` `}\|` (and mirrored) | `crow-zero-one`, `crow-one`, `crow-zero-many`, `crow-one-many` at that end |
+| `--`, `..` | solid, dashed |
+| `A \|\|--o{ B : label` | the label |
+| `style`, `classDef`, `class` | colors |
+
+`mindmap`, notation `'mindmap'`:
+
+| Mermaid | Diagram |
+| --- | --- |
+| an indented line | a node, joined to the line it is indented under by an unmarked edge |
+| `text`, `id[text]`, `id(text)`, `id((text))`, `id))text((`, `id)text(`, `id{{text}}` | no outline of its own, `rect`, `roundRect`, `ellipse`, `cloud`, `cloud`, `hexagon` |
+| no id | `n` and its place in the file: `n2`, `n3`, … |
+| the whole map | laid out by `radial`, the root in the middle and its branches to both sides (the page's `layout`) |
+| `::icon(…)`, `:::class` | dropped, with a warning |
+
+`requirementDiagram`, notation `'requirement'`:
+
+| Mermaid | Diagram |
+| --- | --- |
+| `requirement name { … }`, its five other kinds, and `element name { … }` | a box: a `<<kind>>` row, the name row, a divider, a `field` row per `key: value` |
+| `a - satisfies -> b`, `b <- satisfies - a` | a dashed arrow from `a` to `b` labeled `<<satisfies>>` |
+| `style`, `classDef`, `class` | colors |
+
+Writing a kind writes what its reader reads, so text read and written reads
+back as the same page. A page from elsewhere writes as near as the kind
+allows, with a warning for each thing it cannot carry: an end a class diagram
+has no head for is an arrow, one an ER diagram has no crow's foot for is
+exactly one, an unlabeled relationship is `traces`, and a mind map keeps the
+first root's tree.
 
 ## Exporting a page
 

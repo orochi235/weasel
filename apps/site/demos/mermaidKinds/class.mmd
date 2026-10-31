@@ -1,0 +1,14 @@
+classDiagram
+  class Shape {
+    <<abstract>>
+    +area() float
+  }
+  class Circle {
+    +float radius
+  }
+  class Canvas {
+    +draw(s Shape) void
+  }
+  Shape <|-- Circle
+  Shape <|-- Square
+  Canvas "1" o-- "*" Shape : holds

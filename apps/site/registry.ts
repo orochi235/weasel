@@ -632,6 +632,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramDataDemo.tsx',
   },
   {
+    id: 'mermaid-kinds',
+    title: 'Mermaid diagram kinds',
+    package: 'diagram-formats',
+    description: "DIAGRAM_MERMAID reads a class diagram, a state diagram, an ER diagram, a mind map, and a requirement diagram as well as a flowchart, each into a graph page that remembers which kind it was in its notation, so writing it back gives the same kind. Class members and ER attributes become rows under a divider, multiplicities become labels at an edge's ends, a state machine's start, end, fork and join become their own figures, and a mind map lays out radially, its branches to both sides of its root. documentSpecs turns the page into the scene DiagramView draws.",
+    hint: 'Pick a kind: each is one small Mermaid file read and laid out.',
+    load: () => import('./demos/MermaidKindsDemo').then((m) => m.MermaidKindsDemo),
+    path: 'apps/site/demos/MermaidKindsDemo.tsx',
+  },
+  {
     id: 'diagram-groups',
     title: 'Diagram groups',
     package: 'diagram',

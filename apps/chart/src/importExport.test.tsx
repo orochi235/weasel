@@ -89,6 +89,19 @@ describe('File › Import…', () => {
     expect(at('b').x).toBeLessThan(at('c').x);
   });
 
+  it.each([
+    ['class', 'classDiagram\n  Animal <|-- Dog\n  Owner "1" --> "*" Dog : walks', ['Animal', 'Dog', 'Owner-Dog', 'Owner-Dog/label:from', 'Owner-Dog/label:to']],
+    ['state', 'stateDiagram-v2\n  [*] --> Idle\n  state f <<fork>>\n  Idle --> f\n  f --> Run\n  Run --> [*]', ['[start]', 'Idle', 'f', 'Run', '[end]']],
+    ['ER', 'erDiagram\n  CUSTOMER ||--o{ ORDER : places\n  ORDER {\n    int id PK\n  }', ['CUSTOMER', 'ORDER', 'CUSTOMER-ORDER']],
+    ['mind map', 'mindmap\n  root((Plan))\n    Goals\n    Risks', ['root', 'n2', 'n3']],
+    ['requirement', 'requirementDiagram\n  requirement r {\n    id: 1\n  }\n  element e {\n  }\n  e - satisfies -> r', ['r', 'e', 'e-r']],
+  ])('imports a Mermaid %s diagram as shapes laid out on a page', async (_kind, text, ids) => {
+    io.picked = new File([text], 'diagram.mmd');
+    mount();
+    choose('Import');
+    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
+  });
+
   it('lists what the file had that a chart cannot hold in a toast', async () => {
     io.picked = new File([DIAGRAM_JSON.write!(DOC).text], 'flow.diagram.json');
     extra.warnings = ['A lost thing'];

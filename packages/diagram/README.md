@@ -265,6 +265,11 @@ const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 `labelSize` is the box a label's text takes. Both routes size with it, so a
 label built from data and one the action creates come out the same size.
 
+A label's `at` is `'start'`, `'mid'`, `'end'`, a fraction of the route, or
+`{ near }` a point. At `'start'` or `'end'`, `inset` stands the label's near
+side that far along the route from the end, so it clears the shape the route
+meets; that is how an edge's `endLabels` sit.
+
 ### Labels that dodge
 
 After any edit, a label that would sit on a shape, on another label, or across
@@ -702,7 +707,10 @@ label row each. A `slot` row is reserved space, `height` tall and, with a
 `width`, that wide and centered; one with an `id` becomes a scene node of that
 name, `<node>/<id>`, drawn as an empty frame until you fill it by changing its
 data — with `{ image: { src } }`, say. An edge can name `fromPort`/`toPort`, its own `router`,
-`waypoints`, `labelPlacement`, and a theme role in `style`.
+`waypoints`, `labelPlacement`, and a theme role in `style`. Its `endLabels`
+`{ from, to }` draw text beside each end, a multiplicity or a role, as labels at
+`'start'` and `'end'` (`END_LABEL_PLACEMENT`) whose ids `endLabelIdOf(edge, end)`
+gives.
 
 A node, an edge, a container, or a lane can carry `colors` of its own: a node's `fill`, `stroke`,
 and `text`, an edge's `stroke`, `label`, `width`, `dash`, and markers. `diagramScene` draws them
@@ -723,10 +731,14 @@ flowchart shapes `'rect'`, `'diamond'`, `'stadium'`, `'ellipse'`, `'parallelogra
 `'document'`, `'note'`, `'folder'`, and `'cube'`. Each keeps its rows inside the
 visible shape, clear of a cylinder's cap or a note's fold. Some draw a detail,
 stroked over the fill: a cylinder's rim, a note's fold, a cube's front edges.
+The state-machine figures `'start'` (a filled dot), `'end'` (a ring around a
+dot), and `'bar'` (a fork or join, 6 thick along the box's longer side) keep
+their proportions centered in any box, and fill their solid part in the
+stroke's color.
 
 `registerOutline(name, def)` adds a name, or shadows a built-in until its
 disposer runs. An `OutlineDef` builds `path` in a node's bounds, and optionally
-`detail`, `content` (the box rows lay out in), and `boxForContent` (its inverse,
+`detail`, `solid` (filled in the stroke's color over the fill), `content` (the box rows lay out in), and `boxForContent` (its inverse,
 for sizing a node to its rows). `outlineFromD(d, { detail, content })` builds one
 from SVG path data in a unit square. A saved name that is not registered paints
 as `'rect'` and warns once.

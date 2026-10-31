@@ -1,0 +1,11 @@
+erDiagram
+  AUTHOR ||--o{ BOOK : writes
+  BOOK }o..o{ SHELF : "sits on"
+  AUTHOR {
+    int id PK
+    string name
+  }
+  BOOK {
+    string isbn PK
+    int authorId FK
+  }
