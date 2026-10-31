@@ -96,29 +96,6 @@ function connectorWhereExpected(canvas: HTMLCanvasElement, host: HTMLElement): b
   return false;
 }
 
-/**
- * Starts recording what reaches the page that could lose a drag: a window blur, a pointer cancel, or trusted pointer
- * events from the real mouse beside the test's synthetic ones. Returns a reader for the record.
- */
-function watchDragHazards(canvas: HTMLCanvasElement): { read: () => string[]; stop: () => void } {
-  const seen: string[] = [];
-  const onBlur = () => seen.push('window blur');
-  const onPointer = (e: PointerEvent) => {
-    if (e.isTrusted || e.type === 'pointercancel') seen.push(`${e.isTrusted ? 'trusted ' : ''}${e.type} buttons=${e.buttons}`);
-  };
-  const types = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'] as const;
-  window.addEventListener('blur', onBlur);
-  for (const t of types) document.addEventListener(t, onPointer, true);
-  canvas.addEventListener('lostpointercapture', () => seen.push('lostpointercapture'));
-  return {
-    read: () => [...seen],
-    stop: () => {
-      window.removeEventListener('blur', onBlur);
-      for (const t of types) document.removeEventListener(t, onPointer, true);
-    },
-  };
-}
-
 beforeEach(async () => {
   await page.viewport(1280, 800);
   localStorage.clear();
@@ -134,25 +111,12 @@ describe('WeaselChart edge label dragging', () => {
     seedChart();
     const { host, canvas } = await mountChartApp();
 
-    // This drag saves nothing now and then on the fleet, unreproduced (docs/TODO.md); the record tells a press that
-    // missed the label from a drag lost after it.
+    expect(connectorWhereExpected(canvas, host)).toBe(true);
     const from = labelCenter(host);
-    await frames();
-    const aligned = connectorWhereExpected(canvas, host);
     pointer(canvas, 'pointermove', from, 0);
-    const hoverCursor = canvas.style.cursor;
-    const hazards = watchDragHazards(canvas);
+    expect(canvas.style.cursor).toBe('move');
     await drag(canvas, from, at(host, 450, 370));
-    try {
-      await expect.poll(() => savedLabel()?.dodge).toBe(false);
-    } catch (err) {
-      const record = `press at ${from.x.toFixed(1)},${from.y.toFixed(1)} hovered with cursor "${hoverCursor}"; `
-        + `connector where at() expects: ${aligned}; during the drag: ${hazards.read().join(', ') || 'nothing else'}; `
-        + `saved label ${JSON.stringify(savedLabel())}`;
-      throw new Error(`the label drag saved no placement (${record})`, { cause: err });
-    } finally {
-      hazards.stop();
-    }
+    await expect.poll(() => savedLabel()?.dodge).toBe(false);
     const dragged = savedLabel()!;
     expect(dragged.at as number).toBeCloseTo(0.5, 1);
     expect(dragged.offset as number).toBeLessThan(0);

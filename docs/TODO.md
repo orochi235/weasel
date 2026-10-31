@@ -849,28 +849,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
-  label, keeps it on a reroute, and resets it" times out on its first `expect.poll(() => savedLabel()?.dodge)`:
-  the first drag saves no placement. The onto archive has it failing in 5 of about 45 fleet runs from 2026-10-28
-  20:42 to 2026-10-29 17:00, on keiei, studio, teitou and msb-uai, on branches that touch nothing in chart and on
-  `main` (15e83dc60); none of the roughly 470 archived runs from 2026-10-21 to 2026-10-28 morning failed it. (The
-  `chart-toolbar` branch failed it on 2026-10-28 too, from a page fit that 99ceb63dc fixed.) Both failure
-  screenshots still on the nodes show the chart exactly as mounted with the canvas focused, so the press arrived and
-  the drag left nothing. The two failing logs still on disk started on nodes with 2.2 and 2.4 cores free.
-  Ruled out on 2026-10-29, each measured on the fleet: the host resizing after mount (it never did, and a drag with
-  no wait after the canvas appears passes), slow frames (CPU throttled 16x, or five GPU-loading tabs stretching the
-  drag to 5 s), the drag starting anywhere from 0 to 1.5 s after mount, a window blur from tabs taking focus, the
-  real mouse parked over the canvas or held down elsewhere, local storage shared between files running at once (it
-  is not), and two browser projects on one node at once. 17 instrumented runs (5 full, 6 of the browser project,
-  6 paired on one node) and about 250 probe drags all passed. The test now names, when it fails, the cursor its
-  press point hovered with ("move" means the label was hit), whether the canvas view matched the fit `at()`
-  assumes, and any blur, pointer cancel or real-mouse event during the drag. Waiting on the next sighting to read
-  that line (2026-10-29). Sighted on teitou on 2026-10-30 in the `hud-alloc` branch's run at `9b0c6ee91`, which
-  touches only text layout: `press at 553.1,365.0 hovered with cursor "default"; connector where at() expects:
-  false; during the drag: nothing else`. The press missed the label, and the view was not the fit `at()` assumes.
-  Closes when the view at the press matches the fit `at()` assumes and the test passes in 50 consecutive
-  fleet runs after that fix.
-
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.

@@ -14,7 +14,7 @@ import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
 import { makeChoose } from '../testing/choose';
-import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
+import { canvasSettled, mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
@@ -84,7 +84,7 @@ describe('WeaselChart pipeline mode', () => {
     await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: 'View' }));
     await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Look/.test(el.textContent ?? ''))!);
     await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack(?!\s*Direction)/.test(el.textContent ?? ''))!);
-    await new Promise((r) => setTimeout(r, 100));
+    await canvasSettled(document.querySelector<HTMLElement>('.wc-host')!);
 
     const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
     const r = canvas.getBoundingClientRect();
@@ -138,7 +138,7 @@ describe('WeaselChart pipeline mode', () => {
     await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: 'View' }));
     await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Look/.test(el.textContent ?? ''))!);
     await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack(?!\s*Direction)/.test(el.textContent ?? ''))!);
-    await new Promise((r) => setTimeout(r, 100));
+    await canvasSettled(document.querySelector<HTMLElement>('.wc-host')!);
 
     const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
     const r = canvas.getBoundingClientRect();

@@ -62,6 +62,13 @@ passed in milliseconds alone (2026-10-29). `actSettled` (`@weasel-js/react/testi
 which `renderSettled` uses, holds animation frames until it returns; use it for an async `act` that
 starts or runs during playback.
 
+**A canvas learns that its host resized from a `ResizeObserver`, so a fixed wait can press against the old
+fit.** The observer reports only at the next frame's rendering step, after that frame's `requestAnimationFrame`
+callbacks, and a long first frame holds it back past any timeout. In WeaselChart the host shrinks when the
+toolbar's palette fills in, about 170 ms into a mount on a loaded node; `labelDrag.browser.test.tsx` pressed 18 px
+off its label until 2026-10-31. Wait for the canvas's box to match its host's (chart's `canvasSettled`), then for
+two frames.
+
 **`useScene` builds its scene once into a ref and never rebuilds it.** Editing a demo's
 `initial` nodes and saving leaves the previous scene live under HMR, so the canvas paints
 the old data with no error and no warning. A hard reload is the only way to trust a
