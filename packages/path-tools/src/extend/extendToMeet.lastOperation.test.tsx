@@ -54,7 +54,7 @@ describe('Extend to next path as the last operation', () => {
     const { history, registry, batches, store } = setup();
     // What the tool's click binding hands the action: the world point and its reach.
     act(() => { registry.trigger('extendToMeet', { world: { x: 25, y: 7 }, radiusPx: 3 }); });
-    expect(store.get()).toMatchObject({ id: 'extendToMeet', values: { shape: 'eased' } });
+    expect(store.get()).toMatchObject({ id: 'extendToMeet', values: { shape: 'eased', radiusPx: 3 } });
     const eased = commandsOf(batches[0]);
     act(() => { store.adjust({ shape: 'straight' }); });
     expect(history.undoDepth()).toBe(1);

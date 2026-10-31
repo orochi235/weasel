@@ -125,6 +125,7 @@ function setup() {
     const handle = (linkAnchorAction.invoker as OngoingInvoker).start(alt(p.x, p.y), undefined);
     handle.onMove!(alt(p.x + dx, p.y + dy));
     handle.onEnd!(alt(p.x + dx, p.y + dy), 'commit');
+    return handle;
   };
   /** Drag node `id` whole by `(dx, dy)` with the move action and release; answers each node's preview mid-drag. */
   const moveDrag = (id: NodeId, dx: number, dy: number) => {
@@ -247,6 +248,20 @@ describe('constraint links', () => {
     expect(t.links().map((l) => l.constraint)).toEqual([{ kind: 'onPath', anchor: 2, segment: [3, 4] }]);
     t.linkDrag(t.triangle, 1, 0, -20);
     expect(t.points(t.triangle)[1]).toEqual({ x: 40, y: -70 });
+    expect(t.links()).toHaveLength(1);
+  });
+
+  it('replays the drop with another reach, tying the anchor or leaving it a plain move', () => {
+    const t = setup();
+    const handle = t.linkDrag(t.triangle, 2, -7, 47);
+    expect(t.links()).toHaveLength(1);
+    t.scene.undo();
+    handle.replay!({ reachPx: 2 });
+    expect(t.links()).toEqual([]);
+    expect(t.points(t.triangle)[2]).toEqual({ x: 3, y: -3 });
+    t.scene.undo();
+    handle.replay!({ reachPx: 6 });
+    expect(t.points(t.triangle)[2]).toEqual({ x: 0, y: 0 });
     expect(t.links()).toHaveLength(1);
   });
 

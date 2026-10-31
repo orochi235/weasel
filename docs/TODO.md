@@ -150,8 +150,9 @@ Owner tags, after the priority (2026-10-26):
   a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
   within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
   pointer's travel along the bisector, every selected corner's when its anchor is selected, and a
-  corner with no spec takes `round`. Giving a sharp corner a shape cuts a quarter of its room
-  (`DEFAULT_CORNER_TRIM_SHARE`). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
+  corner with no spec takes `round` (Shape for sharp corners in the last-operation panel after a drag). Giving a
+  sharp corner a shape cuts a quarter of its room (`DEFAULT_CORNER_TRIM_SHARE`, Size for sharp corners in the panel
+  after Next corner shape). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
   Slice tool's key elsewhere), `setCorners` is reached only through the panel, the
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
@@ -165,8 +166,8 @@ Owner tags, after the priority (2026-10-26):
   the defaults and keys he picks are committed.
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
   path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
-  curvature (the `mode` param flips which, and `'eased'` makes the plain drag ease out of the bend as
-  Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
+  curvature (the `mode` param, Shape in the last-operation panel after a drag, flips which, and `'eased'` makes the
+  plain drag ease out of the bend as Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
@@ -253,8 +254,9 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven anchor fields hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune the Girth tool hands-on, with the maintainer driving.** First-draft behavior and
-  keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
-  and Alt-click clearing a width point; and whether a press between anchors should insert one
+  keys: Shift+W in draw; how near an edge a press must land to grab it (6 px, Grab reach in the last-operation
+  panel after a drag); Alt moving one edge alone (One edge only in that panel flips it) and Alt-click clearing a
+  width point; and whether a press between anchors should insert one
   (`packages/path-tools/src/girth/`).
   Closes when the maintainer has driven the Girth tool hands-on and the defaults and keys he picks are
   committed.

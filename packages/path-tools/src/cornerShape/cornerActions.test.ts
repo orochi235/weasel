@@ -80,6 +80,18 @@ describe('editCornerAction', () => {
     expect(cornerAt(edits[0], 0)).toBeNull();
   });
 
+  it('replays the drag giving a sharp corner the shape its params name, and a shaped corner keeps its own', () => {
+    const { dep, edits } = editing(withCorner(square(), 2, { shape: 'scoop', radius: 5 }), [1, 2]);
+    const { handle, ctx } = start(dep, 'corner:1', { x: 90, y: 10 });
+    handle.onMove!({ ...ctx, world: { x: 80, y: 20 } });
+    handle.onEnd!(ctx, 'commit');
+    handle.replay!({ shape: 'bevel' });
+    expect(edits).toHaveLength(2);
+    expect(cornerAt(edits[1], 1)!.shape).toBe('bevel');
+    expect(cornerAt(edits[1], 1)!.radius).toBeCloseTo(cornerAt(edits[0], 1)!.radius, 6);
+    expect(cornerAt(edits[1], 2)!.shape).toBe('scoop');
+  });
+
   it('commits nothing on cancel', () => {
     const { dep, edits } = editing(square());
     const { handle, ctx } = start(dep, 'corner:1', { x: 90, y: 10 });
@@ -108,6 +120,12 @@ describe('cycleCornerShapeAction', () => {
     expect(cornerSpecAt(edits[0], 3)?.shape).toBe('bevel');
     expect(cornerSpecAt(edits[0], 3)?.radius).toBeCloseTo(DEFAULT_CORNER_TRIM_SHARE * 100, 6);
     expect(resolveCorners(edits[0]).coords.length).toBeGreaterThan(square().coords.length);
+  });
+
+  it('cuts the share of a bare corner\'s room its params name', () => {
+    const { dep, edits } = editing(square(), [3]);
+    (cycleCornerShapeAction.invoker as ImmediateInvoker).run(stubDeps({ editAnchors: dep }), { share: 0.5 });
+    expect(cornerSpecAt(edits[0], 3)?.radius).toBeCloseTo(50, 6);
   });
 
   it('is disabled with no corner anchor selected', () => {

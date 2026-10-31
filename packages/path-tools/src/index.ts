@@ -50,9 +50,9 @@ export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/han
 export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
-export { planTrim, trimPathAction } from './trim/trimSegment';
+export { planTrim, TRIM_PATH_PARAMS, trimPathAction } from './trim/trimSegment';
 export { EXTEND_TO_MEET_PARAMS, extendToMeetAction, type ExtendToMeetParams } from './extend/extendToMeet';
-export { lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
+export { LENGTHEN_PATH_PARAMS, lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
 export { useLengthenTool } from './lengthen/useLengthenTool';
 export {
   overlayShown, PATH_OVERLAYS_GROUP, showBalanceAction, showCombAction, showCornersAction, showDirectionAction,
@@ -87,8 +87,12 @@ export {
 } from './warp/warpActions';
 export { WARP_SETTINGS_SCHEMA, warpSettingsForm } from './warp/warpSettingsForm';
 export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
-export { DEFAULT_CORNER_SHAPE, editCornerAction } from './cornerShape/editCorner';
-export { cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './cornerShape/cornerCommands';
+export {
+  CORNER_SHAPE_OPTIONS, DEFAULT_CORNER_SHAPE, EDIT_CORNER_PARAMS, editCornerAction, type EditCornerParams,
+} from './cornerShape/editCorner';
+export {
+  CYCLE_CORNER_SHAPE_PARAMS, cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction, type CycleCornerShapeParams,
+} from './cornerShape/cornerCommands';
 
 // ─── Tools ─────────────────────────────────────────────────────────────────
 export { useTrimTool, type UseTrimToolOptions } from './trim/useTrimTool';
@@ -105,8 +109,8 @@ export {
   type ShapeBuilderFace, type ShapeBuilderMode, type ShapeBuilderPlan, type UseShapeBuilderToolOptions,
 } from './shapeBuilder';
 export {
-  useGirthTool, createGirthOverlay, createGirthActions, GIRTH_CLEAR_ID, GIRTH_DRAG_ID, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID,
-  type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
+  useGirthTool, createGirthOverlay, createGirthActions, DEFAULT_GIRTH_REACH_PX, GIRTH_CLEAR_ID, GIRTH_DRAG_ID,
+  GIRTH_DRAG_PARAMS, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID, type GirthDragParams, type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
 } from './girth';
 
 // ─── Spiro curves ──────────────────────────────────────────────────────────
@@ -125,7 +129,7 @@ export {
   type BrokenConstraintLink, type ConstraintLinkData, type ConstraintLinkNodeOptions,
 } from './constraints/constraintLinks';
 export {
-  linkAnchorAction, linkConstraint, linkTargetAt, type LinkAnchorParams, type LinkTarget,
+  LINK_ANCHOR_PARAMS, linkAnchorAction, linkConstraint, linkTargetAt, type LinkAnchorParams, type LinkTarget,
 } from './constraints/linkAnchor';
 export {
   CONSTRAINT_LINK_MARKS_ID, constraintLinkMarks, createConstraintLinkMarks,

@@ -14,6 +14,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import type { PrefGroup } from '@weasel-js/prefs';
+import { CORNER_SHAPE_OPTIONS } from './editCorner';
 
 /** How far the parameter slider reaches either side of the bevel; the
  *  `square` and `notch` keywords stand for the two infinities beyond it. */
@@ -32,7 +33,7 @@ export const CORNER_CONTROLS: PrefGroup = {
     count: { kind: 'number', name: 'Selected corners', description: '', default: 0, hidden: true },
     shape: {
       kind: 'enum', name: 'Shape', description: '', default: 'round', control: 'toggle', enableIf: ENABLED,
-      options: CORNER_KEYWORDS.map((w) => ({ value: w, label: w })),
+      options: CORNER_SHAPE_OPTIONS,
       // A parameter between the keywords, or a sharp corner, presses none.
       encoding: {
         read: (stored) => (CORNER_KEYWORDS.includes(stored as CornerKeyword) ? (stored as CornerKeyword) : undefined),

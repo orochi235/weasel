@@ -13,12 +13,34 @@ import {
   type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
+import { pref } from '@weasel-js/prefs';
 import { depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep } from '@weasel-js/core';
 import { DEFAULT_CORNER_SHAPE, editedPath } from './editCorner';
 import { icon } from '../icons.gen';
 
 /** The share of a corner's room that a shape given to a sharp corner cuts. */
 export const DEFAULT_CORNER_TRIM_SHARE = 0.25;
+
+const CYCLE_LABEL = 'Next corner shape';
+
+/** What `cycleCornerShape` reads from its params. */
+export interface CycleCornerShapeParams {
+  /** The share of a sharp corner's room its new shape cuts. Default {@link DEFAULT_CORNER_TRIM_SHARE}. */
+  share?: number;
+}
+
+/** Next corner shape's params as a form, for the last-operation panel. */
+export const CYCLE_CORNER_SHAPE_PARAMS = pref.group(CYCLE_LABEL, {
+  share: pref.number('Size for sharp corners', DEFAULT_CORNER_TRIM_SHARE, {
+    description: 'How much of the room a sharp corner has its new shape cuts. A corner that already had a radius keeps it.',
+    min: 0.05, max: 1, step: 0.05, control: 'slider', unit: { scale: 0.01, suffix: '%', precision: 0 },
+  }),
+});
+
+const shareOf = (params: Record<string, unknown> | undefined): number => {
+  const v = params?.share;
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(v, 1) : DEFAULT_CORNER_TRIM_SHARE;
+};
 
 /** The selected anchors of the edited path that can take a corner. */
 function selectedCorners(dep: EditAnchorsDep, path: PolygonPath): CornerFrame[] {
@@ -29,13 +51,15 @@ function selectedCorners(dep: EditAnchorsDep, path: PolygonPath): CornerFrame[] 
 interface CornerChange {
   shape?: CornerShape;
   radius?: number;
+  /** The share of its room a sharp corner given a shape cuts. Default {@link DEFAULT_CORNER_TRIM_SHARE}. */
+  share?: number;
 }
 
 /**
  * `path` with `change` made to every corner in `frames`, each radius clamped
  * to the room its corner has. A shape given to a sharp corner, with no
- * radius, cuts {@link DEFAULT_CORNER_TRIM_SHARE} of its room: every shape
- * looks alike at no radius.
+ * radius, cuts `change.share` of its room: every shape looks alike at no
+ * radius.
  */
 function changeCorners(path: PolygonPath, frames: readonly CornerFrame[], change: CornerChange): PolygonPath {
   let out = path;
@@ -44,7 +68,7 @@ function changeCorners(path: PolygonPath, frames: readonly CornerFrame[], change
     const shape = change.shape ?? spec?.shape ?? DEFAULT_CORNER_SHAPE;
     let radius = Math.max(0, change.radius ?? spec?.radius ?? 0);
     if (change.shape !== undefined && change.radius === undefined && radius <= 0) {
-      radius = DEFAULT_CORNER_TRIM_SHARE * f.maxTrim;
+      radius = (change.share ?? DEFAULT_CORNER_TRIM_SHARE) * f.maxTrim;
     }
     out = withCorner(out, f.index, { shape, radius: Math.min(radius, f.maxTrim) });
   }
@@ -101,20 +125,23 @@ export const setCornersAction: Action & { requires: string[] } = {
  * Step the selected corners to the next `corner-shape` keyword, keeping
  * their radius. Every one takes the keyword after the first selected
  * corner's shape, so a mixed selection comes out alike, and a sharp corner
- * gets a radius that shows it.
+ * gets a radius that shows it: the `share` param of its room
+ * ({@link CycleCornerShapeParams}).
  */
 export const cycleCornerShapeAction: Action & { requires: string[] } = {
   id: 'cycleCornerShape',
   icon: icon('cornerShape'),
-  label: 'Next corner shape',
+  label: CYCLE_LABEL,
   tags: pathOperationTags('command'),
   group: 'anchors',
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
+  params: CYCLE_CORNER_SHAPE_PARAMS,
   invoker: {
     timing: 'immediate',
-    run: (deps) => commitChange(deps, 'Next corner shape', (frames, path) => ({
+    run: (deps, params) => commitChange(deps, CYCLE_LABEL, (frames, path) => ({
       shape: nextCornerShape(cornerSpecAt(path, frames[0].index)?.shape ?? DEFAULT_CORNER_SHAPE),
+      share: shareOf(params),
     })),
   } as ImmediateInvoker,
   enabled: cornersSelected,
