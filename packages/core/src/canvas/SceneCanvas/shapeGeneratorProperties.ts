@@ -29,7 +29,7 @@ export const SHAPE_GENERATOR_SECTIONS: Record<string, PrefSection> = {
         default: 5, min: SHAPE_COUNT_RANGE.min, max: SHAPE_COUNT_RANGE.max, step: 1,
       },
       'data.generator.innerRadiusRatio': {
-        kind: 'number', name: 'Inner', description: 'Inner radius as a fraction of the outer one.',
+        kind: 'number', name: 'Inner radius', description: 'Inner radius as a fraction of the outer one.',
         default: 0.5, min: STAR_RATIO_RANGE.min, max: STAR_RATIO_RANGE.max, step: 0.01, control: 'slider',
       },
     },
