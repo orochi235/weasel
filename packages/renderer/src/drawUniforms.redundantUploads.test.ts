@@ -59,9 +59,10 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
     // the uniform. A clip only the stencil expresses breaks the run between them.
     const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 });
+    /** Notched, so not convex: only the stencil expresses it. */
     const diamond: PolygonPath = {
-      kind: 'polygon', commands: new Uint8Array([M, L, L, L, Z]),
-      coords: new Float32Array([8, 0, 16, 8, 8, 16, 0, 8]), fillRule: 'nonzero',
+      kind: 'polygon', commands: new Uint8Array([M, L, L, L, L, Z]),
+      coords: new Float32Array([8, 0, 16, 8, 8, 16, 8, 10, 0, 8]), fillRule: 'nonzero',
     };
     r.render([
       { kind: 'group', colorMatrix: tinted, children: [img(0)] } as unknown as DrawCommand,

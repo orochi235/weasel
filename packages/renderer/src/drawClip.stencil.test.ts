@@ -5,7 +5,7 @@ import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
 import { pushClip, popClip, drawGroup, dispatch } from './draw';
-import { createRecorderCtx, SQUARE_CLIP } from './testing/recorderCtx';
+import { createRecorderCtx, NOTCHED_CLIP } from './testing/recorderCtx';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 describe('pushClip / popClip', () => {
@@ -108,7 +108,7 @@ describe('drawGroup clip integration', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: SQUARE_CLIP,
+      clip: NOTCHED_CLIP,
       children: [{
         kind: 'path' as const,
         path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
@@ -142,7 +142,7 @@ describe('drawGroup clip integration', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: SQUARE_CLIP,
+      clip: NOTCHED_CLIP,
       children: [{ kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }],
     };
     drawGroup(ctx, cmd);
@@ -221,11 +221,12 @@ const POLYGON_EVENODD: PolygonPath = stencilledEvenOdd({
   coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
 });
 
-// Helper: a polygon path for stroke-stencil (inner/outer) — needs visible area.
+// Helper: a polygon path for stroke-stencil (inner/outer) — needs visible area,
+// and a notch, since an aligned stroke on a convex fill is cut on the CPU.
 const POLYGON_NONZERO: PolygonPath = {
   kind: 'polygon',
-  commands: new Uint8Array([M, L, L, L, Z]),
-  coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+  commands: new Uint8Array([M, L, L, L, L, Z]),
+  coords: new Float32Array([0, 0, 100, 0, 100, 100, 50, 50, 0, 100]),
   fillRule: 'nonzero',
 };
 
@@ -340,7 +341,7 @@ describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', 
     const { ctx, calls } = createRecorderCtx();
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: SQUARE_CLIP,
+      clip: NOTCHED_CLIP,
       children: [],
     };
     drawGroup(ctx, cmd);

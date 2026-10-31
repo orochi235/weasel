@@ -245,7 +245,7 @@ function gcd(x: number, y: number): number {
 
 /** The corners of a rect, or of a polygon of one closed contour of straight
  *  edges; `null` for anything else. */
-function cornersOf(path: Path): number[] | null {
+export function cornersOf(path: Path): number[] | null {
   if (path.kind === 'rect') {
     const { x, y, width: w, height: h } = path;
     return [x, y, x + w, y, x + w, y + h, x, y + h];
@@ -261,7 +261,7 @@ function cornersOf(path: Path): number[] | null {
 
 /** Twice the area, positive when the corners run counterclockwise in window
  *  space (y up). */
-function signedArea(p: number[]): number {
+export function signedArea(p: number[]): number {
   let s = 0;
   for (let i = 0; i < p.length; i += 2) {
     const j = (i + 2) % p.length;
@@ -270,7 +270,7 @@ function signedArea(p: number[]): number {
   return s;
 }
 
-function reverse(p: number[]): void {
+export function reverse(p: number[]): void {
   for (let i = 0, j = p.length - 2; i < j; i += 2, j -= 2) {
     const x = p[i], y = p[i + 1];
     p[i] = p[j]; p[i + 1] = p[j + 1];
@@ -283,7 +283,7 @@ function cross(p: number[], i: number, j: number, k: number): number {
 }
 
 /** The corners where the outline actually turns. */
-function dropCollinear(p: number[]): number[] {
+export function dropCollinear(p: number[]): number[] {
   const out: number[] = [];
   const n = p.length;
   for (let i = 0; i < n; i += 2) {
@@ -294,7 +294,7 @@ function dropCollinear(p: number[]): number[] {
 
 /** Every turn the same way, and once round: the edges' x direction changes
  *  sign at most twice, which a star's does not. */
-function isConvex(p: number[]): boolean {
+export function isConvex(p: number[]): boolean {
   const n = p.length;
   let flips = 0;
   let last = 0;

@@ -13,6 +13,7 @@ import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMesh, meshHandle, fillMeshHandle, flattenToleranceOf } from './mesh';
+import { alignedRibbon } from './alignedRibbon';
 import {
   atMeshOrigin, drawModel, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms,
 } from './uniforms';
@@ -179,7 +180,10 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   // A rect the metric turns is no longer a rect in the space its ribbon is
   // built in, so it aligns through the stencil like any polygon.
   const stenciled = cmd.path.kind === 'polygon' || (metric !== undefined && !metricKeepsRects(metric));
-  if (stenciled && align !== 'center') {
+  const cut = stenciled && align !== 'center' ? cutAlignedRibbon(ctx, cmd, align, spaces) : null;
+  if (cut !== null) {
+    drawRibbon(ctx, cmd, cut);
+  } else if (stenciled && align !== 'center') {
     flushForOwnDraw(ctx);
     atMeshOrigin(ctx, cmd.path.kind === 'polygon' ? cmd.path.origin : undefined,
       () => drawPathStrokeStenciled(ctx, cmd, align, spaces));
@@ -193,9 +197,24 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
 }
 
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces): void {
+  drawRibbon(ctx, cmd, strokeMesh(cmd.path, cmd.stroke, flattenToleranceOf(ctx), spaces));
+}
+
+/** An aligned stroke's ribbon cut to its side of a convex fill on the CPU, or
+ *  `null` where only the stencil can cut it: a fill that is not one convex
+ *  ring, or per-vertex colors, which the cut has no anchors to carry. */
+function cutAlignedRibbon(
+  ctx: DrawContext, cmd: StrokedPathCommand, align: 'inner' | 'outer', spaces: StrokeSpaces,
+): Mesh | null {
+  if (cmd.stroke.vertexColors && cmd.stroke.vertexColors.length > 0) return null;
+  if (ctx.batchVariants?.cuts === false) return null;
+  const ribbon = strokeMesh(cmd.path, doubledStroke(cmd.stroke), flattenToleranceOf(ctx), spaces);
+  return alignedRibbon(ribbon, fillMesh(ctx, cmd.path), align === 'inner');
+}
+
+function drawRibbon(ctx: DrawContext, cmd: StrokedPathCommand, mesh: Mesh): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
-  const mesh = strokeMesh(cmd.path, stroke, flattenToleranceOf(ctx), spaces);
   if (mesh.indices.length === 0) return;
 
   // Staged, a ribbon allocates nothing and joins the fill it sits on.
@@ -265,6 +284,16 @@ function doubledVertexWidths(widths: VertexWidth[]): VertexWidth[] {
   return doubled;
 }
 
+/** The centered stroke twice as wide that an aligned one is cut from. */
+function doubledStroke(stroke: Stroke): Stroke {
+  return {
+    ...stroke,
+    width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
+    ...(stroke.vertexWidths ? { vertexWidths: doubledVertexWidths(stroke.vertexWidths) } : {}),
+    align: 'center',
+  };
+}
+
 function drawPathStrokeStenciled(
   ctx: DrawContext,
   cmd: StrokedPathCommand,
@@ -273,12 +302,7 @@ function drawPathStrokeStenciled(
 ): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
-  const widerStroke: Stroke = {
-    ...stroke,
-    width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
-    ...(stroke.vertexWidths ? { vertexWidths: doubledVertexWidths(stroke.vertexWidths) } : {}),
-    align: 'center',
-  };
+  const widerStroke = doubledStroke(stroke);
 
   const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
 

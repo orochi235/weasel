@@ -20,24 +20,20 @@ import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, packSlot } from './shaders/batchFill';
-import { clipConvexPolygon, type ClipRect } from './batchClip';
+import { BatchStage, FLOATS_PER_VERTEX, doubledTo } from './batchStage';
 import { glyphCorners } from './glyphCorners';
 
 /** Vertices per flush. Caps staging memory; a longer run flushes in chunks,
  *  which stays correct because painter's order survives a flush. */
 export const MAX_VERTICES_PER_BATCH = 32768;
 
-/** vec2 a_position + vec4 a_vertexColor + vec2 a_uv + float a_post + float
- *  a_texSlot. */
-export const FLOATS_PER_VERTEX = 10;
+export { FLOATS_PER_VERTEX };
 
 /** Float offset of `a_texSlot` within a vertex, which carries the paint mode
  *  packed alongside the slot — `paintModeOf` unpacks it. */
 export const TEX_SLOT_OFFSET = 9;
-const INITIAL_VERTICES = 256;
 /** The corners `pushGlyph` maps, read before the next glyph's are written. */
 const CORNERS: number[] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
-const INITIAL_INDICES = 384;
 
 /** UV of the white texel bound at slot 0. Its texture is 1x1, so any
  *  coordinate lands on it; the center is the one that stays on it under either
@@ -107,12 +103,6 @@ interface BufferSet {
   canonicalQuads: number;
 }
 
-function doubledTo(from: number, need: number): number {
-  let capacity = from;
-  while (capacity < need) capacity *= 2;
-  return capacity;
-}
-
 /** The canonical quad index pattern for `quads` quads, as the push helpers
  *  wind them: two triangles over corners 0-1-2 and 0-2-3. */
 function quadIndices(quads: number): Uint32Array {
@@ -126,7 +116,7 @@ function quadIndices(quads: number): Uint32Array {
   return out;
 }
 
-export class DrawBatch {
+export class DrawBatch extends BatchStage {
   private readonly gl: WebGL2RenderingContext;
   private readonly aPos: number;
   private readonly aColor: number;
@@ -144,24 +134,8 @@ export class DrawBatch {
     new Array(SOLID_LARGE_RING_SIZE).fill(undefined);
   private nextLarge = 0;
 
-  private verts = new Float32Array(INITIAL_VERTICES * FLOATS_PER_VERTEX);
-  private idx = new Uint32Array(INITIAL_INDICES);
-  private nVerts = 0;
-  private nIdx = 0;
-  /** Whether the staged run is quads alone, so its indices are the canonical
-   *  pattern and a slot already holding that pattern needs no upload. */
-  private pureRects = true;
-
-  /** The rect every push is cut to, or `null`. A push returns `false`, having
-   *  staged nothing, for geometry it cannot cut exactly; see `clipQuad`. */
-  clip: ClipRect | null = null;
-  /** Polygon scratch for `clip`: a quad cut by four edges has at most eight
-   *  corners. */
-  private readonly polyIn = new Float32Array(8 * FLOATS_PER_VERTEX);
-  private readonly polyOut = new Float32Array(8 * FLOATS_PER_VERTEX);
-  private readonly polyTmp = new Float32Array(8 * FLOATS_PER_VERTEX);
-
   constructor(gl: WebGL2RenderingContext, prog: ShaderProgram) {
+    super();
     const aPos = prog.attribute('a_position');
     const aColor = prog.attribute('a_vertexColor');
     const aUv = prog.attribute('a_uv');
@@ -213,7 +187,7 @@ export class DrawBatch {
     i = this.writeVertex(i, cx, cy, r, g, b, a, WHITE_U, WHITE_V, 1, P);
     this.writeVertex(i, dx, dy, r, g, b, a, WHITE_U, WHITE_V, 1, P);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
+    return this.fitQuad(this.nVerts - 4, this.nIdx - 6);
   }
 
   /**
@@ -247,7 +221,7 @@ export class DrawBatch {
     i = this.writeVertex(i, cx, cy, r, g, b, 1, u1, v1, post, P);
     this.writeVertex(i, dx, dy, r, g, b, 1, u0, v1, post, P);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
+    return this.fitQuad(this.nVerts - 4, this.nIdx - 6);
   }
 
   /**
@@ -284,7 +258,7 @@ export class DrawBatch {
     i = this.writeVertex(i, cx, cy, r, g, b, a, u1, v1, synthBold, P);
     this.writeVertex(i, dx, dy, r, g, b, a, u0, v1, synthBold, P);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
+    return this.fitQuad(this.nVerts - 4, this.nIdx - 6);
   }
 
   /**
@@ -324,7 +298,7 @@ export class DrawBatch {
     corner(x1, y1);
     corner(x, y1);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
+    return this.fitQuad(this.nVerts - 4, this.nIdx - 6);
   }
 
   /** `pushMesh` for a mesh filled by a gradient — see `pushGradientRect` for
@@ -365,7 +339,7 @@ export class DrawBatch {
     for (let k = 0; k < srcIdx.length; k++) out[j++] = base + srcIdx[k];
     this.nVerts += n;
     this.nIdx += srcIdx.length;
-    return this.clip === null || this.clipMesh(base, this.nIdx - srcIdx.length, this.clip);
+    return this.fitMesh(base, this.nIdx - srcIdx.length);
   }
 
   /**
@@ -417,107 +391,6 @@ export class DrawBatch {
     }
     for (const ring of this.rings) ring.fill(undefined);
     this.largeRing.fill(undefined);
-  }
-
-  private writeVertex(
-    i: number,
-    x: number, y: number,
-    r: number, g: number, b: number, a: number,
-    u: number, v: number, post: number, packed: number,
-  ): number {
-    const out = this.verts;
-    out[i] = x; out[i + 1] = y;
-    out[i + 2] = r; out[i + 3] = g; out[i + 4] = b; out[i + 5] = a;
-    out[i + 6] = u; out[i + 7] = v; out[i + 8] = post; out[i + 9] = packed;
-    return i + FLOATS_PER_VERTEX;
-  }
-
-  /**
-   * Fit the quad just written at `v0` to `rect`: keep it if it lies inside,
-   * drop it if it misses, and cut it if it crosses — but only if its edges
-   * run along the axes. Cutting a slanted edge moves its endpoint off the
-   * subpixel grid the rasterizer snaps to, and the shortened edge then covers
-   * different samples than the whole one did; along an axis the cut edge is
-   * the same line exactly. So a slanted quad that crosses is rolled back and
-   * refused, for the caller to clip another way (`enterUncut`).
-   */
-  private clipQuad(v0: number, i0: number, rect: ClipRect): boolean {
-    const v = this.verts;
-    const at = v0 * FLOATS_PER_VERTEX;
-    const F = FLOATS_PER_VERTEX;
-    const ax = v[at], ay = v[at + 1], bx = v[at + F], by = v[at + F + 1];
-    const cx = v[at + 2 * F], cy = v[at + 2 * F + 1], dx = v[at + 3 * F], dy = v[at + 3 * F + 1];
-    const minX = Math.min(ax, bx, cx, dx), maxX = Math.max(ax, bx, cx, dx);
-    const minY = Math.min(ay, by, cy, dy), maxY = Math.max(ay, by, cy, dy);
-    if (minX >= rect.x0 && maxX <= rect.x1 && minY >= rect.y0 && maxY <= rect.y1) return true;
-    this.nVerts = v0;
-    this.nIdx = i0;
-    if (maxX <= rect.x0 || minX >= rect.x1 || maxY <= rect.y0 || minY >= rect.y1) return true;
-    const alongAxes = (ay === by && bx === cx && cy === dy && dx === ax)
-      || (ax === bx && by === cy && cx === dx && dy === ay);
-    if (!alongAxes) return false;
-    this.polyIn.set(v.subarray(at, at + 4 * F));
-    const n = clipConvexPolygon(this.polyIn, 4, F, rect, this.polyOut, this.polyTmp);
-    this.appendFan(this.polyOut, n);
-    return true;
-  }
-
-  /** `clipQuad` for a mesh staged from `v0`. A mesh's edges are slanted in
-   *  general, so one that crosses is refused rather than cut. */
-  private clipMesh(v0: number, i0: number, rect: ClipRect): boolean {
-    const v = this.verts;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (let i = v0 * FLOATS_PER_VERTEX; i < this.nVerts * FLOATS_PER_VERTEX; i += FLOATS_PER_VERTEX) {
-      const x = v[i];
-      const y = v[i + 1];
-      if (x < minX) minX = x; if (x > maxX) maxX = x;
-      if (y < minY) minY = y; if (y > maxY) maxY = y;
-    }
-    if (minX >= rect.x0 && maxX <= rect.x1 && minY >= rect.y0 && maxY <= rect.y1) return true;
-    this.nVerts = v0;
-    this.nIdx = i0;
-    return maxX <= rect.x0 || minX >= rect.x1 || maxY <= rect.y0 || minY >= rect.y1;
-  }
-
-  /** Append the `n`-corner convex polygon in `poly` as a triangle fan. */
-  private appendFan(poly: Float32Array, n: number): void {
-    if (n < 3) return;
-    this.reserve(n, (n - 2) * 3);
-    if (n !== 4) this.pureRects = false;
-    const base = this.nVerts;
-    this.verts.set(poly.subarray(0, n * FLOATS_PER_VERTEX), base * FLOATS_PER_VERTEX);
-    let j = this.nIdx;
-    for (let k = 1; k < n - 1; k++) {
-      this.idx[j++] = base; this.idx[j++] = base + k; this.idx[j++] = base + k + 1;
-    }
-    this.nVerts += n;
-    this.nIdx = j;
-  }
-
-  /** Two triangles over the four corners just written. */
-  private pushQuadIndices(): void {
-    const base = this.nVerts;
-    let j = this.nIdx;
-    this.idx[j++] = base;     this.idx[j++] = base + 1; this.idx[j++] = base + 2;
-    this.idx[j++] = base;     this.idx[j++] = base + 2; this.idx[j++] = base + 3;
-    this.nVerts += 4;
-    this.nIdx += 6;
-  }
-
-  /** Grow the CPU arrays so `vertices` / `indices` more fit. */
-  private reserve(vertices: number, indices: number): void {
-    const needVerts = (this.nVerts + vertices) * FLOATS_PER_VERTEX;
-    if (needVerts > this.verts.length) {
-      const grown = new Float32Array(doubledTo(this.verts.length, needVerts));
-      grown.set(this.verts);
-      this.verts = grown;
-    }
-    const needIdx = this.nIdx + indices;
-    if (needIdx > this.idx.length) {
-      const grown = new Uint32Array(doubledTo(this.idx.length, needIdx));
-      grown.set(this.idx);
-      this.idx = grown;
-    }
   }
 
   private nextRingSlot(tier: number): BufferSet {

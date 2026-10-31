@@ -43,10 +43,13 @@ uniform is 0.5) is what keeps the code alive. The same trap waits for any
 the ramp atlas, a pattern's tile takes a slot of its own, and images, text and
 per-vertex colors join the run too. A test reaching for "a paint the batch
 cannot express" wants a registered paint kind (`testing/ownDrawPaint.ts` in the
-renderer), or for a solid that draws for itself an even-odd fill whose outlines
-touch (`testing/stencilledEvenOdd.ts`; one whose outlines never meet batches since
-2026-10-30), and should count draws to pin that premise: tests written against the old behavior went on
-passing for the wrong reason, twice.
+renderer), or for a solid that draws for itself an even-odd fill too costly to
+resolve (`testing/stencilledEvenOdd.ts`; every other even-odd fill batches since
+2026-10-31), and should count draws to pin that premise. Tests written against the old
+behavior went on passing for the wrong reason, twice. A clip or an aligned stroke
+reaching for the stencil wants a shape that is not convex: a convex clip is cut on
+the CPU wherever the shader decides no hulls, and an aligned stroke on a convex
+fill everywhere (since 2026-10-31).
 
 **A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
 disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any

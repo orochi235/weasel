@@ -1,5 +1,7 @@
 import { mat3, type Path, type GlMat3 } from '@weasel-js/geom';
-import { axisAlignedClipRect, intersectClipRects, type ClipRect } from '../batchClip';
+import {
+  MAX_CUT_PLANES, axisAlignedClipRect, batchCut, convexCutPlanes, intersectClipRects, type BatchCut, type ClipRect,
+} from '../batchClip';
 import {
   meetHulls, hullOf, snappedRectOf, windowMap, type Hull, type HullSet, type WindowMap,
 } from '../batchHull';
@@ -29,8 +31,10 @@ const IDENTITY = mat3.identity();
  * Push a group's clip. A clip only the stencil can express takes its bit now.
  * An axis-aligned rect takes none: staged geometry is cut to it on the CPU, so
  * content inside it joins the run outside it. Nor does a convex clip the batch
- * shader decides (`batchHull.ts`). Either takes a bit only if something that
- * draws for itself turns up inside it — see `flushForOwnDraw`.
+ * shader decides (`batchHull.ts`), nor, on a target where it decides none, a
+ * convex clip staged geometry is cut to on the CPU as half-planes. Each takes
+ * a bit only if something that draws for itself turns up inside it — see
+ * `flushForOwnDraw`.
  *
  * Where the shader can decide hulls, a rect clip is snapped to their grid and
  * carries itself as a hull too, for an item with a slanted edge across it,
@@ -46,22 +50,38 @@ function enterClip(ctx: DrawContext, path: Path, transform: GlMat3): void {
   const belowUncut = top === undefined ? null : top.uncutHulls;
   const hull = rect === null ? hullFor(ctx, path, transform) : null;
   const hulls = hull && (below ? meetHulls(below, hull.set) : hull.set);
+  const planes = rect === null && hull === null ? cutPlanesFor(ctx, path, transform) : null;
   if (rect !== null) {
     const own = snapped ? snapped.hull : null;
     const uncutHulls = own ? joinHulls(belowUncut, own.set) : false;
-    ctx.clipStack.push({ path, transform, rect, hull: own, hulls: below, uncutHulls, depth: 0 });
+    ctx.clipStack.push({ path, transform, rect, hull: own, planes: null, hulls: below, uncutHulls, depth: 0 });
   } else if (hull && hulls) {
     const uncutHulls = joinHulls(belowUncut, hull.set);
-    ctx.clipStack.push({ path, transform, rect: null, hull, hulls, uncutHulls, depth: 0 });
+    ctx.clipStack.push({ path, transform, rect: null, hull, planes: null, hulls, uncutHulls, depth: 0 });
+  } else if (planes !== null) {
+    ctx.clipStack.push({ path, transform, rect: null, hull: null, planes, hulls: below, uncutHulls: belowUncut, depth: 0 });
   } else {
     // Bits nest in stack order, so any clip still without one takes it first.
     materializeClips(ctx);
     const depth = ctx.clipDepth + 1;
     pushClip(ctx, path, depth, transform);
     ctx.clipDepth = depth;
-    ctx.clipStack.push({ path, transform, rect: null, hull: null, hulls: below, uncutHulls: belowUncut, depth });
+    ctx.clipStack.push({
+      path, transform, rect: null, hull: null, planes: null, hulls: below, uncutHulls: belowUncut, depth,
+    });
   }
   syncBatchClip(ctx);
+}
+
+/** `path` under `transform` as half-planes to cut staged geometry to, where
+ *  the shader decides no hulls and the stack has room for them. */
+function cutPlanesFor(ctx: DrawContext, path: Path, transform: GlMat3): Float64Array | null {
+  if (!cutsSlanted(ctx)) return null;
+  const planes = convexCutPlanes(path, transform);
+  if (planes === null) return null;
+  let held = planes.length / 3;
+  for (const entry of ctx.clipStack) if (entry.planes) held += entry.planes.length / 3;
+  return held <= MAX_CUT_PLANES ? planes : null;
 }
 
 function joinHulls(below: HullSet | null | false, set: HullSet): HullSet | false {
@@ -76,6 +96,11 @@ function hullMap(ctx: DrawContext): WindowMap | null {
   if (!ctx.batchVariants?.hulls || ctx.renderTarget || ctx.projection) return null;
   if (ctx.deviceWidth === undefined || ctx.deviceHeight === undefined) return null;
   return windowMap(projFor(ctx), ctx.fragOrigin ?? [0, 0], ctx.deviceWidth, ctx.deviceHeight);
+}
+
+/** Whether a slanted edge is cut on the CPU: where the shader decides no hulls. */
+function cutsSlanted(ctx: DrawContext): boolean {
+  return ctx.batchVariants?.cuts !== false && hullMap(ctx) === null;
 }
 
 /** `path` under `transform` as a hull, where this target can decide one. */
@@ -110,8 +135,8 @@ function stencilTransform(entry: ClipEntry): GlMat3 {
   return entry.hull ? IDENTITY : entry.transform;
 }
 
-/** Give every rect and hull clip on the stack its stencil bit, for a draw
- *  neither the CPU cut nor the batch shader reaches. */
+/** Give every rect, hull and plane clip on the stack its stencil bit, for a
+ *  draw neither the CPU cut nor the batch shader reaches. */
 function materializeClips(ctx: DrawContext): void {
   for (const entry of ctx.clipStack) {
     if (entry.depth !== 0) continue;
@@ -124,25 +149,27 @@ function materializeClips(ctx: DrawContext): void {
 
 function syncBatchClip(ctx: DrawContext): void {
   let rect: ClipRect | null = null;
+  const planes: Float64Array[] = [];
   for (const entry of ctx.clipStack) {
     if (entry.rect) rect = rect ? intersectClipRects(rect, entry.rect) : entry.rect;
+    if (entry.planes) planes.push(entry.planes);
   }
-  ctx.drawBatch.clip = rect;
+  ctx.drawBatch.clip = batchCut(rect, planes, cutsSlanted(ctx));
 }
 
 /**
  * The clip depth a run is staged and drawn at: the innermost clip only the
- * stencil can express. Rect and hull clips are left out whether or not they
- * hold a bit, because the CPU cut or the shader already applies them — which
+ * stencil can express. Rect, hull and plane clips are left out whether or not
+ * they hold a bit, because the CPU cut or the shader already applies them — which
  * is what lets a run cross them.
  */
 export function runClipDepth(ctx: DrawContext): number {
   const stack = ctx.clipStack;
   if (stack.length === 0 || ctx.uncut) return ctx.clipDepth;
   for (let i = stack.length - 1; i >= 0; i--) {
-    if (stack[i].rect === null && stack[i].hull === null) return stack[i].depth;
+    if (stack[i].rect === null && stack[i].hull === null && stack[i].planes === null) return stack[i].depth;
   }
-  // Only rect and hull clips: whatever depth held before the first of them
+  // Only rect, hull and plane clips: whatever depth held before the first of them
   // took a bit.
   for (const entry of stack) if (entry.depth > 0) return entry.depth - 1;
   return ctx.clipDepth;
@@ -159,7 +186,7 @@ export function runClipDepth(ctx: DrawContext): number {
  * Returns the cut to hand back. A pair rather than a callback: the staging
  * paths are hot, and a closure would cost an allocation on every call.
  */
-export function enterUncut(ctx: DrawContext): ClipRect | null {
+export function enterUncut(ctx: DrawContext): BatchCut | null {
   const cut = ctx.drawBatch.clip;
   ctx.drawBatch.clip = null;
   const top = ctx.clipStack[ctx.clipStack.length - 1];
@@ -172,7 +199,7 @@ export function enterUncut(ctx: DrawContext): ClipRect | null {
   return cut;
 }
 
-export function leaveUncut(ctx: DrawContext, cut: ClipRect | null): void {
+export function leaveUncut(ctx: DrawContext, cut: BatchCut | null): void {
   ctx.drawBatch.clip = cut;
   ctx.uncut = false;
   ctx.uncutHulls = undefined;

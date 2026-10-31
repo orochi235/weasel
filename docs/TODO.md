@@ -320,6 +320,16 @@ Owner tags, after the priority (2026-10-26):
 
 ## Rendering & paint
 
+- **(P2) [agent] A stroke's ribbon covers the inside of every turn twice.** `tessellateStroke` overlaps
+  the two segments meeting at a join on the inside of the turn: a closed 100 x 100 square stroked 10 wide
+  sums to 4100 units of triangle area with miter joins, 4050 bevel, 4078.14 round, against 4000 covered
+  (measured 2026-10-31, `@weasel-js/stroke`). Nothing dedupes those triangles, in the run or drawing for
+  itself, so a translucent stroke is inferred to blend twice there, darker at each corner; no pixel was
+  read. Found while cutting aligned strokes on the CPU (`draw/alignedRibbon.ts`), which keeps the
+  overlap as the stencil did; left for its own pass because it changes every stroke's mesh.
+  Closes when the triangle areas of that square's ribbon sum to what it covers, for each join, pinned
+  in `packages/stroke/src/tessellate/stroke.test.ts`, with a translucent corner read in a browser test.
+
 - **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
   the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
   (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code

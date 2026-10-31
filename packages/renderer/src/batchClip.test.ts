@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { axisAlignedClipRect, clipConvexPolygon, intersectClipRects } from './batchClip';
+import {
+  axisAlignedClipRect, batchCut, clipConvexPolygon, convexCutPlanes, cutConvexPolygon, intersectClipRects,
+} from './batchClip';
+import { pathFromD } from '@weasel-js/geom';
 
 const STRIDE = 3; // x, y, and one attribute affine in both
 const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
@@ -86,5 +89,45 @@ describe('intersectClipRects', () => {
       .toEqual({ x0: 3, y0: 0, x1: 5, y1: 4 });
     const none = intersectClipRects({ x0: 0, y0: 0, x1: 1, y1: 1 }, { x0: 2, y0: 2, x1: 3, y1: 3 });
     expect(none.x1 < none.x0).toBe(true);
+  });
+});
+
+describe('convexCutPlanes', () => {
+  const c = Math.SQRT1_2;
+  const eighthTurn = new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]);
+
+  it('bounds a turned rect by four planes, each keeping its inside', () => {
+    const planes = convexCutPlanes({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, eighthTurn)!;
+    expect(planes).toHaveLength(12);
+    const center = [0, 10 * c];
+    for (let k = 0; k < 12; k += 3) {
+      expect(planes[k] * center[0] + planes[k + 1] * center[1] + planes[k + 2]).toBeGreaterThan(0);
+    }
+  });
+
+  it('takes a convex polygon wound either way, and refuses one that is not', () => {
+    expect(convexCutPlanes(pathFromD('M 0 0 L 10 0 L 10 10 L 0 10 Z'), identity)).toHaveLength(12);
+    expect(convexCutPlanes(pathFromD('M 0 0 L 0 10 L 10 10 L 10 0 Z'), identity)).toHaveLength(12);
+    expect(convexCutPlanes(pathFromD('M 0 0 L 10 0 L 10 10 L 5 5 L 0 10 Z'), identity)).toBeNull();
+    expect(convexCutPlanes(pathFromD('M 0 0 C 5 -5 10 0 10 10 L 0 10 Z'), identity)).toBeNull();
+    const nine = Array.from({ length: 9 }, (_, k) => `${Math.cos(k * 0.7)} ${Math.sin(k * 0.7)}`);
+    expect(convexCutPlanes(pathFromD(`M ${nine.join(' L ')} Z`), identity)).toBeNull();
+  });
+});
+
+describe('cutConvexPolygon', () => {
+  const below = (x: number) => batchCut(null, [convexCutPlanes(pathFromD(`M ${x} -100 L 100 -100 L 100 100 L ${x - 50} 100 Z`), identity)!], true)!;
+
+  it('cuts along a slanted plane, interpolating every attribute', () => {
+    const dst = new Float32Array(16 * STRIDE);
+    const tmp = new Float32Array(16 * STRIDE);
+    const n = cutConvexPolygon(square(0, 0, 10, 10), 4, STRIDE, below(5), dst, tmp);
+    expect(n).toBeGreaterThanOrEqual(3);
+    for (let i = 0; i < n; i++) {
+      const [x, y, a] = dst.subarray(i * STRIDE, (i + 1) * STRIDE);
+      // Kept where x >= 5 - y / 4, the plane through (5, -100) and (-45, 100).
+      expect(x).toBeGreaterThanOrEqual(5 - (y + 100) / 4 - 1e-4);
+      expect(a).toBeCloseTo(x + 2 * y, 4);
+    }
   });
 });

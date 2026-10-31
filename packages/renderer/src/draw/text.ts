@@ -18,7 +18,7 @@ import {
   SYNTH_BOLD_AMOUNT,
 } from '@weasel-js/font';
 import { outlineGroupMesh, outlineGroupStrokeMesh } from '../glyphOutlineMesh';
-import type { ClipRect } from '../batchClip';
+import type { BatchCut } from '../batchClip';
 import { glyphCorners } from '../glyphCorners';
 import { QUAD_STRIDE, SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
@@ -132,7 +132,7 @@ function drawTextDecorations(
       continue;
     }
     const [r, g, b, a] = isSolidPaint(paint) ? solidColor(paint) : [0, 0, 0, 1];
-    let cut: ClipRect | null | undefined;
+    let cut: BatchCut | null | undefined;
     for (;;) {
       const slot = stageSolid(ctx, 4);
       const rgba = foldColor(ctx, r, g, b, a);
@@ -217,7 +217,7 @@ function drawTextGroup(
       flushBatch(ctx);
       slot = stageGlyphs(ctx, atlasId, fieldScale, area);
     }
-    let cut: ClipRect | null | undefined;
+    let cut: BatchCut | null | undefined;
     while (!batch.pushGlyph(quads, at, dx, dy, tanItalic, m, rgba, slot, mode, bold)) {
       cut = enterUncut(ctx);
       slot = stageGlyphs(ctx, atlasId, fieldScale, area);

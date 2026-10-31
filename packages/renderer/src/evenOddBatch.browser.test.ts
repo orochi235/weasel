@@ -97,7 +97,12 @@ describe('an even-odd fill, in a real context', () => {
         expect(batched.draws).toBe(1);
         expect(stencil.draws).toBeGreaterThan(1);
         expect(covered(batched.px)).toBeGreaterThan(0);
-        expect(differing(batched.px, stencil.px)).toEqual([]);
+        const off = differing(batched.px, stencil.px);
+        // A crossing is a computed point, not one the rasterizer can hold, so
+        // on a multisampled buffer a sample that close to it can go either way.
+        const meets = MEETING.some(([n]) => n === name);
+        if (antialias && meets) expect(off.length, off.join(' ')).toBeLessThanOrEqual(4);
+        else expect(off).toEqual([]);
       });
     }
   }

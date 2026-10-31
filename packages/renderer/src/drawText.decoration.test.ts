@@ -11,7 +11,7 @@ import { drawGroup, dispatch, type DrawContext } from './draw';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import { paintModeOf } from './shaders/batchFill';
 import {
-  createRecorderCtx, isBatchBuild, stagedVertices, paintModes, positionsOfMode, SQUARE_CLIP,
+  createRecorderCtx, isBatchBuild, stagedVertices, paintModes, positionsOfMode, NOTCHED_CLIP,
 } from './testing/recorderCtx';
 
 /**
@@ -216,7 +216,7 @@ describe('drawText — decoration reaches the GPU', () => {
     const { ctx, calls } = createRecorderCtx();
     drawGroup(ctx, {
       kind: 'group',
-      clip: SQUARE_CLIP,
+      clip: NOTCHED_CLIP,
       children: [{
         kind: 'text', x: 0, y: 0,
         runs: [decoratedRun({ underline: true })],

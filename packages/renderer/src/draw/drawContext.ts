@@ -151,10 +151,14 @@ export interface ClipEntry {
    *  `null` otherwise. */
   rect: ClipRect | null;
   /** The clip as half-planes the batch shader tests, for a convex one it can
-   *  decide; `null` otherwise. A clip with neither this nor `rect` is one only
-   *  the stencil can express. A rect clip has one too where it is snapped to
+   *  decide; `null` otherwise. A clip with none of this, `rect` and `planes`
+   *  is one only the stencil can express. A rect clip has one too where it is snapped to
    *  the hull grid, but the CPU cut applies it, so it is not in `hulls`. */
   hull: Hull | null;
+  /** The clip as half-planes staged geometry is cut to on the CPU, for a
+   *  convex one on a target where the shader decides no hulls; `null`
+   *  otherwise. */
+  planes: Float64Array | null;
   /** Every hull on the stack up to and including this entry, as the one set
    *  a vertex staged now is tested against; `null` under none. */
   hulls: HullSet | null;
