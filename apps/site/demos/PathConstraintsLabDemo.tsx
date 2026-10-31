@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathConstraint, type PathConstraintKind, type PolygonPath, polygonFromPoints, type RectPose, solid, worldEditToStorage } from '@weasel-js/core';
-import { constraintConflictsOf, constraintsOf, constraintsPreset } from '@weasel-js/path-tools';
+import { CONSTRAINT_KIND_LABELS, constraintConflictsOf, constraintsOf, constraintsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -18,21 +18,8 @@ import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', constraintsPreset] as const;
 
-const KIND_LABELS: Record<PathConstraintKind, string> = {
-  horizontal: 'Horizontal',
-  vertical: 'Vertical',
-  parallel: 'Parallel',
-  perpendicular: 'Perpendicular',
-  equalLength: 'Equal length',
-  length: 'Length',
-  coincident: 'Coincident',
-  fixed: 'Fixed',
-  tangent: 'Tangent',
-  onPath: 'On path',
-};
-
 const config = f.schema({
-  kind: f.enum<PathConstraintKind>('perpendicular', Object.entries(KIND_LABELS).map(([value, label]) => ({ value, label })))
+  kind: f.enum<PathConstraintKind>('perpendicular', Object.entries(CONSTRAINT_KIND_LABELS).map(([value, label]) => ({ value, label })))
     .label('C adds'),
   length: f.number(160).range(20, 400).step(10).suffix('px').label('Length').showIf({ path: 'kind', is: 'length' }),
 });
@@ -98,7 +85,7 @@ function describeStatus(scene: ReturnType<typeof createLabScene>): string {
   const broken = constraintConflictsOf(node);
   const count = `${constraints.length} constraint${constraints.length === 1 ? '' : 's'}`;
   if (broken.length === 0) return `${count}, all holding.`;
-  return `${count}. In conflict: ${broken.map((i) => KIND_LABELS[constraints[i].kind]).join(', ')}.`;
+  return `${count}. In conflict: ${broken.map((i) => CONSTRAINT_KIND_LABELS[constraints[i].kind]).join(', ')}.`;
 }
 
 function ConstraintsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {

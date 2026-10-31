@@ -14,6 +14,8 @@ const LEAD = { lead: 'label' } as const;
 
 const PATH = pref.group('Path', { path: run('path'), anchors: run('anchors'), effects: run('pathEffects') }, LEAD);
 
+const CONSTRAINTS = pref.group('Constraints', { constraints: run('constraints') }, LEAD);
+
 const PATHFINDER = pref.group('Pathfinder', { pathfinder: run('pathfinder') }, LEAD);
 
 const ARRANGE = pref.group('Arrange', {
@@ -58,6 +60,8 @@ export const SURFACE_ASSETS: readonly SurfaceAsset[] = [
   { id: 'arrange', label: 'Arrange', schema: ARRANGE, surfaces: ALL, defaultSurface: 'bar' },
   { id: 'pathfinder', label: 'Pathfinder', schema: PATHFINDER, surfaces: ALL, defaultSurface: 'bar' },
   { id: 'path', label: 'Path', schema: PATH, surfaces: ALL, defaultSurface: 'bar' },
+  // A menu, since a bar would show one glyph for every kind of constraint.
+  { id: 'constraints', label: 'Constraints', schema: CONSTRAINTS, surfaces: ALL, defaultSurface: 'menu' },
   { id: 'loupe', label: 'Loupe', schema: LOUPE_SCHEMA, useBinding: useLoupeBinding, surfaces: ALL, defaultSurface: 'bar' },
   ...PANEL_ASSETS,
 ];

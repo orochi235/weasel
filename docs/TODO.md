@@ -224,8 +224,10 @@ Owner tags, after the priority (2026-10-26):
   are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
   keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
-  Shift+C through `tune`), and which kind C adds is a param with no UI outside the lab
-  (`packages/path-tools/src/constraints/anchorConstraints.ts`); the marks' look, their 12 px offset and 8 px click
+  Shift+C through `tune`); WeaselDraw binds Alt+Shift+H, V, L, P, C and F to horizontal, vertical,
+  parallel, perpendicular, coincident and fixed, Alt+Shift+U to remove, and lists every kind in a
+  Constraints menu (`apps/draw/src/constraintKeys.ts`, `apps/draw/src/surfaces/assets.tsx`); the two
+  actions' glyphs (`packages/path-tools/icons/constraints.mjs`); the marks' look, their 12 px offset and 8 px click
   reach, and their teal and red (`packages/path-tools/src/constraints/constraintGlyphs.ts`,
   `packages/path-tools/src/constraints/constraintsExtension.ts`); a drag frame the constraints cannot hold in is dropped, so
   the path sticks rather than giving way (`edit-anchors/action.ts`); how far a dragged anchor
@@ -313,10 +315,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has ruled, and `tickedSegment`, `pillCommands` and
   `measuredSegmentCommands` either stay on core's barrel as designed surface or have moved to an
   `internal` entry.
-- **(P3) [agent] WeaselDraw binds no constraint action.** It needs keys or a bar group for
-  `constrainAnchors` and `unconstrainAnchors`, and icons for them.
-  Closes when WeaselDraw runs `constrainAnchors` and `unconstrainAnchors` from keys or a bar group,
-  each with an icon of its own.
 
 ## Rendering & paint
 

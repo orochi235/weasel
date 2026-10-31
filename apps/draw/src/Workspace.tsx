@@ -37,6 +37,7 @@ import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
 import { useColorContext } from './tools/colorContext';
 import { DRAW_FEATURES } from './drawFeatures';
+import { DRAW_TUNE } from './constraintKeys';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { DRAW_NODE_ROUTING } from './nodeKinds';
@@ -199,6 +200,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             defaultTools={DRAW_TOOLS}
             tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool }}
             ingestion={DRAW_INGESTION}
+            tune={DRAW_TUNE}
             insertPaint={insertPaint}
             // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
             // text box, or the notch of a star, should reach whatever is behind it.
