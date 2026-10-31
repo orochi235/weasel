@@ -1,5 +1,36 @@
 # @weasel-js/diagram
 
+## 1.15.0
+
+### Patch Changes
+
+- Updated dependencies [8461e7b]
+- Updated dependencies [70a64a3]
+- Updated dependencies [3f13a49]
+- Updated dependencies [f77e789]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [e05ddd3]
+- Updated dependencies [30bf607]
+- Updated dependencies [0e60598]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [a1cb281]
+- Updated dependencies [c41c917]
+- Updated dependencies [d25ad30]
+- Updated dependencies [1de1aab]
+- Updated dependencies [fce0494]
+- Updated dependencies [746fab0]
+  - @weasel-js/core@1.15.0
+  - @weasel-js/font@1.15.0
+  - @weasel-js/geom@1.15.0
+  - @weasel-js/clock@1.15.0
+  - @weasel-js/animator@1.15.0
+  - @weasel-js/headless@1.15.0
+  - @weasel-js/audio@1.15.0
+  - @weasel-js/icons@1.15.0
+  - @weasel-js/react@1.15.0
+  - @weasel-js/simulation@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

@@ -1,5 +1,27 @@
 # @weasel-js/minimap
 
+## 1.15.0
+
+### Patch Changes
+
+- Updated dependencies [8461e7b]
+- Updated dependencies [70a64a3]
+- Updated dependencies [f77e789]
+- Updated dependencies [81a1b94]
+- Updated dependencies [0e60598]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [a1cb281]
+- Updated dependencies [2e2f76c]
+- Updated dependencies [c41c917]
+- Updated dependencies [d25ad30]
+- Updated dependencies [1de1aab]
+- Updated dependencies [fce0494]
+- Updated dependencies [746fab0]
+  - @weasel-js/core@1.15.0
+  - @weasel-js/routing@1.15.0
+  - @weasel-js/animator@1.15.0
+  - @weasel-js/react@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

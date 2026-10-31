@@ -1,5 +1,151 @@
 # @weasel-js/ui
 
+## 1.15.0
+
+### Patch Changes
+
+- c08f919: Rows of items along a shape now start at the shape's own start and run its direction, instead of always reading left
+  to right. This changes the default layout of curved rows: a `Bar`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `Tabs`,
+  `PageTabs`, `RadioGroup` or `SwatchGrid` ring on a clockwise bottom arc, or a counterclockwise top one, now lays its
+  first item at the right. Each item still stands upright wherever it sits. Under `rtl` a row starts from the shape's
+  end. Text (`CurvedLabel`), a slider's values and a `Jog`'s transport still run in reading order.
+- 41dbc7b: `BandEditor`'s bands are now a `Slider`: each seam is a thumb, each band is the region between two seams, and
+  dragging a band body is a region drag. Its props and gestures are unchanged. Where it now behaves differently:
+  
+  - A seam's `aria-valuemin` and `aria-valuemax` are the ends of the range, as every `Slider` thumb reports them,
+    rather than its neighboring seams.
+  - Page Up and Page Down move a focused seam ten steps, as they do any slider thumb.
+  - A seam or band no longer carries `data-seam-index`, `--be-at`, `--be-from` or `--be-to`; a seam is placed by
+    `left`, and a band by its region.
+  - The strip holds its direction to ltr, as the ruler and edges always were; a band's caption takes its direction
+    from its own text.
+  
+  `Slider` gains what that took, all of it general:
+  
+  - `renderRegion` draws something across each stretch of track between neighboring thumbs, and before the first and
+    after the last, in the tab order between the thumbs either side. `regionDrag` makes a drag on an inner region move
+    both of its thumbs, keeping the span between them.
+  - `scale` maps values onto the track non-linearly; `logScale` and `linearScale` now export from `Slider` (and still
+    from `BandEditor`, whose `BandScale` is the same type as `SliderScale`).
+  - `stopSnapPx` sets how close a drag must come to a stop to land on it, and holding alt through a drag now passes a
+    magnetic stop by. This changes every slider with stops: alt used to do nothing there.
+  - `onCancel` reports a drag that ended without a release, so a consumer holding the last `onInput` can drop it.
+  - Shift-dragging every thumb (`allowShiftAll`) on a scaled track moves them by track distance, as it already did
+    under `spacing: 'even'`.
+- 332b8e5: A bar's overflow (`overflow="menu"`) now draws each action as a menu row — its icon, its label, and its shortcut
+  at the row's end — where it drew the icon-only button the bar's line shows. `BarActionButton` takes `menu` for
+  that form.
+- d40f593: `@weasel-js/ui` no longer depends on `@weasel-js/bidi`. `CurvedLabel` now reorders mixed-direction text with the engine given to `registerBidi` from `@weasel-js/text`, the same one text layout uses; with none registered it keeps the text's logical order and warns once if the text holds right-to-left letters. An app showing right-to-left text in a `CurvedLabel` installs `@weasel-js/bidi` and calls `registerBidi(bidi)` once at startup. `@weasel-js/text` now exports `registeredBidi` and `warnRtlWithoutEngine`, which takes the caller's name for its message.
+- 41a5648: A row laid along a shape (a curved `Bar`, segments, swatch rings, run slots) that runs at most `RUN_SLACK` (8px)
+  past its track no longer scrolls: it is drawn whole, centered on the track. A curved `Bar` in `'menu'` mode keeps an
+  item on its line under the same allowance rather than sending it to More.
+  
+  In a vertical `Bar`, a button that opens a popover or menu shows its glyph alone when it has one, keeping its name as
+  its accessible name; one without turns 90 degrees and reads along the bar.
+- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
+  
+  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+  and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
+  operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
+  `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
+  over the values it used, and keeps the new entry in place of the old one, so the history still holds one entry. Any
+  other history step, an undo or redo, or `dismiss()` clears it. The values last used become the action's params for
+  the rest of the session, under any tuning. Core publishes a `selectionSnapshot` dep that captures the node selection
+  and the anchor selection together, which the rerun restores.
+  
+  `@weasel-js/ui` adds `<LastOperationPanel>`, which draws the last operation as a form titled with the command's label,
+  adjusting it on each change and dismissing it from its close button; it renders nothing while there is none.
+  
+  `bridgePaths` and `bridgeAnchors` declare their Tension (`BRIDGE_PARAMS`), `resamplePath` its count, spacing, corners,
+  and tolerance (`RESAMPLE_PARAMS`), and `addExtremeAnchors` a new Turns param (`ADD_EXTREMES_PARAMS`). `resamplePath`
+  is now an immediate command committing one entry, where it was an ongoing action previewed through `begin`: code
+  driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
+  default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
+  argument (`ExtremaAxes`).
+- e838373: `ListEditor`'s own text entries (no `renderEntry`) now hold what is typed until blur or Enter, or until typing rests where `typing.settleWhenIdle` is on, like every other typed field, instead of calling `onChange` on every keystroke. In `PrefsForm` and `SelectionPanel` list leaves a typed entry is now one write, and in a panel one undo step. Enter writes the typed entry and the new one as a single change, Backspace in an entry typed empty removes it, Escape drops the draft, and a move carries the typed text with its entry. A new `settleWhenIdle` prop overrides the kit setting.
+- 8a3f058: labkit's `Toolbar` is gone: labkit now re-exports `@weasel-js/ui`'s, which gains what labkit's added. `size="sm"`
+  gives the compact control height a trial's chrome uses, `framed` draws a strip of its own, `Toolbar.Title` sets the
+  toolbar's name as a bar's is, and `Toolbar.Button` is the ghost button labkit drew (also exported as
+  `ToolbarButton`). A labkit toolbar no longer frames itself: a trial's toolbar region passes `size="sm" framed`, the
+  lab header's does not, and the `lk-toolbar` and `lk-toolbar-title` classes no longer exist.
+- c41c917: Path edit's tools are ordinary tools, and a mode can name the tool it starts on.
+  
+  **Breaking:** the `pathEditTool.*` toggle actions (`pathEditToolAction`, `exitPathEditToolAction`,
+  `pathEditToolActive`, `simplifyBrushToolAction`, `lengthenToolAction`, `SIMPLIFY_BRUSH_TOOL`, `LENGTHEN_TOOL`) are
+  removed, as are the `editAnchors` dep's `tool` and `setTool`, `PathEditHost`'s `tool` and `setTool`, and
+  `AnchorState.tool`. The `simplifyBrush` and `lengthenPath` actions no longer bind a drag themselves: mount
+  `useSimplifyBrushTool` and `useLengthenTool` (or `usePathEditTools`, named by `PATH_EDIT_TOOLS`; `usePathToolsTools`
+  includes them), each carrying `edits-anchors`. Their bindings sit at the active tier, so they outrank anchor
+  editing's ambient drags; a Lengthen drag on an anchor that is no open end falls through to moving it.
+  
+  `ModeDefinition.defaultTool` names the tool a mode starts on: entering the mode activates it, leaving restores the
+  tool active at entry, and Escape with another tool on returns to it before a second Escape leaves: a mode shortcut's
+  `exit` and `cancel` and core's `exitPathEdit` each call `returnToModeDefault` first, reading the new `modeDefaultTool`
+  dep `<SceneCanvas>` sources. `PATH_EDIT` names core's new `anchors` tool (key A, glyph `core:anchors`), which the
+  `pathEdit` preset mounts and `ANCHOR_TOOLS` names; it binds nothing and holds path edit's active slot. The pointer
+  cursor over an anchor or handle is now `editAnchors`' own `cursor`, so a path-edit tool's cursor shows there.
+  
+  A `chromeRules` dep, which `<SceneCanvas>` sources, reads and sets chrome-visibility rules at run time. The toggles
+  `pathEdit.show.direction`, `.comb`, `.balance`, and `.corners` (group `pathOverlays`) use it to flip each overlay
+  between `always` and `never`, and come with the preset that draws it.
+  
+  `ToolPalette` takes `ineligible: 'dim' | 'hide'`, default `dim`; `hide` leaves out every tool the current mode does
+  not allow. The Girth tool's palette group is now `path`, beside Trim, Extend, and the Smudge brush.
+  
+  In the dev server and under vitest, `weaselIcons` in app mode stops looking for tables at the nearest workspace root
+  above the app, and reads that workspace's packages' source tables. It used to walk on into an enclosing checkout's
+  `node_modules` (a git worktree sits inside its main checkout), so a worktree served that checkout's glyphs: a glyph
+  added on the branch drew as "?", and one redrawn there drew as before.
+- fada838: Overlays resolve their portal host (the nearest themed ancestor) once per mount instead of on every render, so a page of closed tooltips no longer walks the DOM each time it re-renders. An ancestor themed imperatively after the overlay mounted is no longer picked up until the overlay remounts.
+- f2e728e: A vertical `Bar`, and a `Bar` along a shape, now draw each field the way a horizontal bar does, instead of opening
+  every field but an action from a dropdown. Only a group that opens, a text area, and a field made of other fields
+  still drop down. In a vertical bar a field's parts stack and stay upright: a box sits under its name, a switch or a
+  checkbox above its words, a segmented control runs top to bottom, and a slider stands on end. `ToggleBar` takes an
+  `orientation`, and every segmented row follows the new `OrientationContext` when it sets none. `BarLayout` no longer
+  takes `row`.
+  
+  Every control on a bar now stands at one height, so boxes, selects, segments, dropdown buttons and action buttons
+  line up; action buttons are 24px square rather than 32px, and show a pointer. A bar's label is set like a field
+  label, in capitals, one weight heavier. A flat segmented control draws the same border a text box does, and the
+  default `--wzl-field-border` is a little stronger.
+- Updated dependencies [8461e7b]
+- Updated dependencies [70a64a3]
+- Updated dependencies [3f13a49]
+- Updated dependencies [f77e789]
+- Updated dependencies [d40f593]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [e05ddd3]
+- Updated dependencies [30bf607]
+- Updated dependencies [0e60598]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [a1cb281]
+- Updated dependencies [c41c917]
+- Updated dependencies [d25ad30]
+- Updated dependencies [1de1aab]
+- Updated dependencies [fce0494]
+- Updated dependencies [f2e728e]
+- Updated dependencies [746fab0]
+  - @weasel-js/core@1.15.0
+  - @weasel-js/font@1.15.0
+  - @weasel-js/text@1.15.0
+  - @weasel-js/geom@1.15.0
+  - @weasel-js/modes@1.15.0
+  - @weasel-js/theme@1.15.0
+  - @weasel-js/svg@1.15.0
+  - @weasel-js/clock@1.15.0
+  - @weasel-js/animator@1.15.0
+  - @weasel-js/headless@1.15.0
+  - @weasel-js/menu@1.15.0
+  - @weasel-js/gestures@1.15.0
+  - @weasel-js/icons@1.15.0
+  - @weasel-js/paint@1.15.0
+  - @weasel-js/prefs@1.15.0
+  - @weasel-js/quantity@1.15.0
+  - @weasel-js/react@1.15.0
+  - @weasel-js/registry@1.15.0
+  - @weasel-js/select@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/icons",
-  "version": "1.14.2",
+  "version": "1.15.0",
   "description": "Namespaced icon names, the icon registry, and the plain shape glyphs. No React, no DOM.",
   "license": "MIT",
   "type": "module",
@@ -21,6 +21,6 @@
   "engines": { "node": ">=22" },
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": { "build": "tsup && cp src/icons.table.json dist/" },
-  "dependencies": { "@weasel-js/registry": "1.14.2" },
+  "dependencies": { "@weasel-js/registry": "1.15.0" },
   "publishConfig": { "access": "public", "provenance": true }
 }

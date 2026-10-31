@@ -1,5 +1,107 @@
 # @weasel-js/routing
 
+## 1.15.0
+
+### Patch Changes
+
+- 70a64a3: Tools can declare options: `ToolDef.options` names the action they are params of, a prefs group of number leaves
+  (their bounds and defaults), and which one is the tool's size and which its strength. `<SceneCanvas>` tunes the
+  action from the values the host keeps in the new `toolOptionValues` dep (`ToolOptionValues`, published with
+  `useToolOptionValues`; `createToolOptionValues` keeps them in memory). `defineTool` adds step actions for the size
+  and strength, bound to `[` `]` and `Shift+[` `Shift+]` while the tool is the active one, so they win over the same keys'
+  anchor-selection commands only then.
+  
+  The Smudge brush (`SMUDGE_BRUSH_OPTIONS`: size, strength) and the Simplify brush (`SIMPLIFY_BRUSH_OPTIONS`: size,
+  tolerance) declare theirs. Size steps by ×1.25; the Smudge brush's strength by 0.1, the Simplify brush's tolerance by
+  ×1.25.
+- 81a1b94: A drag can be the last operation. An ongoing action that declares `params` and whose gesture's handle has the new
+  `OngoingHandle.replay(params)` is kept when its commit leaves one history entry, so the last-operation panel can
+  change its params afterward: `adjust` undoes the entry, puts back the selection the drag started on, and has the
+  handle commit the gesture again with the new params, leaving one undo entry. An action whose gesture cannot be
+  recomputed leaves `replay` out and gets no panel. `Action.params` may also be a function answering the form for one
+  run from the params it resolved, or `null` for a run with nothing to show, and `LastOperation.label` is the form's
+  name where it has one. A run that commits live, coalescing into its own entry, now counts as one entry. A run made
+  while a journal is open on the history (path edit's, in an app that journals modes) is kept on that journal, where
+  before it was never kept; the journal committing, cancelling, or suspending ends it.
+- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
+  
+  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+  and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
+  operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
+  `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
+  over the values it used, and keeps the new entry in place of the old one, so the history still holds one entry. Any
+  other history step, an undo or redo, or `dismiss()` clears it. The values last used become the action's params for
+  the rest of the session, under any tuning. Core publishes a `selectionSnapshot` dep that captures the node selection
+  and the anchor selection together, which the rerun restores.
+  
+  `@weasel-js/ui` adds `<LastOperationPanel>`, which draws the last operation as a form titled with the command's label,
+  adjusting it on each change and dismissing it from its close button; it renders nothing while there is none.
+  
+  `bridgePaths` and `bridgeAnchors` declare their Tension (`BRIDGE_PARAMS`), `resamplePath` its count, spacing, corners,
+  and tolerance (`RESAMPLE_PARAMS`), and `addExtremeAnchors` a new Turns param (`ADD_EXTREMES_PARAMS`). `resamplePath`
+  is now an immediate command committing one entry, where it was an ongoing action previewed through `begin`: code
+  driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
+  default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
+  argument (`ExtremaAxes`).
+- 2e2f76c: A key held for an `over` binding now follows the pointer: a key already down when the pointer comes over a surface presses that surface's `over` key-held bindings, and leaving releases them. A single-press `key` binding is not repeated on arrival. Holding a loupe's peek key and then moving onto a loupe raises it again, and the peek carries from one loupe to the next.
+- c41c917: Path edit's tools are ordinary tools, and a mode can name the tool it starts on.
+  
+  **Breaking:** the `pathEditTool.*` toggle actions (`pathEditToolAction`, `exitPathEditToolAction`,
+  `pathEditToolActive`, `simplifyBrushToolAction`, `lengthenToolAction`, `SIMPLIFY_BRUSH_TOOL`, `LENGTHEN_TOOL`) are
+  removed, as are the `editAnchors` dep's `tool` and `setTool`, `PathEditHost`'s `tool` and `setTool`, and
+  `AnchorState.tool`. The `simplifyBrush` and `lengthenPath` actions no longer bind a drag themselves: mount
+  `useSimplifyBrushTool` and `useLengthenTool` (or `usePathEditTools`, named by `PATH_EDIT_TOOLS`; `usePathToolsTools`
+  includes them), each carrying `edits-anchors`. Their bindings sit at the active tier, so they outrank anchor
+  editing's ambient drags; a Lengthen drag on an anchor that is no open end falls through to moving it.
+  
+  `ModeDefinition.defaultTool` names the tool a mode starts on: entering the mode activates it, leaving restores the
+  tool active at entry, and Escape with another tool on returns to it before a second Escape leaves: a mode shortcut's
+  `exit` and `cancel` and core's `exitPathEdit` each call `returnToModeDefault` first, reading the new `modeDefaultTool`
+  dep `<SceneCanvas>` sources. `PATH_EDIT` names core's new `anchors` tool (key A, glyph `core:anchors`), which the
+  `pathEdit` preset mounts and `ANCHOR_TOOLS` names; it binds nothing and holds path edit's active slot. The pointer
+  cursor over an anchor or handle is now `editAnchors`' own `cursor`, so a path-edit tool's cursor shows there.
+  
+  A `chromeRules` dep, which `<SceneCanvas>` sources, reads and sets chrome-visibility rules at run time. The toggles
+  `pathEdit.show.direction`, `.comb`, `.balance`, and `.corners` (group `pathOverlays`) use it to flip each overlay
+  between `always` and `never`, and come with the preset that draws it.
+  
+  `ToolPalette` takes `ineligible: 'dim' | 'hide'`, default `dim`; `hide` leaves out every tool the current mode does
+  not allow. The Girth tool's palette group is now `path`, beside Trim, Extend, and the Smudge brush.
+  
+  In the dev server and under vitest, `weaselIcons` in app mode stops looking for tables at the nearest workspace root
+  above the app, and reads that workspace's packages' source tables. It used to walk on into an enclosing checkout's
+  `node_modules` (a git worktree sits inside its main checkout), so a worktree served that checkout's glyphs: a glyph
+  added on the branch drew as "?", and one redrawn there drew as before.
+- 746fab0: The warp tools (Distort, Envelope, Puppet Warp) now work on a selected group: one set of controls is laid around all
+  of its paths, and they warp together. Selected text converts to outlines when a warp begins on it (a drag on the fresh
+  controls, or a pin placed), conversion and warp landing as one undo step; canceling the drag puts the text back, and
+  text whose face has no outlines is left alone with a notice. While a warp tool is active, the selection's resize and
+  rotation handles no longer draw over its controls or take its presses.
+  
+  New `ToolDef.hides`: chrome ids hidden, in paint and hit-test alike, while that tool is the active one (carried to
+  rules as `RuleCtx.hiddenChrome`).
+- Updated dependencies [8461e7b]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [30bf607]
+- Updated dependencies [35f0277]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [c41c917]
+- Updated dependencies [1de1aab]
+- Updated dependencies [fce0494]
+  - @weasel-js/history@1.15.0
+  - @weasel-js/geom@1.15.0
+  - @weasel-js/modes@1.15.0
+  - @weasel-js/menu@1.15.0
+  - @weasel-js/gestures@1.15.0
+  - @weasel-js/cursor@1.15.0
+  - @weasel-js/icons@1.15.0
+  - @weasel-js/prefs@1.15.0
+  - @weasel-js/quantity@1.15.0
+  - @weasel-js/react@1.15.0
+  - @weasel-js/registry@1.15.0
+  - @weasel-js/select@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

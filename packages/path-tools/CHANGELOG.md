@@ -1,5 +1,158 @@
 # @weasel-js/path-tools
 
+## 1.15.0
+
+### Patch Changes
+
+- 70a64a3: Tools can declare options: `ToolDef.options` names the action they are params of, a prefs group of number leaves
+  (their bounds and defaults), and which one is the tool's size and which its strength. `<SceneCanvas>` tunes the
+  action from the values the host keeps in the new `toolOptionValues` dep (`ToolOptionValues`, published with
+  `useToolOptionValues`; `createToolOptionValues` keeps them in memory). `defineTool` adds step actions for the size
+  and strength, bound to `[` `]` and `Shift+[` `Shift+]` while the tool is the active one, so they win over the same keys'
+  anchor-selection commands only then.
+  
+  The Smudge brush (`SMUDGE_BRUSH_OPTIONS`: size, strength) and the Simplify brush (`SIMPLIFY_BRUSH_OPTIONS`: size,
+  tolerance) declare theirs. Size steps by ×1.25; the Smudge brush's strength by 0.1, the Simplify brush's tolerance by
+  ×1.25.
+- c81abf6: `constrainAnchors` and `unconstrainAnchors` have glyphs of their own, `path-tools:constrainAnchors` and
+  `path-tools:unconstrainAnchors`, and `constrainAnchors` lists one variant per constraint kind, so a bar, menu or
+  palette offers each kind by name. The constraint actions, `deleteConstraint` included, are now in the `constraints`
+  action group rather than `anchors`: a surface drawing the `anchors` group no longer shows them. The kinds' names are
+  exported as `CONSTRAINT_KIND_LABELS`.
+- a95d3a4: Extend to next path now eases a curved end out of its bend instead of running it straight on: the
+  extension starts with the end's curvature, lets it fall linearly to zero (an Euler spiral) over the stretch
+  that turns it a further `easeTurn` (30° by default), then runs straight, so tangent and curvature both stay
+  continuous where it joins. `extendToMeet` searches along that curve for the first stroke it meets.
+  
+  geom: a new `'eased'` `LengthenMode` for `lengthenPathEnd` and `lengthToward`, `extensionPieces` and
+  `easeLength` for the curve an end grows along, and `mode` and `easeTurn` options on `extendToMeet`
+  (default `'eased'`) and `lengthenOpenEnd` (default `'tangent'`). `extendToMeet`'s `distance` is now arc
+  length along the curve.
+  
+  path-tools: the `extendToMeet` action declares `params` (`shape`: Eased or Straight, `easeTurn`), so its
+  settings appear in the last-operation panel after a click or the command; `lengthenPath` accepts
+  `mode: 'eased'`.
+- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
+  
+  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+  and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
+  operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
+  `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
+  over the values it used, and keeps the new entry in place of the old one, so the history still holds one entry. Any
+  other history step, an undo or redo, or `dismiss()` clears it. The values last used become the action's params for
+  the rest of the session, under any tuning. Core publishes a `selectionSnapshot` dep that captures the node selection
+  and the anchor selection together, which the rerun restores.
+  
+  `@weasel-js/ui` adds `<LastOperationPanel>`, which draws the last operation as a form titled with the command's label,
+  adjusting it on each change and dismissing it from its close button; it renders nothing while there is none.
+  
+  `bridgePaths` and `bridgeAnchors` declare their Tension (`BRIDGE_PARAMS`), `resamplePath` its count, spacing, corners,
+  and tolerance (`RESAMPLE_PARAMS`), and `addExtremeAnchors` a new Turns param (`ADD_EXTREMES_PARAMS`). `resamplePath`
+  is now an immediate command committing one entry, where it was an ongoing action previewed through `begin`: code
+  driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
+  default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
+  argument (`ExtremaAxes`).
+- c41c917: Path edit's tools are ordinary tools, and a mode can name the tool it starts on.
+  
+  **Breaking:** the `pathEditTool.*` toggle actions (`pathEditToolAction`, `exitPathEditToolAction`,
+  `pathEditToolActive`, `simplifyBrushToolAction`, `lengthenToolAction`, `SIMPLIFY_BRUSH_TOOL`, `LENGTHEN_TOOL`) are
+  removed, as are the `editAnchors` dep's `tool` and `setTool`, `PathEditHost`'s `tool` and `setTool`, and
+  `AnchorState.tool`. The `simplifyBrush` and `lengthenPath` actions no longer bind a drag themselves: mount
+  `useSimplifyBrushTool` and `useLengthenTool` (or `usePathEditTools`, named by `PATH_EDIT_TOOLS`; `usePathToolsTools`
+  includes them), each carrying `edits-anchors`. Their bindings sit at the active tier, so they outrank anchor
+  editing's ambient drags; a Lengthen drag on an anchor that is no open end falls through to moving it.
+  
+  `ModeDefinition.defaultTool` names the tool a mode starts on: entering the mode activates it, leaving restores the
+  tool active at entry, and Escape with another tool on returns to it before a second Escape leaves: a mode shortcut's
+  `exit` and `cancel` and core's `exitPathEdit` each call `returnToModeDefault` first, reading the new `modeDefaultTool`
+  dep `<SceneCanvas>` sources. `PATH_EDIT` names core's new `anchors` tool (key A, glyph `core:anchors`), which the
+  `pathEdit` preset mounts and `ANCHOR_TOOLS` names; it binds nothing and holds path edit's active slot. The pointer
+  cursor over an anchor or handle is now `editAnchors`' own `cursor`, so a path-edit tool's cursor shows there.
+  
+  A `chromeRules` dep, which `<SceneCanvas>` sources, reads and sets chrome-visibility rules at run time. The toggles
+  `pathEdit.show.direction`, `.comb`, `.balance`, and `.corners` (group `pathOverlays`) use it to flip each overlay
+  between `always` and `never`, and come with the preset that draws it.
+  
+  `ToolPalette` takes `ineligible: 'dim' | 'hide'`, default `dim`; `hide` leaves out every tool the current mode does
+  not allow. The Girth tool's palette group is now `path`, beside Trim, Extend, and the Smudge brush.
+  
+  In the dev server and under vitest, `weaselIcons` in app mode stops looking for tables at the nearest workspace root
+  above the app, and reads that workspace's packages' source tables. It used to walk on into an enclosing checkout's
+  `node_modules` (a git worktree sits inside its main checkout), so a worktree served that checkout's glyphs: a glyph
+  added on the branch drew as "?", and one redrawn there drew as before.
+- eda4635: More path tools leave the last-operation panel up after they run, holding the values they read:
+  
+  - Lengthen (`lengthenPath`, a drag): Shape, straight, arc, or eased (`LENGTHEN_PATH_PARAMS`).
+  - Girth (`girth.drag`, a drag): Grab reach and One edge only (`GIRTH_DRAG_PARAMS`, `GirthDragParams`). The drag
+    action's label is now "Stroke width", its undo entry's. `useGirthTool`'s `reach` option, when given, wins over
+    the reach the panel last set.
+  - Corner radius (`editCorner`, a drag): Shape for sharp corners (`EDIT_CORNER_PARAMS`). The corner controls' Shape
+    options are now labeled ("Round" rather than "round"), from the shared `CORNER_SHAPE_OPTIONS`.
+  - Next corner shape (`cycleCornerShape`): Size for sharp corners, the share of a corner's room its new shape cuts
+    (`CYCLE_CORNER_SHAPE_PARAMS`).
+  - Link anchor (`linkAnchor`, a drag): Reach (`LINK_ANCHOR_PARAMS`). A replay that misses every target leaves a
+    plain move.
+  - Trim segment (`trimPath`): Reach (`TRIM_PATH_PARAMS`). Extend to next path's form gains Reach too.
+  
+  Each drag replays the gesture as it ended with the new values, as one undo entry.
+- 1de1aab: The Smudge brush now smudges text: a text node it may push (selected, or any unlocked, shown one while nothing is
+  selected) is converted to outlines, as Create Outlines does, the moment the brush touches it, and its paths are
+  smudged from then on. Conversion and smudge are one undo entry labeled "Smudge brush", and Escape mid-stroke puts the
+  text back. Text whose face has no outlines is left alone, and the user is told once per stroke. In a host with no
+  `createOutlinesAdapter` dep, text is skipped. A selected group is now smudged as its path leaves.
+  
+  `applyCreateOutlines(adapter, ids?)` converts the given text nodes rather than only the selection.
+  
+  A journal can now open inside another (`Journal.beginJournal`), and `scene.history.beginJournal` opens inside the
+  journal edits are going to when there is one, so a gesture journaled during a mode lands in the mode's journal as one
+  entry. A journal opened on `scene.history` now takes the scene's `applyBatch` edits without an active-journal accessor.
+  
+  New `notices` dep (`NoticesDep`, published with `useNotices`): where an action tells the user something went wrong.
+  Create Outlines, Outline Stroke, Pathfinder, and the Smudge brush report text they cannot outline through it, and fall
+  back to the console without it.
+- c5b61d8: The Smudge brush now pushes every path under it while nothing is selected, skipping locked and hidden ones; with a
+  selection it still pushes only the selected paths. It used to do nothing without a selection.
+- 746fab0: The warp tools (Distort, Envelope, Puppet Warp) now work on a selected group: one set of controls is laid around all
+  of its paths, and they warp together. Selected text converts to outlines when a warp begins on it (a drag on the fresh
+  controls, or a pin placed), conversion and warp landing as one undo step; canceling the drag puts the text back, and
+  text whose face has no outlines is left alone with a notice. While a warp tool is active, the selection's resize and
+  rotation handles no longer draw over its controls or take its presses.
+  
+  New `ToolDef.hides`: chrome ids hidden, in paint and hit-test alike, while that tool is the active one (carried to
+  rules as `RuleCtx.hiddenChrome`).
+- Updated dependencies [2bdba7b]
+- Updated dependencies [8461e7b]
+- Updated dependencies [70a64a3]
+- Updated dependencies [f77e789]
+- Updated dependencies [719d457]
+- Updated dependencies [81a1b94]
+- Updated dependencies [b7d362d]
+- Updated dependencies [a95d3a4]
+- Updated dependencies [e05ddd3]
+- Updated dependencies [30bf607]
+- Updated dependencies [0e60598]
+- Updated dependencies [48b6c4c]
+- Updated dependencies [a1cb281]
+- Updated dependencies [2e2f76c]
+- Updated dependencies [c41c917]
+- Updated dependencies [fbc7ebf]
+- Updated dependencies [d25ad30]
+- Updated dependencies [1de1aab]
+- Updated dependencies [fce0494]
+- Updated dependencies [51ca29e]
+- Updated dependencies [746fab0]
+  - @weasel-js/renderer@1.15.0
+  - @weasel-js/core@1.15.0
+  - @weasel-js/routing@1.15.0
+  - @weasel-js/geom@1.15.0
+  - @weasel-js/stroke@1.15.0
+  - @weasel-js/cursor@1.15.0
+  - @weasel-js/icons@1.15.0
+  - @weasel-js/paint@1.15.0
+  - @weasel-js/prefs@1.15.0
+  - @weasel-js/react@1.15.0
+  - @weasel-js/registry@1.15.0
+
 ## 1.14.2
 
 ### Patch Changes

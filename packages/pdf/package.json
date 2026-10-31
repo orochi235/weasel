@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/pdf",
-  "version": "1.14.2",
+  "version": "1.15.0",
   "description": "PDF documents from weasel draw commands: vector paths, shadings, images, and embedded fonts with selectable text. No scene graph, no React.",
   "license": "MIT",
   "type": "module",
@@ -20,15 +20,15 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/font": "1.14.2",
-    "@weasel-js/geom": "1.14.2",
-    "@weasel-js/paint": "1.14.2",
-    "@weasel-js/renderer": "1.14.2",
-    "@weasel-js/stroke": "1.14.2",
-    "@weasel-js/text": "1.14.2"
+    "@weasel-js/font": "1.15.0",
+    "@weasel-js/geom": "1.15.0",
+    "@weasel-js/paint": "1.15.0",
+    "@weasel-js/renderer": "1.15.0",
+    "@weasel-js/stroke": "1.15.0",
+    "@weasel-js/text": "1.15.0"
   },
   "devDependencies": {
-    "@weasel-js/text-shaping": "1.14.2"
+    "@weasel-js/text-shaping": "1.15.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
