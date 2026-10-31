@@ -16,7 +16,8 @@ npm install @weasel-js/plot
 
 **Scales, axes and marks.** A scale maps values onto a range and says which
 values an axis marks and how they read: `linearScale`, `logScale`,
-`bandScale`, `timeScale` (ticks on calendar units, in UTC) and `ordinalScale`.
+`bandScale`, `timeScale` (ticks on calendar units, in UTC), `ordinalScale`, and
+`polarScale` (a value along each of several spokes from a center).
 `axisMarks` draws an axis from any of the first four: a rule, ticks, labels
 measured through `@weasel-js/text`, grid lines and a title. The mark builders
 (`barMark`, `spanMark`, `lineMark`, `areaMark`, `pointMark`, `arcMark`,
@@ -24,14 +25,31 @@ measured through `@weasel-js/text`, grid lines and a title. The mark builders
 and data the kit's own painters draw, with the datum under `plotMark`, so a
 hit-test on a mark reaches its value.
 
-**Chart specs.** `PlotData` is a union of chart specs on `kind`; today it holds
-`xychart`, bar and line series over a category band or a numeric range.
+**Chart specs.** `PlotData` is a union of chart specs on `kind`:
+
+| Kind | Spec | Edits |
+| --- | --- | --- |
+| `xychart` | bar and line series over a category band or a numeric range | drag a bar's end or a line's point |
+| `gantt` | tasks in sections, each starting on a date, after other tasks, or after the one before, and ending on a date, after a duration, or when another starts; `dateFormat`, `axisFormat`, `excludes`, `todayMarker` | drag a task to move its start, or its end to change its length; tasks after it follow |
+| `timeline` | periods in sections, each with its events | reorder periods by dragging a label; text |
+| `pie` | labeled values; `showData` | a value, typed in the legend; labels |
+| `quadrant` | points from 0 to 1 on both axes, axis and quadrant labels | drag a point; text |
+| `journey` | tasks in sections, each scored 1 to 5, with its actors | drag a score; text |
+| `gitgraph` | commits, branches, checkouts, merges and cherry-picks, replayed into a lane per branch | tags |
+| `sankey` | flows from source to target | a flow's value; node names |
+| `packet` | fields of bits laid in rows (a band scale of bits) | labels |
+| `radar` | curves over axes (a `polarScale`), drawn as areas | drag a point along its axis; axis labels |
+
+Each kind also has its title edited in place.
 `plotSpecs(data, { box })` compiles one to scene node specs: a group root whose
 data is `{ plot: { data, theme } }`, then every mark under it, in the root's
 frame. `replacePlotData` swaps a root's spec and rebuilds its marks as one undo
 entry. `plotEditing({ scene })` gives the handle layer and the contribution
-that bind a drag on a bar's end or a line's point to `plot.dragValue`;
-`PlotView` hosts one chart on a canvas of its own with both wired.
+that bind a drag on a handle (a bar's end, a task's span) to `plot.dragValue`.
+A text mark whose datum names an `edit` is the spec's text: `foldPlotText`
+turns a text edit of it into one edit of the spec, and `usePlotTextEdit` gives
+a `SceneCanvas` the options that do so. `PlotView` hosts one chart on a canvas
+of its own with all of it wired.
 
 Colors come from a `PlotTheme`, by role: `text`, `axis`, `grid`, and `series`,
 which series take in turn. `plotThemeFrom` builds one from a resolved

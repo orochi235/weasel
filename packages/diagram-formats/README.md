@@ -87,7 +87,7 @@ with it and rejects on a file nothing reads.
 | --- | --- | --- | --- |
 | `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes, graph and plot pages | the whole document |
 | `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
-| `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, requirement diagram, or xychart | `.mmd`, `.mermaid` | yes | one page, a graph or an xychart |
+| `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, requirement diagram, sequence diagram, or chart | `.mmd`, `.mermaid` | yes | one page, a graph, a sequence, or a chart |
 | `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
 Not read, by decision (2026-10-20): packaged office-suite drawing formats,
@@ -180,8 +180,8 @@ to the kind it read; it writes a graph page in the kind its `notation` names,
 and as a flowchart when it names none (or one Mermaid has not, with a
 warning). Every kind reads front matter's `title` as the page name (else
 `accTitle`), skips `%%` comments, and drops `%%{…}%%` directives and
-`accDescr` with a warning. A Mermaid kind not read here (`pie`,
-`gantt`, …) is refused with an error naming it. Each reader throws an error
+`accDescr` with a warning. A Mermaid kind not read here (`zenuml`,
+`treemap`, …) is refused with an error naming it. Each reader throws an error
 naming the line on text it cannot read, and warns of what it drops.
 
 `classDiagram`, notation `'class'`:
@@ -263,6 +263,32 @@ first root's tree.
 
 Reading drops other front matter, `%%{init}%%` directives, `accTitle` and
 `accDescr`, with a warning each, and warns of values past the last category.
+
+### Mermaid charts
+
+Each of these reads onto one plot page holding the chart kind named, and a
+plot page holding that kind writes back as it; the writer picks the Mermaid
+kind from the chart's kind. Each reader names the line of an error (a score
+out of range, a field that overlaps another, a checkout of a branch that does
+not exist) and warns of what it drops; each writer warns of what Mermaid
+cannot hold.
+
+| Mermaid | Chart | What is read |
+| --- | --- | --- |
+| `gantt` | `gantt` | `title`, `dateFormat`, `axisFormat`, `excludes`, `todayMarker`, `section`; tasks `Name :tags, id, start, end` with `done`/`active`/`crit`/`milestone`, a start that is a date or `after a b`, an end that is a date, a duration (`3d`, `2w`, `5h`, `1M`, …) or `until a`, each kept as written |
+| `timeline` | `timeline` | `title`, `section`, `period : event : event`, and `: event` lines continuing the period above |
+| `pie` | `pie` | `pie showData title …`, `title`, `"label" : value` |
+| `quadrantChart` | `quadrant` | `title`, `x-axis Low --> High`, `y-axis`, `quadrant-1` to `quadrant-4`, points `Name: [x, y]` with `:::class` and `radius`, `color`, `stroke-color`, `stroke-width`, `classDef` |
+| `journey` | `journey` | `title`, `section`, `Task: score: Actor, Actor` |
+| `gitGraph` | `gitgraph` | `gitGraph LR:`/`TB:`/`BT:`, `commit` (`id`, `type`, `tag`, `msg`), `branch` (`order`), `checkout`/`switch`, `merge` (`id`, `type`, `tag`), `cherry-pick` (`id`, `tag`, `parent`); the title from front matter |
+| `sankey-beta` | `sankey` | CSV `source,target,value` lines, quoted as CSV quotes; the title from front matter |
+| `packet-beta` | `packet` | `title`, `0-15: "label"`, `16: "label"`, `+8: "label"` |
+| `radar-beta` | `radar` | `title`, `axis a["Label"], b`, `curve c["Label"]{1, 2}` and `curve c{ a: 1, b: 2 }`, `max`, `min`, `graticule`, `ticks`, `showLegend` |
+
+Dropped on reading, with a warning: Gantt `click`, `call`, `inclusiveEndDates`,
+`topAxis`, `tickInterval`, `weekday`, `displayMode`, and `vert` tasks; a
+timeline's direction; configuration such as a packet's bits per row or a git
+graph's main branch name. Gantt dates are read and written in UTC.
 
 ### Mermaid sequence diagrams
 

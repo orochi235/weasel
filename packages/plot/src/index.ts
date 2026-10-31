@@ -33,24 +33,38 @@ export type { XyBandAxis, XyChartData, XyRangeAxis, XySeries, XyValueAxis } from
 export { compileXyChart, xyLength, xyValueDomain, type XyLayout } from './xychart/compile';
 export { setXyValue, xyValueAt } from './xychart/edit';
 export type { GanttData, GanttEnd, GanttSection, GanttStart, GanttTag, GanttTask, GanttUnit } from './gantt/types';
-export { compileGantt } from './gantt/compile';
+export { compileGantt, type GanttLayout } from './gantt/compile';
+export { scheduleGantt, type GanttSchedule, type GanttSpan } from './gantt/schedule';
+export { GANTT_DATE_FORMAT, formatGanttDate, parseGanttDate } from './gantt/dates';
+export { moveGanttTask, setGanttEnd, setGanttSectionName, setGanttTaskName } from './gantt/edit';
 export type { TimelineData, TimelinePeriod, TimelineSection } from './timeline/types';
-export { compileTimeline } from './timeline/compile';
+export { compileTimeline, type TimelineLayout } from './timeline/compile';
+export {
+  moveTimelinePeriod, setTimelineEvent, setTimelinePeriodLabel, setTimelineSectionName,
+} from './timeline/edit';
 export type { PieData, PieSlice } from './pie/types';
-export { compilePie } from './pie/compile';
+export { compilePie, type PieLayout } from './pie/compile';
+export { setPieLabel, setPieValue } from './pie/edit';
 export type { QuadrantAxis, QuadrantData, QuadrantPoint, QuadrantPointStyle } from './quadrant/types';
-export { compileQuadrant } from './quadrant/compile';
+export { compileQuadrant, type QuadrantLayout } from './quadrant/compile';
+export { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './quadrant/edit';
 export type { JourneyData, JourneySection, JourneyTask } from './journey/types';
-export { compileJourney } from './journey/compile';
+export { compileJourney, type JourneyLayout } from './journey/compile';
+export { setJourneyScore, setJourneySectionName, setJourneyTaskName } from './journey/edit';
 export type { GitCommand, GitCommitType, GitGraphData } from './gitgraph/types';
-export { compileGitGraph } from './gitgraph/compile';
+export { compileGitGraph, type GitGraphLayout } from './gitgraph/compile';
 export { replayGitGraph, type GitBranch, type GitCommit, type GitHistory } from './gitgraph/replay';
+export { setGitTag } from './gitgraph/edit';
 export type { SankeyData, SankeyLink } from './sankey/types';
 export { compileSankey } from './sankey/compile';
+export { sankeyLayout, type SankeyLayout, type SankeyNodeBox, type SankeyRibbon } from './sankey/layout';
+export { renameSankeyNode, setSankeyValue } from './sankey/edit';
 export type { PacketData, PacketField } from './packet/types';
-export { compilePacket } from './packet/compile';
+export { compilePacket, type PacketLayout, type PacketPiece } from './packet/compile';
+export { setPacketLabel } from './packet/edit';
 export type { RadarAxis, RadarCurve, RadarData } from './radar/types';
-export { compileRadar } from './radar/compile';
+export { compileRadar, type RadarLayout } from './radar/compile';
+export { setRadarAxisLabel, setRadarCurveLabel, setRadarValue } from './radar/edit';
 export { CHART_PAD, chartTitle, withTitle } from './chartTitle';
 
 export {

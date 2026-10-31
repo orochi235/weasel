@@ -44,28 +44,6 @@ import and save in two.
 Engine surface: `DataEdge.endLabels?: { from?: string; to?: string }` through the label trait at
 `start`/`end`; outlines `start`, `end`, `bar`. Mind maps lay out with the existing `radial`, which already is a two-sided tree (decided in arc 2, 2026-10-31, over a second two-sided option on `tree`).
 
-## Plot (`@weasel-js/plot`, new package)
-
-Lower layer: scales (`linear`, `log`, `band`, `time`, `ordinal`, later `polar`) with `ticks()` and
-`format()`; axes as scene nodes; marks `bar`, `span`, `line`, `area`, `point`, `arc`, `ribbon`, `rule`,
-`text`, each keeping its datum in scene data.
-
-Upper layer: `PlotData` is a union of chart specs that `plotSpecs` compiles to marks. Editing and export
-act on the spec.
-
-| Kind | Spec | Edits |
-| --- | --- | --- |
-| `gantt` | sections; tasks with date or `after` start, duration, `done`/`active`/`crit`/`milestone`; `dateFormat`, `excludes`, `todayMarker` | drag a span or its end; dependents follow |
-| `timeline` | periods with events | text, reorder |
-| `pie` | label and value; `showData` | value |
-| `xychart` | band or range x, y range, bar and line series | drag a bar top or line point |
-| `quadrant` | axis and quadrant labels, points in 0–1 | drag a point |
-| `journey` | sections, tasks with score 1–5 and actors | drag a score |
-| `gitgraph` | commits, branches, checkouts, merges, cherry-picks | tags; no commit reordering |
-| `sankey` | source, target, value | value |
-
-Colors come from theme roles. `PlotView` hosts plot pages.
-
 ## Codec and app
 
 `mermaid/common/` holds front matter, `%%` comments, `accTitle`/`accDescr`, `classDef`/`style`; each kind
@@ -82,9 +60,8 @@ cannot hold the document.
 2. Graph kinds.
 3. Sequence (built).
 4. Plot foundation.
-5. Plot kinds.
+5. Plot kinds (built).
 6. `block` (graph, new `grid` layout with column spans), `architecture` (graph, side ports, icon table),
-   `C4` (graph, `person` outline, boundaries as containers), `kanban` (graph, pool with `x` lanes),
-   `packet` (plot, band scale of bits), `radar` (plot, polar scale, `area` marks).
+   `C4` (graph, `person` outline, boundaries as containers), `kanban` (graph, pool with `x` lanes).
 
 Each lands with engine, codec, app support, tests and a site demo per kind. 2–4 depend only on 1.
