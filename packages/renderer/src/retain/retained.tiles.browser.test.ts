@@ -118,17 +118,23 @@ function read(gl: WebGL2RenderingContext, r: WeaselRenderer, commands: DrawComma
   return px;
 }
 
-/** How many pixels differ at all, and by how much at most. */
-function diff(a: Uint8Array, b: Uint8Array): { max: number; off: number } {
+/** How many pixels differ at all, by how much at most, and the first few
+ *  that do, tiled then whole, so a failure names where they are: the
+ *  page screenshot cannot show these canvases. */
+function diff(a: Uint8Array, b: Uint8Array): { max: number; off: number; first: string[] } {
   let max = 0;
   let off = 0;
+  const first: string[] = [];
   for (let i = 0; i < a.length; i += 4) {
     let d = 0;
     for (let c = 0; c < 4; c++) d = Math.max(d, Math.abs(a[i + c] - b[i + c]));
     max = Math.max(max, d);
-    if (d > 0) off++;
+    if (d === 0) continue;
+    off++;
+    const p = i / 4;
+    if (first.length < 12) first.push(`${p % DW},${Math.floor(p / DW)}: ${a.subarray(i, i + 4).join(' ')} / ${b.subarray(i, i + 4).join(' ')}`);
   }
-  return { max, off };
+  return { max, off, first };
 }
 
 /** One frame with `layer(view)` retained, under view translation `x, y`. */

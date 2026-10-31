@@ -1,0 +1,19 @@
+start: 2026-10-31T19:29:11Z
+synced tree: dcf2f0217185a6956131433f06ea73a47f50dd7b dirty-paths: 1
+cpu: Apple M5 Max (18 threads)
+gpu: Apple M5 Max
+node: v26.12.1
+test 1: load { 7.71 9.60 10.13 } "Device Utilization %"=39
+test 2: load { 7.30 9.45 10.07 } "Device Utilization %"=40
+test 3: load { 7.35 9.42 10.06 } "Device Utilization %"=41
+test 4: load { 7.00 9.27 10.00 } "Device Utilization %"=43
+test 5: load { 6.76 9.19 9.96 } "Device Utilization %"=42
+test 6: load { 6.48 9.05 9.90 } "Device Utilization %"=40
+test 7: load { 6.12 8.93 9.86 } "Device Utilization %"=42
+test 8: load { 5.79 8.82 9.81 } "Device Utilization %"=44
+test 9: load { 6.06 8.77 9.78 } "Device Utilization %"=43
+test 10: load { 6.14 8.74 9.77 } "Device Utilization %"=41
+probe: load { 6.19 8.67 9.73 } "Device Utilization %"=0
+probe: exit 1
+probe: after { 10.97 11.42 10.69 } "Device Utilization %"=41
+end: 2026-10-31T19:43:14Z

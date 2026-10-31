@@ -1,0 +1,21 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+prebundle: serving 2763 module(s) of bundled packages from source, since source imports them by path
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstderr[2m | packages/renderer/src/retain/retained.tiles.browser.test.ts[2m > [22m[2ma retained surface drawn in tiles[2m > [22m[2mmatches it with a blur reaching across tile edges, in place and through a pan
+[22m[39mweasel drawShader: uniform "(program)" not found in program "weasel:blur". Check spelling, ensure it's used in the shader (unused uniforms are optimized away by the driver).
+ [32m✓[39m [30m[42m browser (chromium) [49m[39m packages/renderer/src/retain/retained.tiles.browser.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1638[2mms[22m[39m
+   [32m✓[39m a retained surface drawn in tiles [2m(4)[22m
+     [33m[2m✓[22m[39m matches the surface drawn whole inside the buffer, and holds a scratch buffer no larger than a tile[33m 395[2mms[22m[39m
+     [33m[2m✓[22m[39m matches it through a pan, margin past the buffer included[33m 319[2mms[22m[39m
+     [33m[2m✓[22m[39m matches it with a blur reaching across tile edges, in place and through a pan[33m 448[2mms[22m[39m
+     [33m[2m✓[22m[39m matches it for a retained group owning an effects buffer, and single-sampled inside one[33m 468[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 15:30:02
+[2m   Duration [22m 2.22s[2m (tests 86%, setup 8%, import 3%, worker 3%)[22m
+

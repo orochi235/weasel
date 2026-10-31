@@ -170,5 +170,5 @@ describe('tiles flake probe', () => {
   it('loaded', () => {
     const burn = burner();
     loop('loaded', () => burn(6));
-  }, 300_000);
+  }, 900_000);
 });

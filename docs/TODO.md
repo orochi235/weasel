@@ -291,10 +291,14 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
   the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
   (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code
-  (2026-10-29). It passed in every other run found. Whether a tile seam can round differently, or
-  `max: 0` is stricter than the GPU guarantees, is not known; read the failure screenshot at the
-  next sighting.
-  Closes when a second sighting's failure screenshot names the cause and it is fixed or the bound set to
+  (2026-10-29). It did not come back on teitou on 2026-10-31: 10 runs of the file at 39–44% GPU,
+  then 900 draws of that case in fresh contexts, 300 quiet and 600 with another context queuing heavy
+  fragment work before each, all exact, tiled against whole and each against the first draw
+  (`tests/perf/recorded/tiles-flake-2026-10-31`, whose `run.sh` repeats it). A difference of one
+  level in 24 pixels is not a flipped sample, which moves a pixel by up to 64. The page screenshot
+  cannot show these canvases, so the test's failure now lists the first differing pixels, tiled
+  then whole; read those at the next sighting.
+  Closes when a second sighting's pixels name the cause and it is fixed or the bound set to
   what the GPU guarantees, or on 2026-12-01 with no second sighting.
 
 ---

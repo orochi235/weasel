@@ -1,0 +1,94 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+prebundle: serving 2764 module(s) of bundled packages from source, since source imports them by path
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer) in a plugin returned from applyToEnvironment. These hooks will be ignored.
+[2m3:30:31 PM[22m [36m[1m[vite][22m[39m (client) Forced re-optimization of dependencies
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mquiet
+[22m[39mPROBE-PROGRESS quiet 50/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mquiet
+[22m[39mPROBE-PROGRESS quiet 100/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mquiet
+[22m[39mPROBE-PROGRESS quiet 150/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mquiet
+[22m[39mPROBE-PROGRESS quiet 200/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mquiet
+[22m[39mPROBE-PROGRESS quiet 250/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mquiet
+[22m[39mPROBE-PROGRESS quiet 300/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mquiet
+[22m[39mPROBE-SUMMARY {"mode":"quiet","iter":300,"ms":102953,"tw":0,"tt":0,"ww":0}
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 50/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 100/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 150/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 200/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 250/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 300/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-SUMMARY {"mode":"loaded","iter":300,"ms":329784,"tw":0,"tt":0,"ww":0}
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 50/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 100/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 150/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 200/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 250/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-PROGRESS loaded 300/300
+[90mstdout[2m | packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22m[2mtiles flake probe[2m > [22m[2mloaded
+[22m[39mPROBE-SUMMARY {"mode":"loaded","iter":300,"ms":328768,"tw":0,"tt":0,"ww":0}
+ [31m❯[39m [30m[42m browser (chromium) [49m[39m packages/renderer/src/retain/tiles-flake.probe.browser.test.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 761702[2mms[22m[39m
+   [31m❯[39m tiles flake probe [2m(2)[22m
+     [33m[2m✓[22m[39m quiet[33m 102972[2mms[22m[39m
+[31m     [31m×[31m loaded[39m[33m 658722[2mms[22m[39m[33m (retry x1)[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m [30m[42m browser (chromium) [49m[39m packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22mtiles flake probe[2m > [22mloaded
+[41m[1m FAIL [22m[49m [30m[42m browser (chromium) [49m[39m packages/renderer/src/retain/tiles-flake.probe.browser.test.ts[2m > [22mtiles flake probe[2m > [22mloaded
+[31m[1mError[22m: Test timed out in 300000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+
+Failure screenshot:
+  - [2m.vitest/attachments/failure-screenshots/tiles-flake.probe.browser.test.ts/tiles-flake-probe---loaded.png[22m
+
+[90m [2m❯[22m task node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m4849:43[22m[39m
+[90m [2m❯[22m Object.<anonymous> node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m4866:16[22m[39m
+[90m [2m❯[22m Object.<anonymous> node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m4656:28[22m[39m
+[90m [2m❯[22m chain node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m4057:14[22m[39m
+[36m [2m❯[22m packages/renderer/src/retain/tiles-flake.probe.browser.test.ts:[2m170:3[22m[39m
+    [90m168|[39m describe('tiles flake probe', () => {
+    [90m169|[39m   it('quiet', () => loop('quiet', null), 300_000);
+    [90m170|[39m   it('loaded', () => {
+    [90m   |[39m   [31m^[39m
+    [90m171|[39m     const burn = burner();
+    [90m172|[39m     loop('loaded', () => burn(6));
+[90m [2m❯[22m node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m4931:52[22m[39m
+[90m [2m❯[22m runWithSuite node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m5380:8[22m[39m
+[90m [2m❯[22m Object.collect node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m4931:22[22m[39m
+[90m [2m❯[22m Object.collect node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m4936:51[22m[39m
+[90m [2m❯[22m node_modules/.vite-browser/vitest/ef98362b8a6b0c8cd804b0d227aa1ffeaba89786/deps/plugins.Cigb0uSy-CoOOkzGF.js?v=caef5853:[2m5565:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m   Start at [22m 15:30:31
+[2m   Duration [22m 762.76s[2m (tests 100%)[22m
+
+
+⚠ 1 test(s) timed out and were retried once:
+  failed again    /Users/mike/.config/onto/work/weasel/packages/renderer/src/retain/tiles-flake.probe.browser.test.ts > tiles flake probe > loaded
+
