@@ -76,3 +76,7 @@ the bundle and served from source, so it loads once. A stack trace into a bundle
 The `browser` vitest project bundles them the same way under `vitest run`, all but what its test files
 reach by path (`scripts/vitest-browser-prebundle.ts`); watch mode and `WEASEL_DEV_SOURCE=1` serve them
 from source.
+
+**`check:needs -- --write` redraws the README package table from every package's `dist/`.** Run in a
+tree with no fresh build, it strips real badges from core, routing and react; its own error suggests
+the flag. Add a new package's row by hand, matching a sibling's badges, and let the fleet check it.
