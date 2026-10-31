@@ -6,6 +6,14 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
+/** A square notched to its center from below: not convex. */
+const notch = (): PolygonPath => ({
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, L, Z]),
+  coords: new Float32Array([0, 0, 100, 0, 100, 100, 50, 50, 0, 100]),
+  fillRule: 'nonzero',
+});
+
 describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
   let r: WeaselRenderer;
@@ -127,13 +135,15 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
     expect(recorder.calls.filter((c) => c.name === 'drawElements').length).toBe(1);
   });
 
-  it('uses stencil two-pass when stroking a PolygonPath that is not convex with align: inner', () => {
-    const path: PolygonPath = {
-      kind: 'polygon',
-      commands: new Uint8Array([M, L, L, L, L, Z]),
-      coords: new Float32Array([0, 0, 100, 0, 100, 100, 50, 50, 0, 100]),
-      fillRule: 'nonzero',
-    };
+  it('cuts an inner stroke on a PolygonPath that is not convex on the CPU, with no stencil', () => {
+    r.render([{ kind: 'path', path: notch(), stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
+    const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
+    expect(enableCalls.some((c) => c.args[0] === recorder.gl.STENCIL_TEST)).toBe(false);
+    expect(recorder.calls.filter((c) => c.name === 'drawElements').length).toBe(1);
+  });
+
+  it('uses stencil two-pass when stroking a fill that draws through the stencil with align: inner', () => {
+    const path = stencilledEvenOdd(notch());
     r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
     const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
     expect(enableCalls.some((c) => c.args[0] === recorder.gl.STENCIL_TEST)).toBe(true);
@@ -200,12 +210,7 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
   });
 
   it('drawPathStrokeStenciled only touches bit 0 — clip-level bits 1-7 survive', () => {
-    const path: PolygonPath = {
-      kind: 'polygon',
-      commands: new Uint8Array([M, L, L, L, L, Z]),
-      coords: new Float32Array([0, 0, 100, 0, 100, 100, 50, 50, 0, 100]),
-      fillRule: 'nonzero',
-    };
+    const path = stencilledEvenOdd(notch());
     r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
 
     // The function must only set stencilMask to 0x01 (bit 0) or 0xFF (frame-start restore).

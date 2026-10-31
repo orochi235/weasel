@@ -2,7 +2,8 @@
  * Inner/outer alignment on a polygon path renders by tessellating at twice the
  * width and stencilling half of it away, so the ribbon handed to the stencil
  * pass must be twice as wide *everywhere* — including at each `vertexWidths`
- * entry, not just at the uniform `stroke.width`.
+ * entry, not just at the uniform `stroke.width`. The CPU cut is turned off
+ * here, so the ribbon reaches GL whole.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { PolygonPath } from '@weasel-js/geom';
@@ -52,6 +53,7 @@ describe('renderer — inner/outer stroke alignment', () => {
     _resetStrokeMeshCacheForTests();
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
   });
 
   const render = (stroke: Stroke): number => {

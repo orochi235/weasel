@@ -1,14 +1,16 @@
 /**
- * An inner or outer stroke on a convex outline, cut on the CPU so it joins the
- * run rather than drawing through the stencil: the centered ribbon twice as
- * wide, kept inside the fill's polygon for an inner stroke and outside it for
- * an outer one, which is what `drawPathStrokeStenciled` leaves on screen. The
- * polygon is the fill mesh that stencil pass draws, so both cut along the
- * same edges; on a multisampled target a sample on such an edge can still go
- * the other way (`batchClip.ts`).
+ * An inner or outer stroke, cut on the CPU so it joins the run rather than
+ * drawing through the stencil: the centered ribbon twice as wide, kept inside
+ * the fill for an inner stroke and outside it for an outer one, which is what
+ * `drawPathStrokeStenciled` leaves on screen. The fill is the mesh that
+ * stencil pass draws, so both cut along the same edges; on a multisampled
+ * target a sample on such an edge can still go the other way (`batchClip.ts`).
+ * A convex fill is cut to its outline's half-planes; any other to its
+ * triangles (`triangleCut.ts`).
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { clipPlane, ringPlanes } from '../batchClip';
+import { cutToTriangles } from './triangleCut';
 
 /** Edges a fill's polygon may have and still be cut to: a circle flattened
  *  at a large size holds a few hundred. */
@@ -18,23 +20,27 @@ const built = new WeakMap<Mesh, { fill: Mesh; inner: boolean; mesh: Mesh | null 
 
 /**
  * `ribbon`, a centered ribbon twice the stroke's width, cut to the inside of
- * `fill` (`inner`) or its outside, or `null` when `fill` is not one convex
- * polygon. Kept per ribbon mesh while `fill` and the side hold.
+ * `fill` (`inner`) or its outside, or `null` when only the stencil can cut it:
+ * a fill drawn through the stencil itself, or one whose triangles would take
+ * too long to cut against. Kept per ribbon mesh while `fill` and the side hold.
  */
 export function alignedRibbon(ribbon: Mesh, fill: Mesh, inner: boolean): Mesh | null {
   const last = built.get(ribbon);
   if (last !== undefined && last.fill === fill && last.inner === inner) return last.mesh;
-  const planes = outlinePlanes(fill, ribbon.origin);
-  const mesh = planes === null ? null : cutRibbon(ribbon, planes, inner);
+  const mesh = fill.requiresStencil ? null : cut(ribbon, fill, inner);
   built.set(ribbon, { fill, inner, mesh });
   return mesh;
+}
+
+function cut(ribbon: Mesh, fill: Mesh, inner: boolean): Mesh | null {
+  const planes = outlinePlanes(fill, ribbon.origin);
+  return planes === null ? cutToTriangles(ribbon, fill, inner) : cutRibbon(ribbon, planes, inner);
 }
 
 /** `fill`'s outline as half-planes in `origin`'s frame, where `fill` is one
  *  convex ring: earcut leaves a ring of `n` distinct corners with no holes as
  *  `n - 2` triangles over them, in order. */
 function outlinePlanes(fill: Mesh, origin: Mesh['origin']): Float64Array | null {
-  if (fill.requiresStencil) return null;
   const v = fill.vertices;
   const dx = (fill.origin?.x ?? 0) - (origin?.x ?? 0);
   const dy = (fill.origin?.y ?? 0) - (origin?.y ?? 0);

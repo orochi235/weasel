@@ -223,12 +223,13 @@ const POLYGON_EVENODD: PolygonPath = stencilledEvenOdd({
 
 // Helper: a polygon path for stroke-stencil (inner/outer) — needs visible area,
 // and a notch, since an aligned stroke on a convex fill is cut on the CPU.
-const POLYGON_NONZERO: PolygonPath = {
+/** A notched square whose fill draws through the stencil, so an aligned
+ *  stroke on it does too: any fill that does not is cut on the CPU. */
+const NOTCH_STENCILLED: PolygonPath = stencilledEvenOdd({
   kind: 'polygon',
   commands: new Uint8Array([M, L, L, L, L, Z]),
   coords: new Float32Array([0, 0, 100, 0, 100, 100, 50, 50, 0, 100]),
-  fillRule: 'nonzero',
-};
+});
 
 describe('stencil-shaded passes honor ancestor clip', () => {
   it('drawPathFillStencil shaded pass uses EQUAL clipMask|0x01 when clipDepth=2', () => {
@@ -265,7 +266,7 @@ describe('stencil-shaded passes honor ancestor clip', () => {
     // ancestorMask(1) = 0x02, inner ref = 0x03, mask = 0x03
     dispatch(ctx, {
       kind: 'path',
-      path: POLYGON_NONZERO,
+      path: NOTCH_STENCILLED,
       stroke: { paint: { color: '#000' }, width: 10, align: 'inner' },
     });
 
@@ -283,7 +284,7 @@ describe('stencil-shaded passes honor ancestor clip', () => {
     // ancestorMask(1) = 0x02, outer ref = 0x02 (bit 0 NOT set), mask = 0x03
     dispatch(ctx, {
       kind: 'path',
-      path: POLYGON_NONZERO,
+      path: NOTCH_STENCILLED,
       stroke: { paint: { color: '#000' }, width: 10, align: 'outer' },
     });
 

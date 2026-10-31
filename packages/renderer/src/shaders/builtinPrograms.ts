@@ -115,7 +115,7 @@ export interface BatchVariants {
   /**
    * Whether the CPU cuts what the stencil would otherwise: where `hulls` is
    * off, a convex clip and a slanted edge across a rect clip (`batchClip.ts`),
-   * and anywhere, an aligned stroke on a convex fill (`alignedRibbon.ts`).
+   * and anywhere, an aligned stroke (`alignedRibbon.ts`).
    * Always on but in a test that wants the stencil as its reference.
    */
   readonly cuts: boolean;
