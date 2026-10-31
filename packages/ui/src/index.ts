@@ -113,6 +113,7 @@ export * from './components/Callout';
 export * from './components/Popover';
 export * from './components/Toast';
 export * from './components/Plot2D';
+export * from './components/PlotDataPanel';
 export * from './components/CurveEditor';
 export * from './components/PointPlotter';
 export * from './components/ColorField';
