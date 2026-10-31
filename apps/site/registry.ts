@@ -632,6 +632,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramDataDemo.tsx',
   },
   {
+    id: 'sequence-diagram',
+    title: 'Sequence diagram',
+    package: 'diagram',
+    description: "sequenceSpecs draws a SequenceData as one root node holding the data and every head, lifeline, message, activation, note, and fragment as a part under it. DiagramView's onEditSequence turns on the sequence edits, each reported as the sequence's new data: the host stores it and draws the specs again, so an edit is one change to the data.",
+    hint: 'Drag a message up or down, into or out of the alt; drag a head sideways; drag a message end onto another lifeline; double-click text to edit it.',
+    load: () => import('./demos/SequenceDiagramDemo').then((m) => m.SequenceDiagramDemo),
+    path: 'apps/site/demos/SequenceDiagramDemo.tsx',
+  },
+  {
     id: 'diagram-groups',
     title: 'Diagram groups',
     package: 'diagram',
