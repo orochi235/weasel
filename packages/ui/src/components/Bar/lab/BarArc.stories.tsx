@@ -4,7 +4,7 @@ import { loadInto } from '../../Along/lab/Presets';
 import { BAR_ARC_DEFAULTS as D, type BarArcConfig } from './barArcConfig';
 import { BarArcView } from './BarArcView';
 
-export default meta({ title: 'ui/Bar/Bar', layout: 'fullscreen', tags: ['lab'] });
+export default meta({ title: 'ui/Bar', layout: 'fullscreen', tags: ['lab'] });
 
 /** A bar along an arc: built item lists, scroll and menu overflow, align and sweep, read back off the page. */
 export const OnAnArc = story({
