@@ -505,6 +505,11 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
     ];
 
     const W2 = w;
+    // Where the shader decides no hulls, a convex clip and a slanted edge across
+    // a rect clip are cut on the CPU too, to within a sample on the edge
+    // (planeClip.browser.test.ts). Off here, so the polygons go on the stencil
+    // and the triangle is refused the cut, which is what this compares.
+    Object.defineProperty(renderer._batchVariants(), 'cuts', { value: false });
     function draw(asPolygon: boolean): { pixels: Uint8Array; draws: number } {
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
