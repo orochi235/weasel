@@ -437,8 +437,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer reopens the 2026-10-12 ruling and the direct calls reach the open journal,
   or rules today's split final.
 
-### Symmetry follow-ups
-
 ---
 
 ## Animation
@@ -898,7 +896,7 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [waiting] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
+- **(P2) [agent] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
   label, keeps it on a reroute, and resets it" times out on its first `expect.poll(() => savedLabel()?.dodge)`:
   the first drag saves no placement. The onto archive has it failing in 5 of about 45 fleet runs from 2026-10-28
   20:42 to 2026-10-29 17:00, on keiei, studio, teitou and msb-uai, on branches that touch nothing in chart and on
