@@ -95,6 +95,10 @@ describe('File › Import…', () => {
     ['ER', 'erDiagram\n  CUSTOMER ||--o{ ORDER : places\n  ORDER {\n    int id PK\n  }', ['CUSTOMER', 'ORDER', 'CUSTOMER-ORDER']],
     ['mind map', 'mindmap\n  root((Plan))\n    Goals\n    Risks', ['root', 'n2', 'n3']],
     ['requirement', 'requirementDiagram\n  requirement r {\n    id: 1\n  }\n  element e {\n  }\n  e - satisfies -> r', ['r', 'e', 'e-r']],
+    ['block', 'block-beta\n  columns 2\n  a b\n  block:g\n    c\n  end\n  a --> c', ['a', 'b', 'g', 'c', 'a-c']],
+    ['architecture', 'architecture-beta\n  group g[G]\n  service a(server)[A] in g\n  service b[B]\n  a:R --> L:b', ['g', 'a', 'b', 'a-b']],
+    ['C4', 'C4Context\n  Person(u, "User")\n  System_Boundary(sb, "Shop") {\n    System(s, "Store")\n  }\n  Rel(u, s, "Uses")', ['u', 'sb', 's', 'u-s']],
+    ['kanban', 'kanban\n  todo[Todo]\n    t1[Write it]@{ priority: \'High\' }\n  done[Done]', ['board', 'todo', 'done', 't1']],
   ])('imports a Mermaid %s diagram as shapes laid out on a page', async (_kind, text, ids) => {
     io.picked = new File([text], 'diagram.mmd');
     mount();

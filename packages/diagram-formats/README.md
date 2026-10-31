@@ -87,7 +87,7 @@ with it and rejects on a file nothing reads.
 | --- | --- | --- | --- |
 | `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes, graph and plot pages | the whole document |
 | `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
-| `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, requirement diagram, or xychart | `.mmd`, `.mermaid` | yes | one page, a graph or an xychart |
+| `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, requirement, block, architecture, C4, or kanban diagram, or xychart | `.mmd`, `.mermaid` | yes | one page, a graph or an xychart |
 | `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
 Not read, by decision (2026-10-20): packaged office-suite drawing formats,
@@ -239,6 +239,52 @@ naming the line on text it cannot read, and warns of what it drops.
 | `requirement name { … }`, its five other kinds, and `element name { … }` | a box: a `<<kind>>` row, the name row, a divider, a `field` row per `key: value` |
 | `a - satisfies -> b`, `b <- satisfies - a` | a dashed arrow from `a` to `b` labeled `<<satisfies>>` |
 | `style`, `classDef`, `class` | colors |
+
+`block-beta`, notation `'block'`, laid out by `grid` (the page's `layout`):
+
+| Mermaid | Diagram |
+| --- | --- |
+| `a`, `a["text"]`, and the flowchart's other brackets | a node: its text (else its id) in the flowchart's outline for those brackets |
+| `columns 3` | the grid's `columns`, or a group's under `groupColumns`; `columns auto` leaves it unset |
+| `a:2`, `block:g:2` | `spans` |
+| `space`, `space:2` | `skips` on the next block; spaces after a level's last block are dropped, with a warning |
+| `block:g … end`, `block … end` | a container holding its blocks in order; an unnamed one is `block-1`, `block-2`, … |
+| `a --> b`, `a --- b`, `a -.-> b`, `a ==> b`, `a <--> b`, `a -- "text" --> b` | an edge: its heads, dashed or 3 wide, and its label |
+| `style`, `classDef`, `class` | colors |
+| `a<["text"]>(right)` | a rect, its direction dropped with a warning |
+
+`architecture-beta`, notation `'architecture'`, laid out running right:
+
+| Mermaid | Diagram |
+| --- | --- |
+| `service a(icon)[Title] in g` | a node of its title (else its id): `cloud`, `database`, `disk`, `internet`, and `server` as the `cloud`, `cylinder`, `disk`, `globe`, and `server` outlines; no icon, or any other with a warning, as `roundRect` |
+| `junction j in g` | a 12-wide `start` dot with no text |
+| `group g(icon)[Title] in parent` | a container titled with its title; its icon is dropped with a warning |
+| `a:R --> L:b`, `--`, `<--`, `<-->` | an edge leaving `a`'s `e` port and meeting `b`'s `w` (`L`, `R`, `T`, `B` as `w`, `e`, `n`, `s`), with its heads |
+| `a{group}:R --> L:b` | an edge from `a`'s group, meeting its box where layout chooses |
+
+`C4Context`, `C4Container`, `C4Component`, `C4Dynamic`, and `C4Deployment`, notations `'c4-context'` through `'c4-deployment'`:
+
+| Mermaid | Diagram |
+| --- | --- |
+| `Person`, `System`, `Container`, `Component`, their `Db` and `Queue` kinds, and each one's `_Ext` | a node 200 wide: a `<<kind>>` row (`<<external_system_db>>`), its name in bold, a container's or component's `[technology]`, and its description wrapped; outline `person`, `cylinder`, `queue`, or `roundRect`; role `muted` when external, else `accent` |
+| `Enterprise_Boundary`, `System_Boundary`, `Container_Boundary`, `Boundary`, `Deployment_Node`, `Node` | a container titled `Name [enterprise]`, `[system]`, `[container]`, or the type it gives |
+| `Rel(a, b, "label", "technology")`, `BiRel`, `Rel_Back` | an edge labeled `label [technology]`; heads at both ends; a head at `a` only |
+| `Rel_U`, `Rel_D`, `Rel_L`, `Rel_R` | ports: `n` to `s`, `s` to `n`, `w` to `e`, `e` to `w` |
+| `UpdateElementStyle(a, $bgColor, $fontColor, $borderColor)`, `UpdateRelStyle(a, b, $textColor, $lineColor)` | colors |
+| `title` | the page name |
+| sprites, tags, links, a relationship's description, offsets, and layout settings | dropped, with a warning |
+
+Written back, a box with no `<<kind>>` row is a system, a person, store, or queue by its outline, and external when its role is `muted`.
+
+`kanban`, notation `'kanban'`:
+
+| Mermaid | Diagram |
+| --- | --- |
+| the board | one pool, `board`, whose lanes run along `x`, sized to hold its longest column |
+| `todo[Todo]`, a line at the shallowest indent | a lane 220 wide; one with no id is `column-` and its place |
+| `id[text]`, a line indented under it | a node 180 wide in that lane: its text wrapped into rows; one with no id is `card-` and its place |
+| `@{ ticket: MC-1, assigned: 'kim', priority: 'High' }` | a `field` row per pair |
 
 Writing a kind writes what its reader reads, so text read and written reads
 back as the same page. A page from elsewhere writes as near as the kind
