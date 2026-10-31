@@ -46,7 +46,7 @@ describe('attachHud', () => {
   beforeEach(() => {
     _resetFontRegistryForTests();
     // Stub fetch so registerDefaultFont's promise resolves
-    global.fetch = vi.fn(async () => new Response('{"common":{"lineHeight":1},"info":{"face":"x","size":1},"chars":[],"kernings":[]}')) as never;
+    global.fetch = vi.fn(async () => new Response('{"common":{"lineHeight":1,"base":1,"scaleW":1,"scaleH":1},"info":{"face":"x","size":1},"chars":[],"kernings":[]}')) as never;
     // Stub createImageBitmap (jsdom doesn't implement it)
     global.createImageBitmap = vi.fn(async () => ({} as ImageBitmap));
   });
@@ -268,7 +268,7 @@ describe('attachHud', () => {
 describe('attachHud claims', () => {
   beforeEach(() => {
     _resetFontRegistryForTests();
-    global.fetch = vi.fn(async () => new Response('{"common":{"lineHeight":1},"info":{"face":"x","size":1},"chars":[],"kernings":[]}')) as never;
+    global.fetch = vi.fn(async () => new Response('{"common":{"lineHeight":1,"base":1,"scaleW":1,"scaleH":1},"info":{"face":"x","size":1},"chars":[],"kernings":[]}')) as never;
     global.createImageBitmap = vi.fn(async () => ({} as ImageBitmap));
   });
 
