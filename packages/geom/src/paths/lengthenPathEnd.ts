@@ -2,12 +2,12 @@
  * Grow or trim an open subpath at one of its ends. Lengthen drags this, and
  * Extend to next path reaches it through `lengthenOpenEnd`.
  *
- * A positive distance extends the end outward: straight along the end tangent,
- * or along a circular arc with the curvature the end has, which meets the path
- * with matching direction and curvature. A straight end segment is lengthened
- * in place; a curved one is continued with a new segment. A negative distance
- * trims the path back along itself by arc length, whichever way it would have
- * grown.
+ * A positive distance extends the end outward along the curve its mode draws
+ * (`extensionPieces`): straight along the end tangent, along a circular arc
+ * with the curvature the end has, or easing out of that curvature into a
+ * straight run. A straight end segment lengthened straight grows in place;
+ * anything else is continued with new segments. A negative distance trims the
+ * path back along itself by arc length, whichever way it would have grown.
  *
  * The arc rather than extrapolating the end cubic past t = 1: a cubic's
  * leading term takes over beyond its range, so a continued curve swings off
@@ -21,25 +21,16 @@ import { isStraightSegment, type PenAnchor } from './anchors';
 import { splitCubicAtT, type Point } from './cubicMath';
 import { cubicCurvatureAt, cubicDerivativeAt } from './curvature';
 import type { OpenPathEnd } from './extendPath';
+import { nearestOnCubic, nearestOnLine } from '../nearest';
+import {
+  easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type LengthenMode, type PathEndFrame,
+} from './pathEndExtension';
 import { segmentLength, segmentTAtLength } from './segmentLength';
 
-/** How `lengthenPathEnd` grows an end: straight on, or bending as the end bends. */
-export type LengthenMode = 'tangent' | 'curvature';
+export type { EaseOptions, LengthenMode, PathEndFrame } from './pathEndExtension';
 
-/** Where an end is, which way it heads out of the path, and how it bends there. */
-export interface PathEndFrame {
-  point: Point;
-  /** Unit vector pointing out of the path. */
-  tangent: Point;
-  /** Signed curvature along `tangent`: positive turns toward `(-tangent.y, tangent.x)`. */
-  curvature: number;
-}
-
-/** Below this turn over the requested length an arc is drawn as a straight run. */
-const STRAIGHT_TURN = 1e-6;
 /** The share of a subpath's length a trim always leaves. */
 const MIN_KEEP = 1e-3;
-const QUARTER = Math.PI / 2;
 const FULL = 2 * Math.PI;
 
 /** The end of an open subpath that the anchor at `flatIndex` is, or null when it is
@@ -72,17 +63,20 @@ export function pathEndFrame(set: AnchorSet, end: OpenPathEnd): PathEndFrame | n
  * stops at one full turn. Returns false when `end` is not the end of an open
  * subpath or nothing changed.
  */
-export function lengthenPathEnd(set: AnchorSet, end: OpenPathEnd, distance: number, mode: LengthenMode): boolean {
+export function lengthenPathEnd(
+  set: AnchorSet, end: OpenPathEnd, distance: number, mode: LengthenMode, opts: EaseOptions = {},
+): boolean {
   if (!(distance !== 0 && Number.isFinite(distance))) return false;
-  return atTail(set, end, (sub) => (distance < 0 ? trimTail(sub, -distance) : growTail(sub, distance, mode))) ?? false;
+  return atTail(set, end, (sub) => (distance < 0 ? trimTail(sub, -distance) : growTail(sub, distance, mode, opts))) ?? false;
 }
 
 /**
  * The distance `lengthenPathEnd` takes for its new end to land nearest `point`: the
- * point projected onto the end tangent, or for a curvature lengthening, measured
- * around the circle of curvature. A measurement around the circle can name the
- * same spot a turn apart; it answers the one nearest `near`, so a drag passing
- * half a turn keeps going instead of jumping back.
+ * point projected onto the end tangent, for a curvature lengthening measured
+ * around the circle of curvature, and for an eased one along the eased curve
+ * where the point is ahead of the end. A measurement around the circle can name
+ * the same spot a turn apart; it answers the one nearest `near`, so a drag
+ * passing half a turn keeps going instead of jumping back.
  */
 export function lengthToward(
   set: AnchorSet,
@@ -90,13 +84,16 @@ export function lengthToward(
   mode: LengthenMode,
   point: Point,
   near = 0,
+  opts: EaseOptions = {},
 ): number {
   const frame = pathEndFrame(set, end);
   if (!frame) return 0;
   const { point: p, tangent: t, curvature } = frame;
   const vx = point.x - p.x;
   const vy = point.y - p.y;
-  if (mode === 'tangent' || curvature === 0) return vx * t.x + vy * t.y;
+  const ahead = vx * t.x + vy * t.y;
+  if (mode === 'tangent' || curvature === 0 || (mode === 'eased' && ahead <= 0)) return ahead;
+  if (mode === 'eased') return lengthAlongEased(frame, point, opts);
   const s = Math.sign(curvature);
   const r = 1 / Math.abs(curvature);
   const c = arcCenter(frame);
@@ -162,50 +159,49 @@ function arcCenter({ point, tangent, curvature }: PathEndFrame): Point {
   return { x: point.x - tangent.y / curvature, y: point.y + tangent.x / curvature };
 }
 
-function growTail(sub: PenAnchor[], distance: number, mode: LengthenMode): boolean {
-  const frame = tailFrame(sub);
-  if (!frame) return false;
-  if (mode === 'curvature' && Math.abs(frame.curvature) * distance > STRAIGHT_TURN) {
-    appendArc(sub, frame, distance);
-    return true;
+/** The arc length along `frame`'s eased extension to the point of it nearest
+ *  `point`, searching as far past the ease as `point` is from the end. */
+function lengthAlongEased(frame: PathEndFrame, point: Point, opts: EaseOptions): number {
+  const far = Math.hypot(point.x - frame.point.x, point.y - frame.point.y);
+  const reach = Math.min(easeLength(frame, opts), far * 2) + far;
+  let best = { dist: Infinity, length: 0 };
+  let walked = 0;
+  for (const piece of extensionPieces(frame, reach, 'eased', opts)) {
+    const [q0, q1, q2, q3] = piece.pts;
+    const hit = piece.pts.length === 2
+      ? nearestOnLine(point.x, point.y, q0.x, q0.y, q1.x, q1.y)
+      : nearestOnCubic(point.x, point.y, q0.x, q0.y, q1.x, q1.y, q2.x, q2.y, q3.x, q3.y);
+    if (hit.dist < best.dist) best = { dist: hit.dist, length: walked + pieceLengthAt(piece, hit.t) };
+    walked += piece.length;
   }
-  const to = { x: frame.point.x + frame.tangent.x * distance, y: frame.point.y + frame.tangent.y * distance };
-  const end = sub[sub.length - 1];
-  if (isStraightSegment(sub[sub.length - 2], end)) {
-    end.x = to.x;
-    end.y = to.y;
-  } else {
-    sub.push(to);
-  }
-  return true;
+  return best.length;
 }
 
-/** Continue the subpath along the circle of curvature at its end, one cubic per
- *  quarter turn or less. */
-function appendArc(sub: PenAnchor[], frame: PathEndFrame, distance: number): void {
-  const s = Math.sign(frame.curvature);
-  const r = 1 / Math.abs(frame.curvature);
-  const sweep = Math.min(distance / r, FULL);
-  const pieces = Math.max(1, Math.ceil(sweep / QUARTER - 1e-9));
-  const step = sweep / pieces;
-  const reach = (4 / 3) * Math.tan(step / 4) * r;
-  const c = arcCenter(frame);
-  const rx = frame.point.x - c.x;
-  const ry = frame.point.y - c.y;
-  const at = (turn: number) => {
-    const cos = Math.cos(s * turn);
-    const sin = Math.sin(s * turn);
-    return {
-      p: { x: c.x + rx * cos - ry * sin, y: c.y + rx * sin + ry * cos },
-      t: { x: frame.tangent.x * cos - frame.tangent.y * sin, y: frame.tangent.x * sin + frame.tangent.y * cos },
-    };
-  };
+function growTail(sub: PenAnchor[], distance: number, mode: LengthenMode, opts: EaseOptions): boolean {
+  const frame = tailFrame(sub);
+  if (!frame) return false;
+  const pieces = extensionPieces(frame, distance, mode, opts);
+  const end = sub[sub.length - 1];
+  const first = pieces[0];
+  if (pieces.length === 1 && first.pts.length === 2 && isStraightSegment(sub[sub.length - 2], end)) {
+    end.x = first.pts[1].x;
+    end.y = first.pts[1].y;
+    return true;
+  }
+  appendPieces(sub, pieces);
+  return pieces.length > 0;
+}
+
+/** Append `pieces` to the subpath, each starting where it ends. */
+function appendPieces(sub: PenAnchor[], pieces: readonly { pts: Point[] }[]): void {
   let prev = sub[sub.length - 1];
-  for (let i = 1; i <= pieces; i++) {
-    const from = at((i - 1) * step);
-    const to = at(i * step);
-    prev.outHandle = { x: from.p.x + from.t.x * reach, y: from.p.y + from.t.y * reach };
-    const next: PenAnchor = { x: to.p.x, y: to.p.y, inHandle: { x: to.p.x - to.t.x * reach, y: to.p.y - to.t.y * reach } };
+  for (const { pts } of pieces) {
+    const to = pts[pts.length - 1];
+    const next: PenAnchor = { x: to.x, y: to.y };
+    if (pts.length === 4) {
+      prev.outHandle = { ...pts[1] };
+      next.inHandle = { ...pts[2] };
+    }
     sub.push(next);
     prev = next;
   }

@@ -51,7 +51,7 @@ export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
 export { planTrim, trimPathAction } from './trim/trimSegment';
-export { extendToMeetAction } from './extend/extendToMeet';
+export { EXTEND_TO_MEET_PARAMS, extendToMeetAction, type ExtendToMeetParams } from './extend/extendToMeet';
 export {
   LENGTHEN_TOOL, lengthenPathAction, lengthenToolAction, type LengthenPathParams,
 } from './lengthen/lengthenPath';

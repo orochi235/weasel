@@ -139,6 +139,37 @@ describe('lengthenPathEnd along the curvature', () => {
   });
 });
 
+describe('lengthenPathEnd eased', () => {
+  it('eases a curved end out of its curvature into a straight run, the requested length long', () => {
+    const set = quarter();
+    const before = subLength(set.anchors[0]);
+    lengthenPathEnd(set, { sub: 0, end: 'last' }, 150, 'eased');
+    const sub = set.anchors[0];
+    expect(subLength(sub) - before).toBeCloseTo(150, 2);
+    const tip = sub[sub.length - 1];
+    expect(tip.inHandle).toBeUndefined();
+    expect(sub[sub.length - 2].inHandle).toBeDefined();
+  });
+
+  it('lengthens a straight end segment in place, as the tangent does', () => {
+    const eased = line();
+    const tangent = line();
+    lengthenPathEnd(eased, { sub: 0, end: 'last' }, 25, 'eased');
+    lengthenPathEnd(tangent, { sub: 0, end: 'last' }, 25, 'tangent');
+    expect(eased.anchors).toEqual(tangent.anchors);
+  });
+
+  it('measures a point back to the distance that reached it', () => {
+    for (const d of [20, 80, 200]) {
+      const set = quarter();
+      lengthenPathEnd(set, { sub: 0, end: 'last' }, d, 'eased');
+      const tip = set.anchors[0][set.anchors[0].length - 1];
+      expect(lengthToward(quarter(), { sub: 0, end: 'last' }, 'eased', tip)).toBeCloseTo(d, 2);
+    }
+    expect(lengthToward(quarter(), { sub: 0, end: 'last' }, 'eased', { x: 100, y: 90 })).toBeCloseTo(-10, 6);
+  });
+});
+
 describe('lengthenPathEnd with a negative distance', () => {
   it('trims a straight end along itself', () => {
     const set = line();

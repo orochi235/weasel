@@ -26,6 +26,7 @@ const config = f.schema({
   mode: f.enum('tangent', [
     { value: 'tangent', label: 'Tangent' },
     { value: 'curvature', label: 'Curvature' },
+    { value: 'eased', label: 'Eased' },
   ]).radio().label('Lengthen along'),
 });
 type Config = ConfigOf<typeof config>;
