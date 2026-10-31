@@ -9,12 +9,11 @@
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tscArgv } from './lib/tsc.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const TSC = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const named = process.argv.slice(2);
 const packages = readdirSync(join(ROOT, 'packages'))
   .filter((name) => existsSync(join(ROOT, 'packages', name, 'tsconfig.json')))
@@ -32,7 +31,7 @@ const failed = [];
 for (const [index, name] of packages.entries()) {
   const run = spawnSync(
     process.execPath,
-    [TSC, '-p', join('packages', name, 'tsconfig.json'), '--noEmit', '--incremental', 'false', '--pretty', 'false'],
+    tscArgv(['-p', join('packages', name, 'tsconfig.json'), '--noEmit', '--incremental', 'false', '--pretty', 'false']),
     { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 },
   );
   const output = `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ? String(run.error) : ''}`;

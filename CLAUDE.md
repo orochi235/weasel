@@ -264,7 +264,9 @@ Typecheck is `npm run typecheck`. It runs two programs: the root `tsconfig.json`
 `packages/tsconfig.json` for every `*.browser.test.*` file, which the root one excludes because
 those use `@vitest/browser`'s matchers and the rest use jest-dom's — the two declare
 `toHaveTextContent` incompatibly, and in one program load order picks the winner. A bare
-`npx tsc --noEmit` checks only the first. `npm run typecheck:packages`
+`npx tsc --noEmit` checks only the first, and with the wrong compiler: both scripts run
+TypeScript 7 (the `typescript-7` alias), while `typescript` stays on 6.0 for typescript-eslint,
+typedoc and tsup's `.d.ts` build, which need the compiler API 7.0 dropped. `npm run typecheck:packages`
 typechecks each package alone under its own `tsconfig.json`, every sibling read from source: the
 program an editor shows for a file in that package. Name packages after `--` to check only those.
 
