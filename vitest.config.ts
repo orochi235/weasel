@@ -25,9 +25,8 @@ import { devWatch } from './scripts/vite-watch.ts';
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
 // Default `npm test` runs the jsdom projects plus `browser`, which runs
-// `*.browser.test.*` files in headless Chromium. `npm run check:test-projects`
-// fails the build on a test file no project's glob reaches. `forge-stories`
-// is opt-in via `npm run test:stories:forge`. Shared concerns (jsdom env, setup, alias map) live
+// `*.browser.test.*` files in headless Chromium, and `forge-stories`. `npm run check:test-projects`
+// fails the build on a test file no project's glob reaches. Shared concerns (jsdom env, setup, alias map) live
 // in the per-project block — vitest doesn't currently inherit `resolve` or
 // `test` keys from the top-level config when `projects` is set.
 const shared = {
@@ -329,8 +328,7 @@ export default defineConfig({
         },
       },
       // Every story — native and CSF — rendered and played through forge's frame, with the workshop's
-      // frame setup. Opt-in via `npm run test:stories:forge`; kept out of `test`, `test:unit` and CI
-      // because it pulls Playwright and ~250 MB of browser only to prove every story mounts.
+      // frame setup.
       {
         plugins: [
           react(),
@@ -351,6 +349,9 @@ export default defineConfig({
           name: 'forge-stories',
           retry: RETRY_TIMEOUTS,
           include: forgeStories,
+          // Isolated, every story file's iframe imported ~2,850 modules from source again, and Linux Chromium
+          // dropped every socket of the tab mid-import (VITEST_BROWSER_CONNECTION_CLOSED) within ~20 files a tab.
+          isolate: false,
           setupFiles: [REQUEST_LOG_SETUP, RESIZE_LOOPS_SETUP],
           browser: {
             enabled: true,
