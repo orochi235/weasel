@@ -90,6 +90,20 @@ describe('FallthroughDiagram', () => {
     expect(winner?.textContent).toContain('would fire');
   });
 
+  it('gives every term in the input list a name', () => {
+    const { container } = renderWithIcons(<FallthroughDiagram record={fixtures.predictedHover} />);
+    for (const dd of container.querySelectorAll('dd')) {
+      expect(dd.previousElementSibling?.tagName).toBe('DT');
+    }
+  });
+
+  it('explains the specificity tuple in its column header, leaving the cell its own text', () => {
+    const { container } = renderWithIcons(<FallthroughDiagram record={fixtures.escapeInPathEdit} />);
+    const ranked = band('Ranked');
+    expect(within(ranked).getByRole('columnheader', { name: /Specificity.*target, modifiers, phase, exact/ })).toBeTruthy();
+    expect(container.querySelector('td[aria-label]')).toBeNull();
+  });
+
   it('draws every route of a candidate', () => {
     renderWithIcons(<FallthroughDiagram record={fixtures.predictedHover} />);
     expect(screen.getAllByLabelText('[*:*] drag => anchor +shift').length).toBeGreaterThan(0);

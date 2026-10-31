@@ -70,6 +70,7 @@ function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted
       )}
       {predicted && (
         <div className={s.field}>
+          <dt className={s.srOnly}>Status</dt>
           <dd><Badge size="xs" emphasis="high" variant="subtle">predicted</Badge></dd>
         </div>
       )}
@@ -167,7 +168,7 @@ function RankedStage({ ranked }: { ranked: readonly RankedCandidate[] }) {
         <thead>
           <tr>
             <th className={s.num}>#</th><th>Action</th><th>Placed by</th><th>Walk</th>
-            <th>Tier</th><th>Specificity</th><th>Rule</th><th>Route</th>
+            <th>Tier</th><th>Specificity<span className={s.srOnly}> (target, modifiers, phase, exact)</span></th><th>Rule</th><th>Route</th>
           </tr>
         </thead>
         <tbody>
@@ -191,7 +192,7 @@ function RankedStage({ ranked }: { ranked: readonly RankedCandidate[] }) {
                 </td>
                 <td className={s.walk} data-walk={r.walk.kind}>{walkLabel(r.walk)}</td>
                 <td>{c.scope}</td>
-                <td className={s.num} aria-label="target, modifiers, phase, exact">{c.specificity.join(' ')}</td>
+                <td className={s.num}>{c.specificity.join(' ')}</td>
                 <td>{c.eligible ? <Code size="sm" variant="plain">{c.eligible}</Code> : <span className={s.muted}>none</span>}</td>
                 <td><Routes candidate={c} /></td>
               </tr>
