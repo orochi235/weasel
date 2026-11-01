@@ -22,11 +22,12 @@ export interface LoupeEvents {
 }
 
 /** A loupe over `ref`'s canvas, kept to `settings`. Mount only once `ref` is populated: `createLoupe` reads it in a
- *  mount effect and does not retry. */
+ *  mount effect and does not retry. `source` is the layers vector mode re-renders, or `null` for the canvas's own
+ *  stack, scene and selection chrome; which of the two is read at mount. */
 export function useLoupe(
   ref: { current: SceneCanvasApi | null },
   hud: Hud,
-  source: RenderLayer<unknown>[],
+  source: RenderLayer<unknown>[] | null,
   settings: LoupeSettings,
   events: LoupeEvents,
 ): void {
@@ -49,7 +50,7 @@ export function useLoupe(
     // own to declare, and calling `draw` directly drops a world layer's view
     // transform on the floor. The shim stays `'screen'` because its children
     // now carry their own.
-    draw: (data, view, dims) => sourceRef.current.flatMap((l) => drawOneLayer(l, data, view, dims)),
+    draw: (data, view, dims) => (sourceRef.current ?? []).flatMap((l) => drawOneLayer(l, data, view, dims)),
   }]).current;
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export function useLoupe(
       hud,
       canvas: api.surface,
       ...(api.element ? { input: api.element } : {}),
-      source: stableSource,
+      ...(sourceRef.current ? { source: stableSource } : { views: api }),
       mode,
       factor,
       requestRedraw: () => api.requestRedraw(),
@@ -72,7 +73,7 @@ export function useLoupe(
     loupe.window.setHidden(!visible);
     handle.current = loupe;
     return () => { loupe.dispose(); handle.current = null; };
-  }, [hud, eventsRef, settingsRef, ref, stableSource]);
+  }, [hud, eventsRef, settingsRef, sourceRef, ref, stableSource]);
 
   const { visible, mode, factor } = settings;
   useEffect(() => { handle.current?.window.setHidden(!visible); }, [visible]);
