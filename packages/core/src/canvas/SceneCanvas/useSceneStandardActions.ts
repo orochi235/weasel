@@ -1,7 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { Dispatcher, WorldPoint } from '@weasel-js/routing';
 import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
-import type { Scene } from 'core/scene/types';
+import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
@@ -176,10 +176,13 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  const regionTargetOf = useMemo(
-    () => (id: string) => pressTarget(adapter, id, enteredGroup.get()),
-    [adapter, enteredGroup],
-  );
+  const regionTargetOf = useMemo(() => {
+    const tree = {
+      getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null,
+      getNode: (id: string) => scene.get(asNodeId(id)),
+    };
+    return (id: string) => pressTarget(tree, id, enteredGroup.get());
+  }, [scene, enteredGroup]);
   useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
