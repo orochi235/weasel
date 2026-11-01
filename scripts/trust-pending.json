@@ -3,5 +3,6 @@
   "@weasel-js/editor",
   "@weasel-js/headless",
   "@weasel-js/plot",
-  "@weasel-js/text-shaping"
+  "@weasel-js/text-shaping",
+  "@weasel-js/ui-logic"
 ]
