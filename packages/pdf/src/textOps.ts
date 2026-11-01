@@ -38,19 +38,44 @@ function joins(seg: TextSegment | undefined, g: PlacedGlyph, line: number): seg 
 
 /**
  * What `g` draws in `font`, or null when the face has no glyph for it. A shaped code point
- * draws its cluster's glyphs, and carries the cluster's text as `actual` wherever `/ToUnicode`
- * would read them back as anything else: more than one glyph, or a glyph first drawn for other text.
+ * draws its cluster's glyphs, one reading back as the cluster's text and the rest as nothing;
+ * a cluster of more than one glyph carries its text as `actual` too.
  */
 function segmentGlyph(font: EmbeddedFont, g: PlacedGlyph): SegmentGlyph | null {
   if (!g.shaped) {
-    const gid = font.use(g.cp);
-    return gid === null ? null : { g, glyphs: [{ gid, x: 0, y: 0 }] };
+    const code = font.use(g.cp);
+    return code === null ? null : { g, glyphs: [{ code, x: 0, y: 0 }] };
   }
   const { glyphs, text } = g.shaped;
-  // Only the first glyph claims the text, so a reader ignoring /ActualText reads a cluster once,
-  // not once a glyph. Shapers draw a mark or pre-base matra first, ahead of a base other clusters share.
-  for (const [i, { gid }] of glyphs.entries()) if (!font.useGlyph(gid, i === 0 ? text : undefined)) return null;
-  return glyphs.length === 1 && font.readsAs(glyphs[0].gid) === text ? { g, glyphs } : { g, glyphs, actual: text };
+  const placed: SegmentGlyph['glyphs'][number][] = [];
+  const claim = widest(font, glyphs);
+  for (const [i, { gid, x, y, advance }] of glyphs.entries()) {
+    const reads = i === claim ? text : '';
+    const code = font.useGlyph(gid, reads, advance === 0 ? markWidth(reads, x) : undefined);
+    if (code === null) return null;
+    placed.push({ code, x, y });
+  }
+  return placed.length === 1 ? { g, glyphs: placed } : { g, glyphs: placed, actual: text };
+}
+
+/**
+ * How far a glyph the shaper gave no advance moves the pen, in 1000/em: nowhere when it reads
+ * as nothing, and otherwise to its cluster's pen when it sits before it, so a reader that boxes
+ * each character by its advance (poppler) finds no gap between a mark and the base after it.
+ */
+function markWidth(reads: string, x: number): number {
+  return reads === '' ? 0 : Math.max(0, Math.round(-x * 1000));
+}
+
+/**
+ * The glyph a cluster's text goes on: its widest, the first of those as wide. A reader that
+ * ignores `/ActualText` (pdf.js) moves past no glyph that reads as nothing, so the text belongs
+ * on the base, and the marks and matras around it read as nothing.
+ */
+function widest(font: EmbeddedFont, glyphs: readonly { gid: number }[]): number {
+  let best = 0;
+  for (let i = 1; i < glyphs.length; i++) if (font.glyphWidth(glyphs[i].gid) > font.glyphWidth(glyphs[best].gid)) best = i;
+  return best;
 }
 
 /**
@@ -81,7 +106,7 @@ export async function writeText(ctx: PageCtx, cmd: TextDrawCommand, state: DrawS
       const space = isSpace(g.cp);
       if (!space && BLANK.test(String.fromCodePoint(g.cp))) continue;
       // A slot the layout left empty has no width, so drawing into it would land on its neighbor.
-      if (!space && (g.glyph?.color || (g.resolved.source !== 'outline' && g.glyph === null))) {
+      if (!space && (g.glyph?.color || (g.resolved.source !== 'outline' && g.glyph === null && !g.shaped))) {
         skipGlyph(ctx, g, 'has no glyph to draw');
         continue;
       }

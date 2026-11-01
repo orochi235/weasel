@@ -440,6 +440,15 @@
   inline-size: 8ch;
 }
 
+/* A side bar is as wide as its widest field, so its boxes keep to their contents. */
+.field[data-orientation='vertical']:is(.number, .text) input[type='text'] {
+  padding-inline: var(--wzl-space-1);
+}
+
+.field[data-orientation='vertical'].text input[type='text'] {
+  inline-size: 8ch;
+}
+
 .field[data-orientation='vertical'] input[type='range'] {
   writing-mode: vertical-lr;
   direction: rtl;

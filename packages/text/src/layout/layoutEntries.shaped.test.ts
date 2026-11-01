@@ -133,7 +133,7 @@ describe('layoutRuns with a shaper', () => {
     // The second glyph's pen is past the first's advance.
     expect(g.d).toBe('g3@0,0g4@0.3,-0.7');
     expect(g.key).toBe('marks|400|normal|#3;4@0.3,-0.7');
-    expect(out.lines[0].glyphs[0].shaped?.glyphs).toEqual([{ gid: 3, x: 0, y: 0 }, { gid: 4, x: 0.3, y: -0.7 }]);
+    expect(out.lines[0].glyphs[0].shaped?.glyphs).toEqual([{ gid: 3, x: 0, y: 0, advance: 0.5 }, { gid: 4, x: 0.3, y: -0.7, advance: 0 }]);
   });
 
   it('leaves a cluster the face has no glyph for to the code point\'s own', async () => {

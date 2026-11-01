@@ -1,27 +1,34 @@
 import type { FaceEmbedding, FontStyle } from '@weasel-js/font';
-import { name, type PdfObjects, type PdfRef, text } from '../objects';
+import { name, type PdfName, type PdfObjects, type PdfRef, text } from '../objects';
 import type { PdfFontSource } from './fontSource';
-import { subsetTrueType } from './subset';
+import { glyphCount, subsetTrueType } from './subset';
 import { toUnicodeCMap } from './toUnicode';
 
 export interface EmbeddedFont {
   /** The font object; throws until `use` has returned a glyph, so a page names only faces it draws with. */
   readonly ref: PdfRef;
-  /** The glyph id for `cp`, recorded for `/W` and `/ToUnicode`; `null` when the face has no glyph for it. */
+  /** The code that draws `cp`'s glyph and reads back as `cp`, recorded for `/W` and `/ToUnicode`;
+   *  `null` when the face has no glyph for it. */
   use(cp: number): number | null;
   /**
-   * Records glyph `gid`, which a shaper chose, for `/W`, and for `/ToUnicode` as standing for
-   * `text` unless an earlier use claimed it; without `text` it stands for nothing new. False
-   * for `.notdef`.
+   * The code that draws glyph `gid`, which a shaper chose, and reads back as `text`: `''` for a
+   * glyph that stands for no text of its own. With `width`, in 1000/em, the code moves the pen
+   * that far rather than the glyph's own advance. Each reading and width of a glyph takes a
+   * code of its own, mapped to it. Null for `.notdef`.
    */
-  useGlyph(gid: number, text?: string): boolean;
-  /** The text `/ToUnicode` reads glyph `gid` back as, so far. */
-  readsAs(gid: number): string | undefined;
+  useGlyph(gid: number, text: string, width?: number): number | null;
+  /** The text `/ToUnicode` reads code `code` back as: `''` for one that reads as nothing. */
+  readsAs(code: number): string | undefined;
+  /** A code's advance in 1000/em units. */
+  widthOf(code: number): number;
   /** A glyph's advance in 1000/em units. */
-  widthOf(gid: number): number;
+  glyphWidth(gid: number): number;
 }
 
 const encoder = new TextEncoder();
+
+/** The highest two-byte code. */
+const MAX_CODE = 0xffff;
 
 /** U+2060 WORD JOINER: format character, no width, no break. */
 const NOTHING = '\u2060';
@@ -41,10 +48,16 @@ function subsetTag(gids: Iterable<number>): string {
 }
 
 class Face implements EmbeddedFont {
-  /** Every glyph drawn, for `/W` and the subset. */
+  /** Every glyph drawn, for the subset. */
   readonly used = new Set<number>();
-  /** Glyph id to the first text it was drawn for. */
-  readonly unicode = new Map<number, string>();
+  /** Code to the glyph it draws, the text it reads back as, and the width it moves the pen, when
+   *  not the glyph's own. */
+  private readonly codes = new Map<number, { gid: number; text: string; width: number | undefined }>();
+  /** `gid|width|text` to its code. */
+  private readonly codeOf = new Map<string, number>();
+  /** The code the next reading of an already-coded glyph takes: past every glyph id, so a
+   *  glyph's first reading can keep its own id as its code. */
+  private spare: number;
   private fontRef: PdfRef | undefined;
   private written = false;
 
@@ -53,7 +66,9 @@ class Face implements EmbeddedFont {
     private readonly emb: FaceEmbedding,
     private readonly baseFont: string,
     private readonly subset: boolean,
-  ) {}
+  ) {
+    this.spare = glyphCount(emb.sfnt);
+  }
 
   get ref(): PdfRef {
     if (!this.fontRef) throw new Error('pdf: font ref read before any glyph was used');
@@ -62,32 +77,57 @@ class Face implements EmbeddedFont {
 
   use(cp: number): number | null {
     const gid = this.emb.glyphIndexOf(cp);
-    return gid !== null && this.useGlyph(gid, String.fromCodePoint(cp)) ? gid : null;
+    return gid === null ? null : this.useGlyph(gid, String.fromCodePoint(cp));
   }
 
-  useGlyph(gid: number, text?: string): boolean {
-    if (gid === 0) return false;
+  useGlyph(gid: number, text: string, width?: number): number | null {
+    if (gid === 0) return null;
+    if (width === this.glyphWidth(gid)) width = undefined;
+    const key = `${gid}|${width ?? ''}|${text}`;
+    let code = this.codeOf.get(key);
+    if (code === undefined) {
+      code = !this.codes.has(gid) ? gid : this.spare <= MAX_CODE ? this.spare++ : gid;
+      if (!this.codes.has(code)) this.codes.set(code, { gid, text, width });
+      this.codeOf.set(key, code);
+    }
     this.used.add(gid);
-    if (text !== undefined && !this.unicode.has(gid)) this.unicode.set(gid, text);
     this.fontRef ??= this.objects.alloc();
-    return true;
+    return code;
   }
 
-  readsAs(gid: number): string | undefined {
-    return this.unicode.get(gid);
+  readsAs(code: number): string | undefined {
+    return this.codes.get(code)?.text;
   }
 
-  /** What `/ToUnicode` maps each glyph to. A glyph standing for no text of its own (a cluster's
-   *  second glyph, always under `/ActualText`) reads as a word joiner: invisible, and skipped by
-   *  readers that ignore `/ActualText` (pdf.js), which otherwise take its glyph id for a code point. */
+  /** What `/ToUnicode` maps each code to. One that reads as nothing maps to a word joiner:
+   *  invisible, and skipped by readers (pdf.js) that otherwise take an unmapped code for a
+   *  code point. */
   private readings(): Map<number, string> {
-    const out = new Map(this.unicode);
-    for (const gid of this.used) if (!out.has(gid)) out.set(gid, NOTHING);
+    const out = new Map<number, string>();
+    for (const [code, { text }] of this.codes) out.set(code, text || NOTHING);
     return out;
   }
 
-  widthOf(gid: number): number {
+  widthOf(code: number): number {
+    const coded = this.codes.get(code);
+    return coded?.width ?? this.glyphWidth(coded?.gid ?? code);
+  }
+
+  glyphWidth(gid: number): number {
     return Math.round((this.emb.advanceOfGlyph(gid) * 1000) / this.emb.unitsPerEm);
+  }
+
+  /** `/Identity` while every code is its own glyph id, else a stream mapping each code to its glyph. */
+  private cidToGid(): PdfRef | PdfName {
+    let top = -1;
+    for (const [code, { gid }] of this.codes) if (code !== gid) top = Math.max(top, code);
+    if (top < 0) return name('Identity');
+    const map = new Uint8Array((top + 1) * 2);
+    const view = new DataView(map.buffer);
+    for (const [code, { gid }] of this.codes) if (code <= top) view.setUint16(code * 2, gid);
+    const ref = this.objects.alloc();
+    this.objects.streamDeflated(ref, {}, map);
+    return ref;
   }
 
   write(): void {
@@ -116,14 +156,14 @@ class Face implements EmbeddedFont {
       FontFile2: file,
     });
     const widths: (number | number[])[] = [];
-    for (const gid of [...this.used].sort((a, b) => a - b)) widths.push(gid, [this.widthOf(gid)]);
+    for (const code of [...this.codes.keys()].sort((a, b) => a - b)) widths.push(code, [this.widthOf(code)]);
     objects.set(cid, {
       Type: name('Font'),
       Subtype: name('CIDFontType2'),
       BaseFont: name(fontName),
       CIDSystemInfo: { Registry: text('Adobe'), Ordering: text('Identity'), Supplement: 0 },
       FontDescriptor: descriptor,
-      CIDToGIDMap: name('Identity'),
+      CIDToGIDMap: this.cidToGid(),
       W: widths,
     });
     objects.set(this.fontRef, {

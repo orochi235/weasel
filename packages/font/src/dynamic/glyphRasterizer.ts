@@ -66,6 +66,25 @@ export interface GlyphRasterizer {
   rasterizeColor?(
     family: string, weight: number, style: FontStyle, text: string, size?: number,
   ): RasterizedColorGlyph | null;
+  /** `d`, em-space SVG path data with y down and its origin on the baseline at the pen, filled
+   *  at `BAKE_SIZE` px: the glyphs a shaper chose, which `fillText` cannot address. Its
+   *  `advance` is 0; the shaping has the advance. */
+  rasterizePath?(d: string): RasterizedGlyph;
+}
+
+/** `[minX, minY, maxX, maxY]` over every coordinate pair in path data whose commands take only
+ *  absolute pairs (M, L, Q, C, Z): its control points, which hold the outline. */
+export function pathBounds(d: string): [number, number, number, number] {
+  const b: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
+  const nums = d.match(/-?\d*\.?\d+(?:e-?\d+)?/gi) ?? [];
+  for (let k = 0; k + 1 < nums.length; k += 2) {
+    const x = Number(nums[k]), y = Number(nums[k + 1]);
+    if (x < b[0]) b[0] = x;
+    if (y < b[1]) b[1] = y;
+    if (x > b[2]) b[2] = x;
+    if (y > b[3]) b[3] = y;
+  }
+  return b;
 }
 
 /** Ink this far below white did not come from the white fill. */
@@ -167,6 +186,29 @@ export function createCanvasRasterizer(): GlyphRasterizer {
       const alpha = new Uint8ClampedArray(box.width * box.height);
       for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
       return { ...box, alpha };
+    },
+
+    rasterizePath(d) {
+      const [minX, minY, maxX, maxY] = pathBounds(d);
+      const blank = { width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 0 };
+      if (!(maxX > minX && maxY > minY)) return blank;
+      const x0 = Math.floor(minX * BAKE_SIZE), y0 = Math.floor(minY * BAKE_SIZE);
+      const w = Math.ceil(maxX * BAKE_SIZE) - x0 + 2 * PAD;
+      const h = Math.ceil(maxY * BAKE_SIZE) - y0 + 2 * PAD;
+      if (canvas.width < w || canvas.height < h) {
+        canvas.width = Math.max(canvas.width, w);
+        canvas.height = Math.max(canvas.height, h);
+      }
+      ctx!.setTransform(1, 0, 0, 1, 0, 0);
+      ctx!.clearRect(0, 0, w, h);
+      ctx!.setTransform(BAKE_SIZE, 0, 0, BAKE_SIZE, PAD - x0, PAD - y0);
+      ctx!.fillStyle = '#fff';
+      ctx!.fill(new Path2D(d));
+      ctx!.setTransform(1, 0, 0, 1, 0, 0);
+      const data = ctx!.getImageData(0, 0, w, h).data;
+      const alpha = new Uint8ClampedArray(w * h);
+      for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
+      return { width: w, height: h, alpha, left: x0 - PAD, top: PAD - y0, advance: 0 };
     },
 
     rasterizeColor(family, weight, style, text, size) {

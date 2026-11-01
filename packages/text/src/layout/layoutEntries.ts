@@ -280,7 +280,7 @@ export function mirrorEntries(
     const odd = levels[pos] % 2 === 1;
     if (entry.shaped !== null && entry.shaped.rtl !== odd) {
       const flipped = mirror(entry.cp);
-      if (flipped !== null && flipped !== entry.cp) entry = { ...entry, shaped: null };
+      if (flipped !== null && flipped !== entry.cp) entry = unshaped(entry, runs[entry.run]);
     }
     if (!odd) return entry;
     if (entry.shaped !== null) return entry;
@@ -292,4 +292,14 @@ export function mirrorEntries(
     if (!hit) return entry;
     return { ...entry, cp, resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph };
   });
+}
+
+/** `entry` drawing its own code point's glyph rather than its shaped cluster: on an atlas, the
+ *  glyph's record, which shaping left out. */
+function unshaped(entry: Entry, run: ResolvedRun): Entry {
+  if (entry.resolved.source === 'outline') return { ...entry, shaped: null };
+  const hit = resolveGlyph(entry.resolved, run.fontFamily, run.fontWeight, run.fontStyle, entry.cp, false);
+  return hit
+    ? { ...entry, shaped: null, resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph }
+    : { ...entry, shaped: null };
 }

@@ -14,7 +14,7 @@
 import type { ResolveResult } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import type { ShapedCluster, ShapedGlyph, TextShaper } from './shaperSeam';
-import { shapeableBytes } from './shaperRegistry';
+import { shapingFace } from './shaperRegistry';
 import { graphemeEnds } from '../measure/graphemes';
 
 /** What one code point of a shaped run takes. */
@@ -34,8 +34,10 @@ const COVERED: ShapedSlot = Object.freeze({ cluster: NOTHING_DRAWN, advance: 0 }
  *  cluster covers, absent where the code point is left to be found on its own. */
 export type ShapedRun = readonly (ShapedSlot | undefined)[];
 
-/** One shaping's slots, for as long as the shaper holds the shaping. */
+/** One shaping's slots, for as long as the shaper holds the shaping: on an outline face, and on
+ *  an atlas face, which leaves a cluster that is its code point's own glyph unshaped. */
 const slotsOf = new WeakMap<readonly ShapedGlyph[], ShapedRun>();
+const atlasSlotsOf = new WeakMap<readonly ShapedGlyph[], ShapedRun>();
 
 const fmt = (v: number): string => String(Math.round(v * 1e5) / 1e5);
 
@@ -45,23 +47,30 @@ const fmt = (v: number): string => String(Math.round(v * 1e5) / 1e5);
  *
  * A cluster holding `.notdef` is left out, so its code points go to the
  * fallback ladder as unshaped text does rather than drawing the face's box.
+ * On an atlas or canvas face, so is a cluster of one code point drawn as that
+ * code point's own glyph where the pen is: the atlas draws it as it would
+ * unshaped text.
  */
 export function shapeRun(
   run: ResolvedRun, resolved: ResolveResult, shaper: TextShaper | null,
 ): ShapedRun | null {
   if (shaper === null) return null;
-  const face = shapeableBytes(resolved);
-  if (face === null) return null;
+  const embedding = shapingFace(resolved);
+  if (embedding === null) return null;
+  const face = embedding.sfnt;
   const glyphs = shaper.shape(face, run.text, run.fontFeatures, run.lang);
-  let slots = slotsOf.get(glyphs);
+  const cache = resolved.source === 'outline' ? slotsOf : atlasSlotsOf;
+  let slots = cache.get(glyphs);
   if (slots) return slots;
-  slots = slotsFor(shaper, face, run.text, glyphs);
-  slotsOf.set(glyphs, slots);
+  const plain = resolved.source === 'outline' ? null : (cp: number) => embedding.glyphIndexOf(cp);
+  slots = slotsFor(shaper, face, run.text, glyphs, plain);
+  cache.set(glyphs, slots);
   return slots;
 }
 
 function slotsFor(
   shaper: TextShaper, face: ArrayBuffer, text: string, glyphs: readonly ShapedGlyph[],
+  plain: ((cp: number) => number | null) | null,
 ): ShapedRun {
   const slots: (ShapedSlot | undefined)[] = new Array(text.length);
   const ends = graphemeEnds(text);
@@ -76,7 +85,7 @@ function slotsFor(
     while (g < ends.length && ends[g] <= start) g++;
     let inner = 0;
     for (let k = g; k < ends.length && ends[k] < end; k++) inner++;
-    if (!holdsNotdef(glyphs, i, j)) {
+    if (!holdsNotdef(glyphs, i, j) && !(plain && isPlain(glyphs[i], j - i, text, start, end, plain))) {
       const total = advanceOf(glyphs, i, j);
       const share = total / (inner + 1);
       const shift = glyphs[i].rtl ? share - total : 0;
@@ -91,6 +100,16 @@ function slotsFor(
     i = j;
   }
   return slots;
+}
+
+/** Whether a cluster of `count` glyphs from `first`, over `text[start, end)`, is one code point
+ *  drawn as its own glyph at the pen. */
+function isPlain(
+  first: ShapedGlyph, count: number, text: string, start: number, end: number, plain: (cp: number) => number | null,
+): boolean {
+  if (count !== 1 || first.dx !== 0 || first.dy !== 0) return false;
+  const cp = text.codePointAt(start)!;
+  return end - start === (cp > 0xffff ? 2 : 1) && plain(cp) === first.gid;
 }
 
 function advanceOf(glyphs: readonly ShapedGlyph[], from: number, to: number): number {
@@ -110,14 +129,14 @@ function clusterSlot(
   shaper: TextShaper, face: ArrayBuffer, glyphs: readonly ShapedGlyph[], from: number, to: number, text: string,
   shift: number, advance: number,
 ): ShapedSlot {
-  const placed: { gid: number; x: number; y: number }[] = [];
+  const placed: ShapedCluster['glyphs'][number][] = [];
   let pen = shift;
   let d = '';
   let key = '';
   for (let k = from; k < to; k++) {
     const g = glyphs[k];
     const x = pen + g.dx, y = g.dy;
-    placed.push({ gid: g.gid, x, y });
+    placed.push({ gid: g.gid, x, y, advance: g.advance });
     d += shaper.glyphD(face, g.gid, x, y) ?? '';
     key += `${k === from ? '' : ';'}${g.gid}${x === 0 && y === 0 ? '' : `@${fmt(x)},${fmt(y)}`}`;
     pen += g.advance;

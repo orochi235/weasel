@@ -2,7 +2,9 @@
  * Where the shaping engine arrives, the way the bidi engine does
  * (`bidiRegistry.ts`): registered once, found by every layout.
  */
-import { cachedFontVariant, type FontStyle, type OutlineFace, type ResolveResult } from '@weasel-js/font';
+import {
+  cachedFontVariant, outlineMetrics, type FaceEmbedding, type FontStyle, type OutlineFace, type ResolveResult,
+} from '@weasel-js/font';
 import type { TextShaper } from './shaperSeam';
 
 let registered: TextShaper | null = null;
@@ -13,10 +15,13 @@ let registered: TextShaper | null = null;
  * it whenever its options carry none. Pass `null`, or call the function
  * returned, to take it out again.
  *
- * Shaping reaches the text whose face was registered with
- * `registerFontOutlines` from TrueType or OpenType bytes: those are the faces
- * whose glyphs are drawn by index. Text drawn from a baked or canvas atlas,
- * whose glyphs are looked up by code point, is laid out as before.
+ * Shaping reaches the text whose face has TrueType or OpenType bytes behind
+ * it: a face registered with `registerFontOutlines` alone, or a baked or
+ * canvas atlas face whose exact variant is also registered there. The atlas
+ * must be cut from that same file, or its advances disagree with the
+ * shaper's. On an atlas face, a cluster the shaping left as its code point's
+ * own glyph draws from the atlas as before; the rest draw from the shaper's
+ * glyphs.
  */
 export function registerShaper(shaper: TextShaper | null): () => void {
   registered = shaper;
@@ -28,19 +33,31 @@ export function registeredShaper(): TextShaper | null {
   return registered;
 }
 
-const bytesOf = new WeakMap<OutlineFace, ArrayBuffer | null>();
+const embeddingOf = new WeakMap<OutlineFace, FaceEmbedding | null>();
 
-/** The font file behind the face `resolved` landed on, when it is an outline
- *  face with sfnt bytes a shaper can read; null otherwise. */
-export function shapeableBytes(resolved: ResolveResult): ArrayBuffer | null {
-  const face = resolved.outlineFace;
+/**
+ * The face a shaper reads for text that resolved to `resolved`: its own on the
+ * outline tier; on an atlas or canvas face, the outline face registered for
+ * the same exact variant, which starts loading the first time it is asked
+ * for. Null when there is none, or none with sfnt bytes.
+ */
+export function shapingFace(resolved: ResolveResult): FaceEmbedding | null {
+  const { family, weight, style } = resolved.resolved;
+  const face = resolved.outlineFace ?? (resolved.source === 'outline'
+    ? undefined
+    : outlineMetrics(family, weight, style === 'italic' ? 'italic' : 'normal'));
   if (!face) return null;
-  let bytes = bytesOf.get(face);
-  if (bytes === undefined) {
-    bytes = face.embedding?.().sfnt ?? null;
-    bytesOf.set(face, bytes);
+  let embedding = embeddingOf.get(face);
+  if (embedding === undefined) {
+    embedding = face.embedding?.() ?? null;
+    embeddingOf.set(face, embedding);
   }
-  return bytes;
+  return embedding;
+}
+
+/** The font file a shaper reads for text that resolved to `resolved` ({@link shapingFace}). */
+export function shapeableBytes(resolved: ResolveResult): ArrayBuffer | null {
+  return shapingFace(resolved)?.sfnt ?? null;
 }
 
 /** Whether text set in `(family, weight, style)` will be shaped by `shaper`

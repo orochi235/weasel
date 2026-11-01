@@ -55,8 +55,9 @@ export interface ShapedCluster {
   d: string | null;
   /** Names `d` among the glyphs of one face, for caching what is built from it. */
   key: string;
-  /** Each glyph and where it is drawn, in ems from the pen, y down. */
-  glyphs: readonly { gid: number; x: number; y: number }[];
+  /** Each glyph, where it is drawn, and how far the shaper moved the pen past it, in ems
+   *  from the pen, y down. A mark the shaper set over its base has no advance. */
+  glyphs: readonly { gid: number; x: number; y: number; advance: number }[];
   /** Whether it was shaped right to left. */
   rtl: boolean;
   /** The text the cluster's glyphs stand for, in logical order: what a reader
