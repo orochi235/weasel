@@ -1,6 +1,6 @@
 /**
- * The command bar's own buttons (grid, snap, release compound path,
- * preferences) are registered actions: the key a button's tooltip names is
+ * The command bar's own buttons (grid, snap, release compound path, the
+ * command palette) are registered actions: the key a button's tooltip names is
  * the binding that fires it.
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -27,7 +27,6 @@ function setup(over: Partial<AppCommands> = {}) {
     toggleSymmetry: vi.fn(),
     canReleaseCompound: true,
     releaseCompound: vi.fn(),
-    openPrefs: vi.fn(),
     openPalette: vi.fn(),
     chromeHidden: () => false,
     toggleChrome: vi.fn(),
@@ -71,13 +70,6 @@ describe('draw app commands', () => {
     expect(none.commands.releaseCompound).not.toHaveBeenCalled();
   });
 
-  it('mod+, opens preferences', () => {
-    const t = setup();
-    // jsdom is not an Apple platform, so mod is Ctrl.
-    t.key({ key: ',', code: 'Comma', ctrlKey: true });
-    expect(t.commands.openPrefs).toHaveBeenCalledOnce();
-  });
-
   it('mod+K opens the command palette', () => {
     const t = setup();
     t.key({ key: 'k', code: 'KeyK', ctrlKey: true });
@@ -113,11 +105,5 @@ describe('draw app commands', () => {
     const t = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Commands' }));
     expect(t.commands.openPalette).toHaveBeenCalledOnce();
-  });
-
-  it('offers Preferences as a button', () => {
-    const t = setup();
-    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
-    expect(t.commands.openPrefs).toHaveBeenCalledOnce();
   });
 });

@@ -6,14 +6,16 @@ import {
   asNodeId,
   createScene,
   useAction,
+  useCommand,
   useDepSource,
   useSelection,
   useStandardActions,
 } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
 import { StripDock } from './surfaces/StripSurfaces';
+import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
 import {
-  preferencesAction,
+  DRAW_PREFERENCES_COMMAND,
   releaseCompoundAction,
   toggleGridAction,
   toggleSnapAction,
@@ -48,7 +50,6 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     toggleSymmetry: () => setSymmetry((v) => !v),
     canReleaseCompound: compound,
     releaseCompound: noop,
-    openPrefs: noop,
     openPalette: noop,
     chromeHidden: () => false,
     toggleChrome: noop,
@@ -58,7 +59,8 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useAction(toggleSnapAction);
   useAction(toggleSymmetryAction);
   useAction(releaseCompoundAction);
-  useAction(preferencesAction);
+  const { label, ...preferences } = DRAW_PREFERENCES_COMMAND;
+  useCommand(EDITOR_ACTIONS.preferences, label, noop, { ...preferences, keys: EDITOR_PREFERENCES_KEY });
   useDebugCommands();
   useFileCommands({
     scene: storyScene, filename: 'story', paperSize: 'letter', backgroundColor: '#ffffff',

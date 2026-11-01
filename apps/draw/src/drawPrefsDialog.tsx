@@ -1,28 +1,15 @@
-/** Preferences modal — kit `PrefsDialog` over the `PREFS` registry.
- *
- *  The kit owns the walk (the navigation rail, label rows, filtering, hidden
- *  filtering, built-in control mapping); this file supplies only what is
- *  WeaselDraw-specific: the values binding (`usePrefsValues` over the
- *  app's prefs store), renderers for the app's two custom kinds
- *  (`registry-enum`, `data`), and the dev-only "Show hidden" switch.
- */
+/** What WeaselDraw adds to `<EditorShell>`'s preferences dialog: renderers for the app's two custom kinds
+ *  (`registry-enum`, `data`), its layout, and the dev-only "Show hidden" switch. The shell binds the values. */
 import { useMemo, useState } from 'react';
+import type { EditorPrefsDialogProps } from '@weasel-js/editor';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Code } from '@weasel-js/ui/components/Code';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
-import { PrefsDialog, type PrefRenderContext } from '@weasel-js/ui/components/Prefs';
+import type { PrefRenderContext } from '@weasel-js/ui/components/Prefs';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
-import { usePrefsValues } from '@weasel-js/prefs/react';
-import {
-  drawPrefs,
-  PREFS,
-  type DrawPrefPath,
-  type WeaselDrawPrefData,
-  type WeaselDrawPrefRegistryEnum,
-} from './prefs';
-import type { RegistryEnumSources } from './registry/types';
-import { RegistryEnumSourcesContext, RegistrySelect } from './registry/RegistrySelect';
+import type { WeaselDrawPrefData, WeaselDrawPrefRegistryEnum } from './prefs';
+import { RegistrySelect } from './registry/RegistrySelect';
 import { SURFACE_ASSETS } from './surfaces/assets';
 import { ALL_CHROME, type ChromeItem } from './surfaces/chrome';
 import { surfaceOf } from './surfaces/surfaceState';
@@ -39,50 +26,21 @@ const isDevMode = (): boolean => {
   }
 };
 
-export interface PreferencesModalProps {
-  open: boolean;
-  onClose: () => void;
-  /** Per-source option lists for `kind: 'registry-enum'` prefs. Keys
-   *  match the `source` field on the pref descriptor. Omitted sources
-   *  fall back to a plain text input so a missing wiring is recoverable. */
-  registryEnumSources?: RegistryEnumSources;
-}
+const RENDERERS = { 'registry-enum': RegistryEnumControl, data: DataControl };
 
-export function PreferencesModal({ open, onClose, registryEnumSources }: PreferencesModalProps) {
-  const sources = useMemo(() => registryEnumSources ?? {}, [registryEnumSources]);
+/** The dialog props draw hands `<EditorShell prefsDialog>`. A `registry-enum` pref reads its options from the
+ *  `RegistryEnumSourcesContext` above the shell. */
+export function useDrawPrefsDialog(): EditorPrefsDialogProps {
   const [dev] = useState(isDevMode);
   const [showHidden, setShowHidden] = useState(false);
-  const { values, set, unset, reset } = usePrefsValues(drawPrefs());
-
-  return (
-    <RegistryEnumSourcesContext.Provider value={sources}>
-      <PrefsDialog
-        isOpen={open}
-        onOpenChange={(o) => { if (!o) onClose(); }}
-        layout="rail"
-        rowsAcross={2}
-        resizableRail
-        filterable
-        schema={PREFS}
-        values={values}
-        onChange={set}
-        auto={unset}
-        onAutoChange={(path, next) => (next ? reset(path) : set(path, drawPrefs().get(path as DrawPrefPath)))}
-        showHidden={showHidden}
-        renderers={{
-          'registry-enum': RegistryEnumControl,
-          data: DataControl,
-        }}
-        headerExtra={
-          dev ? (
-            <Switch isSelected={showHidden} onChange={setShowHidden}>
-              Show hidden
-            </Switch>
-          ) : undefined
-        }
-      />
-    </RegistryEnumSourcesContext.Provider>
-  );
+  return useMemo(() => ({
+    rowsAcross: 2,
+    resizableRail: true,
+    filterable: true,
+    showHidden,
+    renderers: RENDERERS,
+    headerExtra: dev ? <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch> : undefined,
+  }), [dev, showHidden]);
 }
 
 export function RegistryEnumControl(ctx: PrefRenderContext) {

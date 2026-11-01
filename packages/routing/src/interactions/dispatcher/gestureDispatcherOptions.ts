@@ -112,6 +112,13 @@ export interface UseGestureDispatcherOptions {
    * nest under.
    */
   hears?: 'scope' | 'own';
+  /**
+   * With no canvas: hear no key while a canvas dispatching on `actions`
+   * itself holds the keys. That canvas hears everything this one does, and
+   * runs it with its own views and deps. For an app-wide dispatcher whose
+   * canvases share its registry. Default `false`.
+   */
+  yieldKeys?: boolean;
   /** Every entry in play, keyed by id: tools and any other contribution
    *  whose bindings this dispatcher routes. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;

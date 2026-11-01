@@ -1,13 +1,13 @@
 import { ActionDisabledReason, nextPageId, useCommand } from '@weasel-js/core';
 import { CHART_PAGE } from '../chartDocument';
-import { run, type MenuRuns } from '../menuBar';
+import { menuRun, type MenuRuns } from '@weasel-js/editor';
 import type { PipelineDoc } from './usePipelineDoc';
 
 export const PIPELINE_PAGE_ACTIONS = { add: 'pipeline.page.add', remove: 'pipeline.page.delete' } as const;
 
 /** Pipeline mode's Page menu. */
 export const PIPELINE_PAGE_MENU: MenuRuns = {
-  edit: run({ add: PIPELINE_PAGE_ACTIONS.add, remove: PIPELINE_PAGE_ACTIONS.remove }),
+  edit: menuRun({ add: PIPELINE_PAGE_ACTIONS.add, remove: PIPELINE_PAGE_ACTIONS.remove }),
 };
 
 /** Registers Add Page, which appends a page sized like the last, and Delete Page, which drops the last. Stages stay where they are. */

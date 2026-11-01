@@ -1,5 +1,4 @@
 import {
-  ActiveToolContextProvider,
   createMeasurements,
   placedPagesOf,
   type SceneCanvasApi,
@@ -10,31 +9,33 @@ import {
   useCanvasSize,
   type View
 } from '@weasel-js/core';
+import type { ModeRegistry } from '@weasel-js/modes';
 import { PATH_OVERLAYS_GROUP } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
 import { ActiveToolOptions } from './ui/ToolOptions';
 import { drawToolOptionValues } from './toolOptions';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
-import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
-import { usePageFit, usePages } from '@weasel-js/editor';
+import { EditorShell, usePageFit, usePages } from '@weasel-js/editor';
+import { DRAW_PREFERENCES_COMMAND } from './appCommands/actions';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS } from './paperSizes';
 import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
 import { EditorStatusBar } from './EditorStatusBar';
 import { showFirstRunNotice } from './firstRunNotice';
 import { LoupeProvider } from './LoupeProvider';
-import { DRAW_MENU_BAR } from './menuBar';
+import { DRAW_MENU_CONTRIBUTIONS, DRAW_MENU_TITLES } from './menuBar';
 import type { UseModalityReturn } from './modality/useModality';
 import { useModeId } from './modality/useModeId';
 import { useLoupeSource } from './pageLayers';
-import { PreferencesModal } from './PreferencesModal';
+import { useDrawPrefsDialog } from './drawPrefsDialog';
+import { drawPrefs } from './prefs';
+import { RegistryEnumSourcesContext } from './registry/RegistrySelect';
 import { toolEnumSources } from './registry/toolEnumSource';
 import { RightSidebar } from './RightSidebar';
 import { FIXED_CHROME, ShowChrome } from './surfaces/chrome';
@@ -64,16 +65,14 @@ export interface EditorProps {
   modality: UseModalityReturn;
 }
 
-/** The editor's chrome around the workspace: the command bar led by the menu bar, the toolbar dock under it, the
- *  tool-options strip, the two sidebars, and the status bar. */
+/** The editor's chrome around the workspace, in `<EditorShell>`: the command bar led by the menu bar, the toolbar
+ *  dock under it, the tool-options strip, the two sidebars, and the status bar. */
 export function Editor({ scene, selection, modality }: EditorProps): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
   useLastTool(tools, modality.machine.registry);
   const prefSources = useMemo(() => toolEnumSources(tools), [tools]);
-  const actionsReg = useActionsRegistry();
-  const [prefsOpen, setPrefsOpen] = useState(false);
+  const prefsDialog = useDrawPrefsDialog();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const openPrefs = useCallback(() => setPrefsOpen(true), []);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   useEffect(() => showFirstRunNotice(), []);
   useMachineFontOutlines();
@@ -120,97 +119,112 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   useHoldContentUnderChrome(optionsRef, setView, textEdit.effectiveStyle != null || activeTool?.options !== undefined);
 
   return (
-    <ActiveToolContextProvider>
-      <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
+    <SurfaceHostContext.Provider value={surfaceHost}>
+      <RegistryEnumSourcesContext.Provider value={prefSources}>
         <div className="wd-app">
-          <SurfaceHostContext.Provider value={surfaceHost}>
-            <Toolbar
-              menus={<MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />}
-              scene={scene}
-              selection={selection}
-              paperSize={doc.paperSize}
-              showFirstPage={showFirstPage}
-              leaveMode={modality.machine.leaveMode}
-              page={pages.shown}
-              filename={doc.filename}
-              setFilename={doc.setFilename}
-              backgroundColor={doc.backgroundColor}
-              setBackgroundColor={doc.setBackgroundColor}
-            />
-            <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
-            <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-            <ContextMenuHost />
-            <StripDock className="wd-dock">
-              <div className="wd-dock-main">
-                <div ref={optionsRef}>
-                  <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
-                  <ActiveToolOptions tool={activeTool} values={toolOptions} />
-                </div>
-                <div className="wd-body">
-                  <ShowChrome id={FIXED_CHROME.tools.id}>
-                    <Sidebar side="left" className="wd-sidebar left" ariaLabel={FIXED_CHROME.tools.label}>
-                      {tools && (
-                        <ToolPalette
-                          tools={tools}
-                          groupOrder={TOOL_GROUPS}
-                          stacks={TOOL_STACKS}
-                          orientation="vertical"
-                          lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                          modeRegistry={modality.machine.registry}
-                          ineligible="hide"
-                        />
-                      )}
-                      {inPathEdit && <ActionBar group={PATH_OVERLAYS_GROUP} orientation="vertical" className="wd-path-overlays" />}
-                      <ActiveSwatches />
+          <EditorShell
+            prefs={drawPrefs()}
+            prefsDialog={prefsDialog}
+            preferences={DRAW_PREFERENCES_COMMAND}
+            menus={DRAW_MENU_CONTRIBUTIONS}
+            menuTitles={DRAW_MENU_TITLES}
+            menuBar="inline"
+            menuBarClassName="wd-menubar"
+            topbar={(menuBar) => (
+              <Toolbar
+                menus={menuBar}
+                scene={scene}
+                selection={selection}
+                paperSize={doc.paperSize}
+                showFirstPage={showFirstPage}
+                leaveMode={modality.machine.leaveMode}
+                page={pages.shown}
+                filename={doc.filename}
+                setFilename={doc.setFilename}
+                backgroundColor={doc.backgroundColor}
+                setBackgroundColor={doc.setBackgroundColor}
+              />
+            )}
+          >
+            <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
+              <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+              <StripDock className="wd-dock">
+                <div className="wd-dock-main">
+                  <div ref={optionsRef}>
+                    <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
+                    <ActiveToolOptions tool={activeTool} values={toolOptions} />
+                  </div>
+                  <div className="wd-body">
+                    <ShowChrome id={FIXED_CHROME.tools.id}>
+                      <Sidebar side="left" className="wd-sidebar left" ariaLabel={FIXED_CHROME.tools.label}>
+                        {tools && <DrawToolPalette tools={tools} modeRegistry={modality.machine.registry} />}
+                        {inPathEdit && <ActionBar group={PATH_OVERLAYS_GROUP} orientation="vertical" className="wd-path-overlays" />}
+                        <ActiveSwatches />
+                      </Sidebar>
+                    </ShowChrome>
+                    <Workspace
+                      scene={scene}
+                      selection={selection}
+                      measurements={measurements}
+                      modality={modality}
+                      hostRef={hostRef}
+                      textEdit={textEdit}
+                      view={view}
+                      onViewChange={setView}
+                      hostDims={hostDims}
+                      pages={pages}
+                      shownPage={shownPage}
+                      recenter={recenter}
+                      backgroundColor={doc.backgroundColor}
+                      onToolsCreated={setTools}
+                      onCanvas={attachCanvas}
+                      openPalette={openPalette}
+                    />
+                    <ResizeHandle
+                      value={rightSidebar.width}
+                      min={rightSidebar.min}
+                      max={rightSidebar.max}
+                      invert
+                      onInput={rightSidebar.onInput}
+                      onChange={rightSidebar.onChange}
+                      ariaLabel="Resize properties sidebar"
+                    />
+                    <Sidebar
+                      side="right"
+                      className="wd-sidebar right"
+                      ariaLabel="Properties"
+                      // Width lives in a custom property so app.css keeps ownership of the
+                      // clamp; only the number crosses the boundary.
+                      style={{ '--wd-right-width': `${rightSidebar.width}px` } as CSSProperties}
+                    >
+                      <RightSidebar />
                     </Sidebar>
-                  </ShowChrome>
-                  <Workspace
-                    scene={scene}
-                    selection={selection}
-                    measurements={measurements}
-                    modality={modality}
-                    hostRef={hostRef}
-                    textEdit={textEdit}
-                    view={view}
-                    onViewChange={setView}
-                    hostDims={hostDims}
-                    pages={pages}
-                    shownPage={shownPage}
-                    recenter={recenter}
-                    backgroundColor={doc.backgroundColor}
-                    onToolsCreated={setTools}
-                    onCanvas={attachCanvas}
-                    openPrefs={openPrefs}
-                    openPalette={openPalette}
-                  />
-                  <ResizeHandle
-                    value={rightSidebar.width}
-                    min={rightSidebar.min}
-                    max={rightSidebar.max}
-                    invert
-                    onInput={rightSidebar.onInput}
-                    onChange={rightSidebar.onChange}
-                    ariaLabel="Resize properties sidebar"
-                  />
-                  <Sidebar
-                    side="right"
-                    className="wd-sidebar right"
-                    ariaLabel="Properties"
-                    // Width lives in a custom property so app.css keeps ownership of the
-                    // clamp; only the number crosses the boundary.
-                    style={{ '--wd-right-width': `${rightSidebar.width}px` } as CSSProperties}
-                  >
-                    <RightSidebar />
-                  </Sidebar>
+                  </div>
                 </div>
-              </div>
-            </StripDock>
-          </SurfaceHostContext.Provider>
-          <ShowChrome id={FIXED_CHROME.statusBar.id}>
-            <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
-          </ShowChrome>
+              </StripDock>
+              <ShowChrome id={FIXED_CHROME.statusBar.id}>
+                <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
+              </ShowChrome>
+            </LoupeProvider>
+          </EditorShell>
         </div>
-      </LoupeProvider>
-    </ActiveToolContextProvider>
+      </RegistryEnumSourcesContext.Provider>
+    </SurfaceHostContext.Provider>
+  );
+}
+
+/** The tool palette, each tool's tooltip naming the key the actions registry binds to it. */
+function DrawToolPalette({ tools, modeRegistry }: { tools: ToolsApi; modeRegistry: ModeRegistry }): ReactElement {
+  const actionsReg = useActionsRegistry();
+  return (
+    <ToolPalette
+      tools={tools}
+      groupOrder={TOOL_GROUPS}
+      stacks={TOOL_STACKS}
+      orientation="vertical"
+      lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+      modeRegistry={modeRegistry}
+      ineligible="hide"
+    />
   );
 }

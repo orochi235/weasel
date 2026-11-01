@@ -1,9 +1,8 @@
 import { useCommand } from '@weasel-js/core';
 import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
-import { downloadBlob, pickFile } from '@weasel-js/editor';
-import { CHART_ACTIONS } from '../chartCommands';
-import { can, run, type ChartMenuContributions } from '../menuBar';
+import { EDITOR_ACTIONS, downloadBlob, pickFile, menuRun, type MenuContributions } from '@weasel-js/editor';
+import { can } from '../menuBar';
 import { ARRANGE_MENU } from './pipelineGroups';
 import { LOOK_MENU } from './pipelineLook';
 import { PIPELINE_PAGE_MENU } from './pipelinePages';
@@ -15,19 +14,19 @@ export const PIPELINE_ACTIONS = {
 } as const;
 
 /** Pipeline mode's File, Edit, View, Format, Arrange, Page, and Run menus. Delete and Reset route are kit actions the editor's canvas registers: Delete removes stages and wires alike, and Reset route gives a wire back to its look. */
-export const PIPELINE_MENUS: ChartMenuContributions = {
+export const PIPELINE_MENUS: MenuContributions = {
   file: {
-    open: run({ new: PIPELINE_ACTIONS.new, open: PIPELINE_ACTIONS.open }),
-    save: run({ save: PIPELINE_ACTIONS.save }),
+    open: menuRun({ new: PIPELINE_ACTIONS.new, open: PIPELINE_ACTIONS.open }),
+    save: menuRun({ save: PIPELINE_ACTIONS.save }),
   },
   edit: {
-    history: run({ undo: PIPELINE_ACTIONS.undo, redo: PIPELINE_ACTIONS.redo }),
-    remove: run({ delete: 'delete' }),
+    history: menuRun({ undo: PIPELINE_ACTIONS.undo, redo: PIPELINE_ACTIONS.redo }),
+    remove: menuRun({ delete: 'delete' }),
   },
-  view: { ...LOOK_MENU, ...SHOW_MENU, prefs: run({ preferences: CHART_ACTIONS.preferences }) },
+  view: { ...LOOK_MENU, ...SHOW_MENU, prefs: menuRun({ preferences: EDITOR_ACTIONS.preferences }) },
   format: {
     connector: pref.group('', {
-      connector: pref.group('Connector', { route: run({ resetRoute: RESET_ROUTE_ACTION_ID }) }, { as: 'menu' }),
+      connector: pref.group('Connector', { route: menuRun({ resetRoute: RESET_ROUTE_ACTION_ID }) }, { as: 'menu' }),
     }),
   },
   arrange: ARRANGE_MENU,

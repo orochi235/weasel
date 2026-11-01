@@ -1,10 +1,9 @@
 import { pageName, useCommand, type PlacedPage } from '@weasel-js/core';
 import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { downloadBlob, reportFileWarnings } from '@weasel-js/editor';
+import { downloadBlob, reportFileWarnings, menuRun } from '@weasel-js/editor';
 import type { ChartScene } from './chartDocument';
 import { FORMAT_EXPORT_RUN } from './importExport';
-import { run } from './menuBar';
 import type { ChartPages } from './pages/useChartPages';
 
 export const EXPORT_ACTIONS = {
@@ -13,7 +12,7 @@ export const EXPORT_ACTIONS = {
 
 /** File › Export: the page in view as an image, then the chart in each diagram format. */
 export const EXPORT_MENU: PrefGroup = pref.group('', {
-  export: pref.group('Export', { page: run(EXPORT_ACTIONS), formats: FORMAT_EXPORT_RUN }, { as: 'menu' }),
+  export: pref.group('Export', { page: menuRun(EXPORT_ACTIONS), formats: FORMAT_EXPORT_RUN }, { as: 'menu' }),
 });
 
 /** The page an export draws: the one in view, else the first. */

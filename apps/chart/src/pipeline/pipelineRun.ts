@@ -2,10 +2,10 @@ import { useCommand } from '@weasel-js/core';
 import {
   imageEvaluators, imageValueKinds, testCard, useEffectRunner, type EffectPipeline, type EffectRun, type RunRowOptions,
 } from '@weasel-js/diagram/effect';
-import { pickFile } from '@weasel-js/editor';
+import { pickFile, menuRun, type MenuRuns } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
 import { useMemo, useState } from 'react';
-import { can, run, type MenuRuns } from '../menuBar';
+import { can } from '../menuBar';
 import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
 
 export const RUN_ACTIONS = {
@@ -16,9 +16,9 @@ export const RUN_ACTIONS = {
 
 /** Pipeline mode's Run menu. */
 export const RUN_MENU: MenuRuns = {
-  once: run({ run: RUN_ACTIONS.run, step: RUN_ACTIONS.step }),
-  play: run({ play: RUN_ACTIONS.play, pause: RUN_ACTIONS.pause, reset: RUN_ACTIONS.reset }),
-  source: run({ source: RUN_ACTIONS.source, audioSource: RUN_ACTIONS.audioSource }),
+  once: menuRun({ run: RUN_ACTIONS.run, step: RUN_ACTIONS.step }),
+  play: menuRun({ play: RUN_ACTIONS.play, pause: RUN_ACTIONS.pause, reset: RUN_ACTIONS.reset }),
+  source: menuRun({ source: RUN_ACTIONS.source, audioSource: RUN_ACTIONS.audioSource }),
 };
 
 /** The View menu's run rows: Show Values, Show Previews and Show Spectrum. */

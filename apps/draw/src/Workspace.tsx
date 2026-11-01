@@ -79,7 +79,6 @@ export interface WorkspaceProps {
   backgroundColor: string;
   onToolsCreated: (tools: ToolsApi) => void;
   onCanvas: (api: SceneCanvasApi | null) => void;
-  openPrefs: () => void;
   openPalette: () => void;
 }
 
@@ -125,7 +124,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     symmetry,
     view,
     setView: onViewChange,
-    openPrefs: props.openPrefs,
     openPalette: props.openPalette,
   });
   const insertPaint = useInsertPaint();

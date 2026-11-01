@@ -1,7 +1,8 @@
 import { useCommand } from '@weasel-js/core';
 import type { EditorLook } from '@weasel-js/diagram/effect';
 import { pref } from '@weasel-js/prefs';
-import { can, type MenuRuns } from '../menuBar';
+import { type MenuRuns } from '@weasel-js/editor';
+import { can } from '../menuBar';
 import { useChartPref } from '../prefs';
 
 export const LOOK_ACTIONS = {

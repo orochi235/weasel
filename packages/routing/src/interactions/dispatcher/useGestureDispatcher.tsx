@@ -29,7 +29,7 @@ export type {
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope' } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope', yieldKeys = false } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -130,6 +130,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       onClick: () => onClickRef.current,
       onDoubleClick: () => onDoubleClickRef.current,
       clicks: clicksRef.current,
+      yieldKeys,
     }, {
       keyboard,
       pointer: pointerChannel,
@@ -140,6 +141,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       ingest: ingestChannel,
       carry: carryChannel,
     });
-  }, [enabled, keyboard, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
+  }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
     allDispatchers, clientToLocalRef, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

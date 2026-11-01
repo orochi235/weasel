@@ -1,13 +1,14 @@
 import { useCommand } from '@weasel-js/core';
 import type { EffectEditorApi } from '@weasel-js/diagram/effect';
 import type { RefObject } from 'react';
-import { can, run, type MenuRuns } from '../menuBar';
+import { menuRun, type MenuRuns } from '@weasel-js/editor';
+import { can } from '../menuBar';
 
 export const GROUP_ACTIONS = { group: 'pipeline.group', ungroup: 'pipeline.ungroup' } as const;
 
 /** Pipeline mode's Arrange menu. */
 export const ARRANGE_MENU: MenuRuns = {
-  groups: run({ group: GROUP_ACTIONS.group, ungroup: GROUP_ACTIONS.ungroup }),
+  groups: menuRun({ group: GROUP_ACTIONS.group, ungroup: GROUP_ACTIONS.ungroup }),
 };
 
 /** What is picked in the editor, and how to pick a group. */
