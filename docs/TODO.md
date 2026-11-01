@@ -30,6 +30,16 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P2) [agent] A clone's selection outline lands off its ghost on an offset parent.** `cloneAction`
+  previews each copy at its stored pose (`landed()` in `packages/core/src/interactions/actions/clone/action.ts`
+  returns `frame.local(...)`), and the ghost painter reads it that way. The in-flight selection bounds read the
+  same `previewPose` as a world pose (`previewBoundsOf` in `packages/core/src/canvas/useInFlightBounds.ts`
+  boxes it with no frame), so under a parent away from the origin the selection outline sits short of the ghost
+  by the parent's offset. Seen in collego (2026-11-01): Alt-dragging a cabinet on a face at (130, 290) mm drew the
+  outline that far up and left of the ghost. collego works around it by clearing the selection for the drag
+  (`packages/app/src/canvas/clone.ts`). Closes when one convention holds for `previewPose` across its readers,
+  and a clone under a translated parent outlines its ghost exactly.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
