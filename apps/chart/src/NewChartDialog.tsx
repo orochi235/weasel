@@ -1,6 +1,6 @@
-import { useCommand } from '@weasel-js/core';
 import { FLOWCHART_TYPE, rendererMeasure } from '@weasel-js/diagram';
 import { templateSpecs, type PageTemplate } from '@weasel-js/diagram-formats';
+import { useNewCommand } from '@weasel-js/editor';
 import { useState, type ReactElement } from 'react';
 import { CHART_ACTIONS } from './chartCommands';
 import { CHART_PAGE, chartDoc, type ChartScene } from './chartDocument';
@@ -12,7 +12,7 @@ import { chartThemeOf } from './theme/themeCommands';
  *  template chosen, in the chart's theme. */
 export function NewChart({ scene }: { scene: ChartScene }): ReactElement | null {
   const [open, setOpen] = useState(false);
-  useCommand(CHART_ACTIONS.new, 'New…', () => setOpen(true));
+  useNewCommand(CHART_ACTIONS.new, 'New…', () => setOpen(true));
   if (!open) return null;
   const create = (template: PageTemplate) => {
     const { specs, doc } = templateSpecs(template, { layer: 'shapes', theme: chartThemeOf(scene), measure: rendererMeasure, size: CHART_PAGE });

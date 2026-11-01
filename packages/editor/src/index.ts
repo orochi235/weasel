@@ -1,4 +1,7 @@
 export { downloadBlob, pickFile } from './fileIO';
+export {
+  FILE_KEYS, useNewCommand, useOpenCommand, useSaveCommand, type FileCommandOptions,
+} from './fileCommands';
 export { describeFileWarnings, reportFileWarnings, type FileDeed } from './fileWarnings';
 export { usePaperLayer, type PageSize } from './paperLayer';
 export { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';

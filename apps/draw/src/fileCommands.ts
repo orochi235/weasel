@@ -1,4 +1,5 @@
 import { useCommand, type PlacedPage } from '@weasel-js/core';
+import { useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { importSvgFile, openSvgFile, type OpenSvgTarget } from './openSvg';
 import { onePage, replacePages } from './pages/drawPages';
@@ -26,13 +27,10 @@ export interface FileCommandsTarget extends OpenSvgTarget, SavedDoc {
 
 const NEW_VARIANTS = PAPER_SIZES.map(({ key, label }) => ({ key, label, params: { size: key } }));
 
-const SAVE_KEY = { kind: 'key', key: 's', mods: { mod: true } } as const;
-const OPEN_KEY = { kind: 'key', key: 'o', mods: { mod: true } } as const;
-
 /** Register New, Open, Import and Save as actions on the nearest `<ActionsProvider>`. */
 export function useFileCommands(target: FileCommandsTarget): void {
   const { scene } = target;
-  useCommand(FILE_ACTIONS.new, 'New', (params) => {
+  useNewCommand(FILE_ACTIONS.new, 'New', (params) => {
     const size = params?.size;
     const paper = PAPER_PRESETS[isPaperSize(size) ? size : target.paperSize];
     target.leaveMode();
@@ -43,12 +41,12 @@ export function useFileCommands(target: FileCommandsTarget): void {
     });
     target.showFirstPage();
   }, { variants: NEW_VARIANTS, tags: ['new', 'document'] });
-  useCommand(FILE_ACTIONS.open, 'Open…', () => { void openSvgFile(target); }, { keys: OPEN_KEY });
+  useOpenCommand(FILE_ACTIONS.open, 'Open…', () => { void openSvgFile(target); });
   useCommand(FILE_ACTIONS.import, 'Import…', () => { void importSvgFile(scene); });
-  useCommand(FILE_ACTIONS.save, 'Save', () => {
+  useSaveCommand(FILE_ACTIONS.save, 'Save', () => {
     const { filename, backgroundColor } = target;
     void saveSvgFile(scene, { filename, backgroundColor });
-  }, { keys: SAVE_KEY });
+  });
   useCommand(FILE_ACTIONS.exportPage, 'Export Page as SVG…', () => {
     const { filename, backgroundColor, page } = target;
     if (page !== null) void exportPageSvgFile(scene, page, { filename, backgroundColor });

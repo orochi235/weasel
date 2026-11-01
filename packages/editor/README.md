@@ -24,6 +24,7 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides` and
 | Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession` |
 | Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `serializeReplacer`, `reviveTypedArrays` |
 | Files | `downloadBlob`, `pickFile`, `describeFileWarnings`, `reportFileWarnings` |
+| File commands | `useNewCommand`, `useOpenCommand`, `useSaveCommand`, `FILE_KEYS` |
 | Pages | `usePages`, `usePageFit`, `usePaperLayer`, `usePageGrid` |
 | Text editing | `TextEditDepPublisher` |
 
