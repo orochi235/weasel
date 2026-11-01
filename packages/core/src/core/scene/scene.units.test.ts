@@ -3,7 +3,7 @@ import { resolveScoped, type UnitScope } from '@weasel-js/quantity';
 import { createScene, sceneFromJSON } from './scene';
 import { reconcileSpecs } from './reconcileSpecs';
 import { sceneMutators } from './sceneMutators';
-import { sceneSharedUnitScopes, sceneUnitScopes } from './unitScopes';
+import { sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes } from './unitScopes';
 import { asNodeId, type AddNodeSpec, type GroupNode, type RectPose } from './types';
 
 type Spec = AddNodeSpec<object, 'main', RectPose>;
@@ -142,5 +142,28 @@ describe('sceneSharedUnitScopes', () => {
 
   it('is the root alone for no nodes', () => {
     expect(sceneSharedUnitScopes(scene(), [], INCHES)).toEqual([INCHES]);
+  });
+});
+
+describe('sceneMagnification', () => {
+  const INSET: UnitScope = { ...MM, drawnAt: 0.4 };
+  const DETAIL: UnitScope = { ...CM, drawnAt: 5 };
+  const scene = () => sceneOf([
+    spec('g', { kind: 'group', units: INSET }),
+    spec('inner', { kind: 'group', parent: G, units: DETAIL }),
+    spec('leaf', { parent: INNER }),
+    spec('beside', { parent: G }),
+    spec('loose'),
+  ]);
+
+  it('multiplies the drawnAt of every scope a node sits in', () => {
+    expect(sceneMagnification(scene(), [LEAF])).toBeCloseTo(2);
+    expect(sceneMagnification(scene(), [asNodeId('beside')])).toBeCloseTo(0.4);
+  });
+
+  it('reads only the chain the nodes share, and 1 outside any', () => {
+    expect(sceneMagnification(scene(), [LEAF, asNodeId('beside')])).toBeCloseTo(0.4);
+    expect(sceneMagnification(scene(), [LEAF, asNodeId('loose')])).toBe(1);
+    expect(sceneMagnification(scene(), [G])).toBe(1);
   });
 });

@@ -1,4 +1,4 @@
-import type { Action, GestureBinding, ModSpec, NodeId, Scene, SnapMark, SnapOutcomeStore, SurfaceContribution } from '@weasel-js/core';
+import { sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type Scene, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 import type { ImmediateParams } from '@weasel-js/core';
@@ -14,13 +14,17 @@ export interface DistanceReadoutOptions {
   id?: string;
 }
 
-/** The readout as snap marks: a `distance` per gap, a `line` per leader. */
-function marksOf(r: DistanceReadout, color: string | undefined): SnapMark[] {
+/** The readout as snap marks: a `distance` per gap, its value divided by the
+ *  magnification its ends are drawn at, and a `line` per leader. */
+function marksOf(r: DistanceReadout, color: string | undefined, magnification: number): SnapMark[] {
   const c = color === undefined ? {} : { color };
   return [
-    ...r.gaps.map((g): SnapMark => g.axis === 'x'
-      ? { kind: 'distance', from: { x: g.min, y: g.at }, to: { x: g.max, y: g.at }, value: g.max - g.min, ...c }
-      : { kind: 'distance', from: { x: g.at, y: g.min }, to: { x: g.at, y: g.max }, value: g.max - g.min, ...c }),
+    ...r.gaps.map((g): SnapMark => {
+      const value = (g.max - g.min) / magnification;
+      return g.axis === 'x'
+        ? { kind: 'distance', from: { x: g.min, y: g.at }, to: { x: g.max, y: g.at }, value, ...c }
+        : { kind: 'distance', from: { x: g.at, y: g.min }, to: { x: g.at, y: g.max }, value, ...c };
+    }),
     ...r.leaders.flatMap((l): SnapMark[] => {
       if (l.span === undefined) return [];
       return [l.axis === 'x'
@@ -66,10 +70,10 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
   const modifier = opts.modifier ?? 'alt';
   let shown: DistanceReadout = EMPTY;
   let store: SnapOutcomeStore | null = null;
-  const show = (next: DistanceReadout): void => {
+  const show = (next: DistanceReadout, magnification = 1): void => {
     if (next === shown || (next.gaps.length === 0 && shown.gaps.length === 0)) return;
     shown = next;
-    store?.set(marksOf(next, opts.color));
+    store?.set(marksOf(next, opts.color, magnification));
   };
 
   const action: Action = {
@@ -91,7 +95,8 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
         const hit = nodeAtPoint(p.world, subtreeOf(scene, ids));
         const from = worldUnionOf(scene, ids, { poseDescriptor });
         const [to] = hit === null ? [] : worldBoundsOf(scene, [hit], { poseDescriptor });
-        show(from === null || to === undefined ? EMPTY : measureDistances(from, to));
+        if (from === null || to === undefined) show(EMPTY);
+        else show(measureDistances(from, to), sceneMagnification(scene, [...ids, hit!]));
       },
     },
   };

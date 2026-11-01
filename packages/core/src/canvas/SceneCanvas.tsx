@@ -44,6 +44,7 @@ import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
 import { useGroupEntryContribution } from 'tools/builtin/select/groupEntry';
 import { useNodeKinds } from './SceneCanvas/useNodeKinds';
+import { useMagnificationCheck } from './SceneCanvas/useMagnificationCheck';
 import { DefaultTextEditDep, useCanvasTextEditor } from './SceneCanvas/defaultTextEditor';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
@@ -99,6 +100,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const actionsRegistry = useActionsRegistry();
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
   useEffect(() => publishPreviews(scene, dispatcher), [scene, dispatcher]);
+  useMagnificationCheck(scene as Scene<unknown, string, unknown>);
 
   const frameColor = useChromeColor(internalCanvasRef, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR);
   const { editor: textEditor, layers } = useCanvasTextEditor(scene as Scene<TData, string, unknown>, internalCanvasRef, props);

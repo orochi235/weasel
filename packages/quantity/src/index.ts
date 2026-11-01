@@ -125,9 +125,11 @@ export {
   type UnitExpr,
   type UnitExprContext,
 } from './unitExpr';
+export { scaleBar, type ScaleBar, type ScaleBarOptions } from './scaleBar';
 export {
   formatScoped,
   fromRoot,
+  magnificationOf,
   resolveScoped,
   scopesOf,
   toRoot,

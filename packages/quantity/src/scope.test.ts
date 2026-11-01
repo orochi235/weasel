@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatScoped, fromRoot, resolveScoped, scopesOf, toRoot, type UnitScope } from './scope';
+import { formatScoped, fromRoot, magnificationOf, resolveScoped, scopesOf, toRoot, type UnitScope } from './scope';
 import { IMPERIAL_INCHES, METRIC_MM } from './units';
 
 const SCENE: UnitScope = { system: IMPERIAL_INCHES };
 /** A sub-assembly drawn in millimeters inside an inch scene. */
 const ASSEMBLY: UnitScope = { system: METRIC_MM, scale: 1 / 25.4 };
-/** A detail inside it, drawn at ten times size. */
+/** A detail inside it whose millimeters are worth a tenth of the assembly's. */
 const DETAIL: UnitScope = { system: METRIC_MM, scale: 0.1 };
 
 describe('resolveScoped', () => {
@@ -44,6 +44,15 @@ describe('toRoot and fromRoot', () => {
 describe('formatScoped', () => {
   it('shows a root measure in a unit of the innermost scope', () => {
     expect(formatScoped(1, 'cm', [SCENE, ASSEMBLY])).toBe('2.54cm');
+  });
+});
+
+describe('magnificationOf', () => {
+  it('multiplies every drawnAt along the chain, absent counting as 1', () => {
+    const inset: UnitScope = { system: METRIC_MM, drawnAt: 0.4 };
+    const zoomed: UnitScope = { system: METRIC_MM, drawnAt: 5 };
+    expect(magnificationOf([SCENE, ASSEMBLY])).toBe(1);
+    expect(magnificationOf([SCENE, inset, zoomed])).toBeCloseTo(2);
   });
 });
 

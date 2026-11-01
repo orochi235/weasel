@@ -1,4 +1,4 @@
-import type { Bounds, SnapCollect, SnapMark, SnapSource } from '@weasel-js/core';
+import { asNodeId, sceneMagnification, type Bounds, type SnapCollect, type SnapMark, type SnapSource } from '@weasel-js/core';
 import {
   equalGaps, measureGapSpans, referenceGaps, spacingOffers, type MeasuredGap,
 } from '../guides/alignment/spacing';
@@ -39,11 +39,11 @@ interface Measured { boxes: readonly Bounds[]; x: readonly MeasuredGap[]; y: rea
 const measureAll = (boxes: readonly Bounds[]): Measured =>
   ({ boxes, x: measureGapSpans(boxes, 'x'), y: measureGapSpans(boxes, 'y') });
 
-function gapMark(g: SpacingGap, color: string | undefined): SnapMark {
+function gapMark(g: SpacingGap, color: string | undefined, magnification: number): SnapMark {
   const ends = g.axis === 'x'
     ? { from: { x: g.min, y: g.at }, to: { x: g.max, y: g.at } }
     : { from: { x: g.at, y: g.min }, to: { x: g.at, y: g.max } };
-  return { kind: 'gap', ...ends, value: g.max - g.min, ...(color === undefined ? {} : { color }) };
+  return { kind: 'gap', ...ends, value: (g.max - g.min) / magnification, ...(color === undefined ? {} : { color }) };
 }
 
 /**
@@ -69,6 +69,7 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
       const reach = q.reachWorld(q.reachPx);
       const refs = { x: referenceGaps(box, measured.x), y: referenceGaps(box, measured.y) };
       const seen = new Set<string>();
+      const magnification = q.scene && q.ids?.length ? sceneMagnification(q.scene, q.ids.map(asNodeId)) : 1;
       for (const { axis, edge, rate } of movingSides(q)) {
         const speed = Math.hypot(rate.x, rate.y);
         for (const o of spacingOffers(box, axis, edge, measured.boxes, refs[axis])) {
@@ -80,7 +81,7 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
             locus: sideLine(probe.at, rate, o.delta),
             mark: (delta: Point) => {
               const landed = landedBox(q, delta) ?? box;
-              return equalGaps(landed, axis, o.size, measured.boxes, refs[axis]).map((g) => gapMark(g, opts.color));
+              return equalGaps(landed, axis, o.size, measured.boxes, refs[axis]).map((g) => gapMark(g, opts.color, magnification));
             },
           };
         }

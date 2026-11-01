@@ -357,6 +357,17 @@ Owner tags, after the priority (2026-10-26):
   a mode lands.
   Closes when the maintainer reopens the 2026-10-12 ruling and the direct calls reach the open journal,
   or rules today's split final.
+- **(P2) [agent] The measure tool's readout ignores a frame's declared magnification.** Spacing and
+  distance readouts divide by `units.drawnAt` (`sceneMagnification`), but a measurement is two world
+  points with no node behind them, so `MeasureReadout` shows world lengths inside a drawer drawn at
+  0.4×. It needs the frame each end was snapped in, recorded when the end lands. Filed rather than
+  fixed with `drawnAt` (2026-10-31) because that recording is a change to the measure data model.
+  Closes when a measurement inside a magnified frame reads its true length.
+- **(P2) [recheck] Rulers along the workspace edges, reading the unit scope of the frame under the
+  pointer.** weasel has none; guides are dragged off a ruler only in name. `ScaleBar` (ui) and
+  `scaleBar` (quantity) already measure a frame's true lengths and could set the tick spacing. Filed
+  rather than built with `drawnAt` (2026-10-31): a new chrome component, with a look to settle.
+  Closes when a scene canvas can show rulers whose ticks read the frame's units.
 
 ---
 
