@@ -726,14 +726,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] `typecheck:packages` checks nothing of labkit.** labkit's `tsconfig.json` is
-  solution-style (`"files": []` beside a reference to `tsconfig.lib.json`), and the script runs
-  `tsc -p <pkg>/tsconfig.json --noEmit`, which builds an empty program and prints `labkit ok`. Run on
-  `tsconfig.lib.json` instead (2026-10-31), it reports 191 errors: that config does not extend the root
-  one, so it has none of its `paths` and reads siblings through `node_modules` as published, where
-  `@weasel-js/*/testing/*` does not exist (139 TS2307) and types lag source (`Toolbar.Button`, `PrefAuto`).
-  Closes when the script follows a solution config's references and labkit's program passes under it.
-
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
