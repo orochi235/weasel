@@ -4,8 +4,8 @@
  *  command-row surface asset (`COMMAND_ASSETS`) drawn in its slot here, from the registry `<SceneCanvas>` fills,
  *  glyphs included; each can be moved to a menu or a panel instead. Simplify, Offset and Corner shape are command-row
  *  assets too, of draw's own controls (`PATH_COMMAND_ASSETS`), and move to a panel only. Arrange, Pathfinder, and Path are surface assets, drawn in the
- *  toolbar dock below this row (`StripDock`) when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
- *  Preferences are actions too (`appCommands`), as are Record and Play
+ *  toolbar dock below this row (`StripDock`) when they are shown as toolbars or menus. The app's own view toggles and Release compound
+ *  path are actions too (`appCommands`), as are Preferences (the editor shell's), Record and Play
  *  (`recording`) and Open, Import and Save (`fileCommands`), so a button's shortcut is the
  *  binding that fires it. The Debug menu's rows are `debug.open`'s variants, one per dev page. */
 import type { ReactNode } from 'react';

@@ -1,9 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { ActionsProvider, useCommand } from '@weasel-js/core';
+import { EditorShell } from '@weasel-js/editor';
+import { createMemoryAdapter } from '@weasel-js/storage';
+import { DRAW_PREFERENCES_COMMAND } from './appCommands/actions';
 import { CommandBar } from './CommandBar';
 import { DEBUG_MENU, DEV_ROUTES, useDebugCommands } from './dev/devRoutes';
 import { PAPER_SIZES } from './paperSizes';
+import { PREFS } from './prefs';
+import { withIcons } from './testIcons';
 
 const newRun = vi.fn();
 const openRun = vi.fn();
@@ -66,6 +71,28 @@ describe('CommandBar', () => {
     render(<CommandBar menus={<div role="menubar" aria-label="Menu bar" />} />);
     const row = screen.getByRole('toolbar', { name: 'Actions' });
     expect(row.firstElementChild).toBe(screen.getByRole('menubar', { name: 'Menu bar' }));
+  });
+
+  it("draws the shell's Preferences in the App run ahead of Commands, and opens the dialog from it", () => {
+    function Commands() {
+      useCommand('app.commands', 'Commands', vi.fn());
+      return null;
+    }
+    render(
+      <EditorShell
+        prefs={{ schema: PREFS, storage: createMemoryAdapter(new Map()), prefix: 'test.prefs/' }}
+        preferences={DRAW_PREFERENCES_COMMAND}
+      >
+        <Commands />
+        <CommandBar />
+      </EditorShell>,
+      { wrapper: withIcons },
+    );
+    const prefs = screen.getByRole('button', { name: 'Preferences' });
+    const commands = screen.getByRole('button', { name: 'Commands' });
+    expect(prefs.compareDocumentPosition(commands) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    act(() => { fireEvent.click(prefs); });
+    expect(screen.getByRole('dialog', { name: PREFS.name })).toBeTruthy();
   });
 
   it('draws Debug from the debug.open action, one row per dev route', () => {

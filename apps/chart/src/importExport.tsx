@@ -4,11 +4,11 @@ import {
   DIAGRAM_FORMATS, documentFromScene, documentSpecs, formatTakes, readDocument, scenePageKinds, writtenPage, type DiagramFormat,
 } from '@weasel-js/diagram-formats';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { downloadBlob, pickFile, reportFileWarnings } from '@weasel-js/editor';
+import { downloadBlob, pickFile, reportFileWarnings, menuRun } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
 import { chartDoc, type ChartScene } from './chartDocument';
 import { replaceChart } from './chartPersistence';
-import { can, run } from './menuBar';
+import { can } from './menuBar';
 import type { ChartPages } from './pages/useChartPages';
 import { CHART_DEFAULT_THEME, chartThemeOf } from './theme/themeCommands';
 
@@ -22,7 +22,7 @@ export const FORMAT_EXPORT_ACTIONS: Readonly<Record<string, string>> =
   Object.fromEntries(WRITABLE.map((f) => [f.id, `chart.export.format.${f.id}`]));
 
 /** File › Export's run of formats. */
-export const FORMAT_EXPORT_RUN: PrefGroup = run(FORMAT_EXPORT_ACTIONS);
+export const FORMAT_EXPORT_RUN: PrefGroup = menuRun(FORMAT_EXPORT_ACTIONS);
 
 /** Replaces the chart with the diagram file `file` holds, as one undo entry, "Import". Resolves with what the file had
  *  that a chart cannot hold; rejects on a file no format reads. */

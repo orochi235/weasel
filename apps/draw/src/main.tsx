@@ -2,12 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { StrictMode, Suspense, lazy, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import {
-  ActionsProvider,
-  DepRegistryProvider,
-  IconRegistryProvider,
-  SelectionContextProvider,
-} from '@weasel-js/core';
+import { IconRegistryProvider, WeaselProvider } from '@weasel-js/core';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import icons from 'virtual:weasel-icons';
 import { App } from './App';
@@ -50,8 +45,8 @@ migrateLegacyPanelFlags();
 
 /** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, `#/dev/registry`
  *  the bundle inspector, `#/dev/assets` the asset editor, anything else
- *  the main App. Independent surfaces — they don't share providers
- *  beyond the outer ActionsProvider / SelectionContextProvider scope. */
+ *  the main App, whose `<EditorShell>` mounts the kit's providers. The dev
+ *  surfaces get theirs from a `<WeaselProvider>`. */
 function Root() {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
@@ -61,15 +56,14 @@ function Root() {
   }, []);
   // The inspector is read rather than worked in, so it sets its text a density up.
   const inspector = hash.startsWith('#/dev/registry');
-  const surface = hash.startsWith('#/dev/toolkits') ? (
+  const dev = hash.startsWith('#/dev/toolkits') ? (
     <ToolkitBuilder />
   ) : inspector ? (
     <RegistryInspector />
   ) : hash.startsWith('#/dev/assets') ? (
     <AssetsPage />
-  ) : (
-    <App />
-  );
+  ) : null;
+  const surface = dev ? <WeaselProvider>{dev}</WeaselProvider> : <App />;
   return (
     <ColorModeProvider>
       {(mode) => (
@@ -92,13 +86,7 @@ slot.__reactRoot ??= createRoot(slot);
 slot.__reactRoot.render(
   <StrictMode>
     <IconRegistryProvider icons={icons} variants={ICON_VARIANTS}>
-      <DepRegistryProvider>
-        <ActionsProvider>
-          <SelectionContextProvider>
-            <Root />
-          </SelectionContextProvider>
-        </ActionsProvider>
-      </DepRegistryProvider>
+      <Root />
     </IconRegistryProvider>
   </StrictMode>,
 );

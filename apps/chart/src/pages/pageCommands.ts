@@ -1,6 +1,6 @@
 import { ActionDisabledReason, useCommand, type MenuDef } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
-import { run, type MenuRuns } from '../menuBar';
+import { menuRun, type MenuRuns } from '@weasel-js/editor';
 import type { ChartPages } from './useChartPages';
 
 export const PAGE_ACTIONS = {
@@ -15,9 +15,9 @@ export const PAGE_TAB_MENU_ID = 'chart.pageTab';
 
 /** Chart mode's Page menu. */
 export const PAGE_MENU: MenuRuns = {
-  setup: run({ setup: PAGE_ACTIONS.setup }),
-  edit: run({ add: PAGE_ACTIONS.add, remove: PAGE_ACTIONS.remove }),
-  go: run({ previous: PAGE_ACTIONS.previous, next: PAGE_ACTIONS.next }),
+  setup: menuRun({ setup: PAGE_ACTIONS.setup }),
+  edit: menuRun({ add: PAGE_ACTIONS.add, remove: PAGE_ACTIONS.remove }),
+  go: menuRun({ previous: PAGE_ACTIONS.previous, next: PAGE_ACTIONS.next }),
 };
 
 /** A page tab's context menu. Its items are handed the tab's page as `params.page`. */

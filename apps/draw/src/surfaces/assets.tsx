@@ -1,3 +1,4 @@
+import { EDITOR_ACTIONS } from '@weasel-js/editor';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { FILE_ACTIONS } from '../fileCommands';
 import { LOUPE_SCHEMA, useLoupeBinding } from '../LoupeProvider';
@@ -36,6 +37,12 @@ const FILE = pref.group('File', {
   save: pref.action(FILE_ACTIONS.save, { description: 'Save as SVG' }),
 });
 
+/** Preferences is the shell's command and Commands the app's, so the run names both rather than one group. */
+const APP = pref.group('App', {
+  preferences: pref.action(EDITOR_ACTIONS.preferences),
+  commands: pref.action('app.commands'),
+});
+
 /** The command row's assets, in the row's order. `CommandBar` gives each its slot. */
 export const COMMAND_ASSETS: readonly SurfaceAsset[] = [
   { id: 'file', label: 'File', schema: FILE, surfaces: ALL, defaultSurface: 'bar', row: 'command' },
@@ -48,7 +55,7 @@ export const COMMAND_ASSETS: readonly SurfaceAsset[] = [
   commandRun('text', 'Text', 'text'),
   commandRun('compound', 'Compound path', 'compound'),
   commandRun('record', 'Record', 'record'),
-  commandRun('app', 'App', 'app'),
+  { id: 'app', label: 'App', schema: APP, surfaces: ALL, defaultSurface: 'bar', row: 'command' },
 ];
 
 /**

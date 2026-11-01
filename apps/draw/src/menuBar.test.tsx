@@ -42,7 +42,7 @@ function setup() {
     snapToGrid: false, toggleSnap: vi.fn(),
     symmetryOn: false, toggleSymmetry: vi.fn(),
     canReleaseCompound: false, releaseCompound: vi.fn(),
-    openPrefs: vi.fn(), openPalette: vi.fn(),
+    openPalette: vi.fn(),
     chromeHidden: (id: string) => id === 'history', toggleChrome: vi.fn(),
   };
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });

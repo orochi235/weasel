@@ -42,7 +42,8 @@ export interface DispatchCore {
   keymaps(): KeymapStack | undefined;
   /** Whether a key or a paste that reached the page is this dispatcher's to
    *  handle: its canvas was the last one pressed or scrolled in, or it has no
-   *  canvas and its input scope is the active one. */
+   *  canvas and its input scope is the active one (and, under `yieldKeys`,
+   *  no canvas on that scope holds them). */
   holdsKeys(): boolean;
   /** Whether the pointer is over the canvas, as its enter, move and leave
    *  report it. Always false with no canvas. */
@@ -74,6 +75,8 @@ export interface DispatchCoreSources {
   /** The dispatcher context, less the parts that depend on the routed view. */
   context(): DispatcherContext;
   actions(): ActionsRegistry;
+  /** With no canvas: stand aside while a canvas on `actions()` itself holds the keys. */
+  yieldKeys?: boolean;
   /** Told of the dispatcher each event is about to run on. A view's appears
    *  with no render of the hook, so this is where one is first seen. */
   uses(dispatcher: Dispatcher): void;
@@ -141,7 +144,10 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     }),
     batch,
     keymaps: () => src.context().keymaps,
-    holdsKeys: () => (canvas ? src.actions().holdsKeys() : src.actions().isActive()),
+    holdsKeys: () => {
+      const a = src.actions();
+      return canvas ? a.holdsKeys() : a.isActive() && !(src.yieldKeys === true && a.holdsKeys());
+    },
     pointerOver: () => over,
     setPointerOver: (next) => { over = canvas !== null && next; },
     activate: () => src.actions().activate(),

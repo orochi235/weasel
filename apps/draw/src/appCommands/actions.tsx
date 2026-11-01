@@ -1,7 +1,7 @@
 /**
  * WeaselDraw's own commands (the grid, snap, and symmetry toggles, showing and hiding each
  * toolbar, palette, and panel, Release compound
- * path, Preferences, the command palette) as actions the gesture dispatcher routes and the command
+ * path, the command palette) as actions the gesture dispatcher routes and the command
  * bar draws from the registry. Each reads the live `appCommands` dep.
  */
 
@@ -9,6 +9,7 @@
 import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
+import type { EditorCommandOptions } from '@weasel-js/editor';
 import { icon } from '../icons.gen';
 import { CHROME_ITEMS, chromeActionId } from '../surfaces/chrome';
 
@@ -27,7 +28,6 @@ export interface AppCommands {
   /** Whether any selected path has more than one subpath. */
   canReleaseCompound: boolean;
   releaseCompound(): void;
-  openPrefs(): void;
   openPalette(): void;
 }
 
@@ -98,15 +98,12 @@ export const releaseCompoundAction: AppAction = {
   },
 };
 
-export const preferencesAction: AppAction = {
-  id: 'app.preferences',
+/** How `<EditorShell>` registers Preferences for draw: a button in the command row's App run. */
+export const DRAW_PREFERENCES_COMMAND = {
   label: 'Preferences',
   icon: icon('settings'),
   group: 'app',
-  defaultBinding: { kind: 'key', key: ',', mods: { mod: true } },
-  requires: ['appCommands'],
-  invoker: { timing: 'immediate', run: (deps) => read(deps)?.openPrefs() },
-};
+} as const satisfies EditorCommandOptions;
 
 export const commandsAction: AppAction = {
   id: 'app.commands',
@@ -124,6 +121,5 @@ export const appActions: Action[] = [
   toggleSymmetryAction,
   ...chromeActions,
   releaseCompoundAction,
-  preferencesAction,
   commandsAction,
 ];

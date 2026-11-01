@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { PrefRenderContext } from '@weasel-js/ui/components/Prefs';
-import { RegistryEnumControl, SurfacesEditor } from './PreferencesModal';
+import { RegistryEnumControl, SurfacesEditor } from './drawPrefsDialog';
 import { PREFS, type WeaselDrawPrefRegistryEnum } from './prefs';
 import { RegistryEnumSourcesContext } from './registry/RegistrySelect';
 

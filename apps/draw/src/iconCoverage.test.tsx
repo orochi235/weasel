@@ -22,7 +22,7 @@ afterEach(() => cleanup());
 const commands: AppCommands = {
   gridVisible: false, toggleGrid: vi.fn(), snapToGrid: false, toggleSnap: vi.fn(),
   symmetryOn: false, toggleSymmetry: vi.fn(), canReleaseCompound: false, releaseCompound: vi.fn(),
-  openPrefs: vi.fn(), openPalette: vi.fn(), chromeHidden: () => false, toggleChrome: vi.fn(),
+  openPalette: vi.fn(), chromeHidden: () => false, toggleChrome: vi.fn(),
 };
 
 it("registers every glyph a tool or action on draw's canvas names", () => {

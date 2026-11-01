@@ -16,6 +16,8 @@ export interface CommandOptions {
   keys?: BoundGesture | readonly BoundGesture[];
   /** Shown beside the label. */
   icon?: IconRef;
+  /** The registry group a bar drawing one group gathers it under. */
+  group?: string;
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */
   tags?: readonly string[];
   /** One entry each in a bar, menu or palette; `run` receives the chosen one's params. */
@@ -27,7 +29,7 @@ export interface CommandOptions {
  * for the calling component's lifetime, so a menu, toolbar, palette or key
  * can run it. Callbacks and option functions may be new on every render: the
  * latest are read when used, and the action is replaced only when `id`,
- * `label`, `icon`, `keys`, `tags` or `variants` change by value.
+ * `label`, `icon`, `group`, `keys`, `tags` or `variants` change by value.
  */
 export function useCommand(
   id: string,
@@ -42,6 +44,7 @@ export function useCommand(
   const hasEnabled = options?.enabled !== undefined;
   const hasActive = options?.active !== undefined;
   const icon = options?.icon;
+  const group = options?.group;
   const action = useMemo<Action>(() => {
     const read = () => latest.current.options;
     const a: Action = {
@@ -55,8 +58,9 @@ export function useCommand(
     if (hasEnabled) a.enabled = () => read()?.enabled?.() ?? true;
     if (hasActive) a.active = () => read()?.active?.() ?? false;
     if (icon !== undefined) a.icon = icon;
+    if (group !== undefined) a.group = group;
     return a;
-  }, [id, label, icon, keys, tags, variants, hasEnabled, hasActive, latest]);
+  }, [id, label, icon, group, keys, tags, variants, hasEnabled, hasActive, latest]);
   useAction(action);
 }
 

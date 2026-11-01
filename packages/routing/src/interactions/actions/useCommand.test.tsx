@@ -33,6 +33,11 @@ function mount(initial: Props) {
 }
 
 describe('useCommand', () => {
+  it('files the action under `group`', () => {
+    const { found } = mount({ label: 'A', run: vi.fn(), options: { group: 'app' } });
+    expect(found()?.group).toBe('app');
+  });
+
   it('registers an immediate action with the label', () => {
     const { found } = mount({ label: 'A', run: vi.fn() });
     const action = found();

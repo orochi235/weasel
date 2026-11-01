@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
 import {
   actionBindings,
   actionItems,
@@ -7,6 +8,7 @@ import {
   defaultNodeRouting,
   defaultNodeProperties,
   useActionsRegistry,
+  useCommand,
   useScene,
   type NodePropertiesEntry,
   type ToolDef,
@@ -16,6 +18,7 @@ import {
 import { routesForSpec } from '@weasel-js/core/routing';
 import { actionIcon } from '@weasel-js/ui/components/Icon';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
+import { DRAW_PREFERENCES_COMMAND } from '../appCommands/actions';
 import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from '../drawDocument';
 import { DRAW_FEATURES } from '../drawFeatures';
 import { useFileCommands } from '../fileCommands';
@@ -39,13 +42,13 @@ const noop = () => {};
 const IDLE_COMMANDS: AppCommands = {
   gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop,
   symmetryOn: false, toggleSymmetry: noop,
-  canReleaseCompound: false, releaseCompound: noop, openPrefs: noop, openPalette: noop,
+  canReleaseCompound: false, releaseCompound: noop, openPalette: noop,
   chromeHidden: () => false, toggleChrome: noop,
 };
 const AMBIENT = [appCommandsContribution(() => IDLE_COMMANDS)];
 
-/** Mounts a hidden SceneCanvas with the exhaustive tool bundle and the app's features, own commands
- *  and file commands, lets it auto-wire their actions into the surrounding `ActionsProvider`, and
+/** Mounts a hidden SceneCanvas with the exhaustive tool bundle and the app's features, own commands,
+ *  the editor shell's Preferences, and file commands, lets it auto-wire their actions into the surrounding `ActionsProvider`, and
  *  calls `onSnapshot` with the resulting tool/action lists on every change. */
 export function RegistryProbe({ onSnapshot }: ProbeProps) {
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
@@ -53,6 +56,8 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     initial: [],
   });
   useDebugCommands();
+  const { label: prefsLabel, ...prefsOptions } = DRAW_PREFERENCES_COMMAND;
+  useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFERENCES_KEY });
   useFileCommands({
     scene, filename: 'probe', paperSize: 'letter', backgroundColor: '#ffffff',
     setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null, setBackgroundColor: noop,

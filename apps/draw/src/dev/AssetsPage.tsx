@@ -3,7 +3,7 @@ import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS, workspaceCodec, type CustomKinds
 import { usePrefsStore } from '@weasel-js/prefs/react';
 import type { PrefRenderer } from '@weasel-js/ui/components/Prefs';
 import { localStorageAdapter } from '@weasel-js/storage';
-import { DataControl, RegistryEnumControl } from '../PreferencesModal';
+import { DataControl, RegistryEnumControl } from '../drawPrefsDialog';
 import { DevShell } from './DevShell';
 import { DRAW_LEAF_KINDS, DRAW_WORKSPACE } from './drawWorkspace';
 import { RegistryProbe } from './registryProbe';

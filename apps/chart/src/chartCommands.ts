@@ -3,53 +3,54 @@ import {
   RELEASE_MEMBERS_ACTION_ID, RESET_LABEL_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS,
 } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
-import { downloadBlob, pickFile, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
+import {
+  EDITOR_ACTIONS, downloadBlob, pickFile, menuRun, useOpenCommand, useSaveCommand, type MenuContributions,
+} from '@weasel-js/editor';
 import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
 import { EXPORT_MENU } from './exportCommands';
 import { icon } from './icons.gen';
 import { IMPORT_ACTION } from './importExport';
-import { run, type ChartMenuContributions } from './menuBar';
 import { PAGE_MENU } from './pages/pageCommands';
 import { useChartPref } from './prefs';
 import { THEME_MENU } from './theme/themeCommands';
 
 export const CHART_ACTIONS = {
-  new: 'chart.new', open: 'chart.open', save: 'chart.save', preferences: 'chart.preferences',
+  new: 'chart.new', open: 'chart.open', save: 'chart.save',
   grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid', snapToShapes: 'chart.view.snapToShapes',
   snapToGaps: 'chart.view.snapToGaps', autoLayout: 'chart.arrange.autoLayout',
 } as const;
 
 /** Chart mode's File (Import and Export included), Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, Reset label, Line jumps, and Release members are the diagram package's. */
-export const CHART_MENUS: ChartMenuContributions = {
+export const CHART_MENUS: MenuContributions = {
   file: {
-    open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open, import: IMPORT_ACTION }),
-    save: run({ save: CHART_ACTIONS.save }),
+    open: menuRun({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open, import: IMPORT_ACTION }),
+    save: menuRun({ save: CHART_ACTIONS.save }),
     export: EXPORT_MENU,
   },
   edit: {
-    history: run({ undo: 'undo', redo: 'redo' }),
-    remove: run({ delete: 'delete' }),
+    history: menuRun({ undo: 'undo', redo: 'redo' }),
+    remove: menuRun({ delete: 'delete' }),
   },
   view: {
-    grid: run({ grid: CHART_ACTIONS.grid, snapToGrid: CHART_ACTIONS.snapToGrid }),
-    snap: run({ snapToShapes: CHART_ACTIONS.snapToShapes, snapToGaps: CHART_ACTIONS.snapToGaps }),
-    prefs: run({ preferences: CHART_ACTIONS.preferences }),
+    grid: menuRun({ grid: CHART_ACTIONS.grid, snapToGrid: CHART_ACTIONS.snapToGrid }),
+    snap: menuRun({ snapToShapes: CHART_ACTIONS.snapToShapes, snapToGaps: CHART_ACTIONS.snapToGaps }),
+    prefs: menuRun({ preferences: EDITOR_ACTIONS.preferences }),
   },
   format: {
     theme: THEME_MENU,
     connector: pref.group('', {
       connector: pref.group('Connector', {
-        router: run(SET_ROUTER_ACTION_IDS),
-        route: run({ resetRoute: RESET_ROUTE_ACTION_ID }),
-        label: run({ resetLabel: RESET_LABEL_ACTION_ID }),
-        hops: run({ hops: SET_HOPS_ACTION_ID }),
+        router: menuRun(SET_ROUTER_ACTION_IDS),
+        route: menuRun({ resetRoute: RESET_ROUTE_ACTION_ID }),
+        label: menuRun({ resetLabel: RESET_LABEL_ACTION_ID }),
+        hops: menuRun({ hops: SET_HOPS_ACTION_ID }),
       }, { as: 'menu' }),
     }),
   },
   arrange: {
-    layout: run({ autoLayout: CHART_ACTIONS.autoLayout }),
-    containers: run({ releaseMembers: RELEASE_MEMBERS_ACTION_ID }),
+    layout: menuRun({ autoLayout: CHART_ACTIONS.autoLayout }),
+    containers: menuRun({ releaseMembers: RELEASE_MEMBERS_ACTION_ID }),
   },
   page: PAGE_MENU,
 };

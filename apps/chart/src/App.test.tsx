@@ -1,7 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
 import { PAGE_TEMPLATES } from '@weasel-js/diagram-formats';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
@@ -22,14 +21,7 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const mount = () => render(
-  <DepRegistryProvider>
-    <ActionsProvider>
-      <App />
-    </ActionsProvider>
-  </DepRegistryProvider>,
-  { wrapper: withIcons },
-);
+const mount = () => render(<App />, { wrapper: withIcons });
 
 /** Opens a menu-bar menu and clicks the row whose label starts with `row`. */
 function choose(menu: string, ...rows: string[]): void {
@@ -128,6 +120,13 @@ describe('App', () => {
     mount();
     expect(screen.queryByRole('dialog')).toBeNull();
     choose('View', 'Preferences');
+    expect(within(screen.getByRole('dialog')).getByText('Show grid')).toBeTruthy();
+  });
+
+  it('opens Preferences on Mod+,', () => {
+    mount();
+    // jsdom is not an Apple platform, so mod is Ctrl.
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ',', code: 'Comma', ctrlKey: true, cancelable: true })); });
     expect(within(screen.getByRole('dialog')).getByText('Show grid')).toBeTruthy();
   });
 

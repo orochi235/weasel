@@ -20,7 +20,7 @@ import { wheelInput } from './channels/wheel';
 
 /** What a listener set reads. Each thunk answers for the hook's latest render. */
 export interface InputSources
-  extends Pick<DispatchCoreSources, 'root' | 'views' | 'clientToLocal' | 'context' | 'actions'>,
+  extends Pick<DispatchCoreSources, 'root' | 'views' | 'clientToLocal' | 'context' | 'actions' | 'yieldKeys'>,
     Pick<PointerInputOptions, 'longPress' | 'kitSettings' | 'onClick' | 'onDoubleClick' | 'clicks'> {
   /** Every live dispatcher — what a cancel-everything has to reach. */
   dispatchers(): Dispatcher[];
@@ -59,6 +59,7 @@ export function attachInput(
     clientToLocal: src.clientToLocal,
     context: src.context,
     actions: src.actions,
+    yieldKeys: src.yieldKeys,
     uses: () => { redraw.sync(src.dispatchers()); },
     disposed: () => disposed,
   });

@@ -37,7 +37,7 @@ function App() {
   const commands: AppCommands = {
     gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop,
     symmetryOn: false, toggleSymmetry: noop,
-    canReleaseCompound: false, releaseCompound: noop, openPrefs: noop, openPalette: noop,
+    canReleaseCompound: false, releaseCompound: noop, openPalette: noop,
     ...chrome,
   };
   const ref = useLatest(commands);

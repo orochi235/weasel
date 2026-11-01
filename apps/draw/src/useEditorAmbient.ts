@@ -27,7 +27,6 @@ export interface EditorAmbientArgs {
   };
   view: View;
   setView: (view: View) => void;
-  openPrefs: () => void;
   openPalette: () => void;
 }
 
@@ -48,7 +47,6 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
     ...chrome,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
-    openPrefs: args.openPrefs,
     openPalette: args.openPalette,
   };
   const appCommandsRef = useLatest(appCommands);

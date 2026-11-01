@@ -4,10 +4,9 @@ import {
   type DiagramTheme,
 } from '@weasel-js/diagram';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { downloadBlob, pickFile } from '@weasel-js/editor';
+import { downloadBlob, pickFile, menuRun } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
-import { run } from '../menuBar';
 import { applyChartTheme } from './applyChartTheme';
 
 /** What a chart that names no theme is drawn in: ink on white, as charts were before themes. */
@@ -24,9 +23,9 @@ export const THEME_ACTIONS = { edit: 'chart.editTheme', import: 'chart.importThe
 /** Format › Theme: one item per shipped theme, then editing the theme and moving it between charts. */
 export const THEME_MENU: PrefGroup = pref.group('', {
   theme: pref.group('Theme', {
-    shipped: run(Object.fromEntries(Object.keys(DIAGRAM_THEMES).map((id) => [id, themeActionId(id)]))),
-    edit: run({ edit: THEME_ACTIONS.edit }),
-    file: run({ import: THEME_ACTIONS.import, export: THEME_ACTIONS.export }),
+    shipped: menuRun(Object.fromEntries(Object.keys(DIAGRAM_THEMES).map((id) => [id, themeActionId(id)]))),
+    edit: menuRun({ edit: THEME_ACTIONS.edit }),
+    file: menuRun({ import: THEME_ACTIONS.import, export: THEME_ACTIONS.export }),
   }, { as: 'menu' }),
 });
 
