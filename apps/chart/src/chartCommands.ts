@@ -3,7 +3,7 @@ import {
   RELEASE_MEMBERS_ACTION_ID, RESET_LABEL_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS,
 } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
-import { downloadBlob, pickFile } from '@weasel-js/editor';
+import { downloadBlob, pickFile, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
 import { EXPORT_MENU } from './exportCommands';
@@ -63,12 +63,12 @@ async function openChart(scene: ChartScene): Promise<void> {
 /** Registers Open and Save, and View's grid and snapping toggles, on the nearest `<ActionsProvider>`. New… is
  *  `NewChart`'s, which owns its dialog. */
 export function useChartCommands(scene: ChartScene): void {
-  useCommand(CHART_ACTIONS.open, 'Open…', () => {
+  useOpenCommand(CHART_ACTIONS.open, 'Open…', () => {
     openChart(scene).catch((err: unknown) => console.warn('weaselchart: could not open the file', err));
   });
-  useCommand(CHART_ACTIONS.save, 'Save', () => {
+  useSaveCommand(CHART_ACTIONS.save, 'Save', () => {
     downloadBlob(new Blob([chartToJson(scene)], { type: 'application/json' }), `chart${CHART_FILE_EXTENSION}`);
-  }, { keys: { kind: 'key', key: 's', mods: { mod: true } } });
+  });
   const [gridVisible, setGridVisible] = useChartPref('view.gridVisible');
   const [snapToGrid, setSnapToGrid] = useChartPref('view.snapToGrid');
   // Photoshop's View › Show › Grid and View › Snap. Shift turns ; into :, so Snap names both and the physical key.

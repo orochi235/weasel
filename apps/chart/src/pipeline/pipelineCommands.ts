@@ -1,7 +1,7 @@
 import { useCommand } from '@weasel-js/core';
 import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
-import { downloadBlob, pickFile } from '@weasel-js/editor';
+import { downloadBlob, pickFile, useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { CHART_ACTIONS } from '../chartCommands';
 import { can, run, type ChartMenuContributions } from '../menuBar';
 import { ARRANGE_MENU } from './pipelineGroups';
@@ -43,13 +43,13 @@ async function openPipeline(pipeline: PipelineDoc): Promise<void> {
 
 /** Registers New, Open and Save, and Undo and Redo over the pipeline doc's own history. */
 export function usePipelineCommands(pipeline: PipelineDoc): void {
-  useCommand(PIPELINE_ACTIONS.new, 'New', () => pipeline.change(emptyPipeline(), 'New pipeline'));
-  useCommand(PIPELINE_ACTIONS.open, 'Open…', () => {
+  useNewCommand(PIPELINE_ACTIONS.new, 'New', () => pipeline.change(emptyPipeline(), 'New pipeline'));
+  useOpenCommand(PIPELINE_ACTIONS.open, 'Open…', () => {
     openPipeline(pipeline).catch((err: unknown) => console.warn('weaselchart: could not open the file', err));
   });
-  useCommand(PIPELINE_ACTIONS.save, 'Save', () => {
+  useSaveCommand(PIPELINE_ACTIONS.save, 'Save', () => {
     downloadBlob(new Blob([JSON.stringify(pipeline.doc)], { type: 'application/json' }), `pipeline${PIPELINE_FILE_EXTENSION}`);
-  }, { keys: { kind: 'key', key: 's', mods: { mod: true } } });
+  });
   useCommand(PIPELINE_ACTIONS.undo, 'Undo', () => pipeline.undo(), {
     enabled: () => can(pipeline.canUndo),
     keys: { kind: 'key', key: 'z', mods: { mod: true } },
