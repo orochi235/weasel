@@ -11,7 +11,7 @@
  */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 import { weaselIcons } from '../icons-plugin/src/index.ts';
@@ -47,6 +47,12 @@ for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   entries[`components/${dirent.name}/index`] = resolve(dir, 'index.ts');
 }
 
+const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {
+  dependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+};
+const installed = [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.peerDependencies ?? {})];
+
 export default defineConfig({
   plugins: [react(), weaselIcons.vite({ mode: 'library' })],
   css: { modules: { generateScopedName: stableScopedName } },
@@ -66,17 +72,10 @@ export default defineConfig({
     sourcemap: true,
     emptyOutDir: true,
     rollupOptions: {
-      // Everything the consumer installs stays external. Bundling React or
-      // react-aria-components in would give consumers a second copy of each —
-      // fatal for React (hooks) and for RAC's context-based components.
-      external: [
-        'react',
-        'react/jsx-runtime',
-        'react-dom',
-        'react-aria-components',
-        'windease',
-        /^@weasel-js\//,
-      ],
+      // Everything the consumer installs stays external, deep imports included. A bundled
+      // copy splits a context from its readers: React's hooks, RAC's components, react-aria's
+      // PortalProvider. `npm run check:bundled-deps` fails a build that inlines one.
+      external: (id) => installed.some((name) => id === name || id.startsWith(`${name}/`)),
       output: {
         minify: false,
         // Entry keys already carry the path (`components/Toast/index`), so emit
