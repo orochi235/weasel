@@ -10,6 +10,7 @@
  * in the same session, and as the scene's registry keys, for a snapshot that
  * crossed JSON on the way back.
  */
+import { holderOf, outermost } from '@weasel-js/select';
 import type { ClipboardSnapshot, PasteCtx, PasteOmission } from 'core/adapters/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -89,8 +90,8 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
       for (const cid of scene.childrenOf(asNodeId(id))) capture(cid);
     }
   };
-  const covered = (id: string): boolean =>
-    idSet.has(id) || scene.ancestorsOf(asNodeId(id)).some((a) => idSet.has(a));
+  const parentOf = (id: string) => scene.get(asNodeId(id))?.parent;
+  const covered = (id: string): boolean => holderOf(idSet, id, parentOf) !== null;
   // A hidden node cannot be selected, so one that a copied node derives from
   // comes with it, ahead of it: without it the paste would leave the copy out.
   const carrying = new Set<string>();
@@ -106,10 +107,8 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
     }
     if (hasChildren(n)) for (const cid of scene.childrenOf(asNodeId(id))) carrySources(cid);
   };
-  for (const id of ids) {
-    // Dedupe: an id whose ancestor is also selected is already covered
-    // by that ancestor's subtree walk.
-    if (scene.ancestorsOf(asNodeId(id)).some((a) => idSet.has(a))) continue;
+  // An id an ancestor holds comes with that ancestor's subtree walk.
+  for (const id of outermost(ids, parentOf)) {
     carrySources(id);
     capture(id, true);
   }

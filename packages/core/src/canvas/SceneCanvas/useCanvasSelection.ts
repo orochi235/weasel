@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Node, NodeId, Scene } from 'core/scene/types';
+import { outermostSelection } from 'core/selection/outermostSelection';
 import { readOnlySelection } from 'core/selection/readOnlySelection';
 import { usePublishSceneSelection } from 'core/selection/usePublishSceneSelection';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
@@ -14,8 +15,9 @@ import type { SceneCanvasProps } from './props';
  *
  * Everything the kit writes selection through (the `selection` dep, the
  * adapter's `setSelection`, ops committed through either) reads the returned
- * api, so on an unselectable canvas every write path here is closed. The
- * caller's own api is not wrapped and still writes.
+ * api, so on an unselectable canvas every write path here is closed, and a
+ * caller's api kept off the scene still holds only outermost ids. The caller's
+ * own api is not changed and still writes as it did.
  */
 export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
@@ -35,7 +37,8 @@ export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
     [scene, options],
   );
   const internal = useSelection(derivedOptions);
-  const base = supplied ?? internal;
+  const parentOf = useMemo(() => (id: NodeId) => scene.get(id)?.parent, [scene]);
+  const base = supplied ? outermostSelection(supplied, parentOf) : internal;
   const selection = selectable ? base : readOnlySelection(base);
   usePublishSceneSelection(scene, selection.current as readonly NodeId[], describe);
   return selection;

@@ -8,5 +8,7 @@ export type {
   SelectModifiers,
   SelectPolicy,
 } from './select';
+export { holderOf, outermost } from './tree';
+export type { ParentOf } from './tree';
 export { createSelectionStore } from './store';
 export type { SelectionStore } from './store';

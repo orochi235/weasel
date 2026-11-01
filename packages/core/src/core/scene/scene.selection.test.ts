@@ -146,3 +146,32 @@ describe('Scene — selection', () => {
     expect(scene.getSelection()).toBe(before);
   });
 });
+
+describe('Scene — a selected node holds its subtree', () => {
+  function nested() {
+    const { scene, add } = makeScene();
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: { ...POSE }, data: { label: 'g' } });
+    for (const id of ['a', 'b']) {
+      scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { ...POSE }, data: { label: id }, parent: asNodeId('g') });
+    }
+    add('c');
+    return scene;
+  }
+
+  it('keeps the ancestor whichever order the ids come in', () => {
+    const scene = nested();
+    scene.setSelection(ids(['a', 'g', 'c']));
+    expect(scene.getSelection()).toEqual(ids(['g', 'c']));
+    scene.setSelection(ids(['g', 'b']));
+    expect(scene.getSelection()).toEqual(ids(['g']));
+  });
+
+  it('drops a node moved under a selected one, and undo puts it back', () => {
+    const scene = nested();
+    scene.setSelection(ids(['g', 'c']));
+    scene.move(asNodeId('c'), asNodeId('g'));
+    expect(scene.getSelection()).toEqual(ids(['g']));
+    scene.undo();
+    expect(scene.getSelection()).toEqual(ids(['g', 'c']));
+  });
+});
