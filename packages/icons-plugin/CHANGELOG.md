@@ -1,5 +1,15 @@
 # @weasel-js/icons-plugin
 
+## 1.15.1
+
+### Patch Changes
+
+- 2992b55: Dependency updates: `@msb235/blits` 0.16.1 (core, animator, clock, labkit), `earcut` 3.2.4 (core, geom's peer
+  range, labkit), `react-aria` 3.53.1 and `react-aria-components` 1.22.1 (ui), and `magic-string` 1.4.5, `oxc-parser`
+  0.156.0 and `unplugin` 3.7.0 (icons-plugin). geom's `earcut` peer is an exact pin, so a consumer installing geom
+  beside its own `earcut` needs 3.2.4.
+- @weasel-js/icons@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @weasel-js/renderer
 
+## 1.15.1
+
+### Patch Changes
+
+- Updated dependencies [d2110bc]
+- Updated dependencies [2992b55]
+- Updated dependencies [937167e]
+  - @weasel-js/font@1.15.1
+  - @weasel-js/text@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/stroke@1.15.1
+  - @weasel-js/paint@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

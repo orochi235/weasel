@@ -1,5 +1,63 @@
 # @weasel-js/labkit
 
+## 1.15.1
+
+### Patch Changes
+
+- 2992b55: Dependency updates: `@msb235/blits` 0.16.1 (core, animator, clock, labkit), `earcut` 3.2.4 (core, geom's peer
+  range, labkit), `react-aria` 3.53.1 and `react-aria-components` 1.22.1 (ui), and `magic-string` 1.4.5, `oxc-parser`
+  0.156.0 and `unplugin` 3.7.0 (icons-plugin). geom's `earcut` peer is an exact pin, so a consumer installing geom
+  beside its own `earcut` needs 3.2.4.
+- ae5ed82: `f.enum` types its leaf by its choices, whether they are plain strings or `{ value, label }` options.
+  With labeled options it used to take the type from the default alone, so
+  `f.enum('perspective', [{ value: 'free', … }, { value: 'perspective', … }])` gave `'perspective'` and
+  left out `'free'`. Both forms now give the union of their values, and a default that isn't one of
+  the choices no longer compiles. `ConfigOption` takes the value type as a parameter
+  (`ConfigOption<V extends string = string>`). Options built at runtime with `Object.entries` need their
+  keys cast back to the choice type.
+- 7692a02: labkit's `tsconfig.json` now extends the repo's root config like every other package, so an editor
+  reads labkit against its siblings' source, and `src/css.d.ts` declares the plain `.css` and `.less`
+  stylesheets labkit imports for their side effect.
+- 87595a8: An orbit trial's scene now renders outside the orbit camera's input scope. A `<SceneCanvas>` drawn in an orbit instrument's DOM — a node diagram beside the 3D pane, say — no longer hears the camera's bindings beside its own: it logged a route conflict for every gesture on load, and a drag or wheel on the canvas moved the 3D camera.
+- b6a97f4: A number leaf takes `stops`, the values its slider catches on, declared in the stored unit like `min` and `max`: `pref.number('Level', 0, { min: -1, max: 1, stops: [0] })`, or labkit's `f.number(0).range(-1, 1).stops([0])`. `prefDisplayBounds` converts them with the bounds. Every surface drawing the leaf as a slider honors them, since `PrefsForm`, `SelectionPanel`, `Bar`, `ControlPanel`, and `ControlMatrix` all draw it through `PropertyField`, which takes `stops` too: each stop is marked on the track, a drag passing within the `targets.sliderStopSnapPx` kit setting of one lands on it unless alt is held, and an arrow key stepping across one, on the track or its readout, stops there. Additive.
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [027c59a]
+- Updated dependencies [8ad43af]
+- Updated dependencies [8b52282]
+- Updated dependencies [999fba9]
+- Updated dependencies [8c13aee]
+- Updated dependencies [120420a]
+- Updated dependencies [9c051bd]
+- Updated dependencies [b6a97f4]
+- Updated dependencies [e982d8a]
+- Updated dependencies [156bcd0]
+- Updated dependencies [89e647e]
+- Updated dependencies [fa1c9a7]
+- Updated dependencies [ec16ac7]
+- Updated dependencies [6f496e1]
+- Updated dependencies [4b2a4e3]
+- Updated dependencies [cb3b4a7]
+  - @weasel-js/routing@1.15.1
+  - @weasel-js/core@1.15.1
+  - @weasel-js/quantity@1.15.1
+  - @weasel-js/ui@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/animator@1.15.1
+  - @weasel-js/clock@1.15.1
+  - @weasel-js/prefs@1.15.1
+  - @weasel-js/theme@1.15.1
+  - @weasel-js/minimap@1.15.1
+  - @weasel-js/kernel3d@1.15.1
+  - @weasel-js/loupe@1.15.1
+  - @weasel-js/svg@1.15.1
+  - @weasel-js/icons@1.15.1
+  - @weasel-js/react@1.15.1
+  - @weasel-js/registry@1.15.1
+  - @weasel-js/storage@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

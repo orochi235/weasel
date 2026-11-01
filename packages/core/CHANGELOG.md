@@ -1,5 +1,89 @@
 # Changelog
 
+## 1.15.1
+
+### Patch Changes
+
+- 424ba52: The Smudge brush, the Simplify brush, a warp's control drag, and Warp Settings can be the last operation, their
+  settings changed after the fact in the last-operation panel. A brush stroke replays every dab from its start with the
+  new Size, Strength or Tolerance; text the Smudge brush converted is put back and converted again wherever the brush
+  at its new size meets it. A warp drag replays with the warp remade under the new Mode, Rows, Columns, Mapping or
+  Tolerance, the control moved as it was first, so an envelope's new grid is resampled from the mesh the drag bent.
+  Warp Settings shows only the settings a run changed. Each stays one undo entry.
+  
+  A tool's options and its action's panel are one setting: `ActionTuning.keep` is handed the params a panel change set,
+  and the tuning `<SceneCanvas>` makes from `toolOptionValues` writes them back there, so an options row shows the
+  values the next stroke uses. `OngoingHandle.params` reports params a gesture took from what it edited rather than
+  from its binding, such as a held warp's own grid, which the panel shows and replay receives. A gesture that opens a
+  journal as it starts is now kept as the last operation. `SMUDGE_BRUSH_PARAMS` and `SIMPLIFY_BRUSH_PARAMS` are the
+  forms the brushes' options use, and `warpDragParams`, `configureWarpParams`, and `WARP_SETTING_FIELDS` the warps'.
+- 9515681: A marquee or lasso now selects at the depth a click does. A hit inside a group that isn't entered selects the outermost such group, not the marks inside it. `AreaSelectDep` and `LassoSelectDep` take an optional `targetOf(id)` for this, and `<SceneCanvas>` wires it from the entered group.
+  
+  A clone's selection outline now lands on its ghost under a parent away from the origin. A previewed pose is read in the frame the node is stored in, as the ghost and the published overrides read it. The scene adapter gains `worldOfStored(id, stored)` to carry it to world, and `getEffectivePose` now answers world during a preview as well as after it.
+- 5e66a10: A unit scope can declare the magnification its frame is drawn at: `units: { system, drawnAt: 0.4 }` on a node
+  whose scale `transform` draws its children at 0.4×. The declaration draws nothing; it says what the transform is
+  meant to be, so lengths read on screen can be divided back to the size they were modeled at.
+  
+  - `magnificationOf(scopes)` (quantity) multiplies the chain's `drawnAt`; `sceneMagnification(scene, ids)` and
+    `sceneDeclaredScopes(scene, id)` (core) read it off a scene.
+  - Equal-spacing snap marks and `distanceReadout` divide their lengths by the declared magnification of the nodes
+    they measure.
+  - `undeclaredMagnifications(scene)` (core) lists every container under a declared scope whose children are drawn
+    at a size its scopes do not declare, and `SceneCanvas` warns once per container in development: a container
+    drawn at 1.5× with nothing declaring it is what turns a 20″ cabinet into 30″ of board.
+  - `scaleBar` (quantity) picks a round length for a frame's scopes, and `<ScaleBar>` (ui) draws it, labeled in the
+    frame's own units and saying what size the frame is drawn at.
+- 2992b55: Dependency updates: `@msb235/blits` 0.16.1 (core, animator, clock, labkit), `earcut` 3.2.4 (core, geom's peer
+  range, labkit), `react-aria` 3.53.1 and `react-aria-components` 1.22.1 (ui), and `magic-string` 1.4.5, `oxc-parser`
+  0.156.0 and `unplugin` 3.7.0 (icons-plugin). geom's `earcut` peer is an exact pin, so a consumer installing geom
+  beside its own `earcut` needs 3.2.4.
+- 8ad43af: A core `Page` can carry `meta`: values other packages keep on the page, each under its owner's key. Every page edit
+  (`addPage`, `removePage`, `movePage`, `resizePage`, `renamePage`, `setPages`) and `layoutPages` carry it, and undo
+  restores it with the page.
+  
+  `documentSpecs` writes a graph page's `notation`, `layout`, and `direction` to its page's `meta['diagram:graph']`, and
+  `documentFromScene` reads them back, so a Mermaid class, state, C4, block, or other non-flowchart page drawn into a
+  scene exports as the same kind, a block diagram keeps its columns, spans, and spaces, and a flowchart keeps its
+  direction. `GRAPH_PAGE_META_KEY`, `graphPageSettingsOf`, and `GraphPageSettings` are exported. This adds API.
+- 120420a: `reconcileSpecs` now puts siblings in `next`'s order wherever a parent's children there differ from `prev`'s, by an addition or a reorder. A node added among existing siblings used to land after all of them, so it could paint above a node `next` listed after it. A reorder made in the scene still stands while `next` keeps the same order, and a child no spec names keeps its place.
+- e982d8a: A selection never holds a node together with its descendant: a selected node holds its whole subtree, which counts as selected and can't be selected on its own. The scene's selection keeps only the outermost of the ids written to it, whichever order they come in, and drops a node moved under a selected one. `<SceneCanvas>` applies the same rule to a `selection` kept off the scene, on every write the canvas makes. Selecting a group whose child is selected replaces the child with the group, and Shift-clicking a child of a selected group leaves the selection as it was.
+  
+  `@weasel-js/select` adds `outermost(ids, parentOf)`, the ids no ancestor among them holds, and `holderOf(selected, id, parentOf)`, the selected id that holds `id`: itself or its nearest selected ancestor.
+- Updated dependencies [d2110bc]
+- Updated dependencies [424ba52]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [3105d13]
+- Updated dependencies [027c59a]
+- Updated dependencies [8b52282]
+- Updated dependencies [937167e]
+- Updated dependencies [9c051bd]
+- Updated dependencies [b6a97f4]
+- Updated dependencies [e982d8a]
+- Updated dependencies [fa1c9a7]
+- Updated dependencies [13b0604]
+  - @weasel-js/font@1.15.1
+  - @weasel-js/text@1.15.1
+  - @weasel-js/routing@1.15.1
+  - @weasel-js/quantity@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/animator@1.15.1
+  - @weasel-js/gestures@1.15.1
+  - @weasel-js/ui-logic@1.15.1
+  - @weasel-js/prefs@1.15.1
+  - @weasel-js/select@1.15.1
+  - @weasel-js/renderer@1.15.1
+  - @weasel-js/text-dom@1.15.1
+  - @weasel-js/stroke@1.15.1
+  - @weasel-js/simulation@1.15.1
+  - @weasel-js/cursor@1.15.1
+  - @weasel-js/history@1.15.1
+  - @weasel-js/icons@1.15.1
+  - @weasel-js/modes@1.15.1
+  - @weasel-js/paint@1.15.1
+  - @weasel-js/react@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Minor Changes

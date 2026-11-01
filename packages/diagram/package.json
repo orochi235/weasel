@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/diagram",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "Node-link diagramming for weasel: any scene node becomes a diagram participant, with ports on its perimeter and an optional body builder for flowchart-shaped boxes.",
   "license": "MIT",
   "type": "module",
@@ -33,13 +33,13 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/animator": "1.15.0",
-    "@weasel-js/audio": "1.15.0",
-    "@weasel-js/core": "1.15.0",
-    "@weasel-js/font": "1.15.0",
-    "@weasel-js/geom": "1.15.0",
-    "@weasel-js/react": "1.15.0",
-    "@weasel-js/simulation": "1.15.0"
+    "@weasel-js/animator": "1.15.1",
+    "@weasel-js/audio": "1.15.1",
+    "@weasel-js/core": "1.15.1",
+    "@weasel-js/font": "1.15.1",
+    "@weasel-js/geom": "1.15.1",
+    "@weasel-js/react": "1.15.1",
+    "@weasel-js/simulation": "1.15.1"
   },
   "peerDependenciesMeta": {
     "@weasel-js/audio": {
@@ -50,9 +50,9 @@
     "table": "./dist/icons.table.json"
   },
   "dependencies": {
-    "@weasel-js/clock": "1.15.0",
-    "@weasel-js/ui-logic": "1.15.0",
-    "@weasel-js/icons": "1.15.0"
+    "@weasel-js/clock": "1.15.1",
+    "@weasel-js/ui-logic": "1.15.1",
+    "@weasel-js/icons": "1.15.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

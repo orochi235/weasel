@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/clock",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "A clock for a run of time: a position moved by a signed rate, with passes, ramps and seeking. The root entry has no React and no DOM.",
   "license": "MIT",
   "type": "module",
@@ -28,12 +28,12 @@
     }
   },
   "dependencies": {
-    "@weasel-js/react": "1.15.0",
-    "@weasel-js/registry": "1.15.0"
+    "@weasel-js/react": "1.15.1",
+    "@weasel-js/registry": "1.15.1"
   },
   "devDependencies": {
     "@msb235/blits": "0.16.1",
-    "@weasel-js/history": "1.15.0"
+    "@weasel-js/history": "1.15.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

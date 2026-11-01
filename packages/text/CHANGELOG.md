@@ -1,5 +1,34 @@
 # @weasel-js/text
 
+## 1.15.1
+
+### Patch Changes
+
+- d2110bc: A baked atlas or canvas face is now shaped when its font file is registered too: call
+  `registerFontOutlines` for the same family and variant beside `registerFont` or `registerCanvasFont`,
+  and a registered shaper reads that file. A letter the shaping leaves as its own glyph still draws from
+  the atlas. A shaped cluster (a Devanagari conjunct, an Arabic joining form, a placed mark) draws from
+  its outline, and on a canvas face below the outline size from one tile the canvas tier bakes from that
+  outline (`DynamicFace.requestShaped`). A baked atlas must be cut from the same file, or its advances
+  disagree with the shaper's. PDF export writes such text as the shaped glyphs, where it used to leave
+  the clusters out.
+  
+  A bracket that gives up its shaped glyph on an atlas face now draws its own glyph rather than nothing.
+- 937167e: Shaped text in an exported PDF reads back as written in pdf.js and poppler more often. A glyph drawn for
+  two different texts (the ka under a Devanagari i-matra and a lone ka) now takes a separate code for
+  each, mapped to the same glyph, so `/ToUnicode` reads `किक` back as `किक` rather than `किकक`. A
+  cluster's text goes on its widest glyph, a mark the shaper gave no advance moves the pen nowhere, and a
+  right-to-left cluster's glyphs that stand for no text are drawn after the rest of the line in one span,
+  so pdf.js keeps right-to-left text in one piece and poppler no longer sets a fatha off as a word.
+  
+  `ShapedCluster.glyphs` entries carry the shaper's `advance`.
+- Updated dependencies [d2110bc]
+- Updated dependencies [2992b55]
+  - @weasel-js/font@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/paint@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

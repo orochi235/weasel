@@ -1,5 +1,135 @@
 # @weasel-js/ui
 
+## 1.15.1
+
+### Patch Changes
+
+- 5e66a10: A unit scope can declare the magnification its frame is drawn at: `units: { system, drawnAt: 0.4 }` on a node
+  whose scale `transform` draws its children at 0.4×. The declaration draws nothing; it says what the transform is
+  meant to be, so lengths read on screen can be divided back to the size they were modeled at.
+  
+  - `magnificationOf(scopes)` (quantity) multiplies the chain's `drawnAt`; `sceneMagnification(scene, ids)` and
+    `sceneDeclaredScopes(scene, id)` (core) read it off a scene.
+  - Equal-spacing snap marks and `distanceReadout` divide their lengths by the declared magnification of the nodes
+    they measure.
+  - `undeclaredMagnifications(scene)` (core) lists every container under a declared scope whose children are drawn
+    at a size its scopes do not declare, and `SceneCanvas` warns once per container in development: a container
+    drawn at 1.5× with nothing declaring it is what turns a 20″ cabinet into 30″ of board.
+  - `scaleBar` (quantity) picks a round length for a frame's scopes, and `<ScaleBar>` (ui) draws it, labeled in the
+    frame's own units and saying what size the frame is drawn at.
+- 2992b55: Dependency updates: `@msb235/blits` 0.16.1 (core, animator, clock, labkit), `earcut` 3.2.4 (core, geom's peer
+  range, labkit), `react-aria` 3.53.1 and `react-aria-components` 1.22.1 (ui), and `magic-string` 1.4.5, `oxc-parser`
+  0.156.0 and `unplugin` 3.7.0 (icons-plugin). geom's `earcut` peer is an exact pin, so a consumer installing geom
+  beside its own `earcut` needs 3.2.4.
+- 8b52282: A measure/draw contract a control implements on every target it is drawn on: `HeadlessComponent`, whose `measure`
+  is shared code reading the target's tokens and text metrics through a `MeasureEnv`, and whose `draw` is the
+  target's own. `@weasel-js/ui-logic` adds `measureButton` and `measureRowList` with the parts and roles they lay out
+  (`buttonParts`, `listMode`, `LIST_ROLES`), and `pressStep` for a press's hover and hold. ui's `Button` and
+  `ItemList` implement it as `domButton` and `domItemList` (measure with `domMeasureEnv(el)`); the HUD's button and a
+  new `list` widget (`hud.list`, ui's `ItemList`'s keyboard and listbox semantics) implement it as `hudButton` and
+  `hudList` (`hudMeasureEnv`).
+  
+  The HUD button now lays its label out the way the DOM button does: centered, at the theme's `--wzl-font-size`
+  rather than 13px when `fontSize` is not given, on a body rounded by `--wzl-button-radius` or a tenth of its height.
+  It takes a `size` option. A HUD accessibility node can say `selected` and `multiselectable`.
+- 999fba9: Every plot kind can be authored from nothing, not only adjusted. Each kind has pure edits that insert, remove, and reorder every collection its spec holds (`insertPieSlice`, `insertXyRow`, `insertXySeries`, `removeGanttTask`, `insertTimelineEvent`, `insertQuadrantClass`, `insertGitCommand`, `insertSankeyLink`, `insertPacketField`, `moveRadarAxis`, …) and set the fields no drag reaches: titles, axes and their ends, chart options, a task's id, tags, start and end, a commit's every field. `moveGanttTaskToSection` moves a gantt task into another section, keeping its id and the dependencies on it. A removed or renamed gantt task id leaves every `after` and `until` that named it; a removed or renamed quadrant class leaves every point that used it.
+  
+  `plotSchemaOf(data)` describes a spec of any kind as fields and tables of rows, a table holding tables of its own under each row (a gantt's sections hold their tasks), each read and write going through those edits, so a host builds a form or a grid knowing no kind. `plotRootContaining(scene, id)` names the plot a node is the root or a mark of. `setXyValue` now pads a series shorter than the chart's rows instead of throwing.
+  
+  `@weasel-js/ui` adds `PlotDataPanel`, which renders that schema for one chart: a row per field, a grid per table with add (at the end, or after any row), remove and drag-to-reorder, rows opening onto the tables they hold.
+  
+  `@weasel-js/plot` now exports `formatGanttStart`, `parseGanttStart`, `formatGanttEnd` and `parseGanttEnd`, which the Mermaid gantt reader and writer use.
+- 8c13aee: `@weasel-js/plot` now holds the one implementation of scales and ticks, and ui uses it.
+  
+  `@weasel-js/plot/scales` is a new subpath with every scale and tick helper and no React, DOM or scene. A linear
+  scale gains `spacedTicks({ minSpacing, inset })`, which picks ticks by the room between them along the range and
+  returns them with their step and shared decimals; `niceStep`, `decimalsOf`, `tickDecimals`, `formatTick`,
+  `TickSet`, `TickFormatCtx`, `TickFormatter` and `ContinuousScaleFactory` are exported beside it.
+  
+  This breaks ui's API. Removed from `@weasel-js/ui`, with what replaces each:
+  
+  - `niceTicks`, `niceStep`, `stepDecimals`, `tickDecimals`, `formatTick` and their types: import from
+    `@weasel-js/plot/scales`; `niceTicks(range, px, opts)` is `linearScale({ domain: range, range: [0, px] })
+    .spacedTicks(opts)`, and `stepDecimals` is `decimalsOf`.
+  - `linearScale`, `logScale`, `SliderScale` (from `Slider`) and `BandScale` (from `BandEditor`): `Slider`'s and
+    `BandEditor`'s `scale` prop now takes a scale factory such as plot's `logScale`, which the control calls with
+    `{ domain: [min, max], range: [0, 1] }`. A hand-written `{ toUnit, fromUnit }` no longer fits; build a
+    `ContinuousScale` instead. A `Slider` given `logScale` with a `min` of zero or below now throws rather than
+    placing its thumbs at `NaN`.
+- b6a97f4: A number leaf takes `stops`, the values its slider catches on, declared in the stored unit like `min` and `max`: `pref.number('Level', 0, { min: -1, max: 1, stops: [0] })`, or labkit's `f.number(0).range(-1, 1).stops([0])`. `prefDisplayBounds` converts them with the bounds. Every surface drawing the leaf as a slider honors them, since `PrefsForm`, `SelectionPanel`, `Bar`, `ControlPanel`, and `ControlMatrix` all draw it through `PropertyField`, which takes `stops` too: each stop is marked on the track, a drag passing within the `targets.sliderStopSnapPx` kit setting of one lands on it unless alt is held, and an arrow key stepping across one, on the track or its readout, stops there. Additive.
+- 89e647e: Dialogs, popovers, and tooltips portal where `OverlayPortalProvider` says again, so inside a light-themed root they draw in its theme instead of the default dark one. The build had inlined its own copy of react-aria's `PortalProvider`, which the overlays from `react-aria-components` never read; it now leaves every dependency the package declares, `react-aria` and `prism-react-renderer` included, for the consumer to install once.
+- fa1c9a7: A menu item entry takes `radio: true`, and a menu draws it as a `menuitemradio` rather than a `menuitemcheckbox`. `resolveSchemaMenu` sets it on an enum's options, a union's variants and a field reference's choices, so screen readers hear them as one choice among several.
+  `CommandPalette` shows an action's own `shortcut` text when it has one, before falling back to its bindings as keycaps.
+  A `Dialog` in a contained portal opens from an enclosing `<DialogTrigger>` when it is given no `isOpen`.
+  `CurveEditor` takes an `aria-label` and names its plot with it.
+  A `Callout` keeps a `style` it is given alongside its stance, grade and tint, rather than losing it to them.
+  `Callout`, `LastOperationPanel` and `DragGhost` draw their shadow from `--wzl-bevel-raised` when a theme sets it, as `Dialog` and the menu popovers do.
+  `Button`'s busy spinner stops turning under `prefers-reduced-motion: reduce`.
+  Breaking: `BarPopover`'s `isDisabled` prop is now `disabled`, as every other Bar part names it.
+- ec16ac7: - `Disclosure`'s twisty is filled with `--wzl-accent`, where it used `--wzl-accent-fg`, the accent meant for text.
+  - `FallthroughDiagram` names its "predicted" badge with a term, and explains the specificity tuple in the column header rather than in an `aria-label` that hid each cell's numbers.
+  - An `ItemList` grid gives every row a trailing cell once any row has one, so rows without controls no longer come up a column short.
+  - An unlocked padlock now shows on a hovered `LayerList` card, as it already did on a hovered row.
+  - `MenuButton` takes `buttonRef` for its trigger. `ListEditor` uses it, so removing the last entry from a list with several entry kinds moves focus to the add menu instead of dropping it.
+  - `KeymapHint` keeps its `role="status"` region mounted, empty, while no keymap is open, so a screen reader announces the keys when they appear.
+  - `MeasureReadout`'s values are no longer `<output>` elements, which made a screen reader announce every pointer move.
+  - `ShortcutKeys` sets its keys in `--wzl-font-ui` from its stylesheet instead of an inline `font-family`.
+  - `GradientEditor`'s handles draw their focus ring in `--wzl-focus-ring`, like the rest of the kit.
+- 6f496e1: `Plot2D`'s `grid.color` and `axes.color` now take effect: they set `--plot-grid` and `--plot-axis` rather than an SVG `stroke` attribute the stylesheet outranked.
+  A `divider` motif's heading drops the browser's heading margin and font at every `level`, not only at the default `h4`.
+  A `Powerline` given an `aria-label` is exposed as a named group; the label was ignored before.
+  `IconPicker` draws its keyboard focus ring in `--wzl-focus-ring` instead of the accent.
+  **Breaking:** `isMeshPaint` is removed from `@weasel-js/ui`; use `isMeshGradientPaint` from `@weasel-js/core/mesh`, which it only forwarded to.
+- 4b2a4e3: A focused segment of `ToggleBar`, `ButtonBar` or `OptionsBar` now shows its focus ring when it is the selected one, drawn in `--wzl-focus-ring` (on-accent where the segment is accent-filled).
+  `ToolButton` draws its focus ring in `--wzl-focus-ring`, outside the button, so it no longer looks like the active state; the slider thumb's ring uses the same token.
+  A `ToolButton`'s accessible name no longer includes its shortcut chip; the tooltip still shows it.
+  `ToolPalette` sets `aria-orientation` on its toolbar from `orientation`, and leaves it off when `columns` lays it out as a grid.
+  A small curved segmented row honors `--tb-h`, as the straight one does.
+  `Tree` rows, vertical `Tabs`, segmented-row end corners, `StatusBar` dividers and spacer, the `Toast` accent edge, `ToolButton`'s menu mark and `SidebarPanel`'s title follow the writing direction, so they mirror under `dir="rtl"`.
+  `TabList` forwards its `ref` under React 18 as well as 19, so `PageTabs` gets its list element there too.
+  `Toolbar.Button` with `iconOnly` now requires a `title` or an `aria-label` at the type level, where it rendered `aria-label=""`.
+  A hovered `Tree` row is drawn in `--wzl-surface-hover`, where it used `--wzl-surface` and could not be seen on a surface panel.
+- cb3b4a7: `ReorderHandle` forwards its ref under React 18, so `ListEditor` keeps focus on a moved entry's handle there; `ItemList` rows show a hover background.
+- Updated dependencies [d2110bc]
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [3105d13]
+- Updated dependencies [8ad43af]
+- Updated dependencies [8b52282]
+- Updated dependencies [937167e]
+- Updated dependencies [999fba9]
+- Updated dependencies [69f0788]
+- Updated dependencies [8c13aee]
+- Updated dependencies [728db32]
+- Updated dependencies [120420a]
+- Updated dependencies [b6a97f4]
+- Updated dependencies [e982d8a]
+- Updated dependencies [156bcd0]
+- Updated dependencies [fa1c9a7]
+- Updated dependencies [13b0604]
+  - @weasel-js/font@1.15.1
+  - @weasel-js/text@1.15.1
+  - @weasel-js/core@1.15.1
+  - @weasel-js/quantity@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/animator@1.15.1
+  - @weasel-js/clock@1.15.1
+  - @weasel-js/gestures@1.15.1
+  - @weasel-js/ui-logic@1.15.1
+  - @weasel-js/plot@1.15.1
+  - @weasel-js/prefs@1.15.1
+  - @weasel-js/select@1.15.1
+  - @weasel-js/theme@1.15.1
+  - @weasel-js/menu@1.15.1
+  - @weasel-js/svg@1.15.1
+  - @weasel-js/icons@1.15.1
+  - @weasel-js/modes@1.15.1
+  - @weasel-js/paint@1.15.1
+  - @weasel-js/react@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

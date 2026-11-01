@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/guides",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "Placement aids for weasel: grids, ruler guides, snap sources for them and for sibling alignment and spacing, and container layout strategies.",
   "license": "MIT",
   "type": "module",
@@ -17,8 +17,8 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "1.15.0",
-    "@weasel-js/geom": "1.15.0"
+    "@weasel-js/core": "1.15.1",
+    "@weasel-js/geom": "1.15.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

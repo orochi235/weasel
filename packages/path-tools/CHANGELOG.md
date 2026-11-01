@@ -1,5 +1,45 @@
 # @weasel-js/path-tools
 
+## 1.15.1
+
+### Patch Changes
+
+- 424ba52: The Smudge brush, the Simplify brush, a warp's control drag, and Warp Settings can be the last operation, their
+  settings changed after the fact in the last-operation panel. A brush stroke replays every dab from its start with the
+  new Size, Strength or Tolerance; text the Smudge brush converted is put back and converted again wherever the brush
+  at its new size meets it. A warp drag replays with the warp remade under the new Mode, Rows, Columns, Mapping or
+  Tolerance, the control moved as it was first, so an envelope's new grid is resampled from the mesh the drag bent.
+  Warp Settings shows only the settings a run changed. Each stays one undo entry.
+  
+  A tool's options and its action's panel are one setting: `ActionTuning.keep` is handed the params a panel change set,
+  and the tuning `<SceneCanvas>` makes from `toolOptionValues` writes them back there, so an options row shows the
+  values the next stroke uses. `OngoingHandle.params` reports params a gesture took from what it edited rather than
+  from its binding, such as a held warp's own grid, which the panel shows and replay receives. A gesture that opens a
+  journal as it starts is now kept as the last operation. `SMUDGE_BRUSH_PARAMS` and `SIMPLIFY_BRUSH_PARAMS` are the
+  forms the brushes' options use, and `warpDragParams`, `configureWarpParams`, and `WARP_SETTING_FIELDS` the warps'.
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [027c59a]
+- Updated dependencies [8ad43af]
+- Updated dependencies [120420a]
+- Updated dependencies [9c051bd]
+- Updated dependencies [b6a97f4]
+- Updated dependencies [e982d8a]
+- Updated dependencies [fa1c9a7]
+  - @weasel-js/routing@1.15.1
+  - @weasel-js/core@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/prefs@1.15.1
+  - @weasel-js/renderer@1.15.1
+  - @weasel-js/stroke@1.15.1
+  - @weasel-js/cursor@1.15.1
+  - @weasel-js/icons@1.15.1
+  - @weasel-js/paint@1.15.1
+  - @weasel-js/react@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes
