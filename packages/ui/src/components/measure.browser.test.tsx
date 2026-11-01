@@ -70,7 +70,7 @@ describe('a DOM item list is the box measureRowList gives', () => {
       </div>,
     );
     const list = document.querySelector(`.${s.list}`)!;
-    const slotWidth = (_: unknown, slot: 'leading' | 'trailing') => (slot === 'leading' ? 12 : list.querySelector(`.${s.trailing}`)!.getBoundingClientRect().width);
+    const slotWidth = (_: unknown, slot: 'leading' | 'trailing') => (slot === 'leading' ? 12 : list.querySelector(`.${s.trailing}:not(:empty)`)!.getBoundingClientRect().width);
     const m = domItemList.measure({ props: { rows }, slotWidth }, fixedWidth(240), domMeasureEnv(list));
     near(list.getBoundingClientRect().height, m.height);
     const rowEls = [...list.querySelectorAll(`.${s.row}`)];
