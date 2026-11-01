@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/gestures",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "Pure gesture taxonomy, route grammars, and matcher primitives. No React, no DOM, no scene.",
   "license": "MIT",
   "type": "module",
@@ -16,7 +16,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/menu": "1.15.0"
+    "@weasel-js/menu": "1.15.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

@@ -1,5 +1,15 @@
 # @weasel-js/theme
 
+## 1.15.1
+
+### Patch Changes
+
+- 156bcd0: The palette generator works out each hue's peak lightness the first time it is asked for, rather than all 360 when the module loads, so importing `@weasel-js/theme` no longer costs 14–27 ms up front.
+- Updated dependencies [b6a97f4]
+  - @weasel-js/prefs@1.15.1
+  - @weasel-js/paint@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

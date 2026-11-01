@@ -1,5 +1,115 @@
 # @weasel-js/diagram-formats
 
+## 1.15.1
+
+### Patch Changes
+
+- 9862244: A `DiagramType` names the `notations` its graph pages are written in: UML class `class`, ERD `er`, mind map
+  `mindmap`, flowchart `FLOWCHART_NOTATION`. `diagramNotationOf` gives the one a scene's type writes, and
+  `diagramTypeOfNotation` the type a notation opens as. `documentFromScene` gives a graph page with no notation of its
+  own the one its scene's type writes, so a chart drawn as a UML class diagram exports as a Mermaid `classDiagram`;
+  `documentSpecs` emits `diagram:type` when every graph page's notation names one type, so an imported class diagram
+  opens with the UML stencils. A page whose notation is `FLOWCHART_NOTATION` writes as a flowchart in a chart of
+  another type. This adds API.
+- 8ad43af: A core `Page` can carry `meta`: values other packages keep on the page, each under its owner's key. Every page edit
+  (`addPage`, `removePage`, `movePage`, `resizePage`, `renamePage`, `setPages`) and `layoutPages` carry it, and undo
+  restores it with the page.
+  
+  `documentSpecs` writes a graph page's `notation`, `layout`, and `direction` to its page's `meta['diagram:graph']`, and
+  `documentFromScene` reads them back, so a Mermaid class, state, C4, block, or other non-flowchart page drawn into a
+  scene exports as the same kind, a block diagram keeps its columns, spans, and spaces, and a flowchart keeps its
+  direction. `GRAPH_PAGE_META_KEY`, `graphPageSettingsOf`, and `GraphPageSettings` are exported. This adds API.
+- f6e0f7a: `DIAGRAM_MERMAID` reads and writes four more graph kinds, each into a page whose `notation` names it:
+  
+  - `block-beta` (`'block'`): blocks in the flowchart's shapes, nested `block … end` groups as containers, and
+    `columns`, spans, and `space`s as the options of the page's new `grid` layout, which the writer reads back.
+  - `architecture-beta` (`'architecture'`): services in their built-in icon's outline (`cloud`, `cylinder`, `disk`,
+    `globe`, `server`), junctions as dots, groups as containers, sides as compass ports, and `{group}` ends on the
+    group's box.
+  - `C4Context`, `C4Container`, `C4Component`, `C4Dynamic`, and `C4Deployment` (`'c4-context'` and so on): elements as
+    boxes in their kind's outline and theme role, a first `<<kind>>` row naming the kind so it writes back, boundaries
+    and deployment nodes as containers, and relationships labeled with their technology, their direction as ports.
+  - `kanban` (`'kanban'`): one pool of column lanes along `x`, each card a node in its lane, its metadata as `field`
+    rows.
+  
+  A graph page's `layout` can now name `grid`, with its `grid` option.
+- 24e218c: `DIAGRAM_MERMAID` reads and writes Mermaid class diagrams, state diagrams (`stateDiagram-v2` and `stateDiagram`), ER
+  diagrams, mind maps, and requirement diagrams as well as flowcharts. Reading sets the graph page's `notation` to the
+  kind (`'class'`, `'state'`, `'er'`, `'mindmap'`, `'requirement'`); writing picks the kind from it, a flowchart when it
+  is unset. Other Mermaid kinds are still refused with an error naming the kind.
+  
+  A graph page can name the `layout` it is laid out with on import, any of `LAYOUTS` (a mind map reads as `radial`).
+  `documentFromScene` reads an edge's `endLabels` and a body's `field` rows back; draw-XML writes and reads end labels as
+  label cells at either end and maps the `start`, `end`, and `bar` outlines to draw.io's UML state shapes, and DOT writes
+  and reads them as `taillabel` and `headlabel`. This adds API.
+- 69f0788: `DIAGRAM_MERMAID` reads and writes `gantt`, `timeline`, `pie`, `quadrantChart`, `journey`, `gitGraph`, `sankey-beta`,
+  `packet-beta` and `radar-beta` diagrams, each as one plot page holding that kind of chart; writing a plot page picks
+  the Mermaid kind from its chart's kind. Each reader names the line of an error and warns of what it drops. This adds
+  API.
+- a5e5db3: New diagram types State, Requirement, C4, Block, Architecture, and Kanban, with stencil groups `STATE_GROUP`,
+  `REQUIREMENT_GROUP`, `C4_GROUP`, `ARCHITECTURE_GROUP`, and `KANBAN_GROUP` whose shapes write as their Mermaid
+  constructs: a state's start, end, choice, fork, note, and composite and concurrent states; requirements and elements;
+  C4 people, systems, containers, components, stores, queues, and boundaries; architecture services by Mermaid's built-in
+  icons, junctions, and groups; a kanban board and its cards. Block diagrams draw with the flowchart's shapes on a grid.
+  A `DiagramStencil` can name a `themeRole`, kept on its trait and resolved by `StencilInsertOptions.theme`; a
+  `ContainerStencil` can name its `title` and its first `lanes`; `DiagramTypeEdge` takes a `dash`. A stencil's field
+  rows now carry `bodyField`, so they read back as fields. The Mermaid requirement writer names each block by its name
+  row rather than its id. This adds API.
+- 996e453: Pages in a `DiagramDocument` now carry a required `kind`, today always `'graph'`, so documents can later hold other kinds of page. `DocumentPage` is a union (`GraphPage` is its graph member, with an optional `notation`), every `DiagramFormat` lists the page `kinds` it holds, and `formatHolds`, `graphPageOf`, and `graphPagesOf` help a writer that holds only graphs. Breaking for code that builds pages by hand: add `kind: 'graph'`. The JSON reader reads a page with no `kind` as a graph.
+- a236795: `PAGE_TEMPLATES` holds a new page of every kind a document holds: an empty graph page for each diagram type, in its
+  notation; a small sequence diagram; and a small chart of each plot kind. `templateSpecs` draws a template as a new
+  one-page document, with the diagram type it names, and `addTemplatePage` adds one as another page of a scene, what it
+  draws included, as one undo entry. `pageSpecs` draws any one document page placed as a scene's page list would place
+  it. This adds API.
+- 999fba9: Every plot kind can be authored from nothing, not only adjusted. Each kind has pure edits that insert, remove, and reorder every collection its spec holds (`insertPieSlice`, `insertXyRow`, `insertXySeries`, `removeGanttTask`, `insertTimelineEvent`, `insertQuadrantClass`, `insertGitCommand`, `insertSankeyLink`, `insertPacketField`, `moveRadarAxis`, …) and set the fields no drag reaches: titles, axes and their ends, chart options, a task's id, tags, start and end, a commit's every field. `moveGanttTaskToSection` moves a gantt task into another section, keeping its id and the dependencies on it. A removed or renamed gantt task id leaves every `after` and `until` that named it; a removed or renamed quadrant class leaves every point that used it.
+  
+  `plotSchemaOf(data)` describes a spec of any kind as fields and tables of rows, a table holding tables of its own under each row (a gantt's sections hold their tasks), each read and write going through those edits, so a host builds a form or a grid knowing no kind. `plotRootContaining(scene, id)` names the plot a node is the root or a mark of. `setXyValue` now pads a series shorter than the chart's rows instead of throwing.
+  
+  `@weasel-js/ui` adds `PlotDataPanel`, which renders that schema for one chart: a row per field, a grid per table with add (at the end, or after any row), remove and drag-to-reorder, rows opening onto the tables they hold.
+  
+  `@weasel-js/plot` now exports `formatGanttStart`, `parseGanttStart`, `formatGanttEnd` and `parseGanttEnd`, which the Mermaid gantt reader and writer use.
+- ec4d9f7: `scenePageKinds` tells a plot page apart: a page holding a plot root is a `plot` page, where it read as a graph page
+  before, so a menu no longer offers a graph-only format for a chart holding one.
+- 2f9995e: Add plot pages. `DocumentPage` gains `PlotPage` (`kind: 'plot'`, `data: PlotData` from `@weasel-js/plot`):
+  `documentSpecs` draws one as a plot root filling the page, in the theme's colors (`plotThemeOf`), and
+  `documentFromScene` reads a page holding a plot root back as a plot page. The JSON format holds plot pages, and the
+  Mermaid format reads and writes `xychart-beta` (`readMermaidXychart`, `writeMermaidXychart`). An SVG page export now
+  folds a node's pose through any parent whose pose is a frame, as a plot root's is.
+- 479ecc6: Sequence pages. `DocumentPage` gains `SequencePage` (`kind: 'sequence'`, `data: SequenceData`): `documentSpecs` draws
+  one as a sequence root, `documentFromScene` reads such a root back as one, and the SVG, PNG, and PDF page exports draw
+  it. The JSON and Mermaid formats hold sequence pages; Mermaid reads and writes `sequenceDiagram` — participants and
+  their types, every arrow, activations, notes, fragments, boxes, `create` and `destroy`, `autonumber`, and the title.
+  `scenePageKinds` and `formatTakes` say which formats can hold a scene without building its document. Breaking for a
+  caller that reads `page.data` as a `DiagramData` without checking `page.kind`. Page exports also now place a node's
+  children through its frame, where they had drawn them at their stored offset from the page's corner.
+- Updated dependencies [d2110bc]
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [24e218c]
+- Updated dependencies [5070176]
+- Updated dependencies [9862244]
+- Updated dependencies [8ad43af]
+- Updated dependencies [a5e5db3]
+- Updated dependencies [937167e]
+- Updated dependencies [999fba9]
+- Updated dependencies [69f0788]
+- Updated dependencies [8c13aee]
+- Updated dependencies [728db32]
+- Updated dependencies [120420a]
+- Updated dependencies [e982d8a]
+- Updated dependencies [0e5b3d8]
+- Updated dependencies [2560c69]
+- Updated dependencies [dd4ab9b]
+- Updated dependencies [479ecc6]
+- Updated dependencies [238a49c]
+  - @weasel-js/pdf@1.15.1
+  - @weasel-js/core@1.15.1
+  - @weasel-js/diagram@1.15.1
+  - @weasel-js/plot@1.15.1
+  - @weasel-js/svg@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

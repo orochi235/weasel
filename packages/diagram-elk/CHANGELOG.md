@@ -1,5 +1,29 @@
 # @weasel-js/diagram-elk
 
+## 1.15.1
+
+### Patch Changes
+
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [24e218c]
+- Updated dependencies [5070176]
+- Updated dependencies [9862244]
+- Updated dependencies [8ad43af]
+- Updated dependencies [a5e5db3]
+- Updated dependencies [120420a]
+- Updated dependencies [e982d8a]
+- Updated dependencies [0e5b3d8]
+- Updated dependencies [2560c69]
+- Updated dependencies [dd4ab9b]
+- Updated dependencies [479ecc6]
+- Updated dependencies [238a49c]
+  - @weasel-js/core@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/diagram@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

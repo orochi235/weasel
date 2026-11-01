@@ -1,5 +1,58 @@
 # @weasel-js/hud
 
+## 1.15.1
+
+### Patch Changes
+
+- 9b3270f: `useLoupe` from `@weasel-js/hud/react` keeps a canvas loupe to a React app's settings: pass the canvas
+  ref, a `Hud` from `useHud`, the layers to magnify (or `null` to magnify the canvas's own stack, selection
+  chrome included), `{ visible, mode, factor }`, and the color, pick, and
+  close callbacks. It builds the lens once and follows later settings without rebuilding it, so the lens
+  keeps its position and size. It was WeaselDraw's own hook.
+- 8b52282: A measure/draw contract a control implements on every target it is drawn on: `HeadlessComponent`, whose `measure`
+  is shared code reading the target's tokens and text metrics through a `MeasureEnv`, and whose `draw` is the
+  target's own. `@weasel-js/ui-logic` adds `measureButton` and `measureRowList` with the parts and roles they lay out
+  (`buttonParts`, `listMode`, `LIST_ROLES`), and `pressStep` for a press's hover and hold. ui's `Button` and
+  `ItemList` implement it as `domButton` and `domItemList` (measure with `domMeasureEnv(el)`); the HUD's button and a
+  new `list` widget (`hud.list`, ui's `ItemList`'s keyboard and listbox semantics) implement it as `hudButton` and
+  `hudList` (`hudMeasureEnv`).
+  
+  The HUD button now lays its label out the way the DOM button does: centered, at the theme's `--wzl-font-size`
+  rather than 13px when `fontSize` is not given, on a body rounded by `--wzl-button-radius` or a tenth of its height.
+  It takes a `size` option. A HUD accessibility node can say `selected` and `multiselectable`.
+- fa1c9a7: A menu item entry takes `radio: true`, and a menu draws it as a `menuitemradio` rather than a `menuitemcheckbox`. `resolveSchemaMenu` sets it on an enum's options, a union's variants and a field reference's choices, so screen readers hear them as one choice among several.
+  `CommandPalette` shows an action's own `shortcut` text when it has one, before falling back to its bindings as keycaps.
+  A `Dialog` in a contained portal opens from an enclosing `<DialogTrigger>` when it is given no `isOpen`.
+  `CurveEditor` takes an `aria-label` and names its plot with it.
+  A `Callout` keeps a `style` it is given alongside its stance, grade and tint, rather than losing it to them.
+  `Callout`, `LastOperationPanel` and `DragGhost` draw their shadow from `--wzl-bevel-raised` when a theme sets it, as `Dialog` and the menu popovers do.
+  `Button`'s busy spinner stops turning under `prefers-reduced-motion: reduce`.
+  Breaking: `BarPopover`'s `isDisabled` prop is now `disabled`, as every other Bar part names it.
+- Updated dependencies [d2110bc]
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [3105d13]
+- Updated dependencies [8ad43af]
+- Updated dependencies [8b52282]
+- Updated dependencies [120420a]
+- Updated dependencies [e982d8a]
+- Updated dependencies [156bcd0]
+- Updated dependencies [fa1c9a7]
+- Updated dependencies [13b0604]
+  - @weasel-js/font@1.15.1
+  - @weasel-js/core@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/gestures@1.15.1
+  - @weasel-js/ui-logic@1.15.1
+  - @weasel-js/theme@1.15.1
+  - @weasel-js/menu@1.15.1
+  - @weasel-js/loupe@1.15.1
+  - @weasel-js/icons@1.15.1
+  - @weasel-js/paint@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

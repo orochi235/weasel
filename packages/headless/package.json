@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/headless",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "Render a scene to pixels from Node: renderSceneToPixels in a headless Chromium page, kept open across renders.",
   "license": "MIT",
   "type": "module",
@@ -44,8 +44,8 @@
     "build": "tsup && tsup --config tsup.page.config.ts"
   },
   "dependencies": {
-    "@weasel-js/core": "1.15.0",
-    "@weasel-js/geom": "1.15.0",
+    "@weasel-js/core": "1.15.1",
+    "@weasel-js/geom": "1.15.1",
     "playwright-core": "^1.63.0"
   },
   "publishConfig": {

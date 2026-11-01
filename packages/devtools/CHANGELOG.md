@@ -1,5 +1,30 @@
 # @weasel-js/devtools
 
+## 1.15.1
+
+### Patch Changes
+
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [8ad43af]
+- Updated dependencies [8b52282]
+- Updated dependencies [999fba9]
+- Updated dependencies [8c13aee]
+- Updated dependencies [120420a]
+- Updated dependencies [b6a97f4]
+- Updated dependencies [e982d8a]
+- Updated dependencies [89e647e]
+- Updated dependencies [fa1c9a7]
+- Updated dependencies [ec16ac7]
+- Updated dependencies [6f496e1]
+- Updated dependencies [4b2a4e3]
+- Updated dependencies [cb3b4a7]
+  - @weasel-js/core@1.15.1
+  - @weasel-js/ui@1.15.1
+  - @weasel-js/react@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

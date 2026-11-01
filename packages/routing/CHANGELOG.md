@@ -1,5 +1,63 @@
 # @weasel-js/routing
 
+## 1.15.1
+
+### Patch Changes
+
+- 424ba52: The Smudge brush, the Simplify brush, a warp's control drag, and Warp Settings can be the last operation, their
+  settings changed after the fact in the last-operation panel. A brush stroke replays every dab from its start with the
+  new Size, Strength or Tolerance; text the Smudge brush converted is put back and converted again wherever the brush
+  at its new size meets it. A warp drag replays with the warp remade under the new Mode, Rows, Columns, Mapping or
+  Tolerance, the control moved as it was first, so an envelope's new grid is resampled from the mesh the drag bent.
+  Warp Settings shows only the settings a run changed. Each stays one undo entry.
+  
+  A tool's options and its action's panel are one setting: `ActionTuning.keep` is handed the params a panel change set,
+  and the tuning `<SceneCanvas>` makes from `toolOptionValues` writes them back there, so an options row shows the
+  values the next stroke uses. `OngoingHandle.params` reports params a gesture took from what it edited rather than
+  from its binding, such as a held warp's own grid, which the panel shows and replay receives. A gesture that opens a
+  journal as it starts is now kept as the last operation. `SMUDGE_BRUSH_PARAMS` and `SIMPLIFY_BRUSH_PARAMS` are the
+  forms the brushes' options use, and `warpDragParams`, `configureWarpParams`, and `WARP_SETTING_FIELDS` the warps'.
+- 027c59a: `@weasel-js/editor` adds `<EditorShell>`, the frame of an editor app. It mounts the kit's providers where none is
+  in scope, and a dispatcher that runs the keys of the commands registered on its registry with no canvas mounted or
+  pressed yet; once a canvas on that registry holds the keys, the canvas runs them, so a key never fires twice. Given
+  `prefs` (an open store, or what `openPrefsSync` takes), it registers `editor.preferences` ("Preferences…", Mod+, by
+  default; `preferences` changes its label, keys, icon, and group, or `null` drops it) and draws a `PrefsDialog` for it,
+  with `prefsDialog` passing the dialog's own props. `menus` gives each menu title's runs, drawn on the shell's own row
+  or, with `menuBar="inline"`, handed to a `topbar` function to place; a new `menus` value redraws the bar. The shell
+  also mounts the context menu host. `useEditorPrefs`, `useOpenPreferences`, `EDITOR_ACTIONS`, `EDITOR_PREFERENCES_KEY`, and the menu helpers
+  `editorMenuBar`, `menu`, `menuRun`, and `EDITOR_MENU_TITLES` come with it. The package now takes `@weasel-js/prefs`
+  as a peer.
+  
+  `useGestureDispatcher` takes `yieldKeys`: a dispatcher with no canvas hears no key while a canvas dispatching on the
+  same registry holds the keys. `useCommand` takes `group`.
+- 9c051bd: A route conflict names an action once when two of its bindings meet a third only because `mod` and `ctrl` are one key off a Mac — `viewport.zoom`'s Cmd/Ctrl+wheel and ctrl+wheel against another action's ctrl+wheel — and reports it as one conflict rather than one per platform.
+- fa1c9a7: A menu item entry takes `radio: true`, and a menu draws it as a `menuitemradio` rather than a `menuitemcheckbox`. `resolveSchemaMenu` sets it on an enum's options, a union's variants and a field reference's choices, so screen readers hear them as one choice among several.
+  `CommandPalette` shows an action's own `shortcut` text when it has one, before falling back to its bindings as keycaps.
+  A `Dialog` in a contained portal opens from an enclosing `<DialogTrigger>` when it is given no `isOpen`.
+  `CurveEditor` takes an `aria-label` and names its plot with it.
+  A `Callout` keeps a `style` it is given alongside its stance, grade and tint, rather than losing it to them.
+  `Callout`, `LastOperationPanel` and `DragGhost` draw their shadow from `--wzl-bevel-raised` when a theme sets it, as `Dialog` and the menu popovers do.
+  `Button`'s busy spinner stops turning under `prefers-reduced-motion: reduce`.
+  Breaking: `BarPopover`'s `isDisabled` prop is now `disabled`, as every other Bar part names it.
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [3105d13]
+- Updated dependencies [b6a97f4]
+- Updated dependencies [e982d8a]
+- Updated dependencies [fa1c9a7]
+  - @weasel-js/quantity@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/gestures@1.15.1
+  - @weasel-js/prefs@1.15.1
+  - @weasel-js/select@1.15.1
+  - @weasel-js/menu@1.15.1
+  - @weasel-js/cursor@1.15.1
+  - @weasel-js/history@1.15.1
+  - @weasel-js/icons@1.15.1
+  - @weasel-js/modes@1.15.1
+  - @weasel-js/react@1.15.1
+  - @weasel-js/registry@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes

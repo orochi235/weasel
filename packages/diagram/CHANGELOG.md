@@ -1,5 +1,102 @@
 # @weasel-js/diagram
 
+## 1.15.1
+
+### Patch Changes
+
+- 24e218c: An edge can carry `endLabels` `{ from, to }`: text drawn beside each end, a multiplicity or a role, as labels at
+  `'start'` and `'end'` whose ids `endLabelIdOf` gives. A label at `'start'` or `'end'` takes an `inset`, which stands
+  it that far along the route from the end so it clears the shape there. New outlines `'start'`, `'end'`, and `'bar'`
+  draw a state machine's start dot, end bullseye, and fork or join bar; an `OutlineDef` can name a `solid` part, filled
+  in the stroke's color, and `outlineSolid` builds it. A body's `field` rows carry `bodyField` on their scene node, so a
+  reader can tell one from a text row. This adds API.
+- 5070176: A `grid` layout, in `LAYOUTS` and exported: nodes stand in rows of a fixed number of columns, left to right and top
+  to bottom, as a block diagram does. Its `grid` layout option gives the top level's `columns`, each group's own under
+  `groupColumns`, how many columns an item `spans`, and how many empty cells it `skips` before it. A group, or a
+  container fitted to what it holds, is a grid of its own inside its cells. `diagramScene`'s `layout` now also names
+  `'radial'` and `'grid'`.
+  
+  Two outlines: `person`, a head over a body with rounded shoulders, its rows in the body; and `disk`, a drive seen
+  from above, standing over its label as the other devices do.
+- 9862244: A `DiagramType` names the `notations` its graph pages are written in: UML class `class`, ERD `er`, mind map
+  `mindmap`, flowchart `FLOWCHART_NOTATION`. `diagramNotationOf` gives the one a scene's type writes, and
+  `diagramTypeOfNotation` the type a notation opens as. `documentFromScene` gives a graph page with no notation of its
+  own the one its scene's type writes, so a chart drawn as a UML class diagram exports as a Mermaid `classDiagram`;
+  `documentSpecs` emits `diagram:type` when every graph page's notation names one type, so an imported class diagram
+  opens with the UML stencils. A page whose notation is `FLOWCHART_NOTATION` writes as a flowchart in a chart of
+  another type. This adds API.
+- a5e5db3: New diagram types State, Requirement, C4, Block, Architecture, and Kanban, with stencil groups `STATE_GROUP`,
+  `REQUIREMENT_GROUP`, `C4_GROUP`, `ARCHITECTURE_GROUP`, and `KANBAN_GROUP` whose shapes write as their Mermaid
+  constructs: a state's start, end, choice, fork, note, and composite and concurrent states; requirements and elements;
+  C4 people, systems, containers, components, stores, queues, and boundaries; architecture services by Mermaid's built-in
+  icons, junctions, and groups; a kanban board and its cards. Block diagrams draw with the flowchart's shapes on a grid.
+  A `DiagramStencil` can name a `themeRole`, kept on its trait and resolved by `StencilInsertOptions.theme`; a
+  `ContainerStencil` can name its `title` and its first `lanes`; `DiagramTypeEdge` takes a `dash`. A stencil's field
+  rows now carry `bodyField`, so they read back as fields. The Mermaid requirement writer names each block by its name
+  row rather than its id. This adds API.
+- 0e5b3d8: A sequence diagram can be built from nothing with pure edits of its `SequenceData`: `addParticipant` (with
+  `newParticipant` minting one), `removeParticipant`, `setParticipantOutline`, `insertMessage` with a named arrow from
+  `SEQ_ARROWS`, `insertNote`, `insertMark` for activations, creations and destructions, `wrapSteps` to put a run of
+  steps in a loop, alt, opt, par, critical, break or colored region, `addSection`, `removeSection`, `setFragmentType`,
+  `unwrapFragment`, `removeStep` and `removeStepAt`, `setMessageArrow`, `setMessageActivation`, `addBox`, `removeBox`
+  and `setAutonumber`. `freshSeqId` mints an id nothing in the sequence uses.
+  
+  Removing a participant removes every message to or from it, every mark naming it, and it from every note and box; a
+  note or box left naming no one goes too. Fragments stay, even emptied.
+- 2560c69: `SEQUENCE_TOOLS` gains Mark, which clicks an activation's start or end, a creation, or a destruction onto the lifeline
+  nearest the click, at the row nearest it (`createAddMarkAction`; the host picks the kind through the `mark` reader).
+  `sequenceSelectionOf` reads a selection as one sequence's selected participants, messages, notes, fragments, and
+  boxes, falling back to the scene's only sequence, so a panel can offer the edits that fit. `commitSequence` keeps a
+  selected part selected through the rebuild, where it used to drop the selection.
+- dd4ab9b: Sequence diagrams can be authored on the canvas. `useSequenceTools` (or `sequenceTools` outside React) builds the
+  tools in `SEQUENCE_TOOLS`: Participant clicks a lifeline in where the click falls between two, and on empty canvas
+  starts a new sequence (`startSequence`); Message drags from one lifeline to another, inserted at the row of the press
+  and previewed as it goes, a release on its own lifeline making a self-message; Note clicks a note over the nearest
+  lifeline, or beside it when the click is off to one side, and drags one across several; Fragment drags across rows to
+  wrap them. The host picks the participant kind, the arrow, and the fragment type through the options' readers. Each
+  tool binds its gesture on a sequence's heads, messages and notes as well as on open canvas, and each edit is one undo
+  entry through `commit`.
+  
+  A click on a head, a message, a note, a fragment's tab, or a box's label strip selects the node drawing it, and
+  `createSequenceDeleteAction` turns Delete on such a selection into an edit of the sequence: a head removes its
+  participant and everything naming it. Fragments can be dragged to another row by their tab. `DiagramView` deletes a
+  sequence's selected parts through `onEditSequence`, and takes `tools` and `onToolsCreated` to host the tools. A
+  sequence's selected parts take no resize handles under `diagramResizable`.
+- 479ecc6: Sequence diagrams. `SequenceData` holds participants and steps — messages, notes, activations, `create` and
+  `destroy`, and fragments with sections — plus boxes and `autonumber`; `sequenceSpecs` draws it as one root node
+  holding the data, every head, lifeline, message, activation, note, and fragment a child of it, each in the theme's
+  roles. `moveStep`, `moveParticipant`, `reconnectMessage`, and `setSequenceText` are the edits as pure functions;
+  `DiagramView`'s new `onEditSequence` turns them on as drags and in-place text editing, and `diagramSequence` does the
+  same on a scene that is the document, each edit one undo entry. New outlines: `boundary`, `control`, `entity`,
+  `collections`, and `queue`. Additive: sequence roots and parts take no connectors and are left alone by
+  `themeWrites`, while `applyDiagramTheme` draws them again in the new theme.
+- 238a49c: A sequence's lifeline marks can be selected and deleted. An activation bar and a destruction's cross are taken hold of
+  on the canvas like a head or a message; Delete on a bar removes the marks or message flags that open and close it, and
+  on a cross the `destroy` mark. `SeqActivationPlace` names its `opener` and `closer` and `SeqLifelinePlace` its
+  `destroyedBy` as `SeqMarkRef`s, and the parts drawn for them carry those refs. `removeMarks` removes marks by their
+  places and clears message flags; `removeMarksOf` removes every mark of a kind naming a participant, such as the
+  `create` that draws a head partway down.
+- Updated dependencies [d2110bc]
+- Updated dependencies [424ba52]
+- Updated dependencies [9515681]
+- Updated dependencies [5e66a10]
+- Updated dependencies [2992b55]
+- Updated dependencies [8ad43af]
+- Updated dependencies [8b52282]
+- Updated dependencies [120420a]
+- Updated dependencies [e982d8a]
+- Updated dependencies [13b0604]
+  - @weasel-js/font@1.15.1
+  - @weasel-js/core@1.15.1
+  - @weasel-js/geom@1.15.1
+  - @weasel-js/animator@1.15.1
+  - @weasel-js/clock@1.15.1
+  - @weasel-js/ui-logic@1.15.1
+  - @weasel-js/simulation@1.15.1
+  - @weasel-js/audio@1.15.1
+  - @weasel-js/icons@1.15.1
+  - @weasel-js/react@1.15.1
+
 ## 1.15.0
 
 ### Patch Changes
