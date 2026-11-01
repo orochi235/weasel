@@ -181,7 +181,34 @@ const clickAcrossStall: BrowserCommand<[at: [number, number], stallMs: number]> 
   }
 };
 
+/** What `renderInNode` returns: each render's pixels, base64, and whether the host refused a
+ *  render once disposed. */
+export interface NodeRenders {
+  images: Array<{ width: number; height: number; base64: string }>;
+  refusedAfterDispose: boolean;
+}
+
+/** Render each of `renders` through one `@weasel-js/node-render` host, built from source, in a
+ *  Chromium of its own launched from this Node process; then dispose it. */
+const renderInNode: BrowserCommand<[renders: object[]]> = async (_ctx, renders): Promise<NodeRenders> => {
+  const { nodeRenderHost, nodeRenderPageScript } = await import('./node-render-source.ts');
+  const [{ createNodeRasterHost }, pageScript] = await Promise.all([nodeRenderHost(), nodeRenderPageScript()]);
+  const host = createNodeRasterHost({ pageScript });
+  const images: NodeRenders['images'] = [];
+  try {
+    for (const args of renders) {
+      const image = await host.render(args as Parameters<typeof host.render>[0]);
+      images.push({ width: image.width, height: image.height, base64: Buffer.from(image.data).toString('base64') });
+    }
+  } finally {
+    await host.dispose();
+  }
+  const refusedAfterDispose = await host.render(renders[0] as Parameters<typeof host.render>[0]).then(() => false, () => true);
+  return { images, refusedAfterDispose };
+};
+
 export const browserCommands = {
+  renderInNode,
   grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage, settleFrame,
   watchRequests, pointer, clickAcrossStall,
 };
@@ -198,5 +225,6 @@ declare module 'vitest/browser' {
     watchRequests: () => Promise<void>;
     pointer: (steps: PointerStep[]) => Promise<void>;
     clickAcrossStall: (at: [x: number, y: number], stallMs: number) => Promise<void>;
+    renderInNode: (renders: object[]) => Promise<NodeRenders>;
   }
 }

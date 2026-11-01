@@ -6,6 +6,7 @@
     [
       "@weasel-js/core",
       "@weasel-js/editor",
+      "@weasel-js/node-render",
       "@weasel-js/font",
       "@weasel-js/paint",
       "@weasel-js/text",

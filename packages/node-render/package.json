@@ -1,0 +1,55 @@
+{
+  "name": "@weasel-js/node-render",
+  "version": "1.15.0",
+  "description": "Render a scene to pixels from Node: renderSceneToPixels in a headless Chromium page, kept open across renders.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "./dist/page.js",
+    "./dist/page.global.js"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./page": {
+      "import": "./dist/page.js",
+      "types": "./dist/page.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/node-render"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup && tsup --config tsup.page.config.ts"
+  },
+  "dependencies": {
+    "@weasel-js/core": "1.15.0",
+    "@weasel-js/geom": "1.15.0",
+    "playwright-core": "^1.63.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

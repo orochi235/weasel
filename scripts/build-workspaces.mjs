@@ -37,6 +37,7 @@ export const BUILD_ORDER = [
   '@weasel-js/routing',
   '@weasel-js/animator',
   '@weasel-js/core',
+  '@weasel-js/node-render',
   '@weasel-js/loupe',
   '@weasel-js/svg',
   '@weasel-js/d3',

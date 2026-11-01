@@ -699,13 +699,6 @@ only story runner in the repo.
 
 - **(P3) [agent] WebGPU backend.** Separate future spec.
   Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
-- **(P3) [agent] Headless server-side rendering in Node.** `renderSceneToPixels`
-  (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`, which has to
-  be WebGL2. `headless-gl` cannot supply one: `gl@8.1.6` (read 2026-10-17) implements WebGL 1.0.3
-  only, vertex arrays through `OES_vertex_array_object`, and Node has no `OffscreenCanvas`. Left:
-  find a Node binding that provides WebGL2, or host the render in headless Chromium.
-  Closes when a test renders a scene through `renderSceneToPixels` from a Node process and the pixels
-  match the browser's.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
