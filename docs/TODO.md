@@ -403,6 +403,20 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] A selection never holds a node and its descendant.** A selected group already
+  carries its subtree, yet `useSelection` (`packages/core/src/core/selection/useSelection.ts`) will hold a group
+  and its children at once, from a marquee or Shift-clicks. Each action that cares narrows it itself
+  (`selectedRoots` in `packages/core/src/interactions/actions/selectionSubtree.ts`, used by copy, clone, and
+  move), while outlines, counts, and an app's `selection.get()` see both. collego narrows in its app
+  (`outermost`, 2026-11-01) and asked for it here. Closes when the selection keeps only outermost ids on every
+  change, an option at most, and `selectedRoots` is no longer needed at its call sites.
+
+- **(P2) [agent] A marquee selects marks inside a group that isn't entered.** A click on a group not entered
+  selects the group, but a marquee across it selects the marks inside it: collego's cabinets, groups painted by
+  an inner body mark, came back as each drawer's and the cabinet's `:body` mark (2026-11-01). collego maps them
+  back to their owners. Closes when area select picks at the same depth a click does: the outermost node not
+  inside a group that isn't entered.
+
 - **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
   the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
