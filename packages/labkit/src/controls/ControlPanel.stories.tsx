@@ -130,35 +130,34 @@ const detents = f.schema({
     .stops([0.5]),
 });
 
+function StopsHarness(args: Partial<ControlPanelProps<Record<string, unknown>>>) {
+  const schema = resolveConfigSchema(detents);
+  const [config, setConfig] = useState<Record<string, unknown>>(detents.defaults());
+  const [writes, setWrites] = useState(0);
+  const draft = (path: string, value: unknown) =>
+    setConfig((prev) => withValueAtPath(prev, path, value));
+  return (
+    <>
+      <ControlPanel
+        {...args}
+        schema={schema}
+        config={config}
+        draftConfig={draft}
+        setConfig={(path, value) => {
+          draft(path, value);
+          setWrites((n) => n + 1);
+        }}
+      />
+      <output>setConfig calls: {writes}</output>
+    </>
+  );
+}
+
 /** Stops on a schema slider, declared in the stored unit. The drag drafts
  *  through `draftConfig` and writes `setConfig` once, on release: the count
  *  below is one per drag. */
 export const Stops: Story = {
-  render: (args) => {
-    function Harness() {
-      const schema = resolveConfigSchema(detents);
-      const [config, setConfig] = useState<Record<string, unknown>>(detents.defaults());
-      const [writes, setWrites] = useState(0);
-      const draft = (path: string, value: unknown) =>
-        setConfig((prev) => withValueAtPath(prev, path, value));
-      return (
-        <>
-          <ControlPanel
-            {...args}
-            schema={schema}
-            config={config}
-            draftConfig={draft}
-            setConfig={(path, value) => {
-              draft(path, value);
-              setWrites((n) => n + 1);
-            }}
-          />
-          <output>setConfig calls: {writes}</output>
-        </>
-      );
-    }
-    return <Harness />;
-  },
+  render: (args) => <StopsHarness {...args} />,
 };
 
 /** The same schema with a control supplied for `vector2`. */

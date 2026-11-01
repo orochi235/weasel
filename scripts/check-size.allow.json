@@ -238,7 +238,7 @@
     "longestFunction": 165
   },
   "packages/ui/src/components/ItemList/ItemList.tsx": {
-    "longestFunction": 182
+    "longestFunction": 183
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
     "lines": 403,

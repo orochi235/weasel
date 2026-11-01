@@ -12,10 +12,12 @@ export interface DomItemListState {
   slotWidth?(row: ItemListRow, slot: 'leading' | 'trailing'): number;
 }
 
-/** What `state`'s list shows, as `measureRowList` reads it: each row's label by its text content. */
+/** What `state`'s list shows, as `measureRowList` reads it: each row's label by its text content. Once any row has
+ *  trailing content every row gets a trailing cell, an empty one 0 wide, as `ItemList` draws its grid. */
 export function itemListFaceOf(state: DomItemListState): RowListFace {
+  const trailingColumn = state.props.rows.some((r) => r.trailing != null);
   const width = (r: ItemListRow, slot: 'leading' | 'trailing') =>
-    (r[slot] == null ? undefined : state.slotWidth?.(r, slot) ?? 0);
+    (r[slot] == null ? (slot === 'trailing' && trailingColumn ? 0 : undefined) : state.slotWidth?.(r, slot) ?? 0);
   return {
     rows: state.props.rows.map((r) => ({
       id: r.id, label: nodeText(r.label), leadingWidth: width(r, 'leading'), trailingWidth: width(r, 'trailing'),

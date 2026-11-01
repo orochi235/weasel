@@ -110,6 +110,7 @@
       "@weasel-js/modes/presets/default": ["../modes/src/presets/default.ts"],
       "@weasel-js/node-render": ["../node-render/src/index.ts"],
       "@weasel-js/node-render/page": ["../node-render/src/page.ts"],
+      "@weasel-js/node-render/testing/*": ["../node-render/src/testing/*"],
       "@weasel-js/paint": ["../paint/src/index.ts"],
       "@weasel-js/parallax": ["../parallax/src/index.ts"],
       "@weasel-js/path-tools": ["../path-tools/src/index.ts"],
