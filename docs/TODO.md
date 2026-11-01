@@ -403,13 +403,11 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] A selection never holds a node and its descendant.** A selected group already
-  carries its subtree, yet `useSelection` (`packages/core/src/core/selection/useSelection.ts`) will hold a group
-  and its children at once, from a marquee or Shift-clicks. Each action that cares narrows it itself
-  (`selectedRoots` in `packages/core/src/interactions/actions/selectionSubtree.ts`, used by copy, clone, and
-  move), while outlines, counts, and an app's `selection.get()` see both. collego narrows in its app
-  (`outermost`, 2026-11-01) and asked for it here. Closes when the selection keeps only outermost ids on every
-  change, an option at most, and `selectedRoots` is no longer needed at its call sites.
+- **(P2) [agent] Demos keep their selection off the scene.** Most `apps/site/demos/` call `useSelection()` with no
+  `scene`, so the selection lives in the hook rather than on the scene: undo and redo don't put it back, and an
+  app writing it directly skips the scene's rule that a selection holds only outermost nodes. A demo teaches this
+  shape, so consumers copy it. Closes when no demo calls `useSelection` without `scene`, or its blurb says the
+  local selection is the point.
 
 - **(P2) [agent] A marquee selects marks inside a group that isn't entered.** A click on a group not entered
   selects the group, but a marquee across it selects the marks inside it: collego's cabinets, groups painted by

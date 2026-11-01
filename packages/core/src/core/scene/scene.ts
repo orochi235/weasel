@@ -85,7 +85,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   });
 
   const generateId = options.generateId ?? defaultGenerateId;
-  const selection = createSceneSelection(locks.reachable);
+  const selection = createSceneSelection(locks.reachable, (id) => state.nodes.get(id)?.parent);
   // A selection change is a scene change to every subscriber.
   selection.subscribe(notifier.notify);
 
@@ -161,7 +161,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
-      selection.replace(locks.reachable(selection.get().filter((id) => state.nodes.has(id))));
+      selection.replace(selection.legal(selection.get().filter((id) => state.nodes.has(id))));
       notifier.notify();
     },
 

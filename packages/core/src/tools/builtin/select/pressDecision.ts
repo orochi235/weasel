@@ -1,5 +1,5 @@
 import { isEnvelope } from 'core/scene/effectivePose';
-import { selectedAncestor } from '../../../interactions/actions/selectionSubtree';
+import { holderOf } from '@weasel-js/select';
 
 /** The tree a press reads: who a node's parent is, and the node itself. */
 export interface PressTree {
@@ -40,7 +40,7 @@ export function pressDecision(
 
 function insideSelectedGroup(top: string, sel: readonly string[], tree: PressTree): boolean {
   if (sel.includes(top)) return false;
-  const ancestor = selectedAncestor((id) => tree.getParent(id), top, new Set(sel));
+  const ancestor = holderOf(new Set(sel), top, (id) => tree.getParent(id));
   const node = ancestor === null ? undefined : tree.getNode(ancestor) as { dependsOn?: unknown; derivePose?: unknown } | undefined;
   return node !== undefined && isEnvelope(node);
 }

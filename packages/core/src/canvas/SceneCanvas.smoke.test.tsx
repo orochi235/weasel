@@ -705,6 +705,10 @@ describe('useLassoTool smoke', () => {
       clear: () => { selected = []; },
       contains: (nid: NodeId) => selected.includes(nid),
       applyClick: () => {},
+      adapterMethods: {
+        getSelection: () => [...selected],
+        setSelection: (next: NodeId[]) => { selected = next; },
+      },
     };
     const { container, unmount } = render(
       <SceneCanvas

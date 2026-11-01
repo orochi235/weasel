@@ -36,7 +36,7 @@ describe('createNotifier', () => {
 describe('createSceneSelection', () => {
   it('still tells the subscribers after one that throws', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const selection = createSceneSelection((ids) => ids);
+    const selection = createSceneSelection((ids) => ids, () => null);
     const heard = vi.fn();
     selection.subscribe(() => { throw new Error('boom'); });
     selection.subscribe(heard);

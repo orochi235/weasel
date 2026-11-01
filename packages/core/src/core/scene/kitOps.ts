@@ -61,6 +61,21 @@ export interface KitOpsEnv<TData, TLayer extends string, TPose> {
   noteWritten(node: Node<TData, TLayer, TPose>): void;
 }
 
+/** Move a node from under `left` to `joined` at `index`, for `kit:move` either way. */
+function movesNode<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TLayer, TPose>) {
+  const { detach, attach, invalidateChildDerivedFrom, invalidateDependents } = env.store;
+  return (id: NodeId, left: NodeId | null, joined: NodeId | null, index: number): void => {
+    detach(id);
+    attach(id, joined, index);
+    // Both ends: the container it left no longer hugs it, and the one it
+    // joined now does.
+    invalidateChildDerivedFrom(left);
+    invalidateDependents(id);
+    // Moved under a selected node, it is held by that node now.
+    if (left !== joined) env.narrowSelection();
+  };
+}
+
 /** Register every kit op kind. Answers with the table a live `kit:setLayout`
  *  payload's strategies are kept in, which `scene.setLayout` fills. */
 export function registerKitOps<TData, TLayer extends string, TPose>(
@@ -77,6 +92,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   function registerKitOp<P>(kind: string, handler: RegisteredOp<P>): void {
     env.register(kind, handler as RegisteredOp<unknown>);
   }
+  const relocate = movesNode(env);
 
   registerKitOp<{
     id: NodeId; kind: 'mark' | 'group'; layer: TLayer; pose: TPose; data: TData;
@@ -233,20 +249,8 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     id: NodeId; fromParent: NodeId | null; fromIndex: number;
     toParent: NodeId | null; toIndex: number;
   }>('kit:move', {
-    apply: (p) => {
-      detach(p.id);
-      attach(p.id, p.toParent, p.toIndex);
-      // Both ends: the container it left no longer hugs it, and the one it
-      // joined now does.
-      invalidateChildDerivedFrom(p.fromParent);
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      detach(p.id);
-      attach(p.id, p.fromParent, p.fromIndex);
-      invalidateChildDerivedFrom(p.toParent);
-      invalidateDependents(p.id);
-    },
+    apply: (p) => relocate(p.id, p.fromParent, p.toParent, p.toIndex),
+    revert: (p) => relocate(p.id, p.toParent, p.fromParent, p.fromIndex),
   });
 
   registerLayerOps(env);
