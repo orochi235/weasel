@@ -142,6 +142,14 @@ describe('region selection while a group is entered', () => {
   });
 });
 
+describe('region selection with nothing entered', () => {
+  it('a marquee across a group takes the group, as a click on its member does', () => {
+    const t = setup();
+    t.drag([290, 95], [-5, -5]);
+    expect([...t.selection()].sort()).toEqual(['f', 'g']);
+  });
+});
+
 describe('select all while a group is entered', () => {
   it('selects only what is inside the entered group', () => {
     const t = setup();

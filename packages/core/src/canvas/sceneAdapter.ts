@@ -33,13 +33,46 @@ import {
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
+import { composeChildFrame, composesFrames, composeWorldPose, frameAtOrAbove, type PoseAdapter } from 'core/scene/composePose';
 import { memoizeCompose } from 'core/scene/composeFrame';
 import { scrolledFrames } from 'core/scene/scrollOffsets';
 import { insertSite } from './deps/insertSite';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
+
+/** A scene adapter's pose reads: the stored pose, the world pose, and the fold between them. */
+function scenePoseReads<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) {
+  const composes = composesFrames(scene.composition);
+  const compose = memoizeCompose(scene.composition.compose);
+  const childFrame = composes ? scrolledFrames(scene) : undefined;
+  const reads: PoseAdapter<TPose> & { definesFrame(id: string): boolean } = {
+    getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,
+    getPose(id) {
+      const n = scene.get(asNodeId(id));
+      if (!n) throw new Error(`sceneToAdapter: unknown node "${id}"`);
+      return effectivePose(scene, n);
+    },
+    definesFrame(id) {
+      const n = scene.get(asNodeId(id));
+      return n === undefined || definesFrame(n);
+    },
+    ...(childFrame ? { childFrame } : {}),
+  };
+  return {
+    getPose: reads.getPose,
+    definesFrame: reads.definesFrame,
+    getWorldPose: (id: string): TPose => (composes ? composeWorldPose(reads, id, compose) : reads.getPose(id)),
+    worldOfStored(id: string, stored: TPose): TPose {
+      const frame = composes ? frameAtOrAbove(reads, reads.getParent(id)) : null;
+      return frame === null ? stored : compose(composeChildFrame(reads, frame, compose), stored);
+    },
+    // Only present when it would do something: the render walk skips the fold
+    // entirely when this is absent, which is the absolute-pose path.
+    ...(composes ? { composePose: compose } : {}),
+    ...(childFrame ? { childFrame } : {}),
+  };
+}
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
  *  `setSelection`. Matches `useSelection().adapterMethods` plus an imperative
@@ -81,6 +114,9 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       /** The node's pose with every ancestor's frame folded in. Equal to
        *  `getPose` unless the scene composes poses. */
       getWorldPose(id: string): TPose;
+      /** Where `id` is drawn if it stores `stored`: `stored` folded into the
+       *  frame of its parent's world pose. */
+      worldOfStored(id: string, stored: TPose): TPose;
       /** Whether `id`'s pose is a frame its children are expressed in — see
        *  `definesFrame`. */
       definesFrame(id: string): boolean;
@@ -157,10 +193,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const translate = (p: TPose, dx: number, dy: number, node?: unknown): TPose =>
     translatePoseViaDescriptor(p, dx, dy, node === undefined ? d : poseDescriptorForNode(d, node));
 
-  const composition = scene.composition;
-  const composes = composesFrames(composition);
-  const compose = memoizeCompose(composition.compose);
-  const childFrame = composes ? scrolledFrames(scene) : undefined;
   const pickOpts: ScenePickSourceOptions<unknown> = {};
   // The asking view's layer gate and camera, over the adapter's own options.
   const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
@@ -182,24 +214,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const gates = nodeGates(scene);
       return scene.renderOrderNodes().filter((n) => !gates.hidden(n.id));
     },
-    getPose(id) {
-      const nid = asNodeId(id);
-      const n = scene.get(nid);
-      if (!n) throw new Error(`sceneToAdapter: unknown node "${id}"`);
-      return effectivePose(scene, n);
-    },
-    definesFrame(id) {
-      const n = scene.get(asNodeId(id));
-      return n === undefined || definesFrame(n);
-    },
-    getWorldPose(id) {
-      if (!composes) return adapter.getPose(id);
-      return composeWorldPose(adapter, id, compose);
-    },
-    // Only present when it would do something: the render walk skips the fold
-    // entirely when this is absent, which is the absolute-pose path.
-    ...(composes ? { composePose: compose } : {}),
-    ...(childFrame ? { childFrame } : {}),
+    ...scenePoseReads(scene),
     poseTarget: (id, descriptor) => scenePoseTarget(scene, id, descriptor ?? d),
     getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
     subscribeLayers: (listener) => scene.subscribe(listener),

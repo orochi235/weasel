@@ -1,7 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { Dispatcher, WorldPoint } from '@weasel-js/routing';
 import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
-import type { Scene } from 'core/scene/types';
+import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
@@ -40,6 +40,7 @@ import {
   useViewDepSource,
 } from '../deps';
 import type { EnteredGroupApi } from '../deps/enteredGroup';
+import { pressTarget } from 'tools/builtin/pressTarget';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings, useBindingOverrides } from './useActionTunings';
@@ -175,7 +176,14 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
+  const regionTargetOf = useMemo(() => {
+    const tree = {
+      getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null,
+      getNode: (id: string) => scene.get(asNodeId(id)),
+    };
+    return (id: string) => pressTarget(tree, id, enteredGroup.get());
+  }, [scene, enteredGroup]);
+  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
@@ -199,7 +207,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   usePreviewPathsDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard, ingestionHandlers);
-  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
+  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
   useSelectionSnapshotDepSource();

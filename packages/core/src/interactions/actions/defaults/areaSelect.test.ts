@@ -122,6 +122,14 @@ describe('areaSelectAction descriptor', () => {
     expect(dep.calls.setSelection[0]).toEqual(['node-1', 'node-2']);
   });
 
+  it('onEnd("commit") selects each hit at the depth the dep\'s targetOf names, once', () => {
+    const dep = { ...makeAreaSelectDep(['a', 'b', 'c']), targetOf: (id: string) => (id === 'c' ? 'c' : 'g') };
+    const handle = getOngoingInvoker(areaSelectAction).start(makeCtx({ dep, world: { x: 0, y: 0 } }), undefined);
+    handle.onMove!(makeCtx({ dep, world: { x: 50, y: 50 } }));
+    handle.onEnd!(makeCtx({ dep, world: { x: 50, y: 50 } }), 'commit');
+    expect(dep.getSelection()).toEqual(['g', 'c']);
+  });
+
   it('onEnd("commit") extends selection with shift held', () => {
     const invoker = getOngoingInvoker(areaSelectAction);
     const dep = makeAreaSelectDep(['node-3'], ['node-1', 'node-2']);

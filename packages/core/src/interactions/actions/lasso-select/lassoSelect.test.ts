@@ -161,6 +161,14 @@ describe('lassoSelectAction descriptor', () => {
     expect(dep.calls.setSelection).toEqual([['nodeA', 'nodeB']]);
   });
 
+  it("selects each hit at the depth the dep's targetOf names, once", () => {
+    const dep = { ...makeLassoSelectDep(['a', 'b', 'c']), targetOf: (id: string) => (id === 'c' ? 'c' : 'g') };
+    const handle = getOngoingInvoker(lassoSelectAction).start(makeCtx(dep, { x: 0, y: 0 }), undefined);
+    for (const [x, y] of [[10, 0], [10, 10], [0, 10]]) handle.onMove!(makeCtx(undefined, { x, y }));
+    handle.onEnd!(makeCtx(undefined, { x: 0, y: 10 }), 'commit');
+    expect(dep.getSelection()).toEqual(['g', 'c']);
+  });
+
   it("hit-tests in the binding's params.mode, 'intersect' when none is given", () => {
     const invoker = getOngoingInvoker(lassoSelectAction);
     const run = (opts: Parameters<typeof invoker.start>[1]) => {
