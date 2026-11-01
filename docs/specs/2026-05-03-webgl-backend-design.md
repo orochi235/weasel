@@ -345,7 +345,7 @@ A backend rewrite is the moment to upgrade test rigor:
   deferred; ship without them initially.
 - IE / WebGL1 fallback. Out of scope; WebGL2 only.
 - Headless server-side rendering (Node + headless-gl) — possible but
-  not a v1 commitment. Landed instead as `@weasel-js/node-render`, which
+  not a v1 commitment. Landed instead as `@weasel-js/headless`, which
   hosts the render in headless Chromium (2026-10-31).
 
 ## Migration notes

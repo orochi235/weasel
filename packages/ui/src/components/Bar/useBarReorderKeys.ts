@@ -5,7 +5,7 @@ import { BAR_IN, BAR_UNIT } from './barOrder';
 import { BAR_LEAD } from './useBarOverflow';
 import { containerUnits, grabbedUnit, movedInto } from './useBarReorder';
 import { inlineDirection } from '../../useRovingTabIndex';
-import { nudgeOf } from '@weasel-js/headless';
+import { nudgeOf } from '@weasel-js/ui-logic';
 
 /** What {@link useBarReorderKeys} reads. */
 export interface BarReorderKeysArgs {

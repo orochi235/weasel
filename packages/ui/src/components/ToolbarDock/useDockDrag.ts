@@ -6,7 +6,7 @@ import { BAR_LEAD } from '../Bar/useBarOverflow';
 import { DOCK_BAR, drawnBars, drawnLayout, keyTarget, movedLayout, placeWords, spreadTarget, type DockDropMark } from './dockDrop';
 import { floatWhereDrawn, grabBar, homeTarget, measureEmpties, tearStep, type DockGrab } from './dockTear';
 import { canEnter, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
-import { isNudgeChord } from '@weasel-js/headless';
+import { isNudgeChord } from '@weasel-js/ui-logic';
 
 /**
  * What a drag in progress shows: the bar it lifted, the drawn docks that bar may not enter, where it would drop, and

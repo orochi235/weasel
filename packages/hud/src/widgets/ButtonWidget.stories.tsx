@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import { fixedWidth, IDLE_PRESS } from '@weasel-js/headless';
+import { fixedWidth, IDLE_PRESS } from '@weasel-js/ui-logic';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { DEFAULT_FONT_FAMILY, hudButton, hudMeasureEnv } from '@weasel-js/hud';

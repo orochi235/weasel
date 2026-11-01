@@ -66,7 +66,7 @@
     "@weasel-js/font": "1.15.0",
     "@weasel-js/geom": "1.15.0",
     "@weasel-js/gestures": "1.15.0",
-    "@weasel-js/headless": "1.15.0",
+    "@weasel-js/ui-logic": "1.15.0",
     "@weasel-js/icons": "1.15.0",
     "@weasel-js/menu": "1.15.0",
     "@weasel-js/modes": "1.15.0",

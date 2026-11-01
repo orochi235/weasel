@@ -19,7 +19,7 @@ import {
   type TargetPredicate,
   type Vec2,
 } from '@weasel-js/core';
-import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/headless';
+import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-logic';
 import { carriedBy, slideOthers, type Box } from './reorderSlide';
 
 /** The action that drags an item of a sequence to another place in it. */

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { snapToStep } from '@weasel-js/quantity';
 import { clamp } from '@weasel-js/geom';
 import { useKitSetting } from '@weasel-js/react';
-import { attract, usableStops } from '@weasel-js/headless';
+import { attract, usableStops } from '@weasel-js/ui-logic';
 import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { STOP_SNAP_PX } from './stops';
 import type { SliderProps } from './types';

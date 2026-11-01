@@ -1,4 +1,4 @@
-import { imeKey } from '@weasel-js/headless';
+import { imeKey } from '@weasel-js/ui-logic';
 import type { Hud } from './hud';
 import { isFocusable, type HudTextInput, type Widget } from './widget';
 

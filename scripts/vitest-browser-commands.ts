@@ -188,11 +188,11 @@ export interface NodeRenders {
   refusedAfterDispose: boolean;
 }
 
-/** Render each of `renders` through one `@weasel-js/node-render` host, built from source, in a
+/** Render each of `renders` through one `@weasel-js/headless` host, built from source, in a
  *  Chromium of its own launched from this Node process; then dispose it. */
 const renderInNode: BrowserCommand<[renders: object[]]> = async (_ctx, renders): Promise<NodeRenders> => {
-  const { nodeRenderHost, nodeRenderPageScript } = await import('./node-render-source.ts');
-  const [{ createNodeRasterHost }, pageScript] = await Promise.all([nodeRenderHost(), nodeRenderPageScript()]);
+  const { headlessHost, headlessPageScript } = await import('./headless-source.ts');
+  const [{ createNodeRasterHost }, pageScript] = await Promise.all([headlessHost(), headlessPageScript()]);
   const host = createNodeRasterHost({ pageScript });
   const images: NodeRenders['images'] = [];
   try {

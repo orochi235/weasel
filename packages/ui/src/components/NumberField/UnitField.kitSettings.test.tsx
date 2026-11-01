@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { UnitField } from './UnitField';
-import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/headless';
+import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-logic';
 
 afterEach(() => {
   cleanup();

@@ -1,5 +1,5 @@
 import { type KeyboardEvent, type RefObject, useEffect, useRef, useState } from 'react';
-import { imeKey } from '@weasel-js/headless';
+import { imeKey } from '@weasel-js/ui-logic';
 import {
   canSpin, clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
 } from '@weasel-js/quantity';

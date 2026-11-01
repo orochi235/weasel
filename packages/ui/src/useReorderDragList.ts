@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
-import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/headless';
+import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/ui-logic';
 import { useKitSetting } from '@weasel-js/react';
 import type { SelectModifiers } from '@weasel-js/select';
 

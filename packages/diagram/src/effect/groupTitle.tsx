@@ -1,6 +1,6 @@
 /** The field a group's title is renamed in, held over the title on the canvas. */
 import { adoptCssOnce, useLatest } from '@weasel-js/react';
-import { imeKey } from '@weasel-js/headless';
+import { imeKey } from '@weasel-js/ui-logic';
 import { useMemo, useState, type ReactElement } from 'react';
 import { titleIdOf } from '../containers/trait';
 import { groupLabelIdOf } from '../dataGroups';

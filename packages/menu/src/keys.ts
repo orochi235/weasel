@@ -1,4 +1,4 @@
-import { firstStop, rovingKey, type ListShape } from '@weasel-js/headless';
+import { firstStop, rovingKey, type ListShape } from '@weasel-js/ui-logic';
 import { entriesAt, isRow, type MenuEntry } from './entries';
 
 /** The highlighted index at each open level; its length is how many are open. */

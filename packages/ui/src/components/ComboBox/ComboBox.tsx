@@ -10,7 +10,7 @@ import {
   type ComboBoxProps as RACComboBoxProps,
   type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
-import { imeKey } from '@weasel-js/headless';
+import { imeKey } from '@weasel-js/ui-logic';
 import { Popover } from '../Popover';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';

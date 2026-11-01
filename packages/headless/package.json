@@ -1,10 +1,13 @@
 {
   "name": "@weasel-js/headless",
   "version": "1.15.0",
-  "description": "Headless components: list and focus behavior, and the measure/draw contract, that a DOM component and a canvas-drawn widget share. No React, no DOM.",
+  "description": "Render a scene to pixels from Node: renderSceneToPixels in a headless Chromium page, kept open across renders.",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/page.js",
+    "./dist/page.global.js"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,6 +15,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./page": {
+      "import": "./dist/page.js",
+      "types": "./dist/page.d.ts"
     },
     "./package.json": "./package.json"
   },
@@ -34,11 +41,12 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "tsup && tsup --config tsup.page.config.ts"
   },
   "dependencies": {
+    "@weasel-js/core": "1.15.0",
     "@weasel-js/geom": "1.15.0",
-    "@weasel-js/quantity": "1.15.0"
+    "playwright-core": "^1.63.0"
   },
   "publishConfig": {
     "access": "public",

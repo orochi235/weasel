@@ -1,4 +1,4 @@
-import type { MeasureEnv } from '@weasel-js/headless';
+import type { MeasureEnv } from '@weasel-js/ui-logic';
 import { cachedFontVariant, metricsOf } from '@weasel-js/font';
 import { expandVars, type ResolvedTheme } from '@weasel-js/theme';
 import { measureLabel } from './menu/measureLabel';

@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
-import { imeKey } from '@weasel-js/headless';
+import { imeKey } from '@weasel-js/ui-logic';
 import f from '../field.module.css';
 import { TokenChip } from './TokenChip';
 import { useTokenDrag } from './tokenDrag';

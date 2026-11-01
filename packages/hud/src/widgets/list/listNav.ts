@@ -1,7 +1,7 @@
 import {
   EMPTY_TYPEAHEAD, IDLE_PRESS, TYPEAHEAD_RESET_MS, pressStep, rowKey, typeaheadStep,
   type ListMode, type PressState, type TypeaheadBuffer,
-} from '@weasel-js/headless';
+} from '@weasel-js/ui-logic';
 import type { HudKeyEvent, HudPointerEvent } from '../../widget';
 import type { HudListRow } from './drawList';
 

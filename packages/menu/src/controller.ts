@@ -2,12 +2,12 @@ import { createNumberValues } from './numberValues';
 import { createHeldValues } from './heldValues';
 import { entriesAt, isRow, type MenuColorEntry, type MenuEntry, type MenuNumberEntry, type MenuTextEntry } from './entries';
 import { firstRow, type MenuStack } from './keys';
-import { EMPTY_TYPEAHEAD, timerScheduler, type Scheduler, type TypeaheadBuffer } from '@weasel-js/headless';
+import { EMPTY_TYPEAHEAD, timerScheduler, type Scheduler, type TypeaheadBuffer } from '@weasel-js/ui-logic';
 import { planKey } from './keyPlan';
 import type { Point, Rect } from './placement';
 import { inTriangle } from './triangle';
 
-export { TYPEAHEAD_RESET_MS } from '@weasel-js/headless';
+export { TYPEAHEAD_RESET_MS } from '@weasel-js/ui-logic';
 export { timerScheduler };
 /** How long the pointer rests on a submenu row before its panel opens, in milliseconds. */
 export const SUBMENU_OPEN_MS = 200;

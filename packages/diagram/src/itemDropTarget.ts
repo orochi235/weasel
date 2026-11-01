@@ -4,7 +4,7 @@
  * place among that container's members.
  */
 import type { Bounds, OngoingOverlay, RectPose, Scene, Vec2 } from '@weasel-js/core';
-import { nearestGap } from '@weasel-js/headless';
+import { nearestGap } from '@weasel-js/ui-logic';
 import { bodyAt } from './connectTargets';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { diagramContainerOf } from './containers/trait';

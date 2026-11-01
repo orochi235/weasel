@@ -10,7 +10,7 @@ import { CurveFill } from './CurveFill';
 import { Diamond } from './Diamond';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
-import { arrowMove } from '@weasel-js/headless';
+import { arrowMove } from '@weasel-js/ui-logic';
 import { handleHalf } from '../../handles';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';

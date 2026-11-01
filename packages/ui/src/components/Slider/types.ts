@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TrackRun, TrackShape } from '@weasel-js/geom';
-import type { SliderStop as Stop } from '@weasel-js/headless';
+import type { SliderStop as Stop } from '@weasel-js/ui-logic';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
 

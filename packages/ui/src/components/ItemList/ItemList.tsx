@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import { assignRef } from '@weasel-js/react';
-import { dropSide, LIST_ROLES, listMode } from '@weasel-js/headless';
+import { dropSide, LIST_ROLES, listMode } from '@weasel-js/ui-logic';
 import { modsOf, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
 import { DragGhost } from '../DragGhost';

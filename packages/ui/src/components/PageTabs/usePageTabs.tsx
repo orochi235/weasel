@@ -1,5 +1,5 @@
 import { pageName } from '@weasel-js/core';
-import { movedIndex, nudgeOf } from '@weasel-js/headless';
+import { movedIndex, nudgeOf } from '@weasel-js/ui-logic';
 import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { Key } from 'react-aria-components';
 import { useReorderDragList, type ReorderDragHandlers, type ReorderLine } from '../../useReorderDragList';

@@ -1,7 +1,7 @@
 import { clamp } from '@weasel-js/geom';
 import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
-import { COARSE_STEPS } from '@weasel-js/headless';
+import { COARSE_STEPS } from '@weasel-js/ui-logic';
 import { snapToStep } from '@weasel-js/quantity';
 import type { Orientation } from '../orientation';
 import s from './ResizeHandle.module.css';

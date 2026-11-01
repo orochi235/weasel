@@ -9,7 +9,7 @@ export interface NodeRasterHostOptions {
   browser?: Browser;
   /** Launch options for the Chromium the host starts. Ignored with `browser`. */
   launch?: LaunchOptions;
-  /** The page script's source: one classic script that imports `@weasel-js/node-render/page`.
+  /** The page script's source: one classic script that imports `@weasel-js/headless/page`.
    *  Default: that module bundled alone (`dist/page.global.js`). Bundle your own to register
    *  fonts, paint kinds or node shapes before the first render. */
   pageScript?: string;

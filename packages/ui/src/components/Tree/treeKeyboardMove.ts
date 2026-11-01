@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import type { TreeDropTarget } from '../../dropTarget';
-import { isNudgeChord } from '@weasel-js/headless';
+import { isNudgeChord } from '@weasel-js/ui-logic';
 import type { TreeNode } from './Tree';
 import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, parentsOf, type KeyboardMove } from './treeMoves';
 import type { TreeDragEffect } from './useTreeDrag';

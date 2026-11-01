@@ -6,7 +6,7 @@
     [
       "@weasel-js/core",
       "@weasel-js/editor",
-      "@weasel-js/node-render",
+      "@weasel-js/headless",
       "@weasel-js/font",
       "@weasel-js/paint",
       "@weasel-js/text",
@@ -16,7 +16,7 @@
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",
-      "@weasel-js/headless",
+      "@weasel-js/ui-logic",
       "@weasel-js/menu",
       "@weasel-js/quantity",
       "@weasel-js/simulation",

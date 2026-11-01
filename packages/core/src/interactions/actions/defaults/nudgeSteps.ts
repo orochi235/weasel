@@ -1,4 +1,4 @@
-import { arrowMove } from '@weasel-js/headless';
+import { arrowMove } from '@weasel-js/ui-logic';
 
 /** The arrow-key nudge shared by nodes and path anchors: one direction per
  *  key, a small step bare and a big one with Shift. */

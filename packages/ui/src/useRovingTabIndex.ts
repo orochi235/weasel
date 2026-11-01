@@ -1,4 +1,4 @@
-import { rovingKey } from '@weasel-js/headless';
+import { rovingKey } from '@weasel-js/ui-logic';
 import {
   useCallback,
   useEffect,

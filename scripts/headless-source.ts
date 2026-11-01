@@ -1,5 +1,5 @@
 /**
- * `@weasel-js/node-render` built from source, for the browser project's `renderInNode` command:
+ * `@weasel-js/headless` built from source, for the browser project's `renderInNode` command:
  * the published package runs from `dist`, built from its siblings' `dist`, and a test should
  * exercise the tree it is testing. Same entries, same bundle formats.
  */
@@ -11,10 +11,10 @@ import { weaselAliases } from './vite-aliases.ts';
 import { weaselIcons } from '../packages/icons-plugin/src/index.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const SRC = resolve(ROOT, 'packages/node-render/src');
+const SRC = resolve(ROOT, 'packages/headless/src');
 // One file, overwritten by each load: inside the repo so the bundle's bare `playwright-core`
 // resolves from its node_modules.
-const HOST_OUT = resolve(ROOT, 'node_modules/.cache/node-render/host.mjs');
+const HOST_OUT = resolve(ROOT, 'node_modules/.cache/headless/host.mjs');
 
 function aliases(): Plugin {
   const table = weaselAliases(ROOT).filter((a): a is { find: RegExp; replacement: string } => a.find instanceof RegExp);
@@ -47,27 +47,27 @@ async function bundle(entry: string, options: BuildOptions): Promise<string> {
     ...options,
   });
   const js = result.outputFiles?.find((f) => f.path.endsWith('.js') || f.path.endsWith('.mjs'));
-  if (!js) throw new Error(`node-render from source: esbuild wrote nothing for ${entry}`);
+  if (!js) throw new Error(`headless from source: esbuild wrote nothing for ${entry}`);
   return js.text;
 }
 
 let page: Promise<string> | undefined;
-let host: Promise<typeof import('../packages/node-render/src/index.ts')> | undefined;
+let host: Promise<typeof import('../packages/headless/src/index.ts')> | undefined;
 
 /** The page script, as `dist/page.global.js` holds it. */
-export function nodeRenderPageScript(): Promise<string> {
+export function headlessPageScript(): Promise<string> {
   page ??= bundle('page.ts', { format: 'iife', platform: 'browser', outfile: 'page.global.js' });
   return page;
 }
 
 /** The package's main entry, loaded in this process. */
-export function nodeRenderHost(): Promise<typeof import('../packages/node-render/src/index.ts')> {
+export function headlessHost(): Promise<typeof import('../packages/headless/src/index.ts')> {
   host ??= bundle('index.ts', {
     format: 'esm', platform: 'node', outfile: 'host.mjs', external: ['playwright-core'],
   }).then((text) => {
     mkdirSync(resolve(HOST_OUT, '..'), { recursive: true });
     writeFileSync(HOST_OUT, text);
-    return import(`${pathToFileURL(HOST_OUT).href}?at=${Date.now()}`) as Promise<typeof import('../packages/node-render/src/index.ts')>;
+    return import(`${pathToFileURL(HOST_OUT).href}?at=${Date.now()}`) as Promise<typeof import('../packages/headless/src/index.ts')>;
   });
   return host;
 }

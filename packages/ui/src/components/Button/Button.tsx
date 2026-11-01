@@ -2,7 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactElement, type ReactNod
 import {
   buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart, type ButtonSize as HeadlessButtonSize,
   type HeadlessComponent,
-} from '@weasel-js/headless';
+} from '@weasel-js/ui-logic';
 import { nodeText } from '../../nodeText';
 import type { DomTarget } from '../../domMeasureEnv';
 import s from './Button.module.css';
@@ -188,7 +188,7 @@ function ButtonPartSlot(
 }
 
 /**
- * {@link Button} on the measure/draw contract a HUD button implements too: `measure` is `@weasel-js/headless`'s
+ * {@link Button} on the measure/draw contract a HUD button implements too: `measure` is `@weasel-js/ui-logic`'s
  * `measureButton` (pass `domMeasureEnv(el)` for any element in the themed root), and `draw` renders the button.
  */
 export const domButton: HeadlessComponent<ButtonProps, ButtonLayout, DomTarget<HTMLButtonElement>, ReactElement> = {

@@ -1,4 +1,4 @@
-import { isNoopDrop, nudgeGap } from '@weasel-js/headless';
+import { isNoopDrop, nudgeGap } from '@weasel-js/ui-logic';
 import type { TreeDropTarget } from '../../dropTarget';
 import type { TreeNode } from './Tree';
 

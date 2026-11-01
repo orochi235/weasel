@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { exactly, measureRowList } from '@weasel-js/headless';
+import { exactly, measureRowList } from '@weasel-js/ui-logic';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createList } from './list';

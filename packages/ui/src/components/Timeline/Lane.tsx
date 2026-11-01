@@ -5,7 +5,7 @@ import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { spanPercent, toPercent, windowScale, type TimeWindow } from './timeScale';
 import { snapToNearest, useSnapRadiusPx } from '../../snap';
-import { arrowMove } from '@weasel-js/headless';
+import { arrowMove } from '@weasel-js/ui-logic';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 

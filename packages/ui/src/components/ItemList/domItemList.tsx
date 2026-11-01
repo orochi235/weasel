@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { measureRowList, type HeadlessComponent, type RowListFace, type RowListLayout } from '@weasel-js/headless';
+import { measureRowList, type HeadlessComponent, type RowListFace, type RowListLayout } from '@weasel-js/ui-logic';
 import { nodeText } from '../../nodeText';
 import type { DomTarget } from '../../domMeasureEnv';
 import { ItemList, type ItemListProps, type ItemListRow } from './ItemList';
@@ -27,7 +27,7 @@ export function itemListFaceOf(state: DomItemListState): RowListFace {
 }
 
 /**
- * {@link ItemList} on the measure/draw contract a HUD list implements too: `measure` is `@weasel-js/headless`'s
+ * {@link ItemList} on the measure/draw contract a HUD list implements too: `measure` is `@weasel-js/ui-logic`'s
  * `measureRowList` (pass `domMeasureEnv(el)`, and the column's width as both width bounds, since the list fills its
  * column), and `draw` renders the list, its rows laid out by `ItemList.module.css` from the same tokens.
  */

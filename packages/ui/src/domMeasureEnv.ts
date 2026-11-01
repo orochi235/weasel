@@ -1,5 +1,5 @@
 import type { Ref } from 'react';
-import type { MeasureEnv } from '@weasel-js/headless';
+import type { MeasureEnv } from '@weasel-js/ui-logic';
 
 let context: CanvasRenderingContext2D | null = null;
 

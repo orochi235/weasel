@@ -12,7 +12,7 @@ import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
-import { arrowMove } from '@weasel-js/headless';
+import { arrowMove } from '@weasel-js/ui-logic';
 import { handleHalf } from '../../handles';
 import { snapRadiusPx as kitSnapRadiusPx, snapToNearest } from '../../snap';
 import s from './CurveEditor.module.css';

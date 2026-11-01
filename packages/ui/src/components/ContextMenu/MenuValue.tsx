@@ -2,7 +2,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import {
   menuNumberDisplay, type MenuController, type MenuNumberEntry, type MenuTextEntry,
 } from '@weasel-js/menu';
-import { editEnd, imeKey, type EditEnd } from '@weasel-js/headless';
+import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-logic';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField/UnitField';
 import s from './ContextMenu.module.css';

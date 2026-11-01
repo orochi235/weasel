@@ -1,5 +1,5 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { LIST_ROLES, fixedWidth, listMode, measureRowList, rowAtY, type ListMode, type RowListLayout } from '@weasel-js/headless';
+import { LIST_ROLES, fixedWidth, listMode, measureRowList, rowAtY, type ListMode, type RowListLayout } from '@weasel-js/ui-logic';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
 import { createRevision } from '../../widget';
 import type {

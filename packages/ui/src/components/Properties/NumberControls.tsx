@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { imeKey } from '@weasel-js/headless';
+import { imeKey } from '@weasel-js/ui-logic';
 import { decimal, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { UnitField } from '../NumberField';

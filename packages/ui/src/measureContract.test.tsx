@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { UNBOUNDED, type MeasureEnv } from '@weasel-js/headless';
+import { UNBOUNDED, type MeasureEnv } from '@weasel-js/ui-logic';
 import { buttonFaceOf, domButton } from './components/Button';
 import { domItemList, itemListFaceOf } from './components/ItemList';
 import { nodeText } from './nodeText';

@@ -1,6 +1,6 @@
 import type { MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
 import { isApplePlatform } from '@weasel-js/gestures';
-import { editEnd } from '@weasel-js/headless';
+import { editEnd } from '@weasel-js/ui-logic';
 
 /** A text row being typed into in a HUD menu: which row, what has been typed so far, and the caret and the other
  *  end of the selection, as code-point offsets into `draft`. `anchor` equals `caret` when nothing is selected.

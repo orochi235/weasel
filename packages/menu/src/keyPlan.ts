@@ -2,7 +2,7 @@ import { accessMatch } from './access';
 import { entriesAt } from './entries';
 import type { MenuEntry } from './entries';
 import { firstRow, keyStep, type KeyEffect, type MenuStack } from './keys';
-import { EMPTY_TYPEAHEAD, type TypeaheadBuffer } from '@weasel-js/headless';
+import { EMPTY_TYPEAHEAD, type TypeaheadBuffer } from '@weasel-js/ui-logic';
 import { typeaheadStep } from './typeahead';
 
 export interface KeyPlan {

@@ -1,4 +1,4 @@
-# @weasel-js/headless
+# @weasel-js/ui-logic
 
 ## 1.15.0
 

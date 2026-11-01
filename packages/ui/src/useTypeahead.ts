@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, typeaheadStep, type TypeaheadShape } from '@weasel-js/headless';
+import { EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, typeaheadStep, type TypeaheadShape } from '@weasel-js/ui-logic';
 import { useKitSetting } from '@weasel-js/react';
 
 /** How long a typed prefix lasts before the next key starts a new one. */

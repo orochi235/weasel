@@ -1,7 +1,7 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { keysHeld, modifierStateOf, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
-import { gapByMidpoint, isNoopDrop } from '@weasel-js/headless';
+import { gapByMidpoint, isNoopDrop } from '@weasel-js/ui-logic';
 import type { PrefOrder } from '@weasel-js/prefs';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { swallowNextClick } from '../../useReorderDragList';

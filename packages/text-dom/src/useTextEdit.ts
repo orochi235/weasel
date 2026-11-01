@@ -12,7 +12,7 @@ import {
   numericWeight, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
-import { editEnd, imeKey } from '@weasel-js/headless';
+import { editEnd, imeKey } from '@weasel-js/ui-logic';
 import { layoutTextPose } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';

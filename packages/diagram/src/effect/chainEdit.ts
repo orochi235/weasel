@@ -1,6 +1,6 @@
 /** The main line as a sequence that can be reordered: which ports carry the
  *  signal between neighbors, and the rewiring that moves a stage along it. */
-import { isNoopDrop, moveItems } from '@weasel-js/headless';
+import { isNoopDrop, moveItems } from '@weasel-js/ui-logic';
 import { drawableWires, isControl } from './draw';
 import { canWire, nextWireId, pruneRoutes } from './edit';
 import { mainChain } from './mainChain';

@@ -6,7 +6,7 @@ import { roundRectPath } from '@weasel-js/geom';
 import {
   envPx, exactly, IDLE_PRESS, isPressKey, measureButton, pressStep,
   type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent, type PressInput, type PressState,
-} from '@weasel-js/headless';
+} from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
 
 /** The events a button reports through `on` / `off`. */
@@ -75,7 +75,7 @@ const fontOverride = (fontSize: number | undefined) =>
   (fontSize !== undefined ? { '--wzl-field-font-size': `${fontSize}px` } : undefined);
 
 /**
- * A button on a HUD, on the contract ui's `Button` implements in the DOM: one `measure` from `@weasel-js/headless`,
+ * A button on a HUD, on the contract ui's `Button` implements in the DOM: one `measure` from `@weasel-js/ui-logic`,
  * and a `draw` that lays its parts into `target.bounds` and paints them as draw commands.
  */
 export const hudButton: HeadlessComponent<HudButtonState, ButtonLayout, HudButtonTarget, DrawCommand[]> = {

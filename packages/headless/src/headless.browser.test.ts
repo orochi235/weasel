@@ -1,5 +1,5 @@
 /**
- * A scene rendered from Node through `@weasel-js/node-render` comes back with the pixels this
+ * A scene rendered from Node through `@weasel-js/headless` comes back with the pixels this
  * browser draws for it through `renderSceneToPixels`.
  *
  * Both sides are Playwright's Chromium launched with its default switches on the same machine, so

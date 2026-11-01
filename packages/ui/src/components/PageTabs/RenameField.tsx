@@ -1,5 +1,5 @@
 import { useEffect, useRef, type SyntheticEvent } from 'react';
-import { editEnd, imeKey, type EditEnd } from '@weasel-js/headless';
+import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-logic';
 import s from './PageTabs.module.css';
 
 /** Keep an event from the tab around the field: the tab would read the keys and presses as its own. */

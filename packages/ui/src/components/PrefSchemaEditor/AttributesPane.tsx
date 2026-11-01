@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
-import { imeKey } from '@weasel-js/headless';
+import { imeKey } from '@weasel-js/ui-logic';
 import { isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';

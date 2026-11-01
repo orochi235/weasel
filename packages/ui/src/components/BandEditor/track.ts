@@ -1,5 +1,5 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { arrowSteps } from '@weasel-js/headless';
+import { arrowSteps } from '@weasel-js/ui-logic';
 import { clamp01 } from './scale';
 
 /** One arrow-key step, as a fraction of the track. */

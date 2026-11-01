@@ -57,7 +57,7 @@ export const RULES = [
   ['packages/gestures/src', 'Tools & gestures'],
   ['packages/history/src', 'History'],
   ['packages/icons/src', 'Extension points'],
-  ['packages/headless/src', 'Menu'],
+  ['packages/ui-logic/src', 'Menu'],
   ['packages/menu/src', 'Menu'],
   ['packages/paint/src', 'Paint & fills'],
   ['packages/quantity/src', 'Scene'],

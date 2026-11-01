@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { moveItems, movedIndex, nudgeGap, nudgeOf } from '@weasel-js/headless';
+import { moveItems, movedIndex, nudgeGap, nudgeOf } from '@weasel-js/ui-logic';
 import { useReorderDragList, type ReorderItem } from '../../useReorderDragList';
 
 /** Where focus goes once the list has committed an edit. `removed`: the entry that held it is gone. */

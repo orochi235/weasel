@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
-import { attract, usableStops } from '@weasel-js/headless';
+import { attract, usableStops } from '@weasel-js/ui-logic';
 import { useKitSetting } from '@weasel-js/react';
 import { STOP_SNAP_PX } from '../Slider/stops';
 import shared from '../range.module.css';

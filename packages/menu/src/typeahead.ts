@@ -1,6 +1,6 @@
 import {
   typeaheadMatch as matchIn, typeaheadStep as stepIn, type TypeaheadBuffer, type TypeaheadShape,
-} from '@weasel-js/headless';
+} from '@weasel-js/ui-logic';
 import { isRow, type MenuEntry } from './entries';
 
 const MENU_TYPEAHEAD: TypeaheadShape<MenuEntry> = { canStop: isRow, label: (e) => (isRow(e) ? e.label : '') };

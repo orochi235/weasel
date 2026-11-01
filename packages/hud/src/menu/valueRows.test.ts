@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { OpenMenu } from '@weasel-js/core';
 import { percent } from '@weasel-js/quantity';
-import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/headless';
+import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-logic';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import type { HudDrawCtx, HudKeyEvent } from '../widget';

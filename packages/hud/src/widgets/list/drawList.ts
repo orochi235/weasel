@@ -4,7 +4,7 @@ import { roundRectPath } from '@weasel-js/geom';
 import {
   envPx, exactly, measureRowList,
   type HeadlessComponent, type ListMode, type RowFace, type RowListLayout,
-} from '@weasel-js/headless';
+} from '@weasel-js/ui-logic';
 import { resolveCurrentColor } from '@weasel-js/theme';
 import { hudMeasureEnv } from '../../measureEnv';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
@@ -46,7 +46,7 @@ const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
 
 /**
  * A row list on a HUD, on the contract ui's `ItemList` implements in the DOM: one `measure` from
- * `@weasel-js/headless`, and a `draw` that lays the rows into `target.bounds` and paints them as `ItemList.module.css`
+ * `@weasel-js/ui-logic`, and a `draw` that lays the rows into `target.bounds` and paints them as `ItemList.module.css`
  * styles them: the selected row on `--wzl-border`, the hovered on `--wzl-surface`, the keyboard's row ringed.
  */
 export const hudList: HeadlessComponent<HudListState, RowListLayout, HudListTarget, DrawCommand[]> = {
