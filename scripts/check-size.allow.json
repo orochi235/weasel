@@ -103,7 +103,7 @@
     "longestFunction": 148
   },
   "packages/hud/src/hud.ts": {
-    "longestFunction": 165
+    "longestFunction": 134
   },
   "packages/hud/src/loupe/createLoupe.ts": {
     "longestFunction": 229
@@ -238,7 +238,7 @@
     "longestFunction": 165
   },
   "packages/ui/src/components/ItemList/ItemList.tsx": {
-    "longestFunction": 184
+    "longestFunction": 182
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
     "lines": 403,

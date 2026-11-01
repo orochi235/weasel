@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/headless",
   "version": "1.15.0",
-  "description": "Headless components: list behavior (roving highlight, typeahead) that a DOM component and a canvas-drawn widget share. No React, no DOM.",
+  "description": "Headless components: list and focus behavior, and the measure/draw contract, that a DOM component and a canvas-drawn widget share. No React, no DOM.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

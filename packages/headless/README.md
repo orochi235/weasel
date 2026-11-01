@@ -1,11 +1,9 @@
 # @weasel-js/headless
 
 Component behavior with no substrate: what a DOM component and a canvas-drawn widget both run,
-each drawing it its own way. Today that is a list's roving highlight and typeahead, keyboard
-focus as one contract, and how a text field's edit ends. No React, no DOM.
-
 each drawing it its own way. Today that is a list's roving highlight and typeahead, a tree's
-expand and collapse keys, and keyboard focus as one contract. No React, no DOM.
+expand and collapse keys, keyboard focus as one contract, how a text field's edit ends, and the
+measure/draw contract a button and a row list implement on both targets. No React, no DOM.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -84,6 +82,19 @@ indices `at` into gap `to`; `isNoopDrop` says whether that leaves them where the
 one-place move takes them to, and `nudgeOf` reads the Alt+arrow chord that asks for one. A pointer finds its gap by
 `gapByMidpoint`, for items side by side, each split at its middle, or by `nearestGap`, for gaps drawn at places of
 their own.
+
+## Measure and draw
+
+`HeadlessComponent<S, L, T, O>` is the contract a control implements on every target: `measure(state,
+constraints, env)` gives its box (width, height, first baseline) and where its parts sit, and `draw(state,
+target)` renders it in the target's own output. `measure` is shared: it reads only the state and a
+`MeasureEnv`, the target's tokens and text metrics, so a DOM component and a canvas widget in one theme
+measure alike. `draw` is per target and does not take the measured box: a target that positions by
+coordinates measures with `exactly(w, h)` itself, and the DOM lays out by CSS from the same tokens.
+
+`measureButton` and `measureRowList` are the two so far, with `buttonParts` and `listMode` saying which
+parts and roles a state shows; `pressStep` is a press's hover-and-hold state machine. `@weasel-js/ui`'s
+`domButton` and `domItemList` and `@weasel-js/hud`'s `hudButton` and `hudList` implement them.
 
 ## Hold-to-repeat
 

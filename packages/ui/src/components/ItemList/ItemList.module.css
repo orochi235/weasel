@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+  line-height: var(--wzl-leading-snug);
   user-select: none;
   -webkit-user-select: none;
   position: relative;

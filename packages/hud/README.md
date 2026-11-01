@@ -21,7 +21,8 @@ import { /* … */ } from '@weasel-js/hud/react';
 
 ## Widgets
 
-`rect`, `text`, `image`, `label`, `button`, and `window` — a draggable,
+`rect`, `text`, `image`, `label`, `button`, `list` — a column of rows with ui's `ItemList`'s keyboard
+and semantics — and `window`, a draggable,
 resizable frame whose interior is painted by an opt-in `content` callback. See
 [`src/widgets/window`](src/widgets/window/README.md) for how content composes
 with the frame, and `createLoupe` in [`src/loupe`](src/loupe/createLoupe.ts) for a
@@ -30,6 +31,10 @@ consumer.
 Widgets draw from a data-free context (`{ dims, defaultFont, tokens }`), which
 is what lets a HUD render headlessly and identically. A window's `content`
 painter is the single, explicit exception.
+
+`button` and `list` implement the measure/draw contract from `@weasel-js/headless` that ui's `Button`
+and `ItemList` implement in the DOM: `hudButton.measure` and `hudList.measure`, with `hudMeasureEnv(ctx)`,
+give the box either target draws, so a host can size a widget before creating it.
 
 ## HUD or DOM text?
 

@@ -8,6 +8,7 @@ import { createImage, type ImageOptions, type ImageWidget } from './widgets/imag
 import { createLabel, type LabelOptions, type LabelWidget } from './widgets/label';
 import { createButton, type ButtonOptions, type ButtonWidget } from './widgets/button';
 import { createWindow, type WindowOptions, type WindowWidget } from './widgets/window/window';
+import { createList, type ListOptions, type ListWidget } from './widgets/list/list';
 
 /** How a focus change came about: whether the focused widget shows its ring. */
 export type HudFocusOptions = FocusScopeOptions;
@@ -57,6 +58,8 @@ export interface Hud extends FocusScope<Widget> {
   button(opts: ButtonOptions): ButtonWidget;
   /** Create a window widget, add it to the HUD, and wire onChange → markDirty. */
   window(opts: WindowOptions): WindowWidget;
+  /** Create a list widget, add it to the HUD, and wire onChange → markDirty. */
+  list(opts: ListOptions): ListWidget;
 }
 
 /** Create an empty, unbound HUD. */
@@ -115,10 +118,14 @@ export function createHud(): Hud {
   // for unit tests and advanced consumers who want to manage redraws
   // explicitly).
 
-  /** Build the removeFromHud callback for a factory-created widget. */
-  const makeRemoveFromHud = (getWidget: () => Widget | null) => () => {
-    const w = getWidget();
-    if (w && drop(w)) requestRedraw();
+  /** A factory method: `create` with redraws and removal wired in, its widget added to the HUD. */
+  const factory = <O, W extends Widget>(
+    create: (opts: O & { onChange: () => void; removeFromHud: () => void }) => W, from: string,
+  ) => (opts: O): W => {
+    let w: W | null = null;
+    w = create({ ...opts, onChange: () => requestRedraw(), removeFromHud: () => { if (w && drop(w)) requestRedraw(); } });
+    push(w, from);
+    return w;
   };
 
   /** Every path that puts a widget in the list, so the detached guard is one
@@ -181,47 +188,12 @@ export function createHud(): Hud {
         if (frameSubs.size === 0) { hostFrameSub?.(); hostFrameSub = null; }
       };
     },
-    rect(opts) {
-      let w: RectWidget | null = null;
-      const removeFromHud = makeRemoveFromHud(() => w);
-      w = createRect({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      push(w, 'rect()');
-      return w;
-    },
-    text(opts) {
-      let w: TextWidget | null = null;
-      const removeFromHud = makeRemoveFromHud(() => w);
-      w = createText({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      push(w, 'text()');
-      return w;
-    },
-    image(opts) {
-      let w: ImageWidget | null = null;
-      const removeFromHud = makeRemoveFromHud(() => w);
-      w = createImage({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      push(w, 'image()');
-      return w;
-    },
-    label(opts) {
-      let w: LabelWidget | null = null;
-      const removeFromHud = makeRemoveFromHud(() => w);
-      w = createLabel({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      push(w, 'label()');
-      return w;
-    },
-    button(opts) {
-      let w: ButtonWidget | null = null;
-      const removeFromHud = makeRemoveFromHud(() => w);
-      w = createButton({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      push(w, 'button()');
-      return w;
-    },
-    window(opts) {
-      let w: WindowWidget | null = null;
-      const removeFromHud = makeRemoveFromHud(() => w);
-      w = createWindow({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      push(w, 'window()');
-      return w;
-    },
+    rect: factory(createRect, 'rect()'),
+    text: factory(createText, 'text()'),
+    image: factory(createImage, 'image()'),
+    label: factory(createLabel, 'label()'),
+    button: factory(createButton, 'button()'),
+    window: factory(createWindow, 'window()'),
+    list: factory(createList, 'list()'),
   };
 }

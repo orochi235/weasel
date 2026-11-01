@@ -404,21 +404,6 @@ Owner tags, after the priority (2026-10-26):
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
   Closes when Shift+F10 on a real Windows or Linux Chrome opens the menu once.
 
-- **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** `@weasel-js/headless` (added
-  2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type (`rovingKey`,
-  `stepStop`, `typeaheadStep`), a tree's Right/Left (`treeKey`) and a row list's whole key dispatch (`rowKey`),
-  reordering a list (`moveItems`, `isNoopDrop`, `nudgeGap`, `gapByMidpoint`, `nearestGap`), how a text field's edit
-  ends (`editEnd`), the arrow-key step sizes (`arrowSteps`, `rangeKey`), a slider's value and key math (`sliderKey`),
-  and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
-  `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` and `useRovingTabIndex` step and
-  type ahead through it (`useRowNavigation` takes every key but the nudge from `rowKey`), `Hud` is a `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM
-  elements. Held steppers repeat through `createStepRepeat`, in ui's `UnitField` and on the hud menu's number chips.
-  Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a
-  button and a list onto it. A page that has both DOM controls and a hud canvas still joins the two at `attach.ts`'s
-  `wireFocus`, not through `FocusScope`.
-  Closes when a button and a list each implement one measure/draw contract as both a DOM component and a
-  hud widget.
-
 - **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
