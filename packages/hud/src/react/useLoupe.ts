@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { drawOneLayer, useLatest } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
-import type { Hud } from '@weasel-js/hud';
-import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
+import type { Hud } from '../hud';
+import { createLoupe, type LoupeHandle, type LoupeMode } from '../loupe/createLoupe';
 
 /** What the lens is told to be: whoever owns these drives it. */
 export interface LoupeSettings {

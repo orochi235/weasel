@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
-import type { LoupeEvents, LoupeSettings } from '../useLoupe';
+import type { LoupeEvents, LoupeSettings } from '@weasel-js/hud/react';
 import { CommandBar } from '../CommandBar';
 import { LoupeProvider } from '../LoupeProvider';
 import { drawPrefs } from '../prefs';
@@ -12,13 +12,13 @@ import { renderWithIcons } from '../testIcons';
 
 // The lens itself needs a live canvas; what is under test is the state the asset drives into it.
 const lens = vi.hoisted(() => ({ settings: null as LoupeSettings | null, events: null as LoupeEvents | null }));
-vi.mock('../useLoupe', () => ({
+vi.mock('@weasel-js/hud/react', () => ({
+  useHud: () => ({}),
   useLoupe: (_ref: unknown, _hud: unknown, _source: unknown, settings: LoupeSettings, events: LoupeEvents) => {
     lens.settings = settings;
     lens.events = events;
   },
 }));
-vi.mock('@weasel-js/hud/react', () => ({ useHud: () => ({}) }));
 vi.mock('../tools/colorContext', () => ({ useColorContext: () => ({ focused: 'fill', setFocusedColor: () => {} }) }));
 
 // Same in-memory Storage shim as prefs.test.ts: jsdom 26 + Node 26 can

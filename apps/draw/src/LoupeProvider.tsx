@@ -9,11 +9,10 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import type { LoupeMode } from '@weasel-js/hud';
-import { useHud } from '@weasel-js/hud/react';
+import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
 import { pref } from '@weasel-js/prefs';
 import type { SchemaBinding } from './surfaces/types';
 import { useColorContext } from './tools/colorContext';
-import { type LoupeSettings, useLoupe } from './useLoupe';
 
 /** The action that copies the hex under the loupe. */
 export const LOUPE_COPY_ACTION = 'draw.loupe.copy';
