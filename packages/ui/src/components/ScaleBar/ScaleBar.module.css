@@ -4,7 +4,6 @@
   gap: var(--wzl-space-2);
   color: var(--wzl-fg);
   font-size: var(--wzl-font-size-xs);
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -17,6 +16,7 @@
 }
 
 .label {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-width: 6ch;
 }
 
