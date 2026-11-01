@@ -164,6 +164,12 @@ distance, so the lab's zoom steps dolly it and its reset returns to the home
 distance. `CameraView.zoomOf(view)` reads that zoom off a stored view rather
 than the camera, so chrome rendering beside the trial is never a change late.
 
+Its children render outside its input scope, unlike a `<Stage>`'s. They are
+the instrument's whole DOM — toolbars, timelines, a node diagram — not content
+the camera moves, and a `<SceneCanvas>` among them would otherwise hear the
+camera's bindings beside its own: a route conflict on every gesture, and a
+drag on the diagram turning the camera.
+
 **A 3D view in a trial draws through the trial's orbit camera.** Whatever
 renders it — three.js or raw GL in the instrument's DOM, or a surface tile —
 calls `useOrbitView()` (`src/trial/useOrbitView.tsx`) for the camera and a
