@@ -16,7 +16,7 @@ describe('kindSchemas', () => {
   it('describes a number leaf with base, default and number attributes', () => {
     const { shared, own, readOnly } = attributeSchema(num);
     expect(Object.keys(shared)).toEqual(expect.arrayContaining(['name', 'description', 'tags', 'hidden']));
-    expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'control', 'endless', 'measure']);
+    expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'stops', 'control', 'endless', 'measure']);
     expect(own.default).toMatchObject({ kind: 'number', min: 0, max: 10 });
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
   });

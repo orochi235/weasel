@@ -120,6 +120,14 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
     return this.ann(word === undefined ? { endless: at } : { endless: at, infinity: word });
   }
 
+  /** Values the slider's drag catches on, declared in the stored unit like
+   *  `range` — `.range(-1, 1).stops([0])`. Each is drawn on the track; a drag
+   *  passing near one lands on it unless alt is held, and a key step crossing
+   *  one stops there. */
+  stops(stops: readonly number[]): this {
+    return this.ann({ stops });
+  }
+
   /** Force a slider even without both bounds. */
   slider(): this {
     return this.ann({ control: 'slider' });

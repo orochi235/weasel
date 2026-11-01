@@ -6,7 +6,6 @@
 import type { IconRef } from '@weasel-js/icons';
 import type { PrefAction, PrefActions } from './action';
 import type { PrefAlias } from './alias';
-import type { PrefBoundAt } from './bounds';
 import type { PrefCondition } from './condition';
 import type { PrefSection } from './groups';
 import type { PrefLabel, PrefSeparator } from './label';
@@ -14,8 +13,9 @@ import type { PrefList } from './list';
 import type { PrefLocus } from './locus';
 import type { PrefMap } from './map';
 import type { PrefUnion } from './union';
-import type { PrefNumberUnit } from './unit';
-import type { Display, InfinityText } from '@weasel-js/quantity';
+import type { PrefNumber } from './number';
+
+export type { PrefNumber, PrefNumberBase, PrefNumberControl } from './number';
 
 /** The value types a built-in pref leaf can hold. */
 export type PrefKind =
@@ -122,50 +122,12 @@ export interface PrefValueBase<K extends string, Value> extends PrefBase<K, Valu
   readout?: boolean;
 }
 
-/** How a schema-driven UI should present a number pref. */
-export type PrefNumberControl = 'input' | 'slider';
 /** How a schema-driven UI should present a boolean pref. */
 export type PrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
 /** How a schema-driven UI should present a string pref. */
 export type PrefStringControl = 'input' | 'textarea';
 /** How a schema-driven UI should present an enum pref. */
 export type PrefEnumControl = 'select' | 'radio' | 'toggle' | 'menu';
-
-/** What every number leaf carries; {@link PrefNumber} adds `clearable`. */
-export interface PrefNumberBase extends PrefValueBase<'number', number | undefined> {
-  min?: number;
-  max?: number;
-  /** A lower bound read from where the value is held — a scene node's own
-   *  minimum — taken with `min`, the larger winning. A surface resolves it
-   *  per holder with `prefNumberAt`. */
-  minAt?: PrefBoundAt;
-  /** The upper counterpart of `minAt`, taken with `max`, the smaller winning. */
-  maxAt?: PrefBoundAt;
-  step?: number;
-  control?: PrefNumberControl;
-  /** How the value shows, speaks and reads back when typed — `compact()`
-   *  reads `2.00M`. Presentation only: the stored value stays a number. */
-  display?: Display;
-  unit?: PrefNumberUnit;
-  /** What the number measures. `'length'` is a length stored in world units: a
-   *  surface showing a scene node's field gives it the unit of the unit scopes
-   *  the node sits in (`prefLeafInScopes`). A `unit` of the leaf's own wins. */
-  measure?: 'length';
-  /** Which end of a slider gets a stop for ±Infinity, one step beyond the range. */
-  endless?: 'min' | 'max' | 'both';
-  /** The word infinity shows as — `'never'`, `'uncapped'`. Default `∞`. */
-  infinity?: InfinityText;
-}
-
-/**
- * A numeric pref, optionally bounded and stepped, and optionally stored in a
- * different unit from the one shown.
- *
- * `clearable` says the field may hold no number, which a person sets by
- * emptying it: the value is then `undefined`, which the owner reads as unset,
- * and its default may be too.
- */
-export type PrefNumber = PrefNumberBase & ({ clearable?: false; default: number } | { clearable: true });
 
 /**
  * Stored-value bridge for a boolean leaf whose field is not a boolean — the

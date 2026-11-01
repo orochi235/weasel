@@ -260,7 +260,7 @@
     "longestFunction": 188
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
-    "longestFunction": 158
+    "longestFunction": 132
   },
   "packages/ui/src/components/Select/Select.tsx": {
     "lines": 453,

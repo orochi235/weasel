@@ -16,6 +16,7 @@ import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
+import { catchStop, useTrackStops } from './sliderStops';
 
 /**
  * A slider's props with its drag held locally. A caller taking settled values
@@ -174,6 +175,7 @@ function SliderTrack(p: PropertyNumberFieldProps) {
   const live = p.onInput ?? p.onChange;
   const commit = p.onInput ? p.onChange : undefined;
   const range = useCommitListener(commit && ((raw) => commit(settle(Number(raw)))));
+  const stops = useTrackStops(p.stops, min, max);
   const known = isKnown(p);
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
@@ -185,7 +187,8 @@ function SliderTrack(p: PropertyNumberFieldProps) {
       ref={range}
       type="range"
       id={p.id}
-      className={p.className ? `${shared.range} ${p.className}` : shared.range}
+      className={[shared.range, stops.className, p.className].filter(Boolean).join(' ')}
+      style={stops.style}
       aria-label={p.name}
       // The readout is the keyboard's way in, and steps as the track would; a
       // tab stop here too would be two stops for one value.
@@ -195,8 +198,9 @@ function SliderTrack(p: PropertyNumberFieldProps) {
       step={step}
       value={value}
       disabled={p.mixed || p.disabled}
+      onPointerDown={stops.onPointerDown}
       onChange={(e) => {
-        const v = settle(Number(e.target.value));
+        const v = settle(stops.settle(e.currentTarget, value, Number(e.target.value)));
         dlog('property-panel', 'slider', { name: p.name, value: v });
         live(v);
       }}
@@ -216,6 +220,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       step={step}
       settle={settle}
       onTrack={onTrack}
+      stops={p.stops}
       display={p.display ?? stepDisplay(step)}
       format={p.format}
       unit={p.unit}
@@ -258,6 +263,8 @@ interface EditableReadoutProps {
   settle: (v: number) => number;
   /** Where a value sits on the track. */
   onTrack: (v: number) => number;
+  /** Where a key step crossing one stops, as the track's keys do. */
+  stops?: readonly number[];
   display: Display;
   format?: (value: number) => ReactNode;
   unit?: ReactNode;
@@ -270,7 +277,7 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ name, value, min, max, step, settle, onTrack, display, format, unit, disabled, onCommit }: EditableReadoutProps) {
+function EditableReadout({ name, value, min, max, step, settle, onTrack, stops = [], display, format, unit, disabled, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
@@ -330,8 +337,10 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, display
             e.currentTarget.blur();
           } else {
             const typed = draft === null ? value : read(draft);
-            const next = spinKey(e.key, onTrack(Number.isNaN(typed) ? value : typed), { step, min, max });
-            if (next === null) return;
+            const from = onTrack(Number.isNaN(typed) ? value : typed);
+            const spun = spinKey(e.key, from, { step, min, max });
+            if (spun === null) return;
+            const next = catchStop(from, spun, stops);
             e.preventDefault();
             onCommit(settle(next));
             // A step is committed already; the box shows the value it comes back as.

@@ -308,6 +308,19 @@ Users can hide individual layers via the sidebar's `<LayerList>` and reorder the
 
 To pin a layer (always visible, not reorderable), give `layers.ids` a `LayerDescriptor` in place of the bare id: `{ id: "axes", label: "Axes", alwaysOn: true }`.
 
+### A slider that catches on the values that mean something
+
+`.stops()` gives a number's slider detents, declared in the stored unit like `.range()`:
+
+```tsx
+const config = f.schema({
+  level: f.number(0).range(-0.12, 0.12).step(0.001).suffix("em").stops([0]),
+  depth: f.number(0.5).range(0, 1).step(0.01).unit({ suffix: "%", scale: 0.01, precision: 0 }).stops([0.5]),
+});
+```
+
+Each stop is drawn on the track. A drag passing within the `targets.sliderStopSnapPx` kit setting of one lands on it, and holding alt passes it by. The readout's arrow keys stop on one they cross. Given `draftConfig`, the panel sends the drag there and calls `setConfig` once, on release, so the drag is one undo step.
+
 ### Add a custom undoable action via `ctx.emit(...)`
 
 By default, the trial snapshots state on `'state.change'`. To make a non-state operation undoable, emit a custom event from the instrument and list it in `undo.snapshotOn`:
