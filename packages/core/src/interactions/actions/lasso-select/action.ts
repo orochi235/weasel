@@ -28,7 +28,7 @@ import { applyOpsTo } from 'core/applyOps';
 import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../../gestures/types';
 import { LASSO_VERTICES } from './behaviors/selectFromLasso';
 import { reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
-import { selectionFromHits } from '../hitSelection';
+import { hitTargets, selectionFromHits } from '../hitSelection';
 
 /** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
 function polygonAABB(
@@ -46,16 +46,17 @@ function polygonAABB(
 }
 
 /** The dep's polygon test, or its rect test over the polygon's AABB when it
- *  has none. What both the default commit and a behavior's adapter ask. */
+ *  has none, each hit taken at the depth a click selects. What both the
+ *  default commit and a behavior's adapter ask. */
 function hitTestPolygon(
   dep: LassoSelectDep,
   vertices: ReadonlyArray<Point2>,
   mode: LassoHitMode,
   view: ViewApi | undefined,
 ): string[] {
-  if (dep.hitTestLasso) return dep.hitTestLasso(vertices, mode, view);
+  if (dep.hitTestLasso) return hitTargets(dep.hitTestLasso(vertices, mode, view), dep.targetOf);
   const aabb = polygonAABB(vertices as Point2[]);
-  return aabb ? dep.hitTestArea(aabb, view) : [];
+  return aabb ? hitTargets(dep.hitTestArea(aabb, view), dep.targetOf) : [];
 }
 
 /** The adapter a behavior sees: selection and hit-testing from the dep,
@@ -64,7 +65,7 @@ function behaviorAdapter(dep: LassoSelectDep, view: ViewApi | undefined): LassoS
   const adapter: LassoSelectAdapter = {
     getSelection: () => dep.getSelection(),
     setSelection: (ids) => dep.setSelection(ids),
-    hitTestArea: (rect) => dep.hitTestArea(rect, view),
+    hitTestArea: (rect) => hitTargets(dep.hitTestArea(rect, view), dep.targetOf),
     hitTestLasso: (polygon, mode) => hitTestPolygon(dep, polygon, mode, view),
     applyOps: (ops: Op[]) => applyOpsTo(adapter, ops),
   };

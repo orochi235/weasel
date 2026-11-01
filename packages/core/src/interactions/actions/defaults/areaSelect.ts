@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep, ViewApi } from '../depSchema';
-import { selectionFromHits } from '../hitSelection';
+import { hitTargets, selectionFromHits } from '../hitSelection';
 
 interface AreaSelectScratch {
   dep: AreaSelectDep;
@@ -20,7 +20,8 @@ interface AreaSelectScratch {
 
 /**
  * Marquee selection: replace, or extend with shift held. Hit-testing and
- * selection writes are delegated to the `areaSelect` dep, and the selection
+ * selection writes are delegated to the `areaSelect` dep, each hit taken at
+ * the depth a click selects (`AreaSelectDep.targetOf`), and the selection
  * write makes no undo entry.
  */
 export const areaSelectAction: Action & { requires: string[] } = {
@@ -96,7 +97,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
             return;
           }
 
-          const hits = d.hitTestArea({ x, y, width, height }, view) as NodeId[];
+          const hits = hitTargets(d.hitTestArea({ x, y, width, height }, view), d.targetOf) as NodeId[];
 
           d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
         },

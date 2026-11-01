@@ -30,16 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [agent] A clone's selection outline lands off its ghost on an offset parent.** `cloneAction`
-  previews each copy at its stored pose (`landed()` in `packages/core/src/interactions/actions/clone/action.ts`
-  returns `frame.local(...)`), and the ghost painter reads it that way. The in-flight selection bounds read the
-  same `previewPose` as a world pose (`previewBoundsOf` in `packages/core/src/canvas/useInFlightBounds.ts`
-  boxes it with no frame), so under a parent away from the origin the selection outline sits short of the ghost
-  by the parent's offset. Seen in collego (2026-11-01): Alt-dragging a cabinet on a face at (130, 290) mm drew the
-  outline that far up and left of the ghost. collego works around it by clearing the selection for the drag
-  (`packages/app/src/canvas/clone.ts`). Closes when one convention holds for `previewPose` across its readers,
-  and a clone under a translated parent outlines its ghost exactly.
-
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
@@ -408,12 +398,6 @@ Owner tags, after the priority (2026-10-26):
   app writing it directly skips the scene's rule that a selection holds only outermost nodes. A demo teaches this
   shape, so consumers copy it. Closes when no demo calls `useSelection` without `scene`, or its blurb says the
   local selection is the point.
-
-- **(P2) [agent] A marquee selects marks inside a group that isn't entered.** A click on a group not entered
-  selects the group, but a marquee across it selects the marks inside it: collego's cabinets, groups painted by
-  an inner body mark, came back as each drawer's and the cabinet's `:body` mark (2026-11-01). collego maps them
-  back to their owners. Closes when area select picks at the same depth a click does: the outermost node not
-  inside a group that isn't entered.
 
 - **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at

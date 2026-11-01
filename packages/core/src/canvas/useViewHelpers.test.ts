@@ -61,6 +61,25 @@ describe('useViewHelpers preview bounds', () => {
     }));
     expect(result.current.helpers.getEffectiveBounds('a')).toEqual({ x: 50, y: 20, width: 10, height: 10 });
   });
+
+  // A previewed pose is stored-frame, as a published override is: a clone
+  // under a parent at (130, 290) previews at its offset from that parent.
+  it('carries a previewed pose out of the frame it is stored in', () => {
+    const at = { x: 130, y: 290 };
+    const { result } = renderHook(() => useViewHelpers({
+      adapter: {
+        getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+        worldOfStored: (_id: string, p: Bounds) => ({ ...p, x: p.x + at.x, y: p.y + at.y }),
+      },
+      geometry: RECT_POSE_DESCRIPTOR,
+      boundsOf: undefined,
+      selection: () => [asNodeId('a')],
+      gestureSource: undefined,
+      previewPoseExtra: () => ({ x: 10, y: 0, width: 20, height: 20 }),
+    }));
+    expect(result.current.helpers.getEffectiveBounds('a')).toEqual({ x: 140, y: 290, width: 20, height: 20 });
+    expect(result.current.helpers.getEffectivePose('a')).toEqual({ x: 140, y: 290, width: 20, height: 20 });
+  });
 });
 
 describe('useViewHelpers in-flight bounds', () => {

@@ -24,9 +24,6 @@
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 516
   },
-  "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 134
-  },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 179
   },

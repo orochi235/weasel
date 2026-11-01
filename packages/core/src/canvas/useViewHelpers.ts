@@ -127,6 +127,9 @@ export interface ViewPoseAdapter<TPose> {
   /** Where the node is drawn, when the adapter composes poses. An adapter
    *  without it stores absolute poses, where the two agree. */
   getWorldPose?(id: string): TPose;
+  /** Where `id` is drawn if it stores `stored`. An adapter without it stores
+   *  absolute poses. */
+  worldOfStored?(id: string, stored: TPose): TPose;
   /** The node an id names, whose `layer` decides whether a view that hides
    *  that layer shows its selection chrome. */
   getNode?(id: string): { layer?: string } | undefined;
@@ -222,7 +225,13 @@ export function useViewHelpers<TPose>(
   const selectionRef = useLatest(selection);
 
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
-  const { previewPoseOf, previewBoundsOf } = useInFlightBounds({ gestureSource, previewPoseExtra, boxOf, committedPoseOf });
+  const worldOfStored = useMemo(
+    () => (adapter?.worldOfStored ? (id: string, stored: TPose) => adapter.worldOfStored!(id, stored) : undefined),
+    [adapter],
+  );
+  const { previewPoseOf, previewBoundsOf } = useInFlightBounds({
+    gestureSource, previewPoseExtra, boxOf, committedPoseOf, worldOfStored,
+  });
 
   /**
    * Bounds for `id` with any in-flight gesture folded in — what the user can

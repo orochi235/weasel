@@ -40,6 +40,7 @@ import {
   useViewDepSource,
 } from '../deps';
 import type { EnteredGroupApi } from '../deps/enteredGroup';
+import { pressTarget } from 'tools/builtin/pressTarget';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings, useBindingOverrides } from './useActionTunings';
@@ -175,7 +176,11 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
+  const regionTargetOf = useMemo(
+    () => (id: string) => pressTarget(adapter, id, enteredGroup.get()),
+    [adapter, enteredGroup],
+  );
+  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
@@ -199,7 +204,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   usePreviewPathsDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard, ingestionHandlers);
-  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
+  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
   useSelectionSnapshotDepSource();

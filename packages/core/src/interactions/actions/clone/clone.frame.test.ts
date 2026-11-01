@@ -12,6 +12,7 @@ import {
 } from 'core/scene/frameFixture';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
 import type { InvocationCtx } from '@weasel-js/routing';
+import { sceneToAdapter } from 'canvas/sceneAdapter';
 
 const { group, upright, turned } = FRAME_FIXTURE_IDS;
 
@@ -68,6 +69,19 @@ describe('cloneAction under a container frame', () => {
       { x: 30, y: 20, width: 20, height: 10, rotation: 0 },
     );
     handle.onEnd!(ctxAt(scene, 0, 20), 'cancel');
+  });
+
+  it('previews the copy where the committed copy is drawn', () => {
+    const scene = makeScene();
+    const adapter = sceneToAdapter(scene, {});
+    const invoker = cloneAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(ctxAt(scene, 0, 0), undefined);
+    handle.onMove!(ctxAt(scene, 0, 20));
+    const previewed = adapter.worldOfStored(upright, handle.previewPose!(upright) as RectPose);
+    handle.onEnd!(ctxAt(scene, 0, 20), 'commit');
+    const copy = scene.childrenOf(group).find((id) => id !== upright && id !== turned)!;
+    expectSamePose(previewed, adapter.getWorldPose(copy));
   });
 
   it('leaves a copied group\'s children at their own poses in its frame', () => {
