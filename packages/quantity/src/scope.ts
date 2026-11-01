@@ -11,6 +11,19 @@ export interface UnitScope {
   /** What one of this scope's base units is worth in the enclosing scope's
    *  base units. Absent is 1, which is also what the outermost scope has. */
   scale?: UnitEntry;
+  /** How large the scope's frame is drawn in the enclosing one: a drawer's
+   *  plan inset at 0.4 says 0.4. It declares a magnification that something
+   *  else draws (a scale `transform` on the node), so a length measured on
+   *  screen can be divided back to its true size. Absent is 1. */
+  drawnAt?: number;
+}
+
+/** How large the innermost scope's frame is drawn in the outermost's: every
+ *  `drawnAt` of `scopes`, multiplied. */
+export function magnificationOf(scopes: readonly UnitScope[]): number {
+  let m = 1;
+  for (const scope of scopes) m *= scope.drawnAt ?? 1;
+  return m;
 }
 
 /** A measure in the innermost scope's base units, in the outermost's. `scopes` runs outermost first. */

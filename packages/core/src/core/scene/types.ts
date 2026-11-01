@@ -149,9 +149,9 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
   layout?: LayoutStrategy<TPose>;
-  /** The units its children are shown, typed and snapped in (their poses stay
-   *  in world units), and what one base unit is worth in the enclosing scope's.
-   *  It covers the children, not the node; `sceneUnitScopes` reads the chain. */
+  /** The units its children are shown, typed and snapped in (poses stay in the root's base units), their
+   *  worth in the enclosing scope's, and the magnification they are drawn at (`drawnAt`). It covers the
+   *  children, not the node; `sceneUnitScopes` reads the chain. */
   units?: UnitScope;
 }
 

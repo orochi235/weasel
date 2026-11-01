@@ -1,4 +1,4 @@
-import { scopesOf, type UnitScope } from '@weasel-js/quantity';
+import { magnificationOf, scopesOf, type UnitScope } from '@weasel-js/quantity';
 import { deepEqual } from '@weasel-js/registry';
 import type { NodeId } from './types';
 
@@ -42,4 +42,21 @@ export function sceneSharedUnitScopes(scene: ScopedScene, ids: readonly NodeId[]
     shared = shared.slice(0, n);
   }
   return shared;
+}
+
+const NO_ROOT: UnitScope = { system: { base: '', units: {} } };
+
+/** The scopes the scene's own nodes declare around `id`, outermost first, with
+ *  no root: empty where no container above it declares one. */
+export function sceneDeclaredScopes(scene: ScopedScene, id: NodeId, opts: { inclusive?: boolean } = {}): UnitScope[] {
+  return sceneUnitScopes(scene, id, NO_ROOT, opts).slice(1);
+}
+
+/**
+ * How large the frame `ids` share is drawn in the world: every `drawnAt` their
+ * shared scope chain declares, multiplied. A length measured in world between
+ * them, divided by it, is the length they were modeled at.
+ */
+export function sceneMagnification(scene: ScopedScene, ids: readonly NodeId[]): number {
+  return magnificationOf(sceneSharedUnitScopes(scene, ids, NO_ROOT));
 }

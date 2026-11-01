@@ -78,7 +78,7 @@ export * from '../core/adapters/types';
 export {
   createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneSelectionStore, useScene, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentOf, documentPose, effectivePose, nodeAsShown,
-  CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneSharedUnitScopes, sceneUnitScopes,
+  CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneDeclaredScopes, sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes,
   BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf, booleanGroupFields,
 } from '../core/scene';
 export type { BooleanShapeOp, PlacedSpec, PoseSource, PosedNode, ScopedScene, ShownDataSource } from '../core/scene';

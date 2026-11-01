@@ -1,0 +1,25 @@
+.bar {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wzl-space-2);
+  color: var(--wzl-fg);
+  font-size: var(--wzl-font-size-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rule {
+  flex: none;
+  width: var(--wzl-scale-bar-px);
+  height: var(--wzl-space-2);
+  border: 1px solid currentcolor;
+  border-top: none;
+}
+
+.label {
+  min-width: 6ch;
+}
+
+.drawn {
+  color: var(--wzl-fg-muted);
+}

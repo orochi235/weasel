@@ -4,11 +4,16 @@ import { distanceReadout } from './distanceReadout';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
-function fixture(opts?: Parameters<typeof distanceReadout>[0]) {
+function fixture(opts?: Parameters<typeof distanceReadout>[0], drawnAt?: number) {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
-  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-  const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 30, y: 0, width: 10, height: 10 }, data: {} });
-  const c = scene.add({ kind: 'mark', layer: 'main', pose: { x: 30, y: 40, width: 10, height: 10 }, data: {} });
+  const frame = drawnAt === undefined ? undefined : scene.add({
+    kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+    units: { system: { base: 'in', units: { in: 1 } }, drawnAt },
+  });
+  const inFrame = frame === undefined ? {} : { parent: frame };
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {}, ...inFrame });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 30, y: 0, width: 10, height: 10 }, data: {}, ...inFrame });
+  const c = scene.add({ kind: 'mark', layer: 'main', pose: { x: 30, y: 40, width: 10, height: 10 }, data: {}, ...inFrame });
   let selected: NodeId[] = [a];
   const nodeAtPoint = vi.fn((p: { x: number; y: number }, exclude?: Iterable<NodeId>) => {
     const ex = new Set(exclude);
@@ -45,6 +50,12 @@ describe('distanceReadout', () => {
     expect(r.read().gaps).toEqual([]);
     expect(store.get()).toEqual([]);
     expect(heard).toHaveBeenCalledTimes(2);
+  });
+
+  it('divides a distance by the magnification its frame declares it is drawn at', () => {
+    const { run, store } = fixture(undefined, 2);
+    run({ show: true, world: { x: 35, y: 5 } });
+    expect(store.get()).toEqual([{ kind: 'distance', from: { x: 10, y: 5 }, to: { x: 30, y: 5 }, value: 10 }]);
   });
 
   it('shows nothing over empty canvas, over the selection itself, or with nothing selected', () => {

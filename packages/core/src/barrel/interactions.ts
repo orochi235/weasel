@@ -129,6 +129,7 @@ export {
 } from '../interactions/actions/align';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
 export { sceneBoxFrames, scenePoseFrame } from '../interactions/actions/poseFrame';
+export { undeclaredMagnifications, type UndeclaredMagnification } from '../interactions/actions/magnification';
 export { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from '../interactions/actions/moveNodes';
 export type { PoseFrame } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';

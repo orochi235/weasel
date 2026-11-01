@@ -68,6 +68,18 @@ describe('spacingSnapSource', () => {
     expect(gaps(out.marks)).toEqual([[10, 30, 20], [40, 60, 20]]);
   });
 
+  it('labels a gap with its length divided by the magnification the subject is drawn at', () => {
+    const rect = (x: number) => ({ x, y: 0, width: 10, height: 10 });
+    const { scene, ids } = sceneOf([rect(0), rect(30), rect(62)]);
+    const frame = scene.add({
+      kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      units: { system: { base: 'in', units: { in: 1 } }, drawnAt: 4 },
+    } as never);
+    for (const id of ids) scene.move(id as never, frame);
+    const out = moveBy({ sources: [spacingSnapSource()], ids: [ids[2]], scene }).by(0, 0);
+    expect(gaps(out.marks).map(([, , value]) => value)).toEqual([5, 5]);
+  });
+
   it('snaps a resize\'s moving edge so its gap to the next box equals an existing gap', () => {
     const { scene, ids } = sceneOf([BOX]);
     const targets = [...ROW, { x: 170, y: 100, width: 20, height: 50 }];
