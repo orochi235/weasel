@@ -91,6 +91,12 @@ interface Held {
   holdType?: 'touch' | 'pen';
 }
 
+/** Spend every held press on a multitouch gesture, which also ends the click sequence. */
+function spendPresses(held: ReadonlyMap<number, Held>, clicks: ClickMemory): void {
+  for (const p of held.values()) p.buffered = null;
+  clicks.last = null;
+}
+
 function multiTouchEvent(
   fingers: number,
   mods: EventModifiers,
@@ -164,7 +170,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
   // finger: yanking it from someone who rested a palm is worse than letting it finish.
   const claimForMultiTouch = (s: PointerSample): void => {
     hold.cancel();
-    for (const p of held.values()) p.buffered = null;
+    spendPresses(held, clicks);
     const g = geometry();
     touches.join(positionsOf(held), g.centroid, happenedAt(s));
     sink.dispatch(multiTouchEvent(held.size, s, g));
@@ -197,7 +203,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       // The buffered press goes out before the move: it opens the drag the moves pump.
       if (rec?.buffered && pastDragThreshold(rec.down, s, dragPx())) {
         const press = rec.buffered;
-        rec.buffered = null;
+        rec.buffered = clicks.last = null;
         hold.cancel(s.pointerId);
         sink.dispatch(press);
       }

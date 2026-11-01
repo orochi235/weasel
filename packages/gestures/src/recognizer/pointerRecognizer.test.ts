@@ -174,6 +174,27 @@ describe('a double click', () => {
     expect(near.kinds()).toContain('doubleclick');
   });
 
+  it('is broken off by a drag between the clicks', () => {
+    const h = harness();
+    h.click(0);
+    h.down(1, 0);
+    h.recognizer.move(h.at(1, 20));
+    h.recognizer.release(h.at(1, 20));
+    h.click(0);
+    expect(h.kinds()).not.toContain('doubleclick');
+  });
+
+  it('is broken off by a second pointer between the clicks', () => {
+    const h = harness();
+    h.click(0);
+    h.down(1, 0);
+    h.down(2, 40);
+    h.recognizer.release(h.at(2, 40));
+    h.recognizer.release(h.at(1, 0));
+    h.click(0);
+    expect(h.kinds()).not.toContain('doubleclick');
+  });
+
   it('starts over afterwards, so a third click composes nothing', () => {
     const h = harness();
     h.click();
