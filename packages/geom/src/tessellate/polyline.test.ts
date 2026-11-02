@@ -44,7 +44,7 @@ describe('extractPolylines', () => {
     // The anchor arrays are indexed by point, so they have to shrink with it.
     expect(out[0].anchorA).toHaveLength(3);
     expect(out[0].anchorB).toHaveLength(3);
-    expect(out[0].anchorT).toHaveLength(3);
+    expect(out[0].anchorT).toHaveLength(3);    expect(out[0].closeAnchor).toBe(3);
   });
 
   it('keeps a repeated point that is not the closing one', () => {
@@ -54,7 +54,9 @@ describe('extractPolylines', () => {
       coords: new Float32Array([0, 0, 10, 0, 10, 0, 0, 10]),
       fillRule: 'nonzero',
     };
-    expect(extractPolylines(p)[0].points).toEqual([0, 0, 10, 0, 10, 0, 0, 10]);
+    const out = extractPolylines(p);
+    expect(out[0].points).toEqual([0, 0, 10, 0, 10, 0, 0, 10]);
+    expect(out[0].closeAnchor).toBeUndefined();
   });
 
   it('leaves an open contour\'s repeated endpoint alone', () => {

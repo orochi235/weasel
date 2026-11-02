@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { extractPolylines } from '../tessellate/polyline';
-import { rectPath } from '../paths/builder';
+import { polygonFromPoints, rectPath } from '../paths/builder';
+import { resolveCornersWithSources } from '../paths/corners';
+import { pathFromD } from '../paths/pathFromD';
+import type { CornerSpec } from '../paths/cornerSpec';
 import {
   lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable, type LengthRun,
 } from './lengthTable';
@@ -88,5 +91,45 @@ describe('lengthTable', () => {
     expect(lengthAtAnchor(t, 40)).toBe(7);
     expect(lengthAtSubpath(t, 9)).toBe(7);
     expect(pointAtLength(t, 99).point).toEqual([3, 4, 0]);
+  });
+
+  it('puts a closed rounded square in authored numbering', () => {
+    const round: CornerSpec = { shape: 'round', radius: 20 };
+    const square = { ...polygonFromPoints([{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 200, y: 200 }, { x: 0, y: 200 }]), corners: [round, round, round, round] };
+    const { path, anchorSources } = resolveCornersWithSources(square);
+    expect(anchorSources).not.toBeNull();
+    const t = lengthTable(extractPolylines(path), 2, anchorSources);
+    // The run starts where corner 0's arc ends, so each side is a straight 160 then an arc; coords are float32.
+    const arc = t.total / 4 - 160;
+    expect(arc).toBeGreaterThan(28.5);
+    expect(lengthAtAnchor(t, 0)).toBe(0);
+    expect(lengthAtAnchor(t, 1)).toBeCloseTo(160 + arc / 2, 4);
+    expect(lengthAtAnchor(t, 2)).toBeCloseTo(320 + arc * 1.5, 4);
+    expect(lengthAtAnchor(t, 4)).toBe(t.total);
+    expect(t.segments).toBe(4);
+  });
+
+  it('counts a closing edge dropped as a duplicate, straight or curved', () => {
+    const straight = lengthTable(extractPolylines(pathFromD('M0,0 L1,0 L1,1 L0,1 L0,0 Z')), 2);
+    const curved = lengthTable(extractPolylines(pathFromD('M0,0 L1,0 L1,1 L0,1 C0,0.66 0,0.33 0,0 Z')), 2);
+    expect(straight.segments).toBe(5);
+    expect(curved.segments).toBe(5);
+    expect(lengthAtAnchor(straight, 4)).toBe(4);
+    expect(lengthAtAnchor(straight, 4.5)).toBe(4);
+    expect(lengthAtSegmentFraction(straight, 0.8)).toBe(4);
+  });
+
+  it('a spread copy keeps authored numbering', () => {
+    const run = anchored([0, 0, 2, 0, 3, 1, 3, 4], false, 0);
+    const t = lengthTable([run], 2, Uint32Array.from([0, 1, 1, 2]));
+    const copy = { ...t };
+    expect(lengthAtAnchor(copy, 1)).toBe(lengthAtAnchor(t, 1));
+    expect(pointAtLength(copy, 1).point).toEqual([1, 0, 0]);
+  });
+
+  it('refuses a table built by hand', () => {
+    const t = openL();
+    const hand = { dim: t.dim, runs: t.runs, total: t.total, runStart: t.runStart, segments: t.segments };
+    expect(() => lengthAtAnchor(hand, 1)).toThrow(/lengthTable/);
   });
 });

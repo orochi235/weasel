@@ -6,13 +6,12 @@ import type { StrokeTrim, TrimAt, TrimPace } from '@weasel-js/paint';
 /**
  * The stretch of `t`'s path a trim draws, as pen-order lengths, or null when
  * it draws nothing: a window starting at or past its end, or a position that
- * is NaN. Positions clamp to the path; no trim draws the whole of it.
+ * is NaN. Positions clamp to the path; no trim is `{}`, the whole of it.
  */
 export function resolveTrim(t: LengthTable, trim: StrokeTrim | undefined): { from: number; to: number } | null {
-  if (trim === undefined) return { from: 0, to: t.total };
-  const pace = trim.pace ?? 'length';
-  const from = lengthOf(t, trim.start ?? 0, pace);
-  const to = lengthOf(t, trim.end ?? 1, pace);
+  const { start = 0, end = 1, pace = 'length' } = trim ?? {};
+  const from = lengthOf(t, start, pace);
+  const to = lengthOf(t, end, pace);
   if (Number.isNaN(from) || Number.isNaN(to) || from >= to) return null;
   return { from, to };
 }

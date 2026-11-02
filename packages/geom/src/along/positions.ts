@@ -19,8 +19,15 @@ export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangen
     return { point: at(t, r, 0), tangent: [0, 0, 0] };
   }
   const c = cum[r];
-  let i = 0;
-  while (i < c.length - 2 && c[i + 1] < len) i++;
+  // The first segment whose end reaches `len`.
+  let lo = 0;
+  let hi = c.length - 2;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (c[mid + 1] < len) lo = mid + 1;
+    else hi = mid;
+  }
+  const i = lo;
   const span = c[i + 1] - c[i];
   const f = span > 0 ? (len - c[i]) / span : 0;
   const a = at(t, r, i);

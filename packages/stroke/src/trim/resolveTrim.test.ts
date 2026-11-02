@@ -11,6 +11,12 @@ describe('resolveTrim', () => {
     expect(resolveTrim(openL(), {})).toEqual({ from: 0, to: 7 });
   });
 
+  it('no trim is {} on a path with no length', () => {
+    const dot = lengthTable([{ points: [1, 1], closed: false }], 2);
+    expect(resolveTrim(dot, undefined)).toBeNull();
+    expect(resolveTrim(dot, {})).toBeNull();
+  });
+
   it('fraction under length pace', () => {
     expect(resolveTrim(openL(), { end: 0.5 })).toEqual({ from: 0, to: 3.5 });
   });

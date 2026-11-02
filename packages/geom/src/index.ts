@@ -1,5 +1,6 @@
-/** @weasel-js/geom — pure 2D geometry kernel: scalars, affines, curves, the
- *  `Path` command stream and the math over it, and easing curves. Curve
+/** @weasel-js/geom — dependency-free geometry kernel: scalars, affines, curves,
+ *  the `Path` command stream and the math over it, easing curves, and arc-length
+ *  queries over 2D or 3D polylines (`./3d` holds the rest of 3D). Curve
  *  representations, tessellation and booleans live in subpaths.
  *
  * @packageDocumentation

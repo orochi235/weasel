@@ -59,6 +59,10 @@ last. Moving from one subpath's end to the next subpath's start covers no distan
 - A segment is what the pen draws between two consecutive anchors of one subpath, **including a closed
   subpath's closing edge**. So on a closed subpath, `[last, last + 1)` is the closing edge; on an open
   one that interval is the pen lift and covers no distance. The anchor range is the segment count.
+- A closed subpath's **first** anchor is the exception (2026-11-01): it sits where its corner arc ends,
+  not at the arc's middle, and the whole arc belongs to the closing edge. `resolveCorners` starts a
+  closed contour at that arc's end and draws the arc last, and a window never wraps, so the middle
+  would put anchor 0 after the rest of the subpath.
 
 **`pace` says what a fraction is a fraction of.** `'length'`: of total length, so tweening a number
 moves the pen at constant speed. `'anchor'`: of the anchor range, each segment an equal share, so

@@ -16,6 +16,9 @@ export interface Polyline {
   anchorB?: Uint32Array;
   /** For each point, the arc-length fraction along (A, B). 0 at anchor A; for anchor-aligned, set to 0. */
   anchorT?: Float32Array;
+  /** A closed contour's last anchor when it repeated the first point and was
+   *  dropped for that; the closing edge ends at it. */
+  closeAnchor?: number;
   /** Per-point stroke width, populated by the tessellator when the Stroke
    *  carries `vertexWidths`. Undefined means uniform `Stroke.width`. */
   widths?: Float32Array;
@@ -68,6 +71,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
   let current: Polyline | null = null;
 
   let prevAnchor = -1;
+  let dropped: number | undefined;
   // The anchor a subpath opened by a bare drawing command starts from.
   let startAnchor = 0;
 
@@ -81,30 +85,13 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
     return next;
   };
 
-  /**
-   * A closed contour's last point repeating its first leaves a zero-length
-   * closing segment, which the stroker discards along with the wrap-around
-   * join it should have carried, notching the ribbon at the contour's start.
-   * Every font outline serialized by opentype.js is written this way. Exact
-   * equality is the right test: the duplicate is a re-emission of the same
-   * number, and a near-miss is a genuine (if tiny) segment the author asked for.
-   */
-  const dropDuplicateClosingPoint = (): void => {
-    if (!pts || !aA || !aB || !aT) return;
-    const n = pts.length / 2;
-    if (n < 2) return;
-    if (pts[0] !== pts[(n - 1) * 2] || pts[1] !== pts[(n - 1) * 2 + 1]) return;
-    pts.length -= 2;
-    aA.length -= 1;
-    aB.length -= 1;
-    aT.length -= 1;
-  };
-
   const commit = (target: Polyline): void => {
     if (!pts || !aA || !aB || !aT) return;
     target.anchorA = new Uint32Array(aA);
     target.anchorB = new Uint32Array(aB);
     target.anchorT = new Float32Array(aT);
+    if (dropped !== undefined) target.closeAnchor = dropped;
+    dropped = undefined;
   };
 
   // Fill anchorA/B/T for each point a curve just appended: interior points
@@ -182,7 +169,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
       case PATH_Z: {
         if (current) {
           current.closed = true;
-          dropDuplicateClosingPoint();
+          if (pts && aA && aB && aT) dropped = dropDuplicateClosingPoint(pts, aA, aB, aT);
         }
         break;
       }
@@ -193,4 +180,25 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
 
   if (current) commit(current);
   return out;
+}
+
+/**
+ * A closed contour's last point repeating its first leaves a zero-length
+ * closing segment, which the stroker discards along with the wrap-around
+ * join it should have carried, notching the ribbon at the contour's start.
+ * Every font outline serialized by opentype.js is written this way. Exact
+ * equality is the right test: the duplicate is a re-emission of the same
+ * number, and a near-miss is a genuine (if tiny) segment the author asked for.
+ * Answers the dropped point's anchor, when it was one.
+ */
+function dropDuplicateClosingPoint(pts: number[], aA: number[], aB: number[], aT: number[]): number | undefined {
+  const n = pts.length / 2;
+  if (n < 2) return undefined;
+  if (pts[0] !== pts[(n - 1) * 2] || pts[1] !== pts[(n - 1) * 2 + 1]) return undefined;
+  const anchor = aA[n - 1] === aB[n - 1] ? aA[n - 1] : undefined;
+  pts.length -= 2;
+  aA.length -= 1;
+  aB.length -= 1;
+  aT.length -= 1;
+  return anchor;
 }

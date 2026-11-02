@@ -10,6 +10,8 @@ export interface LengthRun {
   anchorA?: ArrayLike<number>;
   anchorB?: ArrayLike<number>;
   anchorT?: ArrayLike<number>;
+  /** A closed run's last anchor when it sat on the first point and was dropped, as `Polyline` carries it. */
+  closeAnchor?: number;
 }
 
 /** A path's arc length in pen order: subpaths in order, the lift between them covering no distance. */
@@ -35,7 +37,9 @@ export interface LengthTableInternals {
   runAnchor: Float64Array;
 }
 
-const internals = new WeakMap<LengthTable, LengthTableInternals>();
+// A symbol rather than a side table, so a spread copy of a table still answers.
+const INTERNALS = Symbol('lengthTable.internals');
+type WithInternals = LengthTable & { [INTERNALS]?: LengthTableInternals };
 
 /**
  * The length table of `runs`, in `dim` components per point. `anchorSources`
@@ -54,19 +58,15 @@ export function lengthTable(runs: readonly LengthRun[], dim: 2 | 3, anchorSource
     runStart[r + 1] = total;
   });
   const anchors = anchorBreakpoints(runs, dim, cum, anchorSources ?? null);
-  const table: LengthTable = { dim, runs, total, runStart, segments: anchors.segments };
-  internals.set(table, { cum, ...anchors });
+  const table: WithInternals = { dim, runs, total, runStart, segments: anchors.segments };
+  table[INTERNALS] = { cum, ...anchors };
   return table;
 }
 
 /** @internal */
 export function tableInternals(t: LengthTable): LengthTableInternals {
-  let hit = internals.get(t);
-  if (!hit) {
-    // A table not built here: rebuild from its runs, without corner sources.
-    hit = internals.get(lengthTable(t.runs, t.dim))!;
-    internals.set(t, hit);
-  }
+  const hit = (t as WithInternals)[INTERNALS];
+  if (!hit) throw new Error('LengthTable: not built by lengthTable(); build one with it rather than by hand');
   return hit;
 }
 
@@ -179,8 +179,11 @@ function expandedBreaks(run: LengthRun, n: number, c: Float64Array, next: number
   for (let i = 0; i < n; i++) {
     if (A[i] === B[i]) { ids.push(A[i]); lens.push(c[i]); }
   }
-  // A closed curve that returns to its start had that end point dropped as a duplicate; its anchor ends the closing curve.
-  if (run.closed && n >= 2 && A[n - 1] !== B[n - 1]) { ids.push(B[n - 1]); lens.push(c[n]); }
+  // A last anchor dropped as a duplicate of the first point ends the closing edge's drawn part.
+  if (run.closed && n >= 2) {
+    const dropped = run.closeAnchor ?? (A[n - 1] !== B[n - 1] ? B[n - 1] : undefined);
+    if (dropped !== undefined) { ids.push(dropped); lens.push(c[n]); }
+  }
   return { ids, lens };
 }
 
