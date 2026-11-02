@@ -4,7 +4,7 @@
  * geometry at parse time.
  */
 
-import { invert, multiply } from '@weasel-js/geom';
+import { applyToPoint, invert, multiply } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
@@ -12,11 +12,10 @@ import { IDENTITY_MATRIX } from './types';
  *  kernel's own composition — `Matrix` is `Affine`, so nothing converts. */
 export { multiply };
 
-/** Apply a 2x3 affine to a 2D point. The `{x, y}` spelling the rest of this
- *  package works in; geom's `applyToPoint` returns the same numbers as a
- *  tuple. */
+/** geom's `applyToPoint` in the `{x, y}` spelling the rest of this package works in. */
 export function applyMatrix(m: Matrix, x: number, y: number): { x: number; y: number } {
-  return { x: m[0] * x + m[2] * y + m[4], y: m[1] * x + m[3] * y + m[5] };
+  const [px, py] = applyToPoint(m, x, y);
+  return { x: px, y: py };
 }
 
 /** True if `m` is the identity within a small epsilon. */
