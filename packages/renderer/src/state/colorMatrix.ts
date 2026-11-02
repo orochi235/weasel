@@ -3,7 +3,7 @@
  * [4, 9, 14, 19]: the arithmetic the group stack and the batch shader share.
  */
 
-const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+import { clamp01 } from '@weasel-js/geom';
 
 /** `outer ∘ inner`, inner applied first, written into `out` and returned. */
 export function composeColorMatrix<T extends Float32Array | number[]>(

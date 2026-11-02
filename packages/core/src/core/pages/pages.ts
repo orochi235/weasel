@@ -1,3 +1,4 @@
+import { unionRects } from '@weasel-js/geom';
 import type { Bounds } from '@weasel-js/routing';
 
 /** One page of a document: a sheet of a fixed size, in world units. */
@@ -146,13 +147,5 @@ export function adjacentPage(
 
 /** The box around every page, or `null` for a document with none. */
 export function pagesBounds(pages: readonly PlacedPage[]): Bounds | null {
-  if (pages.length === 0) return null;
-  const x = Math.min(...pages.map((p) => p.x));
-  const y = Math.min(...pages.map((p) => p.y));
-  return {
-    x,
-    y,
-    width: Math.max(...pages.map((p) => p.x + p.width)) - x,
-    height: Math.max(...pages.map((p) => p.y + p.height)) - y,
-  };
+  return unionRects(pages);
 }

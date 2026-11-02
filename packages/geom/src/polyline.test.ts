@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pointInPolygon, segmentsCross } from './polyline';
+import { pointInPolygon, ringSignedArea, segmentsCross } from './polyline';
 import { pointSegmentDist2 } from './points2';
 import { approxEq } from './scalar';
 
@@ -76,5 +76,23 @@ describe('pointInPolygon over a vertex range', () => {
 
   it('rejects a range of fewer than three vertices', () => {
     expect(pointInPolygon(coords, 5, 5, 0, 2)).toBe(false);
+  });
+});
+
+describe('ringSignedArea', () => {
+  // Unit square, counterclockwise with y up.
+  const ccw = [0, 0, 2, 0, 2, 2, 0, 2];
+  it('is positive counterclockwise (y up) and negative clockwise', () => {
+    expect(ringSignedArea(ccw)).toBe(4);
+    expect(ringSignedArea([0, 0, 0, 2, 2, 2, 2, 0])).toBe(-4);
+  });
+  it('is zero for fewer than three vertices', () => {
+    expect(ringSignedArea([])).toBe(0);
+    expect(ringSignedArea([1, 1])).toBe(0);
+    expect(ringSignedArea([0, 0, 3, 3])).toBe(0);
+  });
+  it('reads one ring out of a shared buffer by vertex range', () => {
+    const buf = [9, 9, 9, 9, ...ccw, 7, 7];
+    expect(ringSignedArea(buf, 2, 6)).toBe(4);
   });
 });

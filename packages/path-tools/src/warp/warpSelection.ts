@@ -4,6 +4,7 @@
  * warp begins on it. A fresh warp is laid over the box around both.
  */
 import type { ActionDeps } from '@weasel-js/routing';
+import { unionRects } from '@weasel-js/geom';
 import type { WarpBox } from '@weasel-js/geom/warp';
 import {
   type CreateOutlinesAdapter, drawnAABBOf, type NodeId, type PathNode, pathNodesOf, type Scene,
@@ -50,13 +51,7 @@ export function selectedWarpPaths(deps: ActionDeps | undefined): PathNode[] {
 
 /** The box around `a` and `b`, either of which may be missing. */
 export function unionBox(a: WarpBox | null, b: WarpBox | null): WarpBox | null {
-  if (!a || !b) return a ?? b;
-  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
-  return {
-    x, y,
-    width: Math.max(a.x + a.width, b.x + b.width) - x,
-    height: Math.max(a.y + a.height, b.y + b.height) - y,
-  };
+  return a && b ? unionRects([a, b]) : a ?? b;
 }
 
 /** The drawn box around the text nodes `texts`. */

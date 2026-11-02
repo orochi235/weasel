@@ -19,6 +19,7 @@ import {
   type TargetPredicate,
   type Vec2,
 } from '@weasel-js/core';
+import { rectContainsPoint } from '@weasel-js/geom';
 import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-logic';
 import { carriedBy, slideOthers, type Box } from './reorderSlide';
 
@@ -88,8 +89,6 @@ export interface ReorderOptions {
 
 const END_GAP = 24;
 
-const inside = (p: Vec2, b: Box) => p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
-
 /**
  * The slots of items laid out in order along `axis`: a gap halfway between
  * each pair, its bar spanning both across the axis, and one beyond each end,
@@ -124,7 +123,7 @@ interface Held {
 }
 
 function pickAt(slots: ReorderSlots | null, at: Vec2): { from: number; item: ReorderItem } | null {
-  const from = slots?.items.findIndex((i) => i.grip !== null && inside(at, i.grip ?? i.bounds)) ?? -1;
+  const from = slots?.items.findIndex((i) => i.grip !== null && rectContainsPoint(i.grip ?? i.bounds, at.x, at.y)) ?? -1;
   return from < 0 ? null : { from, item: slots!.items[from]! };
 }
 
@@ -166,7 +165,7 @@ export function createReorderAction(opts: ReorderOptions): Action {
         const held: Held = { slots, ...picked };
         const { axis } = slots;
         const region = opts.region?.(ctx.deps, held.item) ?? null;
-        const leaves = (at: Vec2) => region !== null && !inside(at, region);
+        const leaves = (at: Vec2) => region !== null && !rectContainsPoint(region, at.x, at.y);
         let by = ctx.world[axis] - start[axis];
         let open = true;
         // The overlay is read every frame; ask about each gap once a drag.

@@ -4,6 +4,7 @@
  * says how far; the offset goes to `scene.scroll`, which moves what the view
  * shows and leaves the document where it is.
  */
+import { clamp } from '@weasel-js/geom';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
@@ -112,8 +113,6 @@ export function scrollableAt(
   return scrollablesAt(scene, at, descriptor)[0] ?? null;
 }
 
-const clamp = (v: number, [lo, hi]: readonly [number, number]): number => Math.min(hi, Math.max(lo, v));
-
 function sceneOf(deps: ActionDeps | undefined): AnyScene | undefined {
   return (deps as { scene?: AnyScene } | undefined)?.scene;
 }
@@ -155,7 +154,7 @@ export const containerScrollAction: Action & { requires: string[] } = {
       const by = wheelPan({ x: 0, y: 0, scale: view.scale }, delta, { swapAxis: params?.swapAxis === true });
       for (const hit of scrollablesAt(scene, world, poseDescriptorOf(deps.poseDescriptor))) {
         const from = scene.scroll.get(hit.id) ?? { x: 0, y: 0 };
-        const to = { x: clamp(from.x + by.x, hit.range.x), y: clamp(from.y + by.y, hit.range.y) };
+        const to = { x: clamp(from.x + by.x, ...hit.range.x), y: clamp(from.y + by.y, ...hit.range.y) };
         if (to.x === from.x && to.y === from.y) continue;
         scene.scroll.set(hit.id, to);
         return undefined;

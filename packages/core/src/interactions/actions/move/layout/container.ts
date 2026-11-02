@@ -1,4 +1,4 @@
-import { pointInPath } from '@weasel-js/geom';
+import { pointInPath, rectContainsPointHalfOpen } from '@weasel-js/geom';
 import type { NodeId, Scene } from 'core/scene/types';
 import { poseDescriptorForNode } from 'core/geometry/poseDescriptor';
 import { toPlane, type PlaneMap } from 'core/viewport/parallax';
@@ -14,9 +14,6 @@ import type { StrategyView } from 'core/scene/strategyView';
 import { boxOf, containerView, draggedInView } from './view';
 
 export interface Bounds4 { x: number; y: number; width: number; height: number }
-export function pointInBounds(b: Bounds4, at: { x: number; y: number }): boolean {
-  return at.x >= b.x && at.x < b.x + b.width && at.y >= b.y && at.y < b.y + b.height;
-}
 
 type Layout = LayoutStrategy<unknown>;
 export interface Candidate {
@@ -101,7 +98,7 @@ export function pickContainer(
     if (region) return regionContains(region, aabb, at);
     if (mode === 'region') return false;
     if (layout.contains) return layout.contains(cPose, at);
-    return pointInBounds(aabb, at);
+    return rectContainsPointHalfOpen(aabb, at.x, at.y);
   };
   const consider = (id: NodeId, zPath: number[]): void => {
     const layout = layoutDep.getLayout(id as string);

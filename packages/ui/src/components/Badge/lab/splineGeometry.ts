@@ -1,3 +1,4 @@
+import { clamp } from '@weasel-js/geom';
 import type { SplineAnchor, SplineMode } from './splineAnchors';
 
 export interface Point { x: number; y: number }
@@ -10,7 +11,6 @@ const MAX_RADIUS = 71;
 /** The closest a dragged anchor may come to a neighbor along the curve. */
 const NEIGHBOR_GAP = 0.005;
 
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 const toHalf = (v: number): number => Math.round(v * 2) / 2;
 
 /** The angle the curve's far end sits at: the diagonal for an octant, the next cardinal for a quadrant. */

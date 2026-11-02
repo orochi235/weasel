@@ -15,6 +15,7 @@ import {
   type Mat4,
   type Vec3,
 } from '@weasel-js/geom/3d';
+import { clamp } from '@weasel-js/geom';
 
 /** An orbit camera. The eye sits `distance` world units from `target` at
  *  `yaw`/`pitch`; `fov` is the vertical field of view in radians, and
@@ -87,8 +88,6 @@ export const DEFAULT_ORBIT_LIMITS: OrbitLimits = {
   minPitch: -MAX_PITCH,
   maxPitch: MAX_PITCH,
 };
-
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
 /** The camera with its pitch and distance inside `limits`. Returns `camera`
  *  itself when it already holds. */

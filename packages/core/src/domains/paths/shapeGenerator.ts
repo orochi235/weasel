@@ -12,6 +12,7 @@
 import {
   boundsOfPath,
   boxToBox,
+  clamp,
   poseFrameOf,
   regularPolygonPath,
   starPath,
@@ -68,7 +69,6 @@ export function shapeGeneratorOf(data: unknown): ShapeGenerator | null {
   return isShapeGenerator(g) ? g : null;
 }
 
-const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 const count = (v: number): number => clamp(Math.round(v), SHAPE_COUNT_RANGE.min, SHAPE_COUNT_RANGE.max);
 
 /** `g` with its counts rounded and every field held in range. */

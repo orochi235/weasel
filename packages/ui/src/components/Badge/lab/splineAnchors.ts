@@ -1,3 +1,4 @@
+import { clamp } from '@weasel-js/geom';
 import type { BadgeBase } from '@weasel-js/ui/components/Badge';
 import { type BadgeOctantSplineBaseParams } from '@weasel-js/ui/components/Badge';
 import { OCTANT_BSPLINE_MIN_WEIGHT, compileNurbs, evalNurbsAtS } from '../bases/OctantBSpline';
@@ -11,8 +12,6 @@ type SplineParams = LabParams;
 const MIN_ANCHORS = 3;
 /** The closest two anchors may sit along the curve when one is inserted between them. */
 const INSERT_GAP = 0.01;
-
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
 function slot(params: SplineParams, axis: 's' | 'r' | 'w', i: number): number {
   return Number(params[`${axis}${i}`] ?? OCTANT_SPLINE_DEFAULTS[`${axis}${i}` as keyof BadgeOctantSplineBaseParams]);

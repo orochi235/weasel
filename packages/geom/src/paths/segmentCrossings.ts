@@ -1,4 +1,5 @@
 /** Where cubic segments cross one another, as a parameter on each. */
+import { boxesIntersect } from '../box';
 import { cubicEvalAt } from '../curve';
 import type { CubicSegment } from './cubicContours';
 
@@ -27,7 +28,7 @@ export function segmentCrossings(segs: readonly CubicSegment[]): SegmentCrossing
   const out: SegmentCrossing[] = [];
   for (let a = 0; a < segs.length; a++) {
     for (let b = a + 1; b < segs.length; b++) {
-      if (!overlaps(boxes[a]!, boxes[b]!)) continue;
+      if (!boxesIntersect(boxes[a]!, boxes[b]!)) continue;
       const pa = flat[a]!,
         pb = flat[b]!;
       for (let i = 0; i + 1 < pa.length; i++) {
@@ -67,8 +68,6 @@ function boxOf(pts: readonly Pt[]): Box {
   }
   return b;
 }
-
-const overlaps = (p: Box, q: Box) => p[0] <= q[2] && q[0] <= p[2] && p[1] <= q[3] && q[1] <= p[3];
 
 function linesCross(a: Pt, b: Pt, c: Pt, d: Pt): Pt | null {
   const rx = b[0] - a[0],

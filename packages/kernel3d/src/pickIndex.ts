@@ -7,6 +7,7 @@
  */
 
 import type { NodeId } from '@weasel-js/core';
+import { rectsOverlap } from '@weasel-js/geom';
 import { intersectRayAabb, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';
 import { rectOf, viewProjectionOf, type Viewport3d } from './project';
@@ -30,12 +31,6 @@ export function screenBoxOf<TData, TLayer extends string>(
   const pose = node && worldPoseOf(world.scene, id);
   const box = node && pose && boxAt(world, node, pose);
   return box ? projectAabbToScreen(box, viewProjectionOf(viewport), rectOf(viewport)) : null;
-}
-
-function overlaps(a: ScreenBox, b: ScreenBox): boolean {
-  return (
-    a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
-  );
 }
 
 function boxValid({ min, max }: Aabb): boolean {
@@ -121,7 +116,7 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     const pane = rectOf(vp);
     for (const i of candidates) {
       const box = projectAabbToScreen(this.boxes[i]!, m, pane);
-      if (box && overlaps(box, rect)) hits.push(this.order[i]!.id);
+      if (box && rectsOverlap(box, rect)) hits.push(this.order[i]!.id);
     }
     return hits;
   }

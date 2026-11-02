@@ -103,10 +103,6 @@ export const AVOID_DEFAULTS: ResolvedAvoidOptions = Object.freeze({
 export const inflate = (box: Box, by: number): Box =>
   ({ x: box.x - by, y: box.y - by, width: box.width + 2 * by, height: box.height + 2 * by });
 
-/** Whether two boxes share interior. */
-export const overlaps = (a: Box, b: Box): boolean =>
-  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-
 /** A connector as {@link blocks} reads it: its id and the shapes it joins. */
 export interface BlockedEdge {
   id: string;
