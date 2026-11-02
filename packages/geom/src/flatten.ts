@@ -12,6 +12,7 @@
 
 import { pointSegmentDist } from './points2';
 
+/** The tolerance, in world units, the flatteners use when none is given. */
 export const DEFAULT_FLATTEN_TOLERANCE = 0.5;
 
 /** Floor for a non-positive or NaN tolerance. Without it the flatness test can

@@ -9,6 +9,7 @@
 
 import { lerp as lerpScalar } from '../scalar';
 
+/** A point or direction in 3D. */
 export interface Vec3 {
   readonly x: number;
   readonly y: number;
