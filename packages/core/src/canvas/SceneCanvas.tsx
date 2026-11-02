@@ -23,7 +23,7 @@ import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
 import { GestureReason } from './GestureReason';
 import { CanvasKitProviders } from './SceneCanvas/CanvasKitProviders';
 import { canvasPassThrough } from './SceneCanvas/canvasPassThrough';
-import { SceneCanvasInput, type SceneCanvasInputOptions } from './SceneCanvas/SceneCanvasInput';
+import { SceneCanvasInput, type ContentSource, type SceneCanvasInputOptions } from './SceneCanvas/SceneCanvasInput';
 import type { PresetSource } from './SceneCanvas/features';
 import { CORE_PRESET_SOURCE } from './SceneCanvas/namedPresets';
 import type { BridgeAdapter, SceneCanvasProps } from './SceneCanvas/props';
@@ -72,7 +72,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const internalCanvasRef = useRef<HTMLElement | null>(null);
   const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
   const declaredSize = useLatest({ width: props.width ?? 0, height: props.height ?? 0 });
-  const { viewState, viewAnimation, camera } = useCanvasCamera({
+  const { viewState, viewAnimation, camera, publishContent } = useCanvasCamera({
     view: props.view, defaultView: props.defaultView, onViewChange: props.onViewChange, viewBounds: props.viewBounds,
     dims: () => canvasApiRef.current?.getSurfaceRect() ?? declaredSize.current,
     requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
@@ -166,7 +166,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         selection={selection} descriptor={descriptor as PoseDescriptor<unknown>}
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
         tools={tools} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
-        dispatcher={dispatcher} pathEdit={{ state: pathEditState }}
+        dispatcher={dispatcher} pathEdit={{ state: pathEditState }} content={{ publish: publishContent, gestureSource, previewPoseExtra, picking } as ContentSource}
         chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} ingestionHandlers={ingestionHandlers} devtools={devtools}
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />

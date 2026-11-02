@@ -150,6 +150,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
 
       return {
         kind: 'lasso',
+        autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
           const { x, y } = moveCtx.world;
           scratch.currentX = x;

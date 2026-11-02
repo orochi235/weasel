@@ -59,6 +59,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
 
       return {
         kind: 'bend-segment',
+        autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
           const dx = moveCtx.world.x - press.x;
           const dy = moveCtx.world.y - press.y;

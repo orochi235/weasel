@@ -36,12 +36,12 @@ export const DRAW_MENU_CONTRIBUTIONS: MenuContributions = {
     flip: menuRun({ flip: 'flip' }),
   },
   view: {
-    toggles: menuRun({ grid: 'view.grid', snap: 'view.snap', symmetry: 'view.symmetry' }),
+    toggles: menuRun({ grid: 'view.grid', snap: 'view.snap', bounds: 'view.boundToContent', symmetry: 'view.symmetry' }),
     pathOverlays: menuRun({
       direction: 'pathEdit.show.direction', comb: 'pathEdit.show.comb',
       balance: 'pathEdit.show.balance', corners: 'pathEdit.show.corners',
     }),
-    zoom: menuRun({ in: 'viewport.zoom:in', out: 'viewport.zoom:out', reset: 'viewport.zoom:reset' }),
+    zoom: menuRun({ in: 'viewport.zoom:in', out: 'viewport.zoom:out', reset: 'viewport.zoom:reset', fit: 'viewport.zoom:fit' }),
     chrome: menuRun(Object.fromEntries(CHROME_ITEMS.map(({ id }) => [id, chromeActionId(id)]))),
   },
 };

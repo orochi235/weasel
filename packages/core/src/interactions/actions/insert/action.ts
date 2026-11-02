@@ -64,6 +64,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
 
       return {
         kind: 'insert',
+        autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
           if (gesture.repositioning) carryStart(session, frame.pointer, moveCtx.world, moveCtx);
           frame = nextFrame(session, readers, frame, moveCtx);

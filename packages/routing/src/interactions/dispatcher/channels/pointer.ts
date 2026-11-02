@@ -39,6 +39,11 @@ export interface PointerInput {
   takeNativeHold(): boolean;
   /** Cancel every held pointer, each through its session, which reports once. */
   cancelHeld(): void;
+  /** Where the pointer held longest is, in client pixels; `null` with none held. */
+  heldAt(): { clientX: number; clientY: number } | null;
+  /** Send every held pointer's last move again, as of now: under a view that
+   *  has moved since, the same client point is a new world point. */
+  repeatHeld(): void;
   /** Drop every held pointer and timer without dispatching. */
   dispose(): void;
 }
@@ -105,9 +110,29 @@ function holdClock(core: PointerDispatchCore): { clock: RecognizerClock; routeTo
   };
 }
 
+/** Edge panning's reads of the held pointers' last samples: where the
+ *  longest-held one is, and each sent again as of now through `resend`. */
+function heldMoves(
+  /** Each held pointer's last sample, in press order. */
+  last: ReadonlyMap<number, PointerSample>,
+  resend: (s: PointerSample) => void,
+): Pick<PointerInput, 'heldAt' | 'repeatHeld'> {
+  return {
+    heldAt() {
+      for (const s of last.values()) return { clientX: s.clientX, clientY: s.clientY };
+      return null;
+    },
+    repeatHeld() {
+      for (const s of [...last.values()]) resend({ ...s, timeStamp: performance.now() });
+    },
+  };
+}
+
 export function pointerInput(core: PointerDispatchCore, opts: PointerInputOptions): PointerInput {
   const { canvas, routeAt, routeDown, routeRelease, toWorld, target } = core;
   const sessions = new Map<number, PointerSession>();
+  const lastSample = new Map<number, PointerSample>();
+  const drop = (id: number): void => { sessions.delete(id); lastSample.delete(id); };
   // A double click this dispatcher acted on is spent: the browser's own
   // `dblclick` that follows is marked handled, so a container that opens or
   // toggles on double-click leaves it alone.
@@ -143,13 +168,15 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
 
   const onMove = (e: PointerEvent): void => {
     routeAt(e.pointerId, e.clientX, e.clientY);
-    recognizer.move(sampleOf(e));
+    const sample = sampleOf(e);
+    if (sessions.has(e.pointerId)) lastSample.set(e.pointerId, sample);
+    recognizer.move(sample);
     opts.hover.moved(e);
   };
 
   const onUp = (e: PointerEvent): void => {
     routeAt(e.pointerId, e.clientX, e.clientY);
-    sessions.delete(e.pointerId);
+    drop(e.pointerId);
     const { doubleClick } = recognizer.release(sampleOf(e));
     if (doubleClick) claimedDoubleClick = doubleClick === 'handled' || opts.onDoubleClick() !== undefined;
     // Everything this release synthesizes has been dispatched, so the pointer's view can be unpinned.
@@ -164,7 +191,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     if (core.disposed()) return;
     const at = recognizer.positionOf(pointerId);
     if (!at) return;
-    sessions.delete(pointerId);
+    drop(pointerId);
     routeAt(pointerId, at.x, at.y);
     recognizer.cancel(pointerId);
     routeRelease(pointerId);
@@ -192,7 +219,8 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       sessions.set(e.pointerId, openPointerSession(canvas, e, {
         onMove, onEnd: onUp, onCancel: () => { onCancel(e.pointerId); },
       }));
-      recognizer.press({ ...sampleOf(e), x: w.x, y: w.y, pointerType: e.pointerType, ...where });
+      const sample = lastSample.set(e.pointerId, sampleOf(e)).get(e.pointerId)!;
+      recognizer.press({ ...sample, x: w.x, y: w.y, pointerType: e.pointerType, ...where });
     },
     onHoverMove(e) {
       if (!sessions.has(e.pointerId)) onMove(e);
@@ -209,10 +237,12 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     cancelHeld() {
       for (const session of [...sessions.values()]) session.cancel();
     },
+    ...heldMoves(lastSample, (s) => { routeAt(s.pointerId, s.clientX, s.clientY); recognizer.move(s); }),
     dispose() {
       recognizer.reset();
       for (const session of sessions.values()) session.cancel();
       sessions.clear();
+      lastSample.clear();
     },
   };
 }

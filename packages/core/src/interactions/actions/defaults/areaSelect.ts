@@ -67,6 +67,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
 
       return {
         kind: 'marquee',
+        autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;

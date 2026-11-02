@@ -216,6 +216,14 @@ export interface OngoingHandle {
   kind?: string;
 
   /**
+   * Whether the view scrolls while this drag holds the pointer near the
+   * canvas's edge, with the drag seeing its world point move as it does: for
+   * a drag that places or reaches content, such as a move, a resize, an
+   * insert, or a marquee. A canvas without edge panning ignores it.
+   */
+  autoPan?: boolean;
+
+  /**
    * The cursor this gesture shows now, read after every move. Wins over the
    * action's `activeCursor`, for a cursor that follows the gesture — the
    * rotate glyph turning about its pivot. `undefined` defers to the action.

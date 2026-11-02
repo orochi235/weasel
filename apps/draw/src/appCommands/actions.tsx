@@ -19,6 +19,9 @@ export interface AppCommands {
   toggleGrid(): void;
   snapToGrid: boolean;
   toggleSnap(): void;
+  /** Whether the view pans only as far as the content and its margin. */
+  boundToContent: boolean;
+  toggleBoundToContent(): void;
   /** Whether live symmetry is on. */
   symmetryOn: boolean;
   toggleSymmetry(): void;
@@ -55,6 +58,15 @@ export const toggleSnapAction: AppAction = {
   requires: ['appCommands'],
   active: (deps) => read(deps)?.snapToGrid === true,
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSnap() },
+};
+
+export const toggleBoundToContentAction: AppAction = {
+  id: 'view.boundToContent',
+  label: 'Bound view to content',
+  group: 'view',
+  requires: ['appCommands'],
+  active: (deps) => read(deps)?.boundToContent === true,
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleBoundToContent() },
 };
 
 export const toggleSymmetryAction: AppAction = {
@@ -118,6 +130,7 @@ export const commandsAction: AppAction = {
 export const appActions: Action[] = [
   toggleGridAction,
   toggleSnapAction,
+  toggleBoundToContentAction,
   toggleSymmetryAction,
   ...chromeActions,
   releaseCompoundAction,

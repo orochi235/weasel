@@ -51,6 +51,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       let engaged: { x: number; y: number } | null = null;
       return {
         kind: 'move',
+        autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
           if (!engaged) session.lifecycle.start(session.ids as unknown as string[]);

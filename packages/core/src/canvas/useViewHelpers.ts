@@ -2,9 +2,8 @@ import { useCallback, useMemo } from 'react';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { useLatest } from '@weasel-js/react';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
-import { useInFlightBounds } from './useInFlightBounds';
+import { gestureBoundsOf, useInFlightBounds } from './useInFlightBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
-import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { NodeId } from 'core/scene/types';
@@ -167,7 +166,8 @@ export interface ViewHelpersBundle<TPose> {
   helpers: CanvasViewHelpers<TPose>;
 }
 
-function worldPoseOf<TPose>(adapter: ViewPoseAdapter<TPose>, id: string): TPose {
+/** Where `adapter` draws `id`. */
+export function worldPoseOf<TPose>(adapter: ViewPoseAdapter<TPose>, id: string): TPose {
   return typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id);
 }
 
@@ -270,15 +270,9 @@ export function useViewHelpers<TPose>(
       return previewPoseOf(id) ?? committedPoseOf(id);
     },
     getEffectiveBounds: boundsWithPreview,
-    getGestureBounds: (): Bounds | null => {
-      // The same id sets the ghost layer walks, so this cannot disagree with
-      // what the user sees ghosted.
-      const parts: (Bounds | null)[] = [];
-      for (const id of new Set(gestureSource?.ids() ?? [])) parts.push(previewBoundsOf(id));
-      const extraBounds = gestureSource?.bounds();
-      if (extraBounds) for (const b of extraBounds) parts.push(b);
-      return unionAABB(parts);
-    },
+    // The same id sets the ghost layer walks, so this cannot disagree with
+    // what the user sees ghosted.
+    getGestureBounds: (): Bounds | null => gestureBoundsOf(gestureSource, previewBoundsOf),
     subscribeGestures: (fn: () => void): (() => void) =>
       gestureSource?.subscribe(fn) ?? noOpUnsubscribe,
     getGestureVersion: (): number => gestureSource?.getVersion() ?? 0,

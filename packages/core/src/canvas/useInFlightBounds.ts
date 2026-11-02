@@ -2,6 +2,23 @@ import { useCallback, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { GestureSource } from './gestureBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { unionAABB } from 'core/geometry/unionBounds';
+
+/**
+ * Everything `source`'s in-flight gestures propose, boxed: each node they
+ * name, where `previewBoundsOf` puts it, and the content they draw before
+ * any node exists. `null` with nothing in flight.
+ */
+export function gestureBoundsOf(
+  source: GestureSource | undefined,
+  previewBoundsOf: (id: string) => Bounds | null,
+): Bounds | null {
+  if (!source) return null;
+  const parts: (Bounds | null)[] = [];
+  for (const id of new Set(source.ids() ?? [])) parts.push(previewBoundsOf(id));
+  for (const b of source.bounds() ?? []) parts.push(b);
+  return unionAABB(parts);
+}
 
 /**
  * Where a view boxes the nodes an in-flight gesture names: at the pose a

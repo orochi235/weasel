@@ -1,16 +1,18 @@
-import { useInsertionEffect, useMemo, useRef } from 'react';
+import { useCallback, useInsertionEffect, useMemo, useRef } from 'react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { useViewAnimationOn, type ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import { sameView, type View } from 'core/viewport/view';
 import type { Dims } from 'core/layers/render';
 import type { SceneCanvasApi } from '../canvasExtension';
-import { useCanvasView, type CameraProps, type CanvasViewState } from '../useCanvasView';
+import { useCanvasView, type CanvasViewState } from '../useCanvasView';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { sceneViewBounds, type SceneCameraProps } from './sceneViewBounds';
 
 /**
  * The canvas's camera: the view `<Canvas>` looks through, the runner behind
  * `animateView`, and the target and animator it runs on.
  */
-export function useCanvasCamera(opts: CameraProps & {
+export function useCanvasCamera(opts: SceneCameraProps & {
   /** The size the camera looks through, which `viewBounds` clamps against.
    *  Read live: a filling canvas learns it only once measured. */
   dims: () => Dims;
@@ -19,8 +21,11 @@ export function useCanvasCamera(opts: CameraProps & {
   viewState: CanvasViewState;
   viewAnimation: ViewAnimationApi;
   camera: SceneCanvasApi['camera'];
+  /** Sets what `viewBounds: 'content'` reads as the content, once the scene's picking and gestures exist. */
+  publishContent: (read: () => Bounds | null) => void;
 } {
-  const { view, defaultView, onViewChange, viewBounds, dims, requestRedraw } = opts;
+  const { view, defaultView, onViewChange, dims, requestRedraw } = opts;
+  const contentBoundsRef = useRef<() => Bounds | null>(() => null);
   const animationRef = useRef<ViewAnimationApi | null>(null);
   /** The runner has written a frame since the controlled view last moved. */
   const runnerWroteRef = useRef(false);
@@ -33,7 +38,7 @@ export function useCanvasCamera(opts: CameraProps & {
       animationRef.current?.stopIfExternal();
       onViewChange?.(next);
     },
-    viewBounds,
+    viewBounds: sceneViewBounds(opts.viewBounds, () => contentBoundsRef.current()),
     dims,
     requestRedraw,
   });
@@ -70,5 +75,6 @@ export function useCanvasCamera(opts: CameraProps & {
     else viewAnimation.stopIfExternal();
   });
   const camera = useMemo(() => ({ target: viewAnimation.viewTarget, animator }), [viewAnimation, animator]);
-  return { viewState, viewAnimation, camera };
+  const publishContent = useCallback((read: () => Bounds | null) => { contentBoundsRef.current = read; }, []);
+  return { viewState, viewAnimation, camera, publishContent };
 }
