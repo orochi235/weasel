@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 /** What an effect of type `bevel2` takes as `params`. */
 export interface BadgeBevel2EffectParams {
@@ -27,7 +28,7 @@ const SHADE_CLASSES = [
 function lightDirFor(angleDeg: number): { lx: number; ly: number } {
   // Compass convention (0° = up, clockwise). Returns the unit vector pointing
   // outward from the badge toward the light source.
-  const rad = (angleDeg * Math.PI) / 180;
+  const rad = angleDeg * DEG_TO_RAD;
   return { lx: Math.sin(rad), ly: -Math.cos(rad) };
 }
 

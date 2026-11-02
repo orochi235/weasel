@@ -10,6 +10,7 @@
  */
 
 import { PathBuilder } from './builder';
+import { DEG_TO_RAD } from '../angle';
 
 const NUM_RE = /[+-]?(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?/g;
 /** Same grammar, anchored — used where a number's position matters. */
@@ -297,7 +298,7 @@ function arcToCubics(
     b.lineTo(x2, y2);
     return;
   }
-  const phi = (xAxisRotationDeg * Math.PI) / 180;
+  const phi = xAxisRotationDeg * DEG_TO_RAD;
   const cosPhi = Math.cos(phi);
   const sinPhi = Math.sin(phi);
 

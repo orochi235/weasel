@@ -7,6 +7,7 @@ import type {
   TrackShape,
   TrackStation,
 } from './shape';
+import { RAD_TO_DEG } from '../angle';
 
 /** A station as a run places an item: `normal` is the item's up after any flip, `tangent` its reading direction,
  *  `angle` the CSS rotation in degrees that tips an upright item to the place (0 = upright, clockwise positive, in
@@ -75,7 +76,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
   const at = (g: number, options?: TrackAtOptions): TrackPlace => {
     const s = options?.open ? shape.at(toShape(g), options) : shape.at(toShape(clamp(g, 0, 1)));
     const dir = reading(s.normal);
-    const angle = (Math.atan2(dir.y, dir.x) * 180) / Math.PI;
+    const angle = Math.atan2(dir.y, dir.x) * RAD_TO_DEG;
     const normal = { x: sgn * s.normal.x, y: sgn * s.normal.y };
     return {
       point: s.point,

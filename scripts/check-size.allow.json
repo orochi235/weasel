@@ -184,7 +184,7 @@
     "longestFunction": 185
   },
   "packages/svg/src/gradients.ts": {
-    "lines": 624
+    "lines": 623
   },
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 669,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { wrapPositive, type Point } from '@weasel-js/geom';
+import { DEG_TO_RAD, wrapPositive, type Point } from '@weasel-js/geom';
 import { Along, type AlongArc } from '@weasel-js/ui/components/Along';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -37,7 +37,7 @@ export function rimArcs(turn: number): { top: AlongArc; bottom: AlongArc } {
 export function pictureAt(client: Point, lens: DOMRect, size: number, turn: number, zoom: number): Point {
   const dx = client.x - (lens.left + lens.width / 2);
   const dy = client.y - (lens.top + lens.height / 2);
-  const rad = (-turn * Math.PI) / 180;
+  const rad = -turn * DEG_TO_RAD;
   const x = (dx * Math.cos(rad) - dy * Math.sin(rad)) / zoom;
   const y = (dx * Math.sin(rad) + dy * Math.cos(rad)) / zoom;
   return { x: x + size / 2, y: y + size / 2 };

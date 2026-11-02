@@ -19,6 +19,7 @@ import {
 import { collectElementsByTag } from './elements';
 import { imageHref } from './readImage';
 import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
+import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /** Collected pattern definitions, keyed by element id. */
 export type PatternTable = Map<string, Paint>;
@@ -103,7 +104,7 @@ function shapeXml(shape: TileShape): string {
       return `<circle cx="${trimNumber(shape.cx)}" cy="${trimNumber(shape.cy)}" `
         + `r="${trimNumber(shape.r)}" fill="${escapeAttr(shape.color)}"/>`;
     case 'ellipse': {
-      const deg = (shape.rotation * 180) / Math.PI;
+      const deg = shape.rotation * RAD_TO_DEG;
       const transform = deg === 0
         ? ''
         : ` transform="rotate(${trimNumber(deg)} ${trimNumber(shape.cx)} ${trimNumber(shape.cy)})"`;

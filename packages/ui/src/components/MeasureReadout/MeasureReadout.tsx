@@ -15,6 +15,7 @@ import { useActionStates } from '../ActionBar/useActionStates';
 import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { BarActionButton } from '../Bar/BarAction';
 import s from './MeasureReadout.module.css';
+import { RAD_TO_DEG } from '@weasel-js/geom';
 
 const COMMANDS: readonly [string, string][] = [
   [MEASURE_ACTION_IDS.moveBy, 'Move by'],
@@ -72,7 +73,7 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
     ['Distance', format(m.distance)],
     ['ΔX', format(m.dx)],
     ['ΔY', format(m.dy)],
-    ['Angle', `${format((m.angle * 180) / Math.PI)}°`],
+    ['Angle', `${format(m.angle * RAD_TO_DEG)}°`],
   ];
   return (
     <div className={[s.readout, className].filter(Boolean).join(' ')} role="group" aria-label="Measurement">

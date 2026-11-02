@@ -27,6 +27,7 @@ import {
 import { textXml } from './serializeText';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
+import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /**
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
@@ -265,6 +266,6 @@ function rotationAttr(node: SvgPathNode): string | null {
   const b = pathBounds(node.path);
   const cx = b.minX + (b.maxX - b.minX) / 2;
   const cy = b.minY + (b.maxY - b.minY) / 2;
-  const deg = (node.rotation * 180) / Math.PI;
+  const deg = node.rotation * RAD_TO_DEG;
   return `transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`;
 }

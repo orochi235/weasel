@@ -5,6 +5,7 @@ import { ToggleBar as KitToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 const meta: Meta<typeof Button> = {
   title: 'ui/Foundations/Button',
@@ -323,8 +324,8 @@ function buttonStyleFromLab(p: LabParams): CSSProperties {
     ['--btn-text-shadow' as never]: String(p.textShadow),
     ['--btn-text-inset' as never]: String(p.textInset),
     // Compass angle: 0° = up, 90° = right, 180° = down (CSS gradient convention).
-    ['--btn-text-inset-x' as never]: `${(Math.sin((p.textInsetAngle * Math.PI) / 180) * p.textInsetDist).toFixed(2)}px`,
-    ['--btn-text-inset-y' as never]: `${(-Math.cos((p.textInsetAngle * Math.PI) / 180) * p.textInsetDist).toFixed(2)}px`,
+    ['--btn-text-inset-x' as never]: `${(Math.sin(p.textInsetAngle * DEG_TO_RAD) * p.textInsetDist).toFixed(2)}px`,
+    ['--btn-text-inset-y' as never]: `${(-Math.cos(p.textInsetAngle * DEG_TO_RAD) * p.textInsetDist).toFixed(2)}px`,
   };
 }
 

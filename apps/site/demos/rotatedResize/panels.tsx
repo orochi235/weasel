@@ -4,6 +4,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { createGridLayer } from '@weasel-js/guides';
 import num from '@weasel-js/theme/numeric.module.css';
 import { fixedCornerWorld, H, HANDLE, INITIAL_GREEN, medianPose, type Rect, W } from './math';
+import { RAD_TO_DEG } from '@weasel-js/geom';
 
 // drawOne returns unrotated geometry; SceneCanvas wraps the output in a
 // rotation transform when `pose.rotation` is set (see
@@ -52,7 +53,7 @@ function OverlayLabel({ title, subtitle }: { title: string; subtitle?: string })
 function GhostRect({ pose, color }: { pose: Rect; color: string }) {
   const cx = pose.x + pose.width / 2;
   const cy = pose.y + pose.height / 2;
-  const deg = (pose.rotation * 180) / Math.PI;
+  const deg = pose.rotation * RAD_TO_DEG;
   return (
     <svg width={W} height={H} className="rrmd-ghost">
       <rect
@@ -180,7 +181,7 @@ export function StackedOverlayPanel({
           const p = poses[k];
           const cx = p.x + p.width / 2;
           const cy = p.y + p.height / 2;
-          const deg = (p.rotation * 180) / Math.PI;
+          const deg = p.rotation * RAD_TO_DEG;
           const isGreen = k === 'green';
           return (
             <rect
@@ -212,7 +213,7 @@ export function MedianPanel({
   const m = medianPose(orange, purple, teal);
   const cx = m.x + m.width / 2;
   const cy = m.y + m.height / 2;
-  const deg = (m.rotation * 180) / Math.PI;
+  const deg = m.rotation * RAD_TO_DEG;
   const greenColor = INITIAL_GREEN.color;
   return (
     <div className="rrmd-panel">

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
-import type { TrackShape } from '@weasel-js/geom';
+import { RAD_TO_DEG, type TrackShape } from '@weasel-js/geom';
 
 /** One thumb as the page shows it. */
 export interface ThumbReading {
@@ -24,7 +24,7 @@ function angleOf(el: Element): number {
   const t = getComputedStyle(el).transform;
   if (!t || t === 'none') return 0;
   const m = new DOMMatrix(t);
-  const deg = (Math.atan2(m.b, m.a) * 180) / Math.PI;
+  const deg = Math.atan2(m.b, m.a) * RAD_TO_DEG;
   return deg === 0 ? 0 : deg;
 }
 

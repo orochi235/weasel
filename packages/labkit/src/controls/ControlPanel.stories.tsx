@@ -1,5 +1,6 @@
 import { ANGLE_RADIANS } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 import { f, resolveConfigSchema, withValueAtPath } from '@weasel-js/labkit/config';
 import { ControlPanel, type ControlPanelProps } from '@weasel-js/labkit/controls';
 import { type PrefGroup, type PrefNumberUnit, prefUnit } from '@weasel-js/prefs';
@@ -328,7 +329,7 @@ const presentation = f.schema({
     .unit(degrees)
     .label('Rotation'),
   nudge: f
-    .number(Math.PI / 180)
+    .number(1 * DEG_TO_RAD)
     .input()
     .unit(degrees)
     .label('Nudge'),

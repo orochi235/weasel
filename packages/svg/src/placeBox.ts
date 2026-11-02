@@ -4,7 +4,7 @@
  * have a matrix baked into their geometry the way a path can.
  */
 import type { Matrix } from './types';
-import { invert } from '@weasel-js/geom';
+import { RAD_TO_DEG, invert } from '@weasel-js/geom';
 import { poseFrameOf, poseLinearOf, type PoseLinear } from '@weasel-js/core';
 import { applyMatrix, decomposeRotation, formatMatrix, isIdentity, trimNumber } from './transform';
 
@@ -146,6 +146,6 @@ export function boxTransformAttr(
   if (!node.rotation) return null;
   const cx = node.x + node.width / 2;
   const cy = node.y + node.height / 2;
-  const deg = (node.rotation * 180) / Math.PI;
+  const deg = node.rotation * RAD_TO_DEG;
   return `transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`;
 }

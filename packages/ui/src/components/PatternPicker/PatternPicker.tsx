@@ -12,7 +12,7 @@ import {
   type TilePaint,
   type TilePatternSpec,
 } from '@weasel-js/core';
-import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
+import { DEG_TO_RAD, RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { unit } from '@weasel-js/quantity';
 import { tilePreviewCssUrl } from '@weasel-js/svg';
 import { Icon } from '../../icons';
@@ -59,7 +59,7 @@ function toDegrees(rad: number): number {
  *  nothing is left of it. */
 function withRotation(value: PatternPaint, degrees: number): PatternPaint {
   const parts = decomposePatternTransform(value.transform);
-  const [a, b, c, d] = composePatternTransform({ ...parts, rotation: (degrees * Math.PI) / 180 });
+  const [a, b, c, d] = composePatternTransform({ ...parts, rotation: degrees * DEG_TO_RAD });
   const { transform: _drop, ...rest } = value;
   const identity = Math.abs(a - 1) < 1e-9 && Math.abs(b) < 1e-9 && Math.abs(c) < 1e-9 && Math.abs(d - 1) < 1e-9;
   return identity ? rest : { ...rest, transform: [a, b, c, d] };

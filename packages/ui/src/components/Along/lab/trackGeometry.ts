@@ -1,4 +1,4 @@
-import { arcShape, trackRun, wrapPositive, type ArcTrackSpec, type Point, type TrackNearest, type TrackPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { DEG_TO_RAD, RAD_TO_DEG, arcShape, trackRun, wrapPositive, type ArcTrackSpec, type Point, type TrackNearest, type TrackPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
 
 /** The handles the lab's arc is edited by: each is a scene node, and its center is what the arc reads. */
 export type HandleId = 'center' | 'radius' | 'start' | 'end' | 'probe';
@@ -19,13 +19,13 @@ export type HandlePoints = Record<HandleId, Point>;
 
 /** Degrees clockwise from 12 o'clock of `p` about `c`, in [0, 360): the arc's own terms. */
 export function bearing(p: Point, c: Point): number {
-  const deg = (Math.atan2(p.x - c.x, c.y - p.y) * 180) / Math.PI;
+  const deg = Math.atan2(p.x - c.x, c.y - p.y) * RAD_TO_DEG;
   return wrapPositive(deg, 360);
 }
 
 /** The point `deg` clockwise from 12 o'clock on the circle of `r` about `c`. */
 export function onCircle(c: Point, r: number, deg: number): Point {
-  const rad = (deg * Math.PI) / 180;
+  const rad = deg * DEG_TO_RAD;
   return { x: c.x + r * Math.sin(rad), y: c.y - r * Math.cos(rad) };
 }
 

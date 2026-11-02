@@ -26,6 +26,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './MeasureLabDemo.module.css';
 import { icon } from '../icons.gen';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),
@@ -68,7 +69,7 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { snap, spacing, angleStep } = ctx.config;
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATIONS }));
-  const measure = useMeasureTool({ measurements, angleStep: (angleStep * Math.PI) / 180 });
+  const measure = useMeasureTool({ measurements, angleStep: angleStep * DEG_TO_RAD });
   const tools = useMemo(() => ({ measure }), [measure]);
   const ambient = useMemo(() => [measurementsContribution(scene as never, measurements)], [scene, measurements]);
 

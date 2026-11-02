@@ -1,5 +1,6 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 /**
  * Symmetric polar-spline base. The silhouette comes from a single curve r(s) over
@@ -159,7 +160,7 @@ const OctantSpline: BaseModule<BadgeOctantSplineBaseParams> = {
     const cfg = { ...DEFAULTS, ...params };
     const anchors = extractAnchorPairs(cfg);
     const spline = compileSpline(anchors);
-    const rot = (cfg.rotation * Math.PI) / 180;
+    const rot = cfg.rotation * DEG_TO_RAD;
     const N = Math.max(48, Math.floor(cfg.samples));
     const cx = 50, cy = 50;
     const verts: [number, number][] = [];

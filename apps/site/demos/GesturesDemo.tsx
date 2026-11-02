@@ -13,6 +13,7 @@ import {
 import type { ModifierState } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /**
  * Gestures showcase — every gesture *form* in `src/interactions/gestures` on one
@@ -225,7 +226,7 @@ export function GesturesDemo() {
   const radial = useDragRadial({
     onMove: (c) => {
       radialO.current = { cx: c.center.x, cy: c.center.y, radius: c.radius, rotation: c.rotation };
-      const deg = ((c.rotation * 180) / Math.PI).toFixed(0);
+      const deg = (c.rotation * RAD_TO_DEG).toFixed(0);
       setReadout(`angle ${deg}° · radius ${fmt(c.radius)}px · center (${fmt(c.center.x)}, ${fmt(c.center.y)})`);
       draw();
     },

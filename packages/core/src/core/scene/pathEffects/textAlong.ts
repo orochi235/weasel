@@ -3,7 +3,7 @@
  * whole shape as one item — laid end to end along a path, each turned to it.
  */
 import {
-  boundsOfPath, clamp01, multiply, pathShape, placeAlongRun, rotate, runLength, trackRun, transformPath, translate,
+  DEG_TO_RAD, boundsOfPath, clamp01, multiply, pathShape, placeAlongRun, rotate, runLength, trackRun, transformPath, translate,
   type Affine, type Path, type RunAlign, type RunPlace, type TrackSide,
 } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
@@ -113,7 +113,7 @@ function fitGap(lengths: readonly number[], room: number): number {
 
 /** Item frame to world: its middle on `place`, turned to it, its anchor line `lift` above y = 0 brought onto the path. */
 function itemFrame(place: RunPlace, length: number, lift: number): Affine {
-  const turn = multiply(rotate((place.angle * Math.PI) / 180), translate(-length / 2, lift));
+  const turn = multiply(rotate(place.angle * DEG_TO_RAD), translate(-length / 2, lift));
   return multiply(translate(place.point.x, place.point.y), turn);
 }
 

@@ -1,5 +1,6 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 /**
  * 8-fold-symmetric polar shape. The whole silhouette is defined by a single curve r(s)
@@ -107,7 +108,7 @@ export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: nu
 export function quatrefoilVertices(params: BadgeQuatrefoilBaseParams = {}): [number, number][] {
   const cfg = { ...DEFAULTS, ...params };
   const radiusAt = quatrefoilRadius(cfg);
-  const rot = (cfg.rotation * Math.PI) / 180;
+  const rot = cfg.rotation * DEG_TO_RAD;
   const N = Math.max(24, Math.floor(cfg.samples));
   const cx = 50, cy = 50;
   const verts: [number, number][] = [];

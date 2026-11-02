@@ -2,6 +2,7 @@ import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
 import { fitPointRun, keepCorner } from './fitRun';
+import { DEG_TO_RAD } from '../angle';
 
 /** Options for {@link simplifyPath}. */
 export interface SimplifyPathOptions {
@@ -100,7 +101,7 @@ export function simplifySpan(
 function fitParams(tolerance: number, opts: SimplifyPathOptions): { tol: number; cosCorner: number } {
   return {
     tol: Math.max(tolerance, 1e-6),
-    cosCorner: Math.cos(((opts.cornerAngle ?? 40) * Math.PI) / 180),
+    cosCorner: Math.cos((opts.cornerAngle ?? 40) * DEG_TO_RAD),
   };
 }
 

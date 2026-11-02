@@ -4,6 +4,8 @@
  * those edges.
  */
 
+import { DEG_TO_RAD } from '@weasel-js/geom';
+
 export type Cap = 'butt' | 'round' | 'square';
 export type Join = 'miter' | 'round' | 'bevel';
 
@@ -22,7 +24,7 @@ export interface Seg {
   len: number;
 }
 
-const ROUND_CAP_STEP_RAD = (10 * Math.PI) / 180;
+const ROUND_CAP_STEP_RAD = 10 * DEG_TO_RAD;
 
 /**
  * Emit a cap at one end of a segment. `leftIdx`/`rightIdx` are the buffer
@@ -214,7 +216,7 @@ export function emitJoin(
   }
 }
 
-const ROUND_STEP_RAD = (10 * Math.PI) / 180;   // ~10° per fan triangle
+const ROUND_STEP_RAD = 10 * DEG_TO_RAD;   // ~10° per fan triangle
 
 function emitRoundJoin(
   a: Seg, aOuterEnd: number, bOuterStart: number, onPositive: boolean,

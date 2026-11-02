@@ -7,6 +7,7 @@
 
 import { anchorAt, moveHandleTo, translateAnchorBy, type AnchorSet } from './anchorEdits';
 import type { PenAnchor } from './anchors';
+import { DEG_TO_RAD, RAD_TO_DEG } from '../angle';
 
 /** One number of an anchor. Handle angles are degrees counterclockwise from
  *  +x as drawn, where y grows downward; lengths and positions are in the
@@ -104,7 +105,7 @@ function handleTarget(a: PenAnchor, h: Point, part: 'X' | 'Y' | 'Angle' | 'Lengt
   const angle = angleOf(a, h);
   const nextAngle = part === 'Angle' ? apply(angle, entry) : angle;
   const nextLength = part === 'Length' ? Math.max(0, apply(length, entry)) : length;
-  const rad = (nextAngle * Math.PI) / 180;
+  const rad = nextAngle * DEG_TO_RAD;
   return { x: a.x + Math.cos(rad) * nextLength, y: a.y - Math.sin(rad) * nextLength };
 }
 
@@ -114,7 +115,7 @@ function apply(current: number, entry: NumberEntry): number {
 
 function angleOf(a: Point, h: Point): number {
   if (h.x === a.x && h.y === a.y) return 0;
-  return (Math.atan2(a.y - h.y, h.x - a.x) * 180) / Math.PI;
+  return Math.atan2(a.y - h.y, h.x - a.x) * RAD_TO_DEG;
 }
 
 function agreed(values: number[]): number | null {

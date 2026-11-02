@@ -4,7 +4,7 @@
  * geometry at parse time.
  */
 
-import { applyToPoint, invert, multiply } from '@weasel-js/geom';
+import { DEG_TO_RAD, applyToPoint, invert, multiply } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
@@ -73,7 +73,7 @@ export function parseTransform(
       const sy = nums.length >= 2 ? nums[1] : sx;
       local = [sx, 0, 0, sy, 0, 0];
     } else if (name === 'rotate') {
-      const ang = ((nums[0] ?? 0) * Math.PI) / 180;
+      const ang = (nums[0] ?? 0) * DEG_TO_RAD;
       const c = Math.cos(ang);
       const s = Math.sin(ang);
       const rot: Matrix = [c, s, -s, c, 0, 0];
@@ -86,7 +86,7 @@ export function parseTransform(
         local = rot;
       }
     } else if (name === 'skewx' || name === 'skewy') {
-      const ang = ((nums[0] ?? 0) * Math.PI) / 180;
+      const ang = (nums[0] ?? 0) * DEG_TO_RAD;
       const t = Math.tan(ang);
       local = name === 'skewx' ? [1, 0, t, 1, 0, 0] : [1, t, 0, 1, 0, 0];
     } else {

@@ -2,6 +2,7 @@ import { cssColorLiteral, type ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 /** What an effect of type `sunbeams` takes as `params`. */
 export interface BadgeSunbeamsEffectParams {
@@ -75,7 +76,7 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
       const beamWidthVb = nominalWidthVb * widthMult(i);
       const x1 = cursorX;
       const x2 = cursorX + beamWidthVb;
-      const tan = Math.tan(((cfg.angle + angleJitter(i)) * Math.PI) / 180);
+      const tan = Math.tan((cfg.angle + angleJitter(i)) * DEG_TO_RAD);
       const horizPerVb = tan * (sx / sy);
       const halfShear = horizPerVb * (yBot - yTop) / 2;
       const pts = [
@@ -93,7 +94,7 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
 
     // Gradient mask geometry: define a linear gradient from one edge of the viewBox to the
     // other along `gradientAngle`. Position the start/end stops along that 0..1 axis.
-    const ga = (cfg.gradientAngle * Math.PI) / 180;
+    const ga = cfg.gradientAngle * DEG_TO_RAD;
     const cosA = Math.cos(ga), sinA = Math.sin(ga);
     // Vector from centre to edge along the axis. Pick a long-enough span so 0..1 covers
     // the badge fully.

@@ -1,6 +1,6 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import {
-  identity, mat3, multiply, pathFromD, rotateAboutPoint, scale, translate, type Affine, type Path,
+  DEG_TO_RAD, identity, mat3, multiply, pathFromD, rotateAboutPoint, scale, translate, type Affine, type Path,
 } from '@weasel-js/geom';
 import type { IconGlyph } from '@weasel-js/icons';
 
@@ -45,7 +45,7 @@ function transformOf(v: string | undefined): Affine {
     const a = nums(args!);
     const next: Affine | null = fn === 'translate' ? translate(a[0] ?? 0, a[1] ?? 0)
       : fn === 'scale' ? scale(a[0] ?? 1, a[1] ?? a[0] ?? 1)
-        : fn === 'rotate' ? rotateAboutPoint(a[1] ?? 0, a[2] ?? 0, ((a[0] ?? 0) * Math.PI) / 180)
+        : fn === 'rotate' ? rotateAboutPoint(a[1] ?? 0, a[2] ?? 0, (a[0] ?? 0) * DEG_TO_RAD)
           : fn === 'matrix' && a.length === 6 ? (a as unknown as Affine) : null;
     if (next) m = multiply(m, next);
   }

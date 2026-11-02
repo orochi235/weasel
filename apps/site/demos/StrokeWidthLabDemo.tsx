@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 const config = f.schema({
   width: f.number(14).range(1, 40).step(1).suffix('px').label('Base width'),
@@ -27,7 +28,7 @@ type Data = { path?: Path; stroke?: Stroke; fill?: null };
 type State = SceneTrialState<Data, 'default', RectPose>;
 type Style = Pick<Config, 'width' | 'cap' | 'join' | 'nib' | 'nibAngle' | 'nibRatio'>;
 
-const radians = (deg: number) => (deg * Math.PI) / 180;
+const radians = (deg: number) => deg * DEG_TO_RAD;
 
 /** An S-curve across the trial, `y` down from the top: three anchors. */
 const wave = (y: number): Path =>

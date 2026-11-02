@@ -4,7 +4,7 @@ import {
   type Path, type PolygonPath, PATH_L, PATH_M, PATH_Z, getMarker, resolveMarkerSize, solid,
   type MarkerEntry, type MarkerPaint,
 } from '@weasel-js/core';
-import { joinPaths, worldCoords } from '@weasel-js/geom';
+import { DEG_TO_RAD, joinPaths, worldCoords } from '@weasel-js/geom';
 import type { Matrix, SvgNode, ScreenLength } from './types';
 import { multiply, parseTransform } from './transform';
 import { styleAt } from './styleAt';
@@ -145,7 +145,7 @@ function markerOrient(raw: string | null): { orient: 'auto' | number; reverseAtS
   const rad = unit === 'rad' ? n
     : unit === 'grad' ? (n * Math.PI) / 200
     : unit === 'turn' ? n * 2 * Math.PI
-    : (n * Math.PI) / 180;
+    : n * DEG_TO_RAD;
   return { orient: rad, reverseAtStart: false };
 }
 

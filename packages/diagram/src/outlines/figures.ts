@@ -3,7 +3,7 @@
  * actor, and the double ellipse BPMN's intermediate events wear.
  */
 import { PathBuilder, polygonFromPoints } from '@weasel-js/core/math';
-import { boundsOfPath, ellipsePath, transformPath } from '@weasel-js/geom';
+import { DEG_TO_RAD, boundsOfPath, ellipsePath, transformPath } from '@weasel-js/geom';
 import { KAPPA } from './flowchart';
 import { insetByShorter } from './storage';
 import type { Bounds, OutlineDef } from './types';
@@ -89,7 +89,7 @@ const CLOUD_RY = 0.3;
  *  unit square exactly. Built once; each node stretches it. */
 const CLOUD = (() => {
   const pts = CLOUD_JOINS.map((deg) => {
-    const t = (deg * Math.PI) / 180;
+    const t = deg * DEG_TO_RAD;
     return { x: 0.5 + CLOUD_RX * Math.cos(t), y: 0.5 + CLOUD_RY * Math.sin(t) };
   });
   const b = new PathBuilder().moveTo(pts[0]!.x, pts[0]!.y);

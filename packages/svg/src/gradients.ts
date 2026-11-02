@@ -18,6 +18,7 @@ import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
 import { serializePathD } from './path-serializer';
+import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /** Collected gradient definitions, keyed by element id. */
 export type GradientTable = Map<string, Paint>;
@@ -505,9 +506,7 @@ function defaultMarkerXml(
     : '';
   // The kit turns every start marker around, which is what SVG 2 spells
   // `auto-start-reverse`; plain `auto` would point a start head into the line.
-  const orient = typeof entry.orient === 'number'
-    ? trimNumber((entry.orient * 180) / Math.PI)
-    : 'auto-start-reverse';
+  const orient = typeof entry.orient === 'number' ? trimNumber(entry.orient * RAD_TO_DEG) : 'auto-start-reverse';
   const units = size === undefined
     ? 'markerUnits="strokeWidth" markerWidth="8" markerHeight="8"'
     : `markerUnits="userSpaceOnUse" markerWidth="${trimNumber(8 * unit)}" markerHeight="${trimNumber(8 * unit)}"`

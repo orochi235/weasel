@@ -19,6 +19,7 @@ import {
   type CursorGlyphName,
 } from '@weasel-js/cursor';
 import s from './cursors.stories.module.css';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 const meta: Meta = { title: 'ui/Cursors/Gallery', tags: ['gallery'] };
 export default meta;
@@ -134,7 +135,7 @@ export const Rotations: StoryObj = {
               return (
                 <div key={i} className={s.angleCell}>
                   <img
-                    src={assetOf(n, 48, (deg * Math.PI) / 180)}
+                    src={assetOf(n, 48, deg * DEG_TO_RAD)}
                     width={48}
                     height={48}
                     alt={`${n} at ${deg} degrees`}

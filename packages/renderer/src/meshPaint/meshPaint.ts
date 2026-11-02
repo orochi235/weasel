@@ -10,7 +10,7 @@
 import type { GradStop } from '@weasel-js/paint';
 import type { PaintBindContext, PaintDrawKind, PaintProgram, PaintResources } from '../paintKinds';
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
-import { mat3 } from '@weasel-js/geom';
+import { DEG_TO_RAD, mat3 } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../fillInPoseFrame';
@@ -71,7 +71,7 @@ function shifted(color: string, dL: number, cScale: number, dHueDeg: number): st
   const [nL, nA, nB] = oklchToOklab(
     Math.min(1, Math.max(0, L + dL)),
     Math.max(0, C * cScale),
-    h + (dHueDeg * Math.PI) / 180,
+    h + dHueDeg * DEG_TO_RAD,
   );
   const [nr, ng, nb] = oklabToSrgbU8(nL, nA, nB);
   return rgbaToHex([nr / 255, ng / 255, nb / 255, a]);

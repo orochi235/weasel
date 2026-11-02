@@ -1,5 +1,5 @@
 import { isSolidPaint } from '@weasel-js/paint';
-import { mat3, rotateAboutPoint } from '@weasel-js/geom';
+import { DEG_TO_RAD, mat3, rotateAboutPoint } from '@weasel-js/geom';
 import {
   colorPageTextureId, sharpColorPageTextureId, sharperColorGlyph, syncColorPageTexture, syncSharpColorPageTexture,
   DYNAMIC_PAGE_SIZE as PAGE_SIZE,
@@ -52,7 +52,7 @@ export function drawColorGlyphs(ctx: DrawContext, group: LaidOutGroup, dx: numbe
     let cut: BatchCut | null | undefined;
     // A turned glyph's quad is still its upright box, drawn through the turn.
     const qm = q.rotate
-      ? mat3.multiply(m, mat3.fromAffine(rotateAboutPoint(q.penX + dx, q.baselineY + dy, (q.rotate * Math.PI) / 180)))
+      ? mat3.multiply(m, mat3.fromAffine(rotateAboutPoint(q.penX + dx, q.baselineY + dy, q.rotate * DEG_TO_RAD)))
       : m;
     while (!batch.pushQuad(
       q.x0 + dx, q.y0 + dy, q.x1 - q.x0, q.y1 - q.y0, qm,
