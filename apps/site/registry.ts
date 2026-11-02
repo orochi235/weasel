@@ -256,6 +256,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PathSnapLabDemo.tsx',
   },
   {
+    id: 'lab-stroke-trim',
+    title: 'Stroke trim',
+    category: 'Geometry',
+    description:
+      "`Stroke.trim` draws only part of a stroke, from `start` to `end` in pen order, each a fraction of the path: of its length, or with Pace set to Anchor, of its anchors, each segment an equal share. A start past the end wraps a closed path through its first anchor and draws nothing on an open one. The open curve's markers sit on the trimmed ends. The rounded square cuts through its rounded corners, the orange one is stretched to twice its width with corners rounded before the stretch, and the three green squares hold their strokes inside, centered on and outside the edge. The pane on the right is the same scene through `exportPageSvg`, drawn by the browser's own SVG renderer, and Write PDF makes it through `exportPagesPdf`. The cut is measured by exact arc length, so it should not move as you zoom.",
+    hint: 'Drag Start and End, try Pace and the dashed and dotted styles, and zoom in on a cut with the wheel: it should stay put. Compare each shape with the exported SVG on the right, then Write PDF and open it.',
+    load: () => import('./demos/TrimLabDemo').then((m) => m.TrimLabDemo),
+    path: 'apps/site/demos/TrimLabDemo.tsx',
+  },
+  {
     id: 'boolean-ops',
     title: 'Boolean ops',
     category: 'Geometry',
