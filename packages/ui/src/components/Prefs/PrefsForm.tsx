@@ -129,6 +129,11 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    *  from a default, or from what was last saved. What counts as changed is the caller's to say. An alias row is marked when the leaf
    *  it shows is named. */
   changed?: ReadonlySet<string>;
+  /** Dotted paths of the leaves, groups and fields to draw disabled, beside what the schema's own `enableIf`s
+   *  disable: for a caller that judged the conditions itself, against values `values` does not hold the way the
+   *  schema's paths name them (labkit's `sectionTree`). Named as `applyPrefConditions` names what it disables, so a
+   *  group's path dims only its name, and a field's (`stroke.width`) disables that field. */
+  disabled?: ReadonlySet<string>;
   /** A drag over the form. The form lays out as it would after the drop,
    *  with the dragged nodes drawn where they would land: `prefDropTargetAt`
    *  finds where that is from a pointer position. */
@@ -186,6 +191,12 @@ export function PrefsForm(props: PrefsFormProps) {
     [visible, judge, keepEmpty, markHidden, over, targets],
   );
   const entryAt = useMemo(() => entryApplier(judge, markHidden), [judge, markHidden]);
+  const given = props.disabled;
+  const disabled = useMemo(() => {
+    const own = applied?.disabled;
+    if (!given || given.size === 0) return own;
+    return own && own.size > 0 ? new Set([...own, ...given]) : given;
+  }, [applied, given]);
   const conditioned = applied?.shown ?? null;
   const root = useMemo(
     () => (conditioned === null ? null : filterPrefRoot(conditioned, query, over)),
@@ -204,7 +215,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const selection = useSelectedRow(selected, lead, props.onSelect);
   const split = useSplitRows(props, schema, props.over);
   const { settles } = useParamsPolicy('form');
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

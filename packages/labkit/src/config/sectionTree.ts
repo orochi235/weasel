@@ -1,6 +1,7 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { headingLeaf } from './headingLeaf';
 import { valueAtPath } from './path';
+import { bareGroup, configVerdict, type ConfigVerdict } from './railConditions';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
 
@@ -21,6 +22,12 @@ export interface SectionTree {
   values: Record<string, unknown>;
   /** The config path a path within `group` stands for. */
   pathAt: (railPath: string) => string;
+  /** The paths within `group` an `enableIf` disables, judged against the
+   *  config: of leaves, of groups, and of fields inside a leaf, named as
+   *  `applyPrefConditions` names them. Pass it as `PrefsForm`'s `disabled`.
+   *  `group` carries no condition the form could judge in its place, since
+   *  one naming a config path would read `values`, where nothing is there. */
+  disabled: ReadonlySet<string>;
 }
 
 /**
@@ -70,6 +77,7 @@ function prune(
   config: Record<string, unknown>,
   showHidden: boolean,
   nested: Set<string>,
+  verdict: ConfigVerdict,
 ): { group: PrefGroup; values: Record<string, unknown> } | null {
   const children: PrefGroup['children'] = {};
   const values: Record<string, unknown> = {};
@@ -77,11 +85,11 @@ function prune(
     const path = at === '' ? key : `${at}.${key}`;
     if (!isLeafVisible(resolved, path, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
-      children[key] = child;
+      children[key] = verdict.rowAt(path, child);
       values[key] = valueAtPath(config, path);
       continue;
     }
-    const kept = prune(resolved, child, path, config, showHidden, nested);
+    const kept = prune(resolved, child, path, config, showHidden, nested, verdict);
     if (!kept) continue;
     children[key] = kept.group;
     values[key] = kept.values;
@@ -122,7 +130,7 @@ function prune(
     replace(children, reordered);
     replace(values, revalued);
   }
-  return Object.keys(children).length === 0 ? null : { group: { ...group, children }, values };
+  return Object.keys(children).length === 0 ? null : { group: { ...bareGroup(group), children }, values };
 }
 
 function replace<V>(target: Record<string, V>, from: Record<string, V>): void {
@@ -149,6 +157,7 @@ export function sectionTree(
   const slugs = new Set<string>();
   const claimed = new Set<string>();
   const nested = new Set<string>();
+  const verdict = configVerdict(resolved, config);
 
   for (const section of resolved.sections) {
     if (section.at !== '') continue;
@@ -159,10 +168,10 @@ export function sectionTree(
       const child = resolved.group.children[path];
       if (!child || !isLeafVisible(resolved, path, config, showHidden)) continue;
       if (isPrefLeaf(child)) {
-        kept[path] = child;
+        kept[path] = verdict.rowAt(path, child);
         held[path] = valueAtPath(config, path);
       } else {
-        const subtree = prune(resolved, child, path, config, showHidden, nested);
+        const subtree = prune(resolved, child, path, config, showHidden, nested, verdict);
         if (!subtree) continue;
         kept[path] = subtree.group;
         held[path] = subtree.values;
@@ -181,28 +190,56 @@ export function sectionTree(
   for (const [key, child] of Object.entries(resolved.group.children)) {
     if (claimed.has(key) || !isLeafVisible(resolved, key, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
-      children[key] = child;
+      children[key] = verdict.rowAt(key, child);
       values[key] = valueAtPath(config, key);
     } else {
-      const subtree = prune(resolved, child, key, config, showHidden, nested);
+      const subtree = prune(resolved, child, key, config, showHidden, nested, verdict);
       if (!subtree) continue;
       children[key] = subtree.group;
       values[key] = subtree.values;
     }
   }
 
-  return {
-    group: { name: resolved.group.name, children },
-    values,
-    pathAt: (railPath) => {
-      const segs = railPath.split('.');
-      const out: string[] = [];
-      for (const [i, seg] of segs.entries()) {
-        if (i === 0 && slugs.has(seg)) continue;
-        if (nested.has(`${out.join('.')}|${seg}`)) continue;
-        out.push(seg);
-      }
-      return out.join('.');
-    },
+  const group: PrefGroup = { name: resolved.group.name, children };
+  const pathAt = (railPath: string): string => {
+    const segs = railPath.split('.');
+    const out: string[] = [];
+    for (const [i, seg] of segs.entries()) {
+      if (i === 0 && slugs.has(seg)) continue;
+      if (nested.has(`${out.join('.')}|${seg}`)) continue;
+      out.push(seg);
+    }
+    return out.join('.');
   };
+  return { group, values, pathAt, disabled: railPaths(verdict.disabled, group, pathAt) };
+}
+
+/** `paths`, config paths, as paths within `group`: each under the node drawn
+ *  for the longest of its prefixes, which for a field is its leaf. */
+function railPaths(
+  paths: ReadonlySet<string>,
+  group: PrefGroup,
+  pathAt: (railPath: string) => string,
+): ReadonlySet<string> {
+  // Parents first, so a section's group, which stands for its parent's config path, never claims it.
+  const drawn = new Map<string, string>();
+  const visit = (node: PrefGroup, at: string): void => {
+    for (const [key, child] of Object.entries(node.children)) {
+      const rail = at === '' ? key : `${at}.${key}`;
+      const config = pathAt(rail);
+      if (!drawn.has(config)) drawn.set(config, rail);
+      if (!isPrefLeaf(child)) visit(child, rail);
+    }
+  };
+  visit(group, '');
+  const out = new Set<string>();
+  for (const path of paths) {
+    for (let at = path; at !== ''; at = at.includes('.') ? at.slice(0, at.lastIndexOf('.')) : '') {
+      const rail = drawn.get(at);
+      if (rail === undefined) continue;
+      out.add(rail + path.slice(at.length));
+      break;
+    }
+  }
+  return out;
 }
