@@ -32,6 +32,12 @@ export function withTrimDrawn(node: SvgPathNode): SvgPathNode | SvgGroupNode | n
   return drawsAsGroup(node, children);
 }
 
+/** Whether `node`'s stroke is cut away whole by its trim, so it writes nothing, its markers included. */
+export function trimHidesStroke(node: SvgPathNode): boolean {
+  const { stroke } = node;
+  return !!stroke && stroke.trim !== undefined && !hasVariableWidth(stroke) && trimmedPath(node.path, stroke.trim) === null;
+}
+
 /** The elements `cut` is stroked in: one, unless its runs differ in dash phase
  *  or in taking end markers, which SVG states per element. */
 function strokeRuns(cut: TrimmedPath, stroke: SvgStroke): SvgPathNode[] {

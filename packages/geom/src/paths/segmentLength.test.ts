@@ -54,6 +54,30 @@ describe('segmentTAtLength', () => {
     }
   });
 
+  it('answers at once for a coordinate that is not finite', () => {
+    const t0 = performance.now();
+    for (const bad of [NaN, Infinity, -Infinity]) {
+      const c = [0, 0, bad, 1, 2, 1, 3, 0];
+      expect(segmentLength(c, 2)).toBeNaN();
+      expect(segmentTAtLength(c, 2, 1)).toBe(0);
+    }
+    expect(performance.now() - t0).toBeLessThan(50);
+  });
+
+  it('measures a cusp the same at any scale', () => {
+    const at = (k: number) => [0, 0, 100 * k, 100 * k, 0, 100 * k, 100 * k, 0];
+    for (const k of [1e-9, 1e-3, 1e6]) {
+      expect(segmentLength(at(k), 2) / k, `scale ${k}`).toBeCloseTo(segmentLength(at(1), 2), 6);
+      expect(segmentTAtLength(at(k), 2, segmentLength(at(k), 2) * 0.6), `scale ${k}`)
+        .toBeCloseTo(segmentTAtLength(at(1), 2, segmentLength(at(1), 2) * 0.6), 6);
+    }
+  });
+
+  it('takes a total the caller already has', () => {
+    const total = segmentLength(quarter, 2);
+    expect(segmentTAtLength(quarter, 2, total / 2, total)).toBe(segmentTAtLength(quarter, 2, total / 2));
+  });
+
   it('clamps to the ends', () => {
     expect(segmentTAtLength(quarter, 2, -5)).toBe(0);
     expect(segmentTAtLength(quarter, 2, 1e6)).toBe(1);

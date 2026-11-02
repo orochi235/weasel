@@ -21,7 +21,7 @@ const NOTHING_PAINTED: ReadonlySet<string> = new Set();
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
-import { withTrimDrawn } from './trimmedStroke';
+import { trimHidesStroke, withTrimDrawn } from './trimmedStroke';
 import {
   hasVariableWidth, strokeGroupXml, strokeOutlineXml, variableWidthAttrs, writesVariableWidth,
 } from './variableWidthSvg';
@@ -94,8 +94,9 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
       registerPaintServers(n.children, registry);
     } else if (n.kind === 'path') {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
-      if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
-      registerMarkers(n.stroke, registry);
+      const stroke = trimHidesStroke(n) ? undefined : n.stroke;
+      if (stroke && stroke.paint.kind === 'gradient') registry.register(stroke.paint.paint);
+      registerMarkers(stroke, registry);
     } else if (n.kind === 'text') {
       // This pre-pass is load-bearing: `<defs>` is emitted before the body, so
       // a paint first seen while writing an element would be referenced by an

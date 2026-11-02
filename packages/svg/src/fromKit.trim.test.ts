@@ -83,6 +83,12 @@ describe('svg export bakes a stroke trim', () => {
     expect(paths(pathFromD('M0 0 L100 0'), { paint: INK, width: 2, trim: { start: 0.5, end: 0.5 } })).toEqual([]);
   });
 
+  it('defines no marker for a stroke an empty window leaves undrawn', () => {
+    const stroke: Stroke = { paint: INK, width: 2, markerEnd: 'arrow', trim: { start: 0.5, end: 0.5 } };
+    const node = svgLeafFromKit({ path: pathFromD('M0 0 L100 0'), stroke, fill: { paint: RED } }, poseOf(pathFromD('M0 0 L100 0')))!;
+    expect(serializeSvg([node])).not.toContain('<marker');
+  });
+
   it('measures an inner-aligned rect on its authored edge, as the canvas does', () => {
     const rect: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
     const [p] = stroked(paths(rect, { paint: INK, width: 10, align: 'inner', trim: { end: { length: 120 } } }));

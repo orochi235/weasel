@@ -134,7 +134,8 @@ function writeRun(segs: readonly Seg[], a: number, b: number, commands: number[]
 function paramAt(seg: Seg, d: number): number {
   const f = seg.len > 0 ? Math.min(Math.max(d / seg.len, 0), 1) : 0;
   if (seg.cmd === PATH_L || f <= 0 || f >= 1) return f;
-  return segmentTAtLength(seg.c, 2, f * segmentLength(seg.c, 2));
+  const total = segmentLength(seg.c, 2);
+  return segmentTAtLength(seg.c, 2, f * total, total);
 }
 
 /** `seg` between parameters `t0` and `t1`, as its pen then its coords. */
