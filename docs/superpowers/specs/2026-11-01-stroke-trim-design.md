@@ -90,6 +90,8 @@ Neither needs a special case.
 - **Dashes stay anchored to the path's start**, so drawing on reveals a fixed pattern instead of a
   pattern that slides as the line grows. *(builder note: this needs an internal dash phase;
   `splitForDash` always starts at phase 0 today.)*
+- **A text node's stroke ignores its trim** (2026-11-01): each glyph's outline is stroked on its own,
+  so the text has no single pen order for a window to run along.
 - **Picking hits only the visible span of the authored `Stroke.trim`.** A trim the animator is
   overriding draw-time does not reach picking in this cut: `strokeHitTest` never sees the override
   table, and a transient draw-on does not justify a new channel into hit-testing. *(my call)*
@@ -110,8 +112,11 @@ and keep none, so the work splits *(my call)*:
   arc lengths, or `null` for nothing.
 
 `@weasel-js/geom/3d` gets the `Vec3` wrappers, as `portCurve3.ts` does. The 2D stroke fills the table
-from its flattened polylines; the 3D line pass will fill it from a `Vec3` polyline and depend on
-`stroke` for `resolveTrim`.
+from the corner-resolved path's own curves, measured by exact arc length (2026-11-01: filled from
+flattened polylines, each reader's tolerance put the cut somewhere else, and the canvas cut moved
+with zoom). A trim resolves once on it to curve positions, a segment and its curve parameter, and
+every reader cuts its own flattening at those; a dash phase stays in the reader's own measure. The
+3D line pass will fill the table from a `Vec3` polyline and depend on `stroke` for `resolveTrim`.
 
 ## Where it plugs in (2D, this cut)
 
