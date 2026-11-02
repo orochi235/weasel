@@ -15,6 +15,7 @@ export { populatePolylineWidths, widestStrokeWidth } from './tessellate/vertexWi
 export { nibWidthScale } from './tessellate/nib';
 export type { WidthScale } from './tessellate/vertexWidths';
 export { trimInSpace } from './tessellate/insets';
+export { resolveTrim } from './trim/resolveTrim';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
 export {
   screenSpaceKey, strokeSpaceOf, metricKey, polylineIntoMetric, polylineOutOfMetric, sameMetric,

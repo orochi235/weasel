@@ -33,6 +33,10 @@ export {
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
 export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
+export {
+  lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable, type LengthRun, type LengthTable,
+} from './along/lengthTable';
+export { pointAtLength } from './along/positions';
 export type { Path, PolygonPath, RectPath, PathFillRule, PathOpenFill } from './path';
 export { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 export {

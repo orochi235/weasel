@@ -24,3 +24,4 @@ export {
   type Ray, type Aabb,
 } from './ray3';
 export { PORT_REACH, portControls, portCurvePoints, cubicAt } from './portCurve3';
+export { pointAtLength3 } from './along3';
