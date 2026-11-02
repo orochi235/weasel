@@ -66,13 +66,14 @@ export function markerHeads(
     want[role] = true;
   }
 
+  const insets = headInsets(refs, strokeWidth);
   const out: MarkerHead[] = [];
   const origin = path.kind === 'polygon' ? path.origin : undefined;
   for (const { polyline: pl, fromClosed } of headRuns(path, stroke, strokeWidth, flattenTolerance)) {
     for (const [space, want] of groups) {
       const inSpace = space ? { ...pl, points: pl.points.slice() } : pl;
       if (space) polylineIntoMetric(inSpace, space.metric);
-      for (const site of markerSites(inSpace, want, fromClosed)) {
+      for (const site of markerSites(inSpace, want, fromClosed, insets)) {
         const ref: MarkerRef | undefined = refs[site.role];
         if (ref === undefined) continue;
         const entry = getMarker(markerKeyOf(ref));
@@ -86,6 +87,18 @@ export function markerHeads(
     }
   }
   return out;
+}
+
+/** How far the line stops short of the start and end heads, in the units each head is sized in. */
+function headInsets(
+  refs: { start?: MarkerRef; end?: MarkerRef }, strokeWidth: number,
+): { start: number; end: number } {
+  const of = (ref: MarkerRef | undefined): number => {
+    if (ref === undefined) return 0;
+    const inset = getMarker(markerKeyOf(ref))?.inset ?? 0;
+    return inset === 0 ? 0 : inset * resolveMarkerSize(ref, strokeWidth);
+  };
+  return { start: of(refs.start), end: of(refs.end) };
 }
 
 /** The runs heads sit on: the corner-resolved path the ribbon flattens, windowed

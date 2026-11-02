@@ -31,7 +31,7 @@ export type { MarkerCtx, MarkerEntry, MarkerPaint } from './strokeMarkers';
 export { BUILTIN_MARKERS } from './strokeMarkerShapes';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './markerInset';
 export { markerSites } from './markerSites';
-export type { MarkerSite, MarkerSiteRequest } from './markerSites';
+export type { MarkerSite, MarkerSiteInsets, MarkerSiteRequest } from './markerSites';
 export { markerHeads, markerReadsKey, markerReach } from './markerHeads';
 export type { MarkerHead } from './markerHeads';
 

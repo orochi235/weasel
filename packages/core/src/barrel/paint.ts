@@ -143,7 +143,7 @@ export {
 export type { MarkerEntry, MarkerCtx, MarkerPaint } from '@weasel-js/stroke';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from '@weasel-js/stroke';
 export { markerSites } from '@weasel-js/stroke';
-export type { MarkerSite, MarkerSiteRequest } from '@weasel-js/stroke';
+export type { MarkerSite, MarkerSiteInsets, MarkerSiteRequest } from '@weasel-js/stroke';
 export { BUILTIN_MARKERS } from '@weasel-js/stroke';
 export { trimPolyline } from '@weasel-js/geom/tessellate';
 export type { Polyline } from '@weasel-js/geom/tessellate';

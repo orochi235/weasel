@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  type PolygonPath, polygonFromPoints, polylineFromPoints, pathLengthTable,
+  type PolygonPath, pathFromD, polygonFromPoints, polylineFromPoints,
 } from '@weasel-js/geom';
-import { extractPolylines } from '@weasel-js/geom/tessellate';
 import type { Stroke } from '@weasel-js/paint';
 import { markerHeads, type MarkerHead } from './markerHeads';
 import { tessellateStroke } from './tessellate/stroke';
-import { windowPolylines } from './trim/windowPolylines';
-import { trimSpan } from './trim/trimSpan';
+import { strokeInsets } from './markerInset';
 
 const INK = { kind: 'solid', color: '#000' } as const;
 const LINE = polylineFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }]);
@@ -17,6 +15,36 @@ function tip(head: MarkerHead): { x: number; y: number; angle: number } {
   const c = head.path.coords;
   const bx = (c[2] + c[4]) / 2, by = (c[3] + c[5]) / 2;
   return { x: c[0], y: c[1], angle: Math.atan2(c[1] - by, c[0] - bx) };
+}
+
+/**
+ * Whether the ribbon's butt end at `head` is square across the head's axis and
+ * centered on its back: the ribbon vertices farthest along the axis lie on the
+ * back's line across it, either side of the back's middle.
+ */
+function shaftEntersBack(head: MarkerHead, ribbon: ArrayLike<number>): boolean {
+  const c = head.path.coords;
+  const bx = (c[2] + c[4]) / 2, by = (c[3] + c[5]) / 2;
+  const len = Math.hypot(c[0] - bx, c[1] - by);
+  const ux = (c[0] - bx) / len, uy = (c[1] - by) / len;
+  // Only the ribbon near this head: within a head's length of its back.
+  const near: number[] = [];
+  for (let i = 0; i < ribbon.length / 2; i++) {
+    if (Math.hypot(ribbon[i * 2] - bx, ribbon[i * 2 + 1] - by) < len) near.push(i);
+  }
+  const along = (i: number) => (ribbon[i * 2] - bx) * ux + (ribbon[i * 2 + 1] - by) * uy;
+  const far = Math.max(...near.map(along));
+  const end = near.filter((i) => along(i) > far - 1e-3);
+  if (end.length < 2 || Math.abs(far) > 1e-3) return false;
+  const mx = end.reduce((sum, i) => sum + ribbon[i * 2], 0) / end.length;
+  const my = end.reduce((sum, i) => sum + ribbon[i * 2 + 1], 0) / end.length;
+  return Math.hypot(mx - bx, my - by) < 1e-3;
+}
+
+/** The ribbon's insets for `stroke`'s heads, as the renderer passes them. */
+function insetsOf(stroke: Stroke, width: number): { startInset: number; endInset: number } {
+  const { start, end } = strokeInsets(stroke, width);
+  return { startInset: start, endInset: end };
 }
 
 /** A dot's center. */
@@ -64,28 +92,15 @@ describe('markerHeads under a trim', () => {
     const stroke: Stroke = { paint: INK, width: 2, cap: 'butt', markerEnd: 'arrow', trim: { end: { anchor: 1 } } };
     const heads = markerHeads(cornered, stroke, 2, undefined);
     expect(heads).toHaveLength(1);
-    const t = tip(heads[0]);
+    expect(shaftEntersBack(heads[0], tessellateStroke(cornered, stroke, insetsOf(stroke, 2)).vertices)).toBe(true);
+  });
 
-    const span = trimSpan(cornered, stroke.trim)!;
-    const [{ polyline }] = windowPolylines(extractPolylines(cornered), span, pathLengthTable(cornered).runs);
-    const ex = polyline.points[polyline.points.length - 2], ey = polyline.points[polyline.points.length - 1];
-    expect(ex + ey).toBeCloseTo(100, 3);
-    expect(Math.abs(t.x - ex)).toBeLessThan(1e-6);
-    expect(Math.abs(t.y - ey)).toBeLessThan(1e-6);
-
-    // The ribbon's butt end is its farthest reach along the run's final direction, centered on that point.
-    // A cut can land a float's width past a flattened vertex, so the direction comes from the last real segment.
-    const v = tessellateStroke(cornered, stroke).vertices;
-    let k = polyline.points.length / 2 - 2;
-    while (Math.hypot(ex - polyline.points[k * 2], ey - polyline.points[k * 2 + 1]) < 1e-3) k--;
-    const dx = ex - polyline.points[k * 2], dy = ey - polyline.points[k * 2 + 1];
-    const along = (i: number) => (v[i * 2] * dx + v[i * 2 + 1] * dy) / Math.hypot(dx, dy);
-    let far = -Infinity;
-    for (let i = 0; i < v.length / 2; i++) far = Math.max(far, along(i));
-    const end = Array.from({ length: v.length / 2 }, (_v, i) => i).filter((i) => along(i) > far - 1e-3);
-    expect(end.length).toBeGreaterThanOrEqual(2);
-    const mean = (o: number) => end.reduce((sum, i) => sum + v[i * 2 + o], 0) / end.length;
-    expect(mean(0)).toBeCloseTo(ex, 4);
-    expect(mean(1)).toBeCloseTo(ey, 4);
+  it('a curving shaft enters the back of the head along its own direction', () => {
+    const arc = pathFromD('M0 0 C40 -60 100 -60 120 0');
+    const stroke: Stroke = { paint: INK, width: 4, cap: 'butt', markerEnd: 'arrow', markerStart: 'arrow', trim: { end: 0.8 } };
+    const heads = markerHeads(arc, stroke, 4, undefined);
+    expect(heads).toHaveLength(2);
+    const ribbon = tessellateStroke(arc, stroke, insetsOf(stroke, 4)).vertices;
+    for (const head of heads) expect(shaftEntersBack(head, ribbon)).toBe(true);
   });
 });
