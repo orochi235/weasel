@@ -1,5 +1,5 @@
 import type { Scheduler } from './scheduler';
-import { spatialize, type SpatialOptions, type Vec2 } from './spatialize';
+import { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';
 import type { VoiceDropReason, VoiceHandle } from './types';
 import type { ChainPool } from './voiceChains';
 import { reportDrop, type DropWarnings } from './voiceDrops';
@@ -30,7 +30,7 @@ export interface VoicesDeps {
   warn: DropWarnings;
   staleFloor(): number;
   disposed(): boolean;
-  listener(): { at: Vec2; opts: SpatialOptions };
+  listener(): { at: SpatialPoint; opts: SpatialOptions };
 }
 
 interface VoiceOps {
@@ -199,7 +199,7 @@ export function createVoices(deps: VoicesDeps): Voices {
   const live = new Map<number, LiveVoice>();
   let nextVoiceId = 1;
 
-  const spatialOf = (p: Vec2) => {
+  const spatialOf = (p: SpatialPoint) => {
     const l = deps.listener();
     return spatialize(p, l.at, l.opts);
   };

@@ -1,6 +1,6 @@
 import type { Envelope } from './envelope';
 import type { Pitch } from './pitch';
-import type { Vec2 } from './spatialize';
+import type { SpatialPoint } from './spatialize';
 import type { StealPolicy } from './voicePool';
 
 /** Options for `AudioEngine.play`. */
@@ -17,7 +17,7 @@ export interface PlayOptions {
   /** Explicit stereo pan, -1..1. Ignored when `position` is given. */
   pan?: number;
   /** World position; spatialized against the engine listener. */
-  position?: Vec2;
+  position?: SpatialPoint;
   /** Engine time in ms (see `engine.now()`). Default: as soon as possible. */
   when?: number;
   /** `stopKey(key)` stops every voice sharing this key. */
@@ -59,7 +59,7 @@ export interface VoiceHandle {
   setDetune(cents: number): void;
   /** Explicit stereo pan. Stops the voice tracking a `position`. */
   setPan(value: number): void;
-  setPosition(p: Vec2): void;
+  setPosition(p: SpatialPoint): void;
   isPlaying(): boolean;
 }
 

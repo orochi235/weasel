@@ -7,7 +7,7 @@ import type { Slots, Starter } from './liveVoice';
 import { createResumeWatch } from './resumeWatch';
 import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
-import type { SpatialOptions, Vec2 } from './spatialize';
+import type { SpatialOptions, SpatialPoint } from './spatialize';
 import { createStreamStarters } from './streamStarter';
 import { createSynthStarters } from './synthStarters';
 import { createWorkletVoices } from './worklet/workletVoices';
@@ -74,7 +74,7 @@ export interface AudioEngine {
   analyser(busName?: string, opts?: AnalyserTapOptions): AnalyserTap;
   /** A graph feeding `bus`'s input (default: the first bus). Disposed with the engine. */
   graph(bus?: string): AudioGraph;
-  setListener(p: Vec2, opts?: SpatialOptions): void;
+  setListener(p: SpatialPoint, opts?: SpatialOptions): void;
   dispose(): void;
 }
 
@@ -213,7 +213,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const { now, tickTimer, timers, scheduler } = engineClock(ctx, opts);
   const graph = createBusGraph(ctx, busNames, { ...timers, fadeMs: opts.insertFadeMs });
 
-  let listener: Vec2 = { x: 0, y: 0 };
+  let listener: SpatialPoint = { x: 0, y: 0 };
   let spatialOpts: SpatialOptions = {};
   let disposed = false;
   const taps = new Set<AnalyserTap>();

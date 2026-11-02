@@ -1,4 +1,4 @@
-import type { Vec2 } from './spatialize';
+import type { SpatialPoint } from './spatialize';
 import type { PlayOptions, VoiceDropReason } from './types';
 import type { VoicePool } from './voicePool';
 import type { VoiceOut } from './voiceChains';
@@ -82,7 +82,7 @@ export interface LiveVoice {
   rate: number;
   detune: number;
   /** Kept so `setListener` can re-spatialize a voice that is already playing. */
-  position?: Vec2;
+  position?: SpatialPoint;
   playing: boolean;
   canceled: boolean;
   /** `stop(fadeMs)` owns the output's level from here until the source ends. */

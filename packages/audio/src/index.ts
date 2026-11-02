@@ -18,7 +18,7 @@ export {
   type VoicePool, type VoicePoolOptions, type VoiceRecord, type Acquisition,
   type StealPolicy,
 } from './voicePool';
-export { spatialize, type SpatialOptions, type Vec2 } from './spatialize';
+export { spatialize, type SpatialOptions, type SpatialPoint, type Vec2 } from './spatialize';
 export { midiToFrequency, noteToMidi, toFrequency, type Pitch } from './pitch';
 export {
   envelopeLevel, envelopePoints, resolveEnvelope,
