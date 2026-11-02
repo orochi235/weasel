@@ -1,10 +1,12 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { cleanup, render } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { decomposePatternTransform } from '@weasel-js/core';
 import type { PatternPaint as PatternFill } from '@weasel-js/core';
+import { IDLE_SETTLE_MS } from '../../useIdleSettle';
 import { PatternPicker, seedPattern } from './PatternPicker';
 
 afterEach(cleanup);
@@ -25,18 +27,29 @@ test('the rotation field sits beside its label, no wider than it needs', async (
   expect(frame.width).toBeGreaterThan(40);
 });
 
-test('the rotation field reads a typed degree sign', async () => {
+test.each([
+  ['before typing rests', 0],
+  ['after typing rests', IDLE_SETTLE_MS * 2],
+])('the rotation field reads a typed degree sign, Enter pressed %s', async (_, pause) => {
   const seen: PatternFill[] = [];
-  const { getByRole } = render(
-    <PatternPicker
-      value={seedPattern('hatch', '#123456')}
-      color="#123456"
-      onChange={(next) => seen.push(next)}
-    />,
-  );
+  function Controlled() {
+    const [value, setValue] = useState(() => seedPattern('hatch', '#123456'));
+    return (
+      <PatternPicker
+        value={value}
+        color="#123456"
+        onChange={(next) => {
+          seen.push(next);
+          setValue(next);
+        }}
+      />
+    );
+  }
+  const { getByRole } = render(<Controlled />);
   const input = getByRole('spinbutton', { name: 'Rotation' }) as HTMLInputElement;
   input.focus();
   await userEvent.fill(input, '20°');
+  await new Promise((resolve) => setTimeout(resolve, pause));
   await userEvent.keyboard('{Enter}');
   expect(seen).toHaveLength(1);
   expect(decomposePatternTransform(seen[0].transform).rotation).toBeCloseTo((20 * Math.PI) / 180, 9);

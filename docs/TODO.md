@@ -676,12 +676,6 @@ only story runner in the repo.
   Closes when the next failure's stdout names the problem it saw, which makes it a fix, or on 2026-11-30
   with no second sighting, delete it.
 
-- **(P3) [waiting] `PatternPicker.browser.test.tsx`'s "the rotation field reads a typed degree sign" failed once
-  in a full fleet run.** At c9c357cee on 2026-11-01 it saw two `onChange` calls where it expects one, in a 2.6 s
-  run; the same file passed alone on the fleet at that commit in 164 ms. The field's value prop never changes in
-  the test, so a blur after the Enter would commit the same value again (inferred: focus lost under load).
-  Closes when 10 full fleet runs after 2026-11-01 pass it, or at its next failure, which makes it a fix.
-
 - **(P3) [waiting] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" failed once
   in a full fleet run.** At 98d525569 on 2026-10-28 (teitou) the browser project read 534.3125 against
   533.078125 (tolerance 0.5); the same file passed 3 of 3 alone on the fleet at that commit and 3 of 3 at
@@ -756,12 +750,6 @@ only story runner in the repo.
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
-  Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
-
-- **(P3) [waiting] PatternPicker's "the rotation field reads a typed degree sign" saw two commits once.**
-  In a `test:fleet` run of `2bdba7b91` on studio (2026-10-31) it got two `onChange` calls for one typed
-  value and Enter, where it expects one; alone on the fleet it passed. The branch touched only the
-  renderer. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
 - **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
