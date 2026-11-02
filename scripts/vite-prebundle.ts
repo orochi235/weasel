@@ -4,6 +4,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
 import { APP_SOURCES } from './lib/packageEntries.mjs';
 import { isPathImport, pathImportsIn, reachByPath, resolvePath } from './vite-prebundle-reach.ts';
+import { sourcedStarsNamed } from './vite-prebundle-stars.ts';
 
 const SPECIFIER = /(?:from|import)\s*\(?\s*'(@weasel-js\/[\w./-]+)'/g;
 const SOURCE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
@@ -107,9 +108,13 @@ const under = (file: string, dirs: readonly string[]) => dirs.some((dir) => file
  * Whether the bundles cached in `cacheDir` were built from anything other than `inputs` and the files they name as
  * they are now. vite's cache key sees neither: a package edited while no server ran is otherwise served stale.
  */
+const PREBUNDLE_CODE = ['vite-prebundle.ts', 'vite-prebundle-reach.ts', 'vite-prebundle-stars.ts'].map((f) => join(import.meta.dirname, f));
+
 function bundlesStale(cacheDir: string, inputs: readonly string[], files: readonly string[]): boolean {
   const record = join(cacheDir, 'weasel-prebundle.stamp');
   const hash = createHash('sha1').update(inputs.join('\n'));
+  // The bundles are this code's output too, so a change to it re-bundles.
+  for (const own of PREBUNDLE_CODE) hash.update(readFileSync(own));
   for (const file of files) hash.update(`${file}:${statSync(file).mtimeMs}\n`);
   const now = hash.digest('hex');
   if (existsSync(record) && readFileSync(record, 'utf8') === now) return false;
@@ -244,7 +249,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
           include: [...listed].sort(),
           // Without the extensions the optimizer leaves every .tsx file external, served from source.
           extensions: ['.tsx', '.jsx'],
-          rolldownOptions: { plugins: [viteQueriesExternal(), sourcedExternal(() => sourced)] },
+          rolldownOptions: { plugins: [viteQueriesExternal(), sourcedExternal(() => sourced), sourcedStarsNamed(() => sourced)] },
         },
       };
     },
