@@ -24,7 +24,7 @@ import {
 } from '@weasel-js/labkit';
 import { dashForStrokeStyle } from '@weasel-js/paint';
 import { Button } from '@weasel-js/ui/components/Button';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import s from './TrimLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -33,8 +33,8 @@ import { icon } from '../icons.gen';
 const config = f.schema({
   start: f.number(0.1).range(0, 1).step(0.01).label('Start'),
   end: f.number(0.8).range(0, 1).step(0.01).label('End'),
-  pace: f.enum(['length', 'anchor'] as const, 'length').label('Pace'),
-  dash: f.enum(['solid', 'dashed', 'dotted'] as const, 'solid').label('Style'),
+  pace: f.enum('length', ['length', 'anchor']).label('Pace'),
+  dash: f.enum('solid', ['solid', 'dashed', 'dotted']).label('Style'),
   markers: f.boolean(true).label('Markers on the open curve'),
 });
 type Config = ConfigOf<typeof config>;
@@ -46,7 +46,7 @@ const PAGE = { x: 0, y: 0, width: 760, height: 380 };
 
 const rounded = (x: number, y: number, width: number, height: number, radius: number): Path => ({
   ...asPolygonPath(rectPath(x, y, width, height)),
-  corners: [{ radius }, { radius }, { radius }, { radius }],
+  corners: Array.from({ length: 4 }, () => ({ shape: 'round' as const, radius })),
 });
 
 interface Shape {
@@ -134,7 +134,8 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const cfg = ctx.config;
   const scene = useTrialScene(ctx, createLabScene(cfg));
   const version = JSON.stringify(cfg);
-  useEffect(() => {
+  // A layout effect, so the scene holds the new trims before the export pane's own effect reads it.
+  useLayoutEffect(() => {
     for (const shape of SHAPES) scene.update(asNodeId(shape.id), { data: dataOf(shape, cfg) });
     // `version` stands for `cfg`, whose identity changes on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
