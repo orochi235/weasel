@@ -11,6 +11,7 @@ import {
   solid,
   useSelection,
 } from '@weasel-js/core';
+import { createEmitter } from '@weasel-js/registry';
 import { useState } from 'react';
 
 /** The one path each path-edit lab opens with its anchors already editable. */
@@ -48,18 +49,13 @@ export function useSeededPathEdit(): {
   const selection = useSelection({ initial: [EDITED_ID] });
   const [seeded] = useState(() => {
     let editing: string | null = EDITED_ID;
-    const listeners = new Set<() => void>();
-    const changes: RedrawSource = {
-      subscribe(listener) {
-        listeners.add(listener);
-        return () => { listeners.delete(listener); };
-      },
-    };
+    const listeners = createEmitter();
+    const changes: RedrawSource = { subscribe: listeners.subscribe };
     const pathEdit: PathEditHost = {
       editingId: () => editing,
       setEditingId(id) {
         editing = id;
-        for (const listener of listeners) listener();
+        listeners.emit();
       },
     };
     return { pathEdit, redrawOn: [changes] };

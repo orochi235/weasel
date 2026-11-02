@@ -1,4 +1,5 @@
 import type { LensSource, LensSourceRequest } from '@weasel-js/labkit/loupe';
+import { createEmitter } from '@weasel-js/registry';
 import type { Globals } from '../../protocol/messages';
 import type { ForgeComparison, ResolveContext, ResolvedConditions } from './conditions';
 import type { LiveLenses, LiveRequest } from './liveLenses';
@@ -69,12 +70,12 @@ export function createLiveSource(
   conditions: () => { base: Globals; ctx: ResolveContext },
   schedule: (run: () => void) => void = now,
 ): LiveSource {
-  const measures = new Set<() => void>();
-  const listeners = new Set<() => void>();
+  const measures = createEmitter();
+  const listeners = createEmitter();
   let due = false;
   const flush = () => {
     due = false;
-    for (const listener of [...listeners]) listener();
+    listeners.emit();
   };
   const notify = () => {
     if (due) return;
@@ -87,12 +88,7 @@ export function createLiveSource(
     label: () => 'Live',
     status: () => true,
     // A reader hears of what it reads: the lens's copy, and with nothing compared, the main story under the reticle.
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: listeners.subscribe,
     attach(slot, first) {
       const doc = slot.ownerDocument;
       const target = doc.createElement('div');
@@ -134,7 +130,7 @@ export function createLiveSource(
           args: resolved.args,
         });
       };
-      measures.add(measure);
+      const unmeasure = measures.subscribe(measure);
       measure();
       return {
         update(next) {
@@ -144,7 +140,7 @@ export function createLiveSource(
         detach() {
           watchCopy(null);
           watchStory(null);
-          measures.delete(measure);
+          unmeasure();
           lenses.set(liveCellId(request.lensId, request.conditions), null);
           target.remove();
           empty.remove();
@@ -152,7 +148,7 @@ export function createLiveSource(
       };
     },
     remeasure() {
-      for (const measure of [...measures]) measure();
+      measures.emit();
     },
   };
 }

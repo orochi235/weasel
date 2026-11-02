@@ -2,6 +2,7 @@
  * How devtools messages travel. A transport sends one side's messages and
  * hears the other side's; the session neither knows nor cares which kind it has.
  */
+import { createEmitter } from '@weasel-js/registry';
 import type { PageMessage, PanelMessage } from './protocol';
 
 /** One end of a connection: it sends `Out` and hears `In`. */
@@ -33,15 +34,11 @@ export function isDevtoolsEnvelope(data: unknown): data is DevtoolsEnvelope {
 }
 
 function pair<A, B>(): [DevtoolsTransport<A, B>, DevtoolsTransport<B, A>] {
-  const toA = new Set<(m: B) => void>();
-  const toB = new Set<(m: A) => void>();
-  const listen = <M>(set: Set<(m: M) => void>) => (listener: (m: M) => void) => {
-    set.add(listener);
-    return () => { set.delete(listener); };
-  };
+  const toA = createEmitter<[m: B]>();
+  const toB = createEmitter<[m: A]>();
   return [
-    { send: (m) => { for (const l of [...toB]) l(m); }, onMessage: listen(toA) },
-    { send: (m) => { for (const l of [...toA]) l(m); }, onMessage: listen(toB) },
+    { send: (m) => toB.emit(m), onMessage: toA.subscribe },
+    { send: (m) => toA.emit(m), onMessage: toB.subscribe },
   ];
 }
 

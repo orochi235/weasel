@@ -3,6 +3,7 @@
  * the test hook. The canvas supplies live getters; the root adds change
  * versions and the probe registry.
  */
+import { createEmitter } from '@weasel-js/registry';
 import type { DispatchTrace, TraceRing } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import type { CoordTraceEntry } from '../canvas/SceneCanvas/coordTrace';
@@ -60,10 +61,10 @@ export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
   const versions: Record<DevtoolsArea, number> = {
     scene: 0, selection: 0, view: 0, tool: 0, trace: 0, registry: 0, history: 0,
   };
-  const listeners = new Set<(area: DevtoolsArea) => void>();
+  const listeners = createEmitter<[area: DevtoolsArea]>();
   const notify = (area: DevtoolsArea): void => {
     versions[area]++;
-    for (const l of [...listeners]) l(area);
+    listeners.emit(area);
   };
 
   // Attached only while something listens, so a root nobody inspects holds no
@@ -114,10 +115,10 @@ export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
       notify(area);
     },
     subscribe(listener) {
-      listeners.add(listener);
+      const off = listeners.subscribe(listener);
       if (!detach) attach();
       return () => {
-        listeners.delete(listener);
+        off();
         if (listeners.size === 0) detach?.();
       };
     },

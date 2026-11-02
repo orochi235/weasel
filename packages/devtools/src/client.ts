@@ -8,6 +8,7 @@ import {
   type DevtoolsRegistry, type DevtoolsRequest, type DevtoolsRootInfo, type DevtoolsRootState, type DevtoolsTraceSlice,
   type PageMessage, type PanelTransport, type SerializedValue,
 } from '@weasel-js/core/devtools-protocol';
+import { createEmitter } from '@weasel-js/registry';
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -60,14 +61,14 @@ interface Pending {
 /** A connection over `transport`, sending nothing until it is opened. It is connected once the page says `sup`. */
 export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient {
   let state: DevtoolsClientState = { status: 'closed', kitVersion: null, roots: [], error: null };
-  const listeners = new Set<() => void>();
-  const changeListeners = new Set<(rootId: string, areas: DevtoolsArea[]) => void>();
+  const listeners = createEmitter();
+  const changeListeners = createEmitter<[rootId: string, areas: DevtoolsArea[]]>();
   const pending = new Map<number, Pending>();
   let nextId = 1;
 
   const set = (patch: Partial<DevtoolsClientState>): void => {
     state = { ...state, ...patch };
-    for (const l of [...listeners]) l();
+    listeners.emit();
   };
 
   const receive = (m: PageMessage): void => {
@@ -84,7 +85,7 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
         return;
       case 'changed': {
         const areas = Object.keys(m.areas) as DevtoolsArea[];
-        for (const l of [...changeListeners]) l(m.rootId, areas);
+        changeListeners.emit(m.rootId, areas);
         return;
       }
       case 'result':
@@ -106,14 +107,8 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
 
   return {
     state: () => state,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
-    onChanged(listener) {
-      changeListeners.add(listener);
-      return () => { changeListeners.delete(listener); };
-    },
+    subscribe: listeners.subscribe,
+    onChanged: changeListeners.subscribe,
     request(rootId, body) {
       if (state.status === 'closed') return Promise.reject(new Error('the devtools connection is closed'));
       const requestId = nextId++;

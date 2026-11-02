@@ -8,6 +8,7 @@
  */
 import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
 import type { KeySpec } from '@weasel-js/gestures';
+import { createEmitter } from '@weasel-js/registry';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { ActionDeps, ImmediateInvoker } from '../interactions/actions/invoker';
 import type { GestureBinding } from '../interactions/actions/binding';
@@ -51,17 +52,14 @@ const NONE: Readonly<Record<string, number>> = Object.freeze({});
 /** A {@link ToolOptionValues} held in memory, for a host that keeps no prefs. */
 export function createToolOptionValues(): ToolOptionValues {
   const values = new Map<string, Record<string, number>>();
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     get: (toolId) => values.get(toolId) ?? NONE,
     set(toolId, option, value) {
       values.set(toolId, { ...values.get(toolId), [option]: value });
-      for (const l of [...listeners]) l();
+      changed.emit();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
   };
 }
 

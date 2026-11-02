@@ -18,6 +18,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { createEmitter } from '@weasel-js/registry';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
@@ -55,18 +56,15 @@ const createLabScene = () => {
 /** Which path is open in path edit, held here so the panel can open and close it. */
 function createHost(initial: string | null): PathEditHost & { subscribe(l: () => void): () => void } {
   let id = initial;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     editingId: () => id,
     setEditingId(next) {
       if (next === id) return;
       id = next;
-      for (const l of listeners) l();
+      changed.emit();
     },
-    subscribe(l) {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
+    subscribe: changed.subscribe,
   };
 }
 

@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { EffectPipeline, EffectRun } from '../types';
 import { createPass, type EffectPass, type RunPipelineOptions } from './pass';
 import { closeBitmaps, previewsOf } from './previews';
@@ -61,11 +62,11 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
   let behind = false;
   // Runs published and not yet known to be off screen, oldest first.
   let published: EffectRun[] = [];
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
 
   const set = (next: Partial<EffectRunnerState>) => {
     state = { ...state, ...next };
-    for (const l of [...listeners]) l();
+    listeners.emit();
   };
   const publish = (run: EffectRun) => {
     published.push(run);
@@ -155,10 +156,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
       closeBitmaps(published.slice(0, at).flatMap(previewsOf).filter((b) => !keep.has(b)));
       published = published.slice(at);
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: listeners.subscribe,
     dispose() {
       this.reset();
       closeBitmaps(published.flatMap(previewsOf));

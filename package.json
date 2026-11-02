@@ -68,6 +68,7 @@
     "check:bumps": "node scripts/check-changeset-bumps.mjs",
     "check:lockstep": "node scripts/check-lockstep.mjs",
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
+    "check:listener-sets": "node scripts/check-listener-sets.mjs",
     "check:audio-worklet": "node packages/audio/scripts/gen-worklet.mjs --check",
     "check:size": "node scripts/check-size.mjs",
     "check:undescribed": "tsx scripts/undescribed-exports.ts",

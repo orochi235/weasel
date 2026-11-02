@@ -4,6 +4,7 @@
  * opens another and says `yo` again, so the page starts a fresh session.
  */
 import type { PageMessage, PanelMessage, PanelTransport } from '@weasel-js/core/devtools-protocol';
+import { createEmitter } from '@weasel-js/registry';
 import type { PortLike } from '../browserApi';
 import { PORT_PANEL, type PanelHello } from '../envelope';
 
@@ -14,7 +15,7 @@ export interface PortTransport extends PanelTransport {
 
 /** A transport to the page in tab `tabId`, over ports `connect` opens. */
 export function createPortTransport(tabId: number, connect: (name: string) => PortLike): PortTransport {
-  const listeners = new Set<(m: PageMessage) => void>();
+  const listeners = createEmitter<[m: PageMessage]>();
   let yo: PanelMessage | null = null;
   let closed = false;
   let port: PortLike | null = null;
@@ -29,7 +30,7 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
       return null;
     }
     const p = port;
-    p.onMessage.addListener((m) => { for (const l of [...listeners]) l(m as PageMessage); });
+    p.onMessage.addListener((m) => listeners.emit(m as PageMessage));
     p.onDisconnect.addListener(() => {
       if (port !== p) return;
       port = null;
@@ -47,10 +48,7 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
       else if (message.type === 'bye') yo = null;
       (port ?? open())?.postMessage(message);
     },
-    onMessage(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    onMessage: listeners.subscribe,
     close() {
       closed = true;
       const p = port;

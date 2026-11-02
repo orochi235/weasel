@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import { bakeSymmetry, type BakeResult } from './bake';
 import {
@@ -67,8 +68,8 @@ const onHandle = hitPredicate((hit) => (hit as { kind?: string } | null | undefi
 /** Live symmetry for `scene`. Pass `symmetryRegistry` to the scene too, so its groups save. */
 export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: CreateSymmetryOptions = {}): SymmetryController {
   let activeId: NodeId | null = null;
-  const listeners = new Set<() => void>();
-  const notify = () => { for (const l of [...listeners]) l(); };
+  const listeners = createEmitter();
+  const notify = () => listeners.emit();
 
   const write = (id: NodeId, change: SymmetryChange): void => {
     const node = scene.get(id);
@@ -85,10 +86,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
       activeId = id;
       notify();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: listeners.subscribe,
     create({ center, symmetry, layer, parent }) {
       const id = scene.add(symmetryGroupSpec({
         layer: layer ?? scene.layers[0]?.id ?? 'default', center, ...(symmetry ? { symmetry } : {}),

@@ -1,3 +1,5 @@
+import { createEmitter } from '@weasel-js/registry';
+
 /**
  * The selected anchors of the path open in path edit, held by the app so the
  * canvas and the corner controls read one value: the canvas writes it
@@ -13,16 +15,13 @@ const NONE: ReadonlySet<number> = new Set();
 
 export function createAnchorSelection(): AnchorSelection {
   let held = NONE;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     get: () => held,
     set(next) {
       held = next;
-      for (const l of listeners) l();
+      changed.emit();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
   };
 }

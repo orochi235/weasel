@@ -1,5 +1,6 @@
 import type { SnapMark } from './types';
 import type { Point } from '@weasel-js/geom';
+import { createEmitter } from '@weasel-js/registry';
 
 /** The marks of the snap in flight, for the readout to draw. */
 export interface SnapOutcomeStore<P = Point> {
@@ -13,17 +14,14 @@ const NONE: readonly never[] = [];
 /** An empty outcome store, which notifies only when the marks change. */
 export function createSnapOutcomeStore<P = Point>(): SnapOutcomeStore<P> {
   let marks: readonly SnapMark<P>[] = NONE;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     get: () => marks,
     set(next) {
       if (next.length === 0 && marks.length === 0) return;
       marks = next.length === 0 ? NONE : next;
-      for (const l of [...listeners]) l();
+      changed.emit();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
   };
 }
