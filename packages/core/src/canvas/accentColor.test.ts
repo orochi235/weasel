@@ -1,4 +1,4 @@
-import { stubColorScheme } from '@weasel-js/react/testing/stubColorScheme';
+import { stubColorScheme } from '@weasel-js/react/testing/stubMatchMedia';
 import { describe, it, expect, vi } from 'vitest';
 import { chromeColorOf, watchThemeOf } from './accentColor';
 

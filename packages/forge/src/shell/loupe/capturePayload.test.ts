@@ -1,4 +1,4 @@
-import { stubColorScheme } from '@weasel-js/react/testing/stubColorScheme';
+import { stubColorScheme } from '@weasel-js/react/testing/stubMatchMedia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { capturePayload, type CapturePayloadInput, CONFIG_UNSENDABLE, STATE_UNSENDABLE, trialPayload } from './capturePayload';
 import type { TrialInputs } from './captureContext';

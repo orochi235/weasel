@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { stubColorScheme } from './testing/stubColorScheme';
+import { stubColorScheme } from './testing/stubMatchMedia';
 import { DEFAULT_COLOR_SCHEME, systemColorScheme, useSystemColorScheme, watchColorScheme } from './colorScheme';
 
 afterEach(() => { vi.unstubAllGlobals(); });

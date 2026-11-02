@@ -1,4 +1,4 @@
-import { stubColorScheme } from '@weasel-js/react/testing/stubColorScheme';
+import { stubColorScheme } from '@weasel-js/react/testing/stubMatchMedia';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { followScheme, resolveMode, useResolvedMode } from './mode';

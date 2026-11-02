@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { stubReducedMotion } from './testing/stubReducedMotion';
+import { stubReducedMotion } from './testing/stubMatchMedia';
 import { prefersReducedMotion, usePrefersReducedMotion } from './reducedMotion';
 
 afterEach(() => { vi.unstubAllGlobals(); });

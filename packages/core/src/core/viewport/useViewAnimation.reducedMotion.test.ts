@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { act, renderHook } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
-import { stubReducedMotion } from '@weasel-js/react/testing/stubReducedMotion';
+import { stubReducedMotion } from '@weasel-js/react/testing/stubMatchMedia';
 import { useAnimator } from '@weasel-js/animator/react';
 import { DEFAULT_VIEW_ANIMATION_MS, useViewAnimation, type ViewChannel } from './useViewAnimation';
 import type { View } from './view';
