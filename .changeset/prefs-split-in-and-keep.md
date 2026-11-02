@@ -1,10 +1,12 @@
 ---
-'@weasel-js/prefs': patch
+'@weasel-js/prefs': minor
 '@weasel-js/ui': patch
 '@weasel-js/theme': patch
 '@weasel-js/labkit': patch
 '@weasel-js/routing': patch
 ---
+
+<!-- bump-approved: minor: maintainer — 1.16.0 release requested 2026-11-02 -->
 
 Scoped prefs: a pref declares the settings its value is kept separately for, and the store resolves which
 value applies. A **pref** is the declaration; a **value** is one stored value of a pref under a scope, the
