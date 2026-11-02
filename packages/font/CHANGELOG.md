@@ -1,5 +1,12 @@
 # @weasel-js/font
 
+## 1.15.2
+
+### Patch Changes
+
+- Updated dependencies [f1906a8]
+  - @weasel-js/registry@1.15.2
+
 ## 1.15.1
 
 ### Patch Changes

@@ -1,5 +1,45 @@
 # @weasel-js/diagram-formats
 
+## 1.15.2
+
+### Patch Changes
+
+- 507f539: paint exports `relativeLuminance` and `luminanceContrast`, the WCAG luminance and ratio `contrastRatio` is built on; core re-exports both. theme's `luminance`/`contrast`, its test helpers, ui's painted-contrast helpers and forge's pixel contrast readout now use them.
+  
+  Color strings that theme's `withAlpha`/`atAlpha`, ui's `TokenPanel` hex conversion and diagram-formats' DOT and Mermaid writers read are parsed by paint's `parseColor`. The `TokenPanel` color input now converts float and percent `rgb()` channels, named colors and `hsl()` without a browser, and diagram-formats writes percent `rgb()` channels as hex instead of passing them through. diagram-formats now depends on `@weasel-js/paint`.
+  
+  labkit's loupe and ui's `Timeline` ruler and lane graph measure their element with core's `useElementSize`.
+- f1906a8: The rest of the kit's stores notify through registry's `createEmitter`: the entered group, the snap
+  outcome, devtools roots and transports, kit settings, the menu host and menu controller, tool
+  options, `RunSlots`, the seam preview, the HUD list, the effect runners, the symmetry controller,
+  the devtools client, and forge's loupe and CSS-variable stores. A listener that throws is logged
+  and no longer stops the others, and a listener unsubscribed mid-notify is no longer called; the
+  menu host, `RunSlots` and the HUD list used to walk their live set. diagram, diagram-formats, menu,
+  symmetry and devtools now depend on `@weasel-js/registry`.
+  
+  Structural comparisons that went through `JSON.stringify` use `deepEqual` instead, so key order no
+  longer makes two equal values differ (theme baking, diagram export's style diffs, trial marks, path
+  constraints, unit rows, toolbar dock drops). PrefSchemaEditor's three-way merge keeps
+  `JSON.stringify`, because there a reordered key is an edit.
+  
+  New: `sameList(a, b, same?)` in `@weasel-js/registry`, whether two lists hold equal elements in
+  order. `@weasel-js/react`'s `sameList` is now this function, and ui's `samePath` is an alias of it.
+- Updated dependencies [946faff]
+- Updated dependencies [507f539]
+- Updated dependencies [a4138b6]
+- Updated dependencies [f1906a8]
+- Updated dependencies [e804540]
+- Updated dependencies [6544399]
+- Updated dependencies [2f6b10d]
+- Updated dependencies [5f6111b]
+  - @weasel-js/core@1.15.2
+  - @weasel-js/paint@1.15.2
+  - @weasel-js/diagram@1.15.2
+  - @weasel-js/registry@1.15.2
+  - @weasel-js/plot@1.15.2
+  - @weasel-js/svg@1.15.2
+  - @weasel-js/pdf@1.15.2
+
 ## 1.15.1
 
 ### Patch Changes

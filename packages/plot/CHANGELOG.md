@@ -1,5 +1,23 @@
 # @weasel-js/plot
 
+## 1.15.2
+
+### Patch Changes
+
+- Updated dependencies [946faff]
+- Updated dependencies [507f539]
+- Updated dependencies [c6edab2]
+- Updated dependencies [a4138b6]
+- Updated dependencies [5a0375b]
+- Updated dependencies [f1906a8]
+- Updated dependencies [e804540]
+- Updated dependencies [2f6b10d]
+- Updated dependencies [5f6111b]
+  - @weasel-js/core@1.15.2
+  - @weasel-js/theme@1.15.2
+  - @weasel-js/geom@1.15.2
+  - @weasel-js/text@1.15.2
+
 ## 1.15.1
 
 ### Patch Changes

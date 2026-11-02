@@ -1,5 +1,99 @@
 # @weasel-js/ui
 
+## 1.15.2
+
+### Patch Changes
+
+- 507f539: paint exports `relativeLuminance` and `luminanceContrast`, the WCAG luminance and ratio `contrastRatio` is built on; core re-exports both. theme's `luminance`/`contrast`, its test helpers, ui's painted-contrast helpers and forge's pixel contrast readout now use them.
+  
+  Color strings that theme's `withAlpha`/`atAlpha`, ui's `TokenPanel` hex conversion and diagram-formats' DOT and Mermaid writers read are parsed by paint's `parseColor`. The `TokenPanel` color input now converts float and percent `rgb()` channels, named colors and `hsl()` without a browser, and diagram-formats writes percent `rgb()` channels as hex instead of passing them through. diagram-formats now depends on `@weasel-js/paint`.
+  
+  labkit's loupe and ui's `Timeline` ruler and lane graph measure their element with core's `useElementSize`.
+- f1906a8: The rest of the kit's stores notify through registry's `createEmitter`: the entered group, the snap
+  outcome, devtools roots and transports, kit settings, the menu host and menu controller, tool
+  options, `RunSlots`, the seam preview, the HUD list, the effect runners, the symmetry controller,
+  the devtools client, and forge's loupe and CSS-variable stores. A listener that throws is logged
+  and no longer stops the others, and a listener unsubscribed mid-notify is no longer called; the
+  menu host, `RunSlots` and the HUD list used to walk their live set. diagram, diagram-formats, menu,
+  symmetry and devtools now depend on `@weasel-js/registry`.
+  
+  Structural comparisons that went through `JSON.stringify` use `deepEqual` instead, so key order no
+  longer makes two equal values differ (theme baking, diagram export's style diffs, trial marks, path
+  constraints, unit rows, toolbar dock drops). PrefSchemaEditor's three-way merge keeps
+  `JSON.stringify`, because there a reordered key is an edit.
+  
+  New: `sameList(a, b, same?)` in `@weasel-js/registry`, whether two lists hold equal elements in
+  order. `@weasel-js/react`'s `sameList` is now this function, and ui's `samePath` is an alias of it.
+- e804540: **Behavior change:** `matchesKeyBinding` and `historyKey` now read `mod` the way `@weasel-js/gestures`
+  does: Command on an Apple platform, Ctrl elsewhere, and the other key forbidden. Before, either key
+  fired a `mod` binding on every platform, so Ctrl+Z undid on a Mac and Cmd+Z undid on Windows; now
+  neither does, and neither does Cmd+Ctrl+Z. Both take an optional `isMac` argument, defaulting to
+  `isApplePlatform()`. Everything built on them follows: labkit's trial chrome and `useUndoKeys`, and
+  the undo keys in `AssetEditor`, `LayeredCurveEditor` and forge's CSS-vars panel. A trial's snapshot
+  chord is Mod+S alone; Shift+Mod+S no longer takes a snapshot.
+  
+  `rowKey` takes a sixth argument, `apple`, and selects all on Mod+A as above; Ctrl+A on a Mac no
+  longer selects all in a `Tree` or any list on `useRowNavigation`, which passes `isApplePlatform()`.
+  `rowKey` called without it reads `mod` as Ctrl.
+  
+  `@weasel-js/react` reads the system color scheme: `systemColorScheme()`, `watchColorScheme(fn)` and
+  `useSystemColorScheme(follow?)`, with `DEFAULT_COLOR_SCHEME`, dark, wherever `matchMedia` is missing or
+  the system states no preference. Dark is the mode the theme's tokens paint at `:root`. theme's
+  `useResolvedColorMode`, core's `watchThemeOf` and forge's loupe conditions use it. **Behavior change:**
+  forge's loupe read a missing `matchMedia` as light; it now reads it as dark, as the theme always has.
+  
+  `scene.mintId()`, and the id `add` gives a spec with none, now pass over any id the scene already
+  holds. A document reopened in a new session keeps the ids the last one minted, and a `generateId` that
+  starts over with the session could mint them again; a generator that gives 1000 taken ids in a row
+  throws.
+- 8425714: `sectionTree` now judges `enableIf` against the config, as it already did `showIf`. A form drawing its renested
+  tree used to judge `enableIf` against the renested values, where a condition naming a config path
+  (`{ path: 'orbs.commitOrbs' }`) finds nothing, so the row was drawn disabled whatever the config held; and an
+  `enableIf` written as a function was never asked at all. The same went for the conditions on an object's, a
+  union's or a list item's fields. `SectionTree` gains `disabled`, the rail paths of every leaf, group and field an
+  `enableIf` disables, and the tree it returns carries no condition but those that read a list's or a map's entry,
+  with every other test in them already answered; a field a `showIf` hides is cut from its leaf.
+  
+  `PrefsForm` (and so `PrefsDialog`) takes a new `disabled` prop: dotted paths of leaves, groups and fields to draw
+  disabled on top of what the schema's own conditions disable, named as `applyPrefConditions` names them. Pass
+  `sectionTree`'s `disabled` there.
+- a47cce1: `LayeredCurveEditor`'s built-in undo and the Badge compose lab's undo now run on `@weasel-js/history`,
+  which `@weasel-js/ui` lists as a dependency. The keys, the depth kept (100 steps in the editor, 200 in
+  the lab) and the lab's merging of a scrub into one step are unchanged. In the lab, a redo pressed while
+  a change is still settling now records that change first, which leaves nothing to redo, where before it
+  redid the older step and lost the change.
+- Updated dependencies [946faff]
+- Updated dependencies [507f539]
+- Updated dependencies [c6edab2]
+- Updated dependencies [a4138b6]
+- Updated dependencies [5a0375b]
+- Updated dependencies [f1906a8]
+- Updated dependencies [e804540]
+- Updated dependencies [6544399]
+- Updated dependencies [2f6b10d]
+- Updated dependencies [5f6111b]
+  - @weasel-js/core@1.15.2
+  - @weasel-js/paint@1.15.2
+  - @weasel-js/theme@1.15.2
+  - @weasel-js/geom@1.15.2
+  - @weasel-js/animator@1.15.2
+  - @weasel-js/react@1.15.2
+  - @weasel-js/menu@1.15.2
+  - @weasel-js/registry@1.15.2
+  - @weasel-js/text@1.15.2
+  - @weasel-js/ui-logic@1.15.2
+  - @weasel-js/plot@1.15.2
+  - @weasel-js/svg@1.15.2
+  - @weasel-js/prefs@1.15.2
+  - @weasel-js/clock@1.15.2
+  - @weasel-js/gestures@1.15.2
+  - @weasel-js/font@1.15.2
+  - @weasel-js/history@1.15.2
+  - @weasel-js/icons@1.15.2
+  - @weasel-js/modes@1.15.2
+  - @weasel-js/select@1.15.2
+  - @weasel-js/quantity@1.15.2
+
 ## 1.15.1
 
 ### Patch Changes
