@@ -242,7 +242,9 @@ describe('<SceneCanvas> installs the scene wiring', () => {
     act(() => clock.advance(50));
     expect(paintedTrim(layers)).toEqual({ start: { length: 2 }, end: expect.closeTo(0.5, 6) });
     act(() => clock.advance(50));
-    expect(paintedTrim(layers)).toEqual({ start: { length: 2 }, end: 1 });
+    // At rest the override's `end: 1` is the stroke's own window, so the stroke's own command paints.
+    expect(animator.trimOverrides.get(id)).toEqual({ end: 1 });
+    expect(paintedTrim(layers)).toEqual({ start: { length: 2 } });
   });
 
   it('repaints for a bare set or clear on either override store', () => {

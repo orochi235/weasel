@@ -197,7 +197,9 @@ describe('animated stroke trims from a running target', () => {
     step(25);
     expect(paintedTrims(scene, animator.trimOverrides)).toEqual([{ start: { length: 12 }, end: expect.closeTo(0.25, 6) }]);
     step(75);
-    expect(paintedTrims(scene, animator.trimOverrides)).toEqual([{ start: { length: 12 }, end: 1 }]);
+    // At rest the override's `end: 1` is the stroke's own window, so the stroke's own command paints.
+    expect(animator.trimOverrides.get(id)).toEqual({ end: 1 });
+    expect(paintedTrims(scene, animator.trimOverrides)).toEqual([{ start: { length: 12 } }]);
   });
 
   it("paints set's start beside a tween's end", () => {
