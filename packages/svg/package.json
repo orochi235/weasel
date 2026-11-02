@@ -42,7 +42,8 @@
     "provenance": true
   },
   "dependencies": {
-    "@weasel-js/geom": "1.15.1"
+    "@weasel-js/geom": "1.15.1",
+    "@weasel-js/stroke": "1.15.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.15.1"

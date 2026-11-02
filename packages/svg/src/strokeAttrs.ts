@@ -108,6 +108,7 @@ export function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry,
   }
   if (stroke.dash && stroke.dash.length > 0) {
     attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
+    if (stroke.dashOffset) attrs.push(`stroke-dashoffset="${trimNumber(stroke.dashOffset)}"`);
   }
   if (stroke.miterLimit != null) {
     attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);

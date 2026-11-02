@@ -1,7 +1,7 @@
-import type { Path } from '@weasel-js/geom';
+import { splitSubpaths, type Path, type PolygonPath } from '@weasel-js/geom';
 import { type CommandPaint, type CommandStroke, dashPattern, isSolidPaint, type Stroke } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
-import { dashLength, strokeInsets, strokeToPath } from '@weasel-js/stroke';
+import { dashLength, strokeInsets, strokeToPath, trimmedPath, type TrimmedPath } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
 import { NonFiniteNumber, num } from './num';
@@ -23,7 +23,7 @@ export function isNative(stroke: CommandStroke, width: number): boolean {
  * `length` is the stroked path's, from `dashLength`, so a dash too fine for
  * it goes solid here as it does in the renderer.
  */
-export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: number, length?: number): void {
+export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: number, length?: number, phase = 0): void {
   const { out } = ctx;
   out.op('w', width);
   out.op('J', CAPS[stroke.cap ?? 'butt']);
@@ -32,7 +32,7 @@ export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: numbe
   // PDF draws nothing for an all-zero dash and rejects a negative one; the renderer strokes both solid.
   const dash = dashPattern(stroke.dash, length);
   if (dash === 'non-finite') throw new NonFiniteNumber(`pdf: cannot write non-finite dash ${stroke.dash}`);
-  if (dash !== 'solid') out.op('d', `[${dash.map(num).join(' ')}]`, 0);
+  if (dash !== 'solid') out.op('d', `[${dash.map(num).join(' ')}]`, phase);
 }
 
 /** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */
@@ -47,16 +47,29 @@ export function resolveStroke(
 
 function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: DrawState, width: number): void {
   const paint = stroke.paint;
-  if (!paint || !isSolidPaint(paint)) return;
+  const cut = trimmedPath(path, stroke.trim);
+  if (!paint || !isSolidPaint(paint) || !cut) return;
   const { rgb, alpha } = solidColor(paint, state);
   const { out } = ctx;
   out.op('q');
   out.op('gs', `/${ctx.resources.extGState(alpha, alpha)}`);
   out.op('RG', ...rgb);
-  strokeStyleOps(ctx, stroke, width, stroke.dash ? dashLength(path) : undefined);
-  pathOps(out, path, 'all');
-  out.op('S');
+  // The untrimmed length decides a dash too fine to draw, as it does in the renderer.
+  const length = stroke.dash ? dashLength(path) : undefined;
+  for (const run of phaseRuns(cut, stroke.dash !== undefined)) {
+    strokeStyleOps(ctx, stroke, width, length, run.phase);
+    pathOps(out, run.path, 'all');
+    out.op('S');
+  }
   out.op('Q');
+}
+
+/** `cut` as the strokes it is written in: one, unless a run starts mid-pattern,
+ *  since PDF restarts a dash at the same phase on every subpath. */
+function phaseRuns(cut: TrimmedPath, dashed: boolean): { path: Path; phase: number }[] {
+  const phases = cut.dashPhases;
+  if (!dashed || phases.every((p) => p === (phases[0] ?? 0))) return [{ path: cut.path, phase: phases[0] ?? 0 }];
+  return splitSubpaths(cut.path as PolygonPath).map((path, i) => ({ path, phase: phases[i] }));
 }
 
 /**

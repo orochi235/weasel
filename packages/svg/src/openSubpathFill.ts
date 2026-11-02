@@ -14,7 +14,8 @@ const capsEnds = (stroke: SvgStroke | undefined): boolean =>
 const marked = (stroke: SvgStroke | undefined): boolean =>
   capsEnds(stroke) || stroke?.markerMid !== undefined;
 
-function withoutEndMarkers(stroke: SvgStroke): SvgStroke {
+/** `stroke` with no start or end marker, as a closed subpath takes it. */
+export function withoutEndMarkers(stroke: SvgStroke): SvgStroke {
   const { markerStart: _start, markerEnd: _end, ...rest } = stroke;
   return rest;
 }

@@ -21,6 +21,7 @@ const NOTHING_PAINTED: ReadonlySet<string> = new Set();
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
+import { withTrimDrawn } from './trimmedStroke';
 import {
   hasVariableWidth, strokeGroupXml, strokeOutlineXml, variableWidthAttrs, writesVariableWidth,
 } from './variableWidthSvg';
@@ -148,7 +149,9 @@ function kindXml(
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted);
   if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
   if (node.kind === 'image') return imageXml(node, namespaces);
-  const drawn = pathAsSvgDraws(node);
+  const trimmed = withTrimDrawn(node);
+  if (trimmed.kind === 'group') return groupXml(trimmed, registry, namespaces, warn, layoutOf, painted);
+  const drawn = pathAsSvgDraws(trimmed);
   return drawn.kind === 'group'
     ? groupXml(drawn, registry, namespaces, warn, layoutOf, painted)
     : pathXml(drawn, registry, namespaces, warn);

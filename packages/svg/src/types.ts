@@ -103,6 +103,12 @@ export interface SvgStroke {
    *  more takes `width`. */
   vertexWidths?: VertexWidth[];
   nib?: StrokeNib;
+  /** The kit stroke's `trim`, measured along the path as written. SVG has no
+   *  trim, so the serializer strokes only the span it draws; `parseSvg` never sets it. */
+  trim?: Stroke['trim'];
+  /** `stroke-dashoffset`: where along its pattern the dash starts. Written for
+   *  a trimmed run that starts mid-pattern; `parseSvg` never sets it. */
+  dashOffset?: number;
 }
 
 /**

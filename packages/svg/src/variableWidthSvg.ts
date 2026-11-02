@@ -96,6 +96,7 @@ export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: reado
     ...(stroke.markerStart ? { markerStart: stroke.markerStart } : {}),
     ...(stroke.markerMid ? { markerMid: stroke.markerMid } : {}),
     ...(stroke.markerEnd ? { markerEnd: stroke.markerEnd } : {}),
+    ...(stroke.trim ? { trim: stroke.trim } : {}),
   };
   const outline = strokeToPath(path, kit);
   const attrs = [`d="${serializePathD(outline)}"`, ...fillAttrs, 'stroke="none"'];
