@@ -216,4 +216,13 @@ describe('writing what the format cannot carry', () => {
     const back = asGraph((await DRAW_XML.read!(text)).document.pages[0]!).data.edges[0]!;
     expect(back).toMatchObject({ label: 'owns', endLabels: { from: '1', to: '0..*' } });
   });
+
+  it('warns that a trimmed connector was written whole', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', at: { x: 10, y: 10 } }, { id: 'b', at: { x: 200, y: 10 } }],
+      edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }],
+    };
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200, data }] };
+    expect(DRAW_XML.write!(doc).warnings).toEqual(['Trims on connectors were left out; they were written whole.']);
+  });
 });
