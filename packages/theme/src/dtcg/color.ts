@@ -1,4 +1,4 @@
-import { parseHexBytes } from '@weasel-js/paint';
+import { parseColor } from '@weasel-js/paint';
 
 /**
  * A resolved color at `alpha`, multiplied into any alpha it already carries. The
@@ -35,29 +35,14 @@ function round(n: number, places: number): number {
   return Number(n.toFixed(places));
 }
 
+/** Hex, `rgb()`/`rgba()` and `transparent` as 0–255 channels and 0–1 alpha; null for any other form, which goes to the browser. */
 function parseRgba(s: string): Rgba | null {
-  if (s.toLowerCase() === 'transparent') return [0, 0, 0, 0];
-  return parseHex(s) ?? parseRgbFn(s);
-}
-
-function parseHex(s: string): Rgba | null {
-  const bytes = parseHexBytes(s);
-  return bytes && [bytes[0], bytes[1], bytes[2], bytes[3] / 255];
-}
-
-function parseRgbFn(s: string): Rgba | null {
-  const m = /^rgba?\(([^()]*)\)$/i.exec(s);
-  if (!m) return null;
-  const [channels, alphaPart, extra] = m[1].split('/');
-  if (extra !== undefined) return null;
-  const parts = channels.trim().split(/\s*,\s*|\s+/);
-  if (alphaPart !== undefined) parts.push(alphaPart.trim());
-  if (parts.length !== 3 && parts.length !== 4) return null;
-
-  const channel = (p: string) => (p.endsWith('%') ? (Number.parseFloat(p) / 100) * 255 : Number(p));
-  const alpha = (p: string) => (p.endsWith('%') ? Number.parseFloat(p) / 100 : Number(p));
-  const [r, g, b] = parts.slice(0, 3).map(channel);
-  const a = parts[3] === undefined ? 1 : alpha(parts[3]);
-  if (![r, g, b, a].every(Number.isFinite)) return null;
-  return [Math.round(r), Math.round(g), Math.round(b), a];
+  if (!/^(?:#|rgba?\(|transparent$)/i.test(s)) return null;
+  let c: readonly [number, number, number, number];
+  try {
+    c = parseColor(s);
+  } catch {
+    return null;
+  }
+  return [Math.round(c[0] * 255), Math.round(c[1] * 255), Math.round(c[2] * 255), c[3]];
 }

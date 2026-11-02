@@ -1,7 +1,8 @@
 /** Graphviz DOT's attribute values as a diagram reads and writes them: labels, colors, shapes, and arrowheads. */
 import type { MarkerRef } from '@weasel-js/core';
 import type { Outline } from '@weasel-js/diagram';
-import { hex2, markupLines } from '../graphRead';
+import { rgbaToHex } from '@weasel-js/paint';
+import { markupLines } from '../graphRead';
 import type { DotValue } from './parse';
 
 /** A label's lines: an HTML label's text, else the string with its escapes read. `\N` names `self`, `\G` the graph. */
@@ -32,7 +33,7 @@ function hsvHex(h: number, s: number, v: number): string {
     const k = (n + h * 6) % 6;
     return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
   };
-  return `#${hex2(f(5))}${hex2(f(3))}${hex2(f(1))}`;
+  return rgbaToHex([f(5), f(3), f(1)]);
 }
 
 /** A color as CSS reads it: the first of a list, its scheme dropped, an HSV triple as hex. */

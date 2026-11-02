@@ -8,6 +8,8 @@ describe('DOT values', () => {
     expect(hexColor('rgb(255 0 0 / 50%)')).toBe('#ff000080');
     expect(hexColor('#abc')).toBe('#aabbcc');
     expect(hexColor('steelblue')).toBe('steelblue');
+    expect(hexColor('rgb(100% 0% 50%)')).toBe('#ff0080');
+    expect(hexColor('rgb(var(--x) 0 0)')).toBe('rgb(var(--x) 0 0)');
   });
 
   it('reads back what it writes', () => {
