@@ -12,11 +12,27 @@ export function prefObjectBase(pref: PrefObject, held: unknown): Record<string, 
   return pref.fromScalar?.(held) ?? (isObject(pref.default) ? pref.default : {});
 }
 
+/** The value of the field `key` in `held`. A dotted key (`'nib.angle'`) names a field of a field. */
+export function prefObjectField(held: Record<string, unknown> | undefined, key: string): unknown {
+  let cursor: unknown = held;
+  for (const step of key.split('.')) {
+    if (!isObject(cursor)) return undefined;
+    cursor = cursor[step];
+  }
+  return cursor;
+}
+
 /** The object an `object` leaf holds after one of its fields is set: {@link prefObjectBase} with `key` at
- *  `value`, or without the key for `undefined`. */
+ *  `value`, or without the key for `undefined`. A dotted key sets a field of a field, making the objects on
+ *  the way, and clearing one drops an object it leaves empty. */
 export function prefObjectWithField(pref: PrefObject, held: unknown, key: string, value: unknown): Record<string, unknown> {
-  const base = prefObjectBase(pref, held);
-  if (value !== undefined) return { ...base, [key]: value };
-  const { [key]: _dropped, ...rest } = base;
-  return rest;
+  return withField(prefObjectBase(pref, held), key.split('.'), value);
+}
+
+function withField(base: Record<string, unknown>, [step, ...rest]: string[], value: unknown): Record<string, unknown> {
+  const next = rest.length === 0 ? value : withField(isObject(base[step]) ? base[step] : {}, rest, value);
+  const drops = next === undefined || (rest.length > 0 && Object.keys(next as object).length === 0);
+  if (!drops) return { ...base, [step]: next };
+  const { [step]: _dropped, ...kept } = base;
+  return kept;
 }

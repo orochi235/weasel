@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prefObjectWithField } from './object';
+import { prefObjectField, prefObjectWithField } from './object';
 import type { PrefObject } from './schema';
 
 const stroke: PrefObject = {
@@ -38,3 +38,21 @@ describe('prefObjectWithField', () => {
     expect('width' in next).toBe(false);
   });
 });
+
+describe('a dotted field of an object leaf', () => {
+  it('reads and sets a field of a field, making the object on the way', () => {
+    const held = { width: 2, nib: { angle: 1, ratio: 0.5 } };
+    expect(prefObjectField(held, 'nib.angle')).toBe(1);
+    expect(prefObjectField(held, 'trim.end')).toBeUndefined();
+    expect(prefObjectWithField(stroke, held, 'nib.angle', 2)).toEqual({ width: 2, nib: { angle: 2, ratio: 0.5 } });
+    expect(prefObjectWithField(stroke, held, 'trim.end', 0.4)).toEqual({ ...held, trim: { end: 0.4 } });
+    expect(held.nib.angle).toBe(1);
+  });
+
+  it('drops an object a cleared field leaves empty', () => {
+    expect(prefObjectWithField(stroke, { width: 2, trim: { end: 0.4 } }, 'trim.end', undefined)).toEqual({ width: 2 });
+    expect(prefObjectWithField(stroke, { width: 2, trim: { start: 0.1, end: 0.4 } }, 'trim.end', undefined))
+      .toEqual({ width: 2, trim: { start: 0.1 } });
+  });
+});
+

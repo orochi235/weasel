@@ -112,6 +112,39 @@ describe('SelectionPanel — object leaf', () => {
     });
   });
 
+  it('reads and writes a dotted field as a field of a field', () => {
+    const nested: NodePropertiesEntry[] = [{
+      name: 'path',
+      schema: {
+        name: 'Properties',
+        members: {
+          appearance: {
+            name: 'Appearance',
+            members: {
+              'data.stroke': {
+                kind: 'object', name: 'Stroke', description: '', default: {}, block: true,
+                children: {
+                  width: { kind: 'number', name: 'Width', description: '', default: 1 },
+                  'nib.angle': { kind: 'number', name: 'Angle', description: '', default: 0 },
+                  'trim.end': { kind: 'number', name: 'End', description: '', default: 1 },
+                },
+              },
+            },
+          },
+        },
+      },
+    }];
+    const scene = sceneWithStroke({ width: 2, nib: { angle: 1, ratio: 0.5 } });
+    renderWithIcons(<SelectionPanel scene={scene} selection={selectionOf(['p'])} properties={nested} routing={strokeRouting} />);
+    expect(screen.getByLabelText('Angle')).toHaveValue('1');
+    for (const [label, value] of [['Angle', '2'], ['End', '0.4']] as const) {
+      const input = screen.getByLabelText(label);
+      fireEvent.change(input, { target: { value } });
+      fireEvent.blur(input);
+    }
+    expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({ width: 2, nib: { angle: 2, ratio: 0.5 }, trim: { end: 0.4 } });
+  });
+
   // A field the node does not hold must not be shown as though it did: the
   // control would claim a value, and the next edit would write that invention
   // back. `data.stroke` absent leaves every one of its fields with nothing.

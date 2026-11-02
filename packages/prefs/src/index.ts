@@ -90,7 +90,7 @@ export { prefSchemaHolding } from './holding';
 export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
 export type { PrefLabel, PrefSeparator } from './label';
-export { prefObjectBase, prefObjectWithField } from './object';
+export { prefObjectBase, prefObjectField, prefObjectWithField } from './object';
 export type { PrefList, PrefListControl } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
