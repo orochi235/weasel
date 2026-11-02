@@ -147,14 +147,14 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     scene, selection, viewState, tools: p.tools.tools, contributions: p.tools.contributions, routing: props.routing,
     element: canvas.elementRef, api: canvas.apiRef, devtools: p.devtools,
   });
-  const edgePan = props.viewport?.edgePan;
-  const heldPointer = useEdgePan({
-    options: p.viewOn && edgePan !== false ? (edgePan === true || edgePan === undefined ? {} : edgePan) : false,
+  const edgePanProp = props.viewport?.edgePan;
+  const edgePan = useEdgePan({
+    options: p.viewOn && edgePanProp !== false ? (edgePanProp === true || edgePanProp === undefined ? {} : edgePanProp) : false,
     dispatcher: p.dispatcher, element: () => canvas.elementRef.current,
-    getView: viewState.getView, setView: viewState.setViewFromInput,
+    getView: viewState.getView, setView: viewState.setViewFromInput, content: contentBounds,
   });
   useSceneGestureDispatcher({
-    canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, heldPointer,
+    canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, heldPointer: edgePan.heldPointer, clampWorld: edgePan.clampWorld,
     tools: p.tools.tools, contributions: p.tools.contributions,
     enabled: props.enableGestureDispatcher ?? true, keyboard: enableKeybindings,
     claimKeys: props.claimKeys ?? false,

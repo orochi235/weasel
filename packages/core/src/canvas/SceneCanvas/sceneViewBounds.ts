@@ -56,7 +56,7 @@ export function contentReach(content: Bounds | null, margin: number, from: View,
 }
 
 /** The world rect `view` shows over `dims`, whichever way its axes run. */
-function shownRect(view: View, dims: Dims): Bounds {
+export function shownRect(view: View, dims: Dims): Bounds {
   const w = dims.width / view.scale.x;
   const h = dims.height / view.scale.y;
   return { x: Math.min(view.x, view.x + w), y: Math.min(view.y, view.y + h), width: Math.abs(w), height: Math.abs(h) };

@@ -28,6 +28,8 @@ export interface SceneGestureDispatcherInputs {
   canvasRef: React.RefObject<HTMLElement | null>;
   /** Handed the held pointers while the listeners are attached: what edge panning drives. */
   heldPointer?: (feed: HeldPointerFeed | null) => void;
+  /** What the pointer's world point is held to, last: edge panning's limit on a drag. */
+  clampWorld?: (world: { x: number; y: number }) => { x: number; y: number };
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
    *  `requestRedraw()` between pointer events. */
   canvasApiRef: React.RefObject<CanvasExtensionApi | null>;
@@ -236,13 +238,14 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
   const classifyTarget = useClassifyTarget(inputs, kindOfNodeRef);
 
   // Through the handle, so a `clientToWorld` override on the canvas applies.
+  const clampWorldRef = useLatest(inputs.clampWorld);
   const clientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
     const api = canvasApiRef.current;
     const [x, y] = api ? api.clientToWorld(clientX, clientY) : [clientX, clientY];
-    const world = { x, y };
+    const world = clampWorldRef.current?.({ x, y }) ?? { x, y };
     traceConversion(traces.coords, clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
     return world;
-  }, [canvasRef, canvasApiRef, viewRef, traces.coords]);
+  }, [canvasRef, canvasApiRef, viewRef, traces.coords, clampWorldRef]);
 
   // Stable callback that asks the canvas to redraw. Reads via ref so the
   // identity stays stable while the underlying API binds after mount.

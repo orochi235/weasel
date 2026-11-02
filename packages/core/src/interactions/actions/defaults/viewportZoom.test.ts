@@ -44,9 +44,9 @@ describe('viewportZoomAction descriptor', () => {
     expect(viewportZoomAction.enabled!()).toBe(true);
   });
 
-  it('has 6 gesture bindings: wheel+mod, ctrl+wheel, pinch, key =, key -, key 0', () => {
+  it('has 7 gesture bindings: wheel+mod, ctrl+wheel, pinch, key =, key -, key 0, key alt+0', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
-    expect(bindings).toHaveLength(6);
+    expect(bindings).toHaveLength(7);
     const specs = bindings.map((b) => b.spec);
     expect(specs).toContainEqual({ kind: 'pinch' });
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
@@ -59,7 +59,7 @@ describe('viewportZoomAction descriptor', () => {
   it('each binding declares a params.kind', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
     const kinds = bindings.map((b) => b.opts.params.kind);
-    expect(kinds.slice().sort()).toEqual(['in', 'out', 'pinch', 'reset', 'wheel', 'wheel']);
+    expect(kinds.slice().sort()).toEqual(['fit', 'in', 'out', 'pinch', 'reset', 'wheel', 'wheel']);
   });
 });
 
@@ -390,11 +390,12 @@ describe('makeViewportZoomAction with animate', () => {
 });
 
 describe('viewport.zoom variants', () => {
-  it('lists in, out and reset as variants, and nothing for wheel or pinch', () => {
+  it('lists in, out, reset, and fit as variants, and nothing for wheel or pinch', () => {
     expect(actionItems(makeViewportZoomAction()).map((i) => [i.key, i.label, i.params])).toEqual([
       ['viewport.zoom:in', 'Zoom In', { kind: 'in' }],
       ['viewport.zoom:out', 'Zoom Out', { kind: 'out' }],
       ['viewport.zoom:reset', 'Reset Zoom', { kind: 'reset' }],
+      ['viewport.zoom:fit', 'Fit Content', { kind: 'fit' }],
     ]);
   });
 
@@ -402,10 +403,11 @@ describe('viewport.zoom variants', () => {
     const action = makeViewportZoomAction();
     const keyOf = (kind: string) => {
       const s = actionShortcuts(action, { kind })[0];
-      return [s.key, s.mod];
+      return [s.key, s.mod, s.alt ?? false];
     };
-    expect(keyOf('in')).toEqual(['=', true]);
-    expect(keyOf('out')).toEqual(['-', true]);
-    expect(keyOf('reset')).toEqual(['0', true]);
+    expect(keyOf('in')).toEqual(['=', true, false]);
+    expect(keyOf('out')).toEqual(['-', true, false]);
+    expect(keyOf('reset')).toEqual(['0', true, false]);
+    expect(keyOf('fit')).toEqual(['0', true, true]);
   });
 });
