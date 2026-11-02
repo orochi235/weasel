@@ -30,15 +30,24 @@ export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangen
     if (c[mid + 1] < len) lo = mid + 1;
     else hi = mid;
   }
-  const i = lo;
+  return pointOnSegment(t, r, lo, len);
+}
+
+/**
+ * @internal {@link pointAtLength} on a segment already found: the point at
+ * pen-order length `len` on segment `i` of run `r`, `len` clamped to it.
+ */
+export function pointOnSegment(t: LengthTable, r: number, i: number, len: number): { point: Comps; tangent: Comps } {
+  const c = tableInternals(t).cum[r];
   const span = c[i + 1] - c[i];
+  const local = Math.min(Math.max(len - c[i], 0), span);
   const ctl = t.runs[r].controls?.[i];
   if (ctl && ctl.length > 0) {
     const seg = segmentCoords(t.runs[r].points, ctl, t.dim, i);
-    const u = segmentTAtLength(seg, t.dim, len - c[i], span);
+    const u = segmentTAtLength(seg, t.dim, local, span);
     return { point: bezierPoint(seg, t.dim, u), tangent: bezierDirection(seg, t.dim, u) ?? tangentNear(t, r, i) };
   }
-  const f = span > 0 ? (len - c[i]) / span : 0;
+  const f = span > 0 ? local / span : 0;
   const a = at(t, r, i);
   const b = at(t, r, i + 1);
   return { point: [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)], tangent: tangentNear(t, r, i) };

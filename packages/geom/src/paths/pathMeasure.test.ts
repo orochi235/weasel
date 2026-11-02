@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { polylineFromPoints, rectPath } from './builder';
 import { measurePath } from './pathMeasure';
+import { pathFromD } from './pathFromD';
+import { pathLengthTable } from '../along/pathTable';
+import { pointAtLength } from '../along/positions';
 
 const elbow = polylineFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }]);
 
@@ -45,5 +48,26 @@ describe('measurePath', () => {
   it('answers a zero-length path at its point', () => {
     const m = measurePath(polylineFromPoints([{ x: 5, y: 5 }, { x: 5, y: 5 }]))!;
     expect(m.nearest({ x: 8, y: 9 })).toMatchObject({ s: 0, dist: 5, point: { x: 5, y: 5 } });
+  });
+
+  it('measures by exact arc length, so a fraction lands where a trim cuts', () => {
+    const curved = {
+      ...pathFromD('M0 0 L100 0 L100 100 L0 100 Z M200 0 C260 80 300 -40 360 40 Q400 90 420 40'),
+      corners: [null, { shape: 'round' as const, radius: 20 }, null, null, null, null, null, null],
+    };
+    const table = pathLengthTable(curved);
+    for (const tolerance of [0.5, 2]) {
+      const m = measurePath(curved, { flattenTolerance: tolerance })!;
+      expect(m.length).toBeCloseTo(table.total, 9);
+      for (const f of [0.1, 0.25, 0.5, 0.8, 0.97]) {
+        const { point } = pointAtLength(table, f * table.total);
+        const at = m.at(f * m.length).point;
+        expect(at.x).toBeCloseTo(point[0], 6);
+        expect(at.y).toBeCloseTo(point[1], 6);
+        const back = m.nearest(at);
+        expect(back.s / m.length).toBeCloseTo(f, 3);
+        expect(m.at(back.s).point).toEqual(back.point);
+      }
+    }
   });
 });
