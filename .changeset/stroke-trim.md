@@ -10,6 +10,8 @@
 "@weasel-js/diagram": patch
 "@weasel-js/diagram-formats": patch
 "@weasel-js/text": patch
+"@weasel-js/prefs": patch
+"@weasel-js/ui": patch
 ---
 
 A stroke can now draw only part of its path. `Stroke.trim` is a `StrokeTrim`, `{ start?, end?, pace? }`, and the stroke draws the stretch between `start` and `end` in the order the path was authored. Each edge is a `TrimAt`: a bare number is a fraction of the whole path, `{ length }` an absolute distance, `{ anchor }` a vertex index (`2.5` is halfway along the segment after anchor 2) and `{ subpath }` a subpath index. `pace` (`TrimPace`) says what a fraction is a fraction of: `'length'` (the default) moves at constant speed, and `'anchor'` gives every segment an equal share. An edge omitted is the path's start or end, and a window whose start is at or past its end draws nothing. Lengths are exact arc lengths in the path's own space, so the cut doesn't move with zoom or flattening tolerance. Tween `end` from 0 to 1 to draw a line on, then `start` after it to draw it off.
@@ -38,3 +40,4 @@ Breaking and behavior changes:
 - `svgPaintFromKit`, `svgStrokeFromKit` and `SvgKitPose` moved to their own module in svg; they are still exported from the package root.
 - SVG export writes a path stroke aligned `inner` or `outer` as its filled outline, the way it writes a variable-width stroke, where it used to write it centered with a warning. The path keeps its stroke at `stroke-width="0"` and records the alignment as `wzl:stroke-align`, which import reads back. Text strokes still warn.
 - The stroke properties schema (core's default node properties, which draw's sidebar shows) has a Trim row: Start and End as fractions, and Pace. An edge held as a length, anchor or subpath disables its slider rather than being rewritten.
+- An `object` pref leaf's dotted field (`'nib.angle'`) now reads and writes a field of a field. It used to read nothing and write a flat key named `nib.angle`, so the stroke panel's nib Angle and Thinnest rows never took effect. `prefObjectField` (prefs) reads one, and `prefObjectWithField` sets one, making the objects on the way and dropping one a cleared field leaves empty.
