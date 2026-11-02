@@ -72,12 +72,19 @@ describe('markerHeads under a trim', () => {
     expect(Math.abs(t.x - ex)).toBeLessThan(1e-6);
     expect(Math.abs(t.y - ey)).toBeLessThan(1e-6);
 
-    // The ribbon's last quad ends on that point, between its two edge vertices.
+    // The ribbon's butt end is its farthest reach along the run's final direction, centered on that point.
+    // A cut can land a float's width past a flattened vertex, so the direction comes from the last real segment.
     const v = tessellateStroke(cornered, stroke).vertices;
-    let best = Infinity;
-    for (let i = 2; i * 2 + 3 < v.length; i += 4) {
-      best = Math.min(best, Math.hypot((v[i * 2] + v[i * 2 + 2]) / 2 - ex, (v[i * 2 + 1] + v[i * 2 + 3]) / 2 - ey));
-    }
-    expect(best).toBeLessThan(1e-4);
+    let k = polyline.points.length / 2 - 2;
+    while (Math.hypot(ex - polyline.points[k * 2], ey - polyline.points[k * 2 + 1]) < 1e-3) k--;
+    const dx = ex - polyline.points[k * 2], dy = ey - polyline.points[k * 2 + 1];
+    const along = (i: number) => (v[i * 2] * dx + v[i * 2 + 1] * dy) / Math.hypot(dx, dy);
+    let far = -Infinity;
+    for (let i = 0; i < v.length / 2; i++) far = Math.max(far, along(i));
+    const end = Array.from({ length: v.length / 2 }, (_v, i) => i).filter((i) => along(i) > far - 1e-3);
+    expect(end.length).toBeGreaterThanOrEqual(2);
+    const mean = (o: number) => end.reduce((sum, i) => sum + v[i * 2 + o], 0) / end.length;
+    expect(mean(0)).toBeCloseTo(ex, 4);
+    expect(mean(1)).toBeCloseTo(ey, 4);
   });
 });

@@ -6,7 +6,7 @@ import { dashPolylines } from './dash';
 import { strokeFlattening } from './flattening';
 import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
-import { windowRibbon } from './ribbonWindow';
+import { authoredRectTrim, windowRibbon } from './ribbonWindow';
 import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
 import { meetInnerEdges } from './innerJoins';
 import {
@@ -116,8 +116,9 @@ export function tessellateStroke(
   let phases: number[] | undefined;
   let dashLength: number | undefined;
   if (stroke.trim !== undefined) {
+    const trim = path.kind === 'rect' && align !== 'center' ? authoredRectTrim(path, stroke.trim) : stroke.trim;
     ({ runs, phases, dashLength } = windowRibbon(
-      polylines, stroke.trim, resolved?.anchorSources, from, ribbonSpace, opts.startInset, opts.endInset,
+      polylines, trim, resolved?.anchorSources, from, ribbonSpace, opts.startInset, opts.endInset,
       stroke.dash !== undefined,
     ));
   } else {

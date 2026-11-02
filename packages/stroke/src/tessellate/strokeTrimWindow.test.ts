@@ -3,6 +3,7 @@ import { tessellateStroke } from './stroke';
 import { PATH_M, PATH_L, type Path, type PolygonPath } from '@weasel-js/geom';
 import { MAX_DASH_RUNS, type Stroke } from '@weasel-js/paint';
 import { strokeInsets } from '../markerInset';
+import { markerHeads } from '../markerHeads';
 import { strokeSpaceOf } from './metric';
 
 const LINE: PolygonPath = {
@@ -77,5 +78,49 @@ describe('tessellateStroke under a trim', () => {
     const [lo, hi] = spanX(mesh);
     expect(lo).toBeCloseTo(0, 3);
     expect(hi).toBeCloseTo(75, 3);
+  });
+
+  it('trims an inner-aligned rect along its authored outline', () => {
+    const rect: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
+    const stroke: Stroke = { ...BASE, width: 10, align: 'inner', markerMid: 'dot' };
+    // The authored corner sits at 1/3; the shifted 90×40 rect's own corner would come at 0.346.
+    for (let end = 0.3; end <= 0.36; end += 0.005) {
+      const trimmed = { ...stroke, trim: { end } };
+      const head = markerHeads(rect, trimmed, 10, undefined).length > 0;
+      const turned = spanX(tessellateStroke(rect, trimmed))[1] > 100 - 1e-4;
+      expect(turned, `end ${end}`).toBe(head);
+    }
+  });
+
+  it('reads an absolute length on an aligned rect as authored length', () => {
+    const rect: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
+    // 120 authored is 20 down the 50-unit right side; the shifted rect's side runs y 5–45.
+    const mesh = tessellateStroke(rect, { ...BASE, width: 10, align: 'inner', trim: { end: { length: 120 } } });
+    let hi = -Infinity;
+    for (let i = 1; i < mesh.vertices.length; i += 2) hi = Math.max(hi, mesh.vertices[i]);
+    expect(hi).toBeCloseTo(5 + 0.4 * 40, 4);
+  });
+
+  it('keeps the dash fixed under a metric with a start inset measured in world', () => {
+    const { metric } = strokeSpaceOf(4, 0, 0, 1);
+    const bend: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 100]),
+      fillRule: 'nonzero',
+    };
+    const stroke: Stroke = { ...BASE, width: 0.5, dash: [3, 3] };
+    const opts = { metric: metric!, startInset: { length: 6, metric: null } };
+    // Dash edges down the vertical leg, past where the trimmed run starts drawing.
+    const edges = (s: Stroke) => {
+      const v = tessellateStroke(bend, s, opts).vertices;
+      const ys = new Set<number>();
+      for (let i = 1; i < v.length; i += 2) if (v[i] > 27) ys.add(Math.round(v[i] * 1e3) / 1e3);
+      return ys;
+    };
+    const whole = edges(stroke);
+    const trimmed = edges({ ...stroke, trim: { start: { length: 30 } } });
+    expect(trimmed.size).toBeGreaterThan(4);
+    for (const y of trimmed) expect(whole.has(y), `edge at y ${y}`).toBe(true);
   });
 });

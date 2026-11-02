@@ -46,6 +46,15 @@ function sampleAt(
   return { x: px + (qx - px) * f, y: py + (qy - py) * f, a, b, t, w, o, next: i };
 }
 
+/** Float32 rounding at a coordinate's magnitude, with headroom: what points stored as
+ *  `Float32Array` and lengths summed in doubles can disagree by. */
+const ROUNDING = 4 * 2 ** -23;
+
+function nearVertex(pl: Polyline, s: Sample, i: number): boolean {
+  const x = pl.points[i * 2], y = pl.points[i * 2 + 1];
+  return Math.hypot(s.x - x, s.y - y) <= ROUNDING * Math.max(1, Math.abs(x), Math.abs(y));
+}
+
 /**
  * Shorten `pl` by `startInset` from its first point and `endInset` from its
  * last, both in the same world units as the points.
@@ -86,25 +95,33 @@ export function trimPolyline(
 
   const head = sampleAt(pl, cum, A, B, T, W, O, cutA, true);
   const tail = sampleAt(pl, cum, A, B, T, W, O, cutB, false);
+  // A cut within float rounding of a kept vertex is that vertex: the sliver
+  // between them has a direction made of noise, which skews a cap or a head.
+  const interior = tail.next - head.next;
+  const headOnVertex = interior > 0 && nearVertex(pl, head, head.next);
+  const tailOnVertex = interior > 0 && nearVertex(pl, tail, tail.next - 1) && interior + (headOnVertex ? 0 : 1) >= 2;
 
-  const points: number[] = [head.x, head.y];
-  const aOut: number[] = [head.a];
-  const bOut: number[] = [head.b];
-  const tOut: number[] = [head.t];
-  const wOut: number[] | undefined = W ? [head.w] : undefined;
-  const oOut: number[] | undefined = O ? [head.o] : undefined;
+  const points: number[] = [];
+  const aOut: number[] = [];
+  const bOut: number[] = [];
+  const tOut: number[] = [];
+  const wOut: number[] | undefined = W ? [] : undefined;
+  const oOut: number[] | undefined = O ? [] : undefined;
+  const push = (s: Sample) => {
+    points.push(s.x, s.y);
+    aOut.push(s.a); bOut.push(s.b); tOut.push(s.t);
+    if (wOut) wOut.push(s.w);
+    if (oOut) oOut.push(s.o);
+  };
 
+  if (!headOnVertex) push(head);
   for (let i = head.next; i < tail.next; i++) {
     points.push(pl.points[i * 2], pl.points[i * 2 + 1]);
     aOut.push(A[i]); bOut.push(B[i]); tOut.push(T[i]);
     if (wOut) wOut.push(W![i]);
     if (oOut) oOut.push(O![i]);
   }
-
-  points.push(tail.x, tail.y);
-  aOut.push(tail.a); bOut.push(tail.b); tOut.push(tail.t);
-  if (wOut) wOut.push(tail.w);
-  if (oOut) oOut.push(tail.o);
+  if (!tailOnVertex) push(tail);
 
   return {
     points,
