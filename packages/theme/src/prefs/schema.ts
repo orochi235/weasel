@@ -23,7 +23,7 @@ const labeled = (text: string): string => (text === '' ? text : text[0]!.toUpper
 const groupKey = (group: string): string => (group === THEME_PREFS_AXIS ? `${THEME_PREFS_AXIS}-tokens` : group);
 
 /** The locus of a value that differs along `axes`, each level keyed by its axis's leaf. */
-export const locusByAxis = (axis: string, members: Record<string, unknown>): PrefLocus => ({ $by: themeAxisPath(axis), $of: members });
+export const locusByAxis = (axis: string, members: Record<string, unknown>): PrefLocus => ({ $by: themeAxisPath(axis), $in: members });
 
 // On its group's page a token's group prefix says nothing; its whole name stays a tag, so a filter still finds it.
 const shortName = (row: TokenRow): string => (row.name.startsWith(`${row.group}-`) ? row.name.slice(row.group.length + 1) : row.name);

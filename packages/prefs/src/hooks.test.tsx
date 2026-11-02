@@ -100,9 +100,9 @@ describe('usePrefsValues', () => {
     const empty = result.current.loci;
     expect(empty.size).toBe(0);
     act(() => result.current.split('gap', 'mode'));
-    expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $of: { dark: 4, light: 4 } });
+    expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $in: { dark: 4, light: 4 } });
     act(() => result.current.setAt('gap', 9, { mode: 'light' }));
-    expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $of: { dark: 4, light: 9 } });
+    expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $in: { dark: 4, light: 9 } });
     expect(result.current.values.gap).toBe(4);
     const held = result.current.loci;
     act(() => result.current.set('mode', 'light'));

@@ -16,7 +16,7 @@ const LOOK: PrefGroup = {
     },
   },
 };
-const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $of: { dark, light } });
+const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $in: { dark, light } });
 const flag = { kind: 'boolean', name: 'Flag', description: '', default: false } as const;
 
 /** A form of `look` and one leaf at `key`, held split by mode as `locus`, with that row open. */

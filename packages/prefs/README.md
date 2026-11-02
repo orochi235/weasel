@@ -92,13 +92,13 @@ leaf, where it would hold one. The other leaf, the selector, is an ordinary
 'look.mode': { kind: 'enum', default: 'dark', options: [dark, light], … }
 'gap':       { kind: 'number', default: 4, splitBy: ['look.mode'], … }
 
-store.split('gap', 'look.mode');   // holds { $by: 'look.mode', $of: { dark: 4, light: 4 } }
+store.split('gap', 'look.mode');   // holds { $by: 'look.mode', $in: { dark: 4, light: 4 } }
 store.set('gap', 8);               // writes the member the mode is set to
 store.set('look.mode', 'light');   // a change to every leaf split by it
 store.join('gap', 'look.mode');    // back to one value: the member the mode is set to
 ```
 
-The stored value is a locus, `{ $by, $of }`, and a member may itself be split
+The stored value is a locus, `{ $by, $in }`, and a member may itself be split
 by a second selector. `store.get` reads the member the selectors are set to.
 `store.get(path, { weights })` reads the alternatives folded by weight, which
 is what a transition between two options shows on the way:
@@ -143,7 +143,7 @@ reads as:
 
 ```ts
 'gap': { kind: 'number', default: 4, splitBy: ['look.mode'],
-         defaultLocus: { $by: 'look.mode', $of: { dark: 4, light: 6 } }, … }
+         defaultLocus: { $by: 'look.mode', $in: { dark: 4, light: 6 } }, … }
 
 store.get('gap');                                    // 4, or 6 once the mode is light
 store.set('gap', 8, { at: { 'look.mode': 'light' } }); // holds { dark: 4, light: 8 }

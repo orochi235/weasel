@@ -8,24 +8,25 @@ import {
   repairLocus,
   selectionWeights,
   splitLocus,
+  upgradeLocus,
   weighLocus,
   writeMember,
 } from './locus';
 
 const MODE = 'look.mode';
 const DENSITY = 'look.density';
-const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $of: { dark, light } });
-const byDensity = (compact: unknown, roomy: unknown) => ({ $by: DENSITY, $of: { compact, roomy } });
+const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $in: { dark, light } });
+const byDensity = (compact: unknown, roomy: unknown) => ({ $by: DENSITY, $in: { compact, roomy } });
 const OPTIONS: Record<string, readonly string[]> = { [MODE]: ['dark', 'light'], [DENSITY]: ['compact', 'roomy'] };
 const optionsOf = (path: string) => OPTIONS[path];
 
 describe('isPrefLocus', () => {
-  it('holds for an object of exactly $by and $of', () => {
+  it('holds for an object of exactly $by and $in', () => {
     expect(isPrefLocus(byMode(1, 2))).toBe(true);
-    expect(isPrefLocus({ $by: MODE, $of: {}, extra: 1 })).toBe(false);
+    expect(isPrefLocus({ $by: MODE, $in: {}, extra: 1 })).toBe(false);
     expect(isPrefLocus({ by: MODE, dark: 1 })).toBe(false);
-    expect(isPrefLocus({ $by: 3, $of: {} })).toBe(false);
-    expect(isPrefLocus({ $by: MODE, $of: [] })).toBe(false);
+    expect(isPrefLocus({ $by: 3, $in: {} })).toBe(false);
+    expect(isPrefLocus({ $by: MODE, $in: [] })).toBe(false);
     expect(isPrefLocus(4)).toBe(false);
   });
 });
@@ -50,7 +51,7 @@ describe('weighLocus', () => {
   });
 
   it('reads an option the locus has no member for as the absent value', () => {
-    expect(weighLocus({ $by: MODE, $of: { dark: 4 } }, selectionWeights({ [MODE]: 'light' }), 99)).toEqual([{ value: 99, weight: 1 }]);
+    expect(weighLocus({ $by: MODE, $in: { dark: 4 } }, selectionWeights({ [MODE]: 'light' }), 99)).toEqual([{ value: 99, weight: 1 }]);
   });
 
   it('has no members where the selector has no weight', () => {
@@ -117,17 +118,31 @@ describe('repairLocus', () => {
   const double = (v: unknown) => (v as number) * 2;
 
   it('repairs each member and drops a key that is no option', () => {
-    const stored = { $by: MODE, $of: { dark: 1, light: 2, sepia: 3 } };
+    const stored = { $by: MODE, $in: { dark: 1, light: 2, sepia: 3 } };
     expect(repairLocus(stored, [MODE], optionsOf, double)).toEqual(byMode(2, 4));
   });
 
   it('refuses a selector the leaf may not be split by, one that is no enum, and one met twice', () => {
     expect(repairLocus(byDensity(1, 2), [MODE], optionsOf, double)).toBeUndefined();
-    expect(repairLocus({ $by: 'nope', $of: { a: 1 } }, ['nope'], optionsOf, double)).toBeUndefined();
+    expect(repairLocus({ $by: 'nope', $in: { a: 1 } }, ['nope'], optionsOf, double)).toBeUndefined();
     expect(repairLocus(byMode(byMode(1, 2), 3), [MODE], optionsOf, double)).toBeUndefined();
   });
 
   it('reads a nested locus in either order', () => {
     expect(repairLocus(byDensity(byMode(1, 2), 3), [MODE, DENSITY], optionsOf, double)).toEqual(byDensity(byMode(2, 4), 6));
+  });
+});
+
+describe('upgradeLocus', () => {
+  it('rekeys a locus stored as { $by, $of } at any depth', () => {
+    const old = { $by: MODE, $of: { dark: { $by: DENSITY, $of: { compact: 4, roomy: 8 } }, light: 6 } };
+    expect(upgradeLocus(old)).toEqual(byMode(byDensity(4, 8), 6));
+    expect(upgradeLocus(byMode({ $by: DENSITY, $of: { compact: 1 } }, 2))).toEqual(byMode({ $by: DENSITY, $in: { compact: 1 } }, 2));
+  });
+
+  it('returns the same value where there is nothing to upgrade', () => {
+    const current = byMode(byDensity(4, 8), 6);
+    expect(upgradeLocus(current)).toBe(current);
+    for (const value of [4, 'x', null, [1], { $of: { a: 1 } }, { $by: MODE, $of: {}, other: 1 }]) expect(upgradeLocus(value)).toBe(value);
   });
 });

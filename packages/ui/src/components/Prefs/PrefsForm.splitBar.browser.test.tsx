@@ -22,7 +22,7 @@ const BAR: PrefGroup = {
   },
 };
 
-const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $of: { dark, light } });
+const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $in: { dark, light } });
 
 it('sets a split bar cell\'s mark inside the cell, beside its control, on its line and inside the bar', () => {
   render(<PrefsForm schema={BAR} values={{}} onChange={() => {}} loci={new Map([['gap', byMode(4, 8)]])} />);

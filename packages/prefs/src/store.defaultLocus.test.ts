@@ -7,7 +7,7 @@ import { createPrefsStore } from './store';
 
 const MODE = 'mode';
 const DENSITY = 'density';
-const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $of: { dark, light } });
+const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $in: { dark, light } });
 
 const SCHEMA = {
   name: 'Test',
@@ -66,8 +66,8 @@ describe('a leaf whose default is split', () => {
     const { store } = make();
     store.split('gap', DENSITY);
     expect(store.locus('gap')).toEqual(byMode(
-      { $by: DENSITY, $of: { compact: 4, roomy: 4 } },
-      { $by: DENSITY, $of: { compact: 6, roomy: 6 } },
+      { $by: DENSITY, $in: { compact: 4, roomy: 4 } },
+      { $by: DENSITY, $in: { compact: 6, roomy: 6 } },
     ));
   });
 
@@ -89,7 +89,7 @@ describe('a leaf whose default is split', () => {
   });
 
   it('reads default for a member a stored locus leaves out', () => {
-    const { store } = make([['gap', { $by: MODE, $of: { light: 9 } }]]);
+    const { store } = make([['gap', { $by: MODE, $in: { light: 9 } }]]);
     expect(store.get('gap')).toBe(4);
   });
 
@@ -114,7 +114,7 @@ describe('a split default the leaf cannot hold', () => {
       children: {
         mode: SCHEMA.children.mode,
         gap: { kind: 'number', name: 'Gap', description: '', default: 4, defaultLocus: byMode(4, 6) },
-        pad: { kind: 'number', name: 'Pad', description: '', default: 2, splitBy: [MODE], defaultLocus: { $by: 'nope', $of: { a: 1 } } },
+        pad: { kind: 'number', name: 'Pad', description: '', default: 2, splitBy: [MODE], defaultLocus: { $by: 'nope', $in: { a: 1 } } },
       },
     } satisfies PrefGroup;
     const store = createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.' }));

@@ -36,7 +36,7 @@ describe('prefWeightAxes', () => {
   });
 
   it('reads a store at a point between two options, as an animation over the axes passes it', () => {
-    const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['gap', { $by: MODE, $of: { dark: 4, light: 8 } }]] });
+    const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['gap', { $by: MODE, $in: { dark: 4, light: 8 } }]] });
     const store = createPrefsStore(SCHEMA, cache);
     const mode = prefWeightAxes({ [MODE]: ['dark', 'light'] });
     expect(store.get('gap', { weights: mode.from([0.25, 0.75]) })).toBe(7);

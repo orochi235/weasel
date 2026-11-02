@@ -5,7 +5,7 @@ import { prefsCss } from './css';
 import { prefsDefaultsSource } from './defaultsSource';
 import { openPrefsSync } from './open';
 
-const byMode = (dark: unknown, light: unknown) => ({ $by: 'look.mode', $of: { dark, light } });
+const byMode = (dark: unknown, light: unknown) => ({ $by: 'look.mode', $in: { dark, light } });
 
 const SCHEMA = pref.group('Prefs', {
   look: pref.group('Look', {
@@ -13,7 +13,7 @@ const SCHEMA = pref.group('Prefs', {
     density: pref.enum('Density', 'compact', ['compact', 'roomy']),
     inner: pref.group('Inner', { gridGap: pref.number('Grid gap', 2), face: pref.string('Face', 'Sans') }),
   }),
-  gap: { ...pref.number('Gap', 4, { unit: { scale: 1, suffix: 'px' }, splitBy: ['look.mode', 'look.density'] }), defaultLocus: byMode(4, { $by: 'look.density', $of: { compact: 6, roomy: 9 } }) },
+  gap: { ...pref.number('Gap', 4, { unit: { scale: 1, suffix: 'px' }, splitBy: ['look.mode', 'look.density'] }), defaultLocus: byMode(4, { $by: 'look.density', $in: { compact: 6, roomy: 9 } }) },
   surface: pref.color('Surface', '#000000', { splitBy: ['look.mode'] }),
   shown: pref.boolean('Shown', true),
 });

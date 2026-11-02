@@ -21,8 +21,8 @@ const SCHEMA = pref.group('Prefs', {
   tags: { kind: 'list', name: 'Tags', description: '', default: [], item: pref.string('Tag', '') },
 });
 
-const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $of: { dark, light } });
-const byDensity = (compact: unknown, roomy: unknown) => ({ $by: DENSITY, $of: { compact, roomy } });
+const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $in: { dark, light } });
+const byDensity = (compact: unknown, roomy: unknown) => ({ $by: DENSITY, $in: { compact, roomy } });
 
 const make = (initial: [string, unknown][] = []) =>
   createPrefsStore(SCHEMA, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial }));
@@ -89,7 +89,7 @@ describe('prefsCss', () => {
       mode: pref.enum('Mode', 'dark', ['dark', 'light']),
       density: pref.enum('Density', 'compact', ['compact', 'roomy']),
     });
-    const initial: [string, unknown][] = [['gap', { $by: 'mode', $of: { dark: { $by: 'density', $of: { compact: 1, roomy: 2 } }, light: 3 } }]];
+    const initial: [string, unknown][] = [['gap', { $by: 'mode', $in: { dark: { $by: 'density', $in: { compact: 1, roomy: 2 } }, light: 3 } }]];
     const store = createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial }));
     const named = Object.keys(blocksOf(prefsCss(store))).map((head) => head.split('[').length - 1);
     expect(named).toEqual([...named].sort((a, b) => a - b));
@@ -97,7 +97,7 @@ describe('prefsCss', () => {
   });
 
   it('reads an option a locus holds nothing for as the default', () => {
-    const blocks = blocksOf(prefsCss(make([['surface', { $by: MODE, $of: { dark: '#111111' } }]])));
+    const blocks = blocksOf(prefsCss(make([['surface', { $by: MODE, $in: { dark: '#111111' } }]])));
     expect(blocks[":where(:root[data-look-mode='light'])"]).toContain('--surface: #000000;');
   });
 

@@ -30,8 +30,8 @@ const SCHEMA: PrefGroup = {
   },
 };
 
-const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $of: { dark, light } });
-const byDensity = (compact: unknown, roomy: unknown): PrefLocus => ({ $by: DENSITY, $of: { compact, roomy } });
+const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $in: { dark, light } });
+const byDensity = (compact: unknown, roomy: unknown): PrefLocus => ({ $by: DENSITY, $in: { compact, roomy } });
 
 function mount(props: Partial<PrefsFormProps> = {}) {
   const on = { onChange: vi.fn(), onSplit: vi.fn(), onJoin: vi.fn(), onChangeAt: vi.fn() };
@@ -166,7 +166,7 @@ describe('a split value in PrefsForm', () => {
   });
 
   it('shows the default for an option the locus holds nothing for', () => {
-    mount({ loci: new Map([['gap', { $by: MODE, $of: { dark: 9 } }]]), values: { gap: 9 } });
+    mount({ loci: new Map([['gap', { $by: MODE, $in: { dark: 9 } }]]), values: { gap: 9 } });
     fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode' }));
     expect(screen.getByRole('spinbutton', { name: 'Gap, Dark' })).toHaveValue('9');
     expect(screen.getByRole('spinbutton', { name: 'Gap, Light' })).toHaveValue('4');
@@ -339,7 +339,7 @@ describe('the control that opens a split row', () => {
         gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: ['mode'] },
       },
     };
-    const loci = new Map([['gap', { $by: 'mode', $of: { dark: 4, light: 8 } }]]);
+    const loci = new Map([['gap', { $by: 'mode', $in: { dark: 4, light: 8 } }]]);
     render(<PrefsForm schema={SCHEMA} values={{ mode: 'dark', gap: 4 }} onChange={() => {}} loci={loci} onChangeAt={() => {}} onJoin={() => {}} />);
     const toggle = screen.getByRole('button', { name: /Gap/, expanded: false });
     expect(toggle.getAttribute('aria-controls')).toBeNull();

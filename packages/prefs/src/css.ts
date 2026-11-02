@@ -79,7 +79,7 @@ function toldApart(held: unknown, optionsOf: (selector: string) => readonly stri
       return;
     }
     for (const option of optionsOf(value.$by)) {
-      walk(Object.hasOwn(value.$of, option) ? value.$of[option] : absent, [...under, [value.$by, option]]);
+      walk(Object.hasOwn(value.$in, option) ? value.$in[option] : absent, [...under, [value.$by, option]]);
     }
   };
   walk(held, []);

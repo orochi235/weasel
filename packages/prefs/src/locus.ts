@@ -11,9 +11,9 @@ import { isPlainObject } from '@weasel-js/registry';
  * setting of the selector gives one of them all of it.
  */
 export interface PrefLocus {
-  /** The full path of the `enum` leaf whose options key `$of`. */
+  /** The full path of the `enum` leaf whose options key `$in`. */
   $by: string;
-  $of: Record<string, unknown>;
+  $in: Record<string, unknown>;
 }
 
 /** A value for each selector a read is made under: its path, then the option chosen. */
@@ -28,11 +28,22 @@ export interface PrefWeighted {
   weight: number;
 }
 
-/** Whether `value` is a {@link PrefLocus}: an object of exactly `$by` and `$of`. */
+/** Whether `value` is a {@link PrefLocus}: an object of exactly `$by` and `$in`. */
 export function isPrefLocus(value: unknown): value is PrefLocus {
   if (!isPlainObject(value)) return false;
   const keys = Object.keys(value);
-  return keys.length === 2 && typeof value.$by === 'string' && isPlainObject(value.$of);
+  return keys.length === 2 && typeof value.$by === 'string' && isPlainObject(value.$in);
+}
+
+/**
+ * `value` with every locus in it that was stored as `{ $by, $of }`, the shape
+ * before the members' key was renamed, in the current shape. The same value
+ * when it holds none.
+ */
+export function upgradeLocus(value: unknown): unknown {
+  if (isPrefLocus(value)) return mapMembers(value, upgradeLocus);
+  const old = isPlainObject(value) && Object.keys(value).length === 2 && typeof value.$by === 'string' && isPlainObject(value.$of);
+  return old ? mapMembers({ $by: value.$by as string, $in: value.$of as Record<string, unknown> }, upgradeLocus) : value;
 }
 
 /** The weights a plain selection amounts to: all of each selector's on the option chosen. */
@@ -41,7 +52,7 @@ export function selectionWeights(selection: PrefSelection): PrefWeights {
 }
 
 const member = (locus: PrefLocus, option: string, absent: unknown): unknown =>
-  (Object.hasOwn(locus.$of, option) ? locus.$of[option] : absent);
+  (Object.hasOwn(locus.$in, option) ? locus.$in[option] : absent);
 
 /**
  * Every alternative of `stored` that weighs something under `weights`, each
@@ -80,7 +91,7 @@ export function writeMember(stored: unknown, selection: PrefSelection, next: unk
   if (!isPrefLocus(stored)) return next;
   const option = selection[stored.$by];
   if (option === undefined) return stored;
-  return { $by: stored.$by, $of: { ...stored.$of, [option]: writeMember(stored.$of[option], selection, next) } };
+  return { $by: stored.$by, $in: { ...stored.$in, [option]: writeMember(stored.$in[option], selection, next) } };
 }
 
 /**
@@ -89,7 +100,7 @@ export function writeMember(stored: unknown, selection: PrefSelection, next: unk
  * outside a later one, so one meaning has one stored form.
  */
 export function splitLocus(stored: unknown, by: string, options: readonly string[], order: readonly string[]): unknown {
-  const across = (value: unknown): PrefLocus => ({ $by: by, $of: Object.fromEntries(options.map((option) => [option, value])) });
+  const across = (value: unknown): PrefLocus => ({ $by: by, $in: Object.fromEntries(options.map((option) => [option, value])) });
   if (!isPrefLocus(stored)) return across(stored);
   if (stored.$by === by) return stored;
   if (order.indexOf(stored.$by) > order.indexOf(by)) return across(stored);
@@ -106,11 +117,11 @@ export function joinLocus(stored: unknown, by: string, selection: PrefSelection,
 
 function mapMembers(locus: PrefLocus, fn: (member: unknown) => unknown): PrefLocus {
   let out: Record<string, unknown> | undefined;
-  for (const [option, value] of Object.entries(locus.$of)) {
+  for (const [option, value] of Object.entries(locus.$in)) {
     const next = fn(value);
-    if (next !== value) (out ??= { ...locus.$of })[option] = next;
+    if (next !== value) (out ??= { ...locus.$in })[option] = next;
   }
-  return out ? { $by: locus.$by, $of: out } : locus;
+  return out ? { $by: locus.$by, $in: out } : locus;
 }
 
 /** `stored` with each alternative mapped, at any depth. The same value when no member changed. */
@@ -124,7 +135,7 @@ export function locusSelectors(stored: unknown): Set<string> {
   const walk = (value: unknown): void => {
     if (!isPrefLocus(value)) return;
     out.add(value.$by);
-    for (const inner of Object.values(value.$of)) walk(inner);
+    for (const inner of Object.values(value.$in)) walk(inner);
   };
   walk(stored);
   return out;
@@ -149,12 +160,12 @@ export function repairLocus(
     if (!options) return BAD;
     const of: Record<string, unknown> = {};
     for (const option of options) {
-      if (!Object.hasOwn(value.$of, option)) continue;
-      const read = walk(value.$of[option], [...met, value.$by]);
+      if (!Object.hasOwn(value.$in, option)) continue;
+      const read = walk(value.$in[option], [...met, value.$by]);
       if (read === BAD) return BAD;
       of[option] = read;
     }
-    return { $by: value.$by, $of: of };
+    return { $by: value.$by, $in: of };
   };
   const read = walk(stored, []);
   return read === BAD ? undefined : read;

@@ -35,8 +35,8 @@ const SCHEMA = {
   },
 } satisfies PrefGroup;
 
-const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $of: { dark, light } });
-const byDensity = (compact: unknown, roomy: unknown): PrefLocus => ({ $by: DENSITY, $of: { compact, roomy } });
+const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $in: { dark, light } });
+const byDensity = (compact: unknown, roomy: unknown): PrefLocus => ({ $by: DENSITY, $in: { compact, roomy } });
 
 interface SplitFormProps {
   layout: PrefsLayout;

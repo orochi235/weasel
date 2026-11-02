@@ -17,7 +17,7 @@ export interface ThemePrefsSource {
 function pinOf(leaf: PrefLeaf, held: unknown): Varying<PinValue> {
   if (!isPrefLocus(held)) return cssOfPref(leaf, held);
   const out: Record<string, unknown> = { by: themeAxisOf(held.$by) ?? held.$by };
-  for (const [value, member] of Object.entries(held.$of)) out[value] = pinOf(leaf, member);
+  for (const [value, member] of Object.entries(held.$in)) out[value] = pinOf(leaf, member);
   return out as Varying<PinValue>;
 }
 

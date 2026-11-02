@@ -45,7 +45,7 @@ describe('themePrefsSchema', () => {
     const surface = LEAVES.get('surface.surface')!;
     expect(surface.defaultLocus).toEqual({
       $by: 'axis.mode',
-      $of: { dark: resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface'], light: resolveTheme(weaselTheme, { mode: 'light' })['--wzl-surface'] },
+      $in: { dark: resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface'], light: resolveTheme(weaselTheme, { mode: 'light' })['--wzl-surface'] },
     });
     expect(surface.default).toBe(resolveTheme(weaselTheme)['--wzl-surface']);
     expect(LEAVES.get('control.control-h')!.defaultLocus?.$by).toBe('axis.density');

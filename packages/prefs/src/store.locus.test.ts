@@ -33,8 +33,8 @@ const SCHEMA = {
   },
 } satisfies PrefGroup;
 
-const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $of: { dark, light } });
-const byDensity = (compact: unknown, roomy: unknown) => ({ $by: DENSITY, $of: { compact, roomy } });
+const byMode = (dark: unknown, light: unknown) => ({ $by: MODE, $in: { dark, light } });
+const byDensity = (compact: unknown, roomy: unknown) => ({ $by: DENSITY, $in: { compact, roomy } });
 
 const make = (initial: [string, unknown][] = []) => {
   const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial });
@@ -63,8 +63,8 @@ describe('a split value in a store', () => {
   });
 
   it('repairs each member against the leaf, drops a key that is no option, and reads a missing one as the default', () => {
-    const { store } = make([['gap', { $by: MODE, $of: { dark: 999, sepia: 3 } }]]);
-    expect(store.locus('gap')).toEqual({ $by: MODE, $of: { dark: 100 } });
+    const { store } = make([['gap', { $by: MODE, $in: { dark: 999, sepia: 3 } }]]);
+    expect(store.locus('gap')).toEqual({ $by: MODE, $in: { dark: 100 } });
     expect(store.get('gap')).toBe(100);
     store.set(MODE, 'light');
     expect(store.get('gap')).toBe(4);
@@ -123,7 +123,7 @@ describe('a write at a stated selection', () => {
   });
 
   it('writes a member the locus held nothing for', () => {
-    const { cache, store } = make([['gap', { $by: MODE, $of: { dark: 4 } }]]);
+    const { cache, store } = make([['gap', { $by: MODE, $in: { dark: 4 } }]]);
     store.set('gap', 9, { at: { [MODE]: 'light' } });
     expect(recordValue(cache.get('gap'))).toEqual(byMode(4, 9));
   });
@@ -249,7 +249,7 @@ describe('a schema whose splitBy names something that cannot be split by', () =>
         gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: ['on', 'nowhere'] },
       },
     } satisfies PrefGroup;
-    const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['gap', { $by: 'on', $of: { true: 1 } }]] });
+    const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['gap', { $by: 'on', $in: { true: 1 } }]] });
     const store = createPrefsStore(schema, cache);
     expect(warn.mock.calls.map((call) => call[0])).toEqual([
       '[prefs] splitBy of "gap": "on" names a boolean leaf, and only an enum has options to split by',
@@ -257,5 +257,24 @@ describe('a schema whose splitBy names something that cannot be split by', () =>
     ]);
     expect(store.get('gap')).toBe(4);
     warn.mockRestore();
+  });
+});
+
+describe('a split value stored as { $by, $of }, before its members were keyed $in', () => {
+  it('reads as $in, and is written back as $in', () => {
+    const old = { $at: 0, value: { $by: MODE, $of: { dark: { $by: DENSITY, $of: { compact: 4, roomy: 5 } }, light: 8 } } };
+    const { cache, store } = make([['gap', old]]);
+    expect(store.locus('gap')).toEqual(byMode(byDensity(4, 5), 8));
+    expect(store.get('gap')).toBe(4);
+    store.set('gap', 6, { at: { [MODE]: 'light' } });
+    expect(cache.get('gap')).toEqual({ $at: 0, value: byMode(byDensity(4, 5), 6) });
+  });
+
+  it('upgrades an unstamped record too, and leaves a value that is not split alone', () => {
+    const { cache, store } = make([['gap', { $by: MODE, $of: { dark: 3 } }], ['name', 'x']]);
+    expect(store.get('gap')).toBe(3);
+    store.join('gap', MODE);
+    expect(recordValue(cache.get('gap'))).toBe(3);
+    expect(store.get('name')).toBe('x');
   });
 });
