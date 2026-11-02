@@ -42,8 +42,8 @@ export interface PrefWritesSource {
   cache: OwnedRecordCache;
   /** The options of each leaf a value may be split by. */
   selectors: ReadonlyMap<string, readonly string[]>;
-  /** The free selectors: paths a `per` entry names that are no leaf, whose options the app names. */
-  free: ReadonlySet<string>;
+  /** The admitted selectors: paths the schema admits as no pref, whose options the app names. */
+  admitted: ReadonlySet<string>;
   /** The schema version a value written is in, stamped on its record. */
   version: number;
   /** The option each selector is set to, read as a write is made. */
@@ -52,7 +52,7 @@ export interface PrefWritesSource {
 }
 
 /** A store's `set`, `split`, and `join`. */
-export function prefWrites({ leaves, cache, selectors, free, version, selection, warnIfClosed }: PrefWritesSource): {
+export function prefWrites({ leaves, cache, selectors, admitted, version, selection, warnIfClosed }: PrefWritesSource): {
   set: (path: string, value: unknown, write?: { at?: PrefSelection }) => void;
   split: (path: string, by: string) => void;
   join: (path: string, by: string) => void;
@@ -62,7 +62,7 @@ export function prefWrites({ leaves, cache, selectors, free, version, selection,
     const locus = tbdPerDefault(leaf);
     const axes = tbdPerAxes(leaf);
     if (locus === undefined || !axes?.length) return undefined;
-    return repairLocus(locus, axes, (by) => optionsOf({ selectors, free }, by), (member) => encodeInfinity(leaf, member), tbdPerClosed(leaf));
+    return repairLocus(locus, axes, (by) => optionsOf({ selectors, admitted }, by), (member) => encodeInfinity(leaf, member), tbdPerClosed(leaf));
   };
   /** What the leaf holds in storage, unrepaired; its default, as stored, where it holds nothing. */
   const rawAt = (path: string, leaf: PrefLeaf): unknown =>
@@ -96,7 +96,7 @@ export function prefWrites({ leaves, cache, selectors, free, version, selection,
     const stored = encodeInfinity(leaf, value);
     const had = cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf);
     const intoMember = stored !== undefined && split && isPrefLocus(had);
-    const under = write?.at ? selectionAt(selectors, selection(), write.at, free) : selection();
+    const under = write?.at ? selectionAt(selectors, selection(), write.at, admitted) : selection();
     store(path, intoMember ? writeMember(dropUnlisted(had, tbdPerClosed(leaf)), under, stored, tbdPerClosed(leaf)) : stored);
   };
   const split = (path: string, by: string): void => {

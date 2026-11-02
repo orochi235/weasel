@@ -28,7 +28,7 @@ import type {
   ConfigEntry,
   ConfigOption,
   ConfigPredicate,
-  ConfigSchema,
+  ConfigSchemaBuilder,
   ConfigShape,
   InferConfig,
   NodeOptions,
@@ -379,10 +379,15 @@ export const f = {
   schema<S extends ConfigShape>(
     nodes: S,
     options: { over?: PrefGroup | PrefSection } = {},
-  ): ConfigSchema<InferConfig<S>> {
+  ): ConfigSchemaBuilder<InferConfig<S>> {
     const defaults = () => shapeDefaults(nodes) as InferConfig<S>;
-    return options.over === undefined
-      ? { nodes, defaults }
-      : { nodes, defaults, over: options.over };
+    const build = (admitted: readonly string[]): ConfigSchemaBuilder<InferConfig<S>> => ({
+      nodes,
+      defaults,
+      ...(options.over === undefined ? {} : { over: options.over }),
+      ...(admitted.length === 0 ? {} : { admitted }),
+      admits: (...selectors) => build([...admitted, ...selectors]),
+    });
+    return build([]);
   },
 };

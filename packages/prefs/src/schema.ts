@@ -97,7 +97,7 @@ export interface PrefBase<K extends string, Value> {
   /** The selectors this pref's value is kept separately for, one entry each,
    *  outermost first ({@link TbdPer}). Each names an `enum` pref by its full
    *  path, which must be plain: not `clearable`, with no `encoding`, and not
-   *  scoped itself; or a selector the schema's root declares free. The
+   *  scoped itself; or a selector the schema's root `admits`. The
    *  stored value is a {@link PrefLocus} whose shared value holds the next
    *  entry in; an option's own value stops there and is not split further.
    *  A reader may still join a stored value into one, and split it again. */

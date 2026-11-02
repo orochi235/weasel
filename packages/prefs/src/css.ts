@@ -81,7 +81,7 @@ function toldApart(held: unknown, optionsOf: (selector: string) => readonly stri
       return;
     }
     const options = optionsOf(value.$by);
-    // A free selector has no attribute to match, and a scope holding no value of an option's own tells none apart:
+    // An admitted selector has no attribute to match, and a scope holding no value of an option's own tells none apart:
     // what no option is named for stands for all of them.
     if (options.length === 0 || Object.keys(value.$in).length === 0) {
       walk(locusMember(value, undefined, absent, own), under);

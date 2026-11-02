@@ -3,7 +3,7 @@ import type { PrefGroup } from './groups';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves } from './helpers';
 import { isPrefLocus, selectionWeights, type PrefSelection } from './locus';
 import { readStored, resolveHeld, selectionAt } from './snapshot';
-import { prefSelectors, freeSelectors } from './splitCheck';
+import { prefSelectors, admittedSelectors } from './splitCheck';
 import { tbdPerDefault } from './per';
 
 /**
@@ -14,10 +14,10 @@ import { tbdPerDefault } from './per';
 export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   const selectors = prefSelectors(leaves);
-  const free = freeSelectors(schema);
+  const admitted = admittedSelectors(schema);
   const held = new Map([...leaves].map(([path, leaf]) => {
     const locus = tbdPerDefault(leaf);
-    return [path, locus === undefined ? leaf.default : readStored({ selectors, free }, leaf, locus)];
+    return [path, locus === undefined ? leaf.default : readStored({ selectors, admitted }, leaf, locus)];
   }));
   const own: PrefSelection = Object.fromEntries([...selectors.keys()].map((path) => [path, held.get(path) as string]));
 
@@ -30,7 +30,7 @@ export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
   return {
     schema,
     values: (options) => {
-      const selection = options?.at ? selectionAt(selectors, own, options.at, free) : own;
+      const selection = options?.at ? selectionAt(selectors, own, options.at, admitted) : own;
       const tree: Record<string, unknown> = {};
       for (const path of leaves.keys()) assignPrefValueAtPath(tree, path, read(path, selection));
       return tree;

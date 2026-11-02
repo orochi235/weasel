@@ -338,6 +338,15 @@ export interface ConfigSchema<TC> {
   /** Another schema this one is drawn over: an `f.alias` may show a leaf of it, and a condition may
    *  read a setting of it. Its values are not the config's; a lab keeps them (`<Lab over>`). */
   readonly over?: PrefGroup | PrefSection;
+  /** The selectors that are no setting of this schema which its settings' `.per` may name: set by `.admits`. */
+  readonly admitted?: readonly string[];
+}
+
+/** What `f.schema` returns: a {@link ConfigSchema} that can still say what it admits. */
+export interface ConfigSchemaBuilder<TC> extends ConfigSchema<TC> {
+  /** Admit selectors that are no setting of the schema, whose option the app names as it reads and writes: a
+   *  document, a layout from a server. A `.per` naming a path that is neither is a schema problem. */
+  admits(...selectors: string[]): ConfigSchemaBuilder<TC>;
 }
 
 /** The config type behind a schema: `ConfigOf<typeof sceneConfig>`. */

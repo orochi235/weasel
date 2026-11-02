@@ -8,7 +8,7 @@ import { createPrefsStore } from './store';
 
 const SCHEMA = {
   name: 'Test',
-  tbdFreeSelectors: ['document', 'layout'],
+  admits: ['document', 'layout'],
   children: {
     mode: {
       kind: 'enum', name: 'Mode', description: '', default: 'dark',
@@ -107,12 +107,20 @@ describe('nested entries in a store', () => {
 });
 
 describe('checking per', () => {
-  it('names a free selector declared that is a pref', () => {
+  it('names a selector the schema does not admit, listing what it does', () => {
     const schema = {
-      name: 'Bad', tbdFreeSelectors: ['mode'],
+      name: 'Typo', admits: ['document', 'layout'],
+      children: { width: { kind: 'number', name: 'Width', description: '', default: 1, per: [{ selector: 'docment' }] } },
+    } satisfies PrefGroup;
+    expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual(['selector "docment" is not admitted by this schema (it admits: document, layout)']);
+  });
+
+  it('names a selector admitted that is a pref', () => {
+    const schema = {
+      name: 'Bad', admits: ['mode'],
       children: { mode: { kind: 'enum', name: 'Mode', description: '', default: 'a', options: [{ value: 'a', label: 'A' }] } },
     } satisfies PrefGroup;
-    expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual(['"mode" is declared a free selector but names a pref']);
+    expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual(['the schema admits "mode", which is a pref']);
   });
 
   it('names an undeclared selector, an option that is none, and a selector listed twice', () => {
@@ -128,7 +136,7 @@ describe('checking per', () => {
     } satisfies PrefGroup;
     expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual([
       'its closed list names "z", which is no option of "mode"',
-      '"doc" names no pref, and the schema does not declare it a free selector',
+      'selector "doc" is not admitted by this schema (it admits none)',
       '"doc" is listed twice',
     ]);
     expect(checkPrefSplits(SCHEMA)).toEqual([]);

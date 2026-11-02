@@ -8,7 +8,7 @@ afterEach(cleanup);
 const MODE = { value: 'dark', label: 'Dark' };
 const SCHEMA: PrefGroup = {
   name: 'Prefs',
-  tbdFreeSelectors: ['layout'],
+  admits: ['layout'],
   children: {
     mode: {
       kind: 'enum', name: 'Mode', description: '', default: 'dark',
@@ -49,7 +49,7 @@ describe('a value kept per a closed selector in PrefsForm', () => {
     expect(screen.getByRole('spinbutton', { name: 'Limit, Every other mode' })).toHaveValue('5');
   });
 
-  it('offers a join for the selector it is split by, and no split by a free selector', () => {
+  it('offers a join for the selector it is split by, and no split by an admitted selector', () => {
     const { onJoin } = mount();
     fireEvent.click(screen.getByRole('button', { name: 'Limit by Mode' }));
     expect(screen.queryByRole('button', { name: /^Split / })).toBeNull();

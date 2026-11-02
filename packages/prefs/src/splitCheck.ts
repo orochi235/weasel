@@ -7,9 +7,9 @@ import { tbdPerAxes, tbdPerClosed } from './per';
 import { locusSelectors } from './locus';
 import type { PrefEnum, PrefLeaf } from './schema';
 
-/** One thing wrong with a pref's `per`, or with the schema's free selectors. */
+/** One thing wrong with a pref's scopes, or with what the schema admits. */
 export interface PrefSplitProblem {
-  code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per' | 'free';
+  code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per' | 'admits';
   /** The path of the pref whose `per` it is; `''` for the schema. */
   at: string;
   /** The selector the problem is with, where it is with one. */
@@ -40,13 +40,16 @@ export function prefSelectors(leaves: ReadonlyMap<string, PrefLeaf>): Map<string
   return out;
 }
 
-/** The selectors `schema` declares free: no pref of it, their options named by the app. */
-export function freeSelectors(schema: PrefGroup): Set<string> {
-  return new Set(schema.tbdFreeSelectors ?? []);
+/** The selectors `schema` admits: no pref of it, their options named by the app. */
+export function admittedSelectors(schema: PrefGroup): Set<string> {
+  return new Set(schema.admits ?? []);
 }
 
+const notAdmitted = (path: string, admitted: ReadonlySet<string>): string =>
+  `selector "${path}" is not admitted by this schema (${admitted.size ? `it admits: ${[...admitted].join(', ')}` : 'it admits none'})`;
+
 /** What is wrong with the `per` of the leaf at `at`. */
-function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, free: ReadonlySet<string>): PrefSplitProblem[] {
+function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, admitted: ReadonlySet<string>): PrefSplitProblem[] {
   const out: PrefSplitProblem[] = [];
   const closed = tbdPerClosed(leaf) ?? {};
   leaf.per!.forEach((per, i) => {
@@ -56,7 +59,7 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
       return;
     }
     if (!leaves.has(path)) {
-      if (!free.has(path)) out.push({ code: 'no-leaf', at, path, problem: `"${path}" names no pref, and the schema does not declare it a free selector` });
+      if (!admitted.has(path)) out.push({ code: 'no-leaf', at, path, problem: notAdmitted(path, admitted) });
       return;
     }
     const why = refusal(leaves.get(path));
@@ -72,13 +75,13 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
   return out;
 }
 
-/** Everything wrong with the `per` lists of `schema`'s prefs and with its free selectors, in schema order. */
+/** Everything wrong with the `per` lists of `schema`'s prefs and with what it admits, in schema order. */
 export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
   const leaves = prefLeaves(schema);
-  const free = freeSelectors(schema);
+  const admitted = admittedSelectors(schema);
   const out: PrefSplitProblem[] = [];
-  for (const path of free) {
-    if (leaves.has(path)) out.push({ code: 'free', at: '', path, problem: `"${path}" is declared a free selector but names a pref` });
+  for (const path of admitted) {
+    if (leaves.has(path)) out.push({ code: 'admits', at: '', path, problem: `the schema admits "${path}", which is a pref` });
   }
   for (const [at, leaf] of leaves) {
     const axes = tbdPerAxes(leaf);
@@ -91,7 +94,7 @@ export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
       out.push({ code: 'valueless', at, problem: `a ${leaf.kind} leaf holds no value to split` });
       continue;
     }
-    out.push(...perProblems(at, leaf, leaves, free));
+    out.push(...perProblems(at, leaf, leaves, admitted));
   }
   return out;
 }

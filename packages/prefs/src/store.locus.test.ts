@@ -254,7 +254,7 @@ describe('a schema whose per names something that cannot be split by', () => {
     const store = createPrefsStore(schema, cache);
     expect(warn.mock.calls.map((call) => call[0])).toEqual([
       '[prefs] per of "gap": "on" names a boolean leaf, and only an enum has options to split by',
-      '[prefs] per of "gap": "nowhere" names no pref, and the schema does not declare it a free selector',
+      '[prefs] per of "gap": selector "nowhere" is not admitted by this schema (it admits none)',
     ]);
     expect(store.get('gap')).toBe(4);
     warn.mockRestore();

@@ -1,4 +1,4 @@
-import type { PrefLeaf } from '@weasel-js/prefs';
+import { checkPrefSplits, type PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
@@ -20,5 +20,20 @@ describe('.per', () => {
     const base = f.number(1);
     base.per('mode');
     expect(base.annotations.per).toBeUndefined();
+  });
+});
+
+describe('.admits', () => {
+  it('lands on the resolved root as admits, so a .per naming it is no schema problem', () => {
+    const schema = f.schema({ width: f.number(1).per('document') }).admits('document').admits('layout');
+    const r = resolveConfigSchema(schema, []);
+    expect(r.group.admits).toEqual(['document', 'layout']);
+    expect(checkPrefSplits(r.group)).toEqual([]);
+  });
+
+  it('leaves a schema that admits nothing without the field, and its typo a problem', () => {
+    const r = resolveConfigSchema(f.schema({ width: f.number(1).per('docment') }), []);
+    expect(r.group.admits).toBeUndefined();
+    expect(checkPrefSplits(r.group).map((p) => p.problem)).toEqual(['selector "docment" is not admitted by this schema (it admits none)']);
   });
 });

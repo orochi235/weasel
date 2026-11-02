@@ -163,8 +163,8 @@ options named keep their own value, starting at the value given if any, and
 the rest share one. Without `overrides` it is open: an option keeps its own
 value once one is written. An option's own value is not split further; the
 shared member, stored under `TBD_REST_KEY`, holds the next entry in. A
-selector that is no leaf is declared on the schema's root, in
-`tbdFreeSelectors: ['layout']`:
+selector that is no pref is admitted on the schema's root, in
+`admits: ['layout']`:
 
 ```ts
 'limit': { kind: 'number', default: 1.1, per: [
@@ -172,7 +172,7 @@ selector that is no leaf is declared on the schema's root, in
   { selector: 'layout' },                             // open: a layout keeps its own once written
 ], … }
 
-store.get('limit', { at: { layout: 'explorer' } });   // `layout` is a free selector: the app names its option
+store.get('limit', { at: { layout: 'explorer' } });   // `layout` is admitted: the app names its option
 store.set('limit', 2, { at: { layout: 'explorer' } }); // explorer keeps 2 from now on
 store.set('limit', 3);                                 // every other mode and layout reads 3
 ```
