@@ -9,9 +9,9 @@
 import { type DrawCommand } from '@weasel-js/renderer';
 import { type CommandStroke, type CommandFill, type VertexWidth } from '@weasel-js/paint';
 import { subscribeToSources, type RenderLayer } from 'core/layers/render';
-import { paintOverrideSources } from 'canvas/paintOverrides';
+import { paintOverrideSources, type PaintOverrides } from 'canvas/paintOverrides';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
-import type { ColorOverrideRegistry, TrimOverride, TrimOverrideRegistry } from '@weasel-js/animator';
+import type { TrimOverride } from '@weasel-js/animator';
 import { overrideTrim } from 'canvas/trimOverrides';
 import { isDev } from '@weasel-js/react';
 
@@ -19,8 +19,11 @@ const PLACEHOLDER_FILL: CommandFill = { paint: { color: '#ffffff' } };
 const PLACEHOLDER_STROKE: CommandStroke = { paint: { color: '#ffffff' }, width: 1 };
 
 
-/** Options for `createPathLayer`. */
-export interface CreatePathLayerOpts<T> {
+/** Options for `createPathLayer`. Its animated paint, typically an animator,
+ *  comes before `getVertexColors`, `getStrokeVertexColors` and `getStroke`'s
+ *  trim; a function-form color override receives the base colors and the
+ *  timestamp `now` gives. The layer repaints for a `set` or `clear` on either registry. */
+export interface CreatePathLayerOpts<T> extends PaintOverrides {
   id?: string;
   label?: string;
   getNodes: () => readonly T[];
@@ -56,17 +59,6 @@ export interface CreatePathLayerOpts<T> {
    * stroke is synthesized so the per-anchor widths take effect.
    */
   getStrokeVertexWidths?: (node: T) => VertexWidth[] | null | undefined;
-  /**
-   * Optional color override registry, typically `animator.colorOverrides`.
-   * When set, the renderer consults it before falling back to
-   * `getVertexColors` / `getStrokeVertexColors`. Function-form overrides
-   * receive the base color array and the current animation timestamp.
-   */
-  colorOverrides?: ColorOverrideRegistry;
-  /** Optional stroke trim override registry, typically `animator.trimOverrides`:
-   *  its edges replace those of `getStroke`'s trim, as `<SceneCanvas animator>`
-   *  paints them. The layer repaints for a `set` or `clear` on either registry. */
-  trimOverrides?: TrimOverrideRegistry;
   /** Clock used to timestamp function-form color overrides. Defaults to
    *  `performance.now`. Override in tests. */
   now?: () => number;

@@ -16,7 +16,6 @@ import { sceneToAdapter } from './sceneAdapter';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
-import type { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
 import { cullDrawCommands } from '@weasel-js/renderer';
@@ -50,8 +49,8 @@ export interface SceneViewCull<TData, TLayer extends string, TPose> {
 }
 
 /** What to draw into an existing canvas: the scene, the view, and the same
- *  painting hooks `<SceneCanvas>` takes. */
-export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
+ *  painting hooks `<SceneCanvas>` takes, its animated paint among them. */
+export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> extends PaintOverrides {
   /** The DOM canvas to paint into. The first call on a given canvas creates
    *  its renderer and later calls reuse it;
    *  `releaseCanvasRenderer(canvas)` frees it. */
@@ -74,12 +73,6 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   layerVisibility?: SceneViewLayers['layerVisibility'];
   /** Per-view layer order. See {@link SceneViewLayers}. */
   layerOrder?: SceneViewLayers['layerOrder'];
-  /** Animated vertex colors to paint, typically an animator's
-   *  `colorOverrides` — see `NodePaintCtx.vertexColors`. */
-  colorOverrides?: ColorOverrideRegistry;
-  /** Animated stroke trims to paint, typically an animator's
-   *  `trimOverrides` — see `NodePaintCtx.trim`. */
-  trimOverrides?: TrimOverrideRegistry;
   /** Skip what cannot reach the `width × height` view: nodes `paintBounds`
    *  places outside it are not painted, and scene commands that cannot reach
    *  it are dropped before the renderer — the scene slot's `cull`. Off by

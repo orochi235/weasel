@@ -1,7 +1,7 @@
 /** The types `renderSceneToPixels` and its siblings take and answer. */
 import type { GlMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator';
+import type { PaintOverrides } from './paintOverrides';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from 'core/scene/types';
 import type { SceneViewDrawOne } from './sceneViewRender';
@@ -23,8 +23,10 @@ export interface HeadlessCanvasLike {
   getContext(contextId: 'webgl2', options?: WebGLContextAttributes): unknown;
 }
 
-/** What to render, at what resolution, and with which quality settings. */
-export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
+/** What to render, at what resolution, and with which quality settings. Pass
+ *  the on-screen canvas's animated paint, typically an animator, so an export
+ *  shows the frame on screen. */
+export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> extends PaintOverrides {
   scene: Scene<TData, TLayer, TPose>;
   /** Scene-space rect to render (origin + size in scene units). Output pixel
    *  dimensions follow from rect × scale (round, min 1 — see module doc). */
@@ -47,12 +49,6 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  `alphaFor`. Pass the same function the on-screen canvas uses so an
    *  export matches what the user is looking at. Defaults to `() => 1`. */
   alphaFor?: (id: string) => number;
-  /** Animated vertex colors to paint, typically an animator's
-   *  `colorOverrides`, so an export shows the frame on screen. */
-  colorOverrides?: ColorOverrideRegistry;
-  /** Animated stroke trims to paint, typically an animator's
-   *  `trimOverrides`, so an export shows the frame on screen. */
-  trimOverrides?: TrimOverrideRegistry;
   /** Background fill (any CSS color accepted by the renderer). Default:
    *  fully transparent. Passing a color is always valid. */
   background?: string;
