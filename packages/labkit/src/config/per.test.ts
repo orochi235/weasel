@@ -5,10 +5,17 @@ import { resolveConfigSchema } from './resolve';
 
 describe('.per', () => {
   it('lands on the resolved leaf as one entry per call, outermost first', () => {
-    const r = resolveConfigSchema(f.schema({
-      mode: f.enum('dark', ['dark', 'light', 'types']),
-      limit: f.number(1.1).per('mode', ['types']).per('layout', { explorer: 0.3 }).per('document'),
-    }), []);
+    const r = resolveConfigSchema(
+      f.schema({
+        mode: f.enum('dark', ['dark', 'light', 'types']),
+        limit: f
+          .number(1.1)
+          .per('mode', ['types'])
+          .per('layout', { explorer: 0.3 })
+          .per('document'),
+      }),
+      [],
+    );
     expect((r.group.children.limit as PrefLeaf).scopes).toEqual([
       { selector: 'mode', overrides: ['types'] },
       { selector: 'layout', overrides: { explorer: 0.3 } },
@@ -17,11 +24,17 @@ describe('.per', () => {
   });
 
   it('writes overrides only where given: closed with them, open without', () => {
-    const r = resolveConfigSchema(f.schema({
-      mode: f.enum('dark', ['dark', 'light']),
-      gap: f.number(4).per('mode', ['light']).per('density'),
-    }), []);
-    expect((r.group.children.gap as PrefLeaf).scopes).toEqual([{ selector: 'mode', overrides: ['light'] }, { selector: 'density' }]);
+    const r = resolveConfigSchema(
+      f.schema({
+        mode: f.enum('dark', ['dark', 'light']),
+        gap: f.number(4).per('mode', ['light']).per('density'),
+      }),
+      [],
+    );
+    expect((r.group.children.gap as PrefLeaf).scopes).toEqual([
+      { selector: 'mode', overrides: ['light'] },
+      { selector: 'density' },
+    ]);
   });
 
   it('leaves the node it chains from as it was', () => {
@@ -33,7 +46,10 @@ describe('.per', () => {
 
 describe('.admits', () => {
   it('lands on the resolved root as admits, so a .per naming it is no schema problem', () => {
-    const schema = f.schema({ width: f.number(1).per('document') }).admits('document').admits('layout');
+    const schema = f
+      .schema({ width: f.number(1).per('document') })
+      .admits('document')
+      .admits('layout');
     const r = resolveConfigSchema(schema, []);
     expect(r.group.admits).toEqual(['document', 'layout']);
     expect(checkPrefSplits(r.group)).toEqual([]);
@@ -42,6 +58,8 @@ describe('.admits', () => {
   it('leaves a schema that admits nothing without the field, and its typo a problem', () => {
     const r = resolveConfigSchema(f.schema({ width: f.number(1).per('docment') }), []);
     expect(r.group.admits).toBeUndefined();
-    expect(checkPrefSplits(r.group).map((p) => p.problem)).toEqual(['selector "docment" is not admitted by this schema (it admits none)']);
+    expect(checkPrefSplits(r.group).map((p) => p.problem)).toEqual([
+      'selector "docment" is not admitted by this schema (it admits none)',
+    ]);
   });
 });
