@@ -5,8 +5,8 @@ import { reviveTypedArrays, tagTypedArrays } from '@weasel-js/geom';
 /** The page script's global, set once the script has run. */
 export const PAGE_GLOBAL = '__weaselHeadless';
 
-/** `renderSceneToPixels`'s arguments that survive JSON: no `drawOne`, `resolveImage`, `alphaFor`
- *  or `colorOverrides`. Each means what it means there. */
+/** `renderSceneToPixels`'s arguments that survive JSON: no `drawOne`, `resolveImage`, `alphaFor`,
+ *  `colorOverrides` or `trimOverrides`. Each means what it means there. */
 export interface SerializableRenderArgs {
   /** Scene-space rect to render. */
   sourceRect: { x: number; y: number; width: number; height: number };
