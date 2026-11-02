@@ -1,14 +1,14 @@
-// What a store writes: a value encoded for storage, into the member the
-// selectors name where the leaf is split, and a value split or joined.
+// What a store writes: a value encoded for storage, into the value the
+// selectors name where the pref is scoped.
 
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
-import { dropUnlisted, isPrefScope, joinScope, mapScopeValues, repairScope, splitScope, writeMember, type PrefSelection } from './scope';
+import { dropUnlisted, isPrefScope, mapScopeValues, repairScope, writeDeclared, type PrefSelection } from './scope';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
 import { optionsOf, selectionAt } from './snapshot';
-import { scopeSelectorsOf, prefScopedDefault, overridesOfPref } from './scopeSpec';
+import { overridesOfPref, prefScopedDefault, scopeSelectorsOf } from './scopeSpec';
 import { recordValue, stampRecord } from './stamp';
 import { prefVariantOf, type PrefUnion } from './union';
 
@@ -51,11 +51,9 @@ export interface PrefWritesSource {
   warnIfClosed: (path: string | undefined) => void;
 }
 
-/** A store's `set`, `split`, and `join`. */
+/** A store's `set`. */
 export function prefWrites({ leaves, cache, selectors, admitted, version, selection, warnIfClosed }: PrefWritesSource): {
   set: (path: string, value: unknown, write?: { at?: PrefSelection }) => void;
-  split: (path: string, by: string) => void;
-  join: (path: string, by: string) => void;
 } {
   /** The leaf's split default as stored, where it has one it can hold. */
   const unsetScope = (leaf: PrefLeaf): unknown => {
@@ -64,23 +62,10 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
     if (scope === undefined || !axes?.length) return undefined;
     return repairScope(scope, axes, (by) => optionsOf({ selectors, admitted }, by), (member) => encodeInfinity(leaf, member), overridesOfPref(leaf));
   };
-  /** What the leaf holds in storage, unrepaired; its default, as stored, where it holds nothing. */
-  const rawAt = (path: string, leaf: PrefLeaf): unknown =>
-    (cache.has(path) ? recordValue(cache.get(path)) : unsetScope(leaf) ?? encodeInfinity(leaf, leaf.default));
   const store = (path: string, stored: unknown): void => {
     // Unset is stored as nothing, which a stamp would turn into something.
     cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
   };
-  /** The leaf and the selector's options, for a leaf that may be split by it. */
-  const splitOf = (path: string, by: string): { leaf: PrefLeaf; options: readonly string[] } | undefined => {
-    warnIfClosed(path);
-    const leaf = leaves.get(path);
-    const options = selectors.get(by);
-    if (leaf && scopeSelectorsOf(leaf)?.includes(by) && options) return { leaf, options };
-    console.warn(`[prefs] "${path}" cannot be split by "${by}"; ignoring`);
-    return undefined;
-  };
-
   const set = (path: string, value: unknown, write?: { at?: PrefSelection }): void => {
     warnIfClosed(path);
     const leaf = leaves.get(path);
@@ -94,24 +79,16 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
       return;
     }
     const stored = encodeInfinity(leaf, value);
+    if (stored === undefined || !split) {
+      store(path, stored);
+      return;
+    }
     const had = cache.has(path) ? recordValue(cache.get(path)) : unsetScope(leaf);
-    const intoMember = stored !== undefined && split && isPrefScope(had);
-    const under = write?.at ? selectionAt(selectors, selection(), write.at, admitted) : selection();
-    store(path, intoMember ? writeMember(dropUnlisted(had, overridesOfPref(leaf)), under, stored, overridesOfPref(leaf)) : stored);
+    const now = selection();
+    const under = write?.at ? selectionAt(selectors, now, write.at, admitted) : now;
+    const overridesOf = overridesOfPref(leaf);
+    const absent = encodeInfinity(leaf, leaf.default);
+    store(path, writeDeclared(dropUnlisted(had, overridesOf), scopeSelectorsOf(leaf)!, under, now, stored, absent, overridesOf, had !== undefined));
   };
-  const split = (path: string, by: string): void => {
-    const found = splitOf(path, by);
-    if (!found) return;
-    const had = rawAt(path, found.leaf);
-    const next = splitScope(had, by, found.options, scopeSelectorsOf(found.leaf)!, overridesOfPref(found.leaf));
-    if (next !== had) store(path, next);
-  };
-  const join = (path: string, by: string): void => {
-    const found = splitOf(path, by);
-    if (!found) return;
-    const had = rawAt(path, found.leaf);
-    const next = joinScope(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default), overridesOfPref(found.leaf));
-    if (next !== had) store(path, next);
-  };
-  return { set, split, join };
+  return { set };
 }

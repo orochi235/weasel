@@ -34,7 +34,7 @@ const PREFIX = 'theme-prefs.';
  */
 export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter }: ThemePrefsProps) {
   const [store] = useState(() => openPrefsSync(themePrefsSchema(theme), { storage, prefix: PREFIX }) as PrefsStore<PrefGroup>);
-  const { set, unset, reset, split, join, setAt } = usePrefsValues(store);
+  const { set, unset, reset, setAt } = usePrefsValues(store);
   const { values, scopes } = themePrefsValues(store, theme);
   const { mode: _mode, ...selection } = themePrefsSelection(store);
   const axis = themeAxisPath('');
@@ -56,8 +56,6 @@ export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter 
             values={values}
             scopes={scopes}
             onChange={set}
-            onSplit={split}
-            onJoin={join}
             onChangeAt={setAt}
             auto={new Set([...unset].filter(tokens))}
             canInherit={tokens}

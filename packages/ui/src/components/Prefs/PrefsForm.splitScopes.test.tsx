@@ -24,7 +24,7 @@ const SCHEMA: PrefGroup = {
 const held: PrefScope = { $by: 'mode', $in: { types: 0 }, [PREF_ELSE]: { $by: 'layout', $in: { a: 1 }, [PREF_ELSE]: 5 } };
 
 function mount(othersLabel?: string) {
-  const on = { onChange: vi.fn(), onSplit: vi.fn(), onJoin: vi.fn(), onChangeAt: vi.fn() };
+  const on = { onChange: vi.fn(), onChangeAt: vi.fn() };
   render(<PrefsForm schema={SCHEMA} layout="list" values={{ limit: 5 }} scopes={new Map([['limit', held]])} othersLabel={othersLabel} {...on} />);
   return on;
 }
@@ -49,11 +49,9 @@ describe('a value kept per a closed selector in PrefsForm', () => {
     expect(screen.getByRole('spinbutton', { name: 'Limit, Every other mode' })).toHaveValue('5');
   });
 
-  it('offers a join for the selector it is split by, and no split by an admitted selector', () => {
-    const { onJoin } = mount();
+  it('offers no way for the reader to split or join a value', () => {
+    mount();
     fireEvent.click(screen.getByRole('button', { name: 'Limit by Mode' }));
-    expect(screen.queryByRole('button', { name: /^Split / })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Join Mode' }));
-    expect(onJoin).toHaveBeenCalledWith('limit', 'mode');
+    expect(screen.queryByRole('button', { name: /^(Split|Join) / })).toBeNull();
   });
 });

@@ -21,12 +21,19 @@ parents' conditions. That is now `PrefStatus`, and `PrefScope` is the stored sha
 `PrefsCssSource.locus` and theme's `ThemePrefsSource.locus` are `scope`, and `themePrefsValues` returns
 `scopes` where it returned `loci`.
 
-**Breaking: `splitBy` is gone.** A pref lists its selectors in `scopes: [{ selector, overrides? }]`
-(`PrefScopeSpec`), outermost first, or with labkit's `.per(selector, overrides?)`. A pref with nothing
-stored now holds one empty scope per selector, so its first write keeps the current option's own value
-where a `splitBy` pref wrote one value for every option. A reader can still `join` a stored value into one
-and `split` it again. Theme token prefs are scoped by every axis, so setting a token pins it under the
-axis options it was set at.
+**Breaking: `splitBy` is gone, and so is reader-driven splitting.** A pref lists its selectors in
+`scopes: [{ selector, overrides? }]` (`PrefScopeSpec`), outermost first, or with labkit's
+`.per(selector, overrides?)`. Scopes are design-time only (decided 2026-11-01): the store's `split` and
+`join`, `usePrefsValues`' `split` and `join`, and `PrefsForm`'s `onSplit` and `onJoin` with their Split
+and Join buttons are gone. A scoped pref with nothing stored holds one empty scope per selector, so its
+first write keeps the current option's own value, where a `splitBy` pref wrote one value for every
+option until a reader split it.
+
+A stored value whose shape the declaration does not match still reads: a plain value reads as the
+shared value; a value split by a selector the declaration scopes at that level reads as that scope; a
+value split by any other selector reads as it always did. The first write to it rebuilds it in the
+declared shape, with what it reads under the current selection as the shared value, so only the value
+written changes.
 
 **Breaking for stored values:** a scoped value's own values are keyed `$in`, not `$of`. A value stored as
 `{ $by, $of }` is read as `$in` by `recordValue`, which every store read and write starts from, so an old
@@ -40,8 +47,9 @@ record reads correctly and the next write to it stores `$in`.
   `overrides` is open: an option reads its own value once one is written for it, and the shared value
   until then. With no option named, a selector reads and writes the shared value; whatever reaches no value
   reads `default`.
-- **Nesting.** Selectors nest in declaration order. An option's own value ends the descent: only the shared
-  value holds the next selector in.
+- **Nesting.** Selectors nest in declaration order. An option's own value ends the descent, and a write
+  replaces it, unless it is already split by the next selector in (as a nested `defaultLocus` holds it);
+  only the shared value holds the next selector in otherwise.
 - **Admitted selectors.** A schema's root lists `admits: [...]` (labkit: `f.schema(…).admits(...)`), the
   selectors its prefs may name that are no pref of it, whose option the app names through the same
   `PrefSelection` it already uses. `store.get(path, { at })` is new beside `{ weights }`. A selector that is

@@ -121,10 +121,18 @@ next selector in:
 { $by: 'look.mode', $in: { types: 0 }, $else: { $by: 'layout', $in: { explorer: 0.3 }, $else: 1.1 } }
 ```
 
-A pref with nothing stored holds one empty scope per selector, so its first
-write gives the current option a value of its own. `store.join(path, by)` folds
-a stored value into the one value the selector's own value reads, which every
-option then shares, and `store.split(path, by)` holds it once per option again.
+Scopes are the declaration's to say: a reader never splits or joins a pref. A
+pref with nothing stored holds one empty scope per selector, so its first
+write gives the current option a value of its own. An option's own value is
+plain, and a write replaces it, unless it is already split by the next
+selector in, as a nested `defaultLocus` holds it.
+
+A stored value need not have the declared shape, as one stored before the
+declaration changed. A plain value reads as the shared value. A value split
+by a selector the declaration scopes at that level reads as that scope. A
+value split by any other selector reads as it always did, and the first write
+to it rebuilds it in the declared shape, with what it reads now as the shared
+value, so nothing the reader sees changes but the value written.
 A closed list that changes in code needs nothing done: a stored value of an
 option no longer named is ignored, and dropped on the pref's next write.
 
@@ -155,13 +163,12 @@ says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })` is
 the whole tree as it would read with the selectors set as given.
 
 `store.scopes()` is what every scoped pref holds, by path: one map until
-something changes. `usePrefsValues` returns it shaped for `PrefsForm`, with
-`split` and `join` beside it:
+something changes. `usePrefsValues` returns it shaped for `PrefsForm`:
 
 ```tsx
-const { values, set, scopes, split, join, setAt } = usePrefsValues(store);
+const { values, set, scopes, setAt } = usePrefsValues(store);
 <PrefsForm schema={schema} values={values} onChange={set}
-  scopes={scopes} onSplit={split} onJoin={join} onChangeAt={setAt} othersLabel="Other modes" />
+  scopes={scopes} onChangeAt={setAt} othersLabel="Other modes" />
 ```
 
 `defaultLocus` gives a pref a default that differs by option, where its

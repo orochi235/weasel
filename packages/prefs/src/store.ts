@@ -33,16 +33,11 @@ export interface PrefsStore<S extends PrefGroup> {
    * `weights` gives it one, and reads its shared member elsewhere.
    */
   get<P extends PrefPath<S>>(path: P, read?: { weights?: PrefWeights; at?: PrefSelection }): PrefValueAt<S, P>;
-  /** On a split leaf, writes the member the selectors' own values name, or
-   *  with `at` the one named with each selector there set to the option given.
-   *  A {@link PrefScope} given as the value replaces the whole of what is held. */
+  /** On a scoped pref, writes the value the selectors' own values name, or
+   *  with `at` the one named with each selector there set to the option given,
+   *  making what is stored the shape its `scopes` declare on the way. A
+   *  {@link PrefScope} given as the value replaces the whole of what is held. */
   set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefScope, write?: { at?: PrefSelection }): void;
-  /** Hold the pref's value once per option of the selector at `by`, one of
-   *  its `scopes` selectors, each option starting as the value it had. */
-  split(path: PrefPath<S>, by: string): void;
-  /** Stop splitting the leaf's value by the selector at `by`, keeping the
-   *  member that selector's own value names. */
-  join(path: PrefPath<S>, by: string): void;
   /** What the leaf holds where its value is split, each member repaired. */
   scope(path: PrefPath<S>): PrefScope | undefined;
   /** What every split leaf holds, by its path. The same map until something changes. */
@@ -126,7 +121,7 @@ export function createPrefsStore<S extends PrefGroup>(
   for (const { field, at, problem } of checkPrefConditions(schema)) {
     console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
   }
-  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `per of "${at}"`}: ${problem}`);
+  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `scopes of "${at}"`}: ${problem}`);
   const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), admitted: admittedSelectors(schema), validators, blends };
   const { current, peek, drop } = createSnapshots(source);
 

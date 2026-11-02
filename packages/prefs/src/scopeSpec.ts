@@ -8,8 +8,11 @@ import type { PrefLeaf } from './schema';
  * One selector a pref's value is kept separately for, as `.per(selector,
  * overrides?)` declares it. `selector` is the full path of an `enum` pref,
  * or of a selector the schema's root `admits`, whose option the app names as
- * it reads and writes (`at`). With `overrides` the selector is closed, and
- * without, open: see {@link PrefOverrides}.
+ * it reads and writes (`at`).
+ *
+ * With `overrides` the selector is closed, and without, open: see
+ * {@link PrefOverrides}. Scopes are the declaration's to say: a reader never
+ * splits or joins a pref.
  */
 export interface PrefScopeSpec {
   selector: string;
@@ -55,3 +58,4 @@ export function prefScopedDefault(pref: PrefLeaf): PrefScope | undefined {
   for (const scope of [...pref.scopes].reverse()) inner = inner === undefined ? { $by: scope.selector, $in: {} } : withElse(scope.selector, inner);
   return inner;
 }
+

@@ -22,12 +22,6 @@ export interface PrefSplitProps {
    *  and is named here draws a marker for the option each of its selectors is set to, and opens to a control
    *  for every option. `values` still holds the one value such a pref reads as. */
   scopes?: ReadonlyMap<string, PrefScope>;
-  /** The reader asked for the pref's value to be held once per option of the selector at `by`, one of its
-   *  `scopes` selectors. Given, a pref offers it for each selector its value is not split by. */
-  onSplit?: (path: string, by: string) => void;
-  /** The reader asked for the pref's value to be one again across the selector at `by`. Given, a pref offers it
-   *  for each selector its value is split by. */
-  onJoin?: (path: string, by: string) => void;
   /** An edit of one value of a scoped pref: the one `at` names, an option for each selector the value is
    *  split by. Without it a split row does not open. An edit of the row itself goes to `onChange`. */
   onChangeAt?: (path: string, value: unknown, at: PrefSelection) => void;
@@ -66,8 +60,6 @@ export interface SplitLevel {
 export interface SplitShape {
   /** The selectors the value is split by, outermost first. */
   levels: SplitLevel[];
-  /** The selectors it is not split by and may be. */
-  free: Array<{ by: string; name: string }>;
   scope: PrefScope | undefined;
 }
 
@@ -86,7 +78,7 @@ export interface SplitMember {
 export function useSplitRows(
   props: PrefSplitProps, schema: PrefGroup, over: PrefGroup | PrefSection | undefined,
 ): SplitCtx | undefined {
-  const { scopes, onSplit, onJoin, onChangeAt, othersLabel } = props;
+  const { scopes, onChangeAt, othersLabel } = props;
   const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set(props.defaultSplitOpen));
   const formId = useId();
   const setOpen = useCallback((path: string, open: boolean) => {
@@ -99,11 +91,11 @@ export function useSplitRows(
     });
   }, []);
   return useMemo(() => {
-    if (scopes === undefined && onSplit === undefined && onJoin === undefined) return undefined;
+    if (scopes === undefined) return undefined;
     const selectorAt = (path: string, aliased: boolean): PrefLeaf | undefined => prefLeafAt(aliased ? (over ?? schema) : schema, path);
     const bodyId = (path: string): string => `${formId}split-${path}`;
-    return { scopes, onSplit, onJoin, onChangeAt, othersLabel, selectorAt, opened, setOpen, bodyId };
-  }, [scopes, onSplit, onJoin, onChangeAt, othersLabel, schema, over, opened, setOpen, formId]);
+    return { scopes, onChangeAt, othersLabel, selectorAt, opened, setOpen, bodyId };
+  }, [scopes, onChangeAt, othersLabel, schema, over, opened, setOpen, formId]);
 }
 
 /**
@@ -121,15 +113,11 @@ export function splitShape(
   if (!axes.length) return null;
   const by = prefScopeSelectors(scope);
   const levels: SplitLevel[] = [];
-  const free: SplitShape['free'] = [];
   for (const path of axes) {
     const leaf = selectorAt(path);
     if (leaf?.kind !== 'enum') continue;
     const selector = leaf as PrefEnum;
-    if (!by.has(path)) {
-      free.push({ by: path, name: selector.name });
-      continue;
-    }
+    if (!by.has(path)) continue;
     const set = prefValueAtPath(values, path);
     const value = typeof set === 'string' ? set : selector.default;
     const all = selector.options.map((option) => ({ value: option.value, label: option.label }));
@@ -140,7 +128,7 @@ export function splitShape(
     const options = shared ? [...owning, { value: shared.value, label: othersLabel }] : owning;
     levels.push({ by: path, name: selector.name, options, current: all.find((o) => o.value === value)?.label ?? String(value) });
   }
-  return levels.length + free.length === 0 ? null : { levels, free, scope };
+  return levels.length === 0 ? null : { levels, scope };
 }
 
 /** What a split row is called: the pref's name and the selectors its value is split by. */

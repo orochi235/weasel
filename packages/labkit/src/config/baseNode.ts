@@ -97,8 +97,8 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    * `selector`, a full path. Chain once per selector, outermost first. With
    * `overrides` (option names, or option → proposed value) the selector is
    * closed: only those options keep their own value and the rest share one.
-   * Without, it is open: an option keeps its own once one is written. The
-   * name is a placeholder until the feature is named.
+   * Without, it is open, and the value starts as one across every option
+   * until a reader splits it; then an option keeps its own once written.
    */
   per(selector: string, overrides?: PrefScopeSpec['overrides']): this {
     const per: PrefScopeSpec = overrides === undefined ? { selector } : { selector, overrides };

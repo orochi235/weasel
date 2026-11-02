@@ -88,7 +88,7 @@ export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
     const axes = scopeSelectorsOf(leaf);
     for (const path of scopeSelectors(leaf.defaultLocus)) {
       if (axes?.includes(path)) continue;
-      out.push({ code: 'default', at, path, problem: `its defaultLocus is split by "${path}", which its per does not name` });
+      out.push({ code: 'default', at, path, problem: `its defaultLocus is split by "${path}", which its scopes do not name` });
     }
     if (!axes?.length) continue;
     if (!prefHoldsValue(leaf)) {

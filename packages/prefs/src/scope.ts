@@ -26,9 +26,9 @@ export interface PrefScope {
 /**
  * One override list of a pref's scope: the options of its selector that keep
  * a value of their own, by name, or by name with the value each reads before
- * one is written. A selector given one is overridesOf; every option it leaves out
+ * one is written. A selector given one is closed; every option it leaves out
  * shares the scope's {@link PREF_ELSE} value. A selector given none is open:
- * an option keeps a value of its own once one is written for it.
+ * once split, an option keeps a value of its own once one is written for it.
  */
 export type PrefOverrides = readonly string[] | Readonly<Record<string, unknown>>;
 
@@ -135,19 +135,6 @@ export function memberAt(stored: unknown, selection: PrefSelection, absent: unkn
   return value;
 }
 
-/**
- * `stored` with the value `selection` names replaced by `next`: the one a
- * read under it comes from, except that an option that may keep a value of
- * its own has one from then on. A selector `selection` leaves out writes the
- * shared value. A value that is not split is replaced whole.
- */
-export function writeMember(stored: unknown, selection: PrefSelection, next: unknown, overridesOf?: OverridesOf): unknown {
-  if (!isPrefScope(stored)) return next;
-  const option = selection[stored.$by];
-  if (option === undefined || shares(stored, option, overridesOf)) return withRest(stored, writeMember(stored[PREF_ELSE], selection, next, overridesOf));
-  return { ...stored, $in: { ...stored.$in, [option]: writeMember(stored.$in[option], selection, next, overridesOf) } };
-}
-
 /** `stored` without the values of options a closed list leaves out, which no read reaches, at any depth. The same value when there are none. */
 export function dropUnlisted(stored: unknown, overridesOf: OverridesOf | undefined): unknown {
   if (!overridesOf || !isPrefScope(stored)) return stored;
@@ -159,32 +146,34 @@ export function dropUnlisted(stored: unknown, overridesOf: OverridesOf | undefin
 }
 
 /**
- * `stored` split by the selector at `by`, every option that may keep a value
- * of its own holding the value it had, and the shared value the same. The
- * same value where it is split by `by` already.
- * `order` is the pref's `scopes` selectors: a selector earlier in it sits
- * outside a later one, so one meaning has one stored form.
+ * `stored` written as `selectors`, the pref's scopes outermost first, declare
+ * it, with the value `under` names replaced by `next`. Each scope on the way
+ * down is made the declared one first, so nothing reads differently for it:
+ * a plain value becomes the shared value of the scope it stands in for, and
+ * a value split by any other selector becomes the shared value it reads under
+ * `now`, the selection the reader sees. An option's own value is plain, and
+ * a write replaces it whole, unless it is split already by the next selector
+ * in, as a nested default holds it: then the write goes on into that.
  */
-export function splitScope(
-  stored: unknown, by: string, options: readonly string[], order: readonly string[], overridesOf?: OverridesOf,
+export function writeDeclared(
+  stored: unknown, selectors: readonly string[], under: PrefSelection, now: PrefSelection, next: unknown, absent: unknown,
+  overridesOf?: OverridesOf, held = true,
 ): unknown {
-  const overrides = overridesOf?.(by);
-  const own = overrides ? overrideOptions(overrides) : options;
-  const across = (value: unknown): PrefScope => {
-    const out: PrefScope = { $by: by, $in: Object.fromEntries(own.map((option) => [option, value])) };
-    return options.every((option) => own.includes(option)) ? out : withRest(out, value);
-  };
-  if (!isPrefScope(stored)) return across(stored);
-  if (stored.$by === by) return stored;
-  if (order.indexOf(stored.$by) > order.indexOf(by)) return across(stored);
-  return mapMembers(stored, (inner) => splitScope(inner, by, options, order, overridesOf));
-}
-
-/** `stored` no longer split by the selector at `by`: where it was, the value `selection` names stays. */
-export function joinScope(stored: unknown, by: string, selection: PrefSelection, absent: unknown, overridesOf?: OverridesOf): unknown {
-  if (!isPrefScope(stored)) return stored;
-  if (stored.$by !== by) return mapMembers(stored, (inner) => joinScope(inner, by, selection, absent, overridesOf));
-  return scopeOptionValue(stored, selection[by], absent, overridesOf);
+  const [by, ...inner] = selectors;
+  if (by === undefined) return next;
+  let scope: PrefScope;
+  if (isPrefScope(stored) && stored.$by === by) scope = stored;
+  else {
+    const shared = isPrefScope(stored) ? memberAt(stored, now, absent, overridesOf) : stored;
+    scope = held ? { $by: by, $in: {}, [PREF_ELSE]: shared } : { $by: by, $in: {} };
+  }
+  const option = under[by];
+  if (option === undefined || shares(scope, option, overridesOf)) {
+    return withRest(scope, writeDeclared(scope[PREF_ELSE], inner, under, now, next, absent, overridesOf, hasRest(scope)));
+  }
+  const own = scope.$in[option];
+  const kept = isPrefScope(own) && own.$by === inner[0] ? writeDeclared(own, inner, under, now, next, absent, overridesOf) : next;
+  return { ...scope, $in: { ...scope.$in, [option]: kept } };
 }
 
 function mapMembers(scope: PrefScope, fn: (member: unknown) => unknown): PrefScope {

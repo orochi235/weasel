@@ -25,7 +25,7 @@ function openSplit(key: string, leaf: PrefLeaf, scope: PrefScope, props: Partial
   const onChangeAt = vi.fn();
   renderWithIcons(
     <PrefsForm schema={schema} layout="list" values={{}} onChange={vi.fn()} scopes={new Map([[key, scope]])}
-      onChangeAt={onChangeAt} onJoin={vi.fn()} defaultSplitOpen={[key]} {...props} />,
+      onChangeAt={onChangeAt} defaultSplitOpen={[key]} {...props} />,
   );
   const members = screen.getByRole('group', { name: `${leaf.name} by Mode` });
   return { onChangeAt, members, light: () => within(members).getAllByRole('group').at(-1)! };

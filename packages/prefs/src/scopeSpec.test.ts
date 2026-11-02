@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PREF_ELSE, dropUnlisted, joinScope, scopeSelectors, memberAt, repairScope, weighScope, writeMember, type OverridesOf, type PrefOverrides } from './scope';
+import { PREF_ELSE, dropUnlisted, scopeSelectors, memberAt, repairScope, weighScope, writeDeclared, type OverridesOf, type PrefOverrides } from './scope';
 import { prefOverridesOf, prefScopedDefault, prefScopesOf } from './scopeSpec';
 import type { PrefLeaf } from './schema';
 
@@ -7,6 +7,9 @@ const MODE = 'mode';
 const LAYOUT = 'layout';
 const scope = (by: string, own: Record<string, unknown>, shared?: unknown) =>
   (shared === undefined ? { $by: by, $in: own } : { $by: by, $in: own, [PREF_ELSE]: shared });
+/** A write along the selectors `stored` is already split by. */
+const write = (stored: unknown, under: Record<string, string>, next: unknown, overridesOf?: OverridesOf) =>
+  writeDeclared(stored, [...scopeSelectors(stored)], under, under, next, -1, overridesOf);
 const closed = (...lists: [string, PrefOverrides][]): OverridesOf => (selector) => Object.fromEntries(lists)[selector];
 
 describe('a closed selector', () => {
@@ -26,8 +29,8 @@ describe('a closed selector', () => {
   });
 
   it('writes where it reads, and a named option written keeps its own', () => {
-    expect(writeMember(held, { [MODE]: 'light' }, 5, list)).toEqual(scope(MODE, { types: 0 }, 5));
-    expect(writeMember(scope(MODE, {}, 1), { [MODE]: 'types' }, 5, list)).toEqual(scope(MODE, { types: 5 }, 1));
+    expect(write(held, { [MODE]: 'light' }, 5, list)).toEqual(scope(MODE, { types: 0 }, 5));
+    expect(write(scope(MODE, {}, 1), { [MODE]: 'types' }, 5, list)).toEqual(scope(MODE, { types: 5 }, 1));
   });
 
   it('ignores a member of an option it no longer names, and drops it', () => {
@@ -38,9 +41,8 @@ describe('a closed selector', () => {
     expect(dropUnlisted(held, list)).toBe(held);
   });
 
-  it('weighs the shared member once per option that reads it, and joins to what the selection reads', () => {
+  it('weighs the shared member once per option that reads it', () => {
     expect(weighScope(held, { [MODE]: { types: 0.5, dark: 0.5 } }, -1, list)).toEqual([{ value: 0, weight: 0.5 }, { value: 300000, weight: 0.5 }]);
-    expect(joinScope(held, MODE, { [MODE]: 'dark' }, -1, list)).toBe(300000);
   });
 });
 
@@ -54,8 +56,8 @@ describe('an open selector', () => {
 
   it('gives an option written a member of its own, and with no option named writes the shared one', () => {
     const held = scope('document', {}, 1);
-    expect(writeMember(held, { document: 'b' }, 2)).toEqual(scope('document', { b: 2 }, 1));
-    expect(writeMember(held, {}, 2)).toEqual(scope('document', {}, 2));
+    expect(write(held, { document: 'b' }, 2)).toEqual(scope('document', { b: 2 }, 1));
+    expect(write(held, {}, 2)).toEqual(scope('document', {}, 2));
   });
 
   it('reads the shared member where no option is named or weighed', () => {
@@ -78,7 +80,7 @@ describe('nested entries', () => {
   });
 
   it('write into the inner entry through the shared member, and drop stale members at any depth', () => {
-    expect(writeMember(held, { [MODE]: 'dark', [LAYOUT]: 'explorer' }, 0.5, lists))
+    expect(write(held, { [MODE]: 'dark', [LAYOUT]: 'explorer' }, 0.5, lists))
       .toEqual(scope(MODE, { types: 2 }, scope(LAYOUT, { explorer: 0.5 }, 1.1)));
     expect(dropUnlisted(scope(MODE, { types: 2 }, scope(LAYOUT, { explorer: 0.3, grid: 4 }, 1.1)), lists)).toEqual(held);
   });

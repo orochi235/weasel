@@ -100,7 +100,8 @@ export interface PrefBase<K extends string, Value> {
    *  scoped itself; or a selector the schema's root `admits`. The
    *  stored value is a {@link PrefScope} whose shared value holds the next
    *  entry in; an option's own value stops there and is not split further.
-   *  A reader may still join a stored value into one, and split it again. */
+   *  An open entry (no `overrides`) starts as one value, which a reader may
+   *  split and join again. */
   scopes?: readonly PrefScopeSpec[];
   /** What the leaf holds while nothing is stored for it, where that is a
    *  split value: a default that differs by option. Split only by selectors

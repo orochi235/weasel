@@ -65,7 +65,7 @@ describe('themePrefsSchema', () => {
 });
 
 describe('a store over a theme, back as a theme', () => {
-  it('pins a leaf that was set, under the axis options it was set at, and leaves the rest to the theme', () => {
+  it('pins a leaf that was set, a split one by axis, and leaves the rest to the theme', () => {
     const store = open(SCHEMA);
     store.set('gray.gray-50', '#ff3366');
     store.set('surface.surface', '#fffdf8', { at: { 'axis.mode': 'light' } });
@@ -105,6 +105,20 @@ describe('a store over a theme, back as a theme', () => {
   });
 });
 
+describe('values a store kept before scopes', () => {
+  it('reads a split value stored with $of and a plain one as they read then', () => {
+    const backing = new Map<string, unknown>([
+      ['t.surface.surface', { $at: 0, value: { $by: 'axis.mode', $of: { dark: '#111111', light: '#eeeeee' } } }],
+      ['t.gray.gray-50', { $at: 0, value: '#ff3366' }],
+    ]);
+    const store = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 't.' });
+    expect(store.get('surface.surface')).toBe('#111111');
+    expect(store.get('surface.surface', { at: { 'axis.mode': 'light' } })).toBe('#eeeeee');
+    expect(store.get('gray.gray-50', { at: { 'axis.mode': 'light', 'axis.density': 'compact' } })).toBe('#ff3366');
+    expect(themePrefsPins(store)).toMatchObject({ 'gray-50': '#ff3366', surface: { by: 'mode', dark: '#111111', light: '#eeeeee' } });
+  });
+});
+
 describe('themePrefsValues', () => {
   it('reads an unset alias from the pinned theme, where the store reads it from the base', () => {
     const store = open(SCHEMA);
@@ -120,9 +134,9 @@ describe('themePrefsValues', () => {
 
   it('keeps the scopes of a set leaf, and reads an unset one split as the pinned theme has it', () => {
     const store = open(SCHEMA);
-    store.join('gray.gray-50', 'axis.mode');
+    store.set('gray.gray-50', '#ff3366');
     const { scopes } = themePrefsValues(store, weaselTheme);
-    expect(scopes.get('gray.gray-50')?.$by).toBe('axis.density');
+    expect(scopes.get('gray.gray-50')?.$by).toBe('axis.mode');
     expect(scopes.get('surface.surface')).toEqual(store.scope('surface.surface'));
     expect(scopes.has('gray.gray-100')).toBe(false);
   });

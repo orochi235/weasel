@@ -49,9 +49,9 @@ interface SplitFormProps {
 /** A form over a store in memory: what `usePrefsValues` returns is what the form takes. */
 function SplitForm({ layout, held, open }: SplitFormProps) {
   const [store] = useState(() => openPrefsSync(SCHEMA, { storage: createMemoryAdapter(new Map(Object.entries(held).map(([path, value]) => [`p.${path}`, value]))), prefix: 'p.' }));
-  const { values, set, scopes, split, join, setAt } = usePrefsValues(store);
+  const { values, set, scopes, setAt } = usePrefsValues(store);
   return (
-    <PrefsForm layout={layout} schema={SCHEMA} values={values} onChange={set} scopes={scopes} onSplit={split} onJoin={join}
+    <PrefsForm layout={layout} schema={SCHEMA} values={values} onChange={set} scopes={scopes}
       onChangeAt={setAt} defaultSplitOpen={open} />
   );
 }
@@ -65,7 +65,7 @@ export default meta;
 
 type Story = StoryObj<typeof SplitForm>;
 
-/** A pref with `scopes` offers a split by each selector, and draws its one control until it is taken. */
+/** A scoped pref with nothing stored: the row marks the option each selector is set to, and opens to a control per option. */
 export const NotSplit: Story = {};
 
 /** Split by one selector: the row marks the option the selector is set to, and its control edits that member. */

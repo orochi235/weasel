@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { isPrefScope, prefOverridesOf, prefScopeOptionValue, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
-import { Button } from '../Button';
 import { Disclosure } from '../Disclosure';
 import { PropertyRow } from '../Properties/PropertyRow';
 import type { RowWidth } from './compound';
@@ -35,11 +34,9 @@ export function splitRowState(
   if (split === undefined) return null;
   const shape = splitShape(pref, split.scopes?.get(from), (path) => split.selectorAt(path, aliased), values, split.othersLabel);
   if (shape === null) return null;
-  const { levels, free } = shape;
-  const members = shape.scope !== undefined && levels.length > 0 && split.onChangeAt !== undefined && !mixed;
-  const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && levels.length > 0);
-  const name = levels.length > 0 ? splitName(pref.name, levels) : `Split ${pref.name}`;
-  return { shape, members, opens, open: opens && split.opened.has(own), name, bodyId: split.bodyId(own) };
+  const { levels } = shape;
+  const members = shape.scope !== undefined && split.onChangeAt !== undefined && !mixed;
+  return { shape, members, opens: members, open: members && split.opened.has(own), name: splitName(pref.name, levels), bodyId: split.bodyId(own) };
 }
 
 /** The option each selector of a split value is set to, as marks beside the leaf's name. */
@@ -88,7 +85,7 @@ export interface SplitMemberParts {
 }
 
 /**
- * What a row opens to, under it: a split value's members, and a split or a join for each selector. The members
+ * What a row opens to, under it: a scoped value's values. The values
  * are each option of the outermost selector, holding the leaf's own control over that member, or the next
  * selector's options where the value is split again.
  */
@@ -99,8 +96,8 @@ export function SplitBody({ ctx, state, split, parts }: {
   split: SplitCtx;
   parts: SplitMemberParts;
 }) {
-  const { levels, free, scope } = state.shape;
-  const { onSplit, onJoin, onChangeAt } = split;
+  const { levels, scope } = state.shape;
+  const { onChangeAt } = split;
   const { pref, path } = ctx;
   const stacked = parts.width !== 'column' || pref.block === true;
   const row = (member: SplitMember): ReactNode => {
@@ -146,14 +143,6 @@ export function SplitBody({ ctx, state, split, parts }: {
   return (
     <div id={state.bodyId} role="group" aria-label={state.name} className={c.body}>
       {state.members && scope !== undefined && under(scope, scope, 0, undefined)}
-      <div className={c.actions}>
-        {onSplit && free.map(({ by, name }) => (
-          <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onSplit(path, by)}>Split by {name}</Button>
-        ))}
-        {onJoin && levels.map(({ by, name }) => (
-          <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onJoin(path, by)}>Join {name}</Button>
-        ))}
-      </div>
     </div>
   );
 }

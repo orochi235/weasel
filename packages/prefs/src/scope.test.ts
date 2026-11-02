@@ -1,16 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PREF_ELSE,
   isPrefScope,
-  joinScope,
   scopeSelectors,
   mapScopeValues,
   memberAt,
   repairScope,
   selectionWeights,
-  splitScope,
   upgradeScope,
   weighScope,
-  writeMember,
+  writeDeclared,
 } from './scope';
 
 const MODE = 'look.mode';
@@ -59,45 +58,34 @@ describe('weighScope', () => {
   });
 });
 
-describe('memberAt and writeMember', () => {
-  it('reads and writes the member a selection names, leaving the others', () => {
-    const value = byMode(byDensity(4, 8), 6);
-    const at = { [MODE]: 'dark', [DENSITY]: 'roomy' };
-    expect(memberAt(value, at, 0)).toBe(8);
-    expect(writeMember(value, at, 10)).toEqual(byMode(byDensity(4, 10), 6));
-    expect(writeMember(value, { [MODE]: 'light', [DENSITY]: 'roomy' }, 7)).toEqual(byMode(byDensity(4, 8), 7));
-    expect(value).toEqual(byMode(byDensity(4, 8), 6));
-  });
-
-  it('replaces a value that is not split', () => {
-    expect(writeMember(4, { [MODE]: 'dark' }, 5)).toBe(5);
-  });
-});
-
-describe('splitScope', () => {
+describe('memberAt and writeDeclared', () => {
   const order = [MODE, DENSITY];
+  const shared = (by: string, value: unknown, own: Record<string, unknown> = {}) => ({ $by: by, $in: own, [PREF_ELSE]: value });
+  const dark = { [MODE]: 'dark', [DENSITY]: 'compact' };
 
-  it('gives every option the value it had', () => {
-    expect(splitScope(4, MODE, OPTIONS[MODE]!, order)).toEqual(byMode(4, 4));
+  it('reads the value a selection names, at any depth', () => {
+    expect(memberAt(byMode(byDensity(4, 8), 6), { [MODE]: 'dark', [DENSITY]: 'roomy' }, 0)).toBe(8);
   });
 
-  it('nests a later selector inside an earlier one, whichever was split first', () => {
-    expect(splitScope(byMode(4, 8), DENSITY, OPTIONS[DENSITY]!, order)).toEqual(byMode(byDensity(4, 4), byDensity(8, 8)));
-    expect(splitScope(byDensity(4, 8), MODE, OPTIONS[MODE]!, order)).toEqual(byMode(byDensity(4, 8), byDensity(4, 8)));
+  it('writes an option its own value, plain, leaving the others', () => {
+    const value = shared(MODE, shared(DENSITY, 1), { light: 2 });
+    expect(writeDeclared(value, order, { [MODE]: 'light', [DENSITY]: 'roomy' }, dark, 7, 0)).toEqual(shared(MODE, shared(DENSITY, 1), { light: 7 }));
+    expect(value).toEqual(shared(MODE, shared(DENSITY, 1), { light: 2 }));
   });
 
-  it('leaves a value already split by that selector', () => {
-    const value = byMode(4, 8);
-    expect(splitScope(value, MODE, OPTIONS[MODE]!, order)).toBe(value);
+  it('makes a plain value the shared value of the scope it stands in for, so nothing reads differently', () => {
+    expect(writeDeclared(4, order, { [MODE]: 'light', [DENSITY]: 'roomy' }, dark, 9, 0)).toEqual(shared(MODE, 4, { light: 9 }));
   });
-});
 
-describe('joinScope', () => {
-  it('keeps the member the selection names, at any depth', () => {
-    const value = byMode(byDensity(4, 8), 6);
-    expect(joinScope(value, DENSITY, { [DENSITY]: 'roomy' }, 0)).toEqual(byMode(8, 6));
-    expect(joinScope(value, MODE, { [MODE]: 'dark' }, 0)).toEqual(byDensity(4, 8));
-    expect(joinScope(4, MODE, { [MODE]: 'dark' }, 0)).toBe(4);
+  it('flattens a value split by an undeclared selector at that level into the shared value it reads now', () => {
+    expect(writeDeclared(byDensity(4, 8), order, { [MODE]: 'light', [DENSITY]: 'roomy' }, { [MODE]: 'dark', [DENSITY]: 'roomy' }, 9, 0))
+      .toEqual(shared(MODE, 8, { light: 9 }));
+  });
+
+  it('creates an inner scope with no shared value where the outer one held none', () => {
+    const list = (selector: string) => (selector === MODE ? ['types'] : undefined);
+    expect(writeDeclared({ $by: MODE, $in: {} }, order, { [MODE]: 'light', [DENSITY]: 'roomy' }, dark, 5, 0, list))
+      .toEqual(shared(MODE, { $by: DENSITY, $in: { roomy: 5 } }));
   });
 });
 

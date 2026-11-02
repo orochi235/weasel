@@ -84,7 +84,7 @@ describe('usePrefsValues', () => {
     expect(result.current.stored).toEqual({ stray: 'x', other: 2 });
   });
 
-  it('returns the scopes, and a split, a join, and a write at a selection, for PrefsForm', () => {
+  it('returns the scopes and a write at a selection, for PrefsForm', () => {
     const schema = {
       name: 'Split',
       children: {
@@ -98,19 +98,12 @@ describe('usePrefsValues', () => {
     const store = openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 'p.' });
     const { result } = renderHook(() => usePrefsValues(store));
     expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: {} });
-    act(() => result.current.join('gap', 'mode'));
-    expect(result.current.scopes.size).toBe(0);
-    act(() => result.current.split('gap', 'mode'));
-    expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: { dark: 4, light: 4 } });
     act(() => result.current.setAt('gap', 9, { mode: 'light' }));
-    expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: { dark: 4, light: 9 } });
+    expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: { light: 9 } });
     expect(result.current.values.gap).toBe(4);
     const held = result.current.scopes;
     act(() => result.current.set('mode', 'light'));
     expect(result.current.values.gap).toBe(9);
     expect(result.current.scopes.get('gap')).toBe(held.get('gap'));
-    act(() => result.current.join('gap', 'mode'));
-    expect(result.current.scopes.size).toBe(0);
-    expect(result.current.values.gap).toBe(9);
   });
 });

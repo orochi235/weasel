@@ -31,8 +31,7 @@ export function usePref<S extends PrefGroup, P extends PrefPath<S>>(
 
 /** The whole of `store` as React state, shaped for `PrefsForm`: `values`,
  *  `onChange={set}`, `auto={unset}`, and `reset` for `onAutoChange`; for its
- *  split values, `scopes`, `onSplit={split}`, `onJoin={join}`, and
- *  `onChangeAt={setAt}`. `stored` is `store.stored()`. */
+ *  scoped values, `scopes` and `onChangeAt={setAt}`. `stored` is `store.stored()`. */
 export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
   values: Record<string, unknown>;
   set: (path: string, value: unknown) => void;
@@ -40,8 +39,6 @@ export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
   stored: Record<string, unknown>;
   reset: (path?: string) => void;
   scopes: ReadonlyMap<string, PrefScope>;
-  split: (path: string, by: string) => void;
-  join: (path: string, by: string) => void;
   setAt: (path: string, value: unknown, at: PrefSelection) => void;
 } {
   const subscribe = useCallback((onChange: () => void) => store.subscribe(onChange), [store]);
@@ -54,11 +51,9 @@ export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
     [store],
   );
   const reset = useCallback((path?: string) => store.reset(path), [store]);
-  const split = useCallback((path: string, by: string) => store.split(path as PrefPath<S>, by), [store]);
-  const join = useCallback((path: string, by: string) => store.join(path as PrefPath<S>, by), [store]);
   const setAt = useCallback(
     (path: string, value: unknown, at: PrefSelection) => store.set(path as PrefPath<S>, value as never, { at }),
     [store],
   );
-  return { values, set, unset, stored, reset, scopes, split, join, setAt };
+  return { values, set, unset, stored, reset, scopes, setAt };
 }

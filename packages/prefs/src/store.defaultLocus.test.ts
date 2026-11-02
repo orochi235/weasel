@@ -62,23 +62,11 @@ describe('a leaf whose default is split', () => {
     expect(store.get('gap')).toBe(4);
   });
 
-  it('splits by a second selector inside the default', () => {
-    const { store } = make();
-    store.split('gap', DENSITY);
-    expect(store.scope('gap')).toEqual(byMode(
-      { $by: DENSITY, $in: { compact: 4, roomy: 4 } },
-      { $by: DENSITY, $in: { compact: 6, roomy: 6 } },
-    ));
-  });
-
-  it('joins an unset leaf to the member the selector is set to, which sets it', () => {
-    const { store } = make();
-    store.set(MODE, 'light');
-    store.join('gap', MODE);
-    expect(store.scope('gap')).toBeUndefined();
-    expect(store.isSet('gap')).toBe(true);
-    store.set(MODE, 'dark');
-    expect(store.get('gap')).toBe(6);
+  it('writes into the default, an option at a time', () => {
+    const { cache, store } = make();
+    store.set('gap', 5);
+    expect(recordValue(cache.get('gap'))).toEqual(byMode(5, 6));
+    expect(store.get('gap', { at: { [MODE]: 'light' } })).toBe(6);
   });
 
   it('goes back to the split default on reset', () => {
@@ -99,7 +87,7 @@ describe('a leaf whose default is split', () => {
     expect(css).toContain(":where(:root[data-mode='light']) {\n  --mode: light;\n  --gap: 6;");
   });
 
-  it('gives a leaf with no split default a scope per selector, which a write fills for the current option', () => {
+  it('gives a leaf with no split default an empty scope, which a write fills for the current option', () => {
     const { store, cache } = make();
     store.set('plain', 3);
     expect(recordValue(cache.get('plain'))).toEqual({ $by: MODE, $in: { dark: 3 } });
@@ -119,8 +107,8 @@ describe('a split default the leaf cannot hold', () => {
     } satisfies PrefGroup;
     const store = createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.' }));
     expect(warn.mock.calls.map((c) => c[0])).toEqual([
-      '[prefs] per of "gap": its defaultLocus is split by "mode", which its per does not name',
-      '[prefs] per of "pad": its defaultLocus is split by "nope", which its per does not name',
+      '[prefs] scopes of "gap": its defaultLocus is split by "mode", which its scopes do not name',
+      '[prefs] scopes of "pad": its defaultLocus is split by "nope", which its scopes do not name',
     ]);
     expect(store.get('gap')).toBe(4);
     expect(store.scope('gap')).toBeUndefined();
