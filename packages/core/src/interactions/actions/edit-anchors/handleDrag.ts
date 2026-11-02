@@ -3,7 +3,7 @@
  * the guide that shows which one is holding.
  */
 import { roleReader, type ModifierRoles, type ModifierState, type OngoingOverlay, type WorldPoint } from '@weasel-js/routing';
-import { handleAlongItsAngle, handleAtItsLength, type Point } from '@weasel-js/geom';
+import { distance, handleAlongItsAngle, handleAtItsLength, type Point } from '@weasel-js/geom';
 import type { HandleLocks } from './params';
 
 /** Where a handle drag's anchor and handle sat at the press. */
@@ -47,11 +47,11 @@ export function locksInForce(
 /** The handle dragged toward `pointer` under `locks`. */
 export function lockHandle(press: HandlePress, pointer: WorldPoint, locks: HandleLocks): LockedHandle {
   const { anchor, handle } = press;
-  const len = dist(anchor, handle);
+  const len = distance(anchor, handle);
   if (locks.angle && locks.length) return { to: { ...handle }, guide: lineGuide(anchor, handle, len) };
   if (locks.angle) {
     const to = handleAlongItsAngle(anchor, handle, pointer);
-    return { to, guide: lineGuide(anchor, handle, Math.max(len, dist(anchor, to))) };
+    return { to, guide: lineGuide(anchor, handle, Math.max(len, distance(anchor, to))) };
   }
   if (locks.length) return { to: handleAtItsLength(anchor, handle, pointer), guide: circleGuide(anchor, len) };
   return { to: pointer, guide: null };
@@ -59,7 +59,7 @@ export function lockHandle(press: HandlePress, pointer: WorldPoint, locks: Handl
 
 /** The line through `anchor` toward `toward`, reaching past `reach` on both sides. */
 function lineGuide(anchor: Point, toward: Point, reach: number): OngoingOverlay {
-  const d = dist(anchor, toward);
+  const d = distance(anchor, toward);
   if (d === 0) return { kind: 'polyline', points: [anchor, anchor], role: 'lock' };
   const span = reach * LINE_OVERSHOOT;
   const ux = ((toward.x - anchor.x) / d) * span;
@@ -78,8 +78,4 @@ function circleGuide(center: Point, r: number): OngoingOverlay {
     points.push({ x: center.x + Math.cos(a) * r, y: center.y + Math.sin(a) * r });
   }
   return { kind: 'polyline', points, role: 'lock' };
-}
-
-function dist(a: Point, b: Point): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
 }

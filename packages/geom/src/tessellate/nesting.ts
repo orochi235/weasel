@@ -2,6 +2,7 @@
 
 import { pointInPolygon } from '../polyline';
 import type { FlattenedContours } from './crossings';
+import { pointSegmentDist } from '../points2';
 
 export interface Ring {
   start: number;
@@ -55,10 +56,7 @@ function onOutline(coords: number[], o: Ring, x: number, y: number, eps: number)
   for (let i = o.start; i < o.end; i++) {
     const j = i + 1 === o.end ? o.start : i + 1;
     const ax = coords[i * 2], ay = coords[i * 2 + 1];
-    const dx = coords[j * 2] - ax, dy = coords[j * 2 + 1] - ay;
-    const len2 = dx * dx + dy * dy;
-    const s = len2 > 0 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2)) : 0;
-    if (Math.hypot(ax + dx * s - x, ay + dy * s - y) <= eps) return true;
+    if (pointSegmentDist(x, y, ax, ay, coords[j * 2], coords[j * 2 + 1]) <= eps) return true;
   }
   return false;
 }

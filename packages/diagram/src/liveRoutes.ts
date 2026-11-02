@@ -20,6 +20,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { lerpPoint } from '@weasel-js/geom';
 import { diagramEdgeOf, layoutWritesRoute, type DiagramEdge } from './edgeTrait';
 import type { Graph } from './graph';
 import { routeWrites, type LayoutRoutes } from './routeWrites';
@@ -37,8 +38,6 @@ export interface RouteEasing {
   ends: Pick<DiagramEdge, 'from' | 'to'>;
 }
 
-const lerp = (a: Vec2, b: Vec2, u: number): Vec2 => ({ x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u });
-
 /** The point `s` of the way along the polyline through `points`, 0 to 1. */
 function along(points: readonly Vec2[], s: number): Vec2 {
   if (points.length === 1) return points[0]!;
@@ -46,7 +45,7 @@ function along(points: readonly Vec2[], s: number): Vec2 {
   const total = lengths.reduce((a, b) => a + b, 0);
   let left = s * total;
   for (const [i, len] of lengths.entries()) {
-    if (left <= len || i === lengths.length - 1) return lerp(points[i]!, points[i + 1]!, len === 0 ? 0 : Math.min(left / len, 1));
+    if (left <= len || i === lengths.length - 1) return lerpPoint(points[i]!, points[i + 1]!, len === 0 ? 0 : Math.min(left / len, 1));
     left -= len;
   }
   return points[points.length - 1]!;
@@ -55,7 +54,7 @@ function along(points: readonly Vec2[], s: number): Vec2 {
 /** `count` points spread evenly along the straight line from `start` to
  *  `end`, its ends left off. */
 const straightRun = (count: number, start: Vec2, end: Vec2): Vec2[] =>
-  Array.from({ length: count }, (_, k) => lerp(start, end, (k + 1) / (count + 1)));
+  Array.from({ length: count }, (_, k) => lerpPoint(start, end, (k + 1) / (count + 1)));
 
 /** `points` as `count` points spread along the same run, its ends kept. A
  *  run of none is the straight line from `start` to `end`. */
@@ -144,7 +143,7 @@ export function easedPaths<TPose>(
       const [a, b] = deps;
       target = u >= 1 || a === undefined || b === undefined ? [] : straightRun(from.length, centerOf(a), centerOf(b));
     }
-    const waypoints = target.length === 0 && u >= 1 ? [] : from.map((p, k) => lerp(p, target[k]!, u));
+    const waypoints = target.length === 0 && u >= 1 ? [] : from.map((p, k) => lerpPoint(p, target[k]!, u));
     const data = node.data as { diagram: object };
     const diagram = { ...data.diagram, ...ends, waypoints };
     const path = node.derivePath({ ...node, data: { ...data, diagram } } as never, deps);

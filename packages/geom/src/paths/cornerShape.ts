@@ -8,7 +8,8 @@
  * ellipse, `0` the straight bevel, and `±∞` the square corner and the notch.
  */
 import { fitCubicWithTangents } from './schneiderFit';
-import type { Point } from './cubicMath';
+import { cubicPointAt, type Point } from './cubicMath';
+import { distance } from '../points2';
 
 /** The six `corner-shape` keywords, from most convex to most concave. */
 export type CornerKeyword = 'square' | 'squircle' | 'round' | 'bevel' | 'scoop' | 'notch';
@@ -93,16 +94,11 @@ type UnitCubic = [Point, Point, Point];
 
 const sub = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
 
-function cubicAt(p0: Point, [c1, c2, p3]: UnitCubic, t: number): Point {
-  const u = 1 - t;
-  const a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
-  return { x: a * p0.x + b * c1.x + c * c2.x + d * p3.x, y: a * p0.y + b * c1.y + c * c2.y + d * p3.y };
-}
-
 /** The distance from `q` to the cubic `p0, piece`: the nearest of a coarse
  *  scan, refined by bisecting the parameter around it. */
 function distanceToCubic(q: Point, p0: Point, piece: UnitCubic): number {
-  const d = (t: number) => { const c = cubicAt(p0, piece, t); return Math.hypot(c.x - q.x, c.y - q.y); };
+  const [c1, c2, p3] = piece;
+  const d = (t: number) => distance(cubicPointAt(p0, c1, c2, p3, t), q);
   let best = 0;
   for (let i = 1; i <= 32; i++) if (d(i / 32) < d(best / 32)) best = i;
   let lo = Math.max(0, (best - 1) / 32), hi = Math.min(1, (best + 1) / 32);

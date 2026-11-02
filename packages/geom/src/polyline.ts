@@ -1,4 +1,4 @@
-import { sign, dot, len2 } from './scalar';
+import { sign } from './scalar';
 
 /**
  * Even-odd ray-cast point-in-polygon over an interleaved, unclosed contour
@@ -43,17 +43,4 @@ export function segmentsCross(
   const d3 = sign((bx - ax) * (cy - ay) - (by - ay) * (cx - ax));
   const d4 = sign((bx - ax) * (dy - ay) - (by - ay) * (dx - ax));
   return d1 !== d2 && d3 !== d4;
-}
-
-/** Squared distance from (px,py) to segment (ax,ay)-(bx,by), endpoint-clamped. */
-export function pointSegmentDist2(
-  px: number, py: number, ax: number, ay: number, bx: number, by: number,
-): number {
-  const vx = bx - ax, vy = by - ay;
-  const wx = px - ax, wy = py - ay;
-  const vv = len2(vx, vy);
-  let t = vv === 0 ? 0 : dot(wx, wy, vx, vy) / vv;
-  t = t < 0 ? 0 : t > 1 ? 1 : t;
-  const dx = px - (ax + t * vx), dy = py - (ay + t * vy);
-  return len2(dx, dy);
 }

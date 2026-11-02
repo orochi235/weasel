@@ -3,6 +3,8 @@
  * its curve parameter, and how far away it lies.
  */
 import { cubicEvalAt, elevateQuadraticToCubic } from './curve';
+import { segmentT } from './points2';
+import { lerp } from './scalar';
 import { forEachSegment, PATH_M, PATH_L, PATH_Q, PATH_C, PATH_Z } from './commands';
 
 /** The point on one segment nearest a probe. */
@@ -27,13 +29,10 @@ export interface PathNearest extends CurveNearest {
 export function nearestOnLine(
   px: number, py: number, x0: number, y0: number, x1: number, y1: number,
 ): CurveNearest {
-  const vx = x1 - x0, vy = y1 - y0;
-  const vv = vx * vx + vy * vy;
-  let t = vv === 0 ? 0 : ((px - x0) * vx + (py - y0) * vy) / vv;
-  t = t < 0 ? 0 : t > 1 ? 1 : t;
-  const x = t === 1 ? x1 : x0 + t * vx;
-  const y = t === 1 ? y1 : y0 + t * vy;
-  return { x, y, t, dist: Math.hypot(px - x, py - y) };
+  const t = segmentT(px, py, x0, y0, x1, y1);
+  const x = t === 1 ? x1 : lerp(x0, x1, t);
+  const y = t === 1 ? y1 : lerp(y0, y1, t);
+  return { x, y, t, dist: Math.sqrt((px - x) * (px - x) + (py - y) * (py - y)) };
 }
 
 /** Coarse samples per cubic. Each local minimum among them is refined, so this

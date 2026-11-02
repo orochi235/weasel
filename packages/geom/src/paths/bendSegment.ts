@@ -1,5 +1,6 @@
 import type { AnchorSet } from './anchorEdits';
 import { isAnchorSmooth, isStraightSegment, segmentEnds, type PenAnchor } from './anchors';
+import { lerpPoint } from '../points2';
 
 /** Where on a segment a bend is held, as `segmentAt` reports it. */
 export interface BendGrip {
@@ -30,8 +31,8 @@ export function bendSegment(set: AnchorSet, grip: BendGrip, dx: number, dy: numb
   const aSmooth = isAnchorSmooth(a);
   const bSmooth = isAnchorSmooth(b);
   const straight = isStraightSegment(a, b);
-  const p1 = a.outHandle ?? (straight ? lerp(a, b, 1 / 3) : { x: a.x, y: a.y });
-  const p2 = b.inHandle ?? (straight ? lerp(a, b, 2 / 3) : { x: b.x, y: b.y });
+  const p1 = a.outHandle ?? (straight ? lerpPoint(a, b, 1 / 3) : { x: a.x, y: a.y });
+  const p2 = b.inHandle ?? (straight ? lerpPoint(a, b, 2 / 3) : { x: b.x, y: b.y });
 
   const t = Math.min(1 - T_MARGIN, Math.max(T_MARGIN, grip.t));
   const u = 1 - t;
@@ -44,10 +45,6 @@ export function bendSegment(set: AnchorSet, grip: BendGrip, dx: number, dy: numb
   if (aSmooth) a.inHandle = alignedOpposite(a, a.outHandle, a.inHandle!);
   if (bSmooth) b.outHandle = alignedOpposite(b, b.inHandle, b.outHandle!);
   return true;
-}
-
-function lerp(a: PenAnchor, b: PenAnchor, f: number): { x: number; y: number } {
-  return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
 }
 
 /** `other` turned to point directly away from `moved` through the anchor, at

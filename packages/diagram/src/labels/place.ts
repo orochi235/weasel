@@ -5,6 +5,7 @@
  * clear spot.
  */
 import { polylineFromPoints, type Path, type Vec2 } from '@weasel-js/core/math';
+import { nearestOnLine } from '@weasel-js/geom';
 import { SpatialHash } from '../avoid/hash';
 import type { DiagramLabel, LabelSpot } from '../labelTrait';
 import type { Bounds } from '../outline';
@@ -115,11 +116,8 @@ function arcNearest(points: readonly Vec2[], p: Vec2): number {
   for (let i = 0; i + 1 < points.length; i++) {
     const a = points[i]!;
     const b = points[i + 1]!;
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len = Math.hypot(dx, dy);
-    const t = len === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (len * len)));
-    const d = Math.hypot(a.x + t * dx - p.x, a.y + t * dy - p.y);
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const { t, dist: d } = nearestOnLine(p.x, p.y, a.x, a.y, b.x, b.y);
     if (d < best) {
       best = d;
       at = walked + t * len;

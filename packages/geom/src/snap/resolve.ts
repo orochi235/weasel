@@ -2,6 +2,7 @@
  *  over affine constraints on the move `δ`. */
 
 import { closestOnFlat, flatDim, intersectFlats, solveLeastSquares, type Flat, type Vec } from './flat';
+import { distance } from '../points';
 
 /** A `fallback` candidate holds only the axes no `target` claims. */
 export type SnapTier = 'target' | 'fallback';
@@ -91,12 +92,6 @@ const SAME_PX = 1e-9;
 const plus = (a: Vec, b: Vec): Vec => a.map((v, i) => v + b[i]);
 const minus = (a: Vec, b: Vec): Vec => a.map((v, i) => v - b[i]);
 const isFiniteVec = (a: Vec): boolean => a.every(Number.isFinite);
-
-function distance(a: Vec, b: Vec): number {
-  let s = 0;
-  for (let i = 0; i < a.length; i++) s += (a[i] - b[i]) ** 2;
-  return Math.sqrt(s);
-}
 
 /** What the resolver needs to measure a candidate against a trial δ. */
 interface Measure {

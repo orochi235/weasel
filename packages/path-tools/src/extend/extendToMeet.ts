@@ -1,7 +1,7 @@
 /** Extend to next path: carry an open end on until it meets a stroke. */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  extendToMeet, openEndAt, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
+  distance, extendToMeet, openEndAt, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
   type AnchorSet, type ExtendToMeetOptions, type OpenPathEnd, type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
@@ -55,8 +55,6 @@ function endsAt(path: PolygonPath, anchors: ReadonlySet<number>): OpenPathEnd[] 
   return picked.length > 0 ? picked : ends;
 }
 
-const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
-
 /** The topmost stroke within reach of `press` with an open end, and that end
  *  of it nearest the press. */
 function endNearPress(all: readonly PathNode[], press: StrokePress) {
@@ -66,7 +64,7 @@ function endNearPress(all: readonly PathNode[], press: StrokePress) {
     const near = openPathEnds(node.path)
       .map((end) => ({ end, ray: openEndRay(node.path, end) }))
       .filter((e) => e.ray)
-      .sort((a, b) => dist(a.ray!.at, press.at) - dist(b.ray!.at, press.at))[0];
+      .sort((a, b) => distance(a.ray!.at, press.at) - distance(b.ray!.at, press.at))[0];
     if (near) return [{ node, ends: [near.end] }];
   }
   return [];

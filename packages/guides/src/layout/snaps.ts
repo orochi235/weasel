@@ -1,10 +1,5 @@
 import type { DropTarget, LayoutSnap } from '@weasel-js/core';
-
-function dist2(a: { x: number; y: number }, b: { x: number; y: number }): number {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  return dx * dx + dy * dy;
-}
+import { distance2 } from '@weasel-js/geom';
 
 function nearestOf<TPose>(
   targets: DropTarget<TPose>[],
@@ -12,9 +7,9 @@ function nearestOf<TPose>(
 ): DropTarget<TPose> | null {
   if (targets.length === 0) return null;
   let best = targets[0];
-  let bestD = dist2(best.origin, pointer);
+  let bestD = distance2(best.origin, pointer);
   for (let i = 1; i < targets.length; i++) {
-    const d = dist2(targets[i].origin, pointer);
+    const d = distance2(targets[i].origin, pointer);
     if (d < bestD) {
       bestD = d;
       best = targets[i];
@@ -43,7 +38,7 @@ export function nearestWithin<TPose>(opts: { tolerance: number }): LayoutSnap<TP
     pickTarget(targets, pointer) {
       const got = nearestOf(targets, pointer);
       if (got === null) return null;
-      return dist2(got.origin, pointer) <= tol2 ? got : null;
+      return distance2(got.origin, pointer) <= tol2 ? got : null;
     },
   };
 }

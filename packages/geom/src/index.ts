@@ -4,7 +4,7 @@
  *
  * @packageDocumentation
  */
-export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
+export { clamp, cross, dot, sub, len2, sign, approxEq, lerp, EPS } from './scalar';
 export { normalizeZoom, ZOOM_FLOOR, type View } from './view';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
 export { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box, type Rect } from './box';
@@ -32,7 +32,8 @@ export {
   DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic,
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
-export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
+export { pointInPolygon, segmentsCross } from './polyline';
+export { distance, distance2, lerpPoint, pointSegmentDist, pointSegmentDist2, segmentT } from './points2';
 export type { Path, PolygonPath, RectPath, PathFillRule, PathOpenFill } from './path';
 export { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 export {

@@ -7,6 +7,8 @@
  *  it is not a point, and `[x, y, z, w]` is the layout three.js and glMatrix
  *  both use. */
 
+import { lerp as lerpScalar } from '../scalar';
+
 export interface Vec3 {
   readonly x: number;
   readonly y: number;
@@ -69,7 +71,7 @@ export function distance(a: Vec3, b: Vec3): number {
 
 /** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
 export function lerp(a: Vec3, b: Vec3, t: number): Vec3 {
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
+  return { x: lerpScalar(a.x, b.x, t), y: lerpScalar(a.y, b.y, t), z: lerpScalar(a.z, b.z, t) };
 }
 
 /** `Vec3` from loose components — the shape `Mat4`'s row math produces. */

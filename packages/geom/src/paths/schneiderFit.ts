@@ -1,6 +1,7 @@
 import { PathBuilder } from './builder';
 import { cubicPointAt, type Point } from './cubicMath';
 import type { PolygonPath } from '../path';
+import { distance } from '../points2';
 
 /**
  * Schneider (1990, Graphics Gems I) adaptive cubic-Bezier fitter.
@@ -148,7 +149,7 @@ function chordLengthParam(samples: ReadonlyArray<Point>): number[] | null {
   ts[0] = 0;
   let total = 0;
   for (let i = 1; i < n; i++) {
-    total += dist(samples[i - 1], samples[i]);
+    total += distance(samples[i - 1], samples[i]);
     ts[i] = total;
   }
   if (total === 0) return null;
@@ -189,13 +190,13 @@ function solveLS(
   let alpha1: number;
   let alpha2: number;
   if (Math.abs(det) < 1e-12) {
-    const chord = dist(a, e);
+    const chord = distance(a, e);
     alpha1 = alpha2 = chord / 3;
   } else {
     alpha1 = (c22 * x1 - c12 * x2) / det;
     alpha2 = (c11 * x2 - c12 * x1) / det;
     if (alpha1 < 1e-6 || alpha2 < 1e-6) {
-      const chord = dist(a, e);
+      const chord = distance(a, e);
       alpha1 = alpha2 = chord / 3;
     }
   }
@@ -249,9 +250,6 @@ function newtonRefineT(
 
 function sub(a: Point, b: Point): Point {
   return { x: a.x - b.x, y: a.y - b.y };
-}
-function dist(a: Point, b: Point): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 function unit(v: Point): Point {
   const m = Math.hypot(v.x, v.y);

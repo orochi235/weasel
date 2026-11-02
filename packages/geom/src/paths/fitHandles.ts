@@ -4,6 +4,7 @@
  * `fitPointRun`. Both work on flattened cubics and on the run as a polyline.
  */
 import type { Point } from './cubicMath';
+import { pointSegmentDist2 } from '../points2';
 
 /** A cubic's two handles. */
 export interface Handles {
@@ -130,12 +131,7 @@ function worstFromPolyline(from: Float64Array, to: Float64Array, bound: number):
     const px = from[i], py = from[i + 1];
     let near = Infinity, at = hint;
     for (let j = hint, end = Math.min(edges, hint + reach); j < end; j++) {
-      const x0 = to[2 * j], y0 = to[2 * j + 1];
-      const dx = to[2 * j + 2] - x0, dy = to[2 * j + 3] - y0;
-      const len = dx * dx + dy * dy;
-      const s = len === 0 ? 0 : Math.min(1, Math.max(0, ((px - x0) * dx + (py - y0) * dy) / len));
-      const ex = x0 + s * dx - px, ey = y0 + s * dy - py;
-      const d = ex * ex + ey * ey;
+      const d = pointSegmentDist2(px, py, to[2 * j], to[2 * j + 1], to[2 * j + 2], to[2 * j + 3]);
       if (d < near) { near = d; at = j; }
     }
     hint = at;
