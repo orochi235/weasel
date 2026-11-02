@@ -1,3 +1,4 @@
+import { createRepaintListeners } from './repaintListeners';
 import type { Target } from './target';
 import { createTargetTable, type TargetTable } from './targetTable';
 
@@ -44,6 +45,7 @@ export class ColorOverrideRegistry {
   private readonly map = new Map<string, NodeOverrides>();
   private readonly slots = new Map<string, NodeSlots>();
   private readonly tables = new Map<number, ColorTable>();
+  private readonly listeners = createRepaintListeners();
   private _version = 0;
 
   set(id: string, channel: VertexColorChannel, override: ColorOverride): void {
@@ -53,7 +55,7 @@ export class ColorOverrideRegistry {
       this.map.set(id, entry);
     }
     entry[channel] = override;
-    this._version++;
+    this.changed();
   }
 
   /** Drops `id`'s override on `channel`, and the colors a finished or canceled animation on its
@@ -65,7 +67,7 @@ export class ColorOverrideRegistry {
     if (!(channel in entry)) return;
     delete entry[channel];
     if (!entry.fill && !entry.stroke) this.map.delete(id);
-    this._version++;
+    this.changed();
   }
 
   clearAll(): void {
@@ -74,7 +76,7 @@ export class ColorOverrideRegistry {
     }
     if (this.map.size === 0) return;
     this.map.clear();
-    this._version++;
+    this.changed();
   }
 
   /** What `set` stored for `id`'s `channel`; failing that, the colors its {@link target} paints. */
@@ -85,9 +87,12 @@ export class ColorOverrideRegistry {
     return slot?.painted ? shownOf(slot) : undefined;
   }
 
-  /** Whether anything overrides `id`, on either channel. */
+  /** Whether anything paints over `id`, on either channel: an override from `set`, or a target
+   *  an animation has committed. A target asked for and never moved does not count. */
   has(id: string): boolean {
-    return this.map.has(id) || this.slots.has(id);
+    if (this.map.has(id)) return true;
+    const node = this.slots.get(id);
+    return node !== undefined && (node.fill?.painted === true || node.stroke?.painted === true);
   }
 
   /**
@@ -134,7 +139,9 @@ export class ColorOverrideRegistry {
       set: (row) => {
         const slot = rows[row];
         if (slot) slot.painted = true;
-        this._version++;
+        // An animation's commit repaints through onTick; a bare one has nothing else to.
+        if (table.target(row).active) this._version++;
+        else this.changed();
       },
       show: () => { this._version++; },
     });
@@ -159,7 +166,7 @@ export class ColorOverrideRegistry {
     delete node[channel];
     if (!node.fill && !node.stroke) this.slots.delete(id);
     this.drop(slot);
-    if (slot.painted) this._version++;
+    if (slot.painted) this.changed();
   }
 
   /**
@@ -194,8 +201,19 @@ export class ColorOverrideRegistry {
     return result.length === base.length ? result : base;
   }
 
+  /** Calls `listener` after a `set`, `clear`, or release changes what paints; an animation's
+   *  frames reach a painter through `animator.onTick` instead. Returns an unsubscribe. */
+  subscribe(listener: () => void): () => void {
+    return this.listeners.subscribe(listener);
+  }
+
   version(): number {
     return this._version;
+  }
+
+  private changed(): void {
+    this._version++;
+    this.listeners.notify();
   }
 }
 

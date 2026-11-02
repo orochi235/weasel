@@ -5,17 +5,16 @@
  * painted with are therefore invisible to it — an ephemeral override's alpha
  * and data, a derived path, which needs other nodes' poses to resolve, the
  * paint an `'inherit'` field takes from its containers, and animated vertex
- * colors, which live in an animator. `<SceneCanvas>` folds them into the slot
+ * colors and stroke trims, which live in an animator. `<SceneCanvas>` folds them into the slot
  * here; `buildSceneViewCommands` does the same for the headless walk.
  */
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
-import { withColorOverrides } from './colorOverrides';
+import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { withShownNode } from './shownNodes';
-import type { ColorOverrideRegistry } from '@weasel-js/animator';
 
 /**
  * The alpha a view paints a node at: the view's own `alphaFor` times any
@@ -37,11 +36,11 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   slot: SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
   scene: Scene<TData, TLayer, TPose>,
   alphaFor?: (id: string) => number,
-  colorOverrides?: ColorOverrideRegistry,
+  overrides?: PaintOverrides,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
   const shown = shownLookup(scene);
   const derived = withDerivedPaths(scene, withInheritedPaints(shown, slot.drawOne), slot.toPose);
-  const painted = colorOverrides ? withColorOverrides(colorOverrides, derived) : derived;
+  const painted = withPaintOverrides(overrides, derived);
   const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
   return {
     ...slot,

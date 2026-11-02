@@ -159,4 +159,12 @@ describe('marker inset in the cache key', () => {
     const b = strokeMesh(path, { ...base, markerEnd: 'arrow-concave' }, undefined);
     expect(b).toBe(a);
   });
+
+  it('misses when the trim changes, and hits on an equal one', () => {
+    const path = rect();
+    const first = strokeMesh(path, { ...base, trim: { end: 0.4 } }, undefined);
+    const longer = strokeMesh(path, { ...base, trim: { end: 0.6 } }, undefined);
+    expect(longer).not.toBe(first);
+    expect(strokeMesh(path, { ...base, trim: { end: 0.6 } }, undefined)).toBe(longer);
+  });
 });

@@ -7,7 +7,7 @@
  */
 
 import type { Path } from '@weasel-js/geom';
-import type { Stroke, VertexWidth } from '@weasel-js/paint';
+import { strokeTrimKey, type Stroke, type VertexWidth } from '@weasel-js/paint';
 import { tessellateStroke, resolveStrokeWidth } from '@weasel-js/stroke';
 import { strokeInsets } from '@weasel-js/stroke';
 import { metricKey, type ScreenSpace, type StrokeSpaces } from '@weasel-js/stroke';
@@ -72,6 +72,7 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined, spaces:
     metricKey(ribbon),
     metricKey(spaces.start?.metric),
     metricKey(spaces.end?.metric),
+    strokeTrimKey(stroke.trim),
   ].join('|');
 }
 

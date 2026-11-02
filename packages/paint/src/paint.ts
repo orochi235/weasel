@@ -6,6 +6,7 @@
 import type { PatternPaint } from './patternPaint';
 import type { ColorSpace } from './colorSpaces';
 import type { VertexWidth } from './vertexWidth';
+import type { StrokeTrim } from './strokeTrim';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
@@ -160,6 +161,8 @@ export interface Stroke {
    *  the width's units: world, or screen pixels on a `{ px }` stroke, as SVG's
    *  `non-scaling-stroke` measures them. */
   dash?: number[];
+  /** The stretch of the path drawn; omitted, all of it. See {@link StrokeTrim}. */
+  trim?: StrokeTrim;
   /** Marker at the first vertex of each open subpath, rotated to point back
    *  along the line (SVG's `auto-start-reverse`, as the only behavior). */
   markerStart?: MarkerRef;

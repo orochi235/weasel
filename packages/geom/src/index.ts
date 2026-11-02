@@ -1,6 +1,8 @@
-/** @weasel-js/geom — pure 2D geometry kernel: scalars, affines, curves, the
- *  `Path` command stream and the math over it, and easing curves. Curve
- *  representations, tessellation and booleans live in subpaths.
+/** @weasel-js/geom — dependency-free geometry kernel: scalars, affines, curves,
+ *  the `Path` command stream and the math over it, easing curves, and exact
+ *  pen-order arc-length queries over 2D or 3D runs of lines and Bézier curves
+ *  (`./3d` holds the rest of 3D). Curve representations, tessellation and
+ *  booleans live in subpaths.
  *
  * @packageDocumentation
  */
@@ -39,6 +41,13 @@ export {
 } from './flatten';
 export { pointInPolygon, ringSignedArea, segmentsCross } from './polyline';
 export { distance, distance2, lerpPoint, pointSegmentDist, pointSegmentDist2, segmentT } from './points2';
+export {
+  anchorAtLength, closingAnchor, lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable,
+  type LengthRun, type LengthSpan, type LengthTable,
+} from './along/lengthTable';
+export { pointAtLength } from './along/positions';
+export { curveSpan, lengthAtCurve, runSegments, type CurvePosition, type CurveSpan } from './along/curvePosition';
+export { pathLengthTable } from './along/pathTable';
 export type { Path, PolygonPath, RectPath, PathFillRule, PathOpenFill } from './path';
 export { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 export {
@@ -77,6 +86,7 @@ export { pathFromD } from './paths/pathFromD';
 export { pathToD } from './paths/pathToD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { measurePath, type MeasurePathOptions, type PathMeasure, type PathNearestStation } from './paths/pathMeasure';
+export { segmentLength, segmentTAtLength } from './paths/segmentLength';
 export {
   pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
 } from './paths/cubicContours';

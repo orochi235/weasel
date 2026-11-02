@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type MutableRefObject } from 'react';
-import type { ColorOverrideRegistry } from '@weasel-js/animator';
+import type { PaintOverrides } from '../paintOverrides';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { Affordance } from 'affordances/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
@@ -45,7 +45,8 @@ interface SceneCanvasLayersArgs<TData, TLayer extends string, TPose> {
   adapter: HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
   poseDescriptor: PoseDescriptor<TPose>;
   alphaFor: ((id: string) => number) | undefined;
-  colorOverrides: ColorOverrideRegistry | undefined;
+  /** Animated paint to lay over the scene's nodes, typically `<SceneCanvas animator>`. */
+  paintOverrides: PaintOverrides | undefined;
   boundsOf: (id: string) => Bounds | null; enteredGroup: EnteredGroupApi; frameColor: { read: () => string; changed: (fn: () => void) => () => void };
   planeOfNode: (id: string, view: View) => PlaneMap | null;
   /** `<SceneCanvas poseTransition>`, whose ghosts of removed nodes this draws. */
@@ -103,7 +104,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
     scene,
     adapter,
     alphaFor,
-    colorOverrides: args.colorOverrides,
+    paintOverrides: args.paintOverrides,
     boundsOf: args.boundsOf,
     previewIds: args.previewIds,
   });

@@ -1,4 +1,5 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
+import type { TrimOverrideRegistry } from './trimRegistry';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './timeline/types';
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
 import type { StaggerBuilder, StaggerDelay, StaggerFactory, StaggerOptions } from './staggerTypes';
@@ -258,6 +259,10 @@ export interface Animator {
    *  `<SceneCanvas animator>` and read by `createPathLayer`. Only this animator can move its
    *  per-node targets. Cleared automatically on animator unmount. */
   colorOverrides: ColorOverrideRegistry;
+  /** Per-node stroke trim override registry, painted onto scene nodes by `<SceneCanvas animator>`:
+   *  a draw-on with no op and no undo entry. Picking still reads the authored `Stroke.trim`.
+   *  Cleared automatically on animator unmount. */
+  trimOverrides: TrimOverrideRegistry;
   /**
    * Subscribe to a callback fired once per RAF frame while any animation is active; returns
    * an unsubscribe. For consumers that repaint from a non-scene channel such as

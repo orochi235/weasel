@@ -97,6 +97,9 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
   if (page.data.edges.some((e) => e.waypoints !== undefined && e.waypoints.length > 0)) {
     warnings.add(`${format} holds no routes; connectors' bends were dropped.`);
   }
+  if (page.data.edges.some((e) => dataEdgeStyle(e, theme).trim !== undefined)) {
+    warnings.add(`${format} draws a connector whole; trims were dropped.`);
+  }
   return { page, theme, ...tree, byId, edges: [...page.data.edges], warnings };
 }
 

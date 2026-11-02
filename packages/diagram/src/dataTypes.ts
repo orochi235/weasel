@@ -1,7 +1,7 @@
 /**
  * The plain data `diagramScene` reads, and the options and styles it takes.
  */
-import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, PoseComposition, RectPose, Stroke } from '@weasel-js/core';
+import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, PoseComposition, RectPose, Stroke, StrokeTrim } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import type { DiagramEdge } from './edgeTrait';
@@ -87,8 +87,9 @@ export interface DataEdge {
   routedPorts?: LayoutPorts;
   /** The theme role it is drawn in, under `DiagramSceneOptions.theme`: that role's stroke. Kept on its trait. */
   style?: string;
-  /** Its stroke, markers, and label color of its own, over the theme's. `stroke` and `label` are
-   *  listed in the trait's `ownStyle` (as `stroke` and `text`), so a theme change leaves them. */
+  /** Its own {@link EdgeStyle} fields over the theme's: stroke color and width, dash, trim, markers
+   *  and label color. `stroke` and `label` are listed in the trait's `ownStyle` (as `stroke` and
+   *  `text`), so a theme change leaves them; a theme change writes none of the rest. */
   colors?: Partial<EdgeStyle>;
 }
 
@@ -207,7 +208,7 @@ export const LANE_STROKE_WIDTH = 1;
 /** An edge's stroke width when its style gives none. */
 export const EDGE_STROKE_WIDTH = 1.5;
 
-/** The stroke, markers, and label color an edge is drawn with. */
+/** How an edge is drawn: its stroke's color, width, dash and trim, its markers, and its label color. */
 export interface EdgeStyle {
   stroke: string;
   width?: number;
@@ -218,6 +219,9 @@ export interface EdgeStyle {
   markerEnd?: MarkerRef | null;
   /** Default `stroke`. */
   label?: string;
+  /** The stretch of the route drawn, in pen order from the `from` end; the heads ride its ends.
+   *  Default the whole route. */
+  trim?: StrokeTrim;
 }
 
 /** How an edge is drawn between its ends. */

@@ -48,12 +48,18 @@ function toPolyline(run: Run, closed = false): Polyline {
  * The dashed runs of every polyline of one path. Whether the pattern is too
  * fine to dash is decided once for the whole path, as a PDF reader's own
  * stroke operator would, so no subpath goes solid while its neighbor dashes.
+ * `length` is the path length that decision reads, the polylines' own by
+ * default; a trimmed stroke passes its untrimmed one. `phases[i]` starts
+ * `polylines[i]`'s pattern that far in (see {@link splitForDash}).
  */
-export function dashPolylines(polylines: readonly Polyline[], pattern: readonly number[] | undefined): Polyline[] {
-  const dash = dashPattern(pattern, totalLength(polylines));
+export function dashPolylines(
+  polylines: readonly Polyline[], pattern: readonly number[] | undefined, phases?: readonly number[],
+  length = polylinesLength(polylines),
+): Polyline[] {
+  const dash = dashPattern(pattern, length);
   if (dash === 'solid') return [...polylines];
   if (dash === 'non-finite') return [];
-  return polylines.flatMap((pl) => splitForDash(pl, dash));
+  return polylines.flatMap((pl, i) => splitForDash(pl, dash, phases?.[i] ?? 0));
 }
 
 /**
@@ -61,10 +67,11 @@ export function dashPolylines(polylines: readonly Polyline[], pattern: readonly 
  * writer handing the dash to another stroker passes to `dashPattern`.
  */
 export function dashLength(path: Path): number {
-  return totalLength(extractPolylines(path));
+  return polylinesLength(extractPolylines(path));
 }
 
-function totalLength(polylines: readonly Polyline[]): number {
+/** The length the dash walks along every polyline, closing segments included. */
+export function polylinesLength(polylines: readonly Polyline[]): number {
   return polylines.reduce((sum, pl) => sum + polylineLength(pl), 0);
 }
 
@@ -85,9 +92,10 @@ function polylineLength(pl: Polyline): number {
  * widths and offsets are carried through: a dash boundary landing mid-segment takes
  * {@link anchorParamsBetween}'s params and the width interpolated there.
  * A dash {@link dashPattern} reads as solid along `pl` returns `pl` whole,
- * and a non-finite one returns nothing.
+ * and a non-finite one returns nothing. `phase` is how far into the pattern
+ * `pl`'s first point sits, so a run cut from a longer line keeps its pattern.
  */
-export function splitForDash(pl: Polyline, pattern: readonly number[]): Polyline[] {
+export function splitForDash(pl: Polyline, pattern: readonly number[], phase = 0): Polyline[] {
   const dash = dashPattern(pattern, polylineLength(pl));
   if (dash === 'solid') return [pl];
   if (dash === 'non-finite') return [];
@@ -105,7 +113,17 @@ export function splitForDash(pl: Polyline, pattern: readonly number[]): Polyline
   let dashIdx = 0;
   let dashRemaining = dash[0];
   let onPhase = true;
-  let cur: Run | null = runFrom(pointAt(0), !!W, !!O);
+  if (phase > 0) {
+    // An odd-length pattern swaps on and off each pass, so it repeats every two.
+    let into = phase % (dash.reduce((a, b) => a + b, 0) * (dash.length % 2 + 1));
+    while (into >= dash[dashIdx]) {
+      into -= dash[dashIdx];
+      dashIdx = (dashIdx + 1) % dash.length;
+      onPhase = !onPhase;
+    }
+    dashRemaining = dash[dashIdx] - into;
+  }
+  let cur: Run | null = onPhase ? runFrom(pointAt(0), !!W, !!O) : null;
 
   const flushAndAdvance = (at: At) => {
     if (cur && cur.pts.length >= 4) out.push(toPolyline(cur));

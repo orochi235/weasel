@@ -36,7 +36,7 @@ function attrOf(el: Element, name: string): string | null {
 }
 
 /** Whether `stroke` is written as an outline. */
-export function hasVariableWidth(stroke: SvgStroke | undefined): stroke is SvgStroke {
+export function hasVariableWidth(stroke: SvgStroke | undefined): boolean {
   return (stroke?.vertexWidths?.length ?? 0) > 0 || stroke?.nib !== undefined;
 }
 
@@ -96,6 +96,7 @@ export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: reado
     ...(stroke.markerStart ? { markerStart: stroke.markerStart } : {}),
     ...(stroke.markerMid ? { markerMid: stroke.markerMid } : {}),
     ...(stroke.markerEnd ? { markerEnd: stroke.markerEnd } : {}),
+    ...(stroke.trim ? { trim: stroke.trim } : {}),
   };
   const outline = strokeToPath(path, kit);
   const attrs = [`d="${serializePathD(outline)}"`, ...fillAttrs, 'stroke="none"'];

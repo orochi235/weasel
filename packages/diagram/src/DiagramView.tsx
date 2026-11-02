@@ -75,7 +75,7 @@ function Inner({
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
-  minScale, maxScale, anchor, fitPadding, bounded, refit, background, pages, view, onViewChange, className, apiRef,
+  minScale, maxScale, anchor, fitPadding, bounded, refit, background, animator, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
@@ -162,23 +162,17 @@ function Inner({
         scene={scene}
         selection={selection}
         features={features}
-        {...(resizes ? { selectTool } : {})}
-        {...(textEditor ? { textEditor } : {})}
         enableKeybindings={enableKeybindings ?? edits}
         ambient={ambient}
         actions={editing.actions}
-        {...(tools ? { tools } : {})} {...(onToolsCreated ? { onToolsCreated } : {})}
         onClick={onClick}
-        {...(onHover ? { onHover } : {})}
         width={width}
         height={height}
-        {...(fills ? { onResize: setMeasured } : {})}
-        {...(defaultView ? { defaultView } : {})}
-        {...(view ? { view } : {})}
-        {...(onViewChange ? { onViewChange } : {})}
-        {...(viewBounds ? { viewBounds } : {})}
-        {...(background ? { backgroundFill: background } : {})}
-        {...(layers ? { layers } : {})}
+        {...setOnly({
+          selectTool: resizes ? selectTool : undefined, textEditor, tools, onToolsCreated, onHover,
+          onResize: fills ? setMeasured : undefined, defaultView, view, onViewChange, viewBounds,
+          backgroundFill: background, animator, layers,
+        })}
       >
         <DropRules scene={scene} canReparent={canReparent} />
       </SceneCanvas>
@@ -191,6 +185,13 @@ function Inner({
 }
 
 const NO_OVERLAYS: readonly never[] = [];
+
+/** `props` without the ones left unset, for a canvas whose optional props must be absent rather than undefined. */
+function setOnly<T extends object>(props: T): { [K in keyof T]?: Exclude<T[K], undefined | null> } {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(props)) if (value !== undefined && value !== null) out[key] = value;
+  return out as { [K in keyof T]?: Exclude<T[K], undefined | null> };
+}
 
 /** Registers `layers` on the canvas, the only attach route that is hit-tested, in order: the last is hit first. */
 function useRegisteredLayers(canvasRef: RefObject<SceneCanvasApi | null>, layers: readonly RenderLayer<unknown>[]): void {

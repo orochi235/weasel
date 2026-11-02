@@ -22,7 +22,7 @@ import {
   eulerAngleAt, eulerCubicError, eulerCurvatureAt, eulerPointAt, eulerSegmentCubic, integrateEuler,
   type EulerSegment,
 } from './eulerSpiral';
-import { segmentLength } from './segmentLength';
+import { flatPoints, segmentLength } from './segmentLength';
 
 /** How an end grows: straight on, bending as the end bends, or easing out of
  *  the end's bend into a straight run. */
@@ -231,6 +231,7 @@ function g2Cubic(seg: EulerSegment): { c1: Point; c2: Point } | null {
 /** The arc length along `piece` at its parameter `t`. */
 export function pieceLengthAt(piece: ExtensionPiece, t: number): number {
   if (piece.pts.length === 2) return piece.length * t;
-  const whole = segmentLength(piece.pts);
-  return whole > 0 ? (piece.length * segmentLength(piece.pts, 0, t)) / whole : 0;
+  const c = flatPoints(piece.pts);
+  const whole = segmentLength(c, 2);
+  return whole > 0 ? (piece.length * segmentLength(c, 2, 0, t)) / whole : 0;
 }

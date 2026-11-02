@@ -43,7 +43,7 @@ describe('animated vertex colors on default-painted nodes', () => {
     const { scene, id } = strokedScene();
     const registry = new ColorOverrideRegistry();
     registry.set(id, 'stroke', RED);
-    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
     expect(bodyOf(slot.drawOne(node, node.pose, VIEW)).stroke?.vertexColors).toEqual(RED);
   });
@@ -52,7 +52,7 @@ describe('animated vertex colors on default-painted nodes', () => {
     const { scene, id } = strokedScene();
     const registry = new ColorOverrideRegistry();
     registry.set(id, 'stroke', RED);
-    const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, registry);
+    const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, { colorOverrides: registry });
     expect(bodyOf(cmds).stroke?.vertexColors).toEqual(RED);
   });
 
@@ -61,7 +61,7 @@ describe('animated vertex colors on default-painted nodes', () => {
     const registry = new ColorOverrideRegistry();
     let seen: readonly number[] | undefined;
     registry.set(id, 'stroke', (base) => { seen = base; return GRAY; });
-    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
     expect(bodyOf(slot.drawOne(node, node.pose, VIEW)).stroke?.vertexColors).toEqual(GRAY);
     expect(seen).toEqual(RAINBOW);
@@ -70,7 +70,7 @@ describe('animated vertex colors on default-painted nodes', () => {
   it('paints the node\'s own colors again once the override clears, without re-tessellating', () => {
     const { scene, id } = strokedScene();
     const registry = new ColorOverrideRegistry();
-    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
     const before = bodyOf(slot.drawOne(node, node.pose, VIEW));
 
@@ -87,7 +87,7 @@ describe('animated vertex colors on default-painted nodes', () => {
     const { scene, id } = strokedScene();
     const registry = new ColorOverrideRegistry();
     registry.set(id, 'stroke', [1, 0, 0, 1]);
-    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
     expect(bodyOf(slot.drawOne(node, node.pose, VIEW)).stroke?.vertexColors).toEqual(RAINBOW);
   });
@@ -101,7 +101,7 @@ describe('animated vertex colors on default-painted nodes', () => {
       data: { path: pathFromD('M0 0 L100 0 L50 40 Z'), fill: { paint: solid('#fff') }, vertexColors: RAINBOW },
     });
     const registry = new ColorOverrideRegistry();
-    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
     expect(bodyOf(slot.drawOne(node, node.pose, VIEW)).vertexColors).toEqual(RAINBOW);
 
@@ -119,7 +119,7 @@ describe('animated vertex colors on default-painted nodes', () => {
     });
     const node = scene.get(id)!;
     const registry = new ColorOverrideRegistry();
-    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const body = bodyOf(slot.drawOne(node, node.pose, VIEW));
     const colors = Array.from({ length: countPathAnchors(body.path) }, () => [0, 1, 0, 1]).flat();
 

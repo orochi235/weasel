@@ -231,4 +231,16 @@ describe('a color animation over an override', () => {
     step(50);
     expect(painted(BASE)).toBe(eight);
   });
+
+  it('tells subscribers of a bare commit on a resting target, and of nothing an animation frame does', () => {
+    const { animator, registry, step } = setup();
+    let told = 0;
+    registry.subscribe(() => { told += 1; });
+    registry.target('a', 'fill', 4).commit(RED);
+    expect(told).toBe(1);
+    act(() => { animator.tween({ target: registry.target('b', 'fill', 4), from: BLACK, to: RED, ms: 100 }); });
+    step(0);
+    step(50);
+    expect(told).toBe(1);
+  });
 });

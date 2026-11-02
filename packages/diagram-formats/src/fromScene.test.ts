@@ -55,6 +55,14 @@ describe('documentFromScene', () => {
     });
   });
 
+  it("reads an edge's stroke trim back as its own", () => {
+    const scene = docScene();
+    expect(edgeOf(scene, 'ab').colors?.trim).toBeUndefined();
+    const data = scene.get('ab' as never)!.data as { stroke: Record<string, unknown> };
+    scene.update('ab' as never, { data: { ...data, stroke: { ...data.stroke, trim: { end: 0.5 } } } });
+    expect(edgeOf(scene, 'ab').colors?.trim).toEqual({ end: 0.5 });
+  });
+
   it('keeps an edge whose ends are on different pages apart, without waypoints', () => {
     const doc = documentFromScene(docScene());
     expect(doc.crossPageEdges?.map((e) => e.id)).toEqual(['ac']);

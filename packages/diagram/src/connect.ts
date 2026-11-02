@@ -30,7 +30,9 @@ import {
   type Vec2,
 } from '@weasel-js/core';
 import { bodyAt, createTargets, isBodyEnd, type ConnectEnd } from './connectTargets';
+import { DEFAULT_EDGE_STYLE } from './dataStyles';
 import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
+import { edgeStrokeOf } from './edgeStroke';
 import type { DiagramEdge, EdgeEnd } from './edgeTrait';
 import { PORT_AFFORDANCE_KIND, portScratchOf, type ParticipantSource } from './portAffordance';
 import type { DiagramNodeReader } from './trait';
@@ -118,12 +120,8 @@ export interface ConnectActionOptions<TPose> {
 
 const DEFAULT_SNAP = 16;
 /** What a connect-authored edge is drawn with, when the consumer overrides
- *  nothing. */
-export const DEFAULT_EDGE_STROKE: Stroke = {
-  paint: { color: '#7ba7c7' },
-  width: 2,
-  markerEnd: 'arrow',
-};
+ *  nothing: what `diagramScene` draws an edge in with no theme. */
+export const DEFAULT_EDGE_STROKE: Stroke = edgeStrokeOf(DEFAULT_EDGE_STYLE);
 const DEFAULT_ROUTER = 'straight';
 
 interface ConnectScratch {

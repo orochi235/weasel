@@ -9,18 +9,16 @@
  * some other shape matches none of them, and paints through a consumer painter or not at all.
  */
 import { glyphGeneration } from '@weasel-js/font';
-import {
-  pathContainsPoint,
-  strokeHitTest,
-  type Path
-} from '@weasel-js/geom';
-import { pathThroughPoseFrame } from '@weasel-js/geom';
+import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
+import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
 import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewport/screenSlop';
-import { DERIVED_PAINTER } from './nodeShapes/derivedPainter';
+import type { PickSlop } from 'core/viewport/screenSlop';
+import { derivedPartsOf } from 'core/scene/derivedParts';
+import { DERIVED_PAINTER, partsCover } from './nodeShapes/derivedPainter';
+import { inkCovers, trimmedOutline, type TrimmedOutline } from './nodeShapes/pickOutline';
 import { IMAGE_PAINTER } from './nodeShapes/imagePainter';
 import { MEASURE_PAINTER } from './nodeShapes/measurePainter';
 import { derivesPath } from './nodeShapes/memo';
@@ -89,6 +87,7 @@ const PAINTER_SLOT_DERIVED = 'shape:painter:derived';
 const PAINTER_SLOT_DERIVED_NONRECT = 'shape:painter:derived:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
 const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
+const TRIM_PICK_SLOT = 'shape:trim-pick';
 
 /** The painter that will render `node` — first match in priority order — or undefined if
  *  none accepts it. */
@@ -136,7 +135,7 @@ export function findShapeSilhouette<TData, TPose>(
   ctx?: NodeSilhouetteCtx,
 ): Path | null {
   const build = (): Path | null => {
-    const sil = findNodeShape(node)?.silhouette?.(node, pose, ctx) ?? null;
+    const sil = localSilhouette(node, pose, ctx);
     return sil && pathThroughPoseFrame(sil, pose);
   };
   // `SILHOUETTE_SLOT`'s key is (node, pose, data) and cannot see
@@ -159,6 +158,11 @@ export function findShapeSilhouette<TData, TPose>(
     return held.path;
   }
   return nodeMemo(node as { data?: unknown }, SILHOUETTE_SLOT, pose, build);
+}
+
+/** The silhouette `node`'s painter returns, in the pose's local frame: what its stroke is drawn along. */
+function localSilhouette<TData, TPose>(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeSilhouetteCtx): Path | null {
+  return findNodeShape(node)?.silhouette?.(node, pose, ctx) ?? null;
 }
 
 // A boolean group's operands are its children's outlines.
@@ -228,16 +232,24 @@ export function shapeCoversPoint<TData, TPose>(
   if (node.kind === 'group') return true;
   const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath });
   if (sil === null) return true;
+  const parts = derivedPartsOf(opts.derivedPath);
+  if (parts !== undefined) return partsCover(node, parts, pose, x, y, opts);
   const ink = findShapeInk(node, pose, { scale: opts.scale, inherited: opts.inherited }) ?? DEFAULT_INK;
-  const inside = pathContainsPoint(sil, x, y);
-  if (ink.filled && inside) return true;
-  // The stroke reaches a different distance on each side, so which side the point is on
-  // picks the reach. `tolerance` also makes a filled shape grabbable a few pixels outside
-  // its edge.
-  const slop = widenSlop(opts.tolerance, (inside ? ink.insetPx : ink.outsetPx) ?? 0, opts.scale);
-  const { extra, opts: hit } = slopForStrokeHit(slop);
-  const reach = (inside ? ink.inset : ink.outset) + extra;
-  return (reach > 0 || hasSlop(slop)) && strokeHitTest(sil, x, y, reach, hit);
+  const trimmed = ink.trim === undefined ? undefined : trimmedOutlineOf(node, pose, sil, ink.trim, opts.derivedPath);
+  return inkCovers(sil, ink, trimmed, x, y, opts);
+}
+
+/** {@link trimmedOutline} for `node`'s silhouette `sil`, memoized as the silhouette is. */
+function trimmedOutlineOf<TData, TPose>(
+  node: Node<TData, string, TPose>, pose: TPose, sil: Path, trim: StrokeTrim, derivedPath: Path | null | undefined,
+): TrimmedOutline {
+  const build = (): TrimmedOutline => {
+    const local = poseFrameOf(pose) === null ? sil : localSilhouette(node, pose, { derivedPath }) ?? sil;
+    return trimmedOutline(local, sil, pose, trim);
+  };
+  // The trim may be inherited, rebuilt per query, so its value keys the memo beside the node;
+  // see `findShapeSilhouette` for the derived path.
+  return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, TRIM_PICK_SLOT, pose, build, strokeTrimKey(trim));
 }
 
 /** The current painters in evaluation order — `'high'` tier first, then `'normal'`. */

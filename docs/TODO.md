@@ -297,6 +297,15 @@ Owner tags, after the priority (2026-10-26):
   `viewportWorldRect` also changes what `useViewAim` and `viewForAim` round-trip, so the aim
   rect needs to carry the flip some other way. Closes when a y-up view's visible rect has a
   positive size and an aim round-trips a flipped view unchanged.
+- **(P3) [agent] No 3D line pass: a stroke in a 3D scene cannot be drawn.** Port astv's arrow pass
+  (`astv/packages/engine/draw/arrows/pass.glsl.ts`, `pack.ts`, `head.ts`): a polyline expanded in screen
+  pixels after projection, the head capped at a share of the arrow with the shaft narrowing to match,
+  bisector miters, endpoints behind the camera dropped. It consumes `StrokeTrim` through geom's length
+  table and stroke's `resolveTrim` (`docs/superpowers/specs/2026-11-01-stroke-trim-design.md`). Set a
+  head back along its own segment's straight direction, never by walking back along the path: a head
+  longer than its segment otherwise runs the perspective divide through zero.
+  Closes when a kernel3d scene draws a trimmed, headed polyline under a perspective camera in a
+  `*.browser.test` and a site demo.
 - **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
   the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
   (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code

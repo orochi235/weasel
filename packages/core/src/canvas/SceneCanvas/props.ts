@@ -392,9 +392,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Animator to bind for per-frame redraws. SceneCanvas requests a redraw on every active
-     * animation frame and paints `animator.colorOverrides` onto the scene's nodes: the
-     * kit's path and shape painters apply them, and a custom `drawOne` receives them as
-     * `ctx.vertexColors`.
+     * animation frame and paints `animator.colorOverrides` and `animator.trimOverrides` onto
+     * the scene's nodes: the kit's path and shape painters apply them, and a custom `drawOne`
+     * receives them as `ctx.vertexColors` and `ctx.trim`. Picking reads the authored trim.
      */
     animator?: Animator;
 

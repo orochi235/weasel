@@ -42,8 +42,9 @@ export function outlineGroupStrokeMesh(
   dy: number,
   transform: GlMat3,
 ): Mesh | null {
-  const stroke = group.stroke;
-  if (!strokeHasInk(stroke)) return null;
+  if (!strokeHasInk(group.stroke)) return null;
+  // A trim is ignored: per-glyph outlines have no single pen order to draw them on in.
+  const { trim: _trim, ...stroke } = group.stroke;
   const width = stroke.width ?? 1;
   if (typeof width === 'object') {
     const shear = shearOf(group);

@@ -1,6 +1,7 @@
 /** The types a node painter is written against; `NodeShape.ts` holds the registry. */
 import type { Path } from '@weasel-js/geom';
 import type { VertexColorChannel } from '@weasel-js/animator';
+import type { StrokeTrim } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
@@ -29,11 +30,16 @@ export interface NodePaintCtx {
   derivedPath?: Path | null;
   /** A node's animated per-anchor colors: given the colors a painter would paint
    *  on `channel`, the colors to paint instead. **Absent** when nothing animates
-   *  the node. The kit's path painters apply it; see `withColorOverrides`. */
+   *  the node. The kit's path painters apply it; see `withPaintOverrides`. */
   vertexColors?: (
     channel: VertexColorChannel,
     base: readonly number[] | undefined,
   ) => readonly number[] | undefined;
+  /** A node's animated stroke trim: given the trim a painter would draw, the
+   *  trim to draw instead. **Absent** when nothing animates the node. The
+   *  kit's path painters apply it to the drawn stroke and never to picking;
+   *  see `withPaintOverrides`. */
+  trim?: (base: StrokeTrim | undefined) => StrokeTrim | undefined;
   /** What the node's `'inherit'` fill and stroke resolve to, looked up from
    *  its containers by the scene's `drawOne` wrapper. **Absent** for a node
    *  that inherits nothing. Hand it to `resolveFill` / `resolveStroke`. */
@@ -135,6 +141,9 @@ export interface NodeInk {
   outsetPx?: number;
   /** Reach past `inset`, likewise. */
   insetPx?: number;
+  /** The trim of the stroke drawn along the silhouette, when it has one: only
+   *  that stretch of the outline is grabbable by its stroke. */
+  trim?: StrokeTrim;
 }
 
 /** Per-call context for {@link NodeShapeEntry.silhouette}. */

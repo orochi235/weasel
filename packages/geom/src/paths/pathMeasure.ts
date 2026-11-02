@@ -2,10 +2,14 @@
  * A path measured once by arc length, so many stations along it cost a binary
  * search each rather than a fresh flatten: what `pointAlongPath` answers one
  * fraction at a time, and what anything placing or bending geometry along a
- * path reads many times over.
+ * path reads many times over. Lengths and points are exact, read from the
+ * path's `pathLengthTable`, so a fraction lands where a stroke trim cuts.
  */
+import { tableInternals, type LengthTable } from '../along/lengthTable';
+import { pathLengthTable } from '../along/pathTable';
+import { pointOnSegment } from '../along/positions';
 import type { Path } from '../path';
-import { extractPolylines } from '../tessellate/polyline';
+import { extractPolylines, type Polyline } from '../tessellate/polyline';
 import type { Point } from './cubicMath';
 
 /** A point on a path and its heading there. */
@@ -17,7 +21,8 @@ export interface PathStation {
 
 /** Options for {@link measurePath}. */
 export interface MeasurePathOptions {
-  /** Curve flattening tolerance, in world units. Default 0.5. */
+  /** Curve flattening tolerance, in world units, for the headings `at` and the search `nearest` read; lengths
+   *  and points are exact whatever it is. Default 0.5. */
   flattenTolerance?: number;
   /** Keep a vertex that turns further than flattening at the tolerance could as a corner: `at`'s `smooth` heading then
    *  blends only across the vertices flattening made, and a straight edge heads along itself. Default false. */
@@ -42,7 +47,7 @@ export interface PathMeasure {
   /**
    * The station `s` along the path, `s` clamped to `0..length`.
    *
-   * The tangent is the heading of the flattened segment under `s`. With
+   * The point is exact. The tangent is the heading of the flattened segment under `s`. With
    * `smooth`, it is instead blended across each segment from the heading at
    * one vertex to the next, so geometry bent along it turns without facets.
    */
@@ -56,9 +61,14 @@ export interface PathMeasure {
 
 interface Segment {
   ax: number; ay: number; bx: number; by: number;
-  /** Arc length at the segment's start. */
-  start: number;
+  /** Chord length. */
   len: number;
+  /** Exact arc length at the chord's start, and the arc it stands for. */
+  start: number;
+  arc: number;
+  /** The table run and segment the chord lies on. */
+  run: number;
+  seg: number;
   /** Unit heading. */
   tx: number; ty: number;
   /** Headings at either end, averaged with the neighbor's, for `smooth`. */
@@ -76,34 +86,21 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
     path,
     opts.flattenTolerance === undefined ? {} : { flattenTolerance: opts.flattenTolerance },
   );
+  const table = pathLengthTable(path);
+  const cornerTolerance = opts.keepCorners ? (opts.flattenTolerance ?? 0.5) : null;
   const segments: Segment[] = [];
-  let total = 0;
   let first: Point | undefined;
   let contours = 0;
   let lastClosed = false;
-  for (const pl of polylines) {
-    const count = pl.points.length / 2;
-    if (count === 0) continue;
+  polylines.forEach((pl, r) => {
+    if (pl.points.length === 0) return;
     contours++;
     lastClosed = pl.closed;
     first ??= { x: pl.points[0]!, y: pl.points[1]! };
     const startIndex = segments.length;
-    const last = pl.closed ? count : count - 1;
-    for (let i = 0; i < last; i++) {
-      const j = (i + 1) % count;
-      const ax = pl.points[i * 2]!;
-      const ay = pl.points[i * 2 + 1]!;
-      const bx = pl.points[j * 2]!;
-      const by = pl.points[j * 2 + 1]!;
-      const len = Math.hypot(bx - ax, by - ay);
-      if (len === 0) continue;
-      const tx = (bx - ax) / len;
-      const ty = (by - ay) / len;
-      segments.push({ ax, ay, bx, by, start: total, len, tx, ty, t0x: tx, t0y: ty, t1x: tx, t1y: ty });
-      total += len;
-    }
-    smoothVertexHeadings(segments, startIndex, pl.closed, opts.keepCorners ? (opts.flattenTolerance ?? 0.5) : null);
-  }
+    pushChords(pl, r, table, segments);
+    smoothVertexHeadings(segments, startIndex, pl.closed, cornerTolerance);
+  });
   if (first === undefined) return null;
   const origin = first;
   const closed = contours === 1 && lastClosed;
@@ -121,15 +118,20 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
     };
   }
 
+  const total = table.total;
+  const pointAt = (seg: Segment, s: number): Point => {
+    const { point } = pointOnSegment(table, seg.run, seg.seg, s);
+    return { x: point[0], y: point[1] };
+  };
   return {
     length: total,
     closed,
     at(s, smooth = false) {
       const target = Math.min(Math.max(s, 0), total);
       const seg = segments[segmentAt(segments, target)]!;
-      const u = Math.min(Math.max((target - seg.start) / seg.len, 0), 1);
-      const point = { x: seg.ax + (seg.bx - seg.ax) * u, y: seg.ay + (seg.by - seg.ay) * u };
+      const point = pointAt(seg, target);
       if (!smooth) return { point, tangent: { x: seg.tx, y: seg.ty } };
+      const u = seg.arc > 0 ? Math.min(Math.max((target - seg.start) / seg.arc, 0), 1) : 0;
       const x = seg.t0x + (seg.t1x - seg.t0x) * u;
       const y = seg.t0y + (seg.t1y - seg.t0y) * u;
       const l = Math.hypot(x, y);
@@ -148,14 +150,50 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
           bestDist = d;
         }
       }
-      return {
-        s: best.start + best.len * bestU,
-        dist: bestDist,
-        point: { x: best.ax + (best.bx - best.ax) * bestU, y: best.ay + (best.by - best.ay) * bestU },
-        tangent: { x: best.tx, y: best.ty },
-      };
+      const s = best.start + best.arc * bestU;
+      const point = pointAt(best, s);
+      return { s, dist: Math.hypot(p.x - point.x, p.y - point.y), point, tangent: { x: best.tx, y: best.ty } };
     },
   };
+}
+
+/**
+ * Append `pl`'s chords, each placed on run `r` of `table`: a flattened point
+ * between two anchors sits the share of the exact arc between them that it
+ * sits of the flattened one.
+ */
+function pushChords(pl: Polyline, r: number, table: LengthTable, segments: Segment[]): void {
+  const c = tableInternals(table).cum[r]!;
+  const { points, anchorA: A, anchorB: B, anchorT: T } = pl;
+  const count = points.length / 2;
+  // Per point, the table segment it starts and its exact length.
+  const segOf = new Int32Array(count);
+  const lenOf = new Float64Array(count);
+  let k = -1;
+  for (let i = 0; i < count; i++) {
+    const aligned = !A || !B || A[i] === B[i];
+    if (aligned) k++;
+    const at = Math.max(k, 0);
+    segOf[i] = Math.min(at, c.length - 2);
+    lenOf[i] = aligned || !T ? c[at]! : c[at]! + T[i]! * (c[at + 1]! - c[at]!);
+  }
+  const last = pl.closed ? count : count - 1;
+  for (let i = 0; i < last; i++) {
+    const j = (i + 1) % count;
+    const ax = points[i * 2]!;
+    const ay = points[i * 2 + 1]!;
+    const bx = points[j * 2]!;
+    const by = points[j * 2 + 1]!;
+    const len = Math.hypot(bx - ax, by - ay);
+    if (len === 0) continue;
+    const tx = (bx - ax) / len;
+    const ty = (by - ay) / len;
+    const start = lenOf[i]!;
+    const arc = (j === 0 ? c[c.length - 1]! : lenOf[j]!) - start;
+    segments.push({
+      ax, ay, bx, by, len, start, arc, run: r, seg: segOf[i]!, tx, ty, t0x: tx, t0y: ty, t1x: tx, t1y: ty,
+    });
+  }
 }
 
 /** Give each interior vertex of one contour the mean heading of the two

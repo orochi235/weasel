@@ -75,8 +75,8 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
   /** Paint order for the minimap, keyed as `layerVisibility`. */
   layerOrder?: SceneViewLayers['layerOrder'];
   /** Optional animator: the minimap repaints on its ticks and paints its
-   *  `colorOverrides`. Pass the main canvas's animator so both show the same
-   *  colors. */
+   *  `colorOverrides` and `trimOverrides`. Pass the main canvas's animator so
+   *  both show the same colors and trims. */
   animator?: Animator;
   /** Visual tuning of the indicator stroke. */
   indicatorStyle?: IndicatorStyle;

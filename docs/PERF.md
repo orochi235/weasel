@@ -10,6 +10,12 @@ When work merges, retire its entry here in the same change.
 
 ## Scene
 
+- **(P3) [agent] A point at a length along a curve costs about 30× what it did before exact arc length.**
+  `measurePath(...).at()` and `pointAtLength` on a four-cubic path take 0.39 µs, against 0.012 µs when they
+  read a flattened polyline (4dc78d36b, 2026-11-02, one machine, median of 5). Each answer is now the exact
+  point on the curve, found from a per-segment 16-step arc-length lookup plus a bracketed Newton step, so a
+  1,000-vertex `bendAlongPath` takes 3.2 ms. Closes when `at()` on that path is under 0.1 µs with the
+  lookup tests in `geom/src/along` still at 1e-6.
 - **(P3) [agent] A scene add-and-remove round trip still costs about 0.06 µs more than before 599685677,
   and `setPose` about 0.04 µs more.** 599685677 (2026-10-13) records every scene edit as the kit ops it
   caused, and at that commit alone added 0.26 µs to the round trip and 0.12 µs to `setPose`. On msb-uai
@@ -100,6 +106,13 @@ When work merges, retire its entry here in the same change.
 
 ## Animation
 
+- **(P3) [agent] An animating stroke trim rebuilds its ribbon and heads every frame.** `StrokeTrim`
+  (`docs/superpowers/specs/2026-11-01-stroke-trim-design.md`) keys the stroke mesh and marker caches,
+  so each tween step misses both. A dashed, trimmed stroke under a metric (or with an inset in another
+  space) also insets its untrimmed copy a second time each rebuild, to measure the dash decision's
+  length. Carry arc length on each ribbon vertex and clip in the shader, so a
+  changing trim is a uniform.
+  Closes when a trim tween on a 1,000-anchor path makes no stroke-mesh cache miss after its first frame.
 - **(P3) [agent] GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts. Deferred from
   `docs/specs/2026-05-04-animation-primitive-design.md`.
   Closes when a running animation can be handed to `Element.animate` and a spec shows that path holding

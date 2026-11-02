@@ -7,7 +7,9 @@
  */
 import { invert, multiply, rotateAboutPoint, translate, type Affine } from './affine';
 import type { Path } from './path';
+import { resolveCorners } from './paths/corners';
 import { transformPath } from './paths/transformPath';
+import { isSimilarity, stretchOf } from './screenBand';
 import { poseRotationOf, rotatePathAround } from './poseRotation';
 
 /**
@@ -90,11 +92,19 @@ export function poseFrameInverseOf(pose: unknown): Affine | null {
   return frame && invert(frame);
 }
 
-/** `path`, given in the pose's unrotated box frame, as the node draws it. */
+/**
+ * `path`, given in the pose's unrotated box frame, as the node draws it. The
+ * renderer rounds `corners` in the box frame and then frames the result, so a
+ * stretch or skew rounds them first here too; a uniform frame keeps them as
+ * corners, which it maps exactly.
+ */
 export function pathThroughPoseFrame(path: Path, pose: unknown): Path {
   if (poseLinearOf(pose)) {
     const frame = poseFrameOf(pose);
-    return frame ? transformPath(path, frame) : path;
+    if (!frame) return path;
+    const [a, b, c, d] = frame;
+    const uniform = isSimilarity(stretchOf({ a, b, c, d }));
+    return transformPath(path.kind === 'polygon' && !uniform ? resolveCorners(path) : path, frame);
   }
   const r = poseRotationOf(pose);
   return r ? rotatePathAround(path, r.cx, r.cy, r.rotation) : path;

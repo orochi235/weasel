@@ -1,4 +1,5 @@
 import type { ColorOverrideRegistry } from '../colorRegistry';
+import type { TrimOverrideRegistry } from '../trimRegistry';
 import { AnimatorEventHub } from '../observe';
 import type { Behind, TargetState } from '../target';
 import type { Animator } from '../types';
@@ -19,6 +20,7 @@ export interface CoreHost {
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
   colorOverrides: ColorOverrideRegistry;
+  trimOverrides: TrimOverrideRegistry;
 }
 
 /** An animator apart from React: its table, clock, and codec, driven by the host's frames. */
@@ -129,6 +131,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     afterTicks: (cb) => { afterTicks.push(cb); },
     subscribers,
     colorOverrides: host.colorOverrides,
+    trimOverrides: host.trimOverrides,
     halt: host.cancelFrame,
   });
 

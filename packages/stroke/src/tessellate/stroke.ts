@@ -6,10 +6,13 @@ import { dashPolylines } from './dash';
 import { strokeFlattening } from './flattening';
 import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
+import { windowRibbon } from './ribbonWindow';
+import { windowTrim } from '../trim/windowPolylines';
 import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
 import { meetInnerEdges } from './innerJoins';
 import {
-  type StrokeMetric, coordsOutOfMetric, rectIntoMetric, worldWidthInMetric, worldWidthInMetricAlongWorld,
+  type StrokeMetric, coordsOutOfMetric, polylineOutOfMetric, rectIntoMetric, worldWidthInMetric,
+  worldWidthInMetricAlongWorld,
 } from './metric';
 
 /** Options for stroke tessellation. */
@@ -109,13 +112,22 @@ export function tessellateStroke(
   // Trim before dashing, so the dash pattern fits the visible line rather than
   // running off under a marker head.
   const ribbonSpace = metric ?? null;
-  const trimmed: Polyline[] = [];
-  for (const pl of polylines) {
-    populateWidths(pl, vertexWidths, stroke.nib, width, scale);
-    const t = trimInSpace(pl, rectInMetric ? ribbonSpace : null, ribbonSpace, opts.startInset, opts.endInset);
-    if (t !== null) trimmed.push(t);
+  const from = rectInMetric ? ribbonSpace : null;
+  for (const pl of polylines) populateWidths(pl, vertexWidths, stroke.nib, width, scale);
+  let runs: Polyline[];
+  let phases: number[] | undefined;
+  let dashLength: number | undefined;
+  if (stroke.trim !== undefined) {
+    if (from) for (const pl of polylines) polylineOutOfMetric(pl, from);
+    // Resolved on the authored path, whose segments a rect shifted by alignment shares.
+    ({ runs, phases, dashLength } = windowRibbon(
+      polylines, windowTrim(polylines, path, stroke.trim), ribbonSpace,
+      opts.startInset, opts.endInset, stroke.dash !== undefined,
+    ));
+  } else {
+    runs = polylines.flatMap((pl) => trimInSpace(pl, from, ribbonSpace, opts.startInset, opts.endInset) ?? []);
   }
-  for (const sub of dashPolylines(trimmed, stroke.dash)) {
+  for (const sub of dashPolylines(runs, stroke.dash, phases, dashLength)) {
     expandPolyline(sub, width, join, cap, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT);
   }
 

@@ -13,7 +13,7 @@
  */
 
 import type { Path } from '@weasel-js/geom';
-import type { CommandPaint, MarkerRef, CommandStroke } from '@weasel-js/paint';
+import { strokeTrimKey, type CommandPaint, type MarkerRef, type CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import { headCommands } from '../markerCommands';
 import { markerHeads, markerReadsKey, type MarkerHead } from '@weasel-js/stroke';
@@ -92,6 +92,7 @@ export function cachedMarkerCommands(
     screenSpaceKey(spaces.start),
     screenSpaceKey(spaces.mid),
     screenSpaceKey(spaces.end),
+    strokeTrimKey(stroke.trim),
   ].join('|');
   let entry = map.get(key);
   if (entry === undefined) {

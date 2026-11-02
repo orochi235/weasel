@@ -48,6 +48,7 @@ export { releaseCanvasRenderer } from '../canvas/canvasRenderer';
 export type {
   SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers, SceneViewCull,
 } from '../canvas/sceneViewRender';
+export type { PaintOverrides } from '../canvas/paintOverrides';
 export { renderSceneToPixels, planPixelRender, createRasterSession, warmRender } from '../canvas/renderSceneToPixels';
 export { renderNeeds } from '../canvas/renderNeeds';
 export type { RenderNeeds } from '../canvas/renderNeeds';

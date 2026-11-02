@@ -2,6 +2,7 @@ import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'rea
 import { isDev, useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { Clock } from '@weasel-js/clock';
 import { ColorOverrideRegistry } from './colorRegistry';
+import { TrimOverrideRegistry } from './trimRegistry';
 import { createAnimatorCore, type AnimatorCore } from './engine/core';
 import type { Animator } from './types';
 import type { UseAnimatorOptions } from './useAnimatorOptions';
@@ -12,6 +13,7 @@ import type { UseAnimatorOptions } from './useAnimatorOptions';
 export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const optsRef = useLatest(opts);
   const colorOverrides = useRef<ColorOverrideRegistry>(new ColorOverrideRegistry());
+  const trimOverrides = useRef<TrimOverrideRegistry>(new TrimOverrideRegistry());
 
   // The loop runs behind the visibility gate. The core is built in the memo
   // below, so the frame callback reaches it through a ref, published once the
@@ -79,6 +81,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       cancelFrame: () => frameLoopRef.current.cancel(),
       tripwire,
       colorOverrides: colorOverrides.current,
+      trimOverrides: trimOverrides.current,
     });
   }, [frameLoopRef, optsRef]);
 
@@ -103,11 +106,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const { api } = core;
   useEffect(() => {
     const overrides = colorOverrides.current;
+    const trims = trimOverrides.current;
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       api.cancelAll();
       overrides.clearAll();
+      trims.clearAll();
     };
   }, [api]);
 

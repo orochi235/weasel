@@ -14,7 +14,8 @@ const capsEnds = (stroke: SvgStroke | undefined): boolean =>
 const marked = (stroke: SvgStroke | undefined): boolean =>
   capsEnds(stroke) || stroke?.markerMid !== undefined;
 
-function withoutEndMarkers(stroke: SvgStroke): SvgStroke {
+/** `stroke` with no start or end marker, as a closed subpath takes it. */
+export function withoutEndMarkers(stroke: SvgStroke): SvgStroke {
   const { markerStart: _start, markerEnd: _end, ...rest } = stroke;
   return rest;
 }
@@ -83,12 +84,18 @@ export function pathAsSvgDraws(node: SvgPathNode): SvgPathNode | SvgGroupNode {
     const { stroke: _stroke, ...rest } = node;
     return { ...rest, fill: only.fill, ...(only.stroke ? { stroke: only.stroke } : {}) };
   }
-  const group: SvgGroupNode = {
-    kind: 'group',
-    children: pieces.map((p): SvgPathNode => ({ kind: 'path', path: p.path, fill: p.fill, ...(p.stroke ? { stroke: p.stroke } : {}) })),
-  };
+  return drawsAsGroup(
+    node,
+    pieces.map((p): SvgPathNode => ({ kind: 'path', path: p.path, fill: p.fill, ...(p.stroke ? { stroke: p.stroke } : {}) })),
+  );
+}
+
+/** `children`, the elements `node` is drawn as, in one group that takes its
+ *  rotation about its path's center, its opacity, visibility, and metadata. */
+export function drawsAsGroup(node: SvgPathNode, children: SvgPathNode[]): SvgGroupNode {
+  const group: SvgGroupNode = { kind: 'group', children };
   if (node.rotation != null && node.rotation !== 0) {
-    const b = pathBounds(path);
+    const b = pathBounds(node.path);
     group.transform = rotateAboutPoint((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, node.rotation);
   }
   if (node.opacity != null) group.opacity = node.opacity;

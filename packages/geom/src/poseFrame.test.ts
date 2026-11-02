@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, rotateAboutPoint } from '@weasel-js/geom';
-import { boxFrameOf, poseFrameInverseOf, poseFrameOf, poseLinearOf } from './poseFrame';
+import { applyToPoint, polygonFromPoints, resolveCorners, rotateAboutPoint, transformPath, type PolygonPath } from '@weasel-js/geom';
+import {
+  boxFrameOf, pathThroughPoseFrame, poseFrameInverseOf, poseFrameOf, poseLinearOf, type PoseLinear,
+} from './poseFrame';
 
 const BOX = { x: 10, y: 20, width: 40, height: 20 };
 
@@ -68,5 +70,31 @@ describe('boxFrameOf', () => {
   it('is null for a pose that is not a box', () => {
     expect(boxFrameOf({ rotation: 1 })).toBeNull();
     expect(boxFrameOf(undefined)).toBeNull();
+  });
+});
+
+describe('pathThroughPoseFrame on rounded corners', () => {
+  const round = { shape: 'round', radius: 10 } as const;
+  const box = {
+    ...polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]),
+    corners: [round, round, round, round],
+  } as PolygonPath;
+  const pose = (transform: PoseLinear) => ({ x: 0, y: 0, width: 100, height: 100, transform });
+
+  it('rounds corners in the box frame before a stretch or skew, as the renderer draws them', () => {
+    for (const t of [[4, 0, 0, 1], [1, 0.7, 0, 1]] as PoseLinear[]) {
+      const framed = pathThroughPoseFrame(box, pose(t)) as PolygonPath;
+      const drawn = transformPath(resolveCorners(box), poseFrameOf(pose(t))!) as PolygonPath;
+      expect(framed.corners).toBeUndefined();
+      expect(Array.from(framed.commands)).toEqual(Array.from(drawn.commands));
+      Array.from(drawn.coords).forEach((v, i) => expect(framed.coords[i]).toBeCloseTo(v, 4));
+    }
+  });
+
+  it('keeps corners as corners under a uniform frame', () => {
+    const framed = pathThroughPoseFrame(box, pose([2, 0, 0, 2])) as PolygonPath;
+    expect(framed).toEqual(transformPath(box, poseFrameOf(pose([2, 0, 0, 2]))!));
+    expect(framed.corners).toBeDefined();
+    expect((pathThroughPoseFrame(box, { ...pose([1, 0, 0, 1]), rotation: 0.6 }) as PolygonPath).corners).toBeDefined();
   });
 });

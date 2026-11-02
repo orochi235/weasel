@@ -8,17 +8,22 @@
 
 import { type DrawCommand } from '@weasel-js/renderer';
 import { type CommandStroke, type CommandFill, type VertexWidth } from '@weasel-js/paint';
-import type { RenderLayer } from 'core/layers/render';
+import { subscribeToSources, type RenderLayer } from 'core/layers/render';
+import { paintOverrideSources, type PaintOverrides } from 'canvas/paintOverrides';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
-import type { ColorOverrideRegistry } from '@weasel-js/animator';
+import type { TrimOverride } from '@weasel-js/animator';
+import { overrideTrim } from 'canvas/trimOverrides';
 import { isDev } from '@weasel-js/react';
 
 const PLACEHOLDER_FILL: CommandFill = { paint: { color: '#ffffff' } };
 const PLACEHOLDER_STROKE: CommandStroke = { paint: { color: '#ffffff' }, width: 1 };
 
 
-/** Options for `createPathLayer`. */
-export interface CreatePathLayerOpts<T> {
+/** Options for `createPathLayer`. Its animated paint, typically an animator,
+ *  comes before `getVertexColors`, `getStrokeVertexColors` and `getStroke`'s
+ *  trim; a function-form color override receives the base colors and the
+ *  timestamp `now` gives. The layer repaints for a `set` or `clear` on either registry. */
+export interface CreatePathLayerOpts<T> extends PaintOverrides {
   id?: string;
   label?: string;
   getNodes: () => readonly T[];
@@ -54,16 +59,25 @@ export interface CreatePathLayerOpts<T> {
    * stroke is synthesized so the per-anchor widths take effect.
    */
   getStrokeVertexWidths?: (node: T) => VertexWidth[] | null | undefined;
-  /**
-   * Optional color override registry, typically `animator.colorOverrides`.
-   * When set, the renderer consults it before falling back to
-   * `getVertexColors` / `getStrokeVertexColors`. Function-form overrides
-   * receive the base color array and the current animation timestamp.
-   */
-  colorOverrides?: ColorOverrideRegistry;
   /** Clock used to timestamp function-form color overrides. Defaults to
    *  `performance.now`. Override in tests. */
   now?: () => number;
+}
+
+/** `base` with the per-anchor arrays that validated, and a trim override's edges. */
+function strokeWith(
+  base: CommandStroke,
+  vertexColors: readonly number[] | null,
+  vertexWidths: VertexWidth[] | null,
+  override: TrimOverride | undefined,
+): CommandStroke {
+  const trim = overrideTrim(base.trim, override);
+  return {
+    ...base,
+    ...(vertexColors != null ? { vertexColors: vertexColors as number[] } : {}),
+    ...(vertexWidths != null ? { vertexWidths } : {}),
+    ...(trim !== undefined ? { trim } : {}),
+  };
 }
 
 /** Build a `RenderLayer` that fills/strokes `Path` instances enumerated from a node list. */
@@ -72,15 +86,17 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
     id = 'paths', label = 'Paths',
     getNodes, getPath, getFill, getStroke, isHidden,
     getVertexColors, getStrokeVertexColors, getStrokeVertexWidths,
-    colorOverrides,
+    colorOverrides, trimOverrides,
     now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now()),
   } = opts;
   const warned = new Set<string>();
   const dev = isDev();
+  const sources = paintOverrideSources({ colorOverrides, trimOverrides });
 
   return {
     id,
     label,
+    ...(sources.length > 0 ? { subscribe: subscribeToSources(sources) } : {}),
     draw: () => {
       const children: DrawCommand[] = [];
       const nodes = getNodes();
@@ -164,14 +180,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           strokeFromHook != null ? strokeFromHook
           : (useStrokeVColors != null || useStrokeVWidths != null ? PLACEHOLDER_STROKE : undefined);
 
-        const stroke: CommandStroke | undefined =
-          baseStroke != null
-            ? {
-                ...baseStroke,
-                ...(useStrokeVColors != null ? { vertexColors: useStrokeVColors as number[] } : {}),
-                ...(useStrokeVWidths != null ? { vertexWidths: useStrokeVWidths } : {}),
-              }
-            : baseStroke;
+        const stroke = baseStroke && strokeWith(baseStroke, useStrokeVColors, useStrokeVWidths, trimOverrides?.resolve(nodeId));
 
         if (fill == null && stroke == null) continue;
 

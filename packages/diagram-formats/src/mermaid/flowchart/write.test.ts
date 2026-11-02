@@ -149,4 +149,9 @@ describe('writing Mermaid', () => {
     });
     expect(warnings).toEqual([expect.stringMatching(/^Mermaid has no BPMN figures; .*gateways as diamonds without their markers/)]);
   });
+
+  it('warns that a trimmed connector was written whole', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
+    expect(writeFlowchart(pageOf(data)).warnings).toEqual(['Mermaid draws a connector whole; trims were dropped.']);
+  });
 });

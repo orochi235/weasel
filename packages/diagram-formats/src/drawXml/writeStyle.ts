@@ -89,6 +89,7 @@ function markerParts(end: 'start' | 'end', marker: Parameters<typeof markerStyle
 export function edgeStyle(edge: DataEdge, theme: DiagramTheme, warn: Warn): StylePart[] {
   const style = dataEdgeStyle(edge, theme);
   const router = edge.router ?? 'straight';
+  if (style.trim !== undefined) warn('Trims on connectors were left out; they were written whole.');
   return [
     ['edgeStyle', router === 'orthogonal' || router === 'avoid' ? 'orthogonalEdgeStyle' : 'none'],
     ['curved', router === 'bezier' ? 1 : undefined], ['rounded', 0], ['html', 0],

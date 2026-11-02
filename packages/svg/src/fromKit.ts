@@ -6,6 +6,7 @@
  * the canvas shows.
  */
 import {
+  asPolygonPath,
   fillInPoseFrame,
   clipOutline,
   definesFrame,
@@ -15,11 +16,9 @@ import {
   poseLinearOf,
   resolveFill,
   resolveStroke,
-  type Paint,
   type ImageNodeData,
   type NodeClip,
   type Path,
-  type PoseLinear,
   type Stroke,
   type StyledRun,
   type TextStyle,
@@ -30,24 +29,13 @@ import {
   isSolidPaint,
 } from '@weasel-js/core';
 import { mapFillPaint } from './fillPaint';
+import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
+import { strokeTrimOnPath } from './trimmedStroke';
 import type {
-  Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
+  Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPathNode, SvgTextNode,
 } from './types';
 import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import { asBooleanLeaf, booleanGroupSvg, derivedPathIn } from './booleanGroup';
-
-/** A leaf's box: where it is drawn, and the frame its box-relative paints
- *  resolve against. */
-export interface SvgKitPose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-  /** Carried onto a text or image node. A path node has nowhere to hold it,
-   *  so a path leaf's is baked into its geometry with its rotation. */
-  transform?: PoseLinear;
-}
 
 /** The leaf data the kit's path, text and image painters read — what
  *  `svgNodesToKitDrafts` writes. */
@@ -69,41 +57,7 @@ export interface SvgKitLeafData {
   image?: ImageNodeData['image'];
 }
 
-/** A kit paint as an `SvgPaint`. `null` is `fill="none"`; a box-relative
- *  gradient or pattern is resolved into `box`, since the geometry it paints
- *  is written already placed there. */
-export function svgPaintFromKit(fill: Paint | null, box: SvgKitPose): SvgPaint {
-  if (fill === null) return { kind: 'none' };
-  if (fill.kind === undefined || fill.kind === 'solid') {
-    return { kind: 'solid', color: fill.color, ...(fill.opacity != null ? { opacity: fill.opacity } : {}) };
-  }
-  return { kind: 'gradient', paint: fillInPoseFrame(fill, box) };
-}
-
-/** A kit `Stroke` as an `SvgStroke` — the inverse of `strokeDataFromSvg`.
- *  One with no paint or no width draws nothing and is written as no stroke. */
-export function svgStrokeFromKit(raw: Stroke | null | undefined, box: SvgKitPose): SvgStroke | undefined {
-  const stroke = resolveStroke(raw);
-  if (!stroke) return undefined;
-  const width = stroke.width ?? 1;
-  if (!((typeof width === 'object' ? width.px : width) > 0)) return undefined;
-  const opacity = stroke.paint.opacity;
-  return {
-    paint: svgPaintFromKit(stroke.paint, box),
-    width,
-    ...(opacity != null ? { opacity } : {}),
-    ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
-    ...(stroke.join !== undefined ? { join: stroke.join } : {}),
-    ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
-    ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
-    ...(stroke.align !== undefined ? { align: stroke.align } : {}),
-    ...(stroke.markerStart !== undefined ? { markerStart: stroke.markerStart } : {}),
-    ...(stroke.markerMid !== undefined ? { markerMid: stroke.markerMid } : {}),
-    ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
-    ...(stroke.vertexWidths?.length ? { vertexWidths: stroke.vertexWidths } : {}),
-    ...(stroke.nib ? { nib: stroke.nib } : {}),
-  };
-}
+export { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
 
 /** Write a `kit:image` leaf as an `SvgImageNode` — the inverse of the image
  *  arm of `svgNodesToKitDrafts`. The pose is the image's box. */
@@ -172,9 +126,11 @@ export function svgLeafFromKit(
   if (stroke) node.stroke = stroke;
   const frame = poseLinearOf(pose) && poseFrameOf(pose);
   if (frame) {
-    node.path = pathThroughPoseFrame(node.path, pose);
+    const local = node.path;
+    // A rect goes through as a polygon, so a mirror cannot restart where a trim measures from.
+    node.path = pathThroughPoseFrame(stroke?.trim ? asPolygonPath(local) : local, pose);
     node.fill = paintThroughMatrix(node.fill, frame);
-    if (stroke) node.stroke = strokeThroughMatrix(stroke, frame);
+    if (stroke) node.stroke = strokeTrimOnPath(strokeThroughMatrix(stroke, frame), local, node.path);
   } else if (pose.rotation) node.rotation = pose.rotation;
   return node;
 }

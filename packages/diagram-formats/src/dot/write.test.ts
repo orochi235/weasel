@@ -160,4 +160,9 @@ describe('writing DOT', () => {
     expect(writeDot(pageOf(data)).text).toContain('taillabel="1"');
     expect(back(pageOf(data)).data.edges[0]!.endLabels).toEqual({ from: '1', to: '0..*' });
   });
+
+  it('warns that a trimmed connector was written whole', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
+    expect(writeDot(pageOf(data)).warnings).toEqual(['DOT draws a connector whole; trims were dropped.']);
+  });
 });

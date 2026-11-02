@@ -21,6 +21,7 @@ const NOTHING_PAINTED: ReadonlySet<string> = new Set();
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
+import { withTrimsDrawn } from './trimmedStroke';
 import {
   hasVariableWidth, strokeGroupXml, strokeOutlineXml, variableWidthAttrs, writesVariableWidth,
 } from './variableWidthSvg';
@@ -33,11 +34,12 @@ import { RAD_TO_DEG } from '@weasel-js/geom';
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
  * supplied, otherwise a tight bounding box around every leaf.
  */
-export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): string {
+export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): string {
   const registry = new PaintServerRegistry();
+  const nodes = withTrimsDrawn(given);
   registerPaintServers(nodes, registry);
 
-  const bounds = opts.viewBox ?? computeBounds(nodes);
+  const bounds = opts.viewBox ?? computeBounds(given);
   const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
   const namespaces = opts.namespaces ?? {};
 

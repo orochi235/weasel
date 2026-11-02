@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ColorOverrideRegistry } from '../colorRegistry';
+import { TrimOverrideRegistry } from '../trimRegistry';
 import { createTarget } from '../target';
 import type { PhysicsHandle } from '../types';
 import { createAnimatorCore } from './core';
@@ -16,6 +17,7 @@ function setup() {
     cancelFrame() {},
     tripwire: () => { asked += 1; return false; },
     colorOverrides: new ColorOverrideRegistry(),
+    trimOverrides: new TrimOverrideRegistry(),
   });
   return {
     animator: core.api,

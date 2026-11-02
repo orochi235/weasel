@@ -1,4 +1,5 @@
 import type { ColorOverrideRegistry } from '../colorRegistry';
+import type { TrimOverrideRegistry } from '../trimRegistry';
 import { createLoop, createTweenLoop } from '../loop';
 import type { AnimatorEventHub } from '../observe';
 import { createStagger } from '../stagger';
@@ -37,6 +38,7 @@ export interface ApiHost {
   afterTicks(cb: () => void): void;
   subscribers: Pick<Emitter, 'subscribe'>;
   colorOverrides: ColorOverrideRegistry;
+  trimOverrides: TrimOverrideRegistry;
   /** Stops the frame loop, once everything is canceled and its targets are shown at rest. */
   halt(): void;
 }
@@ -159,6 +161,7 @@ export function createAnimatorApi(host: ApiHost): Animator {
       )) as Animator['stagger'],
     timeline: (o: TimelineOptions) => startTimeline(host, o),
     colorOverrides: host.colorOverrides,
+    trimOverrides: host.trimOverrides,
     onTick: (cb) => host.subscribers.subscribe(cb),
     keepAlive: () => {
       const sup = createSupervisor({ kind: 'keepAlive' });
