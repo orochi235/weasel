@@ -26,7 +26,8 @@
  */
 
 import type { Path, GlMat3 } from '@weasel-js/geom';
-import { cornersOf, dropCollinear, isConvex, reverse, signedArea } from './batchHull';
+import { ringSignedArea } from '@weasel-js/geom';
+import { cornersOf, dropCollinear, isConvex, reverse } from './batchHull';
 
 /** In the space batch vertices are staged in: after the model transform,
  *  before the projection. */
@@ -135,7 +136,7 @@ export function ringPlanes(ring: readonly number[], max: number): Float64Array |
   }
   while (pts.length >= 4 && pts[0] === pts[pts.length - 2] && pts[1] === pts[pts.length - 1]) pts.length -= 2;
   if (pts.length < 6) return null;
-  if (signedArea(pts) < 0) reverse(pts);
+  if (ringSignedArea(pts) < 0) reverse(pts);
   const kept = dropCollinear(pts);
   if (kept.length < 6 || kept.length / 2 > max || !isConvex(kept)) return null;
   const n = kept.length / 2;

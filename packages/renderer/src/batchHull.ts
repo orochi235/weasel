@@ -22,7 +22,7 @@
  */
 
 import type { GlMat3, Path } from '@weasel-js/geom';
-import { PATH_L, PATH_M, PATH_Z, polygonFromPoints } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z, polygonFromPoints, ringSignedArea } from '@weasel-js/geom';
 import type { ClipRect } from './batchClip';
 
 /** Half-planes one set of clips can hold, nested clips' together once
@@ -177,7 +177,7 @@ function buildHull(path: Path, m: GlMat3, map: WindowMap): Hull | null {
   while (pts.length >= 4 && pts[0] === pts[pts.length - 2] && pts[1] === pts[pts.length - 1]) {
     pts.length -= 2;
   }
-  if (signedArea(pts) < 0) reverse(pts);
+  if (ringSignedArea(pts) < 0) reverse(pts);
   const kept = dropCollinear(pts);
   const stencil = screenPolygon(kept.length >= 6 ? kept : pts, map);
   if (kept.length < 6) return { set: EMPTY, path: stencil };
@@ -257,17 +257,6 @@ export function cornersOf(path: Path): number[] | null {
   const ox = path.origin?.x ?? 0;
   const oy = path.origin?.y ?? 0;
   return Array.from(coords.subarray(0, (commands.length - 1) * 2), (v, i) => v + (i & 1 ? oy : ox));
-}
-
-/** Twice the area, positive when the corners run counterclockwise in window
- *  space (y up). */
-export function signedArea(p: number[]): number {
-  let s = 0;
-  for (let i = 0; i < p.length; i += 2) {
-    const j = (i + 2) % p.length;
-    s += p[i] * p[j + 1] - p[j] * p[i + 1];
-  }
-  return s;
 }
 
 export function reverse(p: number[]): void {

@@ -36,7 +36,7 @@ export {
   DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic,
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
-export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
+export { pointInPolygon, ringSignedArea, segmentsCross, pointSegmentDist2 } from './polyline';
 export type { Path, PolygonPath, RectPath, PathFillRule, PathOpenFill } from './path';
 export { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 export {

@@ -1,6 +1,6 @@
 /** How the rings of a fill that does not cross itself sit inside one another. */
 
-import { pointInPolygon } from '../polyline';
+import { pointInPolygon, ringSignedArea } from '../polyline';
 import type { FlattenedContours } from './crossings';
 
 export interface Ring {
@@ -19,7 +19,7 @@ export function nestRings(flat: FlattenedContours): Ring[] {
   const total = coords.length / 2;
   const rings: Ring[] = contourStarts.map((start, c) => {
     const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : total;
-    return { start, end, area: signedArea(coords, start, end), parent: -1, winding: 0 };
+    return { start, end, area: ringSignedArea(coords, start, end), parent: -1, winding: 0 };
   });
   const boxes = rings.map((r) => boxOf(coords, r.start, r.end));
   const bySize = rings.map((_, i) => i).filter((i) => rings[i].area !== 0);
@@ -73,11 +73,3 @@ function boxOf(coords: number[], start: number, end: number): number[] {
   return [minX, minY, maxX, maxY];
 }
 
-function signedArea(coords: number[], start: number, end: number): number {
-  let a = 0;
-  for (let i = start; i < end; i++) {
-    const j = i + 1 === end ? start : i + 1;
-    a += coords[i * 2] * coords[j * 2 + 1] - coords[j * 2] * coords[i * 2 + 1];
-  }
-  return a * 0.5;
-}

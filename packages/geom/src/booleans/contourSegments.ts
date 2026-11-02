@@ -1,6 +1,7 @@
 /** A contour as Bézier segments: evaluating and splitting one, and where one crosses a line. */
 
 import { splitCubicAt, splitQuadraticAt } from '../curve';
+import { ringSignedArea } from '../polyline';
 import type { Point } from '../paths/cubicMath';
 
 /** A Bézier segment by its control points: 2 = line, 3 = quadratic, 4 = cubic. */
@@ -83,13 +84,7 @@ export function sampleContour(c: Contour): number[] {
 
 /** Signed area; positive when the fill lies to the left of the direction of travel. */
 export function signedArea(c: Contour): number {
-  const pts = sampleContour(c);
-  let a = 0;
-  for (let i = 0; i < pts.length; i += 2) {
-    const j = (i + 2) % pts.length;
-    a += pts[i] * pts[j + 1] - pts[j] * pts[i + 1];
-  }
-  return a / 2;
+  return ringSignedArea(sampleContour(c));
 }
 
 /** Bernstein coefficients of the signed distance cross(d, P − o) along `s`. */

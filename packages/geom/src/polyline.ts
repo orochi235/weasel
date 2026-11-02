@@ -28,6 +28,25 @@ export function pointInPolygon(
 }
 
 /**
+ * Signed shoelace area of an interleaved, unclosed ring, its closing edge
+ * implicit as in {@link pointInPolygon}: positive when the ring runs
+ * counterclockwise with y up, so clockwise on a y-down screen. `start`/`end`
+ * are vertex indices bounding one ring in a buffer holding several.
+ */
+export function ringSignedArea(
+  coords: ArrayLike<number>,
+  start = 0,
+  end = coords.length >> 1,
+): number {
+  let a = 0;
+  for (let i = start; i < end; i++) {
+    const j = i + 1 === end ? start : i + 1;
+    a += coords[i * 2] * coords[j * 2 + 1] - coords[j * 2] * coords[i * 2 + 1];
+  }
+  return a * 0.5;
+}
+
+/**
  * True if segments (ax,ay)-(bx,by) and (cx,cy)-(dx,dy) intersect at a single
  * point. An endpoint landing on the other segment counts (a T-junction and a
  * shared endpoint both answer true) — hit-testing wants a grazing edge to
