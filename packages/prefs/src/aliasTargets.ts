@@ -7,7 +7,7 @@ import type { PrefGroup, PrefSection } from './groups';
 import { prefLeafAt, visiblePrefSubtree } from './helpers';
 import type { PrefConditionJudge, PrefEntry } from './judge';
 import type { PrefLeaf, PrefObject } from './schema';
-import { applyPrefConditions, applyPrefEntryConditions, type PrefConditionsApplied, type PrefEntryApplied } from './scope';
+import { applyPrefConditions, applyPrefEntryConditions, type PrefConditionsApplied, type PrefEntryApplied } from './status';
 
 /** What an alias row reads of the leaf it shows: the schema that leaf is in, as that schema's own conditions leave it. */
 export interface PrefAliasTargets {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
-import { applyPrefConditions, prefJudge } from './scope';
+import { applyPrefConditions, prefJudge } from './status';
 
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;

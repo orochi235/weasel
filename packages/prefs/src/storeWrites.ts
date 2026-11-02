@@ -1,13 +1,14 @@
-// What a store writes: a value encoded for storage, into the member the
-// selectors name where the leaf is split, and a value split or joined.
+// What a store writes: a value encoded for storage, into the value the
+// selectors name where the pref is scoped.
 
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
-import { isPrefLocus, joinLocus, mapLocusMembers, repairLocus, splitLocus, writeMember, type PrefSelection } from './locus';
+import { dropUnlisted, isPrefScope, mapScopeValues, repairScope, writeDeclared, type PrefSelection } from './scope';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
-import { selectionAt } from './snapshot';
+import { optionsOf, selectionAt } from './snapshot';
+import { overridesOfPref, prefScopedDefault, scopeSelectorsOf } from './scopeSpec';
 import { recordValue, stampRecord } from './stamp';
 import { prefVariantOf, type PrefUnion } from './union';
 
@@ -41,6 +42,8 @@ export interface PrefWritesSource {
   cache: OwnedRecordCache;
   /** The options of each leaf a value may be split by. */
   selectors: ReadonlyMap<string, readonly string[]>;
+  /** The admitted selectors: paths the schema admits as no pref, whose options the app names. */
+  admitted: ReadonlySet<string>;
   /** The schema version a value written is in, stamped on its record. */
   version: number;
   /** The option each selector is set to, read as a write is made. */
@@ -48,34 +51,21 @@ export interface PrefWritesSource {
   warnIfClosed: (path: string | undefined) => void;
 }
 
-/** A store's `set`, `split`, and `join`. */
-export function prefWrites({ leaves, cache, selectors, version, selection, warnIfClosed }: PrefWritesSource): {
+/** A store's `set`. */
+export function prefWrites({ leaves, cache, selectors, admitted, version, selection, warnIfClosed }: PrefWritesSource): {
   set: (path: string, value: unknown, write?: { at?: PrefSelection }) => void;
-  split: (path: string, by: string) => void;
-  join: (path: string, by: string) => void;
 } {
   /** The leaf's split default as stored, where it has one it can hold. */
-  const unsetLocus = (leaf: PrefLeaf): unknown => {
-    if (leaf.defaultLocus === undefined || !leaf.splitBy?.length) return undefined;
-    return repairLocus(leaf.defaultLocus, leaf.splitBy, (by) => selectors.get(by), (member) => encodeInfinity(leaf, member));
+  const unsetScope = (leaf: PrefLeaf): unknown => {
+    const scope = prefScopedDefault(leaf);
+    const axes = scopeSelectorsOf(leaf);
+    if (scope === undefined || !axes?.length) return undefined;
+    return repairScope(scope, axes, (by) => optionsOf({ selectors, admitted }, by), (member) => encodeInfinity(leaf, member), overridesOfPref(leaf));
   };
-  /** What the leaf holds in storage, unrepaired; its default, as stored, where it holds nothing. */
-  const rawAt = (path: string, leaf: PrefLeaf): unknown =>
-    (cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf) ?? encodeInfinity(leaf, leaf.default));
   const store = (path: string, stored: unknown): void => {
     // Unset is stored as nothing, which a stamp would turn into something.
     cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
   };
-  /** The leaf and the selector's options, for a leaf that may be split by it. */
-  const splitOf = (path: string, by: string): { leaf: PrefLeaf; options: readonly string[] } | undefined => {
-    warnIfClosed(path);
-    const leaf = leaves.get(path);
-    const options = selectors.get(by);
-    if (leaf?.splitBy?.includes(by) && options) return { leaf, options };
-    console.warn(`[prefs] "${path}" cannot be split by "${by}"; ignoring`);
-    return undefined;
-  };
-
   const set = (path: string, value: unknown, write?: { at?: PrefSelection }): void => {
     warnIfClosed(path);
     const leaf = leaves.get(path);
@@ -83,29 +73,22 @@ export function prefWrites({ leaves, cache, selectors, version, selection, warnI
       console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
       return;
     }
-    if (leaf.splitBy?.length && isPrefLocus(value)) {
-      store(path, mapLocusMembers(value, (member) => encodeInfinity(leaf, member)));
+    const split = !!scopeSelectorsOf(leaf)?.length;
+    if (split && isPrefScope(value)) {
+      store(path, dropUnlisted(mapScopeValues(value, (member) => encodeInfinity(leaf, member)), overridesOfPref(leaf)));
       return;
     }
     const stored = encodeInfinity(leaf, value);
-    const had = cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf);
-    const intoMember = stored !== undefined && leaf.splitBy?.length && isPrefLocus(had);
-    const under = write?.at ? selectionAt(selectors, selection(), write.at) : selection();
-    store(path, intoMember ? writeMember(had, under, stored) : stored);
+    if (stored === undefined || !split) {
+      store(path, stored);
+      return;
+    }
+    const had = cache.has(path) ? recordValue(cache.get(path)) : unsetScope(leaf);
+    const now = selection();
+    const under = write?.at ? selectionAt(selectors, now, write.at, admitted) : now;
+    const overridesOf = overridesOfPref(leaf);
+    const absent = encodeInfinity(leaf, leaf.default);
+    store(path, writeDeclared(dropUnlisted(had, overridesOf), scopeSelectorsOf(leaf)!, under, now, stored, absent, overridesOf, had !== undefined));
   };
-  const split = (path: string, by: string): void => {
-    const found = splitOf(path, by);
-    if (!found) return;
-    const had = rawAt(path, found.leaf);
-    const next = splitLocus(had, by, found.options, found.leaf.splitBy!);
-    if (next !== had) store(path, next);
-  };
-  const join = (path: string, by: string): void => {
-    const found = splitOf(path, by);
-    if (!found) return;
-    const had = rawAt(path, found.leaf);
-    const next = joinLocus(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default));
-    if (next !== had) store(path, next);
-  };
-  return { set, split, join };
+  return { set };
 }

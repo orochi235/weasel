@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, within } from '@testing-library/react';
-import type { PrefGroup, PrefLocus } from '@weasel-js/prefs';
+import type { PrefGroup, PrefScope } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { PrefsForm } from './PrefsForm';
 
@@ -18,14 +18,14 @@ const BAR: PrefGroup = {
       kind: 'enum', name: 'Mode', description: '', default: 'dark',
       options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }],
     },
-    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, splitBy: [MODE] },
+    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, scopes: [{ selector: MODE }] },
   },
 };
 
-const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $of: { dark, light } });
+const byMode = (dark: unknown, light: unknown): PrefScope => ({ $by: MODE, $in: { dark, light } });
 
 it('sets a split bar cell\'s mark inside the cell, beside its control, on its line and inside the bar', () => {
-  render(<PrefsForm schema={BAR} values={{}} onChange={() => {}} loci={new Map([['gap', byMode(4, 8)]])} />);
+  render(<PrefsForm schema={BAR} values={{}} onChange={() => {}} scopes={new Map([['gap', byMode(4, 8)]])} />);
   const cell = document.querySelector<HTMLElement>('[data-pref-path="gap"]')!;
   const box = cell.getBoundingClientRect();
   const strip = document.querySelector('[data-pref-bar]')!.getBoundingClientRect();

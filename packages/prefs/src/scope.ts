@@ -1,221 +1,244 @@
-// What a schema's conditions come to once nesting is counted: a node is drawn
-// only while it and everything above it is shown, and takes input only while
-// it and everything above it is enabled. Every surface that draws a schema
-// asks here.
+// A value held once per option of an enum leaf: the stored shape, and what
+// reads and rewrites it. Nothing here knows a schema; the store supplies the
+// options, the order, which options keep their own value, and how a value
+// is repaired and blended.
 
-import type { PrefAlias } from './alias';
-import { prefConditionReadsItem } from './condition';
-import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection } from './helpers';
-import { deferEntryConditions, type PrefConditionJudge } from './judge';
-import type { PrefList } from './list';
-import type { PrefMap } from './map';
-import type { PrefLeaf, PrefObject } from './schema';
-import { PREF_ENTRY, PREF_SCOPE, prefAliasScope, prefScopeIn, prefScopeUnder, prefSectionPath, type PrefOwner, type PrefScope } from './scopeAt';
-import type { PrefUnion } from './union';
+import { isPlainObject } from '@weasel-js/registry';
 
-export { prefJudge, prefReader, type PrefConditionField, type PrefConditionJudge, type PrefEntry } from './judge';
-export { PREF_ENTRY, PREF_SCOPE, prefScopeAt, prefScopeIn, prefScopeUnder, prefSectionPath, type PrefOwner, type PrefScope, type PrefScopeAtOptions } from './scopeAt';
+/** The key of a scope's shared value: what every option without a value of its own reads and writes. */
+export const PREF_ELSE = '$else';
 
-const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
-
-/** A schema with its conditions applied. */
-export interface PrefConditionsApplied<T> {
-  /** The schema without the nodes that are not shown. The schema itself when
-   *  that is all of it, and `null` when its root is not shown. */
-  shown: T | null;
-  /**
-   * The value path of every leaf that is disabled, a field of an `object` or
-   * a `union` leaf included (`'stroke.width'`), and under a {@link PrefGroup}
-   * schema the path of every group that is, and of every section by
-   * {@link prefSectionPath}. A `list`'s or a `map`'s item is
-   * named once for every entry, with {@link PREF_ENTRY} as the entry's step:
-   * `'phases.*'`, and `'phases.*.hold'` for a field of it.
-   */
-  disabled: ReadonlySet<string>;
-  /**
-   * With `keepHidden`, the path of everything `shown` holds that is not
-   * shown, named as `disabled` names what is disabled. Empty without it,
-   * since `shown` then holds none.
-   */
-  hidden: ReadonlySet<string>;
-}
-
-/** How {@link applyPrefConditions} treats what it would leave out. */
-export interface PrefConditionsOptions {
-  /** Keep a group or a section that leaves with nothing to draw. */
-  keepEmpty?: boolean;
-  /**
-   * Keep every node whose `showIf` fails, and name it in `hidden`: for a
-   * surface that edits the schema, where a node not drawn cannot be picked.
-   */
-  keepHidden?: boolean;
-  /** The schema an alias's `of` names a leaf of. Default: the schema walked. */
-  aliasOver?: PrefGroup | PrefSection;
-  /** Says which conditions of `aliasOver` hold, where its values are not the ones `holds` reads. Default: `holds`. */
-  aliasHolds?: PrefConditionJudge;
-}
-
-interface WalkOptions {
-  keepEmpty: boolean;
-  keepHidden: boolean;
-  /** Asked inside the item of a list or a map met on the way, whose entries the walk does not have. */
-  inItem: PrefConditionJudge;
-  aliasOver?: PrefGroup | PrefSection;
-  aliasHolds?: PrefConditionJudge;
-}
-
-/** The walk over leaves and what is inside them, which the schema's pass and an entry's share. */
-function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: WalkOptions) {
-  const disabled = new Set<string>();
-  const hidden = new Set<string>();
-
-  const leaf = (node: PrefLeaf, path: string, above: PrefScope, holds: PrefConditionJudge, entry?: string): PrefLeaf | null => {
-    const own = prefScopeUnder(above, node, holds);
-    const scope = node.kind === 'alias' && aliasOver ? prefAliasScope(own, node as PrefAlias, aliasOver, aliasHolds ?? holds) : own;
-    return scope.shown || keepHidden ? inside(node, path, scope, holds, above, entry) : null;
-  };
-
-  /** `node`, whose scope is `scope` in `above`, without what its own value hides: a field, or part of a list's or a
-   *  map's item. `entry` is the path of the entry it sits in, if any. */
-  const inside = (node: PrefLeaf, path: string, scope: PrefScope, holds: PrefConditionJudge, above = scope, entry?: string): PrefLeaf => {
-    if (!scope.shown) hidden.add(path);
-    if (!scope.enabled) disabled.add(path);
-    const owner: PrefOwner = entry === undefined ? { node, scope, above } : { node, scope, above, entry };
-    if (node.kind === 'object') {
-      const children = members((node as PrefObject).children, path, owner, holds);
-      return children === (node as PrefObject).children ? node : ({ ...node, children } as PrefLeaf);
-    }
-    if (node.kind === 'list' || node.kind === 'map') {
-      const { item } = node as Partial<PrefList | PrefMap>;
-      // A leaf an app's renderer draws under a built-in's kind may hold no item.
-      if (item === undefined) return node;
-      // An item is drawn with its entry, so its own `showIf` is not asked.
-      const at = under(path, PREF_ENTRY);
-      const entry = inside(item, at, prefScopeUnder(scope, { enableIf: item.enableIf }, inItem), inItem, scope, at);
-      return entry === item ? node : ({ ...node, item: entry } as PrefLeaf);
-    }
-    if (node.kind !== 'union') return node;
-    const { variants } = node as PrefUnion;
-    let changed = false;
-    const next: PrefUnion['variants'] = {};
-    for (const [key, variant] of Object.entries(variants)) {
-      const children = members(variant.children, path, owner, holds);
-      changed ||= children !== variant.children;
-      next[key] = children === variant.children ? variant : { ...variant, children };
-    }
-    return changed ? ({ ...node, variants: next } as PrefLeaf) : node;
-  };
-
-  /** A section's members or an object leaf's children, held by `owner`. `prefix` is the object leaf's path, empty in a
-   *  section schema, and `within` the path a section among them is named under (`prefSectionPath`). */
-  const members = (
-    held: PrefSection['members'], prefix: string, owner: PrefOwner, holds: PrefConditionJudge, within = prefix,
-  ): PrefSection['members'] => {
-    let changed = false;
-    const out: PrefSection['members'] = {};
-    for (const [key, child] of Object.entries(held)) {
-      const at = under(prefix, key);
-      const kept = isPrefLeaf(child)
-        ? leaf(child, at, prefScopeIn(owner, at, holds), holds, owner.entry)
-        : section(child, prefix, prefSectionPath(within, key), owner.scope, holds, owner.entry);
-      changed ||= kept !== child;
-      if (kept !== null) out[key] = kept;
-    }
-    return changed ? out : held;
-  };
-
-  const section = (
-    node: PrefSection, prefix: string, path: string, above: PrefScope, holds: PrefConditionJudge, entry?: string,
-  ): PrefSection | null => {
-    const scope = prefScopeUnder(above, node, holds);
-    if (!scope.shown && !keepHidden) return null;
-    if (!scope.shown) hidden.add(path);
-    if (!scope.enabled) disabled.add(path);
-    const kept = members(node.members, prefix, entry === undefined ? { node, scope, above } : { node, scope, above, entry }, holds, path);
-    if (kept === node.members) return node;
-    return Object.keys(kept).length === 0 && !keepEmpty ? null : { ...node, members: kept };
-  };
-
-  return { disabled, hidden, leaf, inside, members };
+/**
+ * A pref's value split by another leaf: one value for each option of the
+ * `enum` leaf at `$by`, or of a selector that is no leaf, whose option the app names.
+ * A value may itself be a scope, by a second selector. The alternatives are
+ * folded by weight when the value is read, and a plain setting of the
+ * selector gives one of them all of it.
+ */
+export interface PrefScope {
+  /** The full path of the selector whose options key `$in`. */
+  $by: string;
+  $in: Record<string, unknown>;
+  /** The value shared by every option that keeps none of its own. */
+  [PREF_ELSE]?: unknown;
 }
 
 /**
- * `schema` as it is drawn while `holds` says which conditions hold. A node
- * whose `showIf` fails is dropped with everything under it, unless
- * `keepHidden`, and so is a group or a section that leaves with nothing to
- * draw, unless `keepEmpty`. A node
- * whose `enableIf` fails is disabled with everything under it. The item of
- * a `list` or a `map` is walked as its entries are drawn: its fields hide and
- * disable by their conditions, and its own `enableIf` disables every entry.
- * A condition there that reads the entry (`from: 'item'`) has no one answer
- * for every entry and is left holding: {@link applyPrefEntryConditions}
- * answers it for each.
- * An alias is shown only while it and the leaf it shows both are, and enabled
- * only while both are, with everything above that leaf counted. That leaf is
- * looked for in `aliasOver`, and its side is asked of `aliasHolds`.
- * Parts with nothing dropped come back as the objects they were.
+ * One override list of a pref's scope: the options of its selector that keep
+ * a value of their own, by name, or by name with the value each reads before
+ * one is written. A selector given one is closed; every option it leaves out
+ * shares the scope's {@link PREF_ELSE} value. A selector given none is open:
+ * once split, an option keeps a value of its own once one is written for it.
  */
-export function applyPrefConditions<T extends PrefGroup | PrefSection>(
-  schema: T,
-  holds: PrefConditionJudge,
-  { keepEmpty = false, keepHidden = false, aliasOver, aliasHolds }: PrefConditionsOptions = {},
-): PrefConditionsApplied<T> {
-  const walk = leafWalk({ keepEmpty, keepHidden, inItem: deferEntryConditions(holds), aliasOver: aliasOver ?? schema, aliasHolds });
-  const { disabled, hidden } = walk;
+export type PrefOverrides = readonly string[] | Readonly<Record<string, unknown>>;
 
-  const group = (node: PrefGroup, path: string, above: PrefScope): PrefGroup | null => {
-    const scope = prefScopeUnder(above, node, holds);
-    if (!scope.shown && !keepHidden) return null;
-    if (!scope.shown && path !== '') hidden.add(path);
-    if (!scope.enabled && path !== '') disabled.add(path);
-    let changed = false;
-    const children: PrefGroup['children'] = {};
-    for (const [key, child] of Object.entries(node.children)) {
-      const at = under(path, key);
-      const kept = isPrefLeaf(child) ? walk.leaf(child, at, prefScopeIn({ node, scope, above }, at, holds), holds) : group(child, at, scope);
-      changed ||= kept !== child;
-      if (kept !== null) children[key] = kept;
-    }
-    if (!changed) return node;
-    return Object.keys(children).length === 0 && !keepEmpty && path !== '' ? null : { ...node, children };
-  };
+/** A pref's override list for each selector, where it gives one. */
+export type OverridesOf = (selector: string) => PrefOverrides | undefined;
 
-  if (!isPrefSection(schema)) return { shown: group(schema, '', PREF_SCOPE) as T | null, disabled, hidden };
-  const scope = prefScopeUnder(PREF_SCOPE, schema, holds);
-  if (!scope.shown && !keepHidden) return { shown: null, disabled, hidden };
-  const kept = walk.members(schema.members, '', { node: schema, scope, above: PREF_SCOPE }, holds);
-  return { shown: kept === schema.members ? schema : { ...schema, members: kept }, disabled, hidden };
+const named = (overrides: PrefOverrides): overrides is readonly string[] => Array.isArray(overrides);
+
+/** The options an override list names. */
+export function overrideOptions(overrides: PrefOverrides): readonly string[] {
+  return named(overrides) ? overrides : Object.keys(overrides);
 }
 
-/** One entry of a list or a map with the conditions that read it applied. */
-export interface PrefEntryApplied {
-  /** The item as this entry draws it: without the fields not shown, and the item itself when that is all of them. */
-  item: PrefLeaf;
-  /** The path of the entry, and of every field in it, that is disabled, named as {@link PrefConditionsApplied} names them. */
-  disabled: ReadonlySet<string>;
-  /** With `keepHidden`, the path of every field of the entry that is not shown. */
-  hidden: ReadonlySet<string>;
+/** A value for each selector a read is made under: its path, then the option chosen. */
+export type PrefSelection = Readonly<Record<string, string>>;
+
+/** A weight for each option of each selector, by the selector's path. An option left out weighs nothing. */
+export type PrefWeights = Readonly<Record<string, Readonly<Record<string, number>>>>;
+
+/** One alternative of a split value, and its share of the whole. */
+export interface PrefWeighted {
+  value: unknown;
+  weight: number;
 }
 
-const ALWAYS: PrefConditionJudge = () => true;
+const hasRest = (scope: PrefScope): boolean => Object.hasOwn(scope, PREF_ELSE);
+const restOr = (scope: PrefScope, absent: unknown): unknown => (hasRest(scope) ? scope[PREF_ELSE] : absent);
+const withRest = (scope: PrefScope, rest: unknown): PrefScope => ({ ...scope, [PREF_ELSE]: rest });
+
+/** Whether `value` is a {@link PrefScope}: an object of `$by` and `$in`, and the shared value if any, and nothing else. */
+export function isPrefScope(value: unknown): value is PrefScope {
+  if (!isPlainObject(value)) return false;
+  const keys = Object.keys(value).length - (Object.hasOwn(value, PREF_ELSE) ? 1 : 0);
+  return keys === 2 && typeof value.$by === 'string' && isPlainObject(value.$in);
+}
 
 /**
- * The conditions {@link applyPrefConditions} leaves unanswered, answered for
- * one entry: `item`, as that pass left it, drawn for the entry at `path`
- * (`'phases.2'`) while `holds` says which conditions hold. `holds` reads the
- * entry: `prefJudge` given it. Only a condition that reads the entry is
- * asked, the rest being applied already, and one inside a list or a map
- * within the entry is left for that one's own entries.
+ * `value` with every scope in it that was stored as `{ $by, $of }`, the shape
+ * before the values' key was renamed, in the current shape. The same value
+ * when it holds none.
  */
-export function applyPrefEntryConditions(
-  item: PrefLeaf,
-  path: string,
-  holds: PrefConditionJudge,
-  { keepEmpty = false, keepHidden = false }: Pick<PrefConditionsOptions, 'keepEmpty' | 'keepHidden'> = {},
-): PrefEntryApplied {
-  const asked: PrefConditionJudge = (condition, field) => !prefConditionReadsItem(condition) || holds(condition, field);
-  const walk = leafWalk({ keepEmpty, keepHidden, inItem: ALWAYS });
-  const scope = prefScopeUnder(PREF_SCOPE, { enableIf: item.enableIf }, asked);
-  return { item: walk.inside(item, path, scope, asked, PREF_SCOPE, path), disabled: walk.disabled, hidden: walk.hidden };
+export function upgradeScope(value: unknown): unknown {
+  if (isPrefScope(value)) return mapMembers(value, upgradeScope);
+  const old = isPlainObject(value) && Object.keys(value).length === 2 && typeof value.$by === 'string' && isPlainObject(value.$of);
+  return old ? mapMembers({ $by: value.$by as string, $in: value.$of as Record<string, unknown> }, upgradeScope) : value;
+}
+
+/** The weights a plain selection amounts to: all of each selector's on the option chosen. */
+export function selectionWeights(selection: PrefSelection): PrefWeights {
+  return Object.fromEntries(Object.entries(selection).map(([path, option]) => [path, { [option]: 1 }]));
+}
+
+/** Whether `option` of the scope's selector is one a closed list leaves out, which shares the shared value. */
+const shares = (scope: PrefScope, option: string, overridesOf: OverridesOf | undefined): boolean => {
+  const overrides = overridesOf?.(scope.$by);
+  return overrides !== undefined && !overrideOptions(overrides).includes(option);
+};
+
+/**
+ * What one option of the scope's own selector reads: its own value where it
+ * has one and may (an option a closed list leaves out never does); else,
+ * for an option a closed list proposes a value for, that; else the shared
+ * value. No option named reads the shared value too. Whatever is held
+ * nothing for reads as `absent`.
+ */
+export function scopeOptionValue(scope: PrefScope, option: string | undefined, absent: unknown, overridesOf?: OverridesOf): unknown {
+  if (option === undefined || shares(scope, option, overridesOf)) return restOr(scope, absent);
+  if (Object.hasOwn(scope.$in, option)) return scope.$in[option];
+  const overrides = overridesOf?.(scope.$by);
+  return overrides && !named(overrides) && Object.hasOwn(overrides, option) ? overrides[option] : restOr(scope, absent);
+}
+
+/**
+ * Every alternative of `stored` that weighs something under `weights`, each
+ * with its share: the product of the weights on the way down to it. An option
+ * the scope holds nothing for reads as `absent`, and a selector `weights`
+ * leaves out reads the shared value, or nothing where there is none. Members come in the order `weights`
+ * lists each selector's options.
+ */
+export function weighScope(stored: unknown, weights: PrefWeights, absent: unknown, overridesOf?: OverridesOf): PrefWeighted[] {
+  const out: PrefWeighted[] = [];
+  const walk = (value: unknown, weight: number): void => {
+    if (!isPrefScope(value)) {
+      out.push({ value, weight });
+      return;
+    }
+    const given = weights[value.$by];
+    if (given === undefined) {
+      if (hasRest(value)) walk(value[PREF_ELSE], weight);
+      return;
+    }
+    for (const [option, share] of Object.entries(given)) {
+      if (share > 0) walk(scopeOptionValue(value, option, absent, overridesOf), weight * share);
+    }
+  };
+  walk(stored, 1);
+  return out;
+}
+
+/** The one value `selection` names. A selector it leaves out reads the shared value; an option the scope holds nothing for reads as `absent`. */
+export function memberAt(stored: unknown, selection: PrefSelection, absent: unknown, overridesOf?: OverridesOf): unknown {
+  let value = stored;
+  while (isPrefScope(value)) value = scopeOptionValue(value, selection[value.$by], absent, overridesOf);
+  return value;
+}
+
+/** `stored` without the values of options a closed list leaves out, which no read reaches, at any depth. The same value when there are none. */
+export function dropUnlisted(stored: unknown, overridesOf: OverridesOf | undefined): unknown {
+  if (!overridesOf || !isPrefScope(stored)) return stored;
+  const overrides = overridesOf(stored.$by);
+  const list = overrides && overrideOptions(overrides);
+  const stale = list ? Object.keys(stored.$in).filter((option) => !list.includes(option)) : [];
+  const kept = stale.length ? { ...stored, $in: Object.fromEntries(Object.entries(stored.$in).filter(([option]) => list!.includes(option))) } : stored;
+  return mapMembers(kept, (inner) => dropUnlisted(inner, overridesOf));
+}
+
+/**
+ * `stored` written as `selectors`, the pref's scopes outermost first, declare
+ * it, with the value `under` names replaced by `next`. Each scope on the way
+ * down is made the declared one first, so nothing reads differently for it:
+ * a plain value becomes the shared value of the scope it stands in for, and
+ * a value split by any other selector becomes the shared value it reads under
+ * `now`, the selection the reader sees. An option's own value is plain, and
+ * a write replaces it whole, unless it is split already by the next selector
+ * in, as a nested default holds it: then the write goes on into that.
+ */
+export function writeDeclared(
+  stored: unknown, selectors: readonly string[], under: PrefSelection, now: PrefSelection, next: unknown, absent: unknown,
+  overridesOf?: OverridesOf, held = true,
+): unknown {
+  const [by, ...inner] = selectors;
+  if (by === undefined) return next;
+  let scope: PrefScope;
+  if (isPrefScope(stored) && stored.$by === by) scope = stored;
+  else {
+    const shared = isPrefScope(stored) ? memberAt(stored, now, absent, overridesOf) : stored;
+    scope = held ? { $by: by, $in: {}, [PREF_ELSE]: shared } : { $by: by, $in: {} };
+  }
+  const option = under[by];
+  if (option === undefined || shares(scope, option, overridesOf)) {
+    return withRest(scope, writeDeclared(scope[PREF_ELSE], inner, under, now, next, absent, overridesOf, hasRest(scope)));
+  }
+  const own = scope.$in[option];
+  const kept = isPrefScope(own) && own.$by === inner[0] ? writeDeclared(own, inner, under, now, next, absent, overridesOf) : next;
+  return { ...scope, $in: { ...scope.$in, [option]: kept } };
+}
+
+function mapMembers(scope: PrefScope, fn: (member: unknown) => unknown): PrefScope {
+  let out: Record<string, unknown> | undefined;
+  for (const [option, value] of Object.entries(scope.$in)) {
+    const next = fn(value);
+    if (next !== value) (out ??= { ...scope.$in })[option] = next;
+  }
+  const mapped = out ? { ...scope, $in: out } : scope;
+  if (!hasRest(scope)) return mapped;
+  const rest = fn(scope[PREF_ELSE]);
+  return rest === scope[PREF_ELSE] ? mapped : withRest(mapped, rest);
+}
+
+/** `stored` with each alternative mapped, at any depth. The same value when no value changed. */
+export function mapScopeValues(stored: unknown, fn: (value: unknown) => unknown): unknown {
+  return isPrefScope(stored) ? mapMembers(stored, (inner) => mapScopeValues(inner, fn)) : fn(stored);
+}
+
+/** The path of every selector `stored` is split by, outermost first. */
+export function scopeSelectors(stored: unknown): Set<string> {
+  const out = new Set<string>();
+  const walk = (value: unknown): void => {
+    if (!isPrefScope(value)) return;
+    out.add(value.$by);
+    for (const inner of Object.values(value.$in)) walk(inner);
+    if (hasRest(value)) walk(value[PREF_ELSE]);
+  };
+  walk(stored);
+  return out;
+}
+
+/**
+ * What a stored scope reads as: each value repaired, and left out a key that
+ * is none of its selector's options or one a closed list leaves out.
+ * `optionsOf` gives a selector's options, `null` for a selector that is no leaf, whose
+ * keys are all kept. `undefined` when it is split by a selector not in
+ * `allowed`, by one `optionsOf` has no options for, or by the same one twice
+ * on the way to a value.
+ */
+export function repairScope(
+  stored: unknown,
+  allowed: readonly string[],
+  optionsOf: (path: string) => readonly string[] | null | undefined,
+  repairMember: (value: unknown) => unknown,
+  overridesOf?: OverridesOf,
+): unknown {
+  const BAD = Symbol('bad');
+  const walk = (value: unknown, met: readonly string[]): unknown => {
+    if (!isPrefScope(value)) return repairMember(value);
+    const options = allowed.includes(value.$by) && !met.includes(value.$by) ? optionsOf(value.$by) : undefined;
+    if (options === undefined) return BAD;
+    const inner = [...met, value.$by];
+    const kept: [string, unknown][] = [];
+    for (const option of options ?? Object.keys(value.$in)) {
+      if (!Object.hasOwn(value.$in, option) || shares(value, option, overridesOf)) continue;
+      const read = walk(value.$in[option], inner);
+      if (read === BAD) return BAD;
+      kept.push([option, read]);
+    }
+    const out: PrefScope = { $by: value.$by, $in: Object.fromEntries(kept) };
+    if (!hasRest(value)) return out;
+    const rest = walk(value[PREF_ELSE], inner);
+    return rest === BAD ? BAD : withRest(out, rest);
+  };
+  const read = walk(stored, []);
+  return read === BAD ? undefined : read;
 }

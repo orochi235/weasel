@@ -1,3 +1,5 @@
+import { upgradeScope } from './scope';
+
 /**
  * How a pref is stored: its value, stamped with the schema version it was
  * written at. The stamp is what lets a record be migrated from its own
@@ -32,7 +34,9 @@ export function readRecord(record: unknown, unstamped: number): { at: number; va
     : { at: unstamped, value: record, stamped: false };
 }
 
-/** A stored record's value, whatever version it is in. */
+/** A stored record's value, whatever version it is in, with any split value
+ *  stored in an older shape read in the current one: the value every read and
+ *  every write of a store starts from, so a write stores the current shape. */
 export function recordValue(record: unknown): unknown {
-  return isStampedRecord(record) ? record.value : record;
+  return upgradeScope(isStampedRecord(record) ? record.value : record);
 }

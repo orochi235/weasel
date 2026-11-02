@@ -82,29 +82,65 @@ one holder. A box's width that may not go under its node's own minimum reads
 holds each write to that node's bound, and `PrefsForm` and labkit's
 `ControlPanel` resolve it against their values.
 
-## Split values
+## Scoped prefs
 
-A leaf that lists `splitBy` may hold its value once per option of another
-leaf, where it would hold one. The other leaf, the selector, is an ordinary
-`enum` named by its path:
+A pref's `scopes` keep its value separately per option of another setting, the
+selector, outermost first. A selector is an `enum` pref named by its path, or a
+path the schema's root `admits`, whose option the app names as it reads and
+writes: a document, a layout from a server. labkit's builder writes the same
+with `.per(selector, overrides?)` and `f.schema(…).admits('layout')`.
 
 ```ts
-'look.mode': { kind: 'enum', default: 'dark', options: [dark, light], … }
-'gap':       { kind: 'number', default: 4, splitBy: ['look.mode'], … }
+'look.mode': { kind: 'enum', default: 'dark', options: [dark, light, types], … }
+'limit': { kind: 'number', default: 1.1, scopes: [
+  { selector: 'look.mode', overrides: { types: 0 } }, // closed: types has its own value, proposed 0
+  { selector: 'layout' },                             // open: a layout has its own value once written
+], … }
+// on the schema's root: admits: ['layout']
 
-store.split('gap', 'look.mode');   // holds { $by: 'look.mode', $of: { dark: 4, light: 4 } }
-store.set('gap', 8);               // writes the member the mode is set to
-store.set('look.mode', 'light');   // a change to every leaf split by it
-store.join('gap', 'look.mode');    // back to one value: the member the mode is set to
+store.get('limit');                                    // the current value, under the selectors' own values
+store.get('limit', { at: { layout: 'explorer' } });    // the app names the layout
+store.set('limit', 2, { at: { layout: 'explorer' } }); // explorer keeps 2 from now on
+store.set('limit', 3);                                 // every other mode and layout reads 3
 ```
 
-The stored value is a locus, `{ $by, $of }`, and a member may itself be split
-by a second selector. `store.get` reads the member the selectors are set to.
-`store.get(path, { weights })` reads the alternatives folded by weight, which
-is what a transition between two options shows on the way:
+**Closed and open.** A selector given `overrides` is closed: only the options
+it names keep a value of their own, and every other option shares one, stored
+under `PREF_ELSE` (`$else`). `overrides` is option names, or option → proposed
+value. A named option reads its own value once written; before that, its
+proposed value if it has one, else the shared value. A selector given no
+`overrides` is open: an option reads its own value once one is written for it,
+and the shared value until then. With no option named, a selector reads and
+writes the shared value.
+
+**The stored value** is a `PrefScope`, `{ $by, $in, $else }`, one per
+selector. An option's own value ends there; only the shared value holds the
+next selector in:
 
 ```ts
-store.get('gap', { weights: { 'look.mode': { dark: 0.25, light: 0.75 } } });
+{ $by: 'look.mode', $in: { types: 0 }, $else: { $by: 'layout', $in: { explorer: 0.3 }, $else: 1.1 } }
+```
+
+Scopes are the declaration's to say: a reader never splits or joins a pref. A
+pref with nothing stored holds one empty scope per selector, so its first
+write gives the current option a value of its own. An option's own value is
+plain, and a write replaces it, unless it is already split by the next
+selector in, as a nested `defaultScope` holds it.
+
+A stored value need not have the declared shape, as one stored before the
+declaration changed. A plain value reads as the shared value. A value split
+by a selector the declaration scopes at that level reads as that scope. A
+value split by any other selector reads as it always did, and the first write
+to it rebuilds it in the declared shape, with what it reads now as the shared
+value, so nothing the reader sees changes but the value written.
+A closed list that changes in code needs nothing done: a stored value of an
+option no longer named is ignored, and dropped on the pref's next write.
+
+`store.get(path, { weights })` reads the values folded by weight, which is
+what a transition between two options shows on the way:
+
+```ts
+store.get('limit', { weights: { 'look.mode': { dark: 0.25, light: 0.75 } } });
 ```
 
 `prefWeightAxes` lays weights out as numbers, the `axes` an `@weasel-js/animator` target takes, so an
@@ -116,43 +152,37 @@ const target = createTarget({
   get: () => weights,
   set: (next) => { weights = next; },
   axes: prefWeightAxes({ 'look.mode': ['dark', 'light'] }),
-  show: (now) => draw(store.get('gap', { weights: now })),
+  show: (now) => draw(store.get('limit', { weights: now })),
 });
 animator.tween({ target, to: { 'look.mode': { dark: 0, light: 1 } }, ms: 300 });
 ```
 
 A number blends linearly and a color blends in OKLCH. Every other kind takes
-its heaviest alternative, the first option on a tie; `blends` in the open
-options says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })`
-is the whole tree as it would read with the selectors set as given.
+its heaviest value, the first option on a tie; `blends` in the open options
+says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })` is
+the whole tree as it would read with the selectors set as given.
 
-`store.set(path, value, { at })` writes the member a stated choice names,
-whatever the selectors are set to, and `store.loci()` is what every split leaf
-holds, by path: one map until something changes. `usePrefsValues` returns
-both shaped for `PrefsForm`, with `split` and `join` beside them:
+`store.scopes()` is what every scoped pref holds, by path: one map until
+something changes. `usePrefsValues` returns it shaped for `PrefsForm`:
 
 ```tsx
-const { values, set, loci, split, join, setAt } = usePrefsValues(store);
+const { values, set, scopes, setAt } = usePrefsValues(store);
 <PrefsForm schema={schema} values={values} onChange={set}
-  loci={loci} onSplit={split} onJoin={join} onChangeAt={setAt} />
+  scopes={scopes} onChangeAt={setAt} othersLabel="Other modes" />
 ```
 
-A leaf's default may be split too. `defaultLocus` is what the leaf holds while
-nothing is stored for it, and `default` stays what a member it leaves out
-reads as:
+`defaultScope` gives a pref a default that differs by option, where its
+selectors' proposed values cannot say it, and `default` stays what reaches
+nothing reads:
 
 ```ts
-'gap': { kind: 'number', default: 4, splitBy: ['look.mode'],
-         defaultLocus: { $by: 'look.mode', $of: { dark: 4, light: 6 } }, … }
-
-store.get('gap');                                    // 4, or 6 once the mode is light
-store.set('gap', 8, { at: { 'look.mode': 'light' } }); // holds { dark: 4, light: 8 }
-store.reset('gap');                                  // the split default again
+'gap': { kind: 'number', default: 4, scopes: [{ selector: 'look.mode' }],
+         defaultScope: { $by: 'look.mode', $in: { dark: 4, light: 6 } }, … }
 ```
 
-A selector must be a plain `enum`: not `clearable`, with no `encoding`, and
-not split itself. The store warns of a `splitBy` that names anything else when
-it opens.
+A leaf selector must be a plain `enum`: not `clearable`, with no `encoding`,
+and not scoped itself. The store warns of a scope that names anything else,
+and of one naming a path the schema does not admit, when it opens.
 
 ## As CSS custom properties
 

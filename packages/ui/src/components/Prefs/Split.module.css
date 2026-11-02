@@ -47,13 +47,3 @@
 .branch > :not(.branchName) {
   margin-inline-start: var(--wzl-space-4);
 }
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wzl-space-2);
-}
-
-.actions:empty {
-  display: none;
-}

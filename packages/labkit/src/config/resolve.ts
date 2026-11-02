@@ -73,7 +73,8 @@ export function resolveConfigSchema<TC>(
     motifs: new Map(),
     chain: [...rules, ...builtinRules],
   };
-  const group = resolveShape(schema.nodes, '', '', sink);
+  const shape = resolveShape(schema.nodes, '', '', sink);
+  const group = schema.admitted?.length ? { ...shape, admits: schema.admitted } : shape;
   const said = ({ field, at, problem }: PrefSchemaConditionProblem) =>
     `[labkit] ${field} of "${at}": ${problem}`;
   const drawnOver = over ?? schema.over;

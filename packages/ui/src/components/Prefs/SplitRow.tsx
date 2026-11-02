@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import type { PrefLeaf, PrefLocus } from '@weasel-js/prefs';
+import { isPrefScope, prefOverridesOf, prefScopeOptionValue, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
-import { Button } from '../Button';
 import { Disclosure } from '../Disclosure';
 import { PropertyRow } from '../Properties/PropertyRow';
 import type { RowWidth } from './compound';
@@ -27,19 +26,17 @@ export interface SplitRowState {
 /**
  * What the row of `pref` draws for its split value, in a form given something to split with. `own` is the row's
  * path and `from` where its value lives; `aliased` says the leaf is one an alias shows. A value standing for
- * several (`mixed`) has no one locus to draw the members of.
+ * several (`mixed`) has no one scope to draw the members of.
  */
 export function splitRowState(
   split: SplitCtx | undefined, values: unknown, pref: PrefLeaf, own: string, from: string, aliased: boolean, mixed: boolean,
 ): SplitRowState | null {
   if (split === undefined) return null;
-  const shape = splitShape(pref, split.loci?.get(from), (path) => split.selectorAt(path, aliased), values);
+  const shape = splitShape(pref, split.scopes?.get(from), (path) => split.selectorAt(path, aliased), values, split.othersLabel);
   if (shape === null) return null;
-  const { levels, free } = shape;
-  const members = shape.locus !== undefined && levels.length > 0 && split.onChangeAt !== undefined && !mixed;
-  const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && levels.length > 0);
-  const name = levels.length > 0 ? splitName(pref.name, levels) : `Split ${pref.name}`;
-  return { shape, members, opens, open: opens && split.opened.has(own), name, bodyId: split.bodyId(own) };
+  const { levels } = shape;
+  const members = shape.scope !== undefined && split.onChangeAt !== undefined && !mixed;
+  return { shape, members, opens: members, open: members && split.opened.has(own), name: splitName(pref.name, levels), bodyId: split.bodyId(own) };
 }
 
 /** The option each selector of a split value is set to, as marks beside the leaf's name. */
@@ -88,7 +85,7 @@ export interface SplitMemberParts {
 }
 
 /**
- * What a row opens to, under it: a split value's members, and a split or a join for each selector. The members
+ * What a row opens to, under it: a scoped value's values. The values
  * are each option of the outermost selector, holding the leaf's own control over that member, or the next
  * selector's options where the value is split again.
  */
@@ -99,8 +96,8 @@ export function SplitBody({ ctx, state, split, parts }: {
   split: SplitCtx;
   parts: SplitMemberParts;
 }) {
-  const { levels, free, locus } = state.shape;
-  const { onSplit, onJoin, onChangeAt } = split;
+  const { levels, scope } = state.shape;
+  const { onChangeAt } = split;
   const { pref, path } = ctx;
   const stacked = parts.width !== 'column' || pref.block === true;
   const row = (member: SplitMember): ReactNode => {
@@ -128,28 +125,24 @@ export function SplitBody({ ctx, state, split, parts }: {
       </PropertyRow>
     );
   };
-  const under = (held: PrefLocus, depth: number, outer: SplitMember | undefined): ReactNode[] =>
+  const overridesOf = (selector: string) => prefOverridesOf(pref, selector);
+  /** The rows under `here`, the part of `held` that `outer` names. */
+  const under = (held: PrefScope, here: unknown, depth: number, outer: SplitMember | undefined): ReactNode[] =>
     levels[depth]!.options.map((option) => {
-      const member = splitMember(held, outer, levels[depth]!, option, pref.default);
-      if (depth === levels.length - 1) return row(member);
+      const member = splitMember(held, outer, levels[depth]!, option, pref.default, overridesOf);
+      const inner = isPrefScope(here) && here.$by === levels[depth]!.by ? prefScopeOptionValue(here, option.value, undefined, overridesOf) : here;
+      // An option's own value is not split by the selectors inside it, so it has one row.
+      if (depth === levels.length - 1 || !isPrefScope(inner)) return row(member);
       return (
         <div key={option.value} role="group" aria-label={option.label} className={c.branch}>
           <span className={c.branchName}>{option.label}</span>
-          {under(held, depth + 1, member)}
+          {under(held, inner, depth + 1, member)}
         </div>
       );
     });
   return (
     <div id={state.bodyId} role="group" aria-label={state.name} className={c.body}>
-      {state.members && locus !== undefined && under(locus, 0, undefined)}
-      <div className={c.actions}>
-        {onSplit && free.map(({ by, name }) => (
-          <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onSplit(path, by)}>Split by {name}</Button>
-        ))}
-        {onJoin && levels.map(({ by, name }) => (
-          <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onJoin(path, by)}>Join {name}</Button>
-        ))}
-      </div>
+      {state.members && scope !== undefined && under(scope, scope, 0, undefined)}
     </div>
   );
 }

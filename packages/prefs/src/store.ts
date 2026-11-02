@@ -4,9 +4,9 @@ import type { PrefBlend } from './blend';
 import { checkPrefConditions } from './conditionCheck';
 import { recordValue } from './stamp';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
-import { isPrefLocus, selectionWeights, type PrefLocus, type PrefSelection, type PrefWeights } from './locus';
+import { isPrefScope, selectionWeights, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
-import { checkPrefSplits, prefSelectors } from './splitCheck';
+import { checkPrefSplits, prefSelectors, admittedSelectors } from './splitCheck';
 import type { PrefPath, PrefValueAt } from './paths';
 import type { PrefValidator } from './repair';
 import type { PrefGroup } from './groups';
@@ -28,23 +28,20 @@ export interface PrefsStore<S extends PrefGroup> {
    * split value is folded: under the selectors' own values it is the member
    * they name, and under `weights` it is the blend its kind makes of the
    * members that weigh something. A selector `weights` leaves out keeps its
-   * own value.
+   * own value, or with `at` the option given there. An admitted selector, a path a
+   * `scopes` entry names that is no leaf, has an option only where `at` or
+   * `weights` gives it one, and reads its shared member elsewhere.
    */
-  get<P extends PrefPath<S>>(path: P, read?: { weights?: PrefWeights }): PrefValueAt<S, P>;
-  /** On a split leaf, writes the member the selectors' own values name, or
-   *  with `at` the one named with each selector there set to the option given.
-   *  A {@link PrefLocus} given as the value replaces the whole of what is held. */
-  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefLocus, write?: { at?: PrefSelection }): void;
-  /** Hold the leaf's value once per option of the selector at `by`, one of
-   *  the leaf's `splitBy`, each option starting as the value it had. */
-  split(path: PrefPath<S>, by: string): void;
-  /** Stop splitting the leaf's value by the selector at `by`, keeping the
-   *  member that selector's own value names. */
-  join(path: PrefPath<S>, by: string): void;
+  get<P extends PrefPath<S>>(path: P, read?: { weights?: PrefWeights; at?: PrefSelection }): PrefValueAt<S, P>;
+  /** On a scoped pref, writes the value the selectors' own values name, or
+   *  with `at` the one named with each selector there set to the option given,
+   *  making what is stored the shape its `scopes` declare on the way. A
+   *  {@link PrefScope} given as the value replaces the whole of what is held. */
+  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefScope, write?: { at?: PrefSelection }): void;
   /** What the leaf holds where its value is split, each member repaired. */
-  locus(path: PrefPath<S>): PrefLocus | undefined;
+  scope(path: PrefPath<S>): PrefScope | undefined;
   /** What every split leaf holds, by its path. The same map until something changes. */
-  loci(): ReadonlyMap<string, PrefLocus>;
+  scopes(): ReadonlyMap<string, PrefScope>;
   /** Unset every leaf at or under `path`; with no path, all. */
   reset(path?: string): void;
   /** Whether the leaf has a value of its own rather than following its default. */
@@ -124,8 +121,8 @@ export function createPrefsStore<S extends PrefGroup>(
   for (const { field, at, problem } of checkPrefConditions(schema)) {
     console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
   }
-  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] splitBy of "${at}": ${problem}`);
-  const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), validators, blends };
+  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `scopes of "${at}"`}: ${problem}`);
+  const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), admitted: admittedSelectors(schema), validators, blends };
   const { current, peek, drop } = createSnapshots(source);
 
   let storedTree: Record<string, unknown> | null = null;
@@ -141,7 +138,7 @@ export function createPrefsStore<S extends PrefGroup>(
     const now = current();
     const origins = new Map(mine.map((c) => [c.name, c.origin]));
     for (const c of mine) {
-      for (const path of [...(before?.splitBy.get(c.name) ?? []), ...(now.splitBy.get(c.name) ?? [])]) {
+      for (const path of [...(before?.splitUnder.get(c.name) ?? []), ...(now.splitUnder.get(c.name) ?? [])]) {
         if (!origins.has(path)) origins.set(path, c.origin);
       }
     }
@@ -157,19 +154,21 @@ export function createPrefsStore<S extends PrefGroup>(
   };
   return {
     schema,
-    ...prefWrites({ leaves, cache, selectors: source.selectors, version, selection: () => current().selection, warnIfClosed }),
+    ...prefWrites({ leaves, cache, selectors: source.selectors, admitted: source.admitted!, version, selection: () => current().selection, warnIfClosed }),
     get: (path, read) => {
       const now = current();
-      if (!read?.weights) return now.byPath.get(path) as never;
+      if (!read?.weights && !read?.at) return now.byPath.get(path) as never;
       const leaf = leaves.get(path);
-      const weights = weightsUnder(source.selectors, now.selection, read.weights);
+      const selection = read.at ? selectionAt(source.selectors, now.selection, read.at, source.admitted) : now.selection;
+      if (read.at && source.selectors.has(path)) return selection[path] as never;
+      const weights = weightsUnder(source.selectors, selection, read.weights ?? {}, source.admitted);
       return (leaf ? resolveHeld(source, leaf, now.held.get(path), weights) : undefined) as never;
     },
-    locus: (path) => {
+    scope: (path) => {
       const held = current().held.get(path);
-      return isPrefLocus(held) ? held : undefined;
+      return isPrefScope(held) ? held : undefined;
     },
-    loci: () => current().loci,
+    scopes: () => current().scopes,
     reset: (path) => {
       warnIfClosed(path);
       for (const p of leaves.keys()) {
@@ -180,7 +179,7 @@ export function createPrefsStore<S extends PrefGroup>(
     values: (read) => {
       const now = current();
       if (!read?.at) return now.tree;
-      const selection = selectionAt(source.selectors, now.selection, read.at);
+      const selection = selectionAt(source.selectors, now.selection, read.at, source.admitted);
       const weights = selectionWeights(selection);
       const tree: Record<string, unknown> = {};
       for (const [path, leaf] of leaves) {

@@ -10,8 +10,9 @@ import type { PrefCondition } from './condition';
 import type { PrefSection } from './groups';
 import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefList } from './list';
-import type { PrefLocus } from './locus';
+import type { PrefScope } from './scope';
 import type { PrefMap } from './map';
+import type { PrefScopeSpec } from './scopeSpec';
 import type { PrefUnion } from './union';
 import type { PrefNumber } from './number';
 
@@ -93,19 +94,21 @@ export interface PrefBase<K extends string, Value> {
    *  schema editor shows such a leaf as one closed thing and prints the name
    *  in place of its literal. */
   type?: string;
-  /** The `enum` leaves this one's value may be split by, each by the full
-   *  path its value is read at: the value may then be held once per option
-   *  of any of them (a {@link PrefLocus}), which the store folds into the one
-   *  value read. Whether it is split is the stored value's to say. The
-   *  order is the order a value split by several is stored in, the first
-   *  outermost. Each must be a plain `enum`: not `clearable`, with no
-   *  `encoding`, and not split itself. */
-  splitBy?: readonly string[];
+  /** The selectors this pref's value is kept separately for, one entry each,
+   *  outermost first ({@link PrefScopeSpec}). Each names an `enum` pref by its full
+   *  path, which must be plain: not `clearable`, with no `encoding`, and not
+   *  scoped itself; or a selector the schema's root `admits`. The
+   *  stored value is a {@link PrefScope} whose shared value holds the next
+   *  entry in; an option's own value stops there and is not split further.
+   *  An open entry (no `overrides`) starts as one value, which a reader may
+   *  split and join again. */
+  scopes?: readonly PrefScopeSpec[];
   /** What the leaf holds while nothing is stored for it, where that is a
-   *  split value: a default that differs by option. Split only by entries of
-   *  `splitBy`. `default` stays what a member it leaves out reads as, and
+   *  split value: a default that differs by option. Split only by selectors
+   *  `scopes` names; without it, the default is an empty scope per entry,
+   *  nested. `default` stays what a value it leaves out reads as, and
    *  what the leaf's value type is read from. */
-  defaultLocus?: PrefLocus;
+  defaultScope?: PrefScope;
 }
 
 /** How a leaf that can be auto is auto. */

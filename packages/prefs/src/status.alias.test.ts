@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
-import { applyPrefConditions, prefJudge, prefReader, prefScopeAt } from './scope';
+import { applyPrefConditions, prefJudge, prefReader, prefStatusAt } from './status';
 
 const flag = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'boolean', name, description: '', default: false, ...extra }) as PrefLeaf;
@@ -38,14 +38,14 @@ describe('an alias row', () => {
     const applied = applyPrefConditions(schema, over(null));
     expect(applied.shown).toBe(schema);
     expect([...applied.disabled]).toEqual([]);
-    expect(prefScopeAt(schema, 'quick', over(null))).toEqual({ shown: true, enabled: true });
+    expect(prefStatusAt(schema, 'quick', over(null))).toEqual({ shown: true, enabled: true });
   });
 
   it('is not shown while any one of the three showIfs fails', () => {
     for (const off of ['quickOn', 'gridOn', 'pageOn'] as const) {
       const { shown } = applyPrefConditions(schema, over(off));
       expect(Object.keys(shown!.children), off).not.toContain('quick');
-      expect(prefScopeAt(schema, 'quick', over(off)), off).toEqual({ shown: false, enabled: true });
+      expect(prefStatusAt(schema, 'quick', over(off)), off).toEqual({ shown: false, enabled: true });
     }
   });
 
@@ -54,7 +54,7 @@ describe('an alias row', () => {
       const { shown, disabled } = applyPrefConditions(schema, over(off));
       expect(Object.keys(shown!.children), off).toContain('quick');
       expect(disabled.has('quick'), off).toBe(true);
-      expect(prefScopeAt(schema, 'quick', over(off)), off).toEqual({ shown: true, enabled: false });
+      expect(prefStatusAt(schema, 'quick', over(off)), off).toEqual({ shown: true, enabled: false });
     }
   });
 
@@ -63,8 +63,8 @@ describe('an alias row', () => {
     expect(applyPrefConditions(schema, over('pageOpen')).disabled.has('again')).toBe(true);
     // The alias between them is a second place for the leaf, not something above it.
     expect(applyPrefConditions(schema, over('quickOpen')).disabled.has('again')).toBe(false);
-    expect(prefScopeAt(schema, 'dead', over('gridOn'))).toEqual({ shown: true, enabled: true });
-    expect(prefScopeAt(schema, 'dead', over('quickOpen'))).toEqual({ shown: true, enabled: false });
+    expect(prefStatusAt(schema, 'dead', over('gridOn'))).toEqual({ shown: true, enabled: true });
+    expect(prefStatusAt(schema, 'dead', over('quickOpen'))).toEqual({ shown: true, enabled: false });
   });
 
   it('is named in hidden, and kept, where hidden nodes are kept', () => {
@@ -78,7 +78,7 @@ describe('an alias row', () => {
     const judge = over('pageOpen');
     expect(applyPrefConditions(layout, judge).disabled.has('here')).toBe(false);
     expect(applyPrefConditions(layout, judge, { aliasOver: schema }).disabled.has('here')).toBe(true);
-    expect(prefScopeAt(layout, 'here', judge, { aliasOver: schema })).toEqual({ shown: true, enabled: false });
+    expect(prefStatusAt(layout, 'here', judge, { aliasOver: schema })).toEqual({ shown: true, enabled: false });
     expect(applyPrefConditions(layout, over('gridOn'), { aliasOver: schema }).shown).toEqual({ name: '', children: {} });
   });
 
@@ -94,8 +94,8 @@ describe('an alias row', () => {
     const judge = (on: boolean) => prefJudge(node, (path) => (path === 'data.on' ? on : undefined));
     expect(Object.keys(applyPrefConditions(node, judge(true)).shown!.members)).toEqual(['data.on', 'look', 'data.also']);
     expect(Object.keys(applyPrefConditions(node, judge(false)).shown!.members)).toEqual(['data.on']);
-    expect(prefScopeAt(node, 'data.also', judge(false)).shown).toBe(false);
-    expect(prefScopeAt(node, 'data.fill', judge(false)).shown).toBe(false);
+    expect(prefStatusAt(node, 'data.also', judge(false)).shown).toBe(false);
+    expect(prefStatusAt(node, 'data.fill', judge(false)).shown).toBe(false);
   });
 });
 
@@ -116,13 +116,13 @@ describe('an alias of a leaf in another schema', () => {
   it('is judged on the target\'s side by the judge over that schema', () => {
     const options = (values: unknown) => ({ aliasOver: dialog, aliasHolds: theirs(values) });
     expect(applyPrefConditions(layout, own, options({})).shown).toBe(layout);
-    expect(prefScopeAt(layout, 'rows.grid', own, options({}))).toEqual({ shown: true, enabled: true });
+    expect(prefStatusAt(layout, 'rows.grid', own, options({}))).toEqual({ shown: true, enabled: true });
 
     expect(applyPrefConditions(layout, own, options({ on: false })).shown?.children).toEqual({});
-    expect(prefScopeAt(layout, 'rows.grid', own, options({ on: false }))).toEqual({ shown: false, enabled: true });
+    expect(prefStatusAt(layout, 'rows.grid', own, options({ on: false }))).toEqual({ shown: false, enabled: true });
 
     expect([...applyPrefConditions(layout, own, options({ open: false })).disabled]).toEqual(['rows.grid']);
-    expect(prefScopeAt(layout, 'rows.grid', own, options({ open: false }))).toEqual({ shown: true, enabled: false });
+    expect(prefStatusAt(layout, 'rows.grid', own, options({ open: false }))).toEqual({ shown: true, enabled: false });
   });
 
   it('is judged by the one judge where no other is given', () => {

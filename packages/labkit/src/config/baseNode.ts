@@ -1,4 +1,4 @@
-import type { PrefCondition, PrefPair } from '@weasel-js/prefs';
+import type { PrefCondition, PrefPair, PrefScopeSpec } from '@weasel-js/prefs';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -90,6 +90,19 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    *  (`'offset.y'`), labeled `pair.label` or else this field's label. */
   pair(pair: PrefPair): this {
     return this.ann({ pair });
+  }
+
+  /**
+   * Keep this leaf's value separately for each option of the selector at
+   * `selector`, a full path. Chain once per selector, outermost first. With
+   * `overrides` (option names, or option → proposed value) the selector is
+   * closed: only those options keep their own value and the rest share one.
+   * Without, it is open, and the value starts as one across every option
+   * until a reader splits it; then an option keeps its own once written.
+   */
+  per(selector: string, overrides?: PrefScopeSpec['overrides']): this {
+    const per: PrefScopeSpec = overrides === undefined ? { selector } : { selector, overrides };
+    return this.ann({ scopes: [...(this.annotations.scopes ?? []), per] });
   }
 
   /** Render under a named section heading. `collapsed` opens the section

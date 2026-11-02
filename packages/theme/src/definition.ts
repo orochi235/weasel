@@ -12,6 +12,8 @@ export interface PinObject {
   readonly description?: string;
   /** Render the referenced color at this alpha, 0–1. */
   readonly alpha?: number;
+  /** Axes the token's pref is scoped by even where its values do not differ along them. */
+  readonly scope?: readonly string[];
 }
 
 /** A bare value or `{ value, type?, description?, alpha? }`. The value may be a `{token}` reference. */

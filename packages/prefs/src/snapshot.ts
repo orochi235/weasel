@@ -5,7 +5,8 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
 import { assignPrefValueAtPath } from './helpers';
-import { isPrefLocus, locusSelectors, repairLocus, selectionWeights, weighLocus, type PrefLocus, type PrefSelection, type PrefWeights } from './locus';
+import { overridesOfPref, prefScopedDefault } from './scopeSpec';
+import { isPrefScope, scopeSelectors, repairScope, selectionWeights, weighScope, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefLeaf } from './schema';
 import { recordValue } from './stamp';
@@ -13,14 +14,14 @@ import { recordValue } from './stamp';
 export interface Snapshot {
   /** Each leaf's value as read: a split one folded under `selection`. */
   byPath: Map<string, unknown>;
-  /** Each leaf's stored value, repaired: a locus where it is split. */
+  /** Each leaf's stored value, repaired: a scope where it is split. */
   held: Map<string, unknown>;
   /** What each split leaf holds, by its path. */
-  loci: ReadonlyMap<string, PrefLocus>;
+  scopes: ReadonlyMap<string, PrefScope>;
   /** The option each selector is set to. */
   selection: PrefSelection;
   /** The leaves split by each selector, by the selector's path. */
-  splitBy: Map<string, string[]>;
+  splitUnder: Map<string, string[]>;
   tree: Record<string, unknown>;
   unset: ReadonlySet<string>;
 }
@@ -31,21 +32,33 @@ export interface SnapshotSource {
   cache: OwnedRecordCache;
   /** The options of each leaf a value may be split by. */
   selectors: ReadonlyMap<string, readonly string[]>;
+  /** The admitted selectors: paths the schema admits as no pref, whose options the app names. */
+  admitted?: ReadonlySet<string>;
   validators?: Readonly<Record<string, PrefValidator>>;
   blends?: Readonly<Record<string, PrefBlend>>;
 }
 
-/** What `stored` reads as for `leaf`: a locus with each member repaired where the leaf may hold one, else the value repaired. */
-export function readStored(source: Pick<SnapshotSource, 'selectors' | 'validators'>, leaf: PrefLeaf, stored: unknown): unknown {
+/**
+ * What `stored` reads as for `leaf`: a scope with each value repaired, else
+ * the value repaired. A scope by any selector of the schema reads, not only
+ * one the pref declares, so a value stored before its scopes changed reads as
+ * it did until its first write rebuilds it.
+ */
+export function readStored(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf, stored: unknown): unknown {
   const repair = (value: unknown): unknown => repairPrefValue(leaf, value, source.validators);
-  if (!leaf.splitBy?.length || !isPrefLocus(stored)) return repair(stored);
-  const read = repairLocus(stored, leaf.splitBy, (path) => source.selectors.get(path), repair);
+  if (!isPrefScope(stored)) return repair(stored);
+  const known = [...source.selectors.keys(), ...(source.admitted ?? [])];
+  const read = repairScope(stored, known, (path) => optionsOf(source, path), repair, overridesOfPref(leaf));
   return read === undefined ? leaf.default : read;
 }
 
+/** A selector's options: `null` for an admitted one, and `undefined` for a path that is neither. */
+export const optionsOf = (source: Pick<SnapshotSource, 'selectors' | 'admitted'>, path: string): readonly string[] | null | undefined =>
+  source.selectors.get(path) ?? (source.admitted?.has(path) ? null : undefined);
+
 /** `held` folded under `weights`: itself where it is not split. */
 export function resolveHeld(source: Pick<SnapshotSource, 'blends'>, leaf: PrefLeaf, held: unknown, weights: PrefWeights): unknown {
-  return isPrefLocus(held) ? blendPref(leaf, weighLocus(held, weights, leaf.default), source.blends) : held;
+  return isPrefScope(held) ? blendPref(leaf, weighScope(held, weights, leaf.default, overridesOfPref(leaf)), source.blends) : held;
 }
 
 /** The store's snapshots: `current` builds one when there is none, and `drop` discards it when a record changed. */
@@ -54,12 +67,13 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
   let snapshot: Snapshot | null = null;
   let previous: { raw: Map<string, unknown>; held: Map<string, unknown> } | null = null;
 
-  const unsetLoci = new Map<string, unknown>();
+  const unsetScopes = new Map<string, unknown>();
   /** What an unset leaf holds: its split default, repaired once, where it has one. */
   const unsetHeld = (path: string, leaf: PrefLeaf): unknown => {
-    if (leaf.defaultLocus === undefined) return leaf.default;
-    if (!unsetLoci.has(path)) unsetLoci.set(path, readStored(source, leaf, leaf.defaultLocus));
-    return unsetLoci.get(path);
+    const scope = prefScopedDefault(leaf);
+    if (scope === undefined) return leaf.default;
+    if (!unsetScopes.has(path)) unsetScopes.set(path, readStored(source, leaf, scope));
+    return unsetScopes.get(path);
   };
 
   const build = (): Snapshot => {
@@ -83,18 +97,18 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     for (const path of selectors.keys()) selection[path] = held.get(path) as string;
     const weights = selectionWeights(selection);
     const byPath = new Map<string, unknown>();
-    const splitBy = new Map<string, string[]>();
-    const loci = new Map<string, PrefLocus>();
+    const splitUnder = new Map<string, string[]>();
+    const scopes = new Map<string, PrefScope>();
     const tree: Record<string, unknown> = {};
     for (const [path, leaf] of leaves) {
       const value = held.get(path);
-      if (isPrefLocus(value)) loci.set(path, value);
-      for (const selector of locusSelectors(value)) splitBy.set(selector, [...(splitBy.get(selector) ?? []), path]);
+      if (isPrefScope(value)) scopes.set(path, value);
+      for (const selector of scopeSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
       const read = resolveHeld(source, leaf, value, weights);
       byPath.set(path, read);
       assignPrefValueAtPath(tree, path, read);
     }
-    return { byPath, held, loci, selection, splitBy, tree, unset };
+    return { byPath, held, scopes, selection, splitUnder, tree, unset };
   };
 
   return {
@@ -109,12 +123,14 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
 /**
  * The weights a read is made under: `given` for each selector it names, the
  * options in the selector's own order, and all of every other selector's on
- * the option `selection` has it at.
+ * the option `selection` has it at. An admitted selector neither names reads its
+ * shared member.
  */
 export function weightsUnder(
   selectors: ReadonlyMap<string, readonly string[]>,
   selection: PrefSelection,
   given: PrefWeights,
+  admitted: ReadonlySet<string> = new Set(),
 ): PrefWeights {
   const out: Record<string, Record<string, number>> = {};
   for (const [path, options] of selectors) {
@@ -123,18 +139,23 @@ export function weightsUnder(
       ? Object.fromEntries(options.filter((option) => (own[option] ?? 0) > 0).map((option) => [option, own[option]!]))
       : { [selection[path]!]: 1 };
   }
+  for (const path of admitted) {
+    if (Object.hasOwn(given, path)) out[path] = { ...given[path] };
+    else if (selection[path] !== undefined) out[path] = { [selection[path]]: 1 };
+  }
   return out;
 }
 
-/** `selection` with each selector `at` names set to the option it gives, where that is one of the selector's. */
+/** `selection` with each selector `at` names set to the option it gives, where that is one of the selector's; any option of an admitted one. */
 export function selectionAt(
   selectors: ReadonlyMap<string, readonly string[]>,
   selection: PrefSelection,
   at: PrefSelection,
+  admitted: ReadonlySet<string> = new Set(),
 ): PrefSelection {
   const out: Record<string, string> = { ...selection };
   for (const [path, option] of Object.entries(at)) {
-    if (selectors.get(path)?.includes(option)) out[path] = option;
+    if (selectors.get(path)?.includes(option) || (admitted.has(path) && typeof option === 'string')) out[path] = option;
   }
   return out;
 }

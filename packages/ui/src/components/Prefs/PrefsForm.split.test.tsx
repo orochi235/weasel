@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { PrefGroup, PrefLocus } from '@weasel-js/prefs';
+import type { PrefGroup, PrefScope } from '@weasel-js/prefs';
 import { PrefsForm, type PrefsFormProps } from './index';
 
 afterEach(cleanup);
@@ -25,16 +25,16 @@ const SCHEMA: PrefGroup = {
         },
       },
     },
-    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, splitBy: [MODE, DENSITY] },
+    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, scopes: [{ selector: MODE }, { selector: DENSITY }] },
     name: { kind: 'string', name: 'Name', description: '', default: 'untitled' },
   },
 };
 
-const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $of: { dark, light } });
-const byDensity = (compact: unknown, roomy: unknown): PrefLocus => ({ $by: DENSITY, $of: { compact, roomy } });
+const byMode = (dark: unknown, light: unknown): PrefScope => ({ $by: MODE, $in: { dark, light } });
+const byDensity = (compact: unknown, roomy: unknown): PrefScope => ({ $by: DENSITY, $in: { compact, roomy } });
 
 function mount(props: Partial<PrefsFormProps> = {}) {
-  const on = { onChange: vi.fn(), onSplit: vi.fn(), onJoin: vi.fn(), onChangeAt: vi.fn() };
+  const on = { onChange: vi.fn(), onChangeAt: vi.fn() };
   const view = render(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 4 }} {...on} {...props} />);
   return { ...on, ...view };
 }
@@ -53,10 +53,10 @@ const markup = (ui: ReactElement): string => {
 
 describe('a split value in PrefsForm', () => {
   it('names the option the selector is set to beside the label', () => {
-    const { rerender, onChange } = mount({ loci: new Map([['gap', byMode(4, 8)]]) });
+    const { rerender, onChange } = mount({ scopes: new Map([['gap', byMode(4, 8)]]) });
     expect(screen.getByTitle('Mode: Dark')).toHaveTextContent('Dark');
     rerender(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 8, look: { mode: 'light' } }} onChange={onChange}
-      loci={new Map([['gap', byMode(4, 8)]])} />);
+      scopes={new Map([['gap', byMode(4, 8)]])} />);
     expect(screen.getByTitle('Mode: Light')).toHaveTextContent('Light');
   });
 
@@ -66,33 +66,11 @@ describe('a split value in PrefsForm', () => {
   });
 
   it('writes through onChange from the collapsed row', () => {
-    const { onChange, onChangeAt } = mount({ loci: new Map([['gap', byMode(4, 8)]]) });
+    const { onChange, onChangeAt } = mount({ scopes: new Map([['gap', byMode(4, 8)]]) });
     expect(screen.getByRole('spinbutton', { name: 'Gap' })).toHaveValue('4');
     type(screen.getByRole('spinbutton', { name: 'Gap' }), '12');
     expect(onChange).toHaveBeenCalledWith('gap', 12);
     expect(onChangeAt).not.toHaveBeenCalled();
-  });
-
-  it('offers a split by each selector the value is not split by, and a join of each it is', () => {
-    const { onSplit, onJoin, rerender, onChange } = mount();
-    const toggle = screen.getByRole('button', { name: 'Split Gap' });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('button', { name: 'Split by Mode' })).toBeNull();
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.queryByRole('button', { name: /^Join / })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Split by Mode' }));
-    expect(onSplit).toHaveBeenCalledWith('gap', MODE);
-    fireEvent.click(screen.getByRole('button', { name: 'Split by Density' }));
-    expect(onSplit).toHaveBeenLastCalledWith('gap', DENSITY);
-
-    rerender(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 4 }} onChange={onChange} onSplit={onSplit} onJoin={onJoin}
-      loci={new Map([['gap', byMode(4, 8)]])} />);
-    expect(screen.getByRole('button', { name: 'Gap by Mode' })).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.queryByRole('button', { name: 'Split by Mode' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Split by Density' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Join Mode' }));
-    expect(onJoin).toHaveBeenCalledWith('gap', MODE);
   });
 
   it('leaves the name of the row’s control alone, which the marks and the control beside them would otherwise join', () => {
@@ -101,12 +79,12 @@ describe('a split value in PrefsForm', () => {
       children: {
         look: SCHEMA.children.look!,
         align: {
-          kind: 'enum', name: 'Align', description: '', default: 'tight', splitBy: [MODE],
+          kind: 'enum', name: 'Align', description: '', default: 'tight', scopes: [{ selector: MODE }],
           options: [{ value: 'tight', label: 'Tight' }, { value: 'loose', label: 'Loose' }],
         },
       },
     };
-    mount({ schema, values: {}, loci: new Map([['align', byMode('tight', 'loose')]]) });
+    mount({ schema, values: {}, scopes: new Map([['align', byMode('tight', 'loose')]]) });
     expect(screen.getByRole('button', { name: 'Tight Align' })).toBeTruthy();
   });
 
@@ -117,7 +95,7 @@ describe('a split value in PrefsForm', () => {
       ),
       {},
     );
-    mount({ loci: new Map([['gap', byMode(4, 8)]]), renderers: { number: plain } });
+    mount({ scopes: new Map([['gap', byMode(4, 8)]]), renderers: { number: plain } });
     const field = screen.getByRole('textbox', { name: /^Gap\b/ });
     const row = field.closest('label');
     expect(row).not.toBeNull();
@@ -128,7 +106,7 @@ describe('a split value in PrefsForm', () => {
   });
 
   it('opens to one control per option, each named for the leaf and the option and showing its member', () => {
-    mount({ loci: new Map([['gap', byMode(4, 8)]]) });
+    mount({ scopes: new Map([['gap', byMode(4, 8)]]) });
     const toggle = screen.getByRole('button', { name: 'Gap by Mode' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('group', { name: 'Gap by Mode' })).toBeNull();
@@ -143,7 +121,7 @@ describe('a split value in PrefsForm', () => {
   });
 
   it('writes the one member edited, and nothing through onChange', () => {
-    const { onChange, onChangeAt } = mount({ loci: new Map([['gap', byMode(4, 8)]]) });
+    const { onChange, onChangeAt } = mount({ scopes: new Map([['gap', byMode(4, 8)]]) });
     fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode' }));
     type(screen.getByRole('spinbutton', { name: 'Gap, Light' }), '20');
     expect(onChangeAt).toHaveBeenCalledTimes(1);
@@ -152,7 +130,7 @@ describe('a split value in PrefsForm', () => {
   });
 
   it('nests a second selector under each option of the first', () => {
-    const { onChangeAt } = mount({ loci: new Map([['gap', byMode(byDensity(1, 2), byDensity(3, 5))]]) });
+    const { onChangeAt } = mount({ scopes: new Map([['gap', byMode(byDensity(1, 2), byDensity(3, 5))]]) });
     expect(screen.getByTitle('Mode: Dark')).toBeTruthy();
     expect(screen.getByTitle('Density: Compact')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode and Density' }));
@@ -165,61 +143,58 @@ describe('a split value in PrefsForm', () => {
     expect(onChangeAt).toHaveBeenCalledWith('gap', 9, { [MODE]: 'light', [DENSITY]: 'roomy' });
   });
 
-  it('shows the default for an option the locus holds nothing for', () => {
-    mount({ loci: new Map([['gap', { $by: MODE, $of: { dark: 9 } }]]), values: { gap: 9 } });
+  it('shows the default for an option the scope holds nothing for', () => {
+    mount({ scopes: new Map([['gap', { $by: MODE, $in: { dark: 9 } }]]), values: { gap: 9 } });
     fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode' }));
     expect(screen.getByRole('spinbutton', { name: 'Gap, Dark' })).toHaveValue('9');
     expect(screen.getByRole('spinbutton', { name: 'Gap, Light' })).toHaveValue('4');
   });
 
-  it('draws a leaf with no splitBy as it did, whatever the form is given', () => {
+  it('draws a leaf with no scopes as it did, whatever the form is given', () => {
     const plain: PrefGroup = { name: 'Prefs', children: { name: SCHEMA.children.name! } };
     const bare = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()} />);
-    const given = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()} onSplit={vi.fn()} onJoin={vi.fn()}
-      onChangeAt={vi.fn()} loci={new Map([['name', byMode('a', 'b')]])} />);
+    const given = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()}
+      onChangeAt={vi.fn()} scopes={new Map([['name', byMode('a', 'b')]])} />);
     expect(given).toBe(bare);
   });
 
   it('draws a leaf that may be split as it did in a form given nothing to split with', () => {
-    const never: PrefGroup = { ...SCHEMA, children: { ...SCHEMA.children, gap: { ...SCHEMA.children.gap!, splitBy: undefined } as never } };
+    const never: PrefGroup = { ...SCHEMA, children: { ...SCHEMA.children, gap: { ...SCHEMA.children.gap!, scopes: undefined } as never } };
     const bare = markup(<PrefsForm schema={never} layout="list" values={{ gap: 4 }} onChange={vi.fn()} />);
     const given = markup(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 4 }} onChange={vi.fn()} />);
     expect(given).toBe(bare);
   });
 
   it('starts with the rows named open, which the reader can then shut', () => {
-    mount({ loci: new Map([['gap', byMode(4, 8)]]), defaultSplitOpen: ['gap'] });
+    mount({ scopes: new Map([['gap', byMode(4, 8)]]), defaultSplitOpen: ['gap'] });
     expect(screen.getByRole('spinbutton', { name: 'Gap, Light' })).toHaveValue('8');
     fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode' }));
     expect(screen.queryByRole('spinbutton', { name: 'Gap, Light' })).toBeNull();
   });
 
-  it('stays open by path when the locus it shows is replaced', () => {
-    const { rerender, onChange, onChangeAt } = mount({ loci: new Map([['gap', byMode(4, 8)]]) });
+  it('stays open by path when the scope it shows is replaced', () => {
+    const { rerender, onChange, onChangeAt } = mount({ scopes: new Map([['gap', byMode(4, 8)]]) });
     fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode' }));
     rerender(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 4 }} onChange={onChange} onChangeAt={onChangeAt}
-      loci={new Map([['gap', byMode(4, 30)]])} />);
+      scopes={new Map([['gap', byMode(4, 30)]])} />);
     expect(screen.getByRole('spinbutton', { name: 'Gap, Light' })).toHaveValue('30');
   });
 });
 
 describe('a split value where the row has no members to open', () => {
-  it('marks a mixed row, and opens it to its split and joins alone', () => {
-    mount({ loci: new Map([['gap', byMode(4, 8)]]), mixed: new Set(['gap']) });
+  it('marks a mixed row, and has nothing to open it to', () => {
+    mount({ scopes: new Map([['gap', byMode(4, 8)]]), mixed: new Set(['gap']) });
     expect(screen.getByTitle('Mode: Dark')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode' }));
-    expect(screen.getByRole('button', { name: 'Join Mode' })).toBeTruthy();
-    expect(within(screen.getByRole('group', { name: 'Gap by Mode' })).queryByRole('spinbutton')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Gap by Mode' })).toBeNull();
   });
 
-  it('draws no members in a form that cannot write one', () => {
-    mount({ loci: new Map([['gap', byMode(4, 8)]]), onChangeAt: undefined, defaultSplitOpen: ['gap'] });
-    expect(screen.getByRole('button', { name: 'Join Mode' })).toBeTruthy();
-    expect(within(screen.getByRole('group', { name: 'Gap by Mode' })).queryByRole('spinbutton')).toBeNull();
+  it('has nothing to open in a form that cannot write one value', () => {
+    mount({ scopes: new Map([['gap', byMode(4, 8)]]), onChangeAt: undefined, defaultSplitOpen: ['gap'] });
+    expect(screen.queryByRole('group', { name: 'Gap by Mode' })).toBeNull();
   });
 
-  it('has nothing to open in a form given the loci and nothing to change them with', () => {
-    render(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 4 }} onChange={vi.fn()} loci={new Map([['gap', byMode(4, 8)]])} />);
+  it('has nothing to open in a form given the scopes and nothing to change them with', () => {
+    render(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 4 }} onChange={vi.fn()} scopes={new Map([['gap', byMode(4, 8)]])} />);
     expect(screen.getByTitle('Mode: Dark')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Gap by Mode' })).toBeNull();
   });
@@ -232,16 +207,15 @@ describe('a split value where the row has no members to open', () => {
         shadow: {
           name: 'Shadow',
           children: {
-            on: { kind: 'boolean', name: 'Shadow on', description: '', default: true, control: 'switch', heading: true, splitBy: [MODE] },
+            on: { kind: 'boolean', name: 'Shadow on', description: '', default: true, control: 'switch', heading: true, scopes: [{ selector: MODE }] },
             blur: { kind: 'number', name: 'Blur', description: '', default: 4 },
           },
         },
       },
     };
-    mount({ schema, values: {}, loci: new Map([['shadow.on', byMode(true, false)]]) });
+    mount({ schema, values: {}, scopes: new Map([['shadow.on', byMode(true, false)]]) });
     expect(within(screen.getByRole('heading', { name: /Shadow/ })).getByTitle('Mode: Dark')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /by Mode$/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Join Mode' })).toBeNull();
   });
 
   it('marks a leaf drawn in a bar, and offers nothing there', () => {
@@ -252,15 +226,14 @@ describe('a split value where the row has no members to open', () => {
         tools: { name: 'Tools', as: 'bar', children: { gap: SCHEMA.children.gap! } },
       },
     };
-    mount({ schema, values: {}, loci: new Map([['tools.gap', byMode(4, 8)]]) });
+    mount({ schema, values: {}, scopes: new Map([['tools.gap', byMode(4, 8)]]) });
     expect(screen.getByTitle('Mode: Dark')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Gap by Mode' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Join Mode' })).toBeNull();
   });
 });
 
 describe('a split value under what else shapes a row', () => {
-  it('takes no split, join, or member edit on a row a condition disables', () => {
+  it('takes no edit of a value on a row a condition disables', () => {
     const schema: PrefGroup = {
       ...SCHEMA,
       children: {
@@ -269,13 +242,7 @@ describe('a split value under what else shapes a row', () => {
         gap: { ...SCHEMA.children.gap!, enableIf: { path: 'on' } } as never,
       },
     };
-    const { onSplit, onJoin } = mount({ schema, loci: new Map([['gap', byMode(4, 8)]]), defaultSplitOpen: ['gap'] });
-    const join = screen.getByRole('button', { name: 'Join Mode' });
-    expect(join).toBeDisabled();
-    fireEvent.click(join);
-    fireEvent.click(screen.getByRole('button', { name: 'Split by Density' }));
-    expect(onJoin).not.toHaveBeenCalled();
-    expect(onSplit).not.toHaveBeenCalled();
+    mount({ schema, scopes: new Map([['gap', byMode(4, 8)]]), defaultSplitOpen: ['gap'] });
     expect(screen.getByRole('spinbutton', { name: 'Gap, Light' })).toBeDisabled();
   });
 
@@ -285,7 +252,7 @@ describe('a split value under what else shapes a row', () => {
       children: {
         look: SCHEMA.children.look!,
         edge: {
-          kind: 'object', name: 'Edge', description: '', default: { width: 1, inset: 0 }, splitBy: [MODE],
+          kind: 'object', name: 'Edge', description: '', default: { width: 1, inset: 0 }, scopes: [{ selector: MODE }],
           children: {
             width: { kind: 'number', name: 'Width', description: '', default: 1 },
             inset: { kind: 'number', name: 'Inset', description: '', default: 0 },
@@ -293,7 +260,7 @@ describe('a split value under what else shapes a row', () => {
         } as never,
       },
     };
-    const { onChangeAt } = mount({ schema, values: {}, loci: new Map([['edge', byMode({ width: 1, inset: 0 }, { width: 3, inset: 2 })]]) });
+    const { onChangeAt } = mount({ schema, values: {}, scopes: new Map([['edge', byMode({ width: 1, inset: 0 }, { width: 3, inset: 2 })]]) });
     fireEvent.click(screen.getByRole('button', { name: 'Edge by Mode' }));
     const members = screen.getByRole('group', { name: 'Edge by Mode' });
     const widths = within(members).getAllByRole('spinbutton', { name: 'Width' });
@@ -307,21 +274,19 @@ describe('a split value under what else shapes a row', () => {
       ...SCHEMA,
       children: { ...SCHEMA.children, gap: { ...SCHEMA.children.gap!, block: true } as never },
     };
-    const { onSplit } = mount({ schema, loci: new Map([['gap', byMode(4, 8)]]) });
+    mount({ schema, scopes: new Map([['gap', byMode(4, 8)]]) });
     expect(screen.getByTitle('Mode: Dark')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Gap by Mode' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Split by Density' }));
-    expect(onSplit).toHaveBeenCalledWith('gap', DENSITY);
     expect(screen.getByRole('spinbutton', { name: 'Gap, Light' })).toHaveValue('8');
   });
 
   it('hands an app renderer each member as it hands it the leaf', () => {
     const schema: PrefGroup = {
       ...SCHEMA,
-      children: { look: SCHEMA.children.look!, odd: { kind: 'odd', name: 'Odd', description: '', default: 1, splitBy: [MODE] } as never },
+      children: { look: SCHEMA.children.look!, odd: { kind: 'odd', name: 'Odd', description: '', default: 1, scopes: [{ selector: MODE }] } as never },
     };
     const { onChangeAt } = mount({
-      schema, values: { odd: 2 }, loci: new Map([['odd', byMode(2, 3)]]),
+      schema, values: { odd: 2 }, scopes: new Map([['odd', byMode(2, 3)]]),
       renderers: { odd: (ctx) => <button type="button" onClick={() => ctx.setValue(7)}>{ctx.pref.name}: {String(ctx.value)}</button> },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Odd by Mode' }));
@@ -336,17 +301,17 @@ describe('the control that opens a split row', () => {
       name: 'Test',
       children: {
         mode: { kind: 'enum', name: 'Mode', description: '', default: 'dark', options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }] },
-        gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: ['mode'] },
+        gap: { kind: 'number', name: 'Gap', description: '', default: 4, scopes: [{ selector: 'mode' }] },
       },
     };
-    const loci = new Map([['gap', { $by: 'mode', $of: { dark: 4, light: 8 } }]]);
-    render(<PrefsForm schema={SCHEMA} values={{ mode: 'dark', gap: 4 }} onChange={() => {}} loci={loci} onChangeAt={() => {}} onJoin={() => {}} />);
+    const scopes = new Map([['gap', { $by: 'mode', $in: { dark: 4, light: 8 } }]]);
+    render(<PrefsForm schema={SCHEMA} values={{ mode: 'dark', gap: 4 }} onChange={() => {}} scopes={scopes} onChangeAt={() => {}} />);
     const toggle = screen.getByRole('button', { name: /Gap/, expanded: false });
     expect(toggle.getAttribute('aria-controls')).toBeNull();
     fireEvent.click(toggle);
     const open = screen.getByRole('button', { name: /Gap/, expanded: true });
     const body = document.getElementById(open.getAttribute('aria-controls')!);
     expect(body?.getAttribute('role')).toBe('group');
-    expect(body?.contains(screen.getByRole('button', { name: 'Join Mode' }))).toBe(true);
+    expect(body?.contains(screen.getByRole('spinbutton', { name: 'Gap, Light' }))).toBe(true);
   });
 });

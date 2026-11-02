@@ -3,7 +3,7 @@ import { checkPrefCondition } from './conditionCheck';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
-import { prefJudge } from './scope';
+import { prefJudge } from './status';
 import { prefShownReader } from './shown';
 
 const italic = { read: (stored: unknown) => stored === 'italic', write: (on: boolean) => (on ? 'italic' : undefined) };

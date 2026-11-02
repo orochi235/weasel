@@ -236,6 +236,7 @@ export type {
   ConfigRule,
   ConfigRuleContext,
   ConfigSchema,
+  ConfigSchemaBuilder,
   ConfigShape,
   ControlRenderer,
   DialogSpec,

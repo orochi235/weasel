@@ -84,7 +84,7 @@ describe('usePrefsValues', () => {
     expect(result.current.stored).toEqual({ stray: 'x', other: 2 });
   });
 
-  it('returns the loci, and a split, a join, and a write at a selection, for PrefsForm', () => {
+  it('returns the scopes and a write at a selection, for PrefsForm', () => {
     const schema = {
       name: 'Split',
       children: {
@@ -92,24 +92,18 @@ describe('usePrefsValues', () => {
           kind: 'enum', name: 'Mode', description: '', default: 'dark',
           options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }],
         },
-        gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: ['mode'] },
+        gap: { kind: 'number', name: 'Gap', description: '', default: 4, scopes: [{ selector: 'mode' }] },
       },
     } satisfies PrefGroup;
     const store = openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 'p.' });
     const { result } = renderHook(() => usePrefsValues(store));
-    const empty = result.current.loci;
-    expect(empty.size).toBe(0);
-    act(() => result.current.split('gap', 'mode'));
-    expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $of: { dark: 4, light: 4 } });
+    expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: {} });
     act(() => result.current.setAt('gap', 9, { mode: 'light' }));
-    expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $of: { dark: 4, light: 9 } });
+    expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: { light: 9 } });
     expect(result.current.values.gap).toBe(4);
-    const held = result.current.loci;
+    const held = result.current.scopes;
     act(() => result.current.set('mode', 'light'));
     expect(result.current.values.gap).toBe(9);
-    expect(result.current.loci.get('gap')).toBe(held.get('gap'));
-    act(() => result.current.join('gap', 'mode'));
-    expect(result.current.loci.size).toBe(0);
-    expect(result.current.values.gap).toBe(9);
+    expect(result.current.scopes.get('gap')).toBe(held.get('gap'));
   });
 });
