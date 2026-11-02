@@ -23,9 +23,9 @@ const SCHEMA: PrefGroup = {
 
 const held: PrefLocus = { $by: 'mode', $in: { types: 0 }, [TBD_REST_KEY]: { $by: 'layout', $in: { a: 1 }, [TBD_REST_KEY]: 5 } };
 
-function mount() {
+function mount(othersLabel?: string) {
   const on = { onChange: vi.fn(), onSplit: vi.fn(), onJoin: vi.fn(), onChangeAt: vi.fn() };
-  render(<PrefsForm schema={SCHEMA} layout="list" values={{ limit: 5 }} loci={new Map([['limit', held]])} {...on} />);
+  render(<PrefsForm schema={SCHEMA} layout="list" values={{ limit: 5 }} loci={new Map([['limit', held]])} othersLabel={othersLabel} {...on} />);
   return on;
 }
 
@@ -41,6 +41,12 @@ describe('a value kept per a closed selector in PrefsForm', () => {
     fireEvent.change(others, { target: { value: '7' } });
     fireEvent.blur(others);
     expect(onChangeAt).toHaveBeenCalledWith('limit', 7, { mode: 'dark' });
+  });
+
+  it('calls the shared row what othersLabel says', () => {
+    mount('Every other mode');
+    fireEvent.click(screen.getByRole('button', { name: 'Limit by Mode' }));
+    expect(screen.getByRole('spinbutton', { name: 'Limit, Every other mode' })).toHaveValue('5');
   });
 
   it('offers a join for the selector it is split by, and no split by a free selector', () => {

@@ -33,7 +33,7 @@ export function splitRowState(
   split: SplitCtx | undefined, values: unknown, pref: PrefLeaf, own: string, from: string, aliased: boolean, mixed: boolean,
 ): SplitRowState | null {
   if (split === undefined) return null;
-  const shape = splitShape(pref, split.loci?.get(from), (path) => split.selectorAt(path, aliased), values);
+  const shape = splitShape(pref, split.loci?.get(from), (path) => split.selectorAt(path, aliased), values, split.othersLabel);
   if (shape === null) return null;
   const { levels, free } = shape;
   const members = shape.locus !== undefined && levels.length > 0 && split.onChangeAt !== undefined && !mixed;

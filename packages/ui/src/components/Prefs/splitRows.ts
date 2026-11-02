@@ -30,6 +30,8 @@ export interface PrefSplitProps {
   /** An edit of one member of a split leaf's value: the one `at` names, an option for each selector the value is
    *  split by. Without it a split row does not open. An edit of the row itself goes to `onChange`. */
   onChangeAt?: (path: string, value: unknown, at: PrefSelection) => void;
+  /** What the one row standing for every option a pref's overrides leave out is called. Default `Others`. */
+  othersLabel?: string;
   /** Paths of the split rows open to their members before the reader opens or shuts one. Which are open is the
    *  form's own state from then on. Default: none. */
   defaultSplitOpen?: readonly string[];
@@ -52,8 +54,8 @@ export interface SplitLevel {
   by: string;
   /** The selector leaf's name. */
   name: string;
-  /** A row each: the options with a member of their own, then, where the leaf's `per` closes the selector over some
-   *  out, one labeled `Others` standing for all of those, which share one member. */
+  /** A row each: the options with a value of their own, then, where the pref's overrides leave some out, one
+   *  labeled `othersLabel` standing for all of those, which share one value. */
   options: ReadonlyArray<{ value: string; label: string }>;
   /** The label of the option the selector is set to. */
   current: string;
@@ -83,7 +85,7 @@ export interface SplitMember {
 export function useSplitRows(
   props: PrefSplitProps, schema: PrefGroup, over: PrefGroup | PrefSection | undefined,
 ): SplitCtx | undefined {
-  const { loci, onSplit, onJoin, onChangeAt } = props;
+  const { loci, onSplit, onJoin, onChangeAt, othersLabel } = props;
   const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set(props.defaultSplitOpen));
   const formId = useId();
   const setOpen = useCallback((path: string, open: boolean) => {
@@ -99,8 +101,8 @@ export function useSplitRows(
     if (loci === undefined && onSplit === undefined && onJoin === undefined) return undefined;
     const selectorAt = (path: string, aliased: boolean): PrefLeaf | undefined => prefLeafAt(aliased ? (over ?? schema) : schema, path);
     const bodyId = (path: string): string => `${formId}split-${path}`;
-    return { loci, onSplit, onJoin, onChangeAt, selectorAt, opened, setOpen, bodyId };
-  }, [loci, onSplit, onJoin, onChangeAt, schema, over, opened, setOpen, formId]);
+    return { loci, onSplit, onJoin, onChangeAt, othersLabel, selectorAt, opened, setOpen, bodyId };
+  }, [loci, onSplit, onJoin, onChangeAt, othersLabel, schema, over, opened, setOpen, formId]);
 }
 
 /**
@@ -112,6 +114,7 @@ export function splitShape(
   locus: PrefLocus | undefined,
   selectorAt: (path: string) => PrefLeaf | undefined,
   values: unknown,
+  othersLabel = 'Others',
 ): SplitShape | null {
   const axes = tbdPerAxes(pref);
   if (!axes?.length) return null;
@@ -132,7 +135,7 @@ export function splitShape(
     const list = tbdPerClosed(pref)?.[path]?.options;
     const owning = list ? all.filter((option) => list.includes(option.value)) : all;
     const shared = all.find((option) => !owning.includes(option));
-    const options = shared ? [...owning, { value: shared.value, label: 'Others' }] : owning;
+    const options = shared ? [...owning, { value: shared.value, label: othersLabel }] : owning;
     levels.push({ by: path, name: selector.name, options, current: all.find((o) => o.value === value)?.label ?? String(value) });
   }
   return levels.length + free.length === 0 ? null : { levels, free, locus };
