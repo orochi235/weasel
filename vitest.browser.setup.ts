@@ -3,6 +3,7 @@ import { beforeAll } from 'vitest';
 import { commands } from 'vitest/browser';
 import './scripts/vitest-resize-loops.setup.ts';
 import './scripts/vitest-request-log.setup.ts';
+import './scripts/vitest-layer-throws.setup.ts';
 
 // Testing Library's `waitFor` and `findBy*` give up after one second, the same default the
 // `browser` project already raises for `expect.poll`.
