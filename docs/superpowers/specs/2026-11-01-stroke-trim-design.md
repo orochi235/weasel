@@ -4,7 +4,7 @@ For whoever builds the stroke trim, and later the 3D line pass that consumes it.
 Answers: what a trimmed stroke draws, how the trim is specified and animated, and which parts are
 dimension-free so a 3D renderer can use them unchanged.
 
-Status: designed and approved by the maintainer (2026-11-01); unbuilt. Branch `stroke-trim`.
+Status: designed and approved by the maintainer (2026-11-01); built on branch `stroke-trim` (2026-11-02).
 
 ## Why
 
@@ -88,8 +88,9 @@ Neither needs a special case.
   pop in as the pen passes them. A vertex exactly at a window end is an end, not interior.
   *(my call)*
 - **Dashes stay anchored to the path's start**, so drawing on reveals a fixed pattern instead of a
-  pattern that slides as the line grows. *(builder note: this needs an internal dash phase;
-  `splitForDash` always starts at phase 0 today.)*
+  pattern that slides as the line grows: each run starts its pattern at the phase the untrimmed stroke
+  has there (`splitForDash`'s `phase`, SVG's `stroke-dashoffset`, PDF's `d` phase). Whether a dash
+  too fine to draw goes solid is decided on the untrimmed path, so a trim never changes it.
 - **A text node's stroke ignores its trim** (2026-11-01): each glyph's outline is stroked on its own,
   so the text has no single pen order for a window to run along.
 - **Picking hits only the visible span of the authored `Stroke.trim`.** A trim the animator is
@@ -112,9 +113,10 @@ and keep none, so the work splits *(my call)*:
   arc lengths, or `null` for nothing.
 
 `@weasel-js/geom/3d` gets the `Vec3` wrappers, as `portCurve3.ts` does. The 2D stroke fills the table
-from the corner-resolved path's own curves, measured by exact arc length (2026-11-01: filled from
-flattened polylines, each reader's tolerance put the cut somewhere else, and the canvas cut moved
-with zoom). A trim resolves once on it to curve positions, a segment and its curve parameter, and
+from the corner-resolved path's own curves, measured by exact arc length (2026-11-01), because a
+table filled from flattened polylines puts each reader's cut at its own tolerance and moves the
+canvas cut with zoom. `measurePath` and `pointAlongPath` read the same table (2026-11-02), so a label
+at 0.5 sits where a trim at 0.5 cuts. A trim resolves once on it to curve positions, a segment and its curve parameter, and
 every reader cuts its own flattening at those; a dash phase stays in the reader's own measure. The
 3D line pass will fill the table from a `Vec3` polyline and depend on `stroke` for `resolveTrim`.
 
@@ -124,18 +126,22 @@ every reader cuts its own flattening at those; a dash phase stays in the reader'
   populated and before marker insets and dashing. Measure in world space; the rect-under-metric path
   extracts polylines in metric space, so convert or measure before that.
 - **Marker heads** (`stroke/src/markerHeads.ts`, reached from `renderer/src/cache/markerCommandCache.ts`
-  and `renderer/src/markerCommands.ts`) extract their own polylines, and from the **raw** path: the
-  ribbon flattens the corner-resolved one. Under a trim both must resolve the window against one
-  length table built from the corner-resolved geometry, or the head and the line's end disagree.
+  and `renderer/src/markerCommands.ts`) extract their own polylines from the corner-resolved path, as
+  the ribbon does, and both window them through one `windowTrim` on one length table, so the head
+  and the line's end coincide.
+- **Picking and pose frames**: a stretch or skew can turn a nearly straight rounded corner below the
+  turn corners are cut at, so corners are resolved before a non-uniform pose frame
+  (`pathThroughPoseFrame`, 2026-11-02); the framed outline then has the local path's segments and a
+  trim's curve positions name the same points on both.
 - **Caches**: `strokeMeshCache` and the marker command cache key on the trim. An animating trim
   rebuilds its stroke every frame in this cut (see "Later").
-- **Export**: SVG (`svg/src/strokeAttrs.ts` and the path writer) and PDF (`pdf/src/strokeOps.ts`) bake
-  the trim: they write the visible span's geometry, so markers land at the window's ends and dashes
+- **Export**: SVG (`svg/src/trimmedStroke.ts`) and PDF (`pdf/src/strokeOps.ts`) bake the trim through
+  stroke's `trimmedPath`: they write the visible span's geometry, curves split rather than flattened, so markers land at the window's ends and dashes
   still work. The `pathLength` + `stroke-dasharray` trick is rejected because it leaves markers at
   the original ends and cannot coexist with a dash. Import does not recover a trim.
 - **Animation**: per-frame trims must not go through ops or undo history. Mirror the vertex-color
-  path: a per-node trim override table on the animator (as `ColorOverrideRegistry` in
-  `animator/src/colorRegistry.ts`), read at draw time by core's canvas (as `core/src/canvas/colorOverrides.ts`).
+  path: a per-node trim override table on the animator (`TrimOverrideRegistry`, beside
+  `ColorOverrideRegistry`), read at draw time by core's canvas through `core/src/canvas/paintOverrides.ts`.
 - **Diagrams**: `EdgeStyle` (`diagram/src/dataTypes.ts`) gains `trim?: StrokeTrim`, passed to the
   edge's stroke. An edge animates through the override table by its scene node id.
 - **Demo**: one site demo, a small diagram whose edges draw on in sequence through the animator,
@@ -157,10 +163,10 @@ every reader cuts its own flattening at those; a dash phase stays in the reader'
 - **Trimming without rebuilding**: carry arc length on each ribbon vertex and clip in the shader, so
   an animating trim is a uniform. Filed in `docs/PERF.md`.
 
-## Left to the builder
+## Left to the builder, and what was chosen (2026-11-02)
 
-- Names inside `geom` (`lengthTable`, the query's name), and whether the length table is cached per
-  path.
-- Whether the internal `Trim` interface in `stroke/src/tessellate/insets.ts` is renamed to avoid
-  confusion with `StrokeTrim`. (The path-tools Trim/Extend tool edits geometry; this is paint only.)
-- How the exporters split curves at the span's ends.
+- Names inside `geom`: `lengthTable` for runs, `pathLengthTable` for a `Path`, which is cached per path
+  object; `pointAtLength` and `curveSpan` for the queries.
+- The internal `Trim` interface in `stroke/src/tessellate/insets.ts` keeps its name; it isn't exported.
+- The exporters split curves at the span's ends with `splitCubicAt` / `splitQuadraticAt` at the
+  resolved curve parameters.
