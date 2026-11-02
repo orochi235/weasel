@@ -1,4 +1,4 @@
-import type { PrefCondition, PrefPair } from '@weasel-js/prefs';
+import type { PrefCondition, PrefPair, TbdPer } from '@weasel-js/prefs';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -90,6 +90,19 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    *  (`'offset.y'`), labeled `pair.label` or else this field's label. */
   pair(pair: PrefPair): this {
     return this.ann({ pair });
+  }
+
+  /**
+   * Keep this leaf's value separately for each option of the selector at
+   * `selector`, a full path. Chain once per selector, outermost first. With
+   * `overrides` (option names, or option → proposed value) the selector is
+   * closed: only those options keep their own value and the rest share one.
+   * Without, it is open: an option keeps its own once one is written. The
+   * name is a placeholder until the feature is named.
+   */
+  tbdPer(selector: string, overrides?: TbdPer['overrides']): this {
+    const per: TbdPer = overrides === undefined ? { selector } : { selector, overrides };
+    return this.ann({ tbdPer: [...(this.annotations.tbdPer ?? []), per] });
   }
 
   /** Render under a named section heading. `collapsed` opens the section
