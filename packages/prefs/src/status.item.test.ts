@@ -4,7 +4,7 @@ import { prefValueAtPath } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
-import { applyPrefConditions, PREF_ENTRY, prefJudge, prefScopeAt } from './scope';
+import { applyPrefConditions, PREF_ENTRY, prefJudge, prefStatusAt } from './status';
 
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
@@ -54,7 +54,7 @@ describe("applyPrefConditions over a list's and a map's item", () => {
     const bare: PrefGroup = { name: '', children: { globs: { kind: 'list', name: 'Globs', description: '', default: [] } as unknown as PrefLeaf } };
     const judge = prefJudge(bare, () => undefined);
     expect(applyPrefConditions(bare, judge).shown).toBe(bare);
-    expect(prefScopeAt(bare, 'globs.0', judge)).toEqual({ shown: true, enabled: true });
+    expect(prefStatusAt(bare, 'globs.0', judge)).toEqual({ shown: true, enabled: true });
   });
 
   it('walks an item under a section schema, where a key is the whole path', () => {
@@ -65,14 +65,14 @@ describe("applyPrefConditions over a list's and a map's item", () => {
   });
 });
 
-describe('prefScopeAt inside an entry', () => {
+describe('prefStatusAt inside an entry', () => {
   it("answers for a field of the item at any entry's step", () => {
     const judge = over({ eased: false, holds: false, open: false });
-    expect(prefScopeAt(schema, 'phases.0.hold', judge)).toEqual({ shown: true, enabled: false });
-    expect(prefScopeAt(schema, 'phases.*.ease', judge).shown).toBe(false);
-    expect(prefScopeAt(schema, 'phases.7.length', judge)).toEqual({ shown: true, enabled: true });
-    expect(prefScopeAt(schema, 'weights.left', judge).enabled).toBe(false);
-    expect(prefScopeAt(schema, 'runs.2.5', judge).enabled).toBe(false);
+    expect(prefStatusAt(schema, 'phases.0.hold', judge)).toEqual({ shown: true, enabled: false });
+    expect(prefStatusAt(schema, 'phases.*.ease', judge).shown).toBe(false);
+    expect(prefStatusAt(schema, 'phases.7.length', judge)).toEqual({ shown: true, enabled: true });
+    expect(prefStatusAt(schema, 'weights.left', judge).enabled).toBe(false);
+    expect(prefStatusAt(schema, 'runs.2.5', judge).enabled).toBe(false);
     expect((schema.children.weights as PrefMap).item.name).toBe('Weight');
   });
 });

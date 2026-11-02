@@ -1,7 +1,7 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
-  isBuiltinPref, isPrefLeaf, isPrefSection, PREF_SCOPE, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefDisplayBounds, prefLeafAt,
-  prefNumberAt, prefScopeIn, prefScopeUnder, prefUnitAccepts, prefValueAtPath, resolvePrefUnit,
+  isBuiltinPref, isPrefLeaf, isPrefSection, PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefDisplayBounds, prefLeafAt,
+  prefNumberAt, prefStatusIn, prefStatusUnder, prefUnitAccepts, prefValueAtPath, resolvePrefUnit,
   type PrefConditionJudge, type PrefOwner,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefField, type PrefGroupAs, type PrefLeaf, type PrefList, type PrefMap, type PrefNumber, type PrefObject,
@@ -294,14 +294,14 @@ function drawIn(ctx: Ctx): MenuDraw {
     access: { values: values!, ...(onChange ? { onChange } : {}) },
     leaf: (leaf, key, access, off, entry) => leafRows(through(ctx, access, entry), leaf, key, key, off),
     fields: (fields, prefix, access, off) => {
-      const scope = { ...PREF_SCOPE, enabled: !off };
+      const status = { ...PREF_STATUS, enabled: !off };
       const inner = through(ctx, access);
-      return tidy(groupRows(inner, fields, prefix, { node: {}, scope, above: scope, ...(inner.entry ? { entry: inner.entry } : {}) }));
+      return tidy(groupRows(inner, fields, prefix, { node: {}, status, above: status, ...(inner.entry ? { entry: inner.entry } : {}) }));
     },
   };
 }
 
-const ROOT: PrefOwner = { node: {}, scope: PREF_SCOPE, above: PREF_SCOPE };
+const ROOT: PrefOwner = { node: {}, status: PREF_STATUS, above: PREF_STATUS };
 
 function groupRows(ctx: Ctx, children: Children, prefix: string, owner: PrefOwner): MenuEntry[] {
   const { read } = ctx;
@@ -311,11 +311,11 @@ function groupRows(ctx: Ctx, children: Children, prefix: string, owner: PrefOwne
     const key = prefix ? `${prefix}.${k}` : k;
     // A section's key names its rows but adds nothing to their paths.
     const path = !isPrefLeaf(node) && isPrefSection(node) ? prefix : key;
-    const sits = isPrefLeaf(node) ? prefScopeIn(owner, path, holds) : owner.scope;
-    const scope = prefScopeUnder(sits, node, holds);
-    if (!scope.shown) continue;
-    const disabled = !scope.enabled;
-    const inner: PrefOwner = { node, scope, above: sits, ...(owner.entry ? { entry: owner.entry } : {}) };
+    const sits = isPrefLeaf(node) ? prefStatusIn(owner, path, holds) : owner.status;
+    const status = prefStatusUnder(sits, node, holds);
+    if (!status.shown) continue;
+    const disabled = !status.enabled;
+    const inner: PrefOwner = { node, status, above: sits, ...(owner.entry ? { entry: owner.entry } : {}) };
     if (isPrefLeaf(node)) {
       out.push(...leafRows(ctx, node, path, path, disabled));
       continue;

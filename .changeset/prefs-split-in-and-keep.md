@@ -3,7 +3,14 @@
 '@weasel-js/ui': patch
 '@weasel-js/theme': patch
 '@weasel-js/labkit': patch
+'@weasel-js/routing': patch
 ---
+
+**Breaking:** what a node's conditions come to, `{ shown, enabled }`, is now called its status, freeing
+"scope" for scoped prefs. `PrefScope` is `PrefStatus`, `PREF_SCOPE` is `PREF_STATUS`, `prefScopeAt`
+is `prefStatusAt`, `prefScopeIn` is `prefStatusIn`, `prefScopeUnder` is `prefStatusUnder`,
+`PrefScopeAtOptions` is `PrefStatusAtOptions`, and `PrefOwner`'s `scope` field is `status`. The old
+names are gone, with no aliases.
 
 **Breaking for stored data:** a split value's members are now keyed `$in`, not `$of`:
 `{ $by: 'mode', $in: { dark: 4, light: 8 } }`. A value stored as `{ $by, $of }` is read as `$in` by

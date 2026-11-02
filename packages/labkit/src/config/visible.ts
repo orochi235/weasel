@@ -1,21 +1,21 @@
 import {
   applyPrefConditions,
   applyPrefEntryConditions,
-  PREF_SCOPE,
+  PREF_STATUS,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefEntryApplied,
   type PrefGroup,
   type PrefLeaf,
-  type PrefScope,
+  type PrefStatus,
   type PrefSection,
   prefAliasTargets,
   prefJudge,
   prefLeafAt,
   prefReader,
   prefSchemaHolding,
-  prefScopeAt,
-  prefScopeUnder,
+  prefStatusAt,
+  prefStatusUnder,
 } from '@weasel-js/prefs';
 import { schemaNodeAtPath, valueAtPath } from './path';
 import type { ConfigEntry, ResolvedConfig } from './types';
@@ -55,24 +55,24 @@ function conditionReader(
 /**
  * Whether the node at a dotted path is shown and enabled, with every group
  * above it counted. The conditions the schema carries as data are core's to
- * answer (`prefScopeAt`); the functions beside the tree are asked here, for
+ * answer (`prefStatusAt`); the functions beside the tree are asked here, for
  * the node and for each group on the way to it.
  */
-function scopeAt(
+function statusAt(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
   over?: PrefGroup | PrefSection,
-): PrefScope {
+): PrefStatus {
   const targets = aliasTargetsOf(resolved, config, over);
-  const data = prefScopeAt(
+  const data = prefStatusAt(
     resolved.group,
     path,
     prefJudge(resolved.group, conditionReader(resolved, config, over), undefined, over),
     { aliasOver: over ?? resolved.group, aliasHolds: targets.holds },
   );
   let { shown, enabled } = data;
-  // An alias answers for the leaf it shows as well, as `prefScopeAt` has it for the data conditions.
+  // An alias answers for the leaf it shows as well, as `prefStatusAt` has it for the data conditions.
   const leaf = prefLeafAt(resolved.group, path);
   const target = leaf?.kind === 'alias' ? targets.shown(leaf as PrefAlias) : undefined;
   for (const asked of target ? [path, target.path] : [path]) {
@@ -102,7 +102,7 @@ export function isLeafVisible(
 ): boolean {
   const node = schemaNodeAtPath(resolved.group, path);
   if (node && 'hidden' in node && node.hidden === true && !showHidden) return false;
-  return scopeAt(resolved, path, config, over).shown;
+  return statusAt(resolved, path, config, over).shown;
 }
 
 /**
@@ -116,7 +116,7 @@ export function isLeafEnabled(
   config: Record<string, unknown>,
   over?: PrefGroup | PrefSection,
 ): boolean {
-  return scopeAt(resolved, path, config, over).enabled;
+  return statusAt(resolved, path, config, over).enabled;
 }
 
 /**
@@ -167,6 +167,6 @@ export function isEntryShown(
   schema: PrefGroup | PrefSection,
 ): boolean {
   const judge = prefJudge(schema, (at) => valueAtPath(config, at));
-  if (!prefScopeUnder(PREF_SCOPE, entry.annotations, judge).shown) return false;
+  if (!prefStatusUnder(PREF_STATUS, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }

@@ -46,13 +46,13 @@ export {
   applyPrefConditions,
   applyPrefEntryConditions,
   PREF_ENTRY,
-  PREF_SCOPE,
+  PREF_STATUS,
   prefJudge,
   prefReader,
-  prefScopeAt,
-  prefScopeIn,
+  prefStatusAt,
+  prefStatusIn,
   prefSectionPath,
-  prefScopeUnder,
+  prefStatusUnder,
   type PrefConditionField,
   type PrefConditionJudge,
   type PrefConditionsApplied,
@@ -60,9 +60,9 @@ export {
   type PrefEntry,
   type PrefEntryApplied,
   type PrefOwner,
-  type PrefScope,
-  type PrefScopeAtOptions,
-} from './scope';
+  type PrefStatus,
+  type PrefStatusAtOptions,
+} from './status';
 export { prefShownReader, prefShownValue } from './shown';
 export { prefLeafValue, prefValueAbsent } from './leafValue';
 export {

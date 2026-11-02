@@ -3,7 +3,7 @@ import type { PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf, PrefObject } from './schema';
-import { applyPrefConditions, PREF_SCOPE, prefJudge, prefReader, prefScopeAt, prefScopeUnder } from './scope';
+import { applyPrefConditions, PREF_STATUS, prefJudge, prefReader, prefStatusAt, prefStatusUnder } from './status';
 import type { PrefUnion } from './union';
 
 const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
@@ -15,22 +15,22 @@ const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) =
 
 const on: PrefCondition = { path: 'snap.on' };
 
-describe('prefScopeUnder', () => {
-  it('is shown and enabled with no condition, under a scope that is', () => {
-    expect(prefScopeUnder(PREF_SCOPE, {}, over({}))).toEqual({ shown: true, enabled: true });
+describe('prefStatusUnder', () => {
+  it('is shown and enabled with no condition, under a status that is', () => {
+    expect(prefStatusUnder(PREF_STATUS, {}, over({}))).toEqual({ shown: true, enabled: true });
   });
 
   it('answers for the node and for what is above it', () => {
     const judge = over({ snap: { on: false } });
-    expect(prefScopeUnder(PREF_SCOPE, { showIf: on }, judge)).toEqual({ shown: false, enabled: true });
-    expect(prefScopeUnder(PREF_SCOPE, { enableIf: on }, judge)).toEqual({ shown: true, enabled: false });
-    expect(prefScopeUnder({ shown: false, enabled: true }, {}, judge).shown).toBe(false);
-    expect(prefScopeUnder({ shown: true, enabled: false }, {}, judge).enabled).toBe(false);
+    expect(prefStatusUnder(PREF_STATUS, { showIf: on }, judge)).toEqual({ shown: false, enabled: true });
+    expect(prefStatusUnder(PREF_STATUS, { enableIf: on }, judge)).toEqual({ shown: true, enabled: false });
+    expect(prefStatusUnder({ shown: false, enabled: true }, {}, judge).shown).toBe(false);
+    expect(prefStatusUnder({ shown: true, enabled: false }, {}, judge).enabled).toBe(false);
   });
 
   it('tells the judge which field it is asked about', () => {
     const asked: string[] = [];
-    prefScopeUnder(PREF_SCOPE, { showIf: on, enableIf: on }, (_c, field) => (asked.push(field), true));
+    prefStatusUnder(PREF_STATUS, { showIf: on, enableIf: on }, (_c, field) => (asked.push(field), true));
     expect(asked).toEqual(['showIf', 'enableIf']);
   });
 });
@@ -153,13 +153,13 @@ describe('applyPrefConditions', () => {
   });
 });
 
-describe('prefScopeAt', () => {
+describe('prefStatusAt', () => {
   it('answers for a path by every node on the way to it', () => {
     const judge = over({ snap: { on: false, mode: 'ring' } });
-    expect(prefScopeAt(schema, 'snap.on', judge)).toEqual({ shown: true, enabled: true });
-    expect(prefScopeAt(schema, 'snap.grid', judge)).toEqual({ shown: false, enabled: true });
-    expect(prefScopeAt(schema, 'snap.grid.fine', judge)).toEqual({ shown: false, enabled: false });
-    expect(prefScopeAt(schema, 'view.zoom', judge)).toEqual({ shown: true, enabled: false });
+    expect(prefStatusAt(schema, 'snap.on', judge)).toEqual({ shown: true, enabled: true });
+    expect(prefStatusAt(schema, 'snap.grid', judge)).toEqual({ shown: false, enabled: true });
+    expect(prefStatusAt(schema, 'snap.grid.fine', judge)).toEqual({ shown: false, enabled: false });
+    expect(prefStatusAt(schema, 'view.zoom', judge)).toEqual({ shown: true, enabled: false });
   });
 
   it('follows a field into an object leaf, through the sections that hold it', () => {
@@ -168,12 +168,12 @@ describe('prefScopeAt', () => {
       children: { ends: { name: 'Ends', showIf: on, members: { cap: num('Cap') } } },
     } as PrefObject;
     const root: PrefGroup = { name: '', children: { stroke } };
-    expect(prefScopeAt(root, 'stroke.cap', over({})).shown).toBe(false);
-    expect(prefScopeAt(root, 'stroke.cap', over({ snap: { on: true } })).shown).toBe(true);
+    expect(prefStatusAt(root, 'stroke.cap', over({})).shown).toBe(false);
+    expect(prefStatusAt(root, 'stroke.cap', over({ snap: { on: true } })).shown).toBe(true);
   });
 
   it('stops at the last node a path reaches', () => {
-    expect(prefScopeAt({ ...schema, enableIf: on }, 'no.such', over({}))).toEqual({ shown: true, enabled: false });
+    expect(prefStatusAt({ ...schema, enableIf: on }, 'no.such', over({}))).toEqual({ shown: true, enabled: false });
   });
 });
 

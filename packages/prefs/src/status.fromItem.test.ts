@@ -3,7 +3,7 @@ import type { PrefGroup } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefList } from './list';
 import type { PrefLeaf, PrefObject } from './schema';
-import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefScopeAt } from './scope';
+import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefStatusAt } from './status';
 
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
@@ -41,7 +41,7 @@ describe('a condition that reads the entry, with no entry to read', () => {
     const applied = applyPrefConditions(schema, prefJudge(schema, read(ROOT)));
     expect(applied.shown).toBe(schema);
     expect([...applied.disabled]).toEqual([]);
-    expect(prefScopeAt(schema, 'phases.0.hold', prefJudge(schema, read(ROOT)))).toEqual({ shown: true, enabled: true });
+    expect(prefStatusAt(schema, 'phases.0.hold', prefJudge(schema, read(ROOT)))).toEqual({ shown: true, enabled: true });
   });
 
   it('still applies what reads the root, beside it', () => {

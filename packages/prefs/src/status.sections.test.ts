@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
-import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefSectionPath } from './scope';
+import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefSectionPath } from './status';
 
 const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'boolean', name, description: '', default: false, ...extra }) as PrefLeaf;
