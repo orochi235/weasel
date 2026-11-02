@@ -16,7 +16,7 @@ import {
 } from '@weasel-js/routing/react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
-import { PointerProviderIfRoot, useDeviceProfile } from '@weasel-js/core';
+import { PointerProviderIfRoot, useDeviceProfile, usePublishPointer } from '@weasel-js/core';
 import { usePointerPosition } from '@weasel-js/routing/react';
 import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
@@ -26,7 +26,6 @@ import type { CanvasSize, SurfaceSizeProps, ViewApi } from '@weasel-js/core';
 import { SceneViewCanvas } from '@weasel-js/core';
 import { computeIndicatorCommand } from './minimapMath';
 import { useFitView } from './useFitView';
-import { usePublishPointer } from './usePublishPointer';
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
 import type { SceneViewDrawOne, SceneViewLayers } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core';
@@ -182,7 +181,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     channels: CHANNELS,
   });
 
-  usePublishPointer(localCanvasRef, clientToWorld, id);
+  usePublishPointer(localCanvasRef, (_pointer, cx, cy) => ({ world: clientToWorld(cx, cy), viewId: id }));
 
   const pointer = usePointerPosition();
   const { dpr } = useDeviceProfile();

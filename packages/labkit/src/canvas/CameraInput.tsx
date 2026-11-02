@@ -20,6 +20,7 @@ import {
   useGestureDispatcher,
   useLatest,
   usePointerContext,
+  usePublishPointer as usePublishPointerOf,
   type View,
   type ViewApi,
   viewportDragPanAction,
@@ -331,8 +332,7 @@ function CameraDispatch({
 
 /**
  * Publish the pointer over `hostRef` into the store in scope, in the
- * instrument's world, as `viewId`; clear it when the pointer leaves with no
- * button held.
+ * instrument's world, as `viewId`, through core's `usePublishPointer`.
  */
 export function usePublishPointer(
   hostRef: RefObject<HTMLElement | null>,
@@ -340,27 +340,10 @@ export function usePublishPointer(
   frame: WorldFrame,
   viewId: string,
 ): void {
-  const store = usePointerContext();
-  const frameRef = useLatest(frame);
-  const toLocal = useLatest(clientToLocal);
-  useEffect(() => {
-    const el = hostRef.current;
-    if (!el || !store) return;
-    const onMove = (e: PointerEvent): void => {
-      const w = frameLocalToWorld(toLocal.current(e.clientX, e.clientY), frameRef.current);
-      store.set({ world: { x: w.x, y: w.y }, viewId });
-    };
-    const onLeave = (e: PointerEvent): void => {
-      if (e.buttons !== 0) return;
-      if (store.get()?.viewId === viewId) store.set(null);
-    };
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerleave', onLeave);
-    return () => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
-    };
-  }, [frameRef, hostRef, store, toLocal, viewId]);
+  usePublishPointerOf(hostRef, (_pointer, cx, cy) => ({
+    world: frameLocalToWorld(clientToLocal(cx, cy), frame),
+    viewId,
+  }));
 }
 
 /** The pointer as a frame-local point, or `null` when there is none or it is
