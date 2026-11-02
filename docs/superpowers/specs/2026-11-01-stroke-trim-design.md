@@ -78,6 +78,8 @@ Neither needs a special case.
 ## What a trimmed stroke draws
 
 - **Only the visible span**, as one or more open runs (one per subpath the span touches).
+  A closed subpath the window covers whole stays closed (2026-11-01), so a whole-path trim draws
+  the join, not a seam.
 - **Markers apply to the visible runs as they apply to untrimmed subpaths:** `markerStart` at
   each run's first point, `markerEnd` at its last, pointing along the tangent there. So the end head
   rides the window's front. A run cut from a **closed** subpath takes no start or end marker, as the

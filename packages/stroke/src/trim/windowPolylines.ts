@@ -1,4 +1,4 @@
-import { lengthTable, type LengthTable } from '@weasel-js/geom';
+import { closingAnchor, lengthTable, type LengthTable } from '@weasel-js/geom';
 import { type Polyline, trimPolyline } from '@weasel-js/geom/tessellate';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { resolveTrim } from './resolveTrim';
@@ -26,13 +26,18 @@ export function polylineTable(polylines: readonly Polyline[], anchorSources?: Ui
 /**
  * The parts of `polylines` that `trim` draws, one run per subpath the window
  * touches, in pen order. `null` when there is no trim, so the caller draws
- * `polylines` as they are; empty when the window draws nothing.
+ * `polylines` as they are; empty when the window draws nothing. A run the
+ * window leaves uncut is the input polyline itself, not a copy.
+ *
+ * `table`, when given, must be `polylineTable(polylines, anchorSources)`; pass
+ * it to share one table with the caller's other queries.
  */
 export function windowPolylines(
   polylines: readonly Polyline[], trim: StrokeTrim | undefined, anchorSources?: Uint32Array | null,
+  table?: LengthTable,
 ): WindowedRun[] | null {
   if (trim === undefined) return null;
-  const table = polylineTable(polylines, anchorSources);
+  table ??= polylineTable(polylines, anchorSources);
   const span = resolveTrim(table, trim);
   if (!span) return [];
   const out: WindowedRun[] = [];
@@ -59,7 +64,7 @@ export function windowPolylines(
 function opened(pl: Polyline): Polyline {
   const n = pl.points.length / 2;
   const { anchorA: A, anchorB: B, anchorT: T, widths: W, offsets: O } = pl;
-  const end = pl.closeAnchor ?? (A && B && A[n - 1] !== B[n - 1] ? B[n - 1] : A?.[0] ?? 0);
+  const end = closingAnchor(pl, n) ?? A?.[0] ?? 0;
   const grow = <F extends Uint32Array | Float32Array>(a: F, v: number): F => {
     const g = new (a.constructor as new (len: number) => F)(n + 1);
     g.set(a);

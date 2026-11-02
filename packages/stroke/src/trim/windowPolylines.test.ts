@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  type PolygonPath, lengthAtAnchor, polylineFromPoints, resolveCornersWithSources,
+  type PolygonPath, lengthAtAnchor, polygonFromPoints, polylineFromPoints, resolveCornersWithSources,
 } from '@weasel-js/geom';
 import { type Polyline, extractPolylines } from '@weasel-js/geom/tessellate';
 import { polylineTable, windowPolylines } from './windowPolylines';
@@ -102,6 +102,36 @@ describe('windowPolylines', () => {
       len += Math.hypot(polyline.points[i] - polyline.points[i - 2], polyline.points[i + 1] - polyline.points[i - 1]);
     }
     expect(len).toBeCloseTo(lengthAtAnchor(table, 1), 4);
+  });
+
+  it('keeps a whole closed run closed beside a cut open one', () => {
+    expect(windowPolylines([square()], { end: 1 })![0].polyline.closed).toBe(true);
+    const runs = windowPolylines([square(), anchored([10, 0, 12, 0], false, 4)], { end: 5 / 6 })!;
+    expect(runs.map((r) => r.polyline.closed)).toEqual([true, false]);
+    expect(runs[1].polyline.points).toEqual([10, 0, 11, 0]);
+  });
+
+  it('windows a rounded closed path through its closing edge', () => {
+    const round = { shape: 'round', radius: 20 } as const;
+    const authored = {
+      ...polygonFromPoints([{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 200, y: 200 }, { x: 0, y: 200 }]),
+      corners: [round, round, round, round],
+    };
+    const { path, anchorSources } = resolveCornersWithSources(authored);
+    const polylines = extractPolylines(path);
+    const table = polylineTable(polylines, anchorSources);
+    const [{ polyline, fromClosed, dashPhase }] = windowPolylines(polylines, { start: { anchor: 3 } }, anchorSources, table)!;
+    expect(fromClosed).toBe(true);
+    expect(dashPhase).toBeCloseTo(lengthAtAnchor(table, 3), 6);
+    // Anchor 0 sits at corner 0's arc end, where the run began, so the window ends there, as authored anchor 0.
+    expect(last(polyline)).toEqual(polylines[0].points.slice(0, 2));
+    // The closing edge ends at the expanded anchor dropped as a duplicate, not at the run's first.
+    const end = polyline.anchorA![polyline.anchorA!.length - 1];
+    expect(polylines[0].closeAnchor).toBeDefined();
+    expect(end).toBe(polylines[0].closeAnchor);
+    expect(end).not.toBe(polylines[0].anchorA![0]);
+    expect(anchorSources![end]).toBe(0);
+    expect(polyline.anchorB![polyline.anchorB!.length - 1]).toBe(end);
   });
 
   it('interpolates widths at a cut', () => {
