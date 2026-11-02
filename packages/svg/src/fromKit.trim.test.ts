@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/core';
 import { svgLeafFromKit } from './fromKit';
 import { serializeSvg } from './serialize';
-import type { SvgPathNode } from './types';
+import type { SvgPaint, SvgPathNode } from './types';
 
 const INK = solid('#000000');
 const RED = solid('#ff0000');
@@ -124,16 +124,19 @@ describe('svg export bakes a stroke trim', () => {
   });
 
   it("maps a box-relative stroke gradient onto the node's whole box, not the visible run", () => {
-    const ramp = (to: { x: number; y: number }) => ({
+    const ramp = (to: { x: number; y: number }): SvgPaint => ({
       kind: 'gradient', paint: {
         kind: 'linear-gradient', units: 'bounds', from: { x: 0, y: 0 }, to,
         stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
       },
-    }) as const;
-    const write = (d: string, to: { x: number; y: number }) => serializeSvg([{
-      kind: 'path', path: pathFromD(d), fill: { kind: 'none' },
-      stroke: { paint: ramp(to), width: 2, trim: { end: 0.3 } },
-    } as SvgPathNode]);
+    });
+    const write = (d: string, to: { x: number; y: number }) => {
+      const node: SvgPathNode = {
+        kind: 'path', path: pathFromD(d), fill: { kind: 'none' },
+        stroke: { paint: ramp(to), width: 2, trim: { end: 0.3 } },
+      };
+      return serializeSvg([node]);
+    };
     // The run M0 0L60 0 has no height; mapped onto it, SVG would paint nothing.
     const flat = write('M0 0 L100 0 L100 100', { x: 0, y: 1 });
     expect(flat).toContain('gradientUnits="userSpaceOnUse"');
