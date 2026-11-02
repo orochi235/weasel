@@ -41,6 +41,9 @@ type Config = ConfigOf<typeof config>;
 type Data = { path: Path; fill?: { paint: ReturnType<typeof solid> }; stroke: Stroke };
 type State = SceneTrialState<Data, 'default', RectPose>;
 
+/** The wheel zooms, so a cut can be looked at closely; the hand tool pans. */
+const WHEEL_ZOOM = { pan: false, zoom: { wheel: 'plain' } } as const;
+
 /** The world rect both exports write, the same one the canvas opens on. */
 const PAGE = { x: 0, y: 0, width: 760, height: 380 };
 
@@ -144,7 +147,7 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.trial}>
       <div className={s.canvas}>
-        <TrialSceneCanvas scene={scene} trial={ctx.trial} defaultTools={['hand']} />
+        <TrialSceneCanvas scene={scene} trial={ctx.trial} defaultTools={['hand']} viewport={WHEEL_ZOOM} />
       </div>
       <aside className={s.exports} aria-label="Exports">
         <h3 className={s.heading}>Exported SVG</h3>

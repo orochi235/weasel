@@ -109,6 +109,9 @@ export interface CameraView extends ViewApi {
    *  the view is not this camera's shape. Read off the view rather than the
    *  camera, so chrome rendering beside the trial never sees it a change late. */
   zoomOf(view: unknown): number | null;
+  /** For a camera that keeps its own view rather than the trial's: called
+   *  after each change to it, so chrome reading `zoomOf` reads it again. */
+  subscribe?(fn: () => void): () => void;
 }
 
 function isPositiveFinite(n: number): boolean {

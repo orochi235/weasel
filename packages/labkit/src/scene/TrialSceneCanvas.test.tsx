@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createScene, type Scene, type ToolsApi } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
@@ -126,6 +126,16 @@ describe('<TrialSceneCanvas>', () => {
     addOne();
     modZ();
     expect(live.scene.nodes.size).toBe(1);
+  });
+
+  it("is the trial's camera, so the lab's zoom reads and drives the scene's view", async () => {
+    await mount();
+    const zoomBar = within(screen.getByRole('toolbar', { name: 'Zoom' }));
+    expect(zoomBar.getByRole('button', { name: /^Zoom 100%/ })).toBeEnabled();
+    await userEvent.click(zoomBar.getByRole('button', { name: 'Zoom in' }));
+    expect(zoomBar.queryByRole('button', { name: /^Zoom 100%/ })).toBeNull();
+    await userEvent.click(zoomBar.getByRole('button', { name: /^Zoom \d+%/ }));
+    expect(zoomBar.getByRole('button', { name: /^Zoom 100%/ })).toBeEnabled();
   });
 
   it("keeps the trial's tool slot and the canvas's active tool one value", async () => {

@@ -4,10 +4,11 @@ import {
   type SceneCanvasApi,
   type SceneCanvasProps,
 } from '@weasel-js/core';
-import { type ForwardedRef, forwardRef, type ReactElement, type Ref } from 'react';
+import { type ForwardedRef, forwardRef, type ReactElement, type Ref, useCallback, useRef } from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
 import { useTrialTitle } from '../trial/trialTitle';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
+import { useSceneCamera } from './useSceneCamera';
 
 /** Props for {@link TrialSceneCanvas}: a `<SceneCanvas>`'s, sized by the trial. */
 export type TrialSceneCanvasProps<TData, TLayer extends string, TPose> = Omit<
@@ -36,12 +37,20 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   useTrialHistory(history ? scene : null);
   const toolsReported = useSceneToolSlot(trial, onToolsCreated);
   const title = useTrialTitle();
+  const api = useRef<SceneCanvasApi | null>(null);
+  const host = useRef<HTMLDivElement | null>(null);
+  useSceneCamera(api, host);
+  const both = useCallback((v: SceneCanvasApi | null) => {
+    api.current = v;
+    if (typeof ref === 'function') ref(v);
+    else if (ref) ref.current = v;
+  }, [ref]);
   return (
-    <div className="lk-trial-scene">
+    <div className="lk-trial-scene" ref={host}>
       <SceneCanvas
         aria-label={title ?? undefined}
         {...rest}
-        ref={ref}
+        ref={both}
         scene={scene}
         onToolsCreated={toolsReported}
       />
@@ -56,7 +65,7 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
  *
  * Render it from an instrument that declares no `canvas` or `stage`: the scene
  * then owns every pointer, wheel and key gesture over it, its own pan and zoom
- * included, and the trial's camera is not in play. The trial already mounts
+ * included, and its view is the trial's camera, which the lab's zoom drives. The trial already mounts
  * the kit's providers isolated from the trial beside it, so it needs no
  * `<WeaselProvider>` of its own.
  */

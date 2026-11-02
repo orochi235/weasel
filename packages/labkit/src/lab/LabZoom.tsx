@@ -90,7 +90,7 @@ function LabZoomControls() {
     cameras && focusedTrialId ? cameras.get(focusedTrialId) : null,
   );
   const view = useStore(storeCtx.store, (s) => s.trials.find((t) => t.id === focusedTrialId)?.view);
-  const zoom = camera?.zoomOf(view) ?? null;
+  const zoom = useSyncExternalStore(camera?.subscribe ?? noSubscribe, () => camera?.zoomOf(view) ?? null);
 
   const live = zoom !== null && camera !== null;
   const zoomView = useMemo(() => (camera ? forZoom(camera) : null), [camera]);
