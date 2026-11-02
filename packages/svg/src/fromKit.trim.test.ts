@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   boundsOfPath, pathFromD, solid, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
+import {
+  applyToPoint, lengthAtCurve, pathLengthTable, pointAtLength, polylineFromPoints, poseFrameOf,
+} from '@weasel-js/geom';
+import { trimSpan } from '@weasel-js/stroke';
 import { svgLeafFromKit } from './fromKit';
 import { serializeSvg } from './serialize';
 import type { SvgPaint, SvgPathNode } from './types';
@@ -145,5 +149,21 @@ describe('svg export bakes a stroke trim', () => {
     const curve = write('M0 0 C0 100 100 100 100 0', { x: 1, y: 1 });
     expect(curve).toContain('gradientUnits="userSpaceOnUse"');
     expect(curve).toContain('x1="0" y1="0" x2="100" y2="75"');
+  });
+
+  it("ends a stretched trim at the canvas's point on a corner the stretch would straighten", () => {
+    const round = { shape: 'round', radius: 10 } as const;
+    const local = {
+      ...polylineFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 200, y: 0.2 }, { x: 200, y: 100 }]),
+      corners: [null, round, round, null],
+    } as PolygonPath;
+    const pose = { x: 0, y: 0, width: 200, height: 100, transform: [4, 0, 0, 1] as [number, number, number, number] };
+    const trim = { end: { length: 250 } };
+    const table = pathLengthTable(local);
+    const { point } = pointAtLength(table, lengthAtCurve(table, trimSpan(local, trim)!.to));
+    const [x, y] = applyToPoint(poseFrameOf(pose)!, point[0], point[1]);
+    const [p] = stroked(paths(local, { paint: INK, width: 1, trim }, null, pose));
+    const [ex, ey] = endOf(p);
+    expect(Math.hypot(ex - x, ey - y)).toBeLessThan(1e-3);
   });
 });

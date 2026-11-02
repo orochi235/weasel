@@ -30,6 +30,7 @@ import {
 } from '@weasel-js/core';
 import { mapFillPaint } from './fillPaint';
 import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
+import { resolveCorners } from '@weasel-js/geom';
 import { strokeTrimOnPath } from './trimmedStroke';
 import type {
   Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPathNode, SvgTextNode,
@@ -127,8 +128,10 @@ export function svgLeafFromKit(
   const frame = poseLinearOf(pose) && poseFrameOf(pose);
   if (frame) {
     const local = node.path;
-    // A rect goes through as a polygon, so a mirror cannot restart where a trim measures from.
-    node.path = pathThroughPoseFrame(stroke?.trim ? asPolygonPath(local) : local, pose);
+    // A trimmed rect goes through as a polygon, so a mirror cannot restart where a trim measures
+    // from, and its corners are resolved before the frame, as the ribbon's are, so the trim's
+    // curve positions name the same segments on both.
+    node.path = pathThroughPoseFrame(stroke?.trim ? resolveCorners(asPolygonPath(local)) : local, pose);
     node.fill = paintThroughMatrix(node.fill, frame);
     if (stroke) node.stroke = strokeTrimOnPath(strokeThroughMatrix(stroke, frame), local, node.path);
   } else if (pose.rotation) node.rotation = pose.rotation;

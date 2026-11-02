@@ -3,7 +3,7 @@
  * stroke's reach, over only the stretch a trim draws.
  */
 import {
-  asPolygonPath, pathContainsPoint, pathThroughPoseFrame, poseFrameOf, strokeHitTest,
+  asPolygonPath, pathContainsPoint, pathThroughPoseFrame, poseFrameOf, resolveCorners, strokeHitTest,
   type CurveSpan, type Path,
 } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
@@ -27,11 +27,13 @@ export interface PickReach {
  * Where `trim` draws along `local`, the outline as the painter strokes it, once
  * the pose frame carries it to `world`. The ribbon measures before the frame,
  * so the span is resolved on `local`; its curve positions name the same points
- * on the world outline, carried command for command.
+ * on the world outline, which is `local` corner-resolved and then carried
+ * through the frame command for command.
  */
 export function trimmedOutline(local: Path, world: Path, pose: unknown, trim: StrokeTrim): TrimmedOutline {
-  // A rect goes through as a polygon: a mirrored rect would come out restarted.
-  const drawn = poseFrameOf(pose) === null ? world : pathThroughPoseFrame(asPolygonPath(local), pose);
+  // A rect goes through as a polygon: a mirrored rect would come out restarted. Corners are
+  // resolved before the frame, as the ribbon does, so a stretch cannot straighten one away.
+  const drawn = poseFrameOf(pose) === null ? world : pathThroughPoseFrame(resolveCorners(asPolygonPath(local)), pose);
   return { drawn, span: trimSpan(local, trim) };
 }
 

@@ -10,7 +10,11 @@ import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { strokedBounds } from './strokedBounds';
 import { inkCovers, trimmedOutline, type PickReach } from './pickOutline';
 import { inkReach, inkTrim, withAnimatedVertexColors } from './nodePaint';
-import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from '@weasel-js/paint';
+import { resolveFill, resolveStroke, strokeTrimKey, type PaintedFill, type PaintedStroke } from '@weasel-js/paint';
+import { nodeMemo } from 'core/scene/nodeMemo';
+
+const PART_WORLD_SLOT = 'shape:part-world';
+const PART_TRIM_SLOT = 'shape:part-trim-pick';
 
 type PaintData = { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null; vertexColors?: number[] };
 
@@ -113,9 +117,12 @@ export function partsCover(
   const framed = poseFrameOf(pose) !== null;
   return parts.some((part) => {
     const { fill, stroke } = resolvePartPaint(part, d, opts.inherited);
-    const world = framed ? pathThroughPoseFrame(part.path, pose) : part.path;
+    // Framed paths are kept per part, so the length tables and corners built on them are reused across picks.
+    const world = framed ? nodeMemo(part, PART_WORLD_SLOT, pose, () => pathThroughPoseFrame(part.path, pose)) : part.path;
     const ink = { filled: fill !== null, ...inkReach(stroke, opts.scale) };
-    const trimmed = stroke?.trim === undefined ? undefined : trimmedOutline(part.path, world, pose, stroke.trim);
+    const trim = stroke?.trim;
+    const trimmed = trim === undefined ? undefined
+      : nodeMemo(part, PART_TRIM_SLOT, pose, () => trimmedOutline(part.path, world, pose, trim), strokeTrimKey(trim));
     return inkCovers(world, ink, trimmed, x, y, opts);
   });
 }

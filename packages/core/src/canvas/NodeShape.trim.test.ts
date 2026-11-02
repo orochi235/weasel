@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { pathFromD, pathLengthTable } from '@weasel-js/geom';
+import {
+  applyToPoint, lengthAtCurve, pathFromD, pathLengthTable, pointAtLength, polylineFromPoints, poseFrameOf, type PolygonPath,
+} from '@weasel-js/geom';
+import { trimSpan } from '@weasel-js/stroke';
 import { INHERIT, type PaintedStroke, type Stroke } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
+import { nodeMemoSlotCount } from 'core/scene/nodeMemo';
 import type { Node } from 'core/scene/types';
 import { findShapeInk, shapeCoversPoint } from './NodeShape';
 import { solid } from '../util/paint';
@@ -118,6 +122,31 @@ describe('shapeCoversPoint under a stroke trim', () => {
   });
 });
 
+describe('shapeCoversPoint under a stroke trim and a stretch', () => {
+  // Anchor 1 turns about 2e-3 rad: rounded before the 4x stretch, too straight to round after it.
+  const round = { shape: 'round', radius: 10 } as const;
+  const nearlyStraight = {
+    ...polylineFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 200, y: 0.2 }, { x: 200, y: 100 }]),
+    corners: [null, round, round, null],
+  } as PolygonPath;
+  const pose: Pose = { x: 0, y: 0, width: 200, height: 100, transform: [4, 0, 0, 1] };
+  const trim = { end: { length: 250 } };
+
+  /** Where the canvas ends the line: the cut on the local path, carried through the frame. */
+  function canvasEnd(): [number, number] {
+    const table = pathLengthTable(nearlyStraight);
+    const { point } = pointAtLength(table, lengthAtCurve(table, trimSpan(nearlyStraight, trim)!.to));
+    return applyToPoint(poseFrameOf(pose)!, point[0], point[1]);
+  }
+
+  it("ends the picked span at the canvas's point on a corner the stretch would straighten", () => {
+    const n = node({ path: nearlyStraight, fill: null, stroke: stroke({ width: 1, trim }) }, pose);
+    const [x, y] = canvasEnd();
+    expect(shapeCoversPoint(n, pose, x, y - 1, { tolerance: 0 })).toBe(true);
+    expect(shapeCoversPoint(n, pose, x, y + 1, { tolerance: 0 })).toBe(false);
+  });
+});
+
 describe('shapeCoversPoint memoizes a trimmed outline', () => {
   it('reads a changed inherited trim on the same node and pose', () => {
     const pose: Pose = { ...LINE_POSE, rotation: Math.PI / 2 };
@@ -151,6 +180,15 @@ describe('shapeCoversPoint on a derived path in parts', () => {
     const own = stroke({ trim: { end: 0.5 } });
     expect(covers(own, parts, 75, 0)).toBe(false);
     expect(covers(own, parts, 75, 50)).toBe(true);
+  });
+
+  it("keeps a framed part's trimmed outline across picks", () => {
+    const parts: DerivedPart[] = [{ path: A, stroke: INHERIT }];
+    const pose = { x: 0, y: 0, width: 100, height: 50, transform: [2, 0, 0, 1] as [number, number, number, number] };
+    const n = { ...node({ fill: null, stroke: stroke({ trim: { end: 0.5 } }) }, pose), dependsOn: ['a'], derivePath: 'k' };
+    const derivedPath = pathFromParts(parts);
+    expect(shapeCoversPoint(n as never, pose, 0, 0, { derivedPath })).toBe(true);
+    expect(nodeMemoSlotCount(parts[0])).toBeGreaterThan(0);
   });
 
   it('hits nothing of a part whose trim draws nothing', () => {
