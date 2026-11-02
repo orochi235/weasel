@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useLayoutEffect } from 'react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { DiagramView, diagramScene, edgeIdOf, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -22,24 +22,23 @@ const EDGES: DataEdge[] = [
   { from: 'check', to: 'write', router: 'orthogonal' },
   { from: 'parse', to: 'check', router: 'straight' },
 ];
+const SPECS = diagramScene({ nodes: NODES, edges: EDGES }, { layout: 'none', font: FONT });
 const EDGE_IDS = EDGES.map(edgeIdOf);
 const DRAW = 'draw-on';
 
 export function DiagramDrawOnDemo() {
   const animator = useAnimator();
-  const specs = useMemo(() => diagramScene({ nodes: NODES, edges: EDGES }, { layout: 'none', font: FONT }), []);
 
   const play = useCallback(() => {
+    // Cancels the waiting edges too, so none starts late over the reset.
     animator.cancelKey(DRAW);
     const ends = EDGE_IDS.map((id) => animator.trimOverrides.target(id, 'end'));
-    for (const end of ends) {
-      end.stop({ commit: false });
-      end.commit(0);
-    }
+    for (const end of ends) end.commit(0);
     animator.stagger(ends, 450).tween({ to: 1, ms: 700, easing: 'easeInOutCubic', cancelKey: DRAW });
   }, [animator]);
 
-  useEffect(() => {
+  // Before the canvas's first paint, which would otherwise show every edge whole for a frame.
+  useLayoutEffect(() => {
     play();
     return () => animator.cancelKey(DRAW);
   }, [animator, play]);
@@ -50,7 +49,7 @@ export function DiagramDrawOnDemo() {
         <Button onClick={play}>Replay</Button>
       </div>
       <DemoStage width={W} height={H}>
-        <DiagramView specs={specs} className="ckd-canvas" animator={animator} />
+        <DiagramView specs={SPECS} className="ckd-canvas" animator={animator} />
       </DemoStage>
     </div>
   );
