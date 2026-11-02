@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { prefNumberAt, prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
+import { prefIsEnabled, prefNumberAt, prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from '@weasel-js/stroke';
@@ -112,9 +112,9 @@ describe('leaves that read an absent value as their default', () => {
     const appearance = members('rect', 'appearance');
     const stroke = appearance['data.stroke'] as PrefObject;
     expect(flagged(appearance)).toEqual([]);
-    expect(flagged(stroke.children)).toEqual(['align', 'cap', 'join', 'width']);
+    expect(flagged(stroke.children)).toEqual(['align', 'cap', 'join', 'trim.end', 'trim.pace', 'trim.start', 'width']);
     expect(Object.fromEntries(flagged(stroke.children).map((k) => [k, (stroke.children[k] as PrefLeaf).default])))
-      .toEqual({ align: 'center', cap: 'butt', join: 'miter', width: 1 });
+      .toEqual({ align: 'center', cap: 'butt', join: 'miter', 'trim.end': 1, 'trim.pace': 'length', 'trim.start': 0, width: 1 });
   });
 
   it('flags the text style fields `resolveTextStyle` defaults, each at `DEFAULT_TEXT_STYLE`\'s value', () => {
@@ -195,6 +195,39 @@ describe('the stroke leaf\'s nib', () => {
     expect([ratio.min, ratio.max]).toEqual([0, 1]);
     expect(angle.showIf).toEqual({ path: 'data.stroke.nib' });
     expect(ratio.showIf).toEqual({ path: 'data.stroke.nib' });
+  });
+});
+
+describe('the stroke leaf\'s trim', () => {
+  const strokeLeaf = (): PrefObject => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'path')!;
+    const appearance = entry.schema.members.appearance as PrefSection;
+    return appearance.members['data.stroke'] as PrefObject;
+  };
+  const enabledWith = (edge: 'start' | 'end', held: unknown) =>
+    prefIsEnabled(strokeLeaf().children[`trim.${edge}`] as PrefNumber, (path) =>
+      path === `data.stroke.trim.${edge}` ? held : undefined);
+
+  it('edits each edge as a fraction, absent reading as the whole path', () => {
+    const start = strokeLeaf().children['trim.start'] as PrefNumber;
+    const end = strokeLeaf().children['trim.end'] as PrefNumber;
+    expect([start.min, start.max, start.default]).toEqual([0, 1, 0]);
+    expect([end.min, end.max, end.default]).toEqual([0, 1, 1]);
+    expect(start.absentIsDefault && end.absentIsDefault).toBe(true);
+    expect(start.pair).toEqual({ with: 'data.stroke.trim.end', label: 'Trim' });
+  });
+
+  it('disables an edge held as a length, anchor or subpath instead of rewriting it', () => {
+    expect(enabledWith('start', undefined)).toBe(true);
+    expect(enabledWith('start', 0.25)).toBe(true);
+    expect(enabledWith('end', { anchor: 2 })).toBe(false);
+    expect(enabledWith('end', { length: 40 })).toBe(false);
+  });
+
+  it('shows the pace only while a trim is held', () => {
+    const pace = strokeLeaf().children['trim.pace'] as PrefEnum;
+    expect(pace.options.map((o) => o.value)).toEqual(['length', 'anchor']);
+    expect(pace.showIf).toEqual({ path: 'data.stroke.trim' });
   });
 });
 

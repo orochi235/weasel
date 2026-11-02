@@ -170,6 +170,17 @@ const BACKGROUND_LEAF: PrefLeaf = {
   },
 };
 
+/** `Stroke.trim.start` or `.end` as a fraction. An edge held as a length, anchor
+ *  or subpath leaves the slider disabled rather than rewritten. */
+function trimEdgeLeaf(edge: 'start' | 'end', name: string, description: string, fallback: number, pair?: PrefLeaf['pair']): PrefLeaf {
+  const path = `data.stroke.trim.${edge}`;
+  return {
+    kind: 'number', name, description, absentIsDefault: true, default: fallback, min: 0, max: 1, step: 0.01,
+    control: 'slider', block: true, enableIf: { any: [{ path, is: null }, { path, atLeast: 0 }] },
+    ...(pair ? { pair } : {}),
+  };
+}
+
 /** A whole `Stroke`: paint and line geometry, one value. */
 const STROKE_LEAF: PrefLeaf = {
   kind: 'object',
@@ -201,6 +212,9 @@ const STROKE_LEAF: PrefLeaf = {
     'nib.ratio': { kind: 'number', name: 'Thinnest', description: 'The width moving along the nib, as a fraction of the width moving across it.', default: DEFAULT_NIB.ratio, min: 0, max: 1, step: 0.05, control: 'slider', block: true, showIf: { path: 'data.stroke.nib' } },
     markerStart: markerLeaf({ name: 'Start', description: 'Marker at the first vertex of each open subpath.', block: true, pair: { with: ['data.stroke.markerMid', 'data.stroke.markerEnd'], label: 'Markers' } }),
     markerMid: markerLeaf({ name: 'Mid', description: 'Marker at every interior authored vertex.', block: true }),
+    'trim.start': trimEdgeLeaf('start', 'Start', 'Where the drawn part of the stroke begins, as a fraction of the path in pen order.', 0, { with: 'data.stroke.trim.end', label: 'Trim' }),
+    'trim.end': trimEdgeLeaf('end', 'End', 'Where the drawn part of the stroke ends, as a fraction of the path in pen order.', 1),
+    'trim.pace': { kind: 'enum', name: 'Pace', description: 'What a trim fraction counts: distance along the path, or anchors, each segment an equal share.', absentIsDefault: true, default: 'length', control: 'toggle', block: true, showIf: { path: 'data.stroke.trim' }, options: [{ value: 'length', label: 'Length' }, { value: 'anchor', label: 'Anchor' }] },
     markerEnd: markerLeaf({ name: 'End', description: 'Marker at the last vertex of each open subpath.', block: true }),
   },
 };
