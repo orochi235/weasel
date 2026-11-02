@@ -153,9 +153,7 @@
   path-tools: the `extendToMeet` action declares `params` (`shape`: Eased or Straight, `easeTurn`), so its
   settings appear in the last-operation panel after a click or the command; `lengthenPath` accepts
   `mode: 'eased'`.
-- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
-  
-  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+- 48b6c4c: An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
   and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
   operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
   `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
@@ -173,6 +171,8 @@
   driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
   default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
   argument (`ExtremaAxes`).
+  
+  <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
 - c41c917: Path edit's tools are ordinary tools, and a mode can name the tool it starts on.
   
   **Breaking:** the `pathEditTool.*` toggle actions (`pathEditToolAction`, `exitPathEditToolAction`,
@@ -332,9 +332,9 @@
   Paths far from 0 now get an origin where they are made: past `ORIGIN_THRESHOLD` (16,384), `anchorsToPath` without `like` (the pen tool), `pathFromD`, the booleans, and SVG import measure the path from `originFor`, the rounded center of its points. `PathBuilder.autoOrigin()` and `transformPath`'s `{ autoOrigin: true }` opt a producer in. A path near 0 is built as before.
 - b06e2b9: Breaking: `PointerWorldPos`, the pointer store's value, is `{ world: WorldPoint; viewId }` in place of `{ worldX, worldY, viewId }`. Read `p.world.x` where you read `p.worldX`, and publish with `store.set({ world: { x, y }, viewId })`. `useClipboardOps`' own `getDropPoint` option keeps its `{ worldX, worldY }` shape. When that option is left out, the paste point read from the pointer store no longer carries the store's `viewId` along with it.
 - 01b103e: `core:retractHandles` and `path-tools:resamplePath` are redrawn on the 16px pixel grid. `retractHandles`'s corner runs on the pixel diagonal and its arrows carry 45-degree heads; `resamplePath`'s anchors are two pixels square on pixel corners, so they no longer blur at 1x.
-- 8e2c8c8: <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
+- 8e2c8c8: Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
   
-  Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
+  <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
 - Updated dependencies [d8fbd3d]
 - Updated dependencies [b4cc0d7]
 - Updated dependencies [575e470]

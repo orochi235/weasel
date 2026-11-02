@@ -42,12 +42,15 @@ const files = [
   ...mds(PRE_DIR).map((f) => ({ file: f, path: join(PRE_DIR, f), label: `.changeset/pre/${f}` })),
 ];
 const offenders = [];
+const leading = [];
 
 for (const { file, path, label } of files) {
   const text = readFileSync(path, 'utf8');
   // Frontmatter is the leading `---` block; only bumps declared there count.
   const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
   if (!fm) continue;
+  // Changesets prints a body's first line beside the commit hash, the entry's title.
+  if (/^\s*<!--\s*bump-approved:/i.test(text.slice(fm[0].length))) leading.push(label);
 
   // Changesets reads the frontmatter as YAML, so `"minor"`, `'minor'`, and
   // `minor # why` all bump. Read each value the way YAML would, and refuse a
@@ -69,6 +72,11 @@ for (const { file, path, label } of files) {
   }
 }
 
+if (leading.length > 0) {
+  console.error(`\n[changeset-bumps] BLOCKED: a bump-approved marker opens the body of ${leading.join(', ')}.`);
+  console.error(`  The changelog shows a body's first line as the entry's title. Move the marker to the end.\n`);
+}
+
 if (offenders.length > 0) {
   console.error(`\n[changeset-bumps] BLOCKED: ${offenders.length} unapproved bump(s) above patch.\n`);
   for (const { label, level, pkgs } of offenders) {
@@ -86,10 +94,11 @@ if (offenders.length > 0) {
       change the bump to 'patch'. Say what changed in the prose instead —
       the words are what a reader acts on.
 
-  If Mike has explicitly approved this level, add to the changeset body:
+  If the maintainer has explicitly approved this level, add to the end of the changeset body:
       <!-- bump-approved: ${offenders[0].level}: <who> — <why> -->
 `);
   process.exit(1);
 }
+if (leading.length > 0) process.exit(1);
 
 console.log(`[changeset-bumps] OK — ${files.length} changeset(s), no unapproved bumps above patch.`);

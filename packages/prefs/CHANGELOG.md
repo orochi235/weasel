@@ -4,9 +4,7 @@
 
 ### Minor Changes
 
-- 22451fd: <!-- bump-approved: minor: maintainer — 1.16.0 release requested 2026-11-02 -->
-  
-  Scoped prefs: a pref declares the settings its value is kept separately for, and the store resolves which
+- 22451fd: Scoped prefs: a pref declares the settings its value is kept separately for, and the store resolves which
   value applies. A **pref** is the declaration; a **value** is one stored value of a pref under a scope, the
   shared `$else` one included; the **current value** is what a read returns under the current selection.
   
@@ -75,6 +73,8 @@
   
   `PrefsForm` draws a closed selector as one row per option it names and one row for the shared value,
   called `othersLabel` (default `Others`).
+  
+  <!-- bump-approved: minor: maintainer — 1.16.0 release requested 2026-11-02 -->
 
 ### Patch Changes
 

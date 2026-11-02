@@ -126,9 +126,7 @@
 - 30bf607: `harmonizeAnchors` no longer reports a change for a path that is already curvature-continuous. Stored in single
   precision, such a path re-solved about 1e-4 away from itself, past the old 1e-6 threshold, so Harmonize curvature
   stayed enabled and each run pushed an undo step that moved nothing visibly.
-- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
-  
-  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+- 48b6c4c: An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
   and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
   operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
   `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
@@ -146,6 +144,8 @@
   driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
   default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
   argument (`ExtremaAxes`).
+  
+  <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
 - fce0494: A node can now declare points of its own that a move snaps, through `<SceneCanvas snap={{ anchors }}>`
   or `createSnapSession2d({ anchors })`: a function from a node id to points in that node's box frame,
   such as a cabinet's hanger holes. Each becomes a probe of the new role `'anchor'`, offered only to a
@@ -196,9 +196,9 @@ No changes in this release.
   22, and a pulled 24-segment star with 59 where it took 96. The refit costs about twice as long: the
   star's goes from 1.6 ms to 3.4 ms on an M-series Mac.
 - 2e4943e: `trackRun` takes a `direction: 'ltr' | 'rtl'` option and reports it on the run. Under `'rtl'` the run starts at its right end on the side it stands on, `tangent` points the way it reads, and each item is still tipped upright as left-to-right reading would tip it. A curved `Bar`, segmented row, `RadioGroup`, `TabList` and `PageTabs` read their root's computed `direction`, so in a right-to-left locale item 1 sits at the right end as it does laid out straight, and the chevron past a scrolled run's end points out of the end it is at.
-- 8e2c8c8: <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
+- 8e2c8c8: Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
   
-  Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
+  <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
 - 0fc0e50: A thick stroke flattens its path so its edges, half a width out, stay within the flatten tolerance of the true ones,
   in place of capping every piece at 10° of turn. A bend whose edges sit far out still subdivides as finely as it
   needs; a wiggle smaller than the stroke no longer does, so a 4-wide stroke over 512 small curves flattens to 1,750

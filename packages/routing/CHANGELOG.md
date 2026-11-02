@@ -4,9 +4,7 @@
 
 ### Patch Changes
 
-- 22451fd: <!-- bump-approved: minor: maintainer — 1.16.0 release requested 2026-11-02 -->
-  
-  Scoped prefs: a pref declares the settings its value is kept separately for, and the store resolves which
+- 22451fd: Scoped prefs: a pref declares the settings its value is kept separately for, and the store resolves which
   value applies. A **pref** is the declaration; a **value** is one stored value of a pref under a scope, the
   shared `$else` one included; the **current value** is what a read returns under the current selection.
   
@@ -75,6 +73,8 @@
   
   `PrefsForm` draws a closed selector as one row per option it names and one row for the shared value,
   called `othersLabel` (default `Others`).
+  
+  <!-- bump-approved: minor: maintainer — 1.16.0 release requested 2026-11-02 -->
 - Updated dependencies [22451fd]
 - Updated dependencies [63056ee]
 - Updated dependencies [f9cfd00]
@@ -232,9 +232,7 @@
   name where it has one. A run that commits live, coalescing into its own entry, now counts as one entry. A run made
   while a journal is open on the history (path edit's, in an app that journals modes) is kept on that journal, where
   before it was never kept; the journal committing, cancelling, or suspending ends it.
-- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
-  
-  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+- 48b6c4c: An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
   and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
   operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
   `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
@@ -252,6 +250,8 @@
   driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
   default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
   argument (`ExtremaAxes`).
+  
+  <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
 - 2e2f76c: A key held for an `over` binding now follows the pointer: a key already down when the pointer comes over a surface presses that surface's `over` key-held bindings, and leaving releases them. A single-press `key` binding is not repeated on arrival. Holding a loupe's peek key and then moving onto a loupe raises it again, and the peek carries from one loupe to the next.
 - c41c917: Path edit's tools are ordinary tools, and a mode can name the tool it starts on.
   

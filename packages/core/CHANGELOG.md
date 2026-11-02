@@ -258,9 +258,7 @@
 
 ### Minor Changes
 
-- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
-  
-  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+- 48b6c4c: An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
   and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
   operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
   `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
@@ -278,6 +276,8 @@
   driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
   default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
   argument (`ExtremaAxes`).
+  
+  <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
 
 ### Patch Changes
 
@@ -502,9 +502,9 @@
 
 ### Minor Changes
 
-- 8e2c8c8: <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
+- 8e2c8c8: Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
   
-  Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
+  <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
 
 ### Patch Changes
 
@@ -6881,7 +6881,7 @@
   `HTMLElement`, which stops compiling for a consumer who annotated that parameter
   as `HTMLCanvasElement`; one who let it infer is unaffected.
   
-  <!-- bump-approved: minor: Mike — the labkit annotations arcs 1-4 (a shared drawing surface, a mark store, the overlay, and capture/export) plus this split of a canvas's paint target from its input target, on top of ~30 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-09-03: "we were going to cut a 1.4.0-pre release" -->
+  <!-- bump-approved: minor: maintainer — the labkit annotations arcs 1-4 (a shared drawing surface, a mark store, the overlay, and capture/export) plus this split of a canvas's paint target from its input target, on top of ~30 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-09-03: "we were going to cut a 1.4.0-pre release" -->
 
 ### Patch Changes
 
@@ -7282,7 +7282,7 @@
   bytes alone needs the metrics seam in
   `docs/superpowers/specs/2026-08-28-text-package-extraction-design.md`.
   
-  <!-- bump-approved: minor: Mike — two new published packages (@weasel-js/text, @weasel-js/paint) and layoutRuns promoted to public API, on top of ~50 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-08-29: "tag a minor release and push" -->
+  <!-- bump-approved: minor: maintainer — two new published packages (@weasel-js/text, @weasel-js/paint) and layoutRuns promoted to public API, on top of ~50 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-08-29: "tag a minor release and push" -->
 
 ### Patch Changes
 
@@ -9213,9 +9213,7 @@ dims })` supplies both; omitting `frame` keeps the previous behavior, so no
 
 ### Minor Changes
 
-- 27dd91b: <!-- bump-approved: minor: Mike — new public API across two arcs (timeline + rig, and the @weasel-js/audio package); called explicitly in conversation on 2026-08-22: "the next version we push will be 1.1.0" -->
-
-  Add a keyframe timeline primitive and a hierarchical rig.
+- 27dd91b: Add a keyframe timeline primitive and a hierarchical rig.
 
   This adds public API surface.
 
@@ -9231,6 +9229,8 @@ dims })` supplies both; omitting `frame` keeps the previous behavior, so no
   local deltas from bind, so an absent joint or field means "no change".
   Animating a rig is a `SampledTrack<Pose>` whose `interpolate` is `blendPoses` —
   no rig-specific timeline machinery.
+  
+  <!-- bump-approved: minor: maintainer — new public API across two arcs (timeline + rig, and the @weasel-js/audio package); called explicitly in conversation on 2026-08-22: "the next version we push will be 1.1.0" -->
 
 ### Patch Changes
 

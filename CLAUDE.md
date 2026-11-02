@@ -113,8 +113,8 @@ an unrelated release consumed them.
 `npm run check:bumps` enforces this and runs in CI and in the release workflow.
 The root `prepublishOnly` script runs it too, but only when someone types
 `npm run prepublishOnly`: the root package is private, so npm never fires it.
-Overriding it requires a marker in the changeset body
-naming the level it approves:
+Overriding it requires a marker at the end of the changeset body, naming the level it approves
+(never its first line, which the changelog shows as the entry's title):
 
 ```
 <!-- bump-approved: minor: <who> — <why> -->

@@ -4,9 +4,7 @@
 
 ### Patch Changes
 
-- 22451fd: <!-- bump-approved: minor: maintainer — 1.16.0 release requested 2026-11-02 -->
-  
-  Scoped prefs: a pref declares the settings its value is kept separately for, and the store resolves which
+- 22451fd: Scoped prefs: a pref declares the settings its value is kept separately for, and the store resolves which
   value applies. A **pref** is the declaration; a **value** is one stored value of a pref under a scope, the
   shared `$else` one included; the **current value** is what a read returns under the current selection.
   
@@ -75,6 +73,8 @@
   
   `PrefsForm` draws a closed selector as one row per option it names and one row for the shared value,
   called `othersLabel` (default `Others`).
+  
+  <!-- bump-approved: minor: maintainer — 1.16.0 release requested 2026-11-02 -->
 - f9cfd00: Degree and radian conversions in these packages use geom's `DEG_TO_RAD` and `RAD_TO_DEG` instead of
   writing `Math.PI / 180` out by hand. Results are unchanged up to floating-point rounding.
 - Updated dependencies [22451fd]
@@ -368,9 +368,7 @@
   
   In a vertical `Bar`, a button that opens a popover or menu shows its glyph alone when it has one, keeping its name as
   its accessible name; one without turns 90 degrees and reads along the bar.
-- 48b6c4c: <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
-  
-  An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
+- 48b6c4c: An action can declare its params as a form, `Action.params` (a `@weasel-js/prefs` group of labels, ranges, steps,
   and defaults). An immediate run of such an action that commits one history entry becomes the actions tree's last
   operation, read with `useLastOperation()` / `useLastOperationStore()` (or `lastOperationOf(registry)`). Its
   `adjust(patch)` undoes that entry, puts back the selection the run started from, reruns the action with the patch
@@ -388,6 +386,8 @@
   driving it with `useOngoingAction` must trigger it instead. `addExtremeAnchors` takes `params.axes` — `'xy'` (the
   default), `'x'`, or `'y'` — and geom's `segmentExtremaTs` and `addExtremaAnchors` take the same choice as a last
   argument (`ExtremaAxes`).
+  
+  <!-- bump-approved: minor: maintainer — 1.15.0 release requested 2026-10-31 -->
 - e838373: `ListEditor`'s own text entries (no `renderEntry`) now hold what is typed until blur or Enter, or until typing rests where `typing.settleWhenIdle` is on, like every other typed field, instead of calling `onChange` on every keystroke. In `PrefsForm` and `SelectionPanel` list leaves a typed entry is now one write, and in a panel one undo step. Enter writes the typed entry and the new one as a single change, Backspace in an entry typed empty removes it, Escape drops the draft, and a move carries the typed text with its entry. A new `settleWhenIdle` prop overrides the kit setting.
 - 8a3f058: labkit's `Toolbar` is gone: labkit now re-exports `@weasel-js/ui`'s, which gains what labkit's added. `size="sm"`
   gives the compact control height a trial's chrome uses, `framed` draws a strip of its own, `Toolbar.Title` sets the
@@ -5066,9 +5066,7 @@
 
 ### Minor Changes
 
-- b25b09b: <!-- bump-approved: minor: maintainer — asked for 1.5.0 in the session that added the async ComboBox surface -->
-  
-  `ComboBox` can take its options from a server, and a new `useAsyncOptions` hook
+- b25b09b: `ComboBox` can take its options from a server, and a new `useAsyncOptions` hook
   does the fetching.
   
   **`useAsyncOptions({ load, debounceMs, minLength })`** returns `{ options,
@@ -5096,6 +5094,8 @@
   
   `ComboBox` also has keyboard tests for the first time — real key presses
   asserting that the arrows move the active option and that Enter commits it.
+  
+  <!-- bump-approved: minor: maintainer — asked for 1.5.0 in the session that added the async ComboBox surface -->
 
 ### Patch Changes
 
