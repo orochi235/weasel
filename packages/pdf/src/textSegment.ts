@@ -209,7 +209,7 @@ export async function writeSegment(
   const box = inkBox(seg, dx, dy);
   const rawStroke = strokeHasInk(run.stroke) ? (run.stroke as CommandStroke & { paint: CommandPaint }) : undefined;
   const stroke = rawStroke && resolveStroke(box, rawStroke, state);
-  const nativeStroke = stroke && isNative(stroke.stroke, stroke.width) && isSolidPaint(stroke.stroke.paint);
+  const nativeStroke = stroke && isNative(stroke.stroke) && isSolidPaint(stroke.stroke.paint);
   const solidFill = !fill || isSolidPaint(fill);
   const bold = syntheticBoldOffset(first.resolved);
   const fillColor = fill && isSolidPaint(fill) ? solidColor(fill, state) : undefined;

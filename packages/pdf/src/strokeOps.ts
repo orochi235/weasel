@@ -1,7 +1,7 @@
-import type { Path } from '@weasel-js/geom';
+import { joinPaths, type Path, type PolygonPath, splitByClosure, splitSubpaths } from '@weasel-js/geom';
 import { type CommandPaint, type CommandStroke, dashPattern, isSolidPaint, type Stroke } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
-import { dashLength, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
+import { dashLength, insetPath, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
 import { NonFiniteNumber, num } from './num';
@@ -11,11 +11,9 @@ const CAPS = { butt: 0, round: 1, square: 2 } as const;
 const JOINS = { miter: 0, round: 1, bevel: 2 } as const;
 
 /** Whether PDF's own stroke operator draws this stroke as the renderer would. */
-export function isNative(stroke: CommandStroke, width: number): boolean {
+export function isNative(stroke: CommandStroke): boolean {
   if (stroke.align && stroke.align !== 'center') return false;
-  if (stroke.vertexWidths || stroke.nib || stroke.vertexColors) return false;
-  const { start, end } = strokeInsets(stroke as Stroke, width);
-  return start === 0 && end === 0;
+  return !(stroke.vertexWidths || stroke.nib || stroke.vertexColors);
 }
 
 /**
@@ -56,12 +54,27 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   out.op('RG', ...rgb);
   // The untrimmed length decides a dash too fine to draw, as it does in the renderer.
   const length = stroke.dash ? dashLength(path) : undefined;
-  for (const run of trimmedRuns(cut, stroke.dash !== undefined, false)) {
+  const insets = strokeInsets(stroke as Stroke, width);
+  for (const run of trimmedRuns(cut, stroke.dash !== undefined, true)) {
+    const shaft = run.fromClosed ? run.path : shaftOf(run.path, insets.start, insets.end);
+    if (!shaft) continue;
     strokeStyleOps(ctx, stroke, width, length, run.dashPhase);
-    pathOps(out, run.path, 'all');
+    pathOps(out, shaft, 'all');
     out.op('S');
   }
   out.op('Q');
+}
+
+/** `path` with each open subpath cut back for the heads the line stops short
+ *  of, as the renderer's ribbon is; `null` when nothing of it is left. */
+function shaftOf(path: Path, start: number, end: number): Path | null {
+  if (!(start > 0) && !(end > 0)) return path;
+  const subs = path.kind === 'polygon' ? splitSubpaths(path) : [path];
+  const kept = subs.flatMap((sub) => {
+    if (sub.kind !== 'polygon' || splitByClosure(sub).open === null) return [sub];
+    return insetPath(sub, start, end) ?? [];
+  });
+  return kept.length === 0 ? null : kept.length === 1 ? kept[0] : joinPaths(kept as PolygonPath[]);
 }
 
 /**
@@ -78,7 +91,7 @@ export async function writeStroke(ctx: PageCtx, path: Path, rawStroke: CommandSt
     stroke.markerStart || stroke.markerMid || stroke.markerEnd
       ? markerDrawCommands(path, stroke, width, undefined)
       : [];
-  if (isNative(stroke, width) && isSolidPaint(stroke.paint)) writeNative(ctx, path, stroke, state, width);
+  if (isNative(stroke) && isSolidPaint(stroke.paint)) writeNative(ctx, path, stroke, state, width);
   else {
     if (stroke.vertexColors) skip(ctx, 'stroke vertexColors approximated by a single paint');
     heads = heads.filter((h) => h.stroke || h.fill?.paint !== stroke.paint);

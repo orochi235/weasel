@@ -18,6 +18,7 @@ export { trimInSpace } from './tessellate/insets';
 export { resolveTrim } from './trim/resolveTrim';
 export { trimSpan } from './trim/trimSpan';
 export { trimmedPath, trimmedRuns } from './trim/trimmedPath';
+export { insetPath } from './trim/insetPath';
 export type { TrimmedPath, TrimmedRun } from './trim/trimmedPath';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
 export {

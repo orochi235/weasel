@@ -155,6 +155,11 @@ describe('writeStroke', () => {
     expect(fills(marked)).toBe(1);
   });
 
+  it('strokes a headed line natively, stopped short of the head by its inset', async () => {
+    const c = await content([{ kind: 'path', path: line, stroke: { paint: ink, width: 2, markerEnd: 'arrow' } }]);
+    expect(c).toMatch(/\n0 0 m\n44 0 l\nS\n/);
+  });
+
   it('writes dash lengths as PDF numbers and an all-zero dash as solid', async () => {
     const stroked = (dash: number[]) => content([{ kind: 'path', path: line, stroke: { paint: ink, width: 1, dash } }]);
     expect(await stroked([1 / 3, 2])).toContain('[0.3333 2] 0 d\n');
