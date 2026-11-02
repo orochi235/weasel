@@ -3,7 +3,7 @@ import { EASINGS, PATH_M, PATH_L, type EasingName } from '@weasel-js/geom';
 import {
   SceneCanvas,
   useScene,
-  asNodeId,
+  scenePoseTarget,
   textCommandFromRuns,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
@@ -49,39 +49,27 @@ function buildInitial(): Marker[] {
 }
 
 export function EasingsDemo() {
-  // A `setPose` per marker per frame; nothing here renders scene data as DOM.
+  // Each marker moves on its pose target: the frames are pose overrides, and the
+  // destination is committed untracked, so a run is never an undo step.
   const scene = useScene<Marker>({ items: buildInitial(), subscribe: false });
   const animator = useAnimator();
   const [duration, setDuration] = useState(1400);
 
   const play = (): void => {
     animator.cancelAll();
-    for (const m of buildInitial()) {
-      const id = asNodeId(m.id);
-      const current = scene.get(id);
-      if (!current) continue;
-      scene.setPose(id, { ...(current.pose as Marker), x: TRACK_LEFT, y: m.y });
+    for (const id of scene.renderOrder()) {
+      const target = scenePoseTarget(scene, id);
+      const pose = scene.get(id)?.pose as Marker | undefined;
+      if (!target || !pose) continue;
+      animator.tween({
+        target,
+        from: { ...pose, x: TRACK_LEFT },
+        to: { ...pose, x: TRACK_RIGHT - MARKER_SIZE },
+        ms: duration,
+        easing: EASINGS[pose.easing],
+        cancelKey: `easing-${pose.id}`,
+      });
     }
-    // Defer one frame so the reset position lands before tweens start.
-    requestAnimationFrame(() => {
-      for (const id of scene.renderOrder()) {
-        const node = scene.get(id);
-        if (!node) continue;
-        const marker = node.pose as Marker;
-        animator.tween({
-          from: TRACK_LEFT,
-          to: TRACK_RIGHT - MARKER_SIZE,
-          ms: duration,
-          easing: EASINGS[marker.easing],
-          onTick: (x) => {
-            const cur = scene.get(id);
-            if (!cur) return;
-            scene.setPose(id, { ...(cur.pose as Marker), x });
-          },
-          cancelKey: `easing-${marker.id}`,
-        });
-      }
-    });
   };
 
   // Custom overlay layer: per-row labels + track lines.
