@@ -1,4 +1,4 @@
-import { createRepaintListeners } from './repaintListeners';
+import { createEmitter } from '@weasel-js/registry';
 import type { Target } from './target';
 import { createTargetTable, type TargetTable } from './targetTable';
 
@@ -45,7 +45,7 @@ export class ColorOverrideRegistry {
   private readonly map = new Map<string, NodeOverrides>();
   private readonly slots = new Map<string, NodeSlots>();
   private readonly tables = new Map<number, ColorTable>();
-  private readonly listeners = createRepaintListeners();
+  private readonly listeners = createEmitter();
   private _version = 0;
 
   set(id: string, channel: VertexColorChannel, override: ColorOverride): void {
@@ -213,7 +213,7 @@ export class ColorOverrideRegistry {
 
   private changed(): void {
     this._version++;
-    this.listeners.notify();
+    this.listeners.emit();
   }
 }
 
