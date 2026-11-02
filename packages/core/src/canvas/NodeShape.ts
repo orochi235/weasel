@@ -10,7 +10,7 @@
  */
 import { glyphGeneration } from '@weasel-js/font';
 import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
-import type { StrokeTrim } from '@weasel-js/paint';
+import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
 import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
@@ -247,8 +247,9 @@ function trimmedOutlineOf<TData, TPose>(
     const local = poseFrameOf(pose) === null ? sil : localSilhouette(node, pose, { derivedPath }) ?? sil;
     return trimmedOutline(local, sil, pose, trim);
   };
-  // The trim may be inherited, so it keys the memo beside the node; see `findShapeSilhouette` for the derived path.
-  return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, TRIM_PICK_SLOT, pose, build, trim);
+  // The trim may be inherited, rebuilt per query, so its value keys the memo beside the node;
+  // see `findShapeSilhouette` for the derived path.
+  return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, TRIM_PICK_SLOT, pose, build, strokeTrimKey(trim));
 }
 
 /** The current painters in evaluation order — `'high'` tier first, then `'normal'`. */

@@ -60,6 +60,16 @@ describe('strokeHitTest — span', () => {
     expect(strokeHitTest(rect, 0, 5, 1, { span })).toBe(false);
   });
 
+  it('cuts a rect span across a corner and into its closing edge', () => {
+    const rect: Path = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    const span = { from: 25, to: 35 };
+    expect(strokeHitTest(rect, 2, 10, 0.5, { span })).toBe(true);
+    expect(strokeHitTest(rect, 8, 10, 0.5, { span })).toBe(false);
+    expect(strokeHitTest(rect, 0, 8, 0.5, { span })).toBe(true);
+    expect(strokeHitTest(rect, 0, 2, 0.5, { span })).toBe(false);
+    expect(strokeHitTest(rect, 10, 5, 0.5, { span })).toBe(false);
+  });
+
   it('an empty span hits nothing', () => {
     expect(strokeHitTest(LINE, 25, 0, 2, { span: { from: 30, to: 30 } })).toBe(false);
     expect(strokeHitTest(LINE, 25, 0, 2, { span: { from: 40, to: 10 } })).toBe(false);
