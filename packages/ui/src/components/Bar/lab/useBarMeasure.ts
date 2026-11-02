@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 import type { Point, TrackShape } from '@weasel-js/geom';
+import { cssPx } from '../../../cssPx';
 
 export type Side = 'top' | 'bottom' | 'left' | 'right';
 
@@ -48,7 +49,7 @@ function read(root: HTMLElement, shape: TrackShape, reading: (p: Point) => numbe
     return { kind, name: kind === 'more' ? 'More' : nameOf(el), at: reading(p), clipped: el.getAttribute('data-clipped') ?? 'none', side: sideAt(p) };
   });
   const scrolls = bar.hasAttribute('data-scrolls');
-  const offset = scrolls ? offsetOf(els, placed, Number.parseFloat(getComputedStyle(bar).columnGap) || 0) : 0;
+  const offset = scrolls ? offsetOf(els, placed, cssPx(getComputedStyle(bar).columnGap)) : 0;
   const open = bar.querySelector<HTMLElement>('[aria-expanded="true"]');
   const pop = document.querySelector<HTMLElement>('[data-weasel-overlay][data-placement]');
   const popover = open && pop ? { trigger: nameOf(open.closest('[data-bar-item], [data-bar-more]') ?? open), placement: pop.getAttribute('data-placement')!, side: sideAt(local(open)) } : null;

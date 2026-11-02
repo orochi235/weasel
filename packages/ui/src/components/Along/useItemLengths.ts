@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { cssPx } from '../../cssPx';
 
 const same = (a: ReadonlyMap<string, number>, b: ReadonlyMap<string, number>): boolean =>
   a.size === b.size && [...a].every(([key, length]) => b.get(key) === length);
@@ -66,7 +67,7 @@ export function useRunGap(root: RefObject<HTMLElement | null>): number {
   useLayoutEffect(() => {
     const el = root.current;
     if (el === null) return;
-    const measure = (): void => setGap(Number.parseFloat(getComputedStyle(el).columnGap) || 0);
+    const measure = (): void => setGap(cssPx(getComputedStyle(el).columnGap));
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);

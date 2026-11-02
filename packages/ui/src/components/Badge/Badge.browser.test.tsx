@@ -1,6 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/faces.css';
 import { cleanup, render, waitFor } from '@testing-library/react';
+import { relativeLuminance } from '@weasel-js/paint';
+import { contrastOver, parseComputedColor, type Rgba } from '@weasel-js/theme/testing/computedColor';
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { painted } from '../../testing/paintedContrast';
@@ -15,39 +17,12 @@ import type { BadgeShape, BadgeSize } from './types';
 
 afterEach(cleanup);
 
-type Rgba = [number, number, number, number];
-
-/** Chromium serializes a relative color as `color(srgb r g b / a)` in 0–1 or, from `oklch(from …)`,
- *  as `oklch(l c h / a)`; a plain one as `rgb[a](r, g, b[, a])`. Only a gray oklch is converted. */
-function parse(css: string): Rgba {
-  const lch = /^oklch\(([\d.e-]+) ([\d.e-]+) [\d.e-]+(?: \/ ([\d.e-]+))?\)$/.exec(css);
-  if (lch) {
-    if (Number(lch[2]) !== 0) throw new Error(`chromatic oklch ${css}`);
-    const lin = Number(lch[1]) ** 3;
-    const c = 255 * (lin <= 0.0031308 ? lin * 12.92 : 1.055 * lin ** (1 / 2.4) - 0.055);
-    return [c, c, c, lch[3] === undefined ? 1 : Number(lch[3])];
-  }
-  const srgb = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)(?: \/ ([\d.e-]+))?\)$/.exec(css);
-  if (srgb) return [Number(srgb[1]) * 255, Number(srgb[2]) * 255, Number(srgb[3]) * 255, srgb[4] === undefined ? 1 : Number(srgb[4])];
-  const rgb = /^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/.exec(css);
-  if (!rgb) throw new Error(`unparsed color ${css}`);
-  return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), rgb[4] === undefined ? 1 : Number(rgb[4])];
-}
-
 function over(fg: Rgba, bg: Rgba): Rgba {
   const a = fg[3];
   return [fg[0] * a + bg[0] * (1 - a), fg[1] * a + bg[1] * (1 - a), fg[2] * a + bg[2] * (1 - a), 1];
 }
 
-function luminance([r, g, b]: Rgba): number {
-  const lin = (c: number) => (c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-
-function contrast(a: Rgba, b: Rgba): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
-}
+const luminance = ([r, g, b]: Rgba): number => relativeLuminance(r / 255, g / 255, b / 255);
 
 /** A themed surface in `mode`, the way the kit sets it: only `[data-wzl-mode]` switches the tokens. */
 function Surface({ mode, children }: { mode: 'light' | 'dark'; children: React.ReactNode }) {
@@ -70,9 +45,9 @@ async function paint(root: HTMLElement, badge: HTMLElement) {
       if (!p) throw new Error('no fill path yet');
       return p;
     });
-  const bg = parse(getComputedStyle(surface).backgroundColor);
-  const fill = over(parse(painted === badge ? getComputedStyle(badge).backgroundColor : getComputedStyle(painted).fill), bg);
-  const text = over(parse(getComputedStyle(badge.lastElementChild as HTMLElement).color), fill);
+  const bg = parseComputedColor(getComputedStyle(surface).backgroundColor);
+  const fill = over(parseComputedColor(painted === badge ? getComputedStyle(badge).backgroundColor : getComputedStyle(painted).fill), bg);
+  const text = over(parseComputedColor(getComputedStyle(badge.lastElementChild as HTMLElement).color), fill);
   return { bg, fill, text };
 }
 
@@ -90,8 +65,8 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
     );
     const chord = [...container.querySelectorAll<HTMLElement>('[data-variant="solid"]')].find((el) => el.textContent?.includes('⇧'))!;
     const { bg, fill, text } = await paint(container, chord);
-    expect(contrast(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
-    expect(contrast(fill, bg)).toBeGreaterThan(1.5);
+    expect(contrastOver(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
+    expect(contrastOver(fill, bg)).toBeGreaterThan(1.5);
   });
 
   test('a solid muted pill\'s text is legible on its fill', async () => {
@@ -103,7 +78,7 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
       </Surface>,
     );
     const { text, fill } = await paint(container, container.querySelector<HTMLElement>('[data-variant]')!);
-    expect(contrast(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
+    expect(contrastOver(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
   });
 
   for (const look of BADGE_LOOKS) {
@@ -116,7 +91,7 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
         </Surface>,
       );
       const { text, fill } = await paint(container, container.querySelector<HTMLElement>('[data-variant]')!);
-      expect(contrast(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
+      expect(contrastOver(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
     });
   }
 
@@ -145,7 +120,7 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
         expect(getComputedStyle(badge).backgroundColor, 'paints no fill').toBe('rgba(0, 0, 0, 0)');
         for (const part of ['span', 'button'] as const) {
           const ink = getComputedStyle(badge.querySelector(part)!).color;
-          const ratio = contrast(seen(ink), seen(ground));
+          const ratio = contrastOver(seen(ink), seen(ground));
           expect(ratio, `${badge.dataset.grade ?? badge.dataset.emphasis ?? 'none'} ${part}: ${ink} on ${ground}`).toBeGreaterThanOrEqual(PLAIN_INK_FLOOR);
           // The outline ink is the one chosen to be read with no fill under it.
           expect(seen(ink), `${badge.dataset.grade ?? badge.dataset.emphasis ?? 'none'} ${part}`).toEqual(seen(getComputedStyle(outline.querySelector(part)!).color));

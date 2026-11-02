@@ -1,4 +1,12 @@
-import { hexToOklchDeg, hexToRgbBytes, oklchDegToHex, srgbU8ToOklab, type OklchDeg } from '@weasel-js/paint';
+import {
+  hexToOklchDeg,
+  hexToRgbBytes,
+  luminanceContrast,
+  oklchDegToHex,
+  relativeLuminance,
+  srgbU8ToOklab,
+  type OklchDeg,
+} from '@weasel-js/paint';
 
 /** A color in OKLCH: lightness 0–1, chroma, hue in degrees. paint's own type,
  *  under the name this engine has always called it. */
@@ -17,17 +25,15 @@ export function chromaCap(L: number, H: number): number {
   return toLch(toHex(L, 0.5, H)).C;
 }
 
-/** WCAG relative luminance. */
+/** WCAG relative luminance of a hex color. Throws on anything else. */
 export function luminance(hex: string): number {
-  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
-  const f = (u: number) => (u <= 0.04045 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4);
-  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  const [r, g, b] = hexToRgb(hex);
+  return relativeLuminance(r / 255, g / 255, b / 255);
 }
 
 /** WCAG contrast ratio between two hex colors, 1–21, in either order. */
 export function contrast(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((p, q) => q - p);
-  return (hi + 0.05) / (lo + 0.05);
+  return luminanceContrast(luminance(a), luminance(b));
 }
 
 /** Shortest angular distance between two hues, in degrees. */

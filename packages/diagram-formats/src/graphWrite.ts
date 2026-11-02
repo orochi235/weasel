@@ -7,9 +7,10 @@ import {
   dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
   type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
+import { normalizeHex, parseColor, rgbaToHex, tryNormalizeHex } from '@weasel-js/paint';
 import { deepEqual } from '@weasel-js/registry';
 import { graphPageOf, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
-import { Warnings, hex2 } from './graphRead';
+import { Warnings } from './graphRead';
 import { rowLines } from './rowLines';
 
 /** A container, pool, lane, or group, as the one kind of box a graph format has. */
@@ -101,12 +102,16 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
 
 /** A CSS color in a spelling every graph format reads: `rgb()` and `rgba()` as hex, short hex long. Names pass through. */
 export function hexColor(css: string): string {
-  const short = /^#([\da-f])([\da-f])([\da-f])([\da-f])?$/i.exec(css);
-  if (short !== null) return `#${short.slice(1).filter(Boolean).map((d) => d! + d!).join('')}`;
-  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:\s*[,/]\s*([\d.]+)(%?))?\s*\)$/i.exec(css);
-  if (rgb === null) return css;
-  const alpha = rgb[4] === undefined ? '' : hex2(Number(rgb[4]) / (rgb[5] === '%' ? 100 : 1));
-  return `#${hex2(Number(rgb[1]) / 255)}${hex2(Number(rgb[2]) / 255)}${hex2(Number(rgb[3]) / 255)}${alpha}`;
+  if (css.startsWith('#')) return tryNormalizeHex(css) ?? css;
+  if (!/^rgba?\(/i.test(css)) return css;
+  let rgba: readonly [number, number, number, number];
+  try {
+    rgba = parseColor(css);
+  } catch {
+    return css;
+  }
+  // An alpha written out is kept, `ff` included: a fourth comma-separated value or one after `/`.
+  return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) ? 'rgba' : 'rgb');
 }
 
 /** `style`'s fields that differ from `base`. */

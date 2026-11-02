@@ -7,6 +7,7 @@ import { RunBand, RunEnds, useRunRow } from './Along/useRunRow';
 import type { SegmentedRowProps, SegmentPlace, SegmentState } from './segmentedRow';
 import seg from './segmentedControl.module.css';
 import s from './segmentsAlong.module.css';
+import { cssPx } from '../cssPx';
 
 const SEGMENT = 'data-segment';
 const segmentKeyOf = (child: Element): string | null => child.getAttribute(SEGMENT);
@@ -119,7 +120,7 @@ function useWellEnds(root: RefObject<HTMLElement | null>): { pad: number; cap: n
     if (el === null) return;
     const segment = el.querySelector<HTMLElement>(`[${SEGMENT}]`);
     const measure = (): void => {
-      setPad(Number.parseFloat(getComputedStyle(el).paddingInlineStart) || 0);
+      setPad(cssPx(getComputedStyle(el).paddingInlineStart));
       setCap(segment?.offsetHeight ?? 0);
     };
     measure();

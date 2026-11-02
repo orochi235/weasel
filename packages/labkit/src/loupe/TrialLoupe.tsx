@@ -1,4 +1,4 @@
-import { useLatest } from '@weasel-js/core';
+import { useElementSize, useLatest } from '@weasel-js/core';
 import {
   type ReactNode,
   type RefObject,
@@ -23,7 +23,6 @@ import { LoupeGestures } from './LoupeGestures';
 import { SourceLoupe } from './SourceLoupe';
 import { resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
 import { type LoupeLens, type LoupeOptions, resolveLoupe } from './types';
-import { useHostSize } from './useHostSize';
 import { useLoupe } from './useLoupe';
 
 /** Props for `<TrialLoupe>`. */
@@ -195,7 +194,7 @@ export function TrialLoupe({
   const reading = loupe.visible ? resolved : null;
   useEffect(() => reading?.retain(), [reading]);
 
-  const measured = useHostSize(host);
+  const measured = useElementSize(host);
   const size = surface?.size ?? measured;
 
   // The gestures mount outside the visibility gate: hold-to-peek is what

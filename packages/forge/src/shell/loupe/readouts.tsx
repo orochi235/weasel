@@ -1,4 +1,4 @@
-import { contrastRatio, parseColor, useLatest, wcagLevels } from '@weasel-js/core';
+import { contrastRatio, luminanceContrast, parseColor, relativeLuminance, useLatest, wcagLevels } from '@weasel-js/core';
 import {
   type LensCapture,
   type LensReadoutProps,
@@ -38,7 +38,8 @@ function isLarge(style: CSSStyleDeclaration): boolean {
   return px >= 24 || (px >= 18.66 && w >= 700);
 }
 
-const rgb = (d: Uint8ClampedArray, i: number) => `rgb(${d[i]}, ${d[i + 1]}, ${d[i + 2]})`;
+const luminanceAt = (d: Uint8ClampedArray, i: number) =>
+  relativeLuminance((d[i] as number) / 255, (d[i + 1] as number) / 255, (d[i + 2] as number) / 255);
 
 function ofPixels(capture: LensCapture | undefined, point: LoupePoint): ContrastReading {
   const img = capture ? readBitmap(capture.bitmap) : null;
@@ -60,8 +61,8 @@ function ofPixels(capture: LensCapture | undefined, point: LoupePoint): Contrast
       }
     }
   }
-  const ratio = contrastRatio(rgb(data, center), rgb(data, far));
-  return ratio === null ? { unavailable: NO_CAPTURE } : { ratio, ...wcagLevels(ratio, false), large: false };
+  const ratio = luminanceContrast(luminanceAt(data, center), luminanceAt(data, far));
+  return { ratio, ...wcagLevels(ratio, false), large: false };
 }
 
 /**

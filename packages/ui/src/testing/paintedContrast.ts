@@ -1,3 +1,5 @@
+import { luminanceContrast, relativeLuminance } from '@weasel-js/paint';
+
 /** `color` painted over `ground`, as the three channels a screen shows. Browser only: it reads a canvas. */
 export function painted(color: string, ground: string): [number, number, number] {
   const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
@@ -9,18 +11,11 @@ export function painted(color: string, ground: string): [number, number, number]
   return [r, g, b];
 }
 
-function luminance(rgb: [number, number, number]): number {
-  const [r, g, b] = rgb.map((c) => {
-    const v = c / 255;
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
+const luminance = ([r, g, b]: [number, number, number]): number => relativeLuminance(r / 255, g / 255, b / 255);
 
 /** WCAG's contrast ratio of two colors. */
 export function contrast(a: [number, number, number], b: [number, number, number]): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
+  return luminanceContrast(luminance(a), luminance(b));
 }
 
 /** The contrast of a line drawn in `line` on a fill of `fill`, both CSS colors. */

@@ -37,6 +37,7 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@weasel-js/paint": "1.15.1",
     "@weasel-js/pdf": "1.15.1",
     "@weasel-js/registry": "1.15.1"
   },

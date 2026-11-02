@@ -1,7 +1,6 @@
 import { parseHexBytes } from '@weasel-js/core';
-import { tryNormalizeHex } from '@weasel-js/paint';
+import { parseColor, rgbaToHex } from '@weasel-js/paint';
 
-const RGB = /^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})\b/i;
 const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(.+\)$/i;
 const KEYWORDS = new Set([
   'transparent',
@@ -46,15 +45,12 @@ export function parsesAsColor(value: string, supports: Supports = browserSupport
 }
 
 function hexOf(v: string): string | null {
-  const hex = v.startsWith('#') ? tryNormalizeHex(v, 'rgb') : undefined;
-  if (hex) return hex;
-  const rgb = RGB.exec(v);
-  return rgb
-    ? `#${rgb
-        .slice(1, 4)
-        .map((n) => Math.min(255, Number(n)).toString(16).padStart(2, '0'))
-        .join('')}`
-    : null;
+  try {
+    const [r, g, b] = parseColor(v);
+    return rgbaToHex([r, g, b]);
+  } catch {
+    return null;
+  }
 }
 
 let paint: CanvasRenderingContext2D | null | undefined;

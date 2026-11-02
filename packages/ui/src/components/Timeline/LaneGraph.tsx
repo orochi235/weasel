@@ -1,5 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
+import { useElementSize, useLatest } from '@weasel-js/core';
 import { type Keyframe } from '@weasel-js/animator';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
 import {
@@ -54,20 +54,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   } = props;
 
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  useLayoutEffect(() => {
-    const el = hostRef.current;
-    if (!el) return;
-    const update = (): void => {
-      const r = el.getBoundingClientRect();
-      setSize((prev) => (prev.width === r.width && prev.height === r.height ? prev : { width: r.width, height: r.height }));
-    };
-    update();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const size = useElementSize(hostRef);
 
   const layer = useMemo(() => createKeyframeLayer({
     id: 'keys',

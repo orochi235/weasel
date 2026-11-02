@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
+import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
+import { openPointerSession, useElementSize, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { decimalsOf, type TickSet } from '@weasel-js/plot/scales';
 import { panWindow, TICK_SPACING_PX, toPercent, windowScale, zoomWindow, type TimeWindow } from './timeScale';
@@ -37,19 +37,7 @@ export function Ruler(props: RulerProps): ReactElement {
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
-  // Re-render once the track is mounted so ticks lay out against its real
-  // width — `trackRef.current` is null on the render that first attaches it.
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const update = (): void => setWidth(el.getBoundingClientRect().width);
-    update();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const { width } = useElementSize(trackRef);
 
   const widthOf = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
   const msAt = (clientX: number): number => {

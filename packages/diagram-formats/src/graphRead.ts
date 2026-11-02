@@ -29,9 +29,6 @@ export class Warnings {
   }
 }
 
-/** A channel from 0 to 1 as two hex digits. */
-export const hex2 = (n: number): string => Math.round(Math.max(0, Math.min(1, n)) * 255).toString(16).padStart(2, '0');
-
 const NAMED:Readonly<Record<string, string>> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
 /** `text` with its `&name;` and `&#n;` references read; Mermaid's `#name;` and `#n;` too when `hash` is set. */

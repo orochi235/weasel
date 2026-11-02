@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import { toHex } from '../TokenPanel/color';
 import s from './Foundations.module.css';
 
 const meta: Meta = {
@@ -318,14 +319,6 @@ const COLOR_TOKEN_GROUPS: ColorGroup[] = [
   },
 ];
 
-function rgbToHex(rgb: string): string {
-  const m = rgb.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-  if (!m) return rgb.trim();
-  const [, r, g, b] = m;
-  const toHex = (n: string) => Number(n).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
 function ThemedSwatch({ token, theme }: { token: string; theme: 'dark' | 'light' }): ReactElement {
   const ref = useRef<HTMLDivElement | null>(null);
   const [value, setValue] = useState('');
@@ -338,7 +331,7 @@ function ThemedSwatch({ token, theme }: { token: string; theme: 'dark' | 'light'
   return (
     <div ref={ref} data-wzl-mode={theme} className={s.swatchPair}>
       <div className={s.swatchPairChip} style={{ background: `var(${token})` }} />
-      <code className={s.swatchPairValue}>{rgbToHex(value)}</code>
+      <code className={s.swatchPairValue}>{toHex(value) ?? value.trim()}</code>
     </div>
   );
 }

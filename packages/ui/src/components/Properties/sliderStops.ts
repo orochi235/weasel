@@ -3,6 +3,7 @@ import { attract, usableStops } from '@weasel-js/ui-logic';
 import { useKitSetting } from '@weasel-js/react';
 import { STOP_SNAP_PX } from '../Slider/stops';
 import shared from '../range.module.css';
+import { cssPx } from '../../cssPx';
 
 /** The first stop a move from `from` to `to` crosses, or `to` where it crosses none. */
 export function catchStop(from: number, to: number, stops: readonly number[]): number {
@@ -16,9 +17,8 @@ export function catchStop(from: number, to: number, stops: readonly number[]): n
 /** How far the thumb's center travels across `el`, in px. */
 function runPx(el: HTMLInputElement): number {
   const css = getComputedStyle(el);
-  const px = (v: string) => Number.parseFloat(v) || 0;
-  const thumb = px(css.getPropertyValue('--wzl-slider-thumb-size'));
-  return el.getBoundingClientRect().width - px(css.paddingLeft) - px(css.paddingRight) - thumb;
+  const thumb = cssPx(css.getPropertyValue('--wzl-slider-thumb-size'));
+  return el.getBoundingClientRect().width - cssPx(css.paddingLeft) - cssPx(css.paddingRight) - thumb;
 }
 
 /** Each stop as a 1px mark in the range box's background, centered where the

@@ -8,6 +8,7 @@ import { SwatchButton, swatchesIn, swatchKeyDown, useSwatchApply, type SwatchApp
 import type { SwatchGridOption } from './SwatchGrid';
 import { inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings, type SwatchRing } from './ringPlan';
 import s from './SwatchGrid.module.css';
+import { cssPx } from '../../cssPx';
 
 /** One palette laid on rings: its swatches, a row of `columns` to a ring, after what leads its first ring. */
 export interface SwatchRingGroup {
@@ -54,7 +55,7 @@ function useSwatchMetrics(root: RefObject<HTMLElement | null>): SwatchMetrics {
       const leads = [...(root.current?.querySelectorAll(':scope > [role="group"]') ?? [])].map(
         (group) => group.querySelector<HTMLElement>('[data-ring-item="lead"]')?.offsetHeight ?? 0,
       );
-      const next = { size: swatch?.offsetHeight ?? 0, gap: ring ? Number.parseFloat(getComputedStyle(ring).columnGap) || 0 : 0, leads };
+      const next = { size: swatch?.offsetHeight ?? 0, gap: ring ? cssPx(getComputedStyle(ring).columnGap) : 0, leads };
       setMetrics((prev) => (sameMetrics(prev, next) ? prev : next));
     };
     measure();
