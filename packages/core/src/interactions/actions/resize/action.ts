@@ -56,6 +56,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
         session.lifecycle.start(session.writeIds as readonly string[]);
         return {
           kind: 'resize',
+          autoPan: true,
           onMove(moveCtx: InvocationCtx): void {
             if (!moveCtx.drag) return;
             frame = nextFrame(session, readers, moveCtx);

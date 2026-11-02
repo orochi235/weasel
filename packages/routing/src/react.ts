@@ -11,7 +11,7 @@
  */
 export { useGestureDispatcher } from './interactions/dispatcher/useGestureDispatcher';
 export type {
-  UseGestureDispatcherOptions, DispatcherChannels,
+  UseGestureDispatcherOptions, DispatcherChannels, HeldPointerFeed,
 } from './interactions/dispatcher/useGestureDispatcher';
 
 export { ActionsProvider, useActionsRegistry, useAction } from './interactions/actions/ActionsProvider';

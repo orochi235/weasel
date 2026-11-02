@@ -1,5 +1,6 @@
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
+import type { EdgePanOptions } from './useEdgePan';
 import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
 import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
@@ -41,4 +42,8 @@ export interface SceneCanvasViewport {
    *  there when `animatedZoom` is on; return nothing to dispatch it
    *  yourself, which is what a controlled canvas does. */
   recenter?: () => View | void;
+  /** Scroll the view while a drag of content holds the pointer near the
+   *  canvas's edge: a move, resize, insert, or marquee. On under `view`;
+   *  `false` disables; an object sets the zone and the speed. */
+  edgePan?: boolean | EdgePanOptions;
 }

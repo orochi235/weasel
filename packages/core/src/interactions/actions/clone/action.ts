@@ -139,6 +139,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
 
       return {
         kind: 'clone',
+        autoPan: true,
         // The source stays visible at its committed pose; the ghost appears
         // at the drag target.
         previewHidesSource: false,

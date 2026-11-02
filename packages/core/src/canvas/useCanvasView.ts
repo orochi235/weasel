@@ -30,6 +30,10 @@ export interface CameraProps {
   viewBounds?: { x: number; y: number; width: number; height: number };
 }
 
+/** Bounds read at each write: those a view moving from `from` must stay in,
+ *  or `null` for none. */
+export type ViewBoundsOf = (from: View, dims: Dims) => Bounds | null;
+
 /** Inputs to {@link useCanvasView}: the camera's view props and what a write
  *  needs from whatever the camera looks through. */
 export interface CanvasViewOptions {
@@ -38,7 +42,7 @@ export interface CanvasViewOptions {
   view: View | (() => View) | undefined;
   defaultView: View | undefined;
   onViewChange: ((next: View) => void) | undefined;
-  viewBounds: Bounds | undefined;
+  viewBounds: Bounds | ViewBoundsOf | undefined;
   /** The size the camera looks through, which `viewBounds` clamps against. */
   dims: () => Dims;
   requestRedraw: () => void;
@@ -100,7 +104,8 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
       controlled, derived, onViewChange: forward, viewBounds: bounds, dims: size, requestRedraw: redraw,
     } = live.current;
     const valid = normalizeView(next);
-    const clamped = bounds ? clampView(valid, bounds, size()) : valid;
+    const reach = typeof bounds === 'function' ? bounds(getView(), size()) : bounds;
+    const clamped = reach ? clampView(valid, reach, size()) : valid;
     if (controlled) {
       // The prop is the authority; writing the ref would put pixels and props
       // out of step with nothing to reconcile them.
@@ -120,7 +125,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
     for (const fn of viewSubsRef.current) fn(clamped);
     forward?.(clamped);
     redraw();
-  }, [live]);
+  }, [live, getView]);
 
   const setView = useCallback((next: View | ((current: View) => View)) => {
     write(typeof next === 'function' ? next(getView()) : next, true);

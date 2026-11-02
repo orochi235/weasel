@@ -41,7 +41,7 @@ export const DRAW_MENU_CONTRIBUTIONS: MenuContributions = {
       direction: 'pathEdit.show.direction', comb: 'pathEdit.show.comb',
       balance: 'pathEdit.show.balance', corners: 'pathEdit.show.corners',
     }),
-    zoom: menuRun({ in: 'viewport.zoom:in', out: 'viewport.zoom:out', reset: 'viewport.zoom:reset' }),
+    zoom: menuRun({ in: 'viewport.zoom:in', out: 'viewport.zoom:out', reset: 'viewport.zoom:reset', fit: 'viewport.zoom:fit' }),
     chrome: menuRun(Object.fromEntries(CHROME_ITEMS.map(({ id }) => [id, chromeActionId(id)]))),
   },
 };

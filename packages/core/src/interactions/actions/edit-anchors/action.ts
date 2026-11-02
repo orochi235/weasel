@@ -356,6 +356,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
 
       return {
         kind: 'edit-anchors',
+        autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
           move(moveCtx);
           active = true;

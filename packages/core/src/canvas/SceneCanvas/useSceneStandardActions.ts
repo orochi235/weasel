@@ -6,6 +6,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { View } from 'core/viewport/view';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -87,6 +88,8 @@ export interface SceneStandardActionsInputs {
   /** The canvas's camera runner, published on the `view` dep so
    *  `viewport.zoom`'s discrete branches can animate. */
   viewAnimation: ViewAnimationApi;
+  /** The content's world rect, published on the `view` dep for `viewport.zoom`'s fit. */
+  contentBounds: () => Bounds | null;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateSource;
@@ -156,6 +159,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
     viewAnimation,
     decayLoop,
     layerIsPainted,
+    inputs.contentBounds,
   );
   useStandardDeps({ selection, scene, view, history: scene.history });
   useActionSet(standardActions);

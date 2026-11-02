@@ -90,6 +90,16 @@ export interface DispatcherChannels {
   carry?: boolean;
 }
 
+/** The pointers a dispatcher's listeners hold, for a host that scrolls the
+ *  view under a drag. */
+export interface HeldPointerFeed {
+  /** Where the pointer held longest is, in client pixels; `null` with none held. */
+  at(): { clientX: number; clientY: number } | null;
+  /** Send each held pointer's last move again, so the drag under it sees the
+   *  world point the view now puts there. */
+  repeat(): void;
+}
+
 /** Options for `useGestureDispatcher`: the element to listen on, the actions
  *  and entries in play, and the hooks that turn raw DOM events into the world
  *  coordinates and hit targets bindings match against. */
@@ -124,6 +134,8 @@ export interface UseGestureDispatcherOptions {
   entriesById: ReadonlyMap<string, Contribution<unknown>>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
+  /** Handed the held pointers when the listeners attach, and `null` when they detach. */
+  heldPointer?: (feed: HeldPointerFeed | null) => void;
   /**
    * Observer fired whenever the dispatcher synthesizes a double click, in
    * world coordinates. Runs BEFORE the event is dispatched and independently

@@ -6,6 +6,7 @@
 
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
+import type { FramedBox } from '@weasel-js/geom';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
@@ -44,6 +45,10 @@ export interface ViewApi {
    *  target `View` to let the action animate there; return nothing to keep
    *  dispatching the view yourself. */
   recenter?(): View | void;
+  /** The world rect the scene's content covers, a gesture in flight
+   *  included; `null` when nothing is drawn. When wired, `viewportZoomAction`'s
+   *  `fit` branch (Cmd-Alt-0) fits the view to it. */
+  contentBounds?(): FramedBox | null;
   /** Optional canvas-local host dimensions (CSS px). When wired,
    *  `viewportZoomAction`'s keyboard branches (Cmd+= / Cmd+-) anchor at the
    *  host center instead of the top-left origin. Null when the host isn't

@@ -8,7 +8,7 @@ import type { RuleCtx } from 'domains/chrome-caps';
 import type { Affordance } from 'affordances/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import { useContext, useEffect, type MutableRefObject, type RefObject } from 'react';
+import { useContext, useEffect, useInsertionEffect, type MutableRefObject, type RefObject } from 'react';
 import { SnapSourceRegistryContext } from 'domains/snap/registry';
 import type { SnapOutcomeStore } from 'domains/snap/outcomeStore';
 import type { SnapSource } from 'domains/snap/types';
@@ -25,6 +25,10 @@ import { usePointerPublisher } from './PointerProviderIfRoot';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import type { NodeAtPoint } from './useNodeAtPoint';
 import type { useSceneCanvasTools } from './useSceneCanvasTools';
+import { useEdgePan } from './useEdgePan';
+import { useContentBounds } from './useContentBounds';
+import type { GestureSource } from '../gestureBounds';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { useSceneGestureDispatcher } from './useSceneGestureDispatcher';
 import { useCanvasDevtoolsRoot, type CanvasDevtools } from './useCanvasDevtoolsRoot';
 import type { useScenePicking } from './useScenePicking';
@@ -43,6 +47,14 @@ export type SceneCanvasInputOptions = StandardActionsProps & Pick<
   | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick' | 'routing'
 >;
 
+/** What the content's bounds are read from, and the camera's ref they are published to. */
+export interface ContentSource {
+  into: { current: () => Bounds | null };
+  gestureSource: GestureSource | undefined;
+  previewPoseExtra: ((id: string) => unknown) | undefined;
+  picking: Pick<Picking, 'boundsOf' | 'boundsOfPose' | 'adapter'>;
+}
+
 /** What `<SceneCanvas>` hands {@link SceneCanvasInput}. */
 export interface SceneCanvasInputProps {
   props: SceneCanvasInputOptions;
@@ -57,6 +69,7 @@ export interface SceneCanvasInputProps {
   tools: ReturnType<typeof useSceneCanvasTools>;
   viewOn: boolean;
   camera: { viewState: CanvasViewState; viewAnimation: SceneStandardActionsInputs['viewAnimation'] };
+  content: ContentSource;
   dispatcher: Dispatcher;
   pathEdit: {
     state: SceneStandardActionsInputs['editAnchorsExternalState'];
@@ -99,6 +112,9 @@ export interface SceneCanvasInputProps {
 export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const { props, scene, selection, picking, chrome, overlay, canvas } = p;
   const { viewState } = p.camera;
+  const { into, picking: source, ...gestures } = p.content;
+  const contentBounds = useContentBounds({ scene, ...source, ...gestures });
+  useInsertionEffect(() => { into.current = contentBounds; });
   const { selectTool, enableKeybindings = true } = props;
   const snapRegistry = useContext(SnapSourceRegistryContext);
   useEffect(() => {
@@ -114,7 +130,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     currentViewRef: viewState.viewRef, onViewChange: viewState.setViewFromInput,
     poseDescriptor: p.descriptor, dispatcher: p.dispatcher,
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf, reachable: picking.reachable,
-    viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state,
+    viewAnimation: p.camera.viewAnimation, contentBounds, editAnchorsExternalState: p.pathEdit.state,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
     ingestionHandlers: p.ingestionHandlers,
     snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: snapRegistry, store: p.snapStore },
@@ -131,8 +147,14 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     scene, selection, viewState, tools: p.tools.tools, contributions: p.tools.contributions, routing: props.routing,
     element: canvas.elementRef, api: canvas.apiRef, devtools: p.devtools,
   });
+  const edgePan = props.viewport?.edgePan;
+  const heldPointer = useEdgePan({
+    options: p.viewOn && edgePan !== false ? (edgePan === true || edgePan === undefined ? {} : edgePan) : false,
+    dispatcher: p.dispatcher, element: () => canvas.elementRef.current,
+    getView: viewState.getView, setView: viewState.setViewFromInput,
+  });
   useSceneGestureDispatcher({
-    canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef,
+    canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, heldPointer,
     tools: p.tools.tools, contributions: p.tools.contributions,
     enabled: props.enableGestureDispatcher ?? true, keyboard: enableKeybindings,
     claimKeys: props.claimKeys ?? false,

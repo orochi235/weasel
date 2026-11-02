@@ -33,7 +33,7 @@ import type { LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
 import type { InsertNodeFactory, InsertPaint } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
-import type { CameraProps } from '../useCanvasView';
+import type { SceneCameraProps } from './sceneViewBounds';
 import type { FeatureEntry } from './features';
 import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 import type { VersionCheck } from './useContributionRoles';
@@ -98,7 +98,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
     | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
     | 'debug'           // re-declared below with SceneCanvas's own `slops`
-  > & CameraProps
+  > & SceneCameraProps
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene` JSON
      *  object, which SceneCanvas bakes into a Scene on first render. The

@@ -10,6 +10,7 @@ import type { ViewApi } from 'interactions/actions/depSchema';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 interface Wiring {
   currentViewRef: React.RefObject<View>;
@@ -19,6 +20,7 @@ interface Wiring {
   animation?: ViewAnimationApi;
   decay?: DecayApi;
   layerIsPainted?: (layerId: string) => boolean;
+  contentBounds?: () => Bounds | null;
 }
 
 /** The slice of `useDecayLoop` the view dep republishes. */
@@ -35,11 +37,12 @@ export function useViewDepSource(
   animation?: ViewAnimationApi,
   decay?: DecayApi,
   layerIsPainted?: (layerId: string) => boolean,
+  contentBounds?: () => Bounds | null,
 ): ViewApi {
   // Every method reads through this, so the latest onViewChange / recenter /
   // runner is captured without the API object itself changing identity.
   const wiring = useLatest<Wiring>({
-    currentViewRef, onViewChange, recenter, hostSize, animation, decay, layerIsPainted,
+    currentViewRef, onViewChange, recenter, hostSize, animation, decay, layerIsPainted, contentBounds,
   });
 
   // An unwired optional member must read falsy — `viewportZoomAction` branches
@@ -50,6 +53,7 @@ export function useViewDepSource(
   const hasAnimation = !!animation;
   const hasDecay = !!decay;
   const hasLayerIsPainted = !!layerIsPainted;
+  const hasContentBounds = !!contentBounds;
   return useMemo((): ViewApi => ({
     get: () => wiring.current.currentViewRef.current,
     // Not the canvas's only cancel feed (`onViewChange` is), but a `view` dep
@@ -77,5 +81,6 @@ export function useViewDepSource(
     ...(hasLayerIsPainted
       ? { layerIsPainted: (layerId: string) => wiring.current.layerIsPainted!(layerId) }
       : {}),
-  }), [wiring, hasRecenter, hasHostSize, hasAnimation, hasDecay, hasLayerIsPainted]);
+    ...(hasContentBounds ? { contentBounds: () => wiring.current.contentBounds!() } : {}),
+  }), [wiring, hasRecenter, hasHostSize, hasAnimation, hasDecay, hasLayerIsPainted, hasContentBounds]);
 }

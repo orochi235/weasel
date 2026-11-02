@@ -17,7 +17,7 @@ import { createKeymapStack } from '../../keymaps/keymapStack';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 
 export type {
-  DispatcherChannels, DispatcherViewTarget, UseGestureDispatcherOptions, ViewIdResolver,
+  DispatcherChannels, DispatcherViewTarget, HeldPointerFeed, UseGestureDispatcherOptions, ViewIdResolver,
 } from './gestureDispatcherOptions';
 
 /**
@@ -41,6 +41,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const ingestChannel = channels?.ingest !== false;
   const carryChannel = channels?.carry !== false;
   const onClickRef = useLatest(onClick);
+  const heldPointerRef = useLatest(opts.heldPointer);
   const onDoubleClickRef = useLatest(onDoubleClick);
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
@@ -122,6 +123,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       context: () => ctxRef.current,
       actions: () => registryRef.current,
       dispatchers: allDispatchers,
+      heldPointer: () => heldPointerRef.current,
       requestRedraw: () => { requestRedrawRef.current?.(); },
       paintedCursor: () => cursorRef.current.painted?.(),
       cursorSink: () => cursorRef.current.sink?.(),
@@ -142,5 +144,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       carry: carryChannel,
     });
   }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
-    allDispatchers, clientToLocalRef, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, clientToLocalRef, ctxRef, heldPointerRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

@@ -7,6 +7,7 @@ import { heldPointers } from '@weasel-js/gestures';
 import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
 import { createDispatchCore, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
 import type { Dispatcher } from './dispatcherApi';
+import type { HeldPointerFeed } from './gestureDispatcherOptions';
 import { dispatcherWatch } from './dispatcherWatch';
 import { carryInput } from './channels/carry';
 import { contextMenuInput } from './channels/contextMenu';
@@ -24,6 +25,7 @@ export interface InputSources
     Pick<PointerInputOptions, 'longPress' | 'kitSettings' | 'onClick' | 'onDoubleClick' | 'clicks'> {
   /** Every live dispatcher — what a cancel-everything has to reach. */
   dispatchers(): Dispatcher[];
+  heldPointer(): ((feed: HeldPointerFeed | null) => void) | undefined;
   requestRedraw(): void;
   paintedCursor(): PaintedCursorState | undefined;
   cursorSink(): CursorSink | undefined;
@@ -109,6 +111,7 @@ export function attachInput(
     listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
     listeners.on(canvas, 'pointermove', pointer.onHoverMove);
     listeners.on(canvas, 'dblclick', pointer.onNativeDoubleClick);
+    src.heldPointer()?.({ at: pointer.heldAt, repeat: pointer.repeatHeld });
   } else if (channels.hover) {
     listeners.on(window, 'keydown', hover.onKey);
     listeners.on(window, 'keyup', hover.onKey);
@@ -139,6 +142,7 @@ export function attachInput(
   const offCarry = channels.carry ? carryInput(core) : null;
 
   return () => {
+    if (channels.pointer) src.heldPointer()?.(null);
     listeners.removeAll();
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);

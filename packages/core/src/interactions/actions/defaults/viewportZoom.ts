@@ -6,6 +6,7 @@ import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import { viewToTransform, type View } from 'core/viewport/view';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
+import { fitViewToBounds, type Bounds } from 'core/viewport/fitViewToBounds';
 
 // Multiplicative step for keyboard zoom (matches useKeyboardZoomTool default).
 const KEY_STEP = 1.25;
@@ -95,6 +96,10 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
       spec: { kind: 'key', key: '0', mods: { mod: true } },
       opts: { id: 'viewport.zoom.reset', params: { kind: 'reset' } },
     },
+    {
+      spec: { kind: 'key', key: '0', code: 'Digit0', mods: { mod: true, alt: true } },
+      opts: { id: 'viewport.zoom.fit', params: { kind: 'fit' } },
+    },
   ];
 }
 
@@ -123,6 +128,7 @@ export function makeViewportZoomAction(
       { key: 'in', label: 'Zoom In', params: { kind: 'in' } },
       { key: 'out', label: 'Zoom Out', params: { kind: 'out' } },
       { key: 'reset', label: 'Reset Zoom', params: { kind: 'reset' } },
+      { key: 'fit', label: 'Fit Content', params: { kind: 'fit' } },
     ],
     defaultBinding: zoomBindings(opts.wheel),
     requires: ['view', 'debug'],
@@ -186,6 +192,15 @@ export function makeViewportZoomAction(
             if (target) stepTo(target, resetMs);
             break;
           }
+          case 'fit': {
+            const content = view.contentBounds?.();
+            const host = view.hostSize?.();
+            if (!content || !host) break;
+            const target = fitContent(content, host, current, clamp);
+            stepTo(target, resetMs);
+            record(current, target, { x: host.width / 2, y: host.height / 2 });
+            break;
+          }
           default:
             // Unknown kind — no-op. Legacy bridge calls with params=undefined;
             // default to zoom-in as a sensible fallback.
@@ -205,3 +220,21 @@ export function makeViewportZoomAction(
  * default 0.1–8 scale clamp. Equivalent to `makeViewportZoomAction()`.
  */
 export const viewportZoomAction: Action & { requires: string[] } = makeViewportZoomAction();
+
+/**
+ * The view showing all of `content` in `host` CSS pixels. Content with no
+ * width or no height, a lone line, is fitted along the axis it has; a lone
+ * point is centered at the current zoom.
+ */
+function fitContent(content: Bounds, host: { width: number; height: number }, from: View, clamp: { min: number; max: number }): View {
+  if (content.width > 0 || content.height > 0) {
+    const thin = Math.max(content.width, content.height) * 1e-9;
+    const sized = { ...content, width: Math.max(content.width, thin), height: Math.max(content.height, thin) };
+    return fitViewToBounds(sized, host, from, { minScale: clamp.min, maxScale: clamp.max });
+  }
+  return {
+    x: content.x - host.width / (2 * from.scale.x),
+    y: content.y - host.height / (2 * from.scale.y),
+    scale: from.scale,
+  };
+}
