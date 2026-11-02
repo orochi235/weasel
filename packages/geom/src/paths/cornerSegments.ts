@@ -9,6 +9,7 @@ import { cubicEvalAt, splitCubicAt } from '../curve';
 import type { PolygonPath } from '../path';
 import type { Point } from './cubicMath';
 import { worldCoords } from './pathOrigin';
+import { segmentLength, segmentTAtLength } from './segmentLength';
 
 /** One segment as a cubic; a line has its controls on its ends. */
 export interface Seg {
@@ -97,43 +98,24 @@ function closeContour(c: Contour, unfold: () => void): void {
   c.segs.push(lineSeg(end, a0));
 }
 
-const LUT_STEPS = 32;
-
-/** Arc length of `seg`. */
+/** Arc length of `seg`, exact. */
 export function segLength(seg: Seg): number {
   if (seg.line) return Math.hypot(seg.p3.x - seg.p0.x, seg.p3.y - seg.p0.y);
-  return lut(seg)[LUT_STEPS];
+  let len = lengths.get(seg);
+  if (len === undefined) lengths.set(seg, (len = segmentLength(flatSeg(seg), 2)));
+  return len;
 }
 
-const lutCache = new WeakMap<Seg, Float64Array>();
+const lengths = new WeakMap<Seg, number>();
 
-function lut(seg: Seg): Float64Array {
-  let table = lutCache.get(seg);
-  if (table) return table;
-  table = new Float64Array(LUT_STEPS + 1);
-  let prev = seg.p0;
-  for (let i = 1; i <= LUT_STEPS; i++) {
-    const p = pointAt(seg, i / LUT_STEPS);
-    table[i] = table[i - 1] + Math.hypot(p.x - prev.x, p.y - prev.y);
-    prev = p;
-  }
-  lutCache.set(seg, table);
-  return table;
-}
+const flatSeg = ({ p0, c1, c2, p3 }: Seg): number[] => [p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y];
 
-/** Parameter of the point `s` along `seg` from its start. */
+/** Parameter of the point `s` along `seg` from its start, by exact arc length. */
 export function paramAtLength(seg: Seg, s: number): number {
   const total = segLength(seg);
-  if (total <= 0) return 0;
+  if (!(total > 0)) return 0;
   if (seg.line) return Math.min(1, Math.max(0, s / total));
-  const table = lut(seg);
-  if (s <= 0) return 0;
-  if (s >= total) return 1;
-  let i = 1;
-  while (table[i] < s) i++;
-  const span = table[i] - table[i - 1];
-  const f = span > 0 ? (s - table[i - 1]) / span : 0;
-  return (i - 1 + f) / LUT_STEPS;
+  return segmentTAtLength(flatSeg(seg), 2, s, total);
 }
 
 export function pointAt(seg: Seg, t: number): Point {
