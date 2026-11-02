@@ -14,8 +14,3 @@ export function useStableByContent<T>(value: T, same: (a: T, b: T) => boolean): 
   });
   return out;
 }
-
-/** Same length, and the same element at every index. */
-export function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
-  return a.length === b.length && a.every((t, i) => t === b[i]);
-}

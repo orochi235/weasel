@@ -157,7 +157,7 @@ export function createPoseTarget<TPose>(opts: PoseTargetOptions<TPose>): Target<
 const sceneTargets = new WeakMap<object, Map<string, Target<unknown>>>();
 
 /** Whether two poses hold the same fields, compared without allocating: a running target asks on every publish. */
-function samePose(a: unknown, b: unknown): boolean {
+function samePoseShallow(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
   const ra = a as Record<string, unknown>;
@@ -223,7 +223,7 @@ export function scenePoseTarget<TPose>(
       // The write runs the layout's reflow at once, and a reflow publishes glides to the overrides.
       writing = true;
       try {
-        if (!samePose(n.pose, pose)) scene.untracked(() => scene.setPose(nid, pose));
+        if (!samePoseShallow(n.pose, pose)) scene.untracked(() => scene.setPose(nid, pose));
       } finally {
         writing = false;
       }
@@ -234,7 +234,7 @@ export function scenePoseTarget<TPose>(
   }, () => {
     if (writing) return false;
     const n = scene.get(nid);
-    return !!n && mine !== undefined && !samePose(n.pose, mine);
+    return !!n && mine !== undefined && !samePoseShallow(n.pose, mine);
   });
   if (!target) return undefined;
   made.set(id, target as Target<unknown>);

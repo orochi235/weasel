@@ -1,5 +1,6 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { deepEqual } from '@weasel-js/registry';
 import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
@@ -39,7 +40,7 @@ export interface WorkbenchProps {
   readonly onNew: (name: string) => string | null;
 }
 
-const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+const sameJson = (a: unknown, b: unknown) => deepEqual(a, b, { undefinedAsAbsent: true });
 const selectionText = (s: Selection) => Object.values(s).join(', ') || 'every selection';
 
 function IssueList({ title, issues }: { title: string; issues: readonly IssueReport[] }) {

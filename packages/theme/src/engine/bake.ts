@@ -1,3 +1,4 @@
+import { deepEqual } from '@weasel-js/registry';
 import { enumerateSelections, fullSelection, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
 import { tokenAt } from '../chainTokens.ts';
 import type { SerializableColorList } from '../colorList.ts';
@@ -34,7 +35,7 @@ function normalize(t: RawToken): RawToken {
   };
 }
 
-const same = (a: RawToken | undefined, b: RawToken | undefined) => JSON.stringify(a) === JSON.stringify(b);
+const same = (a: RawToken | undefined, b: RawToken | undefined) => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /** Selection key → that selection's derived tokens. */
 type Table = Map<string, Record<string, RawToken>>;

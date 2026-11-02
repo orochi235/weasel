@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/core';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { annotationsFromJSON } from '../annotations/store';
 import type {
@@ -33,7 +33,7 @@ export interface TrialMarks {
   moves: { undo: boolean; redo: boolean };
 }
 
-const sameMarks = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+const sameMarks = (a: unknown, b: unknown): boolean => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /**
  * A trial's mark store: built from where the marks were kept, saved back on a

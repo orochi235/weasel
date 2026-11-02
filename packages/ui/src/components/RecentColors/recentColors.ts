@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, sameList } from '@weasel-js/registry';
 import { toHex8 } from '@weasel-js/core';
 
 /** The slice of the Web Storage API the store reads and writes. */
@@ -75,10 +75,6 @@ function read(storage: RecentColorsStorage | null, key: string, limit: number): 
   }
 }
 
-function same(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((c, i) => c === b[i]);
-}
-
 /**
  * A {@link RecentColorsStore}, persisted to `localStorage` by default. Every
  * storage access is guarded: a browser that blocks storage, throws on the
@@ -92,7 +88,7 @@ export function createRecentColorsStore(options: RecentColorsStoreOptions = {}):
   let list: readonly string[] = read(storage, key, limit);
 
   const set = (next: readonly string[], persist: boolean): void => {
-    if (same(next, list)) return;
+    if (sameList(next, list)) return;
     list = next;
     if (persist && storage) {
       try {

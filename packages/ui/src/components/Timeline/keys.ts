@@ -1,5 +1,6 @@
 import { type EasingSpec } from '@weasel-js/core';
 import { sampleTrack, type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack, type Track } from '@weasel-js/animator';
+import { sameList } from '@weasel-js/registry';
 import { trackAtPath } from './lanes';
 
 /** One keyframe, addressed by its track's place in the tree and its index in that track's `keys`. */
@@ -17,9 +18,7 @@ export interface KeyEdit {
 }
 
 /** True when two index paths address the same track. */
-export function samePath(a: readonly number[], b: readonly number[]): boolean {
-  return a.length === b.length && a.every((n, i) => n === b[i]);
-}
+export const samePath: (a: readonly number[], b: readonly number[]) => boolean = sameList;
 
 /** Shallow-clone one track, replacing only its key list. `onTick`, `fire`,
  *  `interpolate` and `interpolator` survive as references, which is what lets a

@@ -6,6 +6,7 @@
  */
 
 import { type Action, type ActionDeps, ActionDisabledReason, type ActionVariant, type ImmediateInvoker } from '@weasel-js/routing';
+import { deepEqual } from '@weasel-js/registry';
 import {
   constraintAnchors,
   pathAnchorPoints,
@@ -95,7 +96,7 @@ export function constraintsForAnchors(
   }
 }
 
-const sameConstraint = (a: PathConstraint, b: PathConstraint) => JSON.stringify(a) === JSON.stringify(b);
+const sameConstraint = (a: PathConstraint, b: PathConstraint) => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /** The constraints adding `params` to the edited path's would leave it with, or null for no change. */
 function withAdded(dep: EditAnchorsDep, params: Partial<ConstrainAnchorsParams> | undefined): PathConstraint[] | null {

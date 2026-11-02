@@ -7,7 +7,8 @@
  */
 import type { Action, InvocationCtx, OngoingHandle, OngoingOverlay, Scene, Vec2 } from '@weasel-js/core';
 import { SEQ_ARROWS, insertMessage, insertNote, wrapSteps, type SeqArrow, type SeqArrowName } from './authorSteps';
-import { columnNear, sameList, sequenceAt, sequenceHitOf, slotNear, type SequenceHit } from './authorPlace';
+import { columnNear, sequenceAt, sequenceHitOf, slotNear, type SequenceHit } from './authorPlace';
+import { sameList } from './edit';
 import { noteAt } from './authorActions';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SEQ } from './metrics';

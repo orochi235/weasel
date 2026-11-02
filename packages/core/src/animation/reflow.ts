@@ -59,14 +59,14 @@ interface Glide<TPose> {
 /** The animator's cancel-key for one node's glide. */
 const keyFor = (id: string): string => `reflow:${id}`;
 
-function samePose(a: unknown, b: unknown): boolean {
+function samePoseDeep(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
   const ka = Object.keys(a);
   if (ka.length !== Object.keys(b).length) return false;
   for (const k of ka) {
-    if (!samePose((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) return false;
+    if (!samePoseDeep((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) return false;
   }
   return true;
 }
@@ -120,7 +120,7 @@ function makeGlides<TPose>(
   const run = (id: string, g: Glide<TPose>, to: TPose, settling: boolean): void => {
     const from = g.entry.pose as TPose;
     g.settling = settling;
-    if (samePose(from, to)) {
+    if (samePoseDeep(from, to)) {
       animator.cancelKey(keyFor(id));
       g.slot = to;
       g.entry.pose = to;
@@ -130,7 +130,7 @@ function makeGlides<TPose>(
       return;
     }
     // Already on its way there: whatever is moving it finishes the job.
-    if (g.target?.active && samePose(g.slot, to)) return;
+    if (g.target?.active && samePoseDeep(g.slot, to)) return;
     const o = read();
     const lerp = o.geometry?.lerp;
     const onDone = (): void => {
@@ -167,7 +167,7 @@ function makeGlides<TPose>(
   // False for a glide canceled through the animator: it stopped short of its
   // slot and nothing is carrying it there.
   const onCourse = (id: string, g: Glide<TPose>): boolean =>
-    animator.isActive(keyFor(id)) || samePose(g.entry.pose, g.slot);
+    animator.isActive(keyFor(id)) || samePoseDeep(g.entry.pose, g.slot);
 
   const stop = (id: string): void => {
     const g = glides.get(id);
@@ -223,7 +223,7 @@ function makeGlides<TPose>(
       if (!node) return;
       const from = opts?.from;
       const g = glides.get(id);
-      if (g && from === undefined && !g.settling && samePose(g.slot, pose) && onCourse(id, g)) return;
+      if (g && from === undefined && !g.settling && samePoseDeep(g.slot, pose) && onCourse(id, g)) return;
       run(id, claim(id, node, g, from), pose, false);
     },
     settle(id, opts) {
@@ -234,7 +234,7 @@ function makeGlides<TPose>(
       if (!node) { stop(id); return; }
       const home = documentPose(scene, node);
       if (g && from === undefined) {
-        if (g.settling && samePose(g.slot, home) && onCourse(id, g)) return;
+        if (g.settling && samePoseDeep(g.slot, home) && onCourse(id, g)) return;
         run(id, g, home, true);
         return;
       }

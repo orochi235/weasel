@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { useKitSetting, useLatest } from '@weasel-js/react';
+import { deepEqual } from '@weasel-js/registry';
 import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_LEAD } from '../Bar/useBarOverflow';
 import { DOCK_BAR, drawnBars, drawnLayout, keyTarget, movedLayout, placeWords, spreadTarget, type DockDropMark } from './dockDrop';
@@ -54,7 +55,7 @@ export interface DockDrag {
 
 const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
 
-const same = (a: DockDropMark | FloatPlace | null, b: DockDropMark | FloatPlace | null) => JSON.stringify(a) === JSON.stringify(b);
+const same = (a: DockDropMark | FloatPlace | null, b: DockDropMark | FloatPlace | null) => deepEqual(a, b);
 
 /**
  * Moving bars by their handles. Dragged past the threshold, a handle lifts its bar: docks it may not enter are listed

@@ -31,7 +31,7 @@ interface Entry {
 
 const LAST = new WeakMap<object, Entry>();
 
-function sameIds(a: readonly string[], b: readonly string[]): boolean {
+function sameMembers(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) return false;
   const set = new Set(a);
   return b.every((id) => set.has(id));
@@ -60,7 +60,7 @@ export function recordTransform(
   if (
     transform.kind === 'translate'
     && prev?.transform.kind === 'duplicate'
-    && sameIds(prev.subject, subject)
+    && sameMembers(prev.subject, subject)
   ) {
     LAST.set(scene, {
       transform: { kind: 'duplicate', dx: prev.transform.dx + transform.dx, dy: prev.transform.dy + transform.dy },

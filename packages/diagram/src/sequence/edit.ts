@@ -7,6 +7,10 @@ import type { SeqFragment, SeqStep, SeqTextTarget, SequenceData, StepPlace } fro
 
 type Steps = readonly SeqStep[];
 
+/** Whether two places are in the same list. */
+export const sameList = (a: StepPlace['parent'], b: StepPlace['parent']): boolean =>
+  a === b || (a !== null && b !== null && a.fragment === b.fragment && a.section === b.section);
+
 /** Whether `s` carries an id: a message, a note, or a fragment. */
 export const hasId = (s: SeqStep): s is Extract<SeqStep, { id: string }> => 'id' in s;
 
@@ -111,10 +115,10 @@ export function moveStep(data: SequenceData, id: string, to: StepPlace): Sequenc
   if (from === null || step === null) return data;
   if (to.parent !== null && (to.parent.fragment === id || contains(step, to.parent.fragment))) return data;
   if (stepListOf(data.steps, to.parent) === null) return data;
-  const sameList = JSON.stringify(from.parent) === JSON.stringify(to.parent);
-  if (sameList && (to.index === from.index || to.index === from.index + 1)) return data;
+  const within = sameList(from.parent, to.parent);
+  if (within && (to.index === from.index || to.index === from.index + 1)) return data;
   const removed = withList(data.steps, from.parent, (list) => list.filter((_, i) => i !== from.index));
-  const index = sameList && to.index > from.index ? to.index - 1 : to.index;
+  const index = within && to.index > from.index ? to.index - 1 : to.index;
   const steps = withList(removed, to.parent, (list) => [...list.slice(0, index), step, ...list.slice(index)]);
   return { ...data, steps };
 }

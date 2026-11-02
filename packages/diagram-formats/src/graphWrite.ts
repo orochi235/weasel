@@ -7,6 +7,7 @@ import {
   dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
   type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
+import { deepEqual } from '@weasel-js/registry';
 import { graphPageOf, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
 import { Warnings, hex2 } from './graphRead';
 import { rowLines } from './rowLines';
@@ -112,7 +113,7 @@ export function hexColor(css: string): string {
 export function changed<T extends object>(style: T, base: T): Partial<T> {
   const out: Partial<T> = {};
   for (const key of Object.keys(style) as (keyof T)[]) {
-    if (JSON.stringify(style[key]) !== JSON.stringify(base[key])) out[key] = style[key];
+    if (!deepEqual(style[key], base[key], { undefinedAsAbsent: true })) out[key] = style[key];
   }
   return out;
 }
