@@ -9,7 +9,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, renderHook } from '@testing-library/react';
+import { act, fireEvent, render, renderHook } from '@testing-library/react';
 import type { CanvasProps } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { RectPose, Scene } from 'core/scene/types';
@@ -23,6 +23,9 @@ import { ColorOverrideRegistry } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 import { strokeOf } from '../util/paint';
+import { linear } from '@weasel-js/geom';
+import type { StrokeTrim } from '@weasel-js/paint';
+import type { TrimOverride } from '@weasel-js/animator';
 
 type Data = Record<string, never>;
 
@@ -35,7 +38,7 @@ interface CapturedLayers {
   previewGhost: { layer: Drawable };
 }
 
-const captured = vi.hoisted(() => ({ layers: null as unknown }));
+const captured = vi.hoisted(() => ({ layers: null as unknown, redrawOn: undefined as CanvasProps<RectPose>['redrawOn'] }));
 
 vi.mock('./Canvas', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./Canvas')>();
@@ -45,6 +48,7 @@ vi.mock('./Canvas', async (importOriginal) => {
     ref: React.Ref<unknown>,
   ) {
     captured.layers = props.layers;
+    captured.redrawOn = props.redrawOn;
     const elRef = react.useRef<HTMLCanvasElement | null>(null);
     react.useLayoutEffect(() => {
       // The component spreads this handle, so it has to be a plain object:
@@ -123,6 +127,38 @@ function paintScene(layers: CapturedLayers): DrawCommand[] {
   return layers.scene.layers.flatMap(({ layer }) => layer.draw(null, VIEW, DIMS));
 }
 
+/** A stroked line from (0, 0) to (`length`, 0) wearing `trim`. */
+function lineScene(trim?: StrokeTrim, length = 10) {
+  const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  const data = { path: linePath({ x: 0, y: 0 }, { x: length, y: 0 }), stroke: { ...strokeOf('#fff', 2), ...(trim ? { trim } : {}) } };
+  const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: length, height: 0 }, data: data as unknown as Data });
+  return { scene, id: id as string, data };
+}
+
+/** The trim on the first stroked command the scene slot paints. */
+function paintedTrim(layers: CapturedLayers): StrokeTrim | undefined {
+  const body = flat(paintScene(layers)).find((c) => c.kind === 'path' && c.stroke !== undefined);
+  return body?.kind === 'path' ? body.stroke?.trim : undefined;
+}
+
+/** Frames advanced by hand, for `useAnimator`'s `requestFrame`. */
+function frameClock() {
+  let now = 0;
+  const due = new Map<number, (t: number) => void>();
+  let next = 1;
+  return {
+    now: () => now,
+    requestFrame: (cb: (t: number) => void) => { const h = next++; due.set(h, cb); return h; },
+    cancelFrame: (h: number) => { due.delete(h); },
+    advance: (ms: number) => {
+      now += ms;
+      const run = [...due.values()];
+      due.clear();
+      for (const cb of run) cb(now);
+    },
+  };
+}
+
 function mount(
   scene: Scene<Data, 'main', RectPose>,
   animator?: Animator,
@@ -184,17 +220,64 @@ describe('<SceneCanvas> installs the scene wiring', () => {
   });
 
   it("paints its animator's trim overrides through the scene layers, leaving the scene alone", () => {
-    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const data = { path: linePath({ x: 0, y: 0 }, { x: 10, y: 0 }), stroke: { ...strokeOf('#fff', 2), trim: { pace: 'anchor' } } };
-    const id = scene.add({ kind: 'mark', layer: 'main', pose: pose(0), data: data as unknown as Data });
+    const { scene, id, data } = lineScene({ pace: 'anchor' });
     const undoable = scene.history.canUndo();
     const animator = renderHook(() => useAnimator()).result.current;
     animator.trimOverrides.set(id, { end: 0.5 });
 
-    const body = flat(paintScene(mount(scene, animator))).find((c) => c.kind === 'path');
-    expect(body?.kind === 'path' && body.stroke?.trim).toEqual({ pace: 'anchor', end: 0.5 });
+    expect(paintedTrim(mount(scene, animator))).toEqual({ pace: 'anchor', end: 0.5 });
     expect(scene.get(id)!.data).toBe(data);
     expect(scene.history.canUndo()).toBe(undoable);
+  });
+
+  it("paints a running trim tween's frames, keeping the stroke's own start", () => {
+    const { scene, id } = lineScene({ start: { length: 2 } });
+    const clock = frameClock();
+    const animator = renderHook(() => useAnimator(clock)).result.current;
+    const layers = mount(scene, animator);
+    act(() => {
+      animator.tween({ target: animator.trimOverrides.target(id, 'end'), from: 0, to: 1, ms: 100, easing: linear });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(50));
+    expect(paintedTrim(layers)).toEqual({ start: { length: 2 }, end: expect.closeTo(0.5, 6) });
+    act(() => clock.advance(50));
+    expect(paintedTrim(layers)).toEqual({ start: { length: 2 }, end: 1 });
+  });
+
+  it('repaints for a bare set or clear on either override store', () => {
+    const { scene, id } = lineScene();
+    const animator = renderHook(() => useAnimator()).result.current;
+    mount(scene, animator);
+    let repaints = 0;
+    const offs = (captured.redrawOn ?? []).map((source) => source.subscribe(() => { repaints += 1; }));
+    animator.trimOverrides.set(id, { end: 0.5 });
+    expect(repaints).toBe(1);
+    animator.colorOverrides.set(id, 'stroke', [1, 0, 0, 1, 0, 0, 1, 1]);
+    expect(repaints).toBe(2);
+    animator.trimOverrides.clear(id);
+    animator.colorOverrides.clear(id, 'stroke');
+    expect(repaints).toBe(4);
+    for (const off of offs) off();
+  });
+
+  it('picks by the authored trim whatever the animator paints', () => {
+    const hovered: (string | null)[] = [];
+    const hoverAt = (trim: StrokeTrim, override: TrimOverride) => {
+      const { scene, id } = lineScene(trim, 100);
+      const animator = renderHook(() => useAnimator()).result.current;
+      animator.trimOverrides.set(id, override);
+      const { container } = render(
+        <SceneCanvas<Data, 'main', RectPose>
+          scene={scene} width={300} height={300} animator={animator} onHover={(hit) => hovered.push(hit)}
+        />,
+      );
+      fireEvent.pointerMove(container.querySelector('canvas')!, { clientX: 90, clientY: 0 });
+      return id;
+    };
+    hoverAt({ end: 0.1 }, { end: 1 });
+    const drawnOn = hoverAt({}, { end: 0.1 });
+    expect(hovered).toEqual([drawnOn]);
   });
 
   it('paints the derived path in a preview ghost', () => {

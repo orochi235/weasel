@@ -20,6 +20,8 @@ import type { CanvasRendererLease } from './canvasRenderer';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import { sceneViewFrame } from './sceneViewRender';
+import { paintOverrideSources } from './paintOverrides';
+import { subscribeToSources } from '../core/layers/render';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { normalizeView, type View } from '../core/viewport/view';
@@ -103,8 +105,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       alphaFor,
       layerVisibility,
       layerOrder,
-      colorOverrides: animator?.colorOverrides,
-      trimOverrides: animator?.trimOverrides,
+      overrides: animator,
       cull,
       paintBounds,
     });
@@ -117,6 +118,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => scene.scroll?.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
+  useEffect(() => subscribeToSources(paintOverrideSources(animator))(requestRedraw), [animator, requestRedraw]);
 
   return (
     <SurfaceCanvas

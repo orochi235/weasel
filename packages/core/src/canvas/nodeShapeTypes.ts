@@ -30,7 +30,7 @@ export interface NodePaintCtx {
   derivedPath?: Path | null;
   /** A node's animated per-anchor colors: given the colors a painter would paint
    *  on `channel`, the colors to paint instead. **Absent** when nothing animates
-   *  the node. The kit's path painters apply it; see `withColorOverrides`. */
+   *  the node. The kit's path painters apply it; see `withPaintOverrides`. */
   vertexColors?: (
     channel: VertexColorChannel,
     base: readonly number[] | undefined,
@@ -38,7 +38,7 @@ export interface NodePaintCtx {
   /** A node's animated stroke trim: given the trim a painter would draw, the
    *  trim to draw instead. **Absent** when nothing animates the node. The
    *  kit's path painters apply it to the drawn stroke and never to picking;
-   *  see `withTrimOverrides`. */
+   *  see `withPaintOverrides`. */
   trim?: (base: StrokeTrim | undefined) => StrokeTrim | undefined;
   /** What the node's `'inherit'` fill and stroke resolve to, looked up from
    *  its containers by the scene's `drawOne` wrapper. **Absent** for a node

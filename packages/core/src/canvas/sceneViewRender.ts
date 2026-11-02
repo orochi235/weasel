@@ -195,17 +195,19 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 /**
  * The commands `renderSceneToCanvas` paints for one frame — everything in
  * `args` but the canvas. `<SceneViewCanvas>` paints these through its own
- * renderer lease.
+ * renderer lease. Its animated paint comes as one `overrides`, which an
+ * animator is.
  */
 export function sceneViewFrame<TData, TLayer extends string, TPose>(
-  args: Omit<RenderSceneToCanvasArgs<TData, TLayer, TPose>, 'canvas'>,
+  args: Omit<RenderSceneToCanvasArgs<TData, TLayer, TPose>, 'canvas' | keyof PaintOverrides>
+    & { overrides?: PaintOverrides },
 ): DrawCommand[] {
   const {
     scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    colorOverrides, trimOverrides, cull, dpr,
+    overrides, cull, dpr,
   } = args;
   return buildSceneViewCommands(
-    scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, { colorOverrides, trimOverrides },
+    scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, overrides,
     cull ? { width, height, dpr: resolveDpr(dpr), paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
   );
 }
@@ -219,5 +221,5 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   args: RenderSceneToCanvasArgs<TData, TLayer, TPose>,
 ): void {
   const { canvas, view, width, height, dpr } = args;
-  paintCanvas(canvas, sceneViewFrame(args), view, { width, height, dpr });
+  paintCanvas(canvas, sceneViewFrame({ ...args, overrides: args }), view, { width, height, dpr });
 }

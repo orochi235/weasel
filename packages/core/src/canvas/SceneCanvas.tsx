@@ -106,7 +106,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const { editor: textEditor, layers } = useCanvasTextEditor(scene as Scene<TData, string, unknown>, internalCanvasRef, props);
   const layered = useSceneCanvasLayers({
     layers, presetLayers: enabled.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
-    enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, trimOverrides: props.animator?.trimOverrides, boundsOf, planeOfNode,
+    enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, paintOverrides: props.animator, boundsOf, planeOfNode,
     poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts,
