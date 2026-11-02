@@ -154,6 +154,31 @@ A selector must be a plain `enum`: not `clearable`, with no `encoding`, and
 not split itself. The store warns of a `splitBy` that names anything else when
 it opens.
 
+### Kept separately
+
+`tbdPer` keeps a leaf's value per selector always, where `splitBy` leaves it
+to the reader. (The `tbd` names are placeholders until the feature is named.)
+Entries nest outermost first. A selector given `overrides` is closed: only the
+options named keep their own value, starting at the value given if any, and
+the rest share one. Without `overrides` it is open: an option keeps its own
+value once one is written. An option's own value is not split further; the
+shared member, stored under `TBD_REST_KEY`, holds the next entry in:
+
+```ts
+'limit': { kind: 'number', default: 1.1, tbdPer: [
+  { selector: 'look.mode', overrides: { types: 0 } }, // closed: types keeps its own, from 0
+  { selector: 'layout' },                             // open: a layout keeps its own once written
+], … }
+
+store.get('limit', { at: { layout: 'explorer' } });   // `layout` is no leaf: the app names its option
+store.set('limit', 2, { at: { layout: 'explorer' } }); // explorer keeps 2 from now on
+store.set('limit', 3);                                 // every other mode and layout reads 3
+```
+
+A closed list that changes in code needs nothing done to stored values: an
+option added reads its proposed value, else the shared one, and a member for
+an option removed is ignored and dropped on the leaf's next write.
+
 ## As CSS custom properties
 
 `prefsCss(store)` writes the store's values as custom properties, and

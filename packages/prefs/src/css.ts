@@ -3,7 +3,8 @@
 
 import type { PrefGroup } from './groups';
 import { prefHoldsValue, prefLeaves, prefValueAtPath } from './helpers';
-import { isPrefLocus, type PrefLocus, type PrefSelection } from './locus';
+import { isPrefLocus, locusMember, type PrefLocus, type PrefSelection, type TbdClosedLists } from './locus';
+import { tbdPerClosed } from './per';
 import type { PrefEnum, PrefLeaf, PrefNumber } from './schema';
 import { prefSelectors } from './splitCheck';
 import { resolvePrefUnit } from './unit';
@@ -71,15 +72,18 @@ function cssValue(leaf: PrefLeaf, value: unknown): string | null {
 type Told = { under: [selector: string, option: string][]; value: unknown };
 
 /** Every choice of options a held value tells apart, outermost selector first. */
-function toldApart(held: unknown, optionsOf: (selector: string) => readonly string[], absent: unknown): Told[] {
+function toldApart(held: unknown, optionsOf: (selector: string) => readonly string[], absent: unknown, own?: TbdClosedLists): Told[] {
   const out: Told[] = [];
   const walk = (value: unknown, under: Told['under']): void => {
     if (!isPrefLocus(value)) {
       out.push({ under, value });
       return;
     }
-    for (const option of optionsOf(value.$by)) {
-      walk(Object.hasOwn(value.$in, option) ? value.$in[option] : absent, [...under, [value.$by, option]]);
+    const options = optionsOf(value.$by);
+    // A free selector has no attribute to match: what no option is named for stands for all of them.
+    if (options.length === 0) walk(locusMember(value, undefined, absent, own), under);
+    for (const option of options) {
+      walk(locusMember(value, option, absent, own), [...under, [value.$by, option]]);
     }
   };
   walk(held, []);
@@ -129,7 +133,7 @@ export function prefsCss(store: PrefsCssSource, options: PrefsCssOptions = {}): 
     if (own) for (const option of own) declare([[path, option]], path, leaf, option);
     const held = store.locus(path);
     if (!held) continue;
-    for (const { under, value } of toldApart(held, (selector) => selectors.get(selector) ?? [], leaf.default)) {
+    for (const { under, value } of toldApart(held, (selector) => selectors.get(selector) ?? [], leaf.default, tbdPerClosed(leaf))) {
       declare(under, path, leaf, value);
     }
   }

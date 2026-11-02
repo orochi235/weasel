@@ -12,6 +12,7 @@ import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefList } from './list';
 import type { PrefLocus } from './locus';
 import type { PrefMap } from './map';
+import type { TbdPer } from './per';
 import type { PrefUnion } from './union';
 import type { PrefNumber } from './number';
 
@@ -101,9 +102,16 @@ export interface PrefBase<K extends string, Value> {
    *  outermost. Each must be a plain `enum`: not `clearable`, with no
    *  `encoding`, and not split itself. */
   splitBy?: readonly string[];
+  /** The selectors this leaf's value is always kept separately for, one
+   *  entry each, outermost first ({@link TbdPer}). The stored value is a
+   *  {@link PrefLocus} whose shared member holds the next entry in; an
+   *  option's own member stops there and is not split further. A leaf has
+   *  this or `splitBy`, not both. */
+  tbdPer?: readonly TbdPer[];
   /** What the leaf holds while nothing is stored for it, where that is a
    *  split value: a default that differs by option. Split only by entries of
-   *  `splitBy`. `default` stays what a member it leaves out reads as, and
+   *  `splitBy` or `tbdPer`; under `tbdPer` it defaults to an empty locus per
+   *  entry, nested. `default` stays what a member it leaves out reads as, and
    *  what the leaf's value type is read from. */
   defaultLocus?: PrefLocus;
 }

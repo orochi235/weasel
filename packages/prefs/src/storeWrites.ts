@@ -4,10 +4,11 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
-import { isPrefLocus, joinLocus, mapLocusMembers, repairLocus, splitLocus, writeMember, type PrefSelection } from './locus';
+import { dropUnlisted, isPrefLocus, joinLocus, mapLocusMembers, repairLocus, splitLocus, writeMember, type PrefSelection } from './locus';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
-import { selectionAt } from './snapshot';
+import { optionsOf, selectionAt } from './snapshot';
+import { tbdPerAxes, tbdPerDefault, tbdPerClosed } from './per';
 import { recordValue, stampRecord } from './stamp';
 import { prefVariantOf, type PrefUnion } from './union';
 
@@ -41,6 +42,8 @@ export interface PrefWritesSource {
   cache: OwnedRecordCache;
   /** The options of each leaf a value may be split by. */
   selectors: ReadonlyMap<string, readonly string[]>;
+  /** The free selectors: paths a `tbdPer` entry names that are no leaf, whose options the app names. */
+  free: ReadonlySet<string>;
   /** The schema version a value written is in, stamped on its record. */
   version: number;
   /** The option each selector is set to, read as a write is made. */
@@ -49,15 +52,17 @@ export interface PrefWritesSource {
 }
 
 /** A store's `set`, `split`, and `join`. */
-export function prefWrites({ leaves, cache, selectors, version, selection, warnIfClosed }: PrefWritesSource): {
+export function prefWrites({ leaves, cache, selectors, free, version, selection, warnIfClosed }: PrefWritesSource): {
   set: (path: string, value: unknown, write?: { at?: PrefSelection }) => void;
   split: (path: string, by: string) => void;
   join: (path: string, by: string) => void;
 } {
   /** The leaf's split default as stored, where it has one it can hold. */
   const unsetLocus = (leaf: PrefLeaf): unknown => {
-    if (leaf.defaultLocus === undefined || !leaf.splitBy?.length) return undefined;
-    return repairLocus(leaf.defaultLocus, leaf.splitBy, (by) => selectors.get(by), (member) => encodeInfinity(leaf, member));
+    const locus = tbdPerDefault(leaf);
+    const axes = tbdPerAxes(leaf);
+    if (locus === undefined || !axes?.length) return undefined;
+    return repairLocus(locus, axes, (by) => optionsOf({ selectors, free }, by), (member) => encodeInfinity(leaf, member), tbdPerClosed(leaf));
   };
   /** What the leaf holds in storage, unrepaired; its default, as stored, where it holds nothing. */
   const rawAt = (path: string, leaf: PrefLeaf): unknown =>
@@ -83,15 +88,16 @@ export function prefWrites({ leaves, cache, selectors, version, selection, warnI
       console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
       return;
     }
-    if (leaf.splitBy?.length && isPrefLocus(value)) {
-      store(path, mapLocusMembers(value, (member) => encodeInfinity(leaf, member)));
+    const split = !!tbdPerAxes(leaf)?.length;
+    if (split && isPrefLocus(value)) {
+      store(path, dropUnlisted(mapLocusMembers(value, (member) => encodeInfinity(leaf, member)), tbdPerClosed(leaf)));
       return;
     }
     const stored = encodeInfinity(leaf, value);
     const had = cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf);
-    const intoMember = stored !== undefined && leaf.splitBy?.length && isPrefLocus(had);
-    const under = write?.at ? selectionAt(selectors, selection(), write.at) : selection();
-    store(path, intoMember ? writeMember(had, under, stored) : stored);
+    const intoMember = stored !== undefined && split && isPrefLocus(had);
+    const under = write?.at ? selectionAt(selectors, selection(), write.at, free) : selection();
+    store(path, intoMember ? writeMember(dropUnlisted(had, tbdPerClosed(leaf)), under, stored, tbdPerClosed(leaf)) : stored);
   };
   const split = (path: string, by: string): void => {
     const found = splitOf(path, by);

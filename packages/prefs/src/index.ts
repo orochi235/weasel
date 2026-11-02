@@ -65,10 +65,22 @@ export {
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
 export { prefLeafValue, prefValueAbsent } from './leafValue';
-export { isPrefLocus, locusSelectors as prefLocusSelectors, memberAt as prefLocusMember, type PrefLocus, type PrefSelection, type PrefWeighted, type PrefWeights } from './locus';
+export {
+  isPrefLocus,
+  locusSelectors as prefLocusSelectors,
+  memberAt as prefLocusMember,
+  TBD_REST_KEY,
+  type PrefLocus,
+  type PrefSelection,
+  type TbdClosed,
+  type TbdClosedLists,
+  type PrefWeighted,
+  type PrefWeights,
+} from './locus';
 export { prefWeightAxes, type PrefWeightAxes } from './weightAxes';
 export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
+export { tbdPerAxes, tbdPerClosed, tbdPerDefault, type TbdPer } from './per';
 export { pref } from './build';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
 export { prefsDefaultsSource } from './defaultsSource';
