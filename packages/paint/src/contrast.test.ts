@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contrastLineColor, contrastRatio, wcagLevels } from './contrast';
+import { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';
 import { hexToOklchDeg } from './colorSpaces';
 
 const L = (hex: string): number => hexToOklchDeg(hex.slice(0, 7)).L;
@@ -93,5 +93,30 @@ describe('wcagLevels', () => {
     expect(wcagLevels(3, true)).toEqual({ aa: true, aaa: false });
     expect(wcagLevels(4.5, true)).toEqual({ aa: true, aaa: true });
     expect(wcagLevels(2.99, true)).toEqual({ aa: false, aaa: false });
+  });
+});
+
+describe('relativeLuminance', () => {
+  it('runs from 0 for black to 1 for white, weighted toward green', () => {
+    expect(relativeLuminance(0, 0, 0)).toBe(0);
+    expect(relativeLuminance(1, 1, 1)).toBeCloseTo(1, 10);
+    expect(relativeLuminance(0, 1, 0)).toBeCloseTo(0.7152, 10);
+  });
+
+  it('agrees with the 0.03928 cutoff older WCAG texts give at every 8-bit value', () => {
+    for (let byte = 0; byte <= 255; byte += 1) {
+      const v = byte / 255;
+      const older = v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      expect(relativeLuminance(v, v, v)).toBeCloseTo(older, 12);
+    }
+  });
+});
+
+describe('luminanceContrast', () => {
+  it('is 21 for black and white in either order, and what contrastRatio reports', () => {
+    expect(luminanceContrast(0, 1)).toBeCloseTo(21, 10);
+    expect(luminanceContrast(1, 0)).toBeCloseTo(21, 10);
+    const [a, b] = [relativeLuminance(0.2, 0.4, 0.6), relativeLuminance(1, 1, 1)];
+    expect(luminanceContrast(a, b)).toBeCloseTo(contrastRatio('rgb(20% 40% 60%)', '#fff')!, 10);
   });
 });

@@ -3,6 +3,7 @@ import 'windease/styles.css';
 import '../styles.less';
 import '../lab/presentation.browser.test.less';
 import { cleanup, waitFor } from '@testing-library/react';
+import { luminanceContrast, relativeLuminance } from '@weasel-js/core';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect, useRef } from 'react';
 import { WebGLRenderer } from 'three';
@@ -70,16 +71,8 @@ function rgba(css: string): Rgba {
 const over = (top: Rgba, under: Rgba): Rgba =>
   [...([0, 1, 2] as const).map((i) => top[i] * top[3] + under[i] * (1 - top[3])), 1] as Rgba;
 
-const luminance = ([r, g, b]: Rgba) => {
-  const lin = (v: number) =>
-    v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4;
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-};
-
-const contrast = (a: Rgba, b: Rgba) => {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
-  return (hi + 0.05) / (lo + 0.05);
-};
+const contrast = (a: Rgba, b: Rgba) =>
+  luminanceContrast(relativeLuminance(a[0] / 255, a[1] / 255, a[2] / 255), relativeLuminance(b[0] / 255, b[1] / 255, b[2] / 255));
 
 let warn: MockInstance<typeof console.warn>;
 beforeEach(() => {

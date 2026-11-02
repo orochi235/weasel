@@ -23,8 +23,15 @@ export function contrastLineColor(background: string, strength: number): string 
   return `#${hex2(r)}${hex2(g)}${hex2(b)}`;
 }
 
-const luminance = (r: number, g: number, b: number): number =>
-  0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+/** WCAG 2.x relative luminance of an sRGB color, channels 0..1: 0 for black, 1 for white. */
+export function relativeLuminance(r: number, g: number, b: number): number {
+  return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+}
+
+/** The WCAG 2.x contrast ratio of two {@link relativeLuminance}s, in either order: 1 up to 21. */
+export function luminanceContrast(a: number, b: number): number {
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
 
 /**
  * The WCAG 2.x contrast ratio of `foreground` text on `background`: 1 for two
@@ -42,9 +49,8 @@ export function contrastRatio(foreground: string, background: string): number | 
     return null;
   }
   const a = fg[3];
-  const lf = luminance(a * fg[0] + (1 - a) * bg[0], a * fg[1] + (1 - a) * bg[1], a * fg[2] + (1 - a) * bg[2]);
-  const lb = luminance(bg[0], bg[1], bg[2]);
-  return (Math.max(lf, lb) + 0.05) / (Math.min(lf, lb) + 0.05);
+  const lf = relativeLuminance(a * fg[0] + (1 - a) * bg[0], a * fg[1] + (1 - a) * bg[1], a * fg[2] + (1 - a) * bg[2]);
+  return luminanceContrast(lf, relativeLuminance(bg[0], bg[1], bg[2]));
 }
 
 /** Whether `ratio` passes WCAG AA and AAA: 4.5 and 7, or 3 and 4.5 for large text. */

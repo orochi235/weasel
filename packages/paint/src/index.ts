@@ -87,7 +87,7 @@ export {
   type ColorSpace,
   type OklchDeg,
 } from './colorSpaces';
-export { contrastLineColor, contrastRatio, wcagLevels } from './contrast';
+export { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';
 export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
 export { parseHexBytes, hexToRgbBytes } from './hex';
 export {

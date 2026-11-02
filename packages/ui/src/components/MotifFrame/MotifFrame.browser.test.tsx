@@ -2,6 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { cssColorLiteral } from '@weasel-js/paint';
 import { afterEach, describe, expect, it } from 'vitest';
+import { contrast as byteContrast } from '../../testing/paintedContrast';
 import { MotifFrame } from './MotifFrame';
 import { notch, plaque, stereo, tab } from './motifs';
 
@@ -124,17 +125,7 @@ function rgb(css: string): [number, number, number] {
   return [r!, g!, b!];
 }
 
-function contrast(a: string, b: string) {
-  const lum = (c: string) => {
-    const [r, g, b] = rgb(c).map((v) => {
-      const s = v / 255;
-      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-    }) as [number, number, number];
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  };
-  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x) as [number, number];
-  return (hi + 0.05) / (lo + 0.05);
-}
+const contrast = (a: string, b: string) => byteContrast(rgb(a), rgb(b));
 
 const GRAYS = Array.from({ length: 17 }, (_, i) => `rgb(${i * 15.9375} ${i * 15.9375} ${i * 15.9375})`);
 const HUES = ['#ffd600', '#00e5ff', '#e53935', '#1e40af', '#16a34a', '#d946ef', '#f97316', '#8c94ee'];
