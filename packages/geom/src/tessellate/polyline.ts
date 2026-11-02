@@ -169,7 +169,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
       case PATH_Z: {
         if (current) {
           current.closed = true;
-          if (pts && aA && aB && aT) dropped = dropDuplicateClosingPoint(pts, aA, aB, aT);
+          if (pts && aA && aB && aT) dropped = dropDuplicateClosingPoint(pts, aA, aB, aT) ?? dropped;
         }
         break;
       }

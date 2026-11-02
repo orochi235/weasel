@@ -44,7 +44,20 @@ describe('extractPolylines', () => {
     // The anchor arrays are indexed by point, so they have to shrink with it.
     expect(out[0].anchorA).toHaveLength(3);
     expect(out[0].anchorB).toHaveLength(3);
-    expect(out[0].anchorT).toHaveLength(3);    expect(out[0].closeAnchor).toBe(3);
+    expect(out[0].anchorT).toHaveLength(3);
+    expect(out[0].closeAnchor).toBe(3);
+  });
+
+  it('keeps the dropped closing anchor through a repeated Z', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z, PATH_Z]),
+      coords: new Float32Array([0, 0, 1, 0, 1, 1, 0, 0]),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out[0].points).toEqual([0, 0, 1, 0, 1, 1]);
+    expect(out[0].closeAnchor).toBe(3);
   });
 
   it('keeps a repeated point that is not the closing one', () => {
