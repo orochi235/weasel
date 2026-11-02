@@ -33,15 +33,16 @@ interface KeyBinding {
 // Core's zoom with only its keys: the wheel and pinch belong to each trial's
 // own dispatcher. The clamp is left to the camera, which knows its range.
 const BASE = makeViewportZoomAction({ min: 1e-9, max: Number.POSITIVE_INFINITY });
-const KEY_BINDINGS = (BASE.defaultBinding as KeyBinding[])
-  .filter((b) => b.spec.kind === 'key')
-  .map((b) => ({ ...b, opts: { ...b.opts, id: `${ZOOM_ID}.${b.opts?.params?.kind}` } }));
-const BASE_RUN = (BASE.invoker as ImmediateInvoker).run;
 const VARIANTS = [
   { key: 'in', label: 'Zoom in', params: { kind: 'in' } },
   { key: 'out', label: 'Zoom out', params: { kind: 'out' } },
   { key: 'reset', label: 'Actual size', params: { kind: 'reset' } },
 ] as const;
+// A trial's camera has no content to fit, so core's Fit Content key is left out with the rest.
+const KEY_BINDINGS = (BASE.defaultBinding as KeyBinding[])
+  .filter((b) => b.spec.kind === 'key' && VARIANTS.some((v) => v.key === b.opts?.params?.kind))
+  .map((b) => ({ ...b, opts: { ...b.opts, id: `${ZOOM_ID}.${b.opts?.params?.kind}` } }));
+const BASE_RUN = (BASE.invoker as ImmediateInvoker).run;
 
 function shortcutFor(kind: ZoomKind): string | undefined {
   const spec = KEY_BINDINGS.find((b) => b.opts?.params?.kind === kind)?.spec;

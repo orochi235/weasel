@@ -95,8 +95,8 @@ const ROWS = {
   Arrange: ['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
     'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
     'Distribute Horizontally', 'Distribute Vertically', 'Flip Horizontal', 'Flip Vertical'],
-  View: ['Show grid', 'Snap to grid', 'Symmetry', 'Path direction', 'Curvature comb', 'Handle balance', 'Corner widgets',
-    'Zoom In', 'Zoom Out', 'Reset Zoom',
+  View: ['Show grid', 'Snap to grid', 'Bound view to content', 'Symmetry', 'Path direction', 'Curvature comb',
+    'Handle balance', 'Corner widgets', 'Zoom In', 'Zoom Out', 'Reset Zoom', 'Fit Content',
     'Arrange', 'Pathfinder', 'Path', 'Constraints', 'Loupe', 'Tools', 'Properties', 'Colors', 'Layers', 'History',
     'Status bar'],
 };

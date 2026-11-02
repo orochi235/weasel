@@ -14,6 +14,7 @@ export interface ContentViewBounds {
   include?: readonly Bounds[];
 }
 
+/** How far past the content `viewBounds: 'content'` lets the view go, in screen pixels, unless told otherwise. */
 export const DEFAULT_CONTENT_MARGIN = 200;
 
 /** `<SceneCanvas>`'s camera props: `<Canvas>`'s, with `viewBounds` able to follow the content. */
