@@ -132,7 +132,7 @@ function lineScene(trim?: StrokeTrim, length = 10) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const data = { path: linePath({ x: 0, y: 0 }, { x: length, y: 0 }), stroke: { ...strokeOf('#fff', 2), ...(trim ? { trim } : {}) } };
   const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: length, height: 0 }, data: data as unknown as Data });
-  return { scene, id: id as string, data };
+  return { scene, id, data };
 }
 
 /** The trim on the first stroked command the scene slot paints. */
