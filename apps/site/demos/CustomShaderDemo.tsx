@@ -236,9 +236,7 @@ const drawSeed = (p: RectPose): DrawCommand[] => [{
 
 /** Each seed's center as a fraction of the panel, where it is drawn: mid-drag included. */
 function seedUniform(scene: SeedScene, size: Dims): number[] {
-  return scene.renderOrder().flatMap((id) => {
-    const node = scene.get(id);
-    if (!node) return [];
+  return scene.renderOrderNodes().flatMap((node) => {
     const p = effectivePose(scene, node);
     return [clamp01((p.x + SEED_R) / size.width), clamp01((p.y + SEED_R) / size.height)];
   });
@@ -326,7 +324,7 @@ export function CustomShaderDemo() {
           uniforms={(time, size) => ({
             u_time: time,
             u_seeds: seedUniform(seeds, size),
-            u_seedCount: seeds.renderOrder().length,
+            u_seedCount: seeds.nodes.size,
           })}
           seeds={seeds}
         />

@@ -40,7 +40,7 @@ describe('EasingsDemo', () => {
 
     render(<EasingsDemo />);
     const scene = held.scene!;
-    const ids = scene.renderOrder();
+    const ids = [...scene.renderOrder()];
     expect(ids.length).toBeGreaterThan(20);
 
     fireEvent.click(screen.getByRole('button', { name: /play all/ }));
