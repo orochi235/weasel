@@ -47,7 +47,6 @@ describe('KitSettingsFromPrefs css', () => {
     expect(read()).toBe('500');
     store.set('kit.tree.typeaheadMs', 250);
     expect(read()).toBe('250');
-    store.split('kit.tree.typeaheadMs', 'kit.look.mode');
     store.set('kit.tree.typeaheadMs', 900, { at: { 'kit.look.mode': 'light' } });
     store.set('kit.look.mode', 'light');
     expect(read()).toBe('900');
@@ -65,7 +64,6 @@ describe('KitSettingsFromPrefs css', () => {
     });
     const read = () => getComputedStyle(page!).getPropertyValue(PROPERTY).trim();
     expect(read()).toBe('500');
-    store.split('kit.tree.typeaheadMs', 'kit.look.mode');
     store.set('kit.tree.typeaheadMs', 900, { at: { 'kit.look.mode': 'light' } });
     store.set('kit.look.mode', 'light');
     expect(page!.getAttribute('data-wzl-kit-look-mode')).toBe('light');

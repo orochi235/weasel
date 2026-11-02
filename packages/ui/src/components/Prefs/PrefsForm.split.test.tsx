@@ -153,7 +153,7 @@ describe('a split value in PrefsForm', () => {
   it('draws a leaf with no scopes as it did, whatever the form is given', () => {
     const plain: PrefGroup = { name: 'Prefs', children: { name: SCHEMA.children.name! } };
     const bare = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()} />);
-    const given = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()} onSplit={vi.fn()} onJoin={vi.fn()}
+    const given = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()}
       onChangeAt={vi.fn()} scopes={new Map([['name', byMode('a', 'b')]])} />);
     expect(given).toBe(bare);
   });
