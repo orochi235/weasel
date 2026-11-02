@@ -215,7 +215,7 @@ const STROKE_LEAF: PrefLeaf = {
     markerEnd: markerLeaf({ name: 'End', description: 'Marker at the last vertex of each open subpath.', block: true }),
     'trim.start': trimEdgeLeaf('start', 'Start', 'Where the drawn part of the stroke begins, as a fraction of the path in pen order.', 0, { with: 'data.stroke.trim.end', label: 'Trim' }),
     'trim.end': trimEdgeLeaf('end', 'End', 'Where the drawn part of the stroke ends, as a fraction of the path in pen order.', 1),
-    'trim.pace': { kind: 'enum', name: 'Pace', description: 'What a trim fraction counts: distance along the path, or anchors, each segment an equal share.', absentIsDefault: true, default: 'length', control: 'toggle', showIf: { path: 'data.stroke.trim' }, options: [{ value: 'length', label: 'Length' }, { value: 'anchor', label: 'Anchor' }] },
+    'trim.pace': { kind: 'enum', name: 'Pace', description: 'What a trim fraction counts: distance along the path, or anchors, each segment an equal share.', absentIsDefault: true, default: 'length', control: 'toggle', showIf: { any: [{ path: 'data.stroke.trim.start', isNot: null }, { path: 'data.stroke.trim.end', isNot: null }] }, options: [{ value: 'length', label: 'Length' }, { value: 'anchor', label: 'Anchor' }] },
   },
 };
 

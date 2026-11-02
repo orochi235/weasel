@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { prefIsEnabled, prefNumberAt, prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
+import { prefIsEnabled, prefIsShown, prefNumberAt, prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from '@weasel-js/stroke';
@@ -227,7 +227,10 @@ describe('the stroke leaf\'s trim', () => {
   it('shows the pace only while a trim is held', () => {
     const pace = strokeLeaf().children['trim.pace'] as PrefEnum;
     expect(pace.options.map((o) => o.value)).toEqual(['length', 'anchor']);
-    expect(pace.showIf).toEqual({ path: 'data.stroke.trim' });
+    const shown = (held: Record<string, unknown>) => prefIsShown(pace, (path) => held[path]);
+    expect(shown({})).toBe(false);
+    expect(shown({ 'data.stroke.trim.end': 0.5 })).toBe(true);
+    expect(shown({ 'data.stroke.trim.start': 0 })).toBe(true);
   });
 });
 
