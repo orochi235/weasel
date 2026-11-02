@@ -3,7 +3,7 @@
  */
 
 import type { MarkerRef, Stroke } from '@weasel-js/paint';
-import { type Path, type PolygonPath, boundsOfPath, pathLengthTable, resolveCorners } from '@weasel-js/geom';
+import { type Path, type PolygonPath, boundsOfPath, pathLengthTable } from '@weasel-js/geom';
 import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from './markerInset';
@@ -89,16 +89,13 @@ export function markerHeads(
   return out;
 }
 
-/** The runs heads sit on. A trim windows the corner-resolved path the ribbon
- *  flattens, so a head meets the line's end; untrimmed, the authored one. */
+/** The runs heads sit on: the corner-resolved path the ribbon flattens, windowed
+ *  as the ribbon is under a trim, so a head meets the line's end. */
 function headRuns(
   path: Path, stroke: Stroke, strokeWidth: number, flattenTolerance: number | undefined,
 ): { polyline: Polyline; fromClosed: boolean }[] {
-  const flattening = strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths);
-  if (stroke.trim === undefined) {
-    return extractPolylines(path, flattening).map((polyline) => ({ polyline, fromClosed: polyline.closed }));
-  }
-  const polylines = extractPolylines(path.kind === 'polygon' ? resolveCorners(path) : path, flattening);
+  const polylines = extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths));
+  if (stroke.trim === undefined) return polylines.map((polyline) => ({ polyline, fromClosed: polyline.closed }));
   const span = trimSpan(path, stroke.trim);
   return span ? windowPolylines(polylines, span, pathLengthTable(path).runs) : [];
 }
