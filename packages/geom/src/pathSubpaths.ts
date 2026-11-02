@@ -15,10 +15,23 @@ import { worldCoords } from './paths/pathOrigin';
  * run, as does any subpath a `Z` never ends. The closing edge of a closed run
  * back to its first vertex is implicit. Corner shapes are walked expanded.
  */
-export function flatSubpaths(
-  path: PolygonPath,
-  tolerance: number,
-): { closed: number[][]; open: number[][] } {
+export function flatSubpaths(path: PolygonPath, tolerance: number): FlatSubpaths {
+  let byTolerance = flattened.get(path);
+  if (!byTolerance) flattened.set(path, (byTolerance = new Map()));
+  let flat = byTolerance.get(tolerance);
+  if (!flat) byTolerance.set(tolerance, (flat = flatten(path, tolerance)));
+  return flat;
+}
+
+/** A path's flattened runs; shared between callers, so never written to. */
+export interface FlatSubpaths {
+  closed: readonly (readonly number[])[];
+  open: readonly (readonly number[])[];
+}
+
+const flattened = new WeakMap<PolygonPath, Map<number, FlatSubpaths>>();
+
+function flatten(path: PolygonPath, tolerance: number): FlatSubpaths {
   const drawn = resolveCorners(path);
   const { commands } = drawn;
   const coords = worldCoords(drawn);
@@ -67,10 +80,7 @@ export function flatSubpaths(
 }
 
 /** `flatSubpaths`, with each open run a fill closes moved among the closed. */
-export function regionSubpaths(
-  path: PolygonPath,
-  opts: { tolerance?: number },
-): { closed: number[][]; open: number[][] } {
+export function regionSubpaths(path: PolygonPath, opts: { tolerance?: number }): FlatSubpaths {
   const flat = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
   if (!fillsOpenSubpaths(path)) return flat;
   return {
@@ -79,6 +89,9 @@ export function regionSubpaths(
   };
 }
 
-export function closedSubpaths(path: PolygonPath, opts: { tolerance?: number }): number[][] {
+export function closedSubpaths(
+  path: PolygonPath,
+  opts: { tolerance?: number },
+): readonly (readonly number[])[] {
   return regionSubpaths(path, opts).closed;
 }

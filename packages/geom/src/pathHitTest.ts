@@ -155,7 +155,7 @@ function polygonsIntersect(a: readonly Point[], b: readonly Point[]): boolean {
 
 /** Run `visit` over every edge of every closed subpath until it answers true. */
 function anyEdge(
-  subpaths: readonly number[][],
+  subpaths: readonly (readonly number[])[],
   visit: (ax: number, ay: number, bx: number, by: number) => boolean,
 ): boolean {
   for (const sub of subpaths) {
@@ -168,7 +168,7 @@ function anyEdge(
   return false;
 }
 
-function anyEdgeCrossesRect(subpaths: readonly number[][], r: Rect): boolean {
+function anyEdgeCrossesRect(subpaths: readonly (readonly number[])[], r: Rect): boolean {
   const x0 = r.x, y0 = r.y, x1 = r.x + r.width, y1 = r.y + r.height;
   return anyEdge(subpaths, (ax, ay, bx, by) =>
     segmentsCross(ax, ay, bx, by, x0, y0, x1, y0) ||
@@ -178,7 +178,7 @@ function anyEdgeCrossesRect(subpaths: readonly number[][], r: Rect): boolean {
   );
 }
 
-function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly Point[]): boolean {
+function anyEdgeCrossesPolygon(subpaths: readonly (readonly number[])[], poly: readonly Point[]): boolean {
   if (poly.length === 0) return false;
   return anyEdge(subpaths, (ax, ay, bx, by) => {
     for (let i = 0; i < poly.length; i++) {
@@ -190,7 +190,7 @@ function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly Poi
 }
 
 /** `anyEdgeCrossesPolygon` for open runs: no edge back to the first vertex. */
-function anyOpenEdgeCrossesPolygon(runs: readonly number[][], poly: readonly Point[]): boolean {
+function anyOpenEdgeCrossesPolygon(runs: readonly (readonly number[])[], poly: readonly Point[]): boolean {
   for (const run of runs) {
     for (let i = 0; i + 3 < run.length; i += 2) {
       const ax = run[i], ay = run[i + 1], bx = run[i + 2], by = run[i + 3];
@@ -203,7 +203,7 @@ function anyOpenEdgeCrossesPolygon(runs: readonly number[][], poly: readonly Poi
   return false;
 }
 
-function anyVertexInRect(subpaths: readonly number[][], r: Rect): boolean {
+function anyVertexInRect(subpaths: readonly (readonly number[])[], r: Rect): boolean {
   for (const sub of subpaths) {
     for (let i = 0; i < sub.length; i += 2) {
       const x = sub[i], y = sub[i + 1];
@@ -213,7 +213,7 @@ function anyVertexInRect(subpaths: readonly number[][], r: Rect): boolean {
   return false;
 }
 
-function anyVertexInPolygon(subpaths: readonly number[][], flatPoly: readonly number[]): boolean {
+function anyVertexInPolygon(subpaths: readonly (readonly number[])[], flatPoly: readonly number[]): boolean {
   for (const sub of subpaths) {
     for (let i = 0; i < sub.length; i += 2) {
       if (pointInPolygon(flatPoly, sub[i], sub[i + 1])) return true;
@@ -326,7 +326,7 @@ export function polygonContainsPath(
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;
-  let subpaths: number[][];
+  let subpaths: (readonly number[])[];
   if (path.kind === 'rect') {
     subpaths = [flattenVerts(rectToVerts(path))];
   } else {
