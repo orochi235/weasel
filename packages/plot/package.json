@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/plot",
-  "version": "1.15.1",
+  "version": "1.15.2",
   "description": "Charts on weasel's scene graph: scales, axes, and marks that keep their data, and chart specs compiled to them, edited by dragging the marks.",
   "license": "MIT",
   "type": "module",
@@ -41,12 +41,12 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.15.1",
-    "@weasel-js/text": "1.15.1",
-    "@weasel-js/theme": "1.15.1"
+    "@weasel-js/geom": "1.15.2",
+    "@weasel-js/text": "1.15.2",
+    "@weasel-js/theme": "1.15.2"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.15.1",
+    "@weasel-js/core": "1.15.2",
     "react": ">=18"
   },
   "publishConfig": {

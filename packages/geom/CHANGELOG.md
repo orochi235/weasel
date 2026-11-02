@@ -1,5 +1,62 @@
 # @weasel-js/geom
 
+## 1.15.2
+
+### Patch Changes
+
+- c6edab2: `@weasel-js/geom` exports one definition of each angle operation the packages used to write by hand:
+  `DEG_TO_RAD` and `RAD_TO_DEG`, `wrapAngle(a, half?)`, which wraps radians to the half circle either
+  side of zero, and `wrapPositive(a, period?)`, which wraps to `[0, period)` (radians by default, pass
+  `360` for degrees). A half turn has two names, so `wrapAngle` takes a `HalfTurn` saying which one it
+  returns: `'max'` (the default) gives `π`, `'min'` gives `-π`, and `'sign'` gives the one with the
+  input's sign.
+- a4138b6: `@weasel-js/geom` states the nearest point of a segment, point distance and lerp once, in any
+  dimension, and every tier answers through that one rule.
+  
+  - `@weasel-js/geom/nd` adds `segmentT`, `closestPointOnSegment`, `pointSegmentDist`,
+    `pointSegmentDist2`, `distance`, `distance2` and `lerp` over plain number arrays.
+  - The root barrel adds `segmentT` and `pointSegmentDist` over loose scalars, which allocate nothing,
+    beside the existing `pointSegmentDist2`; `distance`, `distance2` and `lerpPoint` over `Point`; and a
+    scalar `lerp`.
+  - `@weasel-js/geom/3d`'s `closestPointOnSegment` and `lerp` now go through the same rule, so a planar
+    problem gets the same numbers in 2D, 3D and `nd`.
+  
+  A segment's parameter is clamped to [0, 1] and is 0 on a zero-length segment; at `t = 1` the nearest
+  point is the far end exactly. `nearestOnLine` and the private copies in core's measurement hit test,
+  animator's auto-skinning, diagram's route and label code, stroke's edge test, path-tools'
+  extend-to-meet and guides' layout snaps now call these, so their distances can move by a rounding
+  step (`Math.hypot` became a square root of the summed squares).
+  
+  Corner shapes (`cornerShapePieces`) now fit the true superellipse within `CORNER_FIT_TOLERANCE` for
+  every finite `k`. Past `|k| ≈ 9` they strayed up to nine times the tolerance off the curve's straight
+  legs, because the fit stepped in an angle that crowds those legs into less than a double resolves;
+  it now steps evenly along each leg. The same corners draw with about a third fewer cubics.
+- 5a0375b: `clamp` now returns `lo` whenever `lo > hi`, as its documentation always said. It used to return `hi`
+  for any `v` above `lo` in that case. Inside normal bounds nothing changes, and `NaN` still passes through.
+  
+  New exports from `@weasel-js/geom`:
+  
+  - `clamp01(v)` holds `v` to `0..1`, and `NaN` passes through.
+  - `rectsOverlap(a, b)` tests two `{ x, y, width, height }` rects for shared interior, so rects that only
+    touch answer false. `rectsIntersect(a, b)` counts touching edges and corners.
+  - `boxesIntersect(a, b)` is `rectsIntersect` for `[minX, minY, maxX, maxY]` boxes.
+  - `rectContainsPoint(r, x, y)` counts every edge as inside. `rectContainsPointHalfOpen(r, x, y)` leaves
+    the right and bottom edges outside, so rects that tile a plane never both claim a point.
+  - `unionRects(rects)` gives the smallest rect around any number of rects, or `null` for none.
+  - `ringSignedArea(coords, start?, end?)` gives the signed shoelace area of a flat, unclosed ring. It is
+    positive when the ring runs counterclockwise with y up.
+  
+  Core, kernel3d, ui, svg, renderer, diagram, guides and path-tools now use these instead of their own
+  copies, and each replaced copy returns what it did before.
+- 5f6111b: `@weasel-js/geom` exports `viewWorldToScreen(view, p)`, `viewScreenToWorld(view, p)` and
+  `viewRectToScreen(view, rect)`, which convert between world and screen through a `View` directly;
+  `@weasel-js/core` re-exports them. Core, guides, diagram, hud, labkit and path-tools now use them in
+  place of their own inline copies of the same arithmetic.
+  
+  Under a flipped view (a negative `scale` axis), diagram overlays, labkit lens hit boxes and the
+  path-edit marquee now get a rect with a positive width and height. labkit's camera zoom keeps a
+  flipped axis flipped instead of turning it back to positive.
+
 ## 1.15.1
 
 ### Patch Changes

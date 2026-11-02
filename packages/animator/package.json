@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/animator",
-  "version": "1.15.1",
+  "version": "1.15.2",
   "description": "The weasel animator: tweens, springs, holds, staggers, and timelines that combine on targets, run by one frame loop. Needs no scene; the root entry has no React, and the hook is under /react.",
   "license": "MIT",
   "type": "module",
@@ -42,11 +42,11 @@
   },
   "dependencies": {
     "@msb235/blits": "0.16.1",
-    "@weasel-js/clock": "1.15.1",
-    "@weasel-js/geom": "1.15.1",
-    "@weasel-js/paint": "1.15.1",
-    "@weasel-js/react": "1.15.1",
-    "@weasel-js/registry": "1.15.1"
+    "@weasel-js/clock": "1.15.2",
+    "@weasel-js/geom": "1.15.2",
+    "@weasel-js/paint": "1.15.2",
+    "@weasel-js/react": "1.15.2",
+    "@weasel-js/registry": "1.15.2"
   },
   "peerDependencies": {
     "react": ">=18"

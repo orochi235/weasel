@@ -1,5 +1,120 @@
 # Changelog
 
+## 1.15.2
+
+### Patch Changes
+
+- 946faff: `clampMove({ bounds })` from `@weasel-js/core/move` is a move behavior that keeps the dragged nodes inside a
+  world rect: the drag's translation is clamped so the box around every dragged node stays in `bounds`, in
+  the preview and the commit alike. `bounds` can be a function, read each frame, for a rect that changes
+  size.
+- 507f539: paint exports `relativeLuminance` and `luminanceContrast`, the WCAG luminance and ratio `contrastRatio` is built on; core re-exports both. theme's `luminance`/`contrast`, its test helpers, ui's painted-contrast helpers and forge's pixel contrast readout now use them.
+  
+  Color strings that theme's `withAlpha`/`atAlpha`, ui's `TokenPanel` hex conversion and diagram-formats' DOT and Mermaid writers read are parsed by paint's `parseColor`. The `TokenPanel` color input now converts float and percent `rgb()` channels, named colors and `hsl()` without a browser, and diagram-formats writes percent `rgb()` channels as hex instead of passing them through. diagram-formats now depends on `@weasel-js/paint`.
+  
+  labkit's loupe and ui's `Timeline` ruler and lane graph measure their element with core's `useElementSize`.
+- a4138b6: `@weasel-js/geom` states the nearest point of a segment, point distance and lerp once, in any
+  dimension, and every tier answers through that one rule.
+  
+  - `@weasel-js/geom/nd` adds `segmentT`, `closestPointOnSegment`, `pointSegmentDist`,
+    `pointSegmentDist2`, `distance`, `distance2` and `lerp` over plain number arrays.
+  - The root barrel adds `segmentT` and `pointSegmentDist` over loose scalars, which allocate nothing,
+    beside the existing `pointSegmentDist2`; `distance`, `distance2` and `lerpPoint` over `Point`; and a
+    scalar `lerp`.
+  - `@weasel-js/geom/3d`'s `closestPointOnSegment` and `lerp` now go through the same rule, so a planar
+    problem gets the same numbers in 2D, 3D and `nd`.
+  
+  A segment's parameter is clamped to [0, 1] and is 0 on a zero-length segment; at `t = 1` the nearest
+  point is the far end exactly. `nearestOnLine` and the private copies in core's measurement hit test,
+  animator's auto-skinning, diagram's route and label code, stroke's edge test, path-tools'
+  extend-to-meet and guides' layout snaps now call these, so their distances can move by a rounding
+  step (`Math.hypot` became a square root of the summed squares).
+  
+  Corner shapes (`cornerShapePieces`) now fit the true superellipse within `CORNER_FIT_TOLERANCE` for
+  every finite `k`. Past `|k| ≈ 9` they strayed up to nine times the tolerance off the curve's straight
+  legs, because the fit stepped in an angle that crowds those legs into less than a double resolves;
+  it now steps evenly along each leg. The same corners draw with about a third fewer cubics.
+- f1906a8: The rest of the kit's stores notify through registry's `createEmitter`: the entered group, the snap
+  outcome, devtools roots and transports, kit settings, the menu host and menu controller, tool
+  options, `RunSlots`, the seam preview, the HUD list, the effect runners, the symmetry controller,
+  the devtools client, and forge's loupe and CSS-variable stores. A listener that throws is logged
+  and no longer stops the others, and a listener unsubscribed mid-notify is no longer called; the
+  menu host, `RunSlots` and the HUD list used to walk their live set. diagram, diagram-formats, menu,
+  symmetry and devtools now depend on `@weasel-js/registry`.
+  
+  Structural comparisons that went through `JSON.stringify` use `deepEqual` instead, so key order no
+  longer makes two equal values differ (theme baking, diagram export's style diffs, trial marks, path
+  constraints, unit rows, toolbar dock drops). PrefSchemaEditor's three-way merge keeps
+  `JSON.stringify`, because there a reordered key is an edit.
+  
+  New: `sameList(a, b, same?)` in `@weasel-js/registry`, whether two lists hold equal elements in
+  order. `@weasel-js/react`'s `sameList` is now this function, and ui's `samePath` is an alias of it.
+- e804540: **Behavior change:** `matchesKeyBinding` and `historyKey` now read `mod` the way `@weasel-js/gestures`
+  does: Command on an Apple platform, Ctrl elsewhere, and the other key forbidden. Before, either key
+  fired a `mod` binding on every platform, so Ctrl+Z undid on a Mac and Cmd+Z undid on Windows; now
+  neither does, and neither does Cmd+Ctrl+Z. Both take an optional `isMac` argument, defaulting to
+  `isApplePlatform()`. Everything built on them follows: labkit's trial chrome and `useUndoKeys`, and
+  the undo keys in `AssetEditor`, `LayeredCurveEditor` and forge's CSS-vars panel. A trial's snapshot
+  chord is Mod+S alone; Shift+Mod+S no longer takes a snapshot.
+  
+  `rowKey` takes a sixth argument, `apple`, and selects all on Mod+A as above; Ctrl+A on a Mac no
+  longer selects all in a `Tree` or any list on `useRowNavigation`, which passes `isApplePlatform()`.
+  `rowKey` called without it reads `mod` as Ctrl.
+  
+  `@weasel-js/react` reads the system color scheme: `systemColorScheme()`, `watchColorScheme(fn)` and
+  `useSystemColorScheme(follow?)`, with `DEFAULT_COLOR_SCHEME`, dark, wherever `matchMedia` is missing or
+  the system states no preference. Dark is the mode the theme's tokens paint at `:root`. theme's
+  `useResolvedColorMode`, core's `watchThemeOf` and forge's loupe conditions use it. **Behavior change:**
+  forge's loupe read a missing `matchMedia` as light; it now reads it as dark, as the theme always has.
+  
+  `scene.mintId()`, and the id `add` gives a spec with none, now pass over any id the scene already
+  holds. A document reopened in a new session keeps the ids the last one minted, and a `generateId` that
+  starts over with the session could mint them again; a generator that gives 1000 taken ids in a row
+  throws.
+- 2f6b10d: `usePublishPointer(elementRef, locate)` from `@weasel-js/core` publishes the pointer over an element into
+  the pointer store in scope, placed by `locate(pointerId, clientX, clientY)`. It is what `<SceneCanvas>`
+  does for its own canvas: a pointer pressed on the element keeps reporting once a drag leaves it, and a
+  free pointer leaving clears the store unless another view has published since. The minimap and labkit's
+  cameras now publish through it, so a drag that runs off a minimap or a lab stage no longer stops
+  reporting where the pointer is.
+- 5f6111b: `@weasel-js/geom` exports `viewWorldToScreen(view, p)`, `viewScreenToWorld(view, p)` and
+  `viewRectToScreen(view, rect)`, which convert between world and screen through a `View` directly;
+  `@weasel-js/core` re-exports them. Core, guides, diagram, hud, labkit and path-tools now use them in
+  place of their own inline copies of the same arithmetic.
+  
+  Under a flipped view (a negative `scale` axis), diagram overlays, labkit lens hit boxes and the
+  path-edit marquee now get a rect with a positive width and height. labkit's camera zoom keeps a
+  flipped axis flipped instead of turning it back to positive.
+- Updated dependencies [507f539]
+- Updated dependencies [c6edab2]
+- Updated dependencies [a4138b6]
+- Updated dependencies [5a0375b]
+- Updated dependencies [f1906a8]
+- Updated dependencies [e804540]
+- Updated dependencies [6544399]
+- Updated dependencies [5f6111b]
+  - @weasel-js/paint@1.15.2
+  - @weasel-js/geom@1.15.2
+  - @weasel-js/animator@1.15.2
+  - @weasel-js/stroke@1.15.2
+  - @weasel-js/react@1.15.2
+  - @weasel-js/routing@1.15.2
+  - @weasel-js/registry@1.15.2
+  - @weasel-js/text@1.15.2
+  - @weasel-js/ui-logic@1.15.2
+  - @weasel-js/prefs@1.15.2
+  - @weasel-js/renderer@1.15.2
+  - @weasel-js/text-dom@1.15.2
+  - @weasel-js/simulation@1.15.2
+  - @weasel-js/gestures@1.15.2
+  - @weasel-js/cursor@1.15.2
+  - @weasel-js/font@1.15.2
+  - @weasel-js/history@1.15.2
+  - @weasel-js/icons@1.15.2
+  - @weasel-js/modes@1.15.2
+  - @weasel-js/select@1.15.2
+  - @weasel-js/quantity@1.15.2
+
 ## 1.15.1
 
 ### Patch Changes
