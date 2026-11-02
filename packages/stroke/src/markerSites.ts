@@ -18,7 +18,8 @@ export interface MarkerSite {
   role: 'start' | 'mid' | 'end';
 }
 
-/** Which marker roles to place. `start` and `end` are ignored on a closed polyline. */
+/** Which marker roles to place. `start` and `end` are ignored on a closed polyline,
+ *  and on a run cut from one. */
 export interface MarkerSiteRequest {
   start: boolean;
   mid: boolean;
@@ -50,13 +51,15 @@ function prevDistinct(pl: Polyline, i: number): number {
  * Where each requested marker sits on `pl` and the angle it points at.
  * Mid sites fall only on authored vertices, never on flattened curve samples,
  * and need the polyline to carry anchor data; without it no mid sites are returned.
+ * `pl`'s first and last points are never mid sites, so a trimmed run's ends are ends.
+ * `fromClosed` marks an open run cut from a closed subpath, which takes no start or end site.
  */
-export function markerSites(pl: Polyline, want: MarkerSiteRequest): MarkerSite[] {
+export function markerSites(pl: Polyline, want: MarkerSiteRequest, fromClosed = pl.closed): MarkerSite[] {
   const out: MarkerSite[] = [];
   const n = pl.points.length / 2;
   if (n < 2) return out;
 
-  if (want.start && !pl.closed) {
+  if (want.start && !fromClosed) {
     const j = nextDistinct(pl, 0, n);
     const d = j >= 0 ? dir(pl, 0, j) : null;
     if (d) {
@@ -87,7 +90,7 @@ export function markerSites(pl: Polyline, want: MarkerSiteRequest): MarkerSite[]
     }
   }
 
-  if (want.end && !pl.closed) {
+  if (want.end && !fromClosed) {
     const last = n - 1;
     const p = prevDistinct(pl, last);
     const d = p >= 0 ? dir(pl, p, last) : null;

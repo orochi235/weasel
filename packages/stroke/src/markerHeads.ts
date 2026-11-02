@@ -3,12 +3,13 @@
  */
 
 import type { MarkerRef, Stroke } from '@weasel-js/paint';
-import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
-import { extractPolylines } from '@weasel-js/geom/tessellate';
+import { type Path, type PolygonPath, boundsOfPath, resolveCornersWithSources } from '@weasel-js/geom';
+import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from './markerInset';
 import { markerSites, type MarkerSite } from './markerSites';
 import { strokeFlattening } from './tessellate/flattening';
+import { windowPolylines } from './trim/windowPolylines';
 import {
   coordsOutOfMetric, polylineIntoMetric, type ScreenSpace, type StrokeSpaces,
 } from './tessellate/metric';
@@ -42,7 +43,8 @@ export interface MarkerHead {
  * `strokeWidth` is the already width-resolved stroke width; `flattenTolerance`
  * matches what the ribbon used, so heads land on the same flattened vertices
  * the stroke did. A head `spaces` puts in a screen space is placed and sized
- * there and comes back in world units, so it meets the line it caps.
+ * there and comes back in world units, so it meets the line it caps. Under
+ * `stroke.trim` heads sit on the visible runs, windowed as the ribbon is.
  */
 export function markerHeads(
   path: Path,
@@ -66,11 +68,11 @@ export function markerHeads(
 
   const out: MarkerHead[] = [];
   const origin = path.kind === 'polygon' ? path.origin : undefined;
-  for (const pl of extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths))) {
+  for (const { polyline: pl, fromClosed } of headRuns(path, stroke, strokeWidth, flattenTolerance)) {
     for (const [space, want] of groups) {
       const inSpace = space ? { ...pl, points: pl.points.slice() } : pl;
       if (space) polylineIntoMetric(inSpace, space.metric);
-      for (const site of markerSites(inSpace, want)) {
+      for (const site of markerSites(inSpace, want, fromClosed)) {
         const ref: MarkerRef | undefined = refs[site.role];
         if (ref === undefined) continue;
         const entry = getMarker(markerKeyOf(ref));
@@ -84,6 +86,20 @@ export function markerHeads(
     }
   }
   return out;
+}
+
+/** The runs heads sit on. A trim windows the corner-resolved path the ribbon
+ *  flattens, so a head meets the line's end; untrimmed, the authored one. */
+function headRuns(
+  path: Path, stroke: Stroke, strokeWidth: number, flattenTolerance: number | undefined,
+): { polyline: Polyline; fromClosed: boolean }[] {
+  const flattening = strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths);
+  if (stroke.trim === undefined) {
+    return extractPolylines(path, flattening).map((polyline) => ({ polyline, fromClosed: polyline.closed }));
+  }
+  const resolved = path.kind === 'polygon' ? resolveCornersWithSources(path) : null;
+  const polylines = extractPolylines(resolved?.path ?? path, flattening);
+  return windowPolylines(polylines, stroke.trim, resolved?.anchorSources)!;
 }
 
 /**

@@ -6,6 +6,7 @@ import { dashPolylines } from './dash';
 import { strokeFlattening } from './flattening';
 import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
+import { windowRibbon } from './ribbonWindow';
 import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
 import { meetInnerEdges } from './innerJoins';
 import {
@@ -109,13 +110,20 @@ export function tessellateStroke(
   // Trim before dashing, so the dash pattern fits the visible line rather than
   // running off under a marker head.
   const ribbonSpace = metric ?? null;
-  const trimmed: Polyline[] = [];
-  for (const pl of polylines) {
-    populateWidths(pl, vertexWidths, stroke.nib, width, scale);
-    const t = trimInSpace(pl, rectInMetric ? ribbonSpace : null, ribbonSpace, opts.startInset, opts.endInset);
-    if (t !== null) trimmed.push(t);
+  const from = rectInMetric ? ribbonSpace : null;
+  for (const pl of polylines) populateWidths(pl, vertexWidths, stroke.nib, width, scale);
+  let runs: Polyline[];
+  let phases: number[] | undefined;
+  let dashLength: number | undefined;
+  if (stroke.trim !== undefined) {
+    ({ runs, phases, dashLength } = windowRibbon(
+      polylines, stroke.trim, resolved?.anchorSources, from, ribbonSpace, opts.startInset, opts.endInset,
+      stroke.dash !== undefined,
+    ));
+  } else {
+    runs = polylines.flatMap((pl) => trimInSpace(pl, from, ribbonSpace, opts.startInset, opts.endInset) ?? []);
   }
-  for (const sub of dashPolylines(trimmed, stroke.dash)) {
+  for (const sub of dashPolylines(runs, stroke.dash, phases, dashLength)) {
     expandPolyline(sub, width, join, cap, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT);
   }
 
