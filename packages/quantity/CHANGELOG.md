@@ -1,5 +1,9 @@
 # @weasel-js/quantity
 
+## 1.16.0
+
+No changes in this release.
+
 ## 1.15.2
 
 No changes in this release.
