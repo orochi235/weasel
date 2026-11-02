@@ -150,6 +150,7 @@ function kindXml(
   if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
   if (node.kind === 'image') return imageXml(node, namespaces);
   const trimmed = withTrimDrawn(node);
+  if (trimmed === null) return '';
   if (trimmed.kind === 'group') return groupXml(trimmed, registry, namespaces, warn, layoutOf, painted);
   const drawn = pathAsSvgDraws(trimmed);
   return drawn.kind === 'group'

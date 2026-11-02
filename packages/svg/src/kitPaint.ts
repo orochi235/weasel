@@ -1,8 +1,19 @@
 /** A kit paint and stroke as the `SvgPaint` and `SvgStroke` an element is written with. */
-import { fillInPoseFrame, resolveStroke, type Paint, type Path, type Stroke } from '@weasel-js/core';
-import { spanOnPath, trimSpan } from '@weasel-js/stroke';
-import type { SvgKitPose } from './fromKit';
+import { fillInPoseFrame, resolveStroke, type Paint, type PoseLinear, type Stroke } from '@weasel-js/core';
 import type { SvgPaint, SvgStroke } from './types';
+
+/** A leaf's box: where it is drawn, and the frame its box-relative paints
+ *  resolve against. */
+export interface SvgKitPose {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  /** Carried onto a text or image node. A path node has nowhere to hold it,
+   *  so a path leaf's is baked into its geometry with its rotation. */
+  transform?: PoseLinear;
+}
 
 /** A kit paint as an `SvgPaint`. `null` is `fill="none"`; a box-relative
  *  gradient or pattern is resolved into `box`, since the geometry it paints
@@ -39,18 +50,4 @@ export function svgStrokeFromKit(raw: Stroke | null | undefined, box: SvgKitPose
     ...(stroke.nib ? { nib: stroke.nib } : {}),
     ...(stroke.trim !== undefined ? { trim: stroke.trim } : {}),
   };
-}
-
-const NOTHING = { start: 1, end: 0 } as const;
-
-/**
- * `stroke` with its trim, measured along `local` as the ribbon measures it,
- * restated as lengths along `drawn`: `local` carried through the pose frame
- * the stroke is drawn in, anchor for anchor.
- */
-export function strokeTrimOnPath(stroke: SvgStroke, local: Path, drawn: Path): SvgStroke {
-  if (stroke.trim === undefined) return stroke;
-  const span = trimSpan(local, stroke.trim);
-  const on = span && spanOnPath(span, local, drawn);
-  return { ...stroke, trim: on ? { start: { length: on.from }, end: { length: on.to } } : NOTHING };
 }

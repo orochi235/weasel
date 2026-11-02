@@ -19,7 +19,6 @@ import {
   type ImageNodeData,
   type NodeClip,
   type Path,
-  type PoseLinear,
   type Stroke,
   type StyledRun,
   type TextStyle,
@@ -30,25 +29,13 @@ import {
   isSolidPaint,
 } from '@weasel-js/core';
 import { mapFillPaint } from './fillPaint';
-import { strokeTrimOnPath, svgPaintFromKit, svgStrokeFromKit } from './kitPaint';
+import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
+import { strokeTrimOnPath } from './trimmedStroke';
 import type {
   Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPathNode, SvgTextNode,
 } from './types';
 import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import { asBooleanLeaf, booleanGroupSvg, derivedPathIn } from './booleanGroup';
-
-/** A leaf's box: where it is drawn, and the frame its box-relative paints
- *  resolve against. */
-export interface SvgKitPose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-  /** Carried onto a text or image node. A path node has nowhere to hold it,
-   *  so a path leaf's is baked into its geometry with its rotation. */
-  transform?: PoseLinear;
-}
 
 /** The leaf data the kit's path, text and image painters read — what
  *  `svgNodesToKitDrafts` writes. */
@@ -70,7 +57,7 @@ export interface SvgKitLeafData {
   image?: ImageNodeData['image'];
 }
 
-export { svgPaintFromKit, svgStrokeFromKit } from './kitPaint';
+export { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
 
 /** Write a `kit:image` leaf as an `SvgImageNode` — the inverse of the image
  *  arm of `svgNodesToKitDrafts`. The pose is the image's box. */

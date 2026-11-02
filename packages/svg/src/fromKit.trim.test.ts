@@ -79,6 +79,10 @@ describe('svg export bakes a stroke trim', () => {
     expect(dOf(out[0])).toBe('M0 0L100 0L100 100L0 100Z');
   });
 
+  it('writes nothing at all for an empty window on an unfilled node', () => {
+    expect(paths(pathFromD('M0 0 L100 0'), { paint: INK, width: 2, trim: { start: 0.5, end: 0.5 } })).toEqual([]);
+  });
+
   it('measures an inner-aligned rect on its authored edge, as the canvas does', () => {
     const rect: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
     const [p] = stroked(paths(rect, { paint: INK, width: 10, align: 'inner', trim: { end: { length: 120 } } }));
