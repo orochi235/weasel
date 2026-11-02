@@ -5,7 +5,7 @@
  * curve. Runs in screen space so markers keep their size under zoom.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
-import { circlePath, spiroToPath, transformPath, type Affine, type PolygonPath, type SpiroPoint } from '@weasel-js/geom';
+import { circlePath, spiroToPath, transformPath, viewWorldToScreen, type Affine, type PolygonPath, type SpiroPoint } from '@weasel-js/geom';
 import type { RenderLayer } from '@weasel-js/core';
 import { spiroMarker } from './spiroMarkers';
 
@@ -40,8 +40,6 @@ export function createSpiroPreviewLayer(opts: CreateSpiroPreviewLayerOptions): R
     draw: (_data, view) => {
       const { points, cursor, closeHint } = opts.state();
       if (points.length === 0) return [];
-      const sx = (p: { x: number; y: number }) => (p.x - view.x) * view.scale.x;
-      const sy = (p: { x: number; y: number }) => (p.y - view.y) * view.scale.y;
       const out: DrawCommand[] = [];
       const through = cursor && !closeHint ? [...points, cursor] : [...points];
       if (through.length >= 2) {
@@ -49,13 +47,13 @@ export function createSpiroPreviewLayer(opts: CreateSpiroPreviewLayerOptions): R
         const toScreen: Affine = [view.scale.x, 0, 0, view.scale.y, -view.x * view.scale.x, -view.y * view.scale.y];
         out.push({ kind: 'path', path: transformPath(path, toScreen) as PolygonPath, stroke: { paint, width: 1 } });
       }
-      const screen = points.map((p) => ({ x: sx(p), y: sy(p) }));
+      const screen = points.map((p) => viewWorldToScreen(view, p));
       points.forEach((p, i) => {
         const path = spiroMarker(p.kind)(screen[i], MARKER_PX, screen[i - 1] ?? null, screen[i + 1] ?? null);
         out.push({ kind: 'path', path, fill: { paint }, stroke: { paint, width: 1 } });
       });
       if (closeHint) {
-        out.push({ kind: 'path', path: circlePath(sx(points[0]), sy(points[0]), CLOSE_HINT_PX), stroke: { paint, width: 1.5 } });
+        out.push({ kind: 'path', path: circlePath(screen[0].x, screen[0].y, CLOSE_HINT_PX), stroke: { paint, width: 1.5 } });
       }
       return out;
     },

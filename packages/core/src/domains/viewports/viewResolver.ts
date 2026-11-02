@@ -1,4 +1,5 @@
 import type { View } from 'core/viewport/view';
+import { viewScreenToWorld } from '@weasel-js/geom';
 
 /**
  * A view the resolver can route input to: a camera and the rect it paints
@@ -89,10 +90,8 @@ export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
 
   type Local = { x: number; y: number };
   /** `at`, a canvas point `from` its surface's top-left, through `view`. */
-  const worldOf = (at: Local, from: Local, view: View): Local => ({
-    x: (at.x - from.x) / view.scale.x + view.x,
-    y: (at.y - from.y) / view.scale.y + view.y,
-  });
+  const worldOf = (at: Local, from: Local, view: View): Local =>
+    viewScreenToWorld(view, { x: at.x - from.x, y: at.y - from.y });
 
   function rootTarget(at: Local): ViewTarget {
     const view = root();

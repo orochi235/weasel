@@ -40,7 +40,7 @@ export type {
 export * from '../core/viewport/viewTransform';
 export type { View, ZoomFactor, ZoomBound } from '../core/viewport/view';
 export { viewToTransform, normalizeView, viewZoom } from '../core/viewport/view';
-export { meanScale } from '@weasel-js/geom';
+export { meanScale, viewRectToScreen, viewScreenToWorld, viewWorldToScreen } from '@weasel-js/geom';
 export { isPlainObject } from '../core/isPlainObject';
 export { stableStringify } from '../core/stableStringify';
 export { pxExtent, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius } from '@weasel-js/geom';

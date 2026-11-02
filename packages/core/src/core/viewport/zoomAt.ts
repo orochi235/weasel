@@ -1,3 +1,4 @@
+import { viewScreenToWorld } from '@weasel-js/geom';
 import { normalizeView, type View, type ZoomFactor, type ZoomBound } from './view';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds';
 
@@ -54,11 +55,10 @@ export function zoomAt(
   const nextX = clampScale(view.scale.x * fx, minX, maxX);
   const nextY = clampScale(view.scale.y * fy, minY, maxY);
 
-  const worldX = anchor.x / view.scale.x + view.x;
-  const worldY = anchor.y / view.scale.y + view.y;
+  const world = viewScreenToWorld(view, anchor);
   return {
     scale: { x: nextX, y: nextY },
-    x: worldX - anchor.x / nextX,
-    y: worldY - anchor.y / nextY,
+    x: world.x - anchor.x / nextX,
+    y: world.y - anchor.y / nextY,
   };
 }

@@ -1,12 +1,6 @@
-/**
- * Convert client coords directly to world coords by subtracting the canvas
- * rect origin and then applying the inverse view transform.
- *
- * This is the composition of `clientToCanvas` + the view-inverse half of
- * `screenToWorld`, but expressed against the `ViewLike` shape used by
- * `SceneCanvas` (`{ scale: { x, y }, x, y }`) rather than the
- * `ViewTransform` shape used by `screenToWorld` (`{ panX, panY, zoom }`).
- */
+import { viewScreenToWorld } from '@weasel-js/geom';
+
+/** The `View` shape: `clientToWorld` is `clientToCanvas` then `viewScreenToWorld`. */
 export interface ViewLike {
   scale: { x: number; y: number };
   x: number;
@@ -30,8 +24,6 @@ export function clientToWorld(
   origin: { left: number; top: number },
   view: ViewLike,
 ): [number, number] {
-  return [
-    (clientX - origin.left) / view.scale.x + view.x,
-    (clientY - origin.top) / view.scale.y + view.y,
-  ];
+  const world = viewScreenToWorld(view, { x: clientX - origin.left, y: clientY - origin.top });
+  return [world.x, world.y];
 }

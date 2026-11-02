@@ -2,6 +2,7 @@ import { fitViewToBounds, type Bounds } from 'core/viewport/fitViewToBounds';
 import type { Dims } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { ZOOM_FLOOR } from 'core/viewport/zoomBounds';
+import { viewScreenToWorld, viewWorldToScreen } from '@weasel-js/geom';
 
 /** A point in a view's world. A 2D world is the plane z = 0, so `z` is absent there. */
 export interface AimPoint {
@@ -83,8 +84,8 @@ export function aimSpace2d(viewId: string | null, view: View, size: Dims): AimSp
     viewId,
     kind: '2d',
     size: { width: size.width, height: size.height },
-    project: (p) => ({ x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y }),
-    unproject: (px) => ({ x: px.x / view.scale.x + view.x, y: px.y / view.scale.y + view.y }),
+    project: (p) => viewWorldToScreen(view, p),
+    unproject: (px) => viewScreenToWorld(view, px),
   };
 }
 

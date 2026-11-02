@@ -4,6 +4,7 @@ import {
   type ViewportDims,
 } from '../viewport/fitViewToBounds';
 import type { View } from '../viewport/view';
+import { viewportWorldRect } from '../viewport/viewportWorldRect';
 import { pageOfBounds, type PlacedPage } from './pages';
 
 /** The view that shows one placed page whole: `fitViewToBounds` on its rect. */
@@ -23,6 +24,5 @@ export function pageInView(
   view: View,
   viewportDims: ViewportDims,
 ): PlacedPage | null {
-  const visible = { x: view.x, y: view.y, width: viewportDims.width / view.scale.x, height: viewportDims.height / view.scale.y };
-  return pageOfBounds(pages, visible);
+  return pageOfBounds(pages, viewportWorldRect(view, viewportDims));
 }

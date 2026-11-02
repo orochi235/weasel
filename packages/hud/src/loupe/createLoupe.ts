@@ -1,5 +1,5 @@
 import {
-  createViewportLayer, screenToWorld, viewToTransform,
+  createViewportLayer, viewScreenToWorld,
   type CanvasViewHandle, type RenderLayer, type SceneCanvasApi, type View, type ViewAt,
 } from '@weasel-js/core';
 import { releaseImageSource, type DrawCommand } from '@weasel-js/core/renderer';
@@ -116,14 +116,10 @@ function lensCamera(
   aim: { x: number; y: number }, under: ViewAt | null, outer: View, rect: WidgetBounds, factor: number,
 ): View {
   if (under && under.id !== null) {
-    const world = {
-      x: (aim.x - under.rect.x) / under.view.scale.x + under.view.x,
-      y: (aim.y - under.rect.y) / under.view.scale.y + under.view.y,
-    };
+    const world = viewScreenToWorld(under.view, { x: aim.x - under.rect.x, y: aim.y - under.rect.y });
     return loupeInnerView(world, under.view, rect, factor);
   }
-  const world = screenToWorld(aim.x, aim.y, viewToTransform(outer));
-  return loupeInnerView({ x: world[0], y: world[1] }, outer, rect, factor);
+  return loupeInnerView(viewScreenToWorld(outer, aim), outer, rect, factor);
 }
 
 /** Control surface for a live loupe: where it is aimed, how it magnifies,

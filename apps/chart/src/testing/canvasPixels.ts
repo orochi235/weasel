@@ -1,4 +1,4 @@
-import { fitViewToBounds } from '@weasel-js/core';
+import { fitViewToBounds, viewWorldToScreen } from '@weasel-js/core';
 import { CHART_PAGE } from '../chartDocument';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
@@ -7,7 +7,8 @@ import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 export function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
   const box = host.getBoundingClientRect();
   const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 24 });
-  return { x: box.left + (x - view.x) * view.scale.x, y: box.top + (y - view.y) * view.scale.y };
+  const p = viewWorldToScreen(view, { x, y });
+  return { x: box.left + p.x, y: box.top + p.y };
 }
 
 /** The RGBA bytes the canvas drew inside a client rect, bottom row first. */

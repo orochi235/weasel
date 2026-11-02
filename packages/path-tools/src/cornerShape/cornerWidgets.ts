@@ -6,7 +6,7 @@
  * placement.
  */
 import {
-  cornerFrames, cornerShapeK, cornerShapePieces, cornerSpecAt, PathBuilder, standoff,
+  cornerFrames, cornerShapeK, cornerShapePieces, cornerSpecAt, PathBuilder, standoff, viewWorldToScreen,
   type CornerFrame, type PolygonPath, type Scale2, type View,
 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -90,14 +90,12 @@ export function cornerWidgetCommands(path: PolygonPath, view: View, style: Corne
   const fill = { paint: { kind: 'solid' as const, color: style.fill ?? DEFAULT_OVERLAY_STYLE.anchorFill } };
   const stroke = { paint: { kind: 'solid' as const, color: style.stroke ?? DEFAULT_OVERLAY_STYLE.anchorStroke }, width: 1 };
   for (const frame of cornerWidgetFrames(path)) {
-    const w = cornerWidgetAt(frame, view.scale);
-    const x = (w.x - view.x) * view.scale.x;
-    const y = (w.y - view.y) * view.scale.y;
+    const at = viewWorldToScreen(view, cornerWidgetAt(frame, view.scale));
     // On screen, the anchor lies back along the bisector.
     const bx = -frame.bisector.x * view.scale.x, by = -frame.bisector.y * view.scale.y;
     const bl = Math.hypot(bx, by) || 1;
     const k = cornerShapeK(cornerSpecAt(path, frame.index)?.shape ?? 'round');
-    out.push({ kind: 'path', path: cornerGlyph({ x, y }, { x: bx / bl, y: by / bl }, k), fill, stroke });
+    out.push({ kind: 'path', path: cornerGlyph(at, { x: bx / bl, y: by / bl }, k), fill, stroke });
   }
   return out;
 }

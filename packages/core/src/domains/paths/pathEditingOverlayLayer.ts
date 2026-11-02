@@ -8,13 +8,13 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import {
-  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath,
+  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath, viewRectToScreen, viewWorldToScreen,
 } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { chromeStateFrom, previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 import { paintsLayer } from 'core/selection/chromeState';
 import {
-  anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
+  anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, type PathEditingOverlayStyle,
 } from './anchorMarkers';
 import type { PathEditExtension, PathEditMark } from './pathEditExtension';
 import type { AnchorMarkerShape } from './pathRepresentation';
@@ -96,7 +96,7 @@ export function createPathEditingOverlayLayer(
       if (node) {
         const mark = opts.getSelectedMark?.() ?? null;
         const anchors = pathToAnchors(pose as PolygonPath) as AnchorSet;
-        const toScreen = (p: { x: number; y: number }) => worldToScreen(p, view);
+        const toScreen = (p: { x: number; y: number }) => viewWorldToScreen(view, p);
         for (const ext of opts.getExtensions?.() ?? []) {
           if (!ext.marks) continue;
           out.push(...ext.marks({
@@ -111,11 +111,10 @@ export function createPathEditingOverlayLayer(
       // Marquee rubber band, on top of everything.
       const marquee = opts.getMarquee?.(view);
       if (marquee) {
-        const m = worldToScreen(marquee, view);
-        const m2 = worldToScreen({ x: marquee.x + marquee.width, y: marquee.y + marquee.height }, view);
+        const m = viewRectToScreen(view, marquee);
         out.push({
           kind: 'path',
-          path: rectMarkerPath(m.x, m.y, m2.x - m.x, m2.y - m.y),
+          path: rectMarkerPath(m.x, m.y, m.width, m.height),
           fill: { paint: { kind: 'solid', color: style.marqueeFill } },
           stroke: { paint: { kind: 'solid', color: style.marqueeStroke }, width: 1 },
         });

@@ -2,7 +2,7 @@
  *  lands on, and deleting the selected one. */
 
 import type { ActionDeps } from '@weasel-js/routing';
-import { pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, viewWorldToScreen, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import type { PathEditMark, PathEditTarget } from 'domains/paths/pathEditExtension';
 import type { EditAnchorsDep } from '../depSchema';
 
@@ -20,7 +20,7 @@ export function markUnder(dep: EditAnchorsDep, deps: ActionDeps | undefined, wx:
   const target = extensions.length > 0 ? editTargetOf(dep) : null;
   if (!target) return null;
   const view = deps?.view?.get() ?? { x: 0, y: 0, scale: { x: 1, y: 1 } };
-  const toScreen = (p: { x: number; y: number }) => ({ x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y });
+  const toScreen = (p: { x: number; y: number }) => viewWorldToScreen(view, p);
   const screen = toScreen({ x: wx, y: wy });
   for (const ext of [...extensions].reverse()) {
     const index = ext.markAt!(target, toScreen, screen);

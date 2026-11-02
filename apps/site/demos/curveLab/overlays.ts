@@ -1,13 +1,7 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { RenderLayer, View } from '@weasel-js/core';
-import { combTeeth, polylineFromPoints } from '@weasel-js/geom';
+import { combTeeth, polylineFromPoints, viewWorldToScreen } from '@weasel-js/geom';
 import { curvatureSourceOf, type CurveRepresentation, type SharedAnchor } from '@weasel-js/geom/curves';
-
-interface ViewLike { x: number; y: number; scale: { x: number; y: number } }
-
-function w2s(wx: number, wy: number, view: ViewLike): [number, number] {
-  return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
-}
 
 function circlePath(cx: number, cy: number, r: number) {
   const k = 0.5522847498;
@@ -46,7 +40,7 @@ export function createAnchorsLayer(
       const anchors = getAnchors();
       const out: DrawCommand[] = [];
       for (const a of anchors) {
-        const [sx, sy] = w2s(a.x, a.y, view);
+        const { x: sx, y: sy } = viewWorldToScreen(view, a);
         out.push({
           kind: 'path',
           path: { kind: 'rect', x: sx - 4, y: sy - 4, width: 8, height: 8 },
@@ -55,7 +49,7 @@ export function createAnchorsLayer(
         } as DrawCommand);
         if (rep.kind === 'bezierCubic') {
           if (a.outHandle) {
-            const [hx, hy] = w2s(a.outHandle.x, a.outHandle.y, view);
+            const { x: hx, y: hy } = viewWorldToScreen(view, a.outHandle);
             out.push({
               kind: 'path',
               path: linePath(sx, sy, hx, hy),
@@ -68,7 +62,7 @@ export function createAnchorsLayer(
             } as DrawCommand);
           }
           if (a.inHandle) {
-            const [hx, hy] = w2s(a.inHandle.x, a.inHandle.y, view);
+            const { x: hx, y: hy } = viewWorldToScreen(view, a.inHandle);
             out.push({
               kind: 'path',
               path: linePath(sx, sy, hx, hy),
@@ -102,14 +96,11 @@ export function createCurvatureCombLayer(
       if (anchors.length < 2) return [];
       const teeth = combTeeth(curvatureSourceOf(rep, anchors), { scale, samplesPerSegment: 65 });
       const out: DrawCommand[] = teeth.map((tooth) => {
-        const [sx, sy] = w2s(tooth.x, tooth.y, view);
-        const [ex, ey] = w2s(tooth.tipX, tooth.tipY, view);
+        const { x: sx, y: sy } = viewWorldToScreen(view, tooth);
+        const { x: ex, y: ey } = viewWorldToScreen(view, { x: tooth.tipX, y: tooth.tipY });
         return { kind: 'path', path: linePath(sx, sy, ex, ey), stroke: { paint, width: 1 } } as DrawCommand;
       });
-      const tips = teeth.map((tooth) => {
-        const [x, y] = w2s(tooth.tipX, tooth.tipY, view);
-        return { x, y };
-      });
+      const tips = teeth.map((tooth) => viewWorldToScreen(view, { x: tooth.tipX, y: tooth.tipY }));
       out.push({ kind: 'path', path: polylineFromPoints(tips), stroke: { paint, width: 1.5 } } as DrawCommand);
       return out;
     },
@@ -140,7 +131,7 @@ export function createInflectionsLayer(
         if (ks[i - 1] === 0) continue;
         if (Math.sign(ks[i]) !== Math.sign(ks[i - 1]) && ks[i] !== 0) {
           const p = pts[i];
-          const [sx, sy] = w2s(p.x, p.y, view);
+          const { x: sx, y: sy } = viewWorldToScreen(view, p);
           out.push({
             kind: 'path',
             path: circlePath(sx, sy, 5),
@@ -149,7 +140,7 @@ export function createInflectionsLayer(
         }
         if (i > 1 && Math.abs(ks[i - 1]) > Math.abs(ks[i]) && Math.abs(ks[i - 1]) > Math.abs(ks[i - 2])) {
           const p = pts[i - 1];
-          const [sx, sy] = w2s(p.x, p.y, view);
+          const { x: sx, y: sy } = viewWorldToScreen(view, p);
           out.push({
             kind: 'path',
             path: { kind: 'rect', x: sx - 3, y: sy - 3, width: 6, height: 6 },

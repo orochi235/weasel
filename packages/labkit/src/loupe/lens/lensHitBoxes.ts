@@ -1,4 +1,4 @@
-import { effectivePose, type View } from '@weasel-js/core';
+import { effectivePose, viewRectToScreen, type View } from '@weasel-js/core';
 import type { LoupeRect } from '@weasel-js/loupe';
 import { SEAM_GRAB, type SeamPreview, seamOf, showsSeam, splitRects } from './compare';
 import { lensShapeOf } from './lensScene';
@@ -44,12 +44,8 @@ export function hitBoxesOf<C>(
     const { data } = node;
     if (data.role === 'lens-leader') continue;
     const p = effectivePose(scene, node);
-    let rect: LoupeRect = {
-      x: (p.x - view.x) * view.scale.x,
-      y: (p.y - view.y) * view.scale.y,
-      w: p.width * view.scale.x,
-      h: p.height * view.scale.y,
-    };
+    const s = viewRectToScreen(view, p);
+    let rect: LoupeRect = { x: s.x, y: s.y, w: s.width, h: s.height };
     const body = data.role === 'lens-body';
     const grown = body && selected.has(node.id);
     if (grown) {

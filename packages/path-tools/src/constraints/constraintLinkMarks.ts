@@ -7,7 +7,7 @@
  * both in the conflict color.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
-import { nearestOnCubic, PathBuilder, type ConstraintPoint, type View } from '@weasel-js/geom';
+import { nearestOnCubic, PathBuilder, viewWorldToScreen, type ConstraintPoint, type View } from '@weasel-js/geom';
 import type { CanvasExtensionApi, ContributionDepReader, RenderLayer, Scene, SurfaceContribution } from '@weasel-js/core';
 import { constraintGlyphs, type ConstraintGlyphStyle } from './constraintGlyphs';
 import { brokenConstraintLinks, type BrokenConstraintLink } from './constraintLinks';
@@ -66,7 +66,7 @@ export function constraintLinkMarks(
   });
 }
 
-const toScreenIn = (view: View) => (p: Pt): Pt => ({ x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y });
+const toScreenIn = (view: View) => (p: Pt): Pt => viewWorldToScreen(view, p);
 
 /**
  * The layer that draws every broken link of the canvas's scene, as one

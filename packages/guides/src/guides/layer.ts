@@ -10,7 +10,7 @@
  * the visual guide and the snap target in lockstep.
  */
 
-import { measuredSegmentCommands, tickedSegment, type DrawCommand, type RenderLayer, type CommandStroke } from '@weasel-js/core';
+import { measuredSegmentCommands, tickedSegment, viewWorldToScreen, type DrawCommand, type RenderLayer, type CommandStroke } from '@weasel-js/core';
 import type { Guide, SpacingGap } from './types';
 
 /** Options for `createGuidesLayer`. */
@@ -68,34 +68,32 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
       const guides = opts.getGuides();
       const gaps = opts.getGaps?.() ?? [];
       if (guides.length === 0 && gaps.length === 0) return [];
-      const sx = (x: number) => (x - view.x) * view.scale.x;
-      const sy = (y: number) => (y - view.y) * view.scale.y;
-
       const out: DrawCommand[] = [];
       for (const g of guides) {
         const span = spanned ? g.span : undefined;
         if (g.axis === 'x') {
-          const x = sx(g.offset);
+          const lo = viewWorldToScreen(view, { x: g.offset, y: span?.min ?? 0 });
+          const x = lo.x;
           if (x < -lineWidth || x > dims.width + lineWidth) continue;
           const path = span
-            ? tickedSegment(x, sy(span.min), x, sy(span.max), ticks)
+            ? tickedSegment(x, lo.y, x, viewWorldToScreen(view, { x: g.offset, y: span.max }).y, ticks)
             : tickedSegment(x, 0, x, dims.height, 0);
           out.push({ kind: 'path', path, stroke });
         } else {
-          const y = sy(g.offset);
+          const lo = viewWorldToScreen(view, { x: span?.min ?? 0, y: g.offset });
+          const y = lo.y;
           if (y < -lineWidth || y > dims.height + lineWidth) continue;
           const path = span
-            ? tickedSegment(sx(span.min), y, sx(span.max), y, ticks)
+            ? tickedSegment(lo.x, y, viewWorldToScreen(view, { x: span.max, y: g.offset }).x, y, ticks)
             : tickedSegment(0, y, dims.width, y, 0);
           out.push({ kind: 'path', path, stroke });
         }
       }
 
       for (const g of gaps) {
-        const [x0, y0, x1, y1] = g.axis === 'x'
-          ? [sx(g.min), sy(g.at), sx(g.max), sy(g.at)]
-          : [sx(g.at), sy(g.min), sx(g.at), sy(g.max)];
-        out.push(...measuredSegmentCommands(x0, y0, x1, y1, ticks, gapStroke, format?.(g.max - g.min) ?? null, gapColor));
+        const a = viewWorldToScreen(view, g.axis === 'x' ? { x: g.min, y: g.at } : { x: g.at, y: g.min });
+        const b = viewWorldToScreen(view, g.axis === 'x' ? { x: g.max, y: g.at } : { x: g.at, y: g.max });
+        out.push(...measuredSegmentCommands(a.x, a.y, b.x, b.y, ticks, gapStroke, format?.(g.max - g.min) ?? null, gapColor));
       }
       return out;
     },

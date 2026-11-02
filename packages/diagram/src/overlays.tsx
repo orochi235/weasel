@@ -15,7 +15,7 @@ import {
   type RectPose,
   type Scene,
   type SceneCanvasApi,
-  type View,
+  viewRectToScreen,
 } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
 import { clampRectWithin, placeRect, type Placement } from '@weasel-js/geom';
@@ -55,16 +55,6 @@ export function worldRectOf(scene: DiagramScene, id: string): Bounds | null {
   return drawnAABBOf(drawn, id as NodeId, composeWorldPose(live, id, scene.composition.compose as never), { includeStroke: false });
 }
 
-/** `rect` in CSS pixels from the canvas's top-left, through `view`. */
-export function screenRectOf(rect: Bounds, view: View): Bounds {
-  return {
-    x: (rect.x - view.x) * view.scale.x,
-    y: (rect.y - view.y) * view.scale.y,
-    width: rect.width * view.scale.x,
-    height: rect.height * view.scale.y,
-  };
-}
-
 const CENTER = 'center';
 
 /** Place `el` against `anchor` inside `view`. */
@@ -101,7 +91,7 @@ export function useOverlayPlacement(
       const world = worldRectOf(scene, overlay.target);
       el.hidden = world === null;
       if (world === null) continue;
-      const rect = screenRectOf(world, view);
+      const rect = viewRectToScreen(view, world);
       const anchor = { ...rect, x: rect.x + surface.offsetLeft, y: rect.y + surface.offsetTop };
       place(el, overlay, anchor, {
         x: surface.offsetLeft, y: surface.offsetTop, width: surface.offsetWidth, height: surface.offsetHeight,
