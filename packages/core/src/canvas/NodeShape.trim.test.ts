@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyToPoint, lengthAtCurve, pathFromD, pathLengthTable, pointAtLength, polylineFromPoints, poseFrameOf, type PolygonPath,
+  applyToPoint, lengthAtCurve, pathContainsPoint, pathFromD, pathLengthTable, pointAtLength, polygonFromPoints,
+  polylineFromPoints, poseFrameOf, resolveCorners, transformPath, type PolygonPath,
 } from '@weasel-js/geom';
 import { trimSpan } from '@weasel-js/stroke';
 import { INHERIT, type PaintedStroke, type Stroke } from '@weasel-js/paint';
@@ -144,6 +145,32 @@ describe('shapeCoversPoint under a stroke trim and a stretch', () => {
     const [x, y] = canvasEnd();
     expect(shapeCoversPoint(n, pose, x, y - 1, { tolerance: 0 })).toBe(true);
     expect(shapeCoversPoint(n, pose, x, y + 1, { tolerance: 0 })).toBe(false);
+  });
+});
+
+describe('shapeCoversPoint on a stretched rounded fill', () => {
+  it('picks the corner the canvas draws', () => {
+    const round = { shape: 'round', radius: 10 } as const;
+    const box = {
+      ...polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]),
+      corners: [round, round, round, round],
+    } as PolygonPath;
+    const pose: Pose = { x: 0, y: 0, width: 100, height: 100, transform: [4, 0, 0, 1] };
+    const frame = poseFrameOf(pose)!;
+    const drawn = transformPath(resolveCorners(box), frame);
+    const afterFrame = transformPath(box, frame);
+    const n = node({ path: box, fill: { paint: solid('#fff') }, stroke: null }, pose);
+    // Inward along the stretched diagonal from the top-left corner, across both corners' arcs.
+    const [cx, cy] = applyToPoint(frame, 0, 0);
+    let differs = 0;
+    for (let k = 0; k <= 400; k++) {
+      const x = cx + k * 0.05;
+      const y = cy + k * 0.0125;
+      const want = pathContainsPoint(drawn, x, y);
+      if (want !== pathContainsPoint(afterFrame, x, y)) differs++;
+      expect(shapeCoversPoint(n, pose, x, y, { tolerance: 0 }), `${x}, ${y}`).toBe(want);
+    }
+    expect(differs).toBeGreaterThan(0);
   });
 });
 

@@ -3,7 +3,8 @@ import {
   boundsOfPath, pathFromD, solid, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
 import {
-  applyToPoint, lengthAtCurve, pathLengthTable, pointAtLength, polylineFromPoints, poseFrameOf,
+  applyToPoint, lengthAtCurve, pathLengthTable, pointAtLength, polygonFromPoints, polylineFromPoints, poseFrameOf,
+  resolveCorners, transformPath,
 } from '@weasel-js/geom';
 import { trimSpan } from '@weasel-js/stroke';
 import { svgLeafFromKit } from './fromKit';
@@ -165,5 +166,23 @@ describe('svg export bakes a stroke trim', () => {
     const [p] = stroked(paths(local, { paint: INK, width: 1, trim }, null, pose));
     const [ex, ey] = endOf(p);
     expect(Math.hypot(ex - x, ey - y)).toBeLessThan(1e-3);
+  });
+
+  it('writes a stretched or skewed rounded node as the canvas fills it, trimmed or not', () => {
+    const round = { shape: 'round', radius: 10 } as const;
+    const box = {
+      ...polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]),
+      corners: [round, round, round, round],
+    } as PolygonPath;
+    for (const transform of [[4, 0, 0, 1], [1, 0.7, 0, 1]] as [number, number, number, number][]) {
+      const pose = { x: 0, y: 0, width: 100, height: 100, transform };
+      const canvas = transformPath(resolveCorners(box), poseFrameOf(pose)!) as PolygonPath;
+      for (const trim of [undefined, { end: 1 }]) {
+        const [fill] = paths(box, { paint: INK, width: 1, ...(trim ? { trim } : {}) }, RED, pose);
+        const nums = dOf(fill).match(/-?[\d.]+(?:e-?\d+)?/g)!.map(Number);
+        expect(nums.length, `${transform} ${trim ? 'trimmed' : 'untrimmed'}`).toBe(canvas.coords.length);
+        nums.forEach((v, i) => expect(Math.abs(v - canvas.coords[i])).toBeLessThan(1e-3));
+      }
+    }
   });
 });
