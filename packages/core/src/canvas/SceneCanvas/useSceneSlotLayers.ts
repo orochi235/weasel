@@ -4,7 +4,7 @@
  * scene layer, so the list follows the scene's layers after mount.
  */
 import { useMemo } from 'react';
-import type { ColorOverrideRegistry } from '@weasel-js/animator';
+import type { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator';
 import type { Node, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { buildSceneLayers, type SceneSlotConfig } from '../buildSceneLayer';
@@ -23,6 +23,7 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
   adapter: HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
   alphaFor: ((id: string) => number) | undefined;
   colorOverrides: ColorOverrideRegistry | undefined;
+  trimOverrides: TrimOverrideRegistry | undefined;
   /** Committed bounds of a node, for the debug overlay's record of it. */
   boundsOf: (id: string) => Bounds | null;
   /** Ids an in-flight gesture is ghosting; their committed paint is left out
@@ -34,7 +35,7 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
   /** Absent when the slot is empty or carries no `drawOne`; a pre-built layer is the whole slot. */
   layers: SceneSlotLayers | undefined;
 } {
-  const { slot, scene, adapter, alphaFor, colorOverrides, boundsOf, previewIds } = args;
+  const { slot, scene, adapter, alphaFor, colorOverrides, trimOverrides, boundsOf, previewIds } = args;
 
   const config = useMemo(() => {
     if (!slot || isCustomEntry(slot)) return slot;
@@ -42,9 +43,9 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
       slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
       scene,
       alphaFor,
-      colorOverrides,
+      { colorOverrides, trimOverrides },
     );
-  }, [slot, alphaFor, scene, colorOverrides]);
+  }, [slot, alphaFor, scene, colorOverrides, trimOverrides]);
 
   const sceneLayersKey = useSceneLayerList(adapter);
   const layers = useMemo<SceneSlotLayers | undefined>(() => {

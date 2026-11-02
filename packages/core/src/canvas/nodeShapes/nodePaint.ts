@@ -1,5 +1,5 @@
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
-import { resolveFill, resolveStroke } from '@weasel-js/paint';
+import { resolveFill, resolveStroke, strokeTrimKey } from '@weasel-js/paint';
 import type { NodeInk, NodeInkCtx, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
@@ -94,6 +94,28 @@ export function withAnimatedVertexColors(cmds: DrawCommand[], ctx: NodePaintCtx 
     ...(strokeChanged ? { stroke: { ...body.stroke!, vertexColors: stroke as number[] } } : {}),
   };
   return [next, ...cmds.slice(1)];
+}
+
+/** `cmd` with {@link NodePaintCtx.trim} applied to its stroke: `cmd` itself
+ *  when nothing overrides it or the trim comes back the same, otherwise a
+ *  copy. A command with no stroke has nothing to trim. */
+export function withAnimatedStrokeTrim(cmd: DrawCommand, ctx: NodePaintCtx | undefined): DrawCommand {
+  const resolve = ctx?.trim;
+  if (resolve === undefined || cmd.kind !== 'path' || !cmd.stroke) return cmd;
+  const base = cmd.stroke.trim;
+  const trim = resolve(base);
+  if (trim === base || strokeTrimKey(trim) === strokeTrimKey(base)) return cmd;
+  const { trim: _old, ...rest } = cmd.stroke;
+  return { ...cmd, stroke: trim === undefined ? rest : { ...rest, trim } };
+}
+
+/** Apply {@link NodePaintCtx.trim} to a path painter's body, its first
+ *  command, outside the paint memo as {@link withAnimatedVertexColors} is. */
+export function withAnimatedTrim(cmds: DrawCommand[], ctx: NodePaintCtx | undefined): DrawCommand[] {
+  const body = cmds[0];
+  if (ctx?.trim === undefined || body === undefined) return cmds;
+  const next = withAnimatedStrokeTrim(body, ctx);
+  return next === body ? cmds : [next, ...cmds.slice(1)];
 }
 
 /** The paint a path node wears, resolved: what an action that turns ink into

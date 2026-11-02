@@ -9,8 +9,10 @@ import { derivesPath } from './memo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { strokedBounds } from './strokedBounds';
 import { inkCovers, trimmedOutline, type PickReach, type TrimmedOutline } from './pickOutline';
-import { inkReach, inkTrim, withAnimatedVertexColors } from './nodePaint';
-import { resolveFill, resolveStroke, strokeTrimKey, type PaintedFill, type PaintedStroke } from '@weasel-js/paint';
+import { inkReach, inkTrim, withAnimatedStrokeTrim, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
+import {
+  INHERIT, resolveFill, resolveStroke, strokeTrimKey, type PaintedFill, type PaintedStroke,
+} from '@weasel-js/paint';
 
 /** A derived part's path framed by one pose, and its trimmed outline under one trim. */
 interface FramedPart {
@@ -89,7 +91,8 @@ function partCommand(part: DerivedPart, d: PaintData | null, inherited: Inherite
  * the pose AABB's center, which for a zero-sized pose is its origin.
  *
  * A path made by `pathFromParts` paints one command per part, each in the
- * part's own fill and stroke.
+ * part's own fill and stroke; an animated trim reaches only the parts stroked
+ * `INHERIT`, which draw the node's own stroke.
  */
 export const DERIVED_PAINTER: NodeShapeEntry = {
   id: 'kit:derived',
@@ -103,10 +106,15 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     if (path == null) return [];
     const d = node.data as PaintData | null;
     const parts = derivedPartsOf(path);
-    if (parts !== undefined) return parts.map((part) => partCommand(part, d, ctx?.inherited));
+    if (parts !== undefined) {
+      return parts.map((part) => {
+        const cmd = partCommand(part, d, ctx?.inherited);
+        return part.stroke === INHERIT ? withAnimatedStrokeTrim(cmd, ctx) : cmd;
+      });
+    }
     const strokeSpec = resolveStroke(d?.stroke, ctx?.inherited?.stroke);
     const declared = resolveFill(d?.fill, ctx?.inherited?.fill);
-    return withAnimatedVertexColors([pathCommand(path, declared, strokeSpec, d?.vertexColors)], ctx);
+    return withAnimatedTrim(withAnimatedVertexColors([pathCommand(path, declared, strokeSpec, d?.vertexColors)], ctx), ctx);
   },
   // The derived path *is* the silhouette, and it is already absolute — the
   // pose is a placeholder, so nothing here can be recovered from it. Without

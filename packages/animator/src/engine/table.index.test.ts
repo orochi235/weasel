@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AnimatorEventHub } from '../observe';
 import { createTarget, stateOf } from '../target';
 import { createAnimatorCore } from './core';
+import { TrimOverrideRegistry } from '../trimRegistry';
 import type { ActiveAnimation, AnimationSeed } from './context';
 import { createTable } from './table';
 
@@ -95,6 +96,7 @@ describe('an animator with many animations running', () => {
       cancelFrame() {},
       tripwire: () => false,
       colorOverrides: {} as never,
+      trimOverrides: new TrimOverrideRegistry(),
     });
     const box = (v = 0) => {
       const b = { v };

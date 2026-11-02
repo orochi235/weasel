@@ -15,8 +15,8 @@ import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { sceneToAdapter } from './sceneAdapter';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
-import { withColorOverrides } from './colorOverrides';
-import type { ColorOverrideRegistry } from '@weasel-js/animator';
+import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
+import type { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
 import { cullDrawCommands } from '@weasel-js/renderer';
@@ -77,6 +77,9 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   /** Animated vertex colors to paint, typically an animator's
    *  `colorOverrides` — see `NodePaintCtx.vertexColors`. */
   colorOverrides?: ColorOverrideRegistry;
+  /** Animated stroke trims to paint, typically an animator's
+   *  `trimOverrides` — see `NodePaintCtx.trim`. */
+  trimOverrides?: TrimOverrideRegistry;
   /** Skip what cannot reach the `width × height` view: nodes `paintBounds`
    *  places outside it are not painted, and scene commands that cannot reach
    *  it are dropped before the renderer — the scene slot's `cull`. Off by
@@ -140,15 +143,15 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   alphaFor?: (id: string) => number,
   /** This view's own layer visibility and order. */
   layers?: SceneViewLayers,
-  /** Animated vertex colors to paint, typically an animator's `colorOverrides`. */
-  colorOverrides?: ColorOverrideRegistry,
+  /** Animated paint to lay over the nodes, typically an animator. */
+  overrides?: PaintOverrides,
   /** Cull the scene to this CSS-pixel view size — see
    *  `RenderSceneToCanvasArgs.cull`. Omit to paint every node. */
   cull?: SceneViewCull<TData, TLayer, TPose>,
 ): DrawCommand[] {
   const shown = shownLookup(scene);
   const derivedOnly = withDerivedPaths(scene, withInheritedPaints(shown, drawOne));
-  const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
+  const derived = withPaintOverrides(overrides, derivedOnly);
   const derivedPathAt = sceneDerivedPathOf(scene);
   const derivedPathOf = (node: Node<TData, TLayer, TPose>) => derivedPathAt(nodeAsShown(scene.overrides, node));
   const wrappedDrawOne = (
@@ -199,10 +202,10 @@ export function sceneViewFrame<TData, TLayer extends string, TPose>(
 ): DrawCommand[] {
   const {
     scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    colorOverrides, cull, dpr,
+    colorOverrides, trimOverrides, cull, dpr,
   } = args;
   return buildSceneViewCommands(
-    scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, colorOverrides,
+    scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, { colorOverrides, trimOverrides },
     cull ? { width, height, dpr: resolveDpr(dpr), paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
   );
 }

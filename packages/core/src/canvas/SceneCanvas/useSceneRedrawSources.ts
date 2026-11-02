@@ -6,7 +6,7 @@ import type { RedrawSource } from '../../core/layers/render';
  * sources, then the canvas's. Neither a scene write nor an override write
  * renders the component, and an override write does not bump the scene version
  * either; nor does a scroll. An animator frame repaints for a `drawOne` reading
- * `animator.colorOverrides`.
+ * `animator.colorOverrides` or `animator.trimOverrides`.
  */
 export function useSceneRedrawSources(args: {
   /** `<SceneCanvas>`'s own `redrawOn`, `animator` and `modes`. */

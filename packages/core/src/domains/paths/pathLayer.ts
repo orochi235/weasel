@@ -10,7 +10,8 @@ import { type DrawCommand } from '@weasel-js/renderer';
 import { type CommandStroke, type CommandFill, type VertexWidth } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
-import type { ColorOverrideRegistry } from '@weasel-js/animator';
+import type { ColorOverrideRegistry, TrimOverride, TrimOverrideRegistry } from '@weasel-js/animator';
+import { overrideTrim } from 'canvas/trimOverrides';
 import { isDev } from '@weasel-js/react';
 
 const PLACEHOLDER_FILL: CommandFill = { paint: { color: '#ffffff' } };
@@ -61,9 +62,29 @@ export interface CreatePathLayerOpts<T> {
    * receive the base color array and the current animation timestamp.
    */
   colorOverrides?: ColorOverrideRegistry;
+  /** Optional stroke trim override registry, typically `animator.trimOverrides`:
+   *  its edges replace those of `getStroke`'s trim, as `<SceneCanvas animator>`
+   *  paints them. */
+  trimOverrides?: TrimOverrideRegistry;
   /** Clock used to timestamp function-form color overrides. Defaults to
    *  `performance.now`. Override in tests. */
   now?: () => number;
+}
+
+/** `base` with the per-anchor arrays that validated, and a trim override's edges. */
+function strokeWith(
+  base: CommandStroke,
+  vertexColors: readonly number[] | null,
+  vertexWidths: VertexWidth[] | null,
+  override: TrimOverride | undefined,
+): CommandStroke {
+  const trim = overrideTrim(base.trim, override);
+  return {
+    ...base,
+    ...(vertexColors != null ? { vertexColors: vertexColors as number[] } : {}),
+    ...(vertexWidths != null ? { vertexWidths } : {}),
+    ...(trim !== undefined ? { trim } : {}),
+  };
 }
 
 /** Build a `RenderLayer` that fills/strokes `Path` instances enumerated from a node list. */
@@ -72,7 +93,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
     id = 'paths', label = 'Paths',
     getNodes, getPath, getFill, getStroke, isHidden,
     getVertexColors, getStrokeVertexColors, getStrokeVertexWidths,
-    colorOverrides,
+    colorOverrides, trimOverrides,
     now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now()),
   } = opts;
   const warned = new Set<string>();
@@ -164,14 +185,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           strokeFromHook != null ? strokeFromHook
           : (useStrokeVColors != null || useStrokeVWidths != null ? PLACEHOLDER_STROKE : undefined);
 
-        const stroke: CommandStroke | undefined =
-          baseStroke != null
-            ? {
-                ...baseStroke,
-                ...(useStrokeVColors != null ? { vertexColors: useStrokeVColors as number[] } : {}),
-                ...(useStrokeVWidths != null ? { vertexWidths: useStrokeVWidths } : {}),
-              }
-            : baseStroke;
+        const stroke = baseStroke && strokeWith(baseStroke, useStrokeVColors, useStrokeVWidths, trimOverrides?.resolve(nodeId));
 
         if (fill == null && stroke == null) continue;
 

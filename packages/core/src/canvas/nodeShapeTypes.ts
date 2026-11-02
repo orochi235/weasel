@@ -35,6 +35,11 @@ export interface NodePaintCtx {
     channel: VertexColorChannel,
     base: readonly number[] | undefined,
   ) => readonly number[] | undefined;
+  /** A node's animated stroke trim: given the trim a painter would draw, the
+   *  trim to draw instead. **Absent** when nothing animates the node. The
+   *  kit's path painters apply it to the drawn stroke and never to picking;
+   *  see `withTrimOverrides`. */
+  trim?: (base: StrokeTrim | undefined) => StrokeTrim | undefined;
   /** What the node's `'inherit'` fill and stroke resolve to, looked up from
    *  its containers by the scene's `drawOne` wrapper. **Absent** for a node
    *  that inherits nothing. Hand it to `resolveFill` / `resolveStroke`. */

@@ -9,7 +9,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, renderHook } from '@testing-library/react';
 import type { CanvasProps } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { RectPose, Scene } from 'core/scene/types';
@@ -20,6 +20,7 @@ import { createScene } from 'core/scene/scene';
 import type { GesturePreviewSource } from './gestureBounds';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import { ColorOverrideRegistry } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 import { strokeOf } from '../util/paint';
 
@@ -180,6 +181,20 @@ describe('<SceneCanvas> installs the scene wiring', () => {
 
     const body = flat(paintScene(mount(scene, animator))).find((c) => c.kind === 'path');
     expect(body?.kind === 'path' && body.stroke?.vertexColors).toEqual([1, 0, 0, 1, 0, 0, 1, 1]);
+  });
+
+  it("paints its animator's trim overrides through the scene layers, leaving the scene alone", () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const data = { path: linePath({ x: 0, y: 0 }, { x: 10, y: 0 }), stroke: { ...strokeOf('#fff', 2), trim: { pace: 'anchor' } } };
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: pose(0), data: data as unknown as Data });
+    const undoable = scene.history.canUndo();
+    const animator = renderHook(() => useAnimator()).result.current;
+    animator.trimOverrides.set(id, { end: 0.5 });
+
+    const body = flat(paintScene(mount(scene, animator))).find((c) => c.kind === 'path');
+    expect(body?.kind === 'path' && body.stroke?.trim).toEqual({ pace: 'anchor', end: 0.5 });
+    expect(scene.get(id)!.data).toBe(data);
+    expect(scene.history.canUndo()).toBe(undoable);
   });
 
   it('paints the derived path in a preview ghost', () => {

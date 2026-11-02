@@ -10,7 +10,7 @@ import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER, derivedDrawnBounds } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
-import { inkReach, inkTrim, pathPaintOf, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, inkTrim, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import { resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { strokedPoseBox } from './strokedBounds';
@@ -31,7 +31,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   paint: (node, pose, ctx) => ctx?.derivedPath != null
     // A pose override's path stands in for `data.path`, already where it is drawn.
     ? DERIVED_PAINTER.paint(node, pose, ctx)
-    : withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
+    : withAnimatedTrim(withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as PathData & { path: Path };
     const projected = pathInPoseFrame(d.path, pose);
     const { fill: declared, stroke: strokeSpec } = pathPaintOf(d, ctx?.inherited);
@@ -48,7 +48,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       ...(stroke ? { stroke } : {}),
     };
     return [cmd];
-  }, ctx?.inherited), ctx),
+  }, ctx?.inherited), ctx), ctx),
   silhouette: (node, pose, ctx) => {
     if (ctx?.derivedPath != null) return ctx.derivedPath;
     const d = node.data as { path: Path };

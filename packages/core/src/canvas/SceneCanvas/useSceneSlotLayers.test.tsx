@@ -30,6 +30,7 @@ function setup(over: {
     adapter: sceneToAdapter(scene) as unknown as HierarchicalAdapter<TestNode, Pose>,
     alphaFor: undefined,
     colorOverrides: undefined,
+    trimOverrides: undefined,
     boundsOf: () => BOX,
     previewIds: over.previewIds ?? (() => null),
   }));

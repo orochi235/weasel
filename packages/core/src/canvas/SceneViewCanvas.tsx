@@ -58,8 +58,8 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> exten
    *  `defaultDrawOne`. */
   paintBounds?: RenderSceneToCanvasArgs<TData, TLayer, TPose>['paintBounds'];
   /** Optional animator, as on `<SceneCanvas>`: the view repaints on its ticks
-   *  and paints its `colorOverrides`. Pass the main canvas's animator so both
-   *  show the same colors. */
+   *  and paints its `colorOverrides` and `trimOverrides`. Pass the main canvas's
+   *  animator so both show the same colors and trims. */
   animator?: Animator;
   /** Optional CSS class for the `<canvas>`. Its size is `width` × `height`
    *  unless a rule on this class sizes it. */
@@ -104,6 +104,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       layerVisibility,
       layerOrder,
       colorOverrides: animator?.colorOverrides,
+      trimOverrides: animator?.trimOverrides,
       cull,
       paintBounds,
     });
