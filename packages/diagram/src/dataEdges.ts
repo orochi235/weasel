@@ -10,7 +10,7 @@ import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
 import { dataEdgeStyle } from './dataStyles';
-import { EDGE_STROKE_WIDTH } from './dataTypes';
+import { edgeStrokeOf } from './edgeStroke';
 import type { DiagramTheme } from './theme/types';
 import type { OffPageSplit } from './offPage/trait';
 
@@ -83,8 +83,6 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     const laidOut = e.waypoints === undefined && waypoints !== undefined;
     const own = ctx.opts.edgeStyle?.(e);
     const style = own !== undefined ? withColors(own, e.colors) : dataEdgeStyle(e, ctx.theme);
-    const markerStart = style.markerStart ?? null;
-    const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
     const split = ctx.splits?.get(id);
     specs.push({
       id: id as never,
@@ -103,14 +101,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
           ...ownEdgeStyle(e.colors),
           ...(split !== undefined ? { offPage: split } : {}),
         },
-        stroke: {
-          paint: { color: style.stroke },
-          width: style.width ?? EDGE_STROKE_WIDTH,
-          ...(style.dash ? { dash: style.dash } : {}),
-          ...(style.trim !== undefined ? { trim: style.trim } : {}),
-          ...(markerStart !== null ? { markerStart } : {}),
-          ...(markerEnd !== null ? { markerEnd } : {}),
-        },
+        stroke: edgeStrokeOf(style),
       },
       dependsOn: [e.from as never, e.to as never],
       derivePath: EDGE_DERIVE_PATH,

@@ -1,5 +1,6 @@
 import type { Stroke } from '@weasel-js/core';
 import { labelStyleOf } from '../edgeLabel';
+import { edgeStrokeOf } from '../edgeStroke';
 import type { EdgeStyle, NodeStyle } from '../fromData';
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_THEME_KEY, type DiagramTheme } from './types';
@@ -17,18 +18,9 @@ export function roleEdgeStyle(theme: DiagramTheme, role?: string): EdgeStyle {
   return { ...theme.edge, label: theme.edge.label ?? theme.label.fill };
 }
 
-/** The stroke a connector drawn under `theme` starts with, for a connect action's `edgeStroke`. */
-export function themeEdgeStroke(theme: DiagramTheme): Stroke {
-  const { stroke, width, dash, markerStart, markerEnd, trim } = theme.edge;
-  return {
-    paint: { color: stroke },
-    width: width ?? 2,
-    ...(dash ? { dash } : {}),
-    ...(trim !== undefined ? { trim } : {}),
-    ...(markerStart ? { markerStart } : {}),
-    ...(markerEnd !== null ? { markerEnd: markerEnd ?? 'arrow' } : {}),
-  };
-}
+/** The stroke a connector drawn under `theme` starts with, for a connect action's `edgeStroke`:
+ *  the one `diagramScene` draws an edge in with no role. */
+export const themeEdgeStroke = (theme: DiagramTheme): Stroke => edgeStrokeOf(theme.edge);
 
 /** The theme's face as `diagramScene` and the stencils take one. */
 export const themeFont = (theme: DiagramTheme): { fontFamily: string; fontSize: number } =>
