@@ -6,7 +6,7 @@
 import { splitSubpaths, type Path, type PolygonPath } from '@weasel-js/geom';
 import { spanOnPath, trimSpan, trimmedPath, type TrimmedPath } from '@weasel-js/stroke';
 import { drawsAsGroup, withoutEndMarkers } from './openSubpathFill';
-import type { SvgGroupNode, SvgPathNode, SvgStroke } from './types';
+import type { SvgGroupNode, SvgNode, SvgPathNode, SvgStroke } from './types';
 import { hasVariableWidth } from './variableWidthSvg';
 
 const NONE = { kind: 'none' } as const;
@@ -32,10 +32,17 @@ export function withTrimDrawn(node: SvgPathNode): SvgPathNode | SvgGroupNode | n
   return drawsAsGroup(node, children);
 }
 
-/** Whether `node`'s stroke is cut away whole by its trim, so it writes nothing, its markers included. */
-export function trimHidesStroke(node: SvgPathNode): boolean {
-  const { stroke } = node;
-  return !!stroke && stroke.trim !== undefined && !hasVariableWidth(stroke) && trimmedPath(node.path, stroke.trim) === null;
+/** `nodes` with every trimmed stroke drawn by {@link withTrimDrawn}, and what then draws
+ *  nothing left out: the tree the serializer registers paints from and writes, so a stroke an
+ *  empty window hides registers no marker. */
+export function withTrimsDrawn(nodes: readonly SvgNode[]): SvgNode[] {
+  const out: SvgNode[] = [];
+  for (const n of nodes) {
+    const drawn = n.kind === 'path' ? withTrimDrawn(n)
+      : n.kind === 'group' ? { ...n, children: withTrimsDrawn(n.children) } : n;
+    if (drawn) out.push(drawn);
+  }
+  return out;
 }
 
 /** The elements `cut` is stroked in: one, unless its runs differ in dash phase

@@ -8,6 +8,27 @@ const quarter = [100, 0, 100, 100 * K, 100 * K, 100, 0, 100];
 /** The same quarter circle turned into the plane x = 0, running from +z to +y. */
 const upright = [0, 0, 100, 0, 100 * K, 100, 0, 100, 100 * K, 0, 100, 0];
 
+type Cubic = [number, number, number, number, number, number, number, number];
+
+/** A cubic's length and its parameter at a run of length, from a million chords. */
+function denseWalk(c: Cubic): { length: number; tAt(s: number): number } {
+  const n = 1_000_000;
+  const cum = new Float64Array(n + 1);
+  let [px, py] = cubicEvalAt(...c, 0);
+  for (let i = 1; i <= n; i++) {
+    const [x, y] = cubicEvalAt(...c, i / n);
+    cum[i] = cum[i - 1] + Math.hypot(x - px, y - py);
+    px = x;
+    py = y;
+  }
+  const tAt = (s: number) => {
+    let lo = 0, hi = n;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] < s) lo = m; else hi = m; }
+    return (lo + (s - cum[lo]) / (cum[hi] - cum[lo])) / n;
+  };
+  return { length: cum[n], tAt };
+}
+
 describe('segmentLength', () => {
   it('measures a quarter circle of radius 100 as a quarter of its circumference', () => {
     expect(segmentLength(quarter, 2)).toBeCloseTo(50 * Math.PI, 1);
@@ -51,6 +72,20 @@ describe('segmentTAtLength', () => {
       let i = 1;
       while (cum[i] < f * cum[n]) i++;
       expect(segmentTAtLength(cusp, 2, f * cum[n]), `f ${f}`).toBeCloseTo(i / n, 4);
+    }
+  });
+
+  it('settles a cusp or a speed dip that sits beside a panel edge', () => {
+    // A cusp at t = 0.752, just inside the panel from 0.75, and a dip at the edge 0.5.
+    const cases: [string, number[]][] = [
+      ['cusp at 0.752', [0, 0, 100, 100, 0, 100, 55.081485, 89.124038]],
+      ['dip at 0.5', [0, 0, 100, 100, 0, 100.5, 100, 0]],
+    ];
+    for (const [name, c] of cases) {
+      const ref = denseWalk(c as Cubic);
+      const total = segmentLength(c, 2);
+      expect(Math.abs(total - ref.length) / ref.length, name).toBeLessThan(1e-8);
+      expect(Math.abs(segmentTAtLength(c, 2, 0.9 * total) - ref.tAt(0.9 * ref.length)), name).toBeLessThan(1e-8);
     }
   });
 

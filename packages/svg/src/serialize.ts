@@ -21,7 +21,7 @@ const NOTHING_PAINTED: ReadonlySet<string> = new Set();
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
-import { trimHidesStroke, withTrimDrawn } from './trimmedStroke';
+import { withTrimsDrawn } from './trimmedStroke';
 import {
   hasVariableWidth, strokeGroupXml, strokeOutlineXml, variableWidthAttrs, writesVariableWidth,
 } from './variableWidthSvg';
@@ -33,11 +33,12 @@ import { BOOLEAN_ATTR } from './booleanGroup';
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
  * supplied, otherwise a tight bounding box around every leaf.
  */
-export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): string {
+export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): string {
   const registry = new PaintServerRegistry();
+  const nodes = withTrimsDrawn(given);
   registerPaintServers(nodes, registry);
 
-  const bounds = opts.viewBox ?? computeBounds(nodes);
+  const bounds = opts.viewBox ?? computeBounds(given);
   const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
   const namespaces = opts.namespaces ?? {};
 
@@ -94,9 +95,8 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
       registerPaintServers(n.children, registry);
     } else if (n.kind === 'path') {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
-      const stroke = trimHidesStroke(n) ? undefined : n.stroke;
-      if (stroke && stroke.paint.kind === 'gradient') registry.register(stroke.paint.paint);
-      registerMarkers(stroke, registry);
+      if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
+      registerMarkers(n.stroke, registry);
     } else if (n.kind === 'text') {
       // This pre-pass is load-bearing: `<defs>` is emitted before the body, so
       // a paint first seen while writing an element would be referenced by an
@@ -150,10 +150,7 @@ function kindXml(
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted);
   if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
   if (node.kind === 'image') return imageXml(node, namespaces);
-  const trimmed = withTrimDrawn(node);
-  if (trimmed === null) return '';
-  if (trimmed.kind === 'group') return groupXml(trimmed, registry, namespaces, warn, layoutOf, painted);
-  const drawn = pathAsSvgDraws(trimmed);
+  const drawn = pathAsSvgDraws(node);
   return drawn.kind === 'group'
     ? groupXml(drawn, registry, namespaces, warn, layoutOf, painted)
     : pathXml(drawn, registry, namespaces, warn);
