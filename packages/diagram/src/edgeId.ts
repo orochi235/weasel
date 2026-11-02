@@ -1,4 +1,4 @@
-import type { DataEdge } from './fromData';
+import type { DataEdge } from './dataTypes';
 
 /** A part of an edge id with its separators, and the `/` sub-specs append
  *  after one, escaped by a backslash. */

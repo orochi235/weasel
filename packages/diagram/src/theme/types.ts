@@ -1,4 +1,4 @@
-import type { EdgeStyle, NodeStyle } from '../fromData';
+import type { EdgeStyle, NodeStyle } from '../dataTypes';
 
 /** The roles every shipped theme styles, with the name a picker shows. */
 export const DIAGRAM_ROLES = [

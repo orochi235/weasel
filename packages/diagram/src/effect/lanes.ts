@@ -1,7 +1,7 @@
 import type { MeasureRowText } from '../body';
 import { insetOf } from '../cluster';
 import { groupLabelIdOf } from '../dataGroups';
-import type { DataNode, DiagramRouter } from '../fromData';
+import type { DataNode, DiagramRouter } from '../dataTypes';
 import { nestGroups } from '../groupTree';
 import { diagramNodeOf } from '../trait';
 import type { PortSpec } from '../types';

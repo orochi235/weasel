@@ -1,7 +1,8 @@
 /** What every look shares: how a type is colored, how a stage and a wire are
  *  styled, and the lookups a look does over a pipeline. */
 import type { Row } from '../body';
-import { edgeIdOf, type DataEdge, type DataNode, type DiagramData, type DiagramSceneOptions, type EdgeStyle, type NodeStyle } from '../fromData';
+import { edgeIdOf } from '../fromData';
+import { type DataEdge, type DataNode, type DiagramData, type DiagramSceneOptions, type EdgeStyle, type NodeStyle } from '../dataTypes';
 import { DIAGRAM_THEMES } from '../theme/themes';
 import type { DiagramTheme } from '../theme/types';
 import type { PortSpec } from '../types';

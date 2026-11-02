@@ -2,7 +2,7 @@
 import { pointAlongPath, type Vec2 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from '../edge';
 import { LABEL_DERIVE_POSE } from '../label';
-import type { DiagramData, DiagramSpec } from '../fromData';
+import type { DiagramData, DiagramSpec } from '../dataTypes';
 
 type Rect = { x: number; y: number; width: number; height: number };
 

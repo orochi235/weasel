@@ -1,6 +1,6 @@
 /** What every branch symbol is built from: its types, where its ports go, and
  *  the diamond each one falls back to. */
-import type { DataNode, NodeStyle } from '../fromData';
+import type { DataNode, NodeStyle } from '../dataTypes';
 import type { DataMark } from '../marks';
 import type { PortAnchor, PortSpec } from '../types';
 import { splitProblem } from './check';

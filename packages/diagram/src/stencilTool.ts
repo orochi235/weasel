@@ -10,7 +10,7 @@ import {
 import type { MeasureRowText } from './body';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
-import type { NodeStyle } from './fromData';
+import type { NodeStyle } from './dataTypes';
 import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
 import { roleStyle } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';

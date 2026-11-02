@@ -4,7 +4,7 @@ import { RIGID_POSE_COMPOSITION, worldPosesOf, type PlacedSpec, type RectPose } 
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
 import type { ContainerEdit, DeleteReport, LabelMove, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
-import type { DataEdge, DiagramSpec } from '../fromData';
+import type { DataEdge, DiagramSpec } from '../dataTypes';
 import {
   addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
 } from './edit';

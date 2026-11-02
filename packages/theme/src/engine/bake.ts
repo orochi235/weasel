@@ -1,7 +1,7 @@
 import { deepEqual } from '@weasel-js/registry';
 import { enumerateSelections, fullSelection, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
 import { tokenAt } from '../chainTokens.ts';
-import type { SerializableColorList } from '../colorList.ts';
+import type { SerializableColorList } from '../colorListItems.ts';
 import type { ThemeDefinition } from '../definition.ts';
 import type { RawToken } from '../dtcg/types.ts';
 import { derive } from './derive.ts';

@@ -2,7 +2,7 @@ import { colorLiteralToHex, type ColorSource, type Palette } from '@weasel-js/pa
 import React, { createContext, useCallback, useContext, useMemo, useRef, useLayoutEffect } from 'react';
 import { isDev } from '@weasel-js/registry';
 import { applyTheme } from './applyTheme';
-import { themeTints, type ColorList } from './colorList';
+import { themeTints, type ColorList } from './colorListItems';
 import { colorSourceCss, colorSourceLiteral } from './colorSource';
 import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';

@@ -17,7 +17,7 @@ import {
 import { moveItems, nudgeGap } from '@weasel-js/ui-logic';
 import { diagramContainerOf } from './containers/trait';
 import { worldRectOf } from './overlays';
-import type { DiagramSceneData } from './fromData';
+import type { DiagramSceneData } from './dataTypes';
 import { reorderContribution, sequenceSlots, type ReorderSlots } from './reorder';
 import { carriedWith, reorderTargetOf, type ReorderTarget } from './reorderModel';
 

@@ -1,5 +1,5 @@
 import { RIGID_POSE_COMPOSITION, worldPosesOf, type DerivedDep, type PoseComposition, type RectPose } from '@weasel-js/core';
-import type { DiagramSpec } from './fromData';
+import type { DiagramSpec } from './dataTypes';
 
 /** Where each of `specs` draws, by id: its pose folded through the containers above it under `composition`, which
  *  must be the one `diagramScene` was given (default, as there, {@link RIGID_POSE_COMPOSITION}). */

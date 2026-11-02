@@ -21,7 +21,8 @@ import {
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText, RowTextStyle } from './body';
-import type { DiagramSpec, DiagramTextStyle, NodeStyle } from './fromData';
+import type { DiagramTextStyle } from './fromData';
+import type { DiagramSpec, NodeStyle } from './dataTypes';
 import { ANCHOR_DERIVE_POSE } from './group';
 import type { Bounds } from './outline';
 import { DIAGRAM_TRAIT_KEY } from './trait';

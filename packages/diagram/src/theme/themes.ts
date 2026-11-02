@@ -1,4 +1,4 @@
-import type { NodeStyle } from '../fromData';
+import type { NodeStyle } from '../dataTypes';
 import type { DiagramTheme } from './types';
 
 const SANS = { family: 'sans-serif', size: 12 };

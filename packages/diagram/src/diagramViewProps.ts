@@ -5,7 +5,7 @@ import type { CanConnect } from './connect';
 import type { CanReparent } from './containers/canDropInto';
 import type { CanDropItem, ItemDrop } from './itemDrop';
 import type { DiagramContributionOptions } from './contribution';
-import type { DataEdge, DiagramSpec } from './fromData';
+import type { DataEdge, DiagramSpec } from './dataTypes';
 import type { DiagramLabel } from './labelTrait';
 import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';

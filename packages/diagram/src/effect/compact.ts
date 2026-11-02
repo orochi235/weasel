@@ -1,4 +1,4 @@
-import type { DataEdge, DataNode, DiagramRouter, EdgeStyle } from '../fromData';
+import type { DataEdge, DataNode, DiagramRouter, EdgeStyle } from '../dataTypes';
 import type { PortSpec } from '../types';
 import {
   LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups,

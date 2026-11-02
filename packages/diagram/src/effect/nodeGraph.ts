@@ -1,4 +1,4 @@
-import type { DiagramRouter } from '../fromData';
+import type { DiagramRouter } from '../dataTypes';
 import {
   LOOK_THEME, boxNode, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups, uniqueStages, wireEdges,
   type EffectLook, type LookThemeOptions, type RunRowOptions,

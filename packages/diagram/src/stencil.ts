@@ -7,7 +7,7 @@ import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
-import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './fromData';
+import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './dataTypes';
 import { NODE_STROKE_WIDTH } from './dataTypes';
 import { rowTextStyle } from './rowStyle';
 import type { IconRef } from '@weasel-js/icons';

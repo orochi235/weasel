@@ -1,5 +1,5 @@
 import type { AxisDefs, Varying } from './axes.ts';
-import type { SerializableColorList } from './colorList.ts';
+import type { SerializableColorList } from './colorListItems.ts';
 import type { TokenValue } from './dtcg/types.ts';
 
 /** A number, or `{seeds.name}`. */

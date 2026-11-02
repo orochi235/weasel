@@ -3,7 +3,7 @@
  * it draws around them.
  */
 import type { GroupInset } from './cluster';
-import type { DataGroup, DiagramSceneData, DiagramSpec, NodeStyle } from './fromData';
+import type { DataGroup, DiagramSceneData, DiagramSpec, NodeStyle } from './dataTypes';
 import { ANCHOR_DERIVE_POSE, GROUP_DERIVE_POSE, boxAround, type DiagramAnchor } from './group';
 import { nestGroups } from './groupTree';
 

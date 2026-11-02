@@ -11,7 +11,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
 import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute, samePoints, type DiagramEdge, type EdgeEnd } from './edgeTrait';
-import type { DiagramSceneData, DiagramSpec } from './fromData';
+import type { DiagramSceneData, DiagramSpec } from './dataTypes';
 import type { LayoutPorts } from './layout';
 import { readRegions, regionChanges, type ContainerEdit, type RegionStanding } from './regionSync';
 import { isPinned } from './trait';

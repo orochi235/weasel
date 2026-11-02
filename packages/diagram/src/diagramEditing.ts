@@ -21,7 +21,7 @@ import { diagramContainerOf, titleIdOf } from './containers/trait';
 import { diagramLabelDrag, diagramPorts, diagramWaypoints } from './contribution';
 import { editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
-import type { DiagramSpec } from './fromData';
+import type { DiagramSpec } from './dataTypes';
 import type { ParticipantSource } from './portAffordance';
 import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';

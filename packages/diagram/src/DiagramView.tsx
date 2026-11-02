@@ -21,7 +21,7 @@ import { createSpecLabelPlacer } from './labels/specLabels';
 import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
 import { withDiagramRegistry } from './edge';
-import type { DiagramSceneData, DiagramSpec } from './fromData';
+import type { DiagramSceneData, DiagramSpec } from './dataTypes';
 import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';

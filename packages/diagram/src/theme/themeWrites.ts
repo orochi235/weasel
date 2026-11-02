@@ -3,7 +3,7 @@
  * text row, connector, label, and off-page tag, as new node `data`. A color named in the
  * owner's `ownStyle` is the author's, and stays.
  */
-import type { NodeStyle } from '../fromData';
+import type { NodeStyle } from '../dataTypes';
 import { roleEdgeStyle, roleStyle, themeLabelFamily, themeLabelFont } from './resolve';
 import type { DiagramTheme, FontField, StyleField } from './types';
 

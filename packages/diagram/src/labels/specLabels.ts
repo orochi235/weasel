@@ -8,7 +8,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf } from '../containers/trait';
 import { edgeRouter } from '../edge';
 import { diagramEdgeOf } from '../edgeTrait';
-import type { DiagramSpec } from '../fromData';
+import type { DiagramSpec } from '../dataTypes';
 import { diagramGroupOf } from '../group';
 import { diagramLabelOf, type DiagramLabel } from '../labelTrait';
 import { diagramNodeOf } from '../trait';

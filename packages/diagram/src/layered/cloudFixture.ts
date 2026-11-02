@@ -1,5 +1,5 @@
 /** Test fixture: a cloud architecture the layered layout once drew badly. */
-import type { DiagramData } from '../fromData';
+import type { DiagramData } from '../dataTypes';
 
 const fns = (group: string, ...ids: string[]) => ids.map((id) => ({ id, lines: [id], group }));
 

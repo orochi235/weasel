@@ -3,7 +3,8 @@
  *  drawn from. */
 import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
+import { diagramScene, edgeIdOf } from '../fromData';
+import { type DiagramSpec } from '../dataTypes';
 import { portOf } from '../ports';
 import type { EditorLook, EditorScene } from './editorMapping';
 import type { EffectDoc, LookRoute, LookRoutes } from './types';

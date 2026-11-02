@@ -3,7 +3,7 @@ import { polylineFromPoints } from '@weasel-js/core';
 import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
-import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './fromData';
+import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './dataTypes';
 import { ownEdgeStyle, withColors } from './dataColors';
 import { END_LABEL_PLACEMENT, edgeLabelSpec, endLabelIdOf, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';

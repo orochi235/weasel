@@ -1,7 +1,7 @@
 import type { Stroke } from '@weasel-js/core';
 import { labelStyleOf } from '../edgeLabel';
 import { edgeStrokeOf } from '../edgeStroke';
-import type { EdgeStyle, NodeStyle } from '../fromData';
+import type { EdgeStyle, NodeStyle } from '../dataTypes';
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_THEME_KEY, type DiagramTheme } from './types';
 

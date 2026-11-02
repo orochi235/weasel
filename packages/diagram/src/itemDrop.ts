@@ -23,7 +23,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import { useMemo, type PointerEvent as ReactPointerEvent } from 'react';
-import type { DiagramSceneData } from './fromData';
+import type { DiagramSceneData } from './dataTypes';
 import { itemDropTargetAt, outlineOf, type ItemDropTarget } from './itemDropTarget';
 import type { ParticipantSource } from './portAffordance';
 

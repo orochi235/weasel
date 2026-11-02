@@ -1,6 +1,7 @@
 import { createScene, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
-import { diagramScene, edgeIdOf, type DiagramData } from '../fromData';
+import { diagramScene, edgeIdOf } from '../fromData';
+import { type DiagramData } from '../dataTypes';
 
 export const AB = edgeIdOf({ from: 'a', to: 'b', label: 'yes' });
 export const BC = edgeIdOf({ from: 'b', to: 'c' });

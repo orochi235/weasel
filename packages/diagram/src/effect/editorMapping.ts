@@ -1,5 +1,6 @@
 import type { DataContainer } from '../dataTypes';
-import { edgeIdOf, type DataEdge } from '../fromData';
+import { edgeIdOf } from '../fromData';
+import { type DataEdge } from '../dataTypes';
 import { drawableWires, type EffectLookResult } from './draw';
 import { ensureWireIds } from './edit';
 import { lanes, type LanesOptions } from './lanes';

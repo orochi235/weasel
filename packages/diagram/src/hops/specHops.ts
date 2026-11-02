@@ -7,7 +7,7 @@ import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { edgeRouter } from '../edge';
 import { diagramEdgeOf } from '../edgeTrait';
-import type { DiagramSpec } from '../fromData';
+import type { DiagramSpec } from '../dataTypes';
 import { edgeHops } from './crossings';
 import { withHopsData } from './sceneEdges';
 import { specDeps, specWorldPoses } from '../specWorld';

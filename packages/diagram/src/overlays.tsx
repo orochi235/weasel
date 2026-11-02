@@ -21,7 +21,7 @@ import { useLatest } from '@weasel-js/react';
 import { clampRectWithin, placeRect, type Placement } from '@weasel-js/geom';
 import { useCallback, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { diagramEdgeOf } from './edgeTrait';
-import type { DiagramSceneData } from './fromData';
+import type { DiagramSceneData } from './dataTypes';
 
 /** One piece of DOM held against a node, a group or an edge. */
 export interface DiagramOverlay {

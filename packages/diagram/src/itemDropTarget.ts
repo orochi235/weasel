@@ -8,7 +8,7 @@ import { nearestGap } from '@weasel-js/ui-logic';
 import { bodyAt } from './connectTargets';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { diagramContainerOf } from './containers/trait';
-import type { DiagramSceneData } from './fromData';
+import type { DiagramSceneData } from './dataTypes';
 import { worldRectOf } from './overlays';
 import type { ParticipantSource } from './portAffordance';
 import { sequenceSlots, type ReorderGap } from './reorder';

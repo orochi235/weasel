@@ -7,10 +7,8 @@ import type { Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText } from '../body';
 import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
-import {
-  diagramScene, edgeIdOf, LABEL_PLACEMENT, type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramRouter,
-  type DiagramSceneOptions, type DiagramSpec, type EdgeStyle,
-} from '../fromData';
+import { diagramScene, edgeIdOf, LABEL_PLACEMENT } from '../fromData';
+import { type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramRouter, type DiagramSceneOptions, type DiagramSpec, type EdgeStyle } from '../dataTypes';
 import { nestGroups } from '../groupTree';
 import { labelCenter } from '../label';
 import { portSitesOf } from '../ports';

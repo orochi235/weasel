@@ -7,7 +7,7 @@ import { RIGID_POSE_COMPOSITION, type PoseComposition, type RectPose } from '@we
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
-import type { DiagramSpec } from '../fromData';
+import type { DiagramSpec } from '../dataTypes';
 import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf } from '../ports';
 import { diagramNodeOf } from '../trait';

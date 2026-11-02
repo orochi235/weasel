@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/registry';
 import { isByAxis, type AxisDefs, type Varying } from './axes.ts';
-import type { SerializableColorList } from './colorList.ts';
+import type { SerializableColorList } from './colorListItems.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
 import type { RawToken, TokenValue } from './dtcg/types.ts';
 import { BAKED_THEMES } from './generated/themes.ts';

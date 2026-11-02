@@ -4,7 +4,7 @@
  * had, so a chart fed a run every frame repaints only what changed.
  */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, bitmapSrc } from '@weasel-js/core';
-import type { DiagramSpec } from '../fromData';
+import type { DiagramSpec } from '../dataTypes';
 import {
   NO_VALUE, PROBLEM_COLOR, previewRowId, shownPorts, stageStyle, uniqueStages, valueRowId, type EffectLookResult,
 } from './draw';

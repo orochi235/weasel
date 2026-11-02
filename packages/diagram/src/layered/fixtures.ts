@@ -1,5 +1,5 @@
 /** Test fixtures: diagrams the layered layout is measured on. */
-import type { DiagramData } from '../fromData';
+import type { DiagramData } from '../dataTypes';
 
 const node = (id: string, ...lines: string[]) => ({ id, lines: lines.length > 0 ? lines : [id] });
 
