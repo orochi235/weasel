@@ -30,7 +30,7 @@ import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { type ClipTable, collectClipPaths, clipFor } from './readClips';
 import { readPaint, readStroke, isNonScalingStroke } from './readPaint';
-import { isStrokeOutline, unwrapStrokeGroup, withVariableWidth } from './variableWidthSvg';
+import { isStrokeOutline, unwrapStrokeGroup, withOutlinedStroke } from './strokeOutlineSvg';
 import { parseImageElement, parseCroppedImage } from './readImage';
 import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
@@ -341,7 +341,7 @@ function parseElement(
   }
   const leafStyle = deriveStyle(style, el);
   const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked);
-  const ownStroke = withVariableWidth(el, readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el)));
+  const ownStroke = withOutlinedStroke(el, readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el)));
   const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked);
   if (stroke && typeof stroke.width === 'number' && isNonUniform(baked)) {
     onWarn(`<${tag}> stroke sits under a skew or non-uniform scale; its width takes the uniform part only`);

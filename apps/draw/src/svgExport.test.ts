@@ -565,8 +565,8 @@ describe('gradient fills', () => {
   });
 });
 
-describe('what the SVG cannot carry', () => {
-  it('reports an inner-aligned stroke through onWarn instead of dropping it silently', async () => {
+describe('a stroke aligned off its edge', () => {
+  it('writes an inner-aligned stroke as its outline, with nothing to report', async () => {
     const scene = fakeScene({
       r: {
         kind: 'mark',
@@ -579,12 +579,12 @@ describe('what the SVG cannot carry', () => {
       },
     }, ['r']);
     const warnings: string[] = [];
-    await sceneToSvgString(scene, {
+    const svg = await sceneToSvgString(scene, {
       filename: 'a', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]),
       backgroundColor: '#ffffff', onWarn: (w) => warnings.push(w),
     });
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toContain('inner');
+    expect(warnings).toEqual([]);
+    expect(svg).toContain('wzl:stroke-align="inner"');
   });
 });
 

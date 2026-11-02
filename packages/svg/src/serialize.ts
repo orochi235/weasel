@@ -23,8 +23,8 @@ import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
 import { withTrimsDrawn } from './trimmedStroke';
 import {
-  hasVariableWidth, strokeGroupXml, strokeOutlineXml, variableWidthAttrs, writesVariableWidth,
-} from './variableWidthSvg';
+  writesOutline, strokeGroupXml, strokeOutlineXml, outlinedStrokeAttrs, writesOutlines,
+} from './strokeOutlineSvg';
 import { textXml } from './serializeText';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
@@ -46,7 +46,7 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
   const rootAttrs: string[] = [`xmlns="http://www.w3.org/2000/svg"`];
   // Only when something needs it, so a document of ordinary paints carries no
   // trace of it. The pre-pass above has seen every paint, so this answer is final.
-  if ((registry.usesPrivateNamespace() || writesVariableWidth(nodes)) && namespaces[WEASEL_NS_PREFIX] == null) {
+  if ((registry.usesPrivateNamespace() || writesOutlines(nodes)) && namespaces[WEASEL_NS_PREFIX] == null) {
     rootAttrs.push(`xmlns:${WEASEL_NS_PREFIX}="${WEASEL_NS}"`);
   }
   for (const [prefix, uri] of Object.entries(namespaces)) {
@@ -139,7 +139,7 @@ function nodeXml(
   const kind = kindXml(node, registry, namespaces, warn, layoutOf, painted);
   const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, node.inherits, painted) : kind;
   if (!node.hidden) return xml;
-  // A variable-width stroke's outline follows its path, and hides with it.
+  // An outlined stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
     .replace(/<path (?=[^>]*:role="stroke-outline")/, '<path display="none" ');
 }
@@ -239,17 +239,17 @@ function pathXml(
   if (node.path.kind === 'polygon' && node.path.fillRule === 'evenodd') {
     attrs.push(`fill-rule="evenodd"`);
   }
-  const varies = hasVariableWidth(node.stroke);
+  const outlined = writesOutline(node.stroke);
   if (node.stroke) {
-    // A variable width's outline is exact on either side of the edge, so SVG's
+    // An outline is exact on either side of the edge, so SVG's
     // missing alignment loses nothing.
-    const strokeAttrs = strokeAttrsFor(node.stroke, registry, varies ? () => {} : warn);
-    for (const a of varies ? variableWidthAttrs(node.stroke, strokeAttrs) : strokeAttrs) attrs.push(a);
+    const strokeAttrs = strokeAttrsFor(node.stroke, registry, outlined ? () => {} : warn);
+    for (const a of outlined ? outlinedStrokeAttrs(node.stroke, strokeAttrs) : strokeAttrs) attrs.push(a);
   } else {
     attrs.push('stroke="none"');
   }
   const opacity = node.opacity != null && node.opacity !== 1 ? `opacity="${trimNumber(node.opacity)}"` : null;
-  if (opacity && !varies) attrs.push(opacity);
+  if (opacity && !outlined) attrs.push(opacity);
   const transform = rotationAttr(node);
   if (transform) attrs.push(transform);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
@@ -257,7 +257,7 @@ function pathXml(
   const xml = metaEls
     ? `<path ${attrs.join(' ')}${metaAttrs}>${metaEls}</path>`
     : `<path ${attrs.join(' ')}${metaAttrs}/>`;
-  if (!varies) return xml;
+  if (!outlined) return xml;
   const both = xml + strokeOutlineXml(node.path, node.stroke!, strokePaintAsFillAttrs(node.stroke!, registry), transform);
   return opacity ? strokeGroupXml(opacity, both) : both;
 }

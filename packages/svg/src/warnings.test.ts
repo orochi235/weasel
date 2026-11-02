@@ -86,11 +86,9 @@ describe('serializeSvg says what SVG 1.1 cannot carry', () => {
   });
   const black = { kind: 'solid' as const, color: '#000000' };
 
-  it('warns once for a path stroke aligned off its edge, however many share it', () => {
+  it('does not warn for a path stroke aligned off its edge, which is written as its outline', () => {
     const stroke: SvgStroke = { paint: { kind: 'solid', color: '#000' }, width: 2, align: 'inner' };
-    const w = warningsFor([rect(stroke), rect(stroke)]);
-    expect(w).toHaveLength(1);
-    expect(w[0]).toContain('inner');
+    expect(warningsFor([rect(stroke), rect(stroke)])).toEqual([]);
   });
 
   it('warns for a text stroke, or a run stroke, aligned off its edge', () => {

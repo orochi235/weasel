@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PathBuilder } from '@weasel-js/geom';
 import { parseSvg, serializeSvg } from './index';
-import type { SvgPathNode } from './types';
+import type { SvgPathNode, SvgStroke } from './types';
 
 const WIDTHS = [2, 6];
 const NIB = { angle: 0.5, ratio: 0.25 };
@@ -111,3 +111,43 @@ describe('a variable-width stroke in SVG', () => {
     expect(back.stroke?.vertexWidths).toEqual(sided);
   });
 });
+
+describe('a stroke aligned inside or outside its edge in SVG', () => {
+  const SQUARE = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
+  const aligned = (align: 'inner' | 'center' | 'outer', extra: Partial<SvgStroke> = {}) =>
+    node({ path: SQUARE, stroke: { paint: { kind: 'solid', color: '#000' }, width: 10, align, ...extra } });
+  const outlineBox = (svg: string) => {
+    const d = /<path d="([^"]*)"[^>]*wzl:role="stroke-outline"/.exec(svg)![1];
+    const nums = d.match(/-?\d+(\.\d+)?/g)!.map(Number);
+    const xs = nums.filter((_, i) => i % 2 === 0);
+    return [Math.min(...xs), Math.max(...xs)];
+  };
+
+  it('writes its outline on the side of the edge it sits, with no warning', () => {
+    const warnings: string[] = [];
+    const inner = serializeSvg([aligned('inner')], { onWarn: (w) => warnings.push(w) });
+    const outer = serializeSvg([aligned('outer')], { onWarn: (w) => warnings.push(w) });
+    expect(outlineBox(inner)).toEqual([0, 100]);
+    expect(outlineBox(outer)).toEqual([-10, 110]);
+    expect(warnings).toEqual([]);
+  });
+
+  it('reads its alignment back, the outline dropped', () => {
+    const { nodes } = parseSvg(serializeSvg([aligned('outer')]));
+    expect(nodes).toHaveLength(1);
+    expect((nodes[0] as SvgPathNode).stroke).toMatchObject({ width: 10, align: 'outer' });
+  });
+
+  it('cuts a trimmed aligned stroke on its own side, as the canvas does', () => {
+    const svg = serializeSvg([aligned('inner', { trim: { end: 0.25 } })]);
+    const [lo, hi] = outlineBox(svg);
+    expect(lo).toBeGreaterThanOrEqual(0);
+    expect(hi).toBeLessThanOrEqual(100);
+    expect(svg).toContain('stroke-width="0"');
+  });
+
+  it('leaves a centered stroke as SVG draws it', () => {
+    expect(serializeSvg([aligned('center')])).not.toContain('stroke-outline');
+  });
+});
+

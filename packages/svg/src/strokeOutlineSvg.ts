@@ -1,10 +1,11 @@
 /**
- * A stroke whose width varies — per-vertex widths, a nib, or both — in SVG,
- * which has no variable width.
+ * A stroke SVG cannot draw natively — one whose width varies (per-vertex
+ * widths, a nib, or both), or one aligned inside or outside its edge — written
+ * as its outline.
  *
  * The path is written with its stroke attributes as usual but at
  * `stroke-width="0"`, which SVG draws as no stroke, and the real width, the
- * per-vertex widths, and the nib ride in the private namespace. Straight after
+ * per-vertex widths, the nib, and the alignment ride in the private namespace. Straight after
  * it comes the stroke's outline as a filled path in the stroke's paint, marked
  * so the parser drops it and reads the stroke back off the path instead. The
  * outline draws the marker heads, so the path carries its markers in the
@@ -21,6 +22,7 @@ import type { SvgNode, SvgStroke } from './types';
 
 const VERTEX_WIDTHS = 'vertex-widths';
 const NIB = 'nib';
+const ALIGN = 'stroke-align';
 const WIDTH = 'stroke-width';
 const ROLE = 'role';
 const OUTLINE = 'stroke-outline';
@@ -36,14 +38,15 @@ function attrOf(el: Element, name: string): string | null {
 }
 
 /** Whether `stroke` is written as an outline. */
-export function hasVariableWidth(stroke: SvgStroke | undefined): boolean {
-  return (stroke?.vertexWidths?.length ?? 0) > 0 || stroke?.nib !== undefined;
+export function writesOutline(stroke: SvgStroke | undefined): boolean {
+  return (stroke?.vertexWidths?.length ?? 0) > 0 || stroke?.nib !== undefined
+    || stroke?.align === 'inner' || stroke?.align === 'outer';
 }
 
 /** Whether any path under `nodes` writes an outline, and so needs the
  *  private namespace declared. */
-export function writesVariableWidth(nodes: readonly SvgNode[]): boolean {
-  return nodes.some((n) => (n.kind === 'group' ? writesVariableWidth(n.children) : n.kind === 'path' && hasVariableWidth(n.stroke)));
+export function writesOutlines(nodes: readonly SvgNode[]): boolean {
+  return nodes.some((n) => (n.kind === 'group' ? writesOutlines(n.children) : n.kind === 'path' && writesOutline(n.stroke)));
 }
 
 /** One entry as a token: a width, `left/right` for a pair, `-` for unset. */
@@ -61,9 +64,9 @@ function widthOfToken(token: string): VertexWidth {
   return { left: side(left), right: side(right) };
 }
 
-/** `strokeAttrs` for a variable-width stroke: the drawn width zeroed, the
+/** `strokeAttrs` for an outlined stroke: the drawn width zeroed, the
  *  markers moved aside, and what the outline was made from beside them. */
-export function variableWidthAttrs(stroke: SvgStroke, strokeAttrs: readonly string[]): string[] {
+export function outlinedStrokeAttrs(stroke: SvgStroke, strokeAttrs: readonly string[]): string[] {
   const width = typeof stroke.width === 'number' ? stroke.width : stroke.width.px;
   const out = [
     ...strokeAttrs.map((a) => (a.startsWith('stroke-width=') ? 'stroke-width="0"'
@@ -78,10 +81,11 @@ export function variableWidthAttrs(stroke: SvgStroke, strokeAttrs: readonly stri
     // Unrounded: an angle in radians is rarely a short decimal.
     out.push(`${WEASEL_NS_PREFIX}:${NIB}="${String(stroke.nib.angle)} ${String(stroke.nib.ratio)}"`);
   }
+  if (stroke.align === 'inner' || stroke.align === 'outer') out.push(`${WEASEL_NS_PREFIX}:${ALIGN}="${stroke.align}"`);
   return out;
 }
 
-/** The outline element drawn for a variable-width stroke along `path`.
+/** The outline element drawn for an outlined stroke along `path`.
  *  `fillAttrs` paint it in the stroke's paint; `transform` is the path's own. */
 export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: readonly string[], transform: string | null): string {
   const kit: Stroke = {
@@ -119,15 +123,15 @@ export function unwrapStrokeGroup(el: Element, node: SvgNode | SvgNode[] | null)
   return node.opacity != null ? { ...only, opacity: node.opacity * (only.opacity ?? 1) } : only;
 }
 
-/** Whether `el` is an outline written for a variable-width stroke, which the
+/** Whether `el` is an outline written for an outlined stroke, which the
  *  path before it already carries. */
 export function isStrokeOutline(el: Element): boolean {
   return attrOf(el, ROLE) === OUTLINE;
 }
 
-/** `stroke` as read off `el`, with the width, per-vertex widths, nib, and
- *  markers a variable-width stroke keeps in the private namespace restored. */
-export function withVariableWidth(el: Element, stroke: SvgStroke | undefined): SvgStroke | undefined {
+/** `stroke` as read off `el`, with the width, per-vertex widths, nib,
+ *  alignment, and markers an outlined stroke keeps in the private namespace restored. */
+export function withOutlinedStroke(el: Element, stroke: SvgStroke | undefined): SvgStroke | undefined {
   const width = parseFloat(attrOf(el, WIDTH) ?? '');
   if (!stroke || !Number.isFinite(width)) return stroke;
   const out: SvgStroke = { ...stroke, width: typeof stroke.width === 'number' ? width : { px: width } };
@@ -135,6 +139,8 @@ export function withVariableWidth(el: Element, stroke: SvgStroke | undefined): S
   if (list) out.vertexWidths = list.trim().split(/\s+/).map(widthOfToken);
   const [angle, ratio] = (attrOf(el, NIB) ?? '').trim().split(/\s+/).map(Number);
   if (Number.isFinite(angle) && Number.isFinite(ratio)) out.nib = { angle, ratio };
+  const align = attrOf(el, ALIGN);
+  if (align === 'inner' || align === 'outer') out.align = align;
   for (const [attr, field] of [['marker-start', 'markerStart'], ['marker-mid', 'markerMid'], ['marker-end', 'markerEnd']] as const) {
     const id = /^url\(\s*#([^)\s]+)\s*\)$/.exec(attrOf(el, attr)?.trim() ?? '')?.[1];
     if (id) out[field] = id;

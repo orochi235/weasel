@@ -95,10 +95,14 @@ describe('svg export bakes a stroke trim', () => {
     expect(serializeSvg([node])).not.toContain('<marker');
   });
 
-  it('measures an inner-aligned rect on its authored edge, as the canvas does', () => {
+  it('measures an inner-aligned rect on its authored edge and outlines it inside, as the canvas does', () => {
     const rect: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
-    const [p] = stroked(paths(rect, { paint: INK, width: 10, align: 'inner', trim: { end: { length: 120 } } }));
-    expect(dOf(p)).toBe('M0 0L100 0L100 20');
+    const outline = paths(rect, { paint: INK, width: 10, align: 'inner', trim: { end: { length: 120 } } })
+      .find((p) => p.includes('wzl:role="stroke-outline"'))!;
+    const nums = dOf(outline).match(/-?[\d.]+(?:e-?\d+)?/g)!.map(Number);
+    const xs = nums.filter((_, i) => i % 2 === 0), ys = nums.filter((_, i) => i % 2 === 1);
+    expect([Math.min(...xs), Math.max(...xs)]).toEqual([5, 100]);
+    expect([Math.min(...ys), Math.max(...ys)]).toEqual([0, 21]);
   });
 
   it('counts anchors in authored numbering on a cornered path', () => {

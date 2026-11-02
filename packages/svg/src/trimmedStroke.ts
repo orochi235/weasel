@@ -10,20 +10,20 @@ import {
 import { trimSpan, trimmedPath, trimmedRuns, type TrimmedPath } from '@weasel-js/stroke';
 import { drawsAsGroup, withoutEndMarkers } from './openSubpathFill';
 import type { SvgGroupNode, SvgNode, SvgPathNode, SvgStroke } from './types';
-import { hasVariableWidth } from './variableWidthSvg';
+import { writesOutline } from './strokeOutlineSvg';
 
 const NONE = { kind: 'none' } as const;
 
 /**
  * `node` with its stroke's `trim` drawn into the geometry. Untrimmed, and
- * variable-width, whose outline the trim cuts itself, it is `node` as it is;
+ * written as an outline, which the trim cuts itself, it is `node` as it is;
  * `null` when it then draws nothing at all. The result states its paint
  * outright rather than inheriting it, so the fill and the cut stroke each
  * keep their own.
  */
 export function withTrimDrawn(node: SvgPathNode): SvgPathNode | SvgGroupNode | null {
   const { stroke, inherits: _inherits, ...rest } = node;
-  if (!stroke || stroke.trim === undefined || hasVariableWidth(stroke)) return node;
+  if (!stroke || stroke.trim === undefined || writesOutline(stroke)) return node;
   const { trim, ...own } = stroke;
   // A run's own box is not the node's: a box-relative paint is placed on the whole path first.
   const bare = own.paint.kind === 'gradient'
