@@ -135,9 +135,18 @@ describe('windowPolylines', () => {
     const { polylines, table, runs: [{ polyline, fromClosed, dashPhase }] } = windowPath(authored, { start: { anchor: 3 } });
     const { anchorSources } = resolveCornersWithSources(authored);
     expect(fromClosed).toBe(true);
-    // The phase is the polyline's own length to the cut, a chord's sag short of the exact one.
-    expect(lengthAtAnchor(table, 3) - dashPhase).toBeGreaterThanOrEqual(0);
-    expect(lengthAtAnchor(table, 3) - dashPhase).toBeLessThan(0.5);
+    // The cut sits on a flattening vertex, the symmetric arc's midpoint; the phase is the
+    // untrimmed polyline's own length to that vertex.
+    const p = polylines[0].points;
+    let at = 0;
+    let own = 0;
+    for (let i = 1; i < p.length / 2 && Math.hypot(p[at * 2] - polyline.points[0], p[at * 2 + 1] - polyline.points[1]) > 1e-5; i++) {
+      own += Math.hypot(p[i * 2] - p[i * 2 - 2], p[i * 2 + 1] - p[i * 2 - 1]);
+      at = i;
+    }
+    expect(Math.hypot(p[at * 2] - polyline.points[0], p[at * 2 + 1] - polyline.points[1])).toBeLessThan(1e-5);
+    expect(dashPhase).toBeCloseTo(own, 5);
+    expect(lengthAtAnchor(table, 3)).toBeGreaterThan(dashPhase);
     // Anchor 0 sits at corner 0's arc end, where the run began, so the window ends there, as authored anchor 0.
     expect(last(polyline)).toEqual(polylines[0].points.slice(0, 2));
     // The closing edge ends at the expanded anchor dropped as a duplicate, not at the run's first.

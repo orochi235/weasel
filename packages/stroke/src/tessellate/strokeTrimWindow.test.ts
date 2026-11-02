@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { tessellateStroke } from './stroke';
-import { PATH_M, PATH_L, type Path, type PolygonPath } from '@weasel-js/geom';
+import { PATH_M, PATH_L, pathFromD, type Path, type PolygonPath } from '@weasel-js/geom';
 import { MAX_DASH_RUNS, type Stroke } from '@weasel-js/paint';
 import { strokeInsets } from '../markerInset';
 import { markerHeads } from '../markerHeads';
@@ -57,6 +57,23 @@ describe('tessellateStroke under a trim', () => {
     expect(runs[0][1]).toBeCloseTo(30, 4);
     const mid = pieces(tessellateStroke(LINE, { ...BASE, dash: [10, 10], trim: { start: 0.25 } }));
     expect(mid[0]).toEqual([25, 30]);
+  });
+
+  it('dashes a run cut mid-chord where the untrimmed stroke dashes it', () => {
+    const path = pathFromD('M10 10 C180 -40 -60 140 220 90 L300 90');
+    const dashed: Stroke = { ...BASE, dash: [7, 5] };
+    for (const flattenTolerance of [2, 0.5]) {
+      const whole = tessellateStroke(path, dashed, { flattenTolerance }).vertices;
+      const cut = tessellateStroke(path, { ...dashed, trim: { start: { length: 131.3 } } }, { flattenTolerance }).vertices;
+      // Past the first, cut dash, every vertex is one of the untrimmed stroke's.
+      let worst = 0;
+      for (let i = 18; i < cut.length; i += 2) {
+        let best = Infinity;
+        for (let j = 0; j < whole.length; j += 2) best = Math.min(best, Math.hypot(cut[i] - whole[j], cut[i + 1] - whole[j + 1]));
+        worst = Math.max(worst, best);
+      }
+      expect(worst, `tolerance ${flattenTolerance}`).toBeLessThan(1e-6);
+    }
   });
 
   it('dash solid decision ignores trim', () => {

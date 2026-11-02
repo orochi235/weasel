@@ -1,9 +1,9 @@
 import {
-  PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath, curveSpan, lengthAtCurve, pathLengthTable, runSegments,
+  PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath, lengthAtCurve, pathLengthTable, runSegments,
   splitCubicAt, splitQuadraticAt, type CurvePosition, type LengthTable, type Path,
 } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
-import { resolveTrim } from './resolveTrim';
+import { trimSpan } from './trimSpan';
 
 const EPS = 1e-9;
 
@@ -27,10 +27,9 @@ export interface TrimmedPath {
  */
 export function trimmedPath(path: Path, trim: StrokeTrim | undefined): TrimmedPath | null {
   if (trim === undefined) return { path, dashPhases: [], fromClosed: [] };
-  const table = pathLengthTable(path);
-  const lengths = resolveTrim(table, trim);
-  const span = lengths && curveSpan(table, lengths);
+  const span = trimSpan(path, trim);
   if (!span) return null;
+  const table = pathLengthTable(path);
   const out: TrimmedPath = { path, dashPhases: [], fromClosed: [] };
   const commands: number[] = [];
   const coords: number[] = [];

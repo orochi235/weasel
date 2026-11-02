@@ -43,13 +43,21 @@ export function windowPolylines(
     const base = pl.closed ? opened(pl) : pl;
     const cut = trimPolyline(base, lo, total - hi);
     if (!cut) continue;
+    let dashPhase = lo;
     if (cut !== base) {
       // The chord a cut lands on only passes near the curve; the curve's own point ends the run.
-      const k = cut.points.length - 2;
-      if (head && lo > 0) [cut.points[0], cut.points[1]] = [head.x, head.y];
-      if (tail && total - hi > 0) [cut.points[k], cut.points[k + 1]] = [tail.x, tail.y];
+      const q = cut.points;
+      const k = q.length - 2;
+      if (head && lo > 0) {
+        // The first chord changes length with its start, so the phase is set by the first vertex kept,
+        // which must fall in the pattern where the untrimmed stroke puts it.
+        const next = (x: number, y: number) => (k >= 2 ? Math.hypot(q[2] - x, q[3] - y) : 0);
+        dashPhase = Math.max(0, lo + next(q[0], q[1]) - next(head.x, head.y));
+        [q[0], q[1]] = [head.x, head.y];
+      }
+      if (tail && total - hi > 0) [q[k], q[k + 1]] = [tail.x, tail.y];
     }
-    out.push({ polyline: cut, fromClosed: pl.closed, dashPhase: lo });
+    out.push({ polyline: cut, fromClosed: pl.closed, dashPhase });
   }
   return out;
 }
