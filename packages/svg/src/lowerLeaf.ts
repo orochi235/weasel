@@ -9,6 +9,7 @@ import {
 } from './shapes';
 import { hasOpenSubpath, worldCoords } from '@weasel-js/geom';
 import type { Matrix } from './types';
+import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { readLength } from './lengths';
 
 // Every tag set here is compared against a lowercased `tagName`.
@@ -40,7 +41,8 @@ export function lowerLeaf(
   if (tag === 'polyline') return svgFilled(polylineToPath(parsePoints(el.getAttribute('points') ?? ''), m));
   if (tag === 'polygon') return polygonToPath(parsePoints(el.getAttribute('points') ?? ''), m);
   if (tag === 'path') {
-    const d = el.getAttribute('d') ?? '';
+    // A shaft the serializer cut back for its heads carries the path as authored.
+    const d = el.getAttributeNS(WEASEL_NS, 'd') ?? el.getAttribute(`${WEASEL_NS_PREFIX}:d`) ?? el.getAttribute('d') ?? '';
     if (!d.trim()) {
       onWarn('<path> with empty d=');
       return null;

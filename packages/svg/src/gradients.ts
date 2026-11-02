@@ -6,9 +6,9 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import { getPaintKind, getMarker, isPatternPaint, isTileKind, resolveMarkerSize } from '@weasel-js/core';
+import { getPaintKind, getMarker, isPatternPaint, isTileKind } from '@weasel-js/core';
 import type {
-  Paint, GradStop, PaintUnits, MarkerEntry, MarkerPaint, MarkerRef, Path, ScreenLength,
+  Paint, GradStop, PaintUnits, MarkerRef, Path,
 } from '@weasel-js/core';
 import { ownProp, ownValue } from './cascade';
 import { readProperty } from './properties';
@@ -18,7 +18,7 @@ import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
 import { serializePathD } from './path-serializer';
-import { RAD_TO_DEG } from '@weasel-js/geom';
+import { defUsesPrivateNamespace, markerDefOf, markerDefXml, type MarkerDef } from './markerDefs';
 
 /** Collected gradient definitions, keyed by element id. */
 export type GradientTable = Map<string, Paint>;
@@ -377,13 +377,11 @@ export class PaintServerRegistry {
   private order: Paint[] = [];
   private counter = 0;
 
-  // Marker defs referenced by any stroke, by `<defs>` id in first-use order.
-  // An unsized reference's id is the marker key itself, not a minted counter
-  // id: `parseSvg` reads a `marker-end="url(#id)"` fragment back as the marker
-  // key directly when the registry knows it, so a synthetic id would come
-  // back as a stranger. A sized one gets a def of its own, stamped with its
-  // key and size so the parser can read the reference back whole.
-  private markers = new Map<string, { key: string; size?: ScreenLength }>();
+  // Marker defs referenced by any stroke, by `<defs>` id in first-use order;
+  // `markerDefOf` says what each id is.
+  private markers = new Map<string, MarkerDef>();
+  // Whether an element was written with a `wzl:` attribute of its own.
+  private privateAttrs = false;
 
   // Clip paths, in first-use order. Identity, not value: two groups clipped by
   // equal outlines get a def each, which costs bytes and misleads nobody.
@@ -421,21 +419,22 @@ export class PaintServerRegistry {
    *  the root has to declare {@link WEASEL_NS}. */
   usesPrivateNamespace(): boolean {
     return this.order.some((paint) => !hasNativeSvgForm(paint) || usesInterpolateAttr(paint))
-      || [...this.markers.values()].some((m) => m.size !== undefined || writesInset(getMarker(m.key)));
+      || this.privateAttrs || [...this.markers.values()].some(defUsesPrivateNamespace);
   }
 
-  /** The `<defs>` id for a marker reference — the key itself when it has no
-   *  size, else the key suffixed with the size. `undefined` when nothing is
-   *  registered under the key, so a caller emits no attribute at all rather
-   *  than a `url(#…)` pointing at a def that will never be written. */
-  markerId(ref: MarkerRef): string | undefined {
-    const key = typeof ref === 'string' ? ref : ref.key;
-    const size = typeof ref === 'string' ? undefined : ref.size;
-    if (getMarker(key) === undefined) return undefined;
-    const id = size === undefined
-      ? key
-      : `${key}-s${typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}`;
-    if (!this.markers.has(id)) this.markers.set(id, size === undefined ? { key } : { key, size });
+  /** Note that the body uses the private namespace for an attribute of its own. */
+  usePrivateNamespace(): void {
+    this.privateAttrs = true;
+  }
+
+  /** The `<defs>` id for a marker reference, `seated` for a start or end head
+   *  the line was cut back for. `undefined` when nothing is registered under
+   *  the key, so a caller emits no attribute at all rather than a `url(#…)`
+   *  pointing at a def that will never be written. */
+  markerId(ref: MarkerRef, seated = false): string | undefined {
+    if (getMarker(typeof ref === 'string' ? ref : ref.key) === undefined) return undefined;
+    const { id, def } = markerDefOf(ref, seated);
+    if (!this.markers.has(id)) this.markers.set(id, def);
     return id;
   }
 
@@ -459,14 +458,14 @@ export class PaintServerRegistry {
     for (const paint of this.order) {
       parts.push(paintServerXml(this.byPaint.get(paint)!, paint, onWarn));
     }
-    for (const [id, { key, size }] of this.markers) {
-      const entry = getMarker(key);
+    for (const [id, def] of this.markers) {
+      const entry = getMarker(def.key);
       if (!entry) continue;
       if (entry.toSvg) {
-        if (size !== undefined) onWarn?.(`marker "${key}" writes its own <marker> def, which cannot carry a reference's size; written at its own size`);
+        if (def.size !== undefined) onWarn?.(`marker "${def.key}" writes its own <marker> def, which cannot carry a reference's size; written at its own size`);
         parts.push(entry.toSvg(id, entry));
       } else {
-        parts.push(defaultMarkerXml(id, entry, onWarn, key, size));
+        parts.push(markerDefXml(id, entry, def, onWarn));
       }
     }
     for (const path of this.clips) {
@@ -479,67 +478,6 @@ export class PaintServerRegistry {
     parts.push('</defs>');
     return parts.join('');
   }
-}
-
-/** Whether `entry`'s def carries `wzl:inset`: SVG has no way to say how far
- *  a line stops short of its marker, so the parser needs it spelled out. */
-function writesInset(entry: MarkerEntry | undefined): boolean {
-  return entry !== undefined && !entry.toSvg && (entry.inset ?? 0) !== 0;
-}
-
-/** The `<marker>` def for an entry with no `toSvg` of its own. Unsized, one
- *  marker unit is one stroke width, as the kit draws it. A sized reference is
- *  drawn in user space at `resolveMarkerSize`'s reading of its size, and
- *  records its key and size in the private namespace for the parser. The
- *  inset goes there too, in marker units either way. */
-function defaultMarkerXml(
-  id: string, entry: MarkerEntry, onWarn?: (m: string) => void, key?: string, size?: ScreenLength,
-): string {
-  const name = key ?? id;
-  const unit = size === undefined ? 1 : resolveMarkerSize({ key: name, size }, 1);
-  const path = entry.path({ size: unit, stroke: { paint: { kind: 'solid', color: '#000' } } });
-  const d = serializePathD(path);
-  const fill = markerPaintAttrs('fill', entry.fill, id, onWarn);
-  const outline = entry.outline
-    ? ` ${markerPaintAttrs('stroke', entry.outline.paint, id, onWarn)} stroke-width="${trimNumber(entry.outline.width * unit)}"`
-      + ' stroke-linecap="round" stroke-linejoin="round"'
-    : '';
-  // The kit turns every start marker around, which is what SVG 2 spells
-  // `auto-start-reverse`; plain `auto` would point a start head into the line.
-  const orient = typeof entry.orient === 'number' ? trimNumber(entry.orient * RAD_TO_DEG) : 'auto-start-reverse';
-  const units = size === undefined
-    ? 'markerUnits="strokeWidth" markerWidth="8" markerHeight="8"'
-    : `markerUnits="userSpaceOnUse" markerWidth="${trimNumber(8 * unit)}" markerHeight="${trimNumber(8 * unit)}"`
-      + ` ${WEASEL_NS_PREFIX}:key="${escapeAttr(name)}" ${WEASEL_NS_PREFIX}:size="${
-        typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}"`;
-  const inset = writesInset(entry) ? ` ${WEASEL_NS_PREFIX}:inset="${trimNumber(entry.inset!)}"` : '';
-  // `overflow="visible"` overrides the UA default of `hidden`, which would
-  // otherwise clip the arrowhead to the marker's viewport.
-  return (
-    `<marker id="${id}" ${units}${inset}` +
-    ` refX="0" refY="0" orient="${orient}" overflow="visible">` +
-    `<path d="${d}" ${fill}${outline}/></marker>`
-  );
-}
-
-/** A marker paint as `fill` / `stroke` attributes. `'line'` is SVG 2's
- *  `context-stroke`; a paint server has no `<defs>` slot from here, so it
- *  falls back to the line's paint and says so. */
-function markerPaintAttrs(
-  attr: 'fill' | 'stroke',
-  paint: MarkerPaint | undefined,
-  id: string,
-  onWarn?: (m: string) => void,
-): string {
-  if (paint === 'none') return `${attr}="none"`;
-  if (paint === undefined || paint === 'line') return `${attr}="context-stroke"`;
-  if ('color' in paint && (paint.kind === undefined || paint.kind === 'solid')) {
-    return paint.opacity != null && paint.opacity !== 1
-      ? `${attr}="${paint.color}" ${attr}-opacity="${trimNumber(paint.opacity)}"`
-      : `${attr}="${paint.color}"`;
-  }
-  onWarn?.(`marker "${id}" ${attr} is a paint server, which a <marker> def cannot reference here; written as the line's paint`);
-  return `${attr}="context-stroke"`;
 }
 
 /** One paint server's `<defs>` entry: the built-in mapping, else the kind's

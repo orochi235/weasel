@@ -92,7 +92,10 @@ export function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServe
   return attrs;
 }
 
-export function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry, warn: Warn): string[] {
+/** `seat` says which ends of the element were cut back for their heads, which then take their seated defs. */
+export function strokeAttrsFor(
+  stroke: SvgStroke, registry: PaintServerRegistry, warn: Warn, seat?: { start: boolean; end: boolean },
+): string[] {
   warnStrokeAlign(stroke.align, warn);
   // `SvgStroke.opacity` and the paint's own `opacity` are two models of one
   // SVG attribute, and parse fills in both. Emitting each would write
@@ -120,7 +123,8 @@ export function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry,
   ] as const) {
     const ref = stroke[field];
     if (ref === undefined) continue;
-    const id = registry.markerId(ref);
+    const seated = field === 'markerStart' ? seat?.start : field === 'markerEnd' ? seat?.end : false;
+    const id = registry.markerId(ref, seated ?? false);
     if (id === undefined) continue;
     attrs.push(`${attr}="url(#${id})"`);
   }

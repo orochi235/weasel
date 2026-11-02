@@ -32,7 +32,9 @@ const endOf = (p: string): [number, number] => {
 describe('svg export bakes a stroke trim', () => {
   it('writes the visible span with its end marker and no pathLength', () => {
     const [p] = stroked(paths(pathFromD('M0 0 L100 0'), { paint: INK, width: 2, markerEnd: 'arrow', trim: { end: 0.5 } }));
-    expect(dOf(p)).toBe('M0 0L50 0');
+    // The span ends at 50, and its shaft stops the arrow's inset short of that.
+    expect(dOf(p)).toBe('M0 0L44 0');
+    expect(p).toContain('wzl:d="M0 0L50 0"');
     expect(p).toContain('marker-end=');
     expect(p).not.toContain('pathLength');
   });

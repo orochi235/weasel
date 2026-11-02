@@ -61,16 +61,17 @@ export function ingestMarkers(
         delete stroke[field];
         continue;
       }
-      const sized = sizedMarkerRef(el);
-      if (sized) {
+      const keyed = keyedMarkerRef(el);
+      if (keyed) {
         // An unregistered key comes along as the def's geometry in marker
-        // units: the def is drawn in user space at one unit per resolved size.
-        if (getMarker(sized.key) === undefined && !minted.has(sized.key)) {
-          const entry = markerEntryFrom(el, id, role, resolveMarkerSize(sized, 1), gradients, onWarn);
-          minted.set(sized.key, entry && { ...entry, id: sized.key });
+        // units: a sized def is drawn in user space at one unit per resolved size.
+        if (getMarker(keyed.key) === undefined && !minted.has(keyed.key)) {
+          const unit = keyed.size === undefined ? w : resolveMarkerSize({ key: keyed.key, size: keyed.size }, 1);
+          const entry = markerEntryFrom(el, id, role, unit, gradients, onWarn);
+          minted.set(keyed.key, entry && { ...entry, id: keyed.key });
         }
-        if (minted.get(sized.key) === null) delete stroke[field];
-        else stroke[field] = sized;
+        if (minted.get(keyed.key) === null) delete stroke[field];
+        else stroke[field] = keyed.size === undefined ? keyed.key : { key: keyed.key, size: keyed.size };
         continue;
       }
       const cacheKey = `${id}\u0000${role}\u0000${w}`;
@@ -102,12 +103,14 @@ function weaselAttr(el: Element, name: string): string | null {
   return el.getAttributeNS(WEASEL_NS, name) ?? el.getAttribute(`${WEASEL_NS_PREFIX}:${name}`);
 }
 
-/** The reference a sized-marker def this package wrote stands for: its key
- *  and size, read off the private namespace. */
-function sizedMarkerRef(el: Element): { key: string; size: ScreenLength } | undefined {
+/** The reference a def this package wrote under an id other than its key
+ *  stands for, read off the private namespace: its key, and its size when it
+ *  has one. */
+function keyedMarkerRef(el: Element): { key: string; size?: ScreenLength } | undefined {
   const key = weaselAttr(el, 'key');
+  if (!key) return undefined;
   const raw = weaselAttr(el, 'size')?.trim();
-  if (!key || !raw) return undefined;
+  if (!raw) return { key };
   const px = raw.endsWith('px');
   const n = parseFloat(px ? raw.slice(0, -2) : raw);
   if (!Number.isFinite(n) || n <= 0) return undefined;
@@ -226,13 +229,17 @@ function markerEntryFrom(
       sy = s;
     }
   }
-  const refX = markerRef(el.getAttribute('refX'), vb?.x ?? 0, vb?.width ?? 0);
+
   const refY = markerRef(el.getAttribute('refY'), vb?.y ?? 0, vb?.height ?? 0);
   // Marker units are stroke widths already, unless the marker is sized in
   // user space; then this reference's width converts it.
   const k = el.getAttribute('markerUnits') === 'userSpaceOnUse' && strokeWidth > 0
     ? 1 / strokeWidth
     : 1;
+  // A seated def's reference point sits on the head's back, `inset` behind the
+  // tip the kit anchors at.
+  const seatedBy = weaselAttr(el, 'seated') === 'true' ? markerInsetAttr(el) / (sx * k) : 0;
+  const refX = markerRef(el.getAttribute('refX'), vb?.x ?? 0, vb?.width ?? 0) + seatedBy;
   const { orient, reverseAtStart } = markerOrient(el.getAttribute('orient'));
   const turn = role === 'start' && reverseAtStart ? -1 : 1;
   const base: Matrix = [turn * sx * k, 0, 0, turn * sy * k, -turn * sx * k * refX, -turn * sy * k * refY];

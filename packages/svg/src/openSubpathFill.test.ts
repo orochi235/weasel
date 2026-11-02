@@ -85,7 +85,8 @@ describe('svg export: an open subpath no fill closes is written unfilled', () =>
 });
 
 describe('svg export: a split path draws the markers the renderer draws', () => {
-  const MARKED = { ...STROKE, markerStart: 'circle', markerMid: 'square', markerEnd: 'arrow' } as const;
+  // Heads with no inset, so each shaft is written whole.
+  const MARKED = { ...STROKE, markerStart: 'dot', markerMid: 'square', markerEnd: 'bar' } as const;
   const paths = (n: SvgNode) => serializeSvg([n]).replace(/<defs>[\s\S]*<\/defs>/, '').match(/<path [^>]*>/g)!;
   const dOf = (p: string) => /d="([^"]*)"/.exec(p)![1];
 

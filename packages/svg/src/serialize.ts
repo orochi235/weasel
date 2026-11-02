@@ -4,12 +4,12 @@
  */
 
 import { escapeAttr, escapeText } from './xmlEscape';
-import type { Stroke } from '@weasel-js/core';
+import type { Path } from '@weasel-js/core';
 import { isSolidPaint } from '@weasel-js/core';
 import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type {
   SerializeOptions, SvgGroupNode,
-  SvgNode, SvgPathNode, SvgImageNode,
+  SvgNode, SvgImageNode,
 } from './types';
 import { serializePathD } from './path-serializer';
 import { pathAsSvgDraws } from './openSubpathFill';
@@ -22,6 +22,7 @@ import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
 import { withTrimsDrawn } from './trimmedStroke';
+import { type SeatedPathNode, withSeatedHeads } from './seatedHeads';
 import {
   writesOutline, strokeGroupXml, strokeOutlineXml, outlinedStrokeAttrs, writesOutlines,
 } from './strokeOutlineSvg';
@@ -43,9 +44,20 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
   const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
   const namespaces = opts.namespaces ?? {};
 
+  // Once per message: a hundred inner-aligned strokes are one fact.
+  const said = new Set<string>();
+  const warn: Warn = (m) => {
+    if (!opts.onWarn || said.has(m)) return;
+    said.add(m);
+    opts.onWarn(m);
+  };
+  // Written first: a marker's def is registered as an element references it,
+  // which decides whether its head is seated.
+  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn, opts.textLayout)).join('');
+
   const rootAttrs: string[] = [`xmlns="http://www.w3.org/2000/svg"`];
   // Only when something needs it, so a document of ordinary paints carries no
-  // trace of it. The pre-pass above has seen every paint, so this answer is final.
+  // trace of it. The body is written, so every def and attribute is known.
   if ((registry.usesPrivateNamespace() || writesOutlines(nodes)) && namespaces[WEASEL_NS_PREFIX] == null) {
     rootAttrs.push(`xmlns:${WEASEL_NS_PREFIX}="${WEASEL_NS}"`);
   }
@@ -70,14 +82,6 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
   const docMetaXml = metaElementsXml(opts.documentMeta, namespaces);
 
   const defsXml = registry.toDefsXml(opts.onWarn);
-  // Once per message: a hundred inner-aligned strokes are one fact.
-  const said = new Set<string>();
-  const warn: Warn = (m) => {
-    if (!opts.onWarn || said.has(m)) return;
-    said.add(m);
-    opts.onWarn(m);
-  };
-  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn, opts.textLayout)).join('');
 
   const titleXml = opts.title && opts.title.length > 0
     ? `<title>${escapeText(opts.title)}</title>`
@@ -97,14 +101,12 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
     } else if (n.kind === 'path') {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
       if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
-      registerMarkers(n.stroke, registry);
     } else if (n.kind === 'text') {
       // This pre-pass is load-bearing: `<defs>` is emitted before the body, so
       // a paint first seen while writing an element would be referenced by an
       // id that no definition backs.
       registerTextPaint(n.fill?.paint, registry);
       registerTextPaint(n.stroke?.paint, registry);
-      registerMarkers(n.stroke, registry);
       for (const run of n.runs ?? []) {
         registerTextPaint(run.fill?.paint, registry);
         registerTextPaint(run.stroke?.paint, registry);
@@ -119,15 +121,6 @@ function registerTextPaint(
   registry: PaintServerRegistry,
 ): void {
   if (paint && !isSolidPaint(paint)) registry.register(paint);
-}
-
-/** Mint a `<defs>` id for every marker a stroke names, before the body is
- *  written — same reason as the paint pre-pass above. */
-function registerMarkers(stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'markerEnd'> | undefined, registry: PaintServerRegistry): void {
-  if (!stroke) return;
-  for (const ref of [stroke.markerStart, stroke.markerMid, stroke.markerEnd]) {
-    if (ref !== undefined) registry.markerId(ref);
-  }
 }
 
 type LayoutOf = SerializeOptions['textLayout'];
@@ -151,7 +144,8 @@ function kindXml(
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted);
   if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
   if (node.kind === 'image') return imageXml(node, namespaces);
-  const drawn = pathAsSvgDraws(node);
+  const asDrawn = pathAsSvgDraws(node);
+  const drawn = asDrawn.kind === 'path' ? withSeatedHeads(asDrawn) : asDrawn;
   return drawn.kind === 'group'
     ? groupXml(drawn, registry, namespaces, warn, layoutOf, painted)
     : pathXml(drawn, registry, namespaces, warn);
@@ -230,9 +224,14 @@ function groupXml(
 }
 
 function pathXml(
-  node: SvgPathNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+  node: SeatedPathNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
 ): string {
   const attrs: string[] = [`d="${serializePathD(node.path)}"`];
+  // A shaft cut back for its heads keeps the path as authored, for the parser.
+  if (node.seat) {
+    attrs.push(`${WEASEL_NS_PREFIX}:d="${serializePathD(node.seat.authored)}"`);
+    registry.usePrivateNamespace();
+  }
   const fillAttrs = paintAttrs(node.fill, 'fill', registry);
   for (const a of fillAttrs) attrs.push(a);
   // Only when it diverges from SVG's default ('nonzero').
@@ -243,14 +242,14 @@ function pathXml(
   if (node.stroke) {
     // An outline is exact on either side of the edge, so SVG's
     // missing alignment loses nothing.
-    const strokeAttrs = strokeAttrsFor(node.stroke, registry, outlined ? () => {} : warn);
+    const strokeAttrs = strokeAttrsFor(node.stroke, registry, outlined ? () => {} : warn, node.seat);
     for (const a of outlined ? outlinedStrokeAttrs(node.stroke, strokeAttrs) : strokeAttrs) attrs.push(a);
   } else {
     attrs.push('stroke="none"');
   }
   const opacity = node.opacity != null && node.opacity !== 1 ? `opacity="${trimNumber(node.opacity)}"` : null;
   if (opacity && !outlined) attrs.push(opacity);
-  const transform = rotationAttr(node);
+  const transform = rotationAttr(node.rotation, node.seat?.authored ?? node.path);
   if (transform) attrs.push(transform);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
@@ -262,12 +261,12 @@ function pathXml(
   return opacity ? strokeGroupXml(opacity, both) : both;
 }
 
-/** `transform="rotate(...)"` about the center of `node`'s path, or null. */
-function rotationAttr(node: SvgPathNode): string | null {
-  if (node.rotation == null || node.rotation === 0) return null;
-  const b = pathBounds(node.path);
+/** `transform="rotate(...)"` about the center of `path`, or null. */
+function rotationAttr(rotation: number | undefined, path: Path): string | null {
+  if (rotation == null || rotation === 0) return null;
+  const b = pathBounds(path);
   const cx = b.minX + (b.maxX - b.minX) / 2;
   const cy = b.minY + (b.maxY - b.minY) / 2;
-  const deg = node.rotation * RAD_TO_DEG;
+  const deg = rotation * RAD_TO_DEG;
   return `transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`;
 }

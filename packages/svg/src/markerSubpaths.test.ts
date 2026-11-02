@@ -19,13 +19,14 @@ const TWO_OPEN = 'M0 0L10 0 M20 0L30 0L30 10';
 describe('svg export: a marked stroke draws one pair of end markers per open subpath', () => {
   it('writes each open subpath of an unfilled path as its own path', () => {
     const out = paths(node(TWO_OPEN, { stroke: ENDS }));
-    expect(out.map(dOf)).toEqual(['M0 0L10 0', 'M20 0L30 0L30 10']);
+    // Each shaft is cut back for its heads, the first not at all: its heads' insets reach past its length.
+    expect(out.map(dOf)).toEqual(['M0 0L10 0', 'M24 0L30 0L30 4']);
     expect(out.every((p) => p.includes('marker-start=') && p.includes('marker-end=') && p.includes('fill="none"'))).toBe(true);
   });
 
   it('writes a fill that closes its open subpaths once, under the strokes', () => {
     const out = paths(node(TWO_OPEN, { fill: RED, stroke: ENDS }));
-    expect(out.map(dOf)).toEqual(['M0 0L10 0M20 0L30 0L30 10', 'M0 0L10 0', 'M20 0L30 0L30 10']);
+    expect(out.map(dOf)).toEqual(['M0 0L10 0M20 0L30 0L30 10', 'M0 0L10 0', 'M24 0L30 0L30 4']);
     expect(out[0]).toContain('fill="#ff0000"');
     expect(out[0]).toContain('stroke="none"');
     expect(out[0]).not.toMatch(/marker-/);
@@ -56,7 +57,7 @@ describe('svg export: a marked stroke draws one pair of end markers per open sub
   });
 
   it('leaves a single open subpath, and any unmarked stroke, as one path', () => {
-    expect(paths(node('M0 0L10 0L10 10', { fill: RED, stroke: ENDS }))).toHaveLength(1);
+    expect(paths(node('M0 0L10 0L10 10', { fill: RED, stroke: { ...STROKE, markerStart: 'dot', markerEnd: 'bar' } }))).toHaveLength(1);
     expect(paths(node(TWO_OPEN, { fill: RED, stroke: STROKE }))).toHaveLength(1);
     expect(paths(node(TWO_OPEN, { fill: RED }))).toHaveLength(1);
   });
