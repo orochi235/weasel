@@ -184,6 +184,15 @@ describe('TrimOverrideRegistry', () => {
     expect(told).toBe(2);
   });
 
+  it('tells subscribers of a bare commit on a resting target', () => {
+    const r = new TrimOverrideRegistry();
+    let told = 0;
+    r.subscribe(() => { told += 1; });
+    r.target('a', 'end').commit(0.5);
+    expect(told).toBe(1);
+    expect(r.resolve('a')).toEqual({ end: 0.5 });
+  });
+
   it('is cleared when its animator unmounts', () => {
     const clock = makeClock();
     const { result, unmount } = renderHook(() => useAnimator(clock));

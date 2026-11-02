@@ -139,7 +139,9 @@ export class ColorOverrideRegistry {
       set: (row) => {
         const slot = rows[row];
         if (slot) slot.painted = true;
-        this._version++;
+        // An animation's commit repaints through onTick; a bare one has nothing else to.
+        if (table.target(row).active) this._version++;
+        else this.changed();
       },
       show: () => { this._version++; },
     });

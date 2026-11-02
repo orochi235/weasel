@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath, type Path } from '@weasel-js/geom';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
-import { ColorOverrideRegistry } from '@weasel-js/animator';
+import { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator';
 
 // createPathLayer emits raw world-space PathDrawCommands. The viewToMat3
 // wrap is applied at drawLayers orchestration time, not in the layer itself
@@ -220,5 +220,32 @@ describe('createPathLayer color overrides', () => {
     const out = layer.draw(undefined, view, size);
     const cmd = out[0] as any;
     expect(cmd.vertexColors).toEqual(baseFillColors);
+  });
+});
+
+describe('createPathLayer override repaints', () => {
+  it('repaints for a bare set or clear on either registry it holds', () => {
+    const colorOverrides = new ColorOverrideRegistry();
+    const trimOverrides = new TrimOverrideRegistry();
+    const layer = createPathLayer({
+      getNodes: () => [{ id: 'a' }],
+      getPath: () => rectPath(0, 0, 10, 10),
+      colorOverrides,
+      trimOverrides,
+    });
+    let repaints = 0;
+    const off = layer.subscribe!(() => { repaints += 1; });
+    trimOverrides.set('a', { end: 0.5 });
+    colorOverrides.set('a', 'stroke', [1, 0, 0, 1]);
+    trimOverrides.clear('a');
+    expect(repaints).toBe(3);
+    off();
+    trimOverrides.set('a', { end: 0.5 });
+    expect(repaints).toBe(3);
+  });
+
+  it('declares nothing to subscribe to with no registries', () => {
+    const layer = createPathLayer({ getNodes: () => [], getPath: () => rectPath(0, 0, 10, 10) });
+    expect(layer.subscribe).toBeUndefined();
   });
 });

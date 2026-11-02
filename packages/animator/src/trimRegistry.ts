@@ -89,7 +89,9 @@ export class TrimOverrideRegistry {
         if (state.released) throw new Error(`trim overrides: ${id}'s ${edge} target was released`);
         state.value = value;
         state.painted = true;
-        this._version++;
+        // An animation's commit repaints through onTick; a bare one has nothing else to.
+        if (target.active) this._version++;
+        else this.changed();
       },
       show: () => { this._version++; },
     });

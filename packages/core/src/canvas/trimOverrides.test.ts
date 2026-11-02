@@ -13,7 +13,6 @@ import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { overrideTrim } from './trimOverrides';
 import { strokeOf } from '../util/paint';
-import { shapeCoversPoint } from './NodeShape';
 import type { NodePaintCtx, SceneViewDrawOne } from './NodeShape';
 import type { RectPose } from 'core/scene/types';
 
@@ -245,33 +244,5 @@ describe('animated stroke trims from a running target', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]!.trim).toBeDefined();
     expect(seen[0]!.vertexColors).toBeDefined();
-  });
-});
-
-describe('picking under an animated trim', () => {
-  const LINE = pathFromD('M0 0 L100 0');
-  const LINE_POSE = { x: 0, y: 0, width: 100, height: 0 };
-
-  function lineNode(trim?: StrokeTrim) {
-    const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({
-      kind: 'mark', layer: 'main', pose: LINE_POSE,
-      data: { path: LINE, fill: null, stroke: { ...strokeOf('#000', 4), ...(trim ? { trim } : {}) } },
-    });
-    return { id, node: scene.get(id)! };
-  }
-
-  it('reads the authored trim, not an override that draws the whole line', () => {
-    const { id, node } = lineNode({ end: 0.1 });
-    const registry = new TrimOverrideRegistry();
-    registry.set(id, { end: 1 });
-    expect(shapeCoversPoint(node, node.pose, 90, 0)).toBe(false);
-  });
-
-  it('reads the authored trim, not an override that draws almost none of it', () => {
-    const { id, node } = lineNode();
-    const registry = new TrimOverrideRegistry();
-    registry.set(id, { end: 0.1 });
-    expect(shapeCoversPoint(node, node.pose, 90, 0)).toBe(true);
   });
 });

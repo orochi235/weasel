@@ -8,7 +8,8 @@
 
 import { type DrawCommand } from '@weasel-js/renderer';
 import { type CommandStroke, type CommandFill, type VertexWidth } from '@weasel-js/paint';
-import type { RenderLayer } from 'core/layers/render';
+import { subscribeToSources, type RenderLayer } from 'core/layers/render';
+import { paintOverrideSources } from 'canvas/paintOverrides';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
 import type { ColorOverrideRegistry, TrimOverride, TrimOverrideRegistry } from '@weasel-js/animator';
 import { overrideTrim } from 'canvas/trimOverrides';
@@ -64,7 +65,7 @@ export interface CreatePathLayerOpts<T> {
   colorOverrides?: ColorOverrideRegistry;
   /** Optional stroke trim override registry, typically `animator.trimOverrides`:
    *  its edges replace those of `getStroke`'s trim, as `<SceneCanvas animator>`
-   *  paints them. */
+   *  paints them. The layer repaints for a `set` or `clear` on either registry. */
   trimOverrides?: TrimOverrideRegistry;
   /** Clock used to timestamp function-form color overrides. Defaults to
    *  `performance.now`. Override in tests. */
@@ -98,10 +99,12 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
   } = opts;
   const warned = new Set<string>();
   const dev = isDev();
+  const sources = paintOverrideSources({ colorOverrides, trimOverrides });
 
   return {
     id,
     label,
+    ...(sources.length > 0 ? { subscribe: subscribeToSources(sources) } : {}),
     draw: () => {
       const children: DrawCommand[] = [];
       const nodes = getNodes();
