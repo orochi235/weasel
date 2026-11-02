@@ -1,4 +1,4 @@
-import type { FramedBox } from '@weasel-js/geom';
+import { unionRects, type FramedBox, type Rect } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { MoveBehavior } from '../../../gestures/types';
@@ -30,17 +30,14 @@ export function clampMove<TPose>(opts: ClampMoveOptions<TPose>): MoveBehavior<TP
   return {
     onMove(ctx, proposed) {
       const b = typeof opts.bounds === 'function' ? opts.bounds() : opts.bounds;
-      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      const starts: Rect[] = [];
       for (const id of ctx.draggedIds) {
         const pose = ctx.origin.get(id);
-        if (pose === undefined) continue;
-        const r = d.getBounds(pose);
-        x0 = Math.min(x0, r.x);
-        y0 = Math.min(y0, r.y);
-        x1 = Math.max(x1, r.x + r.width);
-        y1 = Math.max(y1, r.y + r.height);
+        if (pose !== undefined) starts.push(d.getBounds(pose));
       }
-      if (x0 > x1) return undefined;
+      const u = unionRects(starts);
+      if (!u) return undefined;
+      const x0 = u.x, y0 = u.y, x1 = u.x + u.width, y1 = u.y + u.height;
       const dx = clampAxis(proposed.dx, x0, x1, b.x, b.x + b.width);
       const dy = clampAxis(proposed.dy, y0, y1, b.y, b.y + b.height);
       if (dx === proposed.dx && dy === proposed.dy) return undefined;
