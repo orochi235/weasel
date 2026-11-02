@@ -39,7 +39,7 @@ afterEach(() => {
 function setup() {
   const commands: AppCommands = {
     gridVisible: false, toggleGrid: vi.fn(),
-    snapToGrid: false, toggleSnap: vi.fn(),
+    snapToGrid: false, toggleSnap: vi.fn(), boundToContent: true, toggleBoundToContent: vi.fn(),
     symmetryOn: false, toggleSymmetry: vi.fn(),
     canReleaseCompound: false, releaseCompound: vi.fn(),
     openPalette: vi.fn(),
