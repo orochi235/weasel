@@ -25,7 +25,16 @@ function setup() {
   const clock = makeClock();
   const { result } = renderHook(() => useAnimator(clock));
   const animator = result.current;
-  return { animator, registry: animator.trimOverrides, step: (ms: number) => act(() => clock.advance(ms)) };
+  const registry = animator.trimOverrides;
+  return {
+    animator,
+    registry,
+    step: (ms: number) => act(() => clock.advance(ms)),
+    /** Starts a linear tween of `id`'s `end` from 0 to `to` over `ms`. */
+    drawOn: (id: string, to = 1, ms = 100) => act(() => {
+      animator.tween({ target: registry.target(id, 'end'), from: 0, to, ms, easing: linear });
+    }),
+  };
 }
 
 describe('TrimOverrideRegistry', () => {
@@ -56,45 +65,76 @@ describe('TrimOverrideRegistry', () => {
     expect(r.get('b')).toBeUndefined();
   });
 
-  it('hands every caller for one node the same target, starting on the whole stroke', () => {
+  it('hands every caller for one node and edge the same target, starting on the whole stroke', () => {
     const r = new TrimOverrideRegistry();
-    expect(r.target('a')).toBe(r.target('a'));
-    expect(r.target('b')).not.toBe(r.target('a'));
-    expect(r.target('a').read()).toEqual({ start: 0, end: 1 });
-    // Nothing is painted until an animation commits.
-    expect(r.get('a')).toBeUndefined();
+    expect(r.target('a', 'end')).toBe(r.target('a', 'end'));
+    expect(r.target('a', 'start')).not.toBe(r.target('a', 'end'));
+    expect(r.target('b', 'end')).not.toBe(r.target('a', 'end'));
+    expect(r.target('a', 'start').read()).toBe(0);
+    expect(r.target('a', 'end').read()).toBe(1);
+  });
+
+  it('counts a target asked for and never moved as nothing', () => {
+    const r = new TrimOverrideRegistry();
+    r.target('a', 'end');
+    expect(r.has('a')).toBe(false);
+    expect(r.resolve('a')).toBeUndefined();
   });
 
   it('target tweens end', () => {
-    const { animator, registry, step } = setup();
-    act(() => {
-      animator.tween({ target: registry.target('a'), from: { start: 0, end: 0 }, to: { start: 0, end: 1 }, ms: 100, easing: linear });
-    });
+    const { registry, step, drawOn } = setup();
+    drawOn('a');
     step(0);
     step(50);
     expect(registry.get('a')?.end).toBeCloseTo(0.5, 6);
-    expect(registry.resolve('a')?.end).toBeCloseTo(0.5, 6);
     step(50);
-    expect(registry.get('a')).toEqual({ start: 0, end: 1 });
+    expect(registry.get('a')).toEqual({ end: 1 });
   });
 
-  it('bumps the version on every frame the target moves', () => {
-    const { animator, registry, step } = setup();
-    act(() => {
-      animator.tween({ target: registry.target('a'), from: { start: 0, end: 0 }, to: { start: 0, end: 1 }, ms: 100, easing: linear });
-    });
+  it("paints only the edge a target moves, so the stroke's own other edge stands", () => {
+    const { registry, step, drawOn } = setup();
+    drawOn('a');
+    step(0);
+    step(50);
+    expect(registry.resolve('a')).toEqual({ end: expect.closeTo(0.5, 6) });
+    step(50);
+    expect(registry.resolve('a')).toEqual({ end: 1 });
+  });
+
+  it("composes set's edge with a target's other edge, mid-flight and at rest", () => {
+    const { registry, step, drawOn } = setup();
+    registry.set('a', { start: 0.2 });
+    drawOn('a');
+    step(0);
+    step(50);
+    expect(registry.resolve('a')).toEqual({ start: 0.2, end: expect.closeTo(0.5, 6) });
+    step(50);
+    expect(registry.resolve('a')).toEqual({ start: 0.2, end: 1 });
+  });
+
+  it('paints an end tween at rest as set({ end }) paints', () => {
+    const { registry, step, drawOn } = setup();
+    drawOn('a', 0.75);
+    step(0);
+    step(100);
+    const other = new TrimOverrideRegistry();
+    other.set('a', { end: 0.75 });
+    expect(registry.resolve('a')).toEqual(other.resolve('a'));
+  });
+
+  it('bumps the version on every frame a target moves', () => {
+    const { registry, step, drawOn } = setup();
+    drawOn('a');
     step(0);
     const v = registry.version();
     step(30);
     expect(registry.version()).toBeGreaterThan(v);
   });
 
-  it('adds what a moving target has left to travel on top of an override from set', () => {
-    const { animator, registry, step } = setup();
+  it("adds what a moving target has left to travel on top of set's value for that edge", () => {
+    const { registry, step, drawOn } = setup();
     registry.set('a', { end: 0.5 });
-    act(() => {
-      animator.tween({ target: registry.target('a'), from: { start: 0, end: 0 }, to: { start: 0, end: 0.2 }, ms: 100, easing: linear });
-    });
+    drawOn('a', 0.2);
     step(0);
     step(50);
     // Halfway: the tween has 0.1 of its 0.2 left, carried on the override's end.
@@ -105,28 +145,43 @@ describe('TrimOverrideRegistry', () => {
   });
 
   it('release drops a resting target, and the old target throws from then on', () => {
-    const { animator, registry, step } = setup();
-    const target = registry.target('a');
-    act(() => { animator.tween({ target, to: { start: 0, end: 0.5 }, ms: 10, easing: linear }); });
+    const { registry, step, drawOn } = setup();
+    const target = registry.target('a', 'end');
+    drawOn('a', 0.5, 10);
     step(0);
     step(10);
-    expect(registry.get('a')).toEqual({ start: 0, end: 0.5 });
-    registry.release('a');
+    expect(registry.get('a')).toEqual({ end: 0.5 });
+    registry.release('a', 'end');
     expect(registry.has('a')).toBe(false);
     expect(registry.get('a')).toBeUndefined();
-    expect(() => target.commit({ start: 0, end: 1 })).toThrow('released');
-    expect(registry.target('a')).not.toBe(target);
+    expect(() => target.commit(1)).toThrow('released');
+    expect(registry.target('a', 'end')).not.toBe(target);
   });
 
   it('keeps a target an animation is still moving through clear', () => {
-    const { animator, registry, step } = setup();
-    act(() => {
-      animator.tween({ target: registry.target('a'), from: { start: 0, end: 0 }, to: { start: 0, end: 1 }, ms: 100, easing: linear });
-    });
+    const { registry, step, drawOn } = setup();
+    drawOn('a');
     step(0);
     registry.clear('a');
     step(50);
     expect(registry.get('a')?.end).toBeCloseTo(0.5, 6);
+  });
+
+  it('tells subscribers of a set and a clear, and of nothing an animation frame does', () => {
+    const { registry, step, drawOn } = setup();
+    let told = 0;
+    const off = registry.subscribe(() => { told += 1; });
+    registry.set('a', { end: 0.5 });
+    expect(told).toBe(1);
+    registry.clear('a');
+    expect(told).toBe(2);
+    drawOn('b');
+    step(0);
+    step(50);
+    expect(told).toBe(2);
+    off();
+    registry.set('a', { end: 0.5 });
+    expect(told).toBe(2);
   });
 
   it('is cleared when its animator unmounts', () => {

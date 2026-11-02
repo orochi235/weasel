@@ -42,4 +42,22 @@ describe('ColorOverrideRegistry', () => {
     r.clear('a', 'fill');
     expect(r.version()).toBeGreaterThan(v1);
   });
+
+  it('counts a target asked for and never moved as nothing', () => {
+    const r = new ColorOverrideRegistry();
+    r.target('a', 'fill', 4);
+    expect(r.has('a')).toBe(false);
+  });
+
+  it('tells subscribers of a set and a clear', () => {
+    const r = new ColorOverrideRegistry();
+    let told = 0;
+    const off = r.subscribe(() => { told += 1; });
+    r.set('a', 'fill', [1, 2, 3, 4]);
+    r.clear('a', 'fill');
+    expect(told).toBe(2);
+    off();
+    r.set('a', 'fill', [1, 2, 3, 4]);
+    expect(told).toBe(2);
+  });
 });

@@ -8,7 +8,7 @@ export {
   ColorOverrideRegistry,
   type ColorOverride, type ColorOverrideFn, type VertexColorChannel,
 } from './colorRegistry';
-export { TrimOverrideRegistry, type TrimOverride, type TrimWindow } from './trimRegistry';
+export { TrimOverrideRegistry, type TrimEdge, type TrimOverride } from './trimRegistry';
 export {
   tweenVertexColors, springVertexColors, staggerVertexColors,
   type TweenVertexColorsOptions, type SpringVertexColorsOptions, type StaggerVertexColorsOptions,
