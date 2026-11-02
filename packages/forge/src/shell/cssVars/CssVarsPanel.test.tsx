@@ -383,9 +383,9 @@ describe('CssVarsPanel history', () => {
     fireEvent.change(token.getByRole('textbox'), { target: { value: '#123456' } });
     await flush();
 
-    fireEvent.keyDown(vars().getByLabelText('Filter'), { key: 'z', metaKey: true, ctrlKey: true });
+    fireEvent.keyDown(vars().getByLabelText('Filter'), { key: 'z', ctrlKey: true });
     expect(token.getByRole('textbox')).toHaveValue('#123456');
-    fireEvent.keyDown(token.getByRole('textbox'), { key: 'z', metaKey: true, ctrlKey: true });
+    fireEvent.keyDown(token.getByRole('textbox'), { key: 'z', ctrlKey: true });
     await flush();
     expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
   });

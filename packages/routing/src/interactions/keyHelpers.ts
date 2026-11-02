@@ -9,6 +9,8 @@
  * @packageDocumentation
  */
 
+import { isApplePlatform, matchModifiers } from '@weasel-js/gestures';
+
 export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 
 /**
@@ -25,8 +27,9 @@ export interface KeyBinding {
    */
   key: string | readonly string[];
   /**
-   * Require Cmd (mac) or Ctrl (others). When `true`, exactly one of
-   * `metaKey`/`ctrlKey` must be held. Default `false` (both forbidden).
+   * Require `mod`: Cmd on an Apple platform, Ctrl elsewhere, with the other
+   * key forbidden — `mod` as `@weasel-js/gestures` defines it. Default `false`
+   * (both forbidden).
    */
   mod?: boolean;
   /** Require Alt. Default `false` (forbidden). */
@@ -56,33 +59,19 @@ function keyMatches(eventKey: string, spec: string | readonly string[]): boolean
  * `preventDefault`. Shared by the tool dispatcher (`useKeybindings`) and the
  * gesture dispatcher so the rules can't drift.
  */
-export function matchesKeyBinding(e: KeyboardEvent, b: KeyBinding): boolean {
+export function matchesKeyBinding(e: KeyBindingEvent, b: KeyBinding, isMac = isApplePlatform()): boolean {
   if (!keyMatches(e.key, b.key)) return false;
-
-  const wantsMod = b.mod === true;
-  const hasMod = e.metaKey || e.ctrlKey;
-  if (wantsMod !== hasMod) return false;
-
-  const wantsAlt = b.alt === true;
-  if (wantsAlt !== e.altKey) return false;
-
-  const shift = b.shift;
-  if (shift === undefined || shift === false) {
-    if (e.shiftKey) return false;
-  } else if (shift === true) {
-    if (!e.shiftKey) return false;
-  }
-  return true;
+  return matchModifiers(e, { mod: b.mod === true, alt: b.alt === true, shift: b.shift ?? false }, isMac);
 }
+
+/** The fields of a keyboard event {@link matchesKeyBinding} reads, so a React event passes as readily as a DOM one. */
+export type KeyBindingEvent = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>;
 
 /** Which history step `e` asks for: Mod+Z undoes, Shift+Mod+Z and Mod+Y redo. `null` for anything else. Takes a
  *  React keyboard event as readily as a DOM one. */
-export function historyKey(
-  e: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>,
-): 'undo' | 'redo' | null {
-  const ev = e as KeyboardEvent;
-  if (matchesKeyBinding(ev, { key: 'z', mod: true })) return 'undo';
-  if (matchesKeyBinding(ev, { key: 'z', mod: true, shift: true }) || matchesKeyBinding(ev, { key: 'y', mod: true }))
+export function historyKey(e: KeyBindingEvent, isMac = isApplePlatform()): 'undo' | 'redo' | null {
+  if (matchesKeyBinding(e, { key: 'z', mod: true }, isMac)) return 'undo';
+  if (matchesKeyBinding(e, { key: 'z', mod: true, shift: true }, isMac) || matchesKeyBinding(e, { key: 'y', mod: true }, isMac))
     return 'redo';
   return null;
 }

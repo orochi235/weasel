@@ -267,9 +267,9 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
     expect(within(preview()).getByText('Grid on')).toBeInTheDocument();
-    fireEvent.keyDown(name(), { key: 'z', metaKey: true });
+    fireEvent.keyDown(name(), { key: 'z', ctrlKey: true });
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
-    fireEvent.keyDown(name(), { key: 'z', metaKey: true, shiftKey: true });
+    fireEvent.keyDown(name(), { key: 'z', ctrlKey: true, shiftKey: true });
     expect(within(preview()).getByText('Grid on')).toBeInTheDocument();
   });
 

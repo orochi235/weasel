@@ -1,3 +1,4 @@
+import { historyKey } from '@weasel-js/core';
 import { createHistory, type History, type Op } from '@weasel-js/history';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 
@@ -80,10 +81,10 @@ export function useLabHistory<T>(initial: T): LabHistory<T> {
       // range, a checkbox, a swatch — has none, and holds the focus right after
       // the edit you meant to undo.
       if (editsText(e.target as HTMLElement | null)) return;
-      const accel = e.metaKey || e.ctrlKey;
-      if (!accel || e.key.toLowerCase() !== 'z') return;
+      const step = historyKey(e);
+      if (!step) return;
       e.preventDefault();
-      if (e.shiftKey) history.redo();
+      if (step === 'redo') history.redo();
       else history.undo();
     };
     window.addEventListener('keydown', onKey);

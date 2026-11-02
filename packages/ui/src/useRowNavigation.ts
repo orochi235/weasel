@@ -1,3 +1,4 @@
+import { isApplePlatform } from '@weasel-js/gestures';
 import { nudgeOf, rowKey, treeKey, type RowKeyAction, type RowKeysShape, type TreeShape } from '@weasel-js/ui-logic';
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { modsOf, type PressModifiers } from './useReorderDragList';
@@ -195,6 +196,6 @@ function rowKeyHandler({ rows, opts, typeahead, focus, focusLater, go }: KeyCtx)
       if (opts.onNudge(id, delta) !== false) focusLater(id);
       return true;
     }
-    return apply(id, i, e, rowKey(rows, i, e, shape, opts.textOf ? typeahead.searching() : false));
+    return apply(id, i, e, rowKey(rows, i, e, shape, opts.textOf ? typeahead.searching() : false, isApplePlatform()));
   };
 }

@@ -1,4 +1,4 @@
-import { DevtoolsLabel } from '@weasel-js/core';
+import { DevtoolsLabel, matchesKeyBinding } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { withMarks } from '../annotations/labMarks';
@@ -241,9 +241,8 @@ export function TrialChrome({
     contributions.filter((c) => c.region === region);
 
   const handleKeyDown = (e: KeyboardEvent): void => {
-    const mod = e.metaKey || e.ctrlKey;
     // A presented trial has no chrome, so nothing the chrome's keys act on.
-    if (!mod || presented || e.defaultPrevented) return;
+    if (presented || e.defaultPrevented) return;
     // A chord is its button's: suppress the button and the chord goes with it.
     const offered = (id: string) => contributions.some((c) => c.id === id);
     const step = undoKeyStep(e);
@@ -252,7 +251,7 @@ export function TrialChrome({
       e.preventDefault();
       if (step === 'redo') ctx.redo();
       else ctx.undo();
-    } else if ((e.key === 's' || e.key === 'S') && offered('snapshot')) {
+    } else if (matchesKeyBinding(e, { key: 's', mod: true }) && offered('snapshot')) {
       e.preventDefault();
       ctx.saveSnapshot();
     }

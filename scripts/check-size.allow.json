@@ -163,7 +163,7 @@
     "longestFunction": 320
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 209
+    "longestFunction": 208
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439

@@ -100,16 +100,18 @@ export type RowKeyAction =
   | { kind: 'type'; held: boolean };
 
 /**
- * What a key on row `at` of a list of rows does, in the order the keys are tried: Cmd/Ctrl+A, the arrows with Home
+ * What a key on row `at` of a list of rows does, in the order the keys are tried: Mod+A, the arrows with Home
  * and End (Shift to extend), a tree's Right and Left, a space typed mid-search, Enter or Space to activate, then any
- * other character to search. `searching` says a typeahead search is under way. Null for a key that is not the list's.
+ * other character to search. `searching` says a typeahead search is under way. `apple` says `mod` is Command, as
+ * `isApplePlatform` from `@weasel-js/gestures` reads it; otherwise it is Ctrl. Null for a key that is not the list's.
  */
 export function rowKey<T>(
-  items: readonly T[], at: number, press: KeyPress, shape: RowKeysShape<T> = {}, searching = false,
+  items: readonly T[], at: number, press: KeyPress, shape: RowKeysShape<T> = {}, searching = false, apple = false,
 ): RowKeyAction | null {
   const { key } = press;
   const chord = !!(press.ctrlKey || press.metaKey);
-  if (shape.selectAll && key.toLowerCase() === 'a' && chord && !press.altKey && !press.shiftKey) return { kind: 'selectAll' };
+  const mod = !!(apple ? press.metaKey && !press.ctrlKey : press.ctrlKey && !press.metaKey);
+  if (shape.selectAll && key.toLowerCase() === 'a' && mod && !press.altKey && !press.shiftKey) return { kind: 'selectAll' };
   const step = rovingKey(items, at, key, shape);
   if (step.handled) return { kind: 'move', at: step.at, extend: !!press.shiftKey };
   if (shape.tree && (key === 'ArrowRight' || key === 'ArrowLeft')) {

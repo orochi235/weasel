@@ -216,7 +216,7 @@ describe('Tree — selection', () => {
         onSelectionChange={onSelectionChange}
       />,
     );
-    expect(fireEvent.keyDown(item('Apple'), { key: 'a', metaKey: true })).toBe(false);
+    expect(fireEvent.keyDown(item('Apple'), { key: 'a', ctrlKey: true })).toBe(false);
     // Lemon and Lime sit in a folded branch, and Salt is disabled.
     expect(onSelectionChange.mock.calls).toEqual([[new Set(['fruit', 'apple', 'banana', 'citrus', 'veg', 'water'])]]);
     expect(item('Banana')).toHaveAttribute('aria-selected', 'true');
@@ -228,7 +228,7 @@ describe('Tree — selection', () => {
   it('leaves Cmd/Ctrl+A alone in a single-select tree', () => {
     const onSelectionChange = vi.fn();
     render(<Tree aria-label="Food" nodes={NODES} selectionMode="single" onSelectionChange={onSelectionChange} />);
-    expect(fireEvent.keyDown(item('Water'), { key: 'a', metaKey: true })).toBe(true);
+    expect(fireEvent.keyDown(item('Water'), { key: 'a', ctrlKey: true })).toBe(true);
     expect(onSelectionChange).not.toHaveBeenCalled();
   });
 

@@ -244,25 +244,25 @@ describe('<TrialChrome>', () => {
     expect(screen.getByRole('region', { name: 'Trial Stub / Default' })).toBeInTheDocument();
   });
 
-  it('Cmd+S triggers saveSnapshot', async () => {
+  it('Mod+S triggers saveSnapshot', async () => {
     const saveSnapshot = vi.fn();
     await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} />, { wrapper: withIcons });
     const region = screen.getByRole('region', { name: /trial/i });
-    fireEvent.keyDown(region, { key: 's', metaKey: true });
+    fireEvent.keyDown(region, { key: 's', ctrlKey: true });
     expect(saveSnapshot).toHaveBeenCalledWith('ws-1', undefined);
   });
 
-  it('leaves Cmd+S to the browser once the snapshot button is suppressed', async () => {
+  it('leaves Mod+S to the browser once the snapshot button is suppressed', async () => {
     const saveSnapshot = vi.fn();
     await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} suppress={['snapshot']} />, {
       wrapper: withIcons,
     });
     const region = screen.getByRole('region', { name: /trial/i });
-    expect(fireEvent.keyDown(region, { key: 's', metaKey: true })).toBe(true);
+    expect(fireEvent.keyDown(region, { key: 's', ctrlKey: true })).toBe(true);
     expect(saveSnapshot).not.toHaveBeenCalled();
   });
 
-  it('answers Cmd+Z only where the undo buttons are offered', async () => {
+  it('answers Mod+Z only where the undo buttons are offered', async () => {
     const undo = vi.fn();
     const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
     const { unmount } = await renderSettled(
@@ -272,7 +272,7 @@ describe('<TrialChrome>', () => {
     expect(
       fireEvent.keyDown(screen.getByRole('region', { name: /trial/i }), {
         key: 'z',
-        metaKey: true,
+        ctrlKey: true,
       }),
     ).toBe(false);
     expect(undo).toHaveBeenCalledTimes(1);
@@ -289,13 +289,13 @@ describe('<TrialChrome>', () => {
     expect(
       fireEvent.keyDown(screen.getByRole('region', { name: /trial/i }), {
         key: 'z',
-        metaKey: true,
+        ctrlKey: true,
       }),
     ).toBe(true);
     expect(undo).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves Cmd+Z to a text field, and still answers it from a slider', async () => {
+  it('leaves Mod+Z to a text field, and still answers it from a slider', async () => {
     const undo = vi.fn();
     const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
     await renderSettled(
@@ -305,15 +305,15 @@ describe('<TrialChrome>', () => {
       </ChromeHarness>,
       { wrapper: withIcons },
     );
-    expect(fireEvent.keyDown(screen.getByTestId('field'), { key: 'z', metaKey: true })).toBe(true);
+    expect(fireEvent.keyDown(screen.getByTestId('field'), { key: 'z', ctrlKey: true })).toBe(true);
     expect(undo).not.toHaveBeenCalled();
-    expect(fireEvent.keyDown(screen.getByTestId('slider'), { key: 'z', metaKey: true })).toBe(
+    expect(fireEvent.keyDown(screen.getByTestId('slider'), { key: 'z', ctrlKey: true })).toBe(
       false,
     );
     expect(undo).toHaveBeenCalledTimes(1);
   });
 
-  it('answers Cmd+Z with focus outside the trial, and leaves a text field there its own', async () => {
+  it('answers Mod+Z with focus outside the trial, and leaves a text field there its own', async () => {
     const undo = vi.fn();
     const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
     await renderSettled(
@@ -323,9 +323,9 @@ describe('<TrialChrome>', () => {
       </>,
       { wrapper: withIcons },
     );
-    expect(fireEvent.keyDown(document.body, { key: 'z', metaKey: true })).toBe(false);
+    expect(fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })).toBe(false);
     expect(undo).toHaveBeenCalledTimes(1);
-    expect(fireEvent.keyDown(screen.getByTestId('outside'), { key: 'z', metaKey: true })).toBe(
+    expect(fireEvent.keyDown(screen.getByTestId('outside'), { key: 'z', ctrlKey: true })).toBe(
       true,
     );
     expect(undo).toHaveBeenCalledTimes(1);

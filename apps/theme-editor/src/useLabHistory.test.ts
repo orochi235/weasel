@@ -13,7 +13,7 @@ function undoFrom(element: HTMLElement) {
   document.body.append(element);
   element.focus();
   act(() => {
-    element.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true, cancelable: true }));
+    element.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
   });
 }
 

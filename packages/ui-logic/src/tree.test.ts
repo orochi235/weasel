@@ -56,11 +56,16 @@ describe('treeKey', () => {
 
 describe('rowKey', () => {
   const all = { wrap: false, tree: shape, selectAll: true, activate: true, typeahead: true };
-  it('selects all on Cmd/Ctrl+A only', () => {
-    expect(rowKey(rows, 0, { key: 'a', metaKey: true }, all)).toEqual({ kind: 'selectAll' });
-    expect(rowKey(rows, 0, { key: 'A', ctrlKey: true }, all)).toEqual({ kind: 'selectAll' });
-    expect(rowKey(rows, 0, { key: 'a', metaKey: true, shiftKey: true }, all)).toBeNull();
-    expect(rowKey(rows, 0, { key: 'a', metaKey: true }, { ...all, selectAll: false })).toBeNull();
+  it('selects all on Mod+A only: Cmd on Apple, Ctrl elsewhere', () => {
+    expect(rowKey(rows, 0, { key: 'a', metaKey: true }, all, false, true)).toEqual({ kind: 'selectAll' });
+    expect(rowKey(rows, 0, { key: 'A', ctrlKey: true }, all, false, false)).toEqual({ kind: 'selectAll' });
+    expect(rowKey(rows, 0, { key: 'a', metaKey: true, shiftKey: true }, all, false, true)).toBeNull();
+    expect(rowKey(rows, 0, { key: 'a', metaKey: true }, { ...all, selectAll: false }, false, true)).toBeNull();
+  });
+  it('leaves the other platform key alone, and does not type it', () => {
+    expect(rowKey(rows, 0, { key: 'a', ctrlKey: true }, all, false, true)).toBeNull();
+    expect(rowKey(rows, 0, { key: 'a', metaKey: true }, all, false, false)).toBeNull();
+    expect(rowKey(rows, 0, { key: 'a', metaKey: true, ctrlKey: true }, all, false, true)).toBeNull();
   });
   it('moves on the arrows, extending with Shift, and stops at the ends', () => {
     expect(rowKey(rows, 0, { key: 'ArrowDown', shiftKey: true }, all)).toEqual({ kind: 'move', at: 1, extend: true });
