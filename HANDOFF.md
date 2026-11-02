@@ -43,11 +43,11 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
-- 2026-11-02, stroke trim: a trimmed stroke in draw at several zooms (the cut should not move), an inner- or
-  outer-aligned rect's trim, dashes on a trimmed run, a rounded closed path's trim through anchor 0, an
-  exported SVG and PDF in a viewer, and a stretched rounded node's fill and outline after `pathThroughPoseFrame`
-  began rounding corners before the stretch. The diagram draw-on demo was seen headless (wall, zone `weasel`:
-  6D622EA4, 027DDF5C, 8C6EF8D3, A1B69541), and picking under a mirror and stretch passed a browser test.
+- 2026-11-02, stroke trim: the site's Stroke trim lab (`#lab-stroke-trim`) holds every case beside its exported
+  SVG, with Write PDF. Seen there headless: rounded and stretched rounded paths, inner/center/outer squares, and
+  canvas, SVG, and PDF agreeing (wall, zone `weasel`: 190854B0, FED374F8). Not yet looked at: zooming in on a cut
+  (it should not move), dashes and Pace set to Anchor on a trimmed run, a start past the end wrapping a closed
+  path, and draw's Trim row (Start, End, Pace under the stroke's markers) on a drawn shape.
 - 2026-10-30 evening: rows along an arc following the arc's direction (`Bar`, tabs, radio groups, swatch rings);
   the trial status strip's scale readout about 1.5 px higher; `ListEditor` entries holding a draft until blur;
   pattern and simple even-odd fills drawn in the batch; `CurvedLabel` with no bidi engine registered.
