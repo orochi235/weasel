@@ -205,7 +205,7 @@ function runLengths(run: LengthRun, dim: 2 | 3, base: number): Float64Array {
  *  folded into authored numbering. */
 function anchorBreakpoints(
   runs: readonly LengthRun[], dim: number, cum: readonly Float64Array[], sources: Uint32Array | null,
-): Omit<LengthTableInternals, 'cum'> & { segments: number } {
+): Omit<LengthTableInternals, 'cum' | 'arcs'> & { segments: number } {
   const ids: number[] = [];
   const lens: number[] = [];
   const runAnchor = new Float64Array(runs.length * 2);
