@@ -1,7 +1,7 @@
 /**
  * The plain data `diagramScene` reads, and the options and styles it takes.
  */
-import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, PoseComposition, RectPose, Stroke } from '@weasel-js/core';
+import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, PoseComposition, RectPose, Stroke, StrokeTrim } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import type { DiagramEdge } from './edgeTrait';
@@ -218,6 +218,9 @@ export interface EdgeStyle {
   markerEnd?: MarkerRef | null;
   /** Default `stroke`. */
   label?: string;
+  /** The stretch of the route drawn, in pen order from the `from` end; the heads ride its ends.
+   *  Default the whole route. */
+  trim?: StrokeTrim;
 }
 
 /** How an edge is drawn between its ends. */

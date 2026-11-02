@@ -1,3 +1,4 @@
+import type { Animator } from '@weasel-js/animator';
 import type { Contribution, Paint, PlacedPage, RectPose, Tool, ToolsApi, View } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { CanConnect } from './connect';
@@ -226,6 +227,9 @@ export interface DiagramViewProps {
   refit?: 'overflow' | 'always';
   /** What the canvas paints behind the diagram. Unset, it is transparent. */
   background?: Paint;
+  /** Repaints the canvas on its frames and paints its overrides, as `<SceneCanvas animator>`:
+   *  an edge's trim animates through `animator.trimOverrides` by its scene node id (`edgeIdOf`). */
+  animator?: Animator;
   /** Sheets painted under the diagram, one filled rect per page; `diagramPages(data)`
    *  places them. The default fit takes in every page. */
   pages?: { placed: readonly PlacedPage[]; fill: string };

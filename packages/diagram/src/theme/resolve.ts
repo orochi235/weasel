@@ -19,11 +19,12 @@ export function roleEdgeStyle(theme: DiagramTheme, role?: string): EdgeStyle {
 
 /** The stroke a connector drawn under `theme` starts with, for a connect action's `edgeStroke`. */
 export function themeEdgeStroke(theme: DiagramTheme): Stroke {
-  const { stroke, width, dash, markerStart, markerEnd } = theme.edge;
+  const { stroke, width, dash, markerStart, markerEnd, trim } = theme.edge;
   return {
     paint: { color: stroke },
     width: width ?? 2,
     ...(dash ? { dash } : {}),
+    ...(trim !== undefined ? { trim } : {}),
     ...(markerStart ? { markerStart } : {}),
     ...(markerEnd !== null ? { markerEnd: markerEnd ?? 'arrow' } : {}),
   };

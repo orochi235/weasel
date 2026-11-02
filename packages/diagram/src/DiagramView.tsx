@@ -74,7 +74,7 @@ function Inner({
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
-  minScale, maxScale, anchor, fitPadding, bounded, refit, background, pages, view, onViewChange, className, apiRef,
+  minScale, maxScale, anchor, fitPadding, bounded, refit, background, animator, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
@@ -176,7 +176,7 @@ function Inner({
         {...(view ? { view } : {})}
         {...(onViewChange ? { onViewChange } : {})}
         {...(viewBounds ? { viewBounds } : {})}
-        {...(background ? { backgroundFill: background } : {})}
+        {...(background ? { backgroundFill: background } : {})} {...(animator ? { animator } : {})}
         {...(layers ? { layers } : {})}
       >
         <DropRules scene={scene} canReparent={canReparent} />

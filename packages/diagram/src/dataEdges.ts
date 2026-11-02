@@ -107,6 +107,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
           paint: { color: style.stroke },
           width: style.width ?? EDGE_STROKE_WIDTH,
           ...(style.dash ? { dash: style.dash } : {}),
+          ...(style.trim !== undefined ? { trim: style.trim } : {}),
           ...(markerStart !== null ? { markerStart } : {}),
           ...(markerEnd !== null ? { markerEnd } : {}),
         },

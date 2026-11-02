@@ -605,6 +605,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramEdgesDemo.tsx',
   },
   {
+    id: 'diagram-draw-on',
+    title: 'Diagram edges drawing on',
+    package: 'diagram',
+    description: "A stroke can draw only part of its path, in pen order: Stroke.trim's start and end are fractions of the length, and the end's arrowhead rides the trimmed front rather than waiting at the far end. An edge's style takes a trim like any other stroke field, but an animation does not write the scene: animator.trimOverrides holds one target per edge and end, by the edge's scene node id (edgeIdOf), and DiagramView given the animator paints whatever those targets show. So the five edges here grow from their tails one after another through an ordinary animator.stagger over their end targets, with no ops and nothing in undo history. Replay commits every end back to 0 and staggers them to 1 again.",
+    hint: "Press Replay to draw the edges on again.",
+    load: () => import('./demos/DiagramDrawOnDemo').then((m) => m.DiagramDrawOnDemo),
+    path: 'apps/site/demos/DiagramDrawOnDemo.tsx',
+  },
+  {
     id: 'diagram-layout',
     title: 'Diagram layout',
     package: 'diagram',

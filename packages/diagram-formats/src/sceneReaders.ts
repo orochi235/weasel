@@ -26,7 +26,7 @@ export interface ReadScene {
   childrenOf(id: never): readonly string[];
 }
 
-type Paint = { paint?: { color?: unknown }; width?: unknown; dash?: unknown; markerStart?: unknown; markerEnd?: unknown };
+type Paint = { paint?: { color?: unknown }; width?: unknown; dash?: unknown; trim?: unknown; markerStart?: unknown; markerEnd?: unknown };
 type Data = {
   diagram?: Record<string, unknown>; fill?: Paint; stroke?: Paint; text?: unknown; bodyRow?: unknown; bodyField?: unknown; style?: { fontSize?: unknown };
 };
@@ -163,7 +163,7 @@ export function readEdge(
   const themed = dataEdgeStyle({ style: trait.style }, theme);
   const colors = ownColors<EdgeStyle>({
     stroke: colorOf(stroke), label: label === undefined ? undefined : colorOf(dataOf(label).fill),
-    width: stroke?.width as number | undefined, dash: stroke?.dash as number[] | undefined,
+    width: stroke?.width as number | undefined, dash: stroke?.dash as number[] | undefined, trim: stroke?.trim as EdgeStyle['trim'],
     markerStart: (stroke?.markerStart ?? null) as EdgeStyle['markerStart'], markerEnd: (stroke?.markerEnd ?? null) as EdgeStyle['markerEnd'],
   }, {
     ...themed, width: themed.width ?? EDGE_STROKE_WIDTH, markerStart: themed.markerStart ?? null,
