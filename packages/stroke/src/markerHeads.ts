@@ -3,14 +3,13 @@
  */
 
 import type { MarkerRef, Stroke } from '@weasel-js/paint';
-import { type Path, type PolygonPath, boundsOfPath, pathLengthTable } from '@weasel-js/geom';
+import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
 import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from './markerInset';
 import { markerSites, type MarkerSite } from './markerSites';
 import { strokeFlattening } from './tessellate/flattening';
-import { windowPolylines } from './trim/windowPolylines';
-import { trimSpan } from './trim/trimSpan';
+import { windowTrim } from './trim/windowPolylines';
 import {
   coordsOutOfMetric, polylineIntoMetric, type ScreenSpace, type StrokeSpaces,
 } from './tessellate/metric';
@@ -96,8 +95,7 @@ function headRuns(
 ): { polyline: Polyline; fromClosed: boolean }[] {
   const polylines = extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths));
   if (stroke.trim === undefined) return polylines.map((polyline) => ({ polyline, fromClosed: polyline.closed }));
-  const span = trimSpan(path, stroke.trim);
-  return span ? windowPolylines(polylines, span, pathLengthTable(path).runs) : [];
+  return windowTrim(polylines, path, stroke.trim)?.windowed ?? [];
 }
 
 /**

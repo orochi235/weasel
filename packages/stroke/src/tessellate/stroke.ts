@@ -1,4 +1,4 @@
-import { pathLengthTable, remapPerAnchor, resolveCornersWithSources, type Path } from '@weasel-js/geom';
+import { remapPerAnchor, resolveCornersWithSources, type Path } from '@weasel-js/geom';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
@@ -7,11 +7,12 @@ import { strokeFlattening } from './flattening';
 import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
 import { windowRibbon } from './ribbonWindow';
-import { trimSpan } from '../trim/trimSpan';
+import { windowTrim } from '../trim/windowPolylines';
 import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
 import { meetInnerEdges } from './innerJoins';
 import {
-  type StrokeMetric, coordsOutOfMetric, rectIntoMetric, worldWidthInMetric, worldWidthInMetricAlongWorld,
+  type StrokeMetric, coordsOutOfMetric, polylineOutOfMetric, rectIntoMetric, worldWidthInMetric,
+  worldWidthInMetricAlongWorld,
 } from './metric';
 
 /** Options for stroke tessellation. */
@@ -117,9 +118,10 @@ export function tessellateStroke(
   let phases: number[] | undefined;
   let dashLength: number | undefined;
   if (stroke.trim !== undefined) {
+    if (from) for (const pl of polylines) polylineOutOfMetric(pl, from);
     // Resolved on the authored path, whose segments a rect shifted by alignment shares.
     ({ runs, phases, dashLength } = windowRibbon(
-      polylines, trimSpan(path, stroke.trim), pathLengthTable(path).runs, from, ribbonSpace,
+      polylines, windowTrim(polylines, path, stroke.trim), ribbonSpace,
       opts.startInset, opts.endInset, stroke.dash !== undefined,
     ));
   } else {

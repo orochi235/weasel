@@ -1,6 +1,10 @@
-import { closingAnchor, type CurvePosition, type CurveSpan, type LengthRun } from '@weasel-js/geom';
+import {
+  closingAnchor, pathLengthTable, type CurvePosition, type CurveSpan, type LengthRun, type Path,
+} from '@weasel-js/geom';
 import { type Polyline, polylineAtCurve, trimPolyline } from '@weasel-js/geom/tessellate';
+import type { StrokeTrim } from '@weasel-js/paint';
 import { polylinesLength } from '../tessellate/dash';
+import { trimSpan } from './trimSpan';
 
 const EPS = 1e-9;
 
@@ -60,6 +64,28 @@ export function windowPolylines(
     out.push({ polyline: cut, fromClosed: pl.closed, dashPhase });
   }
   return out;
+}
+
+/** A trim resolved on a path and applied to a flattening of it. */
+export interface TrimWindow {
+  /** Where the trim cuts, on the path's corner-resolved outline. */
+  span: CurveSpan;
+  /** The path's `pathLengthTable` runs, which carry its curves' control points. */
+  runs: readonly LengthRun[];
+  /** What the window leaves of the flattening. */
+  windowed: WindowedRun[];
+}
+
+/**
+ * `trim` resolved on `path` and cut out of `polylines`, a flattening of its
+ * corner-resolved outline in world space: the one sequence the ribbon and the
+ * marker heads both run, so they cut at the same points. Null when it draws nothing.
+ */
+export function windowTrim(polylines: readonly Polyline[], path: Path, trim: StrokeTrim): TrimWindow | null {
+  const span = trimSpan(path, trim);
+  if (!span) return null;
+  const { runs } = pathLengthTable(path);
+  return { span, runs, windowed: windowPolylines(polylines, span, runs) };
 }
 
 /** `pl` with its closing edge drawn out: the first point repeated at the end,

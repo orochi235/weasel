@@ -1,9 +1,9 @@
 import type { CurvePosition, CurveSpan, LengthRun } from '@weasel-js/geom';
 import type { Polyline } from '@weasel-js/geom/tessellate';
-import { windowPolylines, type WindowedRun } from '../trim/windowPolylines';
+import { type TrimWindow, windowPolylines, type WindowedRun } from '../trim/windowPolylines';
 import { polylinesLength } from './dash';
 import { type InsetLength, trimInSpace } from './insets';
-import { type StrokeMetric, polylineOutOfMetric } from './metric';
+import type { StrokeMetric } from './metric';
 
 /** What a trimmed ribbon strokes: its runs in the ribbon's space, each run's
  *  dash phase there, and the untrimmed length the solid-dash decision reads. */
@@ -22,18 +22,15 @@ const insetLength = (inset: InsetLength | undefined): number =>
   inset === undefined ? 0 : typeof inset === 'number' ? inset : inset.length;
 
 /**
- * `polylines`, whose points are in `from`'s space (`null` for world), windowed
- * to `span` (`null` draws nothing) on the curve `runs` describe, then cut by
- * the insets and carried into `ribbon`'s space. A run cut from a closed
- * subpath takes no inset, as it takes no marker. `polylines` may be mapped in place.
+ * The runs `cut` (`null` draws nothing) left of `polylines`, world-space,
+ * cut by the insets and carried into `ribbon`'s space. A run cut from a closed
+ * subpath takes no inset, as it takes no marker.
  */
 export function windowRibbon(
-  polylines: Polyline[], span: CurveSpan | null, runs: readonly LengthRun[] | undefined,
-  from: StrokeMetric | null, ribbon: StrokeMetric | null,
+  polylines: readonly Polyline[], cut: TrimWindow | null, ribbon: StrokeMetric | null,
   startInset: InsetLength | undefined, endInset: InsetLength | undefined, dashing: boolean,
 ): RibbonRuns {
-  if (from) for (const pl of polylines) polylineOutOfMetric(pl, from);
-  const windowed = span ? windowPolylines(polylines, span, runs) : [];
+  const windowed = cut?.windowed ?? [];
   const inWorld = ribbon === null && worldInset(startInset) && worldInset(endInset);
   const dashLength = !dashing ? undefined
     : inWorld ? untrimmedWorldLength(polylines, insetLength(startInset), insetLength(endInset))
@@ -41,7 +38,7 @@ export function windowRibbon(
   // Only the first run can start mid-subpath. In world its phase is the cut's distance from
   // the subpath start, since the start inset moves both by the same; elsewhere it is measured.
   const phases = windowed.map((run) => (!dashing || run.dashPhase <= 0 || inWorld ? run.dashPhase
-    : measuredPhase(polylines, runs, run, span!.from, ribbon, startInset)));
+    : measuredPhase(polylines, cut!.runs, run, cut!.span.from, ribbon, startInset)));
   const out: Polyline[] = [];
   const kept: number[] = [];
   windowed.forEach(({ polyline, fromClosed }, i) => {

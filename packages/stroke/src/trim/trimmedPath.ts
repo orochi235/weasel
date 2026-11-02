@@ -1,6 +1,6 @@
 import {
   PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath, lengthAtCurve, pathLengthTable, runSegments,
-  splitCubicAt, splitQuadraticAt, type CurvePosition, type LengthTable, type Path,
+  splitCubicAt, splitQuadraticAt, splitSubpaths, type CurvePosition, type LengthTable, type Path, type PolygonPath,
 } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { trimSpan } from './trimSpan';
@@ -56,6 +56,28 @@ export function trimmedPath(path: Path, trim: StrokeTrim | undefined): TrimmedPa
     ...(shape.origin ? { origin: shape.origin } : {}),
   };
   return out;
+}
+
+/** One stroke a writer states a {@link TrimmedPath} in. */
+export interface TrimmedRun {
+  path: Path;
+  dashPhase: number;
+  fromClosed: boolean;
+}
+
+/**
+ * `cut` as the strokes a writer states separately: the whole path as one,
+ * unless its subpaths differ in dash phase (when `dashed`) or, with
+ * `byClosed`, in whether they came from a closed subpath. A writer that
+ * restarts a dash on every subpath, or sets markers per element, needs those apart.
+ */
+export function trimmedRuns(cut: TrimmedPath, dashed: boolean, byClosed: boolean): TrimmedRun[] {
+  const { dashPhases: phases, fromClosed } = cut;
+  const alike = (i: number) => (!byClosed || fromClosed[i] === fromClosed[0]) && (!dashed || phases[i] === phases[0]);
+  if (phases.every((_p, i) => alike(i))) {
+    return [{ path: cut.path, dashPhase: phases[0] ?? 0, fromClosed: fromClosed[0] ?? false }];
+  }
+  return splitSubpaths(cut.path as PolygonPath).map((path, i) => ({ path, dashPhase: phases[i], fromClosed: fromClosed[i] }));
 }
 
 /** Run `r` of `table` from `lo` to `hi`, opened with an `M`; `whole` closes it with a `Z` instead

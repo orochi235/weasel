@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, pathFromD, type PolygonPath } from '@weasel-js/geom';
-import { trimmedPath } from './trimmedPath';
+import { trimmedPath, trimmedRuns } from './trimmedPath';
 
 const poly = (d: string) => pathFromD(d) as PolygonPath;
 const cut = (d: string, trim: Parameters<typeof trimmedPath>[1]) => {
@@ -101,5 +101,23 @@ describe('trimmedPath', () => {
     const out = trimmedPath(p, { end: 0.5 })!.path as PolygonPath;
     expect(out.origin).toEqual({ x: 1000, y: 2000 });
     expect(coords(out)).toEqual([0, 0, 5, 0]);
+  });
+});
+
+describe('trimmedRuns', () => {
+  // A closed square, then an open line.
+  const D = 'M0 0 L100 0 L100 100 L0 100 Z M200 0 L300 0';
+
+  it('keeps one stroke unless asked to part closed runs from open ones', () => {
+    const whole = cut(D, {});
+    expect(trimmedRuns(whole, true, false)).toEqual([{ path: whole.path, dashPhase: 0, fromClosed: true }]);
+    expect(trimmedRuns(whole, true, true).map((r) => [r.dashPhase, r.fromClosed])).toEqual([[0, true], [0, false]]);
+  });
+
+  it('parts runs whose dash phases differ only when dashed', () => {
+    const late = cut(D, { start: { length: 10 } });
+    expect(late.dashPhases).toEqual([10, 0]);
+    expect(trimmedRuns(late, false, false)).toHaveLength(1);
+    expect(trimmedRuns(late, true, false).map((r) => r.dashPhase)).toEqual([10, 0]);
   });
 });

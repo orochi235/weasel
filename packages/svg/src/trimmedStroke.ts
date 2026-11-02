@@ -5,9 +5,9 @@
  */
 import { fillInPoseFrame } from '@weasel-js/core';
 import {
-  boundsOfPath, lengthAtCurve, pathLengthTable, splitSubpaths, type Path, type PolygonPath,
+  boundsOfPath, lengthAtCurve, pathLengthTable, type Path,
 } from '@weasel-js/geom';
-import { trimSpan, trimmedPath, type TrimmedPath } from '@weasel-js/stroke';
+import { trimSpan, trimmedPath, trimmedRuns, type TrimmedPath } from '@weasel-js/stroke';
 import { drawsAsGroup, withoutEndMarkers } from './openSubpathFill';
 import type { SvgGroupNode, SvgNode, SvgPathNode, SvgStroke } from './types';
 import { hasVariableWidth } from './variableWidthSvg';
@@ -56,14 +56,10 @@ export function withTrimsDrawn(nodes: readonly SvgNode[]): SvgNode[] {
  *  or in taking end markers, which SVG states per element. */
 function strokeRuns(cut: TrimmedPath, stroke: SvgStroke): SvgPathNode[] {
   const dashed = (stroke.dash?.length ?? 0) > 0;
-  const runStroke = (i: number): SvgStroke => {
-    const s = cut.fromClosed[i] ? withoutEndMarkers(stroke) : stroke;
-    return dashed && cut.dashPhases[i] > 0 ? { ...s, dashOffset: cut.dashPhases[i] } : s;
-  };
-  const alike = (i: number) => cut.fromClosed[i] === cut.fromClosed[0] && (!dashed || cut.dashPhases[i] === cut.dashPhases[0]);
-  const run = (path: SvgPathNode['path'], i: number): SvgPathNode => ({ kind: 'path', path, fill: NONE, stroke: runStroke(i) });
-  if (cut.dashPhases.every((_p, i) => alike(i))) return [run(cut.path, 0)];
-  return splitSubpaths(cut.path as PolygonPath).map(run);
+  return trimmedRuns(cut, dashed, true).map(({ path, dashPhase, fromClosed }) => {
+    const s = fromClosed ? withoutEndMarkers(stroke) : stroke;
+    return { kind: 'path', path, fill: NONE, stroke: dashed && dashPhase > 0 ? { ...s, dashOffset: dashPhase } : s };
+  });
 }
 
 const NOTHING = { start: 1, end: 0 } as const;

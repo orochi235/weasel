@@ -1,7 +1,7 @@
-import { splitSubpaths, type Path, type PolygonPath } from '@weasel-js/geom';
+import type { Path } from '@weasel-js/geom';
 import { type CommandPaint, type CommandStroke, dashPattern, isSolidPaint, type Stroke } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
-import { dashLength, strokeInsets, strokeToPath, trimmedPath, type TrimmedPath } from '@weasel-js/stroke';
+import { dashLength, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
 import { NonFiniteNumber, num } from './num';
@@ -56,20 +56,12 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   out.op('RG', ...rgb);
   // The untrimmed length decides a dash too fine to draw, as it does in the renderer.
   const length = stroke.dash ? dashLength(path) : undefined;
-  for (const run of phaseRuns(cut, stroke.dash !== undefined)) {
-    strokeStyleOps(ctx, stroke, width, length, run.phase);
+  for (const run of trimmedRuns(cut, stroke.dash !== undefined, false)) {
+    strokeStyleOps(ctx, stroke, width, length, run.dashPhase);
     pathOps(out, run.path, 'all');
     out.op('S');
   }
   out.op('Q');
-}
-
-/** `cut` as the strokes it is written in: one, unless a run starts mid-pattern,
- *  since PDF restarts a dash at the same phase on every subpath. */
-function phaseRuns(cut: TrimmedPath, dashed: boolean): { path: Path; phase: number }[] {
-  const phases = cut.dashPhases;
-  if (!dashed || phases.every((p) => p === (phases[0] ?? 0))) return [{ path: cut.path, phase: phases[0] ?? 0 }];
-  return splitSubpaths(cut.path as PolygonPath).map((path, i) => ({ path, phase: phases[i] }));
 }
 
 /**

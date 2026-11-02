@@ -17,8 +17,8 @@ export type { WidthScale } from './tessellate/vertexWidths';
 export { trimInSpace } from './tessellate/insets';
 export { resolveTrim } from './trim/resolveTrim';
 export { trimSpan } from './trim/trimSpan';
-export { trimmedPath } from './trim/trimmedPath';
-export type { TrimmedPath } from './trim/trimmedPath';
+export { trimmedPath, trimmedRuns } from './trim/trimmedPath';
+export type { TrimmedPath, TrimmedRun } from './trim/trimmedPath';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
 export {
   screenSpaceKey, strokeSpaceOf, metricKey, polylineIntoMetric, polylineOutOfMetric, sameMetric,
