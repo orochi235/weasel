@@ -3,7 +3,8 @@
  * in one element, and the stroke traces only the span it draws in another, cut
  * where the canvas cuts it, so markers land at the window's ends.
  */
-import { splitSubpaths, type Path, type PolygonPath } from '@weasel-js/geom';
+import { fillInPoseFrame } from '@weasel-js/core';
+import { boundsOfPath, splitSubpaths, type Path, type PolygonPath } from '@weasel-js/geom';
 import { spanOnPath, trimSpan, trimmedPath, type TrimmedPath } from '@weasel-js/stroke';
 import { drawsAsGroup, withoutEndMarkers } from './openSubpathFill';
 import type { SvgGroupNode, SvgNode, SvgPathNode, SvgStroke } from './types';
@@ -21,7 +22,11 @@ const NONE = { kind: 'none' } as const;
 export function withTrimDrawn(node: SvgPathNode): SvgPathNode | SvgGroupNode | null {
   const { stroke, inherits: _inherits, ...rest } = node;
   if (!stroke || stroke.trim === undefined || hasVariableWidth(stroke)) return node;
-  const { trim, ...bare } = stroke;
+  const { trim, ...own } = stroke;
+  // A run's own box is not the node's: a box-relative paint is placed on the whole path first.
+  const bare = own.paint.kind === 'gradient'
+    ? { ...own, paint: { ...own.paint, paint: fillInPoseFrame(own.paint.paint, boundsOfPath(node.path)) } }
+    : own;
   const cut = trimmedPath(node.path, trim);
   const children: SvgPathNode[] = [
     ...(node.fill.kind === 'none' ? [] : [{ kind: 'path', path: node.path, fill: node.fill } as const]),

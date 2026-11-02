@@ -4,6 +4,7 @@ import {
 } from '@weasel-js/core';
 import { svgLeafFromKit } from './fromKit';
 import { serializeSvg } from './serialize';
+import type { SvgPathNode } from './types';
 
 const INK = solid('#000000');
 const RED = solid('#ff0000');
@@ -120,5 +121,26 @@ describe('svg export bakes a stroke trim', () => {
     const xs = dOf(outline).match(/-?[\d.]+/g)!.map(Number).filter((_v, i) => i % 2 === 0);
     expect(Math.max(...xs)).toBeCloseTo(50, 0);
     expect(dOf(out[0])).toBe('M0 0L100 0');
+  });
+
+  it("maps a box-relative stroke gradient onto the node's whole box, not the visible run", () => {
+    const ramp = (to: { x: number; y: number }) => ({
+      kind: 'gradient', paint: {
+        kind: 'linear-gradient', units: 'bounds', from: { x: 0, y: 0 }, to,
+        stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
+      },
+    }) as const;
+    const write = (d: string, to: { x: number; y: number }) => serializeSvg([{
+      kind: 'path', path: pathFromD(d), fill: { kind: 'none' },
+      stroke: { paint: ramp(to), width: 2, trim: { end: 0.3 } },
+    } as SvgPathNode]);
+    // The run M0 0L60 0 has no height; mapped onto it, SVG would paint nothing.
+    const flat = write('M0 0 L100 0 L100 100', { x: 0, y: 1 });
+    expect(flat).toContain('gradientUnits="userSpaceOnUse"');
+    expect(flat).toContain('x1="0" y1="0" x2="0" y2="100"');
+    // A curve's box is its extent, 75 high, wherever the window ends.
+    const curve = write('M0 0 C0 100 100 100 100 0', { x: 1, y: 1 });
+    expect(curve).toContain('gradientUnits="userSpaceOnUse"');
+    expect(curve).toContain('x1="0" y1="0" x2="100" y2="75"');
   });
 });
