@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
 import { useClockLoop } from '@weasel-js/clock/react';
-import { SceneCanvas, useHandleDrag, useLatest, useScene } from '@weasel-js/core';
-import type { Action, Dims, ImmediateParams, RenderLayer } from '@weasel-js/core';
+import { clampMove } from '@weasel-js/core/move';
+import { SceneCanvas, asNodeId, effectivePose, ellipsePath, useLatest, useScene } from '@weasel-js/core';
+import type { Action, Dims, Feature, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
@@ -126,23 +127,22 @@ function Panel({
   uniforms,
   onPointerMove,
   onPress,
-  overlay,
+  seeds,
   disabled,
 }: {
   title: string;
   program: ShaderProgramHandle;
   clock: ClockHandle;
   /** Read at each paint, so a uniform that follows the clock costs no render. */
-  uniforms: (seconds: number) => ShaderUniforms;
+  uniforms: (seconds: number, size: Dims) => ShaderUniforms;
   onPointerMove?: (x: number, y: number) => void;
   onPress?: (x: number, y: number) => void;
-  /** Drawn over the canvas, at the size it paints. */
-  overlay?: (size: Dims) => React.ReactNode;
+  /** Handles drawn over the shader, which the `move` action drags. */
+  seeds?: SeedScene;
   disabled?: boolean;
 }) {
   const uniformsRef = useLatest(uniforms);
-  const [size, setSize] = useState<Dims>({ width: PANEL_W, height: PANEL_H });
-  const sizeRef = useLatest(size);
+  const sizeRef = useRef<Dims>({ width: PANEL_W, height: PANEL_H });
 
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: `shader-${title.toLowerCase()}`,
@@ -152,7 +152,7 @@ function Panel({
       kind: 'shader',
       program,
       bounds: { x: 0, y: 0, w: dims.width, h: dims.height },
-      uniforms: uniformsRef.current(secondsOf(clock)),
+      uniforms: uniformsRef.current(secondsOf(clock), dims),
     }],
   }), [program, disabled, title, uniformsRef, clock]);
 
@@ -194,84 +194,57 @@ function Panel({
     }];
   }, [onPressRef, onPointerMoveRef, sizeRef]);
 
-  const scene = useScene<never, 'default'>({
-    systemLayers: [{ id: 'default' }],
-    initial: [],
-  });
+  // Seeds stay on the panel, so one let go past an edge can still be picked.
+  const seedTool = useMemo(() => ({
+    move: { behaviors: [clampMove<RectPose>({ bounds: () => ({ x: 0, y: 0, ...sizeRef.current }) })] },
+  }), []);
+  const empty = useScene<never, 'default'>({ systemLayers: [{ id: 'default' }], initial: [] });
+  const scene: SeedScene = seeds ?? empty;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <strong style={{ color: '#ddd', marginBottom: 4 }}>{title}</strong>
-      <div style={{ position: 'relative' }}>
-        <DemoStage width={PANEL_W} height={PANEL_H}>
-          <SceneCanvas
-            className="ckd-canvas"
-            onResize={setSize}
-            scene={scene}
-            shaders={SHADERS}
-            ambient={ambient}
-            layers={{
-              scene: { drawOne: () => [] },
-              shader: { layer, after: 'scene' },
-            }}
-          />
-        </DemoStage>
-        {overlay?.(size)}
-      </div>
+      <DemoStage width={PANEL_W} height={PANEL_H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          onResize={(s) => { sizeRef.current = s; }}
+          scene={scene}
+          shaders={SHADERS}
+          features={seeds ? SEED_FEATURES : undefined}
+          selectTool={seeds ? seedTool : undefined}
+          ambient={seeds ? undefined : ambient}
+          layers={{
+            shader: { layer, before: 'scene' },
+            scene: { drawOne: (_n, p) => seeds ? drawSeed(p) : [] },
+            selectionOverlay: null,
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Voronoi seed drag handles (SVG overlay)
+// Voronoi seeds: scene nodes over the shader, dragged by the `move` action
 // ---------------------------------------------------------------------------
 
-function SeedHandles({
-  seeds,
-  setSeeds,
-  width,
-  height,
-}: {
-  seeds: { x: number; y: number }[];
-  setSeeds: (s: { x: number; y: number }[] | ((p: { x: number; y: number }[]) => { x: number; y: number }[])) => void;
-  width: number;
-  height: number;
-}) {
-  return (
-    <svg width={width} height={height} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      {seeds.map((s, i) => (
-        <SeedHandle key={i} seed={s} index={i} width={width} height={height} setSeeds={setSeeds} />
-      ))}
-    </svg>
-  );
-}
+type SeedScene = Scene<unknown, 'default', RectPose>;
+const SEED_R = 6;
+const SEED_FEATURES: Feature[] = ['pick', 'move'];
 
-function SeedHandle({
-  seed, index, width, height, setSeeds,
-}: {
-  seed: { x: number; y: number };
-  index: number;
-  width: number;
-  height: number;
-  setSeeds: (s: { x: number; y: number }[] | ((p: { x: number; y: number }[]) => { x: number; y: number }[])) => void;
-}) {
-  const drag = useHandleDrag<SVGCircleElement>({
-    onMove: ({ x, y }) => {
-      setSeeds((prev) => prev.map((p, j) => j === index ? { x: clamp01(x / width), y: clamp01(y / height) } : p));
-    },
+const drawSeed = (p: RectPose): DrawCommand[] => [{
+  kind: 'path',
+  path: ellipsePath(p),
+  fill: { paint: { color: '#fff' } },
+  stroke: { paint: { color: '#222' }, width: 2 },
+}];
+
+/** Each seed's center as a fraction of the panel, where it is drawn: mid-drag included. */
+function seedUniform(scene: SeedScene, size: Dims): number[] {
+  return scene.renderOrderNodes().flatMap((node) => {
+    const p = effectivePose(scene, node);
+    return [clamp01((p.x + SEED_R) / size.width), clamp01((p.y + SEED_R) / size.height)];
   });
-  return (
-    <circle
-      cx={seed.x * width}
-      cy={seed.y * height}
-      r={6}
-      fill="#fff"
-      stroke="#222"
-      strokeWidth={2}
-      style={{ pointerEvents: 'auto', cursor: 'grab' }}
-      {...drag}
-    />
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -302,11 +275,22 @@ export function CustomShaderDemo() {
   useClockLoop(registry);
   const [mouse, setMouse] = useState<[number, number]>([0.5, 0.5]);
   const [ripples, setRipples] = useState<Ripple[]>([]);
-  const [mutableSeeds, setMutableSeeds] = useState<{ x: number; y: number }[]>(() =>
-    Array.from({ length: 6 }, (_, i) => ({
-      x: 0.2 + 0.6 * (i / 5),
-      y: 0.5 + 0.25 * Math.sin(i * 1.3),
-    })));
+  const seeds = useScene<unknown, 'default'>({
+    systemLayers: [{ id: 'default' }],
+    initial: Array.from({ length: 6 }, (_, i) => ({
+      id: asNodeId(`seed-${i}`),
+      kind: 'mark' as const,
+      layer: 'default' as const,
+      pose: {
+        x: (0.2 + 0.6 * (i / 5)) * PANEL_W - SEED_R,
+        y: (0.5 + 0.25 * Math.sin(i * 1.3)) * PANEL_H - SEED_R,
+        width: 2 * SEED_R,
+        height: 2 * SEED_R,
+      },
+      data: null,
+    })),
+    subscribe: false,
+  });
   const tex = useWeaselMarkTexture();
 
   return (
@@ -342,14 +326,12 @@ export function CustomShaderDemo() {
           title="Voronoi"
           program={VORONOI_PROGRAM}
           clock={clock}
-          uniforms={(time) => ({
+          uniforms={(time, size) => ({
             u_time: time,
-            u_seeds: mutableSeeds.flatMap((s) => [s.x, s.y]),
-            u_seedCount: mutableSeeds.length,
+            u_seeds: seedUniform(seeds, size),
+            u_seedCount: seeds.nodes.size,
           })}
-          overlay={(size) => (
-            <SeedHandles seeds={mutableSeeds} setSeeds={setMutableSeeds} width={size.width} height={size.height} />
-          )}
+          seeds={seeds}
         />
       </div>
     </div>

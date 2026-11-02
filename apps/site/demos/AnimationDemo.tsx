@@ -46,12 +46,6 @@ const FLICK_BLOCK = 40;
 const FLICK_COAST_MS = 180;
 
 interface Vec2 { x: number; y: number }
-const v2 = {
-  add: (a: Vec2, b: Vec2): Vec2 => ({ x: a.x + b.x, y: a.y + b.y }),
-  subtract: (a: Vec2, b: Vec2): Vec2 => ({ x: a.x - b.x, y: a.y - b.y }),
-  scale: (v: Vec2, k: number): Vec2 => ({ x: v.x * k, y: v.y * k }),
-  magnitude: (v: Vec2): number => Math.hypot(v.x, v.y),
-};
 
 function nearestGridCell(p: Vec2, area: Dims): Vec2 {
   const round = (v: number) => Math.round(v / FLICK_GRID) * FLICK_GRID;
@@ -245,15 +239,20 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   );
 }
 
+/** A flick in flight, and how to record it where it stands. */
+interface Flight { handle: PhysicsHandle<Pose>; land(): void }
+
 /**
  * Move behavior: on release, coast on the flick velocity, then retarget the
  * same in-flight physics to the nearest grid cell. One animation throughout —
  * `PhysicsHandle.setTarget` turns the decay into a spring without restarting.
+ * It runs on the node's pose target, so each frame is a pose override, and the
+ * whole flick records as one transform once it lands.
  */
 function flickToGrid(args: {
   animator: Animator;
   tracker: ReturnType<typeof useVelocityTracker>;
-  flight: React.MutableRefObject<PhysicsHandle<Vec2> | null>;
+  flight: React.MutableRefObject<Flight | null>;
   area: () => Dims;
 }): MoveBehavior<Pose> {
   const { animator, tracker, flight, area } = args;
@@ -263,8 +262,7 @@ function flickToGrid(args: {
 
   return {
     onStart(ctx) {
-      flight.current?.cancel();
-      flight.current = null;
+      flight.current?.land();
       tracker.reset();
       ctx.scratch[PREV] = pointer(ctx);
     },
@@ -277,40 +275,42 @@ function flickToGrid(args: {
     onEnd(ctx, end) {
       if (end.answered) return undefined;
       const id = ctx.draggedIds[0];
-      const start = id ? ctx.current.get(id) : undefined;
-      if (!id || !start) return undefined;
+      const release = id ? ctx.current.get(id) : undefined;
+      const target = id ? ctx.adapter.poseTarget?.(id) : undefined;
+      if (!id || !release || !target) return undefined;
+      const from = ctx.origin.get(id) ?? target.committed();
 
-      let live: Vec2 = { x: start.x, y: start.y };
-      const write = (p: Vec2) => {
-        live = p;
-        ctx.adapter.setPose(id, { ...start, x: p.x, y: p.y });
+      let live: Pose = release;
+      let landed = false;
+      let handle: PhysicsHandle<Pose> | undefined;
+      const land = (): void => {
+        if (landed) return;
+        landed = true;
+        if (flight.current?.land === land) flight.current = null;
+        handle?.cancel();
+        // The target committed the landing untracked; put the document back so the op records the move.
+        const to = target.committed();
+        target.commit(from);
+        ctx.adapter.applyOps?.([createTransformOp<Pose>({ id, from, to })], 'flick');
       };
-      // A flick below the rest threshold finishes without ever ticking, so the
-      // release pose has to be written before the physics starts.
-      write(live);
-
       const { vx, vy } = tracker.getVelocity();
-      const handle = animator.physics<Vec2>({
-        from: live,
+      handle = animator.physics<Pose>({
+        target,
+        from: release,
         to: null, // start in decay mode
         // useVelocityTracker reports px/ms; physics velocity is units/sec.
-        velocity: { x: vx * 1000, y: vy * 1000 },
+        velocity: { x: vx * 1000, y: vy * 1000, width: 0, height: 0 },
         damping: 5,
         stiffness: 80,
-        ...v2,
-        onTick: write,
-        onDone: () => {
-          flight.current = null;
-          ctx.adapter.applyOps?.(
-            [createTransformOp<Pose>({ id, from: start, to: { ...start, x: live.x, y: live.y } })],
-            'flick',
-          );
-        },
+        onTick: (p) => { live = p; },
+        onDone: () => land(),
       });
-      flight.current = handle;
-      // A newer flick, or the demo unmounting, has already canceled this one.
+      if (landed) return null;
+      const self: Flight = { handle, land };
+      flight.current = self;
+      // A newer flick, or the demo unmounting, has already ended this one.
       setTimeout(() => {
-        if (flight.current === handle) handle.setTarget(nearestGridCell(live, area()));
+        if (flight.current === self) self.handle.setTarget({ ...live, ...nearestGridCell(live, area()) });
       }, FLICK_COAST_MS);
       return null;
     },
@@ -330,10 +330,10 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   });
   const selection = useSelection();
   const tracker = useVelocityTracker();
-  const flight = useRef<PhysicsHandle<Vec2> | null>(null);
+  const flight = useRef<Flight | null>(null);
   const size = useRef<Dims>({ width: FLICK_W, height: FLICK_H });
   useEffect(() => () => {
-    flight.current?.cancel();
+    flight.current?.handle.cancel();
     flight.current = null;
   }, []);
 
