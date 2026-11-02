@@ -4,12 +4,15 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-10-30, evening)
+## State (2026-11-02)
 
-- 1.14.2 is on npm (all 49 packages, checked with `npm run check:published`); `origin/main` is at b6d8ba184.
-  `main` adds three batches from the evening of 2026-10-30, each green on the fleet (4cb4ac958, 5965a40ec,
-  76d1637e4), unpushed.
-- Nothing in flight. GitHub's visual regression job may flag text-heavy shots (small-glyph area coverage) and
+- 1.15.2 is on npm (`npm view @weasel-js/core version`); `origin/main` is at a35efd56e. `main` adds 83
+  commits, unpushed, ending in the stroke trim (`StrokeTrim` on `Stroke`; spec
+  `docs/superpowers/specs/2026-11-01-stroke-trim-design.md`), merged through `batch/2026-11-02`, whose
+  `test:fleet` (33,819 passed) and `test:fleet:postbuild` were green on ec25c0247, the commit `main` now is.
+- Nothing in flight. The stroke trim's changeset (`.changeset/stroke-trim.md`) is `patch` and spells out its
+  breaking changes. GitHub's visual regression job may flag rounded corners beside curves (corners are now cut
+  at exact arc length, up to 0.15 units from before), text-heavy shots (small-glyph area coverage) and
   translucent concave fills (the stencil cover pass now paints each pixel once); regenerate through the
   `visual-update` workflow if it does.
 - The windease fix for a never-shown node is on windease's `main` (24ec47d) and not yet released (npm has
@@ -40,6 +43,11 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-02, stroke trim: a trimmed stroke in draw at several zooms (the cut should not move), an inner- or
+  outer-aligned rect's trim, dashes on a trimmed run, a rounded closed path's trim through anchor 0, an
+  exported SVG and PDF in a viewer, and a stretched rounded node's fill and outline after `pathThroughPoseFrame`
+  began rounding corners before the stretch. The diagram draw-on demo was seen headless (wall, zone `weasel`:
+  6D622EA4, 027DDF5C, 8C6EF8D3, A1B69541), and picking under a mirror and stretch passed a browser test.
 - 2026-10-30 evening: rows along an arc following the arc's direction (`Bar`, tabs, radio groups, swatch rings);
   the trial status strip's scale readout about 1.5 px higher; `ListEditor` entries holding a draft until blur;
   pattern and simple even-odd fills drawn in the batch; `CurvedLabel` with no bidi engine registered.
