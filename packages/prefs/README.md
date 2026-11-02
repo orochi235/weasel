@@ -156,7 +156,7 @@ it opens.
 
 ### Kept separately
 
-`tbdPer` keeps a leaf's value per selector always, where `splitBy` leaves it
+`per` keeps a leaf's value per selector always, where `splitBy` leaves it
 to the reader. (The `tbd` names are placeholders until the feature is named.)
 Entries nest outermost first. A selector given `overrides` is closed: only the
 options named keep their own value, starting at the value given if any, and
@@ -165,7 +165,7 @@ value once one is written. An option's own value is not split further; the
 shared member, stored under `TBD_REST_KEY`, holds the next entry in:
 
 ```ts
-'limit': { kind: 'number', default: 1.1, tbdPer: [
+'limit': { kind: 'number', default: 1.1, per: [
   { selector: 'look.mode', overrides: { types: 0 } }, // closed: types keeps its own, from 0
   { selector: 'layout' },                             // open: a layout keeps its own once written
 ], … }

@@ -42,7 +42,7 @@ export interface PrefWritesSource {
   cache: OwnedRecordCache;
   /** The options of each leaf a value may be split by. */
   selectors: ReadonlyMap<string, readonly string[]>;
-  /** The free selectors: paths a `tbdPer` entry names that are no leaf, whose options the app names. */
+  /** The free selectors: paths a `per` entry names that are no leaf, whose options the app names. */
   free: ReadonlySet<string>;
   /** The schema version a value written is in, stamped on its record. */
   version: number;

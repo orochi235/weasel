@@ -1,4 +1,4 @@
-// A leaf's `tbdPer`: the selectors its value is always kept separately for,
+// A leaf's `per`: the selectors its value is always kept separately for,
 // read into what the locus functions take. Every name with `tbd` in it is a
 // placeholder until the feature is named.
 
@@ -21,9 +21,9 @@ export interface TbdPer {
   overrides?: readonly string[] | Readonly<Record<string, unknown>>;
 }
 
-/** The selectors a leaf's value may be held split by: its `tbdPer`'s, in order, or else its `splitBy`. */
+/** The selectors a leaf's value may be held split by: its `per`'s, in order, or else its `splitBy`. */
 export function tbdPerAxes(leaf: PrefLeaf): readonly string[] | undefined {
-  return leaf.tbdPer?.length ? leaf.tbdPer.map((per) => per.selector) : leaf.splitBy;
+  return leaf.per?.length ? leaf.per.map((per) => per.selector) : leaf.splitBy;
 }
 
 const closedOf = (overrides: NonNullable<TbdPer['overrides']>): TbdClosed =>
@@ -37,9 +37,9 @@ const closedCache = new WeakMap<PrefLeaf, TbdClosedLists | undefined>();
 
 /** The leaf's closed selectors and their lists, by the selector's path. */
 export function tbdPerClosed(leaf: PrefLeaf): TbdClosedLists | undefined {
-  if (!leaf.tbdPer?.length) return undefined;
+  if (!leaf.per?.length) return undefined;
   if (!closedCache.has(leaf)) {
-    const closed = leaf.tbdPer.flatMap((per) => (per.overrides === undefined ? [] : [[per.selector, closedOf(per.overrides)] as const]));
+    const closed = leaf.per.flatMap((per) => (per.overrides === undefined ? [] : [[per.selector, closedOf(per.overrides)] as const]));
     closedCache.set(leaf, closed.length ? Object.fromEntries(closed) : undefined);
   }
   return closedCache.get(leaf);
@@ -47,14 +47,14 @@ export function tbdPerClosed(leaf: PrefLeaf): TbdClosedLists | undefined {
 
 /**
  * What the leaf holds while nothing is stored for it: its `defaultLocus`, or
- * else one locus per `tbdPer` entry, outermost first, each holding no member
+ * else one locus per `per` entry, outermost first, each holding no member
  * of its own and the next one in as its shared member, the last with none so
  * it reads `default`.
  */
 export function tbdPerDefault(leaf: PrefLeaf): PrefLocus | undefined {
-  if (leaf.defaultLocus !== undefined || !leaf.tbdPer?.length) return leaf.defaultLocus;
+  if (leaf.defaultLocus !== undefined || !leaf.per?.length) return leaf.defaultLocus;
   let inner: PrefLocus | undefined;
-  for (const per of [...leaf.tbdPer].reverse()) {
+  for (const per of [...leaf.per].reverse()) {
     inner = inner === undefined ? { $by: per.selector, $in: {} } : withShared(per.selector, inner);
   }
   return inner;

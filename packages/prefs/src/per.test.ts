@@ -84,10 +84,10 @@ describe('nested entries', () => {
   });
 });
 
-describe('a leaf with tbdPer', () => {
+describe('a leaf with per', () => {
   const leaf = {
     kind: 'number', name: 'Limit', description: '', default: 1.1,
-    tbdPer: [{ selector: MODE, overrides: { types: 2 } }, { selector: LAYOUT, overrides: ['explorer'] }, { selector: 'document' }],
+    per: [{ selector: MODE, overrides: { types: 2 } }, { selector: LAYOUT, overrides: ['explorer'] }, { selector: 'document' }],
   } as PrefLeaf;
 
   it('defaults to an empty locus per entry, nested outermost first', () => {

@@ -29,7 +29,7 @@ export interface PrefsStore<S extends PrefGroup> {
    * they name, and under `weights` it is the blend its kind makes of the
    * members that weigh something. A selector `weights` leaves out keeps its
    * own value, or with `at` the option given there. A free selector, a path a
-   * `tbdPer` entry names that is no leaf, has an option only where `at` or
+   * `per` entry names that is no leaf, has an option only where `at` or
    * `weights` gives it one, and reads its shared member elsewhere.
    */
   get<P extends PrefPath<S>>(path: P, read?: { weights?: PrefWeights; at?: PrefSelection }): PrefValueAt<S, P>;

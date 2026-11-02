@@ -32,7 +32,7 @@ export interface SnapshotSource {
   cache: OwnedRecordCache;
   /** The options of each leaf a value may be split by. */
   selectors: ReadonlyMap<string, readonly string[]>;
-  /** The free selectors: paths a `tbdPer` entry names that are no leaf, whose options the app names. */
+  /** The free selectors: paths a `per` entry names that are no leaf, whose options the app names. */
   free?: ReadonlySet<string>;
   validators?: Readonly<Record<string, PrefValidator>>;
   blends?: Readonly<Record<string, PrefBlend>>;

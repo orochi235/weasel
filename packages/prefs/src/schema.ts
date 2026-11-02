@@ -107,10 +107,10 @@ export interface PrefBase<K extends string, Value> {
    *  {@link PrefLocus} whose shared member holds the next entry in; an
    *  option's own member stops there and is not split further. A leaf has
    *  this or `splitBy`, not both. */
-  tbdPer?: readonly TbdPer[];
+  per?: readonly TbdPer[];
   /** What the leaf holds while nothing is stored for it, where that is a
    *  split value: a default that differs by option. Split only by entries of
-   *  `splitBy` or `tbdPer`; under `tbdPer` it defaults to an empty locus per
+   *  `splitBy` or `per`; under `per` it defaults to an empty locus per
    *  entry, nested. `default` stays what a member it leaves out reads as, and
    *  what the leaf's value type is read from. */
   defaultLocus?: PrefLocus;

@@ -52,7 +52,7 @@ export interface SplitLevel {
   by: string;
   /** The selector leaf's name. */
   name: string;
-  /** A row each: the options with a member of their own, then, where the leaf's `tbdPer` closes the selector over some
+  /** A row each: the options with a member of their own, then, where the leaf's `per` closes the selector over some
    *  out, one labeled `Others` standing for all of those, which share one member. */
   options: ReadonlyArray<{ value: string; label: string }>;
   /** The label of the option the selector is set to. */
@@ -65,7 +65,7 @@ export interface SplitShape {
   levels: SplitLevel[];
   /** The selectors it is not split by and may be. */
   free: Array<{ by: string; name: string }>;
-  /** The value is kept by its leaf's `tbdPer`, which the reader neither splits nor joins. */
+  /** The value is kept by its leaf's `per`, which the reader neither splits nor joins. */
   kept: boolean;
   locus: PrefLocus | undefined;
 }
@@ -117,7 +117,7 @@ export function splitShape(
 ): SplitShape | null {
   const axes = tbdPerAxes(pref);
   if (!axes?.length) return null;
-  const kept = !!pref.tbdPer?.length;
+  const kept = !!pref.per?.length;
   const by = prefLocusSelectors(locus);
   const levels: SplitLevel[] = [];
   const free: SplitShape['free'] = [];

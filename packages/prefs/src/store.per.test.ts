@@ -15,13 +15,13 @@ const SCHEMA = {
     },
     limit: {
       kind: 'number', name: 'Limit', description: '', default: 300000,
-      tbdPer: [{ selector: 'mode', overrides: { types: 0 } }],
+      per: [{ selector: 'mode', overrides: { types: 0 } }],
     },
-    bare: { kind: 'number', name: 'Bare', description: '', default: 8, tbdPer: [{ selector: 'mode', overrides: ['types'] }] },
-    width: { kind: 'number', name: 'Width', description: '', default: 1, tbdPer: [{ selector: 'document' }] },
+    bare: { kind: 'number', name: 'Bare', description: '', default: 8, per: [{ selector: 'mode', overrides: ['types'] }] },
+    width: { kind: 'number', name: 'Width', description: '', default: 1, per: [{ selector: 'document' }] },
     ratio: {
       kind: 'number', name: 'Ratio', description: '', default: 1.1,
-      tbdPer: [{ selector: 'mode', overrides: { types: 2 } }, { selector: 'layout', overrides: { explorer: 0.3 } }],
+      per: [{ selector: 'mode', overrides: { types: 2 } }, { selector: 'layout', overrides: { explorer: 0.3 } }],
     },
   },
 } satisfies PrefGroup;
@@ -105,7 +105,7 @@ describe('nested entries in a store', () => {
   });
 });
 
-describe('checking tbdPer', () => {
+describe('checking per', () => {
   it('accepts an open selector, and names an option that is none, a selector listed twice, and splitBy beside it', () => {
     const schema = {
       name: 'Bad',
@@ -113,12 +113,12 @@ describe('checking tbdPer', () => {
         mode: { kind: 'enum', name: 'Mode', description: '', default: 'a', options: [{ value: 'a', label: 'A' }] },
         gap: {
           kind: 'number', name: 'Gap', description: '', default: 1, splitBy: ['mode'],
-          tbdPer: [{ selector: 'mode', overrides: ['z'] }, { selector: 'doc' }, { selector: 'doc' }],
+          per: [{ selector: 'mode', overrides: ['z'] }, { selector: 'doc' }, { selector: 'doc' }],
         },
       },
     } satisfies PrefGroup;
     expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual([
-      'a leaf with tbdPer may not list splitBy too',
+      'a leaf with per may not list splitBy too',
       'its closed list names "z", which is no option of "mode"',
       '"doc" is listed twice',
     ]);

@@ -15,7 +15,7 @@ const SCHEMA: PrefGroup = {
     },
     limit: {
       kind: 'number', name: 'Limit', description: '', default: 9,
-      tbdPer: [{ selector: 'mode', overrides: { types: 0 } }, { selector: 'layout' }],
+      per: [{ selector: 'mode', overrides: { types: 0 } }, { selector: 'layout' }],
     },
   },
 };

@@ -10,7 +10,7 @@ import type { PrefEnum, PrefLeaf } from './schema';
 /** One thing wrong with a leaf's `splitBy`. */
 export interface PrefSplitProblem {
   code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per';
-  /** The path of the leaf whose `splitBy` or `tbdPer` it is. */
+  /** The path of the leaf whose `splitBy` or `per` it is. */
   at: string;
   /** The entry of `splitBy` the problem is with, where it is with one. */
   path?: string;
@@ -40,23 +40,23 @@ export function prefSelectors(leaves: ReadonlyMap<string, PrefLeaf>): Map<string
   return out;
 }
 
-/** The free selectors of `leaves`: each path a `tbdPer` entry names that is no leaf, whose options the app names. */
+/** The free selectors of `leaves`: each path a `per` entry names that is no leaf, whose options the app names. */
 export function freeSelectors(leaves: ReadonlyMap<string, PrefLeaf>): Set<string> {
   const out = new Set<string>();
   for (const leaf of leaves.values()) {
-    for (const per of leaf.tbdPer ?? []) if (!leaves.has(per.selector)) out.add(per.selector);
+    for (const per of leaf.per ?? []) if (!leaves.has(per.selector)) out.add(per.selector);
   }
   return out;
 }
 
-/** What is wrong with the `tbdPer` of the leaf at `at`. */
+/** What is wrong with the `per` of the leaf at `at`. */
 function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>): PrefSplitProblem[] {
   const out: PrefSplitProblem[] = [];
-  if (leaf.splitBy?.length) out.push({ code: 'per', at, problem: 'a leaf with tbdPer may not list splitBy too' });
+  if (leaf.splitBy?.length) out.push({ code: 'per', at, problem: 'a leaf with per may not list splitBy too' });
   const closed = tbdPerClosed(leaf) ?? {};
-  leaf.tbdPer!.forEach((per, i) => {
+  leaf.per!.forEach((per, i) => {
     const path = per.selector;
-    if (leaf.tbdPer!.findIndex((other) => other.selector === path) !== i) {
+    if (leaf.per!.findIndex((other) => other.selector === path) !== i) {
       out.push({ code: 'twice', at, path, problem: `"${path}" is listed twice` });
       return;
     }
@@ -74,7 +74,7 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
   return out;
 }
 
-/** Everything wrong with the `splitBy` and `tbdPer` lists of `schema`'s leaves, in schema order. */
+/** Everything wrong with the `splitBy` and `per` lists of `schema`'s leaves, in schema order. */
 export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
   const leaves = prefLeaves(schema);
   const out: PrefSplitProblem[] = [];
@@ -89,7 +89,7 @@ export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
       out.push({ code: 'valueless', at, problem: `a ${leaf.kind} leaf holds no value to split` });
       continue;
     }
-    if (leaf.tbdPer?.length) {
+    if (leaf.per?.length) {
       out.push(...perProblems(at, leaf, leaves));
       continue;
     }

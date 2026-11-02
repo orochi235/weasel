@@ -20,11 +20,11 @@ next write to it stores `$in`. Code that builds or reads a `PrefLocus` itself re
 A leaf may now be kept separately per selector, always, rather than split by the reader. Every name
 starting `tbd`/`TBD_` is a placeholder until the feature is named, and will be renamed.
 
-- **Schema.** `tbdPer: [{ selector, overrides? }, …]` on a leaf, outermost first. `selector` is a
+- **Schema.** `per: [{ selector, overrides? }, …]` on a leaf, outermost first. `selector` is a
   selector's path. With `overrides`, the selector is **closed**: only the options it names keep their
   own value, and every other option shares one. `overrides` is either option names or option →
   proposed value. Without `overrides`, the selector is **open**: an option gets its own value once one
-  is written for it. A leaf has `tbdPer` or `splitBy`, not both.
+  is written for it. A leaf has `per` or `splitBy`, not both.
 - **Stored value.** A `PrefLocus` with one more member, the shared one, under `TBD_REST_KEY`
   (now `$else`): `{ $by: 'mode', $in: { types: 0 }, $else: { $by: 'layout', $in: { explorer: 0.3 }, $else: 1.1 } }`.
   With nothing stored, the leaf holds one empty locus per entry, each holding the next as its shared
@@ -53,5 +53,5 @@ starting `tbd`/`TBD_` is a placeholder until the feature is named, and will be r
   decided here; resolution assumes neither.
 
 `PrefsForm`'s split rows draw a closed selector as one row per option it names and one `Others` row
-that edits the shared member, and offer neither split nor join for a `tbdPer` leaf. labkit's config
-nodes take `.tbdPer(selector, overrides?)`, chained outermost first.
+that edits the shared member, and offer neither split nor join for a `per` leaf. labkit's config
+nodes take `.per(selector, overrides?)`, chained outermost first.

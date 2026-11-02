@@ -100,9 +100,9 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    * Without, it is open: an option keeps its own once one is written. The
    * name is a placeholder until the feature is named.
    */
-  tbdPer(selector: string, overrides?: TbdPer['overrides']): this {
+  per(selector: string, overrides?: TbdPer['overrides']): this {
     const per: TbdPer = overrides === undefined ? { selector } : { selector, overrides };
-    return this.ann({ tbdPer: [...(this.annotations.tbdPer ?? []), per] });
+    return this.ann({ per: [...(this.annotations.per ?? []), per] });
   }
 
   /** Render under a named section heading. `collapsed` opens the section

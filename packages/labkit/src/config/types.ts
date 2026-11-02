@@ -87,8 +87,8 @@ export interface Annotations {
   run?: ConfigActionRun;
   /** The path of the leaf an alias shows. */
   of?: string;
-  /** The selectors the leaf's value is kept separately for, outermost first. Set by `.tbdPer`. */
-  tbdPer?: readonly TbdPer[];
+  /** The selectors the leaf's value is kept separately for, outermost first. Set by `.per`. */
+  per?: readonly TbdPer[];
 }
 
 /** What an `f.action`'s run is told where labkit draws it: its path, and the config of the
