@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pathFromD, pathLengthTable } from '@weasel-js/geom';
-import { INHERIT, type Stroke } from '@weasel-js/paint';
+import { INHERIT, type PaintedStroke, type Stroke } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
 import type { Node } from 'core/scene/types';
 import { findShapeInk, shapeCoversPoint } from './NodeShape';
@@ -122,7 +122,7 @@ describe('shapeCoversPoint memoizes a trimmed outline', () => {
   it('reads a changed inherited trim on the same node and pose', () => {
     const pose: Pose = { ...LINE_POSE, rotation: Math.PI / 2 };
     const n = node({ path: LINE, fill: null, stroke: INHERIT }, pose);
-    const at = (end: number) => ({ inherited: { stroke: stroke({ trim: { end } }) } });
+    const at = (end: number) => ({ inherited: { fill: null, stroke: stroke({ trim: { end } }) as PaintedStroke } });
     expect(shapeCoversPoint(n, pose, 50, 25, at(0.5))).toBe(false);
     expect(shapeCoversPoint(n, pose, 50, 25, at(1))).toBe(true);
     expect(shapeCoversPoint(n, pose, 50, 25, at(0.5))).toBe(false);
@@ -138,7 +138,7 @@ describe('shapeCoversPoint on a derived path in parts', () => {
   };
 
   it("trims each part along its own length by the node's trim", () => {
-    const parts = [{ path: A, stroke: INHERIT }, { path: B, stroke: INHERIT }];
+    const parts: DerivedPart[] = [{ path: A, stroke: INHERIT }, { path: B, stroke: INHERIT }];
     const own = stroke({ trim: { end: 0.5 } });
     expect(covers(own, parts, 25, 0)).toBe(true);
     expect(covers(own, parts, 75, 0)).toBe(false);
@@ -147,14 +147,14 @@ describe('shapeCoversPoint on a derived path in parts', () => {
   });
 
   it("keeps a part's own untrimmed stroke whole under a trimmed node", () => {
-    const parts = [{ path: A, stroke: INHERIT }, { path: B, stroke: stroke() }];
+    const parts: DerivedPart[] = [{ path: A, stroke: INHERIT }, { path: B, stroke: stroke() }];
     const own = stroke({ trim: { end: 0.5 } });
     expect(covers(own, parts, 75, 0)).toBe(false);
     expect(covers(own, parts, 75, 50)).toBe(true);
   });
 
   it('hits nothing of a part whose trim draws nothing', () => {
-    const parts = [{ path: A, stroke: INHERIT }, { path: B, stroke: stroke({ trim: { start: 1 } }) }];
+    const parts: DerivedPart[] = [{ path: A, stroke: INHERIT }, { path: B, stroke: stroke({ trim: { start: 1 } }) }];
     expect(covers(stroke(), parts, 75, 0)).toBe(true);
     expect(covers(stroke(), parts, 50, 50)).toBe(false);
   });
