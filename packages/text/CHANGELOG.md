@@ -1,5 +1,18 @@
 # @weasel-js/text
 
+## 1.16.0
+
+### Patch Changes
+
+- f9cfd00: Degree and radian conversions in these packages use geom's `DEG_TO_RAD` and `RAD_TO_DEG` instead of
+  writing `Math.PI / 180` out by hand. Results are unchanged up to floating-point rounding.
+- Updated dependencies [63056ee]
+- Updated dependencies [f9cfd00]
+  - @weasel-js/paint@1.16.0
+  - @weasel-js/geom@1.16.0
+  - @weasel-js/font@1.16.0
+  - @weasel-js/registry@1.16.0
+
 ## 1.15.2
 
 ### Patch Changes

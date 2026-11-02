@@ -1,5 +1,13 @@
 # @weasel-js/menu
 
+## 1.16.0
+
+### Patch Changes
+
+- @weasel-js/ui-logic@1.16.0
+  - @weasel-js/quantity@1.16.0
+  - @weasel-js/registry@1.16.0
+
 ## 1.15.2
 
 ### Patch Changes
