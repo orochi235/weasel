@@ -69,6 +69,7 @@ export {
   isPrefLocus,
   locusSelectors as prefLocusSelectors,
   memberAt as prefLocusMember,
+  locusMember as prefScopeOptionValue,
   TBD_REST_KEY,
   type PrefLocus,
   type PrefSelection,

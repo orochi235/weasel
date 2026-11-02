@@ -10,13 +10,13 @@ const SCHEMA = {
   name: 'Test',
   children: {
     mode: leaf({ kind: 'enum', default: 'dark', options: [option('dark'), option('light')] }),
-    size: leaf({ kind: 'enum', default: 's', options: [option('s'), option('m')], splitBy: ['mode'] }),
+    size: leaf({ kind: 'enum', default: 's', options: [option('s'), option('m')], per: [{ selector: 'mode' }] }),
     script: leaf({ kind: 'enum', default: undefined, clearable: true, options: [option('super'), option('sub')] }),
     dash: leaf({ kind: 'enum', default: 'solid', options: [option('solid')], encoding: { read: () => 'solid', write: () => [] } }),
     on: leaf({ kind: 'boolean', default: true }),
-    rule: leaf({ kind: 'separator', default: undefined, splitBy: ['mode'] }),
-    good: leaf({ kind: 'number', default: 1, splitBy: ['mode'] }),
-    bad: leaf({ kind: 'number', default: 1, splitBy: ['mode', 'nowhere', 'on', 'script', 'dash', 'size', 'mode'] }),
+    rule: leaf({ kind: 'separator', default: undefined, per: [{ selector: 'mode' }] }),
+    good: leaf({ kind: 'number', default: 1, per: [{ selector: 'mode' }] }),
+    bad: leaf({ kind: 'number', default: 1, per: [{ selector: 'mode' }, { selector: 'nowhere' }, { selector: 'on' }, { selector: 'script' }, { selector: 'dash' }, { selector: 'size' }, { selector: 'mode' }] }),
   },
 } as unknown as PrefGroup;
 

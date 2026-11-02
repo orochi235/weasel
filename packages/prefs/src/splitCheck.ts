@@ -1,5 +1,5 @@
 // Which leaves a schema lets a value be split by, and what is wrong with a
-// `splitBy` that names something else: what a store warns of.
+// `per` that names something else: what a store warns of.
 
 import type { PrefGroup } from './groups';
 import { prefHoldsValue, prefLeaves } from './helpers';
@@ -7,12 +7,12 @@ import { tbdPerAxes, tbdPerClosed } from './per';
 import { locusSelectors } from './locus';
 import type { PrefEnum, PrefLeaf } from './schema';
 
-/** One thing wrong with a leaf's `splitBy`. */
+/** One thing wrong with a pref's `per`, or with the schema's free selectors. */
 export interface PrefSplitProblem {
   code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per' | 'free';
-  /** The path of the leaf whose `splitBy` or `per` it is. */
+  /** The path of the pref whose `per` it is; `''` for the schema. */
   at: string;
-  /** The entry of `splitBy` the problem is with, where it is with one. */
+  /** The selector the problem is with, where it is with one. */
   path?: string;
   problem: string;
 }
@@ -48,7 +48,6 @@ export function freeSelectors(schema: PrefGroup): Set<string> {
 /** What is wrong with the `per` of the leaf at `at`. */
 function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, free: ReadonlySet<string>): PrefSplitProblem[] {
   const out: PrefSplitProblem[] = [];
-  if (leaf.splitBy?.length) out.push({ code: 'per', at, problem: 'a leaf with per may not list splitBy too' });
   const closed = tbdPerClosed(leaf) ?? {};
   leaf.per!.forEach((per, i) => {
     const path = per.selector;
@@ -73,7 +72,7 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
   return out;
 }
 
-/** Everything wrong with the `splitBy` and `per` lists of `schema`'s leaves, in schema order. */
+/** Everything wrong with the `per` lists of `schema`'s prefs and with its free selectors, in schema order. */
 export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
   const leaves = prefLeaves(schema);
   const free = freeSelectors(schema);
@@ -85,25 +84,14 @@ export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
     const axes = tbdPerAxes(leaf);
     for (const path of locusSelectors(leaf.defaultLocus)) {
       if (axes?.includes(path)) continue;
-      out.push({ code: 'default', at, path, problem: `its defaultLocus is split by "${path}", which its splitBy does not list` });
+      out.push({ code: 'default', at, path, problem: `its defaultLocus is split by "${path}", which its per does not name` });
     }
     if (!axes?.length) continue;
     if (!prefHoldsValue(leaf)) {
       out.push({ code: 'valueless', at, problem: `a ${leaf.kind} leaf holds no value to split` });
       continue;
     }
-    if (leaf.per?.length) {
-      out.push(...perProblems(at, leaf, leaves, free));
-      continue;
-    }
-    axes.forEach((path, i) => {
-      if (axes.indexOf(path) !== i) {
-        out.push({ code: 'twice', at, path, problem: `"${path}" is listed twice` });
-        return;
-      }
-      const why = refusal(leaves.get(path));
-      if (why) out.push({ code: why[0], at, path, problem: `"${path}" ${why[1]}` });
-    });
+    out.push(...perProblems(at, leaf, leaves, free));
   }
   return out;
 }

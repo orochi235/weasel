@@ -153,16 +153,24 @@ export function dropUnlisted(stored: unknown, closed: TbdClosedLists | undefined
 }
 
 /**
- * `stored` split by the selector at `by`, every option starting as the value
- * it had. `order` is the leaf's `splitBy`: a selector earlier in it sits
+ * `stored` split by the selector at `by`, every option that may keep a value
+ * of its own holding the value it had, and the shared value the same. The
+ * same value where it is split by `by` already.
+ * `order` is the pref's `per` selectors: a selector earlier in it sits
  * outside a later one, so one meaning has one stored form.
  */
-export function splitLocus(stored: unknown, by: string, options: readonly string[], order: readonly string[]): unknown {
-  const across = (value: unknown): PrefLocus => ({ $by: by, $in: Object.fromEntries(options.map((option) => [option, value])) });
+export function splitLocus(
+  stored: unknown, by: string, options: readonly string[], order: readonly string[], closed?: TbdClosedLists,
+): unknown {
+  const own = closed?.[by]?.options ?? options;
+  const across = (value: unknown): PrefLocus => {
+    const out: PrefLocus = { $by: by, $in: Object.fromEntries(own.map((option) => [option, value])) };
+    return options.every((option) => own.includes(option)) ? out : withRest(out, value);
+  };
   if (!isPrefLocus(stored)) return across(stored);
   if (stored.$by === by) return stored;
   if (order.indexOf(stored.$by) > order.indexOf(by)) return across(stored);
-  return mapMembers(stored, (inner) => splitLocus(inner, by, options, order));
+  return mapMembers(stored, (inner) => splitLocus(inner, by, options, order, closed));
 }
 
 /** `stored` no longer split by the selector at `by`: where it was, the member `selection` names stays. */

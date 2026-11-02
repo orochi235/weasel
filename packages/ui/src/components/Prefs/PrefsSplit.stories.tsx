@@ -27,8 +27,8 @@ const SCHEMA = {
     panel: {
       name: 'Panel',
       children: {
-        gap: { kind: 'number', name: 'Gap', description: 'Between two rows.', default: 4, min: 0, max: 48, splitBy: [MODE, DENSITY] },
-        surface: { kind: 'color', name: 'Surface', description: '', default: '#1d1b26', splitBy: [MODE] },
+        gap: { kind: 'number', name: 'Gap', description: 'Between two rows.', default: 4, min: 0, max: 48, per: [{ selector: MODE }, { selector: DENSITY }] },
+        surface: { kind: 'color', name: 'Surface', description: '', default: '#1d1b26', per: [{ selector: MODE }] },
         title: { kind: 'string', name: 'Title', description: '', default: 'Untitled' },
       },
     },
@@ -65,7 +65,7 @@ export default meta;
 
 type Story = StoryObj<typeof SplitForm>;
 
-/** A leaf that lists `splitBy` offers a split by each selector, and draws its one control until it is taken. */
+/** A pref with `per` offers a split by each selector, and draws its one control until it is taken. */
 export const NotSplit: Story = {};
 
 /** Split by one selector: the row marks the option the selector is set to, and its control edits that member. */

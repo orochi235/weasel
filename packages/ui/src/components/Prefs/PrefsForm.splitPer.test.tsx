@@ -43,9 +43,11 @@ describe('a value kept per a closed selector in PrefsForm', () => {
     expect(onChangeAt).toHaveBeenCalledWith('limit', 7, { mode: 'dark' });
   });
 
-  it('offers neither a split nor a join', () => {
-    mount();
+  it('offers a join for the selector it is split by, and no split by a free selector', () => {
+    const { onJoin } = mount();
     fireEvent.click(screen.getByRole('button', { name: 'Limit by Mode' }));
-    expect(screen.queryByRole('button', { name: /^(Split|Join) / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Split / })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Join Mode' }));
+    expect(onJoin).toHaveBeenCalledWith('limit', 'mode');
   });
 });

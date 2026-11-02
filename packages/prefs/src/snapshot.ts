@@ -21,7 +21,7 @@ export interface Snapshot {
   /** The option each selector is set to. */
   selection: PrefSelection;
   /** The leaves split by each selector, by the selector's path. */
-  splitBy: Map<string, string[]>;
+  splitUnder: Map<string, string[]>;
   tree: Record<string, unknown>;
   unset: ReadonlySet<string>;
 }
@@ -92,18 +92,18 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     for (const path of selectors.keys()) selection[path] = held.get(path) as string;
     const weights = selectionWeights(selection);
     const byPath = new Map<string, unknown>();
-    const splitBy = new Map<string, string[]>();
+    const splitUnder = new Map<string, string[]>();
     const loci = new Map<string, PrefLocus>();
     const tree: Record<string, unknown> = {};
     for (const [path, leaf] of leaves) {
       const value = held.get(path);
       if (isPrefLocus(value)) loci.set(path, value);
-      for (const selector of locusSelectors(value)) splitBy.set(selector, [...(splitBy.get(selector) ?? []), path]);
+      for (const selector of locusSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
       const read = resolveHeld(source, leaf, value, weights);
       byPath.set(path, read);
       assignPrefValueAtPath(tree, path, read);
     }
-    return { byPath, held, loci, selection, splitBy, tree, unset };
+    return { byPath, held, loci, selection, splitUnder, tree, unset };
   };
 
   return {

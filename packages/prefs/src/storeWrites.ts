@@ -76,7 +76,7 @@ export function prefWrites({ leaves, cache, selectors, free, version, selection,
     warnIfClosed(path);
     const leaf = leaves.get(path);
     const options = selectors.get(by);
-    if (leaf?.splitBy?.includes(by) && options) return { leaf, options };
+    if (leaf && tbdPerAxes(leaf)?.includes(by) && options) return { leaf, options };
     console.warn(`[prefs] "${path}" cannot be split by "${by}"; ignoring`);
     return undefined;
   };
@@ -103,14 +103,14 @@ export function prefWrites({ leaves, cache, selectors, free, version, selection,
     const found = splitOf(path, by);
     if (!found) return;
     const had = rawAt(path, found.leaf);
-    const next = splitLocus(had, by, found.options, found.leaf.splitBy!);
+    const next = splitLocus(had, by, found.options, tbdPerAxes(found.leaf)!, tbdPerClosed(found.leaf));
     if (next !== had) store(path, next);
   };
   const join = (path: string, by: string): void => {
     const found = splitOf(path, by);
     if (!found) return;
     const had = rawAt(path, found.leaf);
-    const next = joinLocus(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default));
+    const next = joinLocus(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default), tbdPerClosed(found.leaf));
     if (next !== had) store(path, next);
   };
   return { set, split, join };

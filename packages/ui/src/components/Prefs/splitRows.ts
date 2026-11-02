@@ -17,12 +17,12 @@ import {
 
 /** What a form is given to draw and edit the values its leaves hold split. */
 export interface PrefSplitProps {
-  /** What each split leaf holds, by the path its value is stored at: `store.loci()`. A leaf that lists `splitBy`
+  /** What each split leaf holds, by the path its value is stored at: `store.loci()`. A pref with `per`
    *  and is named here draws a marker for the option each of its selectors is set to, and opens to a control
    *  for every option. `values` still holds the one value such a leaf reads as. */
   loci?: ReadonlyMap<string, PrefLocus>;
   /** The reader asked for the leaf's value to be held once per option of the selector at `by`, one of its
-   *  `splitBy`. Given, a leaf offers it for each selector its value is not split by. */
+   *  `per` selectors. Given, a leaf offers it for each selector its value is not split by. */
   onSplit?: (path: string, by: string) => void;
   /** The reader asked for the leaf's value to be one again across the selector at `by`. Given, a leaf offers it
    *  for each selector its value is split by. */
@@ -37,7 +37,7 @@ export interface PrefSplitProps {
 
 /** What a form's rows read to draw split values: the form's props, its schema's selectors, and which rows are open. */
 export interface SplitCtx extends Omit<PrefSplitProps, 'defaultSplitOpen'> {
-  /** The leaf a `splitBy` entry names. `aliased` asks the schema the form's aliases point into. */
+  /** The leaf a `per` entry names. `aliased` asks the schema the form's aliases point into. */
   selectorAt: (path: string, aliased: boolean) => PrefLeaf | undefined;
   /** The paths of the rows open to their members. */
   opened: ReadonlySet<string>;
@@ -65,8 +65,6 @@ export interface SplitShape {
   levels: SplitLevel[];
   /** The selectors it is not split by and may be. */
   free: Array<{ by: string; name: string }>;
-  /** The value is kept by its leaf's `per`, which the reader neither splits nor joins. */
-  kept: boolean;
   locus: PrefLocus | undefined;
 }
 
@@ -106,7 +104,7 @@ export function useSplitRows(
 }
 
 /**
- * How `pref`'s value is split, read from the locus it holds and the selectors its `splitBy` names. `selectorAt`
+ * How `pref`'s value is split, read from the locus it holds and the selectors its `per` names. `selectorAt`
  * finds a selector's leaf, and `values` says what each is set to. Null for a leaf that names no usable selector.
  */
 export function splitShape(
@@ -117,7 +115,6 @@ export function splitShape(
 ): SplitShape | null {
   const axes = tbdPerAxes(pref);
   if (!axes?.length) return null;
-  const kept = !!pref.per?.length;
   const by = prefLocusSelectors(locus);
   const levels: SplitLevel[] = [];
   const free: SplitShape['free'] = [];
@@ -126,7 +123,7 @@ export function splitShape(
     if (leaf?.kind !== 'enum') continue;
     const selector = leaf as PrefEnum;
     if (!by.has(path)) {
-      if (!kept) free.push({ by: path, name: selector.name });
+      free.push({ by: path, name: selector.name });
       continue;
     }
     const set = prefValueAtPath(values, path);
@@ -138,7 +135,7 @@ export function splitShape(
     const options = shared ? [...owning, { value: shared.value, label: 'Others' }] : owning;
     levels.push({ by: path, name: selector.name, options, current: all.find((o) => o.value === value)?.label ?? String(value) });
   }
-  return levels.length + free.length === 0 ? null : { levels, free, kept, locus };
+  return levels.length + free.length === 0 ? null : { levels, free, locus };
 }
 
 /** What a split row is called: the leaf's name and the selectors its value is split by. */

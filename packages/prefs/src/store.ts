@@ -37,8 +37,8 @@ export interface PrefsStore<S extends PrefGroup> {
    *  with `at` the one named with each selector there set to the option given.
    *  A {@link PrefLocus} given as the value replaces the whole of what is held. */
   set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefLocus, write?: { at?: PrefSelection }): void;
-  /** Hold the leaf's value once per option of the selector at `by`, one of
-   *  the leaf's `splitBy`, each option starting as the value it had. */
+  /** Hold the pref's value once per option of the selector at `by`, one of
+   *  its `per` selectors, each option starting as the value it had. */
   split(path: PrefPath<S>, by: string): void;
   /** Stop splitting the leaf's value by the selector at `by`, keeping the
    *  member that selector's own value names. */
@@ -126,7 +126,7 @@ export function createPrefsStore<S extends PrefGroup>(
   for (const { field, at, problem } of checkPrefConditions(schema)) {
     console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
   }
-  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] splitBy of "${at}": ${problem}`);
+  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `per of "${at}"`}: ${problem}`);
   const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), free: freeSelectors(schema), validators, blends };
   const { current, peek, drop } = createSnapshots(source);
 
@@ -143,7 +143,7 @@ export function createPrefsStore<S extends PrefGroup>(
     const now = current();
     const origins = new Map(mine.map((c) => [c.name, c.origin]));
     for (const c of mine) {
-      for (const path of [...(before?.splitBy.get(c.name) ?? []), ...(now.splitBy.get(c.name) ?? [])]) {
+      for (const path of [...(before?.splitUnder.get(c.name) ?? []), ...(now.splitUnder.get(c.name) ?? [])]) {
         if (!origins.has(path)) origins.set(path, c.origin);
       }
     }

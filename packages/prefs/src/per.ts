@@ -21,9 +21,9 @@ export interface TbdPer {
   overrides?: readonly string[] | Readonly<Record<string, unknown>>;
 }
 
-/** The selectors a leaf's value may be held split by: its `per`'s, in order, or else its `splitBy`. */
+/** The selectors a pref's value may be held split by: its `per`'s, in order. */
 export function tbdPerAxes(leaf: PrefLeaf): readonly string[] | undefined {
-  return leaf.per?.length ? leaf.per.map((per) => per.selector) : leaf.splitBy;
+  return leaf.per?.length ? leaf.per.map((per) => per.selector) : undefined;
 }
 
 const closedOf = (overrides: NonNullable<TbdPer['overrides']>): TbdClosed =>

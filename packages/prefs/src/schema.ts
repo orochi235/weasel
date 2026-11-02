@@ -94,24 +94,18 @@ export interface PrefBase<K extends string, Value> {
    *  schema editor shows such a leaf as one closed thing and prints the name
    *  in place of its literal. */
   type?: string;
-  /** The `enum` leaves this one's value may be split by, each by the full
-   *  path its value is read at: the value may then be held once per option
-   *  of any of them (a {@link PrefLocus}), which the store folds into the one
-   *  value read. Whether it is split is the stored value's to say. The
-   *  order is the order a value split by several is stored in, the first
-   *  outermost. Each must be a plain `enum`: not `clearable`, with no
-   *  `encoding`, and not split itself. */
-  splitBy?: readonly string[];
-  /** The selectors this leaf's value is always kept separately for, one
-   *  entry each, outermost first ({@link TbdPer}). The stored value is a
-   *  {@link PrefLocus} whose shared member holds the next entry in; an
-   *  option's own member stops there and is not split further. A leaf has
-   *  this or `splitBy`, not both. */
+  /** The selectors this pref's value is kept separately for, one entry each,
+   *  outermost first ({@link TbdPer}). Each names an `enum` pref by its full
+   *  path, which must be plain: not `clearable`, with no `encoding`, and not
+   *  scoped itself; or a selector the schema's root declares free. The
+   *  stored value is a {@link PrefLocus} whose shared value holds the next
+   *  entry in; an option's own value stops there and is not split further.
+   *  A reader may still join a stored value into one, and split it again. */
   per?: readonly TbdPer[];
   /** What the leaf holds while nothing is stored for it, where that is a
-   *  split value: a default that differs by option. Split only by entries of
-   *  `splitBy` or `per`; under `per` it defaults to an empty locus per
-   *  entry, nested. `default` stays what a member it leaves out reads as, and
+   *  split value: a default that differs by option. Split only by selectors
+   *  `per` names; without it, the default is an empty locus per entry,
+   *  nested. `default` stays what a member it leaves out reads as, and
    *  what the leaf's value type is read from. */
   defaultLocus?: PrefLocus;
 }

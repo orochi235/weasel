@@ -27,7 +27,7 @@ describe('weaselPrefsCss', () => {
         `import { GAP } from './look';`,
         `export const SCHEMA = pref.group('Prefs', {`,
         `  mode: pref.enum('Mode', 'dark', ['dark', 'light']),`,
-        `  gap: pref.number('Gap', GAP, { unit: { scale: 1, suffix: 'px' }, splitBy: ['mode'] }),`,
+        `  gap: pref.number('Gap', GAP, { unit: { scale: 1, suffix: 'px' }, per: [{ selector: 'mode' }] }),`,
         `});`,
       ].join('\n'),
     );

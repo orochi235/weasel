@@ -21,7 +21,7 @@ const flag = { kind: 'boolean', name: 'Flag', description: '', default: false } 
 
 /** A form of `look` and one leaf at `key`, held split by mode as `locus`, with that row open. */
 function openSplit(key: string, leaf: PrefLeaf, locus: PrefLocus, props: Partial<PrefsFormProps> = {}) {
-  const schema: PrefGroup = { name: 'Prefs', children: { look: LOOK, [key]: { ...leaf, splitBy: [MODE] } as PrefLeaf } };
+  const schema: PrefGroup = { name: 'Prefs', children: { look: LOOK, [key]: { ...leaf, per: [{ selector: MODE }] } as PrefLeaf } };
   const onChangeAt = vi.fn();
   renderWithIcons(
     <PrefsForm schema={schema} layout="list" values={{}} onChange={vi.fn()} loci={new Map([[key, locus]])}
@@ -79,7 +79,7 @@ describe('a split row the form draws for another reason', () => {
   it('opens an alias row to the members of the leaf it shows, read and written at that leaf’s path', () => {
     const over: PrefGroup = {
       name: 'App',
-      children: { look: LOOK, panel: { name: 'Panel', children: { gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: [MODE] } } } },
+      children: { look: LOOK, panel: { name: 'Panel', children: { gap: { kind: 'number', name: 'Gap', description: '', default: 4, per: [{ selector: MODE }] } } } },
     };
     const schema: PrefGroup = {
       name: 'Tool', children: { gap: { kind: 'alias', name: 'Spacing', description: '', default: undefined, of: 'panel.gap' } as PrefLeaf },

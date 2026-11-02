@@ -1,4 +1,4 @@
-import { isPrefLocus, prefLeaves, type PrefGroup, type PrefLeaf, type PrefLocus } from '@weasel-js/prefs';
+import { isPrefLocus, prefLeaves, type PrefGroup, type PrefLeaf, type PrefLocus, type TbdPer } from '@weasel-js/prefs';
 import { selectionKey } from '../axes.ts';
 import { weaselTheme, type Theme } from '../theme.ts';
 import { prefOfCss, tokenLeafKind } from './leaf.ts';
@@ -28,10 +28,10 @@ export const locusByAxis = (axis: string, members: Record<string, unknown>): Pre
 // On its group's page a token's group prefix says nothing; its whole name stays a tag, so a filter still finds it.
 const shortName = (row: TokenRow): string => (row.name.startsWith(`${row.group}-`) ? row.name.slice(row.group.length + 1) : row.name);
 
-function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, splitBy: readonly string[]): PrefLeaf {
+function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, per: readonly TbdPer[]): PrefLeaf {
   const name = shortName(row);
   const leaf = {
-    ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown, splitBy,
+    ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown, per,
     ...(name === row.name ? {} : { tags: [row.name] }),
   } as PrefLeaf;
   const fallback = row.css[selectionKey(table.axes, {})] ?? Object.values(row.css)[0];
@@ -66,12 +66,12 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
       options: Object.keys(def.values).map((value) => ({ value, label: labeled(value) })),
     };
   }
-  const splitBy = Object.keys(table.axes).map(themeAxisPath);
+  const per = Object.keys(table.axes).map((axis): TbdPer => ({ selector: themeAxisPath(axis) }));
   const children: Record<string, PrefGroup> = { [THEME_PREFS_AXIS]: { name: 'Axes', children: axes } };
   for (const row of table.rows) {
     const key = groupKey(row.group);
     children[key] ??= { name: labeled(row.group), children: {} };
-    children[key].children[row.name] = tokenLeaf(row, table, splitBy);
+    children[key].children[row.name] = tokenLeaf(row, table, per);
   }
   return { name: `${labeled(theme.name)} theme`, children };
 }

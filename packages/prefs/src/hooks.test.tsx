@@ -92,13 +92,14 @@ describe('usePrefsValues', () => {
           kind: 'enum', name: 'Mode', description: '', default: 'dark',
           options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }],
         },
-        gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: ['mode'] },
+        gap: { kind: 'number', name: 'Gap', description: '', default: 4, per: [{ selector: 'mode' }] },
       },
     } satisfies PrefGroup;
     const store = openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 'p.' });
     const { result } = renderHook(() => usePrefsValues(store));
-    const empty = result.current.loci;
-    expect(empty.size).toBe(0);
+    expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $in: {} });
+    act(() => result.current.join('gap', 'mode'));
+    expect(result.current.loci.size).toBe(0);
     act(() => result.current.split('gap', 'mode'));
     expect(result.current.loci.get('gap')).toEqual({ $by: 'mode', $in: { dark: 4, light: 4 } });
     act(() => result.current.setAt('gap', 9, { mode: 'light' }));

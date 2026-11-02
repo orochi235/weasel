@@ -90,7 +90,7 @@ leaf, where it would hold one. The other leaf, the selector, is an ordinary
 
 ```ts
 'look.mode': { kind: 'enum', default: 'dark', options: [dark, light], … }
-'gap':       { kind: 'number', default: 4, splitBy: ['look.mode'], … }
+'gap':       { kind: 'number', default: 4, per: [{ selector: 'look.mode' }], … }
 
 store.split('gap', 'look.mode');   // holds { $by: 'look.mode', $in: { dark: 4, light: 4 } }
 store.set('gap', 8);               // writes the member the mode is set to
@@ -142,7 +142,7 @@ nothing is stored for it, and `default` stays what a member it leaves out
 reads as:
 
 ```ts
-'gap': { kind: 'number', default: 4, splitBy: ['look.mode'],
+'gap': { kind: 'number', default: 4, per: [{ selector: 'look.mode' }],
          defaultLocus: { $by: 'look.mode', $in: { dark: 4, light: 6 } }, … }
 
 store.get('gap');                                    // 4, or 6 once the mode is light

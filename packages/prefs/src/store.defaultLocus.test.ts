@@ -22,9 +22,9 @@ const SCHEMA = {
     },
     gap: {
       kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100,
-      splitBy: [MODE, DENSITY], defaultLocus: byMode(4, 6),
+      per: [{ selector: MODE }, { selector: DENSITY }], defaultLocus: byMode(4, 6),
     },
-    plain: { kind: 'number', name: 'Plain', description: '', default: 1, splitBy: [MODE] },
+    plain: { kind: 'number', name: 'Plain', description: '', default: 1, per: [{ selector: MODE }] },
   },
 } satisfies PrefGroup;
 
@@ -47,7 +47,7 @@ describe('a leaf whose default is split', () => {
   it('holds the default as its locus, and lists it among the loci', () => {
     const { store } = make();
     expect(store.locus('gap')).toEqual(byMode(4, 6));
-    expect([...store.loci().keys()]).toEqual(['gap']);
+    expect([...store.loci().keys()]).toEqual(['gap', 'plain']);
   });
 
   it('blends the default members under weights', () => {
@@ -99,10 +99,10 @@ describe('a leaf whose default is split', () => {
     expect(css).toContain(":where(:root[data-mode='light']) {\n  --mode: light;\n  --gap: 6;");
   });
 
-  it('leaves a leaf with no split default as one value', () => {
+  it('gives a leaf with no split default a scope per selector, which a write fills for the current option', () => {
     const { store, cache } = make();
     store.set('plain', 3);
-    expect(recordValue(cache.get('plain'))).toBe(3);
+    expect(recordValue(cache.get('plain'))).toEqual({ $by: MODE, $in: { dark: 3 } });
   });
 });
 
@@ -114,13 +114,13 @@ describe('a split default the leaf cannot hold', () => {
       children: {
         mode: SCHEMA.children.mode,
         gap: { kind: 'number', name: 'Gap', description: '', default: 4, defaultLocus: byMode(4, 6) },
-        pad: { kind: 'number', name: 'Pad', description: '', default: 2, splitBy: [MODE], defaultLocus: { $by: 'nope', $in: { a: 1 } } },
+        pad: { kind: 'number', name: 'Pad', description: '', default: 2, per: [{ selector: MODE }], defaultLocus: { $by: 'nope', $in: { a: 1 } } },
       },
     } satisfies PrefGroup;
     const store = createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.' }));
     expect(warn.mock.calls.map((c) => c[0])).toEqual([
-      '[prefs] splitBy of "gap": its defaultLocus is split by "mode", which its splitBy does not list',
-      '[prefs] splitBy of "pad": its defaultLocus is split by "nope", which its splitBy does not list',
+      '[prefs] per of "gap": its defaultLocus is split by "mode", which its per does not name',
+      '[prefs] per of "pad": its defaultLocus is split by "nope", which its per does not name',
     ]);
     expect(store.get('gap')).toBe(4);
     expect(store.locus('gap')).toBeUndefined();

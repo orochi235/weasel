@@ -18,7 +18,7 @@ const BAR: PrefGroup = {
       kind: 'enum', name: 'Mode', description: '', default: 'dark',
       options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }],
     },
-    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, splitBy: [MODE] },
+    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, per: [{ selector: MODE }] },
   },
 };
 

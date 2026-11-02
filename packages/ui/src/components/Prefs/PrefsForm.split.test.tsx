@@ -25,7 +25,7 @@ const SCHEMA: PrefGroup = {
         },
       },
     },
-    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, splitBy: [MODE, DENSITY] },
+    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, per: [{ selector: MODE }, { selector: DENSITY }] },
     name: { kind: 'string', name: 'Name', description: '', default: 'untitled' },
   },
 };
@@ -101,7 +101,7 @@ describe('a split value in PrefsForm', () => {
       children: {
         look: SCHEMA.children.look!,
         align: {
-          kind: 'enum', name: 'Align', description: '', default: 'tight', splitBy: [MODE],
+          kind: 'enum', name: 'Align', description: '', default: 'tight', per: [{ selector: MODE }],
           options: [{ value: 'tight', label: 'Tight' }, { value: 'loose', label: 'Loose' }],
         },
       },
@@ -172,7 +172,7 @@ describe('a split value in PrefsForm', () => {
     expect(screen.getByRole('spinbutton', { name: 'Gap, Light' })).toHaveValue('4');
   });
 
-  it('draws a leaf with no splitBy as it did, whatever the form is given', () => {
+  it('draws a leaf with no per as it did, whatever the form is given', () => {
     const plain: PrefGroup = { name: 'Prefs', children: { name: SCHEMA.children.name! } };
     const bare = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()} />);
     const given = markup(<PrefsForm schema={plain} layout="list" values={{}} onChange={vi.fn()} onSplit={vi.fn()} onJoin={vi.fn()}
@@ -181,7 +181,7 @@ describe('a split value in PrefsForm', () => {
   });
 
   it('draws a leaf that may be split as it did in a form given nothing to split with', () => {
-    const never: PrefGroup = { ...SCHEMA, children: { ...SCHEMA.children, gap: { ...SCHEMA.children.gap!, splitBy: undefined } as never } };
+    const never: PrefGroup = { ...SCHEMA, children: { ...SCHEMA.children, gap: { ...SCHEMA.children.gap!, per: undefined } as never } };
     const bare = markup(<PrefsForm schema={never} layout="list" values={{ gap: 4 }} onChange={vi.fn()} />);
     const given = markup(<PrefsForm schema={SCHEMA} layout="list" values={{ gap: 4 }} onChange={vi.fn()} />);
     expect(given).toBe(bare);
@@ -232,7 +232,7 @@ describe('a split value where the row has no members to open', () => {
         shadow: {
           name: 'Shadow',
           children: {
-            on: { kind: 'boolean', name: 'Shadow on', description: '', default: true, control: 'switch', heading: true, splitBy: [MODE] },
+            on: { kind: 'boolean', name: 'Shadow on', description: '', default: true, control: 'switch', heading: true, per: [{ selector: MODE }] },
             blur: { kind: 'number', name: 'Blur', description: '', default: 4 },
           },
         },
@@ -285,7 +285,7 @@ describe('a split value under what else shapes a row', () => {
       children: {
         look: SCHEMA.children.look!,
         edge: {
-          kind: 'object', name: 'Edge', description: '', default: { width: 1, inset: 0 }, splitBy: [MODE],
+          kind: 'object', name: 'Edge', description: '', default: { width: 1, inset: 0 }, per: [{ selector: MODE }],
           children: {
             width: { kind: 'number', name: 'Width', description: '', default: 1 },
             inset: { kind: 'number', name: 'Inset', description: '', default: 0 },
@@ -318,7 +318,7 @@ describe('a split value under what else shapes a row', () => {
   it('hands an app renderer each member as it hands it the leaf', () => {
     const schema: PrefGroup = {
       ...SCHEMA,
-      children: { look: SCHEMA.children.look!, odd: { kind: 'odd', name: 'Odd', description: '', default: 1, splitBy: [MODE] } as never },
+      children: { look: SCHEMA.children.look!, odd: { kind: 'odd', name: 'Odd', description: '', default: 1, per: [{ selector: MODE }] } as never },
     };
     const { onChangeAt } = mount({
       schema, values: { odd: 2 }, loci: new Map([['odd', byMode(2, 3)]]),
@@ -336,7 +336,7 @@ describe('the control that opens a split row', () => {
       name: 'Test',
       children: {
         mode: { kind: 'enum', name: 'Mode', description: '', default: 'dark', options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }] },
-        gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: ['mode'] },
+        gap: { kind: 'number', name: 'Gap', description: '', default: 4, per: [{ selector: 'mode' }] },
       },
     };
     const loci = new Map([['gap', { $by: 'mode', $in: { dark: 4, light: 8 } }]]);

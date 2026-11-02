@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isPrefLocus, tbdPerClosed, type PrefLeaf, type PrefLocus } from '@weasel-js/prefs';
+import { isPrefLocus, prefScopeOptionValue, tbdPerClosed, type PrefLeaf, type PrefLocus } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { Disclosure } from '../Disclosure';
@@ -37,7 +37,7 @@ export function splitRowState(
   if (shape === null) return null;
   const { levels, free } = shape;
   const members = shape.locus !== undefined && levels.length > 0 && split.onChangeAt !== undefined && !mixed;
-  const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && !shape.kept && levels.length > 0);
+  const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && levels.length > 0);
   const name = levels.length > 0 ? splitName(pref.name, levels) : `Split ${pref.name}`;
   return { shape, members, opens, open: opens && split.opened.has(own), name, bodyId: split.bodyId(own) };
 }
@@ -128,26 +128,29 @@ export function SplitBody({ ctx, state, split, parts }: {
       </PropertyRow>
     );
   };
-  const under = (held: PrefLocus, depth: number, outer: SplitMember | undefined): ReactNode[] =>
+  const closed = tbdPerClosed(pref);
+  /** The rows under `here`, the part of `held` that `outer` names. */
+  const under = (held: PrefLocus, here: unknown, depth: number, outer: SplitMember | undefined): ReactNode[] =>
     levels[depth]!.options.map((option) => {
-      const member = splitMember(held, outer, levels[depth]!, option, pref.default, tbdPerClosed(pref));
-      // A kept value's own member is not split by the rules inside it, so it has one row.
-      if (depth === levels.length - 1 || (state.shape.kept && !isPrefLocus(member.value))) return row(member);
+      const member = splitMember(held, outer, levels[depth]!, option, pref.default, closed);
+      const inner = isPrefLocus(here) && here.$by === levels[depth]!.by ? prefScopeOptionValue(here, option.value, undefined, closed) : here;
+      // An option's own value is not split by the selectors inside it, so it has one row.
+      if (depth === levels.length - 1 || !isPrefLocus(inner)) return row(member);
       return (
         <div key={option.value} role="group" aria-label={option.label} className={c.branch}>
           <span className={c.branchName}>{option.label}</span>
-          {under(held, depth + 1, member)}
+          {under(held, inner, depth + 1, member)}
         </div>
       );
     });
   return (
     <div id={state.bodyId} role="group" aria-label={state.name} className={c.body}>
-      {state.members && locus !== undefined && under(locus, 0, undefined)}
+      {state.members && locus !== undefined && under(locus, locus, 0, undefined)}
       <div className={c.actions}>
         {onSplit && free.map(({ by, name }) => (
           <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onSplit(path, by)}>Split by {name}</Button>
         ))}
-        {onJoin && !state.shape.kept && levels.map(({ by, name }) => (
+        {onJoin && levels.map(({ by, name }) => (
           <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onJoin(path, by)}>Join {name}</Button>
         ))}
       </div>

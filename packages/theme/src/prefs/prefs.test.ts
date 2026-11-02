@@ -23,7 +23,7 @@ describe('themePrefsSchema', () => {
     expect(LEAVES.has('status.danger')).toBe(true);
     expect(LEAVES.get('swatch.swatch-size')).toMatchObject({ kind: 'number', default: 28 });
     for (const [path, leaf] of LEAVES) {
-      if (!path.startsWith('axis.')) expect(leaf.splitBy, path).toEqual(['axis.mode', 'axis.density']);
+      if (!path.startsWith('axis.')) expect(leaf.per, path).toEqual([{ selector: 'axis.mode' }, { selector: 'axis.density' }]);
     }
     expect(checkPrefSplits(SCHEMA)).toEqual([]);
   });
@@ -65,16 +65,16 @@ describe('themePrefsSchema', () => {
 });
 
 describe('a store over a theme, back as a theme', () => {
-  it('pins a leaf that was set, a split one by axis, and leaves the rest to the theme', () => {
+  it('pins a leaf that was set, under the axis options it was set at, and leaves the rest to the theme', () => {
     const store = open(SCHEMA);
     store.set('gray.gray-50', '#ff3366');
     store.set('surface.surface', '#fffdf8', { at: { 'axis.mode': 'light' } });
     store.set('motion.motion-fast', 90);
     const dark = resolveTheme(weaselTheme)['--wzl-surface'];
     expect(themePrefsPins(store)).toEqual({
-      'gray-50': '#ff3366',
+      'gray-50': { by: 'mode', dark: '#ff3366' },
       surface: { by: 'mode', dark, light: '#fffdf8' },
-      'motion-fast': '90ms',
+      'motion-fast': { by: 'mode', dark: '90ms' },
     });
   });
 
@@ -120,7 +120,7 @@ describe('themePrefsValues', () => {
 
   it('keeps the loci of a set leaf, and reads an unset one split as the pinned theme has it', () => {
     const store = open(SCHEMA);
-    store.split('gray.gray-50', 'axis.density');
+    store.join('gray.gray-50', 'axis.mode');
     const { loci } = themePrefsValues(store, weaselTheme);
     expect(loci.get('gray.gray-50')?.$by).toBe('axis.density');
     expect(loci.get('surface.surface')).toEqual(store.locus('surface.surface'));
