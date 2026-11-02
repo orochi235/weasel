@@ -8,13 +8,34 @@ import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/d
 import { derivesPath } from './memo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { strokedBounds } from './strokedBounds';
-import { inkCovers, trimmedOutline, type PickReach } from './pickOutline';
+import { inkCovers, trimmedOutline, type PickReach, type TrimmedOutline } from './pickOutline';
 import { inkReach, inkTrim, withAnimatedVertexColors } from './nodePaint';
 import { resolveFill, resolveStroke, strokeTrimKey, type PaintedFill, type PaintedStroke } from '@weasel-js/paint';
-import { nodeMemo } from 'core/scene/nodeMemo';
 
-const PART_WORLD_SLOT = 'shape:part-world';
-const PART_TRIM_SLOT = 'shape:part-trim-pick';
+/** A derived part's path framed by one pose, and its trimmed outline under one trim. */
+interface FramedPart {
+  pose: unknown;
+  world: Path;
+  trimKey?: string;
+  trimmed?: TrimmedOutline;
+}
+
+// Kept per part path, which is immutable, so the length tables and corners built on the framed
+// outline are reused across picks; a new pose object or trim replaces the entry.
+const FRAMED = new WeakMap<Path, FramedPart>();
+
+function framedPart(path: Path, pose: unknown): FramedPart {
+  const hit = FRAMED.get(path);
+  if (hit && hit.pose === pose) return hit;
+  const made: FramedPart = { pose, world: pathThroughPoseFrame(path, pose) };
+  FRAMED.set(path, made);
+  return made;
+}
+
+/** Test seam: the trimmed outline kept for `path`'s part, if any. */
+export function _framedPartOutlineForTests(path: Path): TrimmedOutline | undefined {
+  return FRAMED.get(path)?.trimmed;
+}
 
 type PaintData = { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null; vertexColors?: number[] };
 
@@ -117,12 +138,19 @@ export function partsCover(
   const framed = poseFrameOf(pose) !== null;
   return parts.some((part) => {
     const { fill, stroke } = resolvePartPaint(part, d, opts.inherited);
-    // Framed paths are kept per part, so the length tables and corners built on them are reused across picks.
-    const world = framed ? nodeMemo(part, PART_WORLD_SLOT, pose, () => pathThroughPoseFrame(part.path, pose)) : part.path;
+    const framing = framed ? framedPart(part.path, pose) : null;
+    const world = framing?.world ?? part.path;
     const ink = { filled: fill !== null, ...inkReach(stroke, opts.scale) };
     const trim = stroke?.trim;
-    const trimmed = trim === undefined ? undefined
-      : nodeMemo(part, PART_TRIM_SLOT, pose, () => trimmedOutline(part.path, world, pose, trim), strokeTrimKey(trim));
+    let trimmed: TrimmedOutline | undefined;
+    if (trim !== undefined) {
+      const key = strokeTrimKey(trim);
+      if (framing && framing.trimKey === key && framing.trimmed) trimmed = framing.trimmed;
+      else {
+        trimmed = trimmedOutline(part.path, world, pose, trim);
+        if (framing) Object.assign(framing, { trimKey: key, trimmed });
+      }
+    }
     return inkCovers(world, ink, trimmed, x, y, opts);
   });
 }

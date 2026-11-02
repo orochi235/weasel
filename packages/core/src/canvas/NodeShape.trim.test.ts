@@ -5,7 +5,7 @@ import {
 import { trimSpan } from '@weasel-js/stroke';
 import { INHERIT, type PaintedStroke, type Stroke } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
-import { nodeMemoSlotCount } from 'core/scene/nodeMemo';
+import { _framedPartOutlineForTests } from './nodeShapes/derivedPainter';
 import type { Node } from 'core/scene/types';
 import { findShapeInk, shapeCoversPoint } from './NodeShape';
 import { solid } from '../util/paint';
@@ -188,7 +188,14 @@ describe('shapeCoversPoint on a derived path in parts', () => {
     const n = { ...node({ fill: null, stroke: stroke({ trim: { end: 0.5 } }) }, pose), dependsOn: ['a'], derivePath: 'k' };
     const derivedPath = pathFromParts(parts);
     expect(shapeCoversPoint(n as never, pose, 0, 0, { derivedPath })).toBe(true);
-    expect(nodeMemoSlotCount(parts[0])).toBeGreaterThan(0);
+    const kept = _framedPartOutlineForTests(A);
+    expect(kept).toBeDefined();
+    expect(shapeCoversPoint(n as never, pose, 0, 0, { derivedPath })).toBe(true);
+    expect(_framedPartOutlineForTests(A)).toBe(kept);
+    // A changed trim misses.
+    const longer = { ...n, data: { fill: null, stroke: stroke({ trim: { end: 0.9 } }) } };
+    expect(shapeCoversPoint(longer as never, pose, 100, 0, { derivedPath })).toBe(true);
+    expect(_framedPartOutlineForTests(A)).not.toBe(kept);
   });
 
   it('hits nothing of a part whose trim draws nothing', () => {
