@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { PrefLeaf, PrefLocus } from '@weasel-js/prefs';
+import { isPrefLocus, tbdPerClosed, type PrefLeaf, type PrefLocus } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { Disclosure } from '../Disclosure';
@@ -37,7 +37,7 @@ export function splitRowState(
   if (shape === null) return null;
   const { levels, free } = shape;
   const members = shape.locus !== undefined && levels.length > 0 && split.onChangeAt !== undefined && !mixed;
-  const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && levels.length > 0);
+  const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && !shape.kept && levels.length > 0);
   const name = levels.length > 0 ? splitName(pref.name, levels) : `Split ${pref.name}`;
   return { shape, members, opens, open: opens && split.opened.has(own), name, bodyId: split.bodyId(own) };
 }
@@ -130,8 +130,9 @@ export function SplitBody({ ctx, state, split, parts }: {
   };
   const under = (held: PrefLocus, depth: number, outer: SplitMember | undefined): ReactNode[] =>
     levels[depth]!.options.map((option) => {
-      const member = splitMember(held, outer, levels[depth]!, option, pref.default);
-      if (depth === levels.length - 1) return row(member);
+      const member = splitMember(held, outer, levels[depth]!, option, pref.default, tbdPerClosed(pref));
+      // A kept value's own member is not split by the rules inside it, so it has one row.
+      if (depth === levels.length - 1 || (state.shape.kept && !isPrefLocus(member.value))) return row(member);
       return (
         <div key={option.value} role="group" aria-label={option.label} className={c.branch}>
           <span className={c.branchName}>{option.label}</span>
@@ -146,7 +147,7 @@ export function SplitBody({ ctx, state, split, parts }: {
         {onSplit && free.map(({ by, name }) => (
           <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onSplit(path, by)}>Split by {name}</Button>
         ))}
-        {onJoin && levels.map(({ by, name }) => (
+        {onJoin && !state.shape.kept && levels.map(({ by, name }) => (
           <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onJoin(path, by)}>Join {name}</Button>
         ))}
       </div>

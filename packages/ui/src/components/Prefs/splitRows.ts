@@ -4,12 +4,15 @@ import {
   prefLocusMember,
   prefLocusSelectors,
   prefValueAtPath,
+  tbdPerAxes,
+  tbdPerClosed,
   type PrefEnum,
   type PrefGroup,
   type PrefLeaf,
   type PrefLocus,
   type PrefSection,
   type PrefSelection,
+  type TbdClosedLists,
 } from '@weasel-js/prefs';
 
 /** What a form is given to draw and edit the values its leaves hold split. */
@@ -49,6 +52,8 @@ export interface SplitLevel {
   by: string;
   /** The selector leaf's name. */
   name: string;
+  /** A row each: the options with a member of their own, then, where the leaf's `tbdPer` closes the selector over some
+   *  out, one labeled `Others` standing for all of those, which share one member. */
   options: ReadonlyArray<{ value: string; label: string }>;
   /** The label of the option the selector is set to. */
   current: string;
@@ -60,6 +65,8 @@ export interface SplitShape {
   levels: SplitLevel[];
   /** The selectors it is not split by and may be. */
   free: Array<{ by: string; name: string }>;
+  /** The value is kept by its leaf's `tbdPer`, which the reader neither splits nor joins. */
+  kept: boolean;
   locus: PrefLocus | undefined;
 }
 
@@ -108,24 +115,30 @@ export function splitShape(
   selectorAt: (path: string) => PrefLeaf | undefined,
   values: unknown,
 ): SplitShape | null {
-  if (!pref.splitBy?.length) return null;
+  const axes = tbdPerAxes(pref);
+  if (!axes?.length) return null;
+  const kept = !!pref.tbdPer?.length;
   const by = prefLocusSelectors(locus);
   const levels: SplitLevel[] = [];
   const free: SplitShape['free'] = [];
-  for (const path of pref.splitBy) {
+  for (const path of axes) {
     const leaf = selectorAt(path);
     if (leaf?.kind !== 'enum') continue;
     const selector = leaf as PrefEnum;
     if (!by.has(path)) {
-      free.push({ by: path, name: selector.name });
+      if (!kept) free.push({ by: path, name: selector.name });
       continue;
     }
     const set = prefValueAtPath(values, path);
     const value = typeof set === 'string' ? set : selector.default;
-    const options = selector.options.map((option) => ({ value: option.value, label: option.label }));
-    levels.push({ by: path, name: selector.name, options, current: options.find((o) => o.value === value)?.label ?? String(value) });
+    const all = selector.options.map((option) => ({ value: option.value, label: option.label }));
+    const list = tbdPerClosed(pref)?.[path]?.options;
+    const owning = list ? all.filter((option) => list.includes(option.value)) : all;
+    const shared = all.find((option) => !owning.includes(option));
+    const options = shared ? [...owning, { value: shared.value, label: 'Others' }] : owning;
+    levels.push({ by: path, name: selector.name, options, current: all.find((o) => o.value === value)?.label ?? String(value) });
   }
-  return levels.length + free.length === 0 ? null : { levels, free, locus };
+  return levels.length + free.length === 0 ? null : { levels, free, kept, locus };
 }
 
 /** What a split row is called: the leaf's name and the selectors its value is split by. */
@@ -133,10 +146,14 @@ export function splitName(name: string, levels: readonly SplitLevel[]): string {
   return `${name} by ${levels.map((level) => level.name).join(' and ')}`;
 }
 
-/** The member under one option of `level`, further in from `outer`; an option the locus holds nothing for reads as `absent`. */
+/**
+ * The member under one option of `level`, further in from `outer`; an option the locus holds nothing for reads as
+ * `absent`. `closed` is the leaf's `tbdPerClosed`, by which an option a closed list leaves out reads the shared member.
+ */
 export function splitMember(
   locus: PrefLocus, outer: SplitMember | undefined, level: SplitLevel, option: { value: string; label: string }, absent: unknown,
+  closed?: TbdClosedLists,
 ): SplitMember {
   const at = { ...outer?.at, [level.by]: option.value };
-  return { at, labels: [...(outer?.labels ?? []), option.label], value: prefLocusMember(locus, at, absent) };
+  return { at, labels: [...(outer?.labels ?? []), option.label], value: prefLocusMember(locus, at, absent, closed) };
 }
