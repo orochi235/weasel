@@ -6,7 +6,7 @@
  * close-hint ring on the first anchor when the tool flags it as hot.
  *
  * Runs in screen space so anchor/handle sizes stay constant under zoom.
- * All world-space coords go through `worldToScreen` via the layer's `view`
+ * All world-space coords go through `viewWorldToScreen` with the layer's `view`
  * argument.
  */
 
@@ -14,7 +14,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { KitSettingsStore } from '@weasel-js/react';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
-import { PATH_C, PATH_L, PATH_M, type PolygonPath, anchorsToPath, circlePath } from '@weasel-js/geom';
+import { PATH_C, PATH_L, PATH_M, type PolygonPath, anchorsToPath, circlePath, viewWorldToScreen } from '@weasel-js/geom';
 
 /** Appearance of the pen tool's in-progress path. */
 export interface PenPreviewStyle {
@@ -63,10 +63,6 @@ const radiiOf = (kit: KitSettingsStore | undefined) => ({
   closeHint: kit?.get('targets.penCloseHintRadiusPx') ?? CLOSE_HINT_RADIUS_PX,
 });
 
-function w2s(wx: number, wy: number, view: { x: number; y: number; scale: { x: number; y: number } }): [number, number] {
-  return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
-}
-
 // approximateCircle has moved to `./markers.ts` as `circlePath`. Re-exported
 // locally so we don't rename callers in this file.
 function approximateCircle(cx: number, cy: number, r: number): PolygonPath {
@@ -81,7 +77,7 @@ function subpathToPath(
 ): PolygonPath | null {
   if (sp.anchors.length === 0) return null;
   const pt = (p: { x: number; y: number }) => {
-    const [x, y] = w2s(p.x, p.y, view);
+    const { x: x, y: y } = viewWorldToScreen(view, p);
     return { x, y };
   };
   const anchors = sp.anchors.map((a: PenAnchor) => ({
@@ -138,11 +134,11 @@ export function createPenPreviewLayer(
       if (cur && cur.anchors.length > 0 && s.cursor && s.draggingHandleAt === null) {
         const last = cur.anchors[cur.anchors.length - 1];
         const out2 = last.outHandle;
-        const [sx, sy] = w2s(last.x, last.y, view);
-        const [cx, cy] = w2s(s.cursor.x, s.cursor.y, view);
+        const { x: sx, y: sy } = viewWorldToScreen(view, last);
+        const { x: cx, y: cy } = viewWorldToScreen(view, s.cursor);
         let path: PolygonPath;
         if (out2) {
-          const [c1x, c1y] = w2s(out2.x, out2.y, view);
+          const { x: c1x, y: c1y } = viewWorldToScreen(view, out2);
           path = {
             kind: 'polygon',
             commands: new Uint8Array([PATH_M, PATH_C]),
@@ -168,7 +164,7 @@ export function createPenPreviewLayer(
       if (cur) {
         for (let i = 0; i < cur.anchors.length; i++) {
           const a = cur.anchors[i];
-          const [ax, ay] = w2s(a.x, a.y, view);
+          const { x: ax, y: ay } = viewWorldToScreen(view, a);
           out.push({
             kind: 'path',
             path: approximateCircle(ax, ay, r.anchor),
@@ -177,7 +173,7 @@ export function createPenPreviewLayer(
           });
           // Handle line + dot (only the latest anchor, per spec).
           if (i === cur.anchors.length - 1 && a.outHandle) {
-            const [hx, hy] = w2s(a.outHandle.x, a.outHandle.y, view);
+            const { x: hx, y: hy } = viewWorldToScreen(view, a.outHandle);
             const linePath: PolygonPath = {
               kind: 'polygon',
               commands: new Uint8Array([PATH_M, PATH_L]),
@@ -196,7 +192,7 @@ export function createPenPreviewLayer(
             });
             const inSide = a.inHandle;
             if (inSide) {
-              const [mx, my] = w2s(inSide.x, inSide.y, view);
+              const { x: mx, y: my } = viewWorldToScreen(view, inSide);
               const inLine: PolygonPath = {
                 kind: 'polygon',
                 commands: new Uint8Array([PATH_M, PATH_L]),
@@ -220,7 +216,7 @@ export function createPenPreviewLayer(
         // (5) Close-hint ring on first anchor.
         if (s.closeHintActive && cur.anchors.length >= 3) {
           const first = cur.anchors[0];
-          const [fx, fy] = w2s(first.x, first.y, view);
+          const { x: fx, y: fy } = viewWorldToScreen(view, first);
           out.push({
             kind: 'path',
             path: approximateCircle(fx, fy, r.closeHint),

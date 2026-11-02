@@ -9,6 +9,7 @@ import {
   type SceneCanvasApi,
   useTransformFollower,
   type View,
+  viewWorldToScreen,
   WeaselProvider,
 } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
@@ -173,10 +174,8 @@ function reticleClient<C>(
   if (!node || !layer) return { x: 0, y: 0 };
   const p = effectivePose(scene, node);
   const origin = layer.getBoundingClientRect();
-  return {
-    x: origin.left + (p.x + p.width / 2 - view.x) * view.scale.x,
-    y: origin.top + (p.y + p.height / 2 - view.y) * view.scale.y,
-  };
+  const at = viewWorldToScreen(view, { x: p.x + p.width / 2, y: p.y + p.height / 2 });
+  return { x: origin.left + at.x, y: origin.top + at.y };
 }
 
 /** Registers the lens tile on the layer and keeps the layer's size, which is

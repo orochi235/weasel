@@ -1,4 +1,4 @@
-import { usePointerPosition } from '@weasel-js/core';
+import { usePointerPosition, viewWorldToScreen } from '@weasel-js/core';
 import { crosshairRects } from '@weasel-js/minimap';
 import { useContext } from 'react';
 import { CameraContext, pointerElsewhere, STAGE_VIEW_ID } from './CameraInput';
@@ -19,9 +19,7 @@ export function LinkedCursor() {
   if (!local) return null;
   // `pointerElsewhere` hands back the instrument's world; the camera works
   // frame-local, and the map is its own inverse.
-  const v = camera.view.get();
-  const x = (local.x - v.x) * v.scale.x;
-  const y = (local.y * camera.frame.yDir - v.y) * v.scale.y;
+  const { x, y } = viewWorldToScreen(camera.view.get(), { x: local.x, y: local.y * camera.frame.yDir });
   const { halo, bars } = crosshairRects(x, y, 1);
   const arms = ARMS.map((name, i) => ({ name, halo: halo[i], bar: bars[i] }));
   return (

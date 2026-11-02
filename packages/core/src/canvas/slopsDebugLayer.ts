@@ -13,7 +13,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Affordance } from 'affordances/types';
 import { pointRegionLive, pointRegionScreenQuad, transformOf } from 'affordances/hitAffordanceRegions';
-import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z, viewWorldToScreen } from '@weasel-js/geom';
 import { chromeStateFrom, isVisibleFrom } from './drawEnvelope';
 
 export interface CreateSlopsDebugLayerOptions {
@@ -38,8 +38,10 @@ export function createSlopsDebugLayer(
       const chrome = chromeStateFrom(data);
       if (!chrome) return [];
       const isVisible = isVisibleFrom(data);
-      const toScreen = (x: number, y: number): [number, number] =>
-        [(x - view.x) * view.scale.x, (y - view.y) * view.scale.y];
+      const toScreen = (x: number, y: number): [number, number] => {
+        const p = viewWorldToScreen(view, { x, y });
+        return [p.x, p.y];
+      };
       const out: DrawCommand[] = [];
       for (const a of opts.getAffordances()) {
         if (isVisible && !isVisible(a.id)) continue;

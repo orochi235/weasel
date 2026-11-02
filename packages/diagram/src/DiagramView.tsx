@@ -4,6 +4,7 @@ import {
   useLatest,
   useScene,
   useSelection,
+  viewRectToScreen,
   WeaselProvider,
   type RectPose,
   type RenderLayer,
@@ -26,7 +27,7 @@ import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
 import { DEFAULT_FIT_PADDING, diagramViewBounds, useDiagramFit } from './diagramFit';
 import { useMirroredSelection } from './mirrorSelection';
-import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
+import { useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
 import { registerMarkShape } from './marks';
 import { diagramResizable } from './resizable';
@@ -243,7 +244,7 @@ function useDiagramApi(
       const world = worldRectOf(scene, id);
       const r = canvas?.element?.getBoundingClientRect();
       if (canvas == null || world === null || r === undefined) return null;
-      const rect = screenRectOf(world, canvas.getView());
+      const rect = viewRectToScreen(canvas.getView(), world);
       return { ...rect, x: rect.x + r.left, y: rect.y + r.top };
     },
     subscribeFrame: (fn) => canvasRef.current?.subscribeFrame(() => fn()) ?? (() => {}),

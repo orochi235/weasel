@@ -1,6 +1,5 @@
 // apps/site/demos/platformer/callouts.ts
-import type { Dims, View } from '@weasel-js/core';
-import { worldToScreen } from './camera';
+import { viewWorldToScreen, type Dims, type View } from '@weasel-js/core';
 import type { Vec2 } from './level';
 
 export type CalloutAnchor = { kind: 'world'; at: Vec2 } | { kind: 'screen' };
@@ -24,7 +23,7 @@ export const stepCallouts = (list: Callout[], now: number): Callout[] =>
  *  camera, a screen anchor sits at the canvas center regardless of it. */
 export function calloutScreenPos(c: Callout, view: View, dims: Dims): { x: number; y: number } {
   return c.anchor.kind === 'world'
-    ? worldToScreen(view, c.anchor.at.x, c.anchor.at.y)
+    ? viewWorldToScreen(view, c.anchor.at)
     : { x: dims.width / 2, y: dims.height / 2 };
 }
 

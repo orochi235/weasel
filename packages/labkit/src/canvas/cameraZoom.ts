@@ -1,13 +1,10 @@
-import type { View } from '@weasel-js/core';
+import { zoomAt, type View } from '@weasel-js/core';
 import type { CameraView } from './CameraInput';
 
-/** `view` at `scale`, about the screen point `at`. */
+/** `view` at `scale` on both axes, about the screen point `at`. A flipped axis
+ *  stays flipped. */
 export function atScale(view: View, scale: number, at: { x: number; y: number }): View {
-  return {
-    x: view.x + at.x / view.scale.x - at.x / scale,
-    y: view.y + at.y / view.scale.y - at.y / scale,
-    scale: { x: scale, y: scale },
-  };
+  return zoomAt(view, at, 1, { min: scale, max: scale });
 }
 
 /** The middle of the camera's host, in its own screen space; the origin when it cannot measure. */

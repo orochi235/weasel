@@ -30,3 +30,34 @@ export const ZOOM_FLOOR = 1e-9;
 export function normalizeZoom(zoom: number): number {
   return zoom >= ZOOM_FLOOR && zoom < Infinity ? zoom : ZOOM_FLOOR;
 }
+
+/** The screen pixel `view` draws world point `p` at, from the canvas top-left. */
+export function viewWorldToScreen(view: View, p: { x: number; y: number }): { x: number; y: number } {
+  return { x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y };
+}
+
+/** The world point under screen pixel `p`; the inverse of {@link viewWorldToScreen}. */
+export function viewScreenToWorld(view: View, p: { x: number; y: number }): { x: number; y: number } {
+  return { x: p.x / view.scale.x + view.x, y: p.y / view.scale.y + view.y };
+}
+
+/**
+ * World rect `r` in screen pixels through `view`. A flipped axis (negative
+ * scale) still gives a positive width and height, with `x` / `y` at the
+ * rect's top-left on screen.
+ */
+export function viewRectToScreen(
+  view: View,
+  r: { x: number; y: number; width: number; height: number },
+): { x: number; y: number; width: number; height: number } {
+  const x0 = (r.x - view.x) * view.scale.x;
+  const y0 = (r.y - view.y) * view.scale.y;
+  const w = r.width * view.scale.x;
+  const h = r.height * view.scale.y;
+  return {
+    x: w < 0 ? x0 + w : x0,
+    y: h < 0 ? y0 + h : y0,
+    width: Math.abs(w),
+    height: Math.abs(h),
+  };
+}

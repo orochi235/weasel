@@ -4,7 +4,7 @@
  * call to `fit()` — each applied only while the view is still the last fit,
  * except `fit()`, which takes the view back.
  */
-import { RIGID_POSE_COMPOSITION, worldPosesOf, clampView, fitViewToBounds, useLatest, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, worldPosesOf, clampView, fitViewToBounds, useLatest, viewportWorldRect, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
 import { unionRects } from '@weasel-js/geom';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isBodyOrRegion } from './bodyNode';
@@ -74,9 +74,9 @@ const sameView = (a: View, b: View) =>
 
 /** Whether `inner` lies inside what `view` shows of a `size` box. */
 function inView(inner: Bounds, view: View, size: { width: number; height: number }): boolean {
-  const x1 = view.x + size.width / view.scale.x;
-  const y1 = view.y + size.height / view.scale.y;
-  return inner.x >= view.x && inner.y >= view.y && inner.x + inner.width <= x1 && inner.y + inner.height <= y1;
+  const shown = viewportWorldRect(view, size);
+  return inner.x >= shown.x && inner.y >= shown.y
+    && inner.x + inner.width <= shown.x + shown.width && inner.y + inner.height <= shown.y + shown.height;
 }
 
 export interface DiagramFitting {

@@ -3,9 +3,8 @@
  * outline, then each anchor's handles and marker.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { WorldPoint } from '@weasel-js/routing';
 import {
-  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, worldCoords, type PenAnchor, type PolygonPath, type View, type Point,
+  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, worldCoords, type PenAnchor, type PolygonPath, type View, type Point, viewWorldToScreen,
 } from '@weasel-js/geom';
 import type { AnchorMarkerShape } from './pathRepresentation';
 
@@ -50,10 +49,6 @@ export const DEFAULT_OVERLAY_STYLE: Required<PathEditingOverlayStyle> = {
   marqueeStroke: '#3478f6',
   marqueeFill: 'rgba(52, 120, 246, 0.08)',
 };
-
-export function worldToScreen(p: WorldPoint, view: View): Point {
-  return { x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y };
-}
 
 /** `path`, its corners expanded, with every coordinate carried to screen
  *  through `view`: a radius left on it would stay in world units. */
@@ -121,14 +116,14 @@ export function anchorMarkerCommands(
   const { anchors, closed } = pathToAnchors(path);
   let flat = 0;
   anchors.forEach((sub: PenAnchor[], s) => {
-    const screen = sub.map((a) => worldToScreen(a, view));
+    const screen = sub.map((a) => viewWorldToScreen(view, a));
     const isClosed = closed[s];
     sub.forEach((a, i) => {
       const shape = markers?.[flat] ?? null;
       const isSelected = selected.has(flat++);
       const at = screen[i];
-      if (a.inHandle) out.push(...handleCommands(at, worldToScreen(a.inHandle, view), style));
-      if (a.outHandle) out.push(...handleCommands(at, worldToScreen(a.outHandle, view), style));
+      if (a.inHandle) out.push(...handleCommands(at, viewWorldToScreen(view, a.inHandle), style));
+      if (a.outHandle) out.push(...handleCommands(at, viewWorldToScreen(view, a.outHandle), style));
       if (!isSelected && crowded(screen, closed[s], i, style.anchorSizePx)) {
         out.push({
           kind: 'path',

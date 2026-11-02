@@ -290,6 +290,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Rendering & paint
 
+- **(P3) [agent] `viewportWorldRect` gives a flipped view a negative size.** A `View` with
+  `scale.y < 0` (y-up) gets `height = size.height / scale.y`, so the guides grid's
+  `hasArea` check fails and a y-up canvas draws no grid (read from the code, not run).
+  `debugSnapshotArgs` already normalizes the same rect itself. Normalizing in
+  `viewportWorldRect` also changes what `useViewAim` and `viewForAim` round-trip, so the aim
+  rect needs to carry the flip some other way. Closes when a y-up view's visible rect has a
+  positive size and an aim round-trips a flipped view unchanged.
 - **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
   the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
   (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code

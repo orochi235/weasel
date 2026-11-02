@@ -27,7 +27,7 @@ import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { poseFrameOf } from '@weasel-js/geom';
+import { poseFrameOf, viewScreenToWorld } from '@weasel-js/geom';
 import { isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf, type TextOverflow } from '../../canvas/nodeShapes/textPainter';
 import { useTextEdit, type TextEditClipRect, type TextEditScreenPose, type UseTextEditReturn } from '@weasel-js/text-dom';
@@ -282,9 +282,8 @@ export function useSceneTextEditor<
     const root = containerRef.current;
     const view = resolveView(optsRef.current.view)
       ?? (root ? findMountedCanvas(root, canvas)?.getView() : undefined);
-    const cx = view ? canvasX / view.scale.x + view.x : canvasX;
-    const cy = view ? canvasY / view.scale.y + view.y : canvasY;
-    const hit = textHitAt(sceneRef.current, read, cx, cy);
+    const at = view ? viewScreenToWorld(view, { x: canvasX, y: canvasY }) : { x: canvasX, y: canvasY };
+    const hit = textHitAt(sceneRef.current, read, at.x, at.y);
     if (!hit) return;
     openedOnRef.current = canvas;
     edit.startEdit(hit.id, { caret: hit.caret });

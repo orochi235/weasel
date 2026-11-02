@@ -17,6 +17,7 @@ import type { ViewportLayer } from 'domains/viewports/viewportLayer';
 import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
 import { createViewResolver, viewContains, type ViewResolver } from 'domains/viewports/viewResolver';
 import { createEmitter } from '@weasel-js/registry';
+import { viewWorldToScreen } from '@weasel-js/geom';
 import type { ViewAt } from './canvasExtension';
 import { isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
@@ -77,8 +78,7 @@ export function surfaceLocal(
 ): { x: number; y: number } {
   if (!surface) return { x: clientX, y: clientY };
   const [worldX, worldY] = surface.clientToWorld(clientX, clientY);
-  const view = surface.view();
-  return { x: (worldX - view.x) * view.scale.x, y: (worldY - view.y) * view.scale.y };
+  return viewWorldToScreen(surface.view(), { x: worldX, y: worldY });
 }
 
 /**

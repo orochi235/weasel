@@ -17,6 +17,7 @@ import {
   useGestureDispatcher,
   useLatest,
   usePointerPosition,
+  viewScreenToWorld,
   type View,
   type ViewApi,
 } from '@weasel-js/core';
@@ -336,11 +337,7 @@ function OverviewDispatch({
   const clientToLocal = useMemo(
     () => (cx: number, cy: number) => {
       const r = boxRef.current?.getBoundingClientRect();
-      const f = fitRef.current;
-      return {
-        x: (cx - (r?.left ?? 0)) / f.scale.x + f.x,
-        y: (cy - (r?.top ?? 0)) / f.scale.y + f.y,
-      };
+      return viewScreenToWorld(fitRef.current, { x: cx - (r?.left ?? 0), y: cy - (r?.top ?? 0) });
     },
     [boxRef, fitRef],
   );

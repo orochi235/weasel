@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { viewScreenToWorld } from '@weasel-js/geom';
 import type { View } from 'core/viewport/view';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { CanvasHelpers } from './useViewHelpers';
@@ -46,9 +47,8 @@ export function useViewRegistrySurface(
       setView,
       claimsAbove: (x, y) => {
         const view = viewRef.current;
-        const worldX = x / view.scale.x + view.x;
-        const worldY = y / view.scale.y + view.y;
-        return hitTestExtrasIn(worldX, worldY, view, dimsRef.current, helpersRef.current) !== null;
+        const world = viewScreenToWorld(view, { x, y });
+        return hitTestExtrasIn(world.x, world.y, view, dimsRef.current, helpersRef.current) !== null;
       },
     });
   }, [viewRegistry, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef, helpersRef, clientToWorld, setView]);
