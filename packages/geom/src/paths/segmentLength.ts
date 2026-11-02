@@ -11,8 +11,12 @@ const G4_W = [0.3478548451374538, 0.6521451548625461, 0.6521451548625461, 0.3478
 /** How far the eight-point rule may sit from the four-point one on a panel, as a share of the
  *  segment's size, before the panel is refined. */
 const PANEL_AGREE = 1e-9;
-/** A derivative root slower than this share of the segment's size is a cusp or a dip in speed. */
-const SLOW = 0.1;
+/** A derivative root is a cusp or a dip in speed when the dip is narrower than this many panel
+ *  widths: its speed over the curvature of its path there, `|B′| / |B″|`, a width in `t`. */
+const DIP_PANELS = 1;
+/** A dip this share of a panel from its edge marks the panel across the edge too: its shoulder
+ *  sits in the gap before the edge's nearest Gauss node. */
+const EDGE_NEAR = 0.05;
 /** How closely a refined panel's halves must agree, as a share of the segment's size. */
 const SETTLE = 1e-13;
 
@@ -90,7 +94,8 @@ function derivativeRoots(c: ArrayLike<number>, dim: number, a: number, b: number
     keep(q / A);
     if (q !== 0) keep(C / q);
   }
-  return out.sort((x, y) => x - y);
+  out.sort((x, y) => x - y);
+  return out.filter((t, i) => i === 0 || t !== out[i - 1]);
 }
 
 /** The eight-point length over `p0..p1`, refined when it sits beside a slow root or its
@@ -105,8 +110,9 @@ function panelLength(c: ArrayLike<number>, dim: number, p0: number, p1: number, 
 /**
  * Length of a Bézier segment between parameters `a` and `b`, by Gauss–Legendre
  * over eight panels, split where a component of its derivative is zero and
- * the segment runs slowly. The panels beside such a root are halved until they
- * settle, and so is any other where the eight- and four-point rules disagree. `coords` holds its control
+ * the speed dips there within a panel's width. The panels beside such a root
+ * are halved until they settle, and so is any other where the eight- and
+ * four-point rules disagree. `coords` holds its control
  * points flat, `dim` components each: two points for a line, three for a
  * quadratic, four for a cubic. NaN when a coordinate is not finite.
  */
@@ -114,34 +120,62 @@ export function segmentLength(coords: ArrayLike<number>, dim: 2 | 3, a = 0, b = 
   if (!finite(coords)) return NaN;
   if (coords.length === 2 * dim) return speed(coords, dim, 0) * (b - a);
   const size = hullLength(coords, dim);
-  return lengthOver(coords, dim, a, b, size, slowRoots(coords, dim, size));
+  return lengthOver(coords, dim, a, b, size, speedDips(coords, dim));
 }
 
-/** The derivative roots inside 0..1 where the segment runs slowly. Where one component turns
- *  while another runs fast the speed is smooth, so only a slow root can hide a kink. */
-function slowRoots(c: ArrayLike<number>, dim: number, size: number): number[] {
-  return derivativeRoots(c, dim, 0, 1).filter((t) => speed(c, dim, t) < SLOW * size);
+/** The length of the segment's second derivative at `t`. */
+function bend(c: ArrayLike<number>, dim: number, t: number): number {
+  const n = c.length / dim - 1;
+  let sum = 0;
+  for (let k = 0; k < dim; k++) {
+    const e0 = c[2 * dim + k] - 2 * c[dim + k] + c[k];
+    const v = n === 2 ? 2 * e0 : 6 * ((1 - t) * e0 + t * (c[3 * dim + k] - 2 * c[2 * dim + k] + c[dim + k]));
+    sum += v * v;
+  }
+  return Math.sqrt(sum);
 }
 
-/** {@link segmentLength} over `a..b`, given the segment's size and its slow roots. */
+/** A derivative root inside 0..1, and how wide its dip in speed is, in `t`. */
+interface Dip { t: number; width: number }
+
+/** @internal The derivative roots inside 0..1, each with the width of its dip. */
+export function speedDips(c: ArrayLike<number>, dim: number): Dip[] {
+  return derivativeRoots(c, dim, 0, 1).map((t) => {
+    const b = bend(c, dim, t);
+    return { t, width: b > 0 ? speed(c, dim, t) / b : Infinity };
+  });
+}
+
+/** @internal The dips a panel `h` wide cannot be trusted to see: narrower than {@link DIP_PANELS} panels. */
+export function dipsFor(dips: readonly Dip[], h: number): number[] {
+  const out: number[] = [];
+  for (const d of dips) if (d.width < DIP_PANELS * h) out.push(d.t);
+  return out;
+}
+
+/** {@link segmentLength} over `a..b`, given the segment's size and its dips. */
 function lengthOver(
-  c: ArrayLike<number>, dim: number, a: number, b: number, size: number, roots: readonly number[],
+  c: ArrayLike<number>, dim: number, a: number, b: number, size: number, dips: readonly Dip[],
 ): number {
   const h = (b - a) / 8;
   let sum = 0;
+  const roots = dipsFor(dips, h);
+  if (roots.length === 0) {
+    for (let k = 0; k < 8; k++) sum += panelLength(c, dim, a + k * h, k === 7 ? b : a + (k + 1) * h, size, false);
+    return sum;
+  }
+  const near = (t: number): boolean => roots.some((r) => Math.abs(r - t) <= EDGE_NEAR * h);
   let r = 0;
   while (r < roots.length && roots[r] <= a) r++;
   for (let k = 0; k < 8; k++) {
     const p0 = a + k * h, p1 = k === 7 ? b : p0 + h;
     let from = p0;
-    let fromRoot = r > 0 && roots[r - 1] === p0;
-    // A slow root splits its panel, and both pieces beside it are refined.
+    // A dip splits its panel, and every piece that touches one, or comes near, is refined.
     while (r < roots.length && roots[r] < p1) {
       sum += panelLength(c, dim, from, roots[r], size, true);
       from = roots[r++];
-      fromRoot = true;
     }
-    sum += panelLength(c, dim, from, p1, size, fromRoot || (r < roots.length && roots[r] === p1));
+    sum += panelLength(c, dim, from, p1, size, near(from) || near(p1));
   }
   return sum;
 }
@@ -161,10 +195,10 @@ export function segmentTAtLength(
   if (length >= total) return 1;
   if (coords.length === 2 * dim) return length / total;
   const size = hullLength(coords, dim);
-  const roots = slowRoots(coords, dim, size);
+  const dips = speedDips(coords, dim);
   let lo = 0, hi = 1, t = length / total;
   for (let i = 0; i < 30; i++) {
-    const err = lengthOver(coords, dim, 0, t, size, roots) - length;
+    const err = lengthOver(coords, dim, 0, t, size, dips) - length;
     if (Math.abs(err) < 1e-10 * total) break;
     if (err > 0) hi = t; else lo = t;
     const v = speed(coords, dim, t);

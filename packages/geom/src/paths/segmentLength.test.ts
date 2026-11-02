@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cubicEvalAt } from '../curve';
-import { segmentLength, segmentTAtLength } from './segmentLength';
+import { dipsFor, segmentLength, segmentTAtLength, speedDips } from './segmentLength';
 
 const K = 0.5522847498;
 /** A quarter circle of radius 100 about the origin, from +x to +y. */
@@ -86,6 +86,25 @@ describe('segmentTAtLength', () => {
       const total = segmentLength(c, 2);
       expect(Math.abs(total - ref.length) / ref.length, name).toBeLessThan(1e-8);
       expect(Math.abs(segmentTAtLength(c, 2, 0.9 * total) - ref.tAt(0.9 * ref.length)), name).toBeLessThan(1e-8);
+    }
+  });
+
+  it("settles a dip's shoulder in the panel across an edge", () => {
+    // Its slowest point is at 0.6259, just past the edge at 0.625; its only component root is at 0.62798.
+    const c: Cubic = [0, 0, 100, 100, -50, 40, 92.62712165, 87.5312398];
+    const ref = denseWalk(c);
+    expect(Math.abs(segmentLength(c, 2) - ref.length) / ref.length).toBeLessThan(1e-9);
+  });
+
+  it('decides which roots hide a dip the same way however the curve is turned', () => {
+    const turned = (c: number[], th: number) => c.map((v, i) => (i % 2 === 0
+      ? v * Math.cos(th) - c[i + 1] * Math.sin(th) : c[i - 1] * Math.sin(th) + v * Math.cos(th)));
+    const smooth = [0, 0, 0, 100, 100, 100, 100, 0];
+    const dip = [0, 0, 100, 100, 0, 120, 100, 0];
+    for (const th of [0, 0.6, 1.2, 2, 2.9]) {
+      expect(dipsFor(speedDips(turned(smooth, th), 2), 1 / 8), `smooth at ${th}`).toEqual([]);
+      // The dip's slowest point is near t = 0.523.
+      expect(dipsFor(speedDips(turned(dip, th), 2), 1 / 8).some((t) => Math.abs(t - 0.523) < 0.01), `dip at ${th}`).toBe(true);
     }
   });
 
