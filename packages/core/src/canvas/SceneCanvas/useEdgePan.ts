@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLatest, useVisibleRaf, type VisibleRaf } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { HeldPointerFeed } from '@weasel-js/routing/react';
 import { unionAABB } from 'core/geometry/unionBounds';
@@ -38,13 +38,7 @@ export interface EdgePan {
   clampWorld: (world: { x: number; y: number }) => { x: number; y: number };
 }
 
-/**
- * Scrolls the view while a drag whose handle sets `autoPan` holds the pointer
- * in `zone` pixels of the canvas's edge or past it, faster the deeper it is,
- * and sends the held pointer's move again each frame so the drag reaches the
- * world the view now shows. Does nothing while the canvas has no size.
- */
-export function useEdgePan(opts: {
+interface EdgePanInputs {
   options: EdgePanOptions | false;
   dispatcher: Dispatcher;
   element: () => HTMLElement | null;
@@ -52,28 +46,50 @@ export function useEdgePan(opts: {
   setView: (next: View) => void;
   /** The content's world rect, which `limit: { past }` measures from. */
   content: () => Bounds | null;
-}): EdgePan {
-  const live = useLatest(opts);
-  const feedRef = useRef<HeldPointerFeed | null>(null);
-  const lastFrame = useRef<number | null>(null);
-  /** This drag's limit, fixed when it began; `undefined` between drags. */
-  const dragLimit = useRef<Bounds | null | undefined>(undefined);
+}
 
-  const limit = useCallback((): Bounds | null => {
-    const { options, dispatcher, content } = live.current;
+/**
+ * Scrolls the view while a drag whose handle sets `autoPan` holds the pointer
+ * in `zone` pixels of the canvas's edge or past it, faster the deeper it is,
+ * and sends the held pointer's move again each frame so the drag reaches the
+ * world the view now shows. Does nothing while the canvas has no size.
+ */
+export function useEdgePan(opts: EdgePanInputs): EdgePan {
+  const live = useLatest(opts);
+  const [pan] = useState(() => edgePan(() => live.current));
+  const loop = useVisibleRaf((time, self) => { pan.frame(time, self); }, {
+    target: () => live.current.element(), onResume: () => { pan.resume(); },
+  });
+  const { dispatcher } = opts;
+  useEffect(() => dispatcher.subscribe(() => { pan.changed(loop); }), [dispatcher, pan, loop]);
+  return useMemo(() => ({
+    heldPointer: (feed: HeldPointerFeed | null) => { pan.hold(feed, loop); },
+    clampWorld: pan.clampWorld,
+  }), [pan, loop]);
+}
+
+/** Edge panning's state between frames, over the inputs `read` returns now. */
+function edgePan(read: () => EdgePanInputs) {
+  let feed: HeldPointerFeed | null = null;
+  let lastFrame: number | null = null;
+  /** This drag's limit, fixed when it began; `undefined` between drags. */
+  let dragLimit: Bounds | null | undefined;
+
+  const limit = (): Bounds | null => {
+    const { options, dispatcher, content } = read();
     if (options === false || !options.limit || !autoPanning(dispatcher)) {
-      dragLimit.current = undefined;
+      dragLimit = undefined;
       return null;
     }
-    if (dragLimit.current === undefined) dragLimit.current = limitRect(options.limit, content());
-    return dragLimit.current;
-  }, [live]);
+    if (dragLimit === undefined) dragLimit = limitRect(options.limit, content());
+    return dragLimit;
+  };
 
   /** The scroll the pointer asks for now, in screen pixels a second; `null` for none. */
-  const velocity = useCallback((): { x: number; y: number; dims: { width: number; height: number } } | null => {
-    const { options, dispatcher, element } = live.current;
+  const velocity = (): { x: number; y: number; dims: { width: number; height: number } } | null => {
+    const { options, dispatcher, element } = read();
     if (options === false) return null;
-    const at = feedRef.current?.at();
+    const at = feed?.at();
     const el = element();
     if (!at || !el || !autoPanning(dispatcher)) return null;
     const r = el.getBoundingClientRect();
@@ -84,49 +100,49 @@ export function useEdgePan(opts: {
     const x = pull(r.right - at.clientX) - pull(at.clientX - r.left);
     const y = pull(r.bottom - at.clientY) - pull(at.clientY - r.top);
     return x === 0 && y === 0 ? null : { x, y, dims: { width: r.width, height: r.height } };
-  }, [live]);
+  };
 
-  const loop = useVisibleRaf((time, self) => {
-    const v = velocity();
-    const before = lastFrame.current;
-    lastFrame.current = v ? time : null;
-    if (!v) return;
-    if (before !== null) {
-      const dt = Math.min(time - before, MAX_FRAME_MS) / 1000;
-      const view = live.current.getView();
-      const next = { ...view, x: view.x + (v.x * dt) / view.scale.x, y: view.y + (v.y * dt) / view.scale.y };
-      const reach = limit();
-      // The limit stops the scroll too, but never pulls a view already past it back.
-      live.current.setView(reach ? clampView(next, unionAABB([reach, shownRect(view, v.dims)])!, v.dims) : next);
-      // A controlled camera takes the view a render later, so this move can
-      // trail the scroll by a frame; the next one catches it up.
-      feedRef.current?.repeat();
-    }
-    self.request();
-  }, { target: () => live.current.element(), onResume: () => { lastFrame.current = null; } });
-
-  const { dispatcher } = opts;
-  useEffect(() => dispatcher.subscribe(() => {
-    limit();
-    if (velocity()) loop.request();
-  }), [dispatcher, limit, velocity, loop]);
-
-  const heldPointer = useCallback((feed: HeldPointerFeed | null) => {
-    feedRef.current = feed;
-    if (!feed) {
+  return {
+    frame(time: number, loop: VisibleRaf): void {
+      const v = velocity();
+      const before = lastFrame;
+      lastFrame = v ? time : null;
+      if (!v) return;
+      if (before !== null) {
+        const dt = Math.min(time - before, MAX_FRAME_MS) / 1000;
+        const { getView, setView } = read();
+        const view = getView();
+        const next = { ...view, x: view.x + (v.x * dt) / view.scale.x, y: view.y + (v.y * dt) / view.scale.y };
+        const reach = limit();
+        // The limit stops the scroll too, but never pulls a view already past it back.
+        setView(reach ? clampView(next, unionAABB([reach, shownRect(view, v.dims)])!, v.dims) : next);
+        // A controlled camera takes the view a render later, so this move can
+        // trail the scroll by a frame; the next one catches it up.
+        feed?.repeat();
+      }
+      loop.request();
+    },
+    resume(): void { lastFrame = null; },
+    /** After any change to the dispatcher's in-flight state. */
+    changed(loop: VisibleRaf): void {
+      limit();
+      if (velocity()) loop.request();
+    },
+    hold(next: HeldPointerFeed | null, loop: VisibleRaf): void {
+      feed = next;
+      if (next) return;
       loop.cancel();
-      lastFrame.current = null;
-    }
-  }, [loop]);
-  const clampWorld = useCallback((world: { x: number; y: number }) => {
-    const reach = limit();
-    if (!reach) return world;
-    return {
-      x: Math.min(Math.max(world.x, reach.x), reach.x + reach.width),
-      y: Math.min(Math.max(world.y, reach.y), reach.y + reach.height),
-    };
-  }, [limit]);
-  return { heldPointer, clampWorld };
+      lastFrame = null;
+    },
+    clampWorld(world: { x: number; y: number }): { x: number; y: number } {
+      const reach = limit();
+      if (!reach) return world;
+      return {
+        x: Math.min(Math.max(world.x, reach.x), reach.x + reach.width),
+        y: Math.min(Math.max(world.y, reach.y), reach.y + reach.height),
+      };
+    },
+  };
 }
 
 function autoPanning(dispatcher: Dispatcher): boolean {

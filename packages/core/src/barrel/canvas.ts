@@ -21,6 +21,8 @@ export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLo
 export type { SceneCanvasTextEditor } from '../canvas/SceneCanvas/defaultTextEditor';
 export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
 export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
+export type { EdgePanOptions } from '../canvas/SceneCanvas/useEdgePan';
+export { DEFAULT_CONTENT_MARGIN, type ContentViewBounds, type SceneCameraProps } from '../canvas/SceneCanvas/sceneViewBounds';
 export type { PathEditHost, PathEditOpening } from '../canvas/SceneCanvas/pathEditHost';
 export { hostAnchorRect, hostAnchorCss } from '../canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from '../canvas/hostAnchor';

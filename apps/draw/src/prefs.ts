@@ -140,6 +140,12 @@ export const PREFS = {
           description: 'Constrain move/resize gestures to grid intersections.',
           default: false,
         },
+        boundToContent: {
+          kind: 'boolean',
+          name: 'Bound view to content',
+          description: 'Pan no further than the drawing and its pages, plus a margin. Dragging something to the edge of the canvas scrolls the view to make room for it.',
+          default: true,
+        },
         pathDirection: {
           kind: 'boolean',
           name: 'Show path direction',

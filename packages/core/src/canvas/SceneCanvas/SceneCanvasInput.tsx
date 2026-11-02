@@ -49,7 +49,7 @@ export type SceneCanvasInputOptions = StandardActionsProps & Pick<
 
 /** What the content's bounds are read from, and the camera's ref they are published to. */
 export interface ContentSource {
-  into: { current: () => Bounds | null };
+  publish: (read: () => Bounds | null) => void;
   gestureSource: GestureSource | undefined;
   previewPoseExtra: ((id: string) => unknown) | undefined;
   picking: Pick<Picking, 'boundsOf' | 'boundsOfPose' | 'adapter'>;
@@ -112,9 +112,9 @@ export interface SceneCanvasInputProps {
 export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const { props, scene, selection, picking, chrome, overlay, canvas } = p;
   const { viewState } = p.camera;
-  const { into, picking: source, ...gestures } = p.content;
+  const { publish, picking: source, ...gestures } = p.content;
   const contentBounds = useContentBounds({ scene, ...source, ...gestures });
-  useInsertionEffect(() => { into.current = contentBounds; });
+  useInsertionEffect(() => { publish(contentBounds); });
   const { selectTool, enableKeybindings = true } = props;
   const snapRegistry = useContext(SnapSourceRegistryContext);
   useEffect(() => {

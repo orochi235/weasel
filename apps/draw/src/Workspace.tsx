@@ -40,6 +40,7 @@ import { DRAW_FEATURES } from './drawFeatures';
 import { LastOperation } from './ui/LastOperation';
 import { DRAW_TUNE } from './constraintKeys';
 import { useEditorAmbient } from './useEditorAmbient';
+import { useViewBounds } from './useViewBounds';
 import { useGrid } from './useGrid';
 import { DRAW_NODE_ROUTING } from './nodeKinds';
 import { usePathOverlays } from './usePathOverlays';
@@ -93,6 +94,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(props.pages.placed, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const bounds = useViewBounds(props.pages.placed);
   const spacingHints = useSpacingHints();
   const pathOverlays = usePathOverlays();
   const symmetry = useSymmetry(scene, page);
@@ -120,6 +122,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     selection,
     modes: modes.ambient,
     grid: grid.commands,
+    bounds: bounds.commands,
     pathOverlays: pathOverlays.contribution,
     symmetry,
     view,
@@ -193,6 +196,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             height={hostDims.height}
             view={view}
             onViewChange={onViewChange}
+            viewBounds={bounds.viewBounds}
             scene={scene}
             routing={DRAW_NODE_ROUTING}
             selection={selection}

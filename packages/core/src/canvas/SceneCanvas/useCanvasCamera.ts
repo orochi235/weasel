@@ -1,4 +1,4 @@
-import { useInsertionEffect, useMemo, useRef } from 'react';
+import { useCallback, useInsertionEffect, useMemo, useRef } from 'react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { useViewAnimationOn, type ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import { sameView, type View } from 'core/viewport/view';
@@ -21,8 +21,8 @@ export function useCanvasCamera(opts: SceneCameraProps & {
   viewState: CanvasViewState;
   viewAnimation: ViewAnimationApi;
   camera: SceneCanvasApi['camera'];
-  /** What `viewBounds: 'content'` reads as the content, set once the scene's picking and gestures exist. */
-  contentBoundsRef: { current: () => Bounds | null };
+  /** Sets what `viewBounds: 'content'` reads as the content, once the scene's picking and gestures exist. */
+  publishContent: (read: () => Bounds | null) => void;
 } {
   const { view, defaultView, onViewChange, dims, requestRedraw } = opts;
   const contentBoundsRef = useRef<() => Bounds | null>(() => null);
@@ -75,5 +75,6 @@ export function useCanvasCamera(opts: SceneCameraProps & {
     else viewAnimation.stopIfExternal();
   });
   const camera = useMemo(() => ({ target: viewAnimation.viewTarget, animator }), [viewAnimation, animator]);
-  return { viewState, viewAnimation, camera, contentBoundsRef };
+  const publishContent = useCallback((read: () => Bounds | null) => { contentBoundsRef.current = read; }, []);
+  return { viewState, viewAnimation, camera, publishContent };
 }
