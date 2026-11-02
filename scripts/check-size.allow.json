@@ -166,7 +166,7 @@
     "longestFunction": 208
   },
   "packages/paint/src/colorSpaces.ts": {
-    "lines": 439
+    "lines": 436
   },
   "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 624
