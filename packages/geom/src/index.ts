@@ -77,6 +77,7 @@ export { pathFromD } from './paths/pathFromD';
 export { pathToD } from './paths/pathToD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { measurePath, type MeasurePathOptions, type PathMeasure, type PathNearestStation } from './paths/pathMeasure';
+export { segmentLength, segmentTAtLength } from './paths/segmentLength';
 export {
   pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
 } from './paths/cubicContours';

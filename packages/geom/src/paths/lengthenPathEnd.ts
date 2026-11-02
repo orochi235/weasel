@@ -25,7 +25,7 @@ import { nearestOnCubic, nearestOnLine } from '../nearest';
 import {
   easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type LengthenMode, type PathEndFrame,
 } from './pathEndExtension';
-import { segmentLength, segmentTAtLength } from './segmentLength';
+import { flatPoints, segmentLength, segmentTAtLength } from './segmentLength';
 
 export type { EaseOptions, LengthenMode, PathEndFrame } from './pathEndExtension';
 
@@ -210,7 +210,7 @@ function appendPieces(sub: PenAnchor[], pieces: readonly { pts: Point[] }[]): vo
 function tailLength(sub: readonly PenAnchor[]): number {
   const [p0, p1, p2, p3] = tailCubic(sub);
   if (isStraightSegment(p0, p3)) return Math.hypot(p3.x - p0.x, p3.y - p0.y);
-  return segmentLength([p0, p1, p2, p3]);
+  return segmentLength(flatPoints([p0, p1, p2, p3]), 2);
 }
 
 function subpathLength(sub: readonly PenAnchor[]): number {
@@ -246,7 +246,7 @@ function cutTail(sub: PenAnchor[], keep: number, len: number): void {
     p3.y = p0.y + (p3.y - p0.y) * f;
     return;
   }
-  const t = segmentTAtLength([p0, p1, p2, p3], keep);
+  const t = segmentTAtLength(flatPoints([p0, p1, p2, p3]), 2, keep);
   const { left } = splitCubicAtT(p0, p1, p2, p3, t);
   if (p0.outHandle) p0.outHandle = left[1];
   p3.inHandle = left[2];

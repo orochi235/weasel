@@ -4,7 +4,7 @@ import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 import type { AnchorSet } from './anchorEdits';
 import { cubicPointAt } from './cubicMath';
 import { cubicDerivativeAt } from './curvature';
-import { segmentLength } from './segmentLength';
+import { flatPoints, segmentLength } from './segmentLength';
 import {
   lengthenPathEnd,
   lengthToward,
@@ -36,7 +36,7 @@ function subLength(sub: readonly PenAnchor[]): number {
     const a = sub[i - 1];
     const b = sub[i];
     if (!a.outHandle && !b.inHandle) total += Math.hypot(b.x - a.x, b.y - a.y);
-    else total += segmentLength([a, a.outHandle ?? a, b.inHandle ?? b, b]);
+    else total += segmentLength(flatPoints([a, a.outHandle ?? a, b.inHandle ?? b, b]), 2);
   }
   return total;
 }

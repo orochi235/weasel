@@ -1,14 +1,12 @@
 import {
-  DEFAULT_FLATTEN_TOLERANCE, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath, cubicEvalAt,
-  flattenCubicWithArcLen, flattenQuadraticWithArcLen, forEachSegment, quadraticEvalAt, resolveCorners,
-  splitCubicAt, splitQuadraticAt, type Path, type PolygonPath,
+  DEFAULT_FLATTEN_TOLERANCE, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath,
+  flattenCubicWithArcLen, flattenQuadraticWithArcLen, forEachSegment, resolveCorners, segmentLength,
+  segmentTAtLength, splitCubicAt, splitQuadraticAt, type Path, type PolygonPath,
 } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { trimSpan } from './trimSpan';
 
 const EPS = 1e-9;
-/** Chords per curve when finding where along it a cut falls. */
-const SAMPLES = 64;
 
 /** What a trimmed stroke draws, as a path a writer strokes itself. */
 export interface TrimmedPath {
@@ -132,27 +130,11 @@ function writeRun(segs: readonly Seg[], a: number, b: number, commands: number[]
   }
 }
 
-/** The parameter `d` along `seg` by length: the share of the flattened length, taken on the curve. */
+/** The parameter `d` along `seg`: the same share of its arc length as `d` is of its flattened one. */
 function paramAt(seg: Seg, d: number): number {
   const f = seg.len > 0 ? Math.min(Math.max(d / seg.len, 0), 1) : 0;
   if (seg.cmd === PATH_L || f <= 0 || f >= 1) return f;
-  const cum = [0];
-  let prev = pointOn(seg, 0);
-  for (let i = 1; i <= SAMPLES; i++) {
-    const p = pointOn(seg, i / SAMPLES);
-    cum.push(cum[i - 1] + Math.hypot(p[0] - prev[0], p[1] - prev[1]));
-    prev = p;
-  }
-  const want = f * cum[SAMPLES];
-  let i = 1;
-  while (i < SAMPLES && cum[i] < want) i++;
-  const span = cum[i] - cum[i - 1];
-  return (i - 1 + (span > 0 ? (want - cum[i - 1]) / span : 0)) / SAMPLES;
-}
-
-function pointOn({ cmd, c }: Seg, t: number): [number, number] {
-  return cmd === PATH_Q ? quadraticEvalAt(c[0], c[1], c[2], c[3], c[4], c[5], t)
-    : cubicEvalAt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], t);
+  return segmentTAtLength(seg.c, 2, f * segmentLength(seg.c, 2));
 }
 
 /** `seg` between parameters `t0` and `t1`, as its pen then its coords. */

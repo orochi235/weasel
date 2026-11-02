@@ -6,12 +6,13 @@
 
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
-import { segmentLength, segmentTAtLength } from '../paths/segmentLength';
+import { flatPoints, segmentLength, segmentTAtLength } from '../paths/segmentLength';
 
 /** The parameter at the middle of `s` by arc length. */
 export function segmentMidT(s: Seg): number {
   if (s.length === 2) return 0.5;
-  return segmentTAtLength(s, segmentLength(s) / 2);
+  const c = flatPoints(s);
+  return segmentTAtLength(c, 2, segmentLength(c, 2) / 2);
 }
 
 /** Roots of a quadratic a t² + b t + c in [0, 1]. */
