@@ -1,4 +1,4 @@
-import { checkPrefSplits, openPrefsSync, prefLeaves, type PrefGroup, type PrefNumber } from '@weasel-js/prefs';
+import { checkPrefSplits, openPrefsSync, prefLeaves, prefScopeSelectors, type PrefGroup, type PrefNumber } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
 import { resolveTheme } from '../resolveTheme';
@@ -17,14 +17,20 @@ describe('themePrefsSchema', () => {
     expect(LEAVES.get('axis.density')).toMatchObject({ kind: 'enum', default: 'comfortable' });
   });
 
-  it('holds a leaf for every token and hook, each split by every axis', () => {
+  it('holds a leaf for every token and hook, each scoped by the axes its value differs along', () => {
     const tokens = new Set([...LEAVES.keys()].map((path) => `--wzl-${path.slice(path.indexOf('.') + 1)}`));
     for (const name of Object.keys(resolveTheme(weaselTheme))) expect(tokens.has(name), name).toBe(true);
     expect(LEAVES.has('status.danger')).toBe(true);
     expect(LEAVES.get('swatch.swatch-size')).toMatchObject({ kind: 'number', default: 28 });
     for (const [path, leaf] of LEAVES) {
-      if (!path.startsWith('axis.')) expect(leaf.scopes, path).toEqual([{ selector: 'axis.mode' }, { selector: 'axis.density' }]);
+      if (path.startsWith('axis.')) continue;
+      const differs = [...prefScopeSelectors(leaf.defaultScope)];
+      const axes = ['axis.mode', 'axis.density'].filter((axis) => differs.includes(axis));
+      expect(leaf.scopes, path).toEqual(axes.length ? axes.map((selector) => ({ selector })) : undefined);
     }
+    expect(LEAVES.get('surface.surface')!.scopes).toEqual([{ selector: 'axis.mode' }]);
+    expect(LEAVES.get('control.control-h')!.scopes).toEqual([{ selector: 'axis.density' }]);
+    expect(LEAVES.get('font.font-mono')!.scopes).toBeUndefined();
     expect(checkPrefSplits(SCHEMA)).toEqual([]);
   });
 
@@ -43,13 +49,13 @@ describe('themePrefsSchema', () => {
 
   it('splits a default only along the axes the token differs by', () => {
     const surface = LEAVES.get('surface.surface')!;
-    expect(surface.defaultLocus).toEqual({
+    expect(surface.defaultScope).toEqual({
       $by: 'axis.mode',
       $in: { dark: resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface'], light: resolveTheme(weaselTheme, { mode: 'light' })['--wzl-surface'] },
     });
     expect(surface.default).toBe(resolveTheme(weaselTheme)['--wzl-surface']);
-    expect(LEAVES.get('control.control-h')!.defaultLocus?.$by).toBe('axis.density');
-    expect(LEAVES.get('gray.gray-50')!.defaultLocus).toBeUndefined();
+    expect(LEAVES.get('control.control-h')!.defaultScope?.$by).toBe('axis.density');
+    expect(LEAVES.get('gray.gray-50')!.defaultScope).toBeUndefined();
   });
 
   it('reads the theme as it is from a store nothing was written to', () => {
@@ -72,9 +78,9 @@ describe('a store over a theme, back as a theme', () => {
     store.set('motion.motion-fast', 90);
     const dark = resolveTheme(weaselTheme)['--wzl-surface'];
     expect(themePrefsPins(store)).toEqual({
-      'gray-50': { by: 'mode', dark: '#ff3366' },
+      'gray-50': '#ff3366',
       surface: { by: 'mode', dark, light: '#fffdf8' },
-      'motion-fast': { by: 'mode', dark: '90ms' },
+      'motion-fast': '90ms',
     });
   });
 
@@ -105,17 +111,44 @@ describe('a store over a theme, back as a theme', () => {
   });
 });
 
-describe('values a store kept before scopes', () => {
-  it('reads a split value stored with $of and a plain one as they read then', () => {
-    const backing = new Map<string, unknown>([
-      ['t.surface.surface', { $at: 0, value: { $by: 'axis.mode', $of: { dark: '#111111', light: '#eeeeee' } } }],
-      ['t.gray.gray-50', { $at: 0, value: '#ff3366' }],
-    ]);
-    const store = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 't.' });
+describe('values a store kept when every token was split by every axis', () => {
+  const kept = (records: Record<string, unknown>) =>
+    openPrefsSync(SCHEMA, { storage: createMemoryAdapter(new Map(Object.entries(records).map(([path, value]) => [`t.${path}`, { $at: 0, value }]))), prefix: 't.' });
+
+  it('reads a value split along an axis the token still scopes as before', () => {
+    const store = kept({ 'surface.surface': { $by: 'axis.mode', $of: { dark: '#111111', light: '#eeeeee' } } });
     expect(store.get('surface.surface')).toBe('#111111');
     expect(store.get('surface.surface', { at: { 'axis.mode': 'light' } })).toBe('#eeeeee');
-    expect(store.get('gray.gray-50', { at: { 'axis.mode': 'light', 'axis.density': 'compact' } })).toBe('#ff3366');
-    expect(themePrefsPins(store)).toMatchObject({ 'gray-50': '#ff3366', surface: { by: 'mode', dark: '#111111', light: '#eeeeee' } });
+    expect(themePrefsPins(store)).toEqual({ surface: { by: 'mode', dark: '#111111', light: '#eeeeee' } });
+  });
+
+  it('reads a plain value as the shared one, and keeps it as that on the first write to one mode', () => {
+    const store = kept({ 'surface.surface': '#222222' });
+    expect(store.get('surface.surface', { at: { 'axis.mode': 'light' } })).toBe('#222222');
+    store.set('surface.surface', '#fffdf8', { at: { 'axis.mode': 'light' } });
+    expect(store.get('surface.surface')).toBe('#222222');
+    expect(store.get('surface.surface', { at: { 'axis.mode': 'light' } })).toBe('#fffdf8');
+  });
+
+  it('reads a value split along an axis the token no longer scopes as before, and the first write flattens it to what reads now', () => {
+    const store = kept({ 'font.font-mono': { $by: 'axis.mode', $of: { dark: 'Menlo', light: 'Monaco' } } });
+    expect(store.get('font.font-mono')).toBe('Menlo');
+    expect(store.get('font.font-mono', { at: { 'axis.mode': 'light' } })).toBe('Monaco');
+    store.set('font.font-mono', 'Iosevka');
+    expect(store.get('font.font-mono', { at: { 'axis.mode': 'light' } })).toBe('Iosevka');
+    const control = kept({ 'control.control-h': { $by: 'axis.mode', $of: { dark: { $by: 'axis.density', $of: { compact: 20, comfortable: 24 } }, light: 30 } } });
+    expect(control.get('control.control-h', { at: { 'axis.density': 'compact' } })).toBe(20);
+    control.set('control.control-h', 26, { at: { 'axis.density': 'roomy' } });
+    expect(control.get('control.control-h')).toBe(24);
+    expect(control.get('control.control-h', { at: { 'axis.density': 'compact' } })).toBe(24);
+    expect(control.get('control.control-h', { at: { 'axis.density': 'roomy' } })).toBe(26);
+  });
+});
+
+describe('a token that asks to be scoped by an axis', () => {
+  it('is scoped by it even where its value does not differ along it', () => {
+    const theme = defineTheme({ name: 'scoped', pins: { 'gray-50': { value: '#f5f5f6', scope: ['mode'] } } });
+    expect(prefLeaves(themePrefsSchema(theme)).get('gray.gray-50')!.scopes).toEqual([{ selector: 'axis.mode' }]);
   });
 });
 
@@ -134,9 +167,9 @@ describe('themePrefsValues', () => {
 
   it('keeps the scopes of a set leaf, and reads an unset one split as the pinned theme has it', () => {
     const store = open(SCHEMA);
-    store.set('gray.gray-50', '#ff3366');
+    store.set('surface.surface', '#fffdf8', { at: { 'axis.mode': 'light' } });
     const { scopes } = themePrefsValues(store, weaselTheme);
-    expect(scopes.get('gray.gray-50')?.$by).toBe('axis.mode');
+    expect(scopes.get('surface.surface')?.$in.light).toBe('#fffdf8');
     expect(scopes.get('surface.surface')).toEqual(store.scope('surface.surface'));
     expect(scopes.has('gray.gray-100')).toBe(false);
   });

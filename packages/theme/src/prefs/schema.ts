@@ -1,4 +1,4 @@
-import { isPrefScope, prefLeaves, type PrefGroup, type PrefLeaf, type PrefScope, type PrefScopeSpec } from '@weasel-js/prefs';
+import { isPrefScope, prefLeaves, prefScopeSelectors, type PrefGroup, type PrefLeaf, type PrefScope, type PrefScopeSpec } from '@weasel-js/prefs';
 import { selectionKey } from '../axes.ts';
 import { weaselTheme, type Theme } from '../theme.ts';
 import { prefOfCss, tokenLeafKind } from './leaf.ts';
@@ -28,16 +28,27 @@ export const scopeByAxis = (axis: string, members: Record<string, unknown>): Pre
 // On its group's page a token's group prefix says nothing; its whole name stays a tag, so a filter still finds it.
 const shortName = (row: TokenRow): string => (row.name.startsWith(`${row.group}-`) ? row.name.slice(row.group.length + 1) : row.name);
 
-function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, per: readonly PrefScopeSpec[]): PrefLeaf {
+/**
+ * A token's pref. Its scopes are the axes its CSS differs along anywhere, and
+ * any its definitions ask for, each open and in the theme's axis order; a
+ * token that differs along none is one plain value. Its default is the CSS
+ * folded along those axes, so a store nothing was written to reads the theme.
+ */
+function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLeaf {
   const name = shortName(row);
   const leaf = {
-    ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown, scopes: per,
+    ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown,
     ...(name === row.name ? {} : { tags: [row.name] }),
   } as PrefLeaf;
   const fallback = row.css[selectionKey(table.axes, {})] ?? Object.values(row.css)[0];
   const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, row.css[selectionKey(table.axes, selection)] ?? fallback), scopeByAxis);
   leaf.default = prefOfCss(leaf, fallback);
-  if (isPrefScope(held)) leaf.defaultLocus = held;
+  const differs = prefScopeSelectors(held);
+  const scopes = Object.keys(table.axes)
+    .filter((axis) => differs.has(themeAxisPath(axis)) || row.scope?.includes(axis))
+    .map((axis): PrefScopeSpec => ({ selector: themeAxisPath(axis) }));
+  if (scopes.length > 0) leaf.scopes = scopes;
+  if (isPrefScope(held)) leaf.defaultScope = held;
   return leaf;
 }
 
@@ -48,7 +59,7 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, per: rea
  * without its group's prefix: a
  * `color`, a `number` in the token's unit, or a `string` of CSS text for what
  * neither holds. A leaf is at `<group>.<token>`, the token named without
- * `--wzl-`, and may be split by every axis.
+ * `--wzl-`, and is scoped by the axes its value differs along.
  *
  * A leaf's default is what the theme resolves the token to, already split
  * along the axes it differs by, so a store nothing was written to reads the
@@ -66,12 +77,11 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
       options: Object.keys(def.values).map((value) => ({ value, label: labeled(value) })),
     };
   }
-  const per = Object.keys(table.axes).map((axis): PrefScopeSpec => ({ selector: themeAxisPath(axis) }));
   const children: Record<string, PrefGroup> = { [THEME_PREFS_AXIS]: { name: 'Axes', children: axes } };
   for (const row of table.rows) {
     const key = groupKey(row.group);
     children[key] ??= { name: labeled(row.group), children: {} };
-    children[key].children[row.name] = tokenLeaf(row, table, per);
+    children[key].children[row.name] = tokenLeaf(row, table);
   }
   return { name: `${labeled(theme.name)} theme`, children };
 }

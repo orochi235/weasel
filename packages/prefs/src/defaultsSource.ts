@@ -8,7 +8,7 @@ import { prefScopedDefault } from './scopeSpec';
 
 /**
  * A schema's defaults read the way a store at defaults reads them, a split
- * default by its `defaultLocus` — what `prefsCss` needs to write a schema's
+ * default by its `defaultScope` — what `prefsCss` needs to write a schema's
  * stylesheet with no store and no storage, at build time say.
  */
 export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {

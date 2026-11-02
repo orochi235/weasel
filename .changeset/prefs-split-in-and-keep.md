@@ -35,6 +35,17 @@ value split by any other selector reads as it always did. The first write to it 
 declared shape, with what it reads under the current selection as the shared value, so only the value
 written changes.
 
+**Breaking: `defaultLocus` is `defaultScope`**, read only on a pref that declares scopes.
+
+**Theme token prefs are scoped by what their values differ along.** A token's scopes are the axes its CSS
+differs along anywhere, each open, in axis order; a token that differs along none is one plain value. So
+editing `surface` in dark changes dark only, a control height changes the current density only, and a font
+family changes everywhere. A pin may give `scope: ['mode']` to add an axis its value does not differ along
+yet. A token's default is its CSS folded along those axes, in `defaultScope`. Theme values stored when every
+token was split by every axis read as before under the rule above: a split along an axis the token still
+scopes reads as that scope, a plain value as the shared value, and a split along an axis it no longer
+scopes as before until the first write flattens it.
+
 **Breaking for stored values:** a scoped value's own values are keyed `$in`, not `$of`. A value stored as
 `{ $by, $of }` is read as `$in` by `recordValue`, which every store read and write starts from, so an old
 record reads correctly and the next write to it stores `$in`.
@@ -48,7 +59,7 @@ record reads correctly and the next write to it stores `$in`.
   until then. With no option named, a selector reads and writes the shared value; whatever reaches no value
   reads `default`.
 - **Nesting.** Selectors nest in declaration order. An option's own value ends the descent, and a write
-  replaces it, unless it is already split by the next selector in (as a nested `defaultLocus` holds it);
+  replaces it, unless it is already split by the next selector in (as a nested `defaultScope` holds it);
   only the shared value holds the next selector in otherwise.
 - **Admitted selectors.** A schema's root lists `admits: [...]` (labkit: `f.schema(…).admits(...)`), the
   selectors its prefs may name that are no pref of it, whose option the app names through the same

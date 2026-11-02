@@ -22,7 +22,7 @@ const SCHEMA = {
     },
     gap: {
       kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100,
-      scopes: [{ selector: MODE }, { selector: DENSITY }], defaultLocus: byMode(4, 6),
+      scopes: [{ selector: MODE }, { selector: DENSITY }], defaultScope: byMode(4, 6),
     },
     plain: { kind: 'number', name: 'Plain', description: '', default: 1, scopes: [{ selector: MODE }] },
   },
@@ -101,14 +101,14 @@ describe('a split default the leaf cannot hold', () => {
       name: 'Test',
       children: {
         mode: SCHEMA.children.mode,
-        gap: { kind: 'number', name: 'Gap', description: '', default: 4, defaultLocus: byMode(4, 6) },
-        pad: { kind: 'number', name: 'Pad', description: '', default: 2, scopes: [{ selector: MODE }], defaultLocus: { $by: 'nope', $in: { a: 1 } } },
+        gap: { kind: 'number', name: 'Gap', description: '', default: 4, defaultScope: byMode(4, 6) },
+        pad: { kind: 'number', name: 'Pad', description: '', default: 2, scopes: [{ selector: MODE }], defaultScope: { $by: 'nope', $in: { a: 1 } } },
       },
     } satisfies PrefGroup;
     const store = createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.' }));
     expect(warn.mock.calls.map((c) => c[0])).toEqual([
-      '[prefs] scopes of "gap": its defaultLocus is split by "mode", which its scopes do not name',
-      '[prefs] scopes of "pad": its defaultLocus is split by "nope", which its scopes do not name',
+      '[prefs] scopes of "gap": its defaultScope is split by "mode", which its scopes do not name',
+      '[prefs] scopes of "pad": its defaultScope is split by "nope", which its scopes do not name',
     ]);
     expect(store.get('gap')).toBe(4);
     expect(store.scope('gap')).toBeUndefined();

@@ -112,9 +112,12 @@ The schema holds an `enum` per axis under `axis` (`axis.mode`,
 `axis.density`) and a page per token group, each token at `<group>.<token>`
 with no `--wzl-`: a `color`, a `number` in the token's unit, or a `string` of
 CSS text for a value neither holds, such as a font stack or a `var()`. Override
-hooks are leaves too. Every leaf may be split by every axis, and its default
-is what the theme resolves to, already split along the axes the token differs
-by, so a store nothing was written to reads the theme as it is.
+hooks are leaves too. A token is scoped by the axes its value differs along,
+each open, so editing `surface` in dark changes dark only and a font family
+changes everywhere; a pin's `scope: ['mode']` adds an axis its value does not
+differ along yet. Its default is what the theme resolves to, folded along those
+axes (`defaultScope`), so a store nothing was written to reads the theme as it
+is.
 
 `themePrefsPins(store)` is the `pins` those values amount to. Only a leaf with
 a value of its own is a pin, so a token left alone keeps its rule: pin

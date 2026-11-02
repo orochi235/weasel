@@ -125,7 +125,7 @@ Scopes are the declaration's to say: a reader never splits or joins a pref. A
 pref with nothing stored holds one empty scope per selector, so its first
 write gives the current option a value of its own. An option's own value is
 plain, and a write replaces it, unless it is already split by the next
-selector in, as a nested `defaultLocus` holds it.
+selector in, as a nested `defaultScope` holds it.
 
 A stored value need not have the declared shape, as one stored before the
 declaration changed. A plain value reads as the shared value. A value split
@@ -171,13 +171,13 @@ const { values, set, scopes, setAt } = usePrefsValues(store);
   scopes={scopes} onChangeAt={setAt} othersLabel="Other modes" />
 ```
 
-`defaultLocus` gives a pref a default that differs by option, where its
+`defaultScope` gives a pref a default that differs by option, where its
 selectors' proposed values cannot say it, and `default` stays what reaches
 nothing reads:
 
 ```ts
 'gap': { kind: 'number', default: 4, scopes: [{ selector: 'look.mode' }],
-         defaultLocus: { $by: 'look.mode', $in: { dark: 4, light: 6 } }, … }
+         defaultScope: { $by: 'look.mode', $in: { dark: 4, light: 6 } }, … }
 ```
 
 A leaf selector must be a plain `enum`: not `clearable`, with no `encoding`,

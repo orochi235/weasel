@@ -108,7 +108,7 @@ export interface PrefBase<K extends string, Value> {
    *  `scopes` names; without it, the default is an empty scope per entry,
    *  nested. `default` stays what a value it leaves out reads as, and
    *  what the leaf's value type is read from. */
-  defaultLocus?: PrefScope;
+  defaultScope?: PrefScope;
 }
 
 /** How a leaf that can be auto is auto. */

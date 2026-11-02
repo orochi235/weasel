@@ -103,9 +103,9 @@ describe('a leaf with per', () => {
     expect(prefScopesOf(leaf).map((spec) => spec.selector)).toEqual([MODE, LAYOUT, 'document']);
   });
 
-  it('defaults to its defaultLocus where it has one, and to none with no entries', () => {
+  it('defaults to its defaultScope where it has one, and to none with no entries', () => {
     const given = scope(MODE, { types: 9 });
-    expect(prefScopedDefault({ ...leaf, defaultLocus: given } as PrefLeaf)).toBe(given);
+    expect(prefScopedDefault({ ...leaf, defaultScope: given } as PrefLeaf)).toBe(given);
     expect(prefScopedDefault({ kind: 'number', name: 'N', description: '', default: 1 } as PrefLeaf)).toBeUndefined();
   });
 });

@@ -5,7 +5,7 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
 import { assignPrefValueAtPath } from './helpers';
-import { scopeSelectorsOf, prefScopedDefault, overridesOfPref } from './scopeSpec';
+import { overridesOfPref, prefScopedDefault } from './scopeSpec';
 import { isPrefScope, scopeSelectors, repairScope, selectionWeights, weighScope, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefLeaf } from './schema';
@@ -38,12 +38,17 @@ export interface SnapshotSource {
   blends?: Readonly<Record<string, PrefBlend>>;
 }
 
-/** What `stored` reads as for `leaf`: a scope with each member repaired where the leaf may hold one, else the value repaired. */
+/**
+ * What `stored` reads as for `leaf`: a scope with each value repaired, else
+ * the value repaired. A scope by any selector of the schema reads, not only
+ * one the pref declares, so a value stored before its scopes changed reads as
+ * it did until its first write rebuilds it.
+ */
 export function readStored(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf, stored: unknown): unknown {
   const repair = (value: unknown): unknown => repairPrefValue(leaf, value, source.validators);
-  const axes = scopeSelectorsOf(leaf);
-  if (!axes?.length || !isPrefScope(stored)) return repair(stored);
-  const read = repairScope(stored, axes, (path) => optionsOf(source, path), repair, overridesOfPref(leaf));
+  if (!isPrefScope(stored)) return repair(stored);
+  const known = [...source.selectors.keys(), ...(source.admitted ?? [])];
+  const read = repairScope(stored, known, (path) => optionsOf(source, path), repair, overridesOfPref(leaf));
   return read === undefined ? leaf.default : read;
 }
 

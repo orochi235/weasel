@@ -15,6 +15,8 @@ export interface TokenRow {
   readonly description: string;
   /** The CSS it resolves to, by `selectionKey`. */
   readonly css: Readonly<Record<string, string>>;
+  /** Axes its pref is scoped by even where its CSS does not differ along them: every `scope` its definitions give. */
+  readonly scope?: readonly string[];
 }
 
 /** A theme's tokens and the axes they were resolved along. */
@@ -27,18 +29,20 @@ const MANIFEST = new Map<string, TokenManifestEntry>(TOKEN_MANIFEST.map((entry) 
 
 const groupOf = (name: string): string => (name.includes('-') ? name.slice(0, name.indexOf('-')) : name);
 
-/** The type and description each token was first declared with, root theme first. A pin's type is `unknown`. */
-function declared(theme: Theme): Map<string, { type: string | undefined; description: string }> {
-  const out = new Map<string, { type: string | undefined; description: string }>();
+/** The type and description each token was first declared with, root theme first, and every axis any of its
+ *  definitions asks its pref be scoped by. A pin's type is `unknown`. */
+function declared(theme: Theme): Map<string, { type: string | undefined; description: string; scope: readonly string[] }> {
+  const out = new Map<string, { type: string | undefined; description: string; scope: readonly string[] }>();
   for (const link of themeChain(theme)) {
     for (const [name, varying] of Object.entries(link.tokens)) {
       let raw: unknown = varying;
       while (isByAxis(raw)) raw = Object.entries(raw).find(([key]) => key !== 'by')?.[1];
-      const token = raw as { type?: string; description?: string } | undefined;
+      const token = raw as { type?: string; description?: string; scope?: readonly string[] } | undefined;
       const had = out.get(name);
       out.set(name, {
         type: had?.type ?? (token?.type !== 'unknown' ? token?.type : undefined),
         description: had?.description || token?.description || '',
+        scope: [...new Set([...(had?.scope ?? []), ...(token?.scope ?? [])])],
       });
     }
   }
@@ -74,6 +78,7 @@ export function tokenTable(theme: Theme): TokenTable {
       group: listed?.group ?? groupOf(name),
       description: said?.description || listed?.description || '',
       css,
+      ...(said?.scope.length ? { scope: said.scope } : {}),
     });
   }
   for (const [name, listed] of MANIFEST) {

@@ -47,13 +47,14 @@ export function overridesOfPref(pref: PrefLeaf): OverridesOf | undefined {
 const withElse = (by: string, shared: PrefScope): PrefScope => ({ $by: by, $in: {}, [PREF_ELSE]: shared });
 
 /**
- * What a pref holds while nothing is stored for it: its `defaultLocus`, or
+ * What a pref holds while nothing is stored for it: its `defaultScope`, or
  * else one scope per selector, outermost first, each holding no value of its
  * own and the next one in as its shared value, the last with none so it
  * reads `default`.
  */
 export function prefScopedDefault(pref: PrefLeaf): PrefScope | undefined {
-  if (pref.defaultLocus !== undefined || !pref.scopes?.length) return pref.defaultLocus;
+  if (!pref.scopes?.length) return undefined;
+  if (pref.defaultScope !== undefined) return pref.defaultScope;
   let inner: PrefScope | undefined;
   for (const scope of [...pref.scopes].reverse()) inner = inner === undefined ? { $by: scope.selector, $in: {} } : withElse(scope.selector, inner);
   return inner;

@@ -14,6 +14,8 @@ export interface RawToken {
   /** Render the referenced color at this alpha, 0–1. */
   readonly alpha?: number | undefined;
   readonly description?: string | undefined;
+  /** Axes the token's pref is scoped by even where its values do not differ along them. */
+  readonly scope?: readonly string[] | undefined;
 }
 
 /** A token graph flattened to one level, keyed by token name (no `--wzl-`

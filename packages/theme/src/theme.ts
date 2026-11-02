@@ -34,7 +34,8 @@ function toRaw(v: Varying<PinValue>): Varying<RawToken> {
     return out as Varying<RawToken>;
   }
   const obj: PinObject = isPinObject(v) ? v : { value: v as TokenValue };
-  return { type: obj.type ?? 'unknown', value: obj.value, alpha: obj.alpha, description: obj.description };
+  const raw = { type: obj.type ?? 'unknown', value: obj.value, alpha: obj.alpha, description: obj.description };
+  return obj.scope === undefined ? raw : { ...raw, scope: obj.scope };
 }
 
 /** The built-in theme, from the baked output of themes/weasel.json. */

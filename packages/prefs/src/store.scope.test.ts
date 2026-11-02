@@ -73,15 +73,22 @@ describe('a split value in a store', () => {
     expect(store.get('gap')).toBe(4);
   });
 
-  it('reads the default for a scope by a selector the leaf may not be split by', () => {
+  it('reads a scope by a selector of the schema the pref does not declare as it always read', () => {
     const { store } = make([['surface', byDensity('#111111', '#222222')]]);
-    expect(store.get('surface')).toBe('#000000');
-    expect(store.scope('surface')).toBeUndefined();
+    expect(store.get('surface')).toBe('#111111');
+    expect(store.get('surface', { at: { [DENSITY]: 'roomy' } })).toBe('#222222');
   });
 
-  it('reads a scope-shaped record as an ordinary bad value on a leaf with no scopes', () => {
-    const { store } = make([['name', byMode('a', 'b')]]);
-    expect(store.get('name')).toBe('untitled');
+  it('reads a scope on a pref with no scopes as it always read, and writes it a plain value', () => {
+    const { cache, store } = make([['name', byMode('a', 'b')]]);
+    expect(store.get('name')).toBe('a');
+    store.set('name', 'c');
+    expect(recordValue(cache.get('name'))).toBe('c');
+  });
+
+  it('reads the default for a scope by a path no selector of the schema has', () => {
+    const { store } = make([['surface', { $by: 'nope', $in: { a: '#111111' } }]]);
+    expect(store.get('surface')).toBe('#000000');
   });
 
   it('writes the member the selectors name, and leaves the others', () => {
