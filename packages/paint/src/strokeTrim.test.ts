@@ -14,7 +14,7 @@ describe('strokeTrimKey', () => {
   it('tells apart trims that read differently', () => {
     const keys = [
       strokeTrimKey({}),
-      strokeTrimKey({ start: 0 }),
+      strokeTrimKey({ start: 0.1 }),
       strokeTrimKey({ start: { anchor: 2 } }),
       strokeTrimKey({ start: { length: 2 } }),
       strokeTrimKey({ start: { subpath: 2 } }),
@@ -23,6 +23,12 @@ describe('strokeTrimKey', () => {
     ];
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys[0]).not.toBe('');
+  });
+
+  it('keys an omitted start as 0 and an omitted end as 1', () => {
+    expect(strokeTrimKey({ end: 0.5 })).toBe(strokeTrimKey({ start: 0, end: 0.5 }));
+    expect(strokeTrimKey({ start: 0.5 })).toBe(strokeTrimKey({ start: 0.5, end: 1 }));
+    expect(strokeTrimKey({})).toBe(strokeTrimKey({ start: 0, end: 1 }));
   });
 
   it('keys an omitted pace as the default, length', () => {

@@ -93,7 +93,7 @@ export function windowTrim(polylines: readonly Polyline[], path: Path, trim: Str
 function opened(pl: Polyline): Polyline {
   const n = pl.points.length / 2;
   const { anchorA: A, anchorB: B, anchorT: T, widths: W, offsets: O } = pl;
-  const end = closingAnchor(pl, n) ?? A?.[0] ?? 0;
+  const end = closingAnchor(pl) ?? A?.[0] ?? 0;
   const grow = <F extends Uint32Array | Float32Array>(a: F, v: number): F => {
     const g = new (a.constructor as new (len: number) => F)(n + 1);
     g.set(a);

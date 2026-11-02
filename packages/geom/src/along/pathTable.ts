@@ -52,7 +52,7 @@ function anchorRun(pl: Polyline, controls: readonly (number[] | null)[]): Length
     ids.push(A ? A[i] : i);
   }
   const segControls = ids.slice(1).map((id) => controls[id] ?? null);
-  const close = closingAnchor(pl, n);
+  const close = closingAnchor(pl);
   if (pl.closed && n >= 2) segControls.push(close === undefined ? null : controls[close] ?? null);
   const anchors = Uint32Array.from(ids);
   return {

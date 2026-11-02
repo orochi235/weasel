@@ -225,7 +225,7 @@ function expandedBreaks(run: LengthRun, n: number, c: Float64Array, next: number
     if (A[i] === B[i]) { ids.push(A[i]); lens.push(c[i]); }
   }
   // A last anchor dropped as a duplicate of the first point ends the closing edge's drawn part.
-  const dropped = closingAnchor(run, n);
+  const dropped = closingAnchorOf(run, n);
   if (dropped !== undefined) { ids.push(dropped); lens.push(c[n]); }
   return { ids, lens };
 }
@@ -234,9 +234,13 @@ function expandedBreaks(run: LengthRun, n: number, c: Float64Array, next: number
  * The anchor a closed run's closing edge ends at when that anchor was dropped
  * as a duplicate of the first point: `closeAnchor`, else the anchor the last
  * point is heading toward. `undefined` when none was dropped, so the edge
- * ends at the run's first anchor. `n` is the run's point count.
+ * ends at the run's first anchor. `dim` is the run's components per point.
  */
-export function closingAnchor(run: LengthRun, n: number): number | undefined {
+export function closingAnchor(run: LengthRun, dim: 2 | 3 = 2): number | undefined {
+  return closingAnchorOf(run, Math.floor(run.points.length / dim));
+}
+
+function closingAnchorOf(run: LengthRun, n: number): number | undefined {
   const { anchorA: A, anchorB: B } = run;
   if (!wraps(run, n)) return undefined;
   if (run.closeAnchor !== undefined) return run.closeAnchor;

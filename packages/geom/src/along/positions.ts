@@ -22,7 +22,6 @@ export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangen
     return { point: at(t, r, 0), tangent: [0, 0, 0] };
   }
   const c = cum[r];
-  // The first segment whose end reaches `len`.
   let lo = 0;
   let hi = c.length - 2;
   while (lo < hi) {
