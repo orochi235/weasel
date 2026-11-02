@@ -1,4 +1,4 @@
-import { arcShape, trackRun, type ArcTrackSpec, type Point, type TrackNearest, type TrackPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { arcShape, trackRun, wrapPositive, type ArcTrackSpec, type Point, type TrackNearest, type TrackPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
 
 /** The handles the lab's arc is edited by: each is a scene node, and its center is what the arc reads. */
 export type HandleId = 'center' | 'radius' | 'start' | 'end' | 'probe';
@@ -20,7 +20,7 @@ export type HandlePoints = Record<HandleId, Point>;
 /** Degrees clockwise from 12 o'clock of `p` about `c`, in [0, 360): the arc's own terms. */
 export function bearing(p: Point, c: Point): number {
   const deg = (Math.atan2(p.x - c.x, c.y - p.y) * 180) / Math.PI;
-  return ((deg % 360) + 360) % 360;
+  return wrapPositive(deg, 360);
 }
 
 /** The point `deg` clockwise from 12 o'clock on the circle of `r` about `c`. */
@@ -86,7 +86,7 @@ export interface TrackMeasure {
 /** The arc's sweep in degrees, as `arcShape` reads it: equal ends are a whole circle. */
 export function sweepOf(spec: ArcTrackSpec): number {
   const sign = spec.direction === 'ccw' ? -1 : 1;
-  const raw = (((sign * (spec.end - spec.start)) % 360) + 360) % 360;
+  const raw = wrapPositive(sign * (spec.end - spec.start), 360);
   return raw === 0 ? 360 : raw;
 }
 

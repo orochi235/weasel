@@ -1,4 +1,4 @@
-import { shortWay } from './offsets';
+import { wrapAngle } from '@weasel-js/geom';
 
 /**
  * One hold on each of any number of a store's rows, its values and weights kept as rows of flat
@@ -146,7 +146,7 @@ function foldRow(
         const w = holds(l, a);
         if (!(w > 0)) continue;
         const v = l.values[base + a]!;
-        sum += w * (mean === null ? shortWay(v - c) : shortWay(mean - c) + shortWay(v - mean));
+        sum += w * (mean === null ? wrapAngle(v - c) : wrapAngle(mean - c) + wrapAngle(v - mean));
       }
     }
     total[a] = weight;

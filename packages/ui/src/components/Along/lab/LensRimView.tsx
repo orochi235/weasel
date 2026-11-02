@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import type { Point } from '@weasel-js/geom';
+import { wrapPositive, type Point } from '@weasel-js/geom';
 import { Along, type AlongArc } from '@weasel-js/ui/components/Along';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -24,13 +24,12 @@ export interface LensRimConfig {
 
 const ZOOM_STOPS = [1, 2, 4, 8].map((v) => ({ value: v, label: `${v}×` }));
 const SAVED = 'weasel-lens-rim-lab-v1';
-const mod360 = (deg: number): number => ((deg % 360) + 360) % 360;
 
 /** The rim arcs, turned with the lens: the bar across the top, the zoom across the bottom. */
 export function rimArcs(turn: number): { top: AlongArc; bottom: AlongArc } {
   return {
-    top: { start: mod360(300 + turn), end: mod360(60 + turn), inset: 18 },
-    bottom: { start: mod360(240 + turn), end: mod360(120 + turn), direction: 'ccw', inset: 16 },
+    top: { start: wrapPositive(300 + turn, 360), end: wrapPositive(60 + turn, 360), inset: 18 },
+    bottom: { start: wrapPositive(240 + turn, 360), end: wrapPositive(120 + turn, 360), direction: 'ccw', inset: 16 },
   };
 }
 

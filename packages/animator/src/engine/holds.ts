@@ -1,8 +1,9 @@
+import { wrapAngle } from '@weasel-js/geom';
 import { axisIndexes } from '../axisNames';
 import { committedInto, type TargetState } from '../target';
 import type { AnimationContext } from './context';
 import { createHoldStore, type HoldLayer, type HoldSources, type HoldStore } from './holdStore';
-import { absorb, axesFor, setBeside, shortWay } from './offsets';
+import { absorb, axesFor, setBeside } from './offsets';
 
 /** What {@link openHold} takes. */
 export interface HoldSource<T> {
@@ -56,7 +57,7 @@ function settle(
   return committed.map((c, a) => {
     if (covers && !covers[a]) return 0;
     // Holds that cover the committed value outright leave it nothing to show: it takes this one's.
-    if (rest.total[a]! >= 1 - 1e-9) return angles.includes(a) ? shortWay(own[a]! - c) : own[a]! - c;
+    if (rest.total[a]! >= 1 - 1e-9) return angles.includes(a) ? wrapAngle(own[a]! - c) : own[a]! - c;
     return (all.delta[a]! - rest.delta[a]!) / (1 - rest.total[a]!);
   });
 }

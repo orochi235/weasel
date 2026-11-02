@@ -8,6 +8,7 @@
 // stops themselves, and the browser only interpolates the short hops between.
 
 import { sampleGradientStops, type Paint } from '@weasel-js/core';
+import { RAD_TO_DEG } from '@weasel-js/geom';
 import { solidColorOf } from './components/paintValue';
 
 /** Sample count along a previewed gradient. Enough that a hue arc reads as a
@@ -55,8 +56,6 @@ function sampledStops(paint: Extract<Paint, { stops: unknown }>): string {
   return sampledCssStops((t) => sampleGradientStops(paint.stops, t, space), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
 }
 
-const DEG = 180 / Math.PI;
-
 /** A fraction of the box as a CSS percentage. A gradient in absolute units has
  *  no box to be a fraction of, so its geometry only ever approximates here. */
 function pct(v: number): string {
@@ -83,7 +82,7 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
     const dy = paint.to.y - paint.from.y;
     // CSS measures from "to top", clockwise; the paint measures in a
     // y-down plane from +x.
-    const angle = dx === 0 && dy === 0 ? 90 : Math.atan2(dx, -dy) * DEG;
+    const angle = dx === 0 && dy === 0 ? 90 : Math.atan2(dx, -dy) * RAD_TO_DEG;
     return `linear-gradient(${angle.toFixed(1)}deg, ${sampledStops(paint)})`;
   }
   if (paint.kind === 'radial-gradient') {
@@ -97,7 +96,7 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
   if (paint.kind === 'image') return `url(${JSON.stringify(paint.src)}) center / cover no-repeat`;
   if (paint.kind === 'conic-gradient') {
     // CSS starts a conic gradient at "to top"; the paint starts at +x.
-    const from = (paint.angle * DEG + 90).toFixed(1);
+    const from = (paint.angle * RAD_TO_DEG + 90).toFixed(1);
     return `conic-gradient(from ${from}deg at ${pct(paint.center.x)} ${pct(paint.center.y)}, ${sampledStops(paint)})`;
   }
   return undefined;

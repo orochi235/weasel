@@ -24,6 +24,7 @@
  * extra equations; anywhere else, such a segment's curvature stops bending
  * at that end (its second derivative is zero there).
  */
+import { wrapAngle } from '../angle';
 import type { Point } from './cubicMath';
 import {
   eulerAngleAt, eulerCurvatureAt, eulerCurvatureDerivativesAt, fitEulerSegment, placeEulerSegment,
@@ -54,8 +55,7 @@ export interface SpiroSegment {
 
 type Side = { kind: 'none' } | { kind: 'line'; angle: number } | { kind: 'curve'; seg: number };
 
-const TAU = Math.PI * 2;
-const wrap = (a: number): number => a - TAU * Math.round(a / TAU);
+const wrap = (a: number): number => wrapAngle(a, 'min');
 const angleOf = (p: Point, q: Point): number => Math.atan2(q.y - p.y, q.x - p.x);
 
 /** Whether `kind` is one of the {@link SpiroKind}s. */

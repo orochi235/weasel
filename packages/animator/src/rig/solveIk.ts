@@ -1,4 +1,4 @@
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, wrapAngle, type GlMat3 } from '@weasel-js/geom';
 import { compose, resolveSkeleton, toMat3 } from './resolveSkeleton';
 import type { Joint, Pose, Skeleton } from './types';
 
@@ -53,15 +53,11 @@ export interface IkResult {
   iterations: number;
 }
 
-function wrap(a: number): number {
-  return a - TAU * Math.round(a / TAU);
-}
-
 /** `v` held to `limit`, where out of range means the nearer bound around the circle. */
 function clampAngle(v: number, limit: IkLimit | undefined): number {
   if (!limit) return v;
   for (const c of [v, v - TAU, v + TAU]) if (c >= limit.min && c <= limit.max) return c;
-  return Math.abs(wrap(v - limit.min)) <= Math.abs(wrap(v - limit.max)) ? limit.min : limit.max;
+  return Math.abs(wrapAngle(v - limit.min, 'min')) <= Math.abs(wrapAngle(v - limit.max, 'min')) ? limit.min : limit.max;
 }
 
 const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay * bx;
@@ -102,7 +98,7 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
 
   const rootParent = chain[0].parent;
   const base = rootParent == null ? mat3.identity() : resolveSkeleton(skeleton, pose).get(rootParent)!;
-  const rot = chain.map((joint) => clampAngle(wrap(pose[joint.name]?.rotation ?? 0), limits?.[joint.name]));
+  const rot = chain.map((joint) => clampAngle(wrapAngle(pose[joint.name]?.rotation ?? 0, 'min'), limits?.[joint.name]));
 
   let worlds: GlMat3[] = [];
   const resolve = () => {
@@ -128,10 +124,10 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
     const [ex, ey] = mat3.apply(inv, ...effector);
     const [gx, gy] = mat3.apply(inv, goal.x, goal.y);
     if (Math.hypot(ex - ox, ey - oy) < 1e-9 || Math.hypot(gx - ox, gy - oy) < 1e-9) return false;
-    const want = wrap(rot[i] + Math.atan2(gy - oy, gx - ox) - Math.atan2(ey - oy, ex - ox));
+    const want = wrapAngle(rot[i] + Math.atan2(gy - oy, gx - ox) - Math.atan2(ey - oy, ex - ox), 'min');
     rot[i] = clampAngle(want, limits?.[chain[i].name]);
     resolve();
-    return Math.abs(wrap(rot[i] - want)) > 1e-9;
+    return Math.abs(wrapAngle(rot[i] - want, 'min')) > 1e-9;
   };
 
   const distance = () => {

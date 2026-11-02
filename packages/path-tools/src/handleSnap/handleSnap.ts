@@ -4,7 +4,7 @@
  * length. The drag runs a `'handle'` snap session about the anchor, and
  * {@link handleSnapSource} offers it the angles.
  */
-import { anchorAt } from '@weasel-js/geom';
+import { anchorAt, DEG_TO_RAD } from '@weasel-js/geom';
 import { stepAngles, type AngleCandidate, type PathEditExtension, type SnapMark, type SnapSession, type SnapSource } from '@weasel-js/core';
 
 /** Angle snapping for a control-handle drag. */
@@ -25,7 +25,6 @@ export type HandleSnapOptionsInput = HandleSnapOptions | (() => HandleSnapOption
 
 type Point = { x: number; y: number };
 
-const DEG = Math.PI / 180;
 const DEFAULT_STEP_DEG = 45;
 const DEFAULT_REACH_DEG = 6;
 /** How far a guide reaches past the handle, as a share of its length at the press. */
@@ -57,7 +56,7 @@ export function handleSnapSource(options: HandleSnapOptionsInput = {}): SnapSour
         const angle = Math.atan2(pivot.y - other.y, pivot.x - other.x);
         yield { angle, mark: { kind: 'line', from: other, to: along(pivot, angle, reach) } };
       }
-      const step = (opts.stepDeg ?? DEFAULT_STEP_DEG) * DEG;
+      const step = (opts.stepDeg ?? DEFAULT_STEP_DEG) * DEG_TO_RAD;
       if (step <= 0) return;
       for (const angle of stepAngles(q.theta, step)) yield { angle, mark: guideLine(pivot, angle, reach) };
     },
@@ -89,7 +88,7 @@ export function createHandleSnapExtension(options: HandleSnapOptionsInput = {}):
         pivot: anchor,
         ids: [start.id],
         theta0: Math.atan2(handle.y - anchor.y, handle.x - anchor.x),
-        reachRad: (read()?.reachDeg ?? DEFAULT_REACH_DEG) * DEG,
+        reachRad: (read()?.reachDeg ?? DEFAULT_REACH_DEG) * DEG_TO_RAD,
         ...(other ? { also: { anchors: [{ x: other.x, y: other.y }] } } : {}),
       });
       if (!session) return null;

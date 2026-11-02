@@ -3,7 +3,7 @@
  * count, or a fixed distance apart — and, with a spine, laid along it.
  */
 import {
-  boundsOfPath, measurePath, multiply, prepareBlend, rotate, rotatePathAround, transformPath, translate,
+  boundsOfPath, measurePath, multiply, prepareBlend, rotate, rotatePathAround, transformPath, translate, wrapAngle,
   type BlendPathsOptions, type Path, type PathMeasure,
 } from '@weasel-js/geom';
 import { lerpFill, lerpStroke } from '@weasel-js/paint';
@@ -81,9 +81,7 @@ export function blendParts(effect: BlendEffect, a: EffectSource, b: EffectSource
     ? prepareBlend(turned.a.path, turned.b.path, effect)
     : prepareBlend(a.world, b.world, effect);
   // The shorter way round, so a turn of 350° reads as -10°.
-  const turn = turned
-    ? Math.atan2(Math.sin(turned.b.rotation - turned.a.rotation), Math.cos(turned.b.rotation - turned.a.rotation))
-    : 0;
+  const turn = turned ? wrapAngle(turned.b.rotation - turned.a.rotation, 'sign') : 0;
   const chord = Math.atan2(to.y - from.y, to.x - from.x);
   return stations.map((t) => {
     let path: Path = blend.at(t);

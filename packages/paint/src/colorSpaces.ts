@@ -1,6 +1,7 @@
 // sRGB ↔ OKLab conversion. Reference: https://bottosson.github.io/posts/oklab/
 
 import { hexToRgbBytes } from './hex';
+import { shortArc } from './shortArc';
 
 const SRGB_TO_LINEAR: Float64Array = (() => {
   const lut = new Float64Array(256);
@@ -162,11 +163,7 @@ export function lerpOklch(
   // to avoid spurious arc rotation through undefined hue space.
   const h1 = C1 < C_EPS ? h2Raw : h1Raw;
   const h2 = C2 < C_EPS ? h1Raw : h2Raw;
-  const TWO_PI = Math.PI * 2;
-  // Shortest-arc delta in [-π, π].
-  let dh = h2 - h1;
-  while (dh > Math.PI) dh -= TWO_PI;
-  while (dh < -Math.PI) dh += TWO_PI;
+  const dh = shortArc(h2 - h1);
   return [
     L1 + (L2 - L1) * t,
     C1 + (C2 - C1) * t,

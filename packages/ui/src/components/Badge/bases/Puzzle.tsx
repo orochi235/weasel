@@ -1,3 +1,4 @@
+import { wrapPositive } from '@weasel-js/geom';
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 
@@ -66,8 +67,8 @@ function edgeVertices(
   const θApex = Math.atan2(apex[1] - cy, apex[0] - cx);
   // Choose the arc direction that sweeps through θApex.
   const TAU = Math.PI * 2;
-  const apexFromStart = ((θApex - θ1) % TAU + TAU) % TAU;
-  const endFromStart = ((θ2 - θ1) % TAU + TAU) % TAU;
+  const apexFromStart = wrapPositive(θApex - θ1);
+  const endFromStart = wrapPositive(θ2 - θ1);
   // If the CCW sweep covers apex before reaching θ2, use CCW; otherwise CW.
   const sweep = apexFromStart < endFromStart ? endFromStart : endFromStart - TAU;
 
