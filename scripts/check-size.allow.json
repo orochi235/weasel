@@ -220,8 +220,8 @@
     "longestFunction": 136
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "lines": 452,
-    "longestFunction": 334
+    "lines": 406,
+    "longestFunction": 290
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
     "lines": 411,

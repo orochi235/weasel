@@ -58,6 +58,30 @@ describe('CurveEditor — built-in undo', () => {
     expect(onChange.mock.calls[2]).toEqual([nudged, start]);
   });
 
+  it('redoes the undone steps in order, and a new edit drops what is left to redo', () => {
+    const { container } = render(<Controlled />);
+    const cy = (): string | null => middle().getAttribute('cy');
+    const svg = container.querySelector('svg')!;
+    const seen = [cy()];
+    for (let i = 0; i < 3; i++) {
+      fireEvent.keyDown(middle(), { key: 'ArrowUp', shiftKey: true });
+      seen.push(cy());
+    }
+    for (let i = 0; i < 3; i++) fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    expect(cy()).toBe(seen[0]);
+    fireEvent.keyDown(svg, { key: 'y', metaKey: true });
+    expect(cy()).toBe(seen[1]);
+    fireEvent.keyDown(svg, { key: 'z', metaKey: true, shiftKey: true });
+    expect(cy()).toBe(seen[2]);
+
+    fireEvent.keyDown(middle(), { key: 'ArrowDown', shiftKey: true });
+    const forked = cy();
+    fireEvent.keyDown(svg, { key: 'z', metaKey: true, shiftKey: true });
+    expect(cy()).toBe(forked);
+    fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    expect(cy()).toBe(seen[2]);
+  });
+
   describe('a right-click delete', () => {
     const FOUR: ControlPoint[] = [{ x: 0, y: 0 }, { x: 0.25, y: 0.5 }, { x: 0.75, y: 0.5 }, { x: 1, y: 1 }];
     function Four(props: { onChange?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void; minPoints?: number }): ReactElement {
