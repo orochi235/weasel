@@ -25,6 +25,7 @@ const ALLOWED = new Map([
   ['packages/audio/src/graph/fader.ts', 'not subscribers: the done callbacks of one fade, each called once when it ends; audio depends on no kit package'],
   ['packages/audio/src/testing/fakeAudioContext.ts', "a fake of a platform object, reproducing the platform's semantics rather than the kit's"],
   ['packages/react/src/testing/stubReducedMotion.ts', "a stub of matchMedia, reproducing the platform's semantics rather than the kit's"],
+  ['packages/react/src/testing/stubColorScheme.ts', "a stub of matchMedia, reproducing the platform's semantics rather than the kit's"],
   ['apps/devtools-extension/src/testing/fakePorts.ts', "a fake of the browser's port events, reproducing the platform's semantics rather than the kit's"],
 ]);
 
