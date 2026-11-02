@@ -71,6 +71,11 @@ export interface PrefGroup {
   motif?: string;
   /** The letter that picks this in a menu, and with the menu bar's chord opens a top-level menu. One character; supported, never required. */
   access?: string;
+  /** Read on a schema's root only: the selectors a pref's `per` may name that
+   *  are no pref of the schema, whose option the app names as it reads and
+   *  writes (`at`): a document, a layout from a server. A `per` entry naming
+   *  a path that is neither a pref nor declared here is a schema problem. */
+  tbdFreeSelectors?: readonly string[];
   /** Drawn, with everything under it, only while this holds. */
   showIf?: PrefCondition;
   /** Everything under it is disabled while this does not hold, except a leaf directly in it that this reads: that

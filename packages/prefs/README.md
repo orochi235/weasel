@@ -162,7 +162,9 @@ Entries nest outermost first. A selector given `overrides` is closed: only the
 options named keep their own value, starting at the value given if any, and
 the rest share one. Without `overrides` it is open: an option keeps its own
 value once one is written. An option's own value is not split further; the
-shared member, stored under `TBD_REST_KEY`, holds the next entry in:
+shared member, stored under `TBD_REST_KEY`, holds the next entry in. A
+selector that is no leaf is declared on the schema's root, in
+`tbdFreeSelectors: ['layout']`:
 
 ```ts
 'limit': { kind: 'number', default: 1.1, per: [
@@ -170,7 +172,7 @@ shared member, stored under `TBD_REST_KEY`, holds the next entry in:
   { selector: 'layout' },                             // open: a layout keeps its own once written
 ], … }
 
-store.get('limit', { at: { layout: 'explorer' } });   // `layout` is no leaf: the app names its option
+store.get('limit', { at: { layout: 'explorer' } });   // `layout` is a free selector: the app names its option
 store.set('limit', 2, { at: { layout: 'explorer' } }); // explorer keeps 2 from now on
 store.set('limit', 3);                                 // every other mode and layout reads 3
 ```

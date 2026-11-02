@@ -127,7 +127,7 @@ export function createPrefsStore<S extends PrefGroup>(
     console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
   }
   for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] splitBy of "${at}": ${problem}`);
-  const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), free: freeSelectors(leaves), validators, blends };
+  const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), free: freeSelectors(schema), validators, blends };
   const { current, peek, drop } = createSnapshots(source);
 
   let storedTree: Record<string, unknown> | null = null;

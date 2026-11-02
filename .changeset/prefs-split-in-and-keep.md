@@ -40,8 +40,9 @@ starting `tbd`/`TBD_` is a placeholder until the feature is named, and will be r
   reads.
 - **Nesting.** Entries nest in declaration order. An option's own value ends the descent: it is not
   split further by an inner entry. Only the shared member holds the next entry.
-- **Selectors that are no leaf.** A `selector` naming no leaf of the schema takes whatever options
-  the app names, through the same `PrefSelection` it already uses. `store.get(path, { at })` is new
+- **Free selectors.** A schema's root lists `tbdFreeSelectors`: selectors that are no leaf of it,
+  which take whatever options the app names, through the same `PrefSelection` it already uses. A
+  `selector` that is neither a leaf nor declared there is a schema problem (`checkPrefSplits`). `store.get(path, { at })` is new
   beside `{ weights }`; `store.set(path, value, { at })` and `store.values({ at })` accept any option
   of such a selector. Nothing names one in the store's own selection, so an ordinary read gets the
   shared member. `prefsCss` writes no attribute blocks for one.

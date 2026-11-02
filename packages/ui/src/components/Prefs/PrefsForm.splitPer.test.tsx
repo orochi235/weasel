@@ -8,6 +8,7 @@ afterEach(cleanup);
 const MODE = { value: 'dark', label: 'Dark' };
 const SCHEMA: PrefGroup = {
   name: 'Prefs',
+  tbdFreeSelectors: ['layout'],
   children: {
     mode: {
       kind: 'enum', name: 'Mode', description: '', default: 'dark',

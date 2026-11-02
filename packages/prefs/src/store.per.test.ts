@@ -8,6 +8,7 @@ import { createPrefsStore } from './store';
 
 const SCHEMA = {
   name: 'Test',
+  tbdFreeSelectors: ['document', 'layout'],
   children: {
     mode: {
       kind: 'enum', name: 'Mode', description: '', default: 'dark',
@@ -106,7 +107,15 @@ describe('nested entries in a store', () => {
 });
 
 describe('checking per', () => {
-  it('accepts an open selector, and names an option that is none, a selector listed twice, and splitBy beside it', () => {
+  it('names a free selector declared that is a pref', () => {
+    const schema = {
+      name: 'Bad', tbdFreeSelectors: ['mode'],
+      children: { mode: { kind: 'enum', name: 'Mode', description: '', default: 'a', options: [{ value: 'a', label: 'A' }] } },
+    } satisfies PrefGroup;
+    expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual(['"mode" is declared a free selector but names a pref']);
+  });
+
+  it('names an undeclared selector, an option that is none, a selector listed twice, and splitBy beside it', () => {
     const schema = {
       name: 'Bad',
       children: {
@@ -120,6 +129,7 @@ describe('checking per', () => {
     expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual([
       'a leaf with per may not list splitBy too',
       'its closed list names "z", which is no option of "mode"',
+      '"doc" names no pref, and the schema does not declare it a free selector',
       '"doc" is listed twice',
     ]);
     expect(checkPrefSplits(SCHEMA)).toEqual([]);
