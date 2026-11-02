@@ -58,7 +58,7 @@ const withoutComments = (source) =>
 export function listenerSetLines(source) {
   const lines = new Set();
   const clean = withoutComments(source);
-  const pattern = /\bnew\s+Set\s*<\s*(?:\([^<>]*?\)\s*=>|[A-Z]\w*(?:Listener|Subscriber)\s*>)/g;
+  const pattern = /\bnew\s+Set\s*<\s*(?:\([^<>]*?\)\s*=>|(?:[A-Z]\w*)?(?:Listener|Subscriber)\s*>)/g;
   for (const match of clean.matchAll(pattern)) {
     lines.add(clean.slice(0, match.index).split('\n').length);
   }
