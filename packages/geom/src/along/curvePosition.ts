@@ -1,6 +1,5 @@
-import { segmentLength, segmentTAtLength } from '../paths/segmentLength';
-import { segmentCoords } from './bezier';
-import { tableInternals, type LengthSpan, type LengthTable } from './lengthTable';
+import { lookupLength, lookupT } from '../paths/segmentLength';
+import { segmentArc, tableInternals, type LengthSpan, type LengthTable } from './lengthTable';
 
 /**
  * A place on a path that no flattening moves: curve parameter `t` of segment
@@ -50,9 +49,9 @@ export function lengthAtCurve(t: LengthTable, at: CurvePosition): number {
   const k = Math.min(Math.max(Math.floor(at.segment), 0), segs - 1);
   const f = Math.min(Math.max(at.t, 0), 1);
   const len = c[k + 1] - c[k];
-  const ctl = t.runs[r].controls?.[k];
-  if (!ctl || ctl.length === 0 || f <= 0 || f >= 1 || !(len > 0)) return c[k] + f * len;
-  return c[k] + segmentLength(segmentCoords(t.runs[r].points, ctl, t.dim, k), t.dim, 0, f);
+  const arc = f <= 0 || f >= 1 || !(len > 0) ? null : segmentArc(t, r, k);
+  if (!arc) return c[k] + f * len;
+  return c[k] + Math.min(lookupLength(arc.coords, t.dim, arc.lookup, f), len);
 }
 
 /** The curve position at pen length `s`; `starts` picks the segment leaving a shared point rather than the one arriving. */
@@ -72,7 +71,7 @@ function curveAtLength(t: LengthTable, s: number, starts: boolean): CurvePositio
 }
 
 function paramAt(t: LengthTable, r: number, k: number, local: number, len: number): number {
-  const ctl = t.runs[r].controls?.[k];
-  if (!ctl || ctl.length === 0) return Math.min(Math.max(local / len, 0), 1);
-  return segmentTAtLength(segmentCoords(t.runs[r].points, ctl, t.dim, k), t.dim, local, len);
+  const arc = segmentArc(t, r, k);
+  if (!arc) return Math.min(Math.max(local / len, 0), 1);
+  return lookupT(arc.coords, t.dim, arc.lookup, local);
 }

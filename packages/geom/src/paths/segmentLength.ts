@@ -153,22 +153,23 @@ export function dipsFor(dips: readonly Dip[], h: number): number[] {
   return out;
 }
 
-/** {@link segmentLength} over `a..b`, given the segment's size and its dips. */
+/** {@link segmentLength} over `a..b` in `panels` panels, given the segment's size and its dips. */
 function lengthOver(
-  c: ArrayLike<number>, dim: number, a: number, b: number, size: number, dips: readonly Dip[],
+  c: ArrayLike<number>, dim: number, a: number, b: number, size: number, dips: readonly Dip[], panels = 8,
 ): number {
-  const h = (b - a) / 8;
+  const h = (b - a) / panels;
+  const last = panels - 1;
   let sum = 0;
   const roots = dipsFor(dips, h);
   if (roots.length === 0) {
-    for (let k = 0; k < 8; k++) sum += panelLength(c, dim, a + k * h, k === 7 ? b : a + (k + 1) * h, size, false);
+    for (let k = 0; k < panels; k++) sum += panelLength(c, dim, a + k * h, k === last ? b : a + (k + 1) * h, size, false);
     return sum;
   }
   const near = (t: number): boolean => roots.some((r) => Math.abs(r - t) <= EDGE_NEAR * h);
   let r = 0;
   while (r < roots.length && roots[r] <= a) r++;
-  for (let k = 0; k < 8; k++) {
-    const p0 = a + k * h, p1 = k === 7 ? b : p0 + h;
+  for (let k = 0; k < panels; k++) {
+    const p0 = a + k * h, p1 = k === last ? b : p0 + h;
     let from = p0;
     // A dip splits its panel, and every piece that touches one, or comes near, is refined.
     while (r < roots.length && roots[r] < p1) {
@@ -204,6 +205,65 @@ export function segmentTAtLength(
     const v = speed(coords, dim, t);
     let next = v > 0 ? t - err / v : NaN;
     if (!(next > lo && next < hi)) next = (lo + hi) / 2;
+    t = next;
+  }
+  return t;
+}
+
+const STEPS = 16;
+
+/** A curved segment's exact arc length at evenly spaced parameters: what repeated length queries on one segment start from. */
+export interface ArcLookup {
+  /** The length from the start to parameter `k / 16`, `k` = 0..16. */
+  readonly s: Float64Array;
+  readonly size: number;
+  readonly dips: readonly Dip[];
+}
+
+/** @internal The {@link ArcLookup} of curved segment `coords`, each step measured as one panel of {@link segmentLength}'s rule. */
+export function arcLookup(coords: ArrayLike<number>, dim: 2 | 3): ArcLookup {
+  const size = hullLength(coords, dim);
+  const dips = finite(coords) ? speedDips(coords, dim) : [];
+  const s = new Float64Array(STEPS + 1);
+  for (let k = 0; k < STEPS; k++) s[k + 1] = s[k] + lengthOver(coords, dim, k / STEPS, (k + 1) / STEPS, size, dips, 1);
+  return { s, size, dips };
+}
+
+/** @internal The length from the start of `coords` to parameter `t`, read from its lookup `lk`. */
+export function lookupLength(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, t: number): number {
+  const f = Math.min(Math.max(t, 0), 1);
+  const k = Math.min(Math.floor(f * STEPS), STEPS - 1);
+  return lk.s[k] + lengthOver(coords, dim, k / STEPS, f, lk.size, lk.dips, 1);
+}
+
+/**
+ * @internal {@link segmentTAtLength} from a lookup: the step holding `length`
+ * gives the first guess and the bracket, and Newton steps on one panel's
+ * length finish it, so a query costs a few panels rather than a whole-segment solve.
+ */
+export function lookupT(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, length: number): number {
+  const { s } = lk;
+  const total = s[STEPS];
+  if (length <= 0 || !(total > 0) || !Number.isFinite(total)) return 0;
+  if (length >= total) return 1;
+  let k = 0;
+  let hi = STEPS - 1;
+  while (k < hi) {
+    const mid = (k + hi + 1) >> 1;
+    if (s[mid] <= length) k = mid;
+    else hi = mid - 1;
+  }
+  const a = k / STEPS;
+  let lo = a, top = (k + 1) / STEPS;
+  const step = s[k + 1] - s[k];
+  let t = step > 0 ? a + ((length - s[k]) / step) / STEPS : a;
+  for (let i = 0; i < 30; i++) {
+    const err = s[k] + lengthOver(coords, dim, a, t, lk.size, lk.dips, 1) - length;
+    if (Math.abs(err) < 1e-10 * total) break;
+    if (err > 0) top = t; else lo = t;
+    const v = speed(coords, dim, t);
+    let next = v > 0 ? t - err / v : NaN;
+    if (!(next > lo && next < top)) next = (lo + top) / 2;
     t = next;
   }
   return t;

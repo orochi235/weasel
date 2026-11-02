@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cubicEvalAt } from '../curve';
-import { dipsFor, segmentLength, segmentTAtLength, speedDips } from './segmentLength';
+import { arcLookup, dipsFor, lookupLength, lookupT, segmentLength, segmentTAtLength, speedDips } from './segmentLength';
 
 const K = 0.5522847498;
 /** A quarter circle of radius 100 about the origin, from +x to +y. */
@@ -137,3 +137,47 @@ describe('segmentTAtLength', () => {
     expect(segmentTAtLength(quarter, 2, 1e6)).toBe(1);
   });
 });
+
+describe('arcLookup', () => {
+  const cases: [string, number[]][] = [
+    ['quarter', quarter],
+    ['symmetric', [0, 0, 0, 100, 100, 100, 100, 0]],
+    ['cusp', [0, 0, 100, 100, 0, 100, 100, 0]],
+    ['near cusp', [0, 0, 100, 100, 0, 100.5, 100, 0]],
+    ['cusp at 0.752', [0, 0, 100, 100, 0, 100, 55.081485, 89.124038]],
+    ['shoulder', [0, 0, 100, 100, -50, 40, 92.62712165, 87.5312398]],
+    ['loop', [0, 0, 150, 100, -50, 100, 100, 0]],
+    ['quadratic', [0, 0, 50, 100, 100, 0]],
+  ];
+
+  it('answers the point the whole-segment solve does, within 1e-6', () => {
+    for (const [name, c] of cases) {
+      const lk = arcLookup(c, 2);
+      const total = segmentLength(c, 2);
+      expect(Math.abs(lk.s[16] - total) / total, name).toBeLessThan(1e-10);
+      for (let i = 1; i < 40; i++) {
+        const s = (i / 40) * total;
+        const a = cubicOrQuadAt(c, lookupT(c, 2, lk, s));
+        const b = cubicOrQuadAt(c, segmentTAtLength(c, 2, s, total));
+        expect(Math.hypot(a[0] - b[0], a[1] - b[1]), `${name} at ${i}/40`).toBeLessThan(1e-6);
+        expect(Math.abs(lookupLength(c, 2, lk, segmentTAtLength(c, 2, s, total)) - s), `${name} length at ${i}/40`).toBeLessThan(1e-6);
+      }
+    }
+  });
+
+  it('clamps to the ends', () => {
+    const lk = arcLookup(quarter, 2);
+    expect(lookupT(quarter, 2, lk, -1)).toBe(0);
+    expect(lookupT(quarter, 2, lk, 1e9)).toBe(1);
+  });
+});
+
+function cubicOrQuadAt(c: number[], t: number): [number, number] {
+  if (c.length === 6) {
+    const u = 1 - t;
+    return [u * u * c[0] + 2 * u * t * c[2] + t * t * c[4], u * u * c[1] + 2 * u * t * c[3] + t * t * c[5]];
+  }
+  const [x, y] = cubicEvalAt(...(c as Cubic), t);
+  return [x, y];
+}
+

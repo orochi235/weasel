@@ -1,6 +1,6 @@
-import { segmentTAtLength } from '../paths/segmentLength';
-import { bezierDirection, bezierPoint, segmentCoords } from './bezier';
-import { tableInternals, type LengthTable } from './lengthTable';
+import { lookupT } from '../paths/segmentLength';
+import { bezierDirection, bezierPoint } from './bezier';
+import { segmentArc, tableInternals, type LengthTable } from './lengthTable';
 
 type Comps = [number, number, number];
 
@@ -40,11 +40,10 @@ export function pointOnSegment(t: LengthTable, r: number, i: number, len: number
   const c = tableInternals(t).cum[r];
   const span = c[i + 1] - c[i];
   const local = Math.min(Math.max(len - c[i], 0), span);
-  const ctl = t.runs[r].controls?.[i];
-  if (ctl && ctl.length > 0) {
-    const seg = segmentCoords(t.runs[r].points, ctl, t.dim, i);
-    const u = segmentTAtLength(seg, t.dim, local, span);
-    return { point: bezierPoint(seg, t.dim, u), tangent: bezierDirection(seg, t.dim, u) ?? tangentNear(t, r, i) };
+  const arc = segmentArc(t, r, i);
+  if (arc) {
+    const u = lookupT(arc.coords, t.dim, arc.lookup, local);
+    return { point: bezierPoint(arc.coords, t.dim, u), tangent: bezierDirection(arc.coords, t.dim, u) ?? tangentNear(t, r, i) };
   }
   const f = span > 0 ? local / span : 0;
   const a = at(t, r, i);

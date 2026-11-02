@@ -1,4 +1,4 @@
-import { segmentLength } from '../paths/segmentLength';
+import { arcLookup, segmentLength, type ArcLookup } from '../paths/segmentLength';
 import { segmentCoords } from './bezier';
 
 /** One subpath of a path in pen order: points joined by straight segments, or by curves where `controls` gives them. */
@@ -48,6 +48,14 @@ export interface LengthTableInternals {
   bpLength: Float64Array;
   /** Per run, its first anchor and the anchor its last segment ends at. */
   runAnchor: Float64Array;
+  /** Per run and segment, a curve's control points and arc lookup, filled on first query. */
+  arcs: (SegmentArc | undefined)[][];
+}
+
+/** @internal A curved segment as flat control points, with its {@link ArcLookup}. */
+export interface SegmentArc {
+  coords: number[];
+  lookup: ArcLookup;
 }
 
 // A symbol rather than a side table, so a spread copy of a table still answers.
@@ -72,8 +80,21 @@ export function lengthTable(runs: readonly LengthRun[], dim: 2 | 3, anchorSource
   });
   const anchors = anchorBreakpoints(runs, dim, cum, anchorSources ?? null);
   const table: WithInternals = { dim, runs, total, runStart, segments: anchors.segments };
-  table[INTERNALS] = { cum, ...anchors };
+  table[INTERNALS] = { cum, ...anchors, arcs: runs.map(() => []) };
   return table;
+}
+
+/** @internal Segment `i` of run `r` when it is a curve, with its arc lookup, built on first use; null when straight. */
+export function segmentArc(t: LengthTable, r: number, i: number): SegmentArc | null {
+  const ctl = t.runs[r].controls?.[i];
+  if (!ctl || ctl.length === 0) return null;
+  const arcs = tableInternals(t).arcs[r];
+  let arc = arcs[i];
+  if (!arc) {
+    const coords = segmentCoords(t.runs[r].points, ctl, t.dim, i);
+    arcs[i] = arc = { coords, lookup: arcLookup(coords, t.dim) };
+  }
+  return arc;
 }
 
 /** @internal */
