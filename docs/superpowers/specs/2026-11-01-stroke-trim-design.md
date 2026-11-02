@@ -49,7 +49,7 @@ last. Moving from one subpath's end to the next subpath's start covers no distan
 |---|---|
 | `0.4` | 40% of the way, by whatever `pace` says |
 | `{ length: 120 }` | 120 world units from the start |
-| `{ anchor: 3.5 }` | Halfway between authored anchors 3 and 4, by curve parameter. Anchors count as `countPathAnchors` counts them, across subpaths |
+| `{ anchor: 3.5 }` | Halfway between authored anchors 3 and 4, by length along that segment (flattening's `anchorT` is already this). Anchors count as `countPathAnchors` counts them, across subpaths |
 | `{ subpath: 1 }` | Start of subpath 1. `1.5` is halfway along subpath 1 by length |
 
 **The anchor measure, precisely** *(builder-check answers, my call)*:
