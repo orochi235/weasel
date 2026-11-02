@@ -4,13 +4,13 @@ import {
   extendToMeet, openEndAt, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
   type AnchorSet, type ExtendToMeetOptions, type OpenPathEnd, type PolygonPath,
 } from '@weasel-js/geom';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 
 const EXTEND_LABEL = 'Extend to next path';
-const DEG = Math.PI / 180;
 
 /** What the `extendToMeet` action reads from its params. */
 export type ExtendToMeetParams = {
@@ -29,9 +29,9 @@ export const EXTEND_TO_MEET_PARAMS = pref.group(EXTEND_LABEL, {
     { value: 'eased', label: 'Eased' },
     { value: 'straight', label: 'Straight' },
   ], { description: 'Ease a curved end out of its bend, or carry it straight on along its tangent.', control: 'radio' }),
-  easeTurn: pref.number('Ease turn', 30 * DEG, {
+  easeTurn: pref.number('Ease turn', 30 * DEG_TO_RAD, {
     description: 'How far an eased end keeps turning before it runs straight.',
-    min: 5 * DEG, max: 90 * DEG, step: DEG, control: 'slider', unit: { scale: DEG, suffix: '°', precision: 0 },
+    min: 5 * DEG_TO_RAD, max: 90 * DEG_TO_RAD, step: DEG_TO_RAD, control: 'slider', unit: { scale: DEG_TO_RAD, suffix: '°', precision: 0 },
   }),
   radiusPx: strokeReachPref(),
 });

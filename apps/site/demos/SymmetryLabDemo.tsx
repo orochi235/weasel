@@ -9,6 +9,7 @@ import {
   createSymmetry, symmetryGroupSpec, symmetryRegistry, WALLPAPER_GROUPS, wallpaperSpec, type SymmetryKind,
   type SymmetrySpec, type WallpaperCell, type WallpaperGroup,
 } from '@weasel-js/symmetry';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -59,7 +60,6 @@ const config = f.schema({
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
-const DEG = Math.PI / 180;
 /** The group's spec to start with, matching the panel's defaults. */
 const INITIAL: Partial<SymmetrySpec> = {
   kind: 'kaleidoscope', count: 6, angle: 0, cell: 'kaleidoscope', extent: { x: -320, y: -240, width: 640, height: 480 },
@@ -75,7 +75,7 @@ function pathLeaf(id: string, d: string, color: string) {
 }
 
 function createLabScene() {
-  const dot = { x: CENTER.x + 110 * Math.cos(15 * DEG) - 12, y: CENTER.y + 110 * Math.sin(15 * DEG) - 12, width: 24, height: 24 };
+  const dot = { x: CENTER.x + 110 * Math.cos(15 * DEG_TO_RAD) - 12, y: CENTER.y + 110 * Math.sin(15 * DEG_TO_RAD) - 12, width: 24, height: 24 };
   const scene = createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     registry: symmetryRegistry as SceneRegistry<RectPose>,
@@ -114,9 +114,9 @@ function usePathEditHost() {
 /** The config fields a group's spec and center show as. */
 function fieldsOf(spec: SymmetrySpec, center: { x: number; y: number }) {
   return {
-    kind: spec.kind, angle: spec.angle / DEG, count: spec.count, centerX: center.x, centerY: center.y,
-    spacing: spec.spacing, glide: spec.glide, glideRows: spec.glideRows ?? false, cell: spec.cell, cellAngle: spec.cellAngle / DEG,
-    rowAngle: spec.rowAngle / DEG, rowSpacing: spec.rowSpacing, extentWidth: spec.extent.width,
+    kind: spec.kind, angle: spec.angle / DEG_TO_RAD, count: spec.count, centerX: center.x, centerY: center.y,
+    spacing: spec.spacing, glide: spec.glide, glideRows: spec.glideRows ?? false, cell: spec.cell, cellAngle: spec.cellAngle / DEG_TO_RAD,
+    rowAngle: spec.rowAngle / DEG_TO_RAD, rowSpacing: spec.rowSpacing, extentWidth: spec.extent.width,
     extentHeight: spec.extent.height,
   };
 }
@@ -124,8 +124,8 @@ function fieldsOf(spec: SymmetrySpec, center: { x: number; y: number }) {
 /** The spec the panel's fields say, its extent centered on the group. */
 function specOf(c: Config): Partial<SymmetrySpec> {
   return {
-    kind: c.kind, angle: c.angle * DEG, count: c.count, spacing: c.spacing, glide: c.glide, glideRows: c.glideRows, cell: c.cell,
-    cellAngle: c.cellAngle * DEG, rowAngle: c.rowAngle * DEG, rowSpacing: c.rowSpacing,
+    kind: c.kind, angle: c.angle * DEG_TO_RAD, count: c.count, spacing: c.spacing, glide: c.glide, glideRows: c.glideRows, cell: c.cell,
+    cellAngle: c.cellAngle * DEG_TO_RAD, rowAngle: c.rowAngle * DEG_TO_RAD, rowSpacing: c.rowSpacing,
     extent: { x: -c.extentWidth / 2, y: -c.extentHeight / 2, width: c.extentWidth, height: c.extentHeight },
   };
 }

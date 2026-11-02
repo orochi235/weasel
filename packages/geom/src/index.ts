@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
+export { DEG_TO_RAD, RAD_TO_DEG, wrapAngle, wrapPositive, type HalfTurn } from './angle';
 export { normalizeZoom, ZOOM_FLOOR, type View } from './view';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
 export { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box, type Rect } from './box';

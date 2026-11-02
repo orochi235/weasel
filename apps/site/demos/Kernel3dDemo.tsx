@@ -14,6 +14,7 @@ import { IDENTITY_POSE_COMPOSITION,
   useScene,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
+import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { multiply, quatFromAxisAngle, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
   cameraEye, cameraViewProjection, createCamera, createNodeAtPoint, createPoseDescriptor,
@@ -121,7 +122,7 @@ function solidsLayer(camera: Camera3d, scene: Scene3d<Solid, 'solids'>): RenderL
   };
 }
 
-const deg = (r: number) => qty((Math.atan2(Math.sin(r), Math.cos(r)) * 180) / Math.PI, decimal({ places: 1, grouping: false })).text.padStart(6, '\u2007');
+const deg = (r: number) => qty(wrapAngle(r, 'sign') * RAD_TO_DEG, decimal({ places: 1, grouping: false })).text.padStart(6, '\u2007');
 
 /**
  * Three boxes on a `<SceneCanvas>` whose scene holds `Pose3`s. The kit's own

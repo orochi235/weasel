@@ -1,4 +1,5 @@
 import type { Point } from '../paths/cubicMath';
+import { wrapPositive } from '../angle';
 import type { ArcTrackShape } from './arc';
 import type { EllipseTrackShape } from './ellipse';
 import type { PathTrackShape } from './path';
@@ -42,7 +43,7 @@ export function trackShapeD(shape: TrackShape, from = 0, to = 1): string {
     const param = (p: Point) => Math.atan2((p.x - center.x) / radiusX, (center.y - p.y) / radiusY);
     const sign = direction === 'ccw' ? -1 : 1;
     const whole = (shape.ellipse.start - shape.ellipse.end) % 360 === 0 && Math.abs(to - from) >= 1 - 1e-12;
-    const raw = (sign * Math.sign(to - from) * (param(b) - param(a)) + 4 * Math.PI) % (2 * Math.PI);
+    const raw = wrapPositive(sign * Math.sign(to - from) * (param(b) - param(a)));
     return arcsD(a, b, m, radiusX, radiusY, whole ? 2 * Math.PI : raw, (direction === 'ccw') === to < from ? 1 : 0);
   }
   let d = `M ${pt(a)}`;

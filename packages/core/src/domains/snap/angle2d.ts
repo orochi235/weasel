@@ -1,5 +1,6 @@
 /** A snap session's one-dimensional path: an angle about a pivot, snapped by
  *  the same resolver as a point, with reach carried through the radius. */
+import { wrapPositive } from '@weasel-js/geom';
 import { resolveSnap, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { SnapMods } from 'interactions/actions/snapDep';
 import { distinct, markFromPlane } from './marks';
@@ -114,7 +115,7 @@ function rayMarks(inputs: Session2dInputs, theta: number): SnapMark[] {
   const r = Math.hypot(req.press.x - pivot.x, req.press.y - pivot.y);
   const dir = Math.atan2(req.press.y - pivot.y, req.press.x - pivot.x) + theta - (req.theta0 ?? 0);
   const end = { x: pivot.x + r * Math.cos(dir), y: pivot.y + r * Math.sin(dir) };
-  const deg = ((Math.round(theta * 180 / Math.PI) % 360) + 360) % 360;
+  const deg = wrapPositive(Math.round(theta * 180 / Math.PI), 360);
   return [
     { kind: 'line', from: pivot, to: end },
     { kind: 'point', at: end, glyph: 'quadrant', label: `${deg}°` },

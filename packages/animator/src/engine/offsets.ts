@@ -1,8 +1,7 @@
+import { wrapAngle } from '@weasel-js/geom';
 import type { HoldStore } from './holdStore';
 import type { Reader } from './lanes';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
-
-const TAU = Math.PI * 2;
 
 /** `value` as the target's axes, refused where it is not the target's shape. */
 export function axesFor<T>(axes: TargetAxes<T>, value: T, what: string): number[] {
@@ -13,18 +12,10 @@ export function axesFor<T>(axes: TargetAxes<T>, value: T, what: string): number[
   return a;
 }
 
-/** The angle `x` as the turn of at most half a circle that reaches it. */
-export function shortWay(x: number): number {
-  x %= TAU;
-  if (x > Math.PI) return x - TAU;
-  if (x <= -Math.PI) return x + TAU;
-  return x;
-}
-
 /** `a - b` per axis, the short way round on an angle axis. */
 export function travel<T>(axes: TargetAxes<T>, a: readonly number[], b: readonly number[]): number[] {
   const d = a.map((x, i) => x - b[i]!);
-  for (const i of axes.angles ?? []) d[i] = shortWay(d[i]!);
+  for (const i of axes.angles ?? []) d[i] = wrapAngle(d[i]!);
   return d;
 }
 

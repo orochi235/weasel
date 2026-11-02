@@ -12,6 +12,7 @@ import {
   type TilePaint,
   type TilePatternSpec,
 } from '@weasel-js/core';
+import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { unit } from '@weasel-js/quantity';
 import { tilePreviewCssUrl } from '@weasel-js/svg';
 import { Icon } from '../../icons';
@@ -51,9 +52,7 @@ const DEGREES = unit('°', { places: 1 });
 
 /** Rotation in degrees, folded into (-180, 180]. */
 function toDegrees(rad: number): number {
-  const deg = (rad * 180) / Math.PI;
-  const folded = ((((deg + 180) % 360) + 360) % 360) - 180;
-  return folded === -180 ? 180 : folded;
+  return wrapAngle(rad) * RAD_TO_DEG;
 }
 
 /** `value` with its transform's rotation replaced, the transform dropped when

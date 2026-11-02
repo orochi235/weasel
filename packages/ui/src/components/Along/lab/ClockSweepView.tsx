@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactElement } from 'react';
-import { arcShape, trackRun } from '@weasel-js/geom';
+import { arcShape, trackRun, wrapPositive } from '@weasel-js/geom';
 import { Along, arcInBox, type AlongArc } from '@weasel-js/ui/components/Along';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
@@ -24,11 +24,9 @@ const SLIDER_INSET = 64;
 const STOPS = [0, 5, 10].map((v) => ({ value: v, label: String(v) }));
 const BAR = actionsSchema(3, 'Sweep');
 
-const mod360 = (deg: number): number => ((deg % 360) + 360) % 360;
-
 /** The arc `span` degrees long centered on bearing `at`, `inset` px in from the dial's rim. */
 export function sweepArc(at: number, span: number, inset: number): AlongArc {
-  return { start: mod360(at - span / 2), end: mod360(at + span / 2), inset };
+  return { start: wrapPositive(at - span / 2, 360), end: wrapPositive(at + span / 2, 360), inset };
 }
 
 /** `trackRun`'s verdict on the bar's arc of a dial `size` px across: what the dial's caption says. */
@@ -78,7 +76,7 @@ function Sweep({ title, angles, config }: { title: string; angles: readonly numb
 /** Bearings from `mid - range` to `mid + range`, `step` apart, `mid` always among them. */
 export function fineAngles(mid: number, range: number, step: number): number[] {
   const n = Math.floor(range / step);
-  return Array.from({ length: 2 * n + 1 }, (_, i) => mod360(mid + (i - n) * step));
+  return Array.from({ length: 2 * n + 1 }, (_, i) => wrapPositive(mid + (i - n) * step, 360));
 }
 
 /**
