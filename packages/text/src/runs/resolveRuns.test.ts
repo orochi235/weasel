@@ -338,3 +338,21 @@ describe('smallCapsScale', () => {
     expect(smallCapsScale(undefined)).toBe(SMALL_CAPS_SCALE);
   });
 });
+
+describe('resolveRuns — a stroke trim', () => {
+  const INK = { paint: { kind: 'solid' as const, color: '#000' }, width: 2 };
+
+  it('drops a trim from the node stroke and from a run stroke: glyphs have no pen order to trim in', () => {
+    const style = resolveTextStyle({}, { stroke: { ...INK, trim: { end: 0.3 } } });
+    const [own, node] = resolveRuns([{ text: 'a', stroke: { ...INK, width: 3, trim: { start: 0.5 } } }, { text: 'b' }], style);
+    expect(own.stroke).toEqual({ ...INK, width: 3 });
+    expect(node.stroke).toEqual(INK);
+  });
+
+  it('keeps an untrimmed stroke as it is', () => {
+    const stroke = { ...INK };
+    const [r] = resolveRuns([{ text: 'a', stroke }], resolveTextStyle({}));
+    expect(r.stroke).toBe(stroke);
+  });
+});
+

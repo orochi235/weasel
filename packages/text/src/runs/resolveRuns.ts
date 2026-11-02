@@ -46,8 +46,8 @@ export interface ResolvedRun {
    *  neither. */
   fill: Fill | null;
   /** Outline over this run's glyphs, or absent for none. Painted only on the
-   *  outline tier — a distance field has no geometry to stroke. */
-  stroke?: Stroke;
+   *  outline tier — a distance field has no geometry to stroke. Never trimmed. */
+  stroke?: Omit<Stroke, 'trim'>;
   /** Extra advance added after each glyph of this run, in world units. */
   letterSpacing: number;
   /** Draw a rule below this run's baseline. Additive over the node style. */
@@ -254,7 +254,7 @@ export function resolveRunsInto(
     const overline = run.overline || style.overline;
     // Unlike the decorations, a run's stroke *replaces* the node's rather
     // than adding to it — there is only one outline to paint.
-    const stroke = run.stroke ?? style.stroke;
+    const stroke = untrimmed(run.stroke ?? style.stroke);
     const rotate = run.rotate && Number.isFinite(run.rotate) ? run.rotate : undefined;
     const prev = out[i];
     // Rewritten only at the same shape: deleting a field would leave it a dictionary.
@@ -291,4 +291,12 @@ export function resolveRunsInto(
     out[i] = r;
   }
   return out;
+}
+
+/** `stroke` less its trim, which text ignores: glyph outlines have no single pen order to draw it in.
+ *  Every text reader takes its strokes from here, so none of them trims a glyph. */
+function untrimmed(stroke: Stroke | undefined): Omit<Stroke, 'trim'> | undefined {
+  if (stroke?.trim === undefined) return stroke;
+  const { trim: _trim, ...rest } = stroke;
+  return rest;
 }
