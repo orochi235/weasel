@@ -98,4 +98,31 @@ describe('CustomShaderDemo', () => {
     fire('pointerup', cx + 30, cy + 20);
     expect(seeds.get('seed-0' as never)!.pose).toMatchObject({ x: start.x + 30, y: start.y + 20 });
   });
+
+  it('keeps a seed dragged past the edge on the panel, where it can be picked again', () => {
+    const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
+    proto.setPointerCapture = vi.fn();
+    proto.releasePointerCapture = vi.fn();
+    scenes.length = 0;
+    const { container } = render(<CustomShaderDemo />);
+    const seeds = scenes.find((s) => s.get('seed-0' as never))!;
+    const canvas = container.querySelectorAll('canvas')[2]!;
+    const pose = () => seeds.get('seed-0' as never)!.pose;
+    const fire = (type: string, x: number, y: number): void => act(() => {
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, buttons: 1 }));
+    });
+    const drag = (from: { x: number; y: number }, dx: number, dy: number): void => {
+      fire('pointerdown', from.x, from.y);
+      fire('pointermove', from.x + dx / 2, from.y + dy / 2);
+      fire('pointermove', from.x + dx, from.y + dy);
+      fire('pointerup', from.x + dx, from.y + dy);
+    };
+
+    const start = pose();
+    drag({ x: start.x + 6, y: start.y + 6 }, -500, -500);
+    expect(pose()).toMatchObject({ x: 0, y: 0 });
+
+    drag({ x: 6, y: 6 }, 40, 30);
+    expect(pose()).toMatchObject({ x: 40, y: 30 });
+  });
 });

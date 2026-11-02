@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
 import { useClockLoop } from '@weasel-js/clock/react';
+import { clampMove } from '@weasel-js/core/move';
 import { SceneCanvas, asNodeId, effectivePose, ellipsePath, useLatest, useScene } from '@weasel-js/core';
 import type { Action, Dims, Feature, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
@@ -194,6 +195,10 @@ function Panel({
     }];
   }, [onPressRef, onPointerMoveRef, sizeRef]);
 
+  // Seeds stay on the panel, so one let go past an edge can still be picked.
+  const seedTool = useMemo(() => ({
+    move: { behaviors: [clampMove<RectPose>({ bounds: () => ({ x: 0, y: 0, ...sizeRef.current }) })] },
+  }), []);
   const empty = useScene<never, 'default'>({ systemLayers: [{ id: 'default' }], initial: [] });
   const scene: SeedScene = seeds ?? empty;
 
@@ -207,6 +212,7 @@ function Panel({
           scene={scene}
           shaders={SHADERS}
           features={seeds ? SEED_FEATURES : undefined}
+          selectTool={seeds ? seedTool : undefined}
           ambient={seeds ? undefined : ambient}
           layers={{
             shader: { layer, before: 'scene' },
