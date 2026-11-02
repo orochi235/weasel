@@ -7,6 +7,7 @@ import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
 } from '@weasel-js/renderer';
+import { clamp01 } from '@weasel-js/geom';
 import weaselMarkUrl from '../assets/weasel-mark.png';
 import { DemoStage } from './DemoStage';
 
@@ -86,8 +87,6 @@ const VORONOI_PROGRAM: ShaderProgramHandle = registerProgram('demo-voronoi', '',
 const SHADERS = [PLASMA_PROGRAM, RIPPLE_PROGRAM, VORONOI_PROGRAM];
 
 interface Ripple { x: number; y: number; t: number; }
-
-function clamp01(n: number): number { return Math.max(0, Math.min(1, n)); }
 
 /** The ripples still spreading at `time`, newest last; the shader takes eight. */
 function liveRipples(ripples: Ripple[], time: number): Ripple[] {

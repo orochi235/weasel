@@ -16,7 +16,13 @@ export const SINGULAR_RATIO = 1e-12;
 
 /** `v` held to `lo`..`hi`. `lo` wins when the bounds cross; `NaN` passes through. */
 export function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
+  const c = v > hi ? hi : v;
+  return c < lo ? lo : c;
+}
+
+/** `v` held to `0`..`1`; `NaN` passes through. */
+export function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 /** 2D cross (wedge) product of vectors (ax,ay) and (bx,by). */

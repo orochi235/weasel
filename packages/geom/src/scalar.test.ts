@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
+import { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 
 describe('scalar primitives', () => {
   it('cross product is the 2D wedge', () => {
@@ -48,5 +48,39 @@ describe('approxEq edge cases', () => {
     expect(approxEq(NaN, NaN)).toBe(false);
     expect(approxEq(NaN, 0)).toBe(false);
     expect(approxEq(Infinity, 1e300)).toBe(false);
+  });
+});
+
+describe('clamp', () => {
+  it('holds v to the bounds, inclusive at each end', () => {
+    expect(clamp(-1, 0, 10)).toBe(0);
+    expect(clamp(0, 0, 10)).toBe(0);
+    expect(clamp(5, 0, 10)).toBe(5);
+    expect(clamp(10, 0, 10)).toBe(10);
+    expect(clamp(11, 0, 10)).toBe(10);
+  });
+  it('lets lo win when the bounds cross, wherever v sits', () => {
+    expect(clamp(-5, 10, 0)).toBe(10);
+    expect(clamp(5, 10, 0)).toBe(10);
+    expect(clamp(15, 10, 0)).toBe(10);
+  });
+  it('passes NaN through', () => {
+    expect(clamp(NaN, 0, 1)).toBeNaN();
+    expect(clamp(NaN, 1, 0)).toBeNaN();
+  });
+});
+
+describe('clamp01', () => {
+  it('holds v to 0..1', () => {
+    expect(clamp01(-0.5)).toBe(0);
+    expect(clamp01(0)).toBe(0);
+    expect(clamp01(0.25)).toBe(0.25);
+    expect(clamp01(1)).toBe(1);
+    expect(clamp01(1.5)).toBe(1);
+    expect(clamp01(-Infinity)).toBe(0);
+    expect(clamp01(Infinity)).toBe(1);
+  });
+  it('passes NaN through', () => {
+    expect(clamp01(NaN)).toBeNaN();
   });
 });

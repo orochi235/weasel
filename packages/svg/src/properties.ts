@@ -10,6 +10,7 @@
  * it substitutes. A value is honored when it is read and nothing is warned.
  */
 
+import { clamp01 } from '@weasel-js/geom';
 import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
 import { ABSOLUTE_PX } from './absoluteUnits';
 import { parsePaintAttr, type ParsedColor } from './color';
@@ -34,8 +35,6 @@ function dimension(v: string): { n: number; unit: string } | undefined {
   const m = DIMENSION.exec(v);
   return m ? { n: Number(m[1]), unit: m[2].toLowerCase() } : undefined;
 }
-
-const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
 
 /** What one of `unit` is in px, a font-relative unit taken against `fontSize`. */
 function pxPer(unit: string, fontSize: number): number | undefined {

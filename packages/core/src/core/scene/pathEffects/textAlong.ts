@@ -3,7 +3,7 @@
  * whole shape as one item — laid end to end along a path, each turned to it.
  */
 import {
-  boundsOfPath, multiply, pathShape, placeAlongRun, rotate, runLength, trackRun, transformPath, translate,
+  boundsOfPath, clamp01, multiply, pathShape, placeAlongRun, rotate, runLength, trackRun, transformPath, translate,
   type Affine, type Path, type RunAlign, type RunPlace, type TrackSide,
 } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
@@ -45,11 +45,11 @@ export function textAlongParts(effect: TextAlongEffect, items: readonly EffectIt
   const closed = shape.closed;
   const lengths = items.map((it) => it.length);
   const k = LEAD[effect.align ?? 'start'];
-  const at = clamp01(effect.start ?? 0) * L;
+  const at = unit(effect.start ?? 0) * L;
   const gap = effect.overflow === 'fit' ? fitGap(lengths, roomAt(at, L, k, closed)) : 0;
   const total = runLength(lengths, gap);
   const c = at + (0.5 - k) * total;
-  const about = closed ? ((c / L) % 1 + 1) % 1 : clamp01(c / L);
+  const about = closed ? ((c / L) % 1 + 1) % 1 : unit(c / L);
   const run = trackRun(shape, 0, 1, { side: effect.side ?? 'auto', about });
   const shift = finiteOr(effect.shift, 0);
   const places = placeAlongRun(run, lengths, { gap, align: 'center', at: run.reversed ? L - c : c, shift, wrap: closed });
@@ -117,5 +117,6 @@ function itemFrame(place: RunPlace, length: number, lift: number): Affine {
   return multiply(translate(place.point.x, place.point.y), turn);
 }
 
-const clamp01 = (v: number): number => (v > 1 ? 1 : v > 0 ? v : 0);
+/** `clamp01`, with `NaN` read as 0. */
+const unit = (v: number): number => clamp01(v) || 0;
 const finiteOr = (v: number | undefined, d: number): number => (v !== undefined && Number.isFinite(v) ? v : d);

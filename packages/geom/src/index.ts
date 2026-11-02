@@ -4,7 +4,7 @@
  *
  * @packageDocumentation
  */
-export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
+export { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 export { normalizeZoom, ZOOM_FLOOR, type View } from './view';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
 export { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box, type Rect } from './box';

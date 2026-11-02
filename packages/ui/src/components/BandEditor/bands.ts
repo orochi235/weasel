@@ -1,6 +1,7 @@
 import type { Quantity } from '@weasel-js/quantity';
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
-import { clamp01, unitScale } from './scale';
+import { clamp01 } from '@weasel-js/geom';
+import { unitScale } from './scale';
 
 /** One band. `from` may be a tagged quantity, which keeps its display and
  *  unit through every edit: see `BandEditor`. */
