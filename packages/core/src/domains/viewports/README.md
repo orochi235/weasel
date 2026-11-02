@@ -95,6 +95,31 @@ back on.
 `interactive={false}` turns off one marker, and a by-value source with no
 `setAim` is never draggable.
 
+## Bounding the view
+
+**`viewBounds`** clamps every write to the root view: pan, zoom, `setView`, and
+an `animateView` frame alike. A world rect fixes the bounds. On `<SceneCanvas>`,
+`'content'` bounds the view to what the scene draws plus a margin of 200 screen
+pixels, and `{ content: { margin, include } }` sets the margin and adds rects
+that count as content though nothing draws them, such as a page. The content is
+read at each write, so it covers whatever a gesture in flight proposes: a node
+being dragged, at its preview, or a shape being drawn. A write never moves the
+view away from where it is, so content that shrinks leaves the view in place
+until the next pan carries it back toward what remains.
+
+**Edge panning** scrolls the view while a drag whose handle sets `autoPan` holds
+the pointer near the canvas's edge, and re-sends the held pointer's move each
+frame so the drag follows: the content grows ahead of the view, and
+`'content'` bounds grow with it. Move, resize, insert, clone, the anchor and
+segment drags, marquee and lasso set it. `viewport={{ edgePan }}` tunes the zone
+and the speed, or turns it off; its `limit` holds the drag's pointer inside a
+world rect, or `{ past }` world units past the content as it stood when the drag
+began, which stops both the drag and the scroll there.
+
+**Fit Content** (`viewport.zoom:fit`, Cmd-Alt-0) fits the view to the content
+the `view` dep's `contentBounds()` reports. Cmd-0 stays Reset Zoom, which calls
+the canvas's `viewport.recenter` where it has one.
+
 ## Related
 
 - [`../parallax`](../parallax/README.md) also derives an inner view from the
