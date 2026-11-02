@@ -1,4 +1,4 @@
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -8,6 +8,7 @@ import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/d
 import { derivesPath } from './memo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { strokedBounds } from './strokedBounds';
+import { inkCovers, trimmedOutline, type PickReach } from './pickOutline';
 import { inkReach, inkTrim, withAnimatedVertexColors } from './nodePaint';
 import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from '@weasel-js/paint';
 
@@ -98,3 +99,23 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     };
   },
 };
+
+/**
+ * Whether a derived path in `parts` covers the world point (x, y): each part
+ * picked as {@link DERIVED_PAINTER} paints it, in its own fill and stroke,
+ * a trim cutting each part along its own length.
+ */
+export function partsCover(
+  node: { data?: unknown }, parts: readonly DerivedPart[], pose: unknown, x: number, y: number,
+  opts: PickReach & { inherited?: InheritedPaint },
+): boolean {
+  const d = node.data as PaintData | null;
+  const framed = poseFrameOf(pose) !== null;
+  return parts.some((part) => {
+    const { fill, stroke } = resolvePartPaint(part, d, opts.inherited);
+    const world = framed ? pathThroughPoseFrame(part.path, pose) : part.path;
+    const ink = { filled: fill !== null, ...inkReach(stroke, opts.scale) };
+    const trimmed = stroke?.trim === undefined ? undefined : trimmedOutline(part.path, world, pose, stroke.trim);
+    return inkCovers(world, ink, trimmed, x, y, opts);
+  });
+}

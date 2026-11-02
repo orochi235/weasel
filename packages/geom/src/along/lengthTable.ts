@@ -14,6 +14,12 @@ export interface LengthRun {
   closeAnchor?: number;
 }
 
+/** A stretch of a path between two pen-order lengths, `from` before `to`. */
+export interface LengthSpan {
+  from: number;
+  to: number;
+}
+
 /** A path's arc length in pen order: subpaths in order, the lift between them covering no distance. */
 export interface LengthTable {
   readonly dim: 2 | 3;

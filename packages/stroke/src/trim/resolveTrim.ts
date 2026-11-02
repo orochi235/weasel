@@ -1,5 +1,5 @@
 import {
-  lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, type LengthTable,
+  lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, type LengthSpan, type LengthTable,
 } from '@weasel-js/geom';
 import type { StrokeTrim, TrimAt, TrimPace } from '@weasel-js/paint';
 
@@ -8,7 +8,7 @@ import type { StrokeTrim, TrimAt, TrimPace } from '@weasel-js/paint';
  * it draws nothing: a window starting at or past its end, or a position that
  * is NaN. Positions clamp to the path; no trim is `{}`, the whole of it.
  */
-export function resolveTrim(t: LengthTable, trim: StrokeTrim | undefined): { from: number; to: number } | null {
+export function resolveTrim(t: LengthTable, trim: StrokeTrim | undefined): LengthSpan | null {
   const { start = 0, end = 1, pace = 'length' } = trim ?? {};
   const from = lengthOf(t, start, pace);
   const to = lengthOf(t, end, pace);

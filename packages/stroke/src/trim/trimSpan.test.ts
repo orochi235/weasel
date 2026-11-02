@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pathFromD, transformPath } from '@weasel-js/geom';
-import { trimSpan } from './trimSpan';
+import { spanOnPath, trimSpan } from './trimSpan';
 
 describe('trimSpan', () => {
   it('resolves a trim on a path', () => {
@@ -19,9 +19,10 @@ describe('trimSpan', () => {
   it('restates a span on the path as drawn by anchor position', () => {
     const local = pathFromD('M0 0 L100 0 L100 50');
     const drawn = transformPath(local, [2, 0, 0, 1, 0, 0]);
-    const span = trimSpan(local, { end: { length: 125 } }, drawn)!;
+    const span = spanOnPath(trimSpan(local, { end: { length: 125 } })!, local, drawn)!;
     // 125 local units ends halfway down the vertical edge, which the stretch leaves as it was.
     expect(span.from).toBe(0);
     expect(span.to).toBeCloseTo(225, 9);
+    expect(spanOnPath(span, local, local)).toBe(span);
   });
 });

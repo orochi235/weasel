@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
-import type { Stroke } from '@weasel-js/paint';
+import { INHERIT, type Stroke } from '@weasel-js/paint';
+import { trimSpan } from '@weasel-js/stroke';
+import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
 import type { Node } from 'core/scene/types';
 import { findShapeInk, shapeCoversPoint } from './NodeShape';
 import { solid } from '../util/paint';
 
-type Pose = { x: number; y: number; width: number; height: number; transform?: [number, number, number, number] };
+type Pose = {
+  x: number; y: number; width: number; height: number; rotation?: number; transform?: [number, number, number, number];
+};
 
 function node(data: unknown, pose: Pose): Node<unknown, 'default', Pose> {
   return { id: 'n', kind: 'mark', layer: 'default', pose, data, parentId: null } as unknown as Node<unknown, 'default', Pose>;
@@ -56,6 +60,8 @@ describe('shapeCoversPoint under a stroke trim', () => {
     expect(shapeCoversPoint(n, pose, 50, 5)).toBe(true);
     expect(shapeCoversPoint(n, pose, 95, 15)).toBe(true);
     expect(shapeCoversPoint(n, pose, 95, 32)).toBe(false);
+    // Over-picks past the drawn end (y ≈ 21): the end's reach is the whole width, as at a butt-capped path end.
+    expect(shapeCoversPoint(n, pose, 95, 28)).toBe(true);
     expect(shapeCoversPoint(n, pose, 50, 45)).toBe(false);
     // Nothing of an inner stroke lies outside the outline.
     expect(shapeCoversPoint(n, pose, 50, -3)).toBe(false);
@@ -87,5 +93,70 @@ describe('shapeCoversPoint under a stroke trim', () => {
     expect(shapeCoversPoint(plain, plain.pose, 48, off)).toBe(false);
     expect(shapeCoversPoint(marked, marked.pose, 48, off)).toBe(true);
     expect(shapeCoversPoint(marked, marked.pose, 75, 0)).toBe(false);
+  });
+
+  it('measures a rotated line from its own start', () => {
+    const pose: Pose = { ...LINE_POSE, rotation: Math.PI / 2 };
+    const n = lineNode(stroke({ trim: { end: 0.5 } }), pose);
+    // A quarter turn about (50, 0) runs the line from (50, -50) to (50, 50).
+    expect(shapeCoversPoint(n, pose, 50, -25)).toBe(true);
+    expect(shapeCoversPoint(n, pose, 50, 25)).toBe(false);
+  });
+
+  it('measures a stretched curve before the stretch', () => {
+    const curve = pathFromD('M0 0 C0 50 100 50 100 0');
+    const pose: Pose = { x: 0, y: 0, width: 100, height: 37.5, transform: [2, 0, 0, 1] };
+    const half = trimSpan(curve, {})!.to / 2;
+    const n = node({ path: curve, fill: null, stroke: stroke({ trim: { end: { length: half } } }) }, pose);
+    // The curve at t, stretched about x = 50; half its own length ends at its apex.
+    const at = (t: number): [number, number] => {
+      const x = 300 * t * t * (1 - t) + 100 * t ** 3;
+      return [2 * (x - 50) + 50, 150 * t * (1 - t)];
+    };
+    expect(shapeCoversPoint(n, pose, ...at(0.25))).toBe(true);
+    expect(shapeCoversPoint(n, pose, ...at(0.45))).toBe(true);
+    expect(shapeCoversPoint(n, pose, ...at(0.6))).toBe(false);
+  });
+});
+
+describe('shapeCoversPoint memoizes a trimmed outline', () => {
+  it('reads a changed inherited trim on the same node and pose', () => {
+    const pose: Pose = { ...LINE_POSE, rotation: Math.PI / 2 };
+    const n = node({ path: LINE, fill: null, stroke: INHERIT }, pose);
+    const at = (end: number) => ({ inherited: { stroke: stroke({ trim: { end } }) } });
+    expect(shapeCoversPoint(n, pose, 50, 25, at(0.5))).toBe(false);
+    expect(shapeCoversPoint(n, pose, 50, 25, at(1))).toBe(true);
+    expect(shapeCoversPoint(n, pose, 50, 25, at(0.5))).toBe(false);
+  });
+});
+
+describe('shapeCoversPoint on a derived path in parts', () => {
+  const A = pathFromD('M0 0 L100 0');
+  const B = pathFromD('M0 50 L100 50');
+  const covers = (own: Stroke | null, parts: DerivedPart[], x: number, y: number) => {
+    const n = { ...node({ fill: null, stroke: own }, { x: 0, y: 0, width: 0, height: 0 }), dependsOn: ['a'], derivePath: 'k' };
+    return shapeCoversPoint(n as never, n.pose, x, y, { derivedPath: pathFromParts(parts) });
+  };
+
+  it("trims each part along its own length by the node's trim", () => {
+    const parts = [{ path: A, stroke: INHERIT }, { path: B, stroke: INHERIT }];
+    const own = stroke({ trim: { end: 0.5 } });
+    expect(covers(own, parts, 25, 0)).toBe(true);
+    expect(covers(own, parts, 75, 0)).toBe(false);
+    expect(covers(own, parts, 25, 50)).toBe(true);
+    expect(covers(own, parts, 75, 50)).toBe(false);
+  });
+
+  it("keeps a part's own untrimmed stroke whole under a trimmed node", () => {
+    const parts = [{ path: A, stroke: INHERIT }, { path: B, stroke: stroke() }];
+    const own = stroke({ trim: { end: 0.5 } });
+    expect(covers(own, parts, 75, 0)).toBe(false);
+    expect(covers(own, parts, 75, 50)).toBe(true);
+  });
+
+  it('hits nothing of a part whose trim draws nothing', () => {
+    const parts = [{ path: A, stroke: INHERIT }, { path: B, stroke: stroke({ trim: { start: 1 } }) }];
+    expect(covers(stroke(), parts, 75, 0)).toBe(true);
+    expect(covers(stroke(), parts, 50, 50)).toBe(false);
   });
 });

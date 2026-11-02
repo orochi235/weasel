@@ -13,8 +13,9 @@
 import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
 import type { Rect } from './box';
 import type { Path } from './path';
+import type { LengthSpan } from './along/lengthTable';
 import { closedSubpaths, regionSubpaths } from './pathSubpaths';
-import { someSegment, someSegmentInSpan, type SegmentVisit } from './outlineSegments';
+import { someSegment, type SegmentVisit } from './outlineSegments';
 import type { Affine } from './affine';
 import type { Point } from './paths/cubicMath';
 import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
@@ -46,7 +47,7 @@ export interface StrokeHitTestOptions {
   /** Only the stretch of the outline between these pen-order lengths, world
    *  units, counts: subpaths in authored order, a closed one's closing edge
    *  last. A visible window of a trimmed stroke. */
-  span?: { from: number; to: number };
+  span?: LengthSpan;
 }
 
 // ─── Point vs path ──────────────────────────────────────────────────────────
@@ -112,9 +113,7 @@ export function strokeHitTest(
 }
 
 function walk(path: Path, opts: StrokeHitTestOptions, visit: SegmentVisit): boolean {
-  return opts.span
-    ? someSegmentInSpan(path, opts.tolerance, opts.span, visit)
-    : someSegment(path, opts.tolerance, visit);
+  return someSegment(path, opts.tolerance, opts.span, visit);
 }
 
 // ─── Region vs path ─────────────────────────────────────────────────────────
