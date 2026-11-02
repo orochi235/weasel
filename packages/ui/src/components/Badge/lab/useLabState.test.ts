@@ -4,8 +4,8 @@ import { useLabState, type LabArgs } from './useLabState';
 
 const ARGS: LabArgs = { look: 'info', variant: 'solid', label: 'Badge' };
 
-const undo = () => act(() => { fireEvent.keyDown(window, { key: 'z', metaKey: true }); });
-const redo = () => act(() => { fireEvent.keyDown(window, { key: 'z', metaKey: true, shiftKey: true }); });
+const undo = () => act(() => { fireEvent.keyDown(window, { key: 'z', ctrlKey: true }); });
+const redo = () => act(() => { fireEvent.keyDown(window, { key: 'z', ctrlKey: true, shiftKey: true }); });
 const settle = () => act(() => { vi.advanceTimersByTime(300); });
 
 describe('useLabState undo', () => {

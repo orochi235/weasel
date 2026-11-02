@@ -813,7 +813,7 @@ describe('CurveEditor — keyboard and accessibility', () => {
     }
     const { container } = render(<Controlled />);
     fireEvent.keyDown(container.querySelectorAll('[data-anchor-index]')[1], { key: 'ArrowUp' });
-    fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', metaKey: true });
+    fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', ctrlKey: true });
     expect(onInput.mock.calls.at(-1)![0][1].y).toBe(0.5);
   });
 });

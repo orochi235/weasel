@@ -18,7 +18,7 @@ describe('CurveEditor — built-in undo', () => {
     expect(nudged).not.toBe('50');
     fireEvent.pointerDown(middle(), { clientX: 100, clientY: Number(nudged), pointerId: 1, buttons: 1 });
     fireEvent.pointerUp(document, { clientX: 100, clientY: Number(nudged), pointerId: 1 });
-    fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', metaKey: true });
+    fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', ctrlKey: true });
     expect(middle().getAttribute('cy')).toBe('50');
   });
 
@@ -30,10 +30,10 @@ describe('CurveEditor — built-in undo', () => {
     const nudged = cy();
     expect(nudged).not.toBeCloseTo(50);
     const svg = container.querySelector('svg')!;
-    fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
     expect(cy()).toBeCloseTo(50);
     // The oldest step is gone, so undoing everything stops one edit short of the start.
-    for (let i = 0; i < 150; i++) fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    for (let i = 0; i < 150; i++) fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
     expect(cy()).toBeCloseTo(nudged);
   });
 
@@ -49,11 +49,11 @@ describe('CurveEditor — built-in undo', () => {
     const [nudged, start] = onChange.mock.calls[0];
 
     const svg = container.querySelector('svg')!;
-    fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
     expect(onChange).toHaveBeenCalledTimes(2);
     expect(onChange.mock.calls[1]).toEqual([start, nudged]);
 
-    fireEvent.keyDown(svg, { key: 'z', metaKey: true, shiftKey: true });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true, shiftKey: true });
     expect(onChange).toHaveBeenCalledTimes(3);
     expect(onChange.mock.calls[2]).toEqual([nudged, start]);
   });
@@ -67,18 +67,18 @@ describe('CurveEditor — built-in undo', () => {
       fireEvent.keyDown(middle(), { key: 'ArrowUp', shiftKey: true });
       seen.push(cy());
     }
-    for (let i = 0; i < 3; i++) fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    for (let i = 0; i < 3; i++) fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
     expect(cy()).toBe(seen[0]);
-    fireEvent.keyDown(svg, { key: 'y', metaKey: true });
+    fireEvent.keyDown(svg, { key: 'y', ctrlKey: true });
     expect(cy()).toBe(seen[1]);
-    fireEvent.keyDown(svg, { key: 'z', metaKey: true, shiftKey: true });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true, shiftKey: true });
     expect(cy()).toBe(seen[2]);
 
     fireEvent.keyDown(middle(), { key: 'ArrowDown', shiftKey: true });
     const forked = cy();
-    fireEvent.keyDown(svg, { key: 'z', metaKey: true, shiftKey: true });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true, shiftKey: true });
     expect(cy()).toBe(forked);
-    fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
     expect(cy()).toBe(seen[2]);
   });
 
@@ -110,7 +110,7 @@ describe('CurveEditor — built-in undo', () => {
       expect(rightClick(anchors()[2], 150, 50)).toBe(false);
       expect(anchors()).toHaveLength(3);
 
-      fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', metaKey: true });
+      fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', ctrlKey: true });
       expect(anchors()).toHaveLength(4);
       expect(anchors()[1].getAttribute('cy')).toBe(nudged);
     });
@@ -122,7 +122,7 @@ describe('CurveEditor — built-in undo', () => {
       expect(anchors()).toHaveLength(3);
       expect(onChange).toHaveBeenCalledTimes(1);
 
-      fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', metaKey: true });
+      fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', ctrlKey: true });
       expect(anchors()).toHaveLength(4);
     });
 
