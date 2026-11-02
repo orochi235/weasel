@@ -22,6 +22,7 @@ import { dispatchContextMenu } from './contextMenuDispatch';
 import { CurveLayers } from './CurveLayers';
 import { layerCtxOver } from './layerCtx';
 import { sameFields } from './sameFields';
+import { useLayerHistory, type LayerSnapshot } from './useLayerHistory';
 import type {
   CurveLayer, LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
 } from './layerTypes';
@@ -87,14 +88,11 @@ export interface LayeredCurveEditorProps {
 interface ActiveGesture {
   layerId: string;
   gesture: LayerGesture<unknown>;
-  startStates: Map<string, unknown>;
+  startStates: LayerSnapshot;
   startSelfState: unknown;
 }
 
 /** A cancel carries no event, so a layer's `onCancel` sees no modifiers held. */
-/** Undo steps the built-in history keeps. */
-const HISTORY_DEPTH = 100;
-
 const NO_MODIFIERS: LayerModifiers = { shift: false, alt: false, meta: false, ctrl: false };
 
 function readModifiers(e: PointerEvent | ReactPointerEvent | ReactMouseEvent | KeyboardEvent | ReactKeyboardEvent): LayerModifiers {
@@ -155,51 +153,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
 
   // ── History (whole-state snapshots) ────────────────────────────────
-  const pastRef = useRef<Map<string, unknown>[]>([]);
-  const futureRef = useRef<Map<string, unknown>[]>([]);
-
-  const snapshot = useCallback((): Map<string, unknown> => {
-    const m = new Map<string, unknown>();
-    for (const b of layersRef.current) m.set(b.layer.id, b.state);
-    return m;
-  }, [layersRef]);
-
-  const restore = useCallback((snap: Map<string, unknown>) => {
-    const current = layersRef.current;
-    for (const b of current) {
-      const prev = snap.get(b.layer.id);
-      if (prev !== undefined && prev !== b.state) {
-        onLayerChange(b.layer.id, prev);
-        onLayerCommit?.(b.layer.id, prev, b.state);
-      }
-    }
-  }, [onLayerChange, onLayerCommit, layersRef]);
-
-  /** Push the state an edit started from, dropping the oldest step past the depth kept. */
-  const record = useCallback((before: Map<string, unknown>) => {
-    const past = pastRef.current;
-    past.push(before);
-    if (past.length > HISTORY_DEPTH) past.shift();
-    futureRef.current = [];
-  }, []);
-
-  const undo = useCallback(() => {
-    if (!historyEnabled) return;
-    const past = pastRef.current;
-    if (past.length === 0) return;
-    const prev = past.pop()!;
-    futureRef.current.push(snapshot());
-    restore(prev);
-  }, [historyEnabled, snapshot, restore]);
-
-  const redo = useCallback(() => {
-    if (!historyEnabled) return;
-    const future = futureRef.current;
-    if (future.length === 0) return;
-    const next = future.pop()!;
-    pastRef.current.push(snapshot());
-    restore(next);
-  }, [historyEnabled, snapshot, restore]);
+  const { snapshot, record, undo, redo } = useLayerHistory(layersRef, onLayerChange, onLayerCommit);
 
   // ── Pointer routing during an active gesture ───────────────────────
   // The session's callbacks are fixed at gesture start, so they delegate
