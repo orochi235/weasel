@@ -5,8 +5,8 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
 import { assignPrefValueAtPath } from './helpers';
-import { tbdPerAxes, tbdPerDefault, tbdPerClosed } from './per';
-import { isPrefLocus, locusSelectors, repairLocus, selectionWeights, weighLocus, type PrefLocus, type PrefSelection, type PrefWeights } from './locus';
+import { scopeSelectorsOf, prefScopedDefault, overridesOfPref } from './scopeSpec';
+import { isPrefScope, scopeSelectors, repairScope, selectionWeights, weighScope, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefLeaf } from './schema';
 import { recordValue } from './stamp';
@@ -14,10 +14,10 @@ import { recordValue } from './stamp';
 export interface Snapshot {
   /** Each leaf's value as read: a split one folded under `selection`. */
   byPath: Map<string, unknown>;
-  /** Each leaf's stored value, repaired: a locus where it is split. */
+  /** Each leaf's stored value, repaired: a scope where it is split. */
   held: Map<string, unknown>;
   /** What each split leaf holds, by its path. */
-  loci: ReadonlyMap<string, PrefLocus>;
+  scopes: ReadonlyMap<string, PrefScope>;
   /** The option each selector is set to. */
   selection: PrefSelection;
   /** The leaves split by each selector, by the selector's path. */
@@ -38,12 +38,12 @@ export interface SnapshotSource {
   blends?: Readonly<Record<string, PrefBlend>>;
 }
 
-/** What `stored` reads as for `leaf`: a locus with each member repaired where the leaf may hold one, else the value repaired. */
+/** What `stored` reads as for `leaf`: a scope with each member repaired where the leaf may hold one, else the value repaired. */
 export function readStored(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf, stored: unknown): unknown {
   const repair = (value: unknown): unknown => repairPrefValue(leaf, value, source.validators);
-  const axes = tbdPerAxes(leaf);
-  if (!axes?.length || !isPrefLocus(stored)) return repair(stored);
-  const read = repairLocus(stored, axes, (path) => optionsOf(source, path), repair, tbdPerClosed(leaf));
+  const axes = scopeSelectorsOf(leaf);
+  if (!axes?.length || !isPrefScope(stored)) return repair(stored);
+  const read = repairScope(stored, axes, (path) => optionsOf(source, path), repair, overridesOfPref(leaf));
   return read === undefined ? leaf.default : read;
 }
 
@@ -53,7 +53,7 @@ export const optionsOf = (source: Pick<SnapshotSource, 'selectors' | 'admitted'>
 
 /** `held` folded under `weights`: itself where it is not split. */
 export function resolveHeld(source: Pick<SnapshotSource, 'blends'>, leaf: PrefLeaf, held: unknown, weights: PrefWeights): unknown {
-  return isPrefLocus(held) ? blendPref(leaf, weighLocus(held, weights, leaf.default, tbdPerClosed(leaf)), source.blends) : held;
+  return isPrefScope(held) ? blendPref(leaf, weighScope(held, weights, leaf.default, overridesOfPref(leaf)), source.blends) : held;
 }
 
 /** The store's snapshots: `current` builds one when there is none, and `drop` discards it when a record changed. */
@@ -62,13 +62,13 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
   let snapshot: Snapshot | null = null;
   let previous: { raw: Map<string, unknown>; held: Map<string, unknown> } | null = null;
 
-  const unsetLoci = new Map<string, unknown>();
+  const unsetScopes = new Map<string, unknown>();
   /** What an unset leaf holds: its split default, repaired once, where it has one. */
   const unsetHeld = (path: string, leaf: PrefLeaf): unknown => {
-    const locus = tbdPerDefault(leaf);
-    if (locus === undefined) return leaf.default;
-    if (!unsetLoci.has(path)) unsetLoci.set(path, readStored(source, leaf, locus));
-    return unsetLoci.get(path);
+    const scope = prefScopedDefault(leaf);
+    if (scope === undefined) return leaf.default;
+    if (!unsetScopes.has(path)) unsetScopes.set(path, readStored(source, leaf, scope));
+    return unsetScopes.get(path);
   };
 
   const build = (): Snapshot => {
@@ -93,17 +93,17 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     const weights = selectionWeights(selection);
     const byPath = new Map<string, unknown>();
     const splitUnder = new Map<string, string[]>();
-    const loci = new Map<string, PrefLocus>();
+    const scopes = new Map<string, PrefScope>();
     const tree: Record<string, unknown> = {};
     for (const [path, leaf] of leaves) {
       const value = held.get(path);
-      if (isPrefLocus(value)) loci.set(path, value);
-      for (const selector of locusSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
+      if (isPrefScope(value)) scopes.set(path, value);
+      for (const selector of scopeSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
       const read = resolveHeld(source, leaf, value, weights);
       byPath.set(path, read);
       assignPrefValueAtPath(tree, path, read);
     }
-    return { byPath, held, loci, selection, splitUnder, tree, unset };
+    return { byPath, held, scopes, selection, splitUnder, tree, unset };
   };
 
   return {

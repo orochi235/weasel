@@ -18,7 +18,7 @@ const SCHEMA = {
         },
       },
     },
-    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, per: [{ selector: MODE }] },
+    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, scopes: [{ selector: MODE }] },
   },
 } satisfies PrefGroup;
 

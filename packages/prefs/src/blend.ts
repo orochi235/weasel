@@ -1,7 +1,7 @@
 // How the alternatives of a split value fold into one, by kind.
 
 import { hexToRgba, interpolateSrgb, rgbaToHex } from '@weasel-js/paint';
-import type { PrefWeighted } from './locus';
+import type { PrefWeighted } from './scope';
 import type { PrefLeaf } from './schema';
 
 /**

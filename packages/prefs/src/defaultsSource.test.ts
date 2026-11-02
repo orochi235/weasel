@@ -13,8 +13,8 @@ const SCHEMA = pref.group('Prefs', {
     density: pref.enum('Density', 'compact', ['compact', 'roomy']),
     inner: pref.group('Inner', { gridGap: pref.number('Grid gap', 2), face: pref.string('Face', 'Sans') }),
   }),
-  gap: { ...pref.number('Gap', 4, { unit: { scale: 1, suffix: 'px' }, per: [{ selector: 'look.mode' }, { selector: 'look.density' }] }), defaultLocus: byMode(4, { $by: 'look.density', $in: { compact: 6, roomy: 9 } }) },
-  surface: pref.color('Surface', '#000000', { per: [{ selector: 'look.mode' }] }),
+  gap: { ...pref.number('Gap', 4, { unit: { scale: 1, suffix: 'px' }, scopes: [{ selector: 'look.mode' }, { selector: 'look.density' }] }), defaultLocus: byMode(4, { $by: 'look.density', $in: { compact: 6, roomy: 9 } }) },
+  surface: pref.color('Surface', '#000000', { scopes: [{ selector: 'look.mode' }] }),
   shown: pref.boolean('Shown', true),
 });
 
@@ -26,11 +26,11 @@ describe('prefsDefaultsSource', () => {
     expect(css).toContain('--gap: 9px;');
   });
 
-  it('reads a split default at a selection, and its locus', () => {
+  it('reads a split default at a selection, and its scope', () => {
     const source = prefsDefaultsSource(SCHEMA);
     expect(source.get('gap')).toBe(4);
     expect(source.values({ at: { 'look.mode': 'light' } }).gap).toBe(6);
-    expect(source.locus('gap')).toEqual(SCHEMA.children.gap.defaultLocus);
-    expect(source.locus('surface')).toEqual({ $by: 'look.mode', $in: {} });
+    expect(source.scope('gap')).toEqual(SCHEMA.children.gap.defaultLocus);
+    expect(source.scope('surface')).toEqual({ $by: 'look.mode', $in: {} });
   });
 });

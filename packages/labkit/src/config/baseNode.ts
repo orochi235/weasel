@@ -1,4 +1,4 @@
-import type { PrefCondition, PrefPair, TbdPer } from '@weasel-js/prefs';
+import type { PrefCondition, PrefPair, PrefScopeSpec } from '@weasel-js/prefs';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -100,9 +100,9 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    * Without, it is open: an option keeps its own once one is written. The
    * name is a placeholder until the feature is named.
    */
-  per(selector: string, overrides?: TbdPer['overrides']): this {
-    const per: TbdPer = overrides === undefined ? { selector } : { selector, overrides };
-    return this.ann({ per: [...(this.annotations.per ?? []), per] });
+  per(selector: string, overrides?: PrefScopeSpec['overrides']): this {
+    const per: PrefScopeSpec = overrides === undefined ? { selector } : { selector, overrides };
+    return this.ann({ scopes: [...(this.annotations.scopes ?? []), per] });
   }
 
   /** Render under a named section heading. `collapsed` opens the section

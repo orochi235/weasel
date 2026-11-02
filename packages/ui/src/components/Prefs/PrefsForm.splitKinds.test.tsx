@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import type { PrefGroup, PrefLeaf, PrefLocus } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf, PrefScope } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithIcons } from '../../testing/withIcons';
 import { PrefsForm, type PrefsFormProps } from './index';
@@ -16,15 +16,15 @@ const LOOK: PrefGroup = {
     },
   },
 };
-const byMode = (dark: unknown, light: unknown): PrefLocus => ({ $by: MODE, $in: { dark, light } });
+const byMode = (dark: unknown, light: unknown): PrefScope => ({ $by: MODE, $in: { dark, light } });
 const flag = { kind: 'boolean', name: 'Flag', description: '', default: false } as const;
 
-/** A form of `look` and one leaf at `key`, held split by mode as `locus`, with that row open. */
-function openSplit(key: string, leaf: PrefLeaf, locus: PrefLocus, props: Partial<PrefsFormProps> = {}) {
-  const schema: PrefGroup = { name: 'Prefs', children: { look: LOOK, [key]: { ...leaf, per: [{ selector: MODE }] } as PrefLeaf } };
+/** A form of `look` and one leaf at `key`, held split by mode as `scope`, with that row open. */
+function openSplit(key: string, leaf: PrefLeaf, scope: PrefScope, props: Partial<PrefsFormProps> = {}) {
+  const schema: PrefGroup = { name: 'Prefs', children: { look: LOOK, [key]: { ...leaf, scopes: [{ selector: MODE }] } as PrefLeaf } };
   const onChangeAt = vi.fn();
   renderWithIcons(
-    <PrefsForm schema={schema} layout="list" values={{}} onChange={vi.fn()} loci={new Map([[key, locus]])}
+    <PrefsForm schema={schema} layout="list" values={{}} onChange={vi.fn()} scopes={new Map([[key, scope]])}
       onChangeAt={onChangeAt} onJoin={vi.fn()} defaultSplitOpen={[key]} {...props} />,
   );
   const members = screen.getByRole('group', { name: `${leaf.name} by Mode` });
@@ -79,7 +79,7 @@ describe('a split row the form draws for another reason', () => {
   it('opens an alias row to the members of the leaf it shows, read and written at that leaf’s path', () => {
     const over: PrefGroup = {
       name: 'App',
-      children: { look: LOOK, panel: { name: 'Panel', children: { gap: { kind: 'number', name: 'Gap', description: '', default: 4, per: [{ selector: MODE }] } } } },
+      children: { look: LOOK, panel: { name: 'Panel', children: { gap: { kind: 'number', name: 'Gap', description: '', default: 4, scopes: [{ selector: MODE }] } } } },
     };
     const schema: PrefGroup = {
       name: 'Tool', children: { gap: { kind: 'alias', name: 'Spacing', description: '', default: undefined, of: 'panel.gap' } as PrefLeaf },
@@ -87,7 +87,7 @@ describe('a split row the form draws for another reason', () => {
     const onChangeAt = vi.fn();
     renderWithIcons(
       <PrefsForm schema={schema} over={over} layout="list" values={{}} onChange={vi.fn()}
-        loci={new Map([['panel.gap', byMode(4, 8)]])} onChangeAt={onChangeAt} defaultSplitOpen={['gap']} />,
+        scopes={new Map([['panel.gap', byMode(4, 8)]])} onChangeAt={onChangeAt} defaultSplitOpen={['gap']} />,
     );
     const members = screen.getByRole('group', { name: 'Spacing by Mode' });
     expect(within(members).getByRole('spinbutton', { name: 'Spacing, Light' })).toHaveValue('8');

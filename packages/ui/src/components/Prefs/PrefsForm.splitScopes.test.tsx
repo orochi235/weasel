@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { TBD_REST_KEY, type PrefGroup, type PrefLocus } from '@weasel-js/prefs';
+import { PREF_ELSE, type PrefGroup, type PrefScope } from '@weasel-js/prefs';
 import { PrefsForm } from './index';
 
 afterEach(cleanup);
@@ -16,16 +16,16 @@ const SCHEMA: PrefGroup = {
     },
     limit: {
       kind: 'number', name: 'Limit', description: '', default: 9,
-      per: [{ selector: 'mode', overrides: { types: 0 } }, { selector: 'layout' }],
+      scopes: [{ selector: 'mode', overrides: { types: 0 } }, { selector: 'layout' }],
     },
   },
 };
 
-const held: PrefLocus = { $by: 'mode', $in: { types: 0 }, [TBD_REST_KEY]: { $by: 'layout', $in: { a: 1 }, [TBD_REST_KEY]: 5 } };
+const held: PrefScope = { $by: 'mode', $in: { types: 0 }, [PREF_ELSE]: { $by: 'layout', $in: { a: 1 }, [PREF_ELSE]: 5 } };
 
 function mount(othersLabel?: string) {
   const on = { onChange: vi.fn(), onSplit: vi.fn(), onJoin: vi.fn(), onChangeAt: vi.fn() };
-  render(<PrefsForm schema={SCHEMA} layout="list" values={{ limit: 5 }} loci={new Map([['limit', held]])} othersLabel={othersLabel} {...on} />);
+  render(<PrefsForm schema={SCHEMA} layout="list" values={{ limit: 5 }} scopes={new Map([['limit', held]])} othersLabel={othersLabel} {...on} />);
   return on;
 }
 

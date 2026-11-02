@@ -1,4 +1,4 @@
-import { isPrefLocus, prefLeaves, type PrefGroup, type PrefLeaf, type PrefLocus, type TbdPer } from '@weasel-js/prefs';
+import { isPrefScope, prefLeaves, type PrefGroup, type PrefLeaf, type PrefScope, type PrefScopeSpec } from '@weasel-js/prefs';
 import { selectionKey } from '../axes.ts';
 import { weaselTheme, type Theme } from '../theme.ts';
 import { prefOfCss, tokenLeafKind } from './leaf.ts';
@@ -22,22 +22,22 @@ const labeled = (text: string): string => (text === '' ? text : text[0]!.toUpper
 // A token group named for the axes' own key takes another; no group's name holds a `-`.
 const groupKey = (group: string): string => (group === THEME_PREFS_AXIS ? `${THEME_PREFS_AXIS}-tokens` : group);
 
-/** The locus of a value that differs along `axes`, each level keyed by its axis's leaf. */
-export const locusByAxis = (axis: string, members: Record<string, unknown>): PrefLocus => ({ $by: themeAxisPath(axis), $in: members });
+/** The scope of a value that differs along `axes`, each level keyed by its axis's leaf. */
+export const scopeByAxis = (axis: string, members: Record<string, unknown>): PrefScope => ({ $by: themeAxisPath(axis), $in: members });
 
 // On its group's page a token's group prefix says nothing; its whole name stays a tag, so a filter still finds it.
 const shortName = (row: TokenRow): string => (row.name.startsWith(`${row.group}-`) ? row.name.slice(row.group.length + 1) : row.name);
 
-function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, per: readonly TbdPer[]): PrefLeaf {
+function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, per: readonly PrefScopeSpec[]): PrefLeaf {
   const name = shortName(row);
   const leaf = {
-    ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown, per,
+    ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown, scopes: per,
     ...(name === row.name ? {} : { tags: [row.name] }),
   } as PrefLeaf;
   const fallback = row.css[selectionKey(table.axes, {})] ?? Object.values(row.css)[0];
-  const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, row.css[selectionKey(table.axes, selection)] ?? fallback), locusByAxis);
+  const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, row.css[selectionKey(table.axes, selection)] ?? fallback), scopeByAxis);
   leaf.default = prefOfCss(leaf, fallback);
-  if (isPrefLocus(held)) leaf.defaultLocus = held;
+  if (isPrefScope(held)) leaf.defaultLocus = held;
   return leaf;
 }
 
@@ -66,7 +66,7 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
       options: Object.keys(def.values).map((value) => ({ value, label: labeled(value) })),
     };
   }
-  const per = Object.keys(table.axes).map((axis): TbdPer => ({ selector: themeAxisPath(axis) }));
+  const per = Object.keys(table.axes).map((axis): PrefScopeSpec => ({ selector: themeAxisPath(axis) }));
   const children: Record<string, PrefGroup> = { [THEME_PREFS_AXIS]: { name: 'Axes', children: axes } };
   for (const row of table.rows) {
     const key = groupKey(row.group);

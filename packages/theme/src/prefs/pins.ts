@@ -1,21 +1,21 @@
-import { isPrefLocus, prefLeaves, type PrefGroup, type PrefLeaf, type PrefLocus } from '@weasel-js/prefs';
+import { isPrefScope, prefLeaves, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
 import { selectionKey, type Selection, type Varying } from '../axes.ts';
 import type { PinValue } from '../definition.ts';
 import { defineTheme, type Theme } from '../theme.ts';
 import { cssOfPref, prefOfCss } from './leaf.ts';
-import { locusByAxis, themeAxisOf, themeTokenOf } from './schema.ts';
+import { scopeByAxis, themeAxisOf, themeTokenOf } from './schema.ts';
 import { foldAxes, tokenTable } from './tokens.ts';
 
 /** What the bridge reads of a store over a {@link themePrefsSchema}: any `PrefsStore` is one. */
 export interface ThemePrefsSource {
   schema: PrefGroup;
   get(path: string): unknown;
-  locus(path: string): PrefLocus | undefined;
+  scope(path: string): PrefScope | undefined;
   isSet(path: string): boolean;
 }
 
 function pinOf(leaf: PrefLeaf, held: unknown): Varying<PinValue> {
-  if (!isPrefLocus(held)) return cssOfPref(leaf, held);
+  if (!isPrefScope(held)) return cssOfPref(leaf, held);
   const out: Record<string, unknown> = { by: themeAxisOf(held.$by) ?? held.$by };
   for (const [value, member] of Object.entries(held.$in)) out[value] = pinOf(leaf, member);
   return out as Varying<PinValue>;
@@ -42,7 +42,7 @@ export function themePrefsPins(store: ThemePrefsSource): Record<string, Varying<
   const out: Record<string, Varying<PinValue>> = {};
   for (const [path, leaf] of prefLeaves(store.schema)) {
     if (themeAxisOf(path) !== undefined || !store.isSet(path)) continue;
-    out[themeTokenOf(path)] = pinOf(leaf, store.locus(path) ?? store.get(path));
+    out[themeTokenOf(path)] = pinOf(leaf, store.scope(path) ?? store.get(path));
   }
   return out;
 }
@@ -55,32 +55,32 @@ export function themeFromPrefs(store: ThemePrefsSource, base: Theme, name = `${b
 /** What {@link themePrefsValues} reads beside the pins. */
 export interface ThemePrefsValuesSource extends ThemePrefsSource {
   values(): Record<string, unknown>;
-  loci(): ReadonlyMap<string, PrefLocus>;
+  scopes(): ReadonlyMap<string, PrefScope>;
 }
 
 /**
- * The store's values and loci as a form shows them, with every leaf that
+ * The store's values and scopes as a form shows them, with every leaf that
  * follows its default read from the pinned theme, where the store reads it
  * from `base`. They differ for an alias of a token that was pinned: `accent`
- * after `accent-base` is set. Shaped as `store.values()` and `store.loci()`.
+ * after `accent-base` is set. Shaped as `store.values()` and `store.scopes()`.
  */
 export function themePrefsValues(
   store: ThemePrefsValuesSource,
   base: Theme,
-): { values: Record<string, unknown>; loci: ReadonlyMap<string, PrefLocus> } {
+): { values: Record<string, unknown>; scopes: ReadonlyMap<string, PrefScope> } {
   const { axes, rows } = tokenTable(themeFromPrefs(store, base));
   const css = new Map(rows.map((row) => [row.name, row.css]));
   const now = selectionKey(axes, themePrefsSelection(store));
   const values: Record<string, unknown> = { ...store.values() };
-  const loci = new Map(store.loci());
+  const scopes = new Map(store.scopes());
   const copied = new Set<string>();
   for (const [path, leaf] of prefLeaves(store.schema)) {
     if (themeAxisOf(path) !== undefined || store.isSet(path)) continue;
     const resolved = css.get(themeTokenOf(path));
     if (!resolved || Object.values(resolved).some((text) => prefOfCss(leaf, text) === undefined)) continue;
-    const held = foldAxes(axes, (selection) => prefOfCss(leaf, resolved[selectionKey(axes, selection)]), locusByAxis);
-    if (isPrefLocus(held)) loci.set(path, held);
-    else loci.delete(path);
+    const held = foldAxes(axes, (selection) => prefOfCss(leaf, resolved[selectionKey(axes, selection)]), scopeByAxis);
+    if (isPrefScope(held)) scopes.set(path, held);
+    else scopes.delete(path);
     const group = path.slice(0, path.indexOf('.'));
     if (!copied.has(group)) {
       copied.add(group);
@@ -88,5 +88,5 @@ export function themePrefsValues(
     }
     (values[group] as Record<string, unknown>)[themeTokenOf(path)] = prefOfCss(leaf, resolved[now]);
   }
-  return { values, loci };
+  return { values, scopes };
 }

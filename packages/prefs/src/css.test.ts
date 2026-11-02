@@ -12,8 +12,8 @@ const SCHEMA = pref.group('Prefs', {
     mode: pref.enum('Mode', 'dark', ['dark', 'light']),
     density: pref.enum('Density', 'compact', ['compact', 'roomy']),
   }),
-  gap: pref.number('Gap', 4, { unit: { scale: 1, suffix: 'px' }, per: [{ selector: MODE }, { selector: DENSITY }] }),
-  surface: pref.color('Surface', '#000000', { per: [{ selector: MODE }] }),
+  gap: pref.number('Gap', 4, { unit: { scale: 1, suffix: 'px' }, scopes: [{ selector: MODE }, { selector: DENSITY }] }),
+  surface: pref.color('Surface', '#000000', { scopes: [{ selector: MODE }] }),
   gridGap: pref.number('Grid gap', 2),
   turn: pref.number('Turn', Math.PI, { unit: { scale: Math.PI / 180, suffix: '°' } }),
   shown: pref.boolean('Shown', true),
@@ -85,7 +85,7 @@ describe('prefsCss', () => {
 
   it('puts a block naming more selectors after every block naming fewer, wherever its leaf sits in the schema', () => {
     const schema = pref.group('Prefs', {
-      gap: pref.number('Gap', 4, { per: [{ selector: 'mode' }, { selector: 'density' }] }),
+      gap: pref.number('Gap', 4, { scopes: [{ selector: 'mode' }, { selector: 'density' }] }),
       mode: pref.enum('Mode', 'dark', ['dark', 'light']),
       density: pref.enum('Density', 'compact', ['compact', 'roomy']),
     });
@@ -96,7 +96,7 @@ describe('prefsCss', () => {
     expect(named.at(-1)).toBe(2);
   });
 
-  it('reads an option a locus holds nothing for as the default', () => {
+  it('reads an option a scope holds nothing for as the default', () => {
     const blocks = blocksOf(prefsCss(make([['surface', { $by: MODE, $in: { dark: '#111111' } }]])));
     expect(blocks[":where(:root[data-look-mode='light'])"]).toContain('--surface: #000000;');
   });

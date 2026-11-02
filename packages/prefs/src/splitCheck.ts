@@ -1,16 +1,17 @@
 // Which leaves a schema lets a value be split by, and what is wrong with a
-// `per` that names something else: what a store warns of.
+// `scopes` that names something else: what a store warns of.
 
 import type { PrefGroup } from './groups';
 import { prefHoldsValue, prefLeaves } from './helpers';
-import { tbdPerAxes, tbdPerClosed } from './per';
-import { locusSelectors } from './locus';
+import { overrideOptions } from './scope';
+import { prefOverridesOf, scopeSelectorsOf } from './scopeSpec';
+import { scopeSelectors } from './scope';
 import type { PrefEnum, PrefLeaf } from './schema';
 
 /** One thing wrong with a pref's scopes, or with what the schema admits. */
 export interface PrefSplitProblem {
   code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per' | 'admits';
-  /** The path of the pref whose `per` it is; `''` for the schema. */
+  /** The path of the pref whose `scopes` it is; `''` for the schema. */
   at: string;
   /** The selector the problem is with, where it is with one. */
   path?: string;
@@ -23,7 +24,7 @@ const refusal = (leaf: PrefLeaf | undefined): [PrefSplitProblem['code'], string]
   const selector = leaf as PrefEnum;
   if (selector.encoding) return ['encoded', 'names an enum with an encoding, whose stored value is not its option'];
   if (selector.clearable) return ['clearable', 'names a clearable enum, which may hold none of its options'];
-  if (tbdPerAxes(selector)?.length) return ['split', 'names a leaf that may itself be split'];
+  if (scopeSelectorsOf(selector)?.length) return ['split', 'names a leaf that may itself be split'];
   return undefined;
 };
 
@@ -31,7 +32,7 @@ const refusal = (leaf: PrefLeaf | undefined): [PrefSplitProblem['code'], string]
 export function prefSelectors(leaves: ReadonlyMap<string, PrefLeaf>): Map<string, readonly string[]> {
   const out = new Map<string, readonly string[]>();
   for (const leaf of leaves.values()) {
-    for (const path of tbdPerAxes(leaf) ?? []) {
+    for (const path of scopeSelectorsOf(leaf) ?? []) {
       const selector = leaves.get(path);
       if (out.has(path) || refusal(selector)) continue;
       out.set(path, (selector as PrefEnum).options.map((option) => option.value));
@@ -48,13 +49,12 @@ export function admittedSelectors(schema: PrefGroup): Set<string> {
 const notAdmitted = (path: string, admitted: ReadonlySet<string>): string =>
   `selector "${path}" is not admitted by this schema (${admitted.size ? `it admits: ${[...admitted].join(', ')}` : 'it admits none'})`;
 
-/** What is wrong with the `per` of the leaf at `at`. */
+/** What is wrong with the `scopes` of the leaf at `at`. */
 function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, admitted: ReadonlySet<string>): PrefSplitProblem[] {
   const out: PrefSplitProblem[] = [];
-  const closed = tbdPerClosed(leaf) ?? {};
-  leaf.per!.forEach((per, i) => {
+  leaf.scopes!.forEach((per, i) => {
     const path = per.selector;
-    if (leaf.per!.findIndex((other) => other.selector === path) !== i) {
+    if (leaf.scopes!.findIndex((other) => other.selector === path) !== i) {
       out.push({ code: 'twice', at, path, problem: `"${path}" is listed twice` });
       return;
     }
@@ -68,14 +68,15 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
       return;
     }
     const options = new Set((leaves.get(path) as PrefEnum).options.map((option) => option.value));
-    for (const option of closed[path]?.options ?? []) {
+    const overrides = prefOverridesOf(leaf, path);
+    for (const option of overrides ? overrideOptions(overrides) : []) {
       if (!options.has(option)) out.push({ code: 'per', at, path, problem: `its closed list names "${option}", which is no option of "${path}"` });
     }
   });
   return out;
 }
 
-/** Everything wrong with the `per` lists of `schema`'s prefs and with what it admits, in schema order. */
+/** Everything wrong with the `scopes` lists of `schema`'s prefs and with what it admits, in schema order. */
 export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
   const leaves = prefLeaves(schema);
   const admitted = admittedSelectors(schema);
@@ -84,8 +85,8 @@ export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
     if (leaves.has(path)) out.push({ code: 'admits', at: '', path, problem: `the schema admits "${path}", which is a pref` });
   }
   for (const [at, leaf] of leaves) {
-    const axes = tbdPerAxes(leaf);
-    for (const path of locusSelectors(leaf.defaultLocus)) {
+    const axes = scopeSelectorsOf(leaf);
+    for (const path of scopeSelectors(leaf.defaultLocus)) {
       if (axes?.includes(path)) continue;
       out.push({ code: 'default', at, path, problem: `its defaultLocus is split by "${path}", which its per does not name` });
     }

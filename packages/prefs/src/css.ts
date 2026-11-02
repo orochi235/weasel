@@ -3,8 +3,8 @@
 
 import type { PrefGroup } from './groups';
 import { prefHoldsValue, prefLeaves, prefValueAtPath } from './helpers';
-import { isPrefLocus, locusMember, type PrefLocus, type PrefSelection, type TbdClosedLists } from './locus';
-import { tbdPerClosed } from './per';
+import { isPrefScope, scopeOptionValue, type PrefScope, type OverridesOf, type PrefSelection } from './scope';
+import { overridesOfPref } from './scopeSpec';
 import type { PrefEnum, PrefLeaf, PrefNumber } from './schema';
 import { prefSelectors } from './splitCheck';
 import { resolvePrefUnit } from './unit';
@@ -27,7 +27,7 @@ export interface PrefsCssOptions {
 export interface PrefsCssSource {
   schema: PrefGroup;
   values(read?: { at?: PrefSelection }): Record<string, unknown>;
-  locus(path: string): PrefLocus | undefined;
+  scope(path: string): PrefScope | undefined;
   get(path: string): unknown;
 }
 
@@ -72,10 +72,10 @@ function cssValue(leaf: PrefLeaf, value: unknown): string | null {
 type Told = { under: [selector: string, option: string][]; value: unknown };
 
 /** Every choice of options a held value tells apart, outermost selector first. */
-function toldApart(held: unknown, optionsOf: (selector: string) => readonly string[], absent: unknown, own?: TbdClosedLists): Told[] {
+function toldApart(held: unknown, optionsOf: (selector: string) => readonly string[], absent: unknown, overridesOf?: OverridesOf): Told[] {
   const out: Told[] = [];
   const walk = (value: unknown, under: Told['under']): void => {
-    if (!isPrefLocus(value)) {
+    if (!isPrefScope(value)) {
       // The root block already holds what no choice of options tells apart.
       if (under.length > 0) out.push({ under, value });
       return;
@@ -84,11 +84,11 @@ function toldApart(held: unknown, optionsOf: (selector: string) => readonly stri
     // An admitted selector has no attribute to match, and a scope holding no value of an option's own tells none apart:
     // what no option is named for stands for all of them.
     if (options.length === 0 || Object.keys(value.$in).length === 0) {
-      walk(locusMember(value, undefined, absent, own), under);
+      walk(scopeOptionValue(value, undefined, absent, overridesOf), under);
       return;
     }
     for (const option of options) {
-      walk(locusMember(value, option, absent, own), [...under, [value.$by, option]]);
+      walk(scopeOptionValue(value, option, absent, overridesOf), [...under, [value.$by, option]]);
     }
   };
   walk(held, []);
@@ -136,9 +136,9 @@ export function prefsCss(store: PrefsCssSource, options: PrefsCssOptions = {}): 
     declare([], path, leaf, prefValueAtPath(base, path));
     const own = selectors.get(path);
     if (own) for (const option of own) declare([[path, option]], path, leaf, option);
-    const held = store.locus(path);
+    const held = store.scope(path);
     if (!held) continue;
-    for (const { under, value } of toldApart(held, (selector) => selectors.get(selector) ?? [], leaf.default, tbdPerClosed(leaf))) {
+    for (const { under, value } of toldApart(held, (selector) => selectors.get(selector) ?? [], leaf.default, overridesOfPref(leaf))) {
       declare(under, path, leaf, value);
     }
   }

@@ -4,7 +4,7 @@ import type { PrefBlend } from './blend';
 import { checkPrefConditions } from './conditionCheck';
 import { recordValue } from './stamp';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
-import { isPrefLocus, selectionWeights, type PrefLocus, type PrefSelection, type PrefWeights } from './locus';
+import { isPrefScope, selectionWeights, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
 import { checkPrefSplits, prefSelectors, admittedSelectors } from './splitCheck';
 import type { PrefPath, PrefValueAt } from './paths';
@@ -29,24 +29,24 @@ export interface PrefsStore<S extends PrefGroup> {
    * they name, and under `weights` it is the blend its kind makes of the
    * members that weigh something. A selector `weights` leaves out keeps its
    * own value, or with `at` the option given there. An admitted selector, a path a
-   * `per` entry names that is no leaf, has an option only where `at` or
+   * `scopes` entry names that is no leaf, has an option only where `at` or
    * `weights` gives it one, and reads its shared member elsewhere.
    */
   get<P extends PrefPath<S>>(path: P, read?: { weights?: PrefWeights; at?: PrefSelection }): PrefValueAt<S, P>;
   /** On a split leaf, writes the member the selectors' own values name, or
    *  with `at` the one named with each selector there set to the option given.
-   *  A {@link PrefLocus} given as the value replaces the whole of what is held. */
-  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefLocus, write?: { at?: PrefSelection }): void;
+   *  A {@link PrefScope} given as the value replaces the whole of what is held. */
+  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefScope, write?: { at?: PrefSelection }): void;
   /** Hold the pref's value once per option of the selector at `by`, one of
-   *  its `per` selectors, each option starting as the value it had. */
+   *  its `scopes` selectors, each option starting as the value it had. */
   split(path: PrefPath<S>, by: string): void;
   /** Stop splitting the leaf's value by the selector at `by`, keeping the
    *  member that selector's own value names. */
   join(path: PrefPath<S>, by: string): void;
   /** What the leaf holds where its value is split, each member repaired. */
-  locus(path: PrefPath<S>): PrefLocus | undefined;
+  scope(path: PrefPath<S>): PrefScope | undefined;
   /** What every split leaf holds, by its path. The same map until something changes. */
-  loci(): ReadonlyMap<string, PrefLocus>;
+  scopes(): ReadonlyMap<string, PrefScope>;
   /** Unset every leaf at or under `path`; with no path, all. */
   reset(path?: string): void;
   /** Whether the leaf has a value of its own rather than following its default. */
@@ -169,11 +169,11 @@ export function createPrefsStore<S extends PrefGroup>(
       const weights = weightsUnder(source.selectors, selection, read.weights ?? {}, source.admitted);
       return (leaf ? resolveHeld(source, leaf, now.held.get(path), weights) : undefined) as never;
     },
-    locus: (path) => {
+    scope: (path) => {
       const held = current().held.get(path);
-      return isPrefLocus(held) ? held : undefined;
+      return isPrefScope(held) ? held : undefined;
     },
-    loci: () => current().loci,
+    scopes: () => current().scopes,
     reset: (path) => {
       warnIfClosed(path);
       for (const p of leaves.keys()) {

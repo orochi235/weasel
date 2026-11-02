@@ -23,7 +23,7 @@ describe('themePrefsSchema', () => {
     expect(LEAVES.has('status.danger')).toBe(true);
     expect(LEAVES.get('swatch.swatch-size')).toMatchObject({ kind: 'number', default: 28 });
     for (const [path, leaf] of LEAVES) {
-      if (!path.startsWith('axis.')) expect(leaf.per, path).toEqual([{ selector: 'axis.mode' }, { selector: 'axis.density' }]);
+      if (!path.startsWith('axis.')) expect(leaf.scopes, path).toEqual([{ selector: 'axis.mode' }, { selector: 'axis.density' }]);
     }
     expect(checkPrefSplits(SCHEMA)).toEqual([]);
   });
@@ -118,13 +118,13 @@ describe('themePrefsValues', () => {
     expect(store.values().accent).not.toBe(values.accent);
   });
 
-  it('keeps the loci of a set leaf, and reads an unset one split as the pinned theme has it', () => {
+  it('keeps the scopes of a set leaf, and reads an unset one split as the pinned theme has it', () => {
     const store = open(SCHEMA);
     store.join('gray.gray-50', 'axis.mode');
-    const { loci } = themePrefsValues(store, weaselTheme);
-    expect(loci.get('gray.gray-50')?.$by).toBe('axis.density');
-    expect(loci.get('surface.surface')).toEqual(store.locus('surface.surface'));
-    expect(loci.has('gray.gray-100')).toBe(false);
+    const { scopes } = themePrefsValues(store, weaselTheme);
+    expect(scopes.get('gray.gray-50')?.$by).toBe('axis.density');
+    expect(scopes.get('surface.surface')).toEqual(store.scope('surface.surface'));
+    expect(scopes.has('gray.gray-100')).toBe(false);
   });
 });
 

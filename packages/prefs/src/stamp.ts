@@ -1,4 +1,4 @@
-import { upgradeLocus } from './locus';
+import { upgradeScope } from './scope';
 
 /**
  * How a pref is stored: its value, stamped with the schema version it was
@@ -38,5 +38,5 @@ export function readRecord(record: unknown, unstamped: number): { at: number; va
  *  stored in an older shape read in the current one: the value every read and
  *  every write of a store starts from, so a write stores the current shape. */
 export function recordValue(record: unknown): unknown {
-  return upgradeLocus(isStampedRecord(record) ? record.value : record);
+  return upgradeScope(isStampedRecord(record) ? record.value : record);
 }

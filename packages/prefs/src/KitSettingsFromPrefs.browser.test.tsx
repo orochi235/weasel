@@ -15,7 +15,7 @@ import { KitSettingsFromPrefs } from './react';
 const SCHEMA = pref.group('Prefs', {
   kit: pref.group('Kit', {
     look: pref.group('Look', { mode: pref.enum('Mode', 'dark', ['dark', 'light']) }),
-    tree: pref.group('Tree', { typeaheadMs: pref.number('Typeahead', 500, { per: [{ selector: 'kit.look.mode' }] }) }),
+    tree: pref.group('Tree', { typeaheadMs: pref.number('Typeahead', 500, { scopes: [{ selector: 'kit.look.mode' }] }) }),
   }),
 });
 

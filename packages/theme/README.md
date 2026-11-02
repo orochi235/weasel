@@ -120,7 +120,7 @@ by, so a store nothing was written to reads the theme as it is.
 a value of its own is a pin, so a token left alone keeps its rule: pin
 `accent-base` and `--wzl-accent` still follows it. A store reads such an alias
 from the base theme, where it has not moved; `themePrefsValues(store, base)`
-gives the values and loci for a form with each unset leaf read from the pinned
+gives the values and scopes for a form with each unset leaf read from the pinned
 theme.
 
 ## Desktop themes

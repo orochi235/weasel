@@ -8,7 +8,7 @@ import { createPrefsStore } from './store';
 const SCHEMA = pref.group('Prefs', {
   look: pref.group('Look', {
     mode: pref.enum('Mode', 'dark', ['dark', 'light']),
-    gap: pref.number('Gap', 4, { min: 0, max: 16, per: [{ selector: 'look.mode' }] }),
+    gap: pref.number('Gap', 4, { min: 0, max: 16, scopes: [{ selector: 'look.mode' }] }),
   }, { as: 'panel' }),
   grid: pref.boolean('Grid', true, { description: 'Draw the grid.' }),
   title: pref.string('Title', 'Untitled'),
@@ -28,7 +28,7 @@ describe('pref builders', () => {
               kind: 'enum', name: 'Mode', description: '', default: 'dark',
               options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }],
             },
-            gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 16, per: [{ selector: 'look.mode' }] },
+            gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 16, scopes: [{ selector: 'look.mode' }] },
           },
         },
         grid: { kind: 'boolean', name: 'Grid', description: 'Draw the grid.', default: true },

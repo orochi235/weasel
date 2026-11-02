@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 
-describe('.per', () => {
+describe('.scopes', () => {
   it('lands on the resolved leaf as one entry per call, outermost first', () => {
     const r = resolveConfigSchema(f.schema({
       mode: f.enum('dark', ['dark', 'light', 'types']),
       limit: f.number(1.1).per('mode', ['types']).per('layout', { explorer: 0.3 }).per('document'),
     }), []);
-    expect((r.group.children.limit as PrefLeaf).per).toEqual([
+    expect((r.group.children.limit as PrefLeaf).scopes).toEqual([
       { selector: 'mode', overrides: ['types'] },
       { selector: 'layout', overrides: { explorer: 0.3 } },
       { selector: 'document' },
@@ -19,12 +19,12 @@ describe('.per', () => {
   it('leaves the node it chains from as it was', () => {
     const base = f.number(1);
     base.per('mode');
-    expect(base.annotations.per).toBeUndefined();
+    expect(base.annotations.scopes).toBeUndefined();
   });
 });
 
 describe('.admits', () => {
-  it('lands on the resolved root as admits, so a .per naming it is no schema problem', () => {
+  it('lands on the resolved root as admits, so a .scopes naming it is no schema problem', () => {
     const schema = f.schema({ width: f.number(1).per('document') }).admits('document').admits('layout');
     const r = resolveConfigSchema(schema, []);
     expect(r.group.admits).toEqual(['document', 'layout']);

@@ -1,7 +1,7 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from './groups';
-import { TBD_REST_KEY } from './locus';
+import { PREF_ELSE } from './scope';
 import { checkPrefSplits } from './splitCheck';
 import { recordValue } from './stamp';
 import { createPrefsStore } from './store';
@@ -16,13 +16,13 @@ const SCHEMA = {
     },
     limit: {
       kind: 'number', name: 'Limit', description: '', default: 300000,
-      per: [{ selector: 'mode', overrides: { types: 0 } }],
+      scopes: [{ selector: 'mode', overrides: { types: 0 } }],
     },
-    bare: { kind: 'number', name: 'Bare', description: '', default: 8, per: [{ selector: 'mode', overrides: ['types'] }] },
-    width: { kind: 'number', name: 'Width', description: '', default: 1, per: [{ selector: 'document' }] },
+    bare: { kind: 'number', name: 'Bare', description: '', default: 8, scopes: [{ selector: 'mode', overrides: ['types'] }] },
+    width: { kind: 'number', name: 'Width', description: '', default: 1, scopes: [{ selector: 'document' }] },
     ratio: {
       kind: 'number', name: 'Ratio', description: '', default: 1.1,
-      per: [{ selector: 'mode', overrides: { types: 2 } }, { selector: 'layout', overrides: { explorer: 0.3 } }],
+      scopes: [{ selector: 'mode', overrides: { types: 2 } }, { selector: 'layout', overrides: { explorer: 0.3 } }],
     },
   },
 } satisfies PrefGroup;
@@ -52,10 +52,10 @@ describe('a closed selector in a store', () => {
   });
 
   it('ignores a stored member of an option no longer named, and drops it on the next write', () => {
-    const { cache, store } = make([['limit', { $by: 'mode', $in: { dark: 1 }, [TBD_REST_KEY]: 2 }]]);
+    const { cache, store } = make([['limit', { $by: 'mode', $in: { dark: 1 }, [PREF_ELSE]: 2 }]]);
     expect(store.get('limit')).toBe(2);
     store.set('limit', 5, { at: { mode: 'types' } });
-    expect(recordValue(cache.get('limit'))).toEqual({ $by: 'mode', $in: { types: 5 }, [TBD_REST_KEY]: 2 });
+    expect(recordValue(cache.get('limit'))).toEqual({ $by: 'mode', $in: { types: 5 }, [PREF_ELSE]: 2 });
   });
 
   it('writes one shared value for every option it does not list, and leaves a listed one alone', () => {
@@ -63,7 +63,7 @@ describe('a closed selector in a store', () => {
     store.set('limit', 5);
     expect(store.get('limit', { at: { mode: 'light' } })).toBe(5);
     expect(store.get('limit', { at: { mode: 'types' } })).toBe(0);
-    expect(recordValue(cache.get('limit'))).toEqual({ $by: 'mode', $in: {}, [TBD_REST_KEY]: 5 });
+    expect(recordValue(cache.get('limit'))).toEqual({ $by: 'mode', $in: {}, [PREF_ELSE]: 5 });
   });
 });
 
@@ -88,7 +88,7 @@ describe('an open selector that is no leaf', () => {
 
   it('keeps every option stored for it, whatever it is called', () => {
     const { store } = make([['width', { $by: 'document', $in: { 'any/repo': 4 } }]]);
-    expect(store.locus('width')).toEqual({ $by: 'document', $in: { 'any/repo': 4 } });
+    expect(store.scope('width')).toEqual({ $by: 'document', $in: { 'any/repo': 4 } });
     expect(store.get('width', { weights: { document: { 'any/repo': 1 } } })).toBe(4);
   });
 });
@@ -101,7 +101,7 @@ describe('nested entries in a store', () => {
     expect(store.get('ratio', { at: { layout: 'grid' } })).toBe(1.1);
     store.set('ratio', 0.5, { at: { layout: 'explorer' } });
     expect(recordValue(cache.get('ratio'))).toEqual({
-      $by: 'mode', $in: {}, [TBD_REST_KEY]: { $by: 'layout', $in: { explorer: 0.5 } },
+      $by: 'mode', $in: {}, [PREF_ELSE]: { $by: 'layout', $in: { explorer: 0.5 } },
     });
   });
 });
@@ -110,7 +110,7 @@ describe('checking per', () => {
   it('names a selector the schema does not admit, listing what it does', () => {
     const schema = {
       name: 'Typo', admits: ['document', 'layout'],
-      children: { width: { kind: 'number', name: 'Width', description: '', default: 1, per: [{ selector: 'docment' }] } },
+      children: { width: { kind: 'number', name: 'Width', description: '', default: 1, scopes: [{ selector: 'docment' }] } },
     } satisfies PrefGroup;
     expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual(['selector "docment" is not admitted by this schema (it admits: document, layout)']);
   });
@@ -130,7 +130,7 @@ describe('checking per', () => {
         mode: { kind: 'enum', name: 'Mode', description: '', default: 'a', options: [{ value: 'a', label: 'A' }] },
         gap: {
           kind: 'number', name: 'Gap', description: '', default: 1,
-          per: [{ selector: 'mode', overrides: ['z'] }, { selector: 'doc' }, { selector: 'doc' }],
+          scopes: [{ selector: 'mode', overrides: ['z'] }, { selector: 'doc' }, { selector: 'doc' }],
         },
       },
     } satisfies PrefGroup;

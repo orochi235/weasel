@@ -4,11 +4,11 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
-import { dropUnlisted, isPrefLocus, joinLocus, mapLocusMembers, repairLocus, splitLocus, writeMember, type PrefSelection } from './locus';
+import { dropUnlisted, isPrefScope, joinScope, mapScopeValues, repairScope, splitScope, writeMember, type PrefSelection } from './scope';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
 import { optionsOf, selectionAt } from './snapshot';
-import { tbdPerAxes, tbdPerDefault, tbdPerClosed } from './per';
+import { scopeSelectorsOf, prefScopedDefault, overridesOfPref } from './scopeSpec';
 import { recordValue, stampRecord } from './stamp';
 import { prefVariantOf, type PrefUnion } from './union';
 
@@ -58,15 +58,15 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
   join: (path: string, by: string) => void;
 } {
   /** The leaf's split default as stored, where it has one it can hold. */
-  const unsetLocus = (leaf: PrefLeaf): unknown => {
-    const locus = tbdPerDefault(leaf);
-    const axes = tbdPerAxes(leaf);
-    if (locus === undefined || !axes?.length) return undefined;
-    return repairLocus(locus, axes, (by) => optionsOf({ selectors, admitted }, by), (member) => encodeInfinity(leaf, member), tbdPerClosed(leaf));
+  const unsetScope = (leaf: PrefLeaf): unknown => {
+    const scope = prefScopedDefault(leaf);
+    const axes = scopeSelectorsOf(leaf);
+    if (scope === undefined || !axes?.length) return undefined;
+    return repairScope(scope, axes, (by) => optionsOf({ selectors, admitted }, by), (member) => encodeInfinity(leaf, member), overridesOfPref(leaf));
   };
   /** What the leaf holds in storage, unrepaired; its default, as stored, where it holds nothing. */
   const rawAt = (path: string, leaf: PrefLeaf): unknown =>
-    (cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf) ?? encodeInfinity(leaf, leaf.default));
+    (cache.has(path) ? recordValue(cache.get(path)) : unsetScope(leaf) ?? encodeInfinity(leaf, leaf.default));
   const store = (path: string, stored: unknown): void => {
     // Unset is stored as nothing, which a stamp would turn into something.
     cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
@@ -76,7 +76,7 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
     warnIfClosed(path);
     const leaf = leaves.get(path);
     const options = selectors.get(by);
-    if (leaf && tbdPerAxes(leaf)?.includes(by) && options) return { leaf, options };
+    if (leaf && scopeSelectorsOf(leaf)?.includes(by) && options) return { leaf, options };
     console.warn(`[prefs] "${path}" cannot be split by "${by}"; ignoring`);
     return undefined;
   };
@@ -88,29 +88,29 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
       console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
       return;
     }
-    const split = !!tbdPerAxes(leaf)?.length;
-    if (split && isPrefLocus(value)) {
-      store(path, dropUnlisted(mapLocusMembers(value, (member) => encodeInfinity(leaf, member)), tbdPerClosed(leaf)));
+    const split = !!scopeSelectorsOf(leaf)?.length;
+    if (split && isPrefScope(value)) {
+      store(path, dropUnlisted(mapScopeValues(value, (member) => encodeInfinity(leaf, member)), overridesOfPref(leaf)));
       return;
     }
     const stored = encodeInfinity(leaf, value);
-    const had = cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf);
-    const intoMember = stored !== undefined && split && isPrefLocus(had);
+    const had = cache.has(path) ? recordValue(cache.get(path)) : unsetScope(leaf);
+    const intoMember = stored !== undefined && split && isPrefScope(had);
     const under = write?.at ? selectionAt(selectors, selection(), write.at, admitted) : selection();
-    store(path, intoMember ? writeMember(dropUnlisted(had, tbdPerClosed(leaf)), under, stored, tbdPerClosed(leaf)) : stored);
+    store(path, intoMember ? writeMember(dropUnlisted(had, overridesOfPref(leaf)), under, stored, overridesOfPref(leaf)) : stored);
   };
   const split = (path: string, by: string): void => {
     const found = splitOf(path, by);
     if (!found) return;
     const had = rawAt(path, found.leaf);
-    const next = splitLocus(had, by, found.options, tbdPerAxes(found.leaf)!, tbdPerClosed(found.leaf));
+    const next = splitScope(had, by, found.options, scopeSelectorsOf(found.leaf)!, overridesOfPref(found.leaf));
     if (next !== had) store(path, next);
   };
   const join = (path: string, by: string): void => {
     const found = splitOf(path, by);
     if (!found) return;
     const had = rawAt(path, found.leaf);
-    const next = joinLocus(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default), tbdPerClosed(found.leaf));
+    const next = joinScope(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default), overridesOfPref(found.leaf));
     if (next !== had) store(path, next);
   };
   return { set, split, join };

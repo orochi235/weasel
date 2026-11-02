@@ -1,7 +1,7 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from './groups';
-import { TBD_REST_KEY } from './locus';
+import { PREF_ELSE } from './scope';
 import { recordValue } from './stamp';
 import { createPrefsStore, type PrefChange } from './store';
 
@@ -24,10 +24,10 @@ const SCHEMA = {
         },
       },
     },
-    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, per: [{ selector: MODE }, { selector: DENSITY }] },
-    surface: { kind: 'color', name: 'Surface', description: '', default: '#000000', per: [{ selector: MODE }] },
+    gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, scopes: [{ selector: MODE }, { selector: DENSITY }] },
+    surface: { kind: 'color', name: 'Surface', description: '', default: '#000000', scopes: [{ selector: MODE }] },
     align: {
-      kind: 'enum', name: 'Align', description: '', default: 'tight', per: [{ selector: MODE }],
+      kind: 'enum', name: 'Align', description: '', default: 'tight', scopes: [{ selector: MODE }],
       options: [{ value: 'tight', label: 'Tight' }, { value: 'loose', label: 'Loose' }],
     },
     name: { kind: 'string', name: 'Name', description: '', default: 'untitled' },
@@ -66,19 +66,19 @@ describe('a split value in a store', () => {
 
   it('repairs each member against the leaf, drops a key that is no option, and reads a missing one as the default', () => {
     const { store } = make([['gap', { $by: MODE, $in: { dark: 999, sepia: 3 } }]]);
-    expect(store.locus('gap')).toEqual({ $by: MODE, $in: { dark: 100 } });
+    expect(store.scope('gap')).toEqual({ $by: MODE, $in: { dark: 100 } });
     expect(store.get('gap')).toBe(100);
     store.set(MODE, 'light');
     expect(store.get('gap')).toBe(4);
   });
 
-  it('reads the default for a locus by a selector the leaf may not be split by', () => {
+  it('reads the default for a scope by a selector the leaf may not be split by', () => {
     const { store } = make([['surface', byDensity('#111111', '#222222')]]);
     expect(store.get('surface')).toBe('#000000');
-    expect(store.locus('surface')).toBeUndefined();
+    expect(store.scope('surface')).toBeUndefined();
   });
 
-  it('reads a locus-shaped record as an ordinary bad value on a leaf with no per', () => {
+  it('reads a scope-shaped record as an ordinary bad value on a leaf with no per', () => {
     const { store } = make([['name', byMode('a', 'b')]]);
     expect(store.get('name')).toBe('untitled');
   });
@@ -93,7 +93,7 @@ describe('a split value in a store', () => {
     expect(recordValue(cache.get('gap'))).toEqual(byMode(byDensity(4, 10), 7));
   });
 
-  it('replaces the whole value when given a locus', () => {
+  it('replaces the whole value when given a scope', () => {
     const { cache, store } = make([['gap', byMode(4, 8)]]);
     store.set('gap', byMode(1, 2));
     expect(recordValue(cache.get('gap'))).toEqual(byMode(1, 2));
@@ -103,7 +103,7 @@ describe('a split value in a store', () => {
     const { store } = make([['gap', byMode(4, 8)]]);
     store.reset('gap');
     expect(store.isSet('gap')).toBe(false);
-    expect(store.locus('gap')).toEqual({ $by: MODE, $in: {}, [TBD_REST_KEY]: { $by: DENSITY, $in: {} } });
+    expect(store.scope('gap')).toEqual({ $by: MODE, $in: {}, [PREF_ELSE]: { $by: DENSITY, $in: {} } });
   });
 });
 
@@ -124,7 +124,7 @@ describe('a write at a stated selection', () => {
     expect(recordValue(cache.get('gap'))).toEqual(byMode(byDensity(4, 12), 6));
   });
 
-  it('writes a member the locus held nothing for', () => {
+  it('writes a member the scope held nothing for', () => {
     const { cache, store } = make([['gap', { $by: MODE, $in: { dark: 4 } }]]);
     store.set('gap', 9, { at: { [MODE]: 'light' } });
     expect(recordValue(cache.get('gap'))).toEqual(byMode(4, 9));
@@ -137,20 +137,20 @@ describe('a write at a stated selection', () => {
   });
 });
 
-describe('every locus at once', () => {
+describe('every scope at once', () => {
   it('maps each split path to what it holds, and no other', () => {
     const { store } = make([['gap', byMode(4, 8)], ['surface', '#111111']]);
-    expect([...store.loci()]).toEqual([['gap', byMode(4, 8)], ['align', { $by: MODE, $in: {} }]]);
-    expect(store.loci().get('gap')).toBe(store.locus('gap'));
+    expect([...store.scopes()]).toEqual([['gap', byMode(4, 8)], ['align', { $by: MODE, $in: {} }]]);
+    expect(store.scopes().get('gap')).toBe(store.scope('gap'));
   });
 
   it('is the same map until something changes', () => {
     const { store } = make([['gap', byMode(4, 8)]]);
-    const before = store.loci();
-    expect(store.loci()).toBe(before);
+    const before = store.scopes();
+    expect(store.scopes()).toBe(before);
     store.set('name', 'doc');
-    expect(store.loci()).not.toBe(before);
-    expect(store.loci().get('gap')).toBe(before.get('gap'));
+    expect(store.scopes()).not.toBe(before);
+    expect(store.scopes().get('gap')).toBe(before.get('gap'));
   });
 });
 
@@ -179,7 +179,7 @@ describe('split and join', () => {
     const { cache, store } = make([['gap', byMode(4, 8)], [MODE, 'light']]);
     store.join('gap', MODE);
     expect(recordValue(cache.get('gap'))).toBe(8);
-    expect(store.locus('gap')).toBeUndefined();
+    expect(store.scope('gap')).toBeUndefined();
   });
 
   it('ignores a split by a selector the leaf does not list, and one of a leaf that lists none', () => {
@@ -247,7 +247,7 @@ describe('a schema whose per names something that cannot be split by', () => {
       name: 'Bad',
       children: {
         on: { kind: 'boolean', name: 'On', description: '', default: true },
-        gap: { kind: 'number', name: 'Gap', description: '', default: 4, per: [{ selector: 'on' }, { selector: 'nowhere' }] },
+        gap: { kind: 'number', name: 'Gap', description: '', default: 4, scopes: [{ selector: 'on' }, { selector: 'nowhere' }] },
       },
     } satisfies PrefGroup;
     const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['gap', { $by: 'on', $in: { true: 1 } }]] });
@@ -265,7 +265,7 @@ describe('a split value stored as { $by, $of }, before its members were keyed $i
   it('reads as $in, and is written back as $in', () => {
     const old = { $at: 0, value: { $by: MODE, $of: { dark: { $by: DENSITY, $of: { compact: 4, roomy: 5 } }, light: 8 } } };
     const { cache, store } = make([['gap', old]]);
-    expect(store.locus('gap')).toEqual(byMode(byDensity(4, 5), 8));
+    expect(store.scope('gap')).toEqual(byMode(byDensity(4, 5), 8));
     expect(store.get('gap')).toBe(4);
     store.set('gap', 6, { at: { [MODE]: 'light' } });
     expect(cache.get('gap')).toEqual({ $at: 0, value: byMode(byDensity(4, 5), 6) });

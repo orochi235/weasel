@@ -1,4 +1,4 @@
-import type { PrefWeights } from './locus';
+import type { PrefWeights } from './scope';
 
 /** How a {@link PrefWeights} maps to numbers: the shape `@weasel-js/animator`'s `createTarget` takes as `axes`. */
 export interface PrefWeightAxes {

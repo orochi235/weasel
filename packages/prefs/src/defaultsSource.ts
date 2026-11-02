@@ -1,10 +1,10 @@
 import type { PrefsCssSource } from './css';
 import type { PrefGroup } from './groups';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves } from './helpers';
-import { isPrefLocus, selectionWeights, type PrefSelection } from './locus';
+import { isPrefScope, selectionWeights, type PrefSelection } from './scope';
 import { readStored, resolveHeld, selectionAt } from './snapshot';
 import { prefSelectors, admittedSelectors } from './splitCheck';
-import { tbdPerDefault } from './per';
+import { prefScopedDefault } from './scopeSpec';
 
 /**
  * A schema's defaults read the way a store at defaults reads them, a split
@@ -16,8 +16,8 @@ export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
   const selectors = prefSelectors(leaves);
   const admitted = admittedSelectors(schema);
   const held = new Map([...leaves].map(([path, leaf]) => {
-    const locus = tbdPerDefault(leaf);
-    return [path, locus === undefined ? leaf.default : readStored({ selectors, admitted }, leaf, locus)];
+    const scope = prefScopedDefault(leaf);
+    return [path, scope === undefined ? leaf.default : readStored({ selectors, admitted }, leaf, scope)];
   }));
   const own: PrefSelection = Object.fromEntries([...selectors.keys()].map((path) => [path, held.get(path) as string]));
 
@@ -35,9 +35,9 @@ export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
       for (const path of leaves.keys()) assignPrefValueAtPath(tree, path, read(path, selection));
       return tree;
     },
-    locus: (path) => {
+    scope: (path) => {
       const value = held.get(path);
-      return isPrefLocus(value) ? value : undefined;
+      return isPrefScope(value) ? value : undefined;
     },
     get: (path) => read(path, own),
   };
