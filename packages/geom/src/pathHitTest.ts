@@ -10,11 +10,11 @@
  * `fillsOpenSubpaths`.
  */
 
-import { DEFAULT_FLATTEN_TOLERANCE } from './flatten';
 import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
 import type { Rect } from './box';
 import type { Path } from './path';
-import { closedSubpaths, flatSubpaths, regionSubpaths } from './pathSubpaths';
+import { closedSubpaths, regionSubpaths } from './pathSubpaths';
+import { someSegment, someSegmentInSpan, type SegmentVisit } from './outlineSegments';
 import type { Affine } from './affine';
 import type { Point } from './paths/cubicMath';
 import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
@@ -43,6 +43,10 @@ export interface StrokeHitTestOptions {
    *  screen distance, and under a non-uniform or rotated-then-squished
    *  transform no world distance equals it. */
   slop?: { px: number; transform: Affine };
+  /** Only the stretch of the outline between these pen-order lengths, world
+   *  units, counts: subpaths in authored order, a closed one's closing edge
+   *  last. A visible window of a trimmed stroke. */
+  span?: { from: number; to: number };
 }
 
 // ─── Point vs path ──────────────────────────────────────────────────────────
@@ -96,40 +100,21 @@ export function strokeHitTest(
     // A view collapsed to a point shows nothing to hit, and a pixel there is no world length.
     if (st.s1 === 0) return false;
     if (isSimilarity(st)) {
-      return strokeHitTest(path, x, y, threshold + slop.px / st.s1, { tolerance: opts.tolerance });
+      return strokeHitTest(path, x, y, threshold + slop.px / st.s1, { tolerance: opts.tolerance, span: opts.span });
     }
     const sx = a * x + c * y, sy = b * x + d * y;
-    return someSegment(path, opts.tolerance, (ax, ay, bx, by) =>
+    return walk(path, opts, (ax, ay, bx, by) =>
       capsuleWithinPx(sx, sy, ax, ay, bx, by, threshold, slop.px, m, st));
   }
   const t2 = threshold * threshold;
-  return someSegment(path, opts.tolerance, (ax, ay, bx, by) =>
+  return walk(path, opts, (ax, ay, bx, by) =>
     pointSegmentDist2(x, y, ax, ay, bx, by) <= t2);
 }
 
-/** Does `visit` answer true for any outline segment — every edge of a rect,
- *  closing edges of closed subpaths included? */
-function someSegment(
-  path: Path,
-  tolerance: number | undefined,
-  visit: (ax: number, ay: number, bx: number, by: number) => boolean,
-): boolean {
-  if (path.kind === 'rect') {
-    const { x: rx, y: ry, width: w, height: h } = path;
-    return visit(rx, ry, rx + w, ry) || visit(rx + w, ry, rx + w, ry + h)
-      || visit(rx + w, ry + h, rx, ry + h) || visit(rx, ry + h, rx, ry);
-  }
-  const { closed, open } = flatSubpaths(path, tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
-  const run = (sub: readonly number[], wrap: boolean): boolean => {
-    const n = sub.length;
-    const last = wrap ? n : n - 2;
-    for (let i = 0; i < last; i += 2) {
-      const j = (i + 2) % n;
-      if (visit(sub[i], sub[i + 1], sub[j], sub[j + 1])) return true;
-    }
-    return false;
-  };
-  return closed.some((sub) => run(sub, true)) || open.some((sub) => run(sub, false));
+function walk(path: Path, opts: StrokeHitTestOptions, visit: SegmentVisit): boolean {
+  return opts.span
+    ? someSegmentInSpan(path, opts.tolerance, opts.span, visit)
+    : someSegment(path, opts.tolerance, visit);
 }
 
 // ─── Region vs path ─────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { inkReach, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, inkTrim, withAnimatedVertexColors } from './nodePaint';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { outsetPoseBox, strokedPoseBox } from './strokedBounds';
@@ -58,9 +58,11 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   ink: (node, _pose, ctx) => {
     const d = node.data as ShapeData;
+    const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
     return {
       filled: resolveFill(d.fill, ctx?.inherited?.fill) !== null,
-      ...inkReach(resolveStroke(d.stroke, ctx?.inherited?.stroke), ctx?.scale),
+      ...inkReach(stroke, ctx?.scale),
+      ...inkTrim(stroke),
     };
   },
   // Every shape kind is inscribed in the pose box.

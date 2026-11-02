@@ -35,7 +35,7 @@ export {
 } from './flatten';
 export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
 export {
-  closingAnchor, lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable,
+  anchorAtLength, closingAnchor, lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable,
   type LengthRun, type LengthTable,
 } from './along/lengthTable';
 export { pointAtLength } from './along/positions';

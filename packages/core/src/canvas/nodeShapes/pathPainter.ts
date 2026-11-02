@@ -10,7 +10,7 @@ import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER, derivedDrawnBounds } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
-import { inkReach, pathPaintOf, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, inkTrim, pathPaintOf, withAnimatedVertexColors } from './nodePaint';
 import { resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { strokedPoseBox } from './strokedBounds';
@@ -56,7 +56,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   ink: (node, _pose, ctx) => {
     const { fill, stroke } = pathPaintOf(node.data as PathData, ctx?.inherited);
-    return { filled: fill !== null, ...inkReach(stroke ?? null, ctx?.scale) };
+    return { filled: fill !== null, ...inkReach(stroke ?? null, ctx?.scale), ...inkTrim(stroke ?? null) };
   },
   // `pathInPoseFrame` fits the path's own bounds to the pose box.
   bounds: (node, pose, ctx) =>

@@ -91,6 +91,27 @@ export function lengthAtAnchor(t: LengthTable, anchor: number): number {
   return bpLength[lo] + f * (bpLength[hi] - bpLength[lo]);
 }
 
+/** The authored anchor position at pen length `s`: the inverse of
+ *  {@link lengthAtAnchor}. Where a pen lift puts two anchors at one length,
+ *  the later. Clamps to the path. */
+export function anchorAtLength(t: LengthTable, s: number): number {
+  if (Number.isNaN(s)) return NaN;
+  const { bpAnchor, bpLength } = tableInternals(t);
+  const n = bpAnchor.length;
+  if (n === 0) return 0;
+  if (s <= bpLength[0]) return bpAnchor[0];
+  if (s >= bpLength[n - 1]) return bpAnchor[n - 1];
+  let lo = 0;
+  let hi = n - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (bpLength[mid] <= s) lo = mid;
+    else hi = mid;
+  }
+  const f = (s - bpLength[lo]) / (bpLength[hi] - bpLength[lo]);
+  return bpAnchor[lo] + f * (bpAnchor[hi] - bpAnchor[lo]);
+}
+
 /** The pen-order length at the start of subpath `subpath`; a fractional part
  *  goes that share of the way along it by length. Clamps to the path. */
 export function lengthAtSubpath(t: LengthTable, subpath: number): number {

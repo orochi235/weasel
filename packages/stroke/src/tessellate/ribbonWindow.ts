@@ -1,4 +1,4 @@
-import { type LengthTable, type RectPath, lengthAtAnchor } from '@weasel-js/geom';
+import { type LengthTable, type RectPath, anchorAtLength } from '@weasel-js/geom';
 import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { resolveTrim } from '../trim/resolveTrim';
@@ -93,15 +93,6 @@ const NOTHING: StrokeTrim = { start: 1, end: 0 };
 export function authoredRectTrim(rect: RectPath, trim: StrokeTrim): StrokeTrim {
   const table = polylineTable(extractPolylines(rect));
   const span = resolveTrim(table, trim);
-  return span ? { start: { anchor: anchorAt(table, span.from) }, end: { anchor: anchorAt(table, span.to) } } : NOTHING;
+  return span ? { start: { anchor: anchorAtLength(table, span.from) }, end: { anchor: anchorAtLength(table, span.to) } } : NOTHING;
 }
 
-/** The anchor position at pen length `s` of a single-subpath table. */
-function anchorAt(t: LengthTable, s: number): number {
-  for (let k = 0; k < t.segments; k++) {
-    const a = lengthAtAnchor(t, k);
-    const b = lengthAtAnchor(t, k + 1);
-    if (s <= b || k === t.segments - 1) return b > a ? k + Math.min(1, Math.max(0, (s - a) / (b - a))) : k + 1;
-  }
-  return 0;
-}

@@ -1,6 +1,7 @@
 /** The types a node painter is written against; `NodeShape.ts` holds the registry. */
 import type { Path } from '@weasel-js/geom';
 import type { VertexColorChannel } from '@weasel-js/animator';
+import type { StrokeTrim } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
@@ -135,6 +136,9 @@ export interface NodeInk {
   outsetPx?: number;
   /** Reach past `inset`, likewise. */
   insetPx?: number;
+  /** The trim of the stroke drawn along the silhouette, when it has one: only
+   *  that stretch of the outline is grabbable by its stroke. */
+  trim?: StrokeTrim;
 }
 
 /** Per-call context for {@link NodeShapeEntry.silhouette}. */

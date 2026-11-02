@@ -14,7 +14,8 @@ import {
   strokeHitTest,
   type Path
 } from '@weasel-js/geom';
-import { pathThroughPoseFrame } from '@weasel-js/geom';
+import { asPolygonPath, pathThroughPoseFrame, poseFrameOf } from '@weasel-js/geom';
+import { trimSpan } from '@weasel-js/stroke';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
 import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
@@ -235,9 +236,25 @@ export function shapeCoversPoint<TData, TPose>(
   // picks the reach. `tolerance` also makes a filled shape grabbable a few pixels outside
   // its edge.
   const slop = widenSlop(opts.tolerance, (inside ? ink.insetPx : ink.outsetPx) ?? 0, opts.scale);
+  if (ink.trim === undefined) return outlineWithin(sil, x, y, inside ? ink.inset : ink.outset, slop);
+  // A trim is measured on the outline the painter strokes, before the pose frame carries it
+  // to the world. A rect goes through as a polygon: a mirrored rect would come out restarted.
+  const local = poseFrameOf(pose) === null ? sil
+    : findNodeShape(node)?.silhouette?.(node, pose, { derivedPath: opts.derivedPath }) ?? sil;
+  const drawn = local === sil ? sil : pathThroughPoseFrame(asPolygonPath(local), pose);
+  const span = trimSpan(local, ink.trim, drawn);
+  if (span && outlineWithin(drawn, x, y, inside ? ink.inset : ink.outset, slop, span)) return true;
+  // A fill's edge is grabbable by the tolerance alone, all the way round.
+  return ink.filled && outlineWithin(sil, x, y, 0, opts.tolerance);
+}
+
+/** Is (x, y) within `reach` plus `slop` of the outline of `sil`, or of the stretch `span` of it? */
+function outlineWithin(
+  sil: Path, x: number, y: number, reach: number, slop: PickSlop | undefined, span?: { from: number; to: number },
+): boolean {
   const { extra, opts: hit } = slopForStrokeHit(slop);
-  const reach = (inside ? ink.inset : ink.outset) + extra;
-  return (reach > 0 || hasSlop(slop)) && strokeHitTest(sil, x, y, reach, hit);
+  const r = reach + extra;
+  return (r > 0 || hasSlop(slop)) && strokeHitTest(sil, x, y, r, span ? { ...hit, span } : hit);
 }
 
 /** The current painters in evaluation order — `'high'` tier first, then `'normal'`. */

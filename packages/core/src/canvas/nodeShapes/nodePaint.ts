@@ -40,6 +40,12 @@ export function inkReach(
   return { outset: world.outset, inset: world.inset, outsetPx: px.outset, insetPx: px.inset };
 }
 
+/** `stroke`'s trim as {@link NodeInk} carries it, for a painter whose
+ *  silhouette is the outline the stroke is drawn along. */
+export function inkTrim(stroke: Stroke | null): Pick<NodeInk, 'trim'> {
+  return stroke?.trim === undefined ? {} : { trim: stroke.trim };
+}
+
 /** How far `stroke` reaches outside its outline on every side, world units at
  *  `scale`: {@link inkReach}'s outset with its screen part resolved. */
 export function strokeOutset(stroke: Stroke | null, scale: number): number {

@@ -5,7 +5,7 @@ import { resolveCornersWithSources } from '../paths/corners';
 import { pathFromD } from '../paths/pathFromD';
 import type { CornerSpec } from '../paths/cornerSpec';
 import {
-  lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable, type LengthRun,
+  anchorAtLength, lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable, type LengthRun,
 } from './lengthTable';
 import { pointAtLength } from './positions';
 
@@ -131,5 +131,13 @@ describe('lengthTable', () => {
     const t = openL();
     const hand = { dim: t.dim, runs: t.runs, total: t.total, runStart: t.runStart, segments: t.segments };
     expect(() => lengthAtAnchor(hand, 1)).toThrow(/lengthTable/);
+  });
+
+  it('anchorAtLength inverts lengthAtAnchor', () => {
+    const t = lengthTable([anchored([0, 0, 3, 0, 3, 4], false, 0), anchored([10, 0, 10, 2], false, 3)], 2);
+    for (const a of [0, 0.5, 1, 1.25, 3, 3.5, 4]) expect(anchorAtLength(t, lengthAtAnchor(t, a))).toBeCloseTo(a, 12);
+    expect(anchorAtLength(t, -1)).toBe(0);
+    expect(anchorAtLength(t, 99)).toBe(4);
+    expect(anchorAtLength(t, NaN)).toBeNaN();
   });
 });
