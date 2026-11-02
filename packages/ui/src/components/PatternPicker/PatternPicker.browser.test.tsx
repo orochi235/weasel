@@ -33,7 +33,7 @@ test.each([
 ])('the rotation field reads a typed degree sign, Enter pressed %s', async (_, pause) => {
   const seen: PatternFill[] = [];
   function Controlled() {
-    const [value, setValue] = useState(() => seedPattern('hatch', '#123456'));
+    const [value, setValue] = useState<PatternFill>(() => seedPattern('hatch', '#123456'));
     return (
       <PatternPicker
         value={value}
