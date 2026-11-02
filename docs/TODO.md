@@ -650,18 +650,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P2) [agent] The puppet warp's handle layer throws on every frame in the `browser` project.**
-  `PuppetSolverLabDemo.browser.test.tsx` logs `layer "warp-puppet" threw while drawing; it painted nothing
-  this frame. [TypeError: (0 , src_exports.worldToScreen) is not a function or its return value is not
-  iterable]` 7–10 times in every full fleet run on 2026-11-01, starting with the earliest one kept
-  (`package-renames`). Its tests pass anyway because they read the mesh layer, not the handles. The
-  calls in `packages/path-tools/src/warp/warpHandles.ts` match core's `worldToScreen` and typecheck, and
-  `src_exports` is esbuild's name for a namespace it bundled, so the copy of core that the browser
-  project's prebundle (`scripts/vite-prebundle.ts`) gives path-tools seems to lack the function
-  (inferred). Not yet checked in the site's own dev server.
-  Closes when no full fleet run logs a layer throwing while drawing, and the puppet test asserts that the
-  handles drew.
-
 - **(P3) [recheck] Three visual baselines fail on studio at bab3c623e.** `hud-context-menu` light and dark
   ("the open menu highlights the hovered row": pixel diff 3.84% and 4.64% against a 2% threshold) and
   `stroke-markers` ("Canvas width changed vs baseline"), on studio's headless Chromium over
