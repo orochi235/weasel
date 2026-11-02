@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
-  type PolygonPath, polygonFromPoints, polylineFromPoints, resolveCornersWithSources,
+  type PolygonPath, polygonFromPoints, polylineFromPoints, pathLengthTable, resolveCorners,
 } from '@weasel-js/geom';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import type { Stroke } from '@weasel-js/paint';
 import { markerHeads, type MarkerHead } from './markerHeads';
 import { tessellateStroke } from './tessellate/stroke';
 import { windowPolylines } from './trim/windowPolylines';
+import { trimSpan } from './trim/trimSpan';
 
 const INK = { kind: 'solid', color: '#000' } as const;
 const LINE = polylineFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }]);
@@ -65,8 +66,8 @@ describe('markerHeads under a trim', () => {
     expect(heads).toHaveLength(1);
     const t = tip(heads[0]);
 
-    const { path, anchorSources } = resolveCornersWithSources(cornered);
-    const [{ polyline }] = windowPolylines(extractPolylines(path), stroke.trim, anchorSources)!;
+    const span = trimSpan(cornered, stroke.trim)!;
+    const [{ polyline }] = windowPolylines(extractPolylines(resolveCorners(cornered)), span, pathLengthTable(cornered).runs);
     const ex = polyline.points[polyline.points.length - 2], ey = polyline.points[polyline.points.length - 1];
     expect(ex + ey).toBeCloseTo(100, 3);
     expect(Math.abs(t.x - ex)).toBeLessThan(1e-6);

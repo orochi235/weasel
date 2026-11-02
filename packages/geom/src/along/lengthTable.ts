@@ -1,4 +1,7 @@
-/** One subpath of a path flattened to straight segments, in pen order. */
+import { segmentLength } from '../paths/segmentLength';
+import { segmentCoords } from './bezier';
+
+/** One subpath of a path in pen order: points joined by straight segments, or by curves where `controls` gives them. */
 export interface LengthRun {
   /** `dim` components per point. A closed run does not repeat its first point. */
   points: ArrayLike<number>;
@@ -12,6 +15,10 @@ export interface LengthRun {
   anchorT?: ArrayLike<number>;
   /** A closed run's last anchor when it sat on the first point and was dropped, as `Polyline` carries it. */
   closeAnchor?: number;
+  /** Per segment, from point `i` to the next (a closed run's closing edge last), the control
+   *  points of the curve between them, `dim` components each; empty, null or absent where
+   *  the segment is straight. A curved segment is measured by its exact arc length. */
+  controls?: readonly (ArrayLike<number> | null | undefined)[];
 }
 
 /** A stretch of a path between two pen-order lengths, `from` before `to`. */
@@ -146,13 +153,24 @@ export function lengthAtSegmentFraction(t: LengthTable, f: number): number {
   return t.total;
 }
 
-function runLengths(run: LengthRun, dim: number, base: number): Float64Array {
+/** Whether `run`, of `n` points, has a closing edge: a lone point closes only through a curve back to itself. */
+const wraps = (run: LengthRun, n: number): boolean =>
+  run.closed && (n >= 2 || (n === 1 && (run.controls?.[0]?.length ?? 0) > 0));
+
+function runLengths(run: LengthRun, dim: 2 | 3, base: number): Float64Array {
   const p = run.points;
   const n = Math.floor(p.length / dim);
-  const wrap = run.closed && n >= 2;
+  const wrap = wraps(run, n);
   const c = new Float64Array(Math.max(n + (wrap ? 1 : 0), 1));
   c[0] = base;
   for (let i = 1; i < c.length; i++) {
+    const ctl = run.controls?.[i - 1];
+    if (ctl && ctl.length > 0) {
+      // A curve whose coordinates are not finite flattens to its end point, covering no distance.
+      const len = segmentLength(segmentCoords(p, ctl, dim, i - 1), dim);
+      c[i] = c[i - 1] + (Number.isFinite(len) ? len : 0);
+      continue;
+    }
     const a = (i - 1) * dim;
     const b = (i % n) * dim;
     let d2 = 0;
@@ -177,11 +195,11 @@ function anchorBreakpoints(
     const c = cum[r];
     const raw = expandedBreaks(run, n, c, next);
     next += n;
-    const folded = foldToAuthored(raw, sources, run.closed && n >= 2);
+    const folded = foldToAuthored(raw, sources, wraps(run, n));
     if (folded.ids.length === 0) return;
     const first = folded.ids[0];
     let last = folded.ids[folded.ids.length - 1];
-    if (run.closed && n >= 2) {
+    if (wraps(run, n)) {
       last += 1;
       folded.ids.push(last);
       folded.lens.push(c[c.length - 1]);
@@ -220,7 +238,7 @@ function expandedBreaks(run: LengthRun, n: number, c: Float64Array, next: number
  */
 export function closingAnchor(run: LengthRun, n: number): number | undefined {
   const { anchorA: A, anchorB: B } = run;
-  if (!run.closed || n < 2) return undefined;
+  if (!wraps(run, n)) return undefined;
   if (run.closeAnchor !== undefined) return run.closeAnchor;
   return A && B && A[n - 1] !== B[n - 1] ? B[n - 1] : undefined;
 }

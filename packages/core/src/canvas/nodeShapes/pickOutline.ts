@@ -4,17 +4,17 @@
  */
 import {
   asPolygonPath, pathContainsPoint, pathThroughPoseFrame, poseFrameOf, strokeHitTest,
-  type LengthSpan, type Path,
+  type CurveSpan, type Path,
 } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
-import { spanOnPath, trimSpan } from '@weasel-js/stroke';
+import { trimSpan } from '@weasel-js/stroke';
 import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewport/screenSlop';
 import type { NodeInk } from '../nodeShapeTypes';
 
 /** A trimmed stroke's outline in world, and the stretch of it that is drawn; `span` null draws nothing. */
 export interface TrimmedOutline {
   drawn: Path;
-  span: LengthSpan | null;
+  span: CurveSpan | null;
 }
 
 /** What a pick reads besides the point. */
@@ -26,13 +26,13 @@ export interface PickReach {
 /**
  * Where `trim` draws along `local`, the outline as the painter strokes it, once
  * the pose frame carries it to `world`. The ribbon measures before the frame,
- * so the span is measured on `local` and restated on the world outline.
+ * so the span is resolved on `local`; its curve positions name the same points
+ * on the world outline, carried command for command.
  */
 export function trimmedOutline(local: Path, world: Path, pose: unknown, trim: StrokeTrim): TrimmedOutline {
   // A rect goes through as a polygon: a mirrored rect would come out restarted.
   const drawn = poseFrameOf(pose) === null ? world : pathThroughPoseFrame(asPolygonPath(local), pose);
-  const span = trimSpan(local, trim);
-  return { drawn, span: span && spanOnPath(span, local, drawn) };
+  return { drawn, span: trimSpan(local, trim) };
 }
 
 /**
@@ -55,7 +55,7 @@ export function inkCovers(
 }
 
 function outlineWithin(
-  path: Path, x: number, y: number, reach: number, slop: PickSlop | undefined, span?: LengthSpan,
+  path: Path, x: number, y: number, reach: number, slop: PickSlop | undefined, span?: CurveSpan,
 ): boolean {
   const { extra, opts: hit } = slopForStrokeHit(slop);
   const r = reach + extra;

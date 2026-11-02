@@ -39,6 +39,8 @@ export {
   type LengthRun, type LengthSpan, type LengthTable,
 } from './along/lengthTable';
 export { pointAtLength } from './along/positions';
+export { curveSpan, lengthAtCurve, runSegments, type CurvePosition, type CurveSpan } from './along/curvePosition';
+export { pathLengthTable } from './along/pathTable';
 export type { Path, PolygonPath, RectPath, PathFillRule, PathOpenFill } from './path';
 export { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 export {

@@ -1,7 +1,6 @@
-import { closingAnchor, lengthTable, type LengthTable } from '@weasel-js/geom';
-import { type Polyline, trimPolyline } from '@weasel-js/geom/tessellate';
-import type { StrokeTrim } from '@weasel-js/paint';
-import { resolveTrim } from './resolveTrim';
+import { closingAnchor, type CurvePosition, type CurveSpan, type LengthRun } from '@weasel-js/geom';
+import { type Polyline, polylineAtCurve, trimPolyline } from '@weasel-js/geom/tessellate';
+import { polylinesLength } from '../tessellate/dash';
 
 const EPS = 1e-9;
 
@@ -12,50 +11,46 @@ export interface WindowedRun {
   polyline: Polyline;
   /** Taken from a closed subpath, so it takes no start or end marker. */
   fromClosed: boolean;
-  /** How far along its subpath the run starts: the dash phase that keeps a
-   *  pattern anchored to the path's start. 0 when uncut at the start. */
+  /** How far along its subpath the run starts, in the polyline's own measure: the
+   *  dash phase that keeps a pattern where the untrimmed stroke puts it. 0 when uncut at the start. */
   dashPhase: number;
 }
 
-/** The world-space length table of a stroke's flattened polylines.
- *  `anchorSources` (from `resolveCornersWithSources`) keeps anchors in authored numbering. */
-export function polylineTable(polylines: readonly Polyline[], anchorSources?: Uint32Array | null): LengthTable {
-  return lengthTable(polylines, 2, anchorSources);
-}
-
 /**
- * The parts of `polylines` that `trim` draws, one run per subpath the window
- * touches, in pen order. `null` when there is no trim, so the caller draws
- * `polylines` as they are; empty when the window draws nothing. A run the
- * window leaves uncut is the input polyline itself, not a copy.
- *
- * `table`, when given, must be `polylineTable(polylines, anchorSources)`; pass
- * it to share one table with the caller's other queries.
+ * The parts of `polylines` that `span` draws, one run per subpath it touches,
+ * in pen order, each cut on the exact curve point its position names. `runs`
+ * is the path's `pathLengthTable` runs, for the curves' control points; the
+ * polylines may be any flattening of that path, or a straight-edged copy of it
+ * moved elsewhere. A run the window leaves uncut is the input polyline itself.
  */
 export function windowPolylines(
-  polylines: readonly Polyline[], trim: StrokeTrim | undefined, anchorSources?: Uint32Array | null,
-  table?: LengthTable,
-): WindowedRun[] | null {
-  if (trim === undefined) return null;
-  table ??= polylineTable(polylines, anchorSources);
-  const span = resolveTrim(table, trim);
-  if (!span) return [];
+  polylines: readonly Polyline[], span: CurveSpan, runs?: readonly LengthRun[],
+): WindowedRun[] {
   const out: WindowedRun[] = [];
-  polylines.forEach((pl, r) => {
-    const runFrom = table.runStart[r];
-    const runTo = table.runStart[r + 1];
-    const lo = Math.max(span.from, runFrom);
-    const hi = Math.min(span.to, runTo);
-    if (hi - lo <= EPS) return;
-    const head = lo - runFrom;
-    const tail = runTo - hi;
-    if (pl.closed && head <= EPS && tail <= EPS) {
+  for (let r = Math.max(span.from.run, 0); r <= Math.min(span.to.run, polylines.length - 1); r++) {
+    const pl = polylines[r];
+    const place = (at: CurvePosition) => polylineAtCurve(pl, at.segment, at.t, runs?.[r]);
+    const head = r === span.from.run ? place(span.from) : null;
+    const tail = r === span.to.run ? place(span.to) : null;
+    const total = polylinesLength([pl]);
+    const lo = head?.length ?? 0;
+    const hi = tail?.length ?? total;
+    if (hi - lo <= EPS) continue;
+    if (pl.closed && lo <= EPS && total - hi <= EPS) {
       out.push({ polyline: pl, fromClosed: true, dashPhase: 0 });
-      return;
+      continue;
     }
-    const cut = trimPolyline(pl.closed ? opened(pl) : pl, head, tail);
-    if (cut) out.push({ polyline: cut, fromClosed: pl.closed, dashPhase: head });
-  });
+    const base = pl.closed ? opened(pl) : pl;
+    const cut = trimPolyline(base, lo, total - hi);
+    if (!cut) continue;
+    if (cut !== base) {
+      // The chord a cut lands on only passes near the curve; the curve's own point ends the run.
+      const k = cut.points.length - 2;
+      if (head && lo > 0) [cut.points[0], cut.points[1]] = [head.x, head.y];
+      if (tail && total - hi > 0) [cut.points[k], cut.points[k + 1]] = [tail.x, tail.y];
+    }
+    out.push({ polyline: cut, fromClosed: pl.closed, dashPhase: lo });
+  }
   return out;
 }
 

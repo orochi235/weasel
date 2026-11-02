@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { pathFromD } from '@weasel-js/geom';
+import { pathFromD, pathLengthTable } from '@weasel-js/geom';
 import { INHERIT, type Stroke } from '@weasel-js/paint';
-import { trimSpan } from '@weasel-js/stroke';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
 import type { Node } from 'core/scene/types';
 import { findShapeInk, shapeCoversPoint } from './NodeShape';
@@ -106,7 +105,7 @@ describe('shapeCoversPoint under a stroke trim', () => {
   it('measures a stretched curve before the stretch', () => {
     const curve = pathFromD('M0 0 C0 50 100 50 100 0');
     const pose: Pose = { x: 0, y: 0, width: 100, height: 37.5, transform: [2, 0, 0, 1] };
-    const half = trimSpan(curve, {})!.to / 2;
+    const half = pathLengthTable(curve).total / 2;
     const n = node({ path: curve, fill: null, stroke: stroke({ trim: { end: { length: half } } }) }, pose);
     // The curve at t, stretched about x = 50; half its own length ends at its apex.
     const at = (t: number): [number, number] => {

@@ -3,13 +3,14 @@
  */
 
 import type { MarkerRef, Stroke } from '@weasel-js/paint';
-import { type Path, type PolygonPath, boundsOfPath, resolveCornersWithSources } from '@weasel-js/geom';
+import { type Path, type PolygonPath, boundsOfPath, pathLengthTable, resolveCorners } from '@weasel-js/geom';
 import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from './markerInset';
 import { markerSites, type MarkerSite } from './markerSites';
 import { strokeFlattening } from './tessellate/flattening';
 import { windowPolylines } from './trim/windowPolylines';
+import { trimSpan } from './trim/trimSpan';
 import {
   coordsOutOfMetric, polylineIntoMetric, type ScreenSpace, type StrokeSpaces,
 } from './tessellate/metric';
@@ -97,9 +98,9 @@ function headRuns(
   if (stroke.trim === undefined) {
     return extractPolylines(path, flattening).map((polyline) => ({ polyline, fromClosed: polyline.closed }));
   }
-  const resolved = path.kind === 'polygon' ? resolveCornersWithSources(path) : null;
-  const polylines = extractPolylines(resolved?.path ?? path, flattening);
-  return windowPolylines(polylines, stroke.trim, resolved?.anchorSources)!;
+  const polylines = extractPolylines(path.kind === 'polygon' ? resolveCorners(path) : path, flattening);
+  const span = trimSpan(path, stroke.trim);
+  return span ? windowPolylines(polylines, span, pathLengthTable(path).runs) : [];
 }
 
 /**

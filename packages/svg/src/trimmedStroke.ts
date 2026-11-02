@@ -4,8 +4,10 @@
  * where the canvas cuts it, so markers land at the window's ends.
  */
 import { fillInPoseFrame } from '@weasel-js/core';
-import { boundsOfPath, splitSubpaths, type Path, type PolygonPath } from '@weasel-js/geom';
-import { spanOnPath, trimSpan, trimmedPath, type TrimmedPath } from '@weasel-js/stroke';
+import {
+  boundsOfPath, lengthAtCurve, pathLengthTable, splitSubpaths, type Path, type PolygonPath,
+} from '@weasel-js/geom';
+import { trimSpan, trimmedPath, type TrimmedPath } from '@weasel-js/stroke';
 import { drawsAsGroup, withoutEndMarkers } from './openSubpathFill';
 import type { SvgGroupNode, SvgNode, SvgPathNode, SvgStroke } from './types';
 import { hasVariableWidth } from './variableWidthSvg';
@@ -67,13 +69,15 @@ function strokeRuns(cut: TrimmedPath, stroke: SvgStroke): SvgPathNode[] {
 const NOTHING = { start: 1, end: 0 } as const;
 
 /**
- * `stroke` with its trim, measured along `local` as the ribbon measures it,
- * restated as lengths along `drawn`: `local` carried through the pose frame
- * the stroke is drawn in, anchor for anchor.
+ * `stroke` with its trim, resolved along `local` as the ribbon resolves it,
+ * restated as exact lengths along `drawn`: `local` carried through the pose
+ * frame the stroke is drawn in, command for command, so the curve positions
+ * the trim cuts at name the same points on it.
  */
 export function strokeTrimOnPath(stroke: SvgStroke, local: Path, drawn: Path): SvgStroke {
   if (stroke.trim === undefined) return stroke;
   const span = trimSpan(local, stroke.trim);
-  const on = span && spanOnPath(span, local, drawn);
-  return { ...stroke, trim: on ? { start: { length: on.from }, end: { length: on.to } } : NOTHING };
+  if (!span) return { ...stroke, trim: NOTHING };
+  const table = pathLengthTable(drawn);
+  return { ...stroke, trim: { start: { length: lengthAtCurve(table, span.from) }, end: { length: lengthAtCurve(table, span.to) } } };
 }

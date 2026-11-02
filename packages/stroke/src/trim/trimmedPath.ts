@@ -1,10 +1,9 @@
 import {
-  DEFAULT_FLATTEN_TOLERANCE, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath,
-  flattenCubicWithArcLen, flattenQuadraticWithArcLen, forEachSegment, resolveCorners, segmentLength,
-  segmentTAtLength, splitCubicAt, splitQuadraticAt, type Path, type PolygonPath,
+  PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath, curveSpan, lengthAtCurve, pathLengthTable, runSegments,
+  splitCubicAt, splitQuadraticAt, type CurvePosition, type LengthTable, type Path,
 } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
-import { trimSpan } from './trimSpan';
+import { resolveTrim } from './resolveTrim';
 
 const EPS = 1e-9;
 
@@ -12,134 +11,81 @@ const EPS = 1e-9;
 export interface TrimmedPath {
   /** One subpath per visible run, in pen order; curves split, not flattened. */
   path: Path;
-  /** Per subpath, how far into its pattern a dash starts: `WindowedRun.dashPhase`. */
+  /** Per subpath, how far into its pattern a dash starts: the exact arc length from
+   *  its subpath's start to the cut, the measure a writer's own dashes run in. */
   dashPhases: number[];
   /** Per subpath, whether it came from a closed one, so it takes no start or end marker. */
   fromClosed: boolean[];
 }
 
-/** One drawn segment: its command, the pen then its coords, and its flattened length. */
-interface Seg {
-  cmd: number;
-  c: number[];
-  len: number;
-}
-
-interface Sub {
-  segs: Seg[];
-  closed: boolean;
-  /** How many of `segs` come before the closing edge drawn out of a `Z`. */
-  authored: number;
-}
-
 /**
- * The part of `path` that `trim` strokes, cut where the ribbon cuts it: on the
- * corner-resolved path, measured as `trimSpan` measures. A closed subpath the
- * window covers whole stays closed. `null` when the window draws nothing; the
- * input path itself, with no runs listed, when there is no trim.
+ * The part of `path` that `trim` strokes, cut on the curve points the ribbon
+ * cuts at: on the corner-resolved path, at the positions `trimSpan` resolves.
+ * A closed subpath the window covers whole stays closed. `null` when the
+ * window draws nothing; the input path itself, with no runs listed, when there
+ * is no trim.
  */
 export function trimmedPath(path: Path, trim: StrokeTrim | undefined): TrimmedPath | null {
   if (trim === undefined) return { path, dashPhases: [], fromClosed: [] };
-  const span = trimSpan(path, trim);
+  const table = pathLengthTable(path);
+  const lengths = resolveTrim(table, trim);
+  const span = lengths && curveSpan(table, lengths);
   if (!span) return null;
-  const resolved = path.kind === 'rect' ? asPolygonPath(path) : resolveCorners(path);
   const out: TrimmedPath = { path, dashPhases: [], fromClosed: [] };
   const commands: number[] = [];
   const coords: number[] = [];
-  let at = 0;
-  for (const sub of subpathsOf(resolved)) {
-    const length = sub.segs.reduce((sum, s) => sum + s.len, 0);
-    const lo = Math.max(span.from, at) - at;
-    const hi = Math.min(span.to, at + length) - at;
-    at += length;
-    if (hi - lo <= EPS) continue;
-    const whole = sub.closed && lo <= EPS && length - hi <= EPS;
-    writeRun(whole ? sub.segs.slice(0, sub.authored) : sub.segs, whole ? 0 : lo, whole ? Infinity : hi, commands, coords);
-    if (whole) commands.push(PATH_Z);
-    out.dashPhases.push(whole ? 0 : lo);
-    out.fromClosed.push(sub.closed);
+  for (let r = span.from.run; r <= span.to.run; r++) {
+    const segs = runSegments(table, r);
+    const lo: CurvePosition = r === span.from.run ? span.from : { run: r, segment: 0, t: 0 };
+    const hi: CurvePosition = r === span.to.run ? span.to : { run: r, segment: segs - 1, t: 1 };
+    const at = table.runStart[r];
+    const head = lengthAtCurve(table, lo) - at;
+    if (segs <= 0 || lengthAtCurve(table, hi) - at - head <= EPS) continue;
+    const { closed } = table.runs[r];
+    const whole = closed && head <= EPS && table.runStart[r + 1] - lengthAtCurve(table, hi) <= EPS;
+    writeRun(table, r, lo, hi, whole, commands, coords);
+    out.dashPhases.push(whole ? 0 : head);
+    out.fromClosed.push(closed);
   }
   if (out.dashPhases.length === 0) return null;
+  const shape = path.kind === 'rect' ? asPolygonPath(path) : path;
   out.path = {
     kind: 'polygon',
     commands: Uint8Array.from(commands),
     coords: Float32Array.from(coords),
-    fillRule: resolved.fillRule,
-    ...(resolved.origin ? { origin: resolved.origin } : {}),
+    fillRule: shape.fillRule,
+    ...(shape.origin ? { origin: shape.origin } : {}),
   };
   return out;
 }
 
-/** `path`'s subpaths as `extractPolylines` reads them, each segment measured as it flattens. */
-function subpathsOf(path: PolygonPath): Sub[] {
-  const subs: Sub[] = [];
-  let cur: Sub | null = null;
-  let sx = 0;
-  let sy = 0;
-  const { commands, coords } = path;
-  forEachSegment(commands, coords, (cmd, ci, px, py, _i, opens) => {
-    let sub = cur;
-    if (cmd === PATH_M || opens || !sub) {
-      sub = { segs: [], closed: false, authored: 0 };
-      subs.push(sub);
-      cur = sub;
-      [sx, sy] = cmd === PATH_M ? [coords[ci], coords[ci + 1]] : [px, py];
-      if (cmd === PATH_M) return;
-    }
-    if (cmd === PATH_Z) {
-      sub.closed = true;
-      sub.authored = sub.segs.length;
-      if (px !== sx || py !== sy) sub.segs.push(measured(PATH_L, [px, py, sx, sy]));
-      cur = null;
-      return;
-    }
-    const n = cmd === PATH_L ? 2 : cmd === PATH_Q ? 4 : 6;
-    sub.segs.push(measured(cmd, [px, py, ...Array.from(coords.subarray(ci, ci + n))]));
-  });
-  return subs;
-}
-
-function measured(cmd: number, c: number[]): Seg {
-  const t = DEFAULT_FLATTEN_TOLERANCE;
-  const len = cmd === PATH_L ? Math.hypot(c[2] - c[0], c[3] - c[1])
-    : cmd === PATH_Q ? flattenQuadraticWithArcLen(c[0], c[1], c[2], c[3], c[4], c[5], t, [], [])
-      : flattenCubicWithArcLen(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], t, [], []);
-  return { cmd, c, len };
-}
-
-/** The stretch of `segs` from `a` to `b` along them, opened with an `M`. */
-function writeRun(segs: readonly Seg[], a: number, b: number, commands: number[], coords: number[]): void {
-  let s0 = 0;
-  let started = false;
-  for (const seg of segs) {
-    const s1 = s0 + seg.len;
-    const from = s0;
-    s0 = s1;
-    if (s1 <= a + EPS) continue;
-    if (from >= b - EPS) break;
-    const t0 = from < a ? paramAt(seg, a - from) : 0;
-    const t1 = s1 > b ? paramAt(seg, b - from) : 1;
-    const piece = subSegment(seg, t0, t1);
-    if (!started) {
+/** Run `r` of `table` from `lo` to `hi`, opened with an `M`; `whole` closes it with a `Z` instead
+ *  of writing a straight closing edge. */
+function writeRun(
+  table: LengthTable, r: number, lo: CurvePosition, hi: CurvePosition, whole: boolean,
+  commands: number[], coords: number[],
+): void {
+  const { points, controls } = table.runs[r];
+  const n = points.length / 2;
+  for (let k = lo.segment; k <= hi.segment; k++) {
+    const ctl = controls?.[k];
+    const cmd = !ctl || ctl.length === 0 ? PATH_L : ctl.length === 2 ? PATH_Q : PATH_C;
+    if (whole && cmd === PATH_L && k === n - 1) break;
+    const j = (k + 1) % n;
+    const seg = [points[k * 2], points[k * 2 + 1], ...(ctl ? Array.from(ctl) : []), points[j * 2], points[j * 2 + 1]];
+    const piece = subSegment(cmd, seg, k === lo.segment ? lo.t : 0, k === hi.segment ? hi.t : 1);
+    if (k === lo.segment) {
       commands.push(PATH_M);
       coords.push(piece[0], piece[1]);
-      started = true;
     }
-    commands.push(seg.cmd);
+    commands.push(cmd);
     for (let i = 2; i < piece.length; i++) coords.push(piece[i]);
   }
+  if (whole) commands.push(PATH_Z);
 }
 
-/** The parameter `d` along `seg`: the same share of its arc length as `d` is of its flattened one. */
-function paramAt(seg: Seg, d: number): number {
-  const f = seg.len > 0 ? Math.min(Math.max(d / seg.len, 0), 1) : 0;
-  if (seg.cmd === PATH_L || f <= 0 || f >= 1) return f;
-  const total = segmentLength(seg.c, 2);
-  return segmentTAtLength(seg.c, 2, f * total, total);
-}
-
-/** `seg` between parameters `t0` and `t1`, as its pen then its coords. */
-function subSegment({ cmd, c }: Seg, t0: number, t1: number): number[] {
+/** Segment `c`, drawn by `cmd`, between parameters `t0` and `t1`, as its pen then its coords. */
+function subSegment(cmd: number, c: number[], t0: number, t1: number): number[] {
   if (cmd === PATH_L) {
     const at = (t: number) => [c[0] + (c[2] - c[0]) * t, c[1] + (c[3] - c[1]) * t];
     return [...at(t0), ...at(t1)];

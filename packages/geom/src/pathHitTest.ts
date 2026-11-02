@@ -13,7 +13,7 @@
 import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
 import type { Rect } from './box';
 import type { Path } from './path';
-import type { LengthSpan } from './along/lengthTable';
+import type { CurveSpan } from './along/curvePosition';
 import { closedSubpaths, regionSubpaths } from './pathSubpaths';
 import { someSegment, type SegmentVisit } from './outlineSegments';
 import type { Affine } from './affine';
@@ -44,10 +44,10 @@ export interface StrokeHitTestOptions {
    *  screen distance, and under a non-uniform or rotated-then-squished
    *  transform no world distance equals it. */
   slop?: { px: number; transform: Affine };
-  /** Only the stretch of the outline between these pen-order lengths, world
-   *  units, counts: subpaths in authored order, a closed one's closing edge
-   *  last. A visible window of a trimmed stroke. */
-  span?: LengthSpan;
+  /** Only the stretch of the outline between these curve positions counts,
+   *  as `pathLengthTable` numbers them: a visible window of a trimmed stroke,
+   *  cut at the same points whatever `tolerance` flattens the outline at. */
+  span?: CurveSpan;
 }
 
 // ─── Point vs path ──────────────────────────────────────────────────────────

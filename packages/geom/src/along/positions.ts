@@ -1,10 +1,13 @@
+import { segmentTAtLength } from '../paths/segmentLength';
+import { bezierDirection, bezierPoint, segmentCoords } from './bezier';
 import { tableInternals, type LengthTable } from './lengthTable';
 
 type Comps = [number, number, number];
 
 /**
  * The point at pen-order length `s`, and the unit tangent of the segment
- * arriving there (leaving, at a run's start). Components past the table's
+ * arriving there (leaving, at a run's start); on a curve, the exact point and
+ * the curve's own direction. Components past the table's
  * `dim` read 0. Clamps to the path; where two runs meet, answers the end of the
  * earlier one. A path with no length answers a zero tangent.
  */
@@ -29,6 +32,12 @@ export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangen
   }
   const i = lo;
   const span = c[i + 1] - c[i];
+  const ctl = t.runs[r].controls?.[i];
+  if (ctl && ctl.length > 0) {
+    const seg = segmentCoords(t.runs[r].points, ctl, t.dim, i);
+    const u = segmentTAtLength(seg, t.dim, len - c[i], span);
+    return { point: bezierPoint(seg, t.dim, u), tangent: bezierDirection(seg, t.dim, u) ?? tangentNear(t, r, i) };
+  }
   const f = span > 0 ? (len - c[i]) / span : 0;
   const a = at(t, r, i);
   const b = at(t, r, i + 1);

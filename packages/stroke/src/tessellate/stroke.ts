@@ -1,4 +1,4 @@
-import { remapPerAnchor, resolveCornersWithSources, type Path } from '@weasel-js/geom';
+import { pathLengthTable, remapPerAnchor, resolveCornersWithSources, type Path } from '@weasel-js/geom';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
@@ -6,7 +6,8 @@ import { dashPolylines } from './dash';
 import { strokeFlattening } from './flattening';
 import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
-import { authoredRectTrim, windowRibbon } from './ribbonWindow';
+import { windowRibbon } from './ribbonWindow';
+import { trimSpan } from '../trim/trimSpan';
 import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
 import { meetInnerEdges } from './innerJoins';
 import {
@@ -116,10 +117,10 @@ export function tessellateStroke(
   let phases: number[] | undefined;
   let dashLength: number | undefined;
   if (stroke.trim !== undefined) {
-    const trim = path.kind === 'rect' && align !== 'center' ? authoredRectTrim(path, stroke.trim) : stroke.trim;
+    // Resolved on the authored path, whose segments a rect shifted by alignment shares.
     ({ runs, phases, dashLength } = windowRibbon(
-      polylines, trim, resolved?.anchorSources, from, ribbonSpace, opts.startInset, opts.endInset,
-      stroke.dash !== undefined,
+      polylines, trimSpan(path, stroke.trim), pathLengthTable(path).runs, from, ribbonSpace,
+      opts.startInset, opts.endInset, stroke.dash !== undefined,
     ));
   } else {
     runs = polylines.flatMap((pl) => trimInSpace(pl, from, ribbonSpace, opts.startInset, opts.endInset) ?? []);
