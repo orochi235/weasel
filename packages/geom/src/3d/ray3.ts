@@ -1,5 +1,6 @@
 /** Rays, axis-aligned boxes, and the intersections picking is built from. */
 
+import { closestPointOnSegment as closestPointOnSegmentN } from '../points';
 import { SINGULAR_RATIO } from '../scalar';
 import { add, dot, len, len2, scale, sub, type Vec3 } from './vec3';
 import { transformPoint, type Mat4 } from './mat4';
@@ -108,13 +109,11 @@ export function closestPointOnLine(p: Vec3, origin: Vec3, direction: Vec3): Vec3
   return add(origin, scale(direction, dot(sub(p, origin), direction) / d2));
 }
 
-/** The point of segment `a`–`b` nearest `p`. */
+/** The point of segment `a`–`b` nearest `p`; `a` when the segment has no
+ *  length. The rule is `../points`', stated once for every dimension. */
 export function closestPointOnSegment(p: Vec3, a: Vec3, b: Vec3): Vec3 {
-  const ab = sub(b, a);
-  const d2 = len2(ab);
-  if (!(d2 > 0)) return a;
-  const t = Math.min(1, Math.max(0, dot(sub(p, a), ab) / d2));
-  return add(a, scale(ab, t));
+  const [x, y, z] = closestPointOnSegmentN([p.x, p.y, p.z], [a.x, a.y, a.z], [b.x, b.y, b.z]);
+  return { x: x!, y: y!, z: z! };
 }
 
 /**

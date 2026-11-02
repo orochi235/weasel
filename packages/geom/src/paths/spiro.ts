@@ -29,6 +29,7 @@ import {
   eulerAngleAt, eulerCurvatureAt, eulerCurvatureDerivativesAt, fitEulerSegment, placeEulerSegment,
   type EulerSegment,
 } from './eulerSpiral';
+import { distance } from '../points2';
 
 /** What holds at a spiro point; see the table at the top of `spiro.ts`. */
 export type SpiroKind = 'smooth' | 'g4' | 'corner' | 'left' | 'right';
@@ -56,7 +57,6 @@ type Side = { kind: 'none' } | { kind: 'line'; angle: number } | { kind: 'curve'
 const TAU = Math.PI * 2;
 const wrap = (a: number): number => a - TAU * Math.round(a / TAU);
 const angleOf = (p: Point, q: Point): number => Math.atan2(q.y - p.y, q.x - p.x);
-const distance = (p: Point, q: Point): number => Math.hypot(q.x - p.x, q.y - p.y);
 
 /** Whether `kind` is one of the {@link SpiroKind}s. */
 export function isSpiroKind(kind: unknown): kind is SpiroKind {

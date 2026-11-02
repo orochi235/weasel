@@ -9,6 +9,7 @@
  */
 import { fitCubicWithTangents } from './schneiderFit';
 import type { Point } from './cubicMath';
+import { nearestOnCubic } from '../nearest';
 
 /** The six `corner-shape` keywords, from most convex to most concave. */
 export type CornerKeyword = 'square' | 'squircle' | 'round' | 'bevel' | 'scoop' | 'notch';
@@ -81,10 +82,23 @@ function unitPoint(n: number, theta: number): Point {
   return { x: Math.cos(theta) ** p, y: Math.sin(theta) ** p };
 }
 
-/** The unit direction of travel from start to end at `theta`. */
-function unitTangent(n: number, theta: number): Point {
-  const q = 2 - 2 / n;
-  const x = Math.sin(theta) ** q, y = -(Math.cos(theta) ** q);
+/** The point `w` of the way along the unit curve, from 0 at `(0, 1)` to 2 at
+ *  `(1, 0)`: `u` steps evenly out to the diagonal, then `v` steps evenly back.
+ *  The fit runs on this rather than `theta`, which crowds a large `n`'s legs
+ *  into less angle than a double can resolve. */
+function curveAt(n: number, w: number): Point {
+  const d = 0.5 ** (1 / n);
+  const across = (c: number) => Math.max(0, 1 - c ** n) ** (1 / n);
+  if (w <= 1) { const u = w * d; return { x: u, y: across(u) }; }
+  const v = (2 - w) * d;
+  return { x: across(v), y: v };
+}
+
+/** The unit direction of travel from start to end at `w`. */
+function curveTangent(n: number, w: number): Point {
+  const p = curveAt(n, w);
+  // The coordinate nearer zero over the other is at most 1, so the power cannot overflow.
+  const [x, y] = w <= 1 ? [1, -((p.x / p.y) ** (n - 1))] : [(p.y / p.x) ** (n - 1), -1];
   const l = Math.hypot(x, y);
   return { x: x / l, y: y / l };
 }
@@ -93,46 +107,42 @@ type UnitCubic = [Point, Point, Point];
 
 const sub = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
 
-function cubicAt(p0: Point, [c1, c2, p3]: UnitCubic, t: number): Point {
-  const u = 1 - t;
-  const a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
-  return { x: a * p0.x + b * c1.x + c * c2.x + d * p3.x, y: a * p0.y + b * c1.y + c * c2.y + d * p3.y };
-}
-
-/** The distance from `q` to the cubic `p0, piece`: the nearest of a coarse
- *  scan, refined by bisecting the parameter around it. */
-function distanceToCubic(q: Point, p0: Point, piece: UnitCubic): number {
-  const d = (t: number) => { const c = cubicAt(p0, piece, t); return Math.hypot(c.x - q.x, c.y - q.y); };
-  let best = 0;
-  for (let i = 1; i <= 32; i++) if (d(i / 32) < d(best / 32)) best = i;
-  let lo = Math.max(0, (best - 1) / 32), hi = Math.min(1, (best + 1) / 32);
-  for (let i = 0; i < 30; i++) {
-    const a = lo + (hi - lo) / 3, b = hi - (hi - lo) / 3;
-    if (d(a) < d(b)) hi = b; else lo = a;
-  }
-  return d((lo + hi) / 2);
-}
+/** Points of the true curve each piece is checked at before the worst is refined. */
+const FIT_CHECKS = 32;
 
 /** The farthest any point of the true curve between `a` and `b` lies from
- *  the cubic `p0, piece`. */
-function fitError(n: number, a: number, b: number, p0: Point, piece: UnitCubic): number {
-  let worst = 0;
-  for (let i = 1; i < 16; i++) worst = Math.max(worst, distanceToCubic(unitPoint(n, a + (b - a) * (i / 16)), p0, piece));
-  return worst;
+ *  the cubic `p0, c1, c2, p3`: the worst of evenly spaced checks, then
+ *  searched between its neighbors, since a sharp corner's peak falls between. */
+function fitError(n: number, a: number, b: number, p0: Point, [c1, c2, p3]: UnitCubic): number {
+  const off = (w: number) => {
+    const q = curveAt(n, w);
+    return nearestOnCubic(q.x, q.y, p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y).dist;
+  };
+  let worst = 0, at = 1;
+  for (let i = 1; i < FIT_CHECKS; i++) {
+    const d = off(a + (b - a) * (i / FIT_CHECKS));
+    if (d > worst) { worst = d; at = i; }
+  }
+  let lo = a + (b - a) * ((at - 1) / FIT_CHECKS), hi = a + (b - a) * ((at + 1) / FIT_CHECKS);
+  for (let i = 0; i < 24; i++) {
+    const l = lo + (hi - lo) / 3, r = hi - (hi - lo) / 3;
+    if (off(l) > off(r)) hi = r; else lo = l;
+  }
+  return Math.max(worst, off((lo + hi) / 2));
 }
 
-/** Cubics through the unit curve from `theta = a` down to `b`, split until
- *  each is within `tol`. */
+/** Cubics through the unit curve from `w = a` to `b`, split until each is
+ *  within `tol`. */
 function fitUnit(n: number, a: number, b: number, tol: number, depth: number, out: UnitCubic[]): void {
-  const p0 = unitPoint(n, a), p3 = unitPoint(n, b);
+  const p0 = curveAt(n, a), p3 = curveAt(n, b);
   const samples: Point[] = [];
   const params: number[] = [];
   for (let i = 0; i <= 12; i++) {
-    samples.push(unitPoint(n, a + (b - a) * (i / 12)));
+    samples.push(curveAt(n, a + (b - a) * (i / 12)));
     params.push(i / 12);
   }
-  const tEnd = unitTangent(n, b);
-  const { cp1, cp2 } = fitCubicWithTangents(samples, unitTangent(n, a), { x: -tEnd.x, y: -tEnd.y }, { params });
+  const tEnd = curveTangent(n, b);
+  const { cp1, cp2 } = fitCubicWithTangents(samples, curveTangent(n, a), { x: -tEnd.x, y: -tEnd.y }, { params });
   const piece: UnitCubic = [cp1, cp2, p3];
   if (depth >= 10 || fitError(n, a, b, p0, piece) <= tol) { out.push(piece); return; }
   const mid = (a + b) / 2;
@@ -149,7 +159,7 @@ function unitCubics(n: number, tol: number): UnitCubic[] {
   let hit = unitCache.get(key);
   if (!hit) {
     hit = [];
-    fitUnit(n, Math.PI / 2, 0, tol, 0, hit);
+    fitUnit(n, 0, 2, tol, 0, hit);
     if (unitCache.size > 256) unitCache.clear();
     unitCache.set(key, hit);
   }

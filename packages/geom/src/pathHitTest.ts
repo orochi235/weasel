@@ -11,7 +11,8 @@
  */
 
 import { DEFAULT_FLATTEN_TOLERANCE } from './flatten';
-import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
+import { pointInPolygon, segmentsCross } from './polyline';
+import { pointSegmentDist2 } from './points2';
 import type { Rect } from './box';
 import type { Path } from './path';
 import { closedSubpaths, flatSubpaths, regionSubpaths } from './pathSubpaths';

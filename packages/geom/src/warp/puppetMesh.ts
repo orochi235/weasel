@@ -15,6 +15,8 @@ import { nestRings } from '../tessellate/nesting';
 import type { ArapMesh } from './arap';
 import { refineTriangulation } from './refine';
 import { addOrigin } from '../paths/pathOrigin';
+import { nearestOnLine } from '../nearest';
+import { pointSegmentDist } from '../points2';
 
 /** A puppet's mesh, and the vertex standing for each pin. */
 export interface PuppetMesh extends ArapMesh {
@@ -99,10 +101,7 @@ function nearestEdge(region: Region, x: number, y: number): { d: number; ring: n
   let best = { d: Infinity, ring: 0, edge: 0, t: 0 };
   region.rings.forEach((ring, r) => ring.forEach((a, i) => {
     const b = ring[(i + 1) % ring.length];
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const len2 = dx * dx + dy * dy;
-    const t = len2 > 0 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / len2)) : 0;
-    const d = Math.hypot(a.x + dx * t - x, a.y + dy * t - y);
+    const { t, dist: d } = nearestOnLine(x, y, a.x, a.y, b.x, b.y);
     if (d < best.d) best = { d, ring: r, edge: i, t };
   }));
   return best;
@@ -151,10 +150,7 @@ function clearanceTest(rings: MeshPoint[][], r: number): (x: number, y: number) 
     for (let i = ci - 1; i <= ci + 1; i++) {
       for (let j = cj - 1; j <= cj + 1; j++) {
         for (const [a, b] of cells.get(key(i, j)) ?? []) {
-          const dx = b.x - a.x, dy = b.y - a.y;
-          const len2 = dx * dx + dy * dy;
-          const t = len2 > 0 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / len2)) : 0;
-          if (Math.hypot(a.x + dx * t - x, a.y + dy * t - y) < r) return true;
+          if (pointSegmentDist(x, y, a.x, a.y, b.x, b.y) < r) return true;
         }
       }
     }

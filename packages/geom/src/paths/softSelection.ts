@@ -10,6 +10,7 @@
 import type { AnchorSet } from './anchorEdits';
 import type { PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
+import { lerpPoint } from '../points2';
 
 /** How influence fades from 1 at a selected anchor to 0 at the radius:
  *  `smooth` eases out and in, `linear` falls evenly, `sharp` drops fast and
@@ -187,7 +188,7 @@ export function softSelectionBand(
     sub.segments.forEach((seg, i) => {
       const c = segmentControls(anchors, sub.closed, i);
       if (!c) return;
-      const at = (t: number): Point => (isStraight(c) ? lerp(c[0], c[3], t) : cubicPointAt(c[0], c[1], c[2], c[3], t));
+      const at = (t: number): Point => (isStraight(c) ? lerpPoint(c[0], c[3], t) : cubicPointAt(c[0], c[1], c[2], c[3], t));
       const steps = seg.lengths.length - 1;
       for (let k = 0; k <= steps; k++) {
         const len = seg.lengths[k]!;
@@ -241,6 +242,3 @@ function crossing(a: number, b: number, aIn: boolean, inside: (s: number) => boo
   return (lo + hi) / 2;
 }
 
-function lerp(a: Point, b: Point, t: number): Point {
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-}

@@ -14,6 +14,7 @@ import type { Point } from './cubicMath';
 import type { CornerPiece } from './cornerShape';
 import { compactCorners, withoutCorners, type CornerSpec } from './cornerSpec';
 import { cornerCuts } from './corners';
+import { distance, lerpPoint } from '../points2';
 
 /** A corner a rebuilt path may hold expanded: the anchor and spec it folds
  *  back into, and the cut it is drawn as, from `start` to `end`. */
@@ -45,8 +46,6 @@ export function keepCorners(sources: readonly Path[], result: PolygonPath, toler
   return traces.length === 0 ? result : restoreCorners(result, traces, tolerance);
 }
 
-const dist = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y);
-
 function onTrace(p: Point, t: CornerTrace, tol: number): boolean {
   let from = t.start;
   for (const piece of t.pieces) {
@@ -61,10 +60,9 @@ function onTrace(p: Point, t: CornerTrace, tol: number): boolean {
 
 /** The blossom of cubic `s` at `(u, v, w)`. */
 function blossom(s: Seg, u: number, v: number, w: number): Point {
-  const lerp = (a: Point, b: Point, t: number): Point => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-  const a = lerp(s.p0, s.c1, u), b = lerp(s.c1, s.c2, u), c = lerp(s.c2, s.p3, u);
-  const d = lerp(a, b, v), e = lerp(b, c, v);
-  return lerp(d, e, w);
+  const a = lerpPoint(s.p0, s.c1, u), b = lerpPoint(s.c1, s.c2, u), c = lerpPoint(s.c2, s.p3, u);
+  const d = lerpPoint(a, b, v), e = lerpPoint(b, c, v);
+  return lerpPoint(d, e, w);
 }
 
 /** The parameter, past `[0, 1]` on the side `from` gives, where cubic `s`
@@ -77,14 +75,14 @@ function extendTo(s: Seg, target: Point, from: 0 | 1, tol: number): number | nul
   };
   const speed = Math.hypot(d1(from).x, d1(from).y);
   if (speed === 0) return null;
-  let u = from + (from === 1 ? 1 : -1) * dist(at(from), target) / speed;
+  let u = from + (from === 1 ? 1 : -1) * distance(at(from), target) / speed;
   for (let i = 0; i < 30; i++) {
     const p = at(u), d = d1(u);
     const dd = d.x * d.x + d.y * d.y;
     if (dd === 0) break;
     u -= ((p.x - target.x) * d.x + (p.y - target.y) * d.y) / dd;
   }
-  return dist(at(u), target) <= tol ? u : null;
+  return distance(at(u), target) <= tol ? u : null;
 }
 
 /** `s` with its start moved to `start` and its end to `end`, either left
@@ -105,7 +103,7 @@ interface Run { from: number; to: number; trace: CornerTrace }
  *  cut at `p`: it sits there, or it sits on the cut and the edge runs through
  *  `p` to it, as when flattening has merged the cut's end into the edge. */
 function endsCut(a: Point, edge: Seg, p: Point, t: CornerTrace, tol: number): boolean {
-  if (dist(a, p) <= tol) return true;
+  if (distance(a, p) <= tol) return true;
   return edge.line && onTrace(a, t, tol)
     && nearestOnLine(p.x, p.y, edge.p0.x, edge.p0.y, edge.p3.x, edge.p3.y).dist <= tol;
 }
@@ -220,9 +218,9 @@ function failedTraces(path: PolygonPath, tol: number, folded: readonly Run[]): S
   const bad = new Set(folded.map((r) => r.trace));
   for (const cut of cornerCuts(path)) {
     for (const t of bad) {
-      if (dist(cut.anchor, t.anchor) > tol) continue;
-      const same = (dist(cut.start, t.start) <= tol && dist(cut.end, t.end) <= tol)
-        || (dist(cut.start, t.end) <= tol && dist(cut.end, t.start) <= tol);
+      if (distance(cut.anchor, t.anchor) > tol) continue;
+      const same = (distance(cut.start, t.start) <= tol && distance(cut.end, t.end) <= tol)
+        || (distance(cut.start, t.end) <= tol && distance(cut.end, t.start) <= tol);
       if (same) bad.delete(t);
     }
   }

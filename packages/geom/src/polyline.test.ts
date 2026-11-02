@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
+import { pointInPolygon, segmentsCross } from './polyline';
+import { pointSegmentDist2 } from './points2';
 import { approxEq } from './scalar';
 
 // An L-shaped (non-convex) polygon, interleaved & unclosed.

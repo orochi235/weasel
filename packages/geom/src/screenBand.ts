@@ -8,7 +8,7 @@
  * two ellipses, and the pixel slop has to be measured against that shape:
  * neither a scalar nor a per-axis world tolerance describes it.
  */
-import { pointSegmentDist2 } from './polyline';
+import { pointSegmentDist2 } from './points2';
 
 /** Linear part of a map to the screen: `x' = a·x + c·y`, `y' = b·x + d·y`. */
 export interface Linear2 {

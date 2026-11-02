@@ -1,4 +1,4 @@
-import { mat3, worldCoords, type Path } from '@weasel-js/geom';
+import { mat3, pointSegmentDist, worldCoords, type Path } from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
 import { skinnable, type Skin } from './skin';
 import type { Skeleton } from './types';
@@ -18,13 +18,6 @@ interface Bone {
   segments: number[];
 }
 
-function distanceToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  const t = len2 > 0 ? Math.min(1, Math.max(0, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-}
 
 /** A joint's bones run to its children. A joint with no child has none, being where its
  *  parent's bone ends, unless it has no parent either. */
@@ -71,7 +64,7 @@ export function autoSkin(path: Path, skeleton: Skeleton, options: AutoSkinOption
     for (let b = 0; b < bones.length; b++) {
       const s = bones[b].segments;
       let d = Infinity;
-      for (let k = 0; k < s.length; k += 4) d = Math.min(d, distanceToSegment(px, py, s[k], s[k + 1], s[k + 2], s[k + 3]));
+      for (let k = 0; k < s.length; k += 4) d = Math.min(d, pointSegmentDist(px, py, s[k], s[k + 1], s[k + 2], s[k + 3]));
       distance[b] = d;
     }
     order.sort((a, b) => distance[a] - distance[b] || a - b);

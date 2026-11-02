@@ -2,6 +2,7 @@
 
 import type { FlattenedContours } from './crossings';
 import { nestRings, type Ring } from './nesting';
+import { pointSegmentDist } from '../points2';
 
 /**
  * The rings of an even-odd fill with each `winding` set to 1 where the fill
@@ -121,10 +122,7 @@ function foldsBack(ux: number, uy: number, vx: number, vy: number): boolean {
 
 /** Whether point P lies within `eps` of segment AB. */
 function near(px: number, py: number, ax: number, ay: number, bx: number, by: number, eps: number): boolean {
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
-  return Math.hypot(ax + dx * t - px, ay + dy * t - py) <= eps;
+  return pointSegmentDist(px, py, ax, ay, bx, by) <= eps;
 }
 
 function properCross(

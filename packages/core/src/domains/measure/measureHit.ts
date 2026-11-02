@@ -1,3 +1,4 @@
+import { pointSegmentDist } from '@weasel-js/geom';
 import type { NodeId, Scene } from 'core/scene/types';
 import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement';
 import { measureIds, type Measurements } from './measurements';
@@ -11,14 +12,6 @@ export interface MeasureHit {
   part: MeasureEnd | 'line';
 }
 
-
-function distanceToSegment(p: MeasurePoint, a: MeasurePoint, b: MeasurePoint): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const len2 = dx * dx + dy * dy;
-  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
-  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
-}
 
 /**
  * The measurement under `p`, newest first: an end within `tolerance` world
@@ -44,7 +37,7 @@ export function measureAt(
   }
   for (const id of ids) {
     const ends = measureEndsOf(shown.get(id));
-    if (ends && distanceToSegment(p, ends.start, ends.end) <= tolerance) return { id, part: 'line' };
+    if (ends && pointSegmentDist(p.x, p.y, ends.start.x, ends.start.y, ends.end.x, ends.end.y) <= tolerance) return { id, part: 'line' };
   }
   return null;
 }

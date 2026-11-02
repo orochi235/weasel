@@ -19,6 +19,11 @@ export function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
+/** The number `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
+export function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
 /** 2D cross (wedge) product of vectors (ax,ay) and (bx,by). */
 export function cross(ax: number, ay: number, bx: number, by: number): number {
   return ax * by - ay * bx;

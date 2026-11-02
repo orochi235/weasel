@@ -2,6 +2,7 @@ import { flatAnchorIndex, type AnchorSet } from './anchorEdits';
 import { isStraightSegment, segmentEnds, type PenAnchor } from './anchors';
 import { moveHandleSymmetric, type AnchorSymmetry } from './anchorSymmetry';
 import type { Point } from './cubicMath';
+import { distance } from '../points2';
 
 /** A curved segment's balance line: from its first handle's tip to its
  *  second's, with a grip at the middle. */
@@ -57,7 +58,7 @@ function segmentHandles(
   if (!ends || isStraightSegment(ends.a, ends.b)) return null;
   const { a, b } = ends;
   if (!a.outHandle || !b.inHandle) return null;
-  if (length(a, a.outHandle) === 0 || length(b, b.inHandle) === 0) return null;
+  if (distance(a, a.outHandle) === 0 || distance(b, b.inHandle) === 0) return null;
   return { a, b, from: a.outHandle, to: b.inHandle };
 }
 
@@ -127,8 +128,8 @@ export function equalizeSegmentHandles(set: AnchorSet, sub: number, segIdx: numb
   const handles = segmentHandles(set, sub, segIdx);
   if (!handles) return false;
   const { a, b, from, to } = handles;
-  const lenA = length(a, from);
-  const lenB = length(b, to);
+  const lenA = distance(a, from);
+  const lenB = distance(b, to);
   const ua = { x: (from.x - a.x) / lenA, y: (from.y - a.y) / lenA };
   const ub = { x: (to.x - b.x) / lenB, y: (to.y - b.y) / lenB };
   const corner = rayCrossing(a, ua, b, ub);
@@ -157,10 +158,6 @@ function rayCrossing(p: Point, u: Point, q: Point, v: Point): { ta: number; tb: 
   const ta = (dx * v.y - dy * v.x) / den;
   const tb = (dx * u.y - dy * u.x) / den;
   return ta > 0 && tb > 0 ? { ta, tb } : null;
-}
-
-function length(a: Point, b: Point): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
 function scaledFrom(anchor: Point, handle: Point, k: number): Point {

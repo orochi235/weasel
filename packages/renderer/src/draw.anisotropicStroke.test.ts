@@ -9,6 +9,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Path } from '@weasel-js/geom';
+import { pointSegmentDist } from '@weasel-js/geom/nd';
 import type { Stroke } from '@weasel-js/paint';
 import { linePath, mat3, type GlMat3 } from '@weasel-js/geom';
 import { makeGLRecorder } from './testing/glRecorder';
@@ -44,12 +45,6 @@ function batched(rec: Recorder): { ribbon: Point[]; head: Point[] } {
 
 const span = (pts: Point[], axis: 0 | 1) =>
   Math.max(...pts.map((p) => p[axis])) - Math.min(...pts.map((p) => p[axis]));
-
-function distanceToSegment([x, y]: Point, [ax, ay]: Point, [bx, by]: Point): number {
-  const dx = bx - ax, dy = by - ay;
-  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
-  return Math.hypot(x - ax - t * dx, y - ay - t * dy);
-}
 
 const drawCalls = (rec: Recorder) => rec.calls.filter((c) => c.name === 'drawElements').length;
 
@@ -106,7 +101,7 @@ describe('renderer — { px } strokes under a non-uniform transform', () => {
   it('paints a diagonal line half a pixel either side of it', () => {
     const { ribbon } = frame([{ path: linePath({ x: 0, y: 0 }, { x: 30, y: 40 }), stroke: onePx }]);
     expect(ribbon.length).toBeGreaterThan(0);
-    for (const p of ribbon) expect(distanceToSegment(p, [0, 0], [120, 40])).toBeCloseTo(0.5, 4);
+    for (const p of ribbon) expect(pointSegmentDist(p, [0, 0], [120, 40])).toBeCloseTo(0.5, 4);
   });
 
   it('outlines a rect one pixel thick on both axes, and aligns it inside', () => {

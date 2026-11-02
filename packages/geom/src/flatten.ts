@@ -10,6 +10,8 @@
  * tighter tolerance.
  */
 
+import { pointSegmentDist } from './points2';
+
 export const DEFAULT_FLATTEN_TOLERANCE = 0.5;
 
 /** Floor for a non-positive or NaN tolerance. Without it the flatness test can
@@ -36,21 +38,6 @@ function finite8(
   e: number, f: number, g: number, h: number,
 ): boolean {
   return finite6(a, b, c, d, e, f) && Number.isFinite(g) && Number.isFinite(h);
-}
-
-/**
- * Distance from point P to segment AB. To the segment, not the line through
- * it: a control point on that line but past an end still pulls the curve out
- * beyond the chord, and measures zero against the line.
- */
-function distPointToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  const along = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
-  if (along <= 0) return Math.hypot(px - ax, py - ay);
-  if (along >= 1) return Math.hypot(px - bx, py - by);
-  return Math.abs((px - ax) * dy - (py - ay) * dx) / Math.sqrt(len2);
 }
 
 /** Whether edges `offset` out from a curve stay within `tolerance` of the true
@@ -107,8 +94,8 @@ function flattenCubicRec(
   out: number[],
   depth: number,
 ): void {
-  const d1 = distPointToSegment(x1, y1, x0, y0, x3, y3);
-  const d2 = distPointToSegment(x2, y2, x0, y0, x3, y3);
+  const d1 = pointSegmentDist(x1, y1, x0, y0, x3, y3);
+  const d2 = pointSegmentDist(x2, y2, x0, y0, x3, y3);
   if (Math.max(d1, d2) <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     out.push(x3, y3);
     return;
@@ -147,7 +134,7 @@ function flattenQuadraticRec(
   out: number[],
   depth: number,
 ): void {
-  const d = distPointToSegment(x1, y1, x0, y0, x2, y2);
+  const d = pointSegmentDist(x1, y1, x0, y0, x2, y2);
   if (d <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     out.push(x2, y2);
     return;
@@ -196,8 +183,8 @@ function flattenCubicArcRec(
   accum: number,
   depth: number,
 ): number {
-  const d1 = distPointToSegment(x1, y1, x0, y0, x3, y3);
-  const d2 = distPointToSegment(x2, y2, x0, y0, x3, y3);
+  const d1 = pointSegmentDist(x1, y1, x0, y0, x3, y3);
+  const d2 = pointSegmentDist(x2, y2, x0, y0, x3, y3);
   const flat = Math.max(d1, d2) <= tolerance
     && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x3, y3, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
@@ -252,7 +239,7 @@ function flattenQuadraticArcRec(
   accum: number,
   depth: number,
 ): number {
-  const d = distPointToSegment(x1, y1, x0, y0, x2, y2);
+  const d = pointSegmentDist(x1, y1, x0, y0, x2, y2);
   const flat = d <= tolerance
     && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x2, y2, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
