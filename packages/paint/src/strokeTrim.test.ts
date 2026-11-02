@@ -24,4 +24,8 @@ describe('strokeTrimKey', () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys[0]).not.toBe('');
   });
+
+  it('keys an omitted pace as the default, length', () => {
+    expect(strokeTrimKey({ end: 0.5 })).toBe(strokeTrimKey({ end: 0.5, pace: 'length' }));
+  });
 });

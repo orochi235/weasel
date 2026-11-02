@@ -18,7 +18,7 @@ export interface StrokeTrim {
 /** A stable string per trim value, `''` for no trim; for cache and equality keys. */
 export function strokeTrimKey(trim: StrokeTrim | undefined): string {
   if (trim === undefined) return '';
-  return `trim(${atKey(trim.start)},${atKey(trim.end)},${trim.pace ?? ''})`;
+  return `trim(${atKey(trim.start)},${atKey(trim.end)},${trim.pace ?? 'length'})`;
 }
 
 function atKey(at: TrimAt | undefined): string {

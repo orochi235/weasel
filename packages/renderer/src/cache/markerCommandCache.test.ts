@@ -29,6 +29,14 @@ describe('cachedMarkerCommands', () => {
     expect(at4).not.toBe(at1);
   });
 
+  it('rebuilds when the trim changes, and hits on an equal one', () => {
+    const at = (end: number) => ({ ...STROKE, trim: { end } });
+    const short = cachedMarkerCommands(LINE, at(0.4), at(0.4), 2, undefined);
+    const longer = cachedMarkerCommands(LINE, at(0.6), at(0.6), 2, undefined);
+    expect(longer).not.toBe(short);
+    expect(cachedMarkerCommands(LINE, at(0.6), at(0.6), 2, undefined)).toBe(longer);
+  });
+
   it('rebuilds when the registry changes', () => {
     const before = cachedMarkerCommands(LINE, STROKE, STROKE, 2, undefined);
     const dispose = registerMarker({ ...getMarker('arrow')!, fill: { color: '#f00' } });
