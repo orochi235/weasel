@@ -5,7 +5,8 @@
 import type { CurvePosition, CurveSpan } from './along/curvePosition';
 import { pathLengthTable } from './along/pathTable';
 import { DEFAULT_FLATTEN_TOLERANCE } from './flatten';
-import type { Path, RectPath } from './path';
+import type { Path, PolygonPath, RectPath } from './path';
+import { flatSubpaths } from './pathSubpaths';
 import { originOf } from './paths/pathOrigin';
 import { polylineAtCurve, type PolylinePlace } from './tessellate/atCurve';
 import { extractPolylines } from './tessellate/polyline';
@@ -24,16 +25,15 @@ export function someSegment(
   path: Path, tolerance: number | undefined, span: CurveSpan | undefined, visit: SegmentVisit,
 ): boolean {
   if (path.kind === 'rect') return someRectEdge(path, span, visit);
+  if (!span) return someFlatEdge(path, tolerance, visit);
   const o = originOf(path);
   const polylines = extractPolylines(path, { flattenTolerance: tolerance ?? DEFAULT_FLATTEN_TOLERANCE });
-  const runs = span ? pathLengthTable(path).runs : undefined;
-  const first = span ? span.from.run : 0;
-  const last = span ? Math.min(span.to.run, polylines.length - 1) : polylines.length - 1;
-  for (let r = Math.max(first, 0); r <= last; r++) {
+  const { runs } = pathLengthTable(path);
+  for (let r = Math.max(span.from.run, 0); r <= Math.min(span.to.run, polylines.length - 1); r++) {
     const pl = polylines[r];
-    const place = (at: CurvePosition): PolylinePlace => polylineAtCurve(pl, at.segment, at.t, runs?.[r]);
-    const head = span && r === span.from.run ? place(span.from) : null;
-    const tail = span && r === span.to.run ? place(span.to) : null;
+    const place = (at: CurvePosition): PolylinePlace => polylineAtCurve(pl, at.segment, at.t, runs[r]);
+    const head = r === span.from.run ? place(span.from) : null;
+    const tail = r === span.to.run ? place(span.to) : null;
     const from = head?.length ?? 0;
     const to = tail?.length ?? Infinity;
     if (!(from < to)) continue;
@@ -55,6 +55,21 @@ export function someSegment(
     }
   }
   return false;
+}
+
+/** {@link someSegment} untrimmed: pen order does not matter, so the walk skips the anchor bookkeeping a span needs. */
+function someFlatEdge(path: PolygonPath, tolerance: number | undefined, visit: SegmentVisit): boolean {
+  const { closed, open } = flatSubpaths(path, tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+  const run = (sub: readonly number[], wrap: boolean): boolean => {
+    const n = sub.length;
+    const last = wrap ? n : n - 2;
+    for (let i = 0; i < last; i += 2) {
+      const j = (i + 2) % n;
+      if (visit(sub[i], sub[i + 1], sub[j], sub[j + 1])) return true;
+    }
+    return false;
+  };
+  return closed.some((sub) => run(sub, true)) || open.some((sub) => run(sub, false));
 }
 
 /** {@link someSegment} for a rect, in `rectToContour`'s order: from the
