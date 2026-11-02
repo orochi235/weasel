@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
 import { dragPlacement, floatingItem, ITEM_ID, STRATEGY } from './dragPlacement';
+import { cssPx } from '../cssPx';
 
 /** What {@link useFloatingPlacement} reads. */
 export interface FloatingPlacementOptions {
@@ -55,10 +56,9 @@ function borderBoxOf(entry: ResizeObserverEntry): { w: number; h: number } {
 /** The box a container lays its children out in, as an observer's `contentRect` gives it. */
 function contentBoxOf(el: Element): { w: number; h: number } {
   const css = getComputedStyle(el);
-  const px = (v: string) => Number.parseFloat(v) || 0;
   return {
-    w: el.clientWidth - px(css.paddingLeft) - px(css.paddingRight),
-    h: el.clientHeight - px(css.paddingTop) - px(css.paddingBottom),
+    w: el.clientWidth - cssPx(css.paddingLeft) - cssPx(css.paddingRight),
+    h: el.clientHeight - cssPx(css.paddingTop) - cssPx(css.paddingBottom),
   };
 }
 

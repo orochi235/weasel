@@ -2,6 +2,7 @@ import {
   KEY_MIN_SCALE, KEY_SPELLINGS, pickSpelling, resolveBankScales, spellingsOf,
   type KeySpellings, type LegendFit,
 } from './legendFit';
+import { cssPx } from '../../cssPx';
 
 /** Vertical room kept clear inside the key, for the thicker bottom border. */
 const ROOM_H_SLACK = 4;
@@ -41,17 +42,16 @@ interface Room {
  *  keys lays the page out once. */
 function readRoom(kbd: HTMLElement): Room | null {
   const cs = getComputedStyle(kbd);
-  const px = (v: string) => parseFloat(v) || 0;
-  const applied = px(cs.getPropertyValue('--key-legend-scale')) || 1;
-  const size = px(cs.fontSize) / applied;
+  const applied = cssPx(cs.getPropertyValue('--key-legend-scale')) || 1;
+  const size = cssPx(cs.fontSize) / applied;
   if (!size) return null;
   return {
     font: `${cs.fontStyle} ${cs.fontWeight} ${size}px ${cs.fontFamily}`,
     letterSpacing: cs.letterSpacing,
     size,
-    lineHeight: px(cs.getPropertyValue('--key-wrap-line-height')) || 1,
-    width: kbd.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight),
-    height: kbd.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) - ROOM_H_SLACK,
+    lineHeight: cssPx(cs.getPropertyValue('--key-wrap-line-height')) || 1,
+    width: kbd.clientWidth - cssPx(cs.paddingLeft) - cssPx(cs.paddingRight),
+    height: kbd.clientHeight - cssPx(cs.paddingTop) - cssPx(cs.paddingBottom) - ROOM_H_SLACK,
   };
 }
 

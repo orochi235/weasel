@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { cssPx } from '../../cssPx';
 
 /** Marks a bar's child as one of its items, by key, for {@link useBarOverflow} to measure. */
 export const BAR_ITEM = 'data-bar-item';
@@ -84,10 +85,9 @@ function lineLength(keys: readonly string[], sizes: ReadonlyMap<string, number>,
 /** A bar's padding and border along its line. */
 function frameOf(el: HTMLElement, vertical: boolean): number {
   const style = getComputedStyle(el);
-  const px = (value: string): number => Number.parseFloat(value) || 0;
   return vertical
-    ? px(style.paddingTop) + px(style.paddingBottom) + px(style.borderTopWidth) + px(style.borderBottomWidth)
-    : px(style.paddingLeft) + px(style.paddingRight) + px(style.borderLeftWidth) + px(style.borderRightWidth);
+    ? cssPx(style.paddingTop) + cssPx(style.paddingBottom) + cssPx(style.borderTopWidth) + cssPx(style.borderBottomWidth)
+    : cssPx(style.paddingLeft) + cssPx(style.paddingRight) + cssPx(style.borderLeftWidth) + cssPx(style.borderRightWidth);
 }
 
 /** The length of a bar's line inside its padding, and the gap between two items on it. */
@@ -98,10 +98,9 @@ export interface BarRoom {
 
 function roomOf(el: HTMLElement, vertical: boolean): BarRoom {
   const style = getComputedStyle(el);
-  const px = (value: string): number => Number.parseFloat(value) || 0;
   return vertical
-    ? { size: el.clientHeight - px(style.paddingTop) - px(style.paddingBottom), gap: px(style.rowGap) }
-    : { size: el.clientWidth - px(style.paddingLeft) - px(style.paddingRight), gap: px(style.columnGap) };
+    ? { size: el.clientHeight - cssPx(style.paddingTop) - cssPx(style.paddingBottom), gap: cssPx(style.rowGap) }
+    : { size: el.clientWidth - cssPx(style.paddingLeft) - cssPx(style.paddingRight), gap: cssPx(style.columnGap) };
 }
 
 /** The count of `keys` that fit in `room`: infinite for all of them, and while one has never been measured. */

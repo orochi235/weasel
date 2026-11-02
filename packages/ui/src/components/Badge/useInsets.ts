@@ -4,6 +4,7 @@ import type { BaseModule, BaseSampler } from './bases/types';
 import { fitInsets, outlinePoints } from './bases/inscribedRect';
 import { inwardReach } from './composeOutline';
 import type { BadgeEffectSpec } from './effects';
+import { cssPx } from '../../cssPx';
 
 const NONE: ShapeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const SIDES = ['top', 'right', 'bottom', 'left'] as const;
@@ -23,9 +24,8 @@ const same = (a: Measured, b: Measured) =>
 /** The padding of `badge` that its `--badge-inset-*` properties did not put there. */
 function ownPadding(badge: HTMLElement): ShapeInsets {
   const cs = getComputedStyle(badge);
-  const px = (v: string) => parseFloat(v) || 0;
   const side = (name: typeof SIDES[number], computed: string) =>
-    Math.max(0, px(computed) - px(badge.style.getPropertyValue(`--badge-inset-${name}`)));
+    Math.max(0, cssPx(computed) - cssPx(badge.style.getPropertyValue(`--badge-inset-${name}`)));
   return {
     top: side('top', cs.paddingTop),
     right: side('right', cs.paddingRight),
