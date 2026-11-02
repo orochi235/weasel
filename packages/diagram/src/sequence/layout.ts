@@ -3,6 +3,7 @@
  * diagram's own frame (its top-left at the origin). Pure geometry: the specs
  * draw it, the editing reads it back to place a drop.
  */
+import { unionRects } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { columnsOf } from './columns';
 import { SEQ, seqMeasure, type SeqRect } from './metrics';
@@ -55,18 +56,6 @@ export interface SequenceLayout {
   slots: readonly SeqSlot[];
 }
 
-/** The rect around `rects`, or `null` for none. */
-export function unionRect(rects: readonly SeqRect[]): SeqRect | null {
-  if (rects.length === 0) return null;
-  const x = Math.min(...rects.map((r) => r.x));
-  const y = Math.min(...rects.map((r) => r.y));
-  return {
-    x, y,
-    width: Math.max(...rects.map((r) => r.x + r.width)) - x,
-    height: Math.max(...rects.map((r) => r.y + r.height)) - y,
-  };
-}
-
 /**
  * Lays `data` out: lifelines spaced to the widest text between neighbors, a
  * row per step sized to its text, self-messages looped, heads started at
@@ -84,7 +73,7 @@ export function sequenceLayout(data: SequenceData, opts: SequenceLayoutOptions =
   const lifelines = rows.lifelines.map((l) => ({ ...l, y1: l.y1 ?? foot, destroyed: l.y1 !== null }));
   const boxes = (data.boxes ?? []).flatMap((b): SeqBoxPlace[] => {
     const heads = rows.heads.filter((h) => b.members.includes(h.id)).map((h) => h.box);
-    const around = unionRect(heads);
+    const around = unionRects(heads);
     if (around === null) return [];
     const label = (b.label ?? '') === '' ? null : m.text(b.label!);
     const x = around.x - SEQ.boxPad;
@@ -93,7 +82,7 @@ export function sequenceLayout(data: SequenceData, opts: SequenceLayoutOptions =
     const box = { x, y, width, height: foot + SEQ.boxPad - y };
     return [{ id: b.id, box, ...(label ? { label: { x: x + (width - label.width) / 2, y: y + 2, ...label } } : {}) }];
   });
-  const all = unionRect([
+  const all = unionRects([
     ...rows.heads.map((h) => h.box), ...rows.notes.map((n) => n.box), ...rows.fragments.map((f) => f.box), ...boxes.map((b) => b.box),
     ...rows.messages.flatMap((msg) => (msg.text ? [msg.text] : [])),
     { x: 0, y: 0, width: cols.right, height: foot },

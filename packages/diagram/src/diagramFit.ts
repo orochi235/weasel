@@ -5,6 +5,7 @@
  * except `fit()`, which takes the view back.
  */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, clampView, fitViewToBounds, useLatest, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
+import { unionRects } from '@weasel-js/geom';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isBodyOrRegion } from './bodyNode';
 import { diagramEdgeOf } from './edgeTrait';
@@ -35,15 +36,7 @@ function diagramBounds(specs: Boxes, extra?: Bounds): Bounds | null {
     for (const p of [...(edge?.waypoints ?? []), ...(edge?.route ?? [])]) boxes.push({ x: p.x, y: p.y, width: 0, height: 0 });
   }
   if (extra !== undefined) boxes.push(extra);
-  if (boxes.length === 0) return null;
-  const x = Math.min(...boxes.map((b) => b.x));
-  const y = Math.min(...boxes.map((b) => b.y));
-  return {
-    x,
-    y,
-    width: Math.max(...boxes.map((b) => b.x + b.width)) - x,
-    height: Math.max(...boxes.map((b) => b.y + b.height)) - y,
-  };
+  return unionRects(boxes);
 }
 
 /** The view `DiagramView` opens on: every node box and group box in view, never above

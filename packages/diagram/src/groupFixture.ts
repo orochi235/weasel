@@ -1,4 +1,5 @@
 /** Test fixture: a grouped graph, and where a layout leaves its boxes. */
+import { rectsOverlap } from '@weasel-js/geom';
 import { buildGraph, type Graph, type GraphNodeLike } from './graph';
 import type { LayoutOptions, LayoutResult } from './layout';
 
@@ -55,8 +56,7 @@ export function boxOf(at: Map<string, Rect>, members: readonly string[], inset: 
   };
 }
 
-export const overlaps = (a: Rect, b: Rect) =>
-  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+export const overlaps = rectsOverlap;
 
 /** A group's box where its members may themselves be groups: the union of its
  *  nodes and its inner groups' boxes, grown by the inset. */

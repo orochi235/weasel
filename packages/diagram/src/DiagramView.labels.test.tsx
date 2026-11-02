@@ -1,5 +1,6 @@
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
+import { rectsOverlap } from '@weasel-js/geom';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DiagramView, type DiagramViewApi } from './DiagramView';
@@ -22,8 +23,7 @@ const DATA: DiagramData = {
 };
 const LABEL = `${edgeIdOf(DATA.edges[0]!)}/label`;
 
-type Rect = { x: number; y: number; width: number; height: number };
-const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+const overlaps = rectsOverlap;
 
 function mount(labels?: 'dodge') {
   const api = createRef<DiagramViewApi>();

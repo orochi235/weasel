@@ -6,7 +6,7 @@ import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutStrategy } from '../../../../layout/types';
 import { planeOf } from '../../planeInput';
 import type { MoveSession } from '../session';
-import { pointInBounds } from './container';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 /** Where each dragged root that leaves its layout container on release lands.
  *  A root leaves when the drop center falls outside the body of the layout
@@ -31,7 +31,7 @@ export function resolveLayoutExits(
     const pose = composeWorldPose(poseAdapter, id as string, pc.compose);
     if (layout?.contains) return layout.contains(pose, at);
     const b = poseDescriptorForNode(d, node).getBounds(pose);
-    return pointInBounds(b, at);
+    return rectContainsPointHalfOpen(b, at.x, at.y);
   };
   const landings = new Map<string, NodeId | null>();
   const landingOn = (layer: string): NodeId | null => {

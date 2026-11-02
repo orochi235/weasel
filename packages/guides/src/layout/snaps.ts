@@ -1,4 +1,5 @@
 import type { DropTarget, LayoutSnap } from '@weasel-js/core';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 function dist2(a: { x: number; y: number }, b: { x: number; y: number }): number {
   const dx = a.x - b.x;
@@ -48,13 +49,6 @@ export function nearestWithin<TPose>(opts: { tolerance: number }): LayoutSnap<TP
   };
 }
 
-function rectContains(
-  r: { x: number; y: number; width: number; height: number },
-  p: { x: number; y: number },
-): boolean {
-  return p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
-}
-
 /**
  * Region-aware snap. If the pointer falls inside any target's `hitBounds`,
  * that target wins; otherwise falls back to nearest-origin. Useful for
@@ -69,7 +63,7 @@ export function containedThenNearest<TPose>(): LayoutSnap<TPose> {
   return {
     pickTarget(targets, pointer) {
       for (const t of targets) {
-        if (t.hitBounds && rectContains(t.hitBounds, pointer)) return t;
+        if (t.hitBounds && rectContainsPointHalfOpen(t.hitBounds, pointer.x, pointer.y)) return t;
       }
       return nearestOf(targets, pointer);
     },
@@ -98,8 +92,8 @@ export function cellAt<TPose>(): LayoutSnap<TPose> {
   return {
     pickTarget(targets, pointer) {
       for (const t of targets) {
-        if (t.hitBounds && rectContains(t.hitBounds, pointer)) return t;
-        if (isCellMeta(t.meta) && rectContains(t.meta.cellRect, pointer)) return t;
+        if (t.hitBounds && rectContainsPointHalfOpen(t.hitBounds, pointer.x, pointer.y)) return t;
+        if (isCellMeta(t.meta) && rectContainsPointHalfOpen(t.meta.cellRect, pointer.x, pointer.y)) return t;
       }
       return nearestOf(targets, pointer);
     },

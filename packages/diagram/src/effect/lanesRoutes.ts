@@ -14,7 +14,7 @@ import {
 import { nestGroups } from '../groupTree';
 import { labelCenter } from '../label';
 import { portSitesOf } from '../ports';
-import { worldCoords } from '@weasel-js/geom';
+import { rectsOverlap, worldCoords } from '@weasel-js/geom';
 
 export type Box = { x: number; y: number; width: number; height: number };
 
@@ -209,8 +209,6 @@ export function routeOf(
   return EDGE_DERIVE_PATH(edge, [dep(from), dep(to)] as never);
 }
 
-const overlaps = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-
 /** Where along `path` to put a label `size` big, `offset` off it, so it
  *  covers none of `keepOut`: on the left of the route as near its middle as
  *  that allows, else on its right, else undefined. Answers the point to put
@@ -224,7 +222,7 @@ export function clearLabel(
       const center = near === undefined ? null : labelCenter(path, { at: { near }, offset: side }, size);
       if (near === undefined || center === null) continue;
       const box = { x: center.x - size.width / 2, y: center.y - size.height / 2, width: size.width, height: size.height };
-      if (!keepOut.some((k) => overlaps(box, k))) return { near, offset: side, box };
+      if (!keepOut.some((k) => rectsOverlap(box, k))) return { near, offset: side, box };
     }
   }
   return undefined;

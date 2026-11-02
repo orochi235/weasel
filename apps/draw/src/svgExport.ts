@@ -47,6 +47,7 @@ import {
   SWILL_NAMESPACES,
   type SceneSource,
 } from './svgInterop';
+import { rectsIntersect } from '@weasel-js/geom';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { EffectObj } from './svgEffects';
 import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
@@ -274,9 +275,6 @@ export interface PageToSvgOptions {
   onWarn?: (message: string) => void;
 }
 
-const overlaps = (a: { x: number; y: number; width: number; height: number }, b: typeof a): boolean =>
-  a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
-
 /**
  * Serialize one page of a WeaselDraw scene to an SVG document string: its
  * `viewBox` is the page's rect, so what crosses the edge is cut there, and a
@@ -291,7 +289,7 @@ export function pageToSvgString<TLayer extends string>(
   const poseOf = poseOfIn(scene);
   const roots = scene.roots.map(String).filter((id) => {
     const box = unionAABB([poseOf(id)]);
-    return box !== null && overlaps(box, page);
+    return box !== null && rectsIntersect(box, page);
   });
   const nodes: SvgNode[] = WHITE.test(opts.backgroundColor) ? [] : [backgroundSvgNode(opts.backgroundColor, page)];
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOf), roots));

@@ -1,3 +1,4 @@
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramLabelOf } from '../labelTrait';
 import { dataKeyReader } from '../trait';
@@ -79,8 +80,7 @@ export function diagramDropParentAt(
       const world = frame === null || compose === undefined ? pose : compose(frame as never, pose as never) as Rect;
       const trait = diagramContainerOf(node);
       const b = bodyBox(world, trait?.header);
-      const inside = point.x >= b.x && point.x < b.x + b.width && point.y >= b.y && point.y < b.y + b.height;
-      if (!inside) continue;
+      if (!rectContainsPointHalfOpen(b, point.x, point.y)) continue;
       if (trait?.role === 'container' || trait?.role === 'lane') best = id;
       walk(scene.childrenOf(id as never), world);
     }

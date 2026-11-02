@@ -1,3 +1,4 @@
+import { rectContainsPoint } from '@weasel-js/geom';
 import type { Action, ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { isEnterable, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
@@ -19,9 +20,6 @@ export interface LeaveGroupOptions {
   boxOf: (id: string) => Box | null;
 }
 
-const inside = (b: Box, p: WorldPoint) =>
-  p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
-
 /**
  * Leaves every entered group whose box does not hold `p`, innermost first. A press that lands
  * inside the entered group's box stays in it, and so does one on a group with no box to read.
@@ -33,7 +31,7 @@ export function leaveGroupsOutside(
 ): void {
   for (let id = entered.get(); id !== null; id = entered.get()) {
     const box = boxOf(id);
-    if (box === null || inside(box, p)) return;
+    if (box === null || rectContainsPoint(box, p.x, p.y)) return;
     entered.leave();
     if (entered.get() === id) return;
   }
@@ -87,7 +85,7 @@ export function createLeaveGroupAction(opts: LeaveGroupOptions): Action {
       if (here === null || deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
       if (!at) return true;
       const box = opts.boxOf(here);
-      return box !== null && !inside(box, at) ? true : ActionDisabledReason.NotApplicable;
+      return box !== null && !rectContainsPoint(box, at.x, at.y) ? true : ActionDisabledReason.NotApplicable;
     },
     invoker: {
       timing: 'immediate' as const,
