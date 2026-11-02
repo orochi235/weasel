@@ -36,7 +36,7 @@ function attrOf(el: Element, name: string): string | null {
 }
 
 /** Whether `stroke` is written as an outline. */
-export function hasVariableWidth(stroke: SvgStroke | undefined): stroke is SvgStroke {
+export function hasVariableWidth(stroke: SvgStroke | undefined): boolean {
   return (stroke?.vertexWidths?.length ?? 0) > 0 || stroke?.nib !== undefined;
 }
 
