@@ -10,6 +10,7 @@ import {
   type CornerShapeFrame,
 } from './cornerShape';
 import type { Point } from './cubicMath';
+import { nearestOnCubic } from '../nearest';
 
 // A right-angle corner at (100, 0) with a setback of 10 along each edge.
 const FRAME: CornerShapeFrame = { start: { x: 90, y: 0 }, end: { x: 100, y: 10 }, outer: { x: 100, y: 0 } };
@@ -96,6 +97,29 @@ describe('cornerShapePieces', () => {
     }
     expect(pts.at(-1)!.x).toBeCloseTo(100, 9);
     expect(pts.at(-1)!.y).toBeCloseTo(10, 9);
+  });
+
+  // Sampled evenly in u and v: past k ≈ 7 the curve's legs lie in less angle
+  // than a double resolves, so the theta-sampled check above never lands on them.
+  it.each([7.163, 9.5, -10, 11.3])('fits the legs of k = %s within tolerance', (k) => {
+    const pieces = cornerShapePieces(k, FRAME);
+    const n = 2 ** Math.abs(k);
+    const across = (c: number) => Math.max(0, 1 - c ** n) ** (1 / n);
+    const at = (u: number, v: number): Point => (k > 0 ? { x: 90 + 10 * u, y: 10 - 10 * v } : { x: 100 - 10 * v, y: 10 * u });
+    let worst = 0;
+    for (let i = 0; i <= 400; i++) {
+      const c = i / 400;
+      for (const q of [at(c, across(c)), at(across(c), c)]) {
+        let from = FRAME.start, best = Infinity;
+        for (const p of pieces) {
+          if (p.kind !== 'cubic') continue;
+          best = Math.min(best, nearestOnCubic(q.x, q.y, from.x, from.y, p.c1.x, p.c1.y, p.c2.x, p.c2.y, p.to.x, p.to.y).dist);
+          from = p.to;
+        }
+        worst = Math.max(worst, best);
+      }
+    }
+    expect(worst).toBeLessThanOrEqual(CORNER_FIT_TOLERANCE * 10);
   });
 
   it('puts the squircle where u^4 + v^4 = 1 says its middle is', () => {

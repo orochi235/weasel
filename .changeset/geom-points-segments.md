@@ -24,3 +24,8 @@ point is the far end exactly. `nearestOnLine` and the private copies in core's m
 animator's auto-skinning, diagram's route and label code, stroke's edge test, path-tools'
 extend-to-meet and guides' layout snaps now call these, so their distances can move by a rounding
 step (`Math.hypot` became a square root of the summed squares).
+
+Corner shapes (`cornerShapePieces`) now fit the true superellipse within `CORNER_FIT_TOLERANCE` for
+every finite `k`. Past `|k| ≈ 9` they strayed up to nine times the tolerance off the curve's straight
+legs, because the fit stepped in an angle that crowds those legs into less than a double resolves;
+it now steps evenly along each leg. The same corners draw with about a third fewer cubics.
