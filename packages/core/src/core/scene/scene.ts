@@ -41,6 +41,18 @@ let defaultIdCounter = 0;
 const defaultGenerateId = (): NodeId =>
   asNodeId(`n${(defaultIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
+/** `mint`, passing over any id `taken` already holds: a document reloaded into a new session keeps the ids the last
+ *  session minted, and a generator restarted with the session can mint them again. */
+function freshIds(mint: () => NodeId, taken: (id: NodeId) => boolean): () => NodeId {
+  return () => {
+    for (let tries = 0; tries < 1000; tries++) {
+      const id = mint();
+      if (!taken(id)) return id;
+    }
+    throw new Error('scene: generateId gave 1000 ids the scene already holds');
+  };
+}
+
 /** Build a scene outside React. `useScene` is the usual entry point; reach for
  *  this in tests, in headless rendering, or wherever a scene must outlive a
  *  component. Throws if no system layers are declared. */
@@ -84,7 +96,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     writePose,
   });
 
-  const generateId = options.generateId ?? defaultGenerateId;
+  const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id));
   const selection = createSceneSelection(locks.reachable, (id) => state.nodes.get(id)?.parent);
   // A selection change is a scene change to every subscriber.
   selection.subscribe(notifier.notify);

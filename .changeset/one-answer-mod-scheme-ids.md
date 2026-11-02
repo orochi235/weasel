@@ -26,3 +26,8 @@ longer selects all in a `Tree` or any list on `useRowNavigation`, which passes `
 the system states no preference. Dark is the mode the theme's tokens paint at `:root`. theme's
 `useResolvedColorMode`, core's `watchThemeOf` and forge's loupe conditions use it. **Behavior change:**
 forge's loupe read a missing `matchMedia` as light; it now reads it as dark, as the theme always has.
+
+`scene.mintId()`, and the id `add` gives a spec with none, now pass over any id the scene already
+holds. A document reopened in a new session keeps the ids the last one minted, and a `generateId` that
+starts over with the session could mint them again; a generator that gives 1000 taken ids in a row
+throws.

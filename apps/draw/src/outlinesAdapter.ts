@@ -16,8 +16,6 @@ export function drawOutlinesAdapter(
   scene: DrawScene,
   selection: SelectionApi['adapterMethods'],
 ): CreateOutlinesAdapter {
-  let idCounter = 0;
-  const mintId = () => `o-${Date.now().toString(36)}-${idCounter++}`;
   const a: CreateOutlinesAdapter = {
     ...defaultCommitAdapter(scene, selection),
     getTextSource: (id) => textSourceOf(scene, id),
@@ -30,7 +28,7 @@ export function drawOutlinesAdapter(
       // under a minted group is a part of it, and the group carries the data.
       const standsIn = parent === (source?.parent ?? null);
       return {
-        id: mintId(),
+        id: scene.mintId(),
         kind: 'mark',
         layer: source?.layer ?? 'default',
         parent,
@@ -40,7 +38,7 @@ export function drawOutlinesAdapter(
     },
     // The kit `group` action's container: an envelope tracking its members.
     createContainerNode: (sourceId, { parent, bounds }) => ({
-      id: mintId(),
+      id: scene.mintId(),
       kind: 'group',
       layer: scene.get(sourceId)?.layer ?? 'default',
       parent,
