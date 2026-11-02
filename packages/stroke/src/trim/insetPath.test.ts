@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { pathFromD, pathLengthTable } from '@weasel-js/geom';
+import { type Path, pathFromD, pathLengthTable } from '@weasel-js/geom';
 import { insetPath } from './insetPath';
 
 const ARC = pathFromD('M0 0C40 -60 100 -60 120 0');
-const length = (d: ReturnType<typeof pathFromD>) => pathLengthTable(d).total;
+const length = (d: Path) => pathLengthTable(d).total;
 
 describe('insetPath', () => {
   it('cuts each end back by exact arc length, keeping the curve a curve', () => {

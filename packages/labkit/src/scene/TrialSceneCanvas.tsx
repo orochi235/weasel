@@ -4,11 +4,18 @@ import {
   type SceneCanvasApi,
   type SceneCanvasProps,
 } from '@weasel-js/core';
-import { type ForwardedRef, forwardRef, type ReactElement, type Ref, useCallback, useRef } from 'react';
+import {
+  type ForwardedRef,
+  forwardRef,
+  type ReactElement,
+  type Ref,
+  useCallback,
+  useRef,
+} from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
 import { useTrialTitle } from '../trial/trialTitle';
-import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 import { useSceneCamera } from './useSceneCamera';
+import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 
 /** Props for {@link TrialSceneCanvas}: a `<SceneCanvas>`'s, sized by the trial. */
 export type TrialSceneCanvasProps<TData, TLayer extends string, TPose> = Omit<
@@ -40,11 +47,14 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   const api = useRef<SceneCanvasApi | null>(null);
   const host = useRef<HTMLDivElement | null>(null);
   useSceneCamera(api, host);
-  const both = useCallback((v: SceneCanvasApi | null) => {
-    api.current = v;
-    if (typeof ref === 'function') ref(v);
-    else if (ref) ref.current = v;
-  }, [ref]);
+  const both = useCallback(
+    (v: SceneCanvasApi | null) => {
+      api.current = v;
+      if (typeof ref === 'function') ref(v);
+      else if (ref) ref.current = v;
+    },
+    [ref],
+  );
   return (
     <div className="lk-trial-scene" ref={host}>
       <SceneCanvas
