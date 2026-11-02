@@ -93,12 +93,18 @@ describe('sectionTree enableIf', () => {
     );
     const off = sectionTree(resolved, { look: { stroke: { on: false, width: 1, cap: 1 } } });
     expect([...off.disabled]).toEqual(['style.look.stroke.width']);
-    const stroke = nodeAt(off.group, 'style.look.stroke') as PrefLeaf & { children: Record<string, PrefLeaf> };
+    const stroke = nodeAt(off.group, 'style.look.stroke') as PrefLeaf & {
+      children: Record<string, PrefLeaf>;
+    };
     expect(Object.keys(stroke.children)).toEqual(['on', 'width']);
     expect(stroke.children.width).not.toHaveProperty('enableIf');
     const on = sectionTree(resolved, { look: { stroke: { on: true, width: 1, cap: 1 } } });
     expect([...on.disabled]).toEqual([]);
-    expect(Object.keys((nodeAt(on.group, 'style.look.stroke') as typeof stroke).children)).toEqual(['on', 'width', 'cap']);
+    expect(Object.keys((nodeAt(on.group, 'style.look.stroke') as typeof stroke).children)).toEqual([
+      'on',
+      'width',
+      'cap',
+    ]);
   });
 
   it("keeps a condition that reads a list's entry for the form, with its other tests answered", () => {
@@ -110,14 +116,22 @@ describe('sectionTree enableIf', () => {
             [],
             f.object({
               mode: f.enum<string>('hold', ['hold', 'fade']),
-              hold: f.number(1).enableIf({ all: [{ from: 'item', path: 'mode', is: 'hold' }, { path: 'on' }] }),
+              hold: f
+                .number(1)
+                .enableIf({ all: [{ from: 'item', path: 'mode', is: 'hold' }, { path: 'on' }] }),
             }),
           )
           .section('Phases'),
       }),
     );
     const { group } = sectionTree(resolved, { on: false, phases: [] });
-    const item = (nodeAt(group, 'phases.phases') as PrefLeaf & { item: PrefLeaf & { children: Record<string, PrefLeaf> } }).item;
-    expect(item.children.hold?.enableIf).toEqual({ all: [{ from: 'item', path: 'mode', is: 'hold' }, { any: [] }] });
+    const item = (
+      nodeAt(group, 'phases.phases') as PrefLeaf & {
+        item: PrefLeaf & { children: Record<string, PrefLeaf> };
+      }
+    ).item;
+    expect(item.children.hold?.enableIf).toEqual({
+      all: [{ from: 'item', path: 'mode', is: 'hold' }, { any: [] }],
+    });
   });
 });

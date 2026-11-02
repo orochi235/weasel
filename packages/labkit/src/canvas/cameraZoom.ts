@@ -1,4 +1,4 @@
-import { zoomAt, type View } from '@weasel-js/core';
+import { type View, zoomAt } from '@weasel-js/core';
 import type { CameraView } from './CameraInput';
 
 /** `view` at `scale` on both axes, about the screen point `at`. A flipped axis

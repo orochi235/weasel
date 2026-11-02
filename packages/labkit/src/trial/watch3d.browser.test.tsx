@@ -72,7 +72,10 @@ const over = (top: Rgba, under: Rgba): Rgba =>
   [...([0, 1, 2] as const).map((i) => top[i] * top[3] + under[i] * (1 - top[3])), 1] as Rgba;
 
 const contrast = (a: Rgba, b: Rgba) =>
-  luminanceContrast(relativeLuminance(a[0] / 255, a[1] / 255, a[2] / 255), relativeLuminance(b[0] / 255, b[1] / 255, b[2] / 255));
+  luminanceContrast(
+    relativeLuminance(a[0] / 255, a[1] / 255, a[2] / 255),
+    relativeLuminance(b[0] / 255, b[1] / 255, b[2] / 255),
+  );
 
 let warn: MockInstance<typeof console.warn>;
 beforeEach(() => {

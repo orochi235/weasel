@@ -1,4 +1,4 @@
-import { effectivePose, viewRectToScreen, type View } from '@weasel-js/core';
+import { effectivePose, type View, viewRectToScreen } from '@weasel-js/core';
 import type { LoupeRect } from '@weasel-js/loupe';
 import { SEAM_GRAB, type SeamPreview, seamOf, showsSeam, splitRects } from './compare';
 import { lensShapeOf } from './lensScene';

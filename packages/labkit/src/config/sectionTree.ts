@@ -1,7 +1,7 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { headingLeaf } from './headingLeaf';
 import { valueAtPath } from './path';
-import { bareGroup, configVerdict, type ConfigVerdict } from './railConditions';
+import { bareGroup, type ConfigVerdict, configVerdict } from './railConditions';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
 
@@ -130,7 +130,9 @@ function prune(
     replace(children, reordered);
     replace(values, revalued);
   }
-  return Object.keys(children).length === 0 ? null : { group: { ...bareGroup(group), children }, values };
+  return Object.keys(children).length === 0
+    ? null
+    : { group: { ...bareGroup(group), children }, values };
 }
 
 function replace<V>(target: Record<string, V>, from: Record<string, V>): void {
