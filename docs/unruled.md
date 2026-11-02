@@ -625,8 +625,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-07: `react-hooks/set-state-in-effect` is on.
 - 2026-10-11 (core split): two size allowlist entries went up one line each (`Specimen.tsx`,
   `createKeyframeLayer.tsx`).
-- 2026-10-13: Every store outside the five leaf packages notifies through `createEmitter`, and six
-  packages gained a `@weasel-js/registry` dependency. The root and core `tsconfig` `paths` blocks
+- 2026-10-13: The root and core `tsconfig` `paths` blocks
   are generated (`npm run gen:tsconfig-paths`). `preserve-manual-memoization` is on. Each action's
   code has one directory. New exports to make types nameable: `CameraProps`, `CanvasViewState`,
   `CanvasLayers`, `SceneSlotLayers`, `OpsApplier`, `strokeRegion`, animator's `Naming`, gestures'

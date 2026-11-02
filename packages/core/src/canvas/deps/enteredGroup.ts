@@ -7,6 +7,7 @@
  * parent, and an undo that brings it back lands on it again.
  */
 import { useEffect, useMemo } from 'react';
+import { createEmitter } from '@weasel-js/registry';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { NodeId, Scene } from 'core/scene/types';
 
@@ -47,7 +48,7 @@ type SceneReads = Pick<Scene<unknown, string, unknown>, 'get' | 'ancestorsOf' | 
 export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
   let chain: NodeId[] = [];
   let announced: NodeId | null = null;
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
 
   const isGroup = (id: NodeId) => isEnterable(scene.get(id));
   const get = (): NodeId | null => chain.find(isGroup) ?? null;
@@ -55,7 +56,7 @@ export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
 
   const announce = () => {
     announced = get();
-    for (const fn of [...listeners]) fn();
+    listeners.emit();
   };
 
   let stopScene: (() => void) | null = null;
@@ -86,9 +87,9 @@ export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
         announced = get();
         stopScene = watchScene();
       }
-      listeners.add(fn);
+      const off = listeners.subscribe(fn);
       return () => {
-        listeners.delete(fn);
+        off();
         if (listeners.size === 0) { stopScene?.(); stopScene = null; }
       };
     },

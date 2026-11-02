@@ -1,4 +1,5 @@
 import type { AudioEngine, AudioGraph, GraphPatch } from '@weasel-js/audio';
+import { createEmitter } from '@weasel-js/registry';
 import type { EffectPipeline, EffectRun } from '../types';
 import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
 import { createLivePreviews, errorsRun } from './livePreviews';
@@ -85,7 +86,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
   let errors: Readonly<Record<string, string>> = {};
   let state: LiveAudioRunnerState = { run: { stages: {} }, playing: false };
   let disposed = false;
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   const previews = createLivePreviews();
 
   const set = (next: Partial<LiveAudioRunnerState>) => {
@@ -93,7 +94,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     if (merged.run === state.run && merged.playing === state.playing) return;
     if (merged.run !== state.run && merged.run !== undefined) previews.track(merged.run);
     state = merged;
-    for (const l of [...listeners]) l();
+    listeners.emit();
   };
   const publishErrors = (next: Readonly<Record<string, string>>) => {
     if (sameErrors(errors, next)) return;
@@ -175,10 +176,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
       sync(EMPTY_PLAN);
       set({ playing: false });
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: listeners.subscribe,
     dispose() {
       if (disposed) return;
       disposed = true;

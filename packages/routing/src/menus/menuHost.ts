@@ -3,6 +3,7 @@ import { mergeMenuDefs, pickMenu } from './pickMenu';
 import { resolveMenu, type MenuSources } from './resolveMenu';
 import type { MenuDef, MenuHit, OwnedMenuDef } from './types';
 import type { Point } from '@weasel-js/geom';
+import { createEmitter } from '@weasel-js/registry';
 
 /** Ask to open a menu: by id (chrome) or by what was hit (canvas). */
 export interface MenuOpenRequest {
@@ -49,10 +50,10 @@ export interface MenuHost {
 /** Creates the host that decides which context menu is open, from the menus registered to it. */
 export function createMenuHost(src: MenuSources & { activeTool(): string | null }): MenuHost {
   const defs: OwnedMenuDef[] = [];
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   let open: OpenMenu | null = null;
   let seq = 0;
-  const emit = () => { for (const fn of listeners) fn(); };
+  const emit = () => listeners.emit();
 
   const close = () => {
     if (!open) return;
@@ -96,8 +97,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
     close,
     current: () => open,
     subscribe(fn) {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
+      return listeners.subscribe(fn);
     },
   };
 }

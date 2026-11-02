@@ -52,7 +52,8 @@
   "dependencies": {
     "@weasel-js/clock": "1.15.1",
     "@weasel-js/ui-logic": "1.15.1",
-    "@weasel-js/icons": "1.15.1"
+    "@weasel-js/icons": "1.15.1",
+    "@weasel-js/registry": "1.15.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

@@ -60,6 +60,3 @@ export function slotNear(root: PlacedSequence, y: number, keep: (place: StepPlac
   return i < 0 ? null : slots[i]!;
 }
 
-/** Whether two places are in the same list. */
-export const sameList = (a: StepPlace['parent'], b: StepPlace['parent']): boolean =>
-  a === b || (a !== null && b !== null && a.fragment === b.fragment && a.section === b.section);

@@ -1,5 +1,6 @@
 import { useContext, useLayoutEffect, useState, useSyncExternalStore, type Context, type CSSProperties, type RefObject } from 'react';
 import type { RunAlign, TrackRun } from '@weasel-js/geom';
+import { createEmitter } from '@weasel-js/registry';
 import { insideOf } from './runBend';
 import { useItemLengths, type RunItemsOf, type RunKeyOf } from './useItemLengths';
 import { useRunRow, type RunItemPlace, type RunOverflow, type RunRow } from './useRunRow';
@@ -38,20 +39,17 @@ export interface RunSlots {
 export function createRunSlots(held = false): RunSlots {
   let places: ReadonlyMap<string, RunSlotProps> | null = null;
   let signature = 'null';
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     held,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: changed.subscribe,
     current: () => places,
     publish(next) {
       const sig = next === null ? 'null' : JSON.stringify([...next]);
       if (sig === signature) return;
       signature = sig;
       places = next;
-      for (const listener of listeners) listener();
+      changed.emit();
     },
   };
 }

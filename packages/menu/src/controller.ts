@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { createNumberValues } from './numberValues';
 import { createHeldValues } from './heldValues';
 import { entriesAt, isRow, type MenuColorEntry, type MenuEntry, type MenuNumberEntry, type MenuTextEntry } from './entries';
@@ -74,7 +75,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   const { entries: root, onClose } = opts;
   const sched = opts.scheduler ?? timerScheduler;
   let stack: MenuStack = [opts.highlightFirst ? firstRow(root) : null];
-  const listeners = new Set<() => void>();
+  let listeners = createEmitter();
   const panels = new Map<number, Rect>();
   let pending: (() => void) | null = null;
   let pendingKind: 'open' | 'diagonal' | null = null;
@@ -82,7 +83,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   let deferred: { level: number; index: number | null } | null = null;
   let typed: TypeaheadBuffer = EMPTY_TYPEAHEAD;
   let closed = false;
-  const notify = () => { for (const fn of listeners) fn(); };
+  const notify = () => listeners.emit();
   const numbers = createNumberValues(notify, () => closed);
   const set = (next: MenuStack) => {
     stack = next;
@@ -177,14 +178,11 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
     setPanel(level, rect) { panels.set(level, rect); },
     ...numbers,
     ...createHeldValues(notify, () => closed),
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
-    },
+    subscribe: (fn) => listeners.subscribe(fn),
     dispose() {
       closed = true;
       cancel();
-      listeners.clear();
+      listeners = createEmitter();
     },
   };
 }

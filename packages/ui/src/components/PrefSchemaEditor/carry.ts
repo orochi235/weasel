@@ -1,5 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
 
+// Not deepEqual: key order counts here, since a reader who only reordered keys has made an edit to carry.
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 type Bag = Record<string, unknown>;

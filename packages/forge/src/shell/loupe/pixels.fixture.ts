@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { LensSourceRequest } from '@weasel-js/labkit/loupe';
 import { vi } from 'vitest';
 import type { CapturePayload } from '../../vite/capture/payload';
@@ -69,16 +70,13 @@ export function endpoint() {
 
 export function revisions() {
   let n = 0;
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   return {
     revision: () => n,
-    subscribeRevision: (fn: () => void) => {
-      listeners.add(fn);
-      return () => listeners.delete(fn);
-    },
+    subscribeRevision: listeners.subscribe,
     bump() {
       n += 1;
-      for (const fn of [...listeners]) fn();
+      listeners.emit();
     },
   };
 }

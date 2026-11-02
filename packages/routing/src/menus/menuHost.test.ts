@@ -58,6 +58,28 @@ describe('createMenuHost', () => {
     release();
     expect(h.open({ menu: 'row', client: { x: 0, y: 0 } })).toBe(false);
   });
+  it('a listener that throws stops neither the others nor the open', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const h = host();
+    h.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });
+    h.subscribe(() => { throw new Error('boom'); });
+    const after = vi.fn();
+    h.subscribe(after);
+    expect(h.open({ menu: 'row', client: { x: 0, y: 0 } })).toBe(true);
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledTimes(1);
+    error.mockRestore();
+  });
+  it('a listener unsubscribed by an earlier one in the same notify is not called', () => {
+    const h = host();
+    h.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });
+    const later = vi.fn();
+    let offLater = () => {};
+    h.subscribe(() => offLater());
+    offLater = h.subscribe(later);
+    h.open({ menu: 'row', client: { x: 0, y: 0 } });
+    expect(later).not.toHaveBeenCalled();
+  });
   it('uses a tool-owned def while that tool is active', () => {
     const h = host('pen');
     h.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) }, 'pen');

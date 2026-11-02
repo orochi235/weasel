@@ -1,4 +1,5 @@
 import { createContext } from 'react';
+import { createEmitter } from '@weasel-js/registry';
 import type { ForgeComparison, ResolveContext } from './conditions';
 import type { TrialHit } from './trialAt';
 
@@ -32,7 +33,7 @@ const NONE: readonly LiveRequest[] = [];
 
 export function createLiveLenses(): LiveLenses {
   const requests = new Map<string, LiveRequest>();
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   let byTrial = new Map<string, readonly LiveRequest[]>();
   return {
     set(lensId, request) {
@@ -40,7 +41,7 @@ export function createLiveLenses(): LiveLenses {
         if (!requests.delete(lensId)) return;
       } else requests.set(lensId, request);
       byTrial = new Map();
-      for (const listener of [...listeners]) listener();
+      changed.emit();
     },
     forTrial(trialId) {
       let found = byTrial.get(trialId);
@@ -51,10 +52,7 @@ export function createLiveLenses(): LiveLenses {
       }
       return found;
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: changed.subscribe,
   };
 }
 

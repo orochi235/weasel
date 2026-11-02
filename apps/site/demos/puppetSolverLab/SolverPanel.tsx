@@ -4,6 +4,7 @@
  * the mesh's colors, and what to try.
  */
 import type { ArapStage } from '@weasel-js/geom/warp';
+import { createEmitter } from '@weasel-js/registry';
 import { useSyncExternalStore } from 'react';
 import { LEGEND } from './meshLayer';
 import type { MeshModel, StepPick } from './meshModel';
@@ -31,7 +32,7 @@ const same = (a: Shown | null, b: Shown | null) => a === b || (!!a && !!b
  *  so listeners hear of a change on the next microtask. */
 export function createReadout(): Readout {
   let shown: Shown | null = null;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     set(model) {
       const next = model && {
@@ -40,13 +41,10 @@ export function createReadout(): Readout {
       };
       if (same(next, shown)) return;
       shown = next;
-      queueMicrotask(() => listeners.forEach((l) => l()));
+      queueMicrotask(() => changed.emit());
     },
     get: () => shown,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
   };
 }
 

@@ -21,6 +21,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { CORNER_CONTROLS, cornerShapePreset, type CornerControlsSelection } from '@weasel-js/path-tools';
+import { createEmitter } from '@weasel-js/registry';
 import { useMemo, useState } from 'react';
 import { CornerPanel } from './CornerShapePanel';
 import s from './CornerShapeLabDemo.module.css';
@@ -81,9 +82,9 @@ function useEditHost(): { host: PathEditHost; selection: CornerControlsSelection
   return useState(() => {
     let id: string | null = FIRST;
     let anchors = FIRST_ANCHORS;
-    const listeners = new Set<() => void>();
-    const changed = () => listeners.forEach((l) => l());
-    const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
+    const listeners = createEmitter();
+    const changed = () => listeners.emit();
+    const subscribe = listeners.subscribe;
     return {
       host: {
         editingId: () => id,

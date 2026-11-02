@@ -54,6 +54,9 @@ jobs:
       # Every kit frame loop runs behind `useVisibleRaf`; a bare
       # requestAnimationFrame is how that stops being true.
       - run: npm run check:frame-loops
+      # Every store notifies through registry's createEmitter, which keeps a
+      # throwing listener from stopping the rest; a hand-rolled listener set does not.
+      - run: npm run check:listener-sets
       # The audio worklet's processor ships as source text generated from the
       # synth kernels; editing a kernel without regenerating it ships the old one.
       - run: npm run check:audio-worklet

@@ -1,5 +1,6 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { LIST_ROLES, fixedWidth, listMode, measureRowList, rowAtY, type ListMode, type RowListLayout } from '@weasel-js/ui-logic';
+import { createEmitter } from '@weasel-js/registry';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
 import { createRevision } from '../../widget';
 import type {
@@ -67,7 +68,7 @@ function listTree(
 
 export function createList(opts: ListOptions): ListWidget {
   const rev = createRevision(opts.onChange);
-  const subs = new Set<() => void>();
+  let subs = createEmitter();
   const mode = listMode({ selection: opts.selection, activatable: opts.onActivate !== undefined });
   let disposed = false;
   let hidden = false;
@@ -76,7 +77,7 @@ export function createList(opts: ListOptions): ListWidget {
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h ?? 0 };
   const nav = createListNav(() => rows, mode, (i) => opts.onActivate?.(rows[i]!.id, i));
 
-  const changed = () => { rev.changed(); for (const fn of subs) fn(); };
+  const changed = () => { rev.changed(); subs.emit(); };
   const assertLive = () => { if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.'); };
   const measure = (): RowListLayout & { height: number } => {
     const ctx = lastCtx ?? { tokens: (builtIn ??= resolveTheme(weaselTheme)), defaultFont: DEFAULT_FONT_FAMILY };
@@ -104,7 +105,7 @@ export function createList(opts: ListOptions): ListWidget {
     (x < bounds.x || x >= bounds.x + bounds.w ? null : rowAtY(measure(), y - bounds.y));
   const tree: HudAccessibleTree = {
     read: () => listTree(opts, mode, rows, nav.active),
-    subscribe(fn) { subs.add(fn); return () => { subs.delete(fn); }; },
+    subscribe: (fn) => subs.subscribe(fn),
   };
 
   return {
@@ -147,7 +148,7 @@ export function createList(opts: ListOptions): ListWidget {
     dispose() {
       if (disposed) return;
       disposed = true;
-      subs.clear();
+      subs = createEmitter();
       opts.removeFromHud?.();
     },
   };

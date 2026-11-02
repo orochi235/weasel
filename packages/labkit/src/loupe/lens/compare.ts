@@ -5,6 +5,7 @@
  */
 import { type Action, effectivePose, type LayerHit, type RenderLayer } from '@weasel-js/core';
 import type { LoupeRect } from '@weasel-js/loupe';
+import { createEmitter } from '@weasel-js/registry';
 import type { LensActionApi } from './lensActionDefs';
 import { lensesOf, setLensOps, settingsOf } from './lensScene';
 import type { LensScene, LensSettings } from './lensTypes';
@@ -58,7 +59,7 @@ export interface SeamPreview {
 /** An empty seam preview, which a seam drag writes to until it commits. */
 export function createSeamPreview(): SeamPreview {
   const seams = new Map<string, number>();
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   let version = 0;
   return {
     get: (lensId) => seams.get(lensId),
@@ -67,12 +68,9 @@ export function createSeamPreview(): SeamPreview {
       if (seam === undefined) seams.delete(lensId);
       else seams.set(lensId, seam);
       version += 1;
-      for (const listener of [...listeners]) listener();
+      changed.emit();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: changed.subscribe,
     version: () => version,
   };
 }

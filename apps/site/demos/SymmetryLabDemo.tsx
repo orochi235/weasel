@@ -5,6 +5,7 @@ import {
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
+import { createEmitter } from '@weasel-js/registry';
 import {
   createSymmetry, symmetryGroupSpec, symmetryRegistry, WALLPAPER_GROUPS, wallpaperSpec, type SymmetryKind,
   type SymmetrySpec, type WallpaperCell, type WallpaperGroup,
@@ -96,16 +97,16 @@ function createLabScene() {
 function usePathEditHost() {
   const [store] = useState(() => {
     let id: string | null = PETAL_ID;
-    const listeners = new Set<() => void>();
+    const listeners = createEmitter();
     return {
       host: {
         editingId: () => id,
         setEditingId: (next: string | null) => {
           id = next;
-          for (const l of [...listeners]) l();
+          listeners.emit();
         },
       } satisfies PathEditHost,
-      redraw: { subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; } },
+      redraw: { subscribe: listeners.subscribe },
     };
   });
   return store;

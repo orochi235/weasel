@@ -5,6 +5,7 @@
  */
 import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { deepEqual } from '@weasel-js/registry';
 import {
   DEFAULT_PORTS, EDGE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
   layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
@@ -36,7 +37,7 @@ const ROUTERS: readonly DiagramRouter[] = ['straight', 'bezier', 'orthogonal', '
 const dataOf = (node: ReadNode | undefined): Data => ((node?.data ?? {}) as Data);
 export const traitOf = (node: ReadNode): Record<string, unknown> | null => dataOf(node).diagram ?? null;
 const colorOf = (paint: Paint | undefined): string | undefined => (typeof paint?.paint?.color === 'string' ? paint.paint.color : undefined);
-const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+const same = (a: unknown, b: unknown): boolean => deepEqual(a, b, { undefinedAsAbsent: true });
 const moved = (p: Vec2, by: Vec2): Vec2 => ({ x: p.x - by.x, y: p.y - by.y });
 
 /** What a scene node is to the document, or `null` for something drawn on another's behalf. */

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PrefLinearUnit } from '@weasel-js/prefs';
+import { deepEqual } from '@weasel-js/registry';
 import { entryScale, type UnitEntry, type UnitScale } from '@weasel-js/quantity';
 import type { PrefRenderContext } from '../Prefs';
 import { Button } from '../Button';
@@ -13,7 +14,7 @@ type Accepted = ReadonlyArray<readonly [name: string, entry: UnitEntry]>;
 const nonZero = (n: number): boolean => n !== 0;
 const wholeCount = (n: number): boolean => Number.isInteger(n) && n >= 0;
 const named = (rows: Accepted): Accepted => rows.filter(([name]) => name !== '');
-const sameRows = (a: Accepted, b: Accepted): boolean => JSON.stringify(a) === JSON.stringify(b);
+const sameRows = (a: Accepted, b: Accepted): boolean => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /** `unit` less what says nothing, and `undefined` once nothing is left of it but a scale of 1. */
 function tidy({ suffix, scale, offset, accepts, precision }: PrefLinearUnit): PrefLinearUnit | undefined {

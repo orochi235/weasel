@@ -1,4 +1,5 @@
 import type { LensSourceStatus } from '@weasel-js/labkit/loupe';
+import { createEmitter } from '@weasel-js/registry';
 import { CAPTURE_PATH, type CapturePayload, messageOf } from '../../vite/capture/payload';
 
 export const CHECKING = 'checking for a capture browser';
@@ -20,13 +21,13 @@ export interface CaptureClient {
 
 export function createCaptureClient(base: string, send: typeof fetch): CaptureClient {
   const url = `${base}${CAPTURE_PATH}`;
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   let status: LensSourceStatus = CHECKING;
   let polling: Promise<void> | null = null;
   const setStatus = (next: LensSourceStatus) => {
     if (next === status) return;
     status = next;
-    for (const listener of [...listeners]) listener();
+    listeners.emit();
   };
   const poll = () => {
     polling ??= (async () => {
@@ -45,9 +46,9 @@ export function createCaptureClient(base: string, send: typeof fetch): CaptureCl
   return {
     status: () => status,
     subscribe(listener) {
-      listeners.add(listener);
+      const off = listeners.subscribe(listener);
       poll();
-      return () => listeners.delete(listener);
+      return off;
     },
     poll,
     async take(payload) {

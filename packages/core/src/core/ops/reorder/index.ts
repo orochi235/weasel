@@ -1,3 +1,4 @@
+import { sameList } from '@weasel-js/registry';
 import type { Op } from '../types';
 import { registerOpFactory } from '../registry';
 import {
@@ -20,12 +21,6 @@ interface ReorderAdapter {
 }
 
 type ReorderFn = (list: string[], ids: string[]) => string[];
-
-function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
-}
 
 /** One parent's child order before a reorder, kept so undo can restore it. */
 export interface ReorderRestoreEntry {
@@ -90,7 +85,7 @@ function createPartitionedReorderOp(args: {
       for (const [parentId, parentIds] of byParent) {
         const before = a.getChildren(parentId);
         const after = fn(before, parentIds);
-        if (arraysEqual(before, after)) continue; // already at the desired order
+        if (sameList(before, after)) continue; // already at the desired order
         snapshots.push({ parentId, before: before.slice() });
         a.setChildOrder(parentId, after);
         mutated = true;

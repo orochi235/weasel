@@ -66,6 +66,7 @@
  */
 
 import { faceGeneration } from '@weasel-js/font';
+import { sameList } from '@weasel-js/registry';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { layoutBidi, layoutShaper, storeAlignWidth, type LayoutRunsOpts } from './layoutOpts';
 import { truncate } from './arrayPool';
@@ -218,19 +219,14 @@ function runsHash(runs: readonly ResolvedRun[]): number {
   return h & 0x3fffffff;
 }
 
+const NO_STRS: readonly string[] = [];
+
 function sameNums(a: readonly number[] | undefined, b: readonly number[] | undefined): boolean {
-  if (a === b) return true;
-  if (a === undefined || b === undefined || a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (!same(a[i], b[i])) return false;
-  return true;
+  return a === b || (a !== undefined && b !== undefined && sameList(a, b, same));
 }
 
-function sameStrs(a: readonly string[] | undefined, b: readonly string[] | undefined): boolean {
-  if (a === b) return true;
-  if ((a?.length ?? 0) !== (b?.length ?? 0)) return false;
-  for (let i = 0; i < (a?.length ?? 0); i++) if (a![i] !== b![i]) return false;
-  return true;
-}
+const sameStrs = (a: readonly string[] | undefined, b: readonly string[] | undefined): boolean =>
+  sameList(a ?? NO_STRS, b ?? NO_STRS);
 
 /** Whether `a` and `b` lay out alike. A run's paint and decorations are left
  *  out; `cachedPaintRuns` keys on those. */

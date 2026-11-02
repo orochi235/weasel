@@ -1,7 +1,8 @@
 import { tokenCategory, type TokenCategory, type TokenEntry } from '@weasel-js/ui/components/TokenPanel';
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createEmitter } from '@weasel-js/registry';
 
-const listeners = new Set<(name: string) => void>();
+const listeners = createEmitter<[name: string]>();
 /**
  * The token asked for until a panel has marked it, or has looked and lists it nowhere. The panel can mount only
  * after the reveal that turned it on, and the lab can mount it more than once on the way, so a reveal is spent by
@@ -12,16 +13,14 @@ let pending: string | null = null;
 /** Asks the CSS vars panel to open at the custom property `name`. */
 export function revealVar(name: string): void {
   pending = name;
-  for (const fn of [...listeners]) fn(name);
+  listeners.emit(name);
 }
 
 /** Calls `fn` with each token asked for, and at once with one asked for that no panel has marked yet. */
 export function subscribeReveal(fn: (name: string) => void): () => void {
-  listeners.add(fn);
+  const off = listeners.subscribe(fn);
   if (pending !== null) fn(pending);
-  return () => {
-    listeners.delete(fn);
-  };
+  return off;
 }
 
 export type RevealTab = 'theme' | 'story';

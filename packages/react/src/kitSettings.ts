@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { KitSettings } from './index';
 
 /** A value a settings leaf can hold. */
@@ -65,10 +66,8 @@ export function createKitSettingsStore<T = KitSettings>(
 ): WritableKitSettingsStore<T> {
   let own: unknown = overrides;
   let leaves = flatten(own, '', new Map());
-  const listeners = new Set<() => void>();
-  const notify = (): void => {
-    for (const listener of [...listeners]) listener();
-  };
+  const listeners = createEmitter();
+  const notify = (): void => listeners.emit();
   let unhookParent: (() => void) | null = null;
 
   return {
@@ -77,10 +76,10 @@ export function createKitSettingsStore<T = KitSettings>(
       return (value !== undefined ? value : parent?.get(path)) as never;
     },
     subscribe(listener) {
-      listeners.add(listener);
+      const off = listeners.subscribe(listener);
       if (parent && unhookParent === null) unhookParent = parent.subscribe(notify);
       return () => {
-        listeners.delete(listener);
+        off();
         if (listeners.size === 0 && unhookParent) {
           unhookParent();
           unhookParent = null;

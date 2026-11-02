@@ -41,7 +41,8 @@
   },
   "dependencies": {
     "@weasel-js/react": "1.15.1",
-    "@weasel-js/ui": "1.15.1"
+    "@weasel-js/ui": "1.15.1",
+    "@weasel-js/registry": "1.15.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.15.1",

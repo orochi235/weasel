@@ -122,6 +122,19 @@ geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))
 scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
 and modes do no geometry at all.
 
+## Stores notify through `createEmitter`
+
+A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,
+not a `Set` of its own. The emitter calls the listeners held when the notify
+began, skips one unsubscribed before its turn, and logs a listener that throws
+instead of letting it stop the rest. `npm run check:listener-sets` fails on a
+`new Set` of functions; a set of callbacks that are not subscribers goes on its
+allowlist with the reason.
+
+Equality goes through registry too: `deepEqual` for plain data, never
+`JSON.stringify` (which is key-order sensitive and drops `undefined` keys), and
+`sameList` for two lists in order.
+
 ## Kit settings
 
 A timing, threshold, target size or rate that a user would set once for

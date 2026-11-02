@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { sameList, useStableByContent } from './useStableByContent';
+import { sameList } from '@weasel-js/registry';
+import { useStableByContent } from './useStableByContent';
 
 describe('useStableByContent', () => {
   it('keeps the committed identity while the content is equal', () => {

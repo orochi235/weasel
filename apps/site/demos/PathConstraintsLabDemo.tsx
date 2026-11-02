@@ -1,5 +1,6 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathConstraint, type PathConstraintKind, type PolygonPath, polygonFromPoints, type RectPose, solid, worldEditToStorage } from '@weasel-js/core';
 import { CONSTRAINT_KIND_LABELS, constraintConflictsOf, constraintsOf, constraintsPreset } from '@weasel-js/path-tools';
+import { createEmitter } from '@weasel-js/registry';
 import {
   type ConfigOf,
   defineInstrument,
@@ -64,17 +65,14 @@ function createLabScene() {
 /** A path-edit host that opens on the seeded shape. */
 function createEditHost() {
   let id: string | null = ID;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     editingId: () => id,
     setEditingId(next: string | null) {
       id = next;
-      for (const l of listeners) l();
+      changed.emit();
     },
-    subscribe(l: () => void) {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
+    subscribe: changed.subscribe,
   };
 }
 

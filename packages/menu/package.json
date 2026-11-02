@@ -38,7 +38,8 @@
   },
   "dependencies": {
     "@weasel-js/ui-logic": "1.15.1",
-    "@weasel-js/quantity": "1.15.1"
+    "@weasel-js/quantity": "1.15.1",
+    "@weasel-js/registry": "1.15.1"
   },
   "publishConfig": {
     "access": "public",
