@@ -1,4 +1,4 @@
-import { createRepaintListeners } from './repaintListeners';
+import { createEmitter } from '@weasel-js/registry';
 import { createTarget, type Target } from './target';
 
 /** A stroke trim's window edges as fractions of the path, as `Stroke.trim`'s bare numbers are:
@@ -31,7 +31,7 @@ type NodeSlots = Partial<Record<TrimEdge, EdgeSlot>>;
 export class TrimOverrideRegistry {
   private readonly map = new Map<string, TrimOverride>();
   private readonly slots = new Map<string, NodeSlots>();
-  private readonly listeners = createRepaintListeners();
+  private readonly listeners = createEmitter();
   private _version = 0;
 
   set(id: string, override: TrimOverride): void {
@@ -142,7 +142,7 @@ export class TrimOverrideRegistry {
 
   private changed(): void {
     this._version++;
-    this.listeners.notify();
+    this.listeners.emit();
   }
 }
 
