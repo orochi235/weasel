@@ -34,6 +34,27 @@ describe('add / remove / move', () => {
     expect(b).toBe('g1');
   });
 
+  it('mints past ids the scene already holds, as a reloaded document does', () => {
+    let n = 0;
+    const s = createScene<Data, Layer>({
+      systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
+      generateId: () => asNodeId(`g${n++}`),
+    });
+    s.add({ id: asNodeId('g0'), kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'old' } });
+    s.add({ id: asNodeId('g2'), kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'old' } });
+    expect(s.mintId()).toBe('g1');
+    expect(s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'new' } })).toBe('g3');
+  });
+
+  it('gives up on a generator that mints only taken ids', () => {
+    const s = createScene<Data, Layer>({
+      systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
+      generateId: () => asNodeId('same'),
+    });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    expect(() => s.mintId()).toThrow(/already holds/);
+  });
+
   it('accepts a mark as a parent', () => {
     const s = makeScene();
     const mark = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });

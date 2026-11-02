@@ -54,7 +54,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   it('selects every row the tree shows with Cmd+A', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
-    fireEvent.keyDown(item('grid'), { key: 'a', metaKey: true });
+    fireEvent.keyDown(item('grid'), { key: 'a', ctrlKey: true });
     for (const key of ['grid', 'snap', 'zoom', 'dock']) expect(item(key)).toHaveAttribute('aria-selected', 'true');
   });
 

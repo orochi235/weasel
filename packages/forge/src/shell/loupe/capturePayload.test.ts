@@ -1,3 +1,4 @@
+import { stubColorScheme } from '@weasel-js/react/testing/stubColorScheme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { capturePayload, type CapturePayloadInput, CONFIG_UNSENDABLE, STATE_UNSENDABLE, trialPayload } from './capturePayload';
 import type { TrialInputs } from './captureContext';
@@ -115,8 +116,7 @@ describe('trialPayload', () => {
     declarations: {},
     modeGlobal: 'mode',
   };
-  const prefersDark = (dark: boolean) =>
-    vi.stubGlobal('matchMedia', (query: string) => ({ matches: dark && query === '(prefers-color-scheme: dark)' }));
+  const prefersDark = (dark: boolean) => stubColorScheme(dark ? 'dark' : 'light');
 
   afterEach(() => {
     vi.unstubAllGlobals();

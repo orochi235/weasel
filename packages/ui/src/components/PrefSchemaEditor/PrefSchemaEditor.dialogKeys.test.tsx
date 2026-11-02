@@ -44,7 +44,7 @@ describe('PrefSchemaEditor keys pressed in its own dialogs', () => {
     fireEvent.keyDown(row('snap')!, { key: 'Delete' });
     expect(row('grid')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add pref' }));
-    fireEvent.keyDown(within(screen.getByRole('dialog', { name: 'Add pref' })).getByRole('textbox', { name: 'Name' }), { key: 'z', metaKey: true });
+    fireEvent.keyDown(within(screen.getByRole('dialog', { name: 'Add pref' })).getByRole('textbox', { name: 'Name' }), { key: 'z', ctrlKey: true });
     expect(row('grid')).toBeNull();
   });
 });

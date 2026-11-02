@@ -1,3 +1,4 @@
+import { watchColorScheme } from '@weasel-js/react';
 import { useMemo, type RefObject } from 'react';
 
 /** The accent canvas chrome paints in when the element sits under no theme. */
@@ -29,11 +30,10 @@ export function watchThemeOf(el: () => Element | null | undefined, fn: () => voi
   for (let node: Element | null = el() ?? document.documentElement; node; node = node.parentElement) {
     observer.observe(node, { attributes: true });
   }
-  const scheme = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
-  scheme?.addEventListener?.('change', fn);
+  const stopScheme = watchColorScheme(fn);
   return () => {
     observer.disconnect();
-    scheme?.removeEventListener?.('change', fn);
+    stopScheme();
   };
 }
 

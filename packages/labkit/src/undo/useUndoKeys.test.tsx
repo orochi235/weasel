@@ -26,7 +26,7 @@ describe('useUndoKeys', () => {
   it('undoes on Mod+Z and redoes on Shift+Mod+Z and Mod+Y, claiming the chord', () => {
     const t = target();
     renderHook(() => useUndoKeys(t));
-    expect(fireEvent.keyDown(document.body, { key: 'z', metaKey: true })).toBe(false);
+    expect(fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })).toBe(false);
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true, shiftKey: true });
     fireEvent.keyDown(document.body, { key: 'y', ctrlKey: true });
     expect(t.undo).toHaveBeenCalledTimes(1);
@@ -36,15 +36,15 @@ describe('useUndoKeys', () => {
   it('leaves the chord to a text field, but not to a slider', () => {
     const t = target();
     renderHook(() => useUndoKeys(t));
-    expect(fireEvent.keyDown(input('text'), { key: 'z', metaKey: true })).toBe(true);
-    fireEvent.keyDown(input('range'), { key: 'z', metaKey: true });
+    expect(fireEvent.keyDown(input('text'), { key: 'z', ctrlKey: true })).toBe(true);
+    fireEvent.keyDown(input('range'), { key: 'z', ctrlKey: true });
     expect(t.undo).toHaveBeenCalledTimes(1);
   });
 
   it('leaves a chord with nothing to step to the browser', () => {
     const t = target({ undo: false, redo: true });
     renderHook(() => useUndoKeys(t));
-    expect(fireEvent.keyDown(document.body, { key: 'z', metaKey: true })).toBe(true);
+    expect(fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })).toBe(true);
     expect(t.undo).not.toHaveBeenCalled();
   });
 
@@ -53,10 +53,10 @@ describe('useUndoKeys', () => {
     const { rerender, unmount } = renderHook(({ h }) => useUndoKeys(h), {
       initialProps: { h: null as UndoKeysTarget | null },
     });
-    fireEvent.keyDown(document.body, { key: 'z', metaKey: true });
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true });
     rerender({ h: t });
     unmount();
-    fireEvent.keyDown(document.body, { key: 'z', metaKey: true });
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true });
     expect(t.undo).not.toHaveBeenCalled();
   });
 });

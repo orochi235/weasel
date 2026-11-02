@@ -3,9 +3,10 @@ import { applyBooleanOp, asNodeId, createScene, pathFromD, rectPath, type NodeId
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { drawBooleansAdapter } from './booleansAdapter';
 
-function setup() {
+function setup(generateId?: () => NodeId) {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: [{ id: 'default' }],
+    ...(generateId ? { generateId } : {}),
   });
   const leaf = (id: string, x: number, parent?: string) => scene.add({
     id: asNodeId(id),
@@ -56,10 +57,14 @@ describe('drawBooleansAdapter', () => {
   });
 
   it('mints ids the scene does not already hold', () => {
-    const { scene, adapter } = setup();
-    scene.add({ id: asNodeId('b-0'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    let n = 0;
+    const { scene, adapter } = setup(() => asNodeId(`n${n++}`));
+    scene.add({ id: asNodeId('n0'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    n = 0;
     scene.setSelection([asNodeId('a'), asNodeId('b')]);
-    expect(applyBooleanOp(adapter, 'union').kind).toBe('applied');
+    const result = applyBooleanOp(adapter, 'union');
+    expect(result.kind).toBe('applied');
+    expect(result.kind === 'applied' ? result.resultIds : []).toEqual(['n1']);
   });
 
   it('keeps a fill of None on the result', () => {

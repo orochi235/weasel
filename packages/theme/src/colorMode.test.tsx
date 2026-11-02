@@ -54,6 +54,12 @@ describe('useResolvedColorMode', () => {
     expect(result.current).toBe('dark');
   });
 
+  it("resolves 'auto' to dark where there is no matchMedia, the default the tokens paint at :root", () => {
+    vi.stubGlobal('matchMedia', undefined);
+    const { result } = renderHook(() => useResolvedColorMode('auto'));
+    expect(result.current).toBe('dark');
+  });
+
   it('drops the subscription once the preference goes explicit', () => {
     const sys = fakeSystem(false);
     const { rerender } = renderHook(({ p }) => useResolvedColorMode(p), {

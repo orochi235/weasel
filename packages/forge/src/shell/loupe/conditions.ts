@@ -1,5 +1,6 @@
 import type { LabMode } from '@weasel-js/labkit';
 import { withValueAtPath } from '@weasel-js/labkit/config';
+import { systemColorScheme } from '@weasel-js/react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, FOLLOW_APP, GLOBALS_KEY, type GlobalDeclarations } from '../globals';
 
@@ -122,6 +123,6 @@ export interface LabConditions {
 
 /** What resolving a comparison against `lab` reads, the OS color scheme included. */
 export function resolveContextOf(lab: LabConditions): ResolveContext {
-  const prefersDark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  const prefersDark = systemColorScheme() === 'dark';
   return { declarations: lab.declarations, modeGlobal: lab.modeGlobal, prefersDark, labMode: lab.mode };
 }

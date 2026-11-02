@@ -1,3 +1,4 @@
+import { stubColorScheme } from '@weasel-js/react/testing/stubColorScheme';
 import { describe, it, expect, vi } from 'vitest';
 import { chromeColorOf, watchThemeOf } from './accentColor';
 
@@ -38,5 +39,16 @@ describe('watchThemeOf', () => {
     await Promise.resolve();
     expect(fn).toHaveBeenCalledTimes(1);
     outer.remove();
+  });
+
+  it('hears the system color scheme flip, until stopped', () => {
+    const flip = stubColorScheme('dark');
+    const fn = vi.fn();
+    const stop = watchThemeOf(() => null, fn);
+    flip('light');
+    expect(fn).toHaveBeenCalledTimes(1);
+    stop();
+    expect(flip.listeners.size).toBe(0);
+    vi.unstubAllGlobals();
   });
 });

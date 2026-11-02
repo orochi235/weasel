@@ -45,7 +45,6 @@ export function drawBooleansAdapter(
   scene: DrawScene,
   selection: SelectionApi['adapterMethods'],
 ): BooleansAdapter {
-  let idCounter = 0;
   const a: BooleansAdapter = {
     ...defaultCommitAdapter(scene, selection),
     getWorldPath: (id) => worldPathOf(scene, id),
@@ -62,10 +61,7 @@ export function drawBooleansAdapter(
       const source = scene.get(sourceId);
       const template = source?.data;
       const b = boundsOfPath(path);
-      // Ids restart with the session, and a reloaded document keeps the last
-      // session's.
-      let id: string;
-      do id = `b-${idCounter++}`; while (scene.get(asNodeId(id)));
+      const id = scene.mintId();
       const node: { id: string; kind: 'mark'; layer: WeaselDrawLayer; pose: WeaselDrawPose; data: WeaselDrawData; parent: NodeId | null } = {
         id,
         kind: 'mark',
