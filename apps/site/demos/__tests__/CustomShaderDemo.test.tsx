@@ -1,7 +1,22 @@
 import { Profiler } from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
+import type { Scene } from '@weasel-js/core';
 import { CustomShaderDemo } from '../CustomShaderDemo';
+
+type AnyScene = Scene<unknown, string, { x: number; y: number }>;
+const scenes = vi.hoisted(() => [] as AnyScene[]);
+vi.mock('@weasel-js/core', async (importOriginal) => {
+  const core = await importOriginal<typeof import('@weasel-js/core')>();
+  return {
+    ...core,
+    useScene: (opts: never) => {
+      const scene = core.useScene(opts) as unknown as AnyScene;
+      if (!scenes.includes(scene)) scenes.push(scene);
+      return scene;
+    },
+  };
+});
 
 describe('CustomShaderDemo', () => {
   afterEach(() => { vi.unstubAllGlobals(); });
@@ -62,5 +77,25 @@ describe('CustomShaderDemo', () => {
     } finally {
       window.history.replaceState(null, '', '/');
     }
+  });
+
+  it('drags a Voronoi seed with the move action', () => {
+    const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
+    proto.setPointerCapture = vi.fn();
+    proto.releasePointerCapture = vi.fn();
+    scenes.length = 0;
+    const { container } = render(<CustomShaderDemo />);
+    const seeds = scenes.find((s) => s.get('seed-0' as never))!;
+    const canvas = container.querySelectorAll('canvas')[2]!;
+    const start = seeds.get('seed-0' as never)!.pose;
+    const fire = (type: string, x: number, y: number): void => act(() => {
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, buttons: 1 }));
+    });
+    const cx = start.x + 6, cy = start.y + 6;
+    fire('pointerdown', cx, cy);
+    fire('pointermove', cx + 10, cy + 5);
+    fire('pointermove', cx + 30, cy + 20);
+    fire('pointerup', cx + 30, cy + 20);
+    expect(seeds.get('seed-0' as never)!.pose).toMatchObject({ x: start.x + 30, y: start.y + 20 });
   });
 });
