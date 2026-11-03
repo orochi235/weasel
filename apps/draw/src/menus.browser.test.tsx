@@ -112,7 +112,7 @@ describe('WeaselDraw context menus', () => {
 
   it('opens the row menu on a layer row and selects that row', async () => {
     await mountApp();
-    const firstRow = () => document.querySelector<HTMLElement>('.wd-sidebar.right [role="row"]');
+    const firstRow = () => document.querySelector<HTMLElement>('.wd-sidebar.right [role="row"]:not([data-fixed])');
     await expect.poll(firstRow).not.toBeNull();
     const row = firstRow()!;
     const box = row.getBoundingClientRect();
