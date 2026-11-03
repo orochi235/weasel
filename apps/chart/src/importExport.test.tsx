@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, PAGES_DOC_KEY } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
 import { DIAGRAM_JSON, DIAGRAM_MERMAID, type DiagramDocument } from '@weasel-js/diagram-formats';
 import { defaultToastQueue } from '@weasel-js/ui/components/Toast';
 import { App } from './App';
@@ -65,7 +65,7 @@ function choose(...path: string[]): void {
 
 const mount = () => render(<DepRegistryProvider><ActionsProvider><App /></ActionsProvider></DepRegistryProvider>, { wrapper: withIcons });
 
-type Saved = { nodes: { id: string; pose: { x: number; y: number } }[]; doc?: Record<string, unknown> };
+type Saved = { nodes: { id: string; parent?: string; page?: unknown; pose: { x: number; y: number } }[]; doc?: Record<string, unknown> };
 const stored = (): Saved | null => JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? 'null') as Saved | null;
 
 describe('File › Import…', () => {
@@ -74,9 +74,10 @@ describe('File › Import…', () => {
     mount();
     choose('Import');
     await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'ab'])));
-    const pages = (stored()!.doc![PAGES_DOC_KEY] as { pages: { id: string }[] }).pages;
-    expect(pages.map((p) => p.id)).toEqual(['one', 'two']);
-    expect(stored()!.nodes.find((n) => n.id === 'a')!.pose).toMatchObject({ x: 40, y: 50 });
+    expect(stored()!.nodes.filter((n) => n.page !== undefined).map((n) => n.id)).toEqual(['one', 'two']);
+    const a = stored()!.nodes.find((n) => n.id === 'a')!;
+    expect(a.parent).toBe('one');
+    expect(a.pose).toMatchObject({ x: 40, y: 50 });
   });
 
   it('lays out a Mermaid flowchart, which carries no places', async () => {

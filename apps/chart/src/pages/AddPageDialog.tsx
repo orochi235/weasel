@@ -1,4 +1,3 @@
-import { pagesOf } from '@weasel-js/core';
 import { DIAGRAM_TYPES, addStencilGroup, diagramTypeOf, rendererMeasure, type DiagramTheme } from '@weasel-js/diagram';
 import { addTemplatePage, type PageTemplate } from '@weasel-js/diagram-formats';
 import type { ReactElement } from 'react';
@@ -11,7 +10,7 @@ import type { ChartPages } from './useChartPages';
  * page's stencil groups join the Shapes panel's, so its symbols are there to draw with. One undo entry.
  */
 export function addChartPage(scene: ChartScene, pages: ChartPages, template: PageTemplate, theme: DiagramTheme): void {
-  const list = pagesOf(scene)?.pages ?? [];
+  const list = pages.placed;
   const at = list.findIndex((p) => p.id === pages.shown?.id);
   const like = list[at] ?? list[list.length - 1];
   const groups = template.diagramType !== undefined ? DIAGRAM_TYPES[template.diagramType]?.groups ?? [] : [];

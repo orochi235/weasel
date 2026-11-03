@@ -9,7 +9,7 @@ import { EDGE_DERIVE_PATH, LABEL_PLACEMENT, edgeLabelSpec } from '@weasel-js/dia
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
-import { CHART_LAYERS, CHART_REGISTRY, chartDoc, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
+import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { CHART_SCENE_KEY, chartFromJson, chartToJson } from './chartPersistence';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
@@ -30,7 +30,7 @@ const connector = (id: string, from: string, to: string, color: string) => ({
 });
 
 const chartScene = (initial: unknown[]) => createScene<ChartData, ChartLayer, ChartPose>({
-  systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, doc: chartDoc(), initial: initial as never,
+  systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, initial: initial as never,
 });
 
 /** A red connector along y = 330 from box `a` to box `b`, labeled Yes above its middle. */
