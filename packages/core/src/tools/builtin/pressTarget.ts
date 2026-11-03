@@ -1,3 +1,5 @@
+import { isPageStructure } from 'core/scene/nodeGates';
+
 /** The reads `pressTarget` makes: the tree, and each node's kind. */
 export interface PressTargetTree {
   getParent(id: string): string | null;
@@ -9,7 +11,9 @@ export interface PressTargetTree {
  * below `entered`, or `hitId` itself when there is none. With nothing entered
  * the walk runs to the root, and it does too when `entered` is not an
  * ancestor of the hit; a press inside the entered group stops at it, so
- * its direct members are what gets selected.
+ * its direct members are what gets selected. A page or the page run stops
+ * the walk as the entered group does: what is on a page is pressed as if at
+ * the root.
  */
 export function pressTarget(
   tree: PressTargetTree,
@@ -20,7 +24,9 @@ export function pressTarget(
   let id: string | null = tree.getParent(hitId);
   let steps = 0;
   while (id !== null && id !== entered && steps++ < 10_000) {
-    if ((tree.getNode(id) as { kind?: string } | undefined)?.kind === 'group') target = id;
+    const node = tree.getNode(id) as { kind?: string; page?: unknown; pageRun?: unknown } | undefined;
+    if (isPageStructure(node)) break;
+    if (node?.kind === 'group') target = id;
     id = tree.getParent(id);
   }
   return target;

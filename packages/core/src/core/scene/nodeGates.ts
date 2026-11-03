@@ -8,6 +8,10 @@
  *   its whole subtree, as SVG's `display="none"` does.
  * - **Locked**: it or any ancestor carries `locked`, or sits on a locked
  *   layer. A lock covers the whole subtree, whatever layers it spans.
+ * - **Structure**: it is a page or the page run. Drawn, and its content is
+ *   in reach, but the node itself is never selected, picked, deleted,
+ *   copied, grouped or dropped into by the ordinary scene tools; page edits
+ *   go through the page API. Its own answer only, not its subtree's.
  */
 import type { NodeId } from './types';
 
@@ -17,6 +21,8 @@ export interface GatedNode {
   readonly parent?: string | null;
   readonly hidden?: boolean;
   readonly locked?: boolean;
+  readonly page?: unknown;
+  readonly pageRun?: unknown;
 }
 
 /** The layer fields the gates read. Only an explicit `visible: false` hides. */
@@ -39,13 +45,20 @@ export function hidesSubtree(node: { readonly hidden?: boolean }): boolean {
   return node.hidden === true;
 }
 
-/** Both answers, for one read of a scene. Each takes an id, or the node a
+/** Whether `node` is page structure: a page or the page run. See the module comment. */
+export function isPageStructure(node: { readonly page?: unknown; readonly pageRun?: unknown } | undefined): boolean {
+  return node !== undefined && (node.page !== undefined || node.pageRun !== undefined);
+}
+
+/** The answers, for one read of a scene. Each takes an id, or the node a
  *  walk already holds, which saves looking it up. */
 export interface NodeGates {
   /** Whether `id` is not drawn. An id not in the scene is not hidden. */
   hidden(id: string | GatedNode): boolean;
   /** Whether `id` is out of reach. An id not in the scene is not locked. */
   locked(id: string | GatedNode): boolean;
+  /** Whether `id` is page structure ({@link isPageStructure}). */
+  structure(id: string | GatedNode): boolean;
 }
 
 /**
@@ -102,6 +115,9 @@ export function nodeGates(scene: GateSource): NodeGates {
       const node = typeof id === 'string' ? scene.get(id as NodeId) : id;
       if (node === undefined) return false;
       return ownLock(node) || lockedAbove(node.parent ?? null);
+    },
+    structure(id) {
+      return isPageStructure(typeof id === 'string' ? scene.get(id as NodeId) : id);
     },
   };
 }

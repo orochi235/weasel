@@ -152,6 +152,6 @@ export type { ReorderDirection } from '../core/ops/reorder';
 export { isAnnotationLayer, isAnnotationNode, annotationLayerIds, type AnnotationFlag } from 'core/scene/annotation';
 
 // ─── Whether a node is shown and in reach ────────────────────────────────────
-export { nodeGates, isNodeHidden, isNodeLocked, hidesSubtree } from 'core/scene/nodeGates';
+export { nodeGates, isNodeHidden, isNodeLocked, hidesSubtree, isPageStructure } from 'core/scene/nodeGates';
 export type { NodeGates, GateSource, GatedNode, GatedLayer } from 'core/scene/nodeGates';
 export * from '../domains/measure';

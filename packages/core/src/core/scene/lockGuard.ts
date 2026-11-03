@@ -21,8 +21,8 @@ export interface LockGuard<TLayer extends string> {
   refuse(id: NodeId, verb: string): void;
   /** Throw when `layer` is locked and the guard is not lifted. */
   refuseLayer(layer: TLayer, verb: string): void;
-  /** `ids` less the locked and hidden ones: the scene's selection never
-   *  holds either, whoever writes it. */
+  /** `ids` less the locked and hidden ones, and pages and the page run: the
+   *  scene's selection never holds any of them, whoever writes it. */
   reachable(ids: readonly NodeId[]): readonly NodeId[];
   /** Tell the guard `node` was just written. Until some node carries
    *  `locked`, and no layer is locked, nothing is locked and a check need
@@ -60,9 +60,8 @@ export function createLockGuard<TData, TLayer extends string, TPose>(
     reachable(ids) {
       if (ids.length === 0) return ids;
       const gates = nodeGates(source);
-      return ids.some((id) => gates.locked(id) || gates.hidden(id))
-        ? ids.filter((id) => !gates.locked(id) && !gates.hidden(id))
-        : ids;
+      const out = (id: NodeId) => gates.locked(id) || gates.hidden(id) || gates.structure(id);
+      return ids.some(out) ? ids.filter((id) => !out(id)) : ids;
     },
     noteWritten(node) {
       if (node.locked === true) nodeLockSeen = true;

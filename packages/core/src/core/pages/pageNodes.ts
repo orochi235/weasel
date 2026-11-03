@@ -8,6 +8,7 @@ import type { NodeId, RectPose, Scene } from '../scene/types';
 import type { Page, PageLayoutOptions, PlacedPage } from './pages';
 import { layoutPages } from './pages';
 import { PAGE_RUN_LAYOUT } from './pageRunLayout';
+import { pageClip } from './pageClip';
 
 /** What makes a node a page (`SceneNode.page`): its name, and what other packages keep on it. */
 export interface PageInfo {
@@ -144,7 +145,8 @@ export type CreatePageRunOptions<TLayer extends string> = PageLayoutOptions & {
  * `pageRunLayout`, and a group under it for each of `pages`, whose id is the
  * page's. One undo entry. Returns the run's id. The run and its pages hold
  * `data: undefined` whatever the scene's `TData`: a reader of every node's
- * `data` meets them too.
+ * `data` meets them too. Neither is pickable, and each page clips what is on
+ * it to its rect (`pageClip`).
  */
 export function createPageRun<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -155,7 +157,7 @@ export function createPageRun<TData, TLayer extends string, TPose>(
   const s = asAny(scene);
   return s.batch('Add pages', () => {
     const run = s.add({
-      kind: 'group', layer, pose: runPose(pages, layout), data: undefined,
+      kind: 'group', layer, pose: runPose(pages, layout), data: undefined, pickable: false,
       layout: PAGE_RUN_LAYOUT, pageRun: runInfo(layout, pasteboard),
     });
     const poses = pagePoses(pages, layout);
@@ -168,6 +170,6 @@ export function createPageRun<TData, TLayer extends string, TPose>(
 export function addPageNode(scene: AnyScene, run: NodeId, page: Page, pose: RectPose): void {
   scene.add({
     kind: 'group', layer: scene.get(run)!.layer, parent: run, id: page.id as NodeId,
-    pose, data: undefined, page: pageInfo(page),
+    pose, data: undefined, page: pageInfo(page), pickable: false, clipFromPose: pageClip,
   });
 }

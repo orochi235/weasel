@@ -12,6 +12,7 @@ import { carryDragged, type DraggedChild } from './dragged';
 import { refusalOf } from '../../dropVerdict';
 import type { StrategyView } from 'core/scene/strategyView';
 import { boxOf, containerView, draggedInView } from './view';
+import { isPageStructure } from 'core/scene/nodeGates';
 
 export interface Bounds4 { x: number; y: number; width: number; height: number }
 
@@ -104,7 +105,8 @@ export function pickContainer(
     const layout = layoutDep.getLayout(id as string);
     if (!layout) return;
     const node = scene.get(id);
-    if (!node) return;
+    // Which page takes a drop is the pages' own rule, not a layout drop.
+    if (!node || isPageStructure(node)) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
     const worldAABB = g.getBounds(worldPose);
