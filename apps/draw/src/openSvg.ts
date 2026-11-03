@@ -1,5 +1,5 @@
 import {
-  AUTO_POSE_DESCRIPTOR, type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses,
+  type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses,
   addOnPages, pathEffectNode, registeredPathEffects,
 } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
@@ -72,7 +72,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
     specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }
   // A file's geometry is world; each pose is stored in its container's frame.
-  addOnPages(scene, localizeWorldPoses(specs, scene.composition), { descriptor: AUTO_POSE_DESCRIPTOR });
+  addOnPages(scene, localizeWorldPoses(specs, scene.composition));
 }
 
 /**

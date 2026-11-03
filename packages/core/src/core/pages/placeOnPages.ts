@@ -1,7 +1,6 @@
 /** Putting content placed in world space onto a paged scene's pages. */
-import {
-  RECT_POSE_DESCRIPTOR, poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor,
-} from '../geometry/poseDescriptor';
+import { poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor } from '../geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from '../geometry/autoPoseDescriptor';
 import { composeWorldPose, rebaseLocalPose } from '../scene/composePose';
 import { sameValue } from '../scene/sameValue';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
@@ -60,8 +59,9 @@ function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: Pos
  * every node it follows lands on, else into the page run. With the
  * pasteboard on, a root off every page stays where it is, and one on a page is
  * not moved. Content read from a format that places it in the world, such as
- * an opened file, goes onto its pages this way. Call inside the caller's
- * batch; a scene without pages is left alone.
+ * an opened file, goes onto its pages this way. Each root is measured by
+ * `options.descriptor`, default `AUTO_POSE_DESCRIPTOR`, as an insert is.
+ * Call inside the caller's batch; a scene without pages is left alone.
  */
 export function placeOnPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -71,7 +71,7 @@ export function placeOnPages<TData, TLayer extends string, TPose>(
   const s = scene as unknown as AnyScene;
   const run = pageRunOf(s);
   if (run === null) return;
-  const descriptor = options.descriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>);
+  const descriptor = options.descriptor ?? AUTO_POSE_DESCRIPTOR;
   const content = roots.filter((id) => id !== run && s.get(id)?.parent == null);
   moveIn(s, destinations(s, content, descriptor), run, descriptor);
 }

@@ -11,6 +11,7 @@ import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import { insertSite } from './insertSite';
+import { poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
@@ -151,7 +152,10 @@ export function useInsertDepSource(
     const ad = adapterRef.current;
 
     const site = (at?: { x: number; y: number }) =>
-      insertSite(sc, { at, into: registry.get('insertInto')?.get(), canDropInto: registry.get('canDropInto') });
+      insertSite(sc, {
+        at, into: registry.get('insertInto')?.get(), canDropInto: registry.get('canDropInto'),
+        descriptor: poseDescriptorOf(registry.get('poseDescriptor')),
+      });
     const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
         const kind = extras.kind;
         const { parent, layer, local } = site(ends?.start ?? { x: bounds.x, y: bounds.y });

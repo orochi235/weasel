@@ -5,6 +5,7 @@ import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/
 import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame } from 'core/scene/effectivePose';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
 import type { PlacedPage } from 'core/pages/pages';
@@ -41,10 +42,10 @@ export function siteIn(sc: SiteScene, parentId: NodeId | null): InsertSite {
   return { parent: parent.id, layer: parent.layer, local: (p) => composition.decompose(frame, p) };
 }
 
-/** `world` shifted by {@link keepOnPage}, so part of it is on `page`. */
-function ontoPage(page: PlacedPage, world: unknown): unknown {
-  const { dx, dy } = keepOnPage(page, AUTO_POSE_DESCRIPTOR.getBounds(world));
-  return dx === 0 && dy === 0 ? world : AUTO_POSE_DESCRIPTOR.translate!(world, dx, dy);
+/** `world`, measured by `d`, shifted by {@link keepOnPage}, so part of it is on `page`. */
+function ontoPage(page: PlacedPage, world: unknown, d: PoseDescriptor<unknown>): unknown {
+  const { dx, dy } = keepOnPage(page, d.getBounds(world));
+  return dx === 0 && dy === 0 ? world : translatePoseViaDescriptor(world, dx, dy, d);
 }
 
 /** What {@link insertSite} places by. */
@@ -55,6 +56,8 @@ export interface InsertSiteOptions {
   into?: string | null;
   /** The `canDropInto` dep, which may refuse `into`. */
   canDropInto?: CanDropIntoDep;
+  /** What measures the node to keep part of it on its page. Default `AUTO_POSE_DESCRIPTOR`, as `placeOnPages`'. */
+  descriptor?: PoseDescriptor<unknown>;
 }
 
 /**
@@ -63,9 +66,12 @@ export interface InsertSiteOptions {
  * (`insertParent`); else the top of the tree. A node landing on a page with
  * the pasteboard off is moved so part of it is on the page.
  */
-export function insertSite(sc: SiteScene, { at, into, canDropInto }: InsertSiteOptions = {}): InsertSite {
+export function insertSite(
+  sc: SiteScene,
+  { at, into, canDropInto, descriptor = AUTO_POSE_DESCRIPTOR }: InsertSiteOptions = {},
+): InsertSite {
   const site = siteIn(sc, insertParent(sc, into, canDropInto, at));
   const pageId = site.parent === null || pasteboardOn(sc) || sc.get(site.parent)?.page === undefined ? null : pageOfNode(sc, site.parent);
   const page = pageId === null ? null : placedPage(sc, pageId);
-  return page === null ? site : { ...site, local: (p) => site.local(ontoPage(page, p)) };
+  return page === null ? site : { ...site, local: (p) => site.local(ontoPage(page, p, descriptor)) };
 }

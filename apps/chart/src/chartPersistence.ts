@@ -1,5 +1,5 @@
 import {
-  AUTO_POSE_DESCRIPTOR, isSerializedScene, replaceDoc, type AddNodeSpec, type SavedScene, type SerializedDoc,
+  isSerializedScene, replaceDoc, type AddNodeSpec, type SavedScene, type SerializedDoc,
 } from '@weasel-js/core';
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue } from '@weasel-js/diagram';
 import { addDocumentScene, type DocumentScene } from '@weasel-js/diagram-formats';
@@ -31,7 +31,7 @@ function chartOf(json: ChartSnapshot): ChartFile {
   const systemLayers = (json.systemLayers as ChartSnapshot['systemLayers'] | undefined) ?? CHART_LAYERS;
   const specs = nodeSpecsFromSnapshot(
     { ...json, systemLayers } as ChartSnapshot, CHART_REGISTRY, reviveTypedArrays,
-    { descriptor: AUTO_POSE_DESCRIPTOR, pages: CHART_PAGES },
+    { pages: CHART_PAGES },
   );
   return { specs, doc: docFromSnapshot(json) ?? {} };
 }
