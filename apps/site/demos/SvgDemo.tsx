@@ -121,12 +121,11 @@ function SvgRoundTrip() {
     }
   }, [source]);
 
-  // `selection` is a fresh object each render, so only a new source reloads.
   useEffect(() => {
     if (!('json' in imported)) return;
     selection.set([]);
     scene.loadState(imported.json);
-  }, [scene, imported]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scene, selection, imported]);
 
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const [exported, setExported] = useState<{ text: string; warnings: string[] }>({ text: '', warnings: [] });
