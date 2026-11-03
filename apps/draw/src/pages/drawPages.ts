@@ -1,4 +1,4 @@
-import { createPageRun, type NodeId, pageRunOf, pagesOf, type PagesDoc, type Scene } from '@weasel-js/core';
+import { createPageRun, type NodeId, pagesOf, type PagesDoc, type Scene } from '@weasel-js/core';
 import type { PageSize } from '@weasel-js/editor';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS, PAPER_SIZES, type PaperSizeKey } from '../paperSizes';
 
@@ -18,10 +18,9 @@ export function firstPageSize<TData, TLayer extends string, TPose>(scene: Scene<
   return first ? { width: first.width, height: first.height } : PAPER_PRESETS[DEFAULT_PAPER_SIZE];
 }
 
-/** Give the scene a new page run of `pages`, deleting the one it had and everything on it. Returns the run.
- *  Call inside the batch that replaces the document. */
+/** Empty the scene, locked content and pages included, and give it a new page run of `pages`. Returns the
+ *  run. Call inside the batch that replaces the document. */
 export function replacePages<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, pages: PagesDoc): NodeId {
-  const old = pageRunOf(scene);
-  if (old !== null) scene.remove(old);
+  scene.unlocked(() => { if (scene.roots.length > 0) scene.removeMany([...scene.roots]); });
   return createPageRun(scene, pages.pages, pages.layout);
 }

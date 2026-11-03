@@ -92,7 +92,6 @@ export function openSvgText(
   const doc = parsedToDoc(parsed);
   const pages = doc.pages ? { pages: doc.pages } : onePage(firstPageSize(scene));
   scene.batch('Open', () => {
-    scene.removeMany([...scene.renderOrder()]);
     replacePages(scene, pages);
     addDrafts(scene, drafts);
   });

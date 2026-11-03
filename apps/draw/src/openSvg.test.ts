@@ -36,6 +36,15 @@ describe('openSvgText', () => {
     expect(contentRoots(scene)).toEqual([asNodeId('old')]);
   });
 
+  it('replaces locked content and a locked page', () => {
+    const scene = sceneWithOneShape();
+    scene.setLocked(asNodeId('old'), true);
+    scene.setLocked(asNodeId('page-2'), true);
+    expect(() => openSvgText(scene, svg(TWO), 'art.svg')).not.toThrow();
+    expect(scene.get(asNodeId('old'))).toBeUndefined();
+    expect(contentRoots(scene)).toHaveLength(2);
+  });
+
   it('keeps hidden content, hidden, so an exported hidden node opens as it was', () => {
     const scene = sceneWithOneShape();
     openSvgText(scene, svg('<g display="none"><rect x="1" y="1" width="5" height="5"/></g><rect x="9" y="9" width="5" height="5" display="none"/>'), 'a.svg');

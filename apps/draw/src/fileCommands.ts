@@ -36,7 +36,6 @@ export function useFileCommands(target: FileCommandsTarget): void {
     target.leaveMode();
     // The batch is what names the entry and captures the prior selection.
     scene.batch('New document', () => {
-      scene.removeMany([...scene.renderOrder()]);
       replacePages(scene, onePage(paper));
     });
     target.showFirstPage();
