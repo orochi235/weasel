@@ -1,5 +1,5 @@
 import type { Quantity } from './quantity';
-import { entryScale, formatUnit, resolveUnit, type Unit, type UnitEntry, type UnitSystem, type UnitValue } from './units';
+import { entryScale, formatUnit, resolveUnit, type FormatUnitOptions, type Unit, type UnitEntry, type UnitSystem, type UnitValue } from './units';
 
 /**
  * A unit system nested in another: a sub-assembly drawn in millimeters inside
@@ -60,7 +60,7 @@ export function formatScoped(
   rootBase: number,
   displayUnit: Unit,
   scopes: readonly UnitScope[],
-  opts?: { precision?: number; suffix?: boolean },
+  opts?: FormatUnitOptions,
 ): string {
   return formatUnit(fromRoot(rootBase, scopes), displayUnit, scopes[scopes.length - 1]!.system, opts);
 }

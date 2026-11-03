@@ -68,6 +68,13 @@ describe('formatUnit', () => {
     expect(formatUnit(13, 'ft', IMPERIAL_INCHES, { precision: 0 })).toBe('1ft');
   });
 
+  it('keeps trailing zeros to precision when padding', () => {
+    expect(formatUnit(1.5, 'in', IMPERIAL_INCHES, { precision: 2, pad: true })).toBe('1.50in');
+    expect(formatUnit(36, 'ft', IMPERIAL_INCHES, { precision: 1, pad: true })).toBe('3.0ft');
+    expect(formatUnit(-0.001, 'in', IMPERIAL_INCHES, { precision: 2, pad: true })).toBe('0.00in');
+    expect(formatUnit(2, 'in', IMPERIAL_INCHES, { precision: 0, pad: true })).toBe('2in');
+  });
+
   it('throws when displayUnit is not in the system', () => {
     expect(() => formatUnit(100, 'unknown', IMPERIAL_INCHES)).toThrow(/unknown unit 'unknown'/);
   });

@@ -182,6 +182,7 @@ function numberRows(ctx: Ctx, given: PrefNumber, key: string, path: string, off:
   const stored = values(path);
   const { min, max, step, endless } = prefDisplayBounds(leaf);
   const disabled = off || leaf.readout === true;
+  const display = leaf.display ?? unit?.display;
   return [{
     kind: 'number', key, label: leaf.name, ...withAccess(leaf.access),
     ...(leaf.icon ? { icon: leaf.icon } : {}),
@@ -193,7 +194,7 @@ function numberRows(ctx: Ctx, given: PrefNumber, key: string, path: string, off:
     ...(max === undefined ? {} : { max }),
     step,
     ...(unit?.suffix === undefined ? {} : { suffix: unit.suffix }),
-    ...(leaf.display ? { display: leaf.display } : {}),
+    ...(display ? { display } : {}),
     ...(endless ? { endless } : {}),
     ...(leaf.infinity === undefined ? {} : { infinity: leaf.infinity }),
     ...(unit ? { accepts: prefUnitAccepts(unit) } : {}),
