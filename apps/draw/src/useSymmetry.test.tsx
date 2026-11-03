@@ -1,4 +1,4 @@
-import { createScene } from '@weasel-js/core';
+import { createPageRun, createScene, placedPagesOf } from '@weasel-js/core';
 import { HORIZONTAL_AXIS, isSymmetryGroup, readGroup, symmetryGroupSpec, VERTICAL_AXIS } from '@weasel-js/symmetry';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -61,5 +61,20 @@ describe('useSymmetry', () => {
     act(() => result.current.commands.toggleSymmetry());
     expect(insertInto(result)).toBeNull();
     expect(groups(scene)).toHaveLength(1);
+  });
+
+  it('makes the group on the shown page, at its center in the page\'s frame, and finds it there again', () => {
+    act(() => drawPrefs().set('view.symmetry', true));
+    const scene = newScene();
+    createPageRun(scene, [{ id: 'p1', ...PAGE }, { id: 'p2', ...PAGE }]);
+    const p2 = placedPagesOf(scene)[1]!;
+    const first = renderHook(() => useSymmetry(scene, p2));
+    const [group] = groups(scene);
+    expect(group!.parent).toBe('p2');
+    expect(readGroup(scene as never, group!.id)?.center).toEqual({ x: 300, y: 400 });
+    first.unmount();
+    const { result } = renderHook(() => useSymmetry(scene, p2));
+    expect(groups(scene)).toHaveLength(1);
+    expect(insertInto(result)).toBe(group!.id);
   });
 });

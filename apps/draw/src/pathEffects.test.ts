@@ -10,7 +10,7 @@ import { pathFromD } from '@weasel-js/geom';
 import { loadTextOutlines } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import {
-  asNodeId, createScene, derivedDepOf, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathEffectParts, rectPath,
+  asNodeId, createScene, derivedDepOf, pageRunOf, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathEffectParts, rectPath,
   type AddNodeSpec, type NodeId, type SerializedScene, solid,
   layoutPages,
 } from '@weasel-js/core';
@@ -18,6 +18,7 @@ import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDr
 import { serializeReplacer } from '@weasel-js/editor';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 import { importSvgText, openSvgText } from './openSvg';
+import { contentRoots } from './pages/contentRoots';
 import { sceneToSvgString, selectionToSvgString } from './svgExport';
 
 type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
@@ -88,7 +89,7 @@ const exportOf = (scene: ReturnType<typeof drawScene>) => sceneToSvgString(scene
 
 /** The nodes in `scene` holding a path effect, in render order. */
 const effectsIn = (scene: ReturnType<typeof drawScene>) =>
-  [...scene.renderOrder()].map((id) => scene.get(id)!).filter((n) => n.data.pathEffect !== undefined);
+  [...scene.renderOrder()].map((id) => scene.get(id)!).filter((n) => n.data?.pathEffect !== undefined);
 
 function liveSteps(scene: ReturnType<typeof drawScene>) {
   const node = effectsIn(scene)[0]!;
@@ -96,14 +97,14 @@ function liveSteps(scene: ReturnType<typeof drawScene>) {
 }
 
 describe('a path effect through draw\'s SVG', () => {
-  it('reopens live, over the sources it was made from, in its slot', async () => {
+  it('reopens live, over the sources it was made from, in the page run above the pages', async () => {
     const reopened = drawScene([]);
     openSvgText(reopened, await exportOf(withBlend()), 'x.svg');
 
     const [node] = effectsIn(reopened);
     expect(node!.data.pathEffect).toEqual({ kind: 'blend', steps: 3 });
-    expect(reopened.roots).toHaveLength(3);
-    expect(reopened.roots[1]).toBe(node!.id);
+    expect(contentRoots(reopened)).toHaveLength(3);
+    expect(reopened.get(node!.id)!.parent).toBe(pageRunOf(reopened));
     const [a, b] = node!.dependsOn as NodeId[];
     expect(reopened.get(a!)!.pose.x).toBe(0);
     expect(reopened.get(b!)!.pose.x).toBe(300);
@@ -127,7 +128,7 @@ describe('a path effect through draw\'s SVG', () => {
     const target = drawScene([]);
     importSvgText(target, await selectionToSvgString(withBlend(), ['blend']));
     expect(effectsIn(target)).toEqual([]);
-    expect(target.childrenOf(target.roots[0]!)).toHaveLength(3);
+    expect(target.childrenOf(contentRoots(target)[0]!)).toHaveLength(3);
   });
 
   it('round-trips a bend along a path and a repeat along one', async () => {
@@ -187,12 +188,12 @@ describe('a path effect through draw\'s SVG', () => {
       openSvgText(reopened, await exportOf(scene), 'x.svg');
       const [node] = effectsIn(reopened);
       expect(node?.data.pathEffect).toEqual(effect);
-      expect(reopened.roots[1]).toBe(node!.id);
-      expect(reopened.roots).toHaveLength(3);
+      expect(reopened.get(node!.id)!.parent).toBe(pageRunOf(reopened));
+      expect(contentRoots(reopened)).toHaveLength(3);
 
       const alone = drawScene([]);
       importSvgText(alone, await selectionToSvgString(scene, ['fx']));
-      expect(alone.roots).toEqual([]);
+      expect(contentRoots(alone)).toEqual([]);
     }
   });
 });

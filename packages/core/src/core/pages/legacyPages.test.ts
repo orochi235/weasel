@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '../scene/scene';
 import type { AddNodeSpec, NodeId } from '../scene/types';
-import { adoptLegacyPages } from './legacyPages';
+import { adoptLegacyPages, placeOnPages } from './legacyPages';
 import { PAGES_DOC_KEY, type PagesDoc } from './pageEdits';
-import { pageRunOf } from './pageNodes';
+import { createPageRun, pageRunOf } from './pageNodes';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -90,5 +90,36 @@ describe('adoptLegacyPages', () => {
     const link = 'link' as NodeId;
     adoptLegacyPages(scene);
     expect(scene.get(link)!.parent).toBe(pageRunOf(scene));
+  });
+});
+
+describe('placeOnPages', () => {
+  it('moves roots added to a paged scene onto their pages, inside the caller\'s undo entry', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    createPageRun(scene, TWO.pages, TWO.layout);
+    scene.batch('Open', () => {
+      for (const spec of [rect('onA', 5), rect('onB', 115)]) scene.add(spec);
+      placeOnPages(scene, ['onA' as NodeId, 'onB' as NodeId]);
+    });
+    expect(scene.get('onB' as NodeId)!).toMatchObject({ parent: 'b', pose: { x: 5 } });
+    expect(scene.get('onA' as NodeId)!).toMatchObject({ parent: 'a', pose: { x: 5 } });
+    expect(scene.historyEntries().at(-1)!.label).toBe('Open');
+    scene.undo();
+    expect(scene.get('onB' as NodeId)).toBeUndefined();
+  });
+
+  it('with the pasteboard on, leaves a root off every page where it is', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    createPageRun(scene, TWO.pages, { ...TWO.layout, pasteboard: true });
+    for (const spec of [rect('gap', 102, 2), rect('onB', 115)]) scene.add(spec);
+    placeOnPages(scene, ['gap' as NodeId, 'onB' as NodeId]);
+    expect(scene.get('gap' as NodeId)!).toMatchObject({ parent: null, pose: { x: 102 } });
+    expect(scene.get('onB' as NodeId)!).toMatchObject({ parent: 'b', pose: { x: 5 } });
+  });
+
+  it('leaves a scene without pages alone', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }], initial: [rect('r', 115)] });
+    placeOnPages(scene, ['r' as NodeId]);
+    expect(scene.get('r' as NodeId)!).toMatchObject({ parent: null, pose: { x: 115 } });
   });
 });

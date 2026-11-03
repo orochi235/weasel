@@ -8,19 +8,19 @@ import {
   SceneCanvas,
   actionItems,
   asNodeId,
-  createScene,
-  PAGES_DOC_KEY,
   pagesOf,
   placedPagesOf,
   useActionsRegistry,
   type ActionsRegistry,
 } from '@weasel-js/core';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
-import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import type { DrawScene } from './drawDocument';
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
 import { importSvgFile, openSvgFile } from './openSvg';
+import { contentRoots } from './pages/contentRoots';
 import { exportPageSvgFile, saveSvgFile } from './saveSvg';
 import { withIcons } from './testIcons';
+import { drawScene } from './testScenes';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}), exportPageSvgFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
@@ -36,13 +36,10 @@ afterEach(() => {
 
 function seededScene(): DrawScene {
   const letter = { width: 816, height: 1056 };
-  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
-    systemLayers: [{ id: 'default' }],
-    doc: { [PAGES_DOC_KEY]: { pages: [{ id: 'page-1', ...letter }, { id: 'page-2', ...letter }] } },
-  });
+  const scene = drawScene([{ id: 'page-1', ...letter }, { id: 'page-2', ...letter }]);
   for (const id of ['a', 'b']) {
     scene.add({
-      kind: 'mark', layer: 'default', id: asNodeId(id),
+      kind: 'mark', layer: 'default', id: asNodeId(id), parent: asNodeId('page-1'),
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
     });
@@ -91,21 +88,21 @@ describe('useFileCommands', () => {
 
   it('New at a size empties the document to one page of that size, in one undo entry, and shows it', () => {
     const { registry, scene, target } = setup();
-    vi.mocked(target.leaveMode).mockImplementation(() => { expect(scene.renderOrder()).toHaveLength(2); });
+    vi.mocked(target.leaveMode).mockImplementation(() => { expect(contentRoots(scene)).toHaveLength(2); });
     act(() => { registry.trigger('file.new', { size: 'a4' }); });
     expect(target.leaveMode).toHaveBeenCalledOnce();
-    expect(scene.renderOrder()).toEqual([]);
+    expect(contentRoots(scene)).toEqual([]);
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 794, height: 1123 }]);
     expect(target.showFirstPage).toHaveBeenCalledOnce();
     act(() => { scene.undo(); });
-    expect(scene.renderOrder()).toHaveLength(2);
+    expect(contentRoots(scene)).toHaveLength(2);
     expect(pagesOf(scene)?.pages.map((p) => p.id)).toEqual(['page-1', 'page-2']);
   });
 
   it('New with no size empties the document to one page of the shown paper size', () => {
     const { registry, scene } = setup();
     act(() => { registry.trigger('file.new'); });
-    expect(scene.renderOrder()).toEqual([]);
+    expect(contentRoots(scene)).toEqual([]);
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 816, height: 1056 }]);
   });
 

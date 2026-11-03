@@ -159,7 +159,7 @@ describe('WeaselDraw', () => {
   it('saves the scene and the document to local storage', async () => {
     await mountApp();
     await expect.poll(() => localStorage.getItem(LS_KEY)).toContain('starter-1');
-    await expect.poll(() => localStorage.getItem(LS_KEY)).toContain('core:pages');
+    await expect.poll(() => localStorage.getItem(LS_KEY)).toContain('"pageRun"');
     await expect.poll(() => localStorage.getItem(DOC_KEY)).toContain('untitled.svg');
   });
 
@@ -224,9 +224,9 @@ describe('WeaselDraw', () => {
 
 const tabs = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('.wd-pages [role="tab"]')];
 const lit = (): number => tabs().findIndex((t) => t.getAttribute('aria-selected') === 'true');
-const savedPageIds = (): string[] | undefined =>
-  (JSON.parse(localStorage.getItem(LS_KEY) ?? '{}') as { doc?: { 'core:pages'?: { pages: { id: string }[] } } })
-    .doc?.['core:pages']?.pages.map((p) => p.id);
+const savedPageIds = (): string[] =>
+  (JSON.parse(localStorage.getItem(LS_KEY) ?? '{"nodes":[]}') as { nodes: { id: string; page?: unknown }[] })
+    .nodes.filter((n) => n.page !== undefined).map((n) => n.id);
 
 describe('WeaselDraw pages', () => {
   it('puts the page tabs under the workspace, across its width', async () => {

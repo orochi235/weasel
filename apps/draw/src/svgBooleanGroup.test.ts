@@ -1,22 +1,23 @@
 /** A boolean group saves as the path it draws and opens again as the boolean group. */
 import { describe, expect, it } from 'vitest';
-import { booleanGroupFields, createScene, pathContainsPoint, PAGES_DOC_KEY, solid } from '@weasel-js/core';
+import { asNodeId, booleanGroupFields, pathContainsPoint, solid } from '@weasel-js/core';
 import { parseSvg } from '@weasel-js/svg';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import type { WeaselDrawPose } from './drawDocument';
 import { openSvgText } from './openSvg';
+import { contentRoots } from './pages/contentRoots';
 import { sceneToSvgString } from './svgExport';
 import { SWILL_NAMESPACES } from './svgInterop';
+import { drawScene } from './testScenes';
 
 const PAGE = { id: 'page-1', width: 400, height: 400 };
 
 /** A subtract of a square at (0, 0) less one at (50, 50); inside a group framing it at (200, 200) when `framed`. */
 function makeScene(framed = false) {
-  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
-    systemLayers: [{ id: 'default' }], doc: { [PAGES_DOC_KEY]: { pages: [PAGE] } },
-  });
+  const scene = drawScene([PAGE]);
+  const page = asNodeId(PAGE.id);
   const frame = framed
-    ? scene.add({ kind: 'group', layer: 'default', pose: { x: 200, y: 200, width: 150, height: 150 }, data: {} })
-    : null;
+    ? scene.add({ kind: 'group', layer: 'default', parent: page, pose: { x: 200, y: 200, width: 150, height: 150 }, data: {} })
+    : page;
   const group = scene.add({
     ...booleanGroupFields<WeaselDrawPose>(), layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, parent: frame,
     data: { fill: { paint: solid('#ff0000') }, boolean: 'subtract' },
@@ -66,8 +67,8 @@ describe('a boolean group through SVG', () => {
   it('opens as the boolean group, its children under it and shown', async () => {
     const scene = makeScene();
     openSvgText(scene, await save(scene), 'b.svg');
-    expect(scene.roots).toHaveLength(1);
-    const group = scene.get(scene.roots[0]!)!;
+    expect(contentRoots(scene)).toHaveLength(1);
+    const group = scene.get(contentRoots(scene)[0]!)!;
     expect(group).toMatchObject({ kind: 'mark', consumesChildren: true, dependsOn: 'children' });
     expect(group.data).toMatchObject({ boolean: 'subtract', fill: { paint: { color: '#ff0000' } } });
     expect(group.data.path).toBeUndefined();

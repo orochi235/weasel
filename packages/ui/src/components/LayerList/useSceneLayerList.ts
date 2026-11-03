@@ -1,6 +1,6 @@
 import {
   asNodeId, createDeleteOp, createMoveToIndexOp, createSetDataOp, createSetHiddenOp, createSetLockedOp,
-  defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer,
+  defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageRunOf,
 } from '@weasel-js/core';
 import type { NodeId, Op, Scene, SceneNode, SelectionApi } from '@weasel-js/core';
 import type { LayerListItem, LayerListProps } from './LayerList';
@@ -68,15 +68,22 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
 
   // A scene orders children back to front and the list front to back. Rebuilt
   // every render: the scene keeps its identity across a reorder, so a memo keyed
-  // on it would serve the order from before.
+  // on it would serve the order from before. The page run lists as what it holds,
+  // and a page as a fixed row of what is on it: pages are edited through the page API.
+  const run = pageRunOf(scene);
   const build = (ids: readonly NodeId[], extra: Partial<LayerListItem>): LayerListItem[] =>
     [...ids].reverse().flatMap((id) => {
       const node = scene.get(id);
       if (!node) return [];
       const kids = scene.childrenOf(id);
+      if (id === run) return build(kids, extra);
+      const children = kids.length > 0 ? { children: build(kids, extra) } : {};
+      if (node.page !== undefined) {
+        const index = scene.childrenOf(node.parent!).filter((p) => scene.get(p)?.page !== undefined).indexOf(id);
+        return [{ id, label: pageName(node.page, index), fixed: true, ...children }];
+      }
       return [{
-        ...itemFor(node), ...extra, id, visible: node.hidden !== true, locked: node.locked === true,
-        ...(kids.length > 0 ? { children: build(kids, extra) } : {}),
+        ...itemFor(node), ...extra, id, visible: node.hidden !== true, locked: node.locked === true, ...children,
       }];
     });
 
@@ -107,10 +114,12 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       selection.set(ids.filter((id) => !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId));
     },
     onReorder: ({ ids, parentId, index }) => {
-      const siblings = parentId === null ? scene.roots : scene.childrenOf(asNodeId(parentId));
+      // The list's top level is the page run's, in a paged scene.
+      const parent = parentId ?? run;
+      const siblings = parent === null ? scene.roots : scene.childrenOf(asNodeId(parent));
       // `index` counts from the front among the siblings the drag left behind.
       const back = siblings.length - ids.length - index;
-      commit([createMoveToIndexOp({ ids, parentId, index: Math.max(0, back) })], label);
+      commit([createMoveToIndexOp({ ids, parentId: parent, index: Math.max(0, back) })], label);
     },
     onVisibilityChange: (id, visible) => {
       if (id.startsWith(ANNOTATION_LAYER_ROW)) scene.setLayerVisible(id.slice(ANNOTATION_LAYER_ROW.length) as TLayer, visible);

@@ -79,8 +79,10 @@ const menuItem = (label: string): HTMLElement | undefined =>
   Array.from(document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"]'))
     .find((el) => el.textContent?.includes(label));
 
+/** The saved drawing's nodes but its page run and pages. */
 const savedNodeCount = (): number =>
-  (JSON.parse(localStorage.getItem(LS_KEY) ?? '{"nodes":[]}') as { nodes: unknown[] }).nodes.length;
+  (JSON.parse(localStorage.getItem(LS_KEY) ?? '{"nodes":[]}') as { nodes: { page?: unknown; pageRun?: unknown }[] })
+    .nodes.filter((n) => n.page === undefined && n.pageRun === undefined).length;
 
 describe('WeaselDraw context menus', () => {
   it('duplicates the shape from its menu', async () => {
