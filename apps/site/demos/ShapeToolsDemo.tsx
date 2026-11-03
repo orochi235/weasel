@@ -19,7 +19,7 @@ export function ShapeToolsDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [],
   });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
   return (

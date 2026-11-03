@@ -81,7 +81,7 @@ function createLabScene() {
 
 function BlendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ initial: [BLEND] });
+  const selection = useSelection({ scene, initial: [BLEND] });
   const settings = settingsOf(ctx.config);
   const latest = useLatest(settings);
   // A blend made from the bar or with Alt+Shift+B takes the panel's settings.

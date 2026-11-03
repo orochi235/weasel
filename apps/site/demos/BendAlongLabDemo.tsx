@@ -63,7 +63,7 @@ function createLabScene() {
 
 function BendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ initial: [SPINE] });
+  const selection = useSelection({ scene, initial: [SPINE] });
   const settings = settingsOf(ctx.config);
   const latest = useLatest(settings);
   // A bend made from the bar or with Alt+Shift+W takes the panel's settings.

@@ -31,7 +31,7 @@ const INITIAL: Rect[] = [
 
 function ToolReflectionDemoInner() {
   const scene = useScene<Rect>({ items: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
   const adapter = useSceneAdapter(scene, { selection });
 
   const select = useSelectTool(adapter, {});

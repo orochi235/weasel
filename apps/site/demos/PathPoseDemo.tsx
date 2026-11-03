@@ -53,7 +53,7 @@ export function PathPoseDemo() {
       id: asNodeId(ID),
     }],
   });
-  const selection = useSelection({ initial: [asNodeId(ID)] });
+  const selection = useSelection({ scene, initial: [asNodeId(ID)] });
 
   return (
     <div className="ckd-demo">

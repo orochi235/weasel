@@ -50,7 +50,7 @@ export function MinimapDemo() {
     systemLayers: [{ id: 'default' }],
     initial,
   });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [mainSize, setMainSize] = useState<CanvasSize>({ width: MAIN_W, height: MAIN_H });
   // One entry installs the whole inset minimap: its view, its pan, the

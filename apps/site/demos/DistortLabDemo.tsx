@@ -55,7 +55,7 @@ const SELECTED = [asNodeId('board'), asNodeId('disc')];
 
 function DistortTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ mode: 'multi', initial: SELECTED });
+  const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { mode, tolerance } = ctx.config;
   const settings = useMemo(() => ({ mode, tolerance }), [mode, tolerance]);
   useWarpLabActions(ctx.trial.id, 'distort', settings);

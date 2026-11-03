@@ -50,7 +50,7 @@ export function usePathEditTrial<TC>(ctx: RenderContext<PathLabState, TC>, d: st
       initial: [strokeNode(LAB_PATH_ID, pathFromD(d), color)],
     }),
   );
-  const selection = useSelection({ initial: [asNodeId(LAB_PATH_ID)] });
+  const selection = useSelection({ scene, initial: [asNodeId(LAB_PATH_ID)] });
   const [editingId, setEditingId] = useState<string | null>(LAB_PATH_ID);
   const pathEdit = useMemo<PathEditHost>(() => ({ editingId: () => editingId, setEditingId }), [editingId]);
   return { scene, selection, pathEdit };

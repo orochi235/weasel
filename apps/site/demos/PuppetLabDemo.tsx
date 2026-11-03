@@ -48,7 +48,7 @@ const SELECTED = [asNodeId('eel')];
 
 function PuppetTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ mode: 'multi', initial: SELECTED });
+  const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { tolerance } = ctx.config;
   const settings = useMemo(() => ({ tolerance }), [tolerance]);
   useWarpLabActions(ctx.trial.id, 'puppet', settings);

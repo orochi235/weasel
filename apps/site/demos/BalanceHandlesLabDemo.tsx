@@ -30,7 +30,7 @@ const createLabScene = () =>
 
 function BalanceTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit();
+  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
   const { balance, comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({

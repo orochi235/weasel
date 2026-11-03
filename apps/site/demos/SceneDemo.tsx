@@ -14,7 +14,7 @@ export function SceneDemo() {
   );
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
-  const selection = useSelection();
+  const selection = useSelection({ scene });
 
   return (
     <div tabIndex={0} style={{ outline: 'none' }}>

@@ -32,7 +32,7 @@ const features = ['draw', resamplePreset] as const;
 
 function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit();
+  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
   const actions = useActionsRegistry();
   const bar = (
     <>

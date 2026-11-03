@@ -31,7 +31,7 @@ const features = ['draw', addExtremesPreset, anchorSelectionPreset] as const;
 
 function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit();
+  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
   return (
     <PathLabStage bar={<><ActionBar group="anchors" /><LastOperationPanel /></>}>
       <TrialSceneCanvas

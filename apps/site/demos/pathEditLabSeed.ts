@@ -37,16 +37,16 @@ export function createPathLabScene(d: string | Path, fill?: string) {
 
 /**
  * The path selected and open for anchor editing, the way a double-click on it
- * leaves it: a selection holding it, and a path-edit host whose open path
+ * leaves it: `scene`'s selection holding it, and a path-edit host whose open path
  * starts as it. Escape closes it and a double-click reopens it, through the
  * host. `redrawOn` repaints the canvas when the host's answer changes.
  */
-export function useSeededPathEdit(): {
+export function useSeededPathEdit(scene: ReturnType<typeof createPathLabScene>): {
   selection: ReturnType<typeof useSelection>;
   pathEdit: PathEditHost;
   redrawOn: readonly RedrawSource[];
 } {
-  const selection = useSelection({ initial: [EDITED_ID] });
+  const selection = useSelection({ scene, initial: [EDITED_ID] });
   const [seeded] = useState(() => {
     let editing: string | null = EDITED_ID;
     const listeners = createEmitter();

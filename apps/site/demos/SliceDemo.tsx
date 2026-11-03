@@ -40,7 +40,7 @@ export function SliceDemo() {
   // `<SceneCanvas>` publishes the `slice` dep over its own scene, so mounting
   // the tool is all this needs: every cut swaps the paths it crosses for their pieces.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
     <div className="ckd-shape-tools-demo">

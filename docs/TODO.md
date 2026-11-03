@@ -409,12 +409,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] Demos keep their selection off the scene.** Most `apps/site/demos/` call `useSelection()` with no
-  `scene`, so the selection lives in the hook rather than on the scene: undo and redo don't put it back, and an
-  app writing it directly skips the scene's rule that a selection holds only outermost nodes. A demo teaches this
-  shape, so consumers copy it. Closes when no demo calls `useSelection` without `scene`, or its blurb says the
-  local selection is the point.
-
 - **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
   the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`

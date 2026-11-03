@@ -47,7 +47,7 @@ export function SelectionPanelDemo() {
       { id: 'c' as never, kind: 'mark', layer: 'default', pose: { x: 130, y: 190, width: 140, height: 70 }, data: { kind: 'rect', fill: { paint: solid('#6f9fd9ff') } } },
     ],
   });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
 
   return (
     <div className="ckd-row">

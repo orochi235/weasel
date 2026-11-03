@@ -92,7 +92,7 @@ function Pane({
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
   const [scene] = useState(() => sceneFromJSON(paneScene(fill), {}));
-  const selection = useSelection();
+  const selection = useSelection({ scene });
 
   useLayoutEffect(() => { setInput(boxRef.current); }, []);
 

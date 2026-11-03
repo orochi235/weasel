@@ -163,7 +163,7 @@ export function ForceGraphDemo() {
     systemLayers: [{ id: 'graph' }],
     initial: initial.nodes.map((n) => leafOf(n, GRAPH_SIZES[0].radius)),
   });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
 
   const [forces] = useState(() => graphForces(GRAPH_SIZES[0], initial.links, BOUNDS));
 

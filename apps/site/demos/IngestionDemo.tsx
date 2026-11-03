@@ -18,7 +18,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 
 export function IngestionDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({ systemLayers: [{ id: 'default' }] });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
   const ref = useRef<SceneCanvasApi>(null);
   const [readout, setReadout] = useState('drop an image, paste one, or use the picker');
 

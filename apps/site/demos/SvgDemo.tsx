@@ -111,7 +111,7 @@ export function SvgDemo() {
 function SvgRoundTrip() {
   const [source, setSource] = useState(PRESETS[0].svg);
   const scene = useScene<SvgKitLeafData, LayerId, SvgKitPose>({ systemLayers: [{ id: 'default' }] });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
 
   const imported = useMemo(() => {
     try {

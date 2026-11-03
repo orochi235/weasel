@@ -39,7 +39,7 @@ export function PanZoomDemo() {
         pose: { x: 560, y: 360, width: 80, height: 60 }, data: { color: '#f0e0a8', pin: 'none' } },
     ],
   });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
 
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
