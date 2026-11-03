@@ -1,11 +1,10 @@
 /**
  * Every page of a diagram as one PDF.
  */
-import { createRasterSession, planPixelRender, viewToMat3, warmRender } from '@weasel-js/core';
+import { commandRasterizer, createRasterSession, planPixelRender, viewToMat3, warmRender } from '@weasel-js/core';
 import { registryFontSource, writePdf, type PdfPage, type PdfSkip } from '@weasel-js/pdf';
 import type { PageExportScene, PageRect } from './pageNodes';
 import { pageBackground } from './pageSvg';
-import { pageRasterizer } from './pdfRaster';
 
 /** PDF points per page unit: 72 points to the inch over 96 units to the inch. */
 const PT_PER_UNIT = 0.75;
@@ -64,7 +63,7 @@ export async function exportPagesPdf(
       fonts: registryFontSource,
       ...(opts.title !== undefined ? { title: opts.title } : {}),
       ...(opts.lang !== undefined ? { lang: opts.lang } : {}),
-      rasterize: pageRasterizer(session),
+      rasterize: commandRasterizer(session),
     });
     const copy = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(copy).set(bytes);

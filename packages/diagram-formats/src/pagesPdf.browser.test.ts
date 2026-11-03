@@ -2,7 +2,7 @@
  * A diagram exported as PDF, read back and drawn by pdf.js.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { createRasterSession, viewToMat3 } from '@weasel-js/core';
+import { commandRasterizer, createRasterSession, viewToMat3 } from '@weasel-js/core';
 import { registerFont, registerFontOutlines } from '@weasel-js/font';
 import { registerDiagramShape } from '@weasel-js/diagram';
 import { writePdf } from '@weasel-js/pdf';
@@ -14,7 +14,6 @@ import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../assets/fonts/inter/inter.ttf?url';
 import { exportPagesPdf } from '@weasel-js/diagram-formats';
-import { pageRasterizer } from './pdfRaster';
 import { pageScene } from './testing/pageScene';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -161,7 +160,7 @@ describe('the raster hook', () => {
     });
     const session = createRasterSession();
     try {
-      const rasterize = pageRasterizer(session);
+      const rasterize = commandRasterizer(session);
       const drawn = async (effects: boolean) => {
         const { bytes, skipped } = await writePdf([page(effects)], { fonts: { embedding: async () => null, outline: () => null }, rasterize });
         expect(skipped).toEqual([]);
@@ -194,7 +193,7 @@ describe('the raster hook', () => {
     ];
     const session = createRasterSession();
     try {
-      const rasterize = pageRasterizer(session);
+      const rasterize = commandRasterizer(session);
       const { bytes, skipped } = await writePdf([{ width: 150, height: 75, commands }], { fonts: { embedding: async () => null, outline: () => null }, rasterize });
       const pdf = await draw(await read(new Blob([bytes.slice().buffer as ArrayBuffer])), 1, 2);
       const own = await rasterize(commands, { x: 0, y: 0, width: 150, height: 75 }, 2, undefined);
@@ -226,7 +225,7 @@ describe('the raster hook', () => {
     };
     const session = createRasterSession();
     try {
-      const rasterize = pageRasterizer(session);
+      const rasterize = commandRasterizer(session);
       const whole = await rasterize([blob], { x: 0, y: 0, width: 150, height: 75 }, 2, undefined);
       // The rect writePdf asks for: 12 raster pixels of reach are 6 points, and a point of slack.
       const crop = { x: 43, y: 23, width: 34, height: 24 };
