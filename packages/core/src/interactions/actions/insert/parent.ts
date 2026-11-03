@@ -1,19 +1,21 @@
-import type { NodeId } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
+import { isPaged } from 'core/pages/pageNodes';
+import { pageForPoint } from 'core/pages/pagePlacement';
 import { admitsChild } from '../admitsChild';
 import type { CanDropIntoDep } from '../layoutDeps';
 
-/** What finding an insert's parent reads of a scene. A `Scene` satisfies it. */
-interface ParentReader {
-  get(id: NodeId): { kind: string } | undefined;
-}
-
 /** The node an insert lands in: the one the `insertInto` dep's `into` names when
- *  it exists and admits the insert, or null, the top of the tree. */
+ *  it exists and admits the insert; else, in a paged scene, the page for `at`
+ *  (`pageForPoint`); else null, the top of the tree. */
 export function insertParent(
-  scene: ParentReader | undefined,
+  scene: Scene<unknown, string, unknown> | undefined,
   into: string | null | undefined,
   canDropInto?: CanDropIntoDep,
+  at?: { x: number; y: number },
 ): NodeId | null {
-  if (into == null || !scene || scene.get(into as NodeId) === undefined) return null;
-  return admitsChild(scene, into as NodeId, [], canDropInto) ? (into as NodeId) : null;
+  if (!scene) return null;
+  if (into != null && scene.get(into as NodeId) !== undefined && admitsChild(scene, into as NodeId, [], canDropInto)) {
+    return into as NodeId;
+  }
+  return at !== undefined && isPaged(scene) ? pageForPoint(scene, at) as NodeId | null : null;
 }

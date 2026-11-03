@@ -24,6 +24,8 @@ import {
 import { statedFields } from 'core/scene/statedFields';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import type { InsertSite } from './deps/insertSite';
+import { isFollower } from 'core/pages/pagePlacement';
+import { pasteOnPages, type PageLanding } from './pasteOnPages';
 
 /** What the seam needs from the adapter it serves. */
 export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
@@ -33,7 +35,8 @@ export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
   frameAtOrAbove(id: string | null): string | null;
   poseBounds(pose: TPose, node: unknown): Bounds;
   translate(pose: TPose, dx: number, dy: number, node?: unknown): TPose;
-  /** Where the pasted cluster's roots land; absent, or naming no parent, they keep their layer at the top of the tree. */
+  /** Where the pasted cluster's roots land; absent, or naming no parent, they keep their layer, at the top of the
+   *  tree or, in a paged scene, where `pasteOnPages` puts them. */
   landing?: () => InsertSite;
 }
 
@@ -233,10 +236,21 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   }
   const site = env.landing?.();
   const into = site?.parent != null ? site : null;
+  // With no container named, a paged scene puts the roots on a page, the paste moved to reach it.
+  const paged = into === null ? pagedLanding(env, src.filter(isRoot), { dx, dy }, ctx?.dropPoint) : null;
+  if (paged) {
+    dx += paged.shift.dx;
+    dy += paged.shift.dy;
+  }
+  const landing = (item: Item<TData, TLayer, TPose>): InsertSite | null => {
+    if (!isRoot(item)) return null;
+    if (paged) return isFollower(item) ? paged.follower : paged.other;
+    return into;
+  };
   const placed = (item: Item<TData, TLayer, TPose>): TPose => {
     if (ridesPastedFrame(item)) return copyField(item.pose);
     const moved = env.translate(copyField(item.pose), dx, dy, item);
-    return into && isRoot(item) ? into.local(moved) as TPose : moved;
+    return landing(item)?.local(moved) as TPose ?? moved;
   };
   // `src` is parents-before-children and this keeps it, so children re-attach
   // to freshly inserted parents when the caller's InsertOps apply in order.
@@ -244,7 +258,7 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
     id: idMap.get(item.id)!,
     kind: item.kind,
     layer: into && isRoot(item) ? into.layer as TLayer : item.layer,
-    parent: isRoot(item) ? into?.parent ?? null : idMap.get(item.parent as string)!,
+    parent: isRoot(item) ? landing(item)?.parent ?? null : idMap.get(item.parent as string)!,
     pose: placed(item),
     data: copyField(item.data),
     ...statedFields(item),
@@ -258,4 +272,16 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
         : {}),
     ...fns.get(item.id),
   } as Node<TData, TLayer, TPose>));
+}
+
+/** {@link pasteOnPages} for `roots` once moved by `offset`. */
+function pagedLanding<TData, TLayer extends string, TPose>(
+  env: SceneClipboardEnv<TData, TLayer, TPose>,
+  roots: readonly Item<TData, TLayer, TPose>[],
+  offset: { dx: number; dy: number },
+  dropPoint: { x: number; y: number } | null | undefined,
+): PageLanding | null {
+  const bounds = roots.filter((item) => !isFollower(item))
+    .map((item) => env.poseBounds(env.translate(item.pose, offset.dx, offset.dy, item), item));
+  return pasteOnPages(env.scene as never, bounds, dropPoint);
 }

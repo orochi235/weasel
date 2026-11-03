@@ -150,10 +150,11 @@ export function useInsertDepSource(
     const sc = sceneRef.current;
     const ad = adapterRef.current;
 
-    const site = () => insertSite(sc, registry.get('insertInto')?.get(), registry.get('canDropInto'));
-    const build: NonNullable<InsertDep['build']> = (bounds, extras) => {
+    const site = (at?: { x: number; y: number }) =>
+      insertSite(sc, registry.get('insertInto')?.get(), registry.get('canDropInto'), at);
+    const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
         const kind = extras.kind;
-        const { parent, layer, local } = site();
+        const { parent, layer, local } = site(ends?.start ?? { x: bounds.x, y: bounds.y });
         const seq = ++insertSeqRef.current;
         const id = sc.mintId();
         let asked: ReturnType<InsertPaint> | undefined;

@@ -60,6 +60,25 @@ export function resolveDrop(
   return { newParent, newLayer: hitNode.layer, hitSibling };
 }
 
+/** Root `id`'s pose stored under `newParent` on `newLayer`, keeping the world pose the drag `delta` shows. */
+export function landedLocalPose(
+  session: MoveSession,
+  id: NodeId,
+  newParent: NodeId | null,
+  newLayer: string,
+  delta: { dx: number; dy: number },
+): unknown {
+  const { scene, pc, view } = session;
+  const adapter = sceneViewPoseAdapter(scene);
+  const layer = scene.get(id)!.layer;
+  const world = carryPose(
+    session.descriptorOf(id),
+    draggedWorldPose(session, grabbedPoseAdapter(session, adapter), id, delta),
+    layer !== newLayer ? planeToPlane(planeOf(view, layer), planeOf(view, newLayer)) : null,
+  );
+  return rebaseLocalPose(adapter, world, newParent as string | null, pc.compose, pc.decompose);
+}
+
 /** Reparent and reposition each moved root as ops, keeping the world pose the
  *  drag showed, then the ops that bring uncarried descendants along. */
 export function reparentOps(
@@ -68,8 +87,7 @@ export function reparentOps(
   mode: ReparentOnDrop,
   delta: { dx: number; dy: number },
 ): Op[] {
-  const { scene, pc, view } = session;
-  const adapter = sceneViewPoseAdapter(scene);
+  const { scene } = session;
   const label = session.lifecycle.label;
   const ops: Op[] = [];
   // The destination's children as each op will find them: an earlier root's
@@ -79,12 +97,7 @@ export function reparentOps(
     if (!session.startPoses.has(id)) continue;
     const node = scene.get(id)!;
     const crossing = node.layer !== target.newLayer;
-    const world = carryPose(
-      session.descriptorOf(id),
-      draggedWorldPose(session, grabbedPoseAdapter(session, adapter), id, delta),
-      crossing ? planeToPlane(planeOf(view, node.layer), planeOf(view, target.newLayer)) : null,
-    );
-    const to = rebaseLocalPose(adapter, world, target.newParent as string | null, pc.compose, pc.decompose);
+    const to = landedLocalPose(session, id, target.newParent, target.newLayer, delta);
 
     let from = node.parent as string | null;
     if (crossing) {

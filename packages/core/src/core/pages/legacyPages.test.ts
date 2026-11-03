@@ -65,7 +65,21 @@ describe('adoptLegacyPages', () => {
     const inGap = 'gap' as NodeId;
     adoptLegacyPages(scene);
     expect(scene.get(inGap)!.parent).toBe('a');
-    expect(scene.get(inGap)!.pose.x).toBe(102);
+    // Moved so 1 unit of it is on page a (0..100), not left clipped to nothing.
+    expect(scene.get(inGap)!.pose.x).toBe(99);
+  });
+
+  it('moves a root wholly off every page onto the nearest one, its children with it', () => {
+    const scene = load([
+      { ...rect('far', 400), kind: 'group', pose: { x: 400, y: 300, width: 10, height: 10 } },
+      { ...rect('kid', 2), parent: 'far' as NodeId, pose: { x: 2, y: 2, width: 2, height: 2 } },
+    ]);
+    adoptLegacyPages(scene);
+    const far = scene.get('far' as NodeId)!;
+    expect(far.parent).toBe('b');
+    // Page b spans world (110..210, 0..50): 1 unit of the root is left on it.
+    expect(far.pose).toMatchObject({ x: 99, y: 49 });
+    expect(scene.get('kid' as NodeId)!.pose).toMatchObject({ x: 2, y: 2 });
   });
 
   it('puts a follower in the run', () => {
