@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/core';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import type { PageSize } from './paperLayer';
-import { usePageSettle, type Paging, type ViewSink } from './usePageSettle';
+import { sendView, usePageSettle, type Paging, type ViewSink } from './usePageSettle';
 
 /** The page size `add` gives the first page of a scene without any: US Letter at 96 per inch. */
 const FIRST_PAGE = { width: 816, height: 1056 } as const;
@@ -37,16 +37,26 @@ export interface DocPages {
 
 type AnyScene = Scene<unknown, string, unknown>;
 
-/** The scene's placed pages, read again on each scene change and kept by identity while they read the same. */
+/** A reader of `scene`'s placed pages that answers the array it last read, by identity, until a scene
+ *  edit changes how they read. */
+function placedReader(scene: AnyScene): () => readonly PlacedPage[] {
+  let version = scene.getVersion();
+  let placed: readonly PlacedPage[] = placedPagesOf(scene);
+  return () => {
+    const now = scene.getVersion();
+    if (now !== version) {
+      version = now;
+      const next = placedPagesOf(scene);
+      if (!samePlaced(placed, next)) placed = next;
+    }
+    return placed;
+  };
+}
+
+/** The scene's placed pages, re-rendering the host only when they change. */
 function usePlaced(scene: AnyScene): readonly PlacedPage[] {
-  const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
-  // `version` is the key: a scene edit is what can change the pages.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const next = useMemo(() => placedPagesOf(scene), [scene, version]);
-  const [kept, setKept] = useState(next);
-  const same = samePlaced(kept, next);
-  if (!same) setKept(next);
-  return same ? kept : next;
+  const read = useMemo(() => placedReader(scene), [scene]);
+  return useSyncExternalStore(scene.subscribe, read, read);
 }
 
 function samePlaced(a: readonly PlacedPage[], b: readonly PlacedPage[]): boolean {
@@ -69,7 +79,7 @@ function useShown(placed: readonly PlacedPage[], current: string | null): Placed
  * A scene's pages, read from its page nodes, with the view following them. Each edit is one of
  * core's page edits, so it moves what is on a page with it, in one undo entry. `padding` is what
  * fitting the view to a page leaves around it, in screen pixels. `setView` may be a view dep with
- * `animate`, which `'single'` paging uses to settle; going to a page always sets.
+ * `animate`, and then going to a page and `'single'` paging's settle animate.
  */
 export function usePages<TData, TLayer extends string, TPose>(
   sceneIn: Scene<TData, TLayer, TPose>,
@@ -88,9 +98,7 @@ export function usePages<TData, TLayer extends string, TPose>(
     const show = (page: PlacedPage | null | undefined) => {
       const { view: v, dims: d, setView: set } = latest.current;
       if (!page || d.width <= 0 || d.height <= 0) return;
-      const to = fitViewToPage(page, d, v, { padding });
-      if (typeof set === 'function') set(to);
-      else set.set(to);
+      sendView(set, fitViewToPage(page, d, v, { padding }));
     };
     const goTo = (id: string) => show(placedPagesOf(scene).find((p) => p.id === id));
     return {
@@ -105,7 +113,6 @@ export function usePages<TData, TLayer extends string, TPose>(
         const like = pages[at] ?? pages[pages.length - 1];
         const id = nextPageId(pages);
         const size = like ? { width: like.width, height: like.height } : FIRST_PAGE;
-        // With no page run, addPage's setPages makes one through createPageRun.
         addPage(scene, { id, ...size }, { index: at < 0 ? pages.length : at + 1 });
         goTo(id);
       },

@@ -14,11 +14,14 @@ export type ViewSink = ((view: View) => void) | { set(view: View): void; animate
 export const PAGE_SETTLE_MS = 150;
 
 /** Send `view` to `sink`, animated when it can. */
-function sendView(sink: ViewSink, view: View): void {
+export function sendView(sink: ViewSink, view: View): void {
   if (typeof sink === 'function') sink(view);
   else if (sink.animate) sink.animate(view);
   else sink.set(view);
 }
+
+/** How far past a page's fit the view may be zoomed and still settle, as a fraction of the fit scale. */
+const ZOOM_TOLERANCE = 0.01;
 
 function near(a: View, b: View): boolean {
   const px = 0.5 / Math.max(a.scale.x, a.scale.y);
@@ -26,20 +29,25 @@ function near(a: View, b: View): boolean {
     && Math.abs(a.scale.x / b.scale.x - 1) < 1e-3 && Math.abs(a.scale.y / b.scale.y - 1) < 1e-3;
 }
 
-/** Whether a pointer is down anywhere in the window. */
+/** Whether any pointer is down in the window, counted by `pointerId` so a pinch stays down while one
+ *  finger is. A window blur clears them, since their releases may never arrive. */
 function usePointerDown(on: boolean): boolean {
   const [down, setDown] = useState(false);
   useEffect(() => {
     if (!on) return;
-    const press = () => setDown(true);
-    const release = () => setDown(false);
+    const held = new Set<number>();
+    const press = (e: PointerEvent) => { held.add(e.pointerId); setDown(true); };
+    const release = (e: PointerEvent) => { held.delete(e.pointerId); setDown(held.size > 0); };
+    const clear = () => { held.clear(); setDown(false); };
     window.addEventListener('pointerdown', press, true);
     window.addEventListener('pointerup', release, true);
     window.addEventListener('pointercancel', release, true);
+    window.addEventListener('blur', clear);
     return () => {
       window.removeEventListener('pointerdown', press, true);
       window.removeEventListener('pointerup', release, true);
       window.removeEventListener('pointercancel', release, true);
+      window.removeEventListener('blur', clear);
       setDown(false);
     };
   }, [on]);
@@ -49,7 +57,7 @@ function usePointerDown(on: boolean): boolean {
 /**
  * With `'single'` paging, brings the view to rest fitted to one page: `PAGE_SETTLE_MS` after the view last
  * moved, and never while a pointer is down, it goes to the page the view shows most of, or with none
- * showing the nearest. Animated when `setView` is a view dep with `animate`. With `'continuous'` it does
+ * showing the nearest. A view zoomed in past that page's fit is left where it is, to pan freely. Animated when `setView` is a view dep with `animate`. With `'continuous'` it does
  * nothing. `padding` is what the fit leaves around the page, in screen pixels.
  */
 export function usePageSettle(
@@ -71,6 +79,7 @@ export function usePageSettle(
       const page = pageInView(placed, v, d) ?? pageHolding(placed, viewportWorldRect(v, d));
       if (!page) return;
       const to = fitViewToPage(page, d, v, { padding });
+      if (v.scale.x > to.scale.x * (1 + ZOOM_TOLERANCE)) return;
       if (!near(to, v)) sendView(sink, to);
     }, PAGE_SETTLE_MS);
     return () => clearTimeout(timer);

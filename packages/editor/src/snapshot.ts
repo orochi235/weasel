@@ -6,7 +6,7 @@
 // wrote, which is why the walk here is our own.
 
 import type {
-  AddNodeSpec, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
+  AddNodeSpec, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';
 import { PAGES_DOC_KEY, adoptLegacyPages, asNodeId, sceneFromJSON, specsFromSerialized } from '@weasel-js/core';
 import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
@@ -46,17 +46,26 @@ export function reviveTypedArrays<T>(node: T): T {
   return node;
 }
 
+/** How a snapshot is read: `specsFromSerialized`'s options, and the pose descriptor that measures each
+ *  root when a `core:pages` snapshot's roots are placed on their pages (default rect bounds). */
+export type SnapshotLoadOptions<TData, TLayer extends string, TPose> = SpecsFromSerializedOptions<TData, TLayer, TPose> & {
+  descriptor?: PoseDescriptor<unknown>;
+};
+
 /**
  * `json` with its pages as page nodes: a snapshot saved while a scene's pages were its `core:pages`
- * value is built into a scene, converted there by core's `adoptLegacyPages`, and written out again.
- * Any other snapshot comes back as it is. `registry` and `opts` are what the load reads it with.
+ * value is built into a scene, converted there by core's `adoptLegacyPages` with `opts.descriptor`,
+ * and written out again. Any other snapshot, a converted one included, comes back as it is.
+ * `registry` and `opts` are what the load reads it with. The scene is built on the rigid
+ * composition unless `opts.composition` says otherwise, so a scene on any other must pass its own.
  */
 export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
-  opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
+  opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): SavedScene<TData, TLayer, TPose> {
   if (json.doc?.[PAGES_DOC_KEY] === undefined) return json;
+  const { descriptor, ...read } = opts;
   const taken = new Set<string>(json.nodes.map((n) => n.id));
   let n = 0;
   // The run is the one node adoption mints; a fixed id loads the same snapshot the same way every time.
@@ -66,8 +75,8 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
     taken.add(id);
     return asNodeId(id);
   };
-  const scene = sceneFromJSON(json, { registry, unknownKeys: 'skip', generateId, ...opts });
-  adoptLegacyPages(scene);
+  const scene = sceneFromJSON(json, { registry, unknownKeys: 'skip', generateId, ...read });
+  adoptLegacyPages(scene, descriptor ? { descriptor } : {});
   return scene.toJSON();
 }
 
@@ -77,8 +86,11 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
 export function docFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
 ): Readonly<Record<string, unknown>> | undefined {
-  const { doc } = adoptSnapshotPages(json);
-  return doc !== null && typeof doc === 'object' && !Array.isArray(doc) ? doc : undefined;
+  const { doc } = json;
+  if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return undefined;
+  if (!(PAGES_DOC_KEY in doc)) return doc;
+  const { [PAGES_DOC_KEY]: _pages, ...rest } = doc;
+  return rest;
 }
 
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
@@ -92,8 +104,9 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
   revive: <T>(node: T) => T = reviveTypedArrays,
-  opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
+  opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...opts })
+  const { descriptor: _descriptor, ...read } = opts;
+  return specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...read })
     .map((spec) => ({ ...spec, data: revive(spec.data) }));
 }

@@ -70,10 +70,12 @@ It is off by default, and then nothing is left outside a page.
 **Paging** is a view setting, not part of the document. `usePages(..., { paging })`
 takes `'continuous'` (the default), where the view moves freely across pages,
 or `'single'`, where `usePageSettle` brings the view to rest fitted to one page
-150 ms after it last moved, never while a pointer is down. Pass a view dep with
-`animate` as the view setter and the settle animates.
+150 ms after it last moved, never while a pointer is down; a view zoomed in past
+the page's fit pans freely and is left alone. Pass a view dep with `animate` as
+the view setter and going to a page, and the settle, animate.
 
 A snapshot saved while a scene's pages were its `core:pages` document value
-loads with them as page nodes: `nodeSpecsFromSnapshot` and `docFromSnapshot`
-convert it through core's `adoptLegacyPages`, and `useSessionPersistence`
+loads with them as page nodes: `nodeSpecsFromSnapshot` converts it through
+core's `adoptLegacyPages` (pass the scene's `descriptor` and, off the rigid
+composition, its `composition`), `docFromSnapshot` leaves the value out, and `useSessionPersistence`
 drops the undo stack saved beside it.

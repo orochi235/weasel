@@ -1,6 +1,6 @@
-import { asNodeId, type RectPose, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
+import { RECT_POSE_DESCRIPTOR, asNodeId, type PoseDescriptor, type RectPose, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
+import { adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
 
 // Regression for the reload bug where a loader filtered `kind === 'mark'` and dropped `parent`,
 // losing containers and nesting even though `toJSON()` persisted the full tree.
@@ -150,5 +150,24 @@ describe('a snapshot holding core:pages', () => {
   it('is read the same way twice', () => {
     expect(nodeSpecsFromSnapshot(legacy)).toEqual(nodeSpecsFromSnapshot(legacy));
     expect((legacy.doc as Record<string, unknown>)['core:pages']).toBeDefined();
+  });
+
+  it('places each root by the descriptor it is handed', () => {
+    // Measures every pose 100 to the left of where its rect says: the rect at x 115 reads as on page a.
+    const shifted: PoseDescriptor<unknown> = {
+      ...(RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>),
+      getBounds: (pose) => {
+        const p = pose as RectPose;
+        return { x: p.x - 100, y: p.y, width: p.width, height: p.height };
+      },
+    };
+    const r = nodeSpecsFromSnapshot(legacy, {}, undefined, { descriptor: shifted }).find((s) => s.id === asNodeId('r'))!;
+    expect(r.parent).toBe('a');
+  });
+
+  it('converts once: a converted snapshot comes back as it is', () => {
+    const once = adoptSnapshotPages(legacy);
+    expect(adoptSnapshotPages(once)).toBe(once);
+    expect(adoptSnapshotPages(adoptSnapshotPages(legacy))).toEqual(once);
   });
 });
