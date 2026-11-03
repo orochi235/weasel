@@ -1,1 +1,4 @@
-[]
+[
+  "@weasel-js/dither",
+  "@weasel-js/p-touch"
+]
