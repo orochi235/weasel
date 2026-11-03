@@ -119,7 +119,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
         annotations?.pick(notes.at(-1)!);
         return;
       }
-      selection.set(withoutPageStructure(scene, ids.filter((id) => !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId)));
+      selection.set([...withoutPageStructure(scene, ids.filter((id) => !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId))]);
     },
     onReorder: ({ ids, parentId, index }) => {
       const parent = parentId ?? topParent(ids);
