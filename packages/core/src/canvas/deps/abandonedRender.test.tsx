@@ -62,6 +62,7 @@ const sceneWith = (get: (id: string) => unknown = () => undefined) =>
   ({
     layers: [{ id: 'default' }], get, renderOrderNodes: () => [], layoutOf: () => null, onReflow: () => () => {},
     mintId: () => 'minted',
+    roots: [],
     composition: IDENTITY_POSE_COMPOSITION,
   }) as unknown as Scene<unknown, string, unknown>;
 

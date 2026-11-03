@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
-import { CHART_SCENE_KEY } from './chartPersistence';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
+import { savedContent } from './testing/savedChart';
 
 registerCanvasFont('sans-serif');
 
@@ -75,7 +75,7 @@ afterEach(() => {
 });
 
 interface Saved { nodes: { id: string; parent?: string | null; data: { diagram?: { container?: { role: string } } } }[] }
-const saved = (): Saved => JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as Saved;
+const saved = (): Saved => ({ nodes: savedContent<Saved['nodes'][number]>() });
 const tabs = () => [...document.querySelectorAll<HTMLElement>('[role="tab"]')].map((t) => t.textContent);
 const menuRow = (label: string) => [...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')]
   .find((el) => el.textContent?.startsWith(label));

@@ -79,8 +79,10 @@ const menuItem = (label: string): HTMLElement | undefined =>
   Array.from(document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"]'))
     .find((el) => el.textContent?.includes(label));
 
+/** The saved drawing's nodes but its page run and pages. */
 const savedNodeCount = (): number =>
-  (JSON.parse(localStorage.getItem(LS_KEY) ?? '{"nodes":[]}') as { nodes: unknown[] }).nodes.length;
+  (JSON.parse(localStorage.getItem(LS_KEY) ?? '{"nodes":[]}') as { nodes: { page?: unknown; pageRun?: unknown }[] })
+    .nodes.filter((n) => n.page === undefined && n.pageRun === undefined).length;
 
 describe('WeaselDraw context menus', () => {
   it('duplicates the shape from its menu', async () => {
@@ -108,14 +110,22 @@ describe('WeaselDraw context menus', () => {
     expect(menuItem('Duplicate')).toBeUndefined();
   });
 
-  it('opens the row menu on a layer row and selects that row', async () => {
+  it('opens the row menu on a layer row and selects that row, and none on the page row above it', async () => {
     await mountApp();
-    const firstRow = () => document.querySelector<HTMLElement>('.wd-sidebar.right [role="row"]');
-    await expect.poll(firstRow).not.toBeNull();
-    const row = firstRow()!;
-    const box = row.getBoundingClientRect();
-    rightClick(row, { x: box.left + 10, y: box.top + box.height / 2 });
+    const rows = () => [...document.querySelectorAll<HTMLElement>('.wd-sidebar.right [role="row"]')];
+    await expect.poll(() => rows().length).toBeGreaterThan(1);
+    const status = () => document.querySelector('.wd-statusbar')?.textContent ?? '';
+    const rightClickRow = (row: HTMLElement) => {
+      const box = row.getBoundingClientRect();
+      rightClick(row, { x: box.left + 10, y: box.top + box.height / 2 });
+    };
+    const [pageRow, shapeRow] = rows();
+    expect(pageRow!.dataset.fixed).toBe('true');
+    rightClickRow(pageRow!);
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+    expect(status()).toContain('sel: 0');
+    rightClickRow(shapeRow!);
     await expect.poll(() => menuItem('Duplicate')).toBeDefined();
-    await expect.poll(() => document.querySelector('.wd-statusbar')?.textContent ?? '').toContain('sel: 1');
+    await expect.poll(status).toContain('sel: 1');
   });
 });

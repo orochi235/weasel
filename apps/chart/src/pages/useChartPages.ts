@@ -8,7 +8,7 @@ export const PAGE_FIT_PADDING = 24;
 /** A chart's pages, which one the view is on, and what can be done to them. */
 export type ChartPages = DocPages;
 
-/** The chart's pages, read from the scene's `core:pages` value, with the view following them. */
+/** The chart's pages, read from its page nodes, with the view following them. */
 export function useChartPages(
   scene: ChartScene,
   view: View,

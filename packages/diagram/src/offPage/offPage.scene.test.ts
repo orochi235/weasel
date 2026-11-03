@@ -1,20 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { PAGES_DOC_KEY, createScene, movePage, renamePage, type RectPose, type Scene } from '@weasel-js/core';
+import { movePage, pageRunOf, renamePage, type RectPose } from '@weasel-js/core';
 import { avoidSceneInput } from '../avoid/sceneInput';
 import { installAvoidRouting } from '../avoid/install';
-import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
+import { EDGE_DERIVE_PATH } from '../edge';
 import { createEdgeEnds } from '../edgeEndLayer';
 import type { DiagramEdge } from '../edgeTrait';
 import { sceneParticipants } from '../portLayer';
 import { routeStateOf } from '../waypointLayer';
 import { installOffPageMarkers } from './install';
-
-type OffPageScene = Scene<unknown, 'main', RectPose>;
+import { dragTo, pagedScene, type PagedScene } from './pagedFixture';
 
 const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: '#111111', background: '#ffffff' };
-
-// Two 200 by 100 pages, 40 apart: p1 spans x 0..200, p2 x 240..440.
-const PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] };
 
 const box = (id: string, x: number, y = 20) =>
   ({ id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x, y, width: 40, height: 30 }, data: { diagram: {} } });
@@ -27,23 +23,29 @@ const connector = (id: string, from: string, to: string, extra: Partial<DiagramE
 });
 
 function load(extra: Partial<DiagramEdge> = {}, bAt = 120) {
-  const scene: OffPageScene = createScene<unknown, 'main', RectPose>({
-    systemLayers: [{ id: 'main' }],
-    registry: withDiagramRegistry(),
-    doc: { [PAGES_DOC_KEY]: PAGES },
-    initial: [box('a', 20), box('b', bAt), connector('ab', 'a', 'b', extra)] as never,
-  });
+  const scene = pagedScene([box('a', 20), box('b', bAt), connector('ab', 'a', 'b', extra)]);
   const dispose = installOffPageMarkers(scene, { look: () => LOOK });
   return { scene, dispose };
 }
 
-const trait = (scene: OffPageScene, id = 'ab') => (scene.get(id as never)!.data as { diagram: DiagramEdge }).diagram;
-const tagText = (scene: OffPageScene, end: 'from' | 'to') =>
+const trait = (scene: PagedScene, id = 'ab') => (scene.get(id as never)!.data as { diagram: DiagramEdge }).diagram;
+const tagText = (scene: PagedScene, end: 'from' | 'to') =>
   (scene.get(`ab/offpage-${end}` as never)?.data as { text?: string } | undefined)?.text;
-const moveTo = (scene: OffPageScene, id: string, x: number) =>
-  scene.setPose(id as never, { ...scene.get(id as never)!.pose, x });
+const moveTo = (scene: PagedScene, id: string, x: number) => dragTo(scene, id, x);
 
 describe('off-page markers in a scene', () => {
+  it('splits a connector when a drag takes one end onto another page, which takes the end in and the connector into the run', () => {
+    const { scene } = load();
+    expect(scene.get('b' as never)!.parent).toBe('p1');
+    expect(scene.get('ab' as never)!.parent).toBe('p1');
+    moveTo(scene, 'b', 300);
+    expect(scene.get('b' as never)!.parent).toBe('p2');
+    expect(scene.get('ab' as never)!.parent).toBe(pageRunOf(scene));
+    expect(trait(scene).offPage).toEqual({ ref: 'A', from: 'p1', to: 'p2' });
+    expect(scene.get('ab/offpage-from' as never)).toBeDefined();
+    expect(scene.get('ab/offpage-to' as never)).toBeDefined();
+  });
+
   it('splits a connector when a move takes one end to another page, in the move\'s entry, and undo joins it', () => {
     const { scene } = load();
     const depth = scene.historyEntries().length;
@@ -59,6 +61,13 @@ describe('off-page markers in a scene', () => {
     expect(scene.get('ab/offpage-to' as never)).toBeUndefined();
   });
 
+  it('reads an end\'s page from the tree: one posed past its page\'s edge, still its child, keeps its connector whole', () => {
+    const { scene } = load();
+    scene.setPose('b' as never, { x: 300, y: 20, width: 40, height: 30 });
+    expect(scene.get('b' as never)!.parent).toBe('p1');
+    expect(trait(scene).offPage).toBeUndefined();
+  });
+
   it('joins a split connector when its end comes back onto the other\'s page', () => {
     const { scene } = load();
     moveTo(scene, 'b', 300);
@@ -67,9 +76,10 @@ describe('off-page markers in a scene', () => {
     expect(scene.get('ab/offpage-to' as never)).toBeUndefined();
   });
 
-  it('leaves a connector whole while an end sits in the gap between pages', () => {
+  it('leaves a connector whole while an end sits on the pasteboard, in the gap between pages', () => {
     const { scene } = load();
-    scene.setPose('b' as never, { x: 205, y: 20, width: 30, height: 30 });
+    dragTo(scene, 'b', 120, 150);
+    expect(scene.get('b' as never)!.parent ?? null).toBeNull();
     expect(trait(scene).offPage).toBeUndefined();
   });
 
@@ -93,6 +103,16 @@ describe('off-page markers in a scene', () => {
     renamePage(scene, 'p2', 'Appendix');
     expect(tagText(scene, 'from')).toBe('Appendix · A');
     expect(scene.get('ab/offpage-from' as never)!.pose.width).toBeGreaterThan(before);
+  });
+
+  it('retexts the tags for a rename made again after one was undone', () => {
+    const { scene } = load();
+    moveTo(scene, 'b', 300);
+    renamePage(scene, 'p2', 'Appendix');
+    scene.undo();
+    expect(tagText(scene, 'from')).toBe('Page 2 · A');
+    renamePage(scene, 'p2', 'Appendix');
+    expect(tagText(scene, 'from')).toBe('Appendix · A');
   });
 
   it('removes a connector\'s tags with a shape at its end', () => {

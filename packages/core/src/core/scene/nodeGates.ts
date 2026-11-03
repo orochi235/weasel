@@ -7,9 +7,15 @@
  *   `hidden`. A layer hides only the nodes tagged to it; a hidden node hides
  *   its whole subtree, as SVG's `display="none"` does.
  * - **Locked**: it or any ancestor carries `locked`, or sits on a locked
- *   layer. A lock covers the whole subtree, whatever layers it spans.
+ *   layer. A lock covers the whole subtree, whatever layers it spans. A page
+ *   or the page run ignores layer locks: only its own `locked` counts, so
+ *   locking the paper's layer neither locks the pages nor what is on them.
+ * - **Structure**: it is a page or the page run. Drawn, and its content is
+ *   in reach, but the node itself is never selected, picked, deleted,
+ *   copied, grouped or dropped into by the ordinary scene tools; page edits
+ *   go through the page API. Its own answer only, not its subtree's.
  */
-import type { NodeId } from './types';
+import type { NodeId, Scene } from './types';
 
 /** The node fields the gates read. A partial scene stand-in may leave `parent` out. */
 export interface GatedNode {
@@ -17,6 +23,8 @@ export interface GatedNode {
   readonly parent?: string | null;
   readonly hidden?: boolean;
   readonly locked?: boolean;
+  readonly page?: unknown;
+  readonly pageRun?: unknown;
 }
 
 /** The layer fields the gates read. Only an explicit `visible: false` hides. */
@@ -39,13 +47,39 @@ export function hidesSubtree(node: { readonly hidden?: boolean }): boolean {
   return node.hidden === true;
 }
 
-/** Both answers, for one read of a scene. Each takes an id, or the node a
+/** Whether `node` is page structure: a page or the page run. See the module comment. */
+export function isPageStructure(node: { readonly page?: unknown; readonly pageRun?: unknown } | undefined): boolean {
+  return node !== undefined && (node.page !== undefined || node.pageRun !== undefined);
+}
+
+/** `ids` less pages and the page run, or `ids` itself when it holds neither: the ids a scene action
+ *  reads off a selection, which a caller's own selection api may have filled with anything. */
+export function withoutPageStructure<T extends string>(scene: GateSource, ids: readonly T[]): readonly T[] {
+  const out = (id: T) => isPageStructure(scene.get(id as string as NodeId));
+  return ids.some(out) ? ids.filter((id) => !out(id)) : ids;
+}
+
+/** The tops of what a document holds, from `ids` (default the scene's roots): each id, but the page run and each
+ *  page by what they hold, in order. What a file writes, since it places content in the world and lists its
+ *  pages apart. */
+export function contentRoots<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  ids: readonly (NodeId | string)[] = scene.roots,
+): NodeId[] {
+  return ids.flatMap((id) => isPageStructure(scene.get(id as NodeId))
+    ? contentRoots(scene, scene.childrenOf(id as NodeId))
+    : [id as NodeId]);
+}
+
+/** The answers, for one read of a scene. Each takes an id, or the node a
  *  walk already holds, which saves looking it up. */
 export interface NodeGates {
   /** Whether `id` is not drawn. An id not in the scene is not hidden. */
   hidden(id: string | GatedNode): boolean;
   /** Whether `id` is out of reach. An id not in the scene is not locked. */
   locked(id: string | GatedNode): boolean;
+  /** Whether `id` is page structure ({@link isPageStructure}). */
+  structure(id: string | GatedNode): boolean;
 }
 
 /**
@@ -58,7 +92,7 @@ export function nodeGates(scene: GateSource): NodeGates {
   const lockedLayers = flaggedLayers(scene, 'locked');
   const ownLock = lockedLayers === null
     ? (node: GatedNode) => node.locked === true
-    : (node: GatedNode) => node.locked === true || lockedLayers.has(node.layer);
+    : (node: GatedNode) => node.locked === true || (!isPageStructure(node) && lockedLayers.has(node.layer));
 
   /** Whether `test` holds on the node at `parent` or any of its ancestors.
    *  Only ancestors are remembered, so a walk over a flat scene allocates
@@ -107,6 +141,9 @@ export function nodeGates(scene: GateSource): NodeGates {
       const parent = node.parent;
       return parent !== undefined && parent !== null && lockedAbove(parent);
     },
+    structure(id) {
+      return isPageStructure(typeof id === 'string' ? scene.get(id as NodeId) : id);
+    },
   };
 }
 
@@ -150,7 +187,6 @@ export function isNodeHidden(scene: GateSource, id: NodeId): boolean {
 /** {@link NodeGates.locked} for one id. */
 export function isNodeLocked(scene: GateSource, id: NodeId): boolean {
   const layers = flaggedLayers(scene, 'locked');
-  return climbs(scene, id, layers === null
-    ? (node) => node.locked === true
-    : (node) => node.locked === true || layers.has(node.layer));
+  if (layers === null) return climbs(scene, id, (node) => node.locked === true);
+  return climbs(scene, id, (node) => node.locked === true || (!isPageStructure(node) && layers.has(node.layer)));
 }

@@ -1,19 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { PAGES_DOC_KEY, createScene, type RectPose } from '@weasel-js/core';
-import { setDiagramColor, withDiagramRegistry, type DiagramSceneData } from '@weasel-js/diagram';
+import { pagesOf } from '@weasel-js/core';
+import { setDiagramColor, type DiagramSceneData } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
 import { DIAGRAM_JSON } from './jsonFormat';
 import { documentSpecs } from './toScene';
-import { MEASURE, docScene, type DocScene } from './testing/docScene';
+import { MEASURE, contentNodes, docScene, drawnScene, type DocScene } from './testing/docScene';
 
 /** The scene `scene` comes back as through a document. */
 function throughDocument(scene: DocScene, viaJson = false): DocScene {
   let doc = documentFromScene(scene);
   if (viaJson) doc = (DIAGRAM_JSON.read!(DIAGRAM_JSON.write!(doc).text) as { document: typeof doc }).document;
-  const { specs, doc: values } = documentSpecs(doc, { measure: MEASURE });
-  return createScene<unknown, string, RectPose>({
-    systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc: values, initial: specs as never,
-  });
+  return drawnScene(documentSpecs(doc, { measure: MEASURE }));
 }
 
 /** A scene with a hand-set color and an edge whose ports and route are its author's. */
@@ -27,9 +24,9 @@ function edited(): DocScene {
 }
 
 const poses = (scene: DocScene) => Object.fromEntries(
-  scene.renderOrderNodes().filter((n) => n.dependsOn === undefined).map((n) => [n.id, n.pose]),
+  contentNodes(scene).filter((n) => n.dependsOn === undefined).map((n) => [n.id, n.pose]),
 );
-const colors = (scene: DocScene) => Object.fromEntries(scene.renderOrderNodes().map((n) => {
+const colors = (scene: DocScene) => Object.fromEntries(contentNodes(scene).map((n) => {
   const d = n.data as DiagramSceneData;
   return [n.id, [(d.fill?.paint as { color?: string } | undefined)?.color, (d.stroke?.paint as { color?: string } | undefined)?.color]];
 }));
@@ -63,7 +60,7 @@ describe('scene to document and back', () => {
   it('keeps the pages and the theme', () => {
     const scene = edited();
     const back = throughDocument(scene);
-    expect(back.doc.get(PAGES_DOC_KEY)).toEqual(scene.doc.get(PAGES_DOC_KEY));
+    expect(pagesOf(back)).toEqual(pagesOf(scene));
     expect(back.doc.get('diagram:theme')).toBe('night');
   });
 

@@ -16,6 +16,7 @@ const KIND: Record<string, string> = {
 const tree = (scope: string | null = null) => ({
   parentOf: (id: string) => PARENT[id] ?? null,
   kindOf: (id: string) => KIND[id],
+  getNode: () => ({}),
   scope,
 });
 

@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { createScene, type InvocationCtx, type Scene } from '@weasel-js/core';
+import { createScene, pageRunOf, type InvocationCtx, type Scene } from '@weasel-js/core';
 import { commitEdgeToScene, DEFAULT_EDGE_STROKE } from './connect';
 import { connectorTool } from './connectorTool';
 import { DIAGRAM_EDGE, EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
+import { pagedScene } from './offPage/pagedFixture';
 import type { Port } from './types';
 
 interface Data { diagram?: unknown }
@@ -45,6 +46,20 @@ describe('commitEdgeToScene', () => {
     expect(scene.renderOrderNodes()).toHaveLength(before + 1);
     expect(scene.undo()).toBe(true);
     expect(scene.renderOrderNodes()).toHaveLength(before);
+  });
+
+  it('adds an edge in a paged scene to the page both ends are on, and one between pages to the page run', () => {
+    const scene = pagedScene([
+      { id: 'a', kind: 'mark', layer: 'main', pose: { x: 20, y: 20, width: 40, height: 30 }, data: { diagram: {} } },
+      { id: 'b', kind: 'mark', layer: 'main', pose: { x: 120, y: 20, width: 40, height: 30 }, data: { diagram: {} } },
+      { id: 'c', kind: 'mark', layer: 'main', pose: { x: 300, y: 20, width: 40, height: 30 }, data: { diagram: {} } },
+    ]);
+    const end = (nodeId: string) => ({ kind: 'body' as const, nodeId, point: { x: 0, y: 0 } });
+    const ctx = { deps: { scene } } as unknown as InvocationCtx;
+    commitEdgeToScene({ from: end('a'), to: end('b'), router: 'straight' }, ctx);
+    commitEdgeToScene({ from: end('a'), to: end('c'), router: 'straight' }, ctx);
+    const parents = scene.renderOrderNodes().filter((n) => n.dependsOn !== undefined).map((n) => n.parent);
+    expect(parents).toEqual(['p1', pageRunOf(scene)]);
   });
 
   it('does nothing at all without a scene dep', () => {

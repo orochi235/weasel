@@ -11,6 +11,7 @@ import type { createNodeStore } from './nodeStore';
 import type { Recorder } from './recorder';
 import { SceneMembershipError } from './staleReplay';
 import { statedFields } from './statedFields';
+import { isPageStructure } from './nodeGates';
 import type { AddNodeSpec, Node, NodeId, Scene } from './types';
 
 export interface TreeEditsEnv<TData, TLayer extends string, TPose> {
@@ -72,14 +73,14 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
   const { noteArrival, noteDeparture, noteChange } = env.arrivals;
 
   /** Check that `spec` can be placed, and answer with the `kit:add` payload
-   *  that places it. Throws on an id collision, an unknown or locked layer,
-   *  a locked parent, and a layer below the
-   *  parent's. */
+   *  that places it. Throws on an id collision, an unknown layer, a locked
+   *  one (unless `spec` is a page or the page run, which ignore layer locks),
+   *  a locked parent, and a layer below the parent's. */
   function addPayload(spec: AddNodeSpec<TData, TLayer, TPose>) {
     const id = spec.id ?? env.generateId();
     if (nodes.has(id)) throw new SceneMembershipError(`Scene: id collision on "${id}"`);
     requireLayerIndex(spec.layer);
-    refuseLayer(spec.layer, 'add to');
+    if (!isPageStructure(spec)) refuseLayer(spec.layer, 'add to');
     const parent = spec.parent ?? null;
     if (parent !== null) {
       const p = requireNode(parent);

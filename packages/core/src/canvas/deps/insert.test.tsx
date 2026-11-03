@@ -11,6 +11,7 @@ function makeScene(): Scene<unknown, string, unknown> {
   return {
     layers: [{ id: 'default' }],
     mintId: () => `srv-${minted++}`,
+    roots: [],
     renderOrder: () => [],
     get: () => undefined as never,
   } as unknown as Scene<unknown, string, unknown>;

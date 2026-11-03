@@ -7,6 +7,7 @@ import type { DistributeAxis, DistributeMode } from './distribute';
 import { planDistribute } from './plan';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { translateEach } from '../selectionSubtree';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -43,7 +44,7 @@ function distributeSelection(
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
   finish?: TransformFinisher,
 ): void {
-  const ids = selection.get();
+  const ids = withoutPageStructure(scene, selection.get());
   if (ids.length < 3) return;
   const frame = scenePoseFrame(scene);
   const boxes = boxesOver(frame);

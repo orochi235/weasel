@@ -45,8 +45,9 @@ export function scrollRange(scene: AnyScene, id: NodeId, descriptor: PoseDescrip
   const children = scene.childrenOf(id).map((cid) => ({
     id: cid as string,
     pose: decompose(world, composeWorldPose(doc, cid, compose)),
+    node: scene.get(cid),
   }));
-  const e = layout.contentExtent({ id: id as string, bounds: b }, children);
+  const e = layout.contentExtent({ id: id as string, bounds: b, node }, children);
   return {
     x: [Math.min(0, e.x - b.x), Math.max(0, e.x + e.width - (b.x + b.width))],
     y: [Math.min(0, e.y - b.y), Math.max(0, e.y + e.height - (b.y + b.height))],

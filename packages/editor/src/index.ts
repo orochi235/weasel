@@ -4,11 +4,15 @@ export {
 } from './fileCommands';
 export { describeFileWarnings, reportFileWarnings, type FileDeed } from './fileWarnings';
 export { usePaperLayer, type PageSize } from './paperLayer';
-export { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
+export {
+  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
+  type SnapshotLoadOptions,
+} from './snapshot';
 export { readStored, writeSession, type SessionEntry } from './sessionStore';
 export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutosave';
 export { usePageFit } from './usePageFit';
-export { usePages, type DocPages } from './usePages';
+export { usePages, type DocPages, type UsePagesOptions } from './usePages';
+export { PAGE_SETTLE_MS, usePageSettle, type Paging, type ViewSink } from './usePageSettle';
 export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
 export { usePageGrid, type PageGridOptions } from './usePageGrid';

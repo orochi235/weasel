@@ -1,5 +1,6 @@
 import type { UnitScope } from '@weasel-js/quantity';
 import type { NodeClip } from './types';
+import type { PageInfo, PageRunInfo } from '../pages/pageNodes';
 
 /** The plain optional fields a node or an `AddNodeSpec` may state. */
 export interface StatedNodeFields {
@@ -9,6 +10,8 @@ export interface StatedNodeFields {
   units?: UnitScope;
   clip?: NodeClip;
   consumesChildren?: boolean;
+  page?: PageInfo;
+  pageRun?: PageRunInfo;
 }
 
 /** The plain optional fields of a node or spec as a spread for `scene.add`:
@@ -23,5 +26,7 @@ export function statedFields(n: StatedNodeFields & { kind?: string }): StatedNod
   if (n.units !== undefined) out.units = n.units;
   if (n.clip !== undefined) out.clip = n.clip;
   if (n.consumesChildren === true) out.consumesChildren = true;
+  if (n.page !== undefined) out.page = n.page;
+  if (n.pageRun !== undefined) out.pageRun = n.pageRun;
   return out;
 }

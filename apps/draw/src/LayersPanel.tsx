@@ -52,6 +52,11 @@ export function paintChipColor(fill: Paint): string | undefined {
   return undefined;
 }
 
+/** Whether `id` is a fixed row of `items` (a page, the Background), which has no row menu. */
+function isFixedRow(items: readonly LayerListItem[], id: string): boolean {
+  return items.some((it) => (it.id === id ? it.fixed === true : isFixedRow(it.children ?? [], id)));
+}
+
 export interface LayersContentProps {
   scene: DrawScene;
   selection: SelectionApi;
@@ -109,8 +114,9 @@ export function LayersContent(props: LayersContentProps): ReactElement {
   };
   const selectedIds = docSelected ? [BACKGROUND_ROW_ID] : base.selectedIds;
   const openRowMenu = useContextMenu('draw.layerRow');
+  const items = [...base.items, backgroundRow];
   const onRowContextMenu = (id: string, e: MouseEvent): void => {
-    if (id === BACKGROUND_ROW_ID) return;
+    if (isFixedRow(items, id)) return;
     if (!selectedIds.includes(id)) onSelect([id]);
     openRowMenu(e);
   };
@@ -120,7 +126,7 @@ export function LayersContent(props: LayersContentProps): ReactElement {
       <Checkbox isSelected={showAnnotations} onChange={setShowAnnotations}>Show annotations</Checkbox>
       <LayerList
         {...base}
-        items={[...base.items, backgroundRow]}
+        items={items}
         selectedIds={selectedIds}
         onSelect={onSelect}
         onRowContextMenu={onRowContextMenu}

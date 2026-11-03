@@ -23,11 +23,13 @@ import {
   fillInPoseFrame,
   isAnnotationNode,
   layoutTextPose,
+  pageRunOf,
   pathEffectOf,
   pathEffectParts,
   resolveFill,
   resolvePartPaint,
   resolveStroke,
+  pageNodeOf,
   pathInPoseFrame,
   shapeGeneratorOf,
   unionAABB,
@@ -49,6 +51,7 @@ import {
 } from './svgInterop';
 import { rectsIntersect } from '@weasel-js/geom';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
+import { contentRoots } from '@weasel-js/core';
 import type { EffectObj } from './svgEffects';
 import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
 
@@ -208,7 +211,7 @@ function sceneSourceOf<TLayer extends string>(
     (scene.layers ?? []).filter((l) => !l.visible).map((l) => String(l.id)),
   );
   return {
-    roots: scene.roots.map(String),
+    roots: contentRoots(scene).map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
     get: (id) => scene.get(id as never),
     composition: scene.composition,
@@ -276,10 +279,10 @@ export interface PageToSvgOptions {
 }
 
 /**
- * Serialize one page of a WeaselDraw scene to an SVG document string: its
- * `viewBox` is the page's rect, so what crosses the edge is cut there, and a
- * root lying wholly off the page is left out. It is an export, not a save:
- * it carries no page list.
+ * Serialize one page of a WeaselDraw scene to an SVG document string: what
+ * is on the page, and what follows other nodes across it, in a `viewBox` of
+ * the page's rect, so what crosses the edge is cut there. It is an export,
+ * not a save: it carries no page list.
  */
 export function pageToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
@@ -287,10 +290,14 @@ export function pageToSvgString<TLayer extends string>(
   opts: PageToSvgOptions,
 ): Promise<string> {
   const poseOf = poseOfIn(scene);
-  const roots = scene.roots.map(String).filter((id) => {
-    const box = unionAABB([poseOf(id)]);
+  const run = pageRunOf(scene);
+  // A node following others sits in the run, across pages: it goes with every page it crosses.
+  const followers = (run === null ? [] : scene.childrenOf(run)).map(String).filter((id) => {
+    const box = scene.get(id as never)?.page === undefined ? unionAABB([poseOf(id)]) : null;
     return box !== null && rectsIntersect(box, page);
   });
+  const node = pageNodeOf(scene, page.id);
+  const roots = [...(node === null ? [] : contentRoots(scene, [node])).map(String), ...followers];
   const nodes: SvgNode[] = WHITE.test(opts.backgroundColor) ? [] : [backgroundSvgNode(opts.backgroundColor, page)];
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOf), roots));
   const { x, y, width, height } = page;

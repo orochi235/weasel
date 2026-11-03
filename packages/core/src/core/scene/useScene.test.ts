@@ -168,8 +168,8 @@ describe('useScene — subscribe option', () => {
 
 describe('useScene — doc option', () => {
   it('starts the scene with the given document values, outside history', () => {
-    const { result } = renderHook(() => useScene({ systemLayers: [{ id: 'a' }], doc: { 'core:pages': { pages: [] } } }));
-    expect(result.current.doc.get('core:pages')).toEqual({ pages: [] });
+    const { result } = renderHook(() => useScene({ systemLayers: [{ id: 'a' }], doc: { 'test:sheets': { pages: [] } } }));
+    expect(result.current.doc.get('test:sheets')).toEqual({ pages: [] });
     expect(result.current.canUndo()).toBe(false);
   });
 });

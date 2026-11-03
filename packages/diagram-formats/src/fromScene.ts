@@ -1,15 +1,17 @@
 /** A diagram scene as a {@link DiagramDocument}: what every format writes from. */
 import {
-  composeWorldPose, pageHolding, placedPagesOf, scenePoseAdapter, type PlacedPage, type RectPose, type Scene,
+  composeWorldPose, isPageStructure, pageOfNode, placedPagesOf, scenePoseAdapter,
+  type NodeId, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, FLOWCHART_NOTATION, diagramLabelOf, diagramNotationOf, documentBoundsOf, endLabelIdOf, diagramThemeFrom, offPageSplits, sequenceRootOf, type DataContainer,
+  DIAGRAM_THEME_KEY, FLOWCHART_NOTATION, diagramLabelOf, diagramNotationOf, endLabelIdOf, diagramThemeFrom, sequenceRootOf, type DataContainer,
   type DataEdge, type DataGroup, type DataNode, type DiagramTheme, type SequenceData,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage, PlotPage } from './document';
 import { graphPageSettingsOf } from './graphPageMeta';
 import { plotPageOf } from './plotPages';
 import { kindOf, readEdge, readGroup, readRegion, readShape, type EndLabelNodes, type ReadNode, type ReadScene } from './sceneReaders';
+import { exportPageOf } from './exportPage';
 
 /** Options for {@link documentFromScene}. */
 export interface DocumentFromSceneOptions {
@@ -40,15 +42,16 @@ function contentPage(scene: AnyScene): PlacedPage {
 }
 
 /**
- * Reads a diagram scene into a document: one page per page in its `core:pages`
- * (one page around everything when it has none), each holding the shapes,
- * connectors, containers and pools, and groups on it, in coordinates from the
- * page's corner; a page holding a plot root is a plot page of its spec, and
- * whatever else is on it is left out. A shape belongs to the page its outermost container does, and
- * that is the one its box overlaps most, or the nearest one when it overlaps
- * none. A connector the scene splits off-page, or whose ends export to
- * different pages, goes in `crossPageEdges`: without waypoints when split,
- * with them in world coordinates when not. Colors are kept
+ * Reads a diagram scene into a document: one page per page node (one page
+ * around everything when it has none), each holding the shapes, connectors,
+ * containers and pools, and groups on it, in coordinates from the page's
+ * corner; a page holding a plot root is a plot page of its spec, and whatever
+ * else is on it is left out. A shape belongs to the page it is under
+ * (`pageOfNode`); one on the pasteboard, to the page its outermost container
+ * overlaps most, or the nearest one when it overlaps none. A connector whose
+ * ends are on different pages goes in `crossPageEdges`, without waypoints; one
+ * whose ends export to different pages with an end on the pasteboard goes
+ * there too, with them in world coordinates. Colors are kept
  * where the scene's theme would not give them: the author's own, and any a
  * theme never set. A page holding a sequence's root is a sequence page holding
  * its data; the parts drawn from it, and anything else on that page, are not read.
@@ -64,13 +67,12 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   const placed = placedPagesOf(scene);
   const pages = placed.length > 0 ? placed : [contentPage(s)];
   const buckets = new Map(pages.map((p) => [p.id, { nodes: [], edges: [], groups: [], containers: [] } as PageBucket]));
-  const boxOf = (node: ReadNode) => documentBoundsOf(scene, node);
+  const byId = new Map(pages.map((p) => [p.id, p]));
+  const onPage = (id: string): string | null => pageOfNode(scene as never, id as NodeId);
   const pageCache = new Map<string, PlacedPage>();
   const pageOf = (node: ReadNode): PlacedPage => {
-    let root = node;
-    while (root.parent !== null) root = s.get(root.parent as never)!;
-    if (!pageCache.has(root.id)) pageCache.set(root.id, pageHolding(pages, boxOf(root))!);
-    return pageCache.get(root.id)!;
+    if (!pageCache.has(node.id)) pageCache.set(node.id, byId.get(exportPageOf(scene, pages, node.id as NodeId)!)!);
+    return pageCache.get(node.id)!;
   };
 
   const plots = new Map<string, PlotPage>();
@@ -110,19 +112,14 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
     else if (isContainerOrPool(node)) bucket.containers.push(readRegion(s, node, page, theme));
   }
 
-  const splitInputs = edges.flatMap((node) => {
-    const [from, to] = Array.isArray(node.dependsOn) ? node.dependsOn : [];
-    if (from === undefined || to === undefined || !itemPage.has(from) || !itemPage.has(to)) return [];
-    return [{ id: node.id, from: boxOf(s.get(from as never)!), to: boxOf(s.get(to as never)!) }];
-  });
-  const splits = offPageSplits({ pages, edges: splitInputs });
   const crossPageEdges: DataEdge[] = [];
   for (const node of edges) {
     const [from, to] = Array.isArray(node.dependsOn) ? node.dependsOn : [];
     const fromPage = itemPage.get(from ?? '');
     const toPage = itemPage.get(to ?? '');
     if (fromPage === undefined || toPage === undefined) continue;
-    const split = (splits.get(node.id) ?? null) !== null;
+    const [fromUnder, toUnder] = [onPage(from!), onPage(to!)];
+    const split = fromUnder !== null && toUnder !== null && fromUnder !== toUnder;
     const read = (page: PlacedPage | { x: number; y: number } | null) =>
       readEdge(node, { label: labels.get(node.id), ends: endLabels.get(node.id) }, page, theme);
     if (fromPage === toPage && !split) buckets.get(fromPage.id)!.edges.push(read(fromPage));
@@ -169,6 +166,6 @@ function inWorld<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer
       const node = raw.get(id);
       return node === undefined ? undefined : placed(node);
     },
-    renderOrderNodes: () => raw.renderOrderNodes().map(placed),
+    renderOrderNodes: () => raw.renderOrderNodes().filter((n) => !isPageStructure(n as never)).map(placed),
   };
 }

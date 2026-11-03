@@ -46,11 +46,13 @@ function placeAll(
   const working: LayoutChild<unknown>[] = scene.childrenOf(dest.id).map((cid) => ({
     id: cid as string,
     pose: view.toStrategy(composeWorldPose(poseAdapter, cid as string, pc.compose)),
+    node: scene.get(cid),
   }));
   const setWorking = (id: string, pose: unknown): void => {
     const at = working.findIndex((c) => c.id === id);
-    if (at >= 0) working[at] = { id, pose };
-    else working.push({ id, pose });
+    const child = { id, pose, node: scene.get(asNodeId(id)) };
+    if (at >= 0) working[at] = child;
+    else working.push(child);
   };
 
   const placements: LayoutPlacement[] = [];
@@ -100,12 +102,13 @@ function sourceReflow(
     if (!srcLayout || !srcNode) continue;
     const g = poseDescriptorForNode(d, srcNode);
     const view = containerView(pc, g, composeWorldPose(poseAdapter, srcId, pc.compose));
-    const srcContainer: LayoutContainer = { id: srcId, bounds: boxOf(g, view.upright) };
+    const srcContainer: LayoutContainer = { id: srcId, bounds: boxOf(g, view.upright), node: srcNode };
     const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(srcId))
       .filter((cid) => !leaving.has(cid))
       .map((cid) => ({
         id: cid as string,
         pose: view.toStrategy(composeWorldPose(poseAdapter, cid as string, pc.compose)),
+        node: scene.get(cid),
       }));
     for (const [cid, placed] of srcLayout.childPoses(srcContainer, srcChildren)) {
       const pose = view.toWorld(placed);
@@ -159,7 +162,7 @@ export function runDropPass(
     return { dropCenter, pass: null, reflow: new Map(), refused: { id: dest.id, bounds: dest.bounds, reason: dest.refused } };
   }
 
-  const container: LayoutContainer = { id: dest.id as string, bounds: dest.content };
+  const container: LayoutContainer = { id: dest.id as string, bounds: dest.content, node: scene.get(dest.id) };
   const placed = placeAll(session, dest, container, dragged, probeOffset);
   if (!placed) return { dropCenter, pass: null, reflow: new Map() };
 

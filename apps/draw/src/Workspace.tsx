@@ -74,7 +74,7 @@ export interface WorkspaceProps {
   hostDims: { width: number; height: number };
   pages: DocPages;
   /** The page the grid, the symmetry center and the mode tint go by: the one in view, or the last that was. */
-  shownPage: Pick<PlacedPage, 'x' | 'y' | 'width' | 'height'>;
+  shownPage: Pick<PlacedPage, 'x' | 'y' | 'width' | 'height'> & { id?: string };
   /** Fits the view to the shown page, for `viewport.recenter`. */
   recenter: () => void;
   backgroundColor: string;

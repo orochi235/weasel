@@ -5,6 +5,7 @@
  * machinery a consumer's ops do.
  */
 import type { UnitScope } from '@weasel-js/quantity';
+import type { PageInfo, PageRunInfo } from '../pages/pageNodes';
 import { dwarn } from 'debug/flag';
 import type { LayoutStrategy } from '../../layout/types';
 import { registerLayerOps } from './layerOps';
@@ -99,7 +100,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
     pickable?: boolean; hidden?: boolean; locked?: boolean;
-    units?: UnitScope; clip?: NodeClip; consumesChildren?: boolean;
+    units?: UnitScope; clip?: NodeClip; consumesChildren?: boolean; page?: PageInfo; pageRun?: PageRunInfo;
   } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {

@@ -5,15 +5,16 @@
  * edit that caused it.
  */
 import {
-  PAGES_DOC_KEY,
   createDeleteOp,
   createInsertOp,
   createSetDataOp,
   createTransformOp,
+  followerHome,
+  pageOfNode,
   placedPagesOf,
+  type NodeId,
   type Op,
   type PlacedPage,
-  type PoseDescriptor,
   type Scene,
   type SceneEditSummary,
 } from '@weasel-js/core';
@@ -21,15 +22,12 @@ import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
-import { documentBoundsOf } from './endBox';
 import { offPageSplits, type OffPageEdgeInput } from './split';
 import { offPageFarText, offPageTagData, offPageTagLook, offPageTagSize, offPageTagSpec, type OffPageTagLook } from './tag';
 import { offPageTagId, type OffPageSplit } from './trait';
 
 /** Options for {@link installOffPageMarkers} and `useOffPageMarkers`. */
-export interface OffPageMarkerOptions<TPose> {
-  /** How node poses are measured. Default `AUTO_POSE_DESCRIPTOR`. */
-  geometry?: PoseDescriptor<TPose>;
+export interface OffPageMarkerOptions {
   /** The look a tag is given as it is made or retexted. Default the scene's
    *  theme (`diagram:theme`), else `theme`. */
   look?: () => OffPageTagLook;
@@ -50,7 +48,9 @@ function withSplit(data: unknown, edge: DiagramEdge, split: OffPageSplit | null)
 }
 
 /** The connectors an edit's summary reaches: those it added, wrote, or whose
- *  ends it moved, added, or re-parented, and those whose tag it removed. */
+ *  ends it moved, added, or re-parented, themselves or by an ancestor, those
+ *  whose tag it removed, and every split one, whose tags name pages that a
+ *  page edit may have renamed or renumbered. */
 function reached(scene: AnyScene, s: SceneEditSummary): Set<string> {
   const ids = new Set<string>([...s.added, ...s.posed, ...s.reparented, ...s.dataChanged]);
   const out = new Set<string>();
@@ -58,10 +58,15 @@ function reached(scene: AnyScene, s: SceneEditSummary): Set<string> {
     const tagged = /^(.*)\/offpage-(?:from|to)$/.exec(id);
     if (tagged !== null) out.add(tagged[1]!);
   }
+  const touched = (id: string): boolean => {
+    for (let at: string | null | undefined = id; at != null; at = scene.get(at as never)?.parent) if (ids.has(at)) return true;
+    return false;
+  };
   for (const node of scene.renderOrderNodes()) {
-    if (diagramEdgeOf(node) === null) continue;
+    const trait = diagramEdgeOf(node);
+    if (trait === null) continue;
     const deps = node.dependsOn;
-    if (ids.has(node.id) || (Array.isArray(deps) && deps.some((d) => ids.has(d)))) out.add(node.id);
+    if (trait.offPage !== undefined || ids.has(node.id) || (Array.isArray(deps) && deps.some(touched))) out.add(node.id);
   }
   return out;
 }
@@ -81,7 +86,7 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
     const text = offPageFarText(pages, split, end);
     if (tag === undefined) {
       const spec = offPageTagSpec(edge.id, end, text, { ...lookOf(), layer: edge.layer });
-      ops.push(createInsertOp({ node: { ...spec, parent: null } as never, label: 'Off-page' }));
+      ops.push(createInsertOp({ node: { ...spec, parent: followerHome(scene, spec) } as never, label: 'Off-page' }));
     } else if ((tag.data as { text?: unknown }).text !== text) {
       const old = tag.data as { style?: OffPageTagLook['style']; fill?: { paint?: { color?: string } }; background?: { paint?: { color?: string } }; padding?: number };
       // Keeps the tag's own colors and face, which a theme or the author may have set since.
@@ -109,17 +114,14 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
 export function offPageOps<TPose>(
   scene: Scene<unknown, string, TPose>,
   edges: Iterable<string> | 'all',
-  opts: OffPageMarkerOptions<TPose> = {},
+  opts: OffPageMarkerOptions = {},
 ): Op[] {
   const sc = scene as unknown as AnyScene;
-  const geometry = opts.geometry as PoseDescriptor<unknown> | undefined;
   const look = opts.look ?? (() => offPageTagLook(diagramThemeOf(sc, opts.theme)));
   const wanted = edges === 'all' ? null : new Set(edges);
   const pages = placedPagesOf(sc);
-  const boxOf = (id: string) => {
-    const node = sc.get(id as never);
-    return node === undefined ? null : documentBoundsOf(scene, node, geometry);
-  };
+  const pageOf = (id: string | undefined): string | null | undefined =>
+    (id === undefined || sc.get(id as never) === undefined ? undefined : pageOfNode(sc, id as NodeId));
   const inputs: (OffPageEdgeInput & { node: SceneNode; trait: DiagramEdge })[] = [];
   const used: string[] = [];
   for (const node of sc.renderOrderNodes()) {
@@ -130,13 +132,13 @@ export function offPageOps<TPose>(
       continue;
     }
     const deps = node.dependsOn;
-    const from = Array.isArray(deps) ? boxOf(deps[0]!) : null;
-    const to = Array.isArray(deps) ? boxOf(deps[1]!) : null;
-    if (from === null || to === null) continue;
-    inputs.push({ id: node.id, from, to, offPage: trait.offPage, node, trait });
+    const fromPage = Array.isArray(deps) ? pageOf(deps[0]) : undefined;
+    const toPage = Array.isArray(deps) ? pageOf(deps[1]) : undefined;
+    if (fromPage === undefined || toPage === undefined) continue;
+    inputs.push({ id: node.id, fromPage, toPage, offPage: trait.offPage, node, trait });
   }
   if (inputs.length === 0) return [];
-  const splits = offPageSplits({ pages, edges: inputs, used });
+  const splits = offPageSplits({ edges: inputs, used });
   const ops: Op[] = [];
   for (const edge of inputs) {
     const split = splits.get(edge.id) ?? null;
@@ -149,20 +151,22 @@ export function offPageOps<TPose>(
 }
 
 /**
- * Split `scene`'s connectors across pages from now on: every live edit that
- * moves a connector's end, adds or rewrites a connector, or changes the pages
- * splits, joins, and retags what it reached, in its own history entry. On
- * install nothing is recomputed. Returns the remover. A host without React
- * calls this; a component calls `useOffPageMarkers`.
+ * Split `scene`'s connectors across pages from now on: every live edit
+ * splits or joins the connectors whose ends it moved, and those it added or
+ * rewrote, and retags every split connector, since a page edit may have
+ * renamed or renumbered the page a tag names, all in that edit's own history
+ * entry. Each end's page is its page ancestor. On install nothing is
+ * recomputed. Returns the remover. A host without React calls this; a
+ * component calls `useOffPageMarkers`.
  */
 export function installOffPageMarkers<TPose>(
   scene: Scene<unknown, string, TPose>,
-  opts: OffPageMarkerOptions<TPose> = {},
+  opts: OffPageMarkerOptions = {},
 ): () => void {
   const sc = scene as unknown as AnyScene;
   return scene.addEditPass((summary) => {
-    const edges = summary.docChanged.has(PAGES_DOC_KEY) ? 'all' : reached(sc, summary);
-    if (edges !== 'all' && edges.size === 0) return null;
+    const edges = reached(sc, summary);
+    if (edges.size === 0) return null;
     const ops = offPageOps(scene, edges, opts);
     return ops.length === 0 ? null : ops;
   }, { order: DIAGRAM_PASS_ORDER.offPage });

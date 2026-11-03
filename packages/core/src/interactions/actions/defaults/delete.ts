@@ -6,6 +6,7 @@ import type { Action, ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
 import { hiddenSourcesTakenWith } from 'domains/pathEffects/effectSources';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -41,6 +42,8 @@ export function hiddenSourceDeleteOps(
  * host-array index BEFORE any removal, so `invert()` re-inserts at the right
  * slot and undo restores paint order. Ids with no live node are skipped.
  *
+ * A page or the page run is skipped: pages are removed through the page API.
+ *
  * Ids an already-emitted op will take are skipped: `removeNode` cascades both
  * the subtree and the dependents, so a second op for a node the first has taken
  * would throw `unknown node id` mid-batch — escaping the batch with the scene
@@ -58,7 +61,8 @@ export function buildDeleteOps(
   label: string,
   opts: BuildDeleteOptions = {},
 ): Op[] {
-  const all = opts.takeHiddenSources ? [...ids, ...hiddenSourcesTakenWith(scene, ids as readonly NodeId[])] : ids;
+  const own = withoutPageStructure(scene, ids);
+  const all = opts.takeHiddenSources ? [...own, ...hiddenSourcesTakenWith(scene, own as readonly NodeId[])] : own;
   const covered = new Set<string>();
   const ops: Op[] = [];
   for (const id of all) {

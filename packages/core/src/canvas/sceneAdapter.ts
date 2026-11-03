@@ -203,7 +203,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     worldPoseOf: (id) => adapter.getWorldPose(id),
     frameAtOrAbove: (id) => frameAtOrAbove(adapter, id),
     poseBounds,
-    translate, ...(options.pasteInto ? { landing: () => insertSite(scene as never, options.pasteInto!()) } : {}),
+    translate, ...(options.pasteInto ? { landing: () => insertSite(scene as never, { into: options.pasteInto!() }) } : {}),
   };
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {

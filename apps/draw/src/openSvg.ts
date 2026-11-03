@@ -1,5 +1,6 @@
 import {
-  type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses, pathEffectNode, registeredPathEffects,
+  type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses,
+  addOnPages, pathEffectNode, registeredPathEffects,
 } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
@@ -33,9 +34,11 @@ function booleanOfObj(obj: Obj, op: BooleanShapeOp) {
 
 /**
  * Call inside a batch. Every draft's id is minted first, so an effect can name
- * sources that come after it. An effect whose sources the file does not hold,
- * or that the scene's registry cannot derive, opens as the paths it exported
- * as, and as nothing when it exported none; a live one leaves those paths out.
+ * sources that come after it. Each root lands on the page holding it, where
+ * the file put it in the world (`addOnPages`). An effect whose sources the
+ * file does not hold, or that the scene's registry cannot derive, opens as
+ * the paths it exported as, and as nothing when it exported none; a live one
+ * leaves those paths out.
  */
 function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
   type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
@@ -69,7 +72,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
     specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }
   // A file's geometry is world; each pose is stored in its container's frame.
-  for (const spec of localizeWorldPoses(specs, scene.composition)) scene.add(spec);
+  addOnPages(scene, localizeWorldPoses(specs, scene.composition));
 }
 
 /**
@@ -89,7 +92,6 @@ export function openSvgText(
   const doc = parsedToDoc(parsed);
   const pages = doc.pages ? { pages: doc.pages } : onePage(firstPageSize(scene));
   scene.batch('Open', () => {
-    scene.removeMany([...scene.renderOrder()]);
     replacePages(scene, pages);
     addDrafts(scene, drafts);
   });

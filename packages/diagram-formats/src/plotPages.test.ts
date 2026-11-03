@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
-import { withDiagramRegistry } from '@weasel-js/diagram';
+import type { NodeId } from '@weasel-js/core';
 import { plotRootOf, replacePlotData, setXyValue, type XyChartData } from '@weasel-js/plot';
 import type { DiagramDocument, PlotPage } from './document';
 import { documentFromScene } from './fromScene';
 import { exportPageSvg } from './pageSvg';
 import { plotRootIdOf, plotThemeOf } from './plotPages';
-import { MEASURE, THEME } from './testing/docScene';
+import { MEASURE, THEME, drawnScene } from './testing/docScene';
 import { documentSpecs } from './toScene';
 
 const CHART: XyChartData = {
@@ -22,8 +21,7 @@ const DOC: DiagramDocument = {
 };
 
 function sceneOf(doc: DiagramDocument = DOC) {
-  const { specs, doc: values } = documentSpecs(doc, { measure: MEASURE, theme: THEME });
-  return createScene<unknown, string, RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc: values, initial: specs as never });
+  return drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME }));
 }
 
 describe('plot pages', () => {

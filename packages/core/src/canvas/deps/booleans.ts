@@ -17,6 +17,7 @@ import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDe
 import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import type { BooleansAdapter } from 'interactions/actions/booleans/booleans';
 import { pathPaintOf, type PathPaint } from '../nodeShapes/nodePaint';
@@ -57,7 +58,7 @@ export function useBooleansAdapterSource(
       getParent: (id) => tree().getParent(id),
       getChildren: (parentId) => tree().getChildren(parentId),
       setChildOrder: (parentId, ids) => tree().setChildOrder(parentId, ids),
-      getSelection: () => selectionRef.current.get(),
+      getSelection: () => withoutPageStructure(sceneRef.current, selectionRef.current.get()),
       getWorldPath: (id) => {
         const leaf = leafOf(id);
         return leaf ? pathInWorld(leaf.path, leaf.drawn.box) : undefined;

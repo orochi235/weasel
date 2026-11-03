@@ -2,21 +2,25 @@ import type { Node, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
+import { withoutPageStructure } from 'core/scene/nodeGates';
+import { groupingSite } from 'core/pages/pagePlacement';
+import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { requiresSelection } from './requiresSelection';
+import { requiresContent, selectedContent } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { icon } from '../../../icons.gen';
 
 /**
  * Creates a structural `GroupNode` and reparents the current selection
- * under it as a single undoable batch.
+ * under it as a single undoable batch, in the container `groupingSite` names.
  *
- * Grouping never moves a member on screen. The container takes the world
+ * Grouping never moves a member on screen, unless with the pasteboard off
+ * the members lie wholly off every page and move onto one. The container takes the world
  * envelope of its members' ink, and each member is re-expressed in that
  * container's frame. The container is a frame, so its pose is authored rather
  * than derived from its members, whose poses are expressed in it.
@@ -37,7 +41,7 @@ export const groupAction: Action & { requires: string[] } = {
       const applyOps = deps.applyOps;
       if (!selection || !scene) return;
 
-      const ids = selection.get();
+      const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
       if (ids.length === 0) return;
 
       const nodes = ids
@@ -50,17 +54,18 @@ export const groupAction: Action & { requires: string[] } = {
       if (layers.size > 1) return;
       const layer = nodes[0]!.layer;
 
-      // Nest under the shared parent if the members agree, else at the root.
-      const parents = new Set(nodes.map((n) => n.parent));
-      const parent = parents.size === 1 ? nodes[0]!.parent : null;
-
       const d = poseDescriptorOf(deps.poseDescriptor);
       const frame = scenePoseFrame(scene);
       const worlds = new Map<NodeId, unknown>();
       for (const node of nodes) worlds.set(node.id, frame.world(node.id));
       // Visual, not stored, bounds: a turned member's ink reaches outside its
       // own box, and the container has to cover what is drawn.
-      const union = unionBounds([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, d)));
+      const drawn = unionBounds([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, d)));
+      const { parent, shift } = groupingSite(scene, nodes.map((n) => n.id), drawn);
+      if (shift.dx !== 0 || shift.dy !== 0) {
+        for (const [id, p] of worlds) worlds.set(id, translatePoseViaDescriptor(p, shift.dx, shift.dy, d));
+      }
+      const union = drawn && { ...drawn, x: drawn.x + shift.dx, y: drawn.y + shift.dy };
       const containerWorldPose = union === null
         ? nodes[0]!.pose
         : d.fromBounds(union, nodes[0]!.pose);
@@ -103,7 +108,7 @@ export const groupAction: Action & { requires: string[] } = {
       selection.set([containerId]);
     },
   },
-  enabled: requiresSelection,
+  enabled: requiresContent(1),
 };
 
 /** Whether ungrouping `node` dissolves it: a group, or a boolean group, which releases its operands. */
@@ -132,7 +137,7 @@ export const ungroupAction: Action & { requires: string[] } = {
       const scene = deps.scene;
       if (!selection || !scene) return;
 
-      const ids = selection.get();
+      const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
       if (ids.length === 0) return;
 
       const containers = ids.filter((id) => dissolves(scene.get(id as NodeId)));
@@ -170,9 +175,8 @@ export const ungroupAction: Action & { requires: string[] } = {
     },
   },
   enabled: (deps) => {
-    const selection = deps?.selection;
     const scene = deps?.scene;
-    const any = selection?.get().some((id) => dissolves(scene?.get(id as NodeId)));
+    const any = selectedContent(deps).some((id) => dissolves(scene?.get(id)));
     return any ? true : ActionDisabledReason.NotApplicable;
   },
 };

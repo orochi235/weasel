@@ -92,6 +92,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
 
   const doubleClickNames = useMemo(() => kindOfNode && ((hitId: string) => doubleClickTarget(hitId, {
     parentOf: (id) => scene.get(asNodeId(id))?.parent ?? null,
+    getNode: (id) => scene.get(asNodeId(id)),
     kindOf: kindOfNode,
     scope: enteredGroup.get(),
   })), [scene, kindOfNode, enteredGroup]);
