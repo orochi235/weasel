@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
-import { drawnBoxes } from 'interactions/actions/drawnBoxes';
+import { inkBoxes } from 'canvas/inkBoxes';
 import { buildProbes } from './probes2d';
 import { sceneProbeReads } from './sceneReads';
 
@@ -20,7 +20,7 @@ function strokedRect(): Scene<unknown, string, unknown> {
 
 function reads(geometryAt?: () => { x: number; y: number } | null) {
   const scene = strokedRect();
-  const boxes = drawnBoxes({ scene } as Parameters<typeof drawnBoxes>[0]);
+  const boxes = inkBoxes({ scene } as Parameters<typeof inkBoxes>[0]);
   return sceneProbeReads({ scene, boxes, ...(geometryAt ? { geometryAt } : {}) });
 }
 
@@ -73,7 +73,7 @@ describe('buildProbes', () => {
       const sc = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RIGID_POSE_COMPOSITION });
       sc.add({ id: ID, kind: 'mark', layer: 'main', data: {}, pose });
       const scene = sc as unknown as Scene<unknown, string, unknown>;
-      const boxes = drawnBoxes({ scene } as Parameters<typeof drawnBoxes>[0]);
+      const boxes = inkBoxes({ scene } as Parameters<typeof inkBoxes>[0]);
       const r = sceneProbeReads({ scene, boxes, anchors: (id) => (id === ID ? [{ x: 0, y: 0 }, { x: 10, y: 5 }] : null) });
       return buildProbes({ gesture: 'move', press: { x: 0, y: 0 }, ids: [ID] }, r).filter((p) => p.role === 'anchor');
     }
@@ -99,7 +99,7 @@ describe('buildProbes', () => {
 
     it('offers no anchor probes to a gesture other than a move', () => {
       const scene = strokedRect();
-      const boxes = drawnBoxes({ scene } as Parameters<typeof drawnBoxes>[0]);
+      const boxes = inkBoxes({ scene } as Parameters<typeof inkBoxes>[0]);
       const r = sceneProbeReads({ scene, boxes, anchors: () => [{ x: 0, y: 0 }] });
       const probes = buildProbes({ gesture: 'resize', press: { x: 114, y: 40 }, ids: [ID], handle: { x: 'min', y: 'free' } }, r);
       expect(probes.some((p) => p.role === 'anchor')).toBe(false);
