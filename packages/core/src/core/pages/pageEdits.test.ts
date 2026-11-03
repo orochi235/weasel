@@ -182,4 +182,13 @@ describe('making a Continuous scene paged', () => {
     expect(scene.roots).toEqual([near, far]);
     expect(scene.get(far)!.pose).toMatchObject({ x: 900 });
   });
+
+  it('measures the content by the descriptor the page edit is given', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    const r = scene.add({ kind: 'mark', layer: 'l', pose: { x: 120, y: 10, width: 10, height: 10 }, data: { n: 'r' } });
+    // Reads every box 100 to the left, so `r` measures as on page a and is not shifted onto it.
+    const shifted = { ...RECT_POSE_DESCRIPTOR, getBounds: (p: Pose) => ({ ...p, x: p.x - 100 }) };
+    addPage(scene, { id: 'a', width: 100, height: 100 }, { descriptor: shifted as never });
+    expect(scene.get(r)!).toMatchObject({ parent: 'a', pose: { x: 120 } });
+  });
 });

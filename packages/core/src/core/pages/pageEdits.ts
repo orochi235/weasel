@@ -116,7 +116,8 @@ function edit<TData, TLayer extends string, TPose>(
   change: (pages: Page[]) => Page[],
 ): void {
   const doc = pagesOf(scene) ?? { pages: [] };
-  setPages(scene, { ...doc, pages: change([...doc.pages]) }, options.label ?? fallback);
+  const { label = fallback, descriptor } = options;
+  setPages(scene, { ...doc, pages: change([...doc.pages]) }, label, descriptor ? { descriptor } : {});
 }
 
 /** Insert `page` at `index`, by default after the last page. */
