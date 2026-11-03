@@ -4,13 +4,15 @@
  * minimap's own view answers the minimap's camera.
  */
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { ViewApi } from '@weasel-js/core';
+import { wheelZoom, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Action id for `minimapCenterAction`. */
 export const MINIMAP_CENTER = 'minimap.center';
 /** Action id for `minimapPanAction`. */
 export const MINIMAP_PAN = 'minimap.pan';
+/** Action id for `minimapZoomAction`. */
+export const MINIMAP_ZOOM = 'minimap.zoom';
 
 /** Move `root` so world point (`x`, `y`) sits at the center of its host,
  *  keeping its scale. A no-op while the host is unmeasured. */
@@ -70,6 +72,29 @@ export function minimapPanAction(): Action {
           },
           onEnd: () => {},
         };
+      },
+    },
+  };
+}
+
+/** Zoom the main camera by one wheel sample about the world point under the
+ *  cursor, which keeps its place in the main view. `clamp` is the main view's
+ *  zoom limits, or a getter read on each sample; omitted, the kit defaults
+ *  `viewport.zoom` also uses. */
+export function minimapZoomAction(clamp?: ZoomClampOpts | (() => ZoomClampOpts | undefined)): Action {
+  return {
+    id: MINIMAP_ZOOM,
+    label: 'Minimap — zoom the view',
+    requires: ['rootView'],
+    invoker: {
+      timing: 'immediate',
+      run: (deps, params) => {
+        const p = params as ImmediateParams | undefined;
+        const root = rootOf(deps);
+        if (!root || !p?.world || !p.deltaY) return;
+        const v = root.get();
+        const anchor = { x: (p.world.x - v.x) * v.scale.x, y: (p.world.y - v.y) * v.scale.y };
+        root.set(wheelZoom(v, anchor, p.deltaY, typeof clamp === 'function' ? clamp() : clamp));
       },
     },
   };

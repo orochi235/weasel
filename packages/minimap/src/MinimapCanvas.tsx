@@ -1,28 +1,12 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Ref } from 'react';
-import {
-  ActionsProvider,
-  ActiveToolContextProvider,
-  DepRegistryProvider,
-  useActionsRegistry,
-  useDepSource,
-  useGestureDispatcher,
-} from '@weasel-js/routing/react';
-import { assignRef, useLatest } from '@weasel-js/react';
-import type { Tool } from '@weasel-js/routing';
+import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider } from '@weasel-js/routing/react';
+import { assignRef } from '@weasel-js/react';
 import { PointerProviderIfRoot, useDeviceProfile, usePublishPointer } from '@weasel-js/core';
 import { usePointerPosition } from '@weasel-js/routing/react';
-import {
-  MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
-} from './actions';
+import { useMinimapInput } from './useMinimapInput';
 import { createLinkedCursorLayer } from './layers';
-import type { CanvasSize, SurfaceSizeProps, ViewApi } from '@weasel-js/core';
+import type { CanvasSize, SurfaceSizeProps, ZoomClampOpts } from '@weasel-js/core';
 import { SceneViewCanvas } from '@weasel-js/core';
 import { computeIndicatorCommand } from './minimapMath';
 import { useFitView } from './useFitView';
@@ -89,20 +73,13 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
   /** The view id this minimap publishes its pointer under. Default
    *  `'minimap'`. */
   id?: string;
+  /** Wheel (and trackpad pinch) over the minimap zooms the main view about
+   *  the world point under the cursor, which keeps its place in the main
+   *  view. Default `true`, clamped to the kit's default zoom limits; pass the
+   *  main view's own `{ min, max }` when it zooms further, or `false` to leave
+   *  the wheel to the page. */
+  wheelZoom?: boolean | ZoomClampOpts;
 }
-
-/** The minimap's own bindings. Unscoped: this dispatcher routes no views, so
- *  every input on it is the minimap's. */
-const MINIMAP_INPUT: Tool = {
-  id: 'minimap',
-  eligibility: { always: true },
-  bindings: [
-    { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: 'minimap.pointerDown' } },
-    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: 'minimap.drag' } },
-  ],
-};
-const TOOLS_BY_ID: ReadonlyMap<string, Tool> = new Map([[MINIMAP_INPUT.id, MINIMAP_INPUT]]);
-const CHANNELS = { wheel: false, pinch: false, contextMenu: false, ingest: false } as const;
 
 function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   props: MinimapCanvasProps<TData, TLayer, TPose>,
@@ -124,6 +101,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     canvasRef,
     id = 'minimap',
     onResize,
+    wheelZoom = true,
   } = props;
   const [measured, setMeasured] = useState<CanvasSize | null>(null);
   const width = props.width ?? measured?.width ?? 0;
@@ -142,43 +120,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   }, [mainView, mainViewDims, indicatorStyle, fitView]);
 
   const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const mainViewRef = useLatest(mainView);
-  const mainViewDimsRef = useLatest(mainViewDims);
-  const onMainViewChangeRef = useLatest(onMainViewChange);
-  const fitViewRef = useLatest(fitView);
-
-  // The main canvas's camera, which is what the minimap's actions move.
-  const rootView = useMemo<ViewApi>(() => ({
-    get: () => mainViewRef.current,
-    set: (v) => onMainViewChangeRef.current(v),
-    hostSize: () => mainViewDimsRef.current,
-  }), [mainViewRef, onMainViewChangeRef, mainViewDimsRef]);
-  useDepSource('rootView', () => rootView);
-
-  const actions = useActionsRegistry();
-  useEffect(() => {
-    if (!actions) return;
-    const off = [actions.register(minimapCenterAction()), actions.register(minimapPanAction())];
-    return () => { for (const u of off) u(); };
-  }, [actions]);
-
-  /** Client point → world, through the fit camera. */
-  const clientToWorld = useCallback((cx: number, cy: number) => {
-    const rect = localCanvasRef.current?.getBoundingClientRect();
-    const fv = fitViewRef.current;
-    return {
-      x: fv.x + (cx - (rect?.left ?? 0)) / fv.scale.x,
-      y: fv.y + (cy - (rect?.top ?? 0)) / fv.scale.y,
-    };
-  }, [fitViewRef]);
-
-  useGestureDispatcher({
-    canvasRef: localCanvasRef,
-    actions: actions!,
-    entriesById: TOOLS_BY_ID,
-    clientToWorld,
-    keyboard: false,
-    channels: CHANNELS,
+  const clientToWorld = useMinimapInput({
+    canvasRef: localCanvasRef, mainView, mainViewDims, onMainViewChange, fitView, wheelZoom,
   });
 
   usePublishPointer(localCanvasRef, (_pointer, cx, cy) => ({ world: clientToWorld(cx, cy), viewId: id }));
@@ -226,7 +169,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
  * Opinionated minimap on a canvas of its own. Renders the same `scene` the
  * main canvas is showing through a derived "fit" view, and overlays a dashed
  * indicator of where the main canvas is looking. Press anywhere in it to
- * recenter the main view on that world point; drag to pan continuously.
+ * recenter the main view on that world point; drag to pan continuously;
+ * wheel to zoom the main view about the point under the cursor.
  *
  * Its dispatcher, actions and deps are its own, so it never competes with
  * the main canvas for input. Put one `<PointerContextProvider>` around it and

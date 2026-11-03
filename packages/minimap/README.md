@@ -34,7 +34,10 @@ its layers read, and `attach` runs once per instance.
 
 `<MinimapCanvas>` runs the same two actions on a dispatcher of its own, bound
 unscoped since that dispatcher routes no views, with `rootView` answering the
-`mainView` / `onMainViewChange` props. Put one `<PointerContextProvider>`
+`mainView` / `onMainViewChange` props. It also binds the wheel to
+`minimap.zoom`, which zooms the main view about the world point under the
+cursor; give `wheelZoom` the main view's `{ min, max }` when they differ from
+the kit defaults, or `false` to leave the wheel to the page. Put one `<PointerContextProvider>`
 around it and the main canvas, and give the main canvas
 `createLinkedCursorContribution()`, for crosshairs in both directions.
 

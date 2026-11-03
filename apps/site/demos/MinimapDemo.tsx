@@ -82,7 +82,7 @@ export function MinimapDemo() {
           </span>
           <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</Button>
           <span className={styles.hint}>
-            press or drag either minimap to move the view · the crosshair follows the pointer across all three
+            press or drag either minimap to move the view · wheel over the detached one to zoom · the crosshair follows the pointer across all three
           </span>
         </div>
         <div className={styles.row}>

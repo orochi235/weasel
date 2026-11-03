@@ -1,0 +1,94 @@
+import { useCallback, useEffect, useMemo } from 'react';
+import type { RefObject } from 'react';
+import { useActionsRegistry, useDepSource, useGestureDispatcher } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
+import type { Tool } from '@weasel-js/routing';
+import type { View, ViewApi, ZoomClampOpts } from '@weasel-js/core';
+import {
+  MINIMAP_CENTER, MINIMAP_PAN, MINIMAP_ZOOM, minimapCenterAction, minimapPanAction, minimapZoomAction,
+} from './actions';
+
+// The minimap's own bindings. Unscoped: this dispatcher routes no views, so
+// every input on it is the minimap's.
+const PAN_BINDINGS: Tool['bindings'] = [
+  { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: 'minimap.pointerDown' } },
+  { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: 'minimap.drag' } },
+];
+// A trackpad pinch arrives as ctrl+wheel, which a bare-wheel spec rejects.
+const ZOOM_BINDINGS: Tool['bindings'] = [
+  { spec: { kind: 'wheel' }, actionId: MINIMAP_ZOOM, opts: { id: 'minimap.wheel' } },
+  { spec: { kind: 'wheel', mods: { ctrl: true } }, actionId: MINIMAP_ZOOM, opts: { id: 'minimap.pinch' } },
+];
+const toolsById = (bindings: Tool['bindings']): ReadonlyMap<string, Tool> =>
+  new Map([['minimap', { id: 'minimap', eligibility: { always: true }, bindings }]]);
+const PAN_TOOLS = toolsById(PAN_BINDINGS);
+const PAN_ZOOM_TOOLS = toolsById([...PAN_BINDINGS, ...ZOOM_BINDINGS]);
+const PAN_CHANNELS = { wheel: false, pinch: false, contextMenu: false, ingest: false } as const;
+const PAN_ZOOM_CHANNELS = { ...PAN_CHANNELS, wheel: true } as const;
+
+/** What `useMinimapInput` reads. */
+export interface MinimapInputOptions {
+  canvasRef: RefObject<HTMLCanvasElement | null>;
+  mainView: View;
+  mainViewDims: { width: number; height: number };
+  onMainViewChange: (next: View) => void;
+  /** The minimap's own camera, through which a client point becomes a world one. */
+  fitView: View;
+  wheelZoom: boolean | ZoomClampOpts;
+}
+
+/** Wire `<MinimapCanvas>`'s dispatcher: its actions, bound unscoped, moving the
+ *  main camera through `rootView`. Returns the client → world map it routes by. */
+export function useMinimapInput(opts: MinimapInputOptions): (cx: number, cy: number) => { x: number; y: number } {
+  const { canvasRef, wheelZoom } = opts;
+  const mainViewRef = useLatest(opts.mainView);
+  const mainViewDimsRef = useLatest(opts.mainViewDims);
+  const onMainViewChangeRef = useLatest(opts.onMainViewChange);
+  const fitViewRef = useLatest(opts.fitView);
+
+  // The main canvas's camera, which is what the minimap's actions move.
+  const rootView = useMemo<ViewApi>(() => ({
+    get: () => mainViewRef.current,
+    set: (v) => onMainViewChangeRef.current(v),
+    hostSize: () => mainViewDimsRef.current,
+  }), [mainViewRef, onMainViewChangeRef, mainViewDimsRef]);
+  useDepSource('rootView', () => rootView);
+
+  const actions = useActionsRegistry();
+  useEffect(() => {
+    if (!actions) return;
+    const off = [actions.register(minimapCenterAction()), actions.register(minimapPanAction())];
+    return () => { for (const u of off) u(); };
+  }, [actions]);
+
+  const zoomOn = wheelZoom !== false;
+  const wheelZoomRef = useLatest(wheelZoom);
+  useEffect(() => {
+    if (!actions || !zoomOn) return;
+    return actions.register(minimapZoomAction(() => {
+      const z = wheelZoomRef.current;
+      return typeof z === 'object' ? z : undefined;
+    }));
+  }, [actions, zoomOn, wheelZoomRef]);
+
+  /** Client point → world, through the fit camera. */
+  const clientToWorld = useCallback((cx: number, cy: number) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    const fv = fitViewRef.current;
+    return {
+      x: fv.x + (cx - (rect?.left ?? 0)) / fv.scale.x,
+      y: fv.y + (cy - (rect?.top ?? 0)) / fv.scale.y,
+    };
+  }, [canvasRef, fitViewRef]);
+
+  useGestureDispatcher({
+    canvasRef: canvasRef,
+    actions: actions!,
+    entriesById: zoomOn ? PAN_ZOOM_TOOLS : PAN_TOOLS,
+    clientToWorld,
+    keyboard: false,
+    channels: zoomOn ? PAN_ZOOM_CHANNELS : PAN_CHANNELS,
+  });
+
+  return clientToWorld;
+}

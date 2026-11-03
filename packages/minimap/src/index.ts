@@ -5,7 +5,7 @@ export {
   type LinkedCursorOptions,
 } from './createMinimapContribution';
 export {
-  minimapCenterAction, minimapPanAction, centerRootOn, MINIMAP_CENTER, MINIMAP_PAN,
+  minimapCenterAction, minimapPanAction, minimapZoomAction, centerRootOn, MINIMAP_CENTER, MINIMAP_PAN, MINIMAP_ZOOM,
 } from './actions';
 export {
   createIndicatorLayer, createLinkedCursorLayer, crosshairRects, CROSSHAIR_HALO, type CrosshairRect,
