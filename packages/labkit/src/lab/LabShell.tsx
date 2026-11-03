@@ -14,7 +14,7 @@ export interface LabShellProps {
    *  leaves the body and the footer, for a shell that sits inside a page with
    *  a title of its own. */
   bar?: boolean;
-  /** A menu bar drawn above the header, and only with it. */
+  /** A menu bar drawn in the header after the title, and only with it. */
   menuBar?: ReactNode;
   /** Optional content rendered into the footer. */
   footer?: ReactNode;
@@ -57,7 +57,6 @@ export function LabShell({
 
   return (
     <LabRoot mode={mode} className="lk-shell">
-      {bar && menuBar && <div className="lk-shell-menubar">{menuBar}</div>}
       {bar && (
         <header className="lk-shell-header">
           {pages && pages.length > 0 ? (
@@ -65,6 +64,7 @@ export function LabShell({
           ) : (
             <h1 className="lk-shell-title">{title}</h1>
           )}
+          {menuBar && <div className="lk-shell-menubar">{menuBar}</div>}
           {header && <div className="lk-shell-header-actions">{header}</div>}
         </header>
       )}

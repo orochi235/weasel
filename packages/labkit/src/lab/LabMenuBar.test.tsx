@@ -77,7 +77,7 @@ const press = async (el: HTMLElement) => {
 };
 
 describe('the lab’s menu bar', () => {
-  it('draws a menubar with Lab and View above the header', async () => {
+  it('draws a menubar with Lab and View in the header, after the title', async () => {
     const { container } = await mount();
     const bar = screen.getByRole('menubar', { name: 'Lab menu bar' });
     expect([...bar.querySelectorAll('[role="menuitem"]')].map((el) => el.textContent)).toEqual([
@@ -85,8 +85,10 @@ describe('the lab’s menu bar', () => {
       'View',
     ]);
     const header = container.querySelector('.lk-shell-header');
-    if (!header) throw new Error('no header');
-    expect(bar.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const title = container.querySelector('.lk-shell-title');
+    if (!header || !title) throw new Error('no header or title');
+    expect(header.contains(bar)).toBe(true);
+    expect(title.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('runs Add trial from the Lab menu', async () => {

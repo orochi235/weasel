@@ -148,8 +148,8 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
   const header = document.querySelector('.lk-shell-header')?.getBoundingClientRect();
   if (!bar || !header) return [...problems, 'no menu bar or header'];
   if (!(bar.height > 0)) problems.push(`menu bar height ${bar.height}`);
-  if (bar.bottom > header.top + 1)
-    problems.push(`menu bar ${bar.bottom} below header ${header.top}`);
+  if (bar.top < header.top - 1 || bar.bottom > header.bottom + 1)
+    problems.push(`menu bar ${bar.top}–${bar.bottom} outside header ${header.top}–${header.bottom}`);
 
   if (fixture === 'framed') {
     const frame = document.querySelector('.lk-fit-frame');
