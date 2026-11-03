@@ -1,7 +1,7 @@
 /** A template as a new scene, or as one more page of one. */
 import { addPage, layoutPages, nextPageId, pagesOf, type Page, type Scene } from '@weasel-js/core';
 import { DIAGRAM_TYPE_DOC_KEY, diagramTypeDocValue } from '@weasel-js/diagram';
-import { documentSpecs, pageSpecs, type DocumentScene, type DocumentSpecsOptions } from '../toScene';
+import { addOnPages, documentSpecs, pageSpecs, type DocumentScene, type DocumentSpecsOptions } from '../toScene';
 import type { PageTemplate } from './catalog';
 
 /** A new document of one page made from `template`, as {@link documentSpecs} draws it, with the diagram type the
@@ -37,7 +37,7 @@ export function addTemplatePage<TData, TLayer extends string, TPose>(
   const { page, specs } = pageSpecs(template.page(id, size), placeAt, draw);
   scene.batch('Add page', () => {
     addPage(scene, page, { index: at });
-    for (const spec of specs) scene.add(spec as never);
+    addOnPages(scene, specs);
   });
   return id;
 }

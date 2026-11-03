@@ -8,8 +8,8 @@ import { createElement, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import {
-  PAGES_DOC_KEY, SceneCanvas, createScene, fitViewToPage, placedPagesOf, useSelection,
-  type RectPose, type Scene, type SelectionApi, type View,
+  SceneCanvas, createPageRun, createScene, fitViewToPage, placeOnPages, placedPagesOf, useSelection,
+  type NodeId, type RectPose, type Scene, type SelectionApi, type View,
 } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
@@ -35,19 +35,17 @@ function makeScene(): OffPageScene {
   const box = (id: string, x: number) => ({
     id, kind: 'mark', layer: 'main', pose: { x, y: 60, width: 40, height: 30 }, data: { diagram: {}, fill: { paint: { color: '#101010' } } },
   });
-  return createScene<unknown, 'main', RectPose>({
-    systemLayers: [{ id: 'main' }],
-    registry: withDiagramRegistry(),
-    doc: { [PAGES_DOC_KEY]: { pages: [{ id: 'p1', width: 200, height: 150 }, { id: 'p2', width: 200, height: 150 }], layout: { gap: 200 } } },
-    initial: [
-      box('a', 20), box('b', 420),
-      {
-        id: 'ab', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
-        data: { diagram: { from: {}, to: {} }, stroke: { paint: { color: '#ffffff' }, width: 2 } },
-        dependsOn: ['a', 'b'], derivePath: EDGE_DERIVE_PATH,
-      },
-    ] as never,
-  });
+  const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+  scene.untracked(() => scene.batch('Load', () => {
+    createPageRun(scene, [{ id: 'p1', width: 200, height: 150 }, { id: 'p2', width: 200, height: 150 }], { gap: 200 });
+    for (const spec of [box('a', 20), box('b', 420), {
+      id: 'ab', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      data: { diagram: { from: {}, to: {} }, stroke: { paint: { color: '#ffffff' }, width: 2 } },
+      dependsOn: ['a', 'b'], derivePath: EDGE_DERIVE_PATH,
+    }]) scene.add(spec as never);
+    placeOnPages(scene, ['a', 'b', 'ab'] as NodeId[]);
+  }));
+  return scene;
 }
 
 let view: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -124,7 +122,8 @@ describe('off-page markers in a real canvas', () => {
     // Saved whole, so nothing split it on load: the line still runs across the gap.
     expect(colorAt(canvas, 300, 75)).toBe('#ffffff');
 
-    scene.setPose('b' as never, { x: 421, y: 60, width: 40, height: 30 });
+    // b is on p2, at 20 in its frame.
+    scene.setPose('b' as never, { x: 21, y: 60, width: 40, height: 30 });
     await frame();
     await frame();
     expect(colorAt(canvas, 300, 75)).toBe('#000000');

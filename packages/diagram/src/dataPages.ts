@@ -1,5 +1,5 @@
 /** The pages a {@link DiagramData} is drawn on, and the connectors that cross between them. */
-import { layoutPages, type Bounds, type PlacedPage } from '@weasel-js/core';
+import { layoutPages, pageOfBounds, type Bounds, type PlacedPage } from '@weasel-js/core';
 import type { DiagramData, DiagramSpec } from './dataTypes';
 import { diagramGroupOf } from './group';
 import { offPageSplits } from './offPage/split';
@@ -13,8 +13,9 @@ export function diagramPages(data: DiagramData): PlacedPage[] {
 
 /**
  * Which of `edges` cross between `pages`, lettered in their order, and the two
- * off-page tags of each that does. An edge with an end `boxOf` has no box for
- * is left whole.
+ * off-page tags of each that does. Data places its nodes in world space, so
+ * each end is on the page its box overlaps most (`pageOfBounds`); an edge with
+ * an end `boxOf` has no box for is left whole.
  */
 export function dataOffPage(
   edges: readonly { id: string; from: string; to: string }[],
@@ -25,11 +26,12 @@ export function dataOffPage(
   const input = edges.flatMap((e) => {
     const from = boxOf(e.from);
     const to = boxOf(e.to);
-    return from === undefined || to === undefined ? [] : [{ id: e.id, from, to }];
+    if (from === undefined || to === undefined) return [];
+    return [{ id: e.id, fromPage: pageOfBounds(pages, from)?.id ?? null, toPage: pageOfBounds(pages, to)?.id ?? null }];
   });
   const splits = new Map<string, OffPageSplit>();
   const tags: DiagramSpec[] = [];
-  for (const [id, split] of offPageSplits({ pages, edges: input })) {
+  for (const [id, split] of offPageSplits({ edges: input })) {
     if (split === null) continue;
     splits.set(id, split);
     tags.push(...(offPageTagSpecs(id, split, pages, { ...look, layer: 'main' }) as DiagramSpec[]));

@@ -18,7 +18,7 @@ import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDr
 import { serializeReplacer } from '@weasel-js/editor';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 import { importSvgText, openSvgText } from './openSvg';
-import { contentRoots } from './pages/contentRoots';
+import { contentRoots } from '@weasel-js/core';
 import { sceneToSvgString, selectionToSvgString } from './svgExport';
 
 type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;

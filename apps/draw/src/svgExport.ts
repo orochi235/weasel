@@ -50,7 +50,7 @@ import {
 } from './svgInterop';
 import { rectsIntersect } from '@weasel-js/geom';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
-import { contentRoots } from './pages/contentRoots';
+import { contentRoots } from '@weasel-js/core';
 import type { EffectObj } from './svgEffects';
 import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
 

@@ -43,6 +43,14 @@ const PARENT: RectPose = { x: 100, y: 40, width: 200, height: 120, rotation: 0.7
 const CHILD: RectPose = { x: 15, y: 25, width: 60, height: 40, rotation: -0.3 };
 
 describe('composeRigidPose', () => {
+  it('moves a child under an upright parent by exactly the parent\'s corner, and back', () => {
+    const parent = { x: 1040, y: 0, width: 1000, height: 700 };
+    const child = { x: 60, y: 60, width: 64, height: 45.254833995939045 };
+    const world = composeRigidPose(parent, child);
+    expect(world).toEqual({ ...child, x: 1100, y: 60 });
+    expect(decomposeRigidPose(parent, world)).toEqual(child);
+  });
+
   it('puts the child where the parent frame puts its corners', () => {
     const world = composeRigidPose(PARENT, CHILD);
     expect(maxCornerError(corners(world), cornersUnderParent(PARENT, CHILD))).toBeLessThan(1e-9);

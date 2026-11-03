@@ -1,17 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { PAGES_DOC_KEY, createScene, documentPose, type RectPose, type Scene } from '@weasel-js/core';
-import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
+import { EDGE_DERIVE_PATH } from '../edge';
 import { edgeLabelSpec } from '../edgeLabel';
 import { diagramLabelOf, type DiagramLabel } from '../labelTrait';
 import { installOffPageMarkers } from '../offPage/install';
+import { dragTo, pagedScene, worldBox, type PagedScene } from '../offPage/pagedFixture';
 import { installLabelPlacement } from './install';
 
-type PagedScene = Scene<unknown, 'main', RectPose>;
-
 const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: '#111111', background: '#ffffff' };
-
-// Two 200 by 100 pages, 40 apart: p1 spans x 0..200, p2 x 240..440.
-const PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] };
 
 const box = (id: string, x: number, y: number, width = 40, height = 30) =>
   ({ id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x, y, width, height }, data: { diagram: {} } });
@@ -27,28 +22,20 @@ const connector = (id: string, from: string, to: string, ports: { from: string; 
  *  a vertical connector whose label sits across y = 35, past `ab`'s off-page tag, on the line from `ab`'s first
  *  stub to its second that a split connector does not draw. */
 function load(abLabel: DiagramLabel = { at: 'mid', offset: 9 }) {
-  const scene: PagedScene = createScene<unknown, 'main', RectPose>({
-    systemLayers: [{ id: 'main' }],
-    registry: withDiagramRegistry(),
-    doc: { [PAGES_DOC_KEY]: PAGES },
-    initial: [
-      box('a', 20, 20), box('b', 120, 20), box('c', 160, 0, 40, 10), box('d', 160, 80, 40, 20), box('cover', 1000, 1000, 30, 20),
-      connector('ab', 'a', 'b', { from: 'e', to: 'w' }), connector('cd', 'c', 'd', { from: 's', to: 'n' }),
-      edgeLabelSpec('ab', 'note', { layer: 'main', label: abLabel }),
-      edgeLabelSpec('cd', 'note', { layer: 'main', label: { at: 0.3, offset: 0 } }),
-    ] as never,
-  });
+  const scene = pagedScene([
+    box('a', 20, 20), box('b', 120, 20), box('c', 160, 0, 40, 10), box('d', 160, 80, 40, 20), box('cover', 1000, 1000, 30, 20),
+    connector('ab', 'a', 'b', { from: 'e', to: 'w' }), connector('cd', 'c', 'd', { from: 's', to: 'n' }),
+    edgeLabelSpec('ab', 'note', { layer: 'main', label: abLabel }),
+    edgeLabelSpec('cd', 'note', { layer: 'main', label: { at: 0.3, offset: 0 } }),
+  ]);
   installOffPageMarkers(scene, { look: () => LOOK });
   installLabelPlacement(scene);
-  const move = (id: string, x: number, y?: number) => {
-    const pose = scene.get(id as never)!.pose;
-    scene.setPose(id as never, { ...pose, x, y: y ?? pose.y });
-  };
+  const move = (id: string, x: number, y?: number) => dragTo(scene, id, x, y);
   return { scene, move };
 }
 
 const placedOf = (scene: PagedScene, id: string) => diagramLabelOf(scene.get(id as never)!)!.placed;
-const boxOf = (scene: PagedScene, id: string) => documentPose(scene, scene.get(id as never)!);
+const boxOf = (scene: PagedScene, id: string) => worldBox(scene, id);
 
 describe('label placement on a connector split across pages', () => {
   it('stands a split connector’s label on its first stub', () => {

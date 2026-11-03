@@ -1,5 +1,6 @@
-import { PAGES_DOC_KEY, createScene, placedPagesOf, type PlacedPage, type RectPose, type Scene } from '@weasel-js/core';
+import { createPageRun, createScene, placedPagesOf, type PlacedPage, type RectPose, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, installOffPageMarkers, withDiagramRegistry } from '@weasel-js/diagram';
+import { addOnPages } from '../toScene';
 
 /** The scene the export tests draw: two 200 by 100 pages, 40 apart. */
 export type PageScene = Scene<unknown, 'main', RectPose>;
@@ -11,7 +12,7 @@ export const INK = '#000000';
 export const PAPER = '#fafafa';
 
 const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: INK, background: PAPER };
-const PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] };
+const PAGES = [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }];
 const EDGE_STROKE = { paint: { color: INK }, width: 2, markerEnd: 'arrow' as const };
 
 const body = (id: string, pose: RectPose, outline: string, color: string) => ({
@@ -32,25 +33,25 @@ const connector = (id: string, from: string, to: string) => ({
  * connector is split and tagged at both ends.
  */
 export function pageScene(): { scene: PageScene; pages: readonly PlacedPage[] } {
-  const scene: PageScene = createScene<unknown, 'main', RectPose>({
-    systemLayers: [{ id: 'main' }],
-    registry: withDiagramRegistry(),
-    doc: { [PAGES_DOC_KEY]: PAGES },
-    initial: [
-      body('a', { x: 20, y: 20, width: 60, height: 40 }, 'diamond', RED),
-      {
-        id: 'a/row' as never, kind: 'mark', layer: 'main', parent: 'a' as never,
-        pose: { x: 30, y: 30, width: 40, height: 20 },
-        data: { text: 'Start', style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: { paint: { color: INK } } },
-      },
-      body('b', { x: 100, y: 65, width: 40, height: 30 }, 'rect', GREEN),
-      body('c', { x: 300, y: 30, width: 40, height: 30 }, 'rect', BLUE),
-      connector('ab', 'a', 'b'),
-      connector('ac', 'a', 'c'),
-    ] as never,
-  });
+  const scene: PageScene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+  const initial = [
+    body('a', { x: 20, y: 20, width: 60, height: 40 }, 'diamond', RED),
+    {
+      id: 'a/row' as never, kind: 'mark', layer: 'main', parent: 'a' as never,
+      pose: { x: 30, y: 30, width: 40, height: 20 },
+      data: { text: 'Start', style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: { paint: { color: INK } } },
+    },
+    body('b', { x: 100, y: 65, width: 40, height: 30 }, 'rect', GREEN),
+    body('c', { x: 300, y: 30, width: 40, height: 30 }, 'rect', BLUE),
+    connector('ab', 'a', 'b'),
+    connector('ac', 'a', 'c'),
+  ];
+  scene.untracked(() => scene.batch('Load', () => {
+    createPageRun(scene, PAGES);
+    addOnPages(scene, initial as never);
+  }));
   installOffPageMarkers(scene, { look: () => LOOK });
-  // The split happens in an edit's entry, so make one that reaches the connector.
-  scene.setPose('c' as never, { x: 301, y: 30, width: 40, height: 30 });
+  // The split happens in an edit's entry, so make one that reaches the connector: c moves 1 along page 2.
+  scene.setPose('c' as never, { ...scene.get('c' as never)!.pose, x: scene.get('c' as never)!.pose.x + 1 });
   return { scene, pages: placedPagesOf(scene) };
 }

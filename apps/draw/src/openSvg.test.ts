@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { asNodeId, createScene, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { importSvgText, openSvgFile, openSvgText } from './openSvg';
-import { contentRoots } from './pages/contentRoots';
+import { contentRoots } from '@weasel-js/core';
 import { drawScene } from './testScenes';
 import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
 import { sceneToSvgString } from './svgExport';

@@ -17,7 +17,7 @@ import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import type { DrawScene } from './drawDocument';
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
 import { importSvgFile, openSvgFile } from './openSvg';
-import { contentRoots } from './pages/contentRoots';
+import { contentRoots } from '@weasel-js/core';
 import { exportPageSvgFile, saveSvgFile } from './saveSvg';
 import { withIcons } from './testIcons';
 import { drawScene } from './testScenes';

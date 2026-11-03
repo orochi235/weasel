@@ -1,24 +1,20 @@
 /**
- * Which connectors cross from one page to another, as arithmetic: page
- * rects and end boxes in, splits out. Nothing here reads a scene.
+ * Which connectors cross from one page to another: each end's page in, splits
+ * and their refs out. Nothing here reads a scene.
  */
-import { pageOfBounds, type PlacedPage } from '@weasel-js/core';
 import type { OffPageSplit } from './trait';
 
-type Box = { x: number; y: number; width: number; height: number };
-
-/** One connector as {@link offPageSplits} reads it: its two ends' world boxes,
- *  and the split it holds now, if any. */
+/** One connector as {@link offPageSplits} reads it: the page each end is on (`pageOfNode`), `null` for one on
+ *  none, and the split it holds now, if any. */
 export interface OffPageEdgeInput {
   id: string;
-  from: Box;
-  to: Box;
+  fromPage: string | null;
+  toPage: string | null;
   offPage?: OffPageSplit | undefined;
 }
 
 /** What {@link offPageSplits} reads. */
 export interface OffPageSplitInput {
-  pages: readonly PlacedPage[];
   edges: readonly OffPageEdgeInput[];
   /** Refs held by split connectors not in `edges`, which no edge here may take. */
   used?: Iterable<string>;
@@ -40,29 +36,26 @@ export function nextOffPageRef(used: ReadonlySet<string>): string {
 
 /**
  * Each connector's split, or `null` where it stays whole. A connector splits
- * when its two ends belong to different pages (`pageOfBounds`); an end in a
- * gap belongs to none, and never splits. A split keeps the ref it holds while
- * no earlier connector here or `used` holds it too; a new one takes the next
- * free ref.
+ * when its two ends are on different pages; an end on no page never splits.
+ * A split keeps the ref it holds while no earlier connector here or `used`
+ * holds it too; a new one takes the next free ref.
  */
 export function offPageSplits(input: OffPageSplitInput): Map<string, OffPageSplit | null> {
   const used = new Set(input.used ?? []);
   const out = new Map<string, OffPageSplit | null>();
   const fresh: { id: string; from: string; to: string }[] = [];
-  for (const edge of input.edges) {
-    const from = pageOfBounds(input.pages, edge.from);
-    const to = pageOfBounds(input.pages, edge.to);
-    if (from === null || to === null || from.id === to.id) {
-      out.set(edge.id, null);
+  for (const { id, fromPage: from, toPage: to, offPage } of input.edges) {
+    if (from === null || to === null || from === to) {
+      out.set(id, null);
       continue;
     }
-    const held = edge.offPage?.ref;
+    const held = offPage?.ref;
     if (held !== undefined && !used.has(held)) {
       used.add(held);
-      out.set(edge.id, { ref: held, from: from.id, to: to.id });
+      out.set(id, { ref: held, from, to });
     } else {
-      out.set(edge.id, null);
-      fresh.push({ id: edge.id, from: from.id, to: to.id });
+      out.set(id, null);
+      fresh.push({ id, from, to });
     }
   }
   for (const split of fresh) {

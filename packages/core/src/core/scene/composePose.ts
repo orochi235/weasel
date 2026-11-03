@@ -102,6 +102,8 @@ export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: T
     const linear = multiply(frame, poseFrameOf(child) ?? NO_FRAME);
     return withLinear(centeredAt(child, cx, cy), (child.rotation ?? 0) + pr, linear);
   }
+  // Upright, the offset is added straight: going through the center would leave float noise in the corner.
+  if (pr === 0) return withRotation({ ...child, x: parent.x + child.x, y: parent.y + child.y }, child.rotation ?? 0);
   const [wcx, wcy] = turn(
     parent.x + parent.width / 2,
     parent.y + parent.height / 2,
@@ -123,6 +125,7 @@ export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world:
     const linear = multiply(back, poseFrameOf(world) ?? NO_FRAME);
     return withLinear(centeredAt(world, ux - parent.x, uy - parent.y), (world.rotation ?? 0) - pr, linear);
   }
+  if (pr === 0) return withRotation({ ...world, x: world.x - parent.x, y: world.y - parent.y }, world.rotation ?? 0);
   const [ux, uy] = turn(
     parent.x + parent.width / 2,
     parent.y + parent.height / 2,

@@ -81,6 +81,7 @@ export type { CreatePageRunOptions, PageInfo, PageRunInfo } from '../core/pages/
 export { PAGE_RUN, pageRunLayout } from '../core/pages/pageRunLayout';
 export { PAGE_CLIP, pageClip } from '../core/pages/pageClip';
 export { adoptLegacyPages, placeOnPages } from '../core/pages/legacyPages';
+export { followerHome } from '../core/pages/pagePlacement';
 export { zoomAt, axisZoomFactor } from '../core/viewport/zoomAt';
 export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from '../core/viewport/zoomBounds';
 export type { ZoomClampOpts, ZoomAxis } from '../core/viewport/zoomAt';

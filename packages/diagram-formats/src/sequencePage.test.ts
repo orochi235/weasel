@@ -1,5 +1,5 @@
-import { PAGES_DOC_KEY, createScene, placedPagesOf, type RectPose, type SerializedDoc } from '@weasel-js/core';
-import { DIAGRAM_THEMES, sequenceRootOf, withDiagramRegistry, type SequenceData } from '@weasel-js/diagram';
+import { placedPagesOf } from '@weasel-js/core';
+import { DIAGRAM_THEMES, sequenceRootOf, type SequenceData } from '@weasel-js/diagram';
 import { describe, expect, it } from 'vitest';
 import { formatTakes, type DiagramDocument, type SequencePage } from './document';
 import { DIAGRAM_DOT } from './dot/format';
@@ -8,7 +8,7 @@ import { DIAGRAM_JSON } from './jsonFormat';
 import { scenePageKinds } from './pageKinds';
 import { exportPageSvg } from './pageSvg';
 import { sequenceRootIdOf } from './sequencePage';
-import { MEASURE } from './testing/docScene';
+import { MEASURE, drawnScene } from './testing/docScene';
 import { documentSpecs } from './toScene';
 
 const DATA: SequenceData = {
@@ -27,19 +27,16 @@ const DOC: DiagramDocument = {
 };
 
 function sceneOf(doc: DiagramDocument) {
-  const { specs, doc: values } = documentSpecs(doc, { measure: MEASURE, theme: DIAGRAM_THEMES.night! });
-  return createScene<unknown, 'main', RectPose>({
-    systemLayers: [{ id: 'main' }], initial: specs as never, doc: values as SerializedDoc, registry: withDiagramRegistry(),
-  });
+  return drawnScene(documentSpecs(doc, { measure: MEASURE, theme: DIAGRAM_THEMES.night! }));
 }
 
 describe('sequence pages', () => {
   it('draws a sequence page as one root holding its data, and grows the page to hold its layout', () => {
-    const { specs, doc } = documentSpecs(DOC, { measure: MEASURE });
+    const { specs, pages } = documentSpecs(DOC, { measure: MEASURE });
     const root = specs.find((s) => s.id === sequenceRootIdOf('s'))!;
     expect(sequenceRootOf(root)?.sequence).toBe(DATA);
     expect(specs.some((s) => s.id === 'x')).toBe(true);
-    const page = (doc[PAGES_DOC_KEY] as { pages: { id: string; width: number; height: number }[] }).pages[1]!;
+    const page = pages[1]!;
     expect(page.width).toBeGreaterThan(100);
     expect(root.pose.width).toBeLessThan(page.width);
   });

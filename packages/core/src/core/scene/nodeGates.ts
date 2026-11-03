@@ -15,7 +15,7 @@
  *   copied, grouped or dropped into by the ordinary scene tools; page edits
  *   go through the page API. Its own answer only, not its subtree's.
  */
-import type { NodeId } from './types';
+import type { NodeId, Scene } from './types';
 
 /** The node fields the gates read. A partial scene stand-in may leave `parent` out. */
 export interface GatedNode {
@@ -57,6 +57,18 @@ export function isPageStructure(node: { readonly page?: unknown; readonly pageRu
 export function withoutPageStructure<T extends string>(scene: GateSource, ids: readonly T[]): readonly T[] {
   const out = (id: T) => isPageStructure(scene.get(id as string as NodeId));
   return ids.some(out) ? ids.filter((id) => !out(id)) : ids;
+}
+
+/** The tops of what a document holds, from `ids` (default the scene's roots): each id, but the page run and each
+ *  page by what they hold, in order. What a file writes, since it places content in the world and lists its
+ *  pages apart. */
+export function contentRoots<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  ids: readonly (NodeId | string)[] = scene.roots,
+): NodeId[] {
+  return ids.flatMap((id) => isPageStructure(scene.get(id as NodeId))
+    ? contentRoots(scene, scene.childrenOf(id as NodeId))
+    : [id as NodeId]);
 }
 
 /** The answers, for one read of a scene. Each takes an id, or the node a

@@ -4,7 +4,7 @@ import { asNodeId, booleanGroupFields, pathContainsPoint, solid } from '@weasel-
 import { parseSvg } from '@weasel-js/svg';
 import type { WeaselDrawPose } from './drawDocument';
 import { openSvgText } from './openSvg';
-import { contentRoots } from './pages/contentRoots';
+import { contentRoots } from '@weasel-js/core';
 import { sceneToSvgString } from './svgExport';
 import { SWILL_NAMESPACES } from './svgInterop';
 import { drawScene } from './testScenes';

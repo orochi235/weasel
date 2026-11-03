@@ -1,19 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { PAGES_DOC_KEY, createScene, placedPagesOf, type PagesDoc, type RectPose } from '@weasel-js/core';
-import { DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, withDiagramRegistry, type DiagramTypeDoc } from '@weasel-js/diagram';
+import { pagesOf, placedPagesOf } from '@weasel-js/core';
+import { DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, type DiagramTypeDoc } from '@weasel-js/diagram';
 import type { PlotKind } from '@weasel-js/plot';
 import type { DiagramDocument, GraphPage } from '../document';
 import { documentFromScene } from '../fromScene';
 import { DIAGRAM_MERMAID } from '../mermaid/format';
 import { scenePageKinds } from '../pageKinds';
-import { MEASURE, THEME } from '../testing/docScene';
+import { MEASURE, THEME, drawnScene } from '../testing/docScene';
 import { PAGE_TEMPLATES, type PageTemplate } from './catalog';
 import { PLOT_STARTERS, SEQUENCE_STARTER } from './starters';
 import { addTemplatePage, templateSpecs } from './templateScene';
 
 const sceneOf = (template: PageTemplate) => {
-  const { specs, doc } = templateSpecs(template, { theme: THEME, measure: MEASURE });
-  return createScene<unknown, string, RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc, initial: specs as never });
+  return drawnScene(templateSpecs(template, { theme: THEME, measure: MEASURE }));
 };
 
 describe('page templates', () => {
@@ -66,9 +65,9 @@ describe('page templates', () => {
     expect((doc.pages[1] as GraphPage).notation).toBe('class');
     expect(placedPagesOf(scene)[0]).toMatchObject({ width: 500, height: 400 });
     scene.undo();
-    expect((scene.doc.get(PAGES_DOC_KEY) as PagesDoc).pages.map((p) => p.id)).toEqual(['page-1', pie]);
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1', pie]);
     scene.undo();
-    expect((scene.doc.get(PAGES_DOC_KEY) as PagesDoc).pages.map((p) => p.id)).toEqual(['page-1']);
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1']);
     expect(documentFromScene(scene).pages).toHaveLength(1);
   });
 });

@@ -1,7 +1,8 @@
-import { PAGES_DOC_KEY, createScene, type RectPose, type Scene } from '@weasel-js/core';
+import { createPageRun, createScene, isPageStructure, type RectPose, type Scene } from '@weasel-js/core';
 import {
   DIAGRAM_THEMES, DIAGRAM_THEME_KEY, diagramScene, withDiagramRegistry, type DiagramData, type MeasureRowText,
 } from '@weasel-js/diagram';
+import { addDocumentScene, addOnPages, type DocumentScene } from '../toScene';
 
 /** The scene the document tests read. */
 export type DocScene = Scene<unknown, string, RectPose>;
@@ -41,12 +42,33 @@ export const DOC_DATA: DiagramData = {
   ],
 };
 
-/** A scene built from `data` in `THEME`, on two pages. */
-export function docScene(data: DiagramData = DOC_DATA): DocScene {
-  return createScene<unknown, string, RectPose>({
-    systemLayers: [{ id: 'main' }],
-    registry: withDiagramRegistry(),
-    doc: { [PAGES_DOC_KEY]: { pages: PAGES }, [DIAGRAM_THEME_KEY]: THEME.id },
-    initial: diagramScene(data, { layout: 'none', theme: THEME, measure: MEASURE }) as never,
+/** Options for {@link pagedDocScene} and {@link docScene}. */
+export interface PagedOptions { pages?: typeof PAGES; doc?: Record<string, unknown>; pasteboard?: boolean }
+
+/** A scene of `specs`, placed in world space, on `pages`: each root moved onto the page holding it, or with the
+ *  pasteboard on left off every page it is off. Not an undo step. */
+export function pagedDocScene(specs: readonly unknown[], { pages = PAGES, doc = {}, pasteboard }: PagedOptions = {}): DocScene {
+  const scene = createScene<unknown, string, RectPose>({
+    systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc: { [DIAGRAM_THEME_KEY]: THEME.id, ...doc },
   });
+  scene.untracked(() => scene.batch('Load', () => {
+    createPageRun(scene, pages, pasteboard ? { pasteboard } : {});
+    addOnPages(scene, specs as never);
+  }));
+  return scene;
+}
+
+/** A scene of what `documentSpecs` drew (`addDocumentScene`), not as an undo step. */
+export function drawnScene(drawn: DocumentScene<string>): DocScene {
+  const scene = createScene<unknown, string, RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+  scene.untracked(() => addDocumentScene(scene, drawn));
+  return scene;
+}
+
+/** Every node but the page run and the pages, in render order. */
+export const contentNodes = (scene: DocScene) => scene.renderOrderNodes().filter((n) => !isPageStructure(n));
+
+/** A scene built from `data` in `THEME`, on two pages. */
+export function docScene(data: DiagramData = DOC_DATA, opts: PagedOptions = {}): DocScene {
+  return pagedDocScene(diagramScene(data, { layout: 'none', theme: THEME, measure: MEASURE }), opts);
 }

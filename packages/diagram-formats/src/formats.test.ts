@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { DiagramDocument, DiagramFormat } from './document';
 import { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';
 import { DIAGRAM_JSON } from './jsonFormat';
-import { createScene, type RectPose } from '@weasel-js/core';
-import { withDiagramRegistry } from '@weasel-js/diagram';
 import { DIAGRAM_DOT } from './dot/format';
 import { documentFromScene } from './fromScene';
 import { DIAGRAM_MERMAID } from './mermaid/format';
-import { MEASURE } from './testing/docScene';
+import { MEASURE, drawnScene } from './testing/docScene';
 import { documentSpecs } from './toScene';
 import { DRAW_XML } from './drawXml/format';
 import { asGraph } from './testing/asGraph';
@@ -72,10 +70,7 @@ describe('the graph formats', () => {
 
   it('read to a page that draws laid out, every node placed on it', async () => {
     const { document } = await readDocument('flowchart LR\nA[One] --> B{Two} --> C((Three))', 'flow.mmd');
-    const { specs, doc } = documentSpecs(document, { measure: MEASURE });
-    const scene = createScene<unknown, string, RectPose>({
-      systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc, initial: specs as never,
-    });
+    const scene = drawnScene(documentSpecs(document, { measure: MEASURE }));
     const page = documentFromScene(scene).pages.map(asGraph)[0]!;
     const placed = page.data.nodes;
     expect(placed.map((n) => n.id)).toEqual(['A', 'B', 'C']);

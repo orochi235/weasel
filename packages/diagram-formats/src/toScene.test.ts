@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { PAGES_DOC_KEY } from '@weasel-js/core';
 import { DIAGRAM_THEMES, DIAGRAM_THEME_KEY, edgeIdOf, type DiagramEdge, type DiagramSpec } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
 import { documentSpecs } from './toScene';
@@ -52,9 +51,9 @@ describe('documentSpecs', () => {
     expect(specs.find((s) => s.id === 'ac')?.dependsOn).toEqual(['a', 'c']);
   });
 
-  it('writes the page list and the theme as document values', () => {
-    const { doc } = documentSpecs(DOC);
-    expect(doc[PAGES_DOC_KEY]).toEqual({ pages: [{ id: 'one', width: 400, height: 300 }, { id: 'two', name: 'Two', width: 400, height: 300 }] });
+  it('lists the pages, and writes the theme as a document value', () => {
+    const { pages, doc } = documentSpecs(DOC);
+    expect(pages).toEqual([{ id: 'one', width: 400, height: 300 }, { id: 'two', name: 'Two', width: 400, height: 300 }]);
     expect(doc[DIAGRAM_THEME_KEY]).toBe('paper');
   });
 
@@ -85,8 +84,8 @@ describe('documentSpecs on a page with nodes that have no place', () => {
   });
 
   it('lays the page out, inside its page, growing the page to hold it', () => {
-    const { specs, doc } = documentSpecs(graph(), { measure: MEASURE });
-    const page = (doc[PAGES_DOC_KEY] as { pages: { width: number; height: number }[] }).pages[0]!;
+    const { specs, pages } = documentSpecs(graph(), { measure: MEASURE });
+    const page = pages[0]!;
     const boxes = ['a', 'b', 'c', 'd'].map((id) => boxOf(specs, id));
     for (const b of boxes) {
       expect(b.x).toBeGreaterThanOrEqual(0);

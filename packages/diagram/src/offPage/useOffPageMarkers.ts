@@ -8,7 +8,7 @@ import { installOffPageMarkers, type OffPageMarkerOptions } from './install';
  * splits, joins, and retags what it reached, in its own history entry.
  * Options are read when the scene changes.
  */
-export function useOffPageMarkers<TPose>(scene: Scene<unknown, string, TPose>, opts: OffPageMarkerOptions<TPose> = {}): void {
+export function useOffPageMarkers<TPose>(scene: Scene<unknown, string, TPose>, opts: OffPageMarkerOptions = {}): void {
   const latest = useLatest(opts);
   useEffect(() => installOffPageMarkers(scene, latest.current), [scene, latest]);
 }
