@@ -81,6 +81,18 @@ export async function captureCanvas(
 }
 
 /**
+ * Make the page report Linux as its platform, as CI's runner does. Baselines
+ * come from that runner, and a page that prints shortcuts spells them per
+ * platform: `Ctrl+Shift+D` there, `⌘⇧D` on a Mac, which narrows a menu panel.
+ */
+export async function reportLinuxPlatform(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'platform', { get: () => 'Linux x86_64' });
+    Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => ({ platform: 'Linux' }) });
+  });
+}
+
+/**
  * After a user interaction, wait for the canvas to repaint before capturing.
  * Call this after each simulated event in a spec's interaction sequence.
  */

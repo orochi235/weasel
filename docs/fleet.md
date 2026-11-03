@@ -29,6 +29,12 @@ address, and syncs every edit made here until Ctrl-C stops the servers; `--drop`
 it headless from here with chrome-devtools or Playwright by the printed IP: headless Chrome resolves no
 `.local` names. `DRAW_E2E_URL=http://<ip>:33452 npm run test:e2e:draw` runs draw's e2e suite against it.
 
+**The visual baselines are CI's Linux captures, and every fleet node is a Mac.** Anything a page
+draws per platform differs on a node: menus print shortcuts as `⌘⇧D` on a Mac and `Ctrl+Shift+D` on
+Linux, which failed `hud-context-menu` on studio and teitou alike by 3.84% and 4.64% until its spec
+called `reportLinuxPlatform` (`tests/visual/diff.ts`) (2026-11-03). A spec whose demo shows shortcuts
+calls it before `goto`.
+
 **keiei takes no weasel jobs** (`onto set keiei --refuse repo:orochi235/weasel`, 2026-10-29). With 24 GB
 and 7–11 GB of swap it failed forge's timeline test in five full runs on 2026-10-20, where the other nodes
 pass it in 20–44 s. `onto set keiei --allow repo:orochi235/weasel` takes it back.

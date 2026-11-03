@@ -3,13 +3,13 @@
  * hovers the menu's second row, once per color mode, so the panel, its
  * highlight and its text are pinned against each mode's theme.
  *
- * Baselines: `UPDATE_SNAPSHOTS=1 npm run test:visual -- hud-context-menu`,
- * on a fleet node rather than a laptop, whose rasterizer differs.
+ * Baselines come from the "Visual Regression — Update Baselines" workflow on
+ * CI's Linux runner, like every other spec's.
  */
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { resolve } from 'node:path';
 import { PNG } from 'pngjs';
-import { assertMatchesBaseline, readCanvasPixels, waitForRepaint } from './diff.js';
+import { assertMatchesBaseline, readCanvasPixels, reportLinuxPlatform, waitForRepaint } from './diff.js';
 
 const DEMO_ID = 'hud-context-menu';
 const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
@@ -46,6 +46,7 @@ for (const mode of ['light', 'dark'] as const) {
   test(`${DEMO_ID} — ${mode}: the open menu highlights the hovered row`, async ({ page }) => {
     // A cold vite server's first load takes ~30s on a node (docs/TODO.md, "first page load").
     test.setTimeout(90_000);
+    await reportLinuxPlatform(page);
     await page.addInitScript((m) => window.localStorage.setItem('ckd-mode', m), mode);
     await page.goto(`/#${DEMO_ID}`);
     const canvas = page.locator('canvas').first();

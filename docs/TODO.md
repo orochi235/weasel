@@ -655,12 +655,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) `hud-context-menu`'s visual baselines fail on studio and pass on CI.** "the open menu
-  highlights the hovered row", light and dark, differs by 3.84% and 4.64% against a 2% threshold on
-  studio's headless Chromium over SwiftShader (2026-10-31); CI's ubuntu-22.04 run passes both
-  (2026-11-02, run 41502330003). Closes when the reason studio's capture differs is found and written
-  into `docs/fleet.md`, or studio's run passes them.
-
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"
   (`packages/ui/src/components/ToggleBar/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
