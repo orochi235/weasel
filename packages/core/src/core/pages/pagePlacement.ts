@@ -45,10 +45,66 @@ export function followerHome<TData, TLayer extends string, TPose>(
   node: { readonly dependsOn?: unknown } | undefined,
   pageOf?: (id: NodeId) => string | null,
 ): NodeId | null {
+  const page = pageRunOf(scene) === null ? undefined : followedPage(scene, node, pageOf);
+  return page === undefined ? null : homeOfPage(scene, page);
+}
+
+/** The node a follower whose page is `page` is the child of: that page's node, or the page run for `null`.
+ *  `null` in a scene without pages. */
+export function homeOfPage<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  page: string | null,
+): NodeId | null {
   const run = pageRunOf(scene);
-  const page = run === null ? undefined : followedPage(scene, node, pageOf);
-  if (page === undefined) return null;
+  if (run === null) return null;
   return page === null ? run : pageNodeOf(scene, page) ?? run;
+}
+
+/** A node following others, as {@link followerLandings} reads it: one in the scene, or one about to be. */
+export interface FollowerOf {
+  readonly id: string;
+  readonly dependsOn: readonly string[];
+}
+
+/**
+ * The page each of `followers` belongs on by the follower rule
+ * ({@link followedPage}) once the nodes in `landed` have landed, `null` for
+ * the run. A node `landed` names, and anything under it, is on the page it
+ * gives (`null`: on none); one of `followers` is on the page this finds for
+ * it, so a follower of a follower comes out the same in any order; any other
+ * node is on the page it is on now. A cycle of followers goes to the run.
+ */
+export function followerLandings(
+  scene: PageTreeReader,
+  landed: ReadonlyMap<string, string | null>,
+  followers: readonly FollowerOf[],
+): Map<string, string | null> {
+  const byId = new Map(followers.map((f) => [f.id, f]));
+  const out = new Map<string, string | null>();
+  const visiting = new Set<string>();
+  const pageOf = (dep: NodeId): string | null => {
+    for (let at: NodeId | null | undefined = dep; at != null; at = scene.get(at)?.parent) {
+      if (landed.has(at)) return landed.get(at)!;
+      if (byId.has(at)) return resolve(byId.get(at)!);
+    }
+    return pageOfNode(scene, dep);
+  };
+  const resolve = (f: FollowerOf): string | null => {
+    if (out.has(f.id)) return out.get(f.id)!;
+    if (visiting.has(f.id)) return null;
+    visiting.add(f.id);
+    const page = followedPage(scene, f, pageOf) ?? null;
+    visiting.delete(f.id);
+    out.set(f.id, page);
+    return page;
+  };
+  for (const f of followers) resolve(f);
+  return out;
+}
+
+/** Node `id`, holding `node`, as a {@link FollowerOf}, or `null` when it follows none. */
+export function asFollower(id: string, node: { readonly dependsOn?: unknown } | undefined): FollowerOf | null {
+  return isFollower(node) ? { id, dependsOn: node!.dependsOn as string[] } : null;
 }
 
 /**

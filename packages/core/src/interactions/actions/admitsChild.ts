@@ -1,5 +1,5 @@
 import type { NodeId } from 'core/scene/types';
-import { followedPage } from 'core/pages/pagePlacement';
+import { asFollower, followerLandings } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
 import type { DropVerdict } from './dropVerdict';
 import type { CanDropIntoDep } from './layoutDeps';
@@ -11,18 +11,13 @@ interface ChildReader {
   } | undefined;
 }
 
-/** Where each of `ids` belongs by the follower rule (`followedPage`) once they land in `parent`: a node they
- *  follow that lands with them is on `parent`'s page. `undefined` for an id that follows none. */
+/** Where each of `ids` belongs by the follower rule (`followerLandings`) once they land in `parent`: each of
+ *  them, and what is under it, is on `parent`'s page. `undefined` for an id that follows none. */
 function followerPages(scene: ChildReader, parent: NodeId, ids: readonly string[]): (string | null | undefined)[] {
-  const moving = new Set(ids);
   const landing = pageOfNode(scene, parent);
-  const pageOf = (dep: NodeId) => {
-    for (let at: NodeId | null | undefined = dep; at != null; at = scene.get(at)?.parent) {
-      if (moving.has(at)) return landing;
-    }
-    return pageOfNode(scene, dep);
-  };
-  return ids.map((id) => followedPage(scene, scene.get(id as NodeId), pageOf));
+  const followers = ids.flatMap((id) => asFollower(id, scene.get(id as NodeId)) ?? []);
+  const pages = followerLandings(scene, new Map(ids.map((id) => [id, landing])), followers);
+  return ids.map((id) => pages.get(id));
 }
 
 /** The one rule for whether `parent` takes `ids` as children, by drop or by insert. The page run takes only

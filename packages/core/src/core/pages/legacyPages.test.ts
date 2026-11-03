@@ -111,6 +111,19 @@ describe('adoptLegacyPages', () => {
     adoptLegacyPages(scene);
     expect(scene.childrenOf('a' as NodeId)).toEqual(['a1', 'mid', 'a2']);
   });
+
+  it('puts a follower of a follower where the one it follows goes, whichever comes first', () => {
+    const follower = (id: string, deps: string[]): Spec => ({
+      id: id as NodeId, kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { n: id },
+      dependsOn: deps as NodeId[],
+    });
+    const scene = load([rect('a1', 5), rect('a2', 50), follower('link', ['a1', 'a2']), follower('tag', ['link'])]);
+    scene.untracked(() => scene.reorder('tag' as NodeId, 0));
+    expect(scene.roots[0]).toBe('tag');
+    adoptLegacyPages(scene);
+    expect(scene.get('link' as NodeId)!.parent).toBe('a');
+    expect(scene.get('tag' as NodeId)!.parent).toBe('a');
+  });
 });
 
 describe('placeOnPages', () => {

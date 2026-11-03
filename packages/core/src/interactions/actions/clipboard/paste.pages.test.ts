@@ -80,4 +80,37 @@ describe('materializePaste in a paged scene', () => {
     expect(ends.map((n) => n.parent)).toEqual(['a', PAGE_B]);
     expect(follower.parent).toBe(pageRunOf(scene));
   });
+
+  /** Paste `ON_PAGE`, `end` and a link following both, with a tag following the link listed first, at `drop`. */
+  function pasteChain(drop: { x: number; y: number }, ids: (link: string, tag: string) => string[]) {
+    const { scene } = pagedScene();
+    const end = scene.add({ kind: 'mark', layer: 'ink', parent: asNodeId('a'), pose: { x: 10, y: 30, width: 20, height: 10 }, data: {} });
+    const follow = { derivePose: (_n: unknown, deps: readonly { pose: RectPose }[]) => deps[0]?.pose ?? null };
+    const link = scene.add({
+      kind: 'mark', layer: 'ink', parent: asNodeId('a'), pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [ON_PAGE, end], ...follow,
+    });
+    const tag = scene.add({
+      kind: 'mark', layer: 'ink', parent: asNodeId('a'), pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [link], ...follow,
+    });
+    const adapter = sceneToAdapter(scene);
+    const pasted = materializePaste(adapter as never, adapter.snapshotSelection(ids(link, tag).map((id) => id === 'end' ? end : id)), {
+      currentSelection: [], dropPoint: drop,
+    })!;
+    scene.applyBatch(pasted.ops, 'Paste', adapter as never);
+    const copies = pasted.newIds.map((id) => scene.get(asNodeId(id))!);
+    const copyOf = (original: string) => copies.find((n) => n.dependsOn?.length === (original === tag ? 1 : 2) && n.dependsOn !== undefined);
+    return { scene, copies, link: copyOf(link)!, tag: copyOf(tag)! };
+  }
+
+  it('puts a pasted follower of a pasted follower on the page the pasted copy lands on, listed first or not', () => {
+    // Everything lands on page b, while the originals stay on page a.
+    for (const order of [(l: string, t: string) => [t, ON_PAGE, 'end', l], (l: string, t: string) => [ON_PAGE, 'end', l, t]]) {
+      const { link, tag } = pasteChain({ x: 160, y: 20 }, order);
+      expect(link.parent).toBe(PAGE_B);
+      expect(tag.parent).toBe(PAGE_B);
+      expect(tag.dependsOn).toEqual([link.id]);
+    }
+  });
 });

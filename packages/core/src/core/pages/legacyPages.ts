@@ -6,8 +6,10 @@ import { sameValue } from '../scene/sameValue';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId, Scene } from '../scene/types';
 import { treePreorder } from '../scene/treeOrder';
-import { PAGES_DOC_KEY, createPageRun, pageNodeOf, pageOfNode, pageRunOf, placedPagesOf, type PagesDoc } from './pageNodes';
-import { followedPage, isFollower, keepOnPage, pageForBounds, pasteboardOn } from './pagePlacement';
+import { PAGES_DOC_KEY, createPageRun, pageNodeOf, pageRunOf, placedPagesOf, type PagesDoc } from './pageNodes';
+import {
+  asFollower, followerLandings, keepOnPage, pageForBounds, pasteboardOn, type FollowerOf,
+} from './pagePlacement';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -20,34 +22,31 @@ interface Destination {
 const STILL = { dx: 0, dy: 0 };
 
 /** Where each of `roots` goes, in their order: the page for its bounds (`pageForBounds`), moved onto it when
- *  it lies wholly off it with the pasteboard off; a node following others where `followedPage` puts it, by
- *  where the roots it follows go; or nowhere, a root left on the pasteboard. */
+ *  it lies wholly off it with the pasteboard off; a node following others where the follower rule puts it, by
+ *  where the roots it follows go (`followerLandings`); or nowhere, a root left on the pasteboard. */
 function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: PoseDescriptor<unknown>): Map<NodeId, Destination> {
   const poses = scenePoseAdapter(scene);
   const placed = placedPagesOf(scene);
   const pasteboard = pasteboardOn(scene);
   const content = new Map<NodeId, Destination>();
+  const followers: FollowerOf[] = [];
   for (const id of roots) {
     const node = scene.get(id)!;
-    if (isFollower(node)) continue;
+    const follower = asFollower(id, node);
+    if (follower !== null) {
+      followers.push(follower);
+      continue;
+    }
     const bounds = poseDescriptorForNode(descriptor, node).getBounds(composeWorldPose(poses, id, scene.composition.compose));
     const page = pageForBounds(scene, bounds, placed);
     if (page) content.set(id, { page: page.id, shift: pasteboard ? STILL : keepOnPage(page, bounds) });
   }
+  const landed = new Map<string, string | null>(roots.map((id) => [id, content.get(id)?.page ?? null]));
+  for (const f of followers) landed.delete(f.id);
+  const pages = followerLandings(scene, landed, followers);
   const out = new Map<NodeId, Destination>();
-  const going = (id: NodeId) => out.get(id) ?? content.get(id);
-  const rootOf = (id: NodeId): NodeId => {
-    let at = id;
-    for (let up = scene.get(at)?.parent; up != null; up = scene.get(at)?.parent) at = up;
-    return at;
-  };
-  const pageOf = (dep: NodeId) => {
-    const root = rootOf(dep);
-    return roots.includes(root) ? going(root)?.page ?? null : pageOfNode(scene, dep);
-  };
   for (const id of roots) {
-    const page = followedPage(scene, scene.get(id), pageOf);
-    const at = page === undefined ? content.get(id) : { page, shift: STILL };
+    const at = pages.has(id) ? { page: pages.get(id)!, shift: STILL } : content.get(id);
     if (at) out.set(id, at);
   }
   return out;

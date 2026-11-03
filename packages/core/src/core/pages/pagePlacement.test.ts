@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { followerHome, keepOnPage, pageForBounds, pageForPoint } from './pagePlacement';
+import { followerHome, followerLandings, keepOnPage, pageForBounds, pageForPoint } from './pagePlacement';
 import { ON_PAGE, PAGE_A, PAGE_B, pagedScene } from './pagedFixture';
 
 describe('pageForPoint', () => {
@@ -56,5 +56,18 @@ describe('followerHome', () => {
     expect(followerHome(scene, { dependsOn: [ON_PAGE, onB] })).toBe(run);
     expect(followerHome(scene, { dependsOn: [ON_PAGE] }, () => PAGE_B)).toBe(PAGE_B);
     expect(followerHome(scene, {})).toBeNull();
+  });
+});
+
+describe('followerLandings', () => {
+  it('resolves a follower of a follower by where that one lands, in any order, and a cycle to the run', () => {
+    const { scene } = pagedScene();
+    const landed = new Map([[ON_PAGE as string, PAGE_B as string]]);
+    const link = { id: 'link', dependsOn: [ON_PAGE as string] };
+    const tag = { id: 'tag', dependsOn: ['link'] };
+    expect([...followerLandings(scene, landed, [tag, link])].sort()).toEqual([['link', PAGE_B], ['tag', PAGE_B]]);
+    expect(followerLandings(scene, new Map(), [tag, link]).get('tag')).toBe(PAGE_A);
+    const loop = followerLandings(scene, new Map(), [{ id: 'x', dependsOn: ['y'] }, { id: 'y', dependsOn: ['x'] }]);
+    expect([loop.get('x'), loop.get('y')]).toEqual([null, null]);
   });
 });

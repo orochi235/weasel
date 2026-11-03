@@ -1,7 +1,9 @@
 import type { Bounds } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
-import { pageNodeOf, pageOfNode, pageRunOf } from 'core/pages/pageNodes';
-import { followerHome, keepOnPage, pageForPoint, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
+import { pageNodeOf, pageRunOf } from 'core/pages/pageNodes';
+import {
+  followerLandings, homeOfPage, keepOnPage, pageForPoint, pasteboardOn, placedPage,
+} from 'core/pages/pagePlacement';
 import { siteIn, type InsertSite } from './deps/insertSite';
 
 /** Where one pasted root lands in a paged scene, and how much further it moves, with its subtree, to get there. */
@@ -24,7 +26,8 @@ const middle = (b: Bounds) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
 /**
  * Where a paste into a paged scene puts each of `roots`, in order. A root
  * that follows others goes on the page everything it follows lands on, else
- * in the page run (`followerHome`). The rest each go on the page for
+ * in the page run (`followerLandings`), a follower of a pasted follower by
+ * where that one lands. The rest each go on the page for
  * a point (`pageForPoint`): a lone one's is the paste's `dropPoint`, else its
  * middle, and each of several goes by its own middle. With the pasteboard
  * off, each moves so part of it is on its page. `null` in a scene without
@@ -41,11 +44,11 @@ export function pasteOnPages(
   const pasteboard = pasteboardOn(scene);
   const pages = new Map(roots.filter((root) => root.follows === undefined).map((root) =>
     [root.id, pageForPoint(scene, lone && dropPoint ? dropPoint : middle(root.bounds))]));
-  const pageOf = (id: NodeId) => (pages.has(id) ? pages.get(id)! : pageOfNode(scene, id));
+  const followerPages = followerLandings(scene, pages, roots.flatMap((root) =>
+    root.follows === undefined ? [] : [{ id: root.id, dependsOn: root.follows }]));
   return roots.map((root) => {
     if (root.follows !== undefined) {
-      const home = followerHome(scene, { dependsOn: root.follows }, pageOf);
-      return { site: siteIn(scene, home), shift: { dx: 0, dy: 0 } };
+      return { site: siteIn(scene, homeOfPage(scene, followerPages.get(root.id)!)), shift: { dx: 0, dy: 0 } };
     }
     const pageId = pages.get(root.id)!;
     const page = pageId === null || pasteboard ? null : placedPage(scene, pageId);

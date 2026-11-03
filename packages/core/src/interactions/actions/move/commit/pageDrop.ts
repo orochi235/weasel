@@ -2,7 +2,9 @@ import { createReparentOp } from 'core/ops/reparent';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import { followerHome, isFollower, keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
+import {
+  asFollower, followerLandings, homeOfPage, isFollower, keepOnPage, pasteboardOn, placedPage,
+} from 'core/pages/pagePlacement';
 import { pageAt, pageOfBounds, type PlacedPage } from 'core/pages/pages';
 import { pageNodeOf, pageOfNode, pageRunOf, placedPagesOf } from 'core/pages/pageNodes';
 import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
@@ -92,24 +94,21 @@ export function pageDrops(
   return drops.size === 0 ? null : drops;
 }
 
-/** Add to `drops` each follower on a page or in the run whose home (`followerHome`) the drops change: it
- *  goes to the page everything it follows lands on, else into the run. */
+/** Add to `drops` each follower on a page or in the run whose home the drops change: it goes to the page
+ *  everything it follows lands on, else into the run (`followerLandings`). */
 function rehomeFollowers(session: MoveSession, drops: Map<NodeId, RootDrop>): void {
   const { scene } = session;
   const run = pageRunOf(scene);
   if (run === null || ![...drops.values()].some((d) => d.into !== undefined)) return;
-  const pageOf = (dep: NodeId) => {
-    for (let at: NodeId | null | undefined = dep; at != null; at = scene.get(at)?.parent) {
-      const into = drops.get(at)?.into;
-      if (into !== undefined) return into === null ? null : pageOfNode(scene, into);
-    }
-    return pageOfNode(scene, dep);
-  };
+  const landed = new Map<string, string | null>();
+  for (const [id, { into }] of drops) {
+    if (into !== undefined) landed.set(id, into === null ? null : pageOfNode(scene, into));
+  }
   const tops = [run, ...scene.childrenOf(run).filter((id) => scene.get(id)?.page !== undefined)];
-  for (const id of tops.flatMap((top) => scene.childrenOf(top))) {
-    const node = scene.get(id)!;
-    const home = followerHome(scene, node, pageOf);
-    if (home !== null && home !== node.parent) drops.set(id, { into: home, shift: STAY.shift });
+  const followers = tops.flatMap((top) => scene.childrenOf(top)).flatMap((id) => asFollower(id, scene.get(id)) ?? []);
+  for (const [id, page] of followerLandings(scene, landed, followers)) {
+    const home = homeOfPage(scene, page);
+    if (home !== null && home !== scene.get(id as NodeId)!.parent) drops.set(id as NodeId, { into: home, shift: STAY.shift });
   }
 }
 
