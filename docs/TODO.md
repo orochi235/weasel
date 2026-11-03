@@ -325,15 +325,6 @@ Owner tags, after the priority (2026-10-26):
   without drawing again with those nodes left out, and hover hit-tests on every pointer move, where an id
   frame is a second draw of the frame; that is why it was not done in the same pass.
   Closes when `<SceneCanvas>` can take its press picks from the id buffer, `exclude` included.
-- **(P2) [recheck] Label output: `.lbx` files, and raster printing over WebUSB.** Wanted (2026-11-03)
-  alongside dithering and output-grid clamping, and left out of both arcs. lbx-editor does both today
-  outside weasel: `.lbx` through bil-lbx, which describes objects rather than dots, and printing
-  through obwat, which takes an `RgbaImage`, dithers it with its own copy, and streams raster lines.
-  obwat stays standalone (2026-11-03), so how weasel reaches it, by depending on it or otherwise, is
-  undecided. A dithered export already feeds it unchanged: `maskToRgba` with opaque black ink and
-  white blank passes obwat's default threshold untouched.
-  Closes when a weasel scene can be saved as `.lbx` and printed to a P-touch from the browser through
-  kit API.
 
 ---
 
@@ -703,6 +694,10 @@ only story runner in the repo.
   every `userEvent`/`commands` call is awaited). The test now records the event each `close` and `set` call ran
   in, and requires that Enter's keydown wrote the row, so the next failure names its trigger.
   Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
+- **(P3) [agent] `apps/chart` `pipeline.browser.test.tsx`'s "deletes the selected stage from Edit › Delete, and
+  Mod+Z on the canvas brings it back" failed once under load.** In the full fleet run of d266c0bc5 (2026-11-03,
+  node studio) `canvasSettled` (`apps/chart/src/testing/mountChartApp.tsx:47`) returned false; the file passed
+  alone on teitou minutes later. Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
   `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
