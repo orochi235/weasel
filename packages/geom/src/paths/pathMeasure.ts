@@ -5,7 +5,7 @@
  * path reads many times over. Lengths and points are exact, read from the
  * path's `pathLengthTable`, so a fraction lands where a stroke trim cuts.
  */
-import { tableInternals, type LengthTable } from '../along/lengthTable';
+import { segmentArc, tableInternals, type LengthTable, type SegmentArc } from '../along/lengthTable';
 import { pathLengthTable } from '../along/pathTable';
 import { pointOnSegmentOnly } from '../along/positions';
 import type { Path } from '../path';
@@ -69,6 +69,8 @@ interface Segment {
   /** The table run and segment the chord lies on. */
   run: number;
   seg: number;
+  /** That table segment's curve, once a query has read it; null when it is straight. */
+  curve: SegmentArc | null | undefined;
   /** Unit heading. */
   tx: number; ty: number;
   /** Headings at either end, averaged with the neighbor's, for `smooth`. */
@@ -120,7 +122,8 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
 
   const total = table.total;
   const pointAt = (seg: Segment, s: number): Point => {
-    const point = pointOnSegmentOnly(table, seg.run, seg.seg, s);
+    if (seg.curve === undefined) seg.curve = segmentArc(table, seg.run, seg.seg);
+    const point = pointOnSegmentOnly(table, seg.run, seg.seg, s, seg.curve);
     return { x: point[0], y: point[1] };
   };
   return {
@@ -191,7 +194,7 @@ function pushChords(pl: Polyline, r: number, table: LengthTable, segments: Segme
     const start = lenOf[i]!;
     const arc = (j === 0 ? c[c.length - 1]! : lenOf[j]!) - start;
     segments.push({
-      ax, ay, bx, by, len, start, arc, run: r, seg: segOf[i]!, tx, ty, t0x: tx, t0y: ty, t1x: tx, t1y: ty,
+      ax, ay, bx, by, len, start, arc, run: r, seg: segOf[i]!, curve: undefined, tx, ty, t0x: tx, t0y: ty, t1x: tx, t1y: ty,
     });
   }
 }

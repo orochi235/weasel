@@ -1,9 +1,9 @@
 {
   "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/.onto-fetch-cache.json": {
-    "size": 5876,
-    "mtime": 1793688715554681318,
-    "inode": 754269139,
-    "sha256": "14e224c15a5909086f55530c47c4b8c7afef5f774b9820b61ebf0a69985d6037"
+    "size": 11714,
+    "mtime": 1793689116122996653,
+    "inode": 754289170,
+    "sha256": "d01addc0eed0fe05f85cbc921cf74920948caedc180fdfb490793c93b3a315e4"
   },
   "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/digest.py": {
     "size": 928,
@@ -125,112 +125,220 @@
     "inode": 754212531,
     "sha256": "32f89e332eee4ad24edec49c4f666ff4ef8f0d3deb77d32907292962aa21f677"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-1.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-1.log": {
     "size": 335,
-    "mtime": 1793688718292440345,
+    "mtime": 1793689116123146278,
     "inode": 754269093,
     "sha256": "7493189d081f715be7e14fa3ba723e51a45182315637422e33450669a7113ca7"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-2.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-2.log": {
     "size": 335,
-    "mtime": 1793688718928733795,
+    "mtime": 1793689116123232361,
     "inode": 754269094,
     "sha256": "eaacf6f4974bed8779e92aa0dceb45a8246d122a76199156318ae8986532926d"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-3.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-3.log": {
     "size": 335,
-    "mtime": 1793688722293858150,
+    "mtime": 1793689116123302903,
     "inode": 754269095,
     "sha256": "56dbe6805b8571f7fbfc9ac4758787cf469e38258866777f2b1586da668c6131"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-4.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-4.log": {
     "size": 335,
-    "mtime": 1793688722949065843,
+    "mtime": 1793689116123380444,
     "inode": 754269096,
     "sha256": "9597bfb7d20ddc83aea736b4079e175983e27eff861987fddf291306e12cfde7"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-5.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-5.log": {
     "size": 335,
-    "mtime": 1793688726210409775,
+    "mtime": 1793689116123458944,
     "inode": 754269097,
     "sha256": "803dc74f07a283cc975b827ff219fd87e1ccff66972ed2de2e057db692b05e0b"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-6.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-6.log": {
     "size": 335,
-    "mtime": 1793688726860572637,
+    "mtime": 1793689116123529902,
     "inode": 754269098,
     "sha256": "20bca8a78cf3a2e5d8028b58af6a9621a7b3ac7e0d0c073df34e0f2d09da1569"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-7.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-7.log": {
     "size": 335,
-    "mtime": 1793688730133066565,
+    "mtime": 1793689116123591069,
     "inode": 754269099,
     "sha256": "b0324b16269220ddd2874082cc53a4b854e6b4e303beab940c3be8ea17fd77dc"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-8.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/after-8.log": {
     "size": 335,
-    "mtime": 1793688730786789009,
+    "mtime": 1793689116123656069,
     "inode": 754269100,
     "sha256": "f03cc5ac5e42a3575226833bc2d1d412857bbd74fb1e51cb18b797ce94bba59f"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-1.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-1.log": {
     "size": 335,
-    "mtime": 1793688717633466653,
+    "mtime": 1793689116123726402,
     "inode": 754269101,
     "sha256": "bd507be91d13f1587608d9c6d8294edc43061619026f211abdd1b02780c388e8"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-2.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-2.log": {
     "size": 335,
-    "mtime": 1793688720326467528,
+    "mtime": 1793689116123793986,
     "inode": 754269102,
     "sha256": "fd7afbfb3809aca992e7a586edc75645658f9862e1b903a0e60bc297981b9123"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-3.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-3.log": {
     "size": 335,
-    "mtime": 1793688721626476502,
+    "mtime": 1793689116123855819,
     "inode": 754269103,
     "sha256": "dc7bc6a00b56c472ba278c6fba8c99773c2fa3927032ce511ea9ddadd45be499"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-4.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-4.log": {
     "size": 335,
-    "mtime": 1793688724245600819,
+    "mtime": 1793689116123923236,
     "inode": 754269104,
     "sha256": "1e337d9d30523ae5fccb3fbd96755a072610bb67be2940b47984065a8b4eb430"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-5.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-5.log": {
     "size": 335,
-    "mtime": 1793688725547921000,
+    "mtime": 1793689116123985527,
     "inode": 754269105,
     "sha256": "6049d45603b190e0cfd0fd9d094638df91fef1895924fa2c4cf9744c165cb340"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-6.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-6.log": {
     "size": 335,
-    "mtime": 1793688728175818148,
+    "mtime": 1793689116124123569,
     "inode": 754269106,
     "sha256": "976405ffaecf373446e725d94f0da95a16156fc2c37dd2cd8bee09a6fa96cdee"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-7.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-7.log": {
     "size": 335,
-    "mtime": 1793688729476591622,
+    "mtime": 1793689116124199610,
     "inode": 754269107,
     "sha256": "e57f749a0757becc4c5c424237687004c5b5b014bc95637f6dff230fc6eba233"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-8.log": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/before-8.log": {
     "size": 335,
-    "mtime": 1793688732145112172,
+    "mtime": 1793689116124265277,
     "inode": 754269108,
     "sha256": "479225e26aefccd6ba0aaa3540601bf0564d256ec9cdd65b928119a0ee366744"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/conditions.txt": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/conditions.txt": {
     "size": 1448,
-    "mtime": 1793688732162469999,
+    "mtime": 1793689116124337235,
     "inode": 754269109,
     "sha256": "5328a440ce96f3873137e02e7498614435f088c04aadb4b3e2843ea6f2a3af1e"
   },
-  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/runs.jsonl": {
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio-at-6ffa6d961/runs.jsonl": {
     "size": 25177,
-    "mtime": 1793688732145321838,
+    "mtime": 1793689116124452777,
     "inode": 754269110,
     "sha256": "c883a958362e03bc2233889bba1fe3763a4ced740dc7ccd3b85a538b7f6f43c7"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-1.log": {
+    "size": 335,
+    "mtime": 1793689119247003839,
+    "inode": 754289015,
+    "sha256": "b4a9b5f5de59a90272f610ff43e1d83b8efb5b85e76fcb2283756bb831292bec"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-2.log": {
+    "size": 335,
+    "mtime": 1793689119844315303,
+    "inode": 754289016,
+    "sha256": "a4e87e06932a912ce7183a8461a3ca8a30e56b050a615ae08d0265734561eda0"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-3.log": {
+    "size": 335,
+    "mtime": 1793689123010442350,
+    "inode": 754289017,
+    "sha256": "e0f43796b300e1295ef166afcbeb9be345b65a17e4333eae6c667cefc4c08cea"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-4.log": {
+    "size": 335,
+    "mtime": 1793689123598289442,
+    "inode": 754289018,
+    "sha256": "e68a9f73cacf1390169d5a10c6bc35da8f2bc5124d6e0c01606f47c6e3fc48f1"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-5.log": {
+    "size": 335,
+    "mtime": 1793689126755360034,
+    "inode": 754289019,
+    "sha256": "068d7c386cd995a39b9cbd7e1b48416dd6151ccf4e0f77b556af8c93ca4cedac"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-6.log": {
+    "size": 335,
+    "mtime": 1793689127359597870,
+    "inode": 754289020,
+    "sha256": "46fca36f1ed318e0eab4efdbbe51b6c47a5da12f77a6032409a486a09d04e0a2"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-7.log": {
+    "size": 335,
+    "mtime": 1793689130512781422,
+    "inode": 754289021,
+    "sha256": "28aed95ab62d315c1826ca6636678dcd959da18fb19df2b966769428282622b7"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/after-8.log": {
+    "size": 335,
+    "mtime": 1793689131122756798,
+    "inode": 754289022,
+    "sha256": "5ef4b092a571d225061bb9cc983de648899a7648dd9678a046a88b9bfaf5f967"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-1.log": {
+    "size": 335,
+    "mtime": 1793689118577206401,
+    "inode": 754289023,
+    "sha256": "5258baa63247b41722524167369b0dfd3a2ad4bc0f2486c6fcbf1a9d59c52f8f"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-2.log": {
+    "size": 335,
+    "mtime": 1793689121177950391,
+    "inode": 754289024,
+    "sha256": "75192c57207914e8893fab71ff738e19841359041c3a876155579fa2d518b4eb"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-3.log": {
+    "size": 335,
+    "mtime": 1793689122404544348,
+    "inode": 754289025,
+    "sha256": "7bf731c0ec1e8f8bc2669468e466be44f2bb0c38d2ac6e061ca05b80f26c0c1d"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-4.log": {
+    "size": 335,
+    "mtime": 1793689124928694197,
+    "inode": 754289026,
+    "sha256": "4448f0cb435402c20f3fbce5818f8013a0e8377aee4eea7e233e3678a11e4a7a"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-5.log": {
+    "size": 335,
+    "mtime": 1793689126163687819,
+    "inode": 754289027,
+    "sha256": "4cb5074275af8678fd1f5fb336d30a412b70a1dafdb05df17c992ab534ec1152"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-6.log": {
+    "size": 335,
+    "mtime": 1793689128684890044,
+    "inode": 754289028,
+    "sha256": "8220a7a77e4dcc1f4860d29de0c8466567f15c72707f27862e047e632310b440"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-7.log": {
+    "size": 335,
+    "mtime": 1793689129922019123,
+    "inode": 754289029,
+    "sha256": "3c71386b5f34d15f7a8b74e02b02fe4e03d280d9165a114a31483ee212e0a8fa"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/before-8.log": {
+    "size": 335,
+    "mtime": 1793689132450642054,
+    "inode": 754289030,
+    "sha256": "46eaf592ee73c417b1c3491b0fcaede155c2956fb39f4c2bd305509643409a46"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/conditions.txt": {
+    "size": 1448,
+    "mtime": 1793689132467711048,
+    "inode": 754289031,
+    "sha256": "aff0d910245e98b5ae67ba300c29a53c7af1d4d9060da9fd7c3030ad59d59a4d"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a34d77052005f438c/tests/perf/recorded/arc-lookup-2026-11-03/studio/runs.jsonl": {
+    "size": 25378,
+    "mtime": 1793689132450872304,
+    "inode": 754289032,
+    "sha256": "875cb60214eab09e573ae8e2560ef2aa1c992bfbddad799fc60557af34e3197a"
   }
 }

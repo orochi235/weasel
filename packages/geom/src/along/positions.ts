@@ -14,7 +14,9 @@ type Comps = [number, number, number];
 export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangent: Comps } {
   const { cum } = tableInternals(t);
   const len = Number.isNaN(s) ? 0 : Math.min(Math.max(s, 0), t.total);
-  let r = cum.findIndex((c, i) => c.length >= 2 && len <= t.runStart[i + 1]);
+  let r = 0;
+  while (r < cum.length && !(cum[r].length >= 2 && len <= t.runStart[r + 1])) r++;
+  if (r === cum.length) r = -1;
   if (r < 0) {
     r = t.runs.length - 1;
     while (r >= 0 && t.runs[r].points.length < t.dim) r--;
@@ -45,9 +47,10 @@ export function pointOnSegment(t: LengthTable, r: number, i: number, len: number
   return { point: linePoint(t, r, i, len), tangent: tangentNear(t, r, i) };
 }
 
-/** @internal {@link pointOnSegment}'s point alone. */
-export function pointOnSegmentOnly(t: LengthTable, r: number, i: number, len: number): Comps {
-  const arc = segmentArc(t, r, i);
+/** @internal {@link pointOnSegment}'s point alone, given the segment's `segmentArc` when the caller kept it. */
+export function pointOnSegmentOnly(
+  t: LengthTable, r: number, i: number, len: number, arc: SegmentArc | null = segmentArc(t, r, i),
+): Comps {
   return arc ? bezierPoint(arc.coords, t.dim, arcParam(t, arc, r, i, len)) : linePoint(t, r, i, len);
 }
 
