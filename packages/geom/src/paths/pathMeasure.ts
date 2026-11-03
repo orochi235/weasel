@@ -7,7 +7,7 @@
  */
 import { tableInternals, type LengthTable } from '../along/lengthTable';
 import { pathLengthTable } from '../along/pathTable';
-import { pointOnSegment } from '../along/positions';
+import { pointOnSegmentOnly } from '../along/positions';
 import type { Path } from '../path';
 import { extractPolylines, type Polyline } from '../tessellate/polyline';
 import type { Point } from './cubicMath';
@@ -120,7 +120,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
 
   const total = table.total;
   const pointAt = (seg: Segment, s: number): Point => {
-    const { point } = pointOnSegment(table, seg.run, seg.seg, s);
+    const point = pointOnSegmentOnly(table, seg.run, seg.seg, s);
     return { x: point[0], y: point[1] };
   };
   return {

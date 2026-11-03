@@ -1,6 +1,6 @@
-import { lookupT } from '../paths/segmentLength';
+import { lookupT } from './arcLookup';
 import { bezierDirection, bezierPoint } from './bezier';
-import { segmentArc, tableInternals, type LengthTable } from './lengthTable';
+import { segmentArc, tableInternals, type LengthTable, type SegmentArc } from './lengthTable';
 
 type Comps = [number, number, number];
 
@@ -37,18 +37,33 @@ export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangen
  * pen-order length `len` on segment `i` of run `r`, `len` clamped to it.
  */
 export function pointOnSegment(t: LengthTable, r: number, i: number, len: number): { point: Comps; tangent: Comps } {
+  const arc = segmentArc(t, r, i);
+  if (arc) {
+    const u = arcParam(t, arc, r, i, len);
+    return { point: bezierPoint(arc.coords, t.dim, u), tangent: bezierDirection(arc.coords, t.dim, u) ?? tangentNear(t, r, i) };
+  }
+  return { point: linePoint(t, r, i, len), tangent: tangentNear(t, r, i) };
+}
+
+/** @internal {@link pointOnSegment}'s point alone. */
+export function pointOnSegmentOnly(t: LengthTable, r: number, i: number, len: number): Comps {
+  const arc = segmentArc(t, r, i);
+  return arc ? bezierPoint(arc.coords, t.dim, arcParam(t, arc, r, i, len)) : linePoint(t, r, i, len);
+}
+
+function arcParam(t: LengthTable, arc: SegmentArc, r: number, i: number, len: number): number {
+  const c = tableInternals(t).cum[r];
+  return lookupT(arc.coords, t.dim, arc.lookup, Math.min(Math.max(len - c[i], 0), c[i + 1] - c[i]));
+}
+
+function linePoint(t: LengthTable, r: number, i: number, len: number): Comps {
   const c = tableInternals(t).cum[r];
   const span = c[i + 1] - c[i];
   const local = Math.min(Math.max(len - c[i], 0), span);
-  const arc = segmentArc(t, r, i);
-  if (arc) {
-    const u = lookupT(arc.coords, t.dim, arc.lookup, local);
-    return { point: bezierPoint(arc.coords, t.dim, u), tangent: bezierDirection(arc.coords, t.dim, u) ?? tangentNear(t, r, i) };
-  }
   const f = span > 0 ? local / span : 0;
   const a = at(t, r, i);
   const b = at(t, r, i + 1);
-  return { point: [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)], tangent: tangentNear(t, r, i) };
+  return [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
 }
 
 /** Point `i` of run `r`, wrapping a closed run's closing edge back to its first. */

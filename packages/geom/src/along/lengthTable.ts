@@ -1,4 +1,5 @@
-import { arcLookup, segmentLength, type ArcLookup } from '../paths/segmentLength';
+import { segmentLength } from '../paths/segmentLength';
+import { arcLookup, type ArcLookup } from './arcLookup';
 import { segmentCoords } from './bezier';
 
 /** One subpath of a path in pen order: points joined by straight segments, or by curves where `controls` gives them. */
