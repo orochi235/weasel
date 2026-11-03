@@ -49,7 +49,7 @@ export function windowRibbon(
 }
 
 /** What the untrimmed ribbon's insets leave of `polylines`, all lengths world. */
-function untrimmedWorldLength(polylines: readonly Polyline[], start: number, end: number): number {
+export function untrimmedWorldLength(polylines: readonly Polyline[], start: number, end: number): number {
   const cut = Math.max(0, start) + Math.max(0, end);
   let sum = 0;
   for (const pl of polylines) {

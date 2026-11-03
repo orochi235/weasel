@@ -27,6 +27,9 @@ import {
   GRAD_FILL_ATTRIBUTES,
 } from './gradFill';
 import {
+  TRIMMED_RIBBON_VERT_SRC, TRIMMED_RIBBON_FRAG_SRC, TRIMMED_RIBBON_UNIFORMS, TRIMMED_RIBBON_ATTRIBUTES,
+} from './trimmedRibbon';
+import {
   PATTERN_VERT_SRC,
   PATTERN_FRAG_SRC,
   PATTERN_FILL_UNIFORMS,
@@ -92,6 +95,10 @@ const BATCH_FILL_HULL_SPEC: ProgramSpec = {
 const BATCH_FILL_MATRICES_HULL_SPEC: ProgramSpec = {
   vert: BATCH_VERT_SRC, frag: BATCH_MATRICES_HULL_FRAG_SRC, uniforms: BATCH_HULL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
 };
+const TRIMMED_RIBBON_SPEC: ProgramSpec = {
+  vert: TRIMMED_RIBBON_VERT_SRC, frag: TRIMMED_RIBBON_FRAG_SRC,
+  uniforms: TRIMMED_RIBBON_UNIFORMS, attributes: TRIMMED_RIBBON_ATTRIBUTES,
+};
 export const PATTERN_FILL_SPEC: ProgramSpec = {
   vert: PATTERN_VERT_SRC, frag: PATTERN_FRAG_SRC, uniforms: PATTERN_FILL_UNIFORMS, attributes: PATTERN_FILL_ATTRIBUTES,
 };
@@ -105,7 +112,8 @@ export function createBatchFill(gl: WebGL2RenderingContext): ShaderProgram {
   return program;
 }
 
-/** The batch program's other builds, which a run picks by what it holds. */
+/** The batch program's other builds, which a run picks by what it holds, and
+ *  the trimmed ribbon's, which draws beside the batch. */
 export interface BatchVariants {
   /**
    * Whether a run may hold a hull clip: only where the default framebuffer
@@ -120,6 +128,14 @@ export interface BatchVariants {
    * Always on but in a test that wants the stencil as its reference.
    */
   readonly cuts: boolean;
+  /**
+   * Whether an opaque trimmed stroke too large to batch clips its cached
+   * ribbon in the shader (`draw/clippedTrim.ts`) rather than rebuilding it
+   * trimmed. Always on but in a test that wants the rebuild as its reference.
+   */
+  readonly trimClip: boolean;
+  /** The program that clip draws with (`shaders/trimmedRibbon.ts`). */
+  trimmedRibbon(): ShaderProgram;
   /** The build for a run under several color matrices, holding a hull, or
    *  holding glyphs that need area coverage, in any combination. A run with
    *  none of them draws with `createBatchFill`'s. */
@@ -131,6 +147,8 @@ export interface BatchVariants {
 export class BatchVariantPrograms implements BatchVariants {
   readonly hulls: boolean;
   readonly cuts = true;
+  readonly trimClip = true;
+  private readonly trimmed: LazyProgram;
   private readonly matrices: LazyProgram;
   private readonly hull: LazyProgram;
   private readonly matricesHull: LazyProgram;
@@ -143,6 +161,7 @@ export class BatchVariantPrograms implements BatchVariants {
     this.matrices = new LazyProgram(gl, BATCH_FILL_MATRICES_SPEC);
     this.hull = new LazyProgram(gl, BATCH_FILL_HULL_SPEC);
     this.matricesHull = new LazyProgram(gl, BATCH_FILL_MATRICES_HULL_SPEC);
+    this.trimmed = new LazyProgram(gl, TRIMMED_RIBBON_SPEC);
     this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gl, {
       vert: BATCH_AREA_VERT_SRC,
       frag: batchAreaFragSrc(matrices, hulls),
@@ -157,7 +176,11 @@ export class BatchVariantPrograms implements BatchVariants {
     return (matrices ? this.matricesHull : this.hull).get();
   }
 
+  trimmedRibbon(): ShaderProgram {
+    return this.trimmed.get();
+  }
+
   lazy(): LazyProgram[] {
-    return [this.matrices, this.hull, this.matricesHull, ...this.area];
+    return [this.matrices, this.hull, this.matricesHull, this.trimmed, ...this.area];
   }
 }

@@ -8,7 +8,7 @@
 
 import type { Path } from '@weasel-js/geom';
 import { strokeTrimKey, type Stroke, type VertexWidth } from '@weasel-js/paint';
-import { tessellateStroke, resolveStrokeWidth } from '@weasel-js/stroke';
+import { clipRibbon, tessellateStroke, resolveStrokeWidth, type ClipRibbon } from '@weasel-js/stroke';
 import { strokeInsets } from '@weasel-js/stroke';
 import { metricKey, type ScreenSpace, type StrokeSpaces } from '@weasel-js/stroke';
 import type { InsetLength } from '@weasel-js/stroke';
@@ -39,14 +39,15 @@ export function quantizeStrokeScale(px: number, scale: number): number {
   return 2 ** (Math.round(Math.log2(scale) * stepsPerOctave) / stepsPerOctave);
 }
 
-interface StrokeEntry {
-  readonly mesh: Mesh;
+interface StrokeEntry<T = Mesh> {
+  readonly mesh: T;
   /** Compared by reference — long enough that stringifying it per frame would
    *  cost what the cache saves. */
   readonly vertexWidths: VertexWidth[] | undefined;
 }
 
 let cache = new WeakMap<Path, Map<string, StrokeEntry>>();
+let clips = new WeakMap<Path, Map<string, StrokeEntry<ClipRibbon>>>();
 
 /** The stroke parameters that change the ribbon's geometry. `paint` and
  *  `vertexColors` are absent on purpose: both are applied over the same
@@ -85,26 +86,41 @@ export function strokeMesh(
   flattenTolerance: number | undefined,
   spaces: StrokeSpaces = {},
 ): Mesh {
-  let byConfig = cache.get(path);
-  if (byConfig === undefined) {
-    byConfig = new Map<string, StrokeEntry>();
-    cache.set(path, byConfig);
-  }
-
-  const key = configKey(stroke, flattenTolerance, spaces);
-  const entry = byConfig.get(key);
-  if (entry !== undefined && entry.vertexWidths === stroke.vertexWidths) {
-    return entry.mesh;
-  }
-
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  const insets = strokeInsets(stroke, width);
-  const mesh = tessellateStroke(path, stroke, {
-    flattenTolerance,
-    startInset: insetIn(insets.start, spaces.start, spaces.ribbon),
-    endInset: insetIn(insets.end, spaces.end, spaces.ribbon),
-    metric: spaces.ribbon?.metric,
+  return cached(cache, path, stroke, configKey(stroke, flattenTolerance, spaces), () => {
+    const insets = strokeInsets(stroke, resolveStrokeWidth(stroke.width ?? 1, 1));
+    return tessellateStroke(path, stroke, {
+      flattenTolerance,
+      startInset: insetIn(insets.start, spaces.start, spaces.ribbon),
+      endInset: insetIn(insets.end, spaces.end, spaces.ribbon),
+      metric: spaces.ribbon?.metric,
+    });
   });
+}
+
+/**
+ * The ribbon every trim of `stroke` along `path` is clipped from, for a stroke
+ * whose ribbon and heads are all built in world. One entry serves every trim,
+ * which is what lets a trim animate without a rebuild.
+ */
+export function strokeClipRibbon(path: Path, stroke: Stroke, flattenTolerance: number | undefined): ClipRibbon {
+  const untrimmed: Stroke = { ...stroke, trim: undefined };
+  return cached(clips, path, stroke, configKey(untrimmed, flattenTolerance, {}), () => {
+    const insets = strokeInsets(stroke, resolveStrokeWidth(stroke.width ?? 1, 1));
+    return clipRibbon(path, untrimmed, { flattenTolerance, startInset: insets.start, endInset: insets.end });
+  });
+}
+
+function cached<T>(
+  into: WeakMap<Path, Map<string, StrokeEntry<T>>>, path: Path, stroke: Stroke, key: string, build: () => T,
+): T {
+  let byConfig = into.get(path);
+  if (byConfig === undefined) {
+    byConfig = new Map<string, StrokeEntry<T>>();
+    into.set(path, byConfig);
+  }
+  const entry = byConfig.get(key);
+  if (entry !== undefined && entry.vertexWidths === stroke.vertexWidths) return entry.mesh;
+  const mesh = build();
   // Only a new key grows the map; replacing one under a churning
   // `vertexWidths` must not evict the other configurations alongside it.
   if (entry === undefined && byConfig.size >= STROKE_CONFIGS_PER_PATH) byConfig.clear();
@@ -120,4 +136,5 @@ function insetIn(length: number, head: ScreenSpace | undefined, ribbon: ScreenSp
 /** Test helper. Do not call from product code. */
 export function _resetStrokeMeshCacheForTests(): void {
   cache = new WeakMap();
+  clips = new WeakMap();
 }

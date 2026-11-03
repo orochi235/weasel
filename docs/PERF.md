@@ -106,13 +106,6 @@ When work merges, retire its entry here in the same change.
 
 ## Animation
 
-- **(P3) [agent] An animating stroke trim rebuilds its ribbon and heads every frame.** `StrokeTrim`
-  (`docs/superpowers/specs/2026-11-01-stroke-trim-design.md`) keys the stroke mesh and marker caches,
-  so each tween step misses both. A dashed, trimmed stroke under a metric (or with an inset in another
-  space) also insets its untrimmed copy a second time each rebuild, to measure the dash decision's
-  length. Carry arc length on each ribbon vertex and clip in the shader, so a
-  changing trim is a uniform.
-  Closes when a trim tween on a 1,000-anchor path makes no stroke-mesh cache miss after its first frame.
 - **(P3) [agent] GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts. Deferred from
   `docs/specs/2026-05-04-animation-primitive-design.md`.
   Closes when a running animation can be handed to `Element.animate` and a spec shows that path holding

@@ -90,7 +90,7 @@ export function windowTrim(polylines: readonly Polyline[], path: Path, trim: Str
 
 /** `pl` with its closing edge drawn out: the first point repeated at the end,
  *  as the anchor the closing edge reaches. */
-function opened(pl: Polyline): Polyline {
+export function opened(pl: Polyline): Polyline {
   const n = pl.points.length / 2;
   const { anchorA: A, anchorB: B, anchorT: T, widths: W, offsets: O } = pl;
   const end = closingAnchor(pl) ?? A?.[0] ?? 0;

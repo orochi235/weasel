@@ -10,11 +10,20 @@ export interface GLMeshHandle {
   readonly anchorT?: Float32Array;
 }
 
+/** A per-vertex attribute a mesh's VAO also records, for the one program
+ *  that draws that mesh. */
+export interface MeshAttribute {
+  readonly location: number;
+  readonly size: number;
+  readonly data: Float32Array;
+}
+
 /** Resources to release when a Mesh is reclaimed by GC. */
 interface MeshResources {
   vao: WebGLVertexArrayObject;
   vbo: WebGLBuffer;
   ibo: WebGLBuffer;
+  extra?: WebGLBuffer;
 }
 
 /**
@@ -55,12 +64,11 @@ export class GLMeshCache {
     });
   }
 
-  handleFor(mesh: Mesh): GLMeshHandle {
+  handleFor(mesh: Mesh, attribute?: MeshAttribute): GLMeshHandle {
     const cached = this.map.get(mesh);
     if (cached) return cached;
-    const { handle, vbo, ibo } = this.upload(mesh);
+    const { handle, resources } = this.upload(mesh, attribute);
     this.map.set(mesh, handle);
-    const resources = { vao: handle.vao, vbo, ibo };
     this.persistent.add(resources);
     this.finalizer.register(mesh, resources, mesh);
     return handle;
@@ -71,9 +79,9 @@ export class GLMeshCache {
    * by fresh GL resources that the renderer frees at the end of the current
    * frame via `freeTransient()`, so transient meshes never wait on GC.
    */
-  uploadTransient(mesh: Mesh): GLMeshHandle {
-    const { handle, vbo, ibo } = this.upload(mesh);
-    this.transientThisFrame.push({ vao: handle.vao, vbo, ibo });
+  uploadTransient(mesh: Mesh, attribute?: MeshAttribute): GLMeshHandle {
+    const { handle, resources } = this.upload(mesh, attribute);
+    this.transientThisFrame.push(resources);
     return handle;
   }
 
@@ -85,10 +93,10 @@ export class GLMeshCache {
    * would wait on GC. The transient upload does not populate the persistent
    * map, so steady-state reuse begins on the third frame.
    */
-  uploadRecurring(mesh: Mesh): GLMeshHandle {
-    if (this.seen.has(mesh)) return this.handleFor(mesh);
+  uploadRecurring(mesh: Mesh, attribute?: MeshAttribute): GLMeshHandle {
+    if (this.seen.has(mesh)) return this.handleFor(mesh, attribute);
     this.seen.add(mesh);
-    return this.uploadTransient(mesh);
+    return this.uploadTransient(mesh, attribute);
   }
 
   /**
@@ -102,11 +110,7 @@ export class GLMeshCache {
       this.transientThisFrame.length = 0;
       return;
     }
-    for (const r of this.transientThisFrame) {
-      gl.deleteVertexArray(r.vao);
-      gl.deleteBuffer(r.vbo);
-      gl.deleteBuffer(r.ibo);
-    }
+    for (const r of this.transientThisFrame) release(gl, r);
     this.transientThisFrame.length = 0;
   }
 
@@ -126,11 +130,7 @@ export class GLMeshCache {
       this.pendingDeletes.length = 0;
       return;
     }
-    for (const r of this.pendingDeletes) {
-      gl.deleteVertexArray(r.vao);
-      gl.deleteBuffer(r.vbo);
-      gl.deleteBuffer(r.ibo);
-    }
+    for (const r of this.pendingDeletes) release(gl, r);
     this.pendingDeletes.length = 0;
   }
 
@@ -159,7 +159,7 @@ export class GLMeshCache {
     this.pendingDeletes.push(resources);
   }
 
-  private upload(mesh: Mesh): { handle: GLMeshHandle; vbo: WebGLBuffer; ibo: WebGLBuffer } {
+  private upload(mesh: Mesh, attribute?: MeshAttribute): { handle: GLMeshHandle; resources: MeshResources } {
     const gl = this.gl;
     const vao = gl.createVertexArray();
     if (!vao) throw new Error('createVertexArray returned null');
@@ -172,6 +172,16 @@ export class GLMeshCache {
 
     gl.enableVertexAttribArray(POSITION_ATTRIBUTE_LOCATION);
     gl.vertexAttribPointer(POSITION_ATTRIBUTE_LOCATION, 2, gl.FLOAT, false, 0, 0);
+
+    let extra: WebGLBuffer | undefined;
+    if (attribute) {
+      extra = gl.createBuffer() ?? undefined;
+      if (!extra) throw new Error('createBuffer (attribute) returned null');
+      gl.bindBuffer(gl.ARRAY_BUFFER, extra);
+      gl.bufferData(gl.ARRAY_BUFFER, attribute.data, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(attribute.location);
+      gl.vertexAttribPointer(attribute.location, attribute.size, gl.FLOAT, false, 0, 0);
+    }
 
     const ibo = gl.createBuffer();
     if (!ibo) throw new Error('createBuffer (IBO) returned null');
@@ -189,8 +199,14 @@ export class GLMeshCache {
         anchorB: mesh.anchorB,
         anchorT: mesh.anchorT,
       },
-      vbo,
-      ibo,
+      resources: { vao, vbo, ibo, ...(extra ? { extra } : {}) },
     };
   }
+}
+
+function release(gl: WebGL2RenderingContext, r: MeshResources): void {
+  gl.deleteVertexArray(r.vao);
+  gl.deleteBuffer(r.vbo);
+  gl.deleteBuffer(r.ibo);
+  if (r.extra) gl.deleteBuffer(r.extra);
 }
