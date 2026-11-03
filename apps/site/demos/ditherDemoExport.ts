@@ -1,6 +1,6 @@
 import {
-  defaultDrawOne, renderSceneToPixels, warmRender, withPoses,
-  type NodeId, type RectPose, type RenderSceneToPixelsArgs, type Scene, type SceneViewDrawOne,
+  defaultDrawOne, renderSceneToPixels, warmRender,
+  type RectPose, type RenderSceneToPixelsArgs, type Scene, type SceneViewDrawOne,
 } from '@weasel-js/core';
 import { ditherPixels, maskToRgba, protectMask, protectRects, type DitherMethod } from '@weasel-js/dither';
 import type { OutputGrid } from '@weasel-js/geom';
@@ -14,8 +14,6 @@ export interface ExportSettings {
   method: DitherMethod;
   threshold: number;
   crisp: Crisp;
-  /** Marks' poses snapped to `grid`, drawn in place of the scene's. */
-  poses?: ReadonlyMap<NodeId, RectPose>;
 }
 
 export interface ExportImage {
@@ -26,14 +24,13 @@ export interface ExportImage {
 
 type DitherScene = Scene<DitherNodeData, DitherLayer, RectPose>;
 type RenderArgs = RenderSceneToPixelsArgs<DitherNodeData, DitherLayer, RectPose>;
-type DrawOne = SceneViewDrawOne<DitherNodeData, DitherLayer, RectPose>;
 
 const WHITE = [255, 255, 255, 255] as const;
 
 /** `renderSceneToPixels` takes no layer filter, so one layer is drawn by
  *  leaving the other's nodes out of `drawOne`. */
-const onLayer = (layer: DitherLayer, draw: DrawOne): DrawOne =>
-  (node, pose, view, ctx) => (node.layer === layer ? draw(node, pose, view, ctx) : []);
+const onLayer = (layer: DitherLayer): SceneViewDrawOne<DitherNodeData, DitherLayer, RectPose> =>
+  (node, pose, view, ctx) => (node.layer === layer ? defaultDrawOne(node, pose, view, ctx) : []);
 
 async function rendered(args: RenderArgs) {
   await warmRender({ render: args });
@@ -44,20 +41,18 @@ async function rendered(args: RenderArgs) {
  *  dithered on the CPU, and painted black on white. */
 export async function exportPage(scene: DitherScene, s: ExportSettings): Promise<ExportImage> {
   const scale = 1 / s.grid.pitch;
-  const draw: DrawOne = withPoses(s.poses, defaultDrawOne);
   const base: RenderArgs = {
     scene,
     sourceRect: { x: 0, y: 0, width: PAGE.width, height: PAGE.height },
     scale: { x: scale, y: scale },
     background: '#ffffff',
-    ...(s.poses ? { drawOne: draw } : {}),
   };
   let mask: Uint8Array;
   let width: number;
   let height: number;
   if (s.crisp === 'layer') {
-    const art = await rendered({ ...base, drawOne: onLayer('art', draw) });
-    const marks = await rendered({ ...base, drawOne: onLayer('marks', draw) });
+    const art = await rendered({ ...base, drawOne: onLayer('art') });
+    const marks = await rendered({ ...base, drawOne: onLayer('marks') });
     ({ width, height } = art);
     mask = ditherPixels(art, { method: s.method, threshold: s.threshold });
     const crisp = ditherPixels(marks, { method: 'threshold', threshold: s.threshold });
@@ -67,7 +62,7 @@ export async function exportPage(scene: DitherScene, s: ExportSettings): Promise
     ({ width, height } = page);
     const marks = [...scene.nodes.values()].filter((n) => n.layer === 'marks') as DitherNode[];
     const protect = s.crisp === 'mask'
-      ? protectMask(protectRects(marks, (n) => protectedRect(n, s.poses?.get(n.id)), s.grid), width, height)
+      ? protectMask(protectRects(marks, protectedRect, s.grid), width, height)
       : undefined;
     mask = ditherPixels(page, { method: s.method, threshold: s.threshold, protect });
   }

@@ -12,7 +12,7 @@ import type { SceneChanges } from './sceneChanges';
 import type {
   SavedScene, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2,
 } from './serializedTypes';
-import type { SceneOptions, UseSceneOptions } from './useSceneOptions';
+import type { SceneOptions, SceneQuantize, UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
 import type { SceneDeclaredFieldSetters } from './declaredFieldSetters';
 import type { SceneEditPasses } from './editPass';
@@ -221,7 +221,7 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> ext
  * default; `TLayer` is the union of layer names.
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
-  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll {
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll, SceneQuantize<TData, TPose> {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];

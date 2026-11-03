@@ -1,8 +1,8 @@
 import {
-  asNodeId, fitViewToBounds, snapPosesToGrid,
-  type Fill, type NodeId, type RectPose, type SceneNode, type View, type ViewportDims,
+  asNodeId, fitViewToBounds, quantizeSize,
+  type Fill, type QuantizeRule, type RectPose, type SceneNode, type View, type ViewportDims,
 } from '@weasel-js/core';
-import type { OutputGrid, Rect } from '@weasel-js/geom';
+import { alignToGrid, pathFromD, snapToPitch, type OutputGrid, type Path, type Rect } from '@weasel-js/geom';
 
 /** A label, in points. */
 export const PAGE = { width: 288, height: 108 } as const;
@@ -11,8 +11,12 @@ export type DitherLayer = 'art' | 'marks';
 export interface DitherNodeData {
   fill: Fill;
   shape?: 'ellipse';
-  /** Marks only: how the node's protected rect grows past it. */
-  mark?: 'bar' | 'rule';
+  /** Marks only: how the node's protected rect grows past it, and how it snaps to the dots. */
+  mark?: 'barcode' | 'rule';
+  /** A barcode's bars, in modules across and one unit tall; the painter fits them to the pose. */
+  path?: Path;
+  /** A barcode's width in modules. */
+  modules?: number;
 }
 export type DitherNode = SceneNode<DitherNodeData, DitherLayer, RectPose>;
 
@@ -72,7 +76,7 @@ const TONE: [string, RectPose, DitherNodeData][] = [
 ];
 
 /** Bar and gap widths in modules, alternating, bar first. Not an encoded symbol. */
-const BARS = [2, 1, 1, 2, 3, 1, 1, 3, 2, 2, 1, 1, 4, 1, 1, 2, 2, 3, 1, 1, 1, 2, 3, 1, 2, 1, 1, 4, 2, 1, 1, 2, 1, 3, 2, 2,
+export const BARS = [2, 1, 1, 2, 3, 1, 1, 3, 2, 2, 1, 1, 4, 1, 1, 2, 2, 3, 1, 1, 1, 2, 3, 1, 2, 1, 1, 4, 2, 1, 1, 2, 1, 3, 2, 2,
   1, 1, 3, 1, 2, 1, 1, 2, 4, 1, 1, 3, 2, 1, 1, 2, 2, 1, 3, 1, 1, 2, 1, 1, 2, 3, 1, 1, 2, 2, 1, 4, 1, 1, 2, 1, 3, 2, 1];
 /** Narrow enough that a bar's edges fall inside a 180 or 300 dpi dot. */
 export const MODULE = 0.55;
@@ -81,20 +85,27 @@ const BAR_HEIGHT = 60;
 const BARCODE_X = 192;
 /** Kept blank either side of the bars, and protected with them. */
 export const QUIET = 8;
-const BARCODE_WIDTH = BARS.reduce((sum, m) => sum + m, 0) * MODULE;
+const MODULES = BARS.reduce((sum, m) => sum + m, 0);
+const BARCODE_WIDTH = MODULES * MODULE;
 const RULE_X = BARCODE_X - QUIET;
 const RULE_WIDTH = BARCODE_WIDTH + 2 * QUIET;
 
-function barNodes(): [string, RectPose, DitherNodeData][] {
-  const out: [string, RectPose, DitherNodeData][] = [];
-  let x = BARCODE_X;
-  BARS.forEach((modules, i) => {
-    const width = modules * MODULE;
-    if (i % 2 === 0) out.push([`bar-${i / 2}`, { x, y: BAR_TOP, width, height: BAR_HEIGHT }, { fill: INK, mark: 'bar' }]);
-    x += width;
+/** The bars as one path, a rect per bar. */
+function barsPath(): Path {
+  let at = 0;
+  const d = BARS.map((m, i) => {
+    const bar = i % 2 === 0 ? `M${at} 0H${at + m}V1H${at}Z` : '';
+    at += m;
+    return bar;
   });
-  return out;
+  return pathFromD(d.join(''));
 }
+
+const BARCODE: [string, RectPose, DitherNodeData] = [
+  'barcode',
+  { x: BARCODE_X, y: BAR_TOP, width: BARCODE_WIDTH, height: BAR_HEIGHT },
+  { fill: INK, mark: 'barcode', path: barsPath(), modules: MODULES },
+];
 
 const RULES: [string, RectPose, DitherNodeData][] = [
   ['rule-a', { x: RULE_X, y: 82, width: RULE_WIDTH, height: 0.5 }, { fill: INK, mark: 'rule' }],
@@ -108,29 +119,36 @@ const node = (layer: DitherLayer) => ([id, pose, data]: [string, RectPose, Dithe
 
 export const INITIAL_NODES: DitherNode[] = [
   ...TONE.map(node('art')),
-  ...barNodes().map(node('marks')),
+  node('marks')(BARCODE),
   ...RULES.map(node('marks')),
 ];
 
-/** What protecting a mark keeps at plain threshold: a bar with the quiet zone
- *  either side of the barcode, a rule with a point around it. Art is left to the dither. */
-export function protectedRect(n: DitherNode, pose?: RectPose): Rect | null {
-  const p = pose ?? n.pose;
+/** What protecting a mark keeps at plain threshold: the barcode with its quiet
+ *  zone either side, a rule with a point around it. Art is left to the dither. */
+export function protectedRect(n: DitherNode): Rect | null {
+  const p = n.pose;
   switch (n.data.mark) {
-    case 'bar': return { x: p.x - QUIET, y: p.y - 1, width: p.width + 2 * QUIET, height: p.height + 2 };
+    case 'barcode': return { x: p.x - QUIET, y: p.y - 1, width: p.width + 2 * QUIET, height: p.height + 2 };
     case 'rule': return { x: p.x - 1, y: p.y - 1, width: p.width + 2, height: p.height + 2 };
     default: return null;
   }
 }
 
-/** The marks' poses on `grid`'s dots: the bars as one run, so every module
- *  prints the same whole number of dots, and each rule with its edges on dot
- *  boundaries and at least one dot thick. */
-export function snapMarks(nodes: Iterable<DitherNode>, grid: OutputGrid): Map<NodeId, RectPose> {
-  const byId = new Map([...nodes].map((n) => [n.id, n]));
-  const marked = (mark: DitherNodeData['mark']) => [...byId.values()].filter((n) => n.data.mark === mark).map((n) => n.id);
-  return snapPosesToGrid((id) => byId.get(id)?.pose, grid, {
-    runs: [{ ids: marked('bar'), module: MODULE }],
-    rects: marked('rule'),
-  });
-}
+/**
+ * The marks on the printer's dots. A barcode's module is a whole number of
+ * dots, so every module prints alike, and its width is that module times its
+ * modules, in the document, so W shows the size it prints. A rule is a whole
+ * number of dots each way, at least one, so a hairline prints. Both are drawn
+ * with their corner on a dot. The art is left to the dither.
+ */
+export const DOT_RULE: QuantizeRule<DitherNodeData, RectPose> = {
+  stored({ data, pose }, grid, anchor) {
+    if (!data.mark) return null;
+    const width = data.modules
+      ? data.modules * snapToPitch(pose.width / data.modules, grid.pitch)
+      : snapToPitch(pose.width, grid.pitch);
+    const height = snapToPitch(pose.height, grid.pitch);
+    return width === pose.width && height === pose.height ? null : { pose: quantizeSize(pose, width, height, anchor) };
+  },
+  drawn: ({ data, pose }, grid) => (data.mark ? alignToGrid(pose, grid) : pose),
+};

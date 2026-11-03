@@ -19,6 +19,7 @@ import { resolveLayoutFrame, runLayoutPass, sceneLayoutSource } from './layoutPa
 import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
 import { placingOnPageRunWrite } from '../pages/placeOnPages';
+import { installQuantize, quantizedSpecs } from './outputGrid';
 import type { SceneOptions } from './useSceneOptions';
 import {
   asNodeId,
@@ -144,7 +145,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     ...reads,
 
-    mintId: generateId,
+    mintId: generateId, quantize: options.quantize,
     composition: options.composition ?? (RIGID_POSE_COMPOSITION as PoseComposition<TPose>),
 
     ...placingOnPageRunWrite(() => scene, edits.methods),
@@ -164,7 +165,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     loadState(json, opts) {
       // Validate + map up front: throws on a bad version or registry key before live state is touched.
-      const specs = specsFromSerialized(json, registry, { composition: scene.composition, ...opts });
+      const specs = quantizedSpecs(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.quantize, json.doc);
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
@@ -181,7 +182,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     ...sceneChanges(notifier, selection),
   };
 
-  const initial = initialNodes(registry);
+  const initial = installQuantize(scene, options.quantize, initialNodes(registry), initialDoc);
   if (initial) {
     poseWrites.quiet(() => edits.construct(initial));
     notifier.notify();
@@ -205,6 +206,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
     composition?: SceneOptions<TData, TLayer, TPose>['composition'];
     layoutFrame?: SceneOptions<TData, TLayer, TPose>['layoutFrame'];
+    quantize?: SceneOptions<TData, TLayer, TPose>['quantize'];
   } & SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
   return buildScene(

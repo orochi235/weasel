@@ -1,4 +1,5 @@
-import type { NodeId } from '@weasel-js/routing';
+import type { OutputGrid } from '@weasel-js/geom';
+import type { NodeId, ResizeAnchor } from '@weasel-js/routing';
 import type { PoseComposition } from './composeFrame';
 import type { LayoutFrame } from './layoutTypes';
 import type { SystemLayerSpec } from './layerTypes';
@@ -50,9 +51,44 @@ export interface SceneOptions<TData, TLayer extends string, TPose = RectPose> {
    *  When the accessor isn't known at scene-construction time, wire it after
    *  construction via `scene.setActiveJournalAccessor(fn)`. */
   getActiveJournal?: () => import('@weasel-js/history').Journal | null;
+  /** How the scene keeps nodes on the output grid its document holds under
+   *  `kit:outputGrid`. See {@link QuantizeRule}. Without a grid it does nothing. */
+  quantize?: QuantizeRule<TData, TPose>;
   /** Re-render the host on every scene mutation. Default `true`. Set `false`
    *  when the scene is read by a frame loop rather than by a render — a game
    *  loop, a simulation — and nothing in the host's DOM derives from it.
    *  Read by `useScene`; `createScene` ignores it. */
   subscribe?: boolean;
+}
+
+/**
+ * How a scene keeps its nodes on an output target's dot grid (`kit:outputGrid`
+ * in `scene.doc`), written by the consumer, which switches on node kind.
+ *
+ * - `stored` answers the values the document holds on the grid, or null when
+ *   none change. The scene runs it on every committed write (after every edit
+ *   pass, in the same undo entry), over every node when the grid changes, on a
+ *   document it constructs or loads, and on a resize's or a move's live
+ *   preview, so the release commits the pose the preview showed. It is handed
+ *   the node's stored pose, and for a resize the side the drag holds
+ *   (`anchor`; absent, the top-left). It must be idempotent: run on its own
+ *   output it returns null, or values equal to what it was given. In
+ *   development the scene checks and warns.
+ * - `drawn` answers where the node is drawn, handed its world pose. Hit-testing,
+ *   selection handles and every other reader keep the stored pose; the two
+ *   differ by under half a dot.
+ */
+export interface QuantizeRule<TData, TPose> {
+  stored?(
+    node: { data: TData; pose: TPose },
+    grid: OutputGrid,
+    anchor?: ResizeAnchor,
+  ): { pose?: TPose; data?: TData } | null;
+  drawn?(node: { data: TData; pose: TPose }, grid: OutputGrid): TPose;
+}
+
+/** The part of `Scene` that carries its {@link QuantizeRule}. */
+export interface SceneQuantize<TData, TPose> {
+  /** See {@link SceneOptions.quantize}. */
+  readonly quantize?: QuantizeRule<TData, TPose>;
 }
