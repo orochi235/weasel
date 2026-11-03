@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithIcons as render } from '../../testing/withIcons';
 import { arcShape, lineShape, type ArcTrackSpec } from '@weasel-js/geom';
@@ -94,6 +94,16 @@ describe('SwatchGrid along a curve', () => {
     const stops = screen.getAllByRole('button').filter((el) => el.tabIndex === 0);
     expect(stops.map((el) => el.getAttribute('aria-label'))).toEqual(['c4']);
     expect(stops[0]).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('two swatches of one color are told apart by id', () => {
+    const onChange = vi.fn();
+    const same = [{ id: 'a', value: '#2a7ab0ff', label: 'A' }, { id: 'b', value: '#2a7ab0ff', label: 'B', glyph: 'B' }];
+    render(<SwatchGrid options={same} columns={3} value="b" onChange={onChange} aria-label="Colors" shape={ARCS['top, clockwise'][0]} />);
+    expect(screen.getByRole('button', { name: 'B' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'A' })).not.toHaveAttribute('aria-current');
+    fireEvent.click(screen.getByRole('button', { name: 'A' }));
+    expect(onChange).toHaveBeenCalledWith('a', same[0]);
   });
 
   test('rows past where the arc bends too tight share the last ring that fits', () => {

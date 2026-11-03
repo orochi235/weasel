@@ -4,7 +4,9 @@
   grid-template-columns: repeat(var(--tracks), minmax(0, 1fr));
 }
 
+/* The glyph's box; a ring's swatch already is one, placed absolutely by its ring. */
 .grid > .swatch {
+  position: relative;
   grid-column-end: span 2;
 }
 
@@ -27,6 +29,20 @@
     var(--wzl-checker-layer);
   background-clip: padding-box;
   cursor: pointer;
+}
+
+/* Out of flow, so a glyph never sizes its swatch. */
+.glyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--swatch-ink, inherit);
+  font-size: var(--wzl-font-size-2xs);
+  font-weight: var(--wzl-font-weight-bold);
+  line-height: 1;
+  pointer-events: none;
 }
 
 .swatch:hover {

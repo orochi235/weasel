@@ -41,6 +41,20 @@ describe('SwatchStrip', () => {
     expect(screen.getByText('No recent colors')).toBeInTheDocument();
   });
 
+  it('hands back the color of a palette swatch keyed by id, and marks only the first swatch of the current color', () => {
+    const onChange = vi.fn();
+    const TWINS: SwatchPalette = {
+      id: 'twins',
+      name: 'Twins',
+      colors: [{ id: 'light', value: '#2a7ab0ff', label: 'Light', glyph: 'A', ink: '#ffffffff' }, { id: 'dark', value: '#2a7ab0ff', label: 'Dark' }],
+    };
+    render(<SwatchStrip palettes={[TWINS]} value="#2A7AB0" onChange={onChange} />);
+    expect(screen.getByRole('button', { name: 'Light' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'Dark' })).not.toHaveAttribute('aria-current');
+    fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
+    expect(onChange).toHaveBeenCalledWith('#2a7ab0ff', TWINS.colors[1]);
+  });
+
   it('leaves the recent row out with no store', () => {
     render(<SwatchStrip palettes={[WARM]} onChange={() => {}} />);
     expect(screen.queryByRole('group', { name: 'Recent colors' })).toBeNull();
@@ -52,7 +66,7 @@ describe('SwatchStrip', () => {
     const onChange = vi.fn();
     render(<SwatchStrip store={store} palettes={[WARM]} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Orange' }));
-    expect(onChange).toHaveBeenCalledWith('#ff8800ff');
+    expect(onChange).toHaveBeenCalledWith('#ff8800ff', WARM.colors[1]);
     const first = within(recents()).getAllByRole('button')[0];
     expect(first).toHaveAccessibleName('#ff8800');
   });

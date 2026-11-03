@@ -4,7 +4,7 @@ import { AlongContext } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { useInlineDirection } from '../Along/useRowRun';
 import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunRow';
-import { SwatchButton, swatchesIn, swatchKeyDown, useSwatchApply, type SwatchApply } from './SwatchButton';
+import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, type SwatchApply, type SwatchChange } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
 import { inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings, type SwatchRing } from './ringPlan';
 import s from './SwatchGrid.module.css';
@@ -15,6 +15,7 @@ export interface SwatchRingGroup {
   key: string;
   label?: string;
   options: readonly SwatchGridOption[];
+  /** The id of the swatch to mark current. */
   value?: string | null;
   columns: number;
   /** First on the group's first ring, before its swatches: a heading, a picker. */
@@ -29,8 +30,8 @@ export interface SwatchRingsProps {
   shape: TrackShape;
   align: RunAlign;
   groups: readonly SwatchRingGroup[];
-  onChange: (value: string | null) => void;
-  onAltChange?: (value: string | null) => void;
+  onChange: SwatchChange;
+  onAltChange?: SwatchChange;
   className?: string;
 }
 
@@ -104,7 +105,7 @@ interface RingEntry {
 function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rings: readonly SwatchRing[]; align: RunAlign; apply: SwatchApply }): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const { options, value, columns, lead, empty } = group;
-  const current = value === undefined ? -1 : options.findIndex((o) => o.value === value);
+  const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
   const tabStop = current >= 0 ? current : 0;
   const swatches = () => swatchesIn(root.current);
 
@@ -112,7 +113,7 @@ function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rin
     key: String(i),
     render: (place) => (
       <SwatchButton
-        key={options[i]!.value ?? `none-${i}`}
+        key={swatchId(options[i]!) ?? `none-${i}`}
         option={options[i]!}
         tabStop={i === tabStop}
         current={i === current}
