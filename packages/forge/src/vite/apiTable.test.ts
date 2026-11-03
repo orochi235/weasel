@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { ApiTable } from '../story/api';
+import type { ReadApi } from './apiTable';
 import { createPropReader, type PropReader } from './propTypes';
 
 describe('PropReader.api', () => {
@@ -11,8 +11,8 @@ describe('PropReader.api', () => {
   let reader: PropReader;
   const at = (name: string) => join(root, name);
   const story = (name: string, body: string) => writeFileSync(at(`${name}.stories.ts`), body);
-  const api = (name: string, fallback?: string): ApiTable | null => reader.api(at(`${name}.stories.ts`), fallback);
-  const prop = (table: ApiTable | null, name: string) => table?.props.find((p) => p.name === name);
+  const api = (name: string, fallback?: string): ReadApi | null => reader.api(at(`${name}.stories.ts`), fallback);
+  const prop = (table: ReadApi | null, name: string) => table?.props.find((p) => p.name === name);
 
   beforeAll(async () => {
     root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-api-')));

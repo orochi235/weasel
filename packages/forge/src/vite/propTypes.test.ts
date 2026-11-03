@@ -69,8 +69,13 @@ const Wrapped = (_props: DomProps & BaseProps & Plumbing & { own?: boolean }) =>
 export default { component: Wrapped };
 `,
     );
+    writeFileSync(at('meta.ts'), `export interface Meta { title?: string; component?: unknown }\n`);
+    writeFileSync(
+      at('typed.stories.ts'),
+      `import type { Meta } from './meta';\nimport { Chip } from './Chip';\nconst meta: Meta = { component: Chip };\nexport default meta;\n`,
+    );
     writeFileSync(at('bare.stories.ts'), `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chip.stories.ts', 'legacy.stories.ts', 'bare.stories.ts', 'wrapped.stories.ts'].map(at);
+    const stories = ['chip.stories.ts', 'legacy.stories.ts', 'bare.stories.ts', 'wrapped.stories.ts', 'typed.stories.ts'].map(at);
     all = stories;
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
@@ -96,6 +101,10 @@ export default { component: Wrapped };
       fill: expect.any(Object),
     });
     expect(table?.argTypes.size?.options).toHaveLength(2);
+  });
+
+  it('reads the component a typed meta is given, not the type its property is declared with', () => {
+    expect(reader.read(at('typed.stories.ts'))?.argTypes.disabled).toEqual({ control: { type: 'boolean' } });
   });
 
   it('gives no control to a ReactNode, which takes elements a text control cannot stand for', () => {

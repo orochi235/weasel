@@ -298,6 +298,20 @@ file's own package's tags (`@scope/pkg@1.2.0`) and unscoped ones (`v1.2.0`).
 A file not yet in a tagged release reads `Unreleased`, and a file git has
 never committed shows nothing. A custom page gets it as `History`.
 
+Beside the stories, the page lists the component's API: each prop with its
+type as written, whether it is required, its default and its JSDoc, then what
+its `ref` takes. A ref to a handle lists the handle's methods and properties; a
+ref to an element names the element. A default is the one the component's own
+function gives when it destructures its props, else the prop's `@default` tag.
+Props declared in React's or TypeScript's own types, or in a file the
+`propControls` `skip` option matches, are counted, one line per type that
+declares them, rather than listed. The API is read through the project's
+TypeScript, from the component the meta's `component` names; a component the
+story file declares itself, such as a wrapper mapping args to props, gives way
+to the import the title's last segment names, as it does for the dependency
+lists. Below 560 pixels of page width the API moves above the stories. The
+plugin's `api: false` turns it off. A custom page gets it as `Api`.
+
 ## Galleries
 
 A story file that catalogs many components, or every permutation of one, tags
