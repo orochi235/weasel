@@ -136,19 +136,23 @@ When work merges, retire its entry here in the same change.
   subpath.
   Closes when the maintainer has ruled on making the flag forge's default and the ruling is in place.
 
-- **(P3) [agent] A forge dev server's native memory climbs with every forced re-bundle, and rolldown holds it.** A
-  saved package file restarts the server and forces the dep optimizer to re-bundle the workspace packages
-  (`restartLeavingNothing`, `scripts/vite-prebundle.ts`). Measured on teitou (2026-10-29) with
-  `scripts/probe-dev-restarts.ts`: RSS went from 0.47 GB to 2.34 GB over 8 restarts with the JS heap at 100–140 MB,
-  the growth in mimalloc's memory (rolldown's and oxc's): 0.8 GB at the first forced re-bundle, about 100 MB at
-  each one after. Restarting without forcing one (`--keep-deps`) grows RSS about 35 MB a restart.
-  `scripts/probe-optimize-deps.ts` reproduces it with no server: 16 forced `optimizeDeps` runs in one process took
-  RSS from 0.32 GB to 2.28 GB, heap flat at 35 MB, still about 35 MB a run at the end; `MIMALLOC_PURGE_DELAY=0` cut
-  the footprint by a quarter without stopping the climb. Not traced inside rolldown (1.2.11); that script is the
-  repro for an upstream report. Separately, every server's id-resolver plugin containers outlive it, held from a
-  global handle on the `onWarn` callback rolldown's `viteResolvePlugin` keeps (heap snapshot retainer paths);
-  emptying the outgoing config left 24 native plugin wrappers after 6 restarts against 44 after 4, and RSS where it
-  was. Records:
-  `scripts/probe-dev-restarts.runs.jsonl`.
-  Closes when `probe-optimize-deps.ts` grows RSS under 50 MB a run over 16 forced runs on teitou, from a
-  newer rolldown or a workaround in `scripts/vite-prebundle.ts`.
+- **(P3) [agent] A forge dev server keeps about 2.5 GB of native memory after its first thirty forced re-bundles.**
+  A saved package file restarts the server and forces the dep optimizer to re-bundle the workspace packages
+  (`restartLeavingNothing`, `scripts/vite-prebundle.ts`). The memory is mimalloc's, the allocator rolldown and oxc
+  use, and it levels off rather than leaking. On teitou with rolldown 1.2.16 (2026-11-03),
+  `scripts/probe-optimize-deps.ts` took the physical footprint from 0.26 GB to 1.23 GB at the first forced run,
+  2.15 GB at the 16th and 2.46 GB by the 32nd, then held there through the 100th; the JS heap stayed at 34 MB. At
+  exit mimalloc reported 2.6 GiB committed and 416 MiB still allocated. `scripts/probe-rolldown-rebuilds.mjs` runs
+  the same loop on rolldown's own API with a generated 1500-module input and no vite. It shows the same curve
+  on 1.2.16 and 1.2.11: on macOS the footprint levels off at 0.45–0.6 GB after about 60 builds, and under Linux
+  (docker, 5 CPUs) RSS levels off at 0.3–0.4 GB after about 10. With 1.2.16, mimalloc still had it committed with
+  under 4 MiB allocated, and esbuild on the same input stayed flat. So rolldown is not leaking, and no upstream
+  issue exists for this. vmmap prints mimalloc's regions as `IOAccelerator`, because mimalloc's default `os_tag` is
+  100, VM_MEMORY_IOACCELERATOR. Both probes now retag them through `scripts/lib/vmmap-regions.mjs`.
+  `MIMALLOC_PURGE_DELAY=0` cut the footprint by a quarter (rolldown 1.2.11, 16 runs). Separately, every server's
+  id-resolver plugin containers outlive it, held from a global handle on the `onWarn` callback rolldown's
+  `viteResolvePlugin` keeps (heap snapshot retainer paths). Emptying the outgoing config left 24 native plugin
+  wrappers after 6 restarts, against 44 after 4, and RSS where it was. Records:
+  `scripts/probe-dev-restarts.runs.jsonl`, `scripts/probe-rolldown-rebuilds.runs.jsonl`.
+  Closes when `probe-optimize-deps.ts --runs 40` on teitou ends under 1 GB of footprint, for example by
+  re-bundling in a child process that exits, or when the maintainer rules the high-water mark acceptable.

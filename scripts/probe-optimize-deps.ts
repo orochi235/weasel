@@ -5,14 +5,18 @@
  *   node --expose-gc scripts/probe-optimize-deps.ts [--config apps/forge/vite.config.ts] [--runs 8] [--fresh-config]
  *     [--out <dir>, default node_modules/.probe-optimize-deps, cleared on each run]
  *
- * Writes one JSON line per run to `<out>/runs.jsonl` as it finishes. `--fresh-config` resolves the config before every
- * run instead of once, as a server restart does.
+ * Writes one JSON line per run to `<out>/runs.jsonl` as it finishes, with mimalloc's dirty memory on macOS
+ * (`lib/vmmap-regions.mjs`). `--fresh-config` resolves the config before every run instead of once, as a server
+ * restart does.
  */
-import { execFileSync } from 'node:child_process';
-import { appendFileSync, mkdirSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { cpus, hostname, loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { nativeRegions, retagMimalloc } from './lib/vmmap-regions.mjs';
+
+retagMimalloc();
 
 const { values } = parseArgs({
   options: {
@@ -30,17 +34,9 @@ mkdirSync(out, { recursive: true });
 const runs = Number(values.runs);
 
 const mb = (n: number) => +(n / 2 ** 20).toFixed(1);
-const footprint = () => {
-  if (process.platform !== 'darwin') return undefined;
-  try {
-    const text = execFileSync('vmmap', ['--summary', String(process.pid)], { encoding: 'utf8', maxBuffer: 2 ** 26 });
-    const m = /^Physical footprint:\s+([\d.]+)([KMG])/m.exec(text);
-    const mimalloc = /^IOAccelerator\s+\S+\s+\S+\s+(\S+)/m.exec(text)?.[1];
-    return { footprint: m ? `${m[1]}${m[2]}` : undefined, mimallocDirty: mimalloc };
-  } catch { return undefined; }
-};
-
 const { optimizeDeps, resolveConfig } = await import('vite');
+const fromVite = createRequire(import.meta.resolve('vite'));
+const rolldownVersion: string = JSON.parse(readFileSync(fromVite.resolve('rolldown/package.json'), 'utf8')).version;
 const configure = () => resolveConfig({ configFile: resolve(values.config), logLevel: 'error' }, 'serve');
 let config = await configure();
 for (let run = 0; run <= runs; run++) {
@@ -54,12 +50,15 @@ for (let run = 0; run <= runs; run++) {
   gc();
   const m = process.memoryUsage();
   const row = {
-    run, ms: Math.round(performance.now() - t), heapUsedMB: mb(m.heapUsed), rssMB: mb(m.rss), ...footprint(),
+    run, ms: Math.round(performance.now() - t), heapUsedMB: mb(m.heapUsed), rssMB: mb(m.rss), externalMB: mb(m.external),
+    arrayBuffersMB: mb(m.arrayBuffers), ...nativeRegions(),
     freshConfig: values['fresh-config'], config: values.config, host: hostname(), cores: cpus().length,
-    load1: +loadavg()[0]!.toFixed(2), node: process.version, at: new Date().toISOString(),
+    load1: +loadavg()[0]!.toFixed(2), node: process.version, rolldown: rolldownVersion,
+    mimallocEnv: Object.fromEntries(Object.entries(process.env).filter(([k]) => k.startsWith('MIMALLOC_'))),
+    at: new Date().toISOString(),
   };
   appendFileSync(join(out, 'runs.jsonl'), JSON.stringify(row) + '\n');
   console.log(`onto: progress ${run}/${runs}`);
-  console.log(`${String(run).padStart(2)}/${runs}  heap ${row.heapUsedMB.toFixed(1).padStart(7)} MB  rss ${row.rssMB.toFixed(1).padStart(7)} MB  footprint ${String(row.footprint).padStart(6)}  mimalloc ${String(row.mimallocDirty).padStart(6)}  ${String(row.ms).padStart(6)} ms`);
+  console.log(`${String(run).padStart(2)}/${runs}  heap ${row.heapUsedMB.toFixed(1).padStart(7)} MB  rss ${row.rssMB.toFixed(1).padStart(7)} MB  footprint ${String(row.footprintMB ?? '-').padStart(7)}  mimalloc ${String(row.mimallocDirtyMB ?? '-').padStart(7)}  ${String(row.ms).padStart(6)} ms`);
 }
 process.exit(0);
