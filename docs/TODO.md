@@ -710,6 +710,10 @@ only story runner in the repo.
   In the full fleet run of 7168695bf (2026-11-03) `close` was called once, with no arguments, after Enter
   committed `Nested`; the file passed alone on the fleet minutes later. The failure screenshot did not come home.
   Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
+- **(P3) [agent] `apps/chart` `pipeline.browser.test.tsx`'s "deletes the selected stage from Edit › Delete, and
+  Mod+Z on the canvas brings it back" failed once under load.** In the full fleet run of d266c0bc5 (2026-11-03,
+  node studio) `canvasSettled` (`apps/chart/src/testing/mountChartApp.tsx:47`) returned false; the file passed
+  alone on teitou minutes later. Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
   `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
