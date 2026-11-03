@@ -18,6 +18,7 @@ import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptio
 import { resolveLayoutFrame, runLayoutPass, sceneLayoutSource } from './layoutPass';
 import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
+import { settingPageRun } from '../pages/placeOnPages';
 import type { SceneOptions } from './useSceneOptions';
 import {
   asNodeId,
@@ -147,6 +148,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     composition: options.composition ?? (RIGID_POSE_COMPOSITION as PoseComposition<TPose>),
 
     ...edits.methods,
+    setPageRun: (id, info) => setPageRun(id, info),
     ...recording.methods,
 
     unlocked: (fn) => locks.lifted(fn),
@@ -179,6 +181,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     ...sceneChanges(notifier, selection),
   };
+  const setPageRun = settingPageRun(scene, edits.methods.setPageRun);
 
   const initial = initialNodes(registry);
   if (initial) {

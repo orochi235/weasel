@@ -157,3 +157,18 @@ describe('placeOnPages', () => {
     expect(scene.get('r' as NodeId)!).toMatchObject({ parent: null, pose: { x: 115 } });
   });
 });
+
+describe('turning the pasteboard off', () => {
+  it('puts what sits off every page on the nearest page, in the same undo entry', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    const run = createPageRun(scene, TWO.pages, { ...TWO.layout, pasteboard: true });
+    scene.add(rect('far', 400));
+    const depth = scene.historyEntries().length;
+    scene.setPageRun(run, { ...scene.get(run)!.pageRun!, pasteboard: false });
+    expect(scene.get('far' as NodeId)!).toMatchObject({ parent: 'b', pose: { x: 99 } });
+    expect(scene.historyEntries().length).toBe(depth + 1);
+    scene.undo();
+    expect(scene.get('far' as NodeId)!).toMatchObject({ parent: null, pose: { x: 400 } });
+    expect(scene.get(run)!.pageRun!.pasteboard).toBe(true);
+  });
+});

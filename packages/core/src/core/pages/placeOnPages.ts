@@ -6,7 +6,7 @@ import { sameValue } from '../scene/sameValue';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { AddNodeSpec, NodeId, Scene } from '../scene/types';
 import { treePreorder } from '../scene/treeOrder';
-import { pageNodeOf, pageRunOf, placedPagesOf } from './pageNodes';
+import { pageNodeOf, pageRunOf, placedPagesOf, type PageRunInfo } from './pageNodes';
 import {
   asFollower, followerLandings, keepOnPage, pageForBounds, pasteboardOn, type FollowerOf,
 } from './pagePlacement';
@@ -74,6 +74,22 @@ export function placeOnPages<TData, TLayer extends string, TPose>(
   const descriptor = options.descriptor ?? AUTO_POSE_DESCRIPTOR;
   const content = roots.filter((id) => id !== run && s.get(id)?.parent == null);
   moveIn(s, destinations(s, content, descriptor), run, descriptor);
+}
+
+/** The page run's `setPageRun`, given the raw write: one that turns the run's pasteboard off also puts what
+ *  sits at the top of the tree on the pages (`placeOnPages`), in the same batch. */
+export function settingPageRun<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  write: (id: NodeId, info: PageRunInfo | null) => void,
+): (id: NodeId, info: PageRunInfo | null) => void {
+  return (id, info) => {
+    const closes = scene.get(id)?.pageRun?.pasteboard === true && info !== null && info.pasteboard !== true;
+    if (!closes) return write(id, info);
+    scene.batch('Set page run', () => {
+      write(id, info);
+      placeOnPages(scene, scene.roots.filter((root) => root !== id));
+    });
+  };
 }
 
 /** Add `specs`, placed in world space, and put each root among them on its page (`placeOnPages`, with
