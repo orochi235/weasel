@@ -2,6 +2,9 @@
   "name": "@weasel-js/devtools",
   "version": "1.16.1",
   "description": "A devtools panel for weasel canvases: each canvas's scene tree, state, dispatch trace and frame stats, read and steered over the devtools hook's protocol.",
+  "weasel": {
+    "tier": "plugin"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": [

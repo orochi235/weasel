@@ -2,6 +2,9 @@
   "name": "@weasel-js/paint",
   "version": "1.16.1",
   "description": "Paint vocabulary for weasel: Paint, Stroke, gradients, dashes. Plain data, no renderer.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

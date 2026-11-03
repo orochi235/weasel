@@ -23,6 +23,7 @@
       "@weasel-js/clock",
       "@weasel-js/stroke",
       "@weasel-js/renderer",
+      "@weasel-js/dither",
       "@weasel-js/pdf",
       "@weasel-js/storage",
       "@weasel-js/prefs",

@@ -2,6 +2,9 @@
   "name": "@weasel-js/plot",
   "version": "1.16.1",
   "description": "Charts on weasel's scene graph: scales, axes, and marks that keep their data, and chart specs compiled to them, edited by dragging the marks.",
+  "weasel": {
+    "tier": "plugin"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

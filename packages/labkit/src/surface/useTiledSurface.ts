@@ -1,4 +1,5 @@
-import { useLatest, useVisibleRaf, watchDevicePixelRatio } from '@weasel-js/core';
+import { watchDevicePixelRatio } from '@weasel-js/core/engine';
+import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { createEmitter } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { measureTiles, type SurfaceScope, sameRects, sameScope, scopeHolds } from './measureTiles';

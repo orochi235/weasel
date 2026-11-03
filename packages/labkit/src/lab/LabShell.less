@@ -28,6 +28,9 @@
   // beside it are not, so centering them leaves every label sitting off the
   // title's baseline by half the difference in leading.
   align-items: baseline;
+  // With a menu bar beside the title, a narrow lab runs out of room: the actions take a row of
+  // their own rather than widening the page.
+  flex-wrap: wrap;
   gap: var(--wzl-space-md);
   padding: var(--wzl-space-sm) var(--wzl-space-md);
   background: var(--wzl-surface-raised);

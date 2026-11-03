@@ -1,8 +1,4 @@
-import {
-  gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor,
-  type SnapBegin, type SnapCandidateMark, type SnapOutcome, type SnapOutcomeStore,
-  type SnapProbeAt, type SnapSession, type SnapSource,
-} from '@weasel-js/core';
+import { gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor, type SnapBegin, type SnapCandidateMark, type SnapOutcome, type SnapOutcomeStore, type SnapProbeAt, type SnapSession, type SnapSource } from '@weasel-js/core/engine';
 import { closestOnFlat, resolveSnap, type Flat, type SnapCandidate } from '@weasel-js/geom/nd';
 import {
   add, cross, dot, intersectRayPlane, len, normalize, pointOnRay, sub, type Vec3,

@@ -304,6 +304,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Rendering & paint
 
+- **(P3) [agent] `renderSceneToPixels` cannot render some of a scene's layers.** The dithering
+  demo's "By layer" export dithers the `art` layer and thresholds `marks`, so it renders the scene
+  twice, each time with a `drawOne` that returns nothing for the other layer's nodes
+  (`apps/site/demos/ditherDemoExport.ts`, 2026-11-03). A `layers` argument naming which scene layers
+  to draw, in the form a `LayerGroup` names them, makes that one call per layer with no filter.
+  Closes when `renderSceneToPixels` takes it and the demo's export uses it.
+
 - **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
   the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
   (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code
@@ -327,7 +334,7 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [agent] Multiple render targets, with GPU picking as the first payload.** The renderer
   writes one color attachment per draw (no `drawBuffers` in `packages/renderer`), so per-pixel side
   data needs a second draw. Agreed 2026-11-03 to build it after dithering and output-grid clamping
-  (`docs/superpowers/specs/2026-11-03-dither-design.md`). First payload: a node-id buffer (an
+  (`@weasel-js/dither`'s `protect` input). First payload: a node-id buffer (an
   unblended integer attachment) so hit-testing sees what custom shaders and effects paint; second,
   coverage masks, which let dither protection use exact coverage instead of rects. Costs to design
   for: custom fragment shaders must write the extra output (or the prelude injects it), WebGL2 core

@@ -2,6 +2,9 @@
   "name": "@weasel-js/headless",
   "version": "1.16.1",
   "description": "Render a scene to pixels from Node: renderSceneToPixels in a headless Chromium page, kept open across renders.",
+  "weasel": {
+    "tier": "other"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": [

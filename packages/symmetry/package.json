@@ -2,6 +2,9 @@
   "name": "@weasel-js/symmetry",
   "version": "1.16.1",
   "description": "Live symmetry groups for weasel: a container whose mirrored, rotated and repeated copies are drawn from its real children, so every edit reaches every copy.",
+  "weasel": {
+    "tier": "plugin"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

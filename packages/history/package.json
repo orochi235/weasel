@@ -2,6 +2,9 @@
   "name": "@weasel-js/history",
   "version": "1.16.1",
   "description": "Undo/redo history with scoped sub-history (Journal) primitive. No React, no DOM.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

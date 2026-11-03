@@ -297,6 +297,7 @@ export type UiIconName =
   | 'curveAsymptote'
   | 'd4'
   | 'd6'
+  | 'cube'
   | 'd8'
   | 'd12'
   | 'd20';
@@ -712,6 +713,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
     "names": [
       "d4",
       "d6",
+      "cube",
       "d8",
       "d12",
       "d20"
@@ -1014,6 +1016,7 @@ declare module '@weasel-js/icons' {
     'ui:curveAsymptote': true;
     'ui:d4': true;
     'ui:d6': true;
+    'ui:cube': true;
     'ui:d8': true;
     'ui:d12': true;
     'ui:d20': true;

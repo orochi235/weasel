@@ -3,6 +3,7 @@
   "version": "1.16.1",
   "description": "WebGL-rendered UI widgets that composite into a weasel canvas",
   "weasel": {
+    "tier": "plugin",
     "needs": ["webgl2"]
   },
   "license": "MIT",

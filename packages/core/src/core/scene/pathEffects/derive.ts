@@ -11,7 +11,7 @@
  */
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { derivedPartsOf, pathFromParts, type DerivedPart } from '../derivedParts';
-import { fontGeneration, noteFontRead, withFontReads } from '../fontReads';
+import { noteOutsideRead, outsideGeneration, withOutsideReads } from '../outsideReads';
 import { samePoseValue, snapshotPose } from '../poseSnapshot';
 import type { DerivedDep, NodeId } from '../types';
 import { effectParts, type PathEffect } from './effects';
@@ -43,9 +43,9 @@ interface Derived {
   paths: (Path | null)[];
   inherited: unknown[];
   path: Path | null;
-  /** The face generation it was worked out under, or `null` when it read no
-   *  glyph outlines. */
-  faces: number | null;
+  /** The outside generation it was worked out under, or `null` when it read
+   *  nothing outside the scene. */
+  outside: number | null;
 }
 
 /** The derivations of a path effect whose sources `read` reads. */
@@ -59,8 +59,8 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
     const held = results.get(node);
     if (held !== undefined && current(held, node, deps)) return held;
     const effect = pathEffectOf(node);
-    const generation = fontGeneration();
-    const { value: parts, fonts } = withFontReads(() => (effect === null
+    const generation = outsideGeneration();
+    const { value: parts, outside } = withOutsideReads(() => (effect === null
       ? null
       : effectParts(effect, deps.map((d) => (d === undefined ? null : read(d))))));
     const result: Derived = {
@@ -71,7 +71,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
       paths: deps.map((d) => d?.path ?? null),
       inherited: deps.map((d) => d?.inherited),
       path: parts === null ? null : pathFromParts(parts),
-      faces: fonts ? generation : null,
+      outside: outside ? generation : null,
     };
     results.set(node, result);
     return result;
@@ -89,7 +89,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
 
 function current(held: Derived, node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): boolean {
   if (held.data !== node.data || held.nodes.length !== deps.length) return false;
-  if (held.faces !== null && held.faces !== fontGeneration()) return false;
+  if (held.outside !== null && held.outside !== outsideGeneration()) return false;
   for (let i = 0; i < deps.length; i++) {
     const d = deps[i];
     if (held.nodes[i] !== d?.node) return false;
@@ -98,7 +98,7 @@ function current(held: Derived, node: { data?: unknown }, deps: readonly (Derive
     if (held.paths[i] !== d.path || held.inherited[i] !== d.inherited) return false;
   }
   // A hit is still a read, for the scene memo enclosing this one.
-  if (held.faces !== null) noteFontRead();
+  if (held.outside !== null) noteOutsideRead();
   return true;
 }
 

@@ -49,8 +49,12 @@ export interface DispatchCore {
    *  report it. Always false with no canvas. */
   pointerOver(): boolean;
   setPointerOver(over: boolean): void;
-  /** Make this canvas's input scope the active one. */
-  activate(): void;
+  /** Make this canvas's input scope the active one for the press, wheel or
+   *  menu `event`, unless it landed in another dispatcher's surface nested
+   *  inside this one, or another dispatcher on this surface activated for it
+   *  first: the scope an event lands in is the innermost surface's, and of two
+   *  on one surface, the first attached. With no event, activate unconditionally. */
+  activate(event?: Event): void;
   /** Whether the hook's effect has been torn down. */
   disposed(): boolean;
 }
@@ -81,6 +85,29 @@ export interface DispatchCoreSources {
    *  with no render of the hook, so this is where one is first seen. */
   uses(dispatcher: Dispatcher): void;
   disposed(): boolean;
+}
+
+// Every element a dispatcher listens on, counted, so a press finds the innermost surface it landed in.
+const SURFACES = new WeakMap<Element, number>();
+// Events a dispatcher has activated for, so a second one on the same surface leaves them.
+const CLAIMED = new WeakSet<Event>();
+
+/** Count `el` as a dispatcher's surface until the returned release runs. */
+export function holdSurface(el: Element): () => void {
+  SURFACES.set(el, (SURFACES.get(el) ?? 0) + 1);
+  return () => {
+    const n = (SURFACES.get(el) ?? 1) - 1;
+    if (n > 0) SURFACES.set(el, n);
+    else SURFACES.delete(el);
+  };
+}
+
+/** The innermost dispatcher surface holding `target`, or null. */
+function innermostSurface(target: EventTarget | null): Element | null {
+  for (let el = target instanceof Element ? target : null; el !== null; el = el.parentElement) {
+    if (SURFACES.has(el)) return el;
+  }
+  return null;
 }
 
 export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCore {
@@ -150,7 +177,19 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     },
     pointerOver: () => over,
     setPointerOver: (next) => { over = canvas !== null && next; },
-    activate: () => src.actions().activate(),
+    activate: (event) => {
+      // The wheel listens in the capture phase, so an outer surface can hear an event before
+      // the one it landed in: decide by where it landed, not by who heard it first.
+      if (event !== undefined) {
+        const landed = innermostSurface(event.target);
+        if (landed !== null && landed !== canvas) return;
+        // Two dispatchers can share one surface: a trial's camera listens on the pane its instrument
+        // dispatches on. The first to activate keeps the event, and an instrument attaches first.
+        if (CLAIMED.has(event)) return;
+        CLAIMED.add(event);
+      }
+      src.actions().activate();
+    },
     disposed: src.disposed,
   };
 }

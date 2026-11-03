@@ -7,6 +7,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import { stubDeps } from './testUtils';
+import { inkBoxes } from 'canvas/inkBoxes';
 import { alignLeftAction } from './align/action';
 import { distributeHorizontalAction } from './distribute/action';
 import { flipAction } from './flip/action';
@@ -27,7 +28,7 @@ function makeScene(nodes: Record<string, { pose: RectPose; stroke?: boolean }>) 
 
 function run(action: { invoker?: unknown }, scene: Scene<unknown, string, unknown>, ids: string[], params?: Record<string, unknown>, extra: Record<string, unknown> = {}) {
   (action.invoker as ImmediateInvoker).run(stubDeps({
-    scene, selection: { get: () => ids.map(asNodeId), adapterMethods: undefined }, ...extra,
+    scene, selection: { get: () => ids.map(asNodeId), adapterMethods: undefined }, drawnBoxes: inkBoxes, ...extra,
   }), params);
 }
 
@@ -51,6 +52,15 @@ describe('stroke-inclusive boxes', () => {
       b: { pose: { x: 100, y: 0, width: 50, height: 50 } },
     });
     run(alignLeftAction, scene, ['a', 'b'], undefined, { boundsIncludeStroke: false });
+    expect(x(scene, 'b')).toBe(0);
+  });
+
+  it('align lines up the pose boxes for a host that sources no drawnBoxes', () => {
+    const scene = makeScene({
+      a: { pose: { x: 0, y: 0, width: 50, height: 50 }, stroke: true },
+      b: { pose: { x: 100, y: 0, width: 50, height: 50 } },
+    });
+    run(alignLeftAction, scene, ['a', 'b'], undefined, { drawnBoxes: undefined });
     expect(x(scene, 'b')).toBe(0);
   });
 
@@ -80,7 +90,7 @@ describe('stroke-inclusive boxes', () => {
       a: { pose: { x: 0, y: 0, width: 50, height: 50 }, stroke: true },
       b: { pose: { x: 100, y: 0, width: 50, height: 50 } },
     });
-    const t = captureTurn(scene, [asNodeId('a'), asNodeId('b')] as NodeId[], {}, 'union');
+    const t = captureTurn(scene, [asNodeId('a'), asNodeId('b')] as NodeId[], { drawnBoxes: inkBoxes }, 'union');
     expect(t!.turn.pivot).toEqual({ x: 70, y: 25 });
   });
 });

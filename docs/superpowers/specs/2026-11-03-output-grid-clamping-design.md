@@ -1,8 +1,8 @@
 # Output-grid clamping — design
 
 **Status: designed 2026-11-03, not built.** The second of three arcs: dithering
-(`2026-11-03-dither-design.md`), this, then multiple render targets (`docs/TODO.md`, "Multiple
-render targets"). It uses the `OutputGrid` type the dither arc adds to `@weasel-js/geom`.
+(`@weasel-js/dither`, built), this, then multiple render targets (`docs/TODO.md`, "Multiple
+render targets"). It uses the `OutputGrid` type the dither arc added to `@weasel-js/geom`.
 
 For whoever builds it in core. It answers how a scene keeps a node's geometry on the dot grid of an
 output target (a printer, a 1-bit panel), on every path that writes geometry, and how a node can be
@@ -30,7 +30,9 @@ on every write. That is the gap this arc fills.
 
 `scene.doc` key `kit:outputGrid`, holding an `OutputGrid`: `{ pitch, origin: { x, y } }` in
 document units, one dot's size and where dot (0, 0)'s corner sits. Absent, nothing quantizes.
-lbx's is `{ pitch: 72 / dpi, origin: { x: 0, y: printableBandTop } }`.
+A P-touch label's is `{ pitch: 72 / dpi, origin: { x: 0, y: printableBand(tape, media).y } }`, with
+`printableBand` from `@weasel-js/p-touch` (branch `p-touch`, unmerged on 2026-11-03), which owns that
+math; don't copy it here.
 
 `OutputGrid` is a 2D raster, the target's dots, so a kernel3d scene does not set one; that is a
 stated choice. The rule below is generic over the pose type, so nothing outside the rect helpers

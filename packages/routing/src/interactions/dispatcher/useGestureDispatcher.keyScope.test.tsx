@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
@@ -34,6 +34,43 @@ function Canvas({ name, run, claimKeys, noCanvas, noPointer, over }: {
     ...(noPointer ? { channels: NO_POINTER } : {}),
   });
   return noCanvas ? null : <canvas ref={canvasRef} data-name={name} />;
+}
+
+/** A dispatcher on `surface`, binding `q` to `run`. */
+function OnSurface({ surface, run }: { surface: RefObject<HTMLDivElement | null>; run: () => void }): null {
+  const registry = useActionsRegistry()!;
+  useEffect(() => registry.register({
+    id: 'test.q',
+    label: 'Q',
+    defaultBinding: { kind: 'key', key: 'q' },
+    invoker: { timing: 'immediate', run: () => run() },
+  } satisfies Action), [registry, run]);
+  useGestureDispatcher({ canvasRef: surface, actions: registry, entriesById: NO_ENTRIES });
+  return null;
+}
+
+/** A dispatcher whose surface is an element holding `children`. */
+function Surface({ name, run, children }: { name: string; run: () => void; children: ReactNode }): ReactNode {
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  return (
+    <div ref={surfaceRef} data-name={name}>
+      <OnSurface surface={surfaceRef} run={run} />
+      {children}
+    </div>
+  );
+}
+
+/** Two dispatchers on one element, each in its own root, as a lab trial's camera listens on the
+ *  pane its instrument dispatches on. `inner` attaches first, as an instrument does: its effects run
+ *  before those of the trial that renders it. */
+function SharedSurface({ outer, inner }: { outer: () => void; inner: () => void }): ReactNode {
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  return (
+    <div ref={surfaceRef} data-name="shared">
+      <Root><OnSurface surface={surfaceRef} run={inner} /></Root>
+      <OnSurface surface={surfaceRef} run={outer} />
+    </div>
+  );
 }
 
 /** A canvas whose `over` binding peeks while Alt is held, as a loupe's does. */
@@ -117,6 +154,35 @@ describe('a key that reaches the page', () => {
     act(() => { canvas('a').dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
     press();
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes to the innermost of two nested surfaces pressed or scrolled in, not the one the event bubbles to next', () => {
+    const outer = vi.fn();
+    const inner = vi.fn();
+    render(
+      <Root>
+        <Surface name="outer" run={outer}>
+          <Root><Canvas name="inner" run={inner} /></Root>
+        </Surface>
+      </Root>,
+    );
+    act(() => { canvas('inner').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    press();
+    act(() => { canvas('inner').dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
+    press();
+    expect([outer.mock.calls.length, inner.mock.calls.length]).toEqual([0, 2]);
+  });
+
+  it('goes to the first of two dispatchers on one surface pressed or scrolled in, not the one attached after', () => {
+    const outer = vi.fn();
+    const inner = vi.fn();
+    render(<Root><SharedSurface outer={outer} inner={inner} /></Root>);
+    const shared = document.querySelector('[data-name="shared"]')!;
+    act(() => { shared.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    press();
+    act(() => { shared.dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
+    press();
+    expect([outer.mock.calls.length, inner.mock.calls.length]).toEqual([0, 2]);
   });
 
   it('goes to a canvas that claims the keys on mount', () => {

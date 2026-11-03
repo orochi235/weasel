@@ -5,8 +5,9 @@
  * tested — nothing here subclasses, wraps or works around it.
  */
 
-import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
-import type { NodeId, Scene, SceneNode } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/routing';
+import type { Scene, SceneNode } from '@weasel-js/core/engine';
 import { aabbAround, type Aabb } from '@weasel-js/geom/3d';
 import { aabbOfPose, pose3, type Pose3 } from '@weasel-js/kernel3d';
 

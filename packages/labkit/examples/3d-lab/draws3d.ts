@@ -11,7 +11,8 @@
  * instead, so a drag shows what moved and from where.
  */
 
-import { documentOf, type FeedDelta, type NodeId } from '@weasel-js/core';
+import { documentOf, type FeedDelta } from '@weasel-js/core/engine';
+import { type NodeId } from '@weasel-js/routing';
 import { worldPoseOf } from '@weasel-js/kernel3d';
 import type { SolidDraw } from './renderer3d';
 import type { Pose3, SolidData, SolidKind, SolidLayer, SolidScene } from './scene3d';

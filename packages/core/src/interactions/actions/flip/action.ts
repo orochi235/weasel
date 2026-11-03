@@ -167,7 +167,7 @@ export const flipAction: Action & { requires: string[] } = {
   ],
   eligible: { capability: 'transforms-selection' },
   requires: [
-    'selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke',
+    'selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke', 'drawnBoxes',
     'transformFollowers',
   ],
   invoker: {

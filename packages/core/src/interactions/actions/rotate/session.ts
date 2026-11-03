@@ -137,7 +137,7 @@ function buildGestureContext(
 export function captureTurn(
   scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
-  deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke'>,
+  deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke' | 'drawnBoxes'>,
   pivot: 'union' | 'each',
 ): { turn: Turn; originPoses: Map<NodeId, unknown>; poseFrame: PoseFrame<unknown> } | null {
   const view = deps.view;

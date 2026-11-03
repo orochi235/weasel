@@ -121,7 +121,7 @@ const standing = (apex, front, yaw, pitch) => (pts) => {
   );
 };
 
-function solid(pts, view) {
+function solid(pts, view, widths = { outer: OUTER_WIDTH, inner: INNER_WIDTH }) {
   const faces = hullFaces(pts);
   const cam = view(pts, faces);
   const flat = pts.map((p) => [dot(p, cam.x), -dot(p, cam.y)]);
@@ -155,8 +155,8 @@ function solid(pts, view) {
   const ring = `M${outline.map(P).join('L')}Z`;
   return {
     d: ring,
-    width: OUTER_WIDTH,
-    inner: { d: inner.map(([a, b]) => `M${P(scr[a])}L${P(scr[b])}`).join(''), width: INNER_WIDTH },
+    width: widths.outer,
+    inner: { d: inner.map(([a, b]) => `M${P(scr[a])}L${P(scr[b])}`).join(''), width: widths.inner },
     fill: ring,
     join: 'miter',
   };
@@ -176,6 +176,8 @@ const ICOSA = expand([[0, 1, PHI]], true);
 export const SOLIDS = {
   d4: solid(TETRA, standing(0, 3, 0, 10)),
   d6: solid(CUBE, () => camera([1, 1, 1], [0, 1, 0])),
+  // The d6 at the weight of the set's other glyphs, for a toolbar: a box tool, say.
+  cube: solid(CUBE, () => camera([1, 1, 1], [0, 1, 0]), { outer: 1.5, inner: 1.5 }),
   d8: solid(OCTA, standing(OCTA.findIndex((p) => p[1] === 1), OCTA.findIndex((p) => p[0] === 1), 18, 10)),
   d12: solid(DODECA, faceOn([0, 0, 1], [0, 1, 0])),
   d20: solid(ICOSA, faceOn([0, 0, 1], [0, 1, 0])),

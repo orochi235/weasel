@@ -1432,6 +1432,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/EffectsDemo.tsx',
   },
   {
+    id: 'dither',
+    title: 'Dithering to 1-bit ink',
+    package: 'dither',
+    description: 'A label quantized to 1-bit ink, live on the canvas with `dither()` and in an export with `ditherPixels()`. On a printer grid each dot is a printer dot, so zooming in shows exactly what will print. Keep marks crisp compares dithering by layer, protecting the marks with a mask, and neither.',
+    hint: 'zoom in: on a printer grid the dots grow with the page; on the screen grid they don\'t',
+    load: () => import('./demos/DitherDemo').then((m) => m.DitherDemo),
+    path: 'apps/site/demos/DitherDemo.tsx',
+  },
+  {
     id: 'color-matrix',
     title: 'Stacked color matrices',
     package: 'renderer',

@@ -1,0 +1,33 @@
+.export {
+  margin: var(--wzl-space-6) 0 0;
+}
+
+/* As wide as the canvas and short enough to fit an 800 px window; a 300 dpi
+   export, shown at one pixel per device pixel, scrolls inside it. */
+.pane {
+  width: fit-content;
+  max-width: min(640px, 100%);
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--wzl-border);
+}
+
+/* `--print-w` / `--print-h` are the export's size over devicePixelRatio, set
+   when it renders. */
+.print {
+  display: block;
+  width: var(--print-w, 288px);
+  height: var(--print-h, 108px);
+  image-rendering: pixelated;
+  background: #ffffff;
+}
+
+.caption {
+  margin-top: var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}
+
+.readout {
+  min-width: 3ch;
+}

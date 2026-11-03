@@ -5,7 +5,7 @@
  *  of a drag. The first query at a new key scans and records it; the second
  *  builds. A node that occupies nothing is no target. */
 
-import type { NodeId } from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/routing';
 import type { Aabb } from '@weasel-js/geom/3d';
 import { createBvh, createSettledCache, type BoxN, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
 import { withDescendants, worldBoxes, type Node3d, type World3d } from '../world';

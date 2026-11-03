@@ -18,7 +18,7 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: Wh
   const { routeAt, toWorld, target, dispatch } = core;
 
   const onWheel = (e: WheelEvent) => {
-    core.activate();
+    core.activate(e);
     // Safari can report one trackpad pinch as both a gesture stream and
     // ctrl+wheel. While a claimed gesture is live it is the only driver.
     if (pinchLive() && e.ctrlKey) {

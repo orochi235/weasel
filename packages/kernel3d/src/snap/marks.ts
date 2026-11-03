@@ -1,4 +1,4 @@
-import type { SnapMark } from '@weasel-js/core';
+import type { SnapMark } from '@weasel-js/core/engine';
 import type { Vec3 } from '@weasel-js/geom/3d';
 import { projectPoint, type Viewport3d } from '../project';
 

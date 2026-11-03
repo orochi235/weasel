@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from 'react';
-import { defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/core';
+import { defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/routing';
 import { dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 
@@ -187,7 +187,7 @@ export function useOrbitTool(): Tool {
     id: 'orbit',
     hookName: 'useOrbitTool',
     cursor: 'grab',
-    presentation: { label: 'Orbit', group: 'viewport' },
+    presentation: { label: 'Orbit', group: 'view' },
     bindings: [
       { spec: { kind: 'drag' }, actionId: 'camera.orbit', opts: { id: 'orbit.orbit' } },
       { spec: { kind: 'drag', mods: { shift: true } }, actionId: 'camera.pan', opts: { id: 'orbit.pan' } },

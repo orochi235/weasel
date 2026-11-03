@@ -98,6 +98,9 @@ export {
 export { enterTextEditAction } from '../interactions/actions/defaults/enterTextEdit';
 export type { SliceDep, ClipboardDep, TextEditDep } from '../interactions/actions/depSchema';
 export { useStandardActions, KIT_STANDARD_ACTION_IDS } from '../interactions/actions/useStandardActions';
+export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
+export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';
+export type { StandardDeps } from '../interactions/actions/useActionSet';
 export type { UseStandardActionsOptions } from '../interactions/actions/useStandardActions';
 // Scene-backed op applier for the consumer `applyOps` commit hook — applies a
 // default action's committed ops directly to the scene in its native (local)

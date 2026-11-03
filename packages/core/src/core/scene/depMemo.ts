@@ -17,7 +17,7 @@
  */
 import type { Path } from '@weasel-js/geom';
 import type { InheritedPaint } from './inheritedPaint';
-import { fontGeneration, noteFontRead, withFontReads } from './fontReads';
+import { noteOutsideRead, outsideGeneration, withOutsideReads } from './outsideReads';
 import { samePoseValue, snapshotPose } from './poseSnapshot';
 import type { DerivedDep, Node, NodeId } from './types';
 
@@ -32,13 +32,13 @@ export interface DepRecord<TPose> {
   paths: (Path | null | undefined)[];
   /** What each dependency's children resolved to, where the derivation read them. */
   children: (DepRecord<TPose> | undefined)[];
-  /** The face generation it was derived under, or `null` when it read no
-   *  glyph outlines. */
-  faces: number | null;
+  /** The outside generation it was derived under, or `null` when it read
+   *  nothing outside the scene. */
+  outside: number | null;
 }
 
 export function emptyDepRecord<TPose>(): DepRecord<TPose> {
-  return { nodes: [], poses: [], data: [], layers: [], paths: [], children: [], faces: null };
+  return { nodes: [], poses: [], data: [], layers: [], paths: [], children: [], outside: null };
 }
 
 /** A dependency as the derivation is handed it, noting a read of its path. A
@@ -102,9 +102,9 @@ export function deriveRecorded<TPose, T>(
   derive: (deps: readonly (DerivedDep<TPose> | undefined)[]) => T,
 ): T {
   const handed = recordDeps(into, deps);
-  const generation = fontGeneration();
-  const { value, fonts } = withFontReads(() => derive(handed));
-  into.faces = fonts ? generation : null;
+  const generation = outsideGeneration();
+  const { value, outside } = withOutsideReads(() => derive(handed));
+  into.outside = outside ? generation : null;
   return value;
 }
 
@@ -117,10 +117,10 @@ export function sameDeps<TPose>(
   depOf: (id: NodeId) => DerivedDep<TPose> | undefined,
 ): boolean {
   if (record.nodes.length !== ids.length) return false;
-  if (record.faces !== null && record.faces !== fontGeneration()) return false;
+  if (record.outside !== null && record.outside !== outsideGeneration()) return false;
   for (let i = 0; i < ids.length; i++) if (!sameDep(record, i, depOf(ids[i]))) return false;
   // A hit is still a read, for any derivation enclosing this one.
-  if (record.faces !== null) noteFontRead();
+  if (record.outside !== null) noteOutsideRead();
   return true;
 }
 

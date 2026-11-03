@@ -101,7 +101,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
   modifierRoles: SNAP_ROLES,
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke', 'kitSettings', 'snap'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

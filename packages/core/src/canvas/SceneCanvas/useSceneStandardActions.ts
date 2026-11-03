@@ -11,7 +11,7 @@ import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
-import { drawnBoxes } from 'interactions/actions/drawnBoxes';
+import { inkBoxes } from 'canvas/inkBoxes';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { ReflowTransition } from '../../layout/types';
@@ -196,7 +196,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useSnapDepSource(
     currentViewRef,
     {
-      scene, boxes: () => drawnBoxes({ scene, poseDescriptor, view, boundsIncludeStroke }), sources: snap.sources,
+      scene, boxes: () => inkBoxes({ scene, poseDescriptor, view, boundsIncludeStroke }), sources: snap.sources,
       ...(snap.registry ? { registry: snap.registry } : {}),
       ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
       ...(props.snap?.omit ? { omit: props.snap.omit } : {}),
@@ -218,6 +218,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useDispatcherDepSource(dispatcher);
   usePoseDescriptorDepSource(poseDescriptor);
   useDepSource('boundsIncludeStroke', () => boundsIncludeStroke);
+  useDepSource('drawnBoxes', () => inkBoxes);
 
   // Keyed on the set too: a re-registration of it would otherwise land over
   // the overrides applied on top of it.
