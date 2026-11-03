@@ -411,6 +411,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] `SwatchGrid` options keyed apart from their color, with an optional glyph.** An option's `value` is
+  both its key and its paint, so two swatches of one color collide, and a swatch can draw nothing over its color.
+  collego's label tapes need both: two tapes share one cerulean, told apart by white or black text, and each swatch
+  shows its letter in its tape's ink. collego draws its own grid until then (`tapes/TapeSwatches.tsx`, 2026-11-03).
+  Closes when an option takes an `id` beside its color and a `glyph` drawn over it, and `SwatchButton` is exported.
+
 - **(P2) [maintainer] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
   (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
   itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl
