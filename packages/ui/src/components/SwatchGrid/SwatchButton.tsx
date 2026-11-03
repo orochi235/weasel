@@ -9,25 +9,29 @@ function nameOf(o: SwatchGridOption): string {
   return o.label ?? o.value ?? 'None';
 }
 
-/** What a palette does with a swatch: apply it to either target, recording it as recent. */
-export interface SwatchApply {
-  onChange: (value: string | null) => void;
-  onAltChange: ((value: string | null) => void) | undefined;
+/** What tells a swatch apart from the rest: its `id`, else its color. */
+export function swatchId(o: SwatchGridOption): string | null {
+  return o.id ?? o.value;
 }
 
-/** `onChange` and `onAltChange` that also record what they apply into the nearest recent colors. */
-export function useSwatchApply(onChange: (value: string | null) => void, onAltChange?: (value: string | null) => void): SwatchApply {
+/** What a palette is told when a swatch applies: the swatch's id (its color unless it names one), and the swatch. */
+export type SwatchChange = (id: string | null, option: SwatchGridOption) => void;
+
+/** What a palette does with a swatch: apply it to either target, recording its color as recent. */
+export interface SwatchApply {
+  onChange: (option: SwatchGridOption) => void;
+  onAltChange: ((option: SwatchGridOption) => void) | undefined;
+}
+
+/** Applies that call `onChange` or `onAltChange` with the swatch's id and record its color into the nearest recent
+ *  colors. */
+export function useSwatchApply(onChange: SwatchChange, onAltChange?: SwatchChange): SwatchApply {
   const record = useRecordRecentColor();
-  return {
-    onChange: (v) => {
-      onChange(v);
-      if (v !== null) record(v);
-    },
-    onAltChange: onAltChange && ((v) => {
-      onAltChange(v);
-      if (v !== null) record(v);
-    }),
+  const recorded = (to: SwatchChange) => (o: SwatchGridOption): void => {
+    to(swatchId(o), o);
+    if (o.value !== null) record(o.value);
   };
+  return { onChange: recorded(onChange), onAltChange: onAltChange && recorded(onAltChange) };
 }
 
 const GRID_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
@@ -70,7 +74,7 @@ export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], c
     if (e.key === 'Enter') {
       if (e.shiftKey && apply.onAltChange) {
         e.preventDefault();
-        apply.onAltChange(options[i]!.value);
+        apply.onAltChange(options[i]!);
       }
       return;
     }
@@ -86,20 +90,29 @@ export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], c
 /** Props of {@link SwatchButton}. */
 export interface SwatchButtonProps {
   option: SwatchGridOption;
+  /** Whether this swatch is its palette's one tab stop. */
   tabStop: boolean;
+  /** Whether to mark this swatch current. */
   current: boolean;
+  /** What a click, a shift-click and a right-click apply to: {@link useSwatchApply}'s. */
   apply: SwatchApply;
-  onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void;
+  /** Keys on the swatch: a palette's roving focus. Enter and Space click it without one. */
+  onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void;
   className?: string;
   style?: CSSProperties;
   /** Data attributes a layout reads off the swatch. */
   data?: Record<`data-${string}`, string | undefined>;
 }
 
-/** One swatch: its color over the checker, named by its label, applying on click and to the alternate target on
- *  shift-click or right-click. */
+/** One swatch: its color over the checker, its glyph centered over that in its ink, named by its label, applying on
+ *  click and to the alternate target on shift-click or right-click. */
 export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, className, style, data }: SwatchButtonProps): ReactElement {
   const name = nameOf(o);
+  const paint = {
+    ...style,
+    ...(o.value === null ? {} : { '--swatch': o.value }),
+    ...(o.ink === undefined ? {} : { '--swatch-ink': o.ink }),
+  } as CSSProperties;
   return (
     <button
       type="button"
@@ -111,13 +124,15 @@ export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, cl
       data-swatch=""
       {...data}
       {...(o.value === null ? { 'data-none': '' } : {})}
-      style={o.value === null ? style : ({ ...style, '--swatch': o.value } as CSSProperties)}
+      style={paint}
       onClick={(e) => {
-        if (e.shiftKey && apply.onAltChange) apply.onAltChange(o.value);
-        else apply.onChange(o.value);
+        if (e.shiftKey && apply.onAltChange) apply.onAltChange(o);
+        else apply.onChange(o);
       }}
-      onContextMenu={apply.onAltChange ? (e) => { e.preventDefault(); apply.onAltChange?.(o.value); } : undefined}
+      onContextMenu={apply.onAltChange ? (e) => { e.preventDefault(); apply.onAltChange?.(o); } : undefined}
       onKeyDown={onKeyDown}
-    />
+    >
+      {o.glyph != null && <span className={s.glyph} aria-hidden="true">{o.glyph}</span>}
+    </button>
   );
 }

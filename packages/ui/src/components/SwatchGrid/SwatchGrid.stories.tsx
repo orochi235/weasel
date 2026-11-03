@@ -40,3 +40,27 @@ export const Default: Story = {
     );
   },
 };
+
+const TAPES: SwatchGridOption[] = [
+  { id: 'none', value: null, label: 'No tape' },
+  { id: 'white', value: '#f4f4f0ff', label: 'White, black text', glyph: 'A', ink: '#000000ff' },
+  { id: 'yellow', value: '#f2c230ff', label: 'Yellow, black text', glyph: 'A', ink: '#000000ff' },
+  { id: 'cerulean-white', value: '#2a7ab0ff', label: 'Cerulean, white text', glyph: 'A', ink: '#ffffffff' },
+  { id: 'cerulean-black', value: '#2a7ab0ff', label: 'Cerulean, black text', glyph: 'A', ink: '#000000ff' },
+  { id: 'black', value: '#1a1a1aff', label: 'Black, white text', glyph: 'A', ink: '#ffffffff' },
+];
+
+/** Swatches keyed by `id` rather than color, each drawing a glyph in its own
+ *  ink: the two cerulean tapes share a color and differ only in their text. */
+export const Glyphs: Story = {
+  args: { options: TAPES, columns: 6, 'aria-label': 'Tapes' },
+  render: (args) => {
+    const [tape, setTape] = useState<string | null>('cerulean-black');
+    return (
+      <div>
+        <SwatchGrid {...args} options={args.options ?? TAPES} value={tape} onChange={setTape} />
+        <p>tape {tape ?? 'none'}</p>
+      </div>
+    );
+  },
+};

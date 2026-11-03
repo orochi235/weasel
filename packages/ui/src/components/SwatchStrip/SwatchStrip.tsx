@@ -2,7 +2,7 @@ import { useId, useState, type ReactElement } from 'react';
 import { getAlpha01 } from '@weasel-js/core';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useTrackShape } from '../Along/alongContext';
-import { SwatchGrid, type SwatchGridOption } from '../SwatchGrid';
+import { SwatchGrid, swatchId, type SwatchChange, type SwatchGridOption } from '../SwatchGrid';
 import { SwatchRings, type SwatchRingGroup } from '../SwatchGrid/SwatchRings';
 import { Select } from '../Select';
 import {
@@ -15,15 +15,18 @@ import {
 import { BUILTIN_PALETTES, type SwatchPalette } from './palettes';
 import s from './SwatchStrip.module.css';
 
+/** What {@link SwatchStrip} is told when a swatch applies: its color, whatever its id, and the swatch. */
+export type SwatchColorChange = (color: string | null, option: SwatchGridOption) => void;
+
 /** Props for {@link SwatchStrip}. */
 export interface SwatchStripProps {
   /** The color to mark current, in either row. `null` marks "no paint". */
   value?: string | null;
-  /** A swatch applied: click, Enter or Space. */
-  onChange: (value: string | null) => void;
+  /** A swatch applied: click, Enter or Space, with its color and the swatch. */
+  onChange: SwatchColorChange;
   /** The alternate target, as on {@link SwatchGrid}: shift-click,
    *  right-click, Shift+Enter. */
-  onAltChange?: (value: string | null) => void;
+  onAltChange?: SwatchColorChange;
   /** The preset palettes on offer. Default {@link BUILTIN_PALETTES}. More
    *  than one adds a picker. */
   palettes?: readonly SwatchPalette[];
@@ -74,7 +77,10 @@ function same(a: string | null, b: string | null): boolean {
  * `onAltChange` hand the color to the app.
  */
 export function SwatchStrip(props: SwatchStripProps): ReactElement {
-  const { value, onChange, onAltChange, className } = props;
+  const { value, className } = props;
+  const onChange: SwatchChange = (_, o) => props.onChange(o.value, o);
+  const alt = props.onAltChange;
+  const onAltChange: SwatchChange | undefined = alt && ((_, o) => alt(o.value, o));
   const palettes = props.palettes ?? BUILTIN_PALETTES;
   const columns = props.columns ?? 10;
   const ctxStore = useRecentColorsStore();
@@ -92,8 +98,10 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
 
   const recentOptions: SwatchGridOption[] = recent.map((c) => ({ value: c, label: describeColor(c) }));
   // Match on the color, not its spelling, so `#F00` lights `#ff0000ff`.
-  const currentIn = (options: readonly SwatchGridOption[]): string | null | undefined =>
-    value === undefined ? undefined : options.find((o) => same(o.value, value))?.value;
+  const currentIn = (options: readonly SwatchGridOption[]): string | null | undefined => {
+    const match = value === undefined ? undefined : options.find((o) => same(o.value, value));
+    return match && swatchId(match);
+  };
 
   const along = useTrackShape();
   const shape = props.shape ?? along?.shape;
