@@ -26,6 +26,7 @@ export const RULES = [
 
   ['packages/renderer/src', 'Rendering'],
   ['packages/pdf/src', 'Rendering'],
+  ['packages/dither/src', 'Rendering'],
   ['packages/core/src/canvas', 'Rendering'],
 
   ['packages/core/src/tools', 'Tools & gestures'],
