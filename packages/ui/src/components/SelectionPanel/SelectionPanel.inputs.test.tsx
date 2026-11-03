@@ -49,7 +49,7 @@ describe('SelectionPanel', () => {
       />,
     );
     const rotation = screen.getByLabelText('Rotation');
-    expect(rotation).toHaveValue('45'); // Math.PI / 4 stored
+    expect(rotation).toHaveValue('45.0'); // Math.PI / 4 stored
     fireEvent.change(rotation, { target: { value: '90' } });
     fireEvent.blur(rotation);
     expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.rotation).toBeCloseTo(Math.PI / 2);

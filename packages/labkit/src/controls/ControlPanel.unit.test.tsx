@@ -35,7 +35,7 @@ describe('a number whose unit is data', () => {
       />,
     );
     const field = screen.getByLabelText('Angle') as HTMLInputElement;
-    expect(field.value).toBe('90');
+    expect(field.value).toBe('90.0');
     fireEvent.change(field, { target: { value: '45' } });
     fireEvent.blur(field);
     expect(setConfig.mock.calls[0][0]).toBe('angle');
@@ -70,7 +70,7 @@ describe('what a row with a unit would read as auto', () => {
   };
 
   it('is quoted in the unit the field shows, with its suffix', () => {
-    expect(help(DEGREES)).toHaveTextContent(/^auto 45°$/);
+    expect(help(DEGREES)).toHaveTextContent(/^auto 45\.0°$/);
   });
 
   it('is quoted through the format of a unit that is a pair of functions', () => {

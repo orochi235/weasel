@@ -110,6 +110,7 @@ export {
   resolveAxes,
   resolveUnit,
   unitScale,
+  type FormatUnitOptions,
   type PerAxis,
   type PlaneUnits,
   type PlaneValue,

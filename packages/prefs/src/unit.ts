@@ -1,7 +1,7 @@
 // A number leaf's display unit: the stored value stays canonical (radians, millimeters), and a UI converts
 // at its edge. A unit is data where the conversion is linear, and a pair of functions where it is not.
 
-import { formatUnit, unitScale, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
+import { decimal, formatUnit, unitScale, type Display, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
 
 /** What both forms of a unit say about the text around the number. */
 interface PrefUnitText {
@@ -25,7 +25,8 @@ export interface PrefLinearUnit extends PrefUnitText {
   scale: number;
   /** The stored value a display of 0 stands for. Absent is 0. */
   offset?: number;
-  /** Decimal places the shown value is rounded to. Absent, the value shows unrounded and formats to two places.
+  /** Decimal places the shown value is rounded and padded to, so `1.5` at 2 shows `1.50`. Absent, the value
+   *  shows unrounded and formats to two places, trailing zeros trimmed.
    *  What is typed is stored unrounded either way: a decimal typed at a decimal `scale` is stored as the
    *  decimal the two multiply to, without the dust of multiplying them in binary. */
   precision?: number;
@@ -47,6 +48,8 @@ export type PrefNumberUnit = PrefLinearUnit | PrefFunctionUnit;
 /** A unit of either form as the functions that convert and format with it. */
 export interface ResolvedPrefUnit extends PrefFunctionUnit {
   format: (stored: number) => string;
+  /** How a field shows the display number, where the unit fixes its places. */
+  display?: Display;
 }
 
 /** What a unit leaf's field reads as typed text: its `accepts` table, and its
@@ -101,7 +104,9 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
       return round === undefined ? shown : Math.round(shown * round) / round;
     },
     fromDisplay: (shown) => storedOf(shown, scale, offset),
-    format: (stored) => `${formatUnit(stored, SHOWN, system, { precision: precision ?? 2, suffix: false })}${suffix ?? ''}`,
+    format: (stored) =>
+      `${formatUnit(stored, SHOWN, system, { precision: precision ?? 2, suffix: false, pad: precision !== undefined })}${suffix ?? ''}`,
+    ...(precision === undefined ? {} : { display: decimal({ places: precision, grouping: false }) }),
     ...(suffix === undefined ? {} : { suffix }),
     ...(accepts === undefined ? {} : { accepts }),
   };

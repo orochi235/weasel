@@ -22,3 +22,13 @@ test.each([
   expect(readout.value).toBe(word);
   expect(readout.scrollWidth).toBeLessThanOrEqual(readout.clientWidth);
 });
+
+test('a typed number field draws its digits at equal width, so a column of them lines up', () => {
+  render(
+    <PropertyList>
+      <PropertyField kind="number" label="Length" value={1.5} onChange={() => {}} />
+    </PropertyList>,
+  );
+  const input = screen.getByRole('spinbutton', { name: 'Length' });
+  expect(getComputedStyle(input).fontVariantNumeric).toBe('tabular-nums');
+});

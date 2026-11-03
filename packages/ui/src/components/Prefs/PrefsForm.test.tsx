@@ -450,7 +450,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
 
   it('shows the stored value in the unit the leaf displays', () => {
     renderRotation({}, Math.PI / 4);
-    expect(screen.getByRole('spinbutton', { name: 'Rotation' })).toHaveValue('45');
+    expect(screen.getByRole('spinbutton', { name: 'Rotation' })).toHaveValue('45.0');
   });
 
   it('stores what a typed display value converts back to', () => {
@@ -494,7 +494,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
     fireEvent.change(field, { target: { value: '12mm' } });
     fireEvent.blur(field);
     expect(onChange).not.toHaveBeenCalled();
-    expect(field).toHaveValue('45');
+    expect(field).toHaveValue('45.0');
   });
 
   it('names the unit beside the field', () => {

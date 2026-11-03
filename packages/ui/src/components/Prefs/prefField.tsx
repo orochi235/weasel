@@ -94,7 +94,8 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
     typeof value === 'number' && (Number.isFinite(value) || endlessAllows(leaf.endless, value)) ? value : undefined;
   const bounds = prefDisplayBounds(leaf);
   const clamp = (n: number) => clampToBounds(n, bounds);
-  const store = (shown: number) => setValue(unit ? unit.fromDisplay(clamp(shown)) : clamp(shown));
+  const store = (n: number) => setValue(unit ? unit.fromDisplay(clamp(n)) : clamp(n));
+  const shown = leaf.display ?? unit?.display;
   return {
     kind: 'number',
     control: leaf.control,
@@ -106,8 +107,7 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
     step: bounds.step,
     unit: unit?.suffix,
     accepts: unit ? prefUnitAccepts(unit) : undefined,
-    display:
-      leaf.infinity === undefined ? leaf.display : withInfinity(leaf.display ?? stepDisplay(bounds.step), leaf.infinity),
+    display: leaf.infinity === undefined ? shown : withInfinity(shown ?? stepDisplay(bounds.step), leaf.infinity),
     endless: bounds.endless,
     stops: bounds.stops,
     onChange: store,

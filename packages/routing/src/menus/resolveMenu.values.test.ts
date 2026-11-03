@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MenuColorEntry, MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
-import { percent } from '@weasel-js/quantity';
+import { decimal, percent } from '@weasel-js/quantity';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
 
 function valued(initial: Record<string, unknown>, withChange = true): MenuSources & { onChange: ReturnType<typeof vi.fn> } {
@@ -62,6 +62,12 @@ describe('resolveSchemaMenu: number leaves', () => {
     const display = percent();
     const e = only(resolveSchemaMenu(menu({ a: pref.number('A', 0.5, { display }) }), valued({ a: 0.5 })));
     expect(e).toMatchObject({ kind: 'number', display });
+  });
+
+  it("shows a value at its unit's precision, trailing zeros included, where the leaf names no display", () => {
+    const leaf = pref.number('Length', 1, { unit: { suffix: 'in', scale: 1, precision: 2 } });
+    const e = only(resolveSchemaMenu(menu({ l: leaf }), valued({ l: 1.5 })));
+    expect(e).toMatchObject({ kind: 'number', display: decimal({ places: 2, grouping: false }) });
   });
 
   it('carries its endless ends and word for infinity, and holds an infinity stored at one', () => {

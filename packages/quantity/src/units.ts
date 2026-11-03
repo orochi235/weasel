@@ -79,25 +79,34 @@ export function resolveUnit(v: UnitValue | Quantity, unitSystem?: UnitSystem): n
   return v.value * factor + offset;
 }
 
+/** How {@link formatUnit} writes a value. */
+export interface FormatUnitOptions {
+  /** Decimal places. Default 2. */
+  precision?: number;
+  /** End with the unit's name. Default true. */
+  suffix?: boolean;
+  /** Keep trailing zeros, so every value shows `precision` places. Default false. */
+  pad?: boolean;
+}
+
 /**
  * Format a base-unit number as a string in the named display unit.
  *  e.g. formatUnit(36, 'ft', IMPERIAL_INCHES) => '3ft'
- *  Default precision: 2. Trailing zeros trimmed.
+ *  Trailing zeros are trimmed unless `pad` is set.
  */
 export function formatUnit(
   baseValue: number,
   displayUnit: Unit,
   unitSystem: UnitSystem,
-  opts?: { precision?: number; suffix?: boolean },
+  opts?: FormatUnitOptions,
 ): string {
   const { factor, offset } = scaleOrThrow('formatUnit', unitSystem, displayUnit);
   const precision = opts?.precision ?? 2;
   const suffix = opts?.suffix ?? true;
   const display = (baseValue - offset) / factor;
-  // Trim trailing zeros (and a dangling decimal point) without losing precision.
   let s = display.toFixed(precision);
   if (Number(s) === 0) s = s.replace(/^-/, '');
-  if (s.includes('.')) {
+  if (!opts?.pad && s.includes('.')) {
     s = s.replace(/0+$/, '').replace(/\.$/, '');
   }
   return suffix ? `${s}${displayUnit}` : s;
@@ -139,7 +148,7 @@ export function formatAxes(
   base: PerAxis<number>,
   display: Unit | PerAxis<Unit>,
   units: PlaneUnits,
-  opts?: { precision?: number; suffix?: boolean },
+  opts?: FormatUnitOptions,
 ): PerAxis<string> {
   const on = (axis: 'x' | 'y'): string =>
     formatUnit(base[axis], typeof display === 'string' ? display : display[axis], axisUnits(units, axis)!, opts);

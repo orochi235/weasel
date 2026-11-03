@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANGLE_RADIANS, METRIC_MM, type UnitSystem } from '@weasel-js/quantity';
+import { ANGLE_RADIANS, decimal, METRIC_MM, type UnitSystem } from '@weasel-js/quantity';
 import { prefDisplayBounds } from './helpers';
 import type { PrefNumber } from './schema';
 import { isPrefLinearUnit, prefUnit, prefUnitAccepts, resolvePrefUnit, type PrefLinearUnit, type PrefNumberUnit } from './unit';
@@ -48,7 +48,15 @@ describe('resolvePrefUnit', () => {
   it('formats a linear unit to its precision, two places without one, and ends it with the suffix', () => {
     expect(resolvePrefUnit({ scale: 10, suffix: 'cm' }).format(25)).toBe('2.5cm');
     expect(resolvePrefUnit({ scale: 3 }).format(1)).toBe('0.33');
-    expect(resolvePrefUnit({ scale: Math.PI / 180, precision: 1, suffix: '°' }).format(Math.PI)).toBe('180°');
+    expect(resolvePrefUnit({ scale: Math.PI / 180, precision: 1, suffix: '°' }).format(Math.PI)).toBe('180.0°');
+  });
+
+  it('pads to its precision, so a column of values lines up', () => {
+    const unit = resolvePrefUnit({ scale: 1, precision: 2 });
+    expect(unit.format(1.5)).toBe('1.50');
+    expect(unit.format(2.214)).toBe('2.21');
+    expect(unit.display).toEqual(decimal({ places: 2, grouping: false }));
+    expect(resolvePrefUnit({ scale: 1 }).display).toBeUndefined();
   });
 
   it('carries the suffix and what is accepted through', () => {
@@ -128,7 +136,7 @@ describe('prefUnit', () => {
 
   it('formats a stored value in the display unit', () => {
     expect(resolvePrefUnit(prefUnit(METRIC_MM, 'cm')).format(25)).toBe('2.5cm');
-    expect(resolvePrefUnit(prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' })).format(Math.PI)).toBe('180°');
+    expect(resolvePrefUnit(prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' })).format(Math.PI)).toBe('180.0°');
   });
 });
 
