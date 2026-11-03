@@ -96,17 +96,21 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 | `nodes[i].copiesFromPoseKey`, `derivePathKey`, `derivePoseKey`, `layoutKey` | `string?` | Registry keys for the node's other function fields. Omitted when absent. |
 | `nodes[i].dependsOn` | `string[] \| 'children'?` | Ids the node's geometry derives from. |
 | `nodes[i].pickable`, `hidden`, `locked`, `units` | | Present only when stated: `pickable: false`, `hidden: true`, `locked: true`, a unit scope. |
+| `nodes[i].page` | `PageInfo?` | Makes the node a page: its `name` and `meta`. Present only on a page, a child of the page run. |
+| `nodes[i].pageRun` | `PageRunInfo?` | Makes the root the page run: its layout (`direction`, `gap`, `align`) and `pasteboard`. Present only on the run. |
 | `doc` | `Record<string, unknown>?` | The scene's document values (below). Omitted when it has none, so a snapshot written before they existed reads the same. |
 
 ## Document values
 
-Document state that is not a node, such as a document's pages or its theme, lives in `scene.doc`, a set of named
-JSON values beside the tree. Keys are namespaced by their owner: `core:pages`, `diagram:theme`.
+Document state that is not a node, such as a document's theme, lives in `scene.doc`, a set of named JSON values
+beside the tree. Keys are namespaced by their owner: `diagram:theme`, `diagram:type`. A document's pages are nodes,
+not a value (`nodes[i].page`, `pageRun`); a snapshot that kept them as the `core:pages` value converts on load
+(`adoptLegacyPages`).
 
 ```ts
-scene.doc.set('core:pages', { pages: [{ id: 'page-1', width: 816, height: 1056 }] });
-scene.doc.get<PagesDoc>('core:pages');
-scene.doc.set('core:pages', undefined); // removes the key
+scene.doc.set('myapp:title', 'Floor plan');
+scene.doc.get<string>('myapp:title');
+scene.doc.set('myapp:title', undefined); // removes the key
 ```
 
 A `set` is a scene edit like any other: it is undoable, joins an enclosing `scene.batch` as part of one entry, is

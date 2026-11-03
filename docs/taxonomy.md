@@ -962,6 +962,55 @@ Rejected (2026-10-22), so nobody re-proposes them: a `group: true` flag on a con
 rebuilt as a group of an outline and its parts (the same conflation one level down, and
 Ungroup takes it apart).
 
+### Page
+
+A document is in one of two **modes**, read from its scene's structure, never stored as a setting:
+
+| Mode | The scene | Prior art |
+|---|---|---|
+| **Continuous** | No page run. An infinite plane, or a kernel3d scene's space. | Figma's canvas, a whiteboard |
+| **Pages** | A page run among its roots. | Word (a column), a PDF scrolled sideways (a row) |
+
+**Pages are containers** (decided 2026-11-02). The **page run** is a root group with a `pageRun` field, laid out
+by `pageRunLayout` (`direction`, `gap`, `align`); each **page** is a group under it with a `page` field (its name
+and `meta`), whose pose is its rect. A page frames its children, origin at its top-left, and clips them to its
+rect (`pageClip`). What is on a page is its child: membership is the tree, not geometry, so a page's content moves
+with it, and a drag onto another page reparents through the move action's `depart`/`arrive`, keeping its world
+position. `createPageRun` makes a scene paged; the page edits (`setPages`, `addPage`, `movePage`, …) write the
+nodes, each one undo entry. **Pages are 2D only**: a page is a flat sheet, and a kernel3d scene gets Continuous.
+
+A page or the run is **page structure** (`isPageStructure`): drawn, its content in reach, but never selected,
+picked, deleted, copied or grouped by the ordinary scene tools. Pressing empty paper does what pressing empty
+canvas does. Neither passes its layer's lock or hide down (2026-11-03): content answers to its own layer and its
+own ancestors' flags, so locking the paper's layer locks nothing on the pages. The run and pages go on the lowest
+layer by default, since no child may sit below its parent. The run refuses drops and inserts of anything but
+followers (2026-11-03).
+
+**Followers live in the run** (decided 2026-11-02), refined by **follower home** (2026-11-03): a node whose pose
+follows others (`dependsOn`, such as a connector) is the child of the page every node it follows is on, keeping
+its z-order and that page's clip; only one whose dependencies span pages, or reach the pasteboard, is a child of
+the run, drawn across pages and clipped by neither. `followerHome` is that one rule. Off-page markers
+(`@weasel-js/diagram`) read each end's page from its page ancestor.
+
+**The pasteboard is opt-in** (decided 2026-11-02): the run's `pasteboard` flag. On, a root may sit outside every
+page in world space, and a drag between a page and the pasteboard reparents. Off, the default, nothing is left
+outside a page: content drawn, pasted or dragged wholly off every page goes onto the nearest one, shifted until
+part of it lies on it (`keepOnPage`), so nothing ends up clipped to nothing. A drop in a gap between pages stays
+in the page it came from.
+
+**Paging is continuous by default** (decided 2026-11-02): a view setting, not part of the document, so one file
+opens in either. `'continuous'` moves the view freely across pages; `'single'` brings it to rest fitted to one
+page, and settles only at or below that page's fit scale, so zoomed in past it the view pans freely, as a PDF
+viewer's single-page mode does (2026-11-03). `usePages(scene, …, { paging })` in `@weasel-js/editor` takes it.
+
+A scene saved while its pages were the `core:pages` document value converts on load: `adoptLegacyPages` builds the
+run, moves each root into the page holding it in that page's frame, and drops the value, as one untracked batch;
+a second call does nothing. Draw and chart sessions saved that way load without their undo history.
+
+Rejected, so nobody re-proposes them: keeping the `core:pages` value beside page nodes (two models of a page);
+a mode that only the editor shell knows. **Positionable artboards** (pages placed and sized freely, as in
+Illustrator) are deferred (2026-11-02); they would be another layout policy on the same run, not a new model.
+
 ### View / ViewTransform
 
 `View` — the viewport's camera state: `{ x, y, scale }` where `x/y` is the world
