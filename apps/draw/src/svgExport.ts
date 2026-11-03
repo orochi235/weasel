@@ -29,6 +29,7 @@ import {
   resolveFill,
   resolvePartPaint,
   resolveStroke,
+  pageNodeOf,
   pathInPoseFrame,
   shapeGeneratorOf,
   unionAABB,
@@ -295,7 +296,8 @@ export function pageToSvgString<TLayer extends string>(
     const box = scene.get(id as never)?.page === undefined ? unionAABB([poseOf(id)]) : null;
     return box !== null && rectsIntersect(box, page);
   });
-  const roots = [...contentRoots(scene, [page.id]).map(String), ...followers];
+  const node = pageNodeOf(scene, page.id);
+  const roots = [...(node === null ? [] : contentRoots(scene, [node])).map(String), ...followers];
   const nodes: SvgNode[] = WHITE.test(opts.backgroundColor) ? [] : [backgroundSvgNode(opts.backgroundColor, page)];
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOf), roots));
   const { x, y, width, height } = page;

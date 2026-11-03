@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { boundsOfPath, createPageRun, createScene, type NodeId, pageRunOf, pagesOf, placedPagesOf, solid } from '@weasel-js/core';
+import {
+  boundsOfPath, createPageRun, createScene, type NodeId, pageNodeOf, pageRunOf, pagesOf, placedPagesOf, solid,
+} from '@weasel-js/core';
 import { parseSvg } from '@weasel-js/svg';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { openSvgText } from './openSvg';
@@ -95,5 +97,18 @@ describe('exporting one page', () => {
       .nodes.map((n) => (n as { fill?: { color?: string } }).fill?.color);
     expect(await colors(p2)).toEqual(['#0000ff', '#00ff00']);
     expect(await colors(p1)).toEqual(['#ff0000']);
+  });
+
+  it('writes what is on a page whose id a node already holds', async () => {
+    const scene = emptyScene();
+    scene.add({
+      id: 'cover' as NodeId, kind: 'mark', layer: 'default', pose: { x: -500, y: -500, width: 5, height: 5 },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 }, fill: { paint: solid('#00ff00') } },
+    });
+    createPageRun(scene, PAGES);
+    square(scene, pageNodeOf(scene, 'cover')!, '#0000ff');
+    const cover = placedPagesOf(scene).find((p) => p.id === 'cover')!;
+    const parsed = parseSvg(await pageToSvgString(scene, cover, { backgroundColor: '#ffffff' }));
+    expect(parsed.nodes.map((n) => (n as { fill?: { color?: string } }).fill?.color)).toEqual(['#0000ff']);
   });
 });
