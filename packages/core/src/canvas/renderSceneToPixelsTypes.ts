@@ -66,6 +66,11 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> ex
    *  output's top-left, one unit per output pixel. Annotations, watermarks,
    *  and `renderDebugSnapshot`'s overlay ride here. */
   overlay?: readonly DrawCommand[];
+  /** Which scene layers to draw, named as a `LayerGroup` names its members:
+   *  `'scene:<layerId>'` for one, `'scene'` for all of them. Default: every
+   *  layer. A name matching none of the scene's layers throws. Annotation
+   *  layers stay out unless `annotations` is also set. */
+  layers?: readonly string[];
   /** Draw the scene's annotation layers (`isAnnotationLayer`). Default
    *  `false`: a raster is an export, which leaves them out as the SVG export
    *  does. Pass `true` to reproduce the canvas as it looked. */

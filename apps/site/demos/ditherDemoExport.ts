@@ -1,6 +1,5 @@
 import {
-  defaultDrawOne, renderSceneToPixels, warmRender,
-  type RectPose, type RenderSceneToPixelsArgs, type Scene, type SceneViewDrawOne,
+  renderSceneToPixels, warmRender, type RectPose, type RenderSceneToPixelsArgs, type Scene,
 } from '@weasel-js/core';
 import { ditherPixels, maskToRgba, protectMask, protectRects, type DitherMethod } from '@weasel-js/dither';
 import type { OutputGrid } from '@weasel-js/geom';
@@ -27,11 +26,6 @@ type RenderArgs = RenderSceneToPixelsArgs<DitherNodeData, DitherLayer, RectPose>
 
 const WHITE = [255, 255, 255, 255] as const;
 
-/** `renderSceneToPixels` takes no layer filter, so one layer is drawn by
- *  leaving the other's nodes out of `drawOne`. */
-const onLayer = (layer: DitherLayer): SceneViewDrawOne<DitherNodeData, DitherLayer, RectPose> =>
-  (node, pose, view, ctx) => (node.layer === layer ? defaultDrawOne(node, pose, view, ctx) : []);
-
 async function rendered(args: RenderArgs) {
   await warmRender({ render: args });
   return renderSceneToPixels(args);
@@ -51,8 +45,8 @@ export async function exportPage(scene: DitherScene, s: ExportSettings): Promise
   let width: number;
   let height: number;
   if (s.crisp === 'layer') {
-    const art = await rendered({ ...base, drawOne: onLayer('art') });
-    const marks = await rendered({ ...base, drawOne: onLayer('marks') });
+    const art = await rendered({ ...base, layers: ['scene:art'] });
+    const marks = await rendered({ ...base, layers: ['scene:marks'] });
     ({ width, height } = art);
     mask = ditherPixels(art, { method: s.method, threshold: s.threshold });
     const crisp = ditherPixels(marks, { method: 'threshold', threshold: s.threshold });

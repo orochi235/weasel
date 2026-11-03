@@ -36,6 +36,7 @@ import { renderNeeds } from './renderNeeds';
 import { straightTopDown } from './rasterReadback';
 import { annotationLayerIds } from 'core/scene/annotation';
 import { sceneLayerKey } from './sceneLayerPaint';
+import { layerNameClaims } from 'core/layers/layerGroup';
 import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 
 export type {
@@ -93,14 +94,36 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
       fill: { paint: { kind: 'solid', color: args.background } },
     });
   }
-  const layers = args.annotations ? undefined : {
-    layerVisibility: Object.fromEntries([...annotationLayerIds(args.scene.layers)].map((id) => [sceneLayerKey(id), false])),
-  };
   commands.push(...buildSceneViewCommands(
-    args.scene, view, drawOne, undefined, args.alphaFor, layers, args,
+    args.scene, view, drawOne, undefined, args.alphaFor, drawnLayers(args), args,
   ));
   if (args.overlay) commands.push(...args.overlay);
   return { width, height, view, commands };
+}
+
+/** The scene layers a headless render leaves out: annotation layers unless
+ *  `annotations` asks for them, and those `layers` does not name. */
+function drawnLayers(
+  args: Pick<RenderSceneToPixelsArgs<unknown, string, unknown>, 'scene' | 'annotations' | 'layers'>,
+): { layerVisibility: Record<string, boolean> } | undefined {
+  const names = args.layers;
+  if (args.annotations && !names) return undefined;
+  const keys = args.scene.layers.map((l) => sceneLayerKey(l.id));
+  for (const name of names ?? []) {
+    if (!keys.some((key) => layerNameClaims(name, key))) {
+      throw new Error(
+        `renderSceneToPixels: layers names "${name}", which matches none of the scene's layers `
+        + `(${keys.join(', ')})`,
+      );
+    }
+  }
+  const hidden = args.annotations ? new Set<string>() : annotationLayerIds(args.scene.layers);
+  return {
+    layerVisibility: Object.fromEntries(args.scene.layers.map((l) => {
+      const key = sceneLayerKey(l.id);
+      return [key, !hidden.has(l.id) && (!names || names.some((name) => layerNameClaims(name, key)))];
+    })),
+  };
 }
 
 function defaultCreateCanvas(width: number, height: number): HeadlessCanvasLike {

@@ -44,6 +44,12 @@ export interface LayerGroup {
   composite?: CompositeOp | BlendFactors;
 }
 
+/** Whether `name`, as a `LayerGroup` names a member, claims layer `id`: that
+ *  layer itself, or any under it in the `:` namespace. */
+export function layerNameClaims(name: string, id: string): boolean {
+  return id === name || id.startsWith(`${name}:`);
+}
+
 /**
  * Layer id → the group that owns it. First claim wins across groups, with a
  * warning for the second; the same group naming a layer twice — `['scene',
@@ -60,7 +66,7 @@ export function groupMembership(
     for (const name of group.layers) {
       let matched = false;
       for (const id of stack) {
-        if (id !== name && !id.startsWith(`${name}:`)) continue;
+        if (!layerNameClaims(name, id)) continue;
         matched = true;
         const claimed = byLayer.get(id);
         if (claimed === group) continue;

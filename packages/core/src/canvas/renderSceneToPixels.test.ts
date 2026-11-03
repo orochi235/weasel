@@ -174,6 +174,43 @@ describe('planPixelRender — annotation layers', () => {
   });
 });
 
+describe('planPixelRender — layers', () => {
+  function twoLayerScene() {
+    const art = leaf('a', { x: 10, y: 20, width: 40, height: 20 }, { fill: { paint: { color: '#000' } } });
+    const mark = { ...leaf('m', { x: 10, y: 20, width: 40, height: 20 }, { fill: { paint: { color: '#f00' } } }), layer: 'marks' };
+    const notes = { ...leaf('n', { x: 0, y: 0, width: 4, height: 4 }, { fill: { paint: { color: '#00f' } } }), layer: 'notes' };
+    const scene = fakeScene([art, mark as typeof art, notes as typeof art]);
+    return {
+      ...scene,
+      layers: [
+        { id: 'default', visible: true, locked: false },
+        { id: 'marks', visible: true, locked: false },
+        { id: 'notes', visible: true, locked: false, annotation: true },
+      ],
+    } as unknown as typeof scene;
+  }
+  const layerGroups = (commands: readonly DrawCommand[]) =>
+    (commands[0] as unknown as { children: DrawCommand[] }).children;
+  const nodeCount = (layer: DrawCommand) => (layer as unknown as { children: DrawCommand[] }).children.length;
+  const plan = (extra: { layers?: string[]; annotations?: boolean }) =>
+    planPixelRender({ scene: twoLayerScene(), sourceRect: RECT, scale: { x: 1, y: 1 }, ...extra });
+
+  it('draws only the scene layer it names', () => {
+    const groups = layerGroups(plan({ layers: ['scene:marks'] }).commands);
+    expect(groups).toHaveLength(1);
+    expect(nodeCount(groups[0])).toBe(1);
+  });
+
+  it('takes "scene" for every scene layer, annotation layers still left out', () => {
+    expect(layerGroups(plan({ layers: ['scene'] }).commands)).toHaveLength(2);
+    expect(layerGroups(plan({ layers: ['scene'], annotations: true }).commands)).toHaveLength(3);
+  });
+
+  it('throws on a name that matches no layer', () => {
+    expect(() => plan({ layers: ['scene:mark'] })).toThrow(/matches none/);
+  });
+});
+
 describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   const recorderFactory = (rec: ReturnType<typeof makeGLRecorder>) =>
     (w: number, h: number) => ({ width: w, height: h, getContext: () => rec.gl });
