@@ -142,7 +142,7 @@ export function drawGroupWithEffects(
     gl.viewport(0, 0, rect.width, rect.height);
     gl.clear(gl.COLOR_BUFFER_BIT);
     drawFullscreenQuad(ctx, program, front.texture, rect.width, rect.height, effect.uniforms,
-      undefined, effect.program.id);
+      undefined, effect.program.id, [rect.x, rect.y]);
     targets.release(front);
     front = back;
   }

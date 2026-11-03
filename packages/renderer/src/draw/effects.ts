@@ -36,6 +36,7 @@ export function drawFullscreenQuad(
   uniforms?: Record<string, ShaderUniform>,
   composite?: { alpha: number; colorMatrix: Float32Array },
   programId?: string,
+  windowOrigin?: readonly [number, number],
 ): void {
   const gl = ctx.gl;
   gl.useProgram(program.handle);
@@ -61,6 +62,8 @@ export function drawFullscreenQuad(
   if (resolution !== undefined) gl.uniform2f(resolution, width, height);
   const texel = program.uniform('u_texel');
   if (texel !== undefined) gl.uniform2f(texel, 1 / width, 1 / height);
+  const origin = program.uniform('u_windowOrigin');
+  if (origin !== undefined) gl.uniform2f(origin, windowOrigin?.[0] ?? 0, windowOrigin?.[1] ?? 0);
 
   if (composite) {
     const alpha = program.uniform('u_alpha');
