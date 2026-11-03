@@ -1,6 +1,6 @@
 /** A {@link DiagramDocument} as scene specs and document values: what every import draws from. */
 import {
-  createPageRun, layoutPages, pasteboardOn, placeOnPages, replaceDoc, type Page, type PlacedPage, type Scene,
+  createPageRun, layoutPages, pageRunOf, pasteboardOn, placeOnPages, replaceDoc, type Page, type PlacedPage, type Scene,
   type SerializedDoc,
 } from '@weasel-js/core';
 import {
@@ -141,18 +141,20 @@ function typeOfGraphs(pages: readonly DocumentPage[]): DiagramType | null {
  * `label`: everything it held is removed, locked or not, the page run and its
  * pages with it; its document values are `drawn`'s (`replaceDoc`); its nodes
  * are added, then its pages made under a new run that keeps the old one's
- * pasteboard, a page whose id a node holds getting a fresh node id; and each
- * root goes on its page (`placeOnPages`).
+ * pasteboard and layer, a page whose id a node holds getting a fresh node
+ * id; and each root goes on its page (`placeOnPages`).
  */
 export function addDocumentScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, drawn: DocumentScene<TLayer>, label = 'Open',
 ): void {
   scene.batch(label, () => {
     const pasteboard = pasteboardOn(scene);
+    const old = pageRunOf(scene);
+    const layer = old === null ? undefined : scene.get(old)!.layer;
     scene.unlocked(() => { if (scene.roots.length > 0) scene.removeMany([...scene.roots]); });
     replaceDoc(scene, drawn.doc);
     const added = drawn.specs.map((spec) => scene.add(spec as never));
-    createPageRun(scene, drawn.pages, pasteboard ? { pasteboard } : {});
+    createPageRun(scene, drawn.pages, { ...(pasteboard ? { pasteboard } : {}), ...(layer !== undefined ? { layer } : {}) });
     placeOnPages(scene, added.filter((id) => scene.get(id)?.parent == null));
   });
 }

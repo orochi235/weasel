@@ -3,7 +3,10 @@ import {
   DIAGRAM_THEMES, DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, edgeIdOf, type DiagramEdge, type DiagramSpec,
 } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
-import { asNodeId, pageNodeOf, pageOfNode, pagesOf } from '@weasel-js/core';
+import {
+  asNodeId, createPageRun, createScene, pageNodeOf, pageOfNode, pagesOf, type RectPose,
+} from '@weasel-js/core';
+import { withDiagramRegistry } from '@weasel-js/diagram';
 import { addDocumentScene, documentSpecs } from './toScene';
 import { readDocument } from './formats';
 import { MEASURE, contentNodes, drawnScene } from './testing/docScene';
@@ -181,6 +184,16 @@ describe('addDocumentScene', () => {
     const next = scene.roots.find((id) => scene.get(id)!.pageRun !== undefined)!;
     expect(scene.get(next)!.pageRun!.pasteboard).toBe(true);
     expect(scene.get(asNodeId('a'))!.parent).toBe('one');
+  });
+
+  it('keeps the old page run\'s layer', () => {
+    const scene = createScene<unknown, string, RectPose>({
+      systemLayers: [{ id: 'under' }, { id: 'paper' }, { id: 'main' }], registry: withDiagramRegistry(),
+    });
+    scene.untracked(() => createPageRun(scene, [{ id: 'one', width: 400, height: 300 }], { layer: 'paper' }));
+    addDocumentScene(scene, documentSpecs(SECOND, { measure: MEASURE }), 'Import');
+    const run = scene.roots.find((id) => scene.get(id)!.pageRun !== undefined)!;
+    expect(scene.get(run)!.layer).toBe('paper');
   });
 
   it('replaces locked content and a locked page', () => {
