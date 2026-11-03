@@ -62,6 +62,11 @@ export const Wrapped = (_props: DomProps & { own?: boolean }) => null;
 export interface ListProps<T> { items: T[] }
 export const List = <T,>(_props: ListProps<T>) => null;
 export const Bare = () => null;
+interface Field<T, C = T> { value?: T; onChange?: (value: C) => void }
+export interface InputProps extends Field<string> {
+  onPick?(value: string): void;
+}
+export const Input = (_props: InputProps) => null;
 `,
     );
     story('chart', `import { Chart } from './Chart';\nexport default { component: Chart };\n`);
@@ -84,8 +89,10 @@ export const Bare = () => null;
       'annotatedWrapper',
       `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nfunction Demo(_props: { shown: boolean }) { return Chart; }\nconst meta: Meta<typeof Demo> = { title: 'ui/Chart', component: Demo };\nexport default meta;\n`,
     );
+    story('typedTitle', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst meta: Meta = { title: 'ui/Chart' };\nexport default meta;\n`);
+    story('input', `import { Input } from './Chart';\nexport default { component: Input };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'none'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'none'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -162,6 +169,19 @@ export const Bare = () => null;
     expect(prop(api('annotated'), 'count')?.default).toBe('3');
     expect(api('annotated')?.ref?.type).toBe('ChartHandle');
     expect(api('annotatedWrapper', 'Chart')?.ref?.type).toBe('ChartHandle');
+  });
+
+  it("follows the title's import for a typed meta that names no component", () => {
+    expect(api('typedTitle', 'Chart')?.ref?.type).toBe('ChartHandle');
+  });
+
+  it('prints an inherited generic prop as its instantiation, not its base type parameter', () => {
+    expect(prop(api('input'), 'value')?.type).toBe('string');
+    expect(prop(api('input'), 'onChange')?.type).toBe('(value: string) => void');
+  });
+
+  it('prints a method-shorthand prop as a function, not its return type', () => {
+    expect(prop(api('input'), 'onPick')?.type).toBe('(value: string) => void');
   });
 
   it('returns null when nothing names a component', () => {

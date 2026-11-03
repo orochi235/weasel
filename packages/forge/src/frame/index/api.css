@@ -1,23 +1,19 @@
-/* The generated page scrolls in a box of its own, so the API column can be as tall as that box (100cqh). */
-.fg-index-page {
-  box-sizing: border-box;
-  height: 100%;
-  overflow: auto;
-  container: fg-index-page / size;
+/* The trial's scroller bounds the API column (100cqh) and is what it sticks to. Where there is none, as in a frame
+   document, the column is bounded by the viewport, which is then the scroller. */
+.fg-story__scroll:has(.fg-index-api) {
+  container: fg-scroller / size;
 }
 
 .fg-index--api {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas:
-    'head head'
-    'stories api';
-  column-gap: calc(var(--wzl-space-lg) * 1.5);
   max-width: none;
+  container: fg-index / inline-size;
 }
 
-.fg-index--api > .fg-index__head {
-  grid-area: head;
+.fg-index--api > .fg-index__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: 'stories api';
+  column-gap: calc(var(--wzl-space-lg) * 1.5);
 }
 
 .fg-index__stories {
@@ -38,10 +34,10 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-@container fg-index-page (width < 560px) {
-  .fg-index--api {
+@container fg-index (width < 560px) {
+  .fg-index--api > .fg-index__body {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'head' 'api' 'stories';
+    grid-template-areas: 'api' 'stories';
   }
 
   .fg-index-api {

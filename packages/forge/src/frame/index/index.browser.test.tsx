@@ -1,13 +1,14 @@
 import '@weasel-js/theme/tokens.css';
 import './index.css';
 import './api.css';
+import '../../shell/shell.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { ApiTable } from '../../story/api';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
-import type { LoadedStory } from '../../story/types';
+import type { IndexRender, LoadedStory } from '../../story/types';
 import { type IndexEnv, IndexEnvContext, IndexPage, IndexStory } from './IndexPage';
 
 // A cell's box is layout, which jsdom does not compute.
@@ -141,8 +142,8 @@ const API: ApiTable = {
   ref: null,
 };
 
-/** A generated page with an API panel, in a 600px-tall box as the trial's scroller is. */
-function apiPage(width: number, api: ApiTable = API) {
+/** An index page with an API panel, in a 600px-tall trial scroller as the workshop gives it. */
+function apiPage(width: number, api: ApiTable = API, page: IndexRender | null = null) {
   const stories = loadNativeModule(
     {
       default: meta({ title: 'ui/Long' }),
@@ -162,21 +163,45 @@ function apiPage(width: number, api: ApiTable = API) {
     api,
   };
   const { container } = render(
-    <div className="host" style={{ width, height: 600 }}>
-      <IndexPage env={env} render={null} />
+    <div className="fg-story" style={{ width, height: 600 }}>
+      <div className="fg-story__scroll">
+        <IndexPage env={env} render={page} />
+      </div>
     </div>,
   );
   const get = (selector: string) => container.querySelector<HTMLElement>(selector) as HTMLElement;
-  return { scroller: get('.fg-index-page'), aside: get('.fg-index-api'), head: get('.fg-index__head'), stories: get('.fg-index__stories') };
+  return { scroller: get('.fg-story__scroll'), aside: get('.fg-index-api'), head: get('.fg-index__head'), stories: get('.fg-index__stories') };
 }
 
-test('keeps the API column in view while the page scrolls', () => {
-  const { scroller, aside } = apiPage(1600);
+/** Scrolls the trial 2000px and checks the API is pinned to its top and no taller than it. */
+function expectPinned({ scroller, aside }: { scroller: HTMLElement; aside: HTMLElement }) {
   scroller.scrollTop = 2000;
   expect(scroller.scrollTop).toBe(2000);
   expect(Math.abs(aside.getBoundingClientRect().top - scroller.getBoundingClientRect().top)).toBeLessThanOrEqual(1);
   expect(aside.getBoundingClientRect().height).toBeLessThanOrEqual(600);
   expect(aside.scrollHeight).toBeGreaterThan(aside.clientHeight);
+}
+
+test("keeps the API column in view while the trial's own scroller scrolls", () => {
+  expectPinned(apiPage(1600));
+});
+
+test('scrolls a custom page that places the generated one under a story in the one trial scroller', () => {
+  expectPinned(apiPage(1600, API, ({ DefaultIndex }) => (
+    <>
+      <p className="intro">A story placed above the generated page.</p>
+      <DefaultIndex />
+    </>
+  )));
+});
+
+test("keeps a custom page's own Api within the trial's height", () => {
+  const { aside } = apiPage(1600, API, ({ Api }) => (
+    <div>
+      <Api />
+    </div>
+  ));
+  expect(aside.getBoundingClientRect().height).toBeLessThanOrEqual(600);
 });
 
 test('puts the API beside the stories in a trial as wide as the workshop gives one', () => {

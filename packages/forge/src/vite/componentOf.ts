@@ -27,7 +27,7 @@ export function componentOf(
   let named = meta.getProperty('component');
   let symbol = named && assigned(tsm, checker, resolved(tsm, checker, exported));
   // A wrapper the story file declares itself is the story's, not the component's, as the dependency graph reads it.
-  const local = !named || symbol?.getDeclarations()?.some((declaration) => declaration.getSourceFile() === source);
+  const local = !symbol || symbol.getDeclarations()?.some((declaration) => declaration.getSourceFile() === source);
   const imported = local && fallback ? importNamed(tsm, checker, source, fallback) : undefined;
   if (imported) {
     named = undefined;

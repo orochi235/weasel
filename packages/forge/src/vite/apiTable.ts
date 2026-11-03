@@ -12,7 +12,6 @@ export interface ApiReading {
   platform: (file: string) => boolean;
 }
 
-/** React reserves these; neither is a prop the component reads. */
 /** An API as read, with the project files it is declared in, which the plugin watches and the page never sees. */
 export type ReadApi = ApiTable & { sources: string[] };
 
@@ -77,12 +76,16 @@ function propEntry(reading: ApiReading, prop: ts.Symbol, destructured: string | 
   return entry;
 }
 
-/** The type as its one declaration spells it; otherwise as the checker prints it, untruncated. */
+/**
+ * The type as its one declaration spells it, when that is the type the prop has here; otherwise, as for a prop
+ * inherited through a generic base or a method-shorthand one, as the checker prints it, untruncated.
+ */
 function writtenType({ tsm, checker, at }: ApiReading, symbol: ts.Symbol): string {
+  const type = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(symbol, at));
   const [declaration, ...others] = symbol.getDeclarations() ?? [];
-  const node = declaration && others.length === 0 && 'type' in declaration ? (declaration.type as ts.Node | undefined) : undefined;
-  if (node) return node.getText().replace(/\s+/g, ' ');
-  return checker.typeToString(checker.getTypeOfSymbolAtLocation(symbol, at), undefined, tsm.TypeFormatFlags.NoTruncation);
+  const node = declaration && others.length === 0 && tsm.isPropertySignature(declaration) ? declaration.type : undefined;
+  if (node && checker.getNonNullableType(checker.getTypeFromTypeNode(node)) === type) return node.getText().replace(/\s+/g, ' ');
+  return checker.typeToString(type, undefined, tsm.TypeFormatFlags.NoTruncation);
 }
 
 /** The interface, type alias or class a property is declared in, by name. */

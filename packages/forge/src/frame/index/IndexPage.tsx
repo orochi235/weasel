@@ -254,31 +254,31 @@ export function DefaultIndex() {
   if (library !== undefined && segments[0] === library) segments.shift();
   const withApi = !env.gallery && env.api !== undefined;
   return (
-    <div className="fg-index-page">
-      <article className={withApi ? 'fg-index fg-index--api' : 'fg-index'}>
-        <header className="fg-index__head">
-          {segments.length > 0 || library !== undefined ? (
-            <p className="fg-index__path">
-              {library !== undefined ? <LibraryBadge library={library} className="fg-index__library" /> : null}
-              {segments.join(' / ')}
-            </p>
-          ) : null}
-          <div className="fg-index__title-row">
-            <h1 className="fg-index__title">{name}</h1>
-            {env.gallery ? <GalleryBadge /> : null}
-          </div>
-          {env.description ? <Description text={env.description} className="fg-index__description" /> : null}
-          <IndexHistory />
-          <IndexDependencies />
-        </header>
+    <article className={withApi ? 'fg-index fg-index--api' : 'fg-index'}>
+      <header className="fg-index__head">
+        {segments.length > 0 || library !== undefined ? (
+          <p className="fg-index__path">
+            {library !== undefined ? <LibraryBadge library={library} className="fg-index__library" /> : null}
+            {segments.join(' / ')}
+          </p>
+        ) : null}
+        <div className="fg-index__title-row">
+          <h1 className="fg-index__title">{name}</h1>
+          {env.gallery ? <GalleryBadge /> : null}
+        </div>
+        {env.description ? <Description text={env.description} className="fg-index__description" /> : null}
+        <IndexHistory />
+        <IndexDependencies />
+      </header>
+      <div className="fg-index__body">
         <IndexApi />
         <div className="fg-index__stories">
           {env.stories.map((story) => (
             <StorySection key={story.id} story={story} variants={withVariants.has(story.id)} />
           ))}
         </div>
-      </article>
-    </div>
+      </div>
+    </article>
   );
 }
 
