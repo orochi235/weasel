@@ -1,5 +1,5 @@
 import { fitViewToBounds, type Bounds } from 'core/viewport/fitViewToBounds';
-import type { Dims } from 'core/layers/render';
+import type { Dims } from 'core/layers/dims';
 import { normalizeView, type View } from 'core/viewport/view';
 import { ZOOM_FLOOR } from 'core/viewport/zoomBounds';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';

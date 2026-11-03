@@ -31,7 +31,6 @@ export const SEEDS = [
   'interactions/actions/resolveOverlays.ts',
   'interactions/actions/depSchema.ts',
   'interactions/actions/insertDeps.ts',
-  'tools/overlayBinding.ts',
   'canvas/deps/enteredGroup.ts',
 ];
 export const TWO_D = ['@weasel-js/renderer', '@weasel-js/text', '@weasel-js/font', '@weasel-js/stroke',
