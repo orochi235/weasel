@@ -1,0 +1,37 @@
+start: 2026-11-03T07:35:28Z
+synced tree: 71988aa5ab4e3553dcb907355427de436374a867 dirty-paths: 3
+cpu: Apple M3 Max (14 threads)
+node: v26.8.1
+before-1: load before { 2.68 2.65 3.85 }
+before-1: load after { 2.54 2.62 3.83 }
+after-1: load before { 2.54 2.62 3.83 }
+after-1: load after { 2.54 2.62 3.83 }
+after-2: load before { 2.54 2.62 3.83 }
+after-2: load after { 2.54 2.62 3.83 }
+before-2: load before { 2.54 2.62 3.83 }
+before-2: load after { 2.54 2.62 3.83 }
+before-3: load before { 2.54 2.62 3.83 }
+before-3: load after { 2.54 2.62 3.83 }
+after-3: load before { 2.54 2.62 3.83 }
+after-3: load after { 2.54 2.62 3.83 }
+after-4: load before { 2.54 2.62 3.83 }
+after-4: load after { 2.54 2.62 3.83 }
+before-4: load before { 2.54 2.62 3.83 }
+before-4: load after { 2.42 2.59 3.82 }
+before-5: load before { 2.42 2.59 3.82 }
+before-5: load after { 2.42 2.59 3.82 }
+after-5: load before { 2.42 2.59 3.82 }
+after-5: load after { 2.42 2.59 3.82 }
+after-6: load before { 2.42 2.59 3.82 }
+after-6: load after { 2.42 2.59 3.82 }
+before-6: load before { 2.42 2.59 3.82 }
+before-6: load after { 2.42 2.59 3.82 }
+before-7: load before { 2.42 2.59 3.82 }
+before-7: load after { 2.39 2.58 3.81 }
+after-7: load before { 2.39 2.58 3.81 }
+after-7: load after { 2.39 2.58 3.81 }
+after-8: load before { 2.39 2.58 3.81 }
+after-8: load after { 2.39 2.58 3.81 }
+before-8: load before { 2.39 2.58 3.81 }
+before-8: load after { 2.39 2.58 3.81 }
+end: 2026-11-03T07:35:41Z

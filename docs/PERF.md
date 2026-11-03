@@ -10,12 +10,6 @@ When work merges, retire its entry here in the same change.
 
 ## Scene
 
-- **(P3) [agent] A point at a length along a curve costs about 30× what it did before exact arc length.**
-  `measurePath(...).at()` and `pointAtLength` on a four-cubic path take 0.39 µs, against 0.012 µs when they
-  read a flattened polyline (4dc78d36b, 2026-11-02, one machine, median of 5). Each answer is now the exact
-  point on the curve, found from a per-segment 16-step arc-length lookup plus a bracketed Newton step, so a
-  1,000-vertex `bendAlongPath` takes 3.2 ms. Closes when `at()` on that path is under 0.1 µs with the
-  lookup tests in `geom/src/along` still at 1e-6.
 - **(P3) [agent] A scene add-and-remove round trip still costs about 0.06 µs more than before 599685677,
   and `setPose` about 0.04 µs more.** 599685677 (2026-10-13) records every scene edit as the kit ops it
   caused, and at that commit alone added 0.26 µs to the round trip and 0.12 µs to `setPose`. On msb-uai

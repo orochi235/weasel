@@ -1,4 +1,4 @@
-import { lookupLength, lookupT } from '../paths/segmentLength';
+import { lookupLength, lookupT } from './arcLookup';
 import { segmentArc, tableInternals, type LengthSpan, type LengthTable } from './lengthTable';
 
 /**

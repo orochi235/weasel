@@ -1,16 +1,18 @@
 /** Measuring one Bézier segment by arc length, and finding where a run of it ends. */
 
-const GL_X = [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
+/** @internal Eight-point Gauss–Legendre nodes and weights on -1..1. */
+export const GL_X = [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
   0.1834346424956498, 0.5255324099163290, 0.7966664774136267, 0.9602898564975363];
-const GL_W = [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620,
+export const GL_W = [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620,
   0.3626837833783620, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
 
-const G4_X = [-0.8611363115940526, -0.3399810435848563, 0.3399810435848563, 0.8611363115940526];
-const G4_W = [0.3478548451374538, 0.6521451548625461, 0.6521451548625461, 0.3478548451374538];
+/** @internal The four-point rule. */
+export const G4_X = [-0.8611363115940526, -0.3399810435848563, 0.3399810435848563, 0.8611363115940526];
+export const G4_W = [0.3478548451374538, 0.6521451548625461, 0.6521451548625461, 0.3478548451374538];
 
 /** How far the eight-point rule may sit from the four-point one on a panel, as a share of the
  *  segment's size, before the panel is refined. */
-const PANEL_AGREE = 1e-9;
+export const PANEL_AGREE = 1e-9;
 /** A derivative root is a cusp or a dip in speed when the dip is narrower than this many panel
  *  widths: its speed over the curvature of its path there, `|B′| / |B″|`, a width in `t`. */
 const DIP_PANELS = 1;
@@ -51,8 +53,8 @@ function refined(c: ArrayLike<number>, dim: number, a: number, b: number, whole:
   return refined(c, dim, a, m, l, tol, depth + 1) + refined(c, dim, m, b, r, tol, depth + 1);
 }
 
-/** The length of the control polygon: the segment's own size, which tolerances scale by. */
-function hullLength(c: ArrayLike<number>, dim: number): number {
+/** @internal The length of the control polygon: the segment's own size, which tolerances scale by. */
+export function hullLength(c: ArrayLike<number>, dim: number): number {
   let sum = 0;
   for (let i = dim; i < c.length; i += dim) {
     let d2 = 0;
@@ -62,7 +64,8 @@ function hullLength(c: ArrayLike<number>, dim: number): number {
   return sum;
 }
 
-function finite(c: ArrayLike<number>): boolean {
+/** @internal */
+export function finite(c: ArrayLike<number>): boolean {
   for (let i = 0; i < c.length; i++) if (!Number.isFinite(c[i])) return false;
   return true;
 }
@@ -96,6 +99,13 @@ function derivativeRoots(c: ArrayLike<number>, dim: number, a: number, b: number
   }
   out.sort((x, y) => x - y);
   return out.filter((t, i) => i === 0 || t !== out[i - 1]);
+}
+
+/** @internal Whether a dip in `roots` sits inside `a..b` or near enough an edge that {@link lengthOver} would refine there. */
+export function dipNear(roots: readonly number[], a: number, b: number): boolean {
+  const pad = EDGE_NEAR * (b - a);
+  for (const r of roots) if (r > a - pad && r < b + pad) return true;
+  return false;
 }
 
 /** The eight-point length over `p0..p1`, refined when it sits beside a slow root or its
@@ -136,7 +146,7 @@ function bend(c: ArrayLike<number>, dim: number, t: number): number {
 }
 
 /** A derivative root inside 0..1, and how wide its dip in speed is, in `t`. */
-interface Dip { t: number; width: number }
+export interface Dip { t: number; width: number }
 
 /** @internal The derivative roots inside 0..1, each with the width of its dip. */
 export function speedDips(c: ArrayLike<number>, dim: number): Dip[] {
@@ -153,8 +163,8 @@ export function dipsFor(dips: readonly Dip[], h: number): number[] {
   return out;
 }
 
-/** {@link segmentLength} over `a..b` in `panels` panels, given the segment's size and its dips. */
-function lengthOver(
+/** @internal {@link segmentLength} over `a..b` in `panels` panels, given the segment's size and its dips. */
+export function lengthOver(
   c: ArrayLike<number>, dim: number, a: number, b: number, size: number, dips: readonly Dip[], panels = 8,
 ): number {
   const h = (b - a) / panels;
@@ -205,65 +215,6 @@ export function segmentTAtLength(
     const v = speed(coords, dim, t);
     let next = v > 0 ? t - err / v : NaN;
     if (!(next > lo && next < hi)) next = (lo + hi) / 2;
-    t = next;
-  }
-  return t;
-}
-
-const STEPS = 16;
-
-/** A curved segment's exact arc length at evenly spaced parameters: what repeated length queries on one segment start from. */
-export interface ArcLookup {
-  /** The length from the start to parameter `k / 16`, `k` = 0..16. */
-  readonly s: Float64Array;
-  readonly size: number;
-  readonly dips: readonly Dip[];
-}
-
-/** @internal The {@link ArcLookup} of curved segment `coords`, each step measured as one panel of {@link segmentLength}'s rule. */
-export function arcLookup(coords: ArrayLike<number>, dim: 2 | 3): ArcLookup {
-  const size = hullLength(coords, dim);
-  const dips = finite(coords) ? speedDips(coords, dim) : [];
-  const s = new Float64Array(STEPS + 1);
-  for (let k = 0; k < STEPS; k++) s[k + 1] = s[k] + lengthOver(coords, dim, k / STEPS, (k + 1) / STEPS, size, dips, 1);
-  return { s, size, dips };
-}
-
-/** @internal The length from the start of `coords` to parameter `t`, read from its lookup `lk`. */
-export function lookupLength(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, t: number): number {
-  const f = Math.min(Math.max(t, 0), 1);
-  const k = Math.min(Math.floor(f * STEPS), STEPS - 1);
-  return lk.s[k] + lengthOver(coords, dim, k / STEPS, f, lk.size, lk.dips, 1);
-}
-
-/**
- * @internal {@link segmentTAtLength} from a lookup: the step holding `length`
- * gives the first guess and the bracket, and Newton steps on one panel's
- * length finish it, so a query costs a few panels rather than a whole-segment solve.
- */
-export function lookupT(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, length: number): number {
-  const { s } = lk;
-  const total = s[STEPS];
-  if (length <= 0 || !(total > 0) || !Number.isFinite(total)) return 0;
-  if (length >= total) return 1;
-  let k = 0;
-  let hi = STEPS - 1;
-  while (k < hi) {
-    const mid = (k + hi + 1) >> 1;
-    if (s[mid] <= length) k = mid;
-    else hi = mid - 1;
-  }
-  const a = k / STEPS;
-  let lo = a, top = (k + 1) / STEPS;
-  const step = s[k + 1] - s[k];
-  let t = step > 0 ? a + ((length - s[k]) / step) / STEPS : a;
-  for (let i = 0; i < 30; i++) {
-    const err = s[k] + lengthOver(coords, dim, a, t, lk.size, lk.dips, 1) - length;
-    if (Math.abs(err) < 1e-10 * total) break;
-    if (err > 0) top = t; else lo = t;
-    const v = speed(coords, dim, t);
-    let next = v > 0 ? t - err / v : NaN;
-    if (!(next > lo && next < top)) next = (lo + top) / 2;
     t = next;
   }
   return t;
