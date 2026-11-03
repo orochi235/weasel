@@ -1,5 +1,12 @@
 # @weasel-js/geom
 
+## 1.16.1
+
+### Patch Changes
+
+- 3afef45: A point at a length along a curve is about five times faster: `measurePath(...).at()` on a path of four cubics went from 0.40 to 0.077 µs and `pointAtLength` from 0.40 to 0.093 µs (M3 Max, median of 8 runs each), and a 1,000-vertex `bendAlongPath` on a curved spine from 3.3 to 1.8 ms. Answers are still the exact point on the curve, solved to the same tolerance as before. Each curved segment's length table now also keeps the speed at each step and how precisely each step can be measured, so a query usually costs one four-point measurement and one Newton step.
+- 5a2e82a: The path hit tests (`pointInPath`, `pathIntersectsRect`, `polygonIntersectsPath` and the rest) flatten a path once for each tolerance and reuse that outline, instead of flattening it again on every call. Testing many points against one path is much faster: a test of about 11,000 grid points against two curved outlines at a 1e-4 tolerance went from 3.6 s to 64 ms. As with the length tables, the cache is keyed on the path object, so a path must not be changed in place once it has been hit-tested.
+
 ## 1.16.0
 
 ### Patch Changes

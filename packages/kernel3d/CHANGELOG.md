@@ -1,5 +1,37 @@
 # @weasel-js/kernel3d
 
+## 1.16.1
+
+### Patch Changes
+
+- 1681f02: kernel3d draws lines: `packLines` turns polylines into vertices and `createLinePass(gl)` draws them into a
+  WebGL2 context the host owns. Each line is widened in screen pixels after projection, so it keeps its width
+  at every depth; corners miter along the bisector, a segment with an end behind the eye is dropped, and each
+  open run ends in an arrowhead capped at a share of the line, its shaft narrowing to match. A line takes a
+  `StrokeTrim`, measured in its own space before its `model` places it, so it can draw itself on. This is new
+  API, and kernel3d now depends on `@weasel-js/paint` and `@weasel-js/stroke`.
+- Updated dependencies [3afef45]
+- Updated dependencies [071906a]
+- Updated dependencies [214d5d5]
+- Updated dependencies [9533421]
+- Updated dependencies [6b9d157]
+- Updated dependencies [603dbc3]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [07a8387]
+- Updated dependencies [72330bf]
+- Updated dependencies [3905b08]
+- Updated dependencies [25a1ff7]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [b45f2cc]
+- Updated dependencies [017246d]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/core@1.16.1
+  - @weasel-js/stroke@1.16.1
+  - @weasel-js/prefs@1.16.1
+  - @weasel-js/react@1.16.1
+  - @weasel-js/paint@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

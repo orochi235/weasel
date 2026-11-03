@@ -1,5 +1,53 @@
 # @weasel-js/labkit
 
+## 1.16.1
+
+### Patch Changes
+
+- 6b503a5: Seat a marker head the line stops short of on the shaft's cut end. The head's back now sits on the end of the shortened shaft and points along the shaft there, so a curving shaft enters the back of an arrowhead square instead of poking out its side; the tip lands the head's inset past the cut. The canvas, PDF, and outlined strokes place heads through `markerHeads`, and `markerSites` takes the insets as a new optional argument.
+  
+  SVG export follows the same rule: it cuts the stroked shaft back by each start and end head's inset and moves the head's `<marker>` reference point back to match, so any viewer's `orient="auto"` draws the head the way the canvas does. The element keeps its path as authored in `wzl:d`, and import reads it back, along with the kit marker it references. A mid marker, or an end too short to cut, references an unseated `-tip` def.
+  
+  PDF export strokes an inset-headed shaft natively, cut back by exact arc length, instead of filling a flattened outline, which showed facets on curves when zoomed. The cut is the new `insetPath` from `@weasel-js/stroke`, which the SVG writer uses too.
+  
+  A `TrialSceneCanvas` is now its trial's camera, so the lab header's zoom buttons, readout, and zoom keys drive a scene lab's view.
+- Updated dependencies [3afef45]
+- Updated dependencies [071906a]
+- Updated dependencies [214d5d5]
+- Updated dependencies [9533421]
+- Updated dependencies [6b9d157]
+- Updated dependencies [603dbc3]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [1681f02]
+- Updated dependencies [07a8387]
+- Updated dependencies [685b25f]
+- Updated dependencies [7168695]
+- Updated dependencies [72330bf]
+- Updated dependencies [0fcec39]
+- Updated dependencies [3905b08]
+- Updated dependencies [25a1ff7]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [eebe800]
+- Updated dependencies [017246d]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/core@1.16.1
+  - @weasel-js/routing@1.16.1
+  - @weasel-js/kernel3d@1.16.1
+  - @weasel-js/ui@1.16.1
+  - @weasel-js/minimap@1.16.1
+  - @weasel-js/registry@1.16.1
+  - @weasel-js/svg@1.16.1
+  - @weasel-js/prefs@1.16.1
+  - @weasel-js/quantity@1.16.1
+  - @weasel-js/animator@1.16.1
+  - @weasel-js/loupe@1.16.1
+  - @weasel-js/clock@1.16.1
+  - @weasel-js/icons@1.16.1
+  - @weasel-js/react@1.16.1
+  - @weasel-js/storage@1.16.1
+  - @weasel-js/theme@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

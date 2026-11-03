@@ -1,5 +1,57 @@
 # @weasel-js/ui
 
+## 1.16.1
+
+### Patch Changes
+
+- 07a8387: A measurement reads its true length inside a magnified frame. Each end records the frame it lands in, the topmost node declaring a unit scope whose drawn box holds it, as `frames` beside its `start` and `end` in `MeasureData.measure` and on `Measurement`. `MeasureReadout` divides the distance and the offsets by `measureMagnification(scene, frames)`, so a measurement inside a drawer drawn at 0.4× reads the drawer's lengths, not world's. Ends in frames declaring different scopes read in the scope chain the frames share, world when they share none. A measurement saved without `frames` reads in world as before.
+  
+  `unitFrameAt(scene)` gives the frame a world point lands in. `sceneMagnification` and `sceneSharedUnitScopes` take `{ inclusive: true }` to count each given node's own scope. `measureBetween` and `measureNode` take the frames as an optional last argument.
+- 0fcec39: `PrefsForm`'s list layout takes `rowsAcross={2}`, as the rail layout already did: two rows side by side, each label beside its control while both fit, and a group running the full width. A sidebar's properties pane can now set Width beside Height.
+- Fixes to the stroke trim that shipped in 1.16.0, and a Trim row for the stroke panel.
+  
+  - Text ignores its stroke's trim everywhere now, not just on canvas. A trimmed text stroke used to cut each glyph's outline in PDF export (whenever a glyph was drawn as an outline), in Outline Stroke, and in Create Outlines. `resolveRuns` (text) now drops the trim, and `ResolvedRun.stroke` is typed without one.
+  - SVG export writes a path stroke aligned `inner` or `outer` as its filled outline, the way it writes a variable-width stroke. It used to write it centered with a warning, so the SVG disagreed with the canvas and the PDF, trimmed or not. The path keeps its stroke at `stroke-width="0"` and records the alignment as `wzl:stroke-align`, which import reads back. Text strokes still warn.
+  - An `object` pref leaf's dotted field (`'nib.angle'`) now reads and writes a field of a field. It used to read nothing and write a flat key named `nib.angle`, so the stroke panel's nib Angle and Thinnest rows never took effect. `prefObjectField` (prefs) reads one, and `prefObjectWithField` sets one, making the objects on the way and dropping one a cleared field leaves empty.
+  - The stroke properties schema (core's default node properties, which draw's sidebar shows) has a Trim row after the markers: Start and End as fractions, and Pace once either is set. An edge held as a length, anchor or subpath disables its slider rather than being rewritten.
+- eebe800: A `SwatchGrid` option can take an `id` beside its color, so two swatches of one color are told apart: the grid's `value` names the current swatch by id, and `onChange` and `onAltChange` hand back the id with the option as a second argument. With no `id` a swatch is keyed by its color, as before. An option can also draw a `glyph` (a string or any React node) centered over its paint, in its own `ink`; the glyph is only seen, and the label stays the accessible name. `SwatchStrip` palettes take the same options and still hand back the color applied. `SwatchButton`, `useSwatchApply` and `swatchId` are exported from the package entry, for a palette laid out by its own rules.
+- 017246d: A number leaf whose unit sets `precision` now shows that many places, trailing zeros included: `1.5` at `precision: 2` reads `1.50`, so a column of them lines up. The field, a menu's number row and the unit's `format` (tooltips, dialog summaries) all agree, and a leaf's own `display` still wins. Typing is left alone until the field commits. This changes what existing precision units show: the default node properties' rotation, at `precision: 1`, reads `45.0°` where it read `45°`. `resolvePrefUnit` returns the unit's `display`, and `formatUnit` takes a `pad` option (its options are exported as `FormatUnitOptions`).
+- Updated dependencies [3afef45]
+- Updated dependencies [071906a]
+- Updated dependencies [214d5d5]
+- Updated dependencies [9533421]
+- Updated dependencies [6b9d157]
+- Updated dependencies [603dbc3]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [07a8387]
+- Updated dependencies [72330bf]
+- Updated dependencies [3905b08]
+- Updated dependencies [25a1ff7]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [017246d]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/core@1.16.1
+  - @weasel-js/history@1.16.1
+  - @weasel-js/registry@1.16.1
+  - @weasel-js/svg@1.16.1
+  - @weasel-js/text@1.16.1
+  - @weasel-js/prefs@1.16.1
+  - @weasel-js/quantity@1.16.1
+  - @weasel-js/animator@1.16.1
+  - @weasel-js/plot@1.16.1
+  - @weasel-js/ui-logic@1.16.1
+  - @weasel-js/clock@1.16.1
+  - @weasel-js/font@1.16.1
+  - @weasel-js/icons@1.16.1
+  - @weasel-js/menu@1.16.1
+  - @weasel-js/modes@1.16.1
+  - @weasel-js/react@1.16.1
+  - @weasel-js/select@1.16.1
+  - @weasel-js/theme@1.16.1
+  - @weasel-js/gestures@1.16.1
+  - @weasel-js/paint@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

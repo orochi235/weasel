@@ -1,5 +1,15 @@
 # @weasel-js/loupe
 
+## 1.16.1
+
+### Patch Changes
+
+- Updated dependencies [3afef45]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [25a1ff7]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/registry@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

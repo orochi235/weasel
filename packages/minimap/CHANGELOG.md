@@ -1,5 +1,28 @@
 # @weasel-js/minimap
 
+## 1.16.1
+
+### Patch Changes
+
+- 685b25f: A wheel over `<MinimapCanvas>` now zooms the main view about the world point under the cursor, which keeps its place in the main view; a trackpad pinch does the same. The zoom is clamped to the kit's default limits, or to the `{ min, max }` passed as the new `wheelZoom` prop, and `wheelZoom={false}` turns it off. The action behind it is exported as `minimapZoomAction` (`minimap.zoom`). This is new default behavior: a consumer that relied on the wheel scrolling the page over the minimap needs `wheelZoom={false}`.
+- 7168695: The minimap's `'scene'` and `'live'` fits, and `computeFitView` with them, frame each mark where it draws. They used to read a mark's stored pose, which is local to its container, so a scene with content nested in containers (or on pages) was framed off-center and cropped.
+- Updated dependencies [071906a]
+- Updated dependencies [214d5d5]
+- Updated dependencies [9533421]
+- Updated dependencies [6b9d157]
+- Updated dependencies [603dbc3]
+- Updated dependencies [07a8387]
+- Updated dependencies [72330bf]
+- Updated dependencies [3905b08]
+- Updated dependencies [25a1ff7]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [017246d]
+  - @weasel-js/core@1.16.1
+  - @weasel-js/routing@1.16.1
+  - @weasel-js/animator@1.16.1
+  - @weasel-js/react@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

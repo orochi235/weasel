@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.16.1
+
+### Patch Changes
+
+- 071906a: A marquee or lasso over a scene with no pick index is about twice as fast: a 25% marquee over 10,000 rect nodes went from 0.85 to 0.42 ms (M3 Max, median of 8 interleaved runs each). While nothing in the scene is overridden, the walk reads each node's pose and path straight off the node; while something is, a node that derives no pose costs two override lookups instead of three. Which nodes a pick returns is unchanged.
+- 214d5d5: An alt-drag clone snaps the way a move does: the copy lands where the snap sources hold it, the guides show while it drags, Ctrl suspends snapping and Shift locks the drag to an axis. `cloneAction` now requires the `snap` dep and declares `SNAP_ROLES`. The snapped offset is what the copy commits at and what Transform Again repeats.
+- 9533421: A scene canvas can bound its view to its content. `<SceneCanvas viewBounds="content">` keeps the view within what the scene draws plus a 200-pixel margin, and `viewBounds={{ content: { margin, include } }}` sets the margin, in screen pixels, and adds world rects that count as content though nothing draws them, such as a page. The content is every visible root's drawn bounds and whatever a gesture in flight proposes, read at each write to the view, so dragging content outward takes the bounds with it. A write never moves the view further from the content than it already is. A fixed world rect works as before. Exports `ContentViewBounds`, `SceneCameraProps`, and `DEFAULT_CONTENT_MARGIN`.
+  
+  A drag held near the canvas's edge scrolls the view. It runs for a drag whose `OngoingHandle` sets the new `autoPan` flag, which move, resize, insert, clone, the anchor and segment drags, marquee, and lasso now do. Each frame the view scrolls, faster the closer the pointer is to the edge, and the dispatcher sends the held pointer's move again so the drag follows. `viewport={{ edgePan }}` turns it off with `false`, or takes an `EdgePanOptions` with `zone`, `speed`, and `limit`. `limit` holds the drag's pointer inside a world rect, or `{ past }` world units past the content as it stood when the drag began, so what the drag moves stops there and the scroll stops with it. `useGestureDispatcher` takes a `heldPointer` callback, handed a `HeldPointerFeed` that reports the held pointer and sends its last move again.
+  
+  `viewport.zoom` has a Fit Content variant, `viewport.zoom:fit`, on Cmd-Alt-0, matched by the physical key so Option's character on a Mac doesn't stop it. It fits the view to the `view` dep's new `contentBounds()`, which `<SceneCanvas>` wires. Cmd-0 is unchanged.
+- 6b9d157: `<EditorShell>` now gives every canvas in it default context menus: `editor.selection` on the selection (cut, copy, paste, duplicate, delete; group, ungroup; bring forward, send backward) and `editor.canvas` on empty canvas (paste, select all; undo, redo). An app adds to one by contributing a `MenuDef` with the same id on a canvas `ambient` entry, whose sections follow the editor's; `contextMenus={false}` installs none. The menus are exported as `EDITOR_CONTEXT_MENUS`, and the entry carrying them as `EDITOR_CONTEXT_MENUS_CONTRIBUTION`. This is new default behavior: an app under the shell that already defines its own selection or canvas menu now opens the editor's in its place, since the first matching menu wins, until it moves its items onto the shared ids or passes `contextMenus={false}`.
+  
+  Core adds `<AmbientContributionsProvider contributions>`: every `<SceneCanvas>` below it installs those entries ahead of its own `ambient`, a canvas's `ambient` entry of the same id replacing a provided one. Nested providers accumulate, an inner entry replacing an outer one of the same id.
+- 603dbc3: `viewportWorldRect` gives a flipped view (`scale.y < 0` for y-up, or `scale.x < 0`) a positive size: the rect now runs from its low corner, ending at the camera's corner on a flipped axis, where it used to report a negative width or height. A y-up canvas now draws the guides grid and the grid's cell highlight, a tiled parallax layer draws its copies, and paste placement, image fitting, `pageInView` and diagram fitting read the right area. A consumer that read the sign of `viewportWorldRect`'s size to detect a flip should read `view.scale` instead.
+  
+  A rect aim carries the flip separately, so an aim still round-trips a flipped view: its extent is the new `AimRect`, a positive world rect with an optional `flip: { x, y }`, which `viewForAim` honors and the new `aimRectOf(view, size)` produces. An aim-held `<CanvasView>` takes an `AimRect` as `aim`, so it can now hold a y-up view.
+- 07a8387: A measurement reads its true length inside a magnified frame. Each end records the frame it lands in, the topmost node declaring a unit scope whose drawn box holds it, as `frames` beside its `start` and `end` in `MeasureData.measure` and on `Measurement`. `MeasureReadout` divides the distance and the offsets by `measureMagnification(scene, frames)`, so a measurement inside a drawer drawn at 0.4× reads the drawer's lengths, not world's. Ends in frames declaring different scopes read in the scope chain the frames share, world when they share none. A measurement saved without `frames` reads in world as before.
+  
+  `unitFrameAt(scene)` gives the frame a world point lands in. `sceneMagnification` and `sceneSharedUnitScopes` take `{ inclusive: true }` to count each given node's own scope. `measureBetween` and `measureNode` take the frames as an optional last argument.
+- 72330bf: Pages are scene nodes. A paged scene has a page run, a root group that lays out its pages in a column or a row, and each page is a group under it that frames and clips what is on it. Content on a page is that page's child, in the page's own coordinates with the origin at its top-left, so a page's content moves with it and dragging onto another page reparents. A scene with a page run is in Pages mode; one without is Continuous. Pages are 2D only.
+  
+  This is breaking for a consumer that wrote `core:pages` directly, or placed content on pages in world coordinates: the pages are no longer a document value, and a node on a page is positioned relative to it. Stored scenes convert on load: `adoptLegacyPages` turns a `core:pages` value into page nodes and moves each root onto the page holding it, as one untracked batch. `PAGES_DOC_KEY` remains only as the key that conversion reads.
+  
+  The page edits (`setPages`, `addPage`, `removePage`, `movePage`, `resizePage`, `renamePage`) and readers (`pagesOf`, `placedPagesOf`) keep their names and now work on the nodes. Content placed outside every page goes onto the nearest page unless the page run's `pasteboard` flag is on. A node that follows others (`dependsOn`, such as a connector) goes on the page its ends share, else into the page run. Pages and the run are never selected, deleted, copied or grouped by the scene tools, and the run refuses drops and inserts of anything but followers. A layer lock never locks a page or the run; only its own `locked` flag does. Group and the boolean group made from members on more than one page put the new group on the page the members overlap most. Turning the pasteboard off puts what sits off every page on the pages, in the same undo entry, and `setPages` on a Continuous scene puts what it holds on the new pages.
+  
+  Page and run nodes hold `data: undefined` whatever the scene's `TData`, so code walking `scene.nodes` and reading `data` must skip page structure (`isPageStructure`). A page's node id is its page id (`Page.id`) unless another node already held that id when the page was made: then the node gets a fresh id and `PageInfo.id` keeps the page id. `pagesOf`, `placedPagesOf`, `pageOfNode` and the page edits all speak page ids; `pageNodeOf` gives the node for one.
+  
+  - `@weasel-js/core` exports `createPageRun`, `pageRunOf`, `isPaged`, `pageOfNode`, `PAGE_RUN` and `pageRunLayout`, `PAGE_CLIP` and `pageClip`, `adoptLegacyPages`, `placeOnPages` (moves world-space specs onto their pages, measured by `AUTO_POSE_DESCRIPTOR` unless told otherwise), `addOnPages` (adds specs and places them), `pageNodeOf`, `pasteboardOn`, `replaceDoc` (makes a scene's document values a given set, clearing the rest), `followerHome`, `isPageStructure`, `withoutPageStructure`, `contentRoots`, and, from the routing barrel, `insertSite` with `InsertSite` and `InsertSiteOptions`, whose `descriptor` measures the insert against its page. Nodes gain `page` and `pageRun` fields, which save with the scene, and scenes gain `setPage` and `setPageRun`. `LayoutContainer` and `LayoutChild` gain an optional `node`.
+  - `@weasel-js/editor`: `usePages` takes `{ paging }` as its last argument, `'continuous'` (the default) or `'single'`, which settles the view fitted to one page through the new `usePageSettle`. `adoptSnapshotPages` converts a snapshot saved with `core:pages`, which `nodeSpecsFromSnapshot` now does; both take a `pages` option, the pages a snapshot with neither page nodes nor `core:pages` gets. `snapshotRebuildsTree` says whether a load rebuilds the tree, so the undo stack saved beside it is stale, and `useSessionPersistence` drops that stack, taking the same `pages` option. `usePageFit`'s `page` may be `null`.
+  - `@weasel-js/diagram`: `OffPageEdgeInput` is now `{ id, fromPage, toPage, offPage? }`, each end's page read from its page ancestor, and `OffPageSplitInput` loses `pages`. `OffPageMarkerOptions` loses `geometry` and its type parameter. A stencil drawn on a paged scene lands on the page under it.
+  - `@weasel-js/diagram-formats`: `DocumentScene` gains `pages`. `addDocumentScene` replaces a scene's content, pages and document values with a `DocumentScene` in one undo entry, locked content included, keeping the pasteboard setting; a node in it named like a page no longer collides with that page. `addOnPages` is now core's, re-exported here, and takes the scene's own spec type.
+- 3905b08: Redrawing a retained surface larger than one tile no longer costs more than drawing it whole: 4 layers of 1,000 commands with their pan margins at 2560x1600 went from 16.5–18.3 ms a redraw to 4.8–5.4, against 5.0–5.9 untiled (M5 Max, 4–6 fresh contexts each). Each tile now skips the commands that miss it at any depth, where it used to look only at the retained group's own children, so a layer whose commands sit inside one group staged every command in every tile.
+  
+  Text with a pattern or registered paint in `local` or `world` units now follows a pan in a retained layer, as a path with that paint does, instead of being drawn straight through while the view moves.
+  
+  `drawLayers` retains a layer that runs effects passes, its own or a group's inside it, from 10 drawing commands rather than 250 (`LayerRetainPolicy.minCommandsWithEffects`, also on `<Canvas retain>`): under a blur of radius 8, compositing such a layer was already cheaper than drawing it at 10 commands.
+- 25a1ff7: A bare scene call allocates less: it opens its edit mode and pose-write label without building closures, `history.apply` keeps the one-op array it builds rather than copying it, a history push builds its step only when something observes steps, an emitter reuses its listener array until the listeners change, and the pose-write log skips its flush when nothing is pending. `scene.setPose` takes about 10 ns less, 0.24 µs on an M3 Max (9 interleaved runs). Nothing observable changes; `history.applyOps` still copies the array it is handed.
+- 6b503a5: Seat a marker head the line stops short of on the shaft's cut end. The head's back now sits on the end of the shortened shaft and points along the shaft there, so a curving shaft enters the back of an arrowhead square instead of poking out its side; the tip lands the head's inset past the cut. The canvas, PDF, and outlined strokes place heads through `markerHeads`, and `markerSites` takes the insets as a new optional argument.
+  
+  SVG export follows the same rule: it cuts the stroked shaft back by each start and end head's inset and moves the head's `<marker>` reference point back to match, so any viewer's `orient="auto"` draws the head the way the canvas does. The element keeps its path as authored in `wzl:d`, and import reads it back, along with the kit marker it references. A mid marker, or an end too short to cut, references an unseated `-tip` def.
+  
+  PDF export strokes an inset-headed shaft natively, cut back by exact arc length, instead of filling a flattened outline, which showed facets on curves when zoomed. The cut is the new `insetPath` from `@weasel-js/stroke`, which the SVG writer uses too.
+  
+  A `TrialSceneCanvas` is now its trial's camera, so the lab header's zoom buttons, readout, and zoom keys drive a scene lab's view.
+- Fixes to the stroke trim that shipped in 1.16.0, and a Trim row for the stroke panel.
+  
+  - Text ignores its stroke's trim everywhere now, not just on canvas. A trimmed text stroke used to cut each glyph's outline in PDF export (whenever a glyph was drawn as an outline), in Outline Stroke, and in Create Outlines. `resolveRuns` (text) now drops the trim, and `ResolvedRun.stroke` is typed without one.
+  - SVG export writes a path stroke aligned `inner` or `outer` as its filled outline, the way it writes a variable-width stroke. It used to write it centered with a warning, so the SVG disagreed with the canvas and the PDF, trimmed or not. The path keeps its stroke at `stroke-width="0"` and records the alignment as `wzl:stroke-align`, which import reads back. Text strokes still warn.
+  - An `object` pref leaf's dotted field (`'nib.angle'`) now reads and writes a field of a field. It used to read nothing and write a flat key named `nib.angle`, so the stroke panel's nib Angle and Thinnest rows never took effect. `prefObjectField` (prefs) reads one, and `prefObjectWithField` sets one, making the objects on the way and dropping one a cleared field leaves empty.
+  - The stroke properties schema (core's default node properties, which draw's sidebar shows) has a Trim row after the markers: Start and End as fractions, and Pace once either is set. An edge held as a length, anchor or subpath disables its slider rather than being rewritten.
+- Updated dependencies [3afef45]
+- Updated dependencies [9533421]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [3905b08]
+- Updated dependencies [25a1ff7]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [b45f2cc]
+- Updated dependencies [017246d]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/routing@1.16.1
+  - @weasel-js/renderer@1.16.1
+  - @weasel-js/history@1.16.1
+  - @weasel-js/registry@1.16.1
+  - @weasel-js/stroke@1.16.1
+  - @weasel-js/text@1.16.1
+  - @weasel-js/prefs@1.16.1
+  - @weasel-js/quantity@1.16.1
+  - @weasel-js/animator@1.16.1
+  - @weasel-js/ui-logic@1.16.1
+  - @weasel-js/cursor@1.16.1
+  - @weasel-js/font@1.16.1
+  - @weasel-js/icons@1.16.1
+  - @weasel-js/modes@1.16.1
+  - @weasel-js/react@1.16.1
+  - @weasel-js/select@1.16.1
+  - @weasel-js/text-dom@1.16.1
+  - @weasel-js/simulation@1.16.1
+  - @weasel-js/gestures@1.16.1
+  - @weasel-js/paint@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes
