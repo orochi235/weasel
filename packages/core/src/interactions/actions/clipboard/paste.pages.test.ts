@@ -85,14 +85,13 @@ describe('materializePaste in a paged scene', () => {
   function pasteChain(drop: { x: number; y: number }, ids: (link: string, tag: string) => string[]) {
     const { scene } = pagedScene();
     const end = scene.add({ kind: 'mark', layer: 'ink', parent: asNodeId('a'), pose: { x: 10, y: 30, width: 20, height: 10 }, data: {} });
-    const follow = { derivePose: (_n: unknown, deps: readonly { pose: RectPose }[]) => deps[0]?.pose ?? null };
     const link = scene.add({
       kind: 'mark', layer: 'ink', parent: asNodeId('a'), pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [ON_PAGE, end], ...follow,
+      dependsOn: [ON_PAGE, end], derivePose: (_n, deps) => deps[0]?.pose ?? null,
     });
     const tag = scene.add({
       kind: 'mark', layer: 'ink', parent: asNodeId('a'), pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [link], ...follow,
+      dependsOn: [link], derivePose: (_n, deps) => deps[0]?.pose ?? null,
     });
     const adapter = sceneToAdapter(scene);
     const pasted = materializePaste(adapter as never, adapter.snapshotSelection(ids(link, tag).map((id) => id === 'end' ? end : id)), {

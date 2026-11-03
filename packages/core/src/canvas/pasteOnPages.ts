@@ -1,5 +1,5 @@
 import type { Bounds } from '@weasel-js/routing';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { Scene } from 'core/scene/types';
 import { pageNodeOf, pageRunOf } from 'core/pages/pageNodes';
 import {
   followerLandings, homeOfPage, keepOnPage, pageForPoint, pasteboardOn, placedPage,
