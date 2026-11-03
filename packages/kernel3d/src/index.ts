@@ -3,7 +3,8 @@
  * screen-projected chrome over core's scene graph and dispatcher.
  *
  * It hosts a renderer rather than owning one: a consumer brings its own and
- * the kernel hands it poses. Nothing here touches WebGL.
+ * the kernel hands it poses. The one thing that touches WebGL is the line
+ * pass, which draws into the consumer's own context when it is called.
  *
  * @packageDocumentation
  */
@@ -35,6 +36,11 @@ export {
 } from './snap/sources';
 export { projectSnapMarks, type ScreenLine, type ScreenPoint } from './snap/marks';
 export { collectOverlayBoxes } from './overlays';
+export { HEAD, HEAD_OVERDRAW, headFor, layoutLine, type HeadShape, type HeadSize, type LineLayout } from './lines/head';
+export {
+  LINE_FLOATS, packLines, visibleRuns, type Line3, type LineRun3, type VisibleRun3,
+} from './lines/pack';
+export { createLinePass, type LineDrawOptions, type LinePass } from './lines/pass';
 export {
   orbitAction, panAction, dollyAction, pinchDollyAction, homeAction, useOrbitTool,
 } from './tools';

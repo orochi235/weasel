@@ -1351,6 +1351,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/Kernel3dDemo.tsx',
   },
   {
+    id: 'kernel3d-lines',
+    title: 'Lines in 3D',
+    package: 'kernel3d',
+    description: "Two arrows drawing themselves on and draining away under an orbit camera, drawn by kernel3d's line pass into a WebGL2 canvas the demo owns. The scene holds each polyline as a node with a 3D pose, and every frame the demo tweens a `StrokeTrim` and hands the pass each node's world pose as the line's model; the trim is measured along the line in its own space, the way a 2D stroke's is. The pass widens each line after projection, so the shaft and the head are the same width in pixels near the camera and far from it, corners miter along the bisector, and the head rides the front of the trim. The ground grid is the same pass with no head.",
+    hint: 'Drag to orbit, shift-drag to pan, scroll to dolly; the lines keep their width at every distance.',
+    load: () => import('./demos/Lines3dDemo').then((m) => m.Lines3dDemo),
+    path: 'apps/site/demos/Lines3dDemo.tsx',
+  },
+  {
     id: 'minimap',
     title: 'Minimap',
     package: 'minimap',

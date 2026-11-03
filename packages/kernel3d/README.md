@@ -4,8 +4,9 @@ Poses, an orbit camera, ray picking and screen-projected chrome geometry for
 weasel, over `@weasel-js/core`'s scene graph and dispatcher.
 
 **It hosts a renderer rather than owning one.** A consumer brings its own — a
-bespoke WebGL pass, three.js, anything — and the kernel hands it poses. Nothing
-here touches WebGL.
+bespoke WebGL pass, three.js, anything — and the kernel hands it poses. The one
+thing here that touches WebGL is the line pass (below), which that renderer
+calls into its own context.
 
 ```ts
 import { createScene } from '@weasel-js/core';
@@ -109,6 +110,41 @@ y lie along the two axes `up` is not: x and z for a y-up world. `aimSpace3d`
 makes a pane a target, unprojecting onto the same ground, and `cameraOfAim3d`
 gives back the camera a dragged aim stands for — what an `AimSource`'s `setAim`
 writes.
+
+## Lines
+
+A stroke has no mesh a renderer can draw, so the kernel ships a pass for it.
+`packLines` turns polylines into vertices, and `createLinePass(gl)` draws them
+into a WebGL2 context the host owns, between its own draws:
+
+```ts
+const pass = createLinePass(gl);
+pass.draw(
+  packLines([{ runs: [{ points }], color: [1, 0.4, 0.2, 1], width: 4, trim: { end: 0.6 }, model }]),
+  cameraViewProjection(camera, width / height),
+  { width, height }, // the viewport in CSS pixels
+);
+```
+
+- **Widths are pixels.** Each line is widened after projection, so its shaft and
+  head are the same size near the camera and far from it. Corners miter along
+  the bisector, up to a limit past which a hairpin keeps a notch.
+- **A trim is a `StrokeTrim`, measured in the line's own space** before `model`
+  places it, through geom's length table and stroke's `resolveTrim`, as a 2D
+  stroke's is. It is applied when packing, so an animated trim repacks.
+- **A head caps each open run's end**: `HEAD` by default, a `HeadShape` to set
+  one, `null` for none. It is capped at a share of the line's length on screen,
+  and the shaft narrows by what the cap took. It stands back from the tip along
+  its own segment's direction on screen, so a head longer than its segment
+  stays on that segment's line. A closed subpath, or a run cut from one, has no
+  head.
+- **A segment with an end behind the eye is dropped**, not drawn across the
+  screen.
+
+Depth is tested against the bound buffer by default and never written; pass
+`{ depthTest: false }` to draw over everything. The pass puts back the GL state
+it changes. A three.js host calls it after `renderer.render`, with
+`renderer.getContext()`, and then `renderer.resetState()`.
 
 ## Math
 
