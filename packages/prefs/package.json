@@ -2,6 +2,9 @@
   "name": "@weasel-js/prefs",
   "version": "1.16.1",
   "description": "A preferences schema, a store that loads, validates, migrates and persists values against it, and React hooks over the store.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

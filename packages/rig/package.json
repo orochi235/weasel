@@ -2,6 +2,9 @@
   "name": "@weasel-js/rig",
   "version": "1.16.1",
   "description": "Rigging tools for a weasel canvas: the bone tool, which draws and edits a node's skeleton, and the weight tool, which paints how much each joint moves the paths under it.",
+  "weasel": {
+    "tier": "plugin"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

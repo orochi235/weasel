@@ -2,6 +2,9 @@
   "name": "@weasel-js/path-tools",
   "version": "1.16.1",
   "description": "Path-editing tools for a weasel canvas, as presets an app opts into: brushes, bridge, trim and extend, curvature and handle balance, path constraints, corner shape, path effects, warps, and the Girth and Shape Builder tools.",
+  "weasel": {
+    "tier": "plugin"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

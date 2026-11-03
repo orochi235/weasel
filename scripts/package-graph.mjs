@@ -1,51 +1,54 @@
 // Draws the @weasel-js package dependency graph as two views:
 //   base.svg  core and every package it depends on, directly or not
 //   top.svg   everything else, with core standing in for the base layer
-// Edges are transitively reduced, and each view also writes a PNG at 2x.
+// Colors are each package's `weasel.tier` (scripts/lib/package-tiers.mjs). A package whose code reaches
+// core only through @weasel-js/core/engine points at a node of that name instead of core. Edges are
+// transitively reduced, and each view also writes a PNG at 2x.
 //
 //   node scripts/package-graph.mjs [outDir]   (default: <tmpdir>/weasel-package-graph, overwritten each run)
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
+import { dirname, join, resolve } from 'node:path';
+import { importSpecifiers, isBare } from './lib/imports.mjs';
+import { packageEntries } from './lib/packageEntries.mjs';
+import { closureOf, readPackages, tierProblems } from './lib/package-tiers.mjs';
+import { repoRoot } from './lib/workspaces.mjs';
 
 const require = createRequire(join(repoRoot, 'package.json'));
 const ELK = require('elkjs/lib/elk.bundled.js');
 const { chromium } = require('playwright-core');
 
-// Drop-in canvas features. Everything else falls out of the graph itself.
-const PLUGINS = new Set(['d3', 'devtools', 'diagram', 'diagram-elk', 'guides', 'hud', 'minimap',
-  'parallax', 'path-tools', 'plot', 'rig', 'symmetry']);
-const COLORS = { base: '#4c78a8', core: '#222', plugin: '#e45756', 'other-on-core': '#b279a2', standalone: '#72b7b2' };
-const PARTITION = { plugin: 0, 'other-on-core': 0, core: 1, base: 2, standalone: 2 };
-const SCOPE = '@weasel-js/';
+const COLORS = { base: '#4c78a8', core: '#222', plugin: '#e45756', other: '#b279a2', standalone: '#72b7b2' };
+const PARTITION = { plugin: 0, other: 0, core: 1, base: 2, standalone: 2 };
+const ENGINE = 'core/engine';
 
-function readGraph() {
-  const deps = {};
-  for (const { manifest } of publishableWorkspaces()) {
-    if (!manifest.name.startsWith(SCOPE)) continue;
-    deps[manifest.name.slice(SCOPE.length)] = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })
-      .filter((k) => k.startsWith(SCOPE)).map((k) => k.slice(SCOPE.length));
+/** Every `@weasel-js/core` specifier the package's published entries load at run time, its own files followed. */
+function coreSpecifiers(dir) {
+  const queue = packageEntries(dir).map((e) => e.source).filter((s) => s && !s.includes('*') && /\.tsx?$/.test(s))
+    .map((s) => join(dir, s));
+  const seen = new Set(queue), found = new Set();
+  while (queue.length) {
+    const file = queue.shift();
+    for (const spec of importSpecifiers(readFileSync(file, 'utf8'), file)) {
+      if (isBare(spec)) { if (/^@weasel-js\/core(\/|$)/.test(spec)) found.add(spec); continue; }
+      const base = resolve(dirname(file), spec.replace(/\.js$/, ''));
+      const hit = ['.ts', '.tsx', '/index.ts', '/index.tsx', ''].map((x) => base + x).find((p) => existsSync(p) && !p.endsWith('/'));
+      if (hit && /\.tsx?$/.test(hit) && !seen.has(hit)) { seen.add(hit); queue.push(hit); }
+    }
   }
-  return deps;
+  return found;
 }
 
-function classify(deps) {
-  const memo = new Map();
-  const closure = (n) => {
-    if (memo.has(n)) return memo.get(n);
-    const seen = new Set(), stack = [...(deps[n] ?? [])];
-    while (stack.length) { const x = stack.pop(); if (!seen.has(x)) { seen.add(x); stack.push(...(deps[x] ?? [])); } }
-    memo.set(n, seen);
-    return seen;
-  };
-  const base = closure('core');
-  const category = (n) => n === 'core' ? 'core' : base.has(n) ? 'base' : PLUGINS.has(n) ? 'plugin'
-    : closure(n).has('core') ? 'other-on-core' : 'standalone';
+function classify(packages) {
+  const closure = closureOf(packages);
+  const category = (n) => n === ENGINE ? 'core'
+    : packages.get(n).tier === 'other' && !closure(n).has('core') ? 'standalone' : packages.get(n).tier;
   const edges = [];
-  for (const [a, ds] of Object.entries(deps)) for (const c of ds) {
-    if (!ds.some((b) => b !== c && closure(b).has(c))) edges.push([a, c]);
+  for (const [a, { deps, dir }] of packages) for (const c of deps) {
+    if (deps.some((b) => b !== c && closure(b).has(c))) continue;
+    const viaEngine = c === 'core' && [...coreSpecifiers(dir)].every((s) => s === '@weasel-js/core/engine');
+    edges.push([a, viaEngine ? ENGINE : c]);
   }
   return { category, edges };
 }
@@ -98,11 +101,17 @@ function toSvg(out, category) {
 async function main() {
   const outDir = process.argv[2] ?? join(tmpdir(), 'weasel-package-graph');
   mkdirSync(outDir, { recursive: true });
-  const deps = readGraph();
-  const { category, edges } = classify(deps);
-  const names = Object.keys(deps).sort();
+  const packages = readPackages();
+  const problems = tierProblems(packages);
+  if (problems.length) {
+    for (const p of problems) console.error(p);
+    process.exit(1);
+  }
+  const { category, edges } = classify(packages);
+  const names = [...packages.keys()].sort();
+  if (edges.some(([, c]) => c === ENGINE)) names.push(ENGINE);
   const views = {
-    base: names.filter((n) => ['base', 'core'].includes(category(n))),
+    base: names.filter((n) => n !== ENGINE && ['base', 'core'].includes(category(n))),
     top: names.filter((n) => category(n) !== 'base'),
   };
   const browser = await chromium.launch({ headless: true });
@@ -119,7 +128,7 @@ async function main() {
     await browser.close();
   }
   for (const k of Object.keys(COLORS)) console.log(k.padEnd(14), names.filter((n) => category(n) === k).join(' '));
-  console.log(`edges ${Object.values(deps).flat().length} → ${edges.length} after reduction`);
+  console.log(`edges ${[...packages.values()].flatMap((p) => p.deps).length} → ${edges.length} after reduction`);
   console.log(`wrote ${outDir}/{base,top}.{svg,png}`);
 }
 

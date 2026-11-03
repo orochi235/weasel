@@ -2,6 +2,9 @@
   "name": "@weasel-js/icons-plugin",
   "version": "1.16.1",
   "description": "The build plugin that ships only the glyphs a build names, for vite, rollup, rolldown and esbuild.",
+  "weasel": {
+    "tier": "other"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

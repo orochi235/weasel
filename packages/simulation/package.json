@@ -2,6 +2,9 @@
   "name": "@weasel-js/simulation",
   "version": "1.16.1",
   "description": "A velocity-Verlet N-body integrator that takes d3-force's forces, and a hook that runs it on a frame loop. The root entry has no React and no DOM.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

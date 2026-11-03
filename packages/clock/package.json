@@ -2,6 +2,9 @@
   "name": "@weasel-js/clock",
   "version": "1.16.1",
   "description": "A clock for a run of time: a position moved by a signed rate, with passes, ramps and seeking. The root entry has no React and no DOM.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

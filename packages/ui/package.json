@@ -2,6 +2,9 @@
   "name": "@weasel-js/ui",
   "version": "1.16.1",
   "description": "UI chrome primitives for weasel apps (properties panel, etc.)",
+  "weasel": {
+    "tier": "other"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": [
