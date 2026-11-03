@@ -2,6 +2,9 @@
   "name": "@weasel-js/pdf",
   "version": "1.16.1",
   "description": "PDF documents from weasel draw commands: vector paths, shadings, images, and embedded fonts with selectable text. No scene graph, no React.",
+  "weasel": {
+    "tier": "other"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

@@ -1,7 +1,49 @@
-import type { Affine } from '@weasel-js/geom';
+import type { Affine, PolygonPath } from '@weasel-js/geom';
+import type { DragSample, WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { InsertExtras } from './depSchema';
+
+/**
+ * Per-kind extra geometry passed to `InsertDep.commit`.
+ *
+ * Built-in tools populate a typed variant so the kit's default factory can
+ * render the true tool params (line endpoints, polygon side count, star
+ * geometry, pencil sample list). Consumer-defined tools may pass any
+ * `{ kind: string; ... }` payload; the kit's factory falls back to AABB
+ * inscription for unknown kinds. The sticky tool's extras are its
+ * `StickyStyle` (`stickyNode.ts`) under `kind: 'sticky'`.
+ *
+ * `bounds` is still passed alongside as a useful AABB pose hint — factories
+ * may use it as the node's pose even when richer geometry is available. Any may carry a `minSize`
+ * (`{ width, height }`), which the kit's factories keep as `data.minSize` so a resize holds to it.
+ */
+export type InsertExtras =
+  | { kind: 'rect' }
+  | { kind: 'ellipse' }
+  | { kind: 'line'; a: WorldPoint; b: WorldPoint }
+  | { kind: 'polygon'; sides: number; rotation: number; center?: WorldPoint; radius?: number }
+  | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: WorldPoint; outerRadius?: number }
+  | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
+  | { kind: 'text'; text?: string }
+  /** A finished path in world coords, as the pen tool commits one. `bounds`
+   *  is its AABB. An open path takes no fill. `data` is laid under the path
+   *  and paint on the node's data: the form the path was drawn from
+   *  (`data.representation`), say. */
+  | {
+      kind: 'path';
+      path: PolygonPath;
+      closed: boolean;
+      data?: Readonly<Record<string, unknown>>;
+    }
+  | {
+      kind: 'image';
+      src?: string;
+      opacity?: number;
+      /** Chrome-only: what the in-flight drag paints. Read by the overlay
+       *  layer, ignored by the insert dep. */
+      preview?: 'bitmap' | 'outline';
+    }
+  | { kind: string; [extra: string]: unknown };
 
 /** The gesture an insert's bounds came from, in the same coordinates: `bounds`
  *  is the box `start` and `end` span, or with `fromCenter`, the box centered

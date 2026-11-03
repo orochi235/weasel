@@ -3,6 +3,7 @@
   "version": "1.16.1",
   "description": "A 2D scene-graph engine for React, rendered on WebGL2: the scene tree, viewport math, pointer and keyboard input, layered rendering, and op-based undo.",
   "weasel": {
+    "tier": "core",
     "needs": ["webgl2"]
   },
   "license": "MIT",
@@ -98,6 +99,10 @@
     "./routing": {
       "import": "./dist/routing.js",
       "types": "./dist/routing.d.ts"
+    },
+    "./engine": {
+      "import": "./dist/engine.js",
+      "types": "./dist/engine.d.ts"
     },
     "./test-seams": {
       "import": "./dist/test-seams.js",

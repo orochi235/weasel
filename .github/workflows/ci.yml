@@ -63,6 +63,12 @@ jobs:
       # No source file or function grows past its cap; the allowlist's entries
       # only come down.
       - run: npm run check:size
+      # @weasel-js/core/engine is current with core's main entry and loads no 2D package;
+      # the engine files reach none even by type. See scripts/check-engine-boundary.mjs.
+      - run: npm run check:engine-boundary
+      # Each package's `weasel.tier` agrees with the graph: `base` is exactly core's
+      # dependency closure. See scripts/lib/package-tiers.mjs.
+      - run: npm run check:tiers
       # The README's package marks (React, DOM, WebGL2, Web Audio) match what
       # each main entry's import graph measures. See scripts/package-traits.mjs.
       - run: npm run check:needs

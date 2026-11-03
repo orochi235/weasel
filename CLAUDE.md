@@ -49,6 +49,10 @@ family, and only into a package that qualifies above. A package that ships
 tools also ships `ToolSet`s naming them (core's `SHAPE_TOOLS`, path-tools'
 `RESHAPE_TOOLS`) and a hook that builds them all (`usePathToolsTools`).
 
+Every package's manifest declares `weasel.tier`: `base` (core depends on it), `core`, `plugin`
+(high-level functionality dropped into a canvas), or `other`. `npm run check:tiers` holds `base`
+to core's dependency closure; `npm run graph:packages` draws the result.
+
 ## Todo list
 
 Active todos live in `docs/TODO.md`; the ones about a cost (runtime time, frames, allocations and
@@ -198,6 +202,12 @@ stays clean. A one-commit side request can still go straight to `main`, committe
 2026-10-11 several sessions made 729 commits to `main` from the one checkout, each having run
 only its own test files; nothing checked the combination, and a fleet run of `main` failed on
 another session's uncommitted stylesheet.
+
+**A batch's run is the only suite-sized run (2026-11-03).** Nothing else gets one: not a pull, not a
+branch, not `main` after it fast-forwards. Here this replaces the global rule of a full run after every
+merge to `main`. A pull, merging `origin/main` into `main`, goes straight in with no batch: what origin
+adds is the release bot's version bump or work CI already tested. Resolve its conflicts on `main`
+itself; the next batch's run covers the result.
 
 **Everything ready to merge shares one fleet run: the batch's (2026-10-30).** A feature branch, an
 agent's arc and a quick fix finish on the test files their diff touches (locally, `--maxWorkers=1`,

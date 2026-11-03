@@ -4,7 +4,7 @@
  * no 3D type, so this is the side that knows the camera.
  */
 
-import type { AimOutline, AimPoint, AimSpace, ViewAim } from '@weasel-js/core';
+import type { AimOutline, AimPoint, AimSpace, ViewAim } from '@weasel-js/core/engine';
 import { add, dot, normalize, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { cameraEye, type Camera3d } from './camera';
 import { fromAimPoint, groundAxes, groundHit, toAimPoint, type GroundAxes } from './ground';

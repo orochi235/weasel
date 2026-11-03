@@ -1,4 +1,4 @@
-import { SNAP_AXIS_STEP, type SnapConstrain } from '@weasel-js/core';
+import { SNAP_AXIS_STEP, type SnapConstrain } from '@weasel-js/core/engine';
 import { stepLine, type Flat } from '@weasel-js/geom/nd';
 import { cross, dot, normalize, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 

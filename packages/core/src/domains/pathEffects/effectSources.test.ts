@@ -4,7 +4,8 @@ import { pathEffectNode } from 'core/scene/pathEffects/derive';
 import type { PathEffect } from 'core/scene/pathEffects/effects';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
-import { effectSourceFor, hiddenSourcesTakenWith } from './effectSources';
+import { effectSourceFor } from './effectSources';
+import { hiddenSourcesTakenWith } from './hiddenSources';
 import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from './index';
 
 const T = asNodeId('t');

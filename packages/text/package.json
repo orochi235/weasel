@@ -2,6 +2,9 @@
   "name": "@weasel-js/text",
   "version": "1.16.1",
   "description": "Typography for weasel: styled runs, style resolution, kerned glyph layout, wrap and measurement. No scene graph, no React.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

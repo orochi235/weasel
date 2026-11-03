@@ -8,7 +8,7 @@ import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { boundsOfPath, type PathInWorldPose } from '@weasel-js/geom';
 import { loadTextOutlines, type TextOutlineSource } from '@weasel-js/text';
-import { withFontReads } from 'core/scene/fontReads';
+import { withOutsideReads } from 'core/scene/outsideReads';
 import { textEffectItems } from './textItems';
 
 /** Every code point a 0.6 em bar, half an em tall. */
@@ -81,9 +81,9 @@ describe('textEffectItems', () => {
   it('outlines still loading answer no items and note a font read, and items appear once they land', async () => {
     registerFontOutlines('late', {}, new ArrayBuffer(4), { parser: () => BARS });
     const src = text('Hi', 'late');
-    const read = withFontReads(() => textEffectItems(src, POSE));
+    const read = withOutsideReads(() => textEffectItems(src, POSE));
     expect(read.value).toEqual([]);
-    expect(read.fonts).toBe(true);
+    expect(read.outside).toBe(true);
     const before = faceGeneration();
     await loadTextOutlines(src);
     expect(faceGeneration()).not.toBe(before);
@@ -91,6 +91,6 @@ describe('textEffectItems', () => {
   });
 
   it('notes a font read when the outlines are there too', () => {
-    expect(withFontReads(() => textEffectItems(text('Hi'), POSE)).fonts).toBe(true);
+    expect(withOutsideReads(() => textEffectItems(text('Hi'), POSE)).outside).toBe(true);
   });
 });

@@ -1,9 +1,8 @@
 /** The 3D world every dep is built from: core's scene with a `Pose3`, the
  *  viewport it is seen through, and how wide each node is. */
 
-import {
-  composeWorldPose, scenePoseAdapter, scenePoseFrame, type NodeId, type Scene, type SceneNode,
-} from '@weasel-js/core';
+import { composeWorldPose, scenePoseAdapter, scenePoseFrame, type Scene, type SceneNode } from '@weasel-js/core/engine';
+import { type NodeId } from '@weasel-js/routing';
 import type { Aabb, Vec3 } from '@weasel-js/geom/3d';
 import { aabbOfPose, type Pose3 } from './pose3';
 import type { ViewportSource } from './project';

@@ -3,7 +3,7 @@
  * inserts onto it, and a 2D world lies on it when a 3D view meets one.
  */
 
-import type { AimPoint } from '@weasel-js/core';
+import type { AimPoint } from '@weasel-js/core/engine';
 import { intersectRayPlane, pointOnRay, type Vec3 } from '@weasel-js/geom/3d';
 import { rayAt, type Viewport3d } from './project';
 

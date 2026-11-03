@@ -2,6 +2,9 @@
   "name": "@weasel-js/forge",
   "version": "1.16.1",
   "description": "A component workshop on labkit: stories in isolated frames, controls and state in lab trials.",
+  "weasel": {
+    "tier": "other"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": [

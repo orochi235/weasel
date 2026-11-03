@@ -2,6 +2,9 @@
   "name": "@weasel-js/animator",
   "version": "1.16.1",
   "description": "The weasel animator: tweens, springs, holds, staggers, and timelines that combine on targets, run by one frame loop. Needs no scene; the root entry has no React, and the hook is under /react.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

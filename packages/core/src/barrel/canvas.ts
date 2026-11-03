@@ -159,3 +159,6 @@ export type { DevtoolsLabelProps } from '../devtools/label';
 // ─── Layout: the contract a container's layout strategy implements. The
 // strategies themselves (freeform, tileGrid, snapPoint) are in @weasel-js/guides.
 export * from '../layout';
+
+// ─── Drawn boxes: how the transform actions measure a node (the `drawnBoxes` dep) ─────
+export { inkBoxes } from '../canvas/inkBoxes';

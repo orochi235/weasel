@@ -7,15 +7,9 @@
  */
 
 import { useEffect, useMemo } from 'react';
-import {
-  createEnteredGroupScope,
-  useDepSource,
-  useEnteredGroup,
-  useGroupEntryContribution,
-  type EnteredGroupApi,
-  type NodeId,
-  type Tool,
-} from '@weasel-js/core';
+import { createEnteredGroupScope, useEnteredGroup, useGroupEntryContribution, type EnteredGroupApi } from '@weasel-js/core/engine';
+import { useDepSource } from '@weasel-js/routing/react';
+import { type NodeId, type Tool } from '@weasel-js/routing';
 import { screenBoxOf, type ScreenBox, type Viewport3d, type World3d } from '@weasel-js/kernel3d';
 import type { SolidData, SolidLayer } from './scene3d';
 

@@ -157,3 +157,7 @@ export type { CloneBehavior, CloneBehaviorResult } from '../interactions/gesture
 
 // ─── Animation primitives (tween, spring, easings) ──────────────────────────
 export * from '../animation';
+
+// ─── The `drawnBoxes` dep: the box move, resize, rotate, flip, align and distribute measure ─
+export { drawnBoxes, poseBoxes } from '../interactions/actions/drawnBoxes';
+export type { DrawnBoxes, DrawnBoxesDeps, DrawnBoxesSource } from '../interactions/actions/drawnBoxes';

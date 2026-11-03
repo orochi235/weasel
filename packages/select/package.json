@@ -2,6 +2,9 @@
   "name": "@weasel-js/select",
   "version": "1.16.1",
   "description": "Selection as a value: which ids a press selects, with toggle, range and anchor rules a surface configures. No React, no DOM.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

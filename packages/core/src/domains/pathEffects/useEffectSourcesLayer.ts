@@ -9,7 +9,7 @@ import { PATH_OVERLAY_ROLES } from 'canvas/pathOverlay';
 import { sceneDepLookup } from 'canvas/derivedPath';
 import { chromeStateFrom } from 'canvas/drawEnvelope';
 import type { RenderLayer } from 'core/layers/render';
-import { sourcesHiddenBy } from './effectSources';
+import { sourcesHiddenBy } from './hiddenSources';
 import type { NodeId, Scene } from 'core/scene/types';
 import { readEffectSource } from './readSource';
 

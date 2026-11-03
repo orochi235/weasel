@@ -3,6 +3,7 @@
   "version": "1.16.1",
   "description": "React widgets for building self-contained interactive lab pages",
   "weasel": {
+    "tier": "other",
     "needs": [
       "webgl2"
     ]

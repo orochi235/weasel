@@ -1,18 +1,14 @@
 import type { ActionDeps } from '@weasel-js/routing';
-import { drawnBoundsOf, inkExtentsOf, type DrawnBoundsOptions, type DrawnBoundsScene } from 'canvas/drawnBounds';
-import { drawnBoundsScene } from 'canvas/derivedPath';
-import type { InkExtents } from 'core/geometry/inkExtents';
+import { NO_INK_EXTENTS, type InkExtents } from 'core/geometry/inkExtents';
+import { framedBounds, poseDescriptorForNode } from 'core/geometry/poseDescriptor';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { documentOf } from 'core/scene/documentOf';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseDescriptorOf } from './poseDescriptorDep';
-import { scenePoseFrame, type PoseFrame } from './poseFrame';
+import type { PoseFrame } from './poseFrame';
 
-const NO_SCENE: DrawnBoundsScene = { get: () => undefined };
-
-/** `drawnBoundsOf` bound to an action's deps: the box each id is shown with
- *  at a world pose, stroke included unless the canvas opted out. */
+/** The box each id is shown with at a world pose, as the actions that align,
+ *  rotate, resize and snap to it measure it. */
 export interface DrawnBoxes {
   /** In the frame the pose is drawn in. */
   framed(id: NodeId | string, pose: unknown): Bounds;
@@ -22,28 +18,30 @@ export interface DrawnBoxes {
   extents(id: NodeId | string, pose: unknown): InkExtents;
 }
 
-/** The {@link DrawnBoxes} over `deps.scene`. Pass the action's own `frame`
- *  when it has one, so container members are read the way it reads them. */
+/** What a {@link DrawnBoxesSource} reads off an action's deps. */
+export type DrawnBoxesDeps = Pick<ActionDeps, 'scene' | 'poseDescriptor' | 'view' | 'boundsIncludeStroke'>;
+
+/** Builds the {@link DrawnBoxes} for an action's deps: the `drawnBoxes` dep.
+ *  `frame` is the action's own, when it has one, so container members are
+ *  read the way it reads them. */
+export type DrawnBoxesSource = (deps: DrawnBoxesDeps, frame?: PoseFrame<unknown>) => DrawnBoxes;
+
+/** Each node's pose box under its pose descriptor, with no ink past it: what
+ *  {@link drawnBoxes} answers when no `drawnBoxes` dep is sourced. */
+export const poseBoxes: DrawnBoxesSource = (deps) => {
+  const descriptor = poseDescriptorOf(deps.poseDescriptor);
+  const framed = (id: NodeId | string, pose: unknown): Bounds => {
+    const node = deps.scene?.get(id as NodeId);
+    return framedBounds(pose, node ? poseDescriptorForNode(descriptor, node) : descriptor);
+  };
+  return { framed, aabb: (id, pose) => axisAlignedBounds(framed(id, pose)), extents: () => NO_INK_EXTENTS };
+};
+
+/** The {@link DrawnBoxes} over `deps.scene`: the `drawnBoxes` dep's, which
+ *  `<SceneCanvas>` sources with each shape's ink, or {@link poseBoxes}. */
 export function drawnBoxes(
-  deps: Pick<ActionDeps, 'scene' | 'poseDescriptor' | 'view' | 'boundsIncludeStroke'>,
+  deps: DrawnBoxesDeps & Pick<ActionDeps, 'drawnBoxes'>,
   frame?: PoseFrame<unknown>,
 ): DrawnBoxes {
-  // A command measures what the document holds, not what an open gesture or edit is showing.
-  const scene: DrawnBoundsScene = deps.scene ? drawnBoundsScene(documentOf(deps.scene)) : NO_SCENE;
-  const descriptor = poseDescriptorOf(deps.poseDescriptor);
-  const view = deps.view?.get();
-  let worlds = frame;
-  const opts: DrawnBoundsOptions = {
-    descriptor,
-    worldPoseOf: (id) => (worlds ??= scenePoseFrame(deps.scene!)).world(id),
-    includeStroke: deps.boundsIncludeStroke ?? true,
-    ...(view ? { scale: view.scale } : {}),
-  };
-  const framed = (id: NodeId | string, pose: unknown): Bounds =>
-    drawnBoundsOf(scene, id as NodeId, pose, opts);
-  return {
-    framed,
-    aabb: (id, pose) => axisAlignedBounds(framed(id, pose)),
-    extents: (id, pose) => inkExtentsOf(scene, id as NodeId, pose, opts),
-  };
+  return (deps.drawnBoxes ?? poseBoxes)(deps, frame);
 }

@@ -2,6 +2,9 @@
   "name": "@weasel-js/svg",
   "version": "1.16.1",
   "description": "SVG import/export for @weasel-js/core: parse SVG strings into weasel-native shapes and serialize them back.",
+  "weasel": {
+    "tier": "other"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

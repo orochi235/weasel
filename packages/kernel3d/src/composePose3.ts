@@ -1,7 +1,7 @@
 /** Container composition for `Pose3`: a child's pose is stored in its
  *  container's frame, and folds up to world through every frame above it. */
 
-import type { PoseComposition } from '@weasel-js/core';
+import type { PoseComposition } from '@weasel-js/core/engine';
 import { add, quatConjugate, quatMultiply, quatRotate, sub, type Vec3 } from '@weasel-js/geom/3d';
 import type { Pose3 } from './pose3';
 

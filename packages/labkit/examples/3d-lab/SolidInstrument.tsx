@@ -7,29 +7,10 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
-import {
-  CANVAS_CONTEXT_ATTRIBUTES,
-  DEFAULT_ALLOWED_CAPABILITIES,
-  WeaselProvider,
-  buildRuleCtx,
-  createDispatcher,
-  createPoseFeed,
-  createSnapOutcomeStore,
-  useAction,
-  useActionsRegistry,
-  useActiveToolContext,
-  useDepSource,
-  useGestureDispatcher,
-  useLatest,
-  useSelectTool,
-  selectionMoveContribution,
-  useStandardActions,
-  type Dispatcher,
-  type NodeId,
-  type Tool,
-  type WorldPoint,
-} from '@weasel-js/core';
-import { useKitSettings } from '@weasel-js/react';
+import { CANVAS_CONTEXT_ATTRIBUTES, WeaselProvider, createPoseFeed, createSnapOutcomeStore, useSelectToolWith, selectionMoveContribution, useStandardDeps, useActionSet, ENGINE_STANDARD_ACTIONS } from '@weasel-js/core/engine';
+import { DEFAULT_ALLOWED_CAPABILITIES, buildRuleCtx, createDispatcher, type Dispatcher, type NodeId, type Tool, type WorldPoint } from '@weasel-js/routing';
+import { useAction, useActionsRegistry, useActiveToolContext, useDepSource, useGestureDispatcher } from '@weasel-js/routing/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import { f } from '../../src/config';
 import { defineInstrument } from '../../src/instrument/defineInstrument';
 import type { RenderContext } from '../../src/instrument/types';
@@ -305,7 +286,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
   // `scene.history` is the same handle `<SceneCanvas>` registers, so Cmd+Z
   // runs the kit's own undo action here rather than a lab-local button.
-  useStandardActions({ selection: selectionApi, scene: scene as never, history: scene.history });
+  useStandardDeps({ selection: selectionApi, scene: scene as never, history: scene.history });
+  useActionSet(ENGINE_STANDARD_ACTIONS);
   useDepSource('camera3d', () => camera3d);
   useDepSource('nodeAtPoint', () => nodeAtPoint);
   useDepSource('areaSelect', () => areaSelect);
@@ -345,7 +327,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [scene, areaSelect, selectionRef],
   );
 
-  const select = useSelectTool(selectAdapter, { pickEvery, pickBest, poseDescriptor });
+  const select = useSelectToolWith(selectAdapter, { pickEvery, pickBest, poseDescriptor });
   const orbit = useOrbitTool();
   const box = useBoxTool();
   // The select tool only picks; dragging a solid to move it is the

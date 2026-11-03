@@ -41,7 +41,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
     modifierRoles: SNAP_ROLES,
     requires: [
       'selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view',
-      'boundsIncludeStroke', 'kitSettings', 'snap', 'transformFollowers',
+      'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers',
     ],
     invoker: {
       timing: 'ongoing',

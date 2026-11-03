@@ -2,6 +2,9 @@
   "name": "@weasel-js/ui-logic",
   "version": "1.16.1",
   "description": "Headless components: list and focus behavior, and the measure/draw contract, that a DOM component and a canvas-drawn widget share. No React, no DOM.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

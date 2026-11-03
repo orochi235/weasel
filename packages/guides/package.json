@@ -2,6 +2,9 @@
   "name": "@weasel-js/guides",
   "version": "1.16.1",
   "description": "Placement aids for weasel: grids, ruler guides, snap sources for them and for sibling alignment and spacing, and container layout strategies.",
+  "weasel": {
+    "tier": "plugin"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

@@ -2,7 +2,7 @@
  *  and centers, the planes through their sides and centers, and a grid on
  *  the ground. */
 
-import type { SnapCollect, SnapMark, SnapSource, SourceCandidate } from '@weasel-js/core';
+import type { SnapCollect, SnapMark, SnapSource, SourceCandidate } from '@weasel-js/core/engine';
 import { add, distance, dot, len, normalize, scale, sub, type Aabb, type Vec3 } from '@weasel-js/geom/3d';
 import { DEFAULT_UP, type World3d } from '../world';
 import { padQuery, snapBoxes } from './boxIndex';

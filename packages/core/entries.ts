@@ -13,6 +13,7 @@ const shims = [
   'patterns-builtin',
   'renderer',
   'routing',
+  'engine',
   'test-seams',
 ] as const;
 

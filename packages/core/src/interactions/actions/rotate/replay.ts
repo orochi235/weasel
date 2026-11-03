@@ -11,7 +11,7 @@ import { captureTurn } from './session';
 export function rotateSelectionOps(
   scene: Scene<unknown, string, unknown>,
   selected: readonly string[],
-  deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke'>,
+  deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke' | 'drawnBoxes'>,
   angle: number,
   pivot: 'union' | 'each',
   label: string,
