@@ -218,3 +218,28 @@ describe('reported gesture bounds match the painted preview', () => {
     });
   }
 });
+
+describe('insertPreviewExtent with `lands`', () => {
+  const lands = { x: 10, y: 20, width: 40, height: 24 };
+  const cases: InsertPreview[] = [
+    { kind: 'insertPreview', shape: 'rect', bounds: { x: 9.7, y: 20.2, width: 39.6, height: 24.3 }, extras: { kind: 'rect' }, lands },
+    { kind: 'insertPreview', shape: 'line', bounds: { x: 0, y: 0, width: 1, height: 1 }, extras: { kind: 'line', a: { x: 9, y: 19 }, b: { x: 51, y: 45 } }, lands },
+    { kind: 'insertPreview', shape: 'polygon', bounds: { x: 0, y: 0, width: 1, height: 1 }, extras: { kind: 'polygon', sides: 6, rotation: 0, center: { x: 30, y: 32 }, radius: 13 }, lands },
+    { kind: 'insertPreview', shape: 'pencil', bounds: { x: 0, y: 0, width: 1, height: 1 }, extras: { kind: 'pencil', samples: [{ x: 8, y: 21 }, { x: 30, y: 44 }, { x: 49, y: 23 }] }, lands },
+  ];
+  for (const ov of cases) {
+    it(`fits a ${ov.shape} into the box it lands in`, () => {
+      const fitted = insertPreviewExtent(ov);
+      expect(fitted.bounds).toEqual(lands);
+      const g = fitted.geometry;
+      const points = g.kind === 'line' ? [g.a, g.b] : g.kind === 'pencil' ? g.samples : null;
+      if (points) {
+        for (const p of points) {
+          expect(p.x).toBeGreaterThanOrEqual(lands.x - 1e-9);
+          expect(p.x).toBeLessThanOrEqual(lands.x + lands.width + 1e-9);
+        }
+      }
+      if (ov.shape === 'polygon') expect(g.kind).toBe('path');
+    });
+  }
+});

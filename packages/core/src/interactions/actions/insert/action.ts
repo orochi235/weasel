@@ -14,6 +14,7 @@ import type { InsertLiveGesture } from './live';
 import { insertParams } from './params';
 import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
+import { insertLanding } from './lands';
 
 /** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
  *  press that drifts a few pixels draws nothing rather than a shape a few pixels wide. */
@@ -75,12 +76,14 @@ export const insertAction: Action & { requires: string[] } = inPlane({
           // sides ticking via ArrowUp mid-drag) reflect in the live preview.
           const resolved = resolveParams(session.opts?.params);
           if (!shapeKindInfo(insertKind(resolved))?.insertPreview) return null;
-          const { bounds, extras, start } = insertShape(resolved, frame, frame.points, gesture.userRotation);
+          const { bounds, extras, start, ends } = insertShape(resolved, frame, frame.points, gesture.userRotation);
+          const lands = scene && insertLanding(scene, session.dep, bounds, extras, ends);
           return {
             kind: 'insertPreview',
             shape: extras.kind as KitInsertShape,
             bounds,
             extras,
+            ...(lands ? { lands } : {}),
             // Anchor dot at the click point: radial shapes have no vertex
             // there, and in center mode it marks the growth axis.
             anchorPoint: { x: start.x, y: start.y },

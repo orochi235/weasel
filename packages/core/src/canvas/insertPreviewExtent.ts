@@ -9,7 +9,7 @@
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
-import { boundsOfPath, regularPolygonPath, starPath, type Path, type Point } from '@weasel-js/geom';
+import { boundsOfPath, regularPolygonPath, starPath, transformPath, type Affine, type Path, type Point } from '@weasel-js/geom';
 
 /** The fields of an `insertPreview` overlay this needs. `canvas/deps/insert`
  *  passes the equivalent from its own `(bounds, extras)` commit arguments. */
@@ -17,6 +17,8 @@ export interface InsertPreviewLike {
   shape: string;
   bounds: { x: number; y: number; width: number; height: number };
   extras: unknown;
+  /** See the `insertPreview` overlay's `lands`. */
+  lands?: { x: number; y: number; width: number; height: number };
 }
 
 /** Resolved preview geometry, in the terms the path builders take. */
@@ -32,7 +34,9 @@ export type InsertPreviewGeometry =
       points: number;
       rotation: number;
     }
-  | { kind: 'pencil'; samples: ReadonlyArray<Point> };
+  | { kind: 'pencil'; samples: ReadonlyArray<Point> }
+  /** A shape fitted to where it lands, which a regular polygon's terms no longer hold. */
+  | { kind: 'path'; path: Path };
 
 /** An in-flight insert's shape, resolved from its drag rect and `extras`. */
 export interface InsertPreviewExtent {
@@ -47,8 +51,39 @@ export interface InsertPreviewExtent {
 export type InsertPreviewOverlay = Extract<OngoingOverlay, { kind: 'insertPreview' }>;
 
 /** Resolve an in-flight insert's geometry and world AABB. Uses the geometry in
- *  `extras` where the shape carries it; an unknown shape falls back to its drag rect. */
+ *  `extras` where the shape carries it; an unknown shape falls back to its drag
+ *  rect. With `lands`, the geometry is fitted to that box. */
 export function insertPreviewExtent(ov: InsertPreviewLike): InsertPreviewExtent {
+  const made = extentOf(ov);
+  return ov.lands ? fitted(made, ov.lands) : made;
+}
+
+/** `e` scaled and moved so its extent is `to`. An axis it has no extent on only moves. */
+function fitted(e: InsertPreviewExtent, to: Bounds): InsertPreviewExtent {
+  const b = e.bounds;
+  if (b.x === to.x && b.y === to.y && b.width === to.width && b.height === to.height) return e;
+  const sx = b.width === 0 ? 1 : to.width / b.width;
+  const sy = b.height === 0 ? 1 : to.height / b.height;
+  const m: Affine = [sx, 0, 0, sy, to.x - b.x * sx, to.y - b.y * sy];
+  const at = (p: Point): Point => ({ x: m[0] * p.x + m[4], y: m[3] * p.y + m[5] });
+  const bounds = { x: to.x, y: to.y, width: to.width, height: to.height };
+  const g = e.geometry;
+  switch (g.kind) {
+    case 'box': return { ...e, bounds };
+    case 'line': return { ...e, bounds, geometry: { kind: 'line', a: at(g.a), b: at(g.b) } };
+    case 'pencil': return { ...e, bounds, geometry: { kind: 'pencil', samples: g.samples.map(at) } };
+    case 'path': return { ...e, bounds, geometry: { kind: 'path', path: transformPath(g.path, m) } };
+    case 'polygon':
+      return { ...e, bounds, geometry: { kind: 'path', path: transformPath(regularPolygonPath(g.center, g.radius, g.sides, g.rotation), m) } };
+    case 'star':
+      return {
+        ...e, bounds,
+        geometry: { kind: 'path', path: transformPath(starPath(g.center, g.outerRadius, g.points, g.innerRadius, g.rotation), m) },
+      };
+  }
+}
+
+function extentOf(ov: InsertPreviewLike): InsertPreviewExtent {
   const b = ov.bounds;
   const box = { x: b.x, y: b.y, width: b.width, height: b.height };
 

@@ -108,6 +108,8 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
     return {
       layer,
       build,
+      // A stencil builds a body and its rows, more than one node.
+      peek: (bounds, extras, ends) => (stencilOf(extras.kind) === undefined ? fallback?.peek?.(bounds, extras, ends) ?? null : null),
       commit(bounds, extras, ends) {
         const stencil = stencilOf(extras.kind);
         if (stencil === undefined) return fallback?.commit(bounds, extras, ends) ?? null;

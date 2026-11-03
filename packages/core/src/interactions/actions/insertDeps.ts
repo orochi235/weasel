@@ -81,6 +81,19 @@ export interface InsertDep {
     extras: InsertExtras,
     ends?: InsertEnds,
   ): { id: NodeId; ops: Op[] } | null;
+  /**
+   * The node `build` would insert, made the same way and inserting nothing: no
+   * id is minted and nothing counted per insert (the palette's step) advances,
+   * so a live preview can ask on every frame. `pose` is the pose the node would
+   * be stored at. `null` when `build` would decline, or when the insert makes
+   * more than one node. A preview runs the scene's quantize rule over it, so it
+   * shows the shape where the release will land it.
+   */
+  peek?(
+    bounds: { x: number; y: number; width: number; height: number },
+    extras: InsertExtras,
+    ends?: InsertEnds,
+  ): { data: unknown; pose: unknown } | null;
   /** The scene layer `commit` puts the node on. An insert on a layer carrying
    *  `parallax` is dragged out in that plane's world, so `bounds` arrive
    *  there too. Omitted: the camera's world. */

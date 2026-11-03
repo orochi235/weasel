@@ -9,7 +9,7 @@
 import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
-import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
+import type { InsertDep, InsertEnds, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import { insertSite } from './insertSite';
 import { poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -48,7 +48,9 @@ interface OpsApplier {
  * kit's default `{ path, fill }` factory for that kind; a factory for a novel
  * kind adds support the kit doesn't ship (e.g. `text`). To change only the
  * paint of a kit shape, pass an {@link InsertPaint}. See
- * `SceneCanvas`'s `insertNodeFactories` prop.
+ * `SceneCanvas`'s `insertNodeFactories` prop. It is also asked on every frame
+ * of an insert's drag, inserting nothing, so a preview can show where the
+ * scene's quantize rule lands the node: it must not count or mint anything.
  */
 export type InsertNodeFactory = (
   bounds: { x: number; y: number; width: number; height: number },
@@ -57,7 +59,8 @@ export type InsertNodeFactory = (
 
 /**
  * The paint a kit-built shape is inserted with. `kind` is the shape being
- * built and `seq` counts this canvas's inserts from 1. A key left out stays
+ * built and `seq` counts this canvas's inserts from 1; a preview asks for the
+ * next insert's `seq` as often as it likes, so the answer depends on nothing else. A key left out stays
  * off the node, which paints none of it, the same as `null`. A pencil
  * trail too short to fit is built as a rect and asks as one. A line and an
  * open pen path are inserted unfilled: a fill given to either is dropped.
@@ -132,6 +135,48 @@ function boxKindData(
   }
 }
 
+/** The data the kit builds for an insert of `kind` filling `extent`, or `null`
+ *  for a box kind it has none for. */
+function kitData(
+  kind: string,
+  extent: ReturnType<typeof insertPreviewExtent>,
+  extras: InsertExtras,
+  painted: (as?: string) => ReturnType<typeof paintKeys>,
+): unknown {
+  const geom = extent.geometry;
+  switch (geom.kind) {
+    case 'line':
+      return { path: linePath(geom.a, geom.b), ...painted(), fill: null };
+    case 'polygon':
+      return {
+        path: regularPolygonPath(geom.center, geom.radius, geom.sides, geom.rotation),
+        generator: { kind: 'polygon', sides: geom.sides, rotation: geom.rotation } satisfies ShapeGenerator,
+        ...painted(),
+      };
+    case 'star':
+      return {
+        path: starPath(geom.center, geom.outerRadius, geom.points, geom.innerRadius, geom.rotation),
+        generator: {
+          kind: 'star',
+          points: geom.points,
+          innerRadiusRatio: geom.outerRadius === 0 ? 0.5 : geom.innerRadius / geom.outerRadius,
+          rotation: geom.rotation,
+        } satisfies ShapeGenerator,
+        ...painted(),
+      };
+    case 'pencil': {
+      const samples = geom.samples as { x: number; y: number }[];
+      if (samples.length >= 4) return { path: schneiderFit(samples, 2.0), ...painted() };
+      if (samples.length >= 2) return { path: polygonFromPoints(samples), ...painted() };
+      return { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), ...painted('rect') };
+    }
+    case 'box':
+      return boxKindData(kind, extent.bounds, extras, painted);
+    default:
+      return null;
+  }
+}
+
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,
@@ -156,11 +201,16 @@ export function useInsertDepSource(
         at, into: registry.get('insertInto')?.get(), canDropInto: registry.get('canDropInto'),
         descriptor: poseDescriptorOf(registry.get('poseDescriptor')),
       });
-    const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
+    /** The node an insert numbered `seq` makes, with nothing minted or counted. A peek is quiet. */
+    const nodeFor = (
+      bounds: Parameters<NonNullable<InsertDep['build']>>[0],
+      extras: InsertExtras,
+      ends: InsertEnds | undefined,
+      seq: number,
+      quiet = false,
+    ): { parent: NodeId | null; layer: string; pose: unknown; data: unknown } | null => {
         const kind = extras.kind;
         const { parent, layer, local } = site(ends?.start ?? { x: bounds.x, y: bounds.y });
-        const seq = ++insertSeqRef.current;
-        const id = sc.mintId();
         let asked: ReturnType<InsertPaint> | undefined;
         const painted = (as: string = kind) => paintKeys(asked = paintRef.current(as, seq));
 
@@ -174,70 +224,32 @@ export function useInsertDepSource(
         const factory = factoriesRef.current?.[kind];
         if (factory) {
           const built = factory(bounds, extras);
-          if (built === null) return null;
-          return {
-            id,
-            ops: [createInsertOp({ node: { id, kind: 'mark', layer, parent, pose: local(built.pose ?? pose), data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
-          };
+          return built === null ? null : { parent, layer, pose: local(built.pose ?? pose), data: built.data };
         }
 
-        const geom = extent.geometry;
-        let data: unknown;
-
-        switch (geom.kind) {
-          case 'line':
-            data = { path: linePath(geom.a, geom.b), ...painted(), fill: null };
-            break;
-          case 'polygon':
-            data = {
-              path: regularPolygonPath(geom.center, geom.radius, geom.sides, geom.rotation),
-              generator: { kind: 'polygon', sides: geom.sides, rotation: geom.rotation } satisfies ShapeGenerator,
-              ...painted(),
-            };
-            break;
-          case 'star':
-            data = {
-              path: starPath(geom.center, geom.outerRadius, geom.points, geom.innerRadius, geom.rotation),
-              generator: {
-                kind: 'star',
-                points: geom.points,
-                innerRadiusRatio: geom.outerRadius === 0 ? 0.5 : geom.innerRadius / geom.outerRadius,
-                rotation: geom.rotation,
-              } satisfies ShapeGenerator,
-              ...painted(),
-            };
-            break;
-          case 'pencil': {
-            const samples = geom.samples as { x: number; y: number }[];
-            if (samples.length >= 4) {
-              data = { path: schneiderFit(samples, 2.0), ...painted() };
-            } else if (samples.length >= 2) {
-              data = { path: polygonFromPoints(samples), ...painted() };
-            } else {
-              data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), ...painted('rect') };
-            }
-            break;
-          }
-          case 'box':
-            data = boxKindData(kind, extent.bounds, extras, painted);
-            if (data === null) {
-              console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
-              return null;
-            }
-            break;
+        let data = kitData(kind, extent, extras, painted);
+        if (data === null) {
+          if (!quiet) console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
+          return null;
         }
-
         data = withFillRule(data, asked?.fillRule);
         const min = minSizeOf(extras);
         if (min) data = { ...(data as object), minSize: min };
-        return {
-          id,
-          ops: [createInsertOp({ node: { id, kind: 'mark', layer, parent, pose: local(pose), data } as unknown as { id: string }, label: `Insert ${kind}` })],
-        };
+        return { parent, layer, pose: local(pose), data };
+    };
+    const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
+      const node = nodeFor(bounds, extras, ends, ++insertSeqRef.current);
+      if (node === null) return null;
+      const id = sc.mintId();
+      return { id, ops: [createInsertOp({ node: { id, kind: 'mark', ...node } as unknown as { id: string }, label: `Insert ${extras.kind}` })] };
     };
     return {
       layer: () => site().layer,
       build,
+      peek(bounds, extras, ends) {
+        const node = nodeFor(bounds, extras, ends, insertSeqRef.current + 1, true);
+        return node && { data: node.data, pose: node.pose };
+      },
       commit(bounds, extras, ends): NodeId | null {
         const built = build(bounds, extras, ends);
         if (built === null) return null;
