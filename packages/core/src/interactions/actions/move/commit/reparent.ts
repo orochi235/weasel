@@ -3,6 +3,7 @@ import { createSetLayerOp } from 'core/ops/setLayer';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
+import { isPageStructure } from 'core/scene/nodeGates';
 import { planeToPlane } from 'core/viewport/parallax';
 import { rebaseLocalPose } from 'core/scene/composePose';
 import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
@@ -24,8 +25,9 @@ export interface DropTarget {
 }
 
 /** Walk the hit chain to find the appropriate drop target. Returns
- *  `null` when no reparent should happen (drop on empty canvas, or the
- *  only hits are the moved subtree itself), and a refusal when the first
+ *  `null` when no reparent should happen (drop on empty canvas, the
+ *  only hits are the moved subtree itself, or a page or the run refuses
+ *  it, since the climb never passes page structure), and a refusal when the first
  *  node of the chain to answer refuses with a reason. */
 export function resolveDrop(
   session: MoveSession,
@@ -54,10 +56,24 @@ export function resolveDrop(
     if (verdict === true) break;
     const reason = refusalOf(verdict);
     if (reason !== null) return { refused: { id: newParent, bounds: worldBoundsOf(session, newParent), reason } };
+    if (isPageStructure(session.scene.get(newParent))) return null;
     hitSibling = newParent;
     newParent = session.scene.get(newParent)?.parent ?? null;
   }
   return { newParent, newLayer: hitNode.layer, hitSibling };
+}
+
+/** Move `id` within `siblings`, a destination's children as the next op will find them, to just above
+ *  `above` when it is among them, else to the end. Returns the index to reparent `id` to, or `undefined` to
+ *  append. */
+export function landAbove(siblings: NodeId[], id: NodeId, above: NodeId | null): number | undefined {
+  const was = siblings.indexOf(id);
+  if (was >= 0) siblings.splice(was, 1);
+  const hit = above === null ? -1 : siblings.indexOf(above);
+  const toIndex = hit >= 0 ? hit + 1 : undefined;
+  if (toIndex === undefined) siblings.push(id);
+  else siblings.splice(toIndex, 0, id);
+  return toIndex;
 }
 
 /** Root `id`'s pose stored under `newParent` on `newLayer`, keeping the world pose the drag `delta` shows. */
@@ -111,14 +127,7 @@ export function reparentOps(
       ops.push(createSetLayerOp({ id: id as string, from: node.layer, to: target.newLayer, label }));
     }
 
-    const was = siblings.indexOf(id);
-    if (was >= 0) siblings.splice(was, 1);
-    const hit = mode === 'above' && target.hitSibling
-      ? siblings.indexOf(target.hitSibling)
-      : -1;
-    const toIndex = hit >= 0 ? hit + 1 : undefined;
-    if (toIndex === undefined) siblings.push(id);
-    else siblings.splice(toIndex, 0, id);
+    const toIndex = landAbove(siblings, id, mode === 'above' ? target.hitSibling : null);
 
     ops.push(createReparentOp({
       id: id as string, fromParentId: from, toParentId: target.newParent as string | null, toIndex, label,
