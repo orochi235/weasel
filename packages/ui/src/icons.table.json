@@ -1542,6 +1542,12 @@
       "group": "Platonic solids",
       "tags": []
     },
+    "cube": {
+      "body": "<path d=\"M3.59 6.3L10 2.6L16.41 6.3L16.41 13.7L10 17.4L3.59 13.7Z\" stroke-linejoin=\"miter\" stroke-width=\"1.5\"/><path d=\"M10 10L16.41 6.3M10 17.4L10 10M10 10L3.59 6.3\" stroke-width=\"1.5\"/>",
+      "fill": "<path d=\"M3.59 6.3L10 2.6L16.41 6.3L16.41 13.7L10 17.4L3.59 13.7Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Platonic solids",
+      "tags": []
+    },
     "d8": {
       "body": "<path d=\"M2.85 9.6L10 2.6L17.15 10.4L10 17.4Z\" stroke-linejoin=\"miter\" stroke-width=\"1\"/><path d=\"M7.68 11.24L2.85 9.6M10 2.6L7.68 11.24M7.68 11.24L10 17.4M17.15 10.4L7.68 11.24\" stroke-width=\"0.6\"/>",
       "fill": "<path d=\"M2.85 9.6L10 2.6L17.15 10.4L10 17.4Z\" fill=\"currentColor\" stroke=\"none\"/>",
