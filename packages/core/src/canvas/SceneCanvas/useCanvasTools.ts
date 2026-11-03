@@ -4,6 +4,7 @@ import type { Action } from '@weasel-js/routing';
 import { createLongPressFeedbackContribution } from '../../domains/longPress/longPressFeedback';
 import { createViewMarkerContribution } from '../../domains/viewports/viewMarkerDrag';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
+import { useWithProvidedAmbient } from '../ambientContributions';
 import type { SurfaceContribution } from '../surfaceContribution';
 import {
   presetActions,
@@ -85,7 +86,8 @@ export function useCanvasTools(args: {
   /** The surface's own always-on entries a takeover's ambient leaves out: they apply under it too. */
   surface: readonly SurfaceContribution[];
 } {
-  const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, ambient, initialActiveTool, modes, onToolsCreated } = args;
+  const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, initialActiveTool, modes, onToolsCreated } = args;
+  const ambient = useWithProvidedAmbient(args.ambient);
 
   const takeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
   const registry = useBuiltinTools({

@@ -13,6 +13,7 @@
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
 export { CANVAS_CONTEXT_ATTRIBUTES } from '../canvas/contextAttributes';
 export { OVERLAY_ROLE_STROKES } from '../canvas/overlayRoleStrokes';
+export { AmbientContributionsProvider, type AmbientContributionsProviderProps } from '../canvas/ambientContributions';
 export { LeanSceneCanvas, type LeanSceneCanvasProps } from '../canvas/LeanSceneCanvas';
 export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export { overChildren, isOverChildren, splitOverChildren } from '../canvas/overChildren';
