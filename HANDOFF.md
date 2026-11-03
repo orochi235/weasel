@@ -4,18 +4,14 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-11-02)
+## State (2026-11-03)
 
-- 1.15.2 is on npm (`npm view @weasel-js/core version`). `main` and `origin/main` are at 3481a3b1c, pushed
-  2026-11-02, unreleased since 1.15.2: the stroke trim (`StrokeTrim` on `Stroke`; spec
-  `docs/superpowers/specs/2026-11-01-stroke-trim-design.md`), then seated arrowheads (a head's back on the
-  shaft's cut end, pointing along it, in canvas, SVG, and PDF) and the lab header's zoom driving scene labs.
-  `test:fleet` and `test:fleet:postbuild` were green on 3481a3b1c.
-- Nothing in flight. The stroke trim's changeset (`.changeset/stroke-trim.md`) is `patch` and spells out its
-  breaking changes. GitHub's visual regression job may flag rounded corners beside curves (corners are now cut
-  at exact arc length, up to 0.15 units from before), text-heavy shots (small-glyph area coverage) and
-  translucent concave fills (the stencil cover pass now paints each pixel once); regenerate through the
-  `visual-update` workflow if it does.
+- 1.16.1 is on npm (`npm view @weasel-js/core version`). `main` and `origin/main` are at 6e3b08147, pushed
+  2026-11-03. Unreleased since 1.16.1 is whatever `.changeset/` holds: among it `@weasel-js/core/engine` with
+  kernel3d and the 3D lab built on it, `ENGINE_STANDARD_ACTIONS`, keys staying with the surface a press landed
+  in, a lab's menu bar in its header, the dither package, and the Node 24 floor. The batch run on bd0f69a2a
+  (`test:fleet`, `test:fleet:postbuild`) was green.
+- Nothing in flight.
 - The windease fix for a never-shown node is on windease's `main` (24ec47d) and not yet released (npm has
   2.2.0); the weasel TODO entry says what follows its release.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
@@ -44,6 +40,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-03, 3D lab (`npm run dev:3d` in `packages/labkit`): its tool palette and the `ui:cube` box tool, undo
+  after a press in the 3D surface, the menu bar in a lab's header after the title, and a narrow lab's header
+  wrapping.
 - 2026-11-02, measure: a measurement inside a frame declaring `units.drawnAt` reads that frame's true length
   (30 world units in a 0.4× drawer read 75); ends in frames that disagree read in the scope they share.
 - 2026-11-02, stroke trim: the site's Stroke trim lab (`#lab-stroke-trim`) holds every case beside its exported
