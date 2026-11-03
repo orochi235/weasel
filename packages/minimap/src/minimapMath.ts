@@ -1,6 +1,6 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import { documentPose, effectivePose } from '@weasel-js/core';
-import type { Scene } from '@weasel-js/core';
+import { composeWorldPose, documentPose, effectivePose, scenePoseAdapter } from '@weasel-js/core';
+import type { NodeId, PoseAdapter, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
 import { poseDescriptorForNode, type PoseDescriptor } from '@weasel-js/core';
@@ -71,7 +71,8 @@ function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
 }
 
 /**
- * Compute the AABB union of all leaf-node poses in the scene, via
+ * Compute the AABB union of all leaf-node poses in the scene, in world (each
+ * folded up its containers' frames under the scene's composition), via
  * `descriptor`. Container nodes are skipped — their effective bounds come
  * from their descendant leaves, and so is a leaf whose bounds are not finite,
  * which would otherwise make the whole union non-finite. Returns `null` when
@@ -87,9 +88,14 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   let maxX = -Infinity;
   let maxY = -Infinity;
   let any = false;
+  const frames = {
+    ...(scenePoseAdapter(scene as Scene<unknown, string, unknown>) as PoseAdapter<TPose>),
+    getPose: (id: string) => poseOf(scene, scene.get(id as NodeId)!),
+  };
+  const compose = scene.composition.compose.bind(scene.composition);
   for (const node of scene.nodes.values()) {
     if (node.kind !== 'mark') continue;
-    const b = poseDescriptorForNode(descriptor, node).getBounds(poseOf(scene, node));
+    const b = poseDescriptorForNode(descriptor, node).getBounds(composeWorldPose(frames, node.id, compose));
     if (!Number.isFinite(b.x + b.y + b.width + b.height)) continue;
     if (b.x < minX) minX = b.x;
     if (b.y < minY) minY = b.y;

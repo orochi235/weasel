@@ -151,6 +151,17 @@ describe('computeFitView — fit="scene"', () => {
     // union is just the 10x10 leaf, so scale ~ 184/10.
     expect(view.scale.x).toBeCloseTo(184 / 10, 6);
   });
+
+  it('frames a leaf inside a container where it draws, not at its local pose', () => {
+    const scene = makeScene();
+    const outer = scene.add({ kind: 'group', layer: 'bg', pose: { x: 1000, y: 500, width: 400, height: 400 }, data: { label: 'outer' } });
+    const inner = scene.add({ kind: 'group', layer: 'bg', pose: { x: 100, y: 50, width: 200, height: 200 }, data: { label: 'inner' }, parent: outer });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'leaf' }, parent: inner });
+    const view = computeFitView(scene, { width: 200, height: 200 }, 'scene', identityPoseBounds);
+    // The leaf draws at world (1100, 550)–(1200, 650); its center lands in the minimap's.
+    expect(view.x + 100 / view.scale.x).toBeCloseTo(1150, 6);
+    expect(view.y + 100 / view.scale.y).toBeCloseTo(600, 6);
+  });
 });
 
 describe('computeFitView — fit={kind:"world", rect}', () => {
