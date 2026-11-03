@@ -53,7 +53,7 @@
     "test:fleet": "node scripts/fleet-test.mjs",
     "test:fleet:postbuild": "node scripts/fleet-ci.mjs postbuild",
     "test:fleet:matrix": "node scripts/fleet-ci.mjs matrix",
-    "test:browser": "vitest run --project=browser",
+    "test:browser": "node scripts/vitest-overlap.mjs run --project=browser",
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "check:first-publish": "node scripts/check-first-publish.mjs",
     "check:manifests": "node scripts/check-publish-manifests.mjs",

@@ -1,6 +1,6 @@
 // A vitest reporter that appends one JSON line per test file to $TEST_COSTS_OUT: its project and the
 // worker time vitest spent on it, split the way `TestModule.diagnostic()` splits it. Several vitest
-// processes (`scripts/vitest-overlap.mjs` runs two) may append to the one file. Run with
+// processes (`scripts/vitest-overlap.mjs` runs two or more) may append to the one file. Run with
 // `--experimental.importDurations.limit=<n>` and each line also carries the n modules that took the
 // longest to import, counting their own imports. `node scripts/test-costs.mjs <file>` sums it by package.
 import { appendFileSync } from 'node:fs';
