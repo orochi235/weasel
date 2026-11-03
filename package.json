@@ -142,7 +142,7 @@
     "@vitest/browser-playwright": "^5.1.0",
     "concurrently": "^10.0.5",
     "d3-force": "^3.0.1",
-    "esbuild": "^0.27.7",
+    "esbuild": "^0.28.2",
     "eslint": "^10.11.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "fake-indexeddb": "^6.2.5",
