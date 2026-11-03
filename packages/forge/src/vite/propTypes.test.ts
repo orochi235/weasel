@@ -2,7 +2,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPropReader, type PropReader } from './propTypes';
 
 describe('createPropReader', () => {
@@ -174,5 +174,19 @@ export default { component: Wrapped };
     writeFileSync(at('late.ts'), `export const Late = (_props: { on: boolean }) => null;\n`);
     writeFileSync(at('legacy.stories.ts'), `import { Late } from './late';\nexport default { component: Late };\n`);
     expect(reader.read(at('legacy.stories.ts'))?.argTypes).toEqual({ on: { control: { type: 'boolean' } } });
+  });
+});
+
+describe('createPropReader under TypeScript 7', () => {
+  it('answers null, as without typescript, since 7 exports only its version', async () => {
+    vi.resetModules();
+    vi.doMock('typescript', () => ({ default: { version: '7.0.2', versionMajorMinor: '7.0' } }));
+    try {
+      const { createPropReader: fresh } = await import('./propTypes');
+      expect(await fresh(tmpdir(), () => [])).toBeNull();
+    } finally {
+      vi.doUnmock('typescript');
+      vi.resetModules();
+    }
   });
 });

@@ -107,10 +107,7 @@ function createSplitStore({
   for (const node of side === 'end' ? [contentNode, sidebarNode] : [sidebarNode, contentNode]) {
     store.registerNode(node);
   }
-  store.showNode(SIDEBAR_ID);
-  // Shown then hidden, never left unshown: windease lays out a node that was
-  // never shown, so the strip would keep its room and draw the seam.
-  if (!hasSidebar) store.hideNode(SIDEBAR_ID);
+  if (hasSidebar) store.showNode(SIDEBAR_ID);
   store.showNode(CONTENT_ID);
   return store;
 }
