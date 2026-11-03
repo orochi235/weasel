@@ -621,19 +621,6 @@ only story runner in the repo.
   Closes when the maintainer has ruled, and a derived token edited in the panel either saves as he chose,
   with a case in `saveTokens`' tests, or the panel says it will not be saved.
 
-- **(P3) [agent] windease lays out a node that was registered and never shown.** A
-  strip gives a `mounted` node its room and a seam, while `Container` renders
-  only `visible` ones, so the pane is an empty gap with a live separator
-  (`layout-node-adapter.js` skips `hidden` and `destroyed` only; windease
-  2.2.0). `Split` works around it by showing its sidebar node and hiding it
-  again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`).
-  Fixed on windease's `mounted-not-laid-out` branch (2026-10-29), unmerged and
-  unreleased: layout now places only `visible` children. Once a release carries
-  it, raise labkit's `windease` range to it, leave the sidebar unshown when
-  `hasSidebar` is false, and retire this entry.
-  Closes when labkit's `windease` range names a release that lays out only `visible` children and
-  `Split.tsx` no longer shows and hides the sidebar node.
-
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
   `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
