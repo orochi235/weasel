@@ -315,11 +315,15 @@ Owner tags, after the priority (2026-10-26):
   on 2026-11-03 in "matches it with the content nested in groups each tile culls into", `{ max: 1,
   off: 18 }`, on teitou with the browser project split into three Chromium processes beside the
   `core` jsdom project, every slice re-optimizing its deps (1 of 3 such runs; 0 of 6 runs of the
-  split alone). Neither sighting printed its pixels: `toMatchObject` leaves `first` out of its
-  diff. Every exact comparison now goes through `exact()`, whose message lists them, tiled then
-  whole; read those at the next sighting.
-  Closes when a sighting's pixels name the cause and it is fixed or the bound set to what the GPU
-  guarantees, or on 2026-12-01 with no third sighting.
+  split alone). A third, in a full fleet run of 30f39a982 on 2026-11-03 (a batch touching no renderer
+  code), printed its pixels through `exact()`: 24 off in the first case, each by one level in one
+  channel, tiled then whole: a flat blue fill `42 92 159` / `42 92 158` at (0,4), (22,4), (0,12),
+  (1,12), and along one diagonal edge (36,4), (32,5), (29,6), (27,7), (24,9), (23,10) a yellow
+  `204 179 38` / `205 178 38`, with a gray `98 107 124` / `98 108 124` at (33,4), (34,4). So the
+  tiled draw rounds differently from the whole one in flat interiors as well as on antialiased
+  edges, and only sometimes; that it is a precision or rounding path the GPU picks under load is
+  inferred, not shown.
+  Closes when the cause is found and fixed, or the bound set to what the GPU guarantees.
 
 ---
 
