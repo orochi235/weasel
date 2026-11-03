@@ -23,6 +23,7 @@ import {
   fillInPoseFrame,
   isAnnotationNode,
   layoutTextPose,
+  pageRunOf,
   pathEffectOf,
   pathEffectParts,
   resolveFill,
@@ -47,6 +48,7 @@ import {
   SWILL_NAMESPACES,
   type SceneSource,
 } from './svgInterop';
+import { rectsIntersect } from '@weasel-js/geom';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import { contentRoots } from './pages/contentRoots';
 import type { EffectObj } from './svgEffects';
@@ -277,8 +279,9 @@ export interface PageToSvgOptions {
 
 /**
  * Serialize one page of a WeaselDraw scene to an SVG document string: what
- * is on the page, in a `viewBox` of the page's rect, so what crosses the edge
- * is cut there. It is an export, not a save: it carries no page list.
+ * is on the page, and what follows other nodes across it, in a `viewBox` of
+ * the page's rect, so what crosses the edge is cut there. It is an export,
+ * not a save: it carries no page list.
  */
 export function pageToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
@@ -286,7 +289,13 @@ export function pageToSvgString<TLayer extends string>(
   opts: PageToSvgOptions,
 ): Promise<string> {
   const poseOf = poseOfIn(scene);
-  const roots = contentRoots(scene, [page.id]).map(String);
+  const run = pageRunOf(scene);
+  // A node following others sits in the run, across pages: it goes with every page it crosses.
+  const followers = (run === null ? [] : scene.childrenOf(run)).map(String).filter((id) => {
+    const box = scene.get(id as never)?.page === undefined ? unionAABB([poseOf(id)]) : null;
+    return box !== null && rectsIntersect(box, page);
+  });
+  const roots = [...contentRoots(scene, [page.id]).map(String), ...followers];
   const nodes: SvgNode[] = WHITE.test(opts.backgroundColor) ? [] : [backgroundSvgNode(opts.backgroundColor, page)];
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOf), roots));
   const { x, y, width, height } = page;
