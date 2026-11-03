@@ -1,11 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render } from '@testing-library/react';
+import { TrialBody } from '@weasel-js/labkit';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlPanel } from '@weasel-js/labkit/controls';
 import { afterEach, expect, test } from 'vitest';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlPanel } from '../controls/ControlPanel';
-import { TrialBody } from './TrialBody';
 
 // Whether a label and its value share a cell without overlapping is a layout question, so only a real
 // browser can answer it.

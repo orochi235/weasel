@@ -3,7 +3,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { registerDiagramShape } from '@weasel-js/diagram';
-import { exportPagePng } from './pagePng';
+import { exportPagePng } from '@weasel-js/diagram-formats';
 import { pageScene } from './testing/pageScene';
 
 async function pixels(blob: Blob): Promise<ImageData> {

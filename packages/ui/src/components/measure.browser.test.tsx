@@ -2,9 +2,9 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { fixedWidth, UNBOUNDED } from '@weasel-js/ui-logic';
-import { domMeasureEnv } from '../domMeasureEnv';
-import { Button, domButton, type ButtonProps } from './Button';
-import { domItemList } from './ItemList';
+import { domMeasureEnv } from '@weasel-js/ui';
+import { Button, domButton, type ButtonProps } from '@weasel-js/ui/components/Button';
+import { domItemList } from '@weasel-js/ui/components/ItemList';
 import s from './ItemList/ItemList.module.css';
 
 // The DOM half of the measure/draw contract: CSS lays a button and a list out from the tokens `measure` reads, so

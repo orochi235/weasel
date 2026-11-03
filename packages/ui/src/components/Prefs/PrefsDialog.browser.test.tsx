@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { PrefsDialog } from './PrefsDialog';
+import { PrefsDialog } from '@weasel-js/ui/components/Prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // The modal sets only `max-height`, so a percentage height inside it resolves

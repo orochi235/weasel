@@ -1,8 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { Persistence, usePersistedState } from '@weasel-js/labkit/state';
 import { createIndexedDbAdapter } from '@weasel-js/storage';
 import { afterEach, expect, test } from 'vitest';
-import { Persistence } from './Persistence';
-import { usePersistedState } from './usePersistedState';
 
 // jsdom only has fake-indexeddb, an imitation; this goes through the browser's own.
 

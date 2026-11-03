@@ -3,9 +3,7 @@ import { act } from '@testing-library/react';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
-import { DIVIDER_HEIGHT } from './body';
-import { DiagramView } from './DiagramView';
-import { diagramScene, type DiagramData } from './fromData';
+import { DIVIDER_HEIGHT, DiagramView, diagramScene, type DiagramData } from '@weasel-js/diagram';
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;

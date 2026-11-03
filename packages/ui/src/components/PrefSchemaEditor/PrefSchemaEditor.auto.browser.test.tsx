@@ -3,7 +3,7 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether the switch and its control share a line, and whether a faded control still takes a press, are layout.

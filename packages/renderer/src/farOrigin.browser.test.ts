@@ -8,12 +8,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, viewToMat3 } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer, registerProgram, registerPaintDrawKind, resolvePatternSpec } from '@weasel-js/renderer';
+import { _resetProgramRegistryForTests } from '@weasel-js/renderer/test-seams';
+import { meshDrawKind, seedMeshPatch } from '@weasel-js/renderer/mesh';
 import type { DrawCommand } from './DrawCommand';
-import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
-import { registerPaintDrawKind } from './paintKinds';
-import { meshDrawKind, seedMeshPatch } from './meshPaint/meshPaint';
-import { resolvePatternSpec } from './patterns/resolveSpec';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 const ZOOM = 64;

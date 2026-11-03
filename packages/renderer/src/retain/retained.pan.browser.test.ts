@@ -16,13 +16,11 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
 import { registerFont } from '@weasel-js/font';
 import type { Paint } from '@weasel-js/paint';
-import { WeaselRenderer } from '../WeaselRenderer';
+import {
+  WeaselRenderer, registerProgram, registerTexture, unregisterTexture, registerPaintDrawKind, blur, vignette,
+} from '@weasel-js/renderer';
 import type { DrawCommand } from '../DrawCommand';
 import type { RetainedStats } from '../rendererTypes';
-import { registerProgram } from '../shaders/registerProgram';
-import { registerTexture, unregisterTexture } from '../textures/registerTexture';
-import { registerPaintDrawKind } from '../paintKinds';
-import { blur, vignette } from '../effects/builtins';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 

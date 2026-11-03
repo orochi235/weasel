@@ -1,11 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, screen } from '@testing-library/react';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlPanel } from '@weasel-js/labkit/controls';
 import { PropertyRow } from '@weasel-js/ui/components/Properties';
 import { afterEach, expect, test } from 'vitest';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlPanel } from './ControlPanel';
 
 // Whether a row takes half of the two-column grid or all of it is layout, which only a browser has.
 

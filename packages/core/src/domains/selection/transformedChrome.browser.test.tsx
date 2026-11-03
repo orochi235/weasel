@@ -10,10 +10,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { SceneCanvas } from '../../canvas/SceneCanvas';
-import { createScene } from '../../core/scene/scene';
-import { asNodeId, type Node, type RectPose } from '../../core/scene/types';
-import { useSelection } from '../../core/selection/useSelection';
+import { SceneCanvas, createScene, asNodeId, type SceneNode as Node, type RectPose, useSelection } from '@weasel-js/core';
 
 const W = 340;
 const H = 200;

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ViteDevServer } from 'vite';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import { bundledDirs, restartLeavingNothing, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
+import { bundledDirs, entryFiles, namesSourced, restartLeavingNothing, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
 import { pathImportsIn } from './vite-prebundle-reach';
 
 const tree = mkdtempSync(join(tmpdir(), 'vite-prebundle-'));
@@ -129,6 +129,25 @@ describe('sourcedFromBundled', () => {
       'pkg/src/Widget.stories.tsx',
       'pkg/src/leaf.ts',
       'pkg/src/shape.ts',
+    ]);
+  });
+});
+
+describe('namesSourced', () => {
+  file('repo/packages/kit/package.json', JSON.stringify({
+    name: '@weasel-js/kit',
+    exports: { '.': { types: './dist/index.d.ts' }, './components/*': { types: './dist/components/*/index.d.ts' } },
+  }));
+  file('repo/packages/kit/src/index.ts', "export * from './components/A';");
+  file('repo/packages/kit/src/components/A/index.ts', 'export const a = 1;');
+  file('repo/packages/kit/src/components/B/index.ts', 'export const b = 2;');
+
+  it("names a specifier whose entry module is served from source, a `*` entry's included", () => {
+    const entries = entryFiles(join(tree, 'repo'));
+    const sourced = new Set([join(tree, 'repo/packages/kit/src/components/A/index.ts')]);
+    const named = namesSourced(entries, sourced);
+    expect(['@weasel-js/kit', '@weasel-js/kit/components/A', '@weasel-js/kit/components/B', '@weasel-js/other'].filter(named)).toEqual([
+      '@weasel-js/kit/components/A',
     ]);
   });
 });

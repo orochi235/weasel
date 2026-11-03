@@ -6,7 +6,7 @@
  * colors that program painted, under group alpha and a color matrix too.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 
 const W = 16;

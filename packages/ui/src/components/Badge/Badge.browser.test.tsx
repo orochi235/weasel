@@ -6,9 +6,9 @@ import { contrastOver, parseComputedColor, type Rgba } from '@weasel-js/theme/te
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { painted } from '../../testing/paintedContrast';
-import { GestureRoute } from '../GestureRoute/GestureRoute';
-import { Badge } from './Badge';
-import { BASES, type BadgeBase } from './bases';
+import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
+import { Badge, type BadgeBase } from '@weasel-js/ui/components/Badge';
+import { BASES } from './bases';
 import { BADGE_LOOKS, lookProps } from './looks';
 import type { BadgeShape, BadgeSize } from './types';
 

@@ -3,6 +3,7 @@ import 'windease/styles.css';
 import '../styles.less';
 import './LabFit.browser.test.less';
 import { cleanup, screen, waitFor } from '@testing-library/react';
+import { Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -11,7 +12,6 @@ import { page, userEvent } from 'vitest/browser';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
-import { Lab } from './Lab';
 
 // A lab must fit whatever it is mounted in without scrolling, which only real
 // layout can show.

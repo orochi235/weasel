@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { Ruler } from './Ruler';
+import { Ruler } from '@weasel-js/ui/components/Timeline';
 import type { TimeWindow } from './timeScale';
 
 afterEach(cleanup);

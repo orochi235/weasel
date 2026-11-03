@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { Tree, type TreeNode } from './Tree';
+import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 
 // Whether the ghost of a drag covers the row it is held over is a matter of two boxes, which only a browser lays out.
 

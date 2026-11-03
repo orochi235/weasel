@@ -3,8 +3,7 @@
  * with a color nobody can parse is the reachable throw.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
-import { registerEffect } from './effects/types';
+import { WeaselRenderer, registerEffect } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 
 const SIZE = 8;

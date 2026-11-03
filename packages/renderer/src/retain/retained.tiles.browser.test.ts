@@ -13,10 +13,9 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
-import { WeaselRenderer } from '../WeaselRenderer';
+import { WeaselRenderer, registerProgram, blur } from '@weasel-js/renderer';
+import { _resetProgramRegistryForTests } from '@weasel-js/renderer/test-seams';
 import type { DrawCommand } from '../DrawCommand';
-import { _resetProgramRegistryForTests, registerProgram } from '../shaders/registerProgram';
-import { blur } from '../effects/builtins';
 import type { RetainedSurfaces } from './RetainedSurfaces';
 
 const W = 64;

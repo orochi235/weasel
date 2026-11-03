@@ -10,7 +10,7 @@ import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import { createAnswerBook } from './answers';
 import { connectFrame, flush } from './labHarness';
-import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { StoryGlobalsContext } from '@weasel-js/forge/shell';
 import { storyInstrument } from './storyInstrument';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 

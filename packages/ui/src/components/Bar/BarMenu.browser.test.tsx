@@ -4,7 +4,7 @@ import { afterEach, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { BarMenu } from './BarMenu';
+import { BarMenu } from '@weasel-js/ui/components/Bar';
 import s from './BarMenu.browser.test.module.css';
 
 afterEach(cleanup);

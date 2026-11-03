@@ -3,8 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { cssColorLiteral } from '@weasel-js/paint';
 import { afterEach, describe, expect, it } from 'vitest';
 import { contrast as byteContrast } from '../../testing/paintedContrast';
-import { MotifFrame } from './MotifFrame';
-import { notch, plaque, stereo, tab } from './motifs';
+import { MotifFrame, notch, plaque, stereo, tab } from '@weasel-js/ui/components/MotifFrame';
 
 // Where a motif puts its title, and whether its ink reads, are layout and
 // color questions, so only a real browser can answer them.

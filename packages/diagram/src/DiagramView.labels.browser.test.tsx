@@ -3,8 +3,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerCanvasFont } from '@weasel-js/font';
-import { DiagramView, type DiagramViewProps } from './DiagramView';
-import { diagramScene } from './fromData';
+import { DiagramView, type DiagramViewProps, diagramScene } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');

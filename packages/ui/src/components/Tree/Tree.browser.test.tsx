@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { useState } from 'react';
-import { Tree, type TreeNode } from './Tree';
+import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 import { applyMove } from './Tree.fixtures';
 
 afterEach(cleanup);

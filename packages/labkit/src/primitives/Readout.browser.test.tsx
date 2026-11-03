@@ -2,8 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import '../styles.less';
 import { cleanup, render } from '@testing-library/react';
+import { Readout, type ReadoutRow } from '@weasel-js/labkit/primitives';
 import { afterEach, expect, test } from 'vitest';
-import { Readout, type ReadoutRow } from './Readout';
 
 function must<T>(el: T | null): T {
   if (el == null) throw new Error('expected an element');

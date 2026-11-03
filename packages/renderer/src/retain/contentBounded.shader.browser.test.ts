@@ -6,9 +6,9 @@
  * reached it.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { WeaselRenderer } from '../WeaselRenderer';
+import { WeaselRenderer, registerProgram } from '@weasel-js/renderer';
+import { _resetProgramRegistryForTests } from '@weasel-js/renderer/test-seams';
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
-import { _resetProgramRegistryForTests, registerProgram } from '../shaders/registerProgram';
 
 const W = 48;
 const H = 32;

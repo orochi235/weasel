@@ -8,9 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement, useRef, useState, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneCanvas } from './SceneCanvas';
-import { createScene } from '../core/scene/scene';
-import { useCanvasSize } from '../core/viewport/useCanvasSize';
+import { SceneCanvas, createScene, useCanvasSize } from '@weasel-js/core';
 import { pixelAt } from '../testing/canvasPixels';
 
 const GREEN = { color: '#00ff00' };

@@ -5,23 +5,30 @@ import './LensOverlay.browser.test.less';
 import { cleanup, screen, waitFor } from '@testing-library/react';
 import { effectivePose, type RectPose, sceneToAdapter } from '@weasel-js/core';
 import { canvasGl, readCanvas } from '@weasel-js/core/testing/canvasPixels';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
-import { useEffect } from 'react';
-import { afterEach, beforeEach, expect, test } from 'vitest';
-import { commands, page, userEvent } from 'vitest/browser';
-import { defineInstrument } from '../../instrument/defineInstrument';
-import { Lab } from '../../lab/Lab';
-import { toDeviceRect } from '../../surface/deviceRect';
+import { defineInstrument, Lab } from '@weasel-js/labkit';
 import {
+  addLensOps,
+  BODY_SIZE,
+  createLensScene,
+  LensOverlay,
+  type LensOverlayProps,
+  type LensScene,
+  lensesOf,
+  setLensOps,
+  settingsOf,
+} from '@weasel-js/labkit/loupe';
+import {
+  toDeviceRect,
   useSurface,
   useSurfaceCanvas,
   useSurfaceTile,
   useTileId,
-} from '../../surface/useSurfaceTile';
-import { LensOverlay, type LensOverlayProps } from './LensOverlay';
-import { addLensOps, createLensScene, lensesOf, setLensOps, settingsOf } from './lensScene';
+} from '@weasel-js/labkit/surface';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { useEffect } from 'react';
+import { afterEach, beforeEach, expect, test } from 'vitest';
+import { commands, page, userEvent } from 'vitest/browser';
 import type { LensSource } from './lensSource';
-import { BODY_SIZE, type LensScene } from './lensTypes';
 
 // The lens canvas covers the whole lab body, but takes input only on its hit
 // boxes: its input element is `pointer-events: none`. Whether a press beside

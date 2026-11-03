@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, within } from '@testing-library/react';
 import type { PrefGroup, PrefScope } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 
 // The mark's box and the bar's are the stylesheets', which jsdom does not load.
 

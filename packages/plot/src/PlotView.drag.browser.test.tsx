@@ -7,10 +7,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerCanvasFont } from '@weasel-js/font';
-import { textMeasure } from './measure';
-import { PlotView } from './PlotView';
-import { PLOT_THEME } from './theme';
-import { compileXyChart } from './xychart/compile';
+import { textMeasure, PlotView, PLOT_THEME, compileXyChart } from '@weasel-js/plot';
 import type { XyChartData } from './xychart/types';
 
 registerCanvasFont('sans-serif');

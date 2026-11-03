@@ -3,7 +3,7 @@ import { cleanup } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Where a spanning leaf's rows start against the two columns beside it is the browser's grid and flex layout.

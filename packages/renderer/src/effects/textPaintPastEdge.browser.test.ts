@@ -9,9 +9,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { registerFont } from '@weasel-js/font';
 import type { Paint } from '@weasel-js/paint';
-import { WeaselRenderer } from '../WeaselRenderer';
-import { registerPaintDrawKind } from '../paintKinds';
-import { blur } from './builtins';
+import { WeaselRenderer, registerPaintDrawKind, blur } from '@weasel-js/renderer';
 import type { Effect } from './types';
 import type { DrawCommand } from '../DrawCommand';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';

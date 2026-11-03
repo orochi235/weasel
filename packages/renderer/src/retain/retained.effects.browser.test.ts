@@ -7,9 +7,8 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
-import { WeaselRenderer } from '../WeaselRenderer';
+import { WeaselRenderer, blur, vignette } from '@weasel-js/renderer';
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
-import { blur, vignette } from '../effects/builtins';
 
 const W = 48;
 const H = 32;

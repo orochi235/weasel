@@ -8,9 +8,8 @@ import { createElement } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
-import { pref } from './build';
-import { openPrefsSync } from './open';
-import { KitSettingsFromPrefs } from './react';
+import { pref, openPrefsSync } from '@weasel-js/prefs';
+import { KitSettingsFromPrefs } from '@weasel-js/prefs/react';
 
 const SCHEMA = pref.group('Prefs', {
   kit: pref.group('Kit', {

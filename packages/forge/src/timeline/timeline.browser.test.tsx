@@ -5,10 +5,9 @@ import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { readRouteParams } from '../shell/useRoute';
-import { Workshop } from '../shell/Workshop';
-import { meta, story } from '../story/define';
+import { Workshop } from '@weasel-js/forge/shell';
+import { meta, story, usePlayhead } from '@weasel-js/forge';
 import type { IndexEntry } from '../story/types';
-import { usePlayhead } from './context';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(() => {

@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { LayerList } from './LayerList';
+import { LayerList } from '@weasel-js/ui/components/LayerList';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);

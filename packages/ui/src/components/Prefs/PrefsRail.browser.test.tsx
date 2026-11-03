@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 
 // Where a pane is scrolled to is the browser's to say: jsdom's elements neither scroll nor have `scrollTo`.
 

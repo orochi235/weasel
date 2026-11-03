@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { useState } from 'react';
-import { ItemList } from './ItemList';
+import { ItemList } from '@weasel-js/ui/components/ItemList';
 
 // Whether focus survives the focused element leaving the page is the browser's answer, not jsdom's.
 

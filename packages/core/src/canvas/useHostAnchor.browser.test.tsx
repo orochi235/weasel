@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { useHostAnchor } from './useHostAnchor';
+import { useHostAnchor } from '@weasel-js/core';
 
 let root: Root | null = null;
 let page: HTMLDivElement | null = null;

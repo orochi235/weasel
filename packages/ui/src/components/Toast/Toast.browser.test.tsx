@@ -2,9 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import { act, cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { useState } from 'react';
-import { OverlayPortalProvider } from '../../overlays/portalHost';
-import { ToastRegion, type ToastRegionProps } from './Toast';
-import { createToastQueue } from './queue';
+import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
+import { ToastRegion, type ToastRegionProps, createToastQueue } from '@weasel-js/ui/components/Toast';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // With view transitions on, a toast reaches the DOM only on the next rendered frame, which a

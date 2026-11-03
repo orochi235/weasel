@@ -6,10 +6,9 @@
 import { describe, it, expect } from 'vitest';
 import type { Paint, PatternTransform } from '@weasel-js/paint';
 import { composePatternTransform } from '@weasel-js/paint';
-import { createScene } from 'core/scene/scene';
+import { createScene, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
 import { resolveFillPattern } from '@weasel-js/renderer';
-import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 const W = 64;

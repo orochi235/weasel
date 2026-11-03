@@ -3,11 +3,8 @@
  * land in one raster, lined up the way the canvas showed them.
  */
 import { describe, it, expect } from 'vitest';
-import { createScene } from 'core/scene/scene';
+import { createScene, renderDebugSnapshot, rasterToPng, createDebugSink } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
-import { renderDebugSnapshot } from './renderDebugSnapshot';
-import { rasterToPng } from './rasterToPng';
-import { createDebugSink } from '../debug/createDebugSink';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RasterImage } from './renderSceneToPixels';
 

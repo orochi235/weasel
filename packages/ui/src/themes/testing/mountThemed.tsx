@@ -2,11 +2,10 @@ import '@weasel-js/theme/tokens.css';
 import { applyTheme, type Selection, type Theme } from '@weasel-js/theme';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties } from 'react';
-import { Button } from '../../components/Button';
-import { Input } from '../../components/Input';
-import { DefaultMotif } from '../../components/MotifFrame';
-import { titlebar } from '../../components/MotifFrame/motifs';
-import { PropertyGroup, PropertyPanel } from '../../components/Properties';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Input } from '@weasel-js/ui/components/Input';
+import { DefaultMotif, titlebar } from '@weasel-js/ui/components/MotifFrame';
+import { PropertyGroup, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import p from '../../components/Properties/Properties.module.css';
 
 /** Test support: one of everything a desktop theme restyles, under `theme` at `selection`. */

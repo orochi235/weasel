@@ -11,7 +11,7 @@ import { pathFromD, polygonFromPoints, type Path, type PolygonPath } from '@weas
 import { tessellate } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from '@weasel-js/stroke';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 
 const W = 96;

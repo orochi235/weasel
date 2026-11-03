@@ -1,11 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, screen } from '@testing-library/react';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlPanel } from '@weasel-js/labkit/controls';
 import { useState } from 'react';
 import { afterEach, describe, expect, test } from 'vitest';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlPanel } from './ControlPanel';
 
 // Whether a click on the label reaches the label is a question of what is
 // drawn on top of it, which only a browser lays out.

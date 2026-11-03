@@ -5,9 +5,10 @@
 import { forwardRef, useCallback, useRef } from 'react';
 import type React from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
-import { Canvas as CanvasSurface, type CanvasProps } from '../Canvas';
+import type { CanvasProps, CameraProps } from '@weasel-js/core';
+import { Canvas as CanvasSurface } from '../Canvas';
 import type { CanvasExtensionApi } from '../canvasExtension';
-import { useCanvasView, type CameraProps } from '../useCanvasView';
+import { useCanvasView } from '../useCanvasView';
 
 export type BareCanvasProps<TPose = unknown> =
   Omit<CanvasProps<TPose>, 'viewState'> & CameraProps;

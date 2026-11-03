@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD, pointAlongPath, polylineFromPoints, type Path } from '@weasel-js/geom';
 import { clipRibbon, clipWindow, strokeInsets, tessellateStroke } from '@weasel-js/stroke';
 import type { CommandStroke, Stroke, StrokeTrim } from '@weasel-js/paint';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 
 const W = 200;

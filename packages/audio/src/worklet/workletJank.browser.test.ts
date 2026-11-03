@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { createAudioEngine, type AudioEngine } from '../createAudioEngine';
+import { createAudioEngine, type AudioEngine } from '@weasel-js/audio';
 import type { AudioEngineOptions } from '../types';
 
 // A real, running AudioContext, and a main thread blocked for most of a bar of

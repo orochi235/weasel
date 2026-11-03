@@ -4,12 +4,11 @@ import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
-import { AssetEditor } from './AssetEditor';
+import { AssetEditor, workspaceCodec } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { DEMO_WORKSPACE } from './AssetEditor.demo';
 import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
 import { keyedRow } from './treeRows.fixture';
 import type { Workspace } from './workspace';
-import { workspaceCodec } from './workspaceCodec';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Where the asset list sits and what its rows look like is the grid's and the stylesheet's doing, and whether a

@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { SelectionPanel } from './SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 
 // The panel's rows are its own, so the dimmed label is its own rule, which jsdom does not resolve.
 

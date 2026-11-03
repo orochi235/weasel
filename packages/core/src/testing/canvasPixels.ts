@@ -1,4 +1,4 @@
-import { CANVAS_CONTEXT_ATTRIBUTES } from '../canvas/contextAttributes';
+import { CANVAS_CONTEXT_ATTRIBUTES } from '@weasel-js/core';
 
 /**
  * Reading back what a weasel canvas painted, from a browser test. A read can come before the app's first

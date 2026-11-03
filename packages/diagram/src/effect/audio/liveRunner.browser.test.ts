@@ -1,10 +1,7 @@
 import { renderEngineStereo } from '@weasel-js/audio/testing/renderEngine';
 import { rms } from '@weasel-js/audio/testing/spectrum';
 import { describe, expect, it } from 'vitest';
-import {
-  AUDIO_STAGE_TYPES, audioStageNodes, createLiveAudioRunner,
-  type AudioStageNodes,
-} from '../../effect-audio.entry';
+import { AUDIO_STAGE_TYPES, audioStageNodes, createLiveAudioRunner, type AudioStageNodes } from '@weasel-js/diagram/effect-audio';
 import type { EffectPipeline, EffectStage, EffectWire } from '../types';
 
 const RATE = 48000;

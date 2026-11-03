@@ -4,7 +4,7 @@ import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
 import { renderWithIcons } from '../../testing/withIcons';
 

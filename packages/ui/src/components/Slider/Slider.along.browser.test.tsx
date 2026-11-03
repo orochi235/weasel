@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { lineShape } from '@weasel-js/geom';
-import { Along } from '../Along';
-import { Slider, type SliderProps, type Thumb } from './index';
+import { Along } from '@weasel-js/ui/components/Along';
+import { Slider, type SliderProps, type Thumb } from '@weasel-js/ui/components/Slider';
 
 afterEach(cleanup);
 

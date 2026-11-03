@@ -8,13 +8,8 @@ import { page } from 'vitest/browser';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneCanvas } from '../../canvas/SceneCanvas';
-import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
-import { createScene } from 'core/scene/scene';
+import { SceneCanvas, IDENTITY_POSE_COMPOSITION, createScene, FALLBACK_ACCENT, useTools, WeaselProvider } from '@weasel-js/core';
 import type { SurfaceContribution } from '../../canvas/surfaceContribution';
-import { FALLBACK_ACCENT } from '../../canvas/accentColor';
-import { useTools } from '../../tools/overlayBinding';
-import { WeaselProvider } from '../../WeaselProvider';
 
 const W = 320;
 const H = 240;

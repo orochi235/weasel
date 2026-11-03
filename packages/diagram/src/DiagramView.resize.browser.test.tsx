@@ -2,8 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { DiagramView, type NodeResize } from './DiagramView';
-import { diagramScene, type DiagramData } from './fromData';
+import { DiagramView, type NodeResize, diagramScene, type DiagramData } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 let root: Root | null = null;

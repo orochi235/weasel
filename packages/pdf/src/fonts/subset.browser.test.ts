@@ -8,8 +8,7 @@ import * as pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';
-import { writePdf } from '../writePdf';
-import { registryFontSource } from './fontSource';
+import { writePdf, registryFontSource } from '@weasel-js/pdf';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 // With the worker module on the main thread, its warnings reach the console spy below.

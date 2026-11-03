@@ -6,7 +6,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { ApiTable } from '../../story/api';
-import { meta, story } from '../../story/define';
+import { meta, story } from '@weasel-js/forge';
 import { loadNativeModule } from '../../story/native';
 import type { IndexRender, LoadedStory } from '../../story/types';
 import { type IndexEnv, IndexEnvContext, IndexPage, IndexStory } from './IndexPage';

@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { useEffect, useRef, useState } from 'react';
-import { Tree, type TreeDropHandle, type TreeDropTarget, type TreeNode } from './index';
+import { Tree, type TreeDropHandle, type TreeDropTarget, type TreeNode } from '@weasel-js/ui/components/Tree';
 
 // A drag begun outside a tree and let go on it is hit-tested against real row boxes.
 

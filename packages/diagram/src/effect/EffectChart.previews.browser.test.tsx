@@ -3,10 +3,8 @@ import { cleanup, render } from '@testing-library/react';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { fitDiagram } from '../DiagramView';
-import { diagramScene } from '../fromData';
-import { previewRowId } from './draw';
-import { EffectChart } from './EffectChart';
-import { nodeGraph } from './nodeGraph';
+import { diagramScene } from '@weasel-js/diagram';
+import { previewRowId, EffectChart, nodeGraph } from '@weasel-js/diagram/effect';
 import type { EffectPipeline, EffectRun } from './types';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 

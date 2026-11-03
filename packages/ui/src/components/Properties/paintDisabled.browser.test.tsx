@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import { gradientForBounds, type Paint } from '@weasel-js/core';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { PropertyControl } from './PropertyField';
+import { PropertyControl } from '@weasel-js/ui/components/Properties';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // An inline paint is a stack of controls whose height depends on the paint. Whether the disabled form holds

@@ -1,8 +1,8 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { icon, type UiIconName } from '../icons.gen';
+import { type UiIconName, Icon } from '@weasel-js/ui/components/Icon';
+import { icon } from '../icons.gen';
 import { withIcons } from '../testing/withIcons';
-import { Icon } from './Icon';
 
 afterEach(cleanup);
 

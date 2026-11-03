@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createBusGraph } from './buses';
-import { createDelayEffect, createReverbEffect } from './effects';
+import { createBusGraph, createDelayEffect, createReverbEffect } from '@weasel-js/audio';
 
 // The unit tests prove the wiring against a double; these render it through a
 // real engine, which is the only place a muted cycle or a dead route shows up.

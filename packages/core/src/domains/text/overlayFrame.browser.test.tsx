@@ -8,10 +8,8 @@ import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
-import { createScene } from '../../core/scene/scene';
-import { asNodeId, type RectPose, type Scene } from '../../core/scene/types';
+import { createScene, asNodeId, type RectPose, type Scene, useSceneTextEdit, type DefaultTextData } from '@weasel-js/core';
 import type { View } from '../../core/viewport/view';
-import { useSceneTextEdit, type DefaultTextData } from './useSceneTextEdit';
 
 const ID = asNodeId('t');
 const VIEW: View = { x: 10, y: -20, scale: { x: 2, y: 2 } };

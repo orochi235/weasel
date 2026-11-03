@@ -7,7 +7,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { PathBuilder, viewToMat3, type PolygonPath } from '@weasel-js/geom';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 

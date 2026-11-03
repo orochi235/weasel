@@ -7,7 +7,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { DrawCanvas, type DrawCanvasProps } from './DrawCanvas';
+import { DrawCanvas, type DrawCanvasProps } from '@weasel-js/core';
 import { canvasGl, pixelAt } from '../testing/canvasPixels';
 
 let root: Root | null = null;

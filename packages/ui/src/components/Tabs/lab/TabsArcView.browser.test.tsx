@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { arcShape, trackRun, type Point, type TrackRun } from '@weasel-js/geom';
-import { arcInBox } from '../../Along/arcInBox';
+import { arcInBox } from '@weasel-js/ui/components/Along';
 import { TABS_ARC_DEFAULTS, tabArcs, TabsArcView, type TabsArcConfig } from './TabsArcView';
 
 afterEach(cleanup);

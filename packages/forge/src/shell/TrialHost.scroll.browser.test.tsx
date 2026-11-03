@@ -4,7 +4,7 @@ import { cleanup, render, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { runAxe } from '../frame/a11y';
-import { TrialHost } from './TrialHost';
+import { TrialHost } from '@weasel-js/forge/shell';
 
 afterEach(cleanup);
 

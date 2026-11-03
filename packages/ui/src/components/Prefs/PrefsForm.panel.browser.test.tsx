@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 
 // A field's frame and an `as: 'panel'` box both default to the sunken surface, and only a browser resolves
 // the custom properties that say which color each one ends up.

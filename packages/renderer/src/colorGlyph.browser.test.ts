@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { registerCanvasFont } from '@weasel-js/font';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 
 const W = 160;

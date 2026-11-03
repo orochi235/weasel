@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { lineContrast } from '../testing/paintedContrast';
-import { MotifFrame } from './MotifFrame';
+import { MotifFrame } from '@weasel-js/ui/components/MotifFrame';
 import type { Motif } from './MotifFrame';
 import { FORM_FRAMES } from './Prefs/frames';
 import prefs from './Prefs/Prefs.module.css';

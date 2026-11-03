@@ -1,12 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, screen } from '@testing-library/react';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlMatrix, ControlPanel } from '@weasel-js/labkit/controls';
 import type { ReactNode } from 'react';
 import { afterEach, expect, test } from 'vitest';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlMatrix } from './ControlMatrix';
-import { ControlPanel } from './ControlPanel';
 
 // Mounted on a page whose own ink is not the theme's, a panel's text has to be the theme's ink:
 // only a browser resolves the `var()` that says which color that is.

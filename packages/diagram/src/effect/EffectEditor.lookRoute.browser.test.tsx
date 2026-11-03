@@ -4,14 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { fitDiagram } from '../DiagramView';
-import { diagramScene } from '../fromData';
-import { sequenceSlots } from '../reorder';
-import { EFFECT_MIN_SCALE } from './EffectChart';
-import { EffectEditor } from './EffectEditor';
-import { editorScene } from './editorMapping';
+import { diagramScene, sequenceSlots } from '@weasel-js/diagram';
+import { EFFECT_MIN_SCALE, EffectEditor, editorScene, wireEnds, mainChain } from '@weasel-js/diagram/effect';
 import type { LanesOptions } from './lanes';
-import { wireEnds } from './lookRoutes';
-import { mainChain } from './mainChain';
 import { io, w } from './skipFixture';
 import type { EffectDoc } from './types';
 

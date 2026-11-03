@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { registerFont } from '@weasel-js/font';
 import { bidi } from '@weasel-js/bidi';
 import { layoutTextPose, registerBidi, type TextStyle } from '@weasel-js/core';
-import { serializeSvg } from './serialize';
+import { serializeSvg } from '@weasel-js/svg';
 import type { SvgTextNode } from './types';
 import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';

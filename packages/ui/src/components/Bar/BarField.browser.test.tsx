@@ -1,8 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
-import { BarActionButton } from './BarAction';
-import { BarField } from './BarField';
+import { BarActionButton, BarField } from '@weasel-js/ui/components/Bar';
 import { useStoryFields } from './barStoryFields';
 
 // Whether a cell fits the bar and sits on its line is layout, which jsdom does not do.

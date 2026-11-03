@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { registerFont } from '@weasel-js/font';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';

@@ -7,9 +7,8 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { mat3, pathFromD } from '@weasel-js/geom';
-import { WeaselRenderer } from '../WeaselRenderer';
+import { WeaselRenderer, registerTexture, unregisterTexture } from '@weasel-js/renderer';
 import type { WeaselRendererOptions } from '../rendererTypes';
-import { registerTexture, unregisterTexture } from '../textures/registerTexture';
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 
 const W = 48;

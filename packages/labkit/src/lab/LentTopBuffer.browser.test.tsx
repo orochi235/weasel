@@ -5,17 +5,19 @@ import './LentTopBuffer.browser.test.less';
 import { cleanup, screen, waitFor } from '@testing-library/react';
 import { sceneToAdapter } from '@weasel-js/core';
 import { readCanvas } from '@weasel-js/core/testing/canvasPixels';
+import { defineInstrument, Lab } from '@weasel-js/labkit';
+import {
+  addLensOps,
+  BODY_SIZE,
+  createLensScene,
+  LensOverlay,
+  type LensScene,
+} from '@weasel-js/labkit/loupe';
+import { SurfaceCanvasContext, SurfaceContext, useTiledSurface } from '@weasel-js/labkit/surface';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { type ReactNode, useState } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
-import { defineInstrument } from '../instrument/defineInstrument';
-import { LensOverlay } from '../loupe/lens/LensOverlay';
-import { addLensOps, createLensScene } from '../loupe/lens/lensScene';
-import { BODY_SIZE, type LensScene } from '../loupe/lens/lensTypes';
-import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
-import { useTiledSurface } from '../surface/useTiledSurface';
-import { Lab } from './Lab';
 
 // A lab under a host whose surface publishes only `over` and `under` makes its
 // own `top` buffer on the host's container. Whether the lens paints there, and

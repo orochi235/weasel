@@ -3,10 +3,10 @@ import 'windease/styles.css';
 import '../../styles.less';
 import '../../lab/presentation.browser.test.less';
 import { cleanup } from '@testing-library/react';
+import { Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../../instrument/types';
-import { Lab } from '../../lab/Lab';
 import type { LabContribution } from '../labTypes';
 import type { TrialContribution } from '../types';
 

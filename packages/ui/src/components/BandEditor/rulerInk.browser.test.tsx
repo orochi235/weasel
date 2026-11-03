@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { fraction } from '@weasel-js/quantity';
 import { page } from 'vitest/browser';
 import { afterEach, expect, test } from 'vitest';
-import { BandEditor } from './BandEditor';
+import { BandEditor } from '@weasel-js/ui/components/BandEditor';
 
 // A label's box says where the font put its advance, not where its strokes landed, and the fraction bar
 // has no box at all. So this reads the pixels.

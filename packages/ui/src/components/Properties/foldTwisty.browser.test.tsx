@@ -2,10 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { tab } from '../MotifFrame/motifs';
-import { PropertyGroup } from './PropertyGroup';
-import { PropertyPanel } from './PropertyPanel';
-import { Subpanel } from './Subpanel';
+import { tab } from '@weasel-js/ui/components/MotifFrame';
+import { PropertyGroup, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
 
 // `twisty="folded"` hides an open container's twisty until the keyboard reaches it. Whether the title
 // stays where it was when the twisty shows is layout, which only a browser has.

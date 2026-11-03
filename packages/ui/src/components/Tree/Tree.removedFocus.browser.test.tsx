@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { Tree, type TreeNode } from './Tree';
+import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 
 // What `document.activeElement` is after the focused element leaves the page is the browser's answer, not jsdom's.
 

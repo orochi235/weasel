@@ -8,10 +8,7 @@ import { createElement, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { Canvas } from './testing/BareCanvas';
-import { DrawCanvas } from './DrawCanvas';
-import { SceneViewCanvas } from './SceneViewCanvas';
-import { createScene } from '../core/scene/scene';
-import { defaultDrawOne } from './defaultDrawOne';
+import { DrawCanvas, SceneViewCanvas, createScene, defaultDrawOne } from '@weasel-js/core';
 
 const W = 120;
 const H = 60;

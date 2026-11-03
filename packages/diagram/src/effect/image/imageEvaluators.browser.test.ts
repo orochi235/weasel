@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { stageFromType } from '../stageTypes';
+import { stageFromType, imageEvaluators, IMAGE_STAGE_TYPES, testCard, imageValueKinds } from '@weasel-js/diagram/effect';
 import type { EffectStage } from '../types';
 import type { EffectEvalContext } from '../runner/types';
-import { imageEvaluators } from './evaluators';
-import { IMAGE_STAGE_TYPES } from './stageTypes';
-import { testCard } from './testCard';
-import { imageValueKinds } from './valueKinds';
 
 const W = 16;
 const H = 8;

@@ -4,7 +4,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { arcShape, runPlaces, type Point } from '@weasel-js/geom';
-import { arcInBox } from '../../Along/arcInBox';
+import { arcInBox } from '@weasel-js/ui/components/Along';
 import { rowRun } from '../../Along/rowRun';
 import { renderWithIcons } from '../../../testing/withIcons';
 import { arcOf, BAR_ARC_DEFAULTS, BAR_ARC_PRESETS, type BarArcConfig } from './barArcConfig';

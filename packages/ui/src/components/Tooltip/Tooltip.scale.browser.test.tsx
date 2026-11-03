@@ -3,8 +3,7 @@ import '../Popover/Popover.browser.test.css';
 import { cleanup, render } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { Focusable } from './Focusable';
-import { Tooltip, TooltipTrigger } from './Tooltip';
+import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 
 // Where React Aria places an overlay is measured layout, and under a CSS transform: a real browser's.
 

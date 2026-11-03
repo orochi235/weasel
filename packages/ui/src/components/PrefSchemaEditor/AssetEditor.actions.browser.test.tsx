@@ -3,9 +3,9 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { actionCatalog } from './actionCatalog';
+import { actionCatalog, type Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { Live, WORKSPACE } from './AssetEditor.fixture';
-import { catalogOf, type Workspace } from './workspace';
+import { catalogOf } from './workspace';
 import { drag } from './pointerDrag.fixture';
 import { renderWithIcons } from '../../testing/withIcons';
 

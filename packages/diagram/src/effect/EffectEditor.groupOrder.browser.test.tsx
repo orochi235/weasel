@@ -6,11 +6,8 @@ import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { groupLabelIdOf } from '../dataGroups';
 import { fitDiagram } from '../DiagramView';
-import { diagramScene } from '../fromData';
-import { EFFECT_MIN_SCALE } from './EffectChart';
-import { EffectEditor } from './EffectEditor';
-import { editorScene } from './editorMapping';
-import { mainChain } from './mainChain';
+import { diagramScene } from '@weasel-js/diagram';
+import { EFFECT_MIN_SCALE, EffectEditor, editorScene, mainChain } from '@weasel-js/diagram/effect';
 import type { EffectDoc, EffectStage } from './types';
 
 registerCanvasFont('sans-serif');

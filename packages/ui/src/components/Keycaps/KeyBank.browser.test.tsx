@@ -1,8 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { KeyBank } from './KeyBank';
-import { KeyCap } from './Keycap';
+import { KeyBank, KeyCap } from '@weasel-js/ui/components/Keycaps';
 
 afterEach(cleanup);
 

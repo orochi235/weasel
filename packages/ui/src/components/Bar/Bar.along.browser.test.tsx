@@ -6,11 +6,11 @@ import { afterEach, beforeEach, expect, test } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { Along, type AlongArc } from '../Along';
-import { Slider, type Thumb } from '../Slider';
+import { Along, type AlongArc } from '@weasel-js/ui/components/Along';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
 import { renderWithIcons } from '../../testing/withIcons';
 import { icon } from '../../icons.gen';
-import { Bar, type BarProps } from './Bar';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const KEYS = ['undo', 'redo', 'flipX', 'flipY', 'front', 'back'] as const;

@@ -10,7 +10,7 @@
  * typo metrics. Firefox on macOS, and all three engines on Linux, follow it.
  */
 import { describe, it, expect } from 'vitest';
-import { verticalMetricsFromTables, type FaceMetricTables } from './faceMetrics';
+import { verticalMetricsFromTables, type FaceMetricTables } from '@weasel-js/font/metrics';
 import ttfUrl from '../../../assets/fonts/inter/inter.ttf?url';
 
 const USE_TYPO_METRICS = 1 << 7;

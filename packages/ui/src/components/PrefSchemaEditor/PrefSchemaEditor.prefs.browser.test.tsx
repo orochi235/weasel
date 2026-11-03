@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { drag as dragTo } from './pointerDrag.fixture';
 import { rowKey } from './treeRows.fixture';
 import { renderWithIcons } from '../../testing/withIcons';

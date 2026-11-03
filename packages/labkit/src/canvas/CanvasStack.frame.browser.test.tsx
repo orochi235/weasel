@@ -3,8 +3,8 @@
  * at the density it is shown at, as a stack under a scaled ancestor in its own document does.
  */
 import { cleanup, render, waitFor } from '@testing-library/react';
+import { CanvasStack } from '@weasel-js/labkit/canvas';
 import { afterEach, expect, test } from 'vitest';
-import { CanvasStack } from './CanvasStack';
 
 afterEach(() => {
   cleanup();

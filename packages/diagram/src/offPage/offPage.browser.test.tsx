@@ -12,10 +12,7 @@ import {
   type RectPose, type Scene, type SelectionApi, type View,
 } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
-import { registerDiagramShape } from '../shape';
-import { diagramOffPage } from './follow';
-import { installOffPageMarkers } from './install';
+import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, diagramOffPage, installOffPageMarkers } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 type OffPageScene = Scene<unknown, 'main', RectPose>;

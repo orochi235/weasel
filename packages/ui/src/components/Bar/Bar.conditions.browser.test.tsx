@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { Bar } from './Bar';
+import { Bar } from '@weasel-js/ui/components/Bar';
 
 // A disabled cell's control dims itself and its name is the bar's own, so whether the two read as one
 // disabled cell, and whether anything is dimmed twice, is the stylesheet's, which jsdom does not resolve.

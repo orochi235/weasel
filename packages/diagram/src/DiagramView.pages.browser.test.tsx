@@ -2,9 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { DiagramView } from './DiagramView';
-import { diagramPages } from './dataPages';
-import { diagramScene, type DiagramData } from './fromData';
+import { DiagramView, diagramPages, diagramScene, type DiagramData } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 let root: Root | null = null;

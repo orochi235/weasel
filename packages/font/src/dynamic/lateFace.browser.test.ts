@@ -5,10 +5,9 @@
  * fallback's, and that the face the tier holds follows the load.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import {
-  registerCanvasFont, getDynamicFace, refreshCanvasFont, _resetDynamicFontsForTests,
-} from './dynamicAtlas';
-import { subscribeGlyphReady } from '../glyphReady';
+import { registerCanvasFont, refreshCanvasFont, subscribeGlyphReady } from '@weasel-js/font';
+import { _resetDynamicFontsForTests } from '@weasel-js/font/test-seams';
+import { getDynamicFace } from './dynamicAtlas';
 import { BAKE_SIZE } from './glyphRasterizer';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';
 

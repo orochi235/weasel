@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { icon } from '../../icons.gen';
-import { Bar } from './Bar';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);

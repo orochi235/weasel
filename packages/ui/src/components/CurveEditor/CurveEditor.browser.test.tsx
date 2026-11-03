@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { cssColorLiteral } from '@weasel-js/paint';
 import { afterEach, describe, expect, test } from 'vitest';
-import { CurveEditor, type FillSettings } from './CurveEditor';
+import { CurveEditor, type FillSettings } from '@weasel-js/ui/components/CurveEditor';
 
 afterEach(cleanup);
 

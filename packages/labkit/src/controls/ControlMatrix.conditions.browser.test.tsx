@@ -1,10 +1,9 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, screen } from '@testing-library/react';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlMatrix, type ControlMatrixColumn } from '@weasel-js/labkit/controls';
 import { afterEach, expect, test } from 'vitest';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlMatrix, type ControlMatrixColumn } from './ControlMatrix';
 
 // Whether a disabled cell's dimming reaches its control is the stylesheet's to say, which jsdom does not load.
 

@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { WeaselRenderer, type DrawCommand } from '@weasel-js/core/renderer';
-import { glyphCommands } from './glyph';
+import { glyphCommands } from '@weasel-js/hud';
 
 const SIZE = 40;
 let renderer: WeaselRenderer | undefined;

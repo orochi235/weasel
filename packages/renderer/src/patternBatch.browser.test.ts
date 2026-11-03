@@ -5,8 +5,7 @@
  * the pattern program painted, tiled, under group alpha and a color matrix.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
-import { registerTexture, unregisterTexture, type TextureHandle } from './textures/registerTexture';
+import { WeaselRenderer, registerTexture, unregisterTexture, type TextureHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import { mat3 } from '@weasel-js/geom';
 

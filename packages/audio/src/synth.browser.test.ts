@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { partialPresets } from './synthVoice';
+import { partialPresets } from '@weasel-js/audio';
 import { CENTER_GAIN, renderEngine } from './testing/renderEngine';
 import {
   bandPower, centroid, octaveDensityDb, peaks, powerSpectrum, rms,

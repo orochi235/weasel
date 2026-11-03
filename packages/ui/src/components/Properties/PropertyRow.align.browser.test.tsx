@@ -3,10 +3,8 @@ import { cleanup, screen } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, beforeAll, expect, test } from 'vitest';
-import { ListEditor } from '../ListEditor';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
-import { PropertyRow } from './PropertyRow';
+import { ListEditor } from '@weasel-js/ui/components/ListEditor';
+import { PropertyField, PropertyList, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Where an inline row puts its label is a layout question, so only a real

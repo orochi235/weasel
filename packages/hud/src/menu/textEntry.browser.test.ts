@@ -11,10 +11,8 @@ import { createPaintedCursorState } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { MenuTextEntry } from '@weasel-js/menu';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
-import { attachHud } from '../attach';
-import { createHud, type Hud } from '../hud';
+import { attachHud, createHud, type Hud, createMenuWidget } from '@weasel-js/hud';
 import type { Widget } from '../widget';
-import { createMenuWidget } from './menuWidget';
 
 function makeApi(element: HTMLElement): CanvasExtensionApi {
   return {

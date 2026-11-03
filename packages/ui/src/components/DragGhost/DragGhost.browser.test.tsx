@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { DragGhost } from './DragGhost';
+import { DragGhost } from '@weasel-js/ui/components/DragGhost';
 
 afterEach(cleanup);
 

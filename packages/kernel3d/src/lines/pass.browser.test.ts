@@ -7,10 +7,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { lengthTable } from '@weasel-js/geom';
 import { pointAtLength3, type Vec3 } from '@weasel-js/geom/3d';
-import { cameraEye, cameraViewProjection, createCamera } from '../camera';
-import { projectPoint } from '../project';
-import { packLines, type Line3 } from './pack';
-import { createLinePass, type LinePass } from './pass';
+import { cameraEye, cameraViewProjection, createCamera, projectPoint, packLines, type Line3, createLinePass, type LinePass } from '@weasel-js/kernel3d';
 
 const W = 160;
 const H = 120;

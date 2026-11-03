@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { SelectionPanel } from './SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 
 // A field's frame and an `as: 'panel'` box both default to the sunken surface, and only a browser resolves
 // the custom properties that say which color each one ends up.

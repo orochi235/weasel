@@ -4,9 +4,8 @@
  * leftovers in a buffer the session reuses.
  */
 import { describe, it, expect } from 'vitest';
-import { createScene } from 'core/scene/scene';
+import { createScene, createRasterSession, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
-import { createRasterSession, renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 interface Box { color: string }

@@ -2,9 +2,9 @@ import '@weasel-js/theme/tokens.css';
 import type { ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
-import { ButtonBar } from './ButtonBar/ButtonBar';
-import { OptionsBar } from './OptionsBar/OptionsBar';
-import { ToggleBar } from './ToggleBar/ToggleBar';
+import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
+import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 
 // All three bars draw from segmentedControl.module.css; ToggleBar's own states
 // and its flat cells are measured in ToggleBar.browser.test.tsx.

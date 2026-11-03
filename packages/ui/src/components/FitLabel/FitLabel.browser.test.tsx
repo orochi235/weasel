@@ -3,10 +3,10 @@ import '@weasel-js/theme/faces.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, test } from 'vitest';
-import { PropertyField } from '../Properties/PropertyField';
-import { ToggleBar } from '../ToggleBar';
-import { ToolOptionsBar } from '../ToolOptionsBar';
-import { FitLabel } from './FitLabel';
+import { PropertyField } from '@weasel-js/ui/components/Properties';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
+import { FitLabel } from '@weasel-js/ui/components/FitLabel';
 
 // Which form fits is a question about real widths, so only a browser answers it.
 

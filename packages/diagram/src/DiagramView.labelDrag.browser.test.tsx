@@ -7,8 +7,7 @@ import { createElement, createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerCanvasFont } from '@weasel-js/font';
-import { DiagramView, type DiagramViewApi, type DiagramViewProps } from './DiagramView';
-import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
+import { DiagramView, type DiagramViewApi, type DiagramViewProps, diagramScene, edgeIdOf, type DiagramData } from '@weasel-js/diagram';
 
 registerCanvasFont('sans-serif');
 

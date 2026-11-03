@@ -3,8 +3,7 @@ import type { AudioEngine } from '../createAudioEngine';
 import type { AudioEngineOptions } from '../types';
 import { renderEngineStereo } from '../testing/renderEngine';
 import { rms } from '../testing/spectrum';
-import { createGainNode, delayNode } from './processors';
-import { createFileSourceNode, createOscillatorNode } from './sources';
+import { createGainNode, delayNode, createFileSourceNode, createOscillatorNode } from '@weasel-js/audio';
 import type { AudioGraph } from './types';
 
 // The unit tests prove the wiring against a double; these render it through a

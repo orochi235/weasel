@@ -3,8 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { prefDropTargetAt } from './dropTarget';
-import { PrefsForm } from './PrefsForm';
+import { prefDropTargetAt, PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // A fragment has no box (`display: contents`), so whether its rows take cells in the grid around them, and
