@@ -50,8 +50,9 @@ tools also ships `ToolSet`s naming them (core's `SHAPE_TOOLS`, path-tools'
 `RESHAPE_TOOLS`) and a hook that builds them all (`usePathToolsTools`).
 
 Every package's manifest declares `weasel.tier`: `base` (core depends on it), `core`, `plugin`
-(high-level functionality dropped into a canvas), or `other`. `npm run check:tiers` holds `base`
-to core's dependency closure; `npm run graph:packages` draws the result.
+(high-level functionality a canvas takes in through core's or the renderer's extension points), or
+`other`. `npm run check:tiers` holds `base` to core's dependency closure and a `plugin` to reaching
+core or the renderer; `npm run graph:packages` draws the result.
 
 ## Todo list
 
