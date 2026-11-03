@@ -4,7 +4,9 @@ import type { Path } from '@weasel-js/geom';
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { annotationLayerIds } from 'core/scene/annotation';
-import { nodeGates, type GatedNode } from 'core/scene/nodeGates';
+import { nodeGates } from 'core/scene/nodeGates';
+import { composesFrames } from 'core/scene/composeFrame';
+import { isDocument } from 'core/scene/documentOf';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -67,9 +69,18 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   // A composing strategy makes a node's own pose local, so picking folds the
   // parent chain the same way the render walk does: one definition of both.
   const paintedPoseOf = scenePaintedPoseOf(scene);
+  // Snapshotted like `faded`: a source answers one walk.
+  const unoverridden = enumerable && scene.overrides.ids().length === 0;
+  // What `effectivePose` answers for a node that derives no pose, without its per-node reads.
+  const ownPoseOf = composesFrames(scene.composition) ? null
+    : unoverridden || isDocument(scene) ? (node: PickCandidate<TPose>) => node.pose
+    : (node: PickCandidate<TPose>) => scene.overrides.read(node.id as NodeId)?.pose ?? node.pose;
   const poseOf = getPose
     ? (node: PickCandidate<TPose>) => getPose(node.id)
-    : (node: PickCandidate<TPose>) => paintedPoseOf(node as never);
+    : ownPoseOf === null
+      ? (node: PickCandidate<TPose>) => paintedPoseOf(node as never)
+      : (node: PickCandidate<TPose>) =>
+        ((node as { derivePose?: unknown }).derivePose === undefined ? ownPoseOf(node) : paintedPoseOf(node as never));
 
   // Through `poseOf`, not the document pose: a derived node has to be tested
   // where the renderer draws its dependencies, which is what an override says.
@@ -87,12 +98,17 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     };
   };
 
-  const derivedPathOf = getPose
+  const shownPathOf = getPose ? null : sceneShownPathOf(scene);
+  const derivedPathOf = shownPathOf === null
     ? (node: PickCandidate<TPose>): Path | null => {
       const n = node as unknown as Node<TData, TLayer, TPose>;
       return n.dependsOn === undefined ? null : resolveDerivedPath(n, depOf, childrenOf);
     }
-    : sceneShownPathOf(scene);
+    // With no override carrying a path, only a node that derives one shows a computed path.
+    : unoverridden
+      ? (node: PickCandidate<TPose>): Path | null =>
+        ((node as { dependsOn?: unknown }).dependsOn === undefined ? null : shownPathOf(node))
+      : shownPathOf;
 
   const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
 
@@ -113,8 +129,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     parentsOf: sceneParentsOf(scene),
     // Absent entirely when nothing is faded, so the walk skips the gate.
     ...(readAlpha ? { alphaOf: readAlpha } : {}),
-    isLocked: (node: PickCandidate<TPose>) => gates.locked(node as GatedNode),
-    isHidden: (node: PickCandidate<TPose>) => gates.hidden(node as GatedNode),
+    isLocked: gates.locked as (node: PickCandidate<TPose>) => boolean,
+    isHidden: gates.hidden as (node: PickCandidate<TPose>) => boolean,
     ...(annotations.size > 0 || layerIsPainted
       ? {
         layerIsPainted: (layer: string) =>
