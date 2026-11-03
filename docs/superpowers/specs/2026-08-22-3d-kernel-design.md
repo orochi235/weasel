@@ -82,10 +82,9 @@ none of it carries a camera or a scene and geom is where geometry lives.
 sibling, depending on `gestures` + `history` only. That was written before the
 lab, and the lab settled it the other way: the kernel reuses core's `Scene`, its
 dispatcher, its actions, `resolveOverlays` and the pose feed, and every one of
-those lives in core. Lifting `Scene` out instead is not cheap — `RectPose` is
-*declared inside* `core/scene/types.ts` and imported back by
-`geometry/unionBounds.ts` and `domains/groups/composePose.ts`, so a scene
-package and core would import each other. So `kernel3d` takes core as a peer,
+those lives in core. (Lifting `Scene` out was then blocked by a cycle through
+`RectPose`; that is gone as of 2026-11-03, with `RectPose` in
+`core/geometry/rectPose.ts` importing only `geom`.) So `kernel3d` takes core as a peer,
 the tier `svg`, `diagram` and `loupe` already occupy. Core still takes no diff,
 which is the constraint that mattered.
 
