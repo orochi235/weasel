@@ -49,6 +49,8 @@ export type {
   SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers, SceneViewCull,
 } from '../canvas/sceneViewRender';
 export type { PaintOverrides } from '../canvas/paintOverrides';
+export { snapPosesToGrid, withPoses } from '../canvas/outputGridPoses';
+export type { OutputGridRun, OutputGridSnapPlan } from '../canvas/outputGridPoses';
 export { renderSceneToPixels, planPixelRender, createRasterSession, warmRender } from '../canvas/renderSceneToPixels';
 export { renderNeeds } from '../canvas/renderNeeds';
 export type { RenderNeeds } from '../canvas/renderNeeds';

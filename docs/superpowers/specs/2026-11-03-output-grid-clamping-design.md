@@ -81,6 +81,11 @@ Exported beside the rule, for the common `RectPose`, and replacing lbx's copies:
 | `quantizeSize(pose, width, height, anchor)`: resized with `anchor`'s sides held | `resized` |
 | `alignToGrid(pose, grid)`: the nearest grid corner, size untouched | `gridAligned` |
 
+Built since (2026-11-03): geom's `snapSpanToGrid`, `snapRectToGrid` (edges to the nearest boundary,
+one-dot floor) and `snapModuleRun` (a run's module rounded once), and core's `snapPosesToGrid` and
+`withPoses`, which snap marks for an export and draw from the result without the scene option. These
+helpers are built over those rather than beside them.
+
 lbx's rule is then its barcode module math (whole dots per module, from the encoded symbol) over
 these, a stroke-width snap in `stored`, and `alignToGrid` for barcodes in `drawn`.
 

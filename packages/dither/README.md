@@ -49,3 +49,12 @@ protect. Where tone must be dithered over such artwork, protect it:
 into the mask `ditherPixels` takes, and `protectTexture` uploads that mask
 for `dither`, which needs an output grid to read it. Inside it pixels quantize
 at plain threshold, and error diffusion neither enters nor leaves it.
+
+## Whole-dot marks
+
+Plain threshold still gives each edge to whichever dot it covers more than
+half of, so two bars of one module can print a dot apart and a hairline can
+vanish. Snap the marks to the grid before rendering: core's `snapPosesToGrid`
+returns their poses with edges on dot boundaries (a barcode's bars as one run,
+every module the same number of dots), and `withPoses` draws an export from
+them without changing the document.

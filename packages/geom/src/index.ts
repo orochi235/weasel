@@ -16,6 +16,10 @@ export {
   type Box, type Rect,
 } from './box';
 export type { OutputGrid } from './outputGrid';
+export {
+  gridAxis, snapModuleRun, snapRectToGrid, snapSpanToGrid,
+  type GridAxis, type ModuleRun, type SnappedRun,
+} from './outputGridSnap';
 export { PATH_COMMANDS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, pathCommandCoordCount, forEachSegment, type PathCommandName, type PathCommandCode } from './commands';
 export {
   cubicEvalAt, quadraticEvalAt, elevateQuadraticToCubic, cubicBounds, cubicAxisExtremaTs,

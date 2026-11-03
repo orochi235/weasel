@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  SceneCanvas, defaultDrawOne, solid, useScene,
+  SceneCanvas, defaultDrawOne, solid, useScene, withPoses,
   type DrawCommand, type LayerGroup, type RectPose, type RenderLayer, type View,
 } from '@weasel-js/core';
 import {
@@ -14,7 +14,7 @@ import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 import { exportPage, type Crisp } from './ditherDemoExport';
 import {
-  INITIAL_NODES, PAGE, fitPage, outputGrid, protectedRect, wholeDots,
+  INITIAL_NODES, PAGE, fitPage, outputGrid, protectedRect, snapMarks, wholeDots,
   type DitherLayer, type DitherNode, type DitherNodeData,
 } from './ditherDemoScene';
 import s from './DitherDemo.module.css';
@@ -48,6 +48,13 @@ const CRISP: { value: Crisp; label: string }[] = [
   { value: 'mask', label: 'By mask' },
   { value: 'off', label: 'Off' },
 ];
+type Snap = 'on' | 'off';
+const SNAP: { value: Snap; label: string }[] = [
+  { value: 'on', label: 'Snapped to dots' },
+  { value: 'off', label: 'As drawn' },
+];
+/** The screen grid's export: one pixel per point. */
+const SCREEN_GRID = { pitch: 1, origin: { x: 0, y: 0 } };
 const labelOf = (m: DitherMethod) => METHODS.find((x) => x.value === m)!.label;
 
 /** The paper, under the scene and outside every layer group, so the dither's
@@ -74,10 +81,20 @@ export function DitherDemo() {
   const [method, setMethod] = useState<DitherMethod>('bayer');
   const [threshold, setThreshold] = useState(128);
   const [crisp, setCrisp] = useState<Crisp>('layer');
+  const [snap, setSnap] = useState<Snap>('on');
 
   const printGrid = useMemo(() => (grid === 'screen' ? null : outputGrid(grid)), [grid]);
   const gpuMethod = method === 'threshold' || method === 'bayer' ? method : 'bayer';
   const masked = crisp === 'mask' && printGrid !== null;
+  const exportGrid = printGrid ?? SCREEN_GRID;
+  const poses = useMemo(
+    () => (snap === 'on' ? snapMarks(scene.nodes.values() as Iterable<DitherNode>, exportGrid) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` says the scene's nodes changed.
+    [scene, version, snap, exportGrid],
+  );
+  // The canvas dithers on a printer grid's dots only, so only then does it draw the marks snapped to them.
+  const canvasPoses = printGrid ? poses : undefined;
+  const drawScene = useMemo(() => withPoses(canvasPoses, defaultDrawOne), [canvasPoses]);
 
   // The mask is indexed by dot, so it is the page's size in dots. `undisposed`
   // holds the texture until it is disposed, which the cleanup does before
@@ -89,7 +106,7 @@ export function DitherDemo() {
     const marks = [...scene.nodes.values()].filter((n) => n.layer === 'marks') as DitherNode[];
     const w = Math.ceil(PAGE.width / printGrid.pitch);
     const h = Math.ceil(PAGE.height / printGrid.pitch);
-    const mask = protectMask(protectRects(marks, protectedRect, printGrid), w, h);
+    const mask = protectMask(protectRects(marks, (n) => protectedRect(n, canvasPoses?.get(n.id)), printGrid), w, h);
     let current = true;
     let made: ProtectTexture | null = null;
     protectTexture(mask, w, h).then((t) => {
@@ -103,7 +120,7 @@ export function DitherDemo() {
       if (undisposed.current === made) undisposed.current = null;
       made?.dispose();
     };
-  }, [scene, version, masked, printGrid]);
+  }, [scene, version, masked, printGrid, canvasPoses]);
 
   const layerGroups = useMemo<LayerGroup[]>(() => {
     const at = (view: View, dpr: number) => (printGrid ? gridOnScreen(printGrid, view, dpr) : 'screen' as const);
@@ -127,7 +144,7 @@ export function DitherDemo() {
   const [exported, setExported] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    exportPage(scene, { grid: printGrid ?? { pitch: 1, origin: { x: 0, y: 0 } }, method, threshold, crisp })
+    exportPage(scene, { grid: exportGrid, method, threshold, crisp, poses })
       .then((image) => {
         if (!live) return;
         const canvas = out.current;
@@ -143,7 +160,7 @@ export function DitherDemo() {
       })
       .catch(() => { if (live) setExported(null); });
     return () => { live = false; };
-  }, [scene, version, printGrid, method, threshold, crisp]);
+  }, [scene, version, exportGrid, method, threshold, crisp, poses]);
 
   const notes = [
     gpuMethod === method
@@ -169,7 +186,7 @@ export function DitherDemo() {
           layerGroups={layerGroups}
           layers={{
             paper: { layer: PAPER, before: 'scene' },
-            scene: { drawOne: defaultDrawOne },
+            scene: { drawOne: drawScene },
           }}
         />
       </DemoStage>
@@ -187,6 +204,10 @@ export function DitherDemo() {
         <div className="ckd-control">
           Keep marks crisp
           <ToggleBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} ariaLabel="Keep marks crisp" size="sm" />
+        </div>
+        <div className="ckd-control">
+          Marks
+          <ToggleBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} ariaLabel="Marks" size="sm" />
         </div>
         <label className="ckd-control">
           Threshold
