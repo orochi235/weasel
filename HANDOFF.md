@@ -6,11 +6,13 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## State (2026-11-03)
 
-- 1.16.1 is on npm (`npm view @weasel-js/core version`). `main` and `origin/main` are at 6e3b08147, pushed
-  2026-11-03. Unreleased since 1.16.1 is whatever `.changeset/` holds: among it `@weasel-js/core/engine` with
+- 1.16.1 is on npm (`npm view @weasel-js/core version`). `main` is at 53008c834 (2026-11-03), unpushed past
+  58d39a8ed. Unreleased since 1.16.1 is whatever `.changeset/` holds: among it `@weasel-js/core/engine` with
   kernel3d and the 3D lab built on it, `ENGINE_STANDARD_ACTIONS`, keys staying with the surface a press landed
   in, a lab's menu bar in its header, the dither package, and the Node 24 floor. The batch run on bd0f69a2a
-  (`test:fleet`, `test:fleet:postbuild`) was green.
+  (`test:fleet`, `test:fleet:postbuild`) was green, and so was batch 2026-11-03-agents on 53008c834: id frames and
+  `pickAt`, `renderSceneToPixels`'s `layers`, the scene's `quantize` rule with the output grid as a document
+  value, per-page clips in saved SVG, envelope drops, and the vertical bar's number box.
 - Nothing in flight.
 - The windease fix for a never-shown node is on windease's `main` (24ec47d) and not yet released (npm has
   2.2.0); the weasel TODO entry says what follows its release.
@@ -40,6 +42,10 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-03, dither demo: the Marks toggle (snapped to dots / as drawn), "By mask" now built from the id
+  buffer, and an insert's drag preview fitted to where a size-snapping rule lands it.
+- 2026-11-03, draw: a shape hanging off its page, saved as SVG and opened in another viewer (clipped at the page)
+  and back in draw (still on its own page).
 - 2026-11-03, 3D lab (`npm run dev:3d` in `packages/labkit`): its tool palette and the `ui:cube` box tool, undo
   after a press in the 3D surface, the menu bar in a lab's header after the title, and a narrow lab's header
   wrapping.
