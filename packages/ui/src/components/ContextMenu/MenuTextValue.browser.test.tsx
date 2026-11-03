@@ -10,9 +10,19 @@ import { OpenPanels } from './ContextMenuHost';
 
 afterEach(cleanup);
 
+/** The event being dispatched when a callback runs, so a failure names what closed the menu or wrote the row. */
+function cause(): string {
+  const e = window.event;
+  if (!e) return 'no event';
+  const t = e.target;
+  const role = t instanceof Element ? t.getAttribute('role') : null;
+  const at = t instanceof Element ? `${t.tagName.toLowerCase()}${role ? `[role=${role}]` : ''}` : t === window ? 'window' : String(t);
+  return `${e.type} on ${at}${e.isTrusted ? '' : ' (untrusted)'}`;
+}
+
 function open() {
-  const set = vi.fn();
-  const close = vi.fn();
+  const set = vi.fn((_value: string) => cause());
+  const close = vi.fn(() => cause());
   const entries: MenuEntry[] = [
     { kind: 'item', key: 'cut', label: 'Cut', run: () => {} },
     { kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', set },
@@ -33,7 +43,9 @@ it('takes typed text, the menu’s typeahead included, and commits it on Enter w
   expect(document.activeElement).toBe(field);
   await userEvent.keyboard('{Enter}');
   expect(set).toHaveBeenCalledWith('Nested');
-  expect(close).not.toHaveBeenCalled();
+  // Enter wrote it, not a blur that happened to commit the same text.
+  expect(set.mock.results.map((r) => r.value)).toEqual(['keydown on input']);
+  expect(close.mock.results.map((r) => r.value)).toEqual([]);
   expect(menu.isConnected).toBe(true);
 });
 

@@ -713,8 +713,18 @@ only story runner in the repo.
   Closes when 10 full fleet runs after 2026-10-28 pass it, or at its next failure, which makes it a fix.
 
 - **(P3) [agent] `MenuTextValue.browser.test.tsx`'s "commits it on Enter without closing" closed the menu once under load.**
-  In the full fleet run of 7168695bf (2026-11-03) `close` was called once, with no arguments, after Enter
-  committed `Nested`; the file passed alone on the fleet minutes later. The failure screenshot did not come home.
+  In the full fleet run of 7168695bf (2026-11-03) `close` was called once, with no arguments, by the time Enter
+  had committed `Nested`; the file passed alone on the fleet minutes later, and in about 45 other full runs. The failure
+  screenshot (still on studio, under `.vitest/attachments/failure-screenshots/`) shows the menu whole, Name highlighted,
+  `Nested` in the field and the field's focus border mid-fade, so focus had just left it. `close` was a mock, so it
+  could have been called any time after render. Read from the code (2026-11-03), no path reaches it from the test's
+  own input: the controller closes only on Escape, Tab or choosing an item, and the field's keys never reach it; the
+  dismiss closes on a window `blur`, a `resize`, or a press or wheel outside the panel. Ruled out by reading vitest
+  5.1 and Playwright, not by a run: a `blur` from another tab (Playwright emulates focus per page), from another frame
+  (each tab holds one test iframe, and the orchestrator focuses nothing), a `resize` from the next file's viewport
+  reset (it lands before `execute`), and a command left running by an earlier file (no test timed out in that run, and
+  every `userEvent`/`commands` call is awaited). The test now records the event each `close` and `set` call ran
+  in, and requires that Enter's keydown wrote the row, so the next failure names its trigger.
   Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
