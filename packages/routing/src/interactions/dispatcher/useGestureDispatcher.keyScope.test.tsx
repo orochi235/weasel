@@ -17,8 +17,8 @@ import { heldKeySpec } from '../actions/toolOffhand';
 const NO_ENTRIES = new Map();
 const NO_POINTER = { pointer: false } as const;
 
-function Canvas({ name, run, claimKeys, noCanvas, noPointer, over }: {
-  name: string; run: () => void; claimKeys?: boolean; noCanvas?: boolean; noPointer?: boolean; over?: boolean;
+function Canvas({ name, run, claimKeys, noCanvas, noPointer, over, noKeys }: {
+  name: string; run: () => void; claimKeys?: boolean; noCanvas?: boolean; noPointer?: boolean; over?: boolean; noKeys?: boolean;
 }): ReactNode {
   const registry = useActionsRegistry()!;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -32,8 +32,23 @@ function Canvas({ name, run, claimKeys, noCanvas, noPointer, over }: {
     canvasRef, actions: registry, entriesById: NO_ENTRIES,
     ...(claimKeys !== undefined ? { claimKeys } : {}),
     ...(noPointer ? { channels: NO_POINTER } : {}),
+    ...(noKeys ? { keyboard: false } : {}),
   });
   return noCanvas ? null : <canvas ref={canvasRef} data-name={name} />;
+}
+
+/** A dispatcher whose surface is an element holding `children`, as a lab trial's camera wraps an instrument. */
+function Surface({ name, run, children }: { name: string; run: () => void; children: ReactNode }): ReactNode {
+  const registry = useActionsRegistry()!;
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => registry.register({
+    id: 'test.q',
+    label: 'Q',
+    defaultBinding: { kind: 'key', key: 'q' },
+    invoker: { timing: 'immediate', run: () => run() },
+  } satisfies Action), [registry, run]);
+  useGestureDispatcher({ canvasRef: surfaceRef, actions: registry, entriesById: NO_ENTRIES });
+  return <div ref={surfaceRef} data-name={name}>{children}</div>;
 }
 
 /** A canvas whose `over` binding peeks while Alt is held, as a loupe's does. */
@@ -117,6 +132,39 @@ describe('a key that reaches the page', () => {
     act(() => { canvas('a').dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
     press();
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes to the innermost of two nested surfaces pressed or scrolled in, not the one the event bubbles to next', () => {
+    const outer = vi.fn();
+    const inner = vi.fn();
+    render(
+      <Root>
+        <Surface name="outer" run={outer}>
+          <Root><Canvas name="inner" run={inner} /></Root>
+        </Surface>
+      </Root>,
+    );
+    act(() => { canvas('inner').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    press();
+    act(() => { canvas('inner').dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
+    press();
+    expect([outer.mock.calls.length, inner.mock.calls.length]).toEqual([0, 2]);
+  });
+
+  it('stays where it was when a press or a scroll lands on a canvas that takes no keys', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><Canvas name="a" run={a} /></InputScope>
+        <InputScope><Canvas name="b" run={b} noKeys /></InputScope>
+      </Root>,
+    );
+    giveKeys(canvas('a'));
+    act(() => { canvas('b').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    act(() => { canvas('b').dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
   });
 
   it('goes to a canvas that claims the keys on mount', () => {

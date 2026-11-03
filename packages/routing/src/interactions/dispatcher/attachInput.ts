@@ -5,7 +5,7 @@
  */
 import { heldPointers } from '@weasel-js/gestures';
 import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
-import { createDispatchCore, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
+import { createDispatchCore, holdSurface, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
 import type { Dispatcher } from './dispatcherApi';
 import type { HeldPointerFeed } from './gestureDispatcherOptions';
 import { dispatcherWatch } from './dispatcherWatch';
@@ -62,6 +62,7 @@ export function attachInput(
     context: src.context,
     actions: src.actions,
     yieldKeys: src.yieldKeys,
+    takesKeys: Boolean(channels.keyboard),
     uses: () => { redraw.sync(src.dispatchers()); },
     disposed: () => disposed,
   });
@@ -99,7 +100,7 @@ export function attachInput(
   // Ahead of the pointer channel's own listener, and whether or not that
   // channel is on: a press with any button makes this the scope chrome and
   // keys reach.
-  listeners.on(canvas, 'pointerdown', () => { src.actions().activate(); });
+  listeners.on(canvas, 'pointerdown', (e: PointerEvent) => { core.activate(e); });
   // Whether or not the pointer channel is on: it is what an `over` key binding asks.
   trackPointerOver(listeners, canvas, core, keys);
   if (channels.pointer) {
@@ -140,10 +141,12 @@ export function attachInput(
     listeners.on(window, 'paste', ingest.onPaste);
   }
   const offCarry = channels.carry ? carryInput(core) : null;
+  const releaseSurface = canvas ? holdSurface(canvas) : null;
 
   return () => {
     if (channels.pointer) src.heldPointer()?.(null);
     listeners.removeAll();
+    releaseSurface?.();
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
     ingest.endPreview();

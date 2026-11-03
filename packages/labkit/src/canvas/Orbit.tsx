@@ -315,6 +315,8 @@ function OrbitDispatch({
     actions: registry,
     entriesById: NO_TOOLS,
     clientToWorld: IDENTITY,
+    // It binds no key, so a press on it must not take the keys from the instrument under it.
+    keyboard: false,
     channels: useMemo(
       () => ({
         pointer: drag || homes || touchPinch,
