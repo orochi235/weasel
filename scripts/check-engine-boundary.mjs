@@ -29,7 +29,7 @@ export const SEEDS = [
   'domains/viewports/aim.ts',
   'interactions/actions/snapDep.ts',
   'interactions/actions/resolveOverlays.ts',
-  'interactions/actions/depSchema.ts',
+  'interactions/actions/engineDeps.ts',
   'interactions/actions/insertDeps.ts',
   'canvas/deps/enteredGroup.ts',
 ];
