@@ -2,6 +2,7 @@ import { fitViewToBounds, type Bounds } from 'core/viewport/fitViewToBounds';
 import type { Dims } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { ZOOM_FLOOR } from 'core/viewport/zoomBounds';
+import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { viewScreenToWorld, viewWorldToScreen } from '@weasel-js/geom';
 
 /** A point in a view's world. A 2D world is the plane z = 0, so `z` is absent there. */
@@ -40,11 +41,25 @@ export interface ViewAim<TExtent = unknown> {
   pannedIn(space: AimSpace, from: { x: number; y: number }, to: { x: number; y: number }): ViewAim<TExtent> | null;
 }
 
+/**
+ * A world rect a 2D view shows, always of positive size, and the axes its camera runs flipped on
+ * (`y: true` for y-up). `flip` absent, or an axis absent from it, is unflipped.
+ */
+export type AimRect = Bounds & { readonly flip?: { readonly x?: boolean; readonly y?: boolean } };
+
 /** Core's 2D aim: a world rect a view shows. */
-export type RectAim = ViewAim<Bounds> & { readonly kind: 'rect' };
+export type RectAim = ViewAim<AimRect> & { readonly kind: 'rect' };
+
+/** What `view` shows in a frame of `size`, as an aim rect: `viewportWorldRect` and the camera's flips. */
+export function aimRectOf(view: View, size: { width: number; height: number }): AimRect {
+  const rect = viewportWorldRect(view, size);
+  const x = view.scale.x < 0;
+  const y = view.scale.y < 0;
+  return x || y ? { ...rect, flip: { x, y } } : rect;
+}
 
 /** The aim of view `viewId` (`null`: a surface's root) showing world rect `rect`. */
-export function rectAim(viewId: string | null, rect: Bounds): RectAim {
+export function rectAim(viewId: string | null, rect: AimRect): RectAim {
   return {
     viewId,
     kind: 'rect',
@@ -92,14 +107,23 @@ export function aimSpace2d(viewId: string | null, view: View, size: Dims): AimSp
 const UNUSED_CURRENT: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /**
- * The camera that shows `rect` in a frame of `size`: `'exact'` per axis (the inverse of `viewportWorldRect`),
- * `'contain'` uniform and centered. Not clamped to a zoom range, and finite for an empty rect or frame. Normalized.
+ * The camera that shows `rect` in a frame of `size`, flipped on the axes `rect.flip` names: `'exact'` per
+ * axis (the inverse of {@link aimRectOf}), `'contain'` uniform and centered. Not clamped to a zoom range,
+ * and finite for an empty rect or frame. Normalized.
  */
-export function viewForAim(rect: Bounds, size: Dims, fit: 'exact' | 'contain'): View {
-  if (!(rect.width > 0 && rect.height > 0 && size.width > 0 && size.height > 0)) {
-    return normalizeView({ x: rect.x, y: rect.y, scale: { x: ZOOM_FLOOR, y: ZOOM_FLOOR } });
-  }
-  return normalizeView(fitViewToBounds(rect, size, UNUSED_CURRENT, {
-    mode: fit === 'exact' ? 'stretch' : 'contain', padding: 0, minScale: 0, maxScale: Infinity,
-  }));
+export function viewForAim(rect: AimRect, size: Dims, fit: 'exact' | 'contain'): View {
+  const upright = rect.width > 0 && rect.height > 0 && size.width > 0 && size.height > 0
+    ? normalizeView(fitViewToBounds(rect, size, UNUSED_CURRENT, {
+      mode: fit === 'exact' ? 'stretch' : 'contain', padding: 0, minScale: 0, maxScale: Infinity,
+    }))
+    : normalizeView({ x: rect.x, y: rect.y, scale: { x: ZOOM_FLOOR, y: ZOOM_FLOOR } });
+  const fx = rect.flip?.x === true;
+  const fy = rect.flip?.y === true;
+  if (!fx && !fy) return upright;
+  const { x, y, scale } = upright;
+  return {
+    x: fx ? x + size.width / scale.x : x,
+    y: fy ? y + size.height / scale.y : y,
+    scale: { x: fx ? -scale.x : scale.x, y: fy ? -scale.y : scale.y },
+  };
 }

@@ -2,6 +2,7 @@ import type { Dims } from 'core/layers/render';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
+import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import type { CameraProps, ViewBoundsOf } from '../useCanvasView';
 
 /** How `viewBounds: 'content'` bounds the view. */
@@ -53,12 +54,5 @@ export function contentReach(content: Bounds | null, margin: number, from: View,
   const mx = margin / Math.abs(from.scale.x);
   const my = margin / Math.abs(from.scale.y);
   const grown = { x: content.x - mx, y: content.y - my, width: content.width + 2 * mx, height: content.height + 2 * my };
-  return unionAABB([grown, shownRect(from, dims)]);
-}
-
-/** The world rect `view` shows over `dims`, whichever way its axes run. */
-export function shownRect(view: View, dims: Dims): Bounds {
-  const w = dims.width / view.scale.x;
-  const h = dims.height / view.scale.y;
-  return { x: Math.min(view.x, view.x + w), y: Math.min(view.y, view.y + h), width: Math.abs(w), height: Math.abs(h) };
+  return unionAABB([grown, viewportWorldRect(from, dims)]);
 }

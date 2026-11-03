@@ -298,13 +298,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Rendering & paint
 
-- **(P3) [agent] `viewportWorldRect` gives a flipped view a negative size.** A `View` with
-  `scale.y < 0` (y-up) gets `height = size.height / scale.y`, so the guides grid's
-  `hasArea` check fails and a y-up canvas draws no grid (read from the code, not run).
-  `debugSnapshotArgs` already normalizes the same rect itself. Normalizing in
-  `viewportWorldRect` also changes what `useViewAim` and `viewForAim` round-trip, so the aim
-  rect needs to carry the flip some other way. Closes when a y-up view's visible rect has a
-  positive size and an aim round-trips a flipped view unchanged.
 - **(P3) [agent] No 3D line pass: a stroke in a 3D scene cannot be drawn.** Port astv's arrow pass
   (`astv/packages/engine/draw/arrows/pass.glsl.ts`, `pack.ts`, `head.ts`): a polyline expanded in screen
   pixels after projection, the head capped at a share of the arrow with the shaft narrowing to match,

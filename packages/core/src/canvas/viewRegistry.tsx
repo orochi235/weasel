@@ -19,8 +19,7 @@ import { createViewResolver, viewContains, type ViewResolver } from 'domains/vie
 import { createEmitter } from '@weasel-js/registry';
 import { viewWorldToScreen } from '@weasel-js/geom';
 import type { ViewAt } from './canvasExtension';
-import { isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
-import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
+import { aimRectOf, isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
 import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
 import { createViewMarkerRegistry, type ViewMarkerRegistry } from './viewMarkers';
 
@@ -227,7 +226,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
       aimOf: (id) => {
         if (id !== null) return get(id)?.aim() ?? null;
         const surface = surfaceRef.current;
-        return surface ? rectAim(null, viewportWorldRect(surface.view(), surface.dims())) : null;
+        return surface ? rectAim(null, aimRectOf(surface.view(), surface.dims())) : null;
       },
       setAim: (id, aim) => {
         if (id !== null) return get(id)?.setAim(aim) ?? false;

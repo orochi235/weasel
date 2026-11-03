@@ -6,7 +6,7 @@ import { unionAABB } from 'core/geometry/unionBounds';
 import { clampView } from 'core/viewport/clampView';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
-import { shownRect } from './sceneViewBounds';
+import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 
 /** `<SceneCanvas viewport={{ edgePan }}>`: how a drag near the edge scrolls the view. */
 export interface EdgePanOptions {
@@ -115,7 +115,7 @@ function edgePan(read: () => EdgePanInputs) {
         const next = { ...view, x: view.x + (v.x * dt) / view.scale.x, y: view.y + (v.y * dt) / view.scale.y };
         const reach = limit();
         // The limit stops the scroll too, but never pulls a view already past it back.
-        setView(reach ? clampView(next, unionAABB([reach, shownRect(view, v.dims)])!, v.dims) : next);
+        setView(reach ? clampView(next, unionAABB([reach, viewportWorldRect(view, v.dims)])!, v.dims) : next);
         // A controlled camera takes the view a render later, so this move can
         // trail the scroll by a frame; the next one catches it up.
         feed?.repeat();

@@ -6,6 +6,7 @@ import { renderSceneToPixels, type RasterImage, type RenderSceneToPixelsArgs } f
 import { buildDebugOverlayCommands } from '../debug/createDebugOverlayLayer';
 import type { DebugConfig, DebugSnapshot } from '../debug/types';
 import type { View } from '../core/viewport/view';
+import { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 import { mat3 } from '@weasel-js/geom';
 
 /** The canvas to reproduce — its camera, its size, and what its debug overlay
@@ -48,17 +49,10 @@ export function debugSnapshotArgs<TData, TLayer extends string, TPose>(
 ): RenderSceneToPixelsArgs<TData, TLayer, TPose> {
   const { view, size, debug, config, pixelRatio = 1, ...rest } = args;
   const overlay = buildDebugOverlayCommands(debug, config, view, size);
-  const width = size.width / Math.abs(view.scale.x);
-  const height = size.height / Math.abs(view.scale.y);
   return {
     annotations: true,
     ...rest,
-    sourceRect: {
-      x: view.scale.x < 0 ? view.x - width : view.x,
-      y: view.scale.y < 0 ? view.y - height : view.y,
-      width,
-      height,
-    },
+    sourceRect: viewportWorldRect(view, size),
     scale: { x: view.scale.x * pixelRatio, y: view.scale.y * pixelRatio },
     overlay: pixelRatio === 1
       ? overlay
