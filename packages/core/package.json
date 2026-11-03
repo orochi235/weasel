@@ -99,6 +99,10 @@
       "import": "./dist/routing.js",
       "types": "./dist/routing.d.ts"
     },
+    "./engine": {
+      "import": "./dist/engine.js",
+      "types": "./dist/engine.d.ts"
+    },
     "./test-seams": {
       "import": "./dist/test-seams.js",
       "types": "./dist/test-seams.d.ts"

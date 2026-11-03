@@ -52,6 +52,7 @@
       "@weasel-js/core/patterns-builtin": ["./packages/core/src/import-shims/patterns-builtin.ts"],
       "@weasel-js/core/renderer": ["./packages/core/src/import-shims/renderer.ts"],
       "@weasel-js/core/routing": ["./packages/core/src/import-shims/routing.ts"],
+      "@weasel-js/core/engine": ["./packages/core/src/import-shims/engine.ts"],
       "@weasel-js/core/test-seams": ["./packages/core/src/import-shims/test-seams.ts"],
       "@weasel-js/core/testing/*": ["./packages/core/src/testing/*"],
       "@weasel-js/cursor": ["./packages/cursor/src/index.ts"],
