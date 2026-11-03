@@ -315,9 +315,10 @@ export default defineConfig({
           // when the node's cores are taken, and time out. `npm test` and the fleet run it beside
           // them instead, with the rest held to fewer workers (scripts/vitest-overlap.mjs).
           sequence: { groupOrder: 1 },
-          // Every tab shares one Chromium. Past six, the project took no less wall time on 14- and
-          // 18-core nodes, and a test making WebGL contexts ran three to five times as long.
-          maxWorkers: 6,
+          // Every tab of one process shares one Chromium. Past six, the project took no less wall time,
+          // and a test making WebGL contexts ran three to five times as long; scripts/vitest-overlap.mjs
+          // runs it as several processes instead. WEASEL_BROWSER_TABS is for benchmarks.
+          maxWorkers: Number(process.env.WEASEL_BROWSER_TABS) || 6,
           exclude: ['**/node_modules/**', '**/dist/**'],
           css: true,
           browser: {

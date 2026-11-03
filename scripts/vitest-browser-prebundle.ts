@@ -48,9 +48,12 @@ export function browserPrebundle(
   const servedFiles = globSync([...tests, ...setupFiles], { cwd: repoRoot, exclude: (dir) => dir === 'node_modules' })
     .map((file) => resolve(repoRoot, file))
     .filter((file) => statSync(file).isFile());
+  // A slice of its own too: a slice re-optimizing a shared directory deletes the deps the other slices' pages were
+  // about to load, and they never connect.
+  const slice = argv.map((arg) => /^--shard=(\d+)\/\d+$/.exec(arg)?.[1]).find(Boolean);
   return {
     plugins: [prebundleWorkspace(repoRoot, [], { servedFiles, watch: false })],
     // Its own: the stamp and bundles would otherwise be thrown out by every source-served run between.
-    cacheDir: `node_modules/.vite-${name}`,
+    cacheDir: `node_modules/.vite-${name}${slice ? `-${slice}` : ''}`,
   };
 }

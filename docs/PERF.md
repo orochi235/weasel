@@ -95,14 +95,16 @@ When work merges, retire its entry here in the same change.
 
 ## Test suite speed
 
-- **(P3) [agent] The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
-  Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
-  nodes, plausibly because every tab's WebGL goes through one GPU process (inferred, not measured).
-  Splitting the project across 2 or 3 Chromium processes (vitest `--shard` per process) is untested:
-  run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
-  every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
-  Closes when those runs are recorded: if neither 2 nor 3 processes is faster than 1 by 5% on either
-  node, delete it as accepted; otherwise the faster split becomes the default.
+- **(P3) [agent] The browser project's slices finish up to 45% apart.** `scripts/vitest-overlap.mjs`
+  runs the project as three processes on nodes of 10 cores or more (`scripts/lib/browser-shards.mjs`),
+  each its own Chromium and a `--shard` slice of the files, which ran it 40–45% faster than one process
+  (2026-11-03, `scripts/bench-browser-project.mjs --processes`, rows in
+  `scripts/bench-browser-project.runs.jsonl`). vitest slices by file, not by time, so the slowest slice
+  sets the wall time: at three processes they finished at 59.7, 74.0 and 86.7 s on teitou, and 106.1,
+  128.8 and 151.8 s on studio. Splitting the files by their measured durations
+  (`scripts/test-costs-reporter.mjs` records each file's) would bring every slice near the mean.
+  Closes when the browser project alone at three processes is 10% faster than 86.7 s on teitou, or a
+  duration split measures no better than vitest's.
 
 - **(P3) [agent] The `browser` project still spends 0.6 s per file outside its tests.** The packages are
   served pre-bundled under `vitest run` (`scripts/vitest-browser-prebundle.ts`), all but the modules some
