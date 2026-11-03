@@ -10,20 +10,6 @@ When work merges, retire its entry here in the same change.
 
 ## Scene
 
-- **(P3) [agent] A scene add-and-remove round trip still costs about 0.06 µs more than before 599685677,
-  and `setPose` about 0.04 µs more.** 599685677 (2026-10-13) records every scene edit as the kit ops it
-  caused, and at that commit alone added 0.26 µs to the round trip and 0.12 µs to `setPose`. On msb-uai
-  (9 interleaved runs each, 2026-10-30, `ab5/`) the round trip is 0.93 µs at its parent 43a827165, 1.05 µs
-  on `main` at b6d8ba184 and 0.99 µs after the 2026-10-30 cuts; `setPose` 0.21, 0.27 and 0.25 µs. What a bare
-  call still does that 43a827165 did not: run its engine push inside `mode.during('own')`, copy the ops
-  it pushes, and open a labeled edit and run wrapped handlers for the pose-write log, which arrived
-  after it. No one of these stands out in a CPU profile (`profile-599/`). Runs, profiles and the script
-  that times any commit against the synced tree: `tests/perf/recorded/core-regress-2026-10-30/`; the
-  earlier bisect is in `tests/perf/recorded/scene-roundtrip-2026-10-29/`.
-  Closes when the round trip is within 0.02 µs of 43a827165 and `setPose` within 0.01 µs, on msb-uai
-  with 9 interleaved runs of `core-regress-2026-10-30/run.sh`, or once each of those three costs is timed
-  alone and none exceeds 0.02 µs, delete it as accepted.
-
 - **(P3) [agent] The unindexed area walk still costs 1.6 times what it did on 2026-10-11.** The 25%
   marquee over 10,000 rect nodes (`walk.bench.ts`, the `full walk` row) takes 0.86 ms on msb-uai;
   `hitTestArea` at 0a2eba982 (2026-10-11) takes 0.52 ms and at 43a827165 (2026-10-12) 0.66 ms (7

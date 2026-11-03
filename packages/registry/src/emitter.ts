@@ -20,14 +20,20 @@ export interface Emitter<TArgs extends unknown[] = []> {
  */
 export function createEmitter<TArgs extends unknown[] = []>(): Emitter<TArgs> {
   const listeners = new Set<(...args: TArgs) => void>();
+  /** `listeners` as an array, rebuilt only after it changes: an emit walks this one. */
+  let held: ((...args: TArgs) => void)[] | null = null;
   return {
     subscribe(listener) {
       listeners.add(listener);
-      return () => { listeners.delete(listener); };
+      held = null;
+      return () => {
+        listeners.delete(listener);
+        held = null;
+      };
     },
     emit(...args) {
       if (listeners.size === 0) return;
-      for (const listener of [...listeners]) {
+      for (const listener of (held ??= [...listeners])) {
         if (!listeners.has(listener)) continue;
         try {
           listener(...args);

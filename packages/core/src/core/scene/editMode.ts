@@ -18,25 +18,38 @@ export interface EditMode {
   untracked(): boolean;
   /** Run `fn` under `driver`. */
   during<T>(driver: EditDriver, fn: () => T): T;
+  /** Open `driver` until the matching `leave`, for a hot path that would
+   *  otherwise build a closure for `during` on every call. */
+  enter(driver: EditDriver): void;
+  leave(driver: EditDriver): void;
 }
 
 export function createEditMode(): EditMode {
   const depth: Record<EditDriver, number> = { batch: 0, engine: 0, untracked: 0, own: 0 };
   let open = 0;
 
+  function enter(driver: EditDriver): void {
+    depth[driver]++;
+    open++;
+  }
+  function leave(driver: EditDriver): void {
+    depth[driver]--;
+    open--;
+  }
+
   return {
     open: () => open > 0,
     records: () => depth.engine + depth.untracked === 0,
     untracked: () => depth.untracked > 0,
     during(driver, fn) {
-      depth[driver]++;
-      open++;
+      enter(driver);
       try {
         return fn();
       } finally {
-        depth[driver]--;
-        open--;
+        leave(driver);
       }
     },
+    enter,
+    leave,
   };
 }

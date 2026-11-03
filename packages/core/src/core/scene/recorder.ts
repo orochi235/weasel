@@ -31,6 +31,9 @@ export interface RecorderEnv {
   writePose(id: string, pose: unknown): void;
   /** Run `fn` as an edit made by a scene call labeled `label`. */
   labeled<T>(label: string, via: 'call', fn: () => T): T;
+  /** `labeled`'s two halves, for the bare call's path. */
+  label(label: string, via: 'call'): boolean;
+  unlabel(): void;
 }
 
 /** Options for `scene.batch`. */
@@ -72,6 +75,19 @@ function unwind(outer: readonly Op[]): void {
     } catch {
       // The throw being unwound is the one the caller sees.
     }
+  }
+}
+
+/** Hand a bare call's op to the engine, which applies it itself: that is what lets it coalesce.
+ *  Every bare scene call runs this, so it opens its label and mode without closures. */
+function pushOwn(env: RecorderEnv, op: Op, label: string): void {
+  const labeled = env.label(label, 'call');
+  env.mode.enter('own');
+  try {
+    env.engine.apply(op, label);
+  } finally {
+    env.mode.leave('own');
+    if (labeled) env.unlabel();
   }
 }
 
@@ -130,17 +146,16 @@ export function createRecorder(env: RecorderEnv): Recorder {
     // While passes listen, a bare edit is a batch of its own, so their ops land in its entry.
     if (mode.records() && !collecting && passes.any()) return void batch(label, () => record(kind, payload, label));
     passes.note(kind, payload);
-    env.labeled(label, 'call', () => {
-      if (mode.records() && !collecting) {
-        // The engine applies the op itself, which is what lets it coalesce.
-        mode.during('own', () => engine.applyOps([env.makeOp(kind, payload)], label));
-      } else {
+    if (mode.records() && !collecting) {
+      pushOwn(env, env.makeOp(kind, payload), label);
+    } else {
+      env.labeled(label, 'call', () => {
         env.runOp(kind, payload);
         log.logApplied(kind, payload);
         if (mode.records()) collecting!.ops.push(env.makeOp(kind, payload));
         else if (!mode.untracked()) captured?.push(env.makeOp(kind, payload));
-      }
-    });
+      });
+    }
     notifier.notify();
   }
 

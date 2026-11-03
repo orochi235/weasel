@@ -33,6 +33,18 @@ describe('createEmitter', () => {
     expect(late).toHaveBeenCalledOnce();
   });
 
+  it('calls the listeners held at each emit, however they changed between emits', () => {
+    const e = createEmitter();
+    const seen: string[] = [];
+    const offA = e.subscribe(() => seen.push('a'));
+    e.emit();
+    e.subscribe(() => seen.push('b'));
+    e.emit();
+    offA();
+    e.emit();
+    expect(seen).toEqual(['a', 'a', 'b', 'b']);
+  });
+
   it('does not call a listener unsubscribed earlier in the same pass', () => {
     const e = createEmitter();
     const second = vi.fn();

@@ -30,7 +30,7 @@ export interface SceneRecordingEnv {
   /** The adapter an edit pass's ops apply through. */
   passAdapter(): unknown;
   writePose(id: string, pose: unknown): void;
-  poseWrites: Pick<PoseWriteLog<unknown>, 'labeled' | 'replaying'>;
+  poseWrites: Pick<PoseWriteLog<unknown>, 'labeled' | 'label' | 'unlabel' | 'replaying'>;
   config: {
     getActiveJournal?: (() => Journal | null) | undefined;
     coalesceWindowMs?: number | undefined;
@@ -113,6 +113,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     selection: selection.get,
     writePose: env.writePose,
     labeled: poseWrites.labeled,
+    label: poseWrites.label, unlabel: poseWrites.unlabel,
   });
   const { record, engineDriven } = recorder;
 

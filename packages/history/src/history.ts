@@ -67,9 +67,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   let coalesceAnchorVersion = -1;
   const changed = createEmitter();
   const stepped = createEmitter<[HistoryStep]>();
-  function bump(step?: HistoryStep | (() => HistoryStep)): void {
+  function bump(step?: HistoryStep): void {
     version++;
-    if (step && stepped.size > 0) stepped.emit(typeof step === 'function' ? step() : step);
+    if (step && stepped.size > 0) stepped.emit(step);
     changed.emit();
   }
 
@@ -197,13 +197,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     return sameCoalesceKeys(top.forwardOps, incoming);
   }
 
-  function pushOrCoalesce(applied: Op[], label: string): void {
+  function pushOrCoalesce(applied: Op[], label: string, owned = false): void {
     if (applied.length === 0) return;
     const selectionBefore = readSelection();
     const idle: Op[] = [];
     const anyMutated = applyAllOrNothing(applied, undefined, idle);
     const kept = idle.length === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.includes(op)));
-    const ops = anyCaused(kept) ? kept.flatMap((op) => op.caused?.() ?? [op]) : kept.slice();
+    const ops = anyCaused(kept) ? kept.flatMap((op) => op.caused?.() ?? [op]) : owned || kept !== applied ? kept : kept.slice();
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
       // tied to real state changes. Surfaced through the kit's debug
@@ -235,7 +235,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // the anchor only survives until the stack is stepped, and every step
       // clears it, so a live anchor implies an empty redo stack.
       logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
-      bump(() => ({ kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] }));
+      bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] } : undefined);
       coalesceAnchorVersion = version;
       return;
     }
@@ -248,13 +248,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(() => stepOf('push', [entry]));
+    bump(stepped.size > 0 ? stepOf('push', [entry]) : undefined);
     coalesceAnchorVersion = version;
   }
 
   function fold(top: Entry, ops: Op[]): void {
     foldEntry(top, ops, now());
-    bump(() => ({ kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] }));
+    bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] } : undefined);
     coalesceAnchorVersion = version;
   }
 
@@ -275,13 +275,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(() => stepOf('push', [entry]));
+    bump(stepped.size > 0 ? stepOf('push', [entry]) : undefined);
     if (key !== undefined) coalesceAnchorVersion = version;
   }
 
   const history: History = {
     apply(op, label) {
-      pushOrCoalesce([op], label ?? op.label ?? '');
+      pushOrCoalesce([op], label ?? op.label ?? '', true);
     },
     applyOps(ops, label) {
       pushOrCoalesce(ops, label);
