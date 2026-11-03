@@ -333,11 +333,6 @@ Owner tags, after the priority (2026-10-26):
   for: custom fragment shaders must write the extra output (or the prelude injects it), WebGL2 core
   has one blend state for every attachment, and each group and effect target grows by one.
   Closes when a pick on the canvas reads the id buffer and dither's `protect` accepts its mask.
-- **(P2) [maintainer] `@weasel-js/p-touch` depends on an obwat Node cannot load.** obwat 0.3.0's dist
-  imports `./types` with no extension, so a Node consumer of p-touch fails at import, and the
-  `weasel-ui` vitest project inlines obwat to get past it (`vitest.config.ts`). The fix is on obwat's
-  `node-esm-imports` branch, waiting for a 0.3.1 publish. Closes when p-touch depends on `^0.3.1` and
-  the inline is gone.
 
 ---
 

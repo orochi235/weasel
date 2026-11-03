@@ -178,9 +178,6 @@ export default defineConfig({
           globals: true,
           setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
           include: ['packages/**/*.test.{ts,tsx}'],
-          // obwat 0.3.0's dist imports './types' with no extension, which Node cannot load. Drop
-          // this once p-touch depends on an obwat whose dist names its files.
-          server: { deps: { inline: ['obwat'] } },
           // labkit runs in its own project below (own setup + css handling).
           // core runs in the `core` project above — it lived at the repo root
           // until the move into packages/, and this glob would otherwise

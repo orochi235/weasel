@@ -42,7 +42,7 @@
     "@weasel-js/renderer": "1.16.1",
     "@weasel-js/text": "1.16.1",
     "bil-lbx": "^0.3.1",
-    "obwat": "^0.3.0"
+    "obwat": "^0.3.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.16.1"
