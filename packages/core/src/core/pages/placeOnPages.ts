@@ -21,10 +21,26 @@ interface Destination {
 
 const STILL = { dx: 0, dy: 0 };
 
-/** Where each of `roots` goes, in their order: the page for its bounds (`pageForBounds`), moved onto it when
- *  it lies wholly off it with the pasteboard off; a node following others where the follower rule puts it, by
- *  where the roots it follows go (`followerLandings`); or nowhere, a root left on the pasteboard. */
-function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: PoseDescriptor<unknown>): Map<NodeId, Destination> {
+/** Options for {@link placeOnPages} and {@link addOnPages}. */
+export interface PlaceOnPagesOptions {
+  /** What measures each root, as an insert does. Default `AUTO_POSE_DESCRIPTOR`. */
+  descriptor?: PoseDescriptor<unknown>;
+  /** The page (`Page.id`) a root was on where it was read from, as a file that keeps each page's content apart
+   *  says. A root named here goes on that page where it is, unmoved; one naming a page the scene lacks, or
+   *  `null`, goes by its bounds. */
+  pageOf?(root: NodeId): string | null | undefined;
+}
+
+/** Where each of `roots` goes, in their order: the page `pageOf` names; else the page for its bounds
+ *  (`pageForBounds`), moved onto it when it lies wholly off it with the pasteboard off; a node following others
+ *  where the follower rule puts it, by where the roots it follows go (`followerLandings`); or nowhere, a root
+ *  left on the pasteboard. */
+function destinations(
+  scene: AnyScene,
+  roots: readonly NodeId[],
+  descriptor: PoseDescriptor<unknown>,
+  pageOf: PlaceOnPagesOptions['pageOf'],
+): Map<NodeId, Destination> {
   const poses = scenePoseAdapter(scene);
   const placed = placedPagesOf(scene);
   const pasteboard = pasteboardOn(scene);
@@ -35,6 +51,11 @@ function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: Pos
     const follower = asFollower(id, node);
     if (follower !== null) {
       followers.push(follower);
+      continue;
+    }
+    const stated = pageOf?.(id);
+    if (stated != null && placed.some((p) => p.id === stated)) {
+      content.set(id, { page: stated, shift: STILL });
       continue;
     }
     const bounds = poseDescriptorForNode(descriptor, node).getBounds(composeWorldPose(poses, id, scene.composition.compose));
@@ -59,7 +80,8 @@ function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: Pos
  * every node it follows lands on, else into the page run. With the
  * pasteboard on, a root off every page stays where it is, and one on a page is
  * not moved. Content read from a format that places it in the world, such as
- * an opened file, goes onto its pages this way. Each root is measured by
+ * an opened file, goes onto its pages this way, and a root whose page the
+ * format kept goes on that page (`options.pageOf`). Each root is measured by
  * `options.descriptor`, default `AUTO_POSE_DESCRIPTOR`, as an insert is. A
  * locked root, or one on a locked layer, is moved all the same.
  * Call inside the caller's batch; a scene without pages is left alone.
@@ -67,14 +89,14 @@ function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: Pos
 export function placeOnPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   roots: readonly NodeId[],
-  options: { descriptor?: PoseDescriptor<unknown> } = {},
+  options: PlaceOnPagesOptions = {},
 ): void {
   const s = scene as unknown as AnyScene;
   const run = pageRunOf(s);
   if (run === null) return;
   const descriptor = options.descriptor ?? AUTO_POSE_DESCRIPTOR;
   const content = roots.filter((id) => id !== run && s.get(id)?.parent == null);
-  s.unlocked(() => moveIn(s, destinations(s, content, descriptor), run, descriptor));
+  s.unlocked(() => moveIn(s, destinations(s, content, descriptor, options.pageOf), run, descriptor));
 }
 
 /** `methods`, a scene's edits, with a `setPageRun` that, when it turns the run's pasteboard off, also puts
@@ -100,7 +122,7 @@ export function placingOnPageRunWrite<TData, TLayer extends string, TPose, M ext
 export function addOnPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   specs: readonly AddNodeSpec<TData, TLayer, TPose>[],
-  options: { descriptor?: PoseDescriptor<unknown> } = {},
+  options: PlaceOnPagesOptions = {},
 ): NodeId[] {
   const added = specs.map((spec) => scene.add(spec));
   placeOnPages(scene, added.filter((id) => scene.get(id)?.parent == null), options);

@@ -545,14 +545,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when draw can add a second layer and its SVG files round-trip the layer list, or on 2026-12-31
   with draw still on one layer, delete it.
 
-- **(P3) [agent] draw's whole-document SVG save writes what the canvas clips at a page's edge.** A page clips
-  its children (`pageClip`), but `saveSvgFile` (`apps/draw/src/saveSvg.ts`) writes every page's content in
-  world space with no per-page `<clipPath>`, so a shape hanging off its page shows its overhang in another
-  viewer, over the gap or the next page. Adding the clip changes the bytes of every saved file, and openSvg
-  has to read it back as the page's clip rather than a clip group of its own.
-  Closes when a saved file clips each page's content to the page and opens back with the same tree, or
-  the maintainer rules the overhang stays.
-
 - **(P2) [maintainer] Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
   asset, each one's default surface, and where switching lives were picked without anyone using
   them (`apps/draw/src/surfaces/assets.tsx`). Today Arrange (reorder, align, distribute, flip),

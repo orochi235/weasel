@@ -81,4 +81,16 @@ describe('a clipped <g>', () => {
     expect(outlineOnly.clip).toBeUndefined();
     expect(plain.clip).toBeUndefined();
   });
+
+  it('writes a node with a clipFromPose, as a page has, clipped to what it returns for its pose', () => {
+    const tree: SvgKitTree = {
+      roots: ['page'],
+      childrenOf: (id) => (id === 'page' ? ['a'] : []),
+      get: (id) => (id === 'page'
+        ? { kind: 'group', data: undefined, pose: { x: 5, y: 6, width: 7, height: 8 }, clipFromPose: (p) => ({ kind: 'rect', ...p }) }
+        : { kind: 'path', data: { path: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 } }, pose: { x: 0, y: 0, width: 100, height: 100 } }),
+    };
+    const [page] = svgNodesFromKit(tree) as SvgGroupNode[];
+    expect(page.clip).toEqual({ kind: 'rect', x: 5, y: 6, width: 7, height: 8 });
+  });
 });

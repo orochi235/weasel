@@ -143,6 +143,16 @@ describe('placeOnPages', () => {
     expect(scene.get('onB' as NodeId)).toBeUndefined();
   });
 
+  it('puts a root on the page pageOf names, unmoved, and one naming no page the scene has by its bounds', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    createPageRun(scene, TWO.pages, TWO.layout);
+    for (const spec of [rect('mostlyOnB', 95, 40), rect('nowhere', 115)]) scene.add(spec);
+    const named: Record<string, string> = { mostlyOnB: 'a', nowhere: 'gone' };
+    placeOnPages(scene, ['mostlyOnB' as NodeId, 'nowhere' as NodeId], { pageOf: (id) => named[id] });
+    expect(scene.get('mostlyOnB' as NodeId)!).toMatchObject({ parent: 'a', pose: { x: 95 } });
+    expect(scene.get('nowhere' as NodeId)!).toMatchObject({ parent: 'b', pose: { x: 5 } });
+  });
+
   it('with the pasteboard on, leaves a root off every page where it is', () => {
     const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
     createPageRun(scene, TWO.pages, { ...TWO.layout, pasteboard: true });

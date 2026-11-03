@@ -34,13 +34,14 @@ function booleanOfObj(obj: Obj, op: BooleanShapeOp) {
 
 /**
  * Call inside a batch. Every draft's id is minted first, so an effect can name
- * sources that come after it. Each root lands on the page holding it, where
- * the file put it in the world (`addOnPages`). An effect whose sources the
+ * sources that come after it. Each root lands where the file put it in the
+ * world (`addOnPages`): with `keepPages`, on the page the file saved it in,
+ * and otherwise, or where the file names none, on the page holding it. An effect whose sources the
  * file does not hold, or that the scene's registry cannot derive, opens as
  * the paths it exported as, and as nothing when it exported none; a live one
  * leaves those paths out.
  */
-function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
+function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[], keepPages: boolean): void {
   type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
   const sceneIdOf = new Map(drafts.map((d) => [d.id, scene.mintId()]));
   const derivations = registeredPathEffects(scene.registry);
@@ -71,8 +72,9 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
       : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
     specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }
+  const pageOf = new Map(keepPages ? drafts.flatMap((d) => (d.page === undefined ? [] : [[sceneIdOf.get(d.id)!, d.page]])) : []);
   // A file's geometry is world; each pose is stored in its container's frame.
-  addOnPages(scene, localizeWorldPoses(specs, scene.composition));
+  addOnPages(scene, localizeWorldPoses(specs, scene.composition), { pageOf: (id) => pageOf.get(id) });
 }
 
 /**
@@ -93,7 +95,7 @@ export function openSvgText(
   const pages = doc.pages ? { pages: doc.pages } : onePage(firstPageSize(scene));
   scene.batch('Open', () => {
     replacePages(scene, pages);
-    addDrafts(scene, drafts);
+    addDrafts(scene, drafts, true);
   });
   return {
     filename: fileName,
@@ -107,7 +109,7 @@ export function openSvgText(
  */
 export function importSvgText(scene: DrawScene, text: string, onWarn: OnWarn = () => {}): void {
   const { drafts } = parseDrafts(text, onWarn);
-  scene.batch('Import SVG', () => addDrafts(scene, drafts));
+  scene.batch('Import SVG', () => addDrafts(scene, drafts, false));
 }
 
 /** Where an opened file lands: the scene, and the document state beside it. */

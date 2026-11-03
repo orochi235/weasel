@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  boundsOfPath, createPageRun, createScene, type NodeId, pageNodeOf, pageRunOf, pagesOf, placedPagesOf, solid,
+  boundsOfPath, createPageRun, createScene, type NodeId, pageNodeOf, pageOfNode, pageRunOf, pagesOf, placedPagesOf, solid,
 } from '@weasel-js/core';
-import { parseSvg } from '@weasel-js/svg';
+import { parseSvg, type SvgGroupNode } from '@weasel-js/svg';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { openSvgText } from './openSvg';
 import { pageToSvgString, sceneToSvgString } from './svgExport';
@@ -31,6 +31,15 @@ function emptyScene() {
 const save = (scene: DrawScene, backgroundColor = '#ffffff') =>
   sceneToSvgString(scene, { filename: 'a.svg', pages: placedPagesOf(scene), backgroundColor });
 
+/** The tree under the page run, as each node's page, kind, and pose, ids aside. */
+const tree = (scene: DrawScene): unknown => {
+  const walk = (id: NodeId): unknown => {
+    const n = scene.get(id)!;
+    return { page: n.page === undefined ? undefined : pageOfNode(scene, id), kind: n.kind, pose: n.pose, children: scene.childrenOf(id).map(walk) };
+  };
+  return scene.childrenOf(pageRunOf(scene)!).map(walk);
+};
+
 /** Each page's children as `[page, x]`, in page order. */
 const onPages = (scene: DrawScene) => placedPagesOf(scene).flatMap((p) =>
   scene.childrenOf(p.id as NodeId).map((id) => [p.id, (scene.get(id)!.pose as WeaselDrawPose).x]));
@@ -45,10 +54,39 @@ describe('saving a drawing of several pages', () => {
     expect(pagesOf(opened)?.pages).toEqual(PAGES);
   });
 
-  it('writes each shape where it is in the world, and writes no page or run as a group', async () => {
-    const parsed = parseSvg(await save(twoPages()));
-    expect(parsed.nodes.map((n) => n.kind)).toEqual(['path', 'path']);
-    expect(parsed.nodes.map((n) => n.kind === 'path' && boundsOfPath(n.path).x)).toEqual([10, 866]);
+  it('writes each shape where it is in the world, in a group per page clipped to the page', async () => {
+    const parsed = parseSvg(await save(twoPages()), { namespaces: SWILL_NAMESPACES });
+    const groups = parsed.nodes as SvgGroupNode[];
+    expect(groups.map((g) => [g.kind, g.meta?.wd?.attrs])).toEqual([
+      ['group', { role: 'page', 'page-id': 'page-1' }],
+      ['group', { role: 'page', 'page-id': 'cover' }],
+    ]);
+    expect(groups.map((g) => g.clip)).toEqual([
+      { kind: 'rect', x: 0, y: 0, width: 816, height: 1056 },
+      { kind: 'rect', x: 856, y: 0, width: 794, height: 1123 },
+    ]);
+    expect(groups.map((g) => { const [n] = g.children; return n?.kind === 'path' && boundsOfPath(n.path).x; })).toEqual([10, 866]);
+  });
+
+  it('opens a shape hanging off its page onto that page, whichever page holds most of it, and saves it the same', async () => {
+    const scene = twoPages();
+    // 790..1000 on page-1: most of it lies over the gap and the cover page.
+    scene.add({
+      kind: 'mark', layer: 'default', parent: 'page-1' as NodeId, pose: { x: 790, y: 100, width: 210, height: 20 },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 210, height: 20 }, fill: { paint: solid('#00ff00') } },
+    });
+    const svg = await save(scene);
+    const opened = emptyScene();
+    openSvgText(opened, svg, 'a.svg');
+    expect(tree(opened)).toEqual(tree(scene));
+    const unminted = (text: string) => text.replace(/ wd:leaf-id="[^"]*"/g, '');
+    expect(unminted(await save(opened))).toBe(unminted(svg));
+  });
+
+  it('opens a page\'s group as the page, with no clip group of its own', async () => {
+    const opened = emptyScene();
+    openSvgText(opened, await save(twoPages()), 'a.svg');
+    expect([...opened.nodes.values()].filter((n) => n.kind === 'group' && n.page === undefined && n.pageRun === undefined)).toEqual([]);
   });
 
   it('opens each shape as a child of its page, in page-local coordinates, and saves it to the same place', async () => {
