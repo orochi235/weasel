@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 
 afterEach(cleanup);
@@ -14,7 +15,8 @@ const NODES: readonly TreeNode[] = [
 test('a row\'s tooltip opens beside that row', async () => {
   render(<div style={{ width: 240, margin: 40 }}><Tree aria-label="Prefs" nodes={NODES} /></div>);
   const row = screen.getByRole('treeitem', { name: 'Snap' }).firstElementChild!;
-  row.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
+  // The real pointer: a synthetic event leaves it where the tab's last file put it, which can be over the other row.
+  await userEvent.hover(row);
   const tip = await screen.findByRole('tooltip', undefined, { timeout: 2000 });
   expect(tip.textContent).toBe('Snap to the grid.');
   const [r, t] = [row.getBoundingClientRect(), tip.getBoundingClientRect()];

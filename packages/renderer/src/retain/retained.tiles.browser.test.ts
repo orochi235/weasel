@@ -144,6 +144,12 @@ function frame(p: Pair, x: number, y: number, layer: (view: GlMat3) => DrawComma
   return { ...diff(tiled, whole), tiled: p.tiled.lastFrameStats().retained, whole: p.whole.lastFrameStats().retained };
 }
 
+/** Asserts tiled and whole agree exactly, naming the pixels that do not: `toMatchObject` leaves `first` out of its diff. */
+function exact<T extends { max: number; off: number; first: string[] }>(r: T, label = 'tiled against whole'): T {
+  expect(r.max, `${label}: ${r.off} pixel(s) differ, first ${r.first.join('; ')}`).toBe(0);
+  return r;
+}
+
 const worldLayer = (children: DrawCommand[]) => (view: GlMat3): DrawCommand => ({ kind: 'group', transform: view, retain: 'L', children });
 
 describe('a retained surface drawn in tiles', () => {
@@ -157,13 +163,13 @@ describe('a retained surface drawn in tiles', () => {
     const layer = (): DrawCommand => ({ kind: 'group', retain: 'L', children });
     const first = frame(p, 0, 0, layer);
     expect(first.tiled).toMatchObject({ redrawn: 1 });
-    expect(first, 'tiled against whole').toMatchObject({ max: 0 });
+    exact(first);
     expect(first.tiled.bytes).toBeLessThan(first.whole.bytes);
     // The surface is the drawing buffer; the scratch buffer at most a tile,
     // with the single-sampled copy tiles resolve through.
     const samples = 4;
     expect(first.tiled.bytes).toBeLessThanOrEqual(DW * DH * 4 + TILE * TILE * (8 * samples + 4));
-    expect(frame(p, 0, 0, layer)).toMatchObject({ max: 0, tiled: { composited: 1 } });
+    expect(exact(frame(p, 0, 0, layer)).tiled).toMatchObject({ composited: 1 });
   });
 
   it('matches it through a pan, margin past the buffer included', () => {
@@ -193,7 +199,7 @@ describe('a retained surface drawn in tiles', () => {
       ],
     };
     const layer = worldLayer([nested]);
-    expect(frame(p, 0, 0, layer)).toMatchObject({ max: 0, tiled: { redrawn: 1 } });
+    expect(exact(frame(p, 0, 0, layer)).tiled).toMatchObject({ redrawn: 1 });
     frame(p, 0, 0, layer);
     for (const [x, y] of [[3.5, -2], [3.5 + W / 4, -2]]) {
       const moved = frame(p, x, y, layer);
@@ -205,12 +211,12 @@ describe('a retained surface drawn in tiles', () => {
   it('matches it with a blur reaching across tile edges, in place and through a pan', () => {
     const p = pairOf();
     const layer = worldLayer([BLURRED]);
-    expect(frame(p, 0, 0, layer)).toMatchObject({ max: 0, tiled: { redrawn: 1 } });
+    expect(exact(frame(p, 0, 0, layer)).tiled).toMatchObject({ redrawn: 1 });
     frame(p, 0, 0, layer);
     let redrawn = 0;
     for (const [x, y] of [[3.5, -2], [3.5 + W / 4, -2], [-W / 4, 6]]) {
       const moved = frame(p, x, y, layer);
-      expect(moved, `at ${x}, ${y}`).toMatchObject({ max: 0 });
+      exact(moved, `at ${x}, ${y}`);
       redrawn += moved.tiled.redrawn;
     }
     expect(redrawn).toBeGreaterThan(0);
@@ -219,11 +225,11 @@ describe('a retained surface drawn in tiles', () => {
   it('matches it for a retained group owning an effects buffer, and single-sampled inside one', () => {
     const p = pairOf();
     const owns = (): DrawCommand => ({ ...BLURRED, retain: 'L' });
-    expect(frame(p, 0, 0, owns)).toMatchObject({ max: 0, tiled: { redrawn: 1 } });
+    expect(exact(frame(p, 0, 0, owns)).tiled).toMatchObject({ redrawn: 1 });
     const inside = (): DrawCommand => ({
       kind: 'group', effects: blur({ radius: 3 }),
       children: [{ kind: 'group', retain: 'inner', children: world() }],
     });
-    expect(frame(p, 0, 0, inside)).toMatchObject({ max: 0, tiled: { redrawn: 1 } });
+    expect(exact(frame(p, 0, 0, inside)).tiled).toMatchObject({ redrawn: 1 });
   });
 });
