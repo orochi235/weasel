@@ -22,7 +22,7 @@ function makeScene(): Scene<unknown, string, unknown> {
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 
-function dragOntoTarget(scene: Scene<unknown, string, unknown>, dx: number) {
+function dragOntoTarget(scene: Scene<unknown, string, unknown>, dx: number, selected: NodeId[] = [G]) {
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const nodeAtPoint: NodeAtPointDep = () => T;
@@ -30,7 +30,7 @@ function dragOntoTarget(scene: Scene<unknown, string, unknown>, dx: number) {
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [G] as NodeId[] }, scene, nodeAtPoint },
+    deps: { selection: { get: () => selected }, scene, nodeAtPoint },
   };
   const drag = { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 } };
   const handle = invoker.start(base as unknown as InvocationCtx, { params: { reparentOnDrop: 'top' } });
@@ -44,6 +44,14 @@ describe('moveAction — reparentOnDrop of a container with children', () => {
     dragOntoTarget(scene, 50);
     expect(scene.get(G)!.parent).toBe(T);
     expect(scene.get(G)!.pose).toEqual({ x: 10, y: 0, width: 20, height: 20 });
+    expect(scene.get(C)!.parent).toBe(G);
+    expect(scene.get(C)!.pose).toEqual({ x: 5, y: 5, width: 10, height: 10 });
+  });
+
+  it('keeps a selected child in its container, riding in its frame', () => {
+    const scene = makeScene();
+    dragOntoTarget(scene, 50, [G, C]);
+    expect(scene.get(G)!.parent).toBe(T);
     expect(scene.get(C)!.parent).toBe(G);
     expect(scene.get(C)!.pose).toEqual({ x: 5, y: 5, width: 10, height: 10 });
   });
@@ -71,5 +79,25 @@ describe('moveAction — reparentOnDrop of an envelope', () => {
     expect(scene.get(G)!.parent).toBe(T);
     // World x 55, in the target's frame at x 40.
     expect(scene.get(C)!.pose).toEqual({ x: 15, y: 5, width: 10, height: 10 });
+  });
+
+  it('takes its children, a selected one too, onto the target\'s layer, where the drag left them', () => {
+    const D = asNodeId('d');
+    const scene = createScene<unknown, 'main' | 'top', RectPose>({ systemLayers: [{ id: 'main' }, { id: 'top' }] });
+    scene.add({
+      id: G, kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 },
+      dependsOn: 'children', derivePose: unionOfChildren,
+    });
+    scene.add({ id: C, kind: 'mark', layer: 'main', parent: G, data: {}, pose: { x: 5, y: 5, width: 10, height: 10 } });
+    scene.add({ id: D, kind: 'mark', layer: 'main', parent: G, data: {}, pose: { x: 20, y: 5, width: 10, height: 10 } });
+    scene.add({ id: T, kind: 'group', layer: 'top', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 } });
+    dragOntoTarget(scene as unknown as Scene<unknown, string, unknown>, 50, [G, C]);
+    expect(scene.get(G)!.parent).toBe(T);
+    for (const id of [G, C, D]) expect(scene.get(id)!.layer).toBe('top');
+    expect(scene.get(C)!.parent).toBe(G);
+    expect(scene.get(D)!.parent).toBe(G);
+    // World x 55 and 70, in the target's frame at x 40.
+    expect(scene.get(C)!.pose).toEqual({ x: 15, y: 5, width: 10, height: 10 });
+    expect(scene.get(D)!.pose).toEqual({ x: 30, y: 5, width: 10, height: 10 });
   });
 });

@@ -12,6 +12,7 @@ import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession, ReparentOnDrop } from '../session';
 import { translateOps } from '../translate';
 import { translateNodeOps } from '../../moveNodes';
+import { outermost } from '@weasel-js/select';
 import { refusalOf } from '../../dropVerdict';
 import { worldBoundsOf, type MoveRefusal } from '../refusal';
 
@@ -139,7 +140,8 @@ export function reparentOps(
   // The destination's children as each op will find them: an earlier root's
   // landing shifts where a later one goes.
   const siblings = [...(target.newParent === null ? scene.roots : scene.childrenOf(target.newParent))];
-  for (const id of session.ids) {
+  const roots = new Set(outermost(session.ids, (id) => scene.get(id)?.parent ?? null));
+  for (const id of roots) {
     if (!session.startPoses.has(id)) continue;
     const node = scene.get(id)!;
     const crossing = node.layer !== target.newLayer;
@@ -164,5 +166,6 @@ export function reparentOps(
     }));
     ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label }));
   }
-  return [...ops, ...landedCascadeOps(session, session.cascadeIds, target.newParent, delta, target.newLayer)];
+  const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
+  return [...ops, ...landedCascadeOps(session, riders, target.newParent, delta, target.newLayer)];
 }
