@@ -58,6 +58,16 @@ describe('moveAction in a paged scene', () => {
     expect(pose.x).toBe(99);
   });
 
+  it('moves a box straddling both pages to the page it overlaps most, the pointer in the gap', () => {
+    const wide = (more: number) => drag(more, {
+      ids: [R2], add: [rect(R2, PAGE_A, 70, { pose: { x: 70, y: 10, width: 40, height: 10 } })], from: { x: 80, y: 15 },
+    });
+    // World 95..135: 5 on page a, 25 on page b.
+    expect(wide(25).node.parent).toBe(PAGE_B);
+    // World 75..115: 25 on page a, 5 on page b.
+    expect(wide(5).node.parent).toBe(PAGE_A);
+  });
+
   it('keeps one dropped off page b in page b, 1 unit of it on b, in b\'s frame', () => {
     const { node, pose } = drag(300, { ids: [R2], add: [rect(R2, PAGE_B, 50)], from: { x: 165, y: 15 } });
     expect(node.parent).toBe(PAGE_B);

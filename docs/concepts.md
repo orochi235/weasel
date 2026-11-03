@@ -610,8 +610,9 @@ layout under `'diagram:graph'`); every edit carries it with the page. `layoutPag
 `pageInView`, `fitViewToPage`, and `pagesLayer` work on the placed list. `PageTabs` in `@weasel-js/ui` is a strip of
 tabs over any page list.
 
-Specs built in world space go onto the pages with `placeOnPages`, each root into the page under it in that page's
-frame. A scene saved while its pages were the `core:pages` document value converts on load (`adoptLegacyPages`).
+Specs built in world space go onto the pages with `addOnPages`, or `placeOnPages` once added, each root into the
+page under it in that page's frame; `setPages` does the same for what a Continuous scene holds when it makes the scene
+paged. A scene saved while its pages were the `core:pages` document value converts on load (`adoptLegacyPages`).
 
 ## Affordance
 

@@ -973,7 +973,8 @@ A document is in one of two **modes**, read from its scene's structure, never st
 
 **Pages are containers** (decided 2026-11-02). The **page run** is a root group with a `pageRun` field, laid out
 by `pageRunLayout` (`direction`, `gap`, `align`); each **page** is a group under it with a `page` field (its name
-and `meta`), whose pose is its rect. A page frames its children, origin at its top-left, and clips them to its
+and `meta`), whose pose is its rect. A page's node id is its page id unless another node held that id when the page
+was made; then the `page` field keeps the page id, and `pageNodeOf` and `pageOfNode` translate (2026-11-03). A page frames its children, origin at its top-left, and clips them to its
 rect (`pageClip`). What is on a page is its child: membership is the tree, not geometry, so a page's content moves
 with it, and a drag onto another page reparents through the move action's `depart`/`arrive`, keeping its world
 position. `createPageRun` makes a scene paged; the page edits (`setPages`, `addPage`, `movePage`, …) write the
@@ -985,19 +986,21 @@ canvas does. Neither takes its layer's lock, nor passes its layer's hide down (2
 flag locks a page or the run, and content answers to its own layer and its own ancestors' flags, so locking the
 paper's layer locks neither the pages nor anything on them. The run and pages go on the lowest
 layer by default, since no child may sit below its parent. The run refuses drops and inserts of anything but
-followers (2026-11-03).
+followers (2026-11-03). A group made from members on more than one page goes on the page their union overlaps most, and
+the others reparent into it (`groupingSite`, 2026-11-03).
 
 **Followers live in the run** (decided 2026-11-02), refined by **follower home** (2026-11-03): a node whose pose
 follows others (`dependsOn`, such as a connector) is the child of the page every node it follows is on, keeping
 its z-order and that page's clip; only one whose dependencies span pages, or reach the pasteboard, is a child of
-the run, drawn across pages and clipped by neither. `followerHome` is that one rule. Off-page markers
+the run, drawn across pages and clipped by neither. `followerHome` is that one rule. A follower nested in a user
+group stays in the group: group membership outranks follower home (2026-11-03). Off-page markers
 (`@weasel-js/diagram`) read each end's page from its page ancestor.
 
 **The pasteboard is opt-in** (decided 2026-11-02): the run's `pasteboard` flag. On, a root may sit outside every
 page in world space, and a drag between a page and the pasteboard reparents. Off, the default, nothing is left
 outside a page: content drawn, pasted or dragged wholly off every page goes onto the nearest one, shifted until
-part of it lies on it (`keepOnPage`), so nothing ends up clipped to nothing. A drop in a gap between pages stays
-in the page it came from.
+part of it lies on it (`keepOnPage`), so nothing ends up clipped to nothing. A box dropped wholly in a gap stays
+on its page, shifted so part of it stays on; one overlapping a page goes to the page it overlaps most.
 
 **Paging is continuous by default** (decided 2026-11-02): a view setting, not part of the document, so one file
 opens in either. `'continuous'` moves the view freely across pages; `'single'` brings it to rest fitted to one
