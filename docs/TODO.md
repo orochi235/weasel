@@ -403,6 +403,11 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] A number field with a unit `precision` shows that many places.** A prefs number leaf whose unit sets
+  `precision: 2` rounds what it shows but drops trailing zeros, so a column of lengths reads 2.21 over 1.5 and its
+  decimals don't line up (collego's selection form, 2026-11-02). Closes when the field pads to `precision` while it
+  shows a value, and still accepts whatever is typed.
+
 - **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
   the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
