@@ -2,9 +2,13 @@ import type { Action, ActionDeps, BindingOpts, InvocationCtx, OngoingHandle } fr
 import { resolveParams } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
+import { unitFrameAt } from 'interactions/actions/magnification';
 import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from 'domains/snap/roles';
 import { spanSnap } from 'domains/snap/spanSnap';
-import { measureBetween, measureEndsOf, withMeasureEnd, type MeasureEnd, type MeasurePoint } from './measurement';
+import {
+  measureBetween, measureEndsOf, withMeasureEnd,
+  type MeasureEnd, type MeasureFrameAt, type MeasurePoint,
+} from './measurement';
 import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
 import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './measureEdits';
@@ -18,6 +22,10 @@ export const MEASURE_HIT_PX = 6;
 
 const pointOf = (at: InvocationCtx): MeasurePoint => at.drag?.current ?? at.world;
 
+/** Where an end lands among `scene`'s unit-scope frames; the top of the tree
+ *  without a scene. Built once per gesture: the scene holds still under it. */
+const framesOf = (scene: AnyScene | undefined): MeasureFrameAt => (scene ? unitFrameAt(scene) : () => null);
+
 /** World units `px` screen pixels span at the deps' view. */
 export function pxToWorld(deps: ActionDeps | undefined, px: number): number {
   const scale = deps?.view?.get().scale.x ?? 1;
@@ -29,8 +37,10 @@ export function pxToWorld(deps: ActionDeps | undefined, px: number): number {
  * session of the `snap` dep. While `snap.constrain` (Shift) is held the end
  * stays on the line through the snapped start at the nearest step of the
  * binding param `angleStep` (radians, default 15°), and lands where that line
- * meets a target. The drawing shows in `ms.draft`; on release it becomes a
- * measurement node, one undo step, and the picked one.
+ * meets a target. Each end records the unit-scope frame it lands in
+ * (`unitFrameAt`), so the measurement reads in that frame's units. The drawing
+ * shows in `ms.draft`; on release it becomes a measurement node, one undo
+ * step, and the picked one.
  */
 export function measureCreateAction(ms: Measurements): Action {
   return {
@@ -48,20 +58,23 @@ export function measureCreateAction(ms: Measurements): Action {
           const step = resolveParams(opts?.params)?.['angleStep'];
           return { step: typeof step === 'number' ? step : SNAP_ANGLE_STEP };
         });
+        const scene = deps.scene as AnyScene | undefined;
+        const frameAt = framesOf(scene);
         const start = snap.start(ctx.drag?.start ?? ctx.world, snapMods(ctx)).point;
+        const startFrame = frameAt(start);
         const endAt = (at: InvocationCtx): MeasurePoint => snap.end(pointOf(at), snapMods(at)).point;
-        ms.draft.set(measureBetween(start, start));
+        const between = (end: MeasurePoint) => measureBetween(start, end, { start: startFrame, end: frameAt(end) });
+        ms.draft.set(between(start));
         return {
           kind: 'measure',
-          onMove: (moveCtx) => ms.draft.set(measureBetween(start, endAt(moveCtx))),
+          onMove: (moveCtx) => ms.draft.set(between(endAt(moveCtx))),
           onEnd: (endCtx, reason) => {
             try {
               ms.draft.set(null);
-              const scene = deps.scene as AnyScene | undefined;
               if (reason !== 'commit' || !scene) return;
               const end = endAt(endCtx);
               if (end.x === start.x && end.y === start.y) return;
-              const { id, op } = addMeasureOp(scene, ms.layer, start, end);
+              const { id, op } = addMeasureOp(scene, ms.layer, start, end, between(end).frames);
               commitOps(deps, [op], 'Measure');
               ms.picked.set(id);
             } finally {
@@ -124,8 +137,9 @@ function nodeOf(scene: AnyScene | undefined, id: NodeId) {
  * measurement it moves that end, keeping its offset from the press, through
  * a `point` session of the `snap` dep in which the measurement's own ends
  * offer nothing; anywhere else on a
- * measurement it carries the whole measurement with the pointer. Previewed
- * while it runs; one undo step on release.
+ * measurement it carries the whole measurement with the pointer. Either way
+ * each moved end records the unit-scope frame it lands in. Previewed while it
+ * runs; one undo step on release.
  */
 export function measureDragAction(ms: Measurements): Action {
   return {
@@ -145,11 +159,12 @@ export function measureDragAction(ms: Measurements): Action {
         const from = ctx.drag?.start ?? ctx.world;
         const grabbed = (end && measureEndsOf(node)?.[end]) || from;
         const snap = end ? deps.snap?.begin({ gesture: 'point', press: grabbed, ids: [hit.id] }) ?? null : null;
+        const frameAt = framesOf(scene);
         let at = from;
         let landed = grabbed;
         const next = () => (end
-          ? withMeasureEnd(node, end, landed)
-          : translatedMeasure(node, at.x - from.x, at.y - from.y));
+          ? withMeasureEnd(node, end, landed, frameAt(landed))
+          : translatedMeasure(node, at.x - from.x, at.y - from.y, frameAt));
         const follow = (c: InvocationCtx) => {
           at = pointOf(c);
           const held = { x: grabbed.x + at.x - from.x, y: grabbed.y + at.y - from.y };
@@ -163,7 +178,9 @@ export function measureDragAction(ms: Measurements): Action {
             try {
               if (reason !== 'commit') return;
               follow(endCtx);
-              const ops = end ? moveEndOps(node, end, landed) : moveMeasureOps(node, at.x - from.x, at.y - from.y);
+              const ops = end
+                ? moveEndOps(node, end, landed, frameAt(landed))
+                : moveMeasureOps(node, at.x - from.x, at.y - from.y, frameAt);
               commitOps(deps, ops, ops[0]?.label ?? 'Move Measurement');
             } finally {
               snap?.end();

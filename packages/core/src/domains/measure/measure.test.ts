@@ -78,7 +78,11 @@ function setup() {
   const run = (id: string, params?: Record<string, unknown>) =>
     (action(id).invoker as ImmediateInvoker).run(deps as never, params);
   const ids = () => measureIds(scene as unknown as AnyScene, ms);
-  const ends = (id: NodeId) => measureEndsOf(scene.get(id as never));
+  /** Where `id`'s ends are; `measureFrames.test.ts` reads the frames they landed in. */
+  const ends = (id: NodeId) => {
+    const e = measureEndsOf(scene.get(id as never));
+    return e && { start: e.start, end: e.end };
+  };
   return { scene, box, selection, ms, deps, pose, measure, drag, enabled, run, ids, ends };
 }
 

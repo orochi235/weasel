@@ -30,13 +30,19 @@ export function sceneUnitScopes(
  * The unit scopes every node of `ids` sits in, outermost first: the run of
  * their chains that agree, where two containers declaring equal scopes
  * agree. What a reader showing or snapping several nodes as one reads them
- * in; the root alone for no nodes.
+ * in; the root alone for no nodes. `inclusive` reads each of `ids` as a
+ * container whose own scope counts, as `sceneUnitScopes` does.
  */
-export function sceneSharedUnitScopes(scene: ScopedScene, ids: readonly NodeId[], root: UnitScope): UnitScope[] {
+export function sceneSharedUnitScopes(
+  scene: ScopedScene,
+  ids: readonly NodeId[],
+  root: UnitScope,
+  opts: { inclusive?: boolean } = {},
+): UnitScope[] {
   if (ids.length === 0) return [root];
-  let shared = sceneUnitScopes(scene, ids[0]!, root);
+  let shared = sceneUnitScopes(scene, ids[0]!, root, opts);
   for (const id of ids.slice(1)) {
-    const chain = sceneUnitScopes(scene, id, root);
+    const chain = sceneUnitScopes(scene, id, root, opts);
     let n = 0;
     while (n < shared.length && n < chain.length && deepEqual(shared[n], chain[n])) n++;
     shared = shared.slice(0, n);
@@ -55,8 +61,9 @@ export function sceneDeclaredScopes(scene: ScopedScene, id: NodeId, opts: { incl
 /**
  * How large the frame `ids` share is drawn in the world: every `drawnAt` their
  * shared scope chain declares, multiplied. A length measured in world between
- * them, divided by it, is the length they were modeled at.
+ * them, divided by it, is the length they were modeled at. `inclusive` reads
+ * `ids` as frames themselves, counting each one's own scope.
  */
-export function sceneMagnification(scene: ScopedScene, ids: readonly NodeId[]): number {
-  return magnificationOf(sceneSharedUnitScopes(scene, ids, NO_ROOT));
+export function sceneMagnification(scene: ScopedScene, ids: readonly NodeId[], opts: { inclusive?: boolean } = {}): number {
+  return magnificationOf(sceneSharedUnitScopes(scene, ids, NO_ROOT, opts));
 }

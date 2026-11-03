@@ -10,6 +10,7 @@ import { IDENTITY_POSE_COMPOSITION,
   measurementsContribution,
   useDepSource,
   type DepName,
+  type MeasureFrames,
   type NodeId,
   type Scene,
 } from '@weasel-js/core';
@@ -30,8 +31,8 @@ function setup() {
     systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
   }) as unknown as AnyScene;
   const ms = createMeasurements({ layer: 'notes' });
-  const add = (id: string, a: { x: number; y: number }, b: { x: number; y: number }) =>
-    act(() => { scene.add(measureNode(id as NodeId, 'notes', a, b) as never); });
+  const add = (id: string, a: { x: number; y: number }, b: { x: number; y: number }, frames?: MeasureFrames) =>
+    act(() => { scene.add(measureNode(id as NodeId, 'notes', a, b, frames) as never); });
   const actions = measurementsContribution(scene, ms).actions ?? [];
   const view = (selected: string[]) => (
     <DepRegistryProvider>
@@ -72,6 +73,28 @@ describe('MeasureReadout', () => {
     rig.add('a', { x: 0, y: 0 }, { x: 5, y: 0 });
     act(() => rig.ms.draft.set({ start: { x: 0, y: 0 }, end: { x: 0, y: 7 }, dx: 0, dy: 7, distance: 7, angle: -Math.PI / 2 }));
     expect(values()[0]).toBe('7.00');
+  });
+
+  it("reads a measurement inside a magnified frame in that frame's units", () => {
+    const rig = setup();
+    const scope = (drawnAt: number) => ({ system: { base: 'in', units: { in: 1 } }, drawnAt });
+    const frame = (id: string, drawnAt: number) => {
+      rig.scene.add({ id: id as NodeId, kind: 'group', layer: 'main', parent: null, pose: {}, data: {}, units: scope(drawnAt) } as never);
+      return id as NodeId;
+    };
+    const drawer = frame('drawer', 0.4);
+    const twin = frame('twin', 0.4);
+    const detail = frame('detail', 2);
+    render(rig.view([]));
+    rig.add('a', { x: 0, y: 0 }, { x: 12, y: 16 }, { start: drawer, end: drawer });
+    expect(values()).toEqual(['50.00', '30.00', '40.00', '−53.13°']);
+    // Frames declaring equal scopes agree; frames that disagree read in world.
+    rig.add('b', { x: 0, y: 0 }, { x: 4, y: 0 }, { start: drawer, end: twin });
+    expect(values()[0]).toBe('10.00');
+    rig.add('c', { x: 0, y: 0 }, { x: 4, y: 0 }, { start: drawer, end: detail });
+    expect(values()[0]).toBe('4.00');
+    rig.add('d', { x: 0, y: 0 }, { x: 4, y: 0 }, { start: drawer, end: null });
+    expect(values()[0]).toBe('4.00');
   });
 
   it('greys out Move by and Rotate by with nothing selected, and says why', () => {

@@ -1,6 +1,6 @@
 export {
-  measureBetween, measurementOf, measureEndsOf, measurePose, measureNode,
-  type Measurement, type MeasurePoint, type MeasureData, type MeasureEnd,
+  measureBetween, measurementOf, measureEndsOf, measureMagnification, measurePose, measureNode,
+  type Measurement, type MeasurePoint, type MeasureData, type MeasureEnd, type MeasureFrames, type MeasureFrameAt,
 } from './measurement';
 export {
   createMeasurements, currentMeasureId, measureIds,

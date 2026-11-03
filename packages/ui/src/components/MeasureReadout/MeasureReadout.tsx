@@ -3,6 +3,7 @@ import {
   actionItems,
   currentMeasureId,
   MEASURE_ACTION_IDS,
+  measureMagnification,
   measurementOf,
   useActionsRegistry,
   type Action,
@@ -54,7 +55,8 @@ function useCommands(): { items: ActionItem[]; trigger: (id: string) => void } {
  * The measurement readout: a chip pinned to the bottom of the nearest
  * positioned ancestor, showing the measurement a measure drag is drawing,
  * else the picked one, else the newest — its distance, offset, and angle in
- * world units — with Move by, Rotate by, Delete, and Clear all from the
+ * the units of the frame its ends landed in, its world lengths divided by that
+ * frame's magnification (`measureMagnification`) — with Move by, Rotate by, Delete, and Clear all from the
  * actions registry. A command that cannot run says why in its tooltip. The
  * angle reads like a protractor, counterclockwise-positive: a line rising to
  * the right at 30° reads 30°, and Rotate by turns the selection that way.
@@ -69,10 +71,11 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
   const id = currentMeasureId(scene, ms);
   const m = draft ?? (id === null ? null : measurementOf(scene.get(id)));
   if (!m) return null;
+  const mag = measureMagnification(scene, m.frames);
   const cells: [string, string][] = [
-    ['Distance', format(m.distance)],
-    ['ΔX', format(m.dx)],
-    ['ΔY', format(m.dy)],
+    ['Distance', format(m.distance / mag)],
+    ['ΔX', format(m.dx / mag)],
+    ['ΔY', format(m.dy / mag)],
     ['Angle', `${format(m.angle * RAD_TO_DEG)}°`],
   ];
   return (

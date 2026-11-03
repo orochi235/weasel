@@ -1,7 +1,8 @@
+import { applyToPoint, invert, type Affine, type Point } from '@weasel-js/geom';
 import { magnificationOf } from '@weasel-js/quantity';
 import { sceneDeclaredScopes } from 'core/scene/unitScopes';
 import type { NodeId, Scene } from 'core/scene/types';
-import { sceneBoxFrames } from './poseFrame';
+import { sceneBoxFrames, scenePoseFrame } from './poseFrame';
 
 /** A container whose children are drawn at a size its unit scopes do not declare. */
 export interface UndeclaredMagnification {
@@ -37,4 +38,35 @@ export function undeclaredMagnifications(
     if (differs(drawn.x, declared, tolerance) || differs(drawn.y, declared, tolerance)) out.push({ id, drawn, declared });
   }
   return out;
+}
+
+/**
+ * Which frame a world point lands in: built once over `scene` as it stands, it
+ * gives the topmost node declaring a unit scope whose drawn box holds the
+ * point, edges included, or `null` outside them all. A length between points
+ * read in their frames' shared scope chain (`sceneMagnification` with
+ * `inclusive`) is the length they were modeled at.
+ */
+export function unitFrameAt(scene: Scene<unknown, string, unknown>): (p: Point) => NodeId | null {
+  const frames = sceneBoxFrames(scene);
+  const poses = scenePoseFrame(scene);
+  const boxes: { id: NodeId; toLocal: Affine; width: number; height: number }[] = [];
+  for (const node of scene.renderOrderNodes()) {
+    if ((node as { units?: unknown }).units === undefined) continue;
+    const frame = frames(node.id);
+    const toLocal = frame && invert(frame);
+    const { width, height } = poses.world(node.id) as { width?: unknown; height?: unknown };
+    if (!toLocal || typeof width !== 'number' || typeof height !== 'number') continue;
+    boxes.push({ id: node.id, toLocal, width, height });
+  }
+  boxes.reverse();
+  return (p) => {
+    for (const b of boxes) {
+      const [x, y] = applyToPoint(b.toLocal, p.x, p.y);
+      // A point snapped to the box's edge comes back a rounding error outside it.
+      const e = 1e-9 * Math.max(b.width, b.height, 1);
+      if (x >= -e && y >= -e && x <= b.width + e && y <= b.height + e) return b.id;
+    }
+    return null;
+  };
 }

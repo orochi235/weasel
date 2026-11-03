@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { UnitScope } from '@weasel-js/quantity';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type AddNodeSpec, type RectPose } from 'core/scene/types';
-import { undeclaredMagnifications } from './magnification';
+import { undeclaredMagnifications, unitFrameAt } from './magnification';
 
 type Spec = AddNodeSpec<object, 'main', RectPose>;
 const IN = { system: { base: 'in', units: { in: 1 } } } satisfies UnitScope;
@@ -55,5 +55,26 @@ describe('undeclaredMagnifications', () => {
       spec('cabinet', { parent: asNodeId('inset') }),
     ]);
     expect(undeclaredMagnifications(scene)).toEqual([]);
+  });
+});
+
+describe('unitFrameAt', () => {
+  // The inset's transform draws its 48-unit box at 0.4× about its center: 14.4 to 33.6.
+  const at = unitFrameAt(board(0.4, { ...IN, drawnAt: 0.4 }));
+
+  it('finds the innermost scope-declaring box a point lands in, as drawn', () => {
+    expect(at({ x: 20, y: 30 })).toBe('inset');
+    expect(at({ x: 10, y: 10 })).toBe('board');
+    expect(at({ x: 60, y: 10 })).toBeNull();
+  });
+
+  it('counts a point on the drawn edge as inside', () => {
+    expect(at({ x: 14.4, y: 24 })).toBe('inset');
+    expect(at({ x: 33.6, y: 33.6 })).toBe('inset');
+  });
+
+  it('passes over a container that declares no scope', () => {
+    const scene = sceneOf([spec('g', { kind: 'group' }), spec('leaf', { parent: asNodeId('g') })]);
+    expect(unitFrameAt(scene)({ x: 5, y: 5 })).toBeNull();
   });
 });
