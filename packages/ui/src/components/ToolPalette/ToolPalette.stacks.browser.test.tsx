@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import type { Tool, ToolsApi } from '@weasel-js/core';
-import { ToolPalette } from './ToolPalette';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 
 afterEach(cleanup);
 

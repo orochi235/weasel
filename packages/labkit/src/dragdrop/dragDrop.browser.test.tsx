@@ -3,11 +3,10 @@ import 'windease/styles.css';
 import '../styles.less';
 import '../lab/presentation.browser.test.less';
 import { cleanup, screen } from '@testing-library/react';
+import { defineInstrument, Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { defineInstrument } from '../instrument/defineInstrument';
-import { Lab } from '../lab/Lab';
 
 // A palette drag holds its press captured to the palette item, so in a browser
 // the canvas never hears the pointer at all: the drop reaches the canvas's

@@ -1,7 +1,8 @@
 import { act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { type Channel, openChannel } from '../protocol/channel';
-import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
+import type { Channel, FromFrame, ToFrame } from '@weasel-js/forge/frame';
+import { openChannel } from '../protocol/channel';
+import { FRAME_HELLO, PORT_HANDOFF } from '../protocol/messages';
 
 /** The forge test project runs without labkit's setup, and a lab's tiled surface needs a measured, non-zero box. */
 export function installResizeObserver(): void {

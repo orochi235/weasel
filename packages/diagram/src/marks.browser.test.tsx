@@ -2,8 +2,7 @@ import { act } from '@testing-library/react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it } from 'vitest';
 import { registerCanvasFont } from '@weasel-js/font';
-import { DiagramView, type NodeMove } from './DiagramView';
-import { diagramScene } from './fromData';
+import { DiagramView, type NodeMove, diagramScene } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');

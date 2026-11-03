@@ -5,9 +5,8 @@
  * the screen on the next frame.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
-import { registerProgram, _resetProgramRegistryForTests, type ShaderUniform } from './shaders/registerProgram';
-import { registerTexture, _resetTextureRegistryForTests } from './textures/registerTexture';
+import { WeaselRenderer, registerProgram, type ShaderUniform, registerTexture } from '@weasel-js/renderer';
+import { _resetProgramRegistryForTests, _resetTextureRegistryForTests } from '@weasel-js/renderer/test-seams';
 
 const W = 4;
 

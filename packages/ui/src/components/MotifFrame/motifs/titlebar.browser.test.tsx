@@ -3,8 +3,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties, ReactNode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { MotifFrame } from '../MotifFrame';
-import { titlebar } from './titlebar';
+import { MotifFrame, titlebar } from '@weasel-js/ui/components/MotifFrame';
 
 // Where the strip sits, what paints it, and whether a tint outranks a theme's
 // strip are layout and cascade questions, so only a real browser answers them.

@@ -2,10 +2,10 @@ import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
+import { CanvasStack } from '@weasel-js/labkit/canvas';
+import { TrialLoupe } from '@weasel-js/labkit/loupe';
 import { afterEach, expect, test } from 'vitest';
 import { commands } from 'vitest/browser';
-import { CanvasStack } from '../canvas/CanvasStack';
-import { TrialLoupe } from './TrialLoupe';
 
 // The lens follows the real mouse, pressed or not, and goes away when it
 // leaves. Every other test of the aim fires synthetic events at the host; this

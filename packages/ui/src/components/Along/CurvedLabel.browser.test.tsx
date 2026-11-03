@@ -4,8 +4,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { arcShape, lineShape, placeAlongRun, trackRun, type PlaceAlongRunOptions, type TrackShape } from '@weasel-js/geom';
-import { arcInBox } from './arcInBox';
-import { CurvedLabel, type CurvedLabelProps } from './CurvedLabel';
+import { arcInBox, CurvedLabel, type CurvedLabelProps } from '@weasel-js/ui/components/Along';
 import type { AlongArc } from './alongContext';
 
 afterEach(cleanup);

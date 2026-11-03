@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { arcShape, trackRun, type Point } from '@weasel-js/geom';
-import { arcInBox } from '../../Along/arcInBox';
+import { arcInBox } from '@weasel-js/ui/components/Along';
 import { arcOf, SLIDER_ARC_DEFAULTS, type SliderArcConfig } from './sliderArcConfig';
 import { SliderArcView } from './SliderArcView';
 

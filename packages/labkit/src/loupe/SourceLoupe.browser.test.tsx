@@ -1,10 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { TrialLoupe } from '@weasel-js/labkit/loupe';
 import { type CanvasSource, createCanvasSource } from '@weasel-js/loupe';
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
-import { TrialLoupe } from './TrialLoupe';
 
 // A foreign WebGL canvas — one labkit neither created nor draws — read by the
 // lens. Its pixels only exist in the task that drew them, which is what a

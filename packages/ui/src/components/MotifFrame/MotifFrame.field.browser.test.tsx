@@ -1,9 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { Input } from '../Input';
-import { MotifFrame } from './MotifFrame';
-import { notch, rule, stereo, tab } from './motifs';
+import { Input } from '@weasel-js/ui/components/Input';
+import { MotifFrame, notch, rule, stereo, tab } from '@weasel-js/ui/components/MotifFrame';
 
 // A field's frame and a frame's fill both default to the sunken surface, and only a browser resolves the
 // custom properties that say which color each one ends up.

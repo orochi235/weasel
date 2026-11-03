@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { MenuBar } from './MenuBar';
+import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import s from './MenuBar.browser.test.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 

@@ -6,10 +6,10 @@
 
 import { registerFont } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { createAnnotationStore } from '@weasel-js/labkit';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
-import { createAnnotationStore } from './store';
 
 /** Pixels where the mark's red ink landed on the transparent export. */
 async function inkPixels(blob: Blob): Promise<number> {

@@ -1,11 +1,10 @@
 import '../styles.less';
 import './CameraInput.browser.test.less';
 import { cleanup, render } from '@testing-library/react';
+import { CameraContext, type CameraContextValue, CanvasStack } from '@weasel-js/labkit/canvas';
 import { useContext } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
 import type { ViewTransform } from '../instrument/types';
-import { CameraContext, type CameraContextValue } from './CameraInput';
-import { CanvasStack } from './CanvasStack';
 
 // A stack under a scaled ancestor — a `<Stage>`, a lens — draws in its layout
 // px, so its camera has to read the pointer in them too. Only a browser

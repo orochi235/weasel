@@ -6,7 +6,7 @@ import { commands, page, userEvent } from 'vitest/browser';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import { arcShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
-import { Bar, type BarProps } from './Bar';
+import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
 import s from './Bar.reorder.browser.test.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 

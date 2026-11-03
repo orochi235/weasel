@@ -5,9 +5,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import type { Paint } from '@weasel-js/paint';
-import { createScene } from 'core/scene/scene';
+import { createScene, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
-import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';
 import 'core/paint/registerMesh';

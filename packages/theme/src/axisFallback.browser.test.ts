@@ -1,9 +1,7 @@
 import { afterEach, expect, test } from 'vitest';
 import type { ThemeDefinition } from './definition';
-import { bakeChain } from './engine/bake';
-import { axisDependencies } from './engine/deps';
-import { emitCss } from './engine/emit/css';
-import { resolveTheme } from './resolveTheme';
+import { bakeChain, axisDependencies, emitCss } from '@weasel-js/theme/engine';
+import { resolveTheme } from '@weasel-js/theme';
 import type { Theme } from './theme';
 
 const base: ThemeDefinition = {

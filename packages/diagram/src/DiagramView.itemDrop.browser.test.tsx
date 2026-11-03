@@ -2,9 +2,7 @@ import { act } from '@testing-library/react';
 import { createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it } from 'vitest';
-import { DiagramView, type DiagramViewApi, type DiagramViewProps } from './DiagramView';
-import { diagramScene } from './fromData';
-import { dragItemProps, type ItemDrop } from './itemDrop';
+import { DiagramView, type DiagramViewApi, type DiagramViewProps, diagramScene, dragItemProps, type ItemDrop } from '@weasel-js/diagram';
 
 const node = (id: string, x: number) => ({ id, lines: [id], width: 60, height: 40, at: { x, y: 140 }, pinned: true });
 const SPECS = diagramScene({

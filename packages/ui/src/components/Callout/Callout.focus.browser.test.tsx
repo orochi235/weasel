@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { Callout } from './Callout';
+import { Callout } from '@weasel-js/ui/components/Callout';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // jsdom has no focus containment worth the name: React Aria's FocusScope pulls focus back from a real focus event.

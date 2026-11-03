@@ -2,8 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { Along, type RunAlign } from './Along';
-import { ToggleBar } from './ToggleBar';
+import { Along, type RunAlign } from '@weasel-js/ui/components/Along';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 
 afterEach(cleanup);
 

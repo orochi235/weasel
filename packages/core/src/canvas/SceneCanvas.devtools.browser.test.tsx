@@ -6,10 +6,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneCanvas } from './SceneCanvas';
-import { createScene } from '../core/scene/scene';
-import { DEVTOOLS_PROTOCOL, type PanelMessage } from '../devtools/protocol';
-import { createInPageTransports } from '../devtools/transport';
+import { SceneCanvas, createScene } from '@weasel-js/core';
+import { DEVTOOLS_PROTOCOL, type PanelMessage, createInPageTransports } from '@weasel-js/core/devtools';
 import { pixelAt } from '../testing/canvasPixels';
 
 let root: Root | null = null;

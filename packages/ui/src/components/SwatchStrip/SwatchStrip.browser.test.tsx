@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { RunAlign } from '@weasel-js/geom';
-import { createRecentColorsStore } from '../RecentColors';
-import { SwatchStrip } from './SwatchStrip';
+import { createRecentColorsStore } from '@weasel-js/ui/components/RecentColors';
+import { SwatchStrip } from '@weasel-js/ui/components/SwatchStrip';
 
 afterEach(cleanup);
 

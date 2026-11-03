@@ -9,11 +9,10 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneCanvas } from './SceneCanvas';
+import { SceneCanvas, createScene } from '@weasel-js/core';
+import { buildWeaselClipboardText } from '@weasel-js/core/clipboard';
 import type { Feature } from './SceneCanvas/features';
-import { createScene } from '../core/scene/scene';
 import type { Scene } from '../core/scene/types';
-import { buildWeaselClipboardText } from '../interactions/actions/clipboard/wireFormat';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 
 type P = { x: number; y: number; width: number; height: number };

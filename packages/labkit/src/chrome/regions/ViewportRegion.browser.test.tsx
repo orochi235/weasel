@@ -2,10 +2,10 @@ import '@weasel-js/theme/tokens.css';
 import '../../styles.less';
 import './ViewportRegion.browser.test.less';
 import { cleanup, render } from '@testing-library/react';
+import { ViewportRegion } from '@weasel-js/labkit/chrome';
+import { ZoomControl } from '@weasel-js/labkit/primitives';
 import { afterEach, expect, test } from 'vitest';
-import { ZoomControl } from '../../primitives/ZoomControl';
 import type { TrialChromeContext, TrialContribution } from '../types';
-import { ViewportRegion } from './ViewportRegion';
 
 // Whether a rendered control shrinks to the cluster or runs out past it is
 // layout, which only a real browser has.

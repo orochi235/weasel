@@ -2,18 +2,18 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties, ReactNode } from 'react';
 import { afterEach, describe, expect, test } from 'vitest';
-import { Button } from './Button';
-import { Checkbox } from './Checkbox';
-import { Dialog } from './Dialog';
-import { Input } from './Input';
-import { Radio, RadioGroup } from './RadioGroup';
-import { Switch } from './Switch';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
+import { Input } from '@weasel-js/ui/components/Input';
+import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
+import { Switch } from '@weasel-js/ui/components/Switch';
+import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import dialog from './Dialog/Dialog.module.css';
 import listbox from './listbox.module.css';
 import radio from './RadioGroup/RadioGroup.module.css';
 import toggle from './Switch/Switch.module.css';
 import tooltip from './Tooltip/Tooltip.module.css';
-import { PropertyPanel } from './Properties';
 import p from './Properties/Properties.module.css';
 
 // Whether a hook reaches the property it is for is a cascade question: jsdom

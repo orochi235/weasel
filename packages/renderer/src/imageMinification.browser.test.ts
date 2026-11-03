@@ -5,7 +5,7 @@
  * a mipmap reads their average.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { ImageMinification } from './cache/GLImageCache';
 
 const SOURCE = 64;

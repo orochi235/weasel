@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 import { decimal, fraction } from '@weasel-js/quantity';
-import { BandEditor } from './BandEditor';
+import { BandEditor } from '@weasel-js/ui/components/BandEditor';
 
 afterEach(cleanup);
 

@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { partialPresets } from './synthVoice';
+import { partialPresets, renderNoise, renderNote } from '@weasel-js/audio';
 import { CENTER_GAIN, renderEngine } from './testing/renderEngine';
 import { centroid, peaks, powerSpectrum, rmsEnvelope } from './testing/spectrum';
 import type { NoiseOptions, NoteOptions } from './types';
-import { renderNoise, renderNote } from './voiceKernel';
 
 // A kernel is a second implementation of what the node graph plays, so the
 // graph is the reference: the same patch through both has to come out at the

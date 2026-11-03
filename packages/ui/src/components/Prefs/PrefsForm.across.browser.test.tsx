@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 
 // Whether a control sits beside its label or under it is the browser's flex wrapping to decide. The label is
 // short and the pane narrow so the answer does not turn on which font the machine has.

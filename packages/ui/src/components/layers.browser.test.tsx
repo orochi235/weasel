@@ -1,8 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { Dialog } from './Dialog/Dialog';
-import { DragGhost } from './DragGhost/DragGhost';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
+import { DragGhost } from '@weasel-js/ui/components/DragGhost';
 import { renderWithIcons } from '../testing/withIcons';
 
 // The overlays order themselves on the --wzl-z-* ladder; jsdom resolves no var().

@@ -2,12 +2,11 @@ import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { CANVAS_CONTEXT_ATTRIBUTES } from '@weasel-js/core';
+import { TrialLoupe } from '@weasel-js/labkit/loupe';
+import { SurfaceContext, useTiledSurface } from '@weasel-js/labkit/surface';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
-import { SurfaceContext } from '../surface/SurfaceContext';
-import { useTiledSurface } from '../surface/useTiledSurface';
-import { TrialLoupe } from './TrialLoupe';
 import type { LoupeOptions } from './types';
 
 // The lens has to open where the pointer already is, however it comes up:

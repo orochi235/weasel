@@ -3,12 +3,12 @@ import 'windease/styles.css';
 import '../styles.less';
 import './presentation.browser.test.less';
 import { cleanup } from '@testing-library/react';
+import { Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
 import { it as liveTest } from '../testing/liveTest';
-import { Lab } from './Lab';
 import type { LabProps } from './labProps';
 
 // That a still says it is ready only after its frame is drawn is the frame

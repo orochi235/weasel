@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { Plot2D } from './Plot2D';
+import { Plot2D } from '@weasel-js/ui/components/Plot2D';
 
 afterEach(cleanup);
 

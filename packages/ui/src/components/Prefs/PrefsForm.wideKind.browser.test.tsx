@@ -3,8 +3,8 @@ import { cleanup, screen } from '@testing-library/react';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { PrefConditionEditor } from '../PrefConditionEditor';
-import { PrefsForm, type PrefRenderer } from './PrefsForm';
+import { PrefConditionEditor } from '@weasel-js/ui/components/PrefConditionEditor';
+import { PrefsForm, type PrefRenderer } from '@weasel-js/ui/components/Prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Where a row's label sits and how wide its control runs is layout, which jsdom does not do.

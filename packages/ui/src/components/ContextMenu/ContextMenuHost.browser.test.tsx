@@ -6,9 +6,9 @@ import { useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
-import { OverlayPortalProvider } from '../../overlays/portalHost';
+import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { lineContrast } from '../../testing/paintedContrast';
-import { ContextMenuHost } from './ContextMenuHost';
 
 afterEach(cleanup);
 

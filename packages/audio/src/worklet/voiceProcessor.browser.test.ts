@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderNoise, renderNote } from '../voiceKernel';
+import { renderNoise, renderNote } from '@weasel-js/audio';
 import { loadVoiceProcessor } from './loadVoiceProcessor';
 import { VOICE_PROCESSOR, type FromProcessor, type ToProcessor } from './protocol';
 

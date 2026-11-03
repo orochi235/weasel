@@ -1,5 +1,5 @@
 import type { AlongArc, RunAlign } from '@weasel-js/ui/components/Along';
-import { BASIC_PALETTE, STANDARD_PALETTE, type SwatchPalette } from '../palettes';
+import { BASIC_PALETTE, STANDARD_PALETTE, type SwatchPalette } from '@weasel-js/ui/components/SwatchStrip';
 
 /** The knobs the swatches-on-an-arc lab reads. */
 export interface SwatchArcConfig {

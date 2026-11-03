@@ -5,9 +5,8 @@
  * screenshot of a scene whose images are opaque.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer, registerTexture, unregisterTexture, type TextureHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
-import { registerTexture, unregisterTexture, type TextureHandle } from './textures/registerTexture';
 
 const W = 48;
 const H = 16;

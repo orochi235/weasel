@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 
 const SIZE = 16;

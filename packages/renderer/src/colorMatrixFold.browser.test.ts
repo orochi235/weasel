@@ -6,7 +6,7 @@
  * pixel, and nothing mapped on the CPU may also be mapped by a uniform.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import { colorFolding } from './draw';
 

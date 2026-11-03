@@ -5,13 +5,11 @@
  * these lines 0.5px tall running across and 2px wide running down.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import type { CommandStroke, Path } from '@weasel-js/core';
+import { type CommandStroke, type Path, createScene, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
 import { ellipsePath, linePath } from '@weasel-js/geom';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
-import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';

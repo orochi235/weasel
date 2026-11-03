@@ -2,12 +2,9 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
+import { ActionsProvider, useActionsRegistry, ActiveToolContextProvider, DepRegistryProvider, useGestureDispatcher } from '@weasel-js/routing/react';
+import { startCarry } from '@weasel-js/routing';
 import type { Action } from '../actions/action';
-import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DepRegistryProvider } from '../actions/depRegistry';
-import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
-import { startCarry } from './carry';
 import s from './carry.browser.test.module.css';
 
 // A carry holds the press captured to its source, which jsdom only records:

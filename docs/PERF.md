@@ -121,19 +121,21 @@ When work merges, retire its entry here in the same change.
   Closes when those runs are recorded: if neither 2 nor 3 processes is faster than 1 by 5% on either
   node, delete it as accepted; otherwise the faster split becomes the default.
 
-- **(P3) [agent] The `browser` project still spends about a second per file outside its tests.** Alone on
-  teitou (2026-10-30, 332 files, six tabs), serving the workspace packages pre-bundled under `vitest run`
-  (`scripts/vitest-browser-prebundle.ts`) took the project from 162.5, 164.6 and 163.2 s to 137.2, 138.5
-  and 140.2 s, run alternately; of the six tabs' worker-seconds, the part outside the tests fell from
-  about 455 to 325, 1.37 s a file to 0.98. The first bundled run, which re-bundled, was no slower
-  (`scripts/bench-browser-project.mjs`, records in `scripts/bench-browser-project.runs.jsonl`). What is
-  left: the tests import their own package by relative path, so 2,716 package modules stay source, each
-  a request per file; moving the tests onto package specifiers, as forge's stories did (2026-10-21), is
-  the next step (inferred, not tried). `--no-isolate`, which would reuse one page, failed every file at
-  about 5 s with its tests skipped (2026-10-20).
-  Closes when the tests import their packages by specifier and the project alone on teitou spends under
-  0.5 s a file outside its tests (`bench-browser-project.mjs`, three alternating runs), or if that move
-  saves under 5% of the project's time, delete it as accepted.
+- **(P3) [agent] The `browser` project still spends 0.6 s per file outside its tests.** The packages are
+  served pre-bundled under `vitest run` (`scripts/vitest-browser-prebundle.ts`), all but the modules some
+  browser test reaches by relative path, which every bundle then imports from source. Moving the tests and
+  their test-only helpers onto package specifiers (2026-11-03) took that set from 2,716 modules to 1,452,
+  and, alone on teitou with 351 files and run alternately, the project from 188.8, 191.8 and 188.3 s to
+  162.1, 160.4 and 159.5 s; the part of the six tabs' worker-seconds outside the tests fell from 1.04–1.09 s
+  a file to 0.61–0.62 (`scripts/bench-browser-project-ab.sh`, records in
+  `scripts/bench-browser-project.runs.jsonl`). What is left is what a test can only reach by path, since
+  no package exports it: `PreviewPane` (387 modules behind it), `EffectEditor` and `DiagramView`, which two
+  tests `vi.mock` by path (207 and 166), diagram's `fitDiagram`, `attrRenderers`, `Prefs/frames` and core's
+  `BareCanvas` (about 100 each). Serving those from the bundles too, under an alias only the optimizer
+  sees, is the next step (inferred, not tried). `--no-isolate`, which would reuse one page, failed every
+  file at about 5 s with its tests skipped (2026-10-20).
+  Closes when the project alone on teitou spends under 0.5 s a file outside its tests (three alternating
+  runs of `bench-browser-project-ab.sh`).
 
 ---
 

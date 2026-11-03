@@ -2,10 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { commands } from 'vitest/browser';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
-import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DepRegistryProvider } from '../actions/depRegistry';
-import { useGestureDispatcher } from './useGestureDispatcher';
+import { ActionsProvider, useActionsRegistry, ActiveToolContextProvider, DepRegistryProvider, useGestureDispatcher } from '@weasel-js/routing/react';
 
 // A real long task between two real clicks: the second click happens on time,
 // and the page only handles it once the task ends.

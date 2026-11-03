@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { fraction, percent, tag, unit } from '@weasel-js/quantity';
 import { afterEach, expect, it } from 'vitest';
-import { QuantityText } from './QuantityText';
+import { QuantityText } from '@weasel-js/ui/components/QuantityText';
 
 // What a part is drawn in is the cascade's, and whether the spoken copy takes room is layout.
 

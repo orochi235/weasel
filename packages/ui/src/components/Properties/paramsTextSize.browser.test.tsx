@@ -4,14 +4,12 @@ import { cleanup } from '@testing-library/react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import { PREF_KINDS, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { DetailList, DetailRow } from '../DetailList';
-import { PrefsForm } from '../Prefs/PrefsForm';
-import { SelectionPanel } from '../SelectionPanel';
-import { PropertyField } from './PropertyField';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
+import { PropertyField, PropertyList, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { PropertyFieldKind } from './fieldTypes';
 import type { PropertyRowLayout } from './PropertyRow';
-import { PropertyList } from './PropertyList';
-import { PropertyPanel } from './PropertyPanel';
 import { renderWithIcons } from '../../testing/withIcons';
 import { EVERY_KIND, LEAVES_BY_KIND, mismatches, notAt, rowTexts } from '../../testing/paramsText';
 

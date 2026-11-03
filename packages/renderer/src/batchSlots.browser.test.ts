@@ -6,7 +6,7 @@
  * vertices and never a texel.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import { BATCH_TEXTURE_SLOTS } from './shaders/batchFill';
 

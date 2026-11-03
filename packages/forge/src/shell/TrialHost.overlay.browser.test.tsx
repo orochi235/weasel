@@ -3,7 +3,7 @@ import { useAssignedPortalContainer } from '@weasel-js/ui/portal-host';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { createPortal } from 'react-dom';
 import { afterEach, expect, test } from 'vitest';
-import { TrialHost } from './TrialHost';
+import { TrialHost } from '@weasel-js/forge/shell';
 
 afterEach(cleanup);
 

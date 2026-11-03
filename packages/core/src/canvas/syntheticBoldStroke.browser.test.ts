@@ -8,9 +8,8 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { registerFont, registerFontOutlines, loadFontOutlines, outlineStatus } from '@weasel-js/font';
-import { createScene } from 'core/scene/scene';
+import { createScene, createRasterSession, type RasterImage } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
-import { createRasterSession, type RasterImage } from './renderSceneToPixels';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';

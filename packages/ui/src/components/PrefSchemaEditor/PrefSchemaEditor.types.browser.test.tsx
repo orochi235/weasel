@@ -4,7 +4,7 @@ import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether the entry's rows fit the attributes pane is layout, which jsdom does not do.

@@ -3,13 +3,17 @@ import 'windease/styles.css';
 import '../styles.less';
 import './presentation.browser.test.less';
 import { act, cleanup } from '@testing-library/react';
+import {
+  Lab,
+  LabContext,
+  type LabContextValue,
+  type Presentation,
+  usePresentation,
+} from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { Lab } from './Lab';
-import { LabContext, type LabContextValue } from './LabContext';
-import { type Presentation, usePresentation } from './presentation';
 
 // What presenting hides and what it fills is layout, and what it hands the page
 // is a computed color-scheme: a browser's to answer.

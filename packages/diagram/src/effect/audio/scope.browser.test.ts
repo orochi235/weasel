@@ -1,6 +1,6 @@
 import { createAnalyserTap } from '@weasel-js/audio';
 import { describe, expect, it } from 'vitest';
-import { drawScope, drawSpectrum } from './scope';
+import { drawScope, drawSpectrum } from '@weasel-js/diagram/effect-audio';
 
 const SIZE = { width: 48, height: 24 };
 const RATE = 48000;

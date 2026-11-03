@@ -1,11 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, screen } from '@testing-library/react';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlMatrix, type ControlMatrixColumn } from '@weasel-js/labkit/controls';
 import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, expect, test } from 'vitest';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlMatrix, type ControlMatrixColumn } from './ControlMatrix';
 
 // Where the lifted column headers sit against the panel title is a layout question.
 

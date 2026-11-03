@@ -2,8 +2,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { DevtoolsPanel } from './DevtoolsPanel';
-import { createInPagePanelTransport } from './inPageTransport';
+import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
 import { TestCanvas } from './testing/mountCanvas';
 import s from './DevtoolsPanel.browser.module.css';
 

@@ -2,7 +2,7 @@ import './shell.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { captureHost, storyBox } from './storyMarks';
-import { TrialHost } from './TrialHost';
+import { TrialHost } from '@weasel-js/forge/shell';
 
 afterEach(cleanup);
 

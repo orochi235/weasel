@@ -1,8 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { LabShell } from '@weasel-js/labkit';
 import { afterEach, expect, test } from 'vitest';
-import { LabShell } from './LabShell';
 
 // The menu sits under the shell's title, so what it inherits from the title is
 // cascade, which only a real browser computes.

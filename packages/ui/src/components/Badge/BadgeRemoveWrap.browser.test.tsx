@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
-import { Badge } from './Badge';
+import { Badge } from '@weasel-js/ui/components/Badge';
 
 // Where a line breaks is layout, which jsdom does not do.
 

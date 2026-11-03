@@ -5,8 +5,7 @@ import { useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefDrop, PrefDropMark } from './drop';
-import { prefDropTargetAt } from './dropTarget';
-import { PrefsForm } from './PrefsForm';
+import { prefDropTargetAt, PrefsForm } from '@weasel-js/ui/components/Prefs';
 
 // Where a drag lands is read off the form's layout, and drawing the answer moves that layout. Only real layout
 // shows whether the two agree.

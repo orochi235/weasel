@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
-import { WeaselRenderer } from '../WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 
 const W = 48;

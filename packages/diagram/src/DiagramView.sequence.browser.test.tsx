@@ -7,11 +7,8 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerCanvasFont } from '@weasel-js/font';
-import { DiagramView, type DiagramViewProps } from './DiagramView';
-import { findStep } from './sequence/edit';
+import { DiagramView, type DiagramViewProps, findStep, sequenceLayout, sequenceSpecs } from '@weasel-js/diagram';
 import { SEQ_FIXTURE as data } from './sequence/fixture';
-import { sequenceLayout } from './sequence/layout';
-import { sequenceSpecs } from './sequence/specs';
 import type { SequenceEdit } from './sequence/commit';
 
 registerCanvasFont('sans-serif');

@@ -2,9 +2,9 @@ import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import './Lab.density.browser.test.less';
 import { cleanup, render } from '@testing-library/react';
+import { CanvasStack } from '@weasel-js/labkit/canvas';
+import { useSurfaceTile } from '@weasel-js/labkit/surface';
 import { afterEach, expect, test } from 'vitest';
-import { CanvasStack } from '../canvas/CanvasStack';
-import { useSurfaceTile } from '../surface/useSurfaceTile';
 import { LabSurface } from './LabSurface';
 
 // A window moved to a display of another density: the device pixel ratio

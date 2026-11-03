@@ -1,4 +1,4 @@
-import { createAudioEngine, type AudioEngine } from '../createAudioEngine';
+import { createAudioEngine, type AudioEngine } from '@weasel-js/audio';
 import type { AudioEngineOptions } from '../types';
 
 /** A centered voice leaves a stereo panner at this gain per channel. */

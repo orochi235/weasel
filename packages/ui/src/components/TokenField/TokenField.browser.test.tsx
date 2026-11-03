@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
-import { TokenField } from './TokenField';
+import { TokenField } from '@weasel-js/ui/components/TokenField';
 import s from './TokenField.browser.test.module.css';
 
 const WORDS = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf'];

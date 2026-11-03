@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { PropertyField } from './PropertyField';
+import { PropertyField } from '@weasel-js/ui/components/Properties';
 
 // Opacity multiplies down the tree, so a control dimmed inside something already dimmed reads fainter than the
 // rest of its row. Only a browser resolves which rule wins.

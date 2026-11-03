@@ -14,11 +14,9 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
-import { WeaselRenderer } from '../WeaselRenderer';
+import { WeaselRenderer, registerProgram, blur, vignette } from '@weasel-js/renderer';
 import type { DrawCommand } from '../DrawCommand';
 import type { RetainedStats } from '../rendererTypes';
-import { registerProgram } from '../shaders/registerProgram';
-import { blur, vignette } from '../effects/builtins';
 
 const W = 64;
 const H = 48;

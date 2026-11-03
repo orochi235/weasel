@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { Slider } from './Slider';
+import { Slider } from '@weasel-js/ui/components/Slider';
 
 afterEach(cleanup);
 

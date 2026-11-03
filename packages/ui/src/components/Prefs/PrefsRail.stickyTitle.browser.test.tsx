@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 
 // Where a sticky heading rests, and where a scroll to a row under it ends, are the browser's to say.
 

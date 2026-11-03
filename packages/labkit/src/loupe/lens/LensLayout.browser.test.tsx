@@ -4,15 +4,13 @@ import '../../styles.less';
 import './LensOverlay.browser.test.less';
 import { cleanup, waitFor } from '@testing-library/react';
 import { sceneToAdapter } from '@weasel-js/core';
+import { defineInstrument, Lab } from '@weasel-js/labkit';
+import { addLensOps, createLensScene, LensOverlay, setLensOps } from '@weasel-js/labkit/loupe';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { defineInstrument } from '../../instrument/defineInstrument';
-import { Lab } from '../../lab/Lab';
-import { LensOverlay } from './LensOverlay';
 import { HANDLE_SLOP } from './lensHitBoxes';
-import { addLensOps, createLensScene, setLensOps } from './lensScene';
 import type { LensSource } from './lensSource';
 import type { LensScene } from './lensTypes';
 

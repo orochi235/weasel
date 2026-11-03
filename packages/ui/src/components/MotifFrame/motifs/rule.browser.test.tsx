@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { lineContrast } from '../../../testing/paintedContrast';
-import { MotifFrame } from '../MotifFrame';
+import { MotifFrame } from '@weasel-js/ui/components/MotifFrame';
 
 // The rules either side of the title are drawn in one token and the frame's fill in another, and only a
 // browser resolves the two to colors that can be told apart or cannot.

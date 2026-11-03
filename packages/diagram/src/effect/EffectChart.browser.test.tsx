@@ -4,12 +4,9 @@ import { cleanup, render, waitFor } from '@testing-library/react';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { fitDiagram } from '../DiagramView';
-import { isDiagramBody } from '../bodyNode';
-import { diagramScene } from '../fromData';
-import { portsOf } from '../ports';
-import { EffectChart } from './EffectChart';
-import { nodeGraph } from './nodeGraph';
-import { rack } from './rack';
+import { isDiagramBody, diagramScene } from '@weasel-js/diagram';
+import { portsOf } from '@weasel-js/diagram/layout';
+import { EffectChart, nodeGraph, rack } from '@weasel-js/diagram/effect';
 import type { EffectPipeline } from './types';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 

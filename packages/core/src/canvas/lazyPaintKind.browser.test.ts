@@ -6,13 +6,10 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Paint } from '@weasel-js/paint';
-import { createScene } from 'core/scene/scene';
-import {
-  _resetPaintKindsForTests, getPaintKind, paintKindRegistry,
-} from 'core/paint/paintKinds';
+import { createScene, getPaintKind, paintKindRegistry, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
+import { _resetPaintKindsForTests } from '@weasel-js/core/test-seams';
 import { warmPaintKinds } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
-import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 /** One straight-edged patch over the 64×48 output, green on the left, blue on

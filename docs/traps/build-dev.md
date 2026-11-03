@@ -75,7 +75,9 @@ the bundle and served from source, so it loads once. A stack trace into a bundle
 `node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves every package file by file again.
 The `browser` vitest project bundles them the same way under `vitest run`, all but what its test files
 reach by path (`scripts/vitest-browser-prebundle.ts`); watch mode and `WEASEL_DEV_SOURCE=1` serve them
-from source.
+from source. So a browser test imports its own package by specifier wherever the package exports what it
+needs: one relative import of a component serves it and everything it imports from source to every test
+file whose bundle reaches it, and passes.
 
 **`check:needs -- --write` redraws the README package table from every package's `dist/`.** Run in a
 tree with no fresh build, it strips real badges from core, routing and react; its own error suggests

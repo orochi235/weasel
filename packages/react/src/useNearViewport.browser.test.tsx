@@ -2,7 +2,7 @@ import { cleanup, render } from '@testing-library/react';
 import { type CSSProperties, useRef } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { useNearViewport } from './useNearViewport';
+import { useNearViewport } from '@weasel-js/react';
 
 // Clipping and scroll position are layout, which jsdom does not compute, and its IntersectionObserver is a stub.
 

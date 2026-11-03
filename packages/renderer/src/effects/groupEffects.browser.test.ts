@@ -5,10 +5,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
-import { WeaselRenderer } from '../WeaselRenderer';
-import { registerEffect } from './types';
-import { registerTexture } from '../textures/registerTexture';
-import { blur } from './builtins';
+import { WeaselRenderer, registerEffect, registerTexture, blur } from '@weasel-js/renderer';
 import type { DrawCommand } from '../DrawCommand';
 
 const SIZE = 8;

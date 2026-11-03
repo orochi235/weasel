@@ -1,11 +1,11 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
-import { InlineRange } from './InlineRange/InlineRange';
-import { PropertyField } from './Properties/PropertyField';
-import { RangeSlider } from './RangeSlider/RangeSlider';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { PropertyField } from '@weasel-js/ui/components/Properties';
+import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
+import { Slider } from '@weasel-js/ui/components/Slider';
 import rs from './RangeSlider/RangeSlider.module.css';
-import { Slider } from './Slider/Slider';
 
 // A slop is invisible hit area, so the only way to see one is to ask real
 // layout what a point lands on.

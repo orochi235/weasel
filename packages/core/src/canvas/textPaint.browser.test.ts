@@ -11,15 +11,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
 import type { Fill, Paint } from '@weasel-js/paint';
-import { createScene } from 'core/scene/scene';
+import { createScene, registerPaintKind, asPaint, type PaintKindEntry, renderSceneToPixels, type RasterImage, defaultDrawOne } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
 import { resolveFillPattern } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';
 import 'core/paint/registerMesh';
-import { registerPaintKind } from 'core/paint/paintKinds';
-import { asPaint, type PaintKindEntry } from 'core/paint/paintKindEntry';
-import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
-import { defaultDrawOne } from './defaultDrawOne';
 import { registerEffect } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/renderer';

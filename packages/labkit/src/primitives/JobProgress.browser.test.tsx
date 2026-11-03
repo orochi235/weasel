@@ -1,9 +1,9 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render } from '@testing-library/react';
+import { JobProgress } from '@weasel-js/labkit/primitives';
 import { afterEach, expect, test } from 'vitest';
 import type { JobHandle } from '../job/types';
-import { JobProgress } from './JobProgress';
 
 afterEach(cleanup);
 

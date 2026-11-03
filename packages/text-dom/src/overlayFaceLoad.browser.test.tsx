@@ -10,7 +10,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerFont, registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
 import type { TextStyle } from '@weasel-js/text';
-import { useTextEdit } from './useTextEdit';
+import { useTextEdit } from '@weasel-js/text-dom';
 import type { TextEditScreenPose } from './textEditTypes';
 import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';

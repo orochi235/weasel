@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { Dialog } from './Dialog';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // The overlay portals into the nearest themed ancestor, found from an anchor

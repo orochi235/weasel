@@ -2,8 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { painted } from '../testing/paintedContrast';
-import { Button } from './Button/Button';
-import { ToggleBar } from './ToggleBar/ToggleBar';
+import { Button } from '@weasel-js/ui/components/Button';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 
 // --wzl-gloss fades the glass on a boxed button and a selected segment through
 // calc() and color-mix(), neither of which jsdom resolves.

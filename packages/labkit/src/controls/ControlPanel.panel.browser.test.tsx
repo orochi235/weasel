@@ -1,10 +1,9 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, screen } from '@testing-library/react';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlPanel } from '@weasel-js/labkit/controls';
 import { afterEach, expect, test } from 'vitest';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlPanel } from './ControlPanel';
 
 // A field's frame and an `as: 'panel'` box both default to the sunken surface, and only a browser resolves
 // the custom properties that say which color each one ends up.

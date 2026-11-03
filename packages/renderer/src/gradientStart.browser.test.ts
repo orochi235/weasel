@@ -8,7 +8,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
-import { WeaselRenderer } from './WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 

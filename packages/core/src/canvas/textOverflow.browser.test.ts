@@ -7,9 +7,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/renderer';
-import { createScene } from 'core/scene/scene';
+import { createScene, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
-import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';

@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { PropertyField } from './PropertyField';
+import { PropertyField } from '@weasel-js/ui/components/Properties';
 
 // Which element Tab lands on, and whether a focus came from the keyboard, are the browser's to say:
 // jsdom has no tab order and reads every focus as one a key made.

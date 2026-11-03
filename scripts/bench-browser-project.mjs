@@ -3,6 +3,9 @@
 // and one line of its numbers go to --out as the run finishes.
 //
 //   node scripts/bench-browser-project.mjs --node teitou --variants source,bundled --reps 3 --out .bench/browser-project
+//
+// `--files` passes vitest file filters, to time one package's tests; `--label` names what the tree held, for a
+// comparison between two trees rather than two variants (the caller swaps the tree between runs).
 import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus, hostname } from 'node:os';
@@ -16,12 +19,16 @@ const { values } = parseArgs({
     reps: { type: 'string', default: '1' },
     node: { type: 'string', default: hostname().split('.')[0] },
     out: { type: 'string', default: '.bench/browser-project' },
+    files: { type: 'string', default: '' },
+    label: { type: 'string', default: '' },
   },
 });
 const variants = values.variants.split(',');
 const reps = Number(values.reps);
 const cores = cpus().length;
 const node = values.node;
+const filters = values.files ? values.files.split(',') : [];
+const label = values.label || undefined;
 mkdirSync(values.out, { recursive: true });
 
 /** vitest's summary, `Duration 6.82s (worker 50%, import 32%, tests 16%, setup 3%)`: its wall time and each phase's share. */
@@ -60,7 +67,7 @@ const trial = (variant, id) =>
     const log = join(values.out, `${id}.log`);
     const report = join(values.out, `${id}.json`);
     const env = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1', WEASEL_DEV_SOURCE: variant === 'source' ? '1' : '0' };
-    const args = ['node_modules/vitest/vitest.mjs', 'run', '--project=browser', '--reporter=default', '--reporter=json', `--outputFile.json=${report}`];
+    const args = ['node_modules/vitest/vitest.mjs', 'run', '--project=browser', '--reporter=default', '--reporter=json', `--outputFile.json=${report}`, ...filters];
     const child = spawn(process.execPath, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
     let text = '';
     const take = (d) => {
@@ -85,15 +92,15 @@ let n = 0;
 for (let rep = 1; rep <= reps; rep++) {
   for (const variant of variants) {
     n++;
-    const id = `${node}-${variant}-rep${rep}`;
+    const id = `${node}-${label ? `${label}-` : ''}${variant}-rep${rep}`;
     const before = await sampleLoad();
     const r = await trial(variant, id);
     // The project's maxWorkers, so workerSeconds is what the run held: tabs × wall.
-    const row = { node, cores, maxWorkers: 6, workerSeconds: 6 * r.wallSeconds, variant, rep, at: new Date().toISOString(), loadBefore: before, ...r };
+    const row = { node, cores, maxWorkers: 6, workerSeconds: 6 * r.wallSeconds, variant, ...(label && { label }), ...(filters.length && { filters }), rep, at: new Date().toISOString(), loadBefore: before, ...r };
     appendFileSync(join(values.out, 'runs.jsonl'), JSON.stringify(row) + '\n');
     console.log(
       `${String(n).padStart(2)}/${total}  ${node}  ${variant.padEnd(7)}  rep ${rep}  ` +
-        `${r.wallSeconds.toFixed(1).padStart(6)}s wall  ${(6 * r.wallSeconds).toFixed(1).padStart(6)} worker-s  ` +
+        `${label ? `${label.padEnd(6)}  ` : ""}${r.wallSeconds.toFixed(1).padStart(6)}s wall  ${(6 * r.wallSeconds).toFixed(1).padStart(6)} worker-s  ` +
         `${(r.testSeconds ?? 0).toFixed(1).padStart(6)}s in tests  failed ${String(r.failed ?? '?').padStart(3)}  ` +
         `busy before ${before.busy.toFixed(1).padStart(4)}  exit ${r.code}`,
     );

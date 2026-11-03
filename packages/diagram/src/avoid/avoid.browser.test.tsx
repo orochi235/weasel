@@ -8,10 +8,8 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { createScene, SceneCanvas, useSelection, type RectPose, type Scene } from '@weasel-js/core';
-import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
+import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, useAvoidRouting } from '@weasel-js/diagram';
 import type { DiagramEdge } from '../edgeTrait';
-import { registerDiagramShape } from '../shape';
-import { useAvoidRouting } from './useAvoidRouting';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 type AvoidScene = Scene<unknown, 'main', RectPose>;

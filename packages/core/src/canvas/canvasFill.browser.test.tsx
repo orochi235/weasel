@@ -8,12 +8,8 @@ import { createElement, createRef, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { Canvas } from './testing/BareCanvas';
-import { DrawCanvas } from './DrawCanvas';
-import { SceneViewCanvas } from './SceneViewCanvas';
-import { SceneCanvas } from './SceneCanvas';
+import { DrawCanvas, SceneViewCanvas, SceneCanvas, createScene, defaultDrawOne } from '@weasel-js/core';
 import type { CanvasExtensionApi } from './canvasExtension';
-import { createScene } from '../core/scene/scene';
-import { defaultDrawOne } from './defaultDrawOne';
 
 const DPR = 2;
 

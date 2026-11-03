@@ -4,8 +4,8 @@ import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { OverlayPortalProvider } from '../../overlays/portalHost';
-import { PrefsDialog } from './PrefsDialog';
+import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
+import { PrefsDialog } from '@weasel-js/ui/components/Prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);

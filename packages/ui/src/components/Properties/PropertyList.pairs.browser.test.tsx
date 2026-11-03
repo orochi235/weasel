@@ -3,8 +3,7 @@ import '@weasel-js/theme/fonts.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, beforeAll, expect, test } from 'vitest';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
+import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
 
 // Where the two rows of a pair put their labels, and how wide a row is, are layout questions.
 

@@ -3,7 +3,7 @@ import { act, cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { grip, pointer, pointIn } from './pointerDrag.fixture';
 import { renderWithIcons } from '../../testing/withIcons';
 

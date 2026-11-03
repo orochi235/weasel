@@ -3,8 +3,7 @@ import { createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';
-import { DiagramView, type DiagramViewApi, type DiagramViewProps, type ReorderChange } from './DiagramView';
-import { diagramScene, type DiagramData } from './fromData';
+import { DiagramView, type DiagramViewApi, type DiagramViewProps, type ReorderChange, diagramScene, type DiagramData } from '@weasel-js/diagram';
 
 const DATA: DiagramData = {
   nodes: [

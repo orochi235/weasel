@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { StatusBar, StatusBarItem, StatusBarSpacer } from './StatusBar';
+import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
 
 // Borders and overflow are computed style, which jsdom's class proxy cannot show.
 

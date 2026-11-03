@@ -1,8 +1,8 @@
 import '../styles.less';
 import './useViewPlacement.browser.test.less';
 import { cleanup, render, renderHook } from '@testing-library/react';
+import { fitStage, Stage } from '@weasel-js/labkit/canvas';
 import { afterEach, expect, test, vi } from 'vitest';
-import { fitStage, Stage } from '../canvas/Stage';
 import type { Instrument } from '../instrument/types';
 import { useViewPlacement } from './useViewPlacement';
 

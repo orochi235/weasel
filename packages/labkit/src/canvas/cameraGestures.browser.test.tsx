@@ -1,9 +1,8 @@
 import '../styles.less';
 import { cleanup, render } from '@testing-library/react';
+import { CanvasStack, Stage } from '@weasel-js/labkit/canvas';
 import { afterEach, expect, test } from 'vitest';
-import { CanvasStack } from './CanvasStack';
 import type { CameraGestures } from './cameraGestures';
-import { Stage } from './Stage';
 
 // `touch-action` is what decides whether a finger scrolls the page, and only a
 // browser resolves it from the stylesheet.

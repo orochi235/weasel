@@ -2,8 +2,7 @@ import { act } from '@testing-library/react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';
-import { DiagramView } from './DiagramView';
-import { diagramScene, type DiagramData } from './fromData';
+import { DiagramView, diagramScene, type DiagramData } from '@weasel-js/diagram';
 
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],

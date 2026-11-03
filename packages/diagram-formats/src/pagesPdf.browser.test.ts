@@ -13,7 +13,7 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../assets/fonts/inter/inter.ttf?url';
-import { exportPagesPdf } from './pagesPdf';
+import { exportPagesPdf } from '@weasel-js/diagram-formats';
 import { pageRasterizer } from './pdfRaster';
 import { pageScene } from './testing/pageScene';
 

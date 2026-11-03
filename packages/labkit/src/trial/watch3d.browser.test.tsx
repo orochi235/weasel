@@ -4,13 +4,13 @@ import '../styles.less';
 import '../lab/presentation.browser.test.less';
 import { cleanup, waitFor } from '@testing-library/react';
 import { luminanceContrast, relativeLuminance } from '@weasel-js/core';
+import { Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect, useRef } from 'react';
 import { WebGLRenderer } from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import type { Instrument, OrbitCapability } from '../instrument/types';
-import { Lab } from '../lab/Lab';
 import type { LabMode } from '../state/types';
 
 // The jsdom suite fires three's devtools announcement and fakes a WebGL context; this one builds real

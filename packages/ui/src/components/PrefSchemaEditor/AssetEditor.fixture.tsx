@@ -1,10 +1,9 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
-import { AssetEditor, type AssetEditorProps } from './AssetEditor';
+import { AssetEditor, type AssetEditorProps, workspaceCodec } from '@weasel-js/ui/components/PrefSchemaEditor';
 import type { Workspace } from './workspace';
 import { CODE, pointer, SETTINGS, WORKSPACE } from './workspace.fixtures';
 import { keyedRow } from './treeRows.fixture';
-import { workspaceCodec } from './workspaceCodec';
 
 const codec = workspaceCodec([]);
 

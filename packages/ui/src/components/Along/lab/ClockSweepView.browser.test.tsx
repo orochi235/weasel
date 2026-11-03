@@ -4,7 +4,7 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { arcShape, trackRun, type Point, type TrackRun } from '@weasel-js/geom';
-import { arcInBox } from '../arcInBox';
+import { arcInBox } from '@weasel-js/ui/components/Along';
 import { rowRun } from '../rowRun';
 import { renderWithIcons } from '../../../testing/withIcons';
 import { ClockSweepView, sweepArc, type ClockSweepConfig } from './ClockSweepView';

@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { PageTabs } from './PageTabs';
+import { PageTabs } from '@weasel-js/ui/components/PageTabs';
 
 afterEach(cleanup);
 

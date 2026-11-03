@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { render, type RenderOptions } from '@testing-library/react';
 import { IconRegistryProvider } from '@weasel-js/core';
 import type { IconTable } from '@weasel-js/icons';
-import { kitIcons } from '../kitIcons';
+import { kitIcons } from '@weasel-js/ui/kit-icons';
 
 type Wrapper = (props: { children: ReactNode }) => ReactElement;
 

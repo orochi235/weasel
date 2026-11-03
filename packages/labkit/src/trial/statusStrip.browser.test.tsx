@@ -2,10 +2,10 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import { cleanup } from '@testing-library/react';
+import { Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { Lab } from '../lab/Lab';
 
 // Whether the strip's readouts take their face's metrics is line layout: a browser's to answer.
 // Until the kit's faces arrive, the readouts draw in whatever the stack falls back to.

@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { SwatchGrid } from './SwatchGrid';
+import { SwatchGrid } from '@weasel-js/ui/components/SwatchGrid';
 
 afterEach(cleanup);
 

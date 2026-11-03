@@ -11,7 +11,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerCanvasFont } from '@weasel-js/font';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
-import { useTextEdit } from './useTextEdit';
+import { useTextEdit } from '@weasel-js/text-dom';
 import type { TextEditCommit, TextEditScreenPose, UseTextEditReturn } from './textEditTypes';
 import { overlayReady } from './testing/overlayReady';
 

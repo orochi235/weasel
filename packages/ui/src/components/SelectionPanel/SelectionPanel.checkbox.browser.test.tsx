@@ -5,7 +5,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { SelectionPanel } from './SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 
 // A row's controls share its width by a rule that ties with the checkbox's own on specificity, so which
 // stylesheet loaded last decided whether a checkbox was a box or a bar across the row.

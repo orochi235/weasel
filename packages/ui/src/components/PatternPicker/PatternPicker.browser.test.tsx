@@ -6,8 +6,8 @@ import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { decomposePatternTransform } from '@weasel-js/core';
 import type { PatternPaint as PatternFill } from '@weasel-js/core';
-import { IDLE_SETTLE_MS } from '../../useIdleSettle';
-import { PatternPicker, seedPattern } from './PatternPicker';
+import { IDLE_SETTLE_MS } from '@weasel-js/ui';
+import { PatternPicker, seedPattern } from '@weasel-js/ui/components/PatternPicker';
 
 afterEach(cleanup);
 

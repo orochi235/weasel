@@ -5,8 +5,8 @@ import { page } from 'vitest/browser';
 import { IconRegistryProvider } from '@weasel-js/core';
 import type { IconTable } from '@weasel-js/icons';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { kitIcons } from '../../kitIcons';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 
 // Whether the grid scrolls in its own pane, and whether a glyph occupies any space, is the browser's to say.
 

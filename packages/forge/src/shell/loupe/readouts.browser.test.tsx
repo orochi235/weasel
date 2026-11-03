@@ -7,9 +7,9 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import type { FrameSetup } from '../../frame/FrameController';
-import { meta, story } from '../../story/define';
+import { meta, story } from '@weasel-js/forge';
+import { Workshop } from '@weasel-js/forge/shell';
 import type { IndexEntry } from '../../story/types';
-import { Workshop } from '../Workshop';
 
 // A real lens over a real story, with the production stylesheets: whether a readout's hit test reaches into a
 // compared copy that the lens layer keeps from the pointer is a browser's question.

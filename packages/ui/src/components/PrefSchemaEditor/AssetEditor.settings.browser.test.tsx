@@ -4,11 +4,10 @@ import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import { isPrefLeaf, type PrefAlias, type PrefGroup } from '@weasel-js/prefs';
-import { AssetEditor } from './AssetEditor';
+import { AssetEditor, workspaceCodec } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { DEMO_WORKSPACE } from './AssetEditor.demo';
 import { drag } from './pointerDrag.fixture';
 import type { Workspace } from './workspace';
-import { workspaceCodec } from './workspaceCodec';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether a row dragged out of the settings tree lands in the layout is read off real boxes; jsdom lays nothing out.

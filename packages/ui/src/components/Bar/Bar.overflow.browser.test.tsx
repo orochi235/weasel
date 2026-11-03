@@ -4,7 +4,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
-import { Bar } from './Bar';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Which cells a line has room for is layout, and jsdom has none.

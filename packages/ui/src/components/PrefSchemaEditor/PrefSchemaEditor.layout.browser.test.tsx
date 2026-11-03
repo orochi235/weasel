@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Which panes share an edge is the grid's doing, and jsdom lays nothing out.

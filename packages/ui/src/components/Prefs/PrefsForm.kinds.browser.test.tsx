@@ -3,7 +3,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether an entry's control keeps a usable width beside its remove button, and whether an

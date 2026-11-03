@@ -4,7 +4,7 @@ import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEn
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { SelectionPanel } from './SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 
 // Whether a marked row shows its mark is the stylesheet's to answer, and this file loads only what the panel imports.
 
