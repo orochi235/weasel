@@ -651,6 +651,13 @@ only story runner in the repo.
   before a face or a layout settles is the first thing to look for.
   Closes when it fails again, which makes it a fix, or on 2026-11-30 with no second sighting, delete it.
 
+- **(P3) [waiting] chart's audio browser test timed out clicking a menu row in one full fleet run.** "plays an
+  oscillator into the output, draws it as a scope or a spectrum, and closes its engine when the mode is left while
+  it plays" (`apps/chart/src/pipeline/audio.browser.test.tsx`) hit `locator.click: Timeout 2435ms exceeded` on the
+  `Chart` menuitemcheckbox, resolved, visible and stable, in a full run at e8ab0d680 (2026-11-03, a batch touching
+  the renderer's retained tiles but no chart code), then passed 3 of 3 alone on teitou at the same tree. Seen once.
+  Closes when it fails again, which makes it a fix, or on 2026-12-03 with no second sighting, delete it.
+
 - **(P3) [waiting] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case failed
   intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
   for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
