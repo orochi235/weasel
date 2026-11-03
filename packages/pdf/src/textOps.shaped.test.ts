@@ -112,10 +112,11 @@ function popplerText(bytes: Uint8Array): string {
   }
 }
 
-/** Text both readers read back as written. A mark on a word's last letter does not yet (docs/TODO.md). */
+/** Text both readers read back as written: a mark on a word's last letter, after a space and before one, among it. */
 const READ_BACK = [
   ['किक', 'pdf-shaped-deva'], ['ककि कि', 'pdf-shaped-deva'], ['क्ष कितर्क', 'pdf-shaped-deva'],
   ['بَب', 'pdf-shaped-ar'], ['بت بيت', 'pdf-shaped-ar'], ['السلام مسلم', 'pdf-shaped-ar'],
+  ['بَبَ', 'pdf-shaped-ar'], ['بَبَ بت', 'pdf-shaped-ar'], ['بت بَبَ', 'pdf-shaped-ar'],
 ] as const;
 
 // pdf.js reads `/ToUnicode` and ignores `/ActualText`.

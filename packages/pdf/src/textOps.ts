@@ -51,9 +51,9 @@ function segmentGlyph(font: EmbeddedFont, g: PlacedGlyph): SegmentGlyph | null {
   const claim = widest(font, glyphs);
   for (const [i, { gid, x, y, advance }] of glyphs.entries()) {
     const reads = i === claim ? text : '';
-    const code = font.useGlyph(gid, reads, advance === 0 ? markWidth(reads, x) : undefined);
+    const code = font.useGlyph(gid, reads, advance === 0 ? markWidth(reads, x, g.shaped.rtl) : undefined);
     if (code === null) return null;
-    placed.push({ code, x, y });
+    placed.push({ code, gid, x, y });
   }
   return placed.length === 1 ? { g, glyphs: placed } : { g, glyphs: placed, actual: text };
 }
@@ -62,9 +62,12 @@ function segmentGlyph(font: EmbeddedFont, g: PlacedGlyph): SegmentGlyph | null {
  * How far a glyph the shaper gave no advance moves the pen, in 1000/em: nowhere when it reads
  * as nothing, and otherwise to its cluster's pen when it sits before it, so a reader that boxes
  * each character by its advance (poppler) finds no gap between a mark and the base after it.
+ * A right-to-left mark is drawn before its base, which starts at its pen; it moves back to a
+ * hair short of that, wherever it sits, since poppler orders a word's pieces by where they start.
  */
-function markWidth(reads: string, x: number): number {
-  return reads === '' ? 0 : Math.max(0, Math.round(-x * 1000));
+function markWidth(reads: string, x: number, rtl: boolean): number {
+  if (reads === '') return 0;
+  return rtl ? Math.round(-x * 1000) - 1 : Math.max(0, Math.round(-x * 1000));
 }
 
 /**

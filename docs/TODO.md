@@ -336,18 +336,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has ruled between a WebKit DPR 1 bound in
   `overlayAlignment.browser.test.tsx` and a WebKit nudge in text-dom, and the chosen one is in the tree.
 
-- **(P3) [agent] A mark on the last letter of an Arabic word reads back wrong from an exported PDF.**
-  `किक`, `ककि कि`, `क्ष कितर्क`, `بَب`, `بت بيت` and `السلام مسلم` read back as written in pdf.js (6.4)
-  and poppler (26.10) (`textOps.shaped.test.ts`, 2026-10-31). A mark the shaper set over a word's
-  logically last letter does not: `بَبَ` reads `ببَ َ` in poppler, and `بَبَ بت` reads `بَب َ بت` in
-  pdf.js (measured 2026-10-31). poppler starts a new word at a character beginning more than 0.2 em
-  before the end of the word so far, so a fatha drawn at the middle of a wide final letter splits it
-  whichever is drawn first. pdf.js pushes a space for a combining mark that follows a space glyph, then
-  another for the gap the space glyph left, so the fatha drawn first after the space stands alone.
-  Already tried: drawing a right-to-left mark after its base (pdf.js then reverses the pair, `َبب`);
-  folding the mark's text into its base's `/ActualText` (poppler lays a span's characters out left to
-  right, `َبب`). Closes when `بَبَ بت` reads back as written in both readers.
-
 ---
 
 ## Scene, adapters & layout
