@@ -403,6 +403,15 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [maintainer] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
+  (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
+  itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl
+  off macOS) adds or removes the pressed node, and Shift selects from the last node clicked to the pressed one.
+  Two calls are open: where `select.deep` moves (Alt is clone-drag, double-click enters groups), and what a range
+  is in a free 2D scene. collego's answer, which it wires over weasel's picks in its own press handler: every
+  item of the same kind whose center lies in the box the two span (`drawersBetween`). Closes when the select
+  tool's bindings follow the convention and `select.deep` has a new home.
+
 - **(P2) [agent] A number field with a unit `precision` shows that many places.** A prefs number leaf whose unit sets
   `precision: 2` rounds what it shows but drops trailing zeros, so a column of lengths reads 2.21 over 1.5 and its
   decimals don't line up (collego's selection form, 2026-11-02). Closes when the field pads to `precision` while it
