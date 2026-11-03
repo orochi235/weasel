@@ -572,6 +572,16 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P2) [maintainer] Whether index pages' API panel should read typedoc's output instead of forge's own
+  compiler pass** (2026-11-02). The panel (in progress, branch `forge-api-panel`) lists a component's props and
+  its ref handle's methods from forge's TypeScript reader (`packages/forge/src/vite/propTypes.ts`): live in dev,
+  following edits, and available to any project that installs forge. `npm run build:api` already runs typedoc
+  over every package (`typedoc/`), which resolves `{@link}` and `@see`, overloads and inherited members, and
+  could link each entry to the API reference; but its output exists only after a build, and a consumer of forge
+  may not run typedoc at all. Not decided: keep the reader, switch to typedoc, or read typedoc's JSON as a
+  richer source where a build has made one. Closes when the maintainer has ruled: on keep, delete the entry; on
+  either other answer, when the panel reads typedoc's JSON.
+
 - **(P3) [maintainer] Whether forge's vite plugin should wait for writes to settle, as the repo's own dev servers do.**
   On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
   server serving the first text until the next save. Every dev server here (and vitest's watcher) off macOS now waits for
