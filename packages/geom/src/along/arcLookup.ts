@@ -51,22 +51,28 @@ function derivative(c: ArrayLike<number>, dim: number): Float64Array {
 }
 
 function speedAt(der: Float64Array, dim: number, t: number): number {
-  let sum = 0;
-  for (let k = 0; k < dim * 3; k += 3) {
-    const v = (der[k] * t + der[k + 1]) * t + der[k + 2];
-    sum += v * v;
-  }
-  return Math.sqrt(sum);
+  const x = (der[0] * t + der[1]) * t + der[2];
+  const y = (der[3] * t + der[4]) * t + der[5];
+  if (dim === 2) return Math.sqrt(x * x + y * y);
+  const z = (der[6] * t + der[7]) * t + der[8];
+  return Math.sqrt(x * x + y * y + z * z);
 }
 
-/** The length of the second derivative at `t`. */
-function bendAt(der: Float64Array, dim: number, t: number): number {
-  let sum = 0;
-  for (let k = 0; k < dim * 3; k += 3) {
-    const v = 2 * der[k] * t + der[k + 1];
-    sum += v * v;
-  }
-  return Math.sqrt(sum);
+/** The squared length of the second derivative at `t`. */
+function bend2At(der: Float64Array, dim: number, t: number): number {
+  const x = 2 * der[0] * t + der[1];
+  const y = 2 * der[3] * t + der[4];
+  if (dim === 2) return x * x + y * y;
+  const z = 2 * der[6] * t + der[7];
+  return x * x + y * y + z * z;
+}
+
+/** The four-point rule over `a..b`, unrolled: what a query inside a step that allows it costs. */
+function four(der: Float64Array, dim: number, a: number, b: number): number {
+  const mid = (a + b) / 2, half = (b - a) / 2;
+  const o0 = G4_X[3] * half, o1 = G4_X[2] * half;
+  return half * (G4_W[3] * (speedAt(der, dim, mid - o0) + speedAt(der, dim, mid + o0))
+    + G4_W[2] * (speedAt(der, dim, mid - o1) + speedAt(der, dim, mid + o1)));
 }
 
 function gauss(der: Float64Array, dim: number, a: number, b: number, xs: readonly number[], ws: readonly number[]): number {
@@ -105,7 +111,7 @@ export function arcLookup(coords: ArrayLike<number>, dim: 2 | 3): ArcLookup {
 function within(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, k: number, t: number): number {
   const r = lk.rule[k];
   const a = k / STEPS;
-  if (r === FOUR) return gauss(lk.der, dim, a, t, G4_X, G4_W);
+  if (r === FOUR) return four(lk.der, dim, a, t);
   if (r === EIGHT) return gauss(lk.der, dim, a, t, GL_X, GL_W);
   return lengthOver(coords, dim, a, t, lk.size, lk.dips, 1);
 }
@@ -119,21 +125,17 @@ export function lookupLength(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLooku
 
 /**
  * The share of a step at which the cubic Hermite through its ends' lengths and
- * speeds reaches `length`: a first guess close enough that one Newton step on
- * the exact length usually finishes. `rise` is the step's length and `m0`,
- * `m1` its end speeds scaled to the step.
+ * speeds reaches `length`, by one Newton step on it from the linear guess: a
+ * first guess close enough that one Newton step on the exact length usually
+ * finishes. `rise` is the step's length and `m0`, `m1` its end speeds scaled to the step.
  */
 function hermiteShare(rise: number, m0: number, m1: number, length: number): number {
   if (!(rise > 0)) return 0;
   const c2 = 3 * rise - 2 * m0 - m1, c3 = m0 + m1 - 2 * rise;
-  let u = length / rise;
-  for (let i = 0; i < 3; i++) {
-    const d = m0 + u * (2 * c2 + 3 * c3 * u);
-    if (!(d > 0)) break;
-    u -= (u * (m0 + u * (c2 + c3 * u)) - length) / d;
-    u = Math.min(Math.max(u, 0), 1);
-  }
-  return u;
+  const u = length / rise;
+  const d = m0 + u * (2 * c2 + 3 * c3 * u);
+  if (!(d > 0)) return u;
+  return Math.min(Math.max(u - (u * (m0 + u * (c2 + c3 * u)) - length) / d, 0), 1);
 }
 
 /**
@@ -170,7 +172,7 @@ export function lookupT(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, le
     if (err > 0) top = t; else lo = t;
     if (!inside) { t = (lo + top) / 2; continue; }
     // The step leaves an error of half the speed's change times dt², and the speed changes no faster than the bend.
-    if (flat && bendAt(der, dim, t) * dt * dt < SURE * tol) return next;
+    if (flat && bend2At(der, dim, t) * (dt * dt) ** 2 < (SURE * tol) ** 2) return next;
     t = next;
   }
   return t;

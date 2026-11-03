@@ -5,10 +5,14 @@ export function bezierPoint(c: ArrayLike<number>, dim: number, t: number): [numb
   const n = c.length / dim - 1;
   const u = 1 - t;
   const out: [number, number, number] = [0, 0, 0];
-  for (let k = 0; k < dim; k++) {
-    out[k] = n === 1 ? u * c[k] + t * c[dim + k]
-      : n === 2 ? u * u * c[k] + 2 * u * t * c[dim + k] + t * t * c[2 * dim + k]
-        : u * u * u * c[k] + 3 * u * u * t * c[dim + k] + 3 * u * t * t * c[2 * dim + k] + t * t * t * c[3 * dim + k];
+  if (n === 3) {
+    const w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t;
+    for (let k = 0; k < dim; k++) out[k] = w0 * c[k] + w1 * c[dim + k] + w2 * c[2 * dim + k] + w3 * c[3 * dim + k];
+  } else if (n === 2) {
+    const w0 = u * u, w1 = 2 * u * t, w2 = t * t;
+    for (let k = 0; k < dim; k++) out[k] = w0 * c[k] + w1 * c[dim + k] + w2 * c[2 * dim + k];
+  } else {
+    for (let k = 0; k < dim; k++) out[k] = u * c[k] + t * c[dim + k];
   }
   return out;
 }
