@@ -155,11 +155,9 @@ every reader cuts its own flattening at those; a dash phase stays in the reader'
 
 ## Later
 
-- **The 3D line pass**, ported from astv's `pass.glsl.ts`: screen-space expansion under perspective,
-  head capped to a share of the arrow with the shaft narrowing, bisector miters, behind-camera cull.
-  It consumes this cut's length table and `resolveTrim`. astv's trap carries over: set a head back
-  along its own segment's straight direction, never by walking back along the path, or a head longer
-  than its segment runs the perspective divide through zero. Filed in `docs/TODO.md`.
+- **The 3D line pass**: built as kernel3d's `packLines` and `createLinePass` (2026-11-03), from astv's
+  `pass.glsl.ts`. Its trim resolves on this cut's length table through `resolveTrim` when packing,
+  and its head stands back along its own segment's direction on screen; the package README has the rest.
 - **Trimming without rebuilding**: carry arc length on each ribbon vertex and clip in the shader, so
   an animating trim is a uniform. Filed in `docs/PERF.md`.
 
