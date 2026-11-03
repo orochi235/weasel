@@ -4,7 +4,9 @@
 # segmentLength's refining rule) and as synced (after), ABBA rounds on one node. Run from the repo root as
 #   onto do --kind bench --solo --expect 5m --out tests/perf/recorded/arc-lookup-2026-11-03 -- \
 #     bash tests/perf/recorded/arc-lookup-2026-11-03/run.sh
-# The source files are swapped in place and restored on exit; only the results stay.
+# The source files are swapped in place and restored on exit; only the results stay. Results land in a
+# directory named for `hostname -s`; msb-uai answers `Mac`, so its directory was renamed by hand. The
+# studio-at-<sha> directories are earlier rounds, measuring the branch at that commit.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(git rev-parse --show-toplevel)"
