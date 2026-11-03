@@ -3,6 +3,7 @@
   "version": "1.16.1",
   "description": "A WebGL2 renderer for draw commands: batched path fills and strokes, MSDF and outline text, images and sprites, gradients, patterns, registered shader programs, and full-screen effects. No scene graph, no React.",
   "weasel": {
+    "tier": "base",
     "needs": ["webgl2"]
   },
   "license": "MIT",

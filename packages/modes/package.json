@@ -2,6 +2,9 @@
   "name": "@weasel-js/modes",
   "version": "1.16.1",
   "description": "App-level modality primitives: capability tags, mode definitions, mode registry, and decoration layer.",
+  "weasel": {
+    "tier": "base"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

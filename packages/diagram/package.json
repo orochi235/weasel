@@ -2,6 +2,9 @@
   "name": "@weasel-js/diagram",
   "version": "1.16.1",
   "description": "Node-link diagramming for weasel: any scene node becomes a diagram participant, with ports on its perimeter and an optional body builder for flowchart-shaped boxes.",
+  "weasel": {
+    "tier": "plugin"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

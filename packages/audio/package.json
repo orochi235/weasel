@@ -3,6 +3,7 @@
   "version": "1.16.1",
   "description": "Web Audio engine for 2D and 3D scenes: voices, buses, lookahead scheduling, spatialization and analysis. No weasel dependencies.",
   "weasel": {
+    "tier": "other",
     "needs": ["webaudio"]
   },
   "license": "MIT",
