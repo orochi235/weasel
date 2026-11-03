@@ -1,5 +1,24 @@
 # @weasel-js/stroke
 
+## 1.16.1
+
+### Patch Changes
+
+- 6b503a5: Seat a marker head the line stops short of on the shaft's cut end. The head's back now sits on the end of the shortened shaft and points along the shaft there, so a curving shaft enters the back of an arrowhead square instead of poking out its side; the tip lands the head's inset past the cut. The canvas, PDF, and outlined strokes place heads through `markerHeads`, and `markerSites` takes the insets as a new optional argument.
+  
+  SVG export follows the same rule: it cuts the stroked shaft back by each start and end head's inset and moves the head's `<marker>` reference point back to match, so any viewer's `orient="auto"` draws the head the way the canvas does. The element keeps its path as authored in `wzl:d`, and import reads it back, along with the kit marker it references. A mid marker, or an end too short to cut, references an unseated `-tip` def.
+  
+  PDF export strokes an inset-headed shaft natively, cut back by exact arc length, instead of filling a flattened outline, which showed facets on curves when zoomed. The cut is the new `insetPath` from `@weasel-js/stroke`, which the SVG writer uses too.
+  
+  A `TrialSceneCanvas` is now its trial's camera, so the lab header's zoom buttons, readout, and zoom keys drive a scene lab's view.
+- b45f2cc: An animating `Stroke.trim` no longer rebuilds the stroke's ribbon every frame. For an opaque solid stroke too large to batch, the renderer builds the ribbon once, untrimmed, with an arc length on every vertex, and the trim clips it in the shader, so a tween changes a uniform; only the cut ends, a few triangles with their caps, and the marker heads are built per frame. A trim tween on a 1,000-anchor path now makes no ribbon rebuild after its first frame. Other trimmed strokes are still rebuilt trimmed: translucent ones, ones the batch takes, ones built in a stretched view's metric, vertex-colored ones, and any paint but a solid. `@weasel-js/stroke` exports what the clip is built from: `clipRibbon`, which builds the ribbon, and `clipWindow`, which turns a trim into the window of lengths to draw and the geometry for its cut ends.
+- Updated dependencies [3afef45]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [25a1ff7]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/registry@1.16.1
+  - @weasel-js/paint@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

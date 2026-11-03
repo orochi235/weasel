@@ -1,5 +1,37 @@
 # @weasel-js/forge
 
+## 1.16.1
+
+### Patch Changes
+
+- 3b90324: An index page shows its component's API beside the stories: every prop with its type, whether it is required, its default and its JSDoc, and what the component's `ref` takes, a handle's methods and properties listed. Props from React's and TypeScript's own types are counted per declaring type rather than listed. It is read through the project's TypeScript when the story module is served. The plugin takes `api: false` to turn it off, and a custom index page places it with `IndexContext.Api`.
+  
+  The prop reader now reads a typed meta's `component` from the object as written, so `const meta: Meta = { component: Chip }` gives the same controls as an untyped meta.
+- Updated dependencies [071906a]
+- Updated dependencies [214d5d5]
+- Updated dependencies [9533421]
+- Updated dependencies [6b9d157]
+- Updated dependencies [603dbc3]
+- Updated dependencies [07a8387]
+- Updated dependencies [72330bf]
+- Updated dependencies [0fcec39]
+- Updated dependencies [3905b08]
+- Updated dependencies [25a1ff7]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [eebe800]
+- Updated dependencies [017246d]
+  - @weasel-js/core@1.16.1
+  - @weasel-js/ui@1.16.1
+  - @weasel-js/registry@1.16.1
+  - @weasel-js/svg@1.16.1
+  - @weasel-js/labkit@1.16.1
+  - @weasel-js/prefs@1.16.1
+  - @weasel-js/clock@1.16.1
+  - @weasel-js/icons@1.16.1
+  - @weasel-js/react@1.16.1
+  - @weasel-js/theme@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

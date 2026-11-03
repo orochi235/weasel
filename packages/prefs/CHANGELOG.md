@@ -1,5 +1,25 @@
 # @weasel-js/prefs
 
+## 1.16.1
+
+### Patch Changes
+
+- Fixes to the stroke trim that shipped in 1.16.0, and a Trim row for the stroke panel.
+  
+  - Text ignores its stroke's trim everywhere now, not just on canvas. A trimmed text stroke used to cut each glyph's outline in PDF export (whenever a glyph was drawn as an outline), in Outline Stroke, and in Create Outlines. `resolveRuns` (text) now drops the trim, and `ResolvedRun.stroke` is typed without one.
+  - SVG export writes a path stroke aligned `inner` or `outer` as its filled outline, the way it writes a variable-width stroke. It used to write it centered with a warning, so the SVG disagreed with the canvas and the PDF, trimmed or not. The path keeps its stroke at `stroke-width="0"` and records the alignment as `wzl:stroke-align`, which import reads back. Text strokes still warn.
+  - An `object` pref leaf's dotted field (`'nib.angle'`) now reads and writes a field of a field. It used to read nothing and write a flat key named `nib.angle`, so the stroke panel's nib Angle and Thinnest rows never took effect. `prefObjectField` (prefs) reads one, and `prefObjectWithField` sets one, making the objects on the way and dropping one a cleared field leaves empty.
+  - The stroke properties schema (core's default node properties, which draw's sidebar shows) has a Trim row after the markers: Start and End as fractions, and Pace once either is set. An edge held as a length, anchor or subpath disables its slider rather than being rewritten.
+- 017246d: A number leaf whose unit sets `precision` now shows that many places, trailing zeros included: `1.5` at `precision: 2` reads `1.50`, so a column of them lines up. The field, a menu's number row and the unit's `format` (tooltips, dialog summaries) all agree, and a leaf's own `display` still wins. Typing is left alone until the field commits. This changes what existing precision units show: the default node properties' rotation, at `precision: 1`, reads `45.0°` where it read `45°`. `resolvePrefUnit` returns the unit's `display`, and `formatUnit` takes a `pad` option (its options are exported as `FormatUnitOptions`).
+- Updated dependencies [25a1ff7]
+- Updated dependencies [017246d]
+  - @weasel-js/registry@1.16.1
+  - @weasel-js/quantity@1.16.1
+  - @weasel-js/icons@1.16.1
+  - @weasel-js/react@1.16.1
+  - @weasel-js/storage@1.16.1
+  - @weasel-js/paint@1.16.1
+
 ## 1.16.0
 
 ### Minor Changes
