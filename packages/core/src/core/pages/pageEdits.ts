@@ -1,47 +1,31 @@
 /**
- * A document's pages as a scene document value, and the edits that change
- * them. Each edit moves the nodes on a page by however far the page itself
- * moved, so what is on a page stays where it is on that page.
+ * The edits that change a document's pages. A page is a node under the page
+ * run, whose layout places it, so an edit writes the page nodes and the run
+ * moves the pages; what is on a page is its children and goes with it,
+ * stored poses untouched.
  */
+import type { PoseDescriptor } from '../geometry/poseDescriptor';
+import { sameValue } from '../scene/sameValue';
+import type { NodeId, RectPose, Scene } from '../scene/types';
+import type { Page, PlacedPage } from './pages';
 import {
-  RECT_POSE_DESCRIPTOR, poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor,
-} from '../geometry/poseDescriptor';
-import { carriedDescendants, sceneCarrySource } from '../scene/carryDescendants';
-import { effectivePose, isEnvelope } from '../scene/effectivePose';
-import type { NodeId, Scene } from '../scene/types';
-import { layoutPages, pageOfBounds, type Page, type PageLayoutOptions, type PlacedPage } from './pages';
+  addPageNode, createPageRun, pageIdsOf, pageInfo, pageRunOf, pagesOf, placedPagesOf, runInfo, runPose,
+  type PagesDoc,
+} from './pageNodes';
 
-/** The document value under {@link PAGES_DOC_KEY}: the pages in order, and how they are laid out. */
-export interface PagesDoc {
-  readonly pages: readonly Page[];
-  readonly layout?: PageLayoutOptions;
-}
-
-/** The scene document value key a page list lives under (`scene.doc`). */
-export const PAGES_DOC_KEY = 'core:pages';
+export { PAGES_DOC_KEY, pagesOf, placedPagesOf, type PagesDoc } from './pageNodes';
 
 /** Options every page edit takes. */
 export interface PageEditOptions {
   /** The undo entry's label. */
   label?: string;
-  /** How node poses are measured and moved. Default: poses are rects. */
+  /** Accepted for compatibility and not read: membership is the tree, so nothing is measured. */
   descriptor?: PoseDescriptor<unknown>;
 }
 
 type AnyScene = Scene<unknown, string, unknown>;
 const asAny = <TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) =>
   scene as unknown as AnyScene;
-
-/** The scene's pages doc, or `null` when it has none. */
-export function pagesOf<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): PagesDoc | null {
-  return scene.doc.get<PagesDoc>(PAGES_DOC_KEY) ?? null;
-}
-
-/** The scene's pages, placed in world space; empty when it has no pages doc. */
-export function placedPagesOf<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): PlacedPage[] {
-  const doc = pagesOf(scene);
-  return doc ? layoutPages(doc.pages, doc.layout) : [];
-}
 
 /** An id none of `pages` has: `page-1`, `page-2`, and so on. */
 export function nextPageId(pages: readonly Page[]): string {
@@ -51,94 +35,69 @@ export function nextPageId(pages: readonly Page[]): string {
   return `page-${n}`;
 }
 
-/** Whether `id` draws from other nodes and goes wherever they go. */
-function followsOthers(scene: AnyScene, id: NodeId): boolean {
-  const deps = scene.get(id)?.dependsOn;
-  return Array.isArray(deps) && deps.length > 0;
-}
-
-/**
- * The root nodes on each placed page, by page id: each root belongs to the
- * page its bounds overlap most (`pageOfBounds`). A root in the gaps belongs to
- * none, and one that derives from other nodes is left out, since it follows
- * them.
- */
+/** The nodes on each placed page, by page id: the page's own children. `descriptor` is not read. */
 export function pageMembers<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
-  placed: readonly PlacedPage[],
-  descriptor: PoseDescriptor<unknown> = RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
+  placed: readonly PlacedPage[] = placedPagesOf(scene),
+  _descriptor?: PoseDescriptor<unknown>,
 ): Map<string, NodeId[]> {
-  const s = asAny(scene);
-  const out = new Map<string, NodeId[]>(placed.map((p) => [p.id, []]));
-  for (const id of s.roots) {
-    const node = s.get(id);
-    if (!node || followsOthers(s, id)) continue;
-    const bounds = poseDescriptorForNode(descriptor, node).getBounds(effectivePose(s, node));
-    const page = pageOfBounds(placed, bounds);
-    if (page) out.get(page.id)!.push(id);
-  }
-  return out;
+  return new Map(placed.map((p) => [p.id, scene.get(p.id as NodeId) ? [...scene.childrenOf(p.id as NodeId)] : []]));
 }
 
-function derivesPose(scene: AnyScene, id: NodeId): boolean {
-  const node = scene.get(id);
-  return node !== undefined && isEnvelope(node);
+/** Put `run`'s pages in `order`, each into the slot the `k`th page holds, so its other children stay put. */
+function orderPages(scene: AnyScene, run: NodeId, order: readonly NodeId[]): void {
+  order.forEach((id, k) => {
+    const children = scene.childrenOf(run);
+    const slot = children.filter((c) => scene.get(c)?.page !== undefined)[k];
+    const at = slot === undefined ? -1 : children.indexOf(slot);
+    if (at >= 0 && slot !== id) scene.reorder(id, at);
+  });
 }
 
-/** The stored poses that move root `id` and what it carries by `dx`, `dy`: the
- *  root, unless its pose derives from its children (then each child moves in
- *  its place), and the descendants it carries, less whatever derives its pose. */
-function pageMoveWrites(
-  scene: AnyScene,
-  id: NodeId,
-  dx: number,
-  dy: number,
-  descriptor: PoseDescriptor<unknown>,
-  out: { id: NodeId; pose: unknown }[],
-): void {
-  const node = scene.get(id);
-  if (!node || followsOthers(scene, id)) return;
-  if (derivesPose(scene, id)) {
-    for (const child of scene.childrenOf(id)) pageMoveWrites(scene, child, dx, dy, descriptor, out);
-    return;
+/** Bring page node `id` to `page`'s size, name and meta. */
+function writePage(scene: AnyScene, page: Page): void {
+  const id = page.id as NodeId;
+  const node = scene.get(id)!;
+  const pose = node.pose as RectPose;
+  if (pose.width !== page.width || pose.height !== page.height) {
+    scene.setPose(id, { ...pose, width: page.width, height: page.height });
   }
-  const move = (pose: unknown, at: NodeId) => translatePoseViaDescriptor(pose, dx, dy, poseDescriptorForNode(descriptor, scene.get(at)!));
-  out.push({ id, pose: move(node.pose, id) });
-  const carried = carriedDescendants(sceneCarrySource(scene), id, (world, at) => (
-    followsOthers(scene, at) || derivesPose(scene, at) ? null : move(world, at)
-  ));
-  for (const [at, pose] of carried) out.push({ id: at, pose });
+  const info = pageInfo(page);
+  if (!sameValue(node.page, info)) scene.setPage(id, info);
 }
 
 /**
- * Replace the scene's pages doc with `next`, moving each page's members by
- * the change in their page's place, all as one undo entry labeled `label`.
- * Members of a page `next` drops are left where they are; `removePage` deletes
- * them first.
+ * Make the scene's pages `next`, as one undo entry labeled `label`: pages it
+ * keeps are resized, renamed and reordered, new ones are added, and ones it
+ * drops are deleted with everything on them and whatever follows that. A
+ * scene with no page run gets one. Content keeps its place on its page.
  */
 export function setPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   next: PagesDoc,
   label: string,
-  options: Pick<PageEditOptions, 'descriptor'> = {},
+  _options: Pick<PageEditOptions, 'descriptor'> = {},
 ): void {
   const s = asAny(scene);
-  const descriptor = options.descriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>);
-  const before = placedPagesOf(s);
-  const after = new Map(layoutPages(next.pages, next.layout).map((p) => [p.id, p]));
-  const members = pageMembers(s, before, descriptor);
-  const writes: { id: NodeId; pose: unknown }[] = [];
-  for (const page of before) {
-    const to = after.get(page.id);
-    if (!to) continue;
-    const dx = to.x - page.x;
-    const dy = to.y - page.y;
-    if (dx === 0 && dy === 0) continue;
-    for (const root of members.get(page.id) ?? []) pageMoveWrites(s, root, dx, dy, descriptor, writes);
-  }
   s.batch(label, () => {
-    for (const { id, pose } of writes) s.setPose(id, pose);
-    s.doc.set(PAGES_DOC_KEY, next);
+    const run = pageRunOf(s);
+    if (run === null) {
+      createPageRun(s, next.pages, next.layout);
+      return;
+    }
+    const node = s.get(run)!;
+    const keep = new Set(next.pages.map((p) => p.id));
+    const dropped = pageIdsOf(s, run).filter((id) => !keep.has(id));
+    if (dropped.length > 0) s.removeMany(dropped);
+    const info = runInfo(next.layout, node.pageRun!.pasteboard);
+    if (!sameValue(node.pageRun, info)) s.setPageRun(run, info);
+    for (const page of next.pages) {
+      if (s.get(page.id as NodeId) === undefined) addPageNode(s, run, page);
+      else writePage(s, page);
+    }
+    orderPages(s, run, next.pages.map((p) => p.id as NodeId));
+    const pose = runPose(next.pages, next.layout);
+    if (!sameValue(s.get(run)!.pose, pose)) s.setPose(run, pose);
   });
 }
 
@@ -149,7 +108,7 @@ function edit<TData, TLayer extends string, TPose>(
   change: (pages: Page[]) => Page[],
 ): void {
   const doc = pagesOf(scene) ?? { pages: [] };
-  setPages(scene, { ...doc, pages: change([...doc.pages]) }, options.label ?? fallback, options);
+  setPages(scene, { ...doc, pages: change([...doc.pages]) }, options.label ?? fallback);
 }
 
 /** Insert `page` at `index`, by default after the last page. */
@@ -164,18 +123,13 @@ export function addPage<TData, TLayer extends string, TPose>(
   });
 }
 
-/** Delete page `id`, what is on it, and every node that derives from that, as one entry. */
+/** Delete page `id`, what is on it, and every node that follows any of that, as one entry. */
 export function removePage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   id: string,
   options: PageEditOptions = {},
 ): void {
-  const label = options.label ?? 'Delete page';
-  const members = pageMembers(scene, placedPagesOf(scene), options.descriptor).get(id) ?? [];
-  scene.batch(label, () => {
-    if (members.length > 0) scene.removeMany(members);
-    edit(scene, label, { ...options, label }, (pages) => pages.filter((p) => p.id !== id));
-  });
+  edit(scene, 'Delete page', options, (pages) => pages.filter((p) => p.id !== id));
 }
 
 /** Move page `id` to `index` in the page order. */
@@ -194,7 +148,7 @@ export function movePage<TData, TLayer extends string, TPose>(
   });
 }
 
-/** Give page `id` a new size. Its members keep their places on it; the pages after it shift. */
+/** Give page `id` a new size. What is on it keeps its place on it; the pages after it shift. */
 export function resizePage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   id: string,

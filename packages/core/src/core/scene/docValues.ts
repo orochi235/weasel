@@ -1,5 +1,5 @@
 /**
- * Document state that is not a node — a document's pages, its theme — held as
+ * Document state that is not a node — a document's theme, say — held as
  * named JSON values beside the tree, saved in its snapshot and undone with it.
  */
 import { deepEqual } from '@weasel-js/registry';
@@ -7,7 +7,7 @@ import type { RegisteredOp } from './types';
 
 /**
  * A scene's document values. Keys are namespaced by their owner
- * (`core:pages`, `diagram:theme`); values are JSON, and are not to be mutated
+ * (`diagram:theme`); values are JSON, and are not to be mutated
  * once set. A `set` is a scene edit: undoable, part of an enclosing `batch`,
  * skipped when the value is deep-equal to the current one, and heard by
  * `subscribe`. Setting `undefined` removes the key.

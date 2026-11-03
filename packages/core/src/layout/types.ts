@@ -1,4 +1,5 @@
 import type { Op } from 'core/ops/types';
+import type { Node } from 'core/scene/types';
 import type { Path } from '@weasel-js/geom';
 
 /** A layout container's extent in world units. */
@@ -13,6 +14,8 @@ export type ContainerBounds = {
 export interface LayoutChild<TPose> {
   id: string;
   pose: TPose;
+  /** The child's own scene node, for a strategy that arranges some children and not others. */
+  node?: Node<unknown, string, unknown>;
 }
 
 /** One place a dragged child could land. A strategy offers these as the drag
@@ -101,6 +104,8 @@ export interface ReflowGlideOptions<TPose = unknown> {
 export interface LayoutContainer {
   id: string;
   bounds: ContainerBounds;
+  /** The container's own scene node, for a strategy that reads its settings off it (`pageRun`). */
+  node?: Node<unknown, string, unknown>;
 }
 
 /** What a container does about an edit to its children: see

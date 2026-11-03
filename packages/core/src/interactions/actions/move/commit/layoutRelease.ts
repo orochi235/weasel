@@ -41,6 +41,7 @@ function releaseFrom(
   const srcContainer: LayoutContainer = {
     id: srcId,
     bounds: boxOf(g, view.toStrategy(composeChildFrame(commitAdapter, srcId, pc.compose))),
+    node: srcNode,
   };
   // What the container is left holding — grown back as each
   // release puts one of its own home again.
@@ -50,6 +51,7 @@ function releaseFrom(
       .map((cid) => ({
         id: cid as string,
         pose: view.toStrategy(composeWorldPose(commitAdapter, cid as string, pc.compose)),
+        node: session.scene.get(cid),
       }));
   for (const id of leaving) {
     const startWorld = composeWorldPose(
@@ -70,7 +72,7 @@ function releaseFrom(
       if (op.name === 'transform' && a.id === (id as string)) landed = a.to;
       releasedOps.push(rebaseReleased(op));
     }
-    srcChildren = [...srcChildren, { id: id as string, pose: landed }];
+    srcChildren = [...srcChildren, { id: id as string, pose: landed, node: session.scene.get(id) }];
   }
   return { ops: releasedOps, released };
 }

@@ -15,7 +15,7 @@ import { createSceneSelection } from './sceneSelection';
 import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
 import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
-import { resolveLayoutFrame, runLayoutPass } from './layoutPass';
+import { resolveLayoutFrame, runLayoutPass, sceneLayoutSource } from './layoutPass';
 import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
 import type { SceneOptions } from './useSceneOptions';
@@ -91,7 +91,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   const arrivals = createArrivalWindow<TData, TLayer, TPose>({
     nodes: state.nodes,
     layoutPass: (arrived, touched, departed) =>
-      runLayoutPass(scene, reads.layoutOf, arrived, touched, layoutFrame, departed),
+      runLayoutPass(sceneLayoutSource(scene), reads.layoutOf, arrived, touched, layoutFrame, departed),
     recordsBareEdits: () => !mode.open(),
     writePose,
   });

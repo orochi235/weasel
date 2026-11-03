@@ -94,7 +94,7 @@ export function pickContainer(
   const testInside = (
     id: NodeId, cPose: unknown, aabb: Bounds4, layout: Layout, at: { x: number; y: number },
   ): boolean => {
-    const region = layout.dropRegion?.({ id: id as string, bounds: aabb }) ?? null;
+    const region = layout.dropRegion?.({ id: id as string, bounds: aabb, node: scene.get(id) }) ?? null;
     if (region) return regionContains(region, aabb, at);
     if (mode === 'region') return false;
     if (layout.contains) return layout.contains(cPose, at);
@@ -117,7 +117,7 @@ export function pickContainer(
     const view = containerView(pc, g, worldPose);
     const content = boxOf(g, view.toStrategy(childFrameAt(poseAdapter, id as string, worldPose)));
     if (refused === null && layout.acceptsDrop) {
-      const arg: LayoutContainer = { id: id as string, bounds: content };
+      const arg: LayoutContainer = { id: id as string, bounds: content, node };
       for (const c of dragged) {
         if (!layout.acceptsDrop(arg, draggedInView(view, carryDragged(session, c, plane).arg))) return;
       }
