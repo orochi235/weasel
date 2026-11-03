@@ -149,7 +149,9 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
   if (!bar || !header) return [...problems, 'no menu bar or header'];
   if (!(bar.height > 0)) problems.push(`menu bar height ${bar.height}`);
   if (bar.top < header.top - 1 || bar.bottom > header.bottom + 1)
-    problems.push(`menu bar ${bar.top}–${bar.bottom} outside header ${header.top}–${header.bottom}`);
+    problems.push(
+      `menu bar ${bar.top}–${bar.bottom} outside header ${header.top}–${header.bottom}`,
+    );
 
   if (fixture === 'framed') {
     const frame = document.querySelector('.lk-fit-frame');
