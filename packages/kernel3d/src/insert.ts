@@ -1,6 +1,7 @@
 /** The `insert` dep over a 3D world: a drag becomes a footprint on the ground. */
 
-import type { InsertDep, InsertEnds, InsertExtras, NodeId } from '@weasel-js/core';
+import type { InsertDep, InsertEnds, InsertExtras } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/routing';
 import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { groundAxes, groundHit } from './ground';
 import type { ViewportSource } from './project';

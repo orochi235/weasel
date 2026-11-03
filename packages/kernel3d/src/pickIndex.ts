@@ -6,7 +6,7 @@
  * did; one that occupies nothing is never picked.
  */
 
-import type { NodeId } from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/routing';
 import { rectsOverlap } from '@weasel-js/geom';
 import { intersectRayAabb, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';

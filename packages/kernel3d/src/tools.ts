@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from 'react';
-import { defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/core';
+import { defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/routing';
 import { dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 

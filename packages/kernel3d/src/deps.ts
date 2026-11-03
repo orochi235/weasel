@@ -6,16 +6,9 @@
  * something in 3D is the camera each dep already closes over.
  */
 
-import type {
-  AreaSelectDep,
-  NodeAtPointDep,
-  NodeId,
-  PoseDescriptor,
-  SnapDep,
-  SnapOutcomeStore,
-  SnapSource,
-} from '@weasel-js/core';
-import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core';
+import type { AreaSelectDep, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/routing';
+import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core/engine';
 import { isDev, type KitSettingsStore } from '@weasel-js/react';
 import {
   aabbOfPoints,

@@ -1,4 +1,5 @@
-import type { NodeId, SnapProbeAt } from '@weasel-js/core';
+import type { SnapProbeAt } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/routing';
 import { add, dot, scale, type Aabb, type Vec3 } from '@weasel-js/geom/3d';
 import { boxAt, measuredBoxAt, withDescendants, worldPoses, type Node3d, type World3d } from '../world';
 
