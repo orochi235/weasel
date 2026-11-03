@@ -1,0 +1,151 @@
+// @vitest-environment node
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { ApiTable } from '../story/api';
+import { createPropReader, type PropReader } from './propTypes';
+
+describe('PropReader.api', () => {
+  let root: string;
+  let reader: PropReader;
+  const at = (name: string) => join(root, name);
+  const story = (name: string, body: string) => writeFileSync(at(`${name}.stories.ts`), body);
+  const api = (name: string, fallback?: string): ApiTable | null => reader.api(at(`${name}.stories.ts`), fallback);
+  const prop = (table: ApiTable | null, name: string) => table?.props.find((p) => p.name === name);
+
+  beforeAll(async () => {
+    root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-api-')));
+    writeFileSync(
+      at('react.ts'),
+      `export interface RefObject<T> { current: T }
+export type RefCallback<T> = (instance: T | null) => void;
+export type Ref<T> = RefCallback<T> | RefObject<T | null> | null;
+export function forwardRef<T, P>(render: (props: P, ref: Ref<T>) => unknown): (props: P & { ref?: Ref<T>; key?: string }) => null {
+  return render as never;
+}
+export function memo<C>(component: C): C { return component; }
+`,
+    );
+    mkdirSync(at('node_modules/@types/react'), { recursive: true });
+    writeFileSync(at('node_modules/@types/react/dom.d.ts'), `export interface DomProps { hidden?: boolean; title?: string }\n`);
+    writeFileSync(
+      at('Chart.ts'),
+      `import { forwardRef, memo } from './react';
+import type { DomProps } from './node_modules/@types/react/dom';
+export interface Point { x: number; y: number }
+export interface ChartHandle {
+  /** Maps a plot point to the model. */
+  toModel(pt: Point): Point;
+  readonly width: number;
+  label: string;
+}
+type Weight = 'thin' | 'bold';
+export interface ChartProps {
+  /** Shown beside
+   *  the glyph. */
+  label: string;
+  onPress?: () => void;
+  weight?: Weight;
+  count?: number;
+  /** @default 'md' */
+  size?: 'sm' | 'md';
+  /** @deprecated use tone */
+  loud?: boolean;
+}
+export const Chart = forwardRef<ChartHandle, ChartProps>(function Chart({ count = 3, label: _label }, _ref) {
+  return null;
+});
+export const Memo = memo(forwardRef<ChartHandle, ChartProps>(({ count = 4 }, _ref) => null));
+export const Box = forwardRef<HTMLDivElement, { tall?: boolean }>((_props, _ref) => null);
+export const Wrapped = (_props: DomProps & { own?: boolean }) => null;
+export interface ListProps<T> { items: T[] }
+export const List = <T,>(_props: ListProps<T>) => null;
+export const Bare = () => null;
+`,
+    );
+    story('chart', `import { Chart } from './Chart';\nexport default { component: Chart };\n`);
+    story('memo', `import { Memo } from './Chart';\nconst meta = { component: Memo };\nexport default meta;\n`);
+    story('box', `import { Box } from './Chart';\nexport default { component: Box };\n`);
+    story('wrapped', `import { Wrapped } from './Chart';\nexport default { component: Wrapped };\n`);
+    story('list', `import { List } from './Chart';\nexport default { component: List };\n`);
+    story('bare', `import { Bare } from './Chart';\nexport default { component: Bare };\n`);
+    story('native', `import { Chart } from './Chart';\nexport default { title: 'ui/Chart' };\nexport const A = Chart;\n`);
+    story('none', `export default { title: 'x' };\nexport const A = {};\n`);
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'none'].map((n) => at(`${n}.stories.ts`));
+    const made = await createPropReader(root, () => stories);
+    if (!made) throw new Error('typescript did not load');
+    reader = made;
+  });
+
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  it('lists every prop, controls or not', () => {
+    const table = api('chart');
+    expect(prop(table, 'onPress')).toEqual({ name: 'onPress', type: '() => void', required: false });
+    expect(prop(table, 'label')).toMatchObject({ required: true, description: 'Shown beside the glyph.' });
+    expect(table?.props.map((p) => p.name)).toEqual(['label', 'onPress', 'weight', 'count', 'size', 'loud']);
+  });
+
+  it('writes a type as its declaration spells it', () => {
+    expect(prop(api('chart'), 'weight')?.type).toBe('Weight');
+  });
+
+  it('reads a default from destructuring, else from @default', () => {
+    expect(prop(api('chart'), 'count')?.default).toBe('3');
+    expect(prop(api('chart'), 'size')?.default).toBe("'md'");
+  });
+
+  it('marks a deprecated prop', () => {
+    expect(prop(api('chart'), 'loud')?.deprecated).toBe('use tone');
+  });
+
+  it('collapses props declared in skipped files', () => {
+    const table = api('wrapped');
+    expect(table?.inherited).toEqual([{ from: 'DomProps', count: 2 }]);
+    expect(table?.props.map((p) => p.name)).toEqual(['own']);
+  });
+
+  it('reads the members of a forwardRef handle', () => {
+    const table = api('chart');
+    expect(table?.ref?.type).toBe('ChartHandle');
+    expect(table?.ref?.members).toEqual([
+      { name: 'toModel', kind: 'method', signature: '(pt: Point) => Point', readonly: false, description: 'Maps a plot point to the model.' },
+      { name: 'width', kind: 'property', signature: 'number', readonly: true },
+      { name: 'label', kind: 'property', signature: 'string', readonly: false },
+    ]);
+    expect(prop(table, 'ref')).toBeUndefined();
+    expect(prop(table, 'key')).toBeUndefined();
+  });
+
+  it('names a platform ref type and lists nothing', () => {
+    expect(api('box')?.ref).toEqual({ type: 'HTMLDivElement', members: [] });
+  });
+
+  it('unwraps memo(forwardRef(fn)) for defaults and ref', () => {
+    const table = api('memo');
+    expect(prop(table, 'count')?.default).toBe('4');
+    expect(table?.ref?.type).toBe('ChartHandle');
+  });
+
+  it('reads a generic component', () => {
+    expect(prop(api('list'), 'items')?.type).toBe('T[]');
+  });
+
+  it('reads a component that takes no props', () => {
+    expect(api('bare')).toEqual({ props: [], inherited: [], ref: null, sources: [] });
+  });
+
+  it('follows the fallback import for a meta with no component', () => {
+    expect(api('native', 'Chart')?.ref?.type).toBe('ChartHandle');
+  });
+
+  it('returns null when nothing names a component', () => {
+    expect(api('none')).toBeNull();
+    expect(api('none', 'Nope')).toBeNull();
+  });
+
+  it('lists the files the API is declared in, leaving out packages', () => {
+    expect(api('wrapped')?.sources).toEqual([at('Chart.ts')]);
+  });
+});

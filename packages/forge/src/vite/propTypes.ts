@@ -1,6 +1,9 @@
 import { dirname } from 'node:path';
 import type ts from 'typescript';
 import type { ArgShape, ArgType } from '../csf/argsToSchema.ts';
+import type { ApiTable } from '../story/api.ts';
+import { apiTable } from './apiTable.ts';
+import { componentOf } from './componentOf.ts';
 
 /** What a story file's component takes, as argTypes, and the files its props are declared in. */
 export interface PropTable {
@@ -11,6 +14,11 @@ export interface PropTable {
 export interface PropReader {
   /** The props of the component `file`'s default export names; null when it names none. */
   read(file: string): PropTable | null;
+  /**
+   * The API of the component `file`'s default export names, or else of the import named `fallback`; null when
+   * neither names one.
+   */
+  api(file: string, fallback?: string): ApiTable | null;
 }
 
 /** React's own declarations and TypeScript's libraries: every DOM attribute and event handler an element takes. */
@@ -34,7 +42,8 @@ export async function createPropReader(
   stories: () => readonly string[],
   { skip }: PropControlsOptions = {},
 ): Promise<PropReader | null> {
-  const skipped = (file: string) => PLATFORM.test(file) || skip?.(file) === true;
+  const platform = (file: string) => PLATFORM.test(file);
+  const skipped = (file: string) => platform(file) || skip?.(file) === true;
   let tsm: typeof ts;
   try {
     tsm = (await import('typescript')).default;
@@ -76,39 +85,29 @@ export async function createPropReader(
   };
   const service = tsm.createLanguageService(host, tsm.createDocumentRegistry());
 
+  const sourceOf = (file: string) => {
+    const program = service.getProgram();
+    const source = program?.getSourceFile(file);
+    return program && source ? { checker: program.getTypeChecker(), source } : null;
+  };
+
   return {
     read(file) {
-      const program = service.getProgram();
-      const source = program?.getSourceFile(file);
-      if (!program || !source) return null;
-      const checker = program.getTypeChecker();
-      const props = componentProps(tsm, checker, source);
+      const found = sourceOf(file);
+      if (!found) return null;
+      const { checker, source } = found;
+      const props = componentOf(tsm, checker, source)?.props;
       return props ? propTable(tsm, checker, props, source, skipped) : null;
     },
+    api(file, fallback) {
+      const found = sourceOf(file);
+      if (!found) return null;
+      const { checker, source } = found;
+      const component = componentOf(tsm, checker, source, fallback);
+      if (!component) return null;
+      return apiTable({ tsm, checker, at: source, skipped, platform }, component.declaration, component.props);
+    },
   };
-}
-
-/** The props type of the `component` a story file's default export names. */
-function componentProps(tsm: typeof ts, checker: ts.TypeChecker, source: ts.SourceFile): ts.Type | null {
-  const module = checker.getSymbolAtLocation(source);
-  const exported = module && checker.tryGetMemberInModuleExports('default', module);
-  if (!exported) return null;
-  const meta = checker.getTypeOfSymbolAtLocation(
-    exported.flags & tsm.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported,
-    source,
-  );
-  const named = meta.getProperty('component');
-  if (!named) return null;
-  const component = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(named, source));
-  for (const part of component.isUnion() ? component.types : [component]) {
-    const [call] = part.getCallSignatures();
-    const [param] = call?.getParameters() ?? [];
-    if (call) return param ? checker.getTypeOfSymbolAtLocation(param, source) : null;
-    const instance = part.getConstructSignatures()[0]?.getReturnType();
-    const held = instance?.getProperty('props');
-    if (held) return checker.getTypeOfSymbolAtLocation(held, source);
-  }
-  return null;
 }
 
 /** What reading one story file's props needs at every level of a prop's type. */
