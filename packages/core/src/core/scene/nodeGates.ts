@@ -96,12 +96,16 @@ export function nodeGates(scene: GateSource): NodeGates {
     hidden(id) {
       const node = typeof id === 'string' ? scene.get(id as NodeId) : id;
       if (node === undefined) return false;
-      return hiddenLayers?.has(node.layer) === true || hidesSubtree(node) || hiddenAbove(node.parent ?? null);
+      if (hidesSubtree(node) || (hiddenLayers !== null && hiddenLayers.has(node.layer))) return true;
+      const parent = node.parent;
+      return parent !== undefined && parent !== null && hiddenAbove(parent);
     },
     locked(id) {
       const node = typeof id === 'string' ? scene.get(id as NodeId) : id;
       if (node === undefined) return false;
-      return ownLock(node) || lockedAbove(node.parent ?? null);
+      if (ownLock(node)) return true;
+      const parent = node.parent;
+      return parent !== undefined && parent !== null && lockedAbove(parent);
     },
   };
 }

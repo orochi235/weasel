@@ -1,0 +1,50 @@
+{
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/conditions.txt": {
+    "size": 267,
+    "mtime": 1793692248926979610,
+    "inode": 754567739,
+    "sha256": "354d4809fc6f4d68d0e454fe1950f2c6040d000683a9b18c42764beaeec7e4ab"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/prof/base-walk.cpuprofile.gz": {
+    "size": 18756,
+    "mtime": 1793692244784939000,
+    "inode": 754567741,
+    "sha256": "54763b29bd8a132eb02d4ccbedd413e991067d5c64e52d727b1b35c11560fa77"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/prof/base-walk.top.txt": {
+    "size": 2716,
+    "mtime": 1793692248836588764,
+    "inode": 754567742,
+    "sha256": "4b48886f24dc9858c2b0b24d8589df4e4df0d7900024c0db8eb26d688d4e7f00"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/prof/mid-walk.cpuprofile.gz": {
+    "size": 15034,
+    "mtime": 1793692246857210000,
+    "inode": 754567743,
+    "sha256": "c43dc55421a477656fbbdaf2e4312df894d19b1009f597ec2ef7a26b6698d11c"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/prof/mid-walk.top.txt": {
+    "size": 2586,
+    "mtime": 1793692248877911816,
+    "inode": 754567744,
+    "sha256": "9f14e033e47b2ba24a659c2ff45672ea98b2ee82edad6ac1430dcfd34a5fca37"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/prof/old-walk.cpuprofile.gz": {
+    "size": 12788,
+    "mtime": 1793692248795820000,
+    "inode": 754567745,
+    "sha256": "1da33227a12449b1f14837fc01157fa2c848e6a6124284f643ce4a8f6580e89c"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/prof/old-walk.top.txt": {
+    "size": 2749,
+    "mtime": 1793692248920052622,
+    "inode": 754567746,
+    "sha256": "431c5dfa0a1081128873d1b3ffabfdc3c9be6891c042a71bb7e56b721d7cc4bf"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/profile-base/Mac/runs.jsonl": {
+    "size": 671,
+    "mtime": 1793692248801072069,
+    "inode": 754567747,
+    "sha256": "98c65a378e457ae4a277cb9785037c039bc8a2789df81d5f7c5e76dfc046fae8"
+  }
+}

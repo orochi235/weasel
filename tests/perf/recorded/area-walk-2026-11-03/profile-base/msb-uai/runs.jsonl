@@ -1,0 +1,3 @@
+{"round":1,"sha":"tree","script":"walk.mjs","load":"{ 3.24 2.57 2.89 }","at":"2026-11-03T07:50:44Z","result":{"label":"base","hits":2630,"via":"pickWalk","fullWalkMs":{"median":0.835084,"min":0.820709,"p90":0.907375}}}
+{"round":1,"sha":"43a827165","script":"walk.mjs","load":"{ 3.70 2.68 2.92 }","at":"2026-11-03T07:50:46Z","result":{"label":"mid","hits":2630,"via":"hitTestArea","fullWalkMs":{"median":0.680333,"min":0.642042,"p90":0.751041}}}
+{"round":1,"sha":"0a2eba982","script":"walk.mjs","load":"{ 3.70 2.68 2.92 }","at":"2026-11-03T07:50:48Z","result":{"label":"old","hits":2630,"via":"hitTestArea","fullWalkMs":{"median":0.551292,"min":0.523125,"p90":0.613709}}}

@@ -9,6 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, sceneFromJSON } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
+import { documentOf } from 'core/scene/documentOf';
 import { pickWalk, scenePickSource, type ScenePickSourceOptions } from './pickWalk';
 import { hitTestArea } from './deps/hitTestArea';
 import { sceneToAdapter } from './sceneAdapter';
@@ -296,5 +297,15 @@ describe('the four walks agree', () => {
     // Both area walks agree.
     expect(hitTestArea(scene as never, far)).toEqual(['a']);
     expect(adapter.hitTestArea!(far)).toEqual(['a']);
+  });
+
+  it('a document reading picks at the document pose while an override is set', () => {
+    const scene = rectScene();
+    scene.overrides.set(asNodeId('a'), { pose: { x: 510, y: 510, width: 10, height: 10 } });
+    scene.overrides.commit();
+
+    const doc = documentOf(scene);
+    expect(hitTestArea(doc as never, { x: 500, y: 500, width: 50, height: 50 })).toEqual([]);
+    expect(hitTestArea(doc as never, { x: 0, y: 0, width: 10, height: 10 })).toEqual(['a']);
   });
 });
