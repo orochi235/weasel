@@ -12,6 +12,7 @@ import type { View } from '../core/viewport/view';
 import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
+import { scenePickIds } from './scenePickIds';
 import { sceneToAdapter } from './sceneAdapter';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
@@ -103,6 +104,7 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
   layers: SceneViewLayers = {},
 ): HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose> {
   const { getNode, getChildren, getPose, composePose, childFrame } = sceneToAdapter(scene);
+  const pickIds = scenePickIds(scene);
   return {
     getLayers: () =>
       paintedSceneLayers(scene.layers, layers)
@@ -112,6 +114,7 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
     getPose,
     ...(composePose ? { composePose } : {}),
     ...(childFrame ? { childFrame } : {}),
+    pickIdOf: (id) => pickIds.idOf(id),
   };
 }
 

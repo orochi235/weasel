@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useInsertionEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { viewToMat3 } from '@weasel-js/renderer';
+import { viewToMat3, type DrawCommand, type WeaselRenderer } from '@weasel-js/renderer';
+import type { CanvasExtensionApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
 import {
   DEFAULT_LAYER_RETAIN, drawLayers, type LayerCommandCache, type LayerRetainPolicy, type RenderLayer,
@@ -66,11 +67,13 @@ export function useCanvasPaint(
   frame: PaintFrame,
   markPainted: () => void,
   requestRedraw: () => void,
+  pickRef: { current: CanvasExtensionApi['pickAt'] },
 ): void {
   const { paintTargetRef, ownCanvasRef, paintRectRef } = target;
   const { inputsRef, viewRef, gateRef, helpersRef } = frame;
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
   const snapRef = useRef(new ViewSnap());
+  const lastFrameRef = useRef<{ renderer: WeaselRenderer; commands: DrawCommand[]; view: View } | null>(null);
 
   const paint = useCallback((): boolean => {
     const c = paintTargetRef.current ?? ownCanvasRef.current;
@@ -115,6 +118,7 @@ export function useCanvasPaint(
       retainPolicy(retain),
     );
     renderer.render(commands, viewToMat3(view), spans ? { spans } : undefined);
+    lastFrameRef.current = { renderer, commands, view };
     const stats = renderer.lastFrameStats();
     debugFrame?.end(stats);
     markPainted();
@@ -127,6 +131,21 @@ export function useCanvasPaint(
 
   useEffect(() => {
     const layerCache = layerCacheRef.current;
-    return () => { layerCache.clear(); };
+    return () => {
+      layerCache.clear();
+      lastFrameRef.current = null;
+    };
   }, []);
+
+  const pickAt = useCallback<CanvasExtensionApi['pickAt']>((x, y, options) => {
+    const last = lastFrameRef.current;
+    if (!last || last.renderer.isContextLost()) return 0;
+    const ids = last.renderer.renderIds(last.commands, viewToMat3(last.view), {
+      rect: { x, y, width: 0, height: 0 }, minAlpha: options?.minAlpha,
+    });
+    return ids.data[0] ?? 0;
+  }, []);
+  useInsertionEffect(() => {
+    pickRef.current = pickAt;
+  });
 }

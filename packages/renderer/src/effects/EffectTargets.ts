@@ -9,6 +9,9 @@
  * inherit the default framebuffer's — one without its own attachment renders
  * even-odd paths with their holes filled and clips that do not clip, with no
  * GL error. Every target here gets a DEPTH24_STENCIL8 renderbuffer of its own.
+ *
+ * An id frame's targets also hold an id attachment (`ids`), drawn to beside
+ * the color; one asked for with ids is never handed out for one without.
  */
 
 export interface EffectTarget {
@@ -16,6 +19,8 @@ export interface EffectTarget {
   readonly texture: WebGLTexture;
   readonly width: number;
   readonly height: number;
+  /** The id attachment at `COLOR_ATTACHMENT1`, for a target acquired with ids. */
+  readonly ids: WebGLTexture | null;
   /** @internal — the pool's own bookkeeping. */
   readonly stencil: WebGLRenderbuffer;
 }
@@ -29,6 +34,8 @@ export class EffectTargets {
   private readonly gl: WebGL2RenderingContext;
   private all: Pooled[] = [];
   private free: Pooled[] = [];
+  /** The framebuffers of every target made with ids. */
+  readonly idFbos: WeakSet<WebGLFramebuffer> = new WeakSet();
 
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
@@ -40,10 +47,11 @@ export class EffectTargets {
     return this.all.length > 0;
   }
 
-  /** Borrow a target sized `width` × `height` device pixels. */
-  acquire(width: number, height: number): EffectTarget {
-    const i = this.free.findIndex((t) => t.width === width && t.height === height);
-    const target = i >= 0 ? this.free.splice(i, 1)[0] : this.create(width, height);
+  /** Borrow a target sized `width` × `height` device pixels, with an id
+   *  attachment when `ids` is set. */
+  acquire(width: number, height: number, ids = false): EffectTarget {
+    const i = this.free.findIndex((t) => t.width === width && t.height === height && (t.ids !== null) === ids);
+    const target = i >= 0 ? this.free.splice(i, 1)[0] : this.create(width, height, ids);
     target.used = true;
     return target;
   }
@@ -79,21 +87,30 @@ export class EffectTargets {
     const gl = this.gl;
     gl.deleteFramebuffer(t.fbo);
     gl.deleteTexture(t.texture);
+    if (t.ids) gl.deleteTexture(t.ids);
     gl.deleteRenderbuffer(t.stencil);
   }
 
-  private create(width: number, height: number): Pooled {
+  private texture(width: number, height: number, filter: number): WebGLTexture {
     const gl = this.gl;
     const texture = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     // CLAMP_TO_EDGE so a kernel reaching past the edge repeats the border
     // instead of wrapping the opposite side of the buffer into frame.
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.bindTexture(gl.TEXTURE_2D, null);
+    return texture;
+  }
+
+  private create(width: number, height: number, withIds: boolean): Pooled {
+    const gl = this.gl;
+    const texture = this.texture(width, height, gl.LINEAR);
+    // Ids are not samples to blend between.
+    const ids = withIds ? this.texture(width, height, gl.NEAREST) : null;
 
     const stencil = gl.createRenderbuffer()!;
     gl.bindRenderbuffer(gl.RENDERBUFFER, stencil);
@@ -104,9 +121,14 @@ export class EffectTargets {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, stencil);
+    if (ids) {
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, ids, 0);
+      gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+      this.idFbos.add(fbo);
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-    const made: Pooled = { fbo, texture, stencil, width, height, used: false };
+    const made: Pooled = { fbo, texture, ids, stencil, width, height, used: false };
     this.all.push(made);
     return made;
   }

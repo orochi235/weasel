@@ -37,6 +37,7 @@ import { composeChildFrame, composesFrames, composeWorldPose, frameAtOrAbove, ty
 import { memoizeCompose } from 'core/scene/composeFrame';
 import { scrolledFrames } from 'core/scene/scrollOffsets';
 import { insertSite } from './deps/insertSite';
+import { scenePickIds } from './scenePickIds';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
@@ -127,6 +128,8 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
        *  `scroll` offset — see `PoseAdapter.childFrame`. Present only when the
        *  composition can scroll. */
       childFrame?(id: string, world: TPose): TPose;
+      /** The `pickId` a node's paint carries into an id frame: `scenePickIds`. */
+      pickIdOf?(id: string): number;
       getSelection(): string[];
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
@@ -217,6 +220,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     ...scenePoseReads(scene),
     poseTarget: (id, descriptor) => scenePoseTarget(scene, id, descriptor ?? d),
     getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
+    pickIdOf: (id) => scenePickIds(scene).idOf(id),
     subscribeLayers: (listener) => scene.subscribe(listener),
     getLayout: (id) => scene.layoutOf(asNodeId(id)),
     // With a label the ops are one batch checkpoint; without one they are

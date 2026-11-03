@@ -70,6 +70,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         paintedCursor: createPaintedCursorState(),
         cursorSink: { setBase() {}, setOverride() {} },
         getDebug: () => null,
+        pickAt: () => 0,
         registerLayer: () => () => {},
         hitTestExtras: () => null,
       } satisfies CanvasExtensionApi;

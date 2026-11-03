@@ -25,7 +25,7 @@
  */
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { DrawCommand } from '@weasel-js/renderer';
+import type { DrawCommand, IdBuffer } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node } from 'core/scene/types';
 import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender';
@@ -36,6 +36,7 @@ import { renderNeeds } from './renderNeeds';
 import { straightTopDown } from './rasterReadback';
 import { annotationLayerIds } from 'core/scene/annotation';
 import { sceneLayerKey } from './sceneLayerPaint';
+import { layerNameClaims } from 'core/layers/layerGroup';
 import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 
 export type {
@@ -93,14 +94,36 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
       fill: { paint: { kind: 'solid', color: args.background } },
     });
   }
-  const layers = args.annotations ? undefined : {
-    layerVisibility: Object.fromEntries([...annotationLayerIds(args.scene.layers)].map((id) => [sceneLayerKey(id), false])),
-  };
   commands.push(...buildSceneViewCommands(
-    args.scene, view, drawOne, undefined, args.alphaFor, layers, args,
+    args.scene, view, drawOne, undefined, args.alphaFor, drawnLayers(args), args,
   ));
   if (args.overlay) commands.push(...args.overlay);
   return { width, height, view, commands };
+}
+
+/** The scene layers a headless render leaves out: annotation layers unless
+ *  `annotations` asks for them, and those `layers` does not name. */
+function drawnLayers(
+  args: Pick<RenderSceneToPixelsArgs<unknown, string, unknown>, 'scene' | 'annotations' | 'layers'>,
+): { layerVisibility: Record<string, boolean> } | undefined {
+  const names = args.layers;
+  if (args.annotations && !names) return undefined;
+  const keys = args.scene.layers.map((l) => sceneLayerKey(l.id));
+  for (const name of names ?? []) {
+    if (!keys.some((key) => layerNameClaims(name, key))) {
+      throw new Error(
+        `renderSceneToPixels: layers names "${name}", which matches none of the scene's layers `
+        + `(${keys.join(', ')})`,
+      );
+    }
+  }
+  const hidden = args.annotations ? new Set<string>() : annotationLayerIds(args.scene.layers);
+  return {
+    layerVisibility: Object.fromEntries(args.scene.layers.map((l) => {
+      const key = sceneLayerKey(l.id);
+      return [key, !hidden.has(l.id) && (!names || names.some((name) => layerNameClaims(name, key)))];
+    })),
+  };
 }
 
 function defaultCreateCanvas(width: number, height: number): HeadlessCanvasLike {
@@ -139,6 +162,14 @@ export type RasterRenderArgs<TData, TLayer extends string, TPose> =
 export interface RasterSession {
   /** Same contract as `renderSceneToPixels`. Throws once disposed. */
   render<TData, TLayer extends string, TPose>(args: RasterRenderArgs<TData, TLayer, TPose>): RasterImage;
+  /** The same render's ids instead of its pixels: for each output pixel, the
+   *  `pickId` of what painted it last (`WeaselRenderer.renderIds`), which
+   *  `scenePickIds(args.scene).nodeOf` names; `idMask` makes a coverage mask
+   *  of them. A fragment claims its pixel at `minAlpha` or more, default
+   *  1/255. Throws once disposed. */
+  renderIds<TData, TLayer extends string, TPose>(
+    args: RasterRenderArgs<TData, TLayer, TPose>, options?: { minAlpha?: number },
+  ): IdBuffer;
   /** Free every GL resource the session created — programs, geometry, and
    *  the texture and mesh caches — and drop its own canvas. A caller-owned
    *  context stays open. Idempotent. */
@@ -194,36 +225,53 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
     return gl;
   }
 
+  /** The plan for `args`, and the context and renderer sized for it. */
+  function prepare<TData, TLayer extends string, TPose>(
+    call: string, args: RasterRenderArgs<TData, TLayer, TPose>,
+  ): { plan: PixelRenderPlan; ctx: WebGL2RenderingContext; renderer: WeaselRenderer } {
+    if (disposed) throw new Error(`raster session: ${call}() on a disposed session`);
+    const plan = planPixelRender(args);
+    const { width, height } = plan;
+    const ctx = contextFor(width, height);
+    const flattenTolerance = { px: args.flattenTolerancePx ?? 0.25 };
+    if (!renderer) {
+      renderer = new WeaselRenderer({
+        gl: ctx,
+        width,
+        height,
+        dpr: 1,
+        imageMinification: 'mipmap',
+        flattenTolerance,
+        // Dynamic canvas-SDF glyphs must all bake inline — this path is
+        // synchronous with no notify-and-redraw, and print must be complete.
+        bakeBudget: Infinity,
+      });
+    } else {
+      renderer.resize({ width, height, dpr: 1 });
+      renderer.setFlattenTolerance(flattenTolerance);
+    }
+    return { plan, ctx, renderer };
+  }
+
   return {
     render(args) {
-      if (disposed) throw new Error('raster session: render() on a disposed session');
-      const plan = planPixelRender(args);
+      const { plan, ctx, renderer: r } = prepare('render', args);
       const { width, height } = plan;
-      const ctx = contextFor(width, height);
-      const flattenTolerance = { px: args.flattenTolerancePx ?? 0.25 };
-      if (!renderer) {
-        renderer = new WeaselRenderer({
-          gl: ctx,
-          width,
-          height,
-          dpr: 1,
-          imageMinification: 'mipmap',
-          flattenTolerance,
-          // Dynamic canvas-SDF glyphs must all bake inline — this path is
-          // synchronous with no notify-and-redraw, and print must be complete.
-          bakeBudget: Infinity,
-        });
-      } else {
-        renderer.resize({ width, height, dpr: 1 });
-        renderer.setFlattenTolerance(flattenTolerance);
-      }
-      renderer.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
+      r.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
       if (isLost(ctx)) {
         throw new Error('raster session: the WebGL2 context was lost during render');
       }
       const raw = new Uint8Array(width * height * 4);
       ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, raw);
       return { width, height, data: straightTopDown(raw, width, height) };
+    },
+    renderIds(args, options) {
+      const { plan, ctx, renderer: r } = prepare('renderIds', args);
+      const ids = r.renderIds(plan.commands, viewToMat3(plan.view), { screen: args.screen, minAlpha: options?.minAlpha });
+      if (isLost(ctx)) {
+        throw new Error('raster session: the WebGL2 context was lost during renderIds');
+      }
+      return ids;
     },
     dispose() {
       if (disposed) return;

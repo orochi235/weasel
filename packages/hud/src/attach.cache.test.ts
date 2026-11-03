@@ -29,6 +29,7 @@ function attached() {
     paintedCursor: createPaintedCursorState(),
     cursorSink: { setBase() {}, setOverride() {} },
     getDebug: () => null,
+    pickAt: () => 0,
   };
   const hud = createHud();
   attachHud(api, hud, { font: 'sans-serif' });

@@ -4,7 +4,7 @@ import {
   type DrawCommand, type LayerGroup, type RectPose, type RenderLayer, type View,
 } from '@weasel-js/core';
 import {
-  dither, gridOnScreen, protectMask, protectRects, protectTexture,
+  dither, gridOnScreen, protectTexture,
   type DitherMethod, type ProtectTexture,
 } from '@weasel-js/dither';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -12,10 +12,10 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
-import { exportPage, type Crisp } from './ditherDemoExport';
+import { exportPage, marksMask, type Crisp } from './ditherDemoExport';
 import {
-  INITIAL_NODES, PAGE, fitPage, outputGrid, protectedRect, wholeDots,
-  type DitherLayer, type DitherNode, type DitherNodeData,
+  INITIAL_NODES, PAGE, fitPage, outputGrid, wholeDots,
+  type DitherLayer, type DitherNodeData,
 } from './ditherDemoScene';
 import s from './DitherDemo.module.css';
 
@@ -86,13 +86,9 @@ export function DitherDemo() {
   const [held, setHeld] = useState<ProtectTexture | null>(null);
   useEffect(() => {
     if (!masked || !printGrid) return;
-    const marks = [...scene.nodes.values()].filter((n) => n.layer === 'marks') as DitherNode[];
-    const w = Math.ceil(PAGE.width / printGrid.pitch);
-    const h = Math.ceil(PAGE.height / printGrid.pitch);
-    const mask = protectMask(protectRects(marks, protectedRect, printGrid), w, h);
     let current = true;
     let made: ProtectTexture | null = null;
-    protectTexture(mask, w, h).then((t) => {
+    marksMask(scene, printGrid).then(({ mask, width, height }) => protectTexture(mask, width, height)).then((t) => {
       if (!current) { t.dispose(); return; }
       made = t;
       undisposed.current = t;

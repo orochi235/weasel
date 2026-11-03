@@ -22,22 +22,25 @@ export interface HierarchicalAdapter<TNode, TPose> {
   /** The frame a container gives its children from its world pose: moved by
    *  its scroll offset where the view scrolls it. Absent means the pose itself. */
   childFrame?(id: string, world: TPose): TPose;
+  /** The `pickId` a node's paint carries into an id frame — `scenePickIds`
+   *  for a scene. Absent, nodes carry none. */
+  pickIdOf?(id: string): number;
 }
 
 /** A clip on the chain, with the layer whose world it is drawn in, or the
  *  transform of a copy a container draws — see `GroupNode.copiesFromPose`. */
 type ChainEntry = { path: Path; layer: string } | { copy: Affine };
 
-/** Wrap `cmds` in one nested group per chain entry, so the renderer intersects
+/** Wrap `inner` in one nested group per chain entry, so the renderer intersects
  *  the clips and applies each copy's transform to everything inside it.
- *  Outermost group carries the ancestor-most entry; innermost holds `cmds`. */
+ *  Outermost group carries the ancestor-most entry. */
 function wrapInChain(
-  cmds: DrawCommand[],
+  inner: GroupDrawCommand,
   chain: readonly ChainEntry[],
   toLayer: string,
   carry: ReturnType<typeof clipCarrier>,
 ): DrawCommand {
-  let node: GroupDrawCommand = { kind: 'group', children: cmds };
+  let node = inner;
   for (let i = chain.length - 1; i >= 0; i--) {
     const e = chain[i];
     node = 'copy' in e
@@ -135,8 +138,12 @@ export function buildSceneTree<
     // Every node emits a wrapper group even with empty paint, keeping the per-node tree
     // shape stable. A node's own clip is its children's, so its own paint, over
     // its children or under them, takes only the clips above it.
-    const wrap = (cmds: DrawCommand[]): DrawCommand => (ancestorClips.length > 0
-      ? wrapInChain(cmds, ancestorClips, node.layer, carry) : { kind: 'group', children: cmds });
+    const pickId = adapter.pickIdOf?.(id);
+    const wrap = (cmds: DrawCommand[]): DrawCommand => {
+      const inner: GroupDrawCommand = pickId === undefined
+        ? { kind: 'group', children: cmds } : { kind: 'group', pickId, children: cmds };
+      return ancestorClips.length > 0 ? wrapInChain(inner, ancestorClips, node.layer, carry) : inner;
+    };
     if (bucket) bucket.push(wrap(self));
 
     // An envelope's children share its own parent's frame.

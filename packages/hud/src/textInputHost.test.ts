@@ -19,7 +19,7 @@ function makeApi(element: HTMLElement): CanvasExtensionApi {
     registerLayer: vi.fn(() => () => {}),
     getView: vi.fn(() => ({ x: 0, y: 0, scale: { x: 1, y: 1 } })), setView: vi.fn(), subscribeView: vi.fn(() => () => {}),
     getPaintedVersion: vi.fn(() => 0), paintedCursor: createPaintedCursorState(),
-    cursorSink: { setBase() {}, setOverride() {} }, getDebug: () => null,
+    cursorSink: { setBase() {}, setOverride() {} }, getDebug: () => null, pickAt: () => 0,
   };
 }
 

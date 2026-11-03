@@ -24,6 +24,30 @@ export interface RenderOptions {
   screen?: GlMat3;
 }
 
+/** Per-frame options for {@link WeaselRenderer.renderIds}. */
+export interface RenderIdsOptions extends Pick<RenderOptions, 'screen'> {
+  /** The part of the drawing to read ids for, in CSS pixels; it covers every
+   *  device pixel it touches. Default all of it. Only commands that can reach
+   *  it are drawn (`cullDrawCommands`), so a small rect is a cheap frame. */
+  rect?: { x: number; y: number; width: number; height: number };
+  /** The least alpha, 0 to 1, a fragment claims its pixel with. Default
+   *  `1 / 255`: every pixel painted visibly. 0.5 claims the pixels whose
+   *  centers a shape covers. A fragment of alpha 0 never claims. */
+  minAlpha?: number;
+}
+
+/** What an id frame read back: for each device pixel, the `pickId` of the
+ *  last thing to paint it, 0 where nothing did or what did carried none. */
+export interface IdBuffer {
+  /** Where the buffer's top-left pixel sits, device pixels from the drawing's top-left. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Top-down rows, one id per device pixel. */
+  data: Uint32Array;
+}
+
 /** What one span cost. A batched run is drawn when something closes it, so
  *  its draw call counts toward the span that closed it. */
 export interface RenderSpanStats {

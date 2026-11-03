@@ -204,6 +204,7 @@ function makeApi(element: HTMLElement): CanvasExtensionApi {
     paintedCursor: createPaintedCursorState(),
     cursorSink: { setBase() {}, setOverride() {} },
     getDebug: () => null,
+    pickAt: () => 0,
   };
 }
 

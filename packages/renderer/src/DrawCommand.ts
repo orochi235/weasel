@@ -137,6 +137,17 @@ export interface GroupDrawCommand {
    * `source-over`, which reads pixels a retained surface does not have.
    */
   retain?: string;
+  /**
+   * The id this group's pixels carry into an id frame
+   * (`WeaselRenderer.renderIds`): an integer from 1 to `MAX_PICK_ID`, or 0 for
+   * pixels that claim nothing. Absent inherits the enclosing group's, and at
+   * the top of a frame that is 0. A pixel holds the id of the last thing to
+   * paint it with at least the frame's `minAlpha`, so custom shaders and
+   * effects claim what they paint: a blur claims the pixels it spreads into,
+   * with the id its children left there, else this group's. An ordinary frame
+   * ignores it.
+   */
+  pickId?: number;
   children: DrawCommand[];
 }
 

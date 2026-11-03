@@ -16,6 +16,7 @@ import type { DeviceRect } from '../retain/contentBounds';
 import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 import type { FlattenTolerance } from './flattenTolerance';
+import type { IdFrame } from './idFrame';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -137,6 +138,9 @@ export interface DrawContext {
    *  when a caller drives `dispatch` without a renderer behind it, in which
    *  case one per context stands in and is never released. */
   paintResources?: PaintResources;
+  /** Set while an id frame draws (`WeaselRenderer.renderIds`): every draw
+   *  then writes the id `state.pickId` names beside its color. */
+  ids?: IdFrame;
   /** Per-frame counters the renderer reads back after the stream ends.
    *  Absent, nothing is counted. */
   stats?: { drawCalls: number };
