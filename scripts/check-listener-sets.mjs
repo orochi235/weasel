@@ -21,6 +21,7 @@ const ALLOWED = new Map([
   ['packages/registry/src/emitter.ts', 'the emitter itself'],
   ['packages/animator/src/engine/offsets.ts', 'not subscribers: the publishes one frame queued, deduplicated, run once and cleared'],
   ['packages/forge/src/shell/framePool.ts', 'not subscribers: the stop for each frame still loading, whose count sizes the pool'],
+  ['packages/core/src/core/scene/outsideReads.ts', 'not subscribers: generation getters, read and summed, never notified'],
   ['packages/d3/src/transition.ts', 'not subscribers: the cancels pending on one node, run when something else claims it'],
   ['packages/audio/src/graph/fader.ts', 'not subscribers: the done callbacks of one fade, each called once when it ends; audio depends on no kit package'],
   ['packages/audio/src/testing/fakeAudioContext.ts', "a fake of a platform object, reproducing the platform's semantics rather than the kit's"],
