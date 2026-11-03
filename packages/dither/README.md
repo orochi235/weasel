@@ -79,8 +79,8 @@ The grid is a document value, `kit:outputGrid` in `scene.doc`, so setting it
 is an undoable edit, and the stored values re-snap inside that same edit
 (2026-11-03). `stored` runs on every committed write, whatever made it (a
 resize, typed W/H, align's match size, a paste, a data edit such as a stroke
-width), on a document as it is built or loaded, and on a resize's or a move's
-live preview. It answers data as well as a pose, since a stroke 1.5 dots wide
+width), on a document as it is built or loaded, and on the live preview of a
+resize, a move or an insert, so a release lands where its preview showed. It answers data as well as a pose, since a stroke 1.5 dots wide
 prints as ragged as a barcode module (2026-11-03). Which values are stored
 and which only drawn is the rule's choice, per field (2026-11-03): a size that
 must still read true after the grid changes belongs in `stored`, so W and H

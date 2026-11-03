@@ -117,11 +117,21 @@ export function quantizedPreview<TPose>(
   pose: TPose,
   anchor?: ResizeAnchor,
 ): TPose {
+  const node = scene.quantize?.stored ? scene.get(id) : undefined;
+  return node ? quantizedNodePose(scene, { data: node.data, pose }, anchor) : pose;
+}
+
+/** `node`'s pose as `stored` would commit it, for a node the scene does not
+ *  hold yet: an insert's, while it is dragged out. */
+export function quantizedNodePose<TData, TPose>(
+  scene: Pick<Scene<TData, string, TPose>, 'doc' | 'quantize'>,
+  node: { data: TData; pose: TPose },
+  anchor?: ResizeAnchor,
+): TPose {
   const rule = scene.quantize;
   const grid = rule?.stored ? outputGridOf(scene) : undefined;
-  const node = grid ? scene.get(id) : undefined;
-  if (!rule || !grid || !node) return pose;
-  return storedOf(rule, { data: node.data, pose }, grid, anchor)?.pose ?? pose;
+  if (!rule || !grid) return node.pose;
+  return storedOf(rule, node, grid, anchor)?.pose ?? node.pose;
 }
 
 /** Where the scene walk draws a node: `drawn`'s pose for its world pose, when

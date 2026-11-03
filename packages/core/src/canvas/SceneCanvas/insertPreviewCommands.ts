@@ -1,5 +1,5 @@
 import {
-  ellipsePath, invert, linePath, mat3, multiply, rectPath, regularPolygonPath, starPath, polylineFromPoints,
+  ellipsePath, invert, linePath, mat3, multiply, rectPath, regularPolygonPath, starPath, polylineFromPoints, transformPath,
   type Affine,
 } from '@weasel-js/geom';
 import { getImageBitmap, type DrawCommand, type PathDrawCommand } from '@weasel-js/renderer';
@@ -89,6 +89,9 @@ export function insertPreviewCommands(
         geom.innerRadius * radialScale,
         geom.rotation,
       );
+      break;
+    case 'path':
+      pathCmd = transformPath(geom.path, [view.scale.x, 0, 0, view.scale.y, t.panX, t.panY]);
       break;
     case 'pencil':
       // Genuinely open: `polygonFromPoints` closes the path, and the

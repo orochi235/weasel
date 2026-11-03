@@ -30,12 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [agent] An insert's live preview ignores the scene's quantize rule.** Under a rule whose `stored`
-  resizes, the shape a drag shows can land up to a dot off where the release commits it; resize and move
-  previews already run the rule. Needs a read on the `insert` dep that answers the node `build` would
-  mint without minting it. Design: `docs/superpowers/specs/2026-11-03-output-grid-clamping-design.md`.
-  Closes when an insert's preview equals the pose its release commits under a size-snapping rule.
-
 - **(P3) [maintainer] Whether an alt-drag clone should snap to its own source.** Clone snaps as move
   does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names
   the box being snapped and hides those nodes as targets. During a clone the source stays put, so the
