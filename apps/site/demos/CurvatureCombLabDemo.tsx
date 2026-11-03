@@ -31,7 +31,7 @@ const createLabScene = () =>
 
 function CombTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit();
+  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
   const { comb, scale, teeth } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);

@@ -79,7 +79,7 @@ export function RepresentationPanel({
     scene.setPose(nodeId, rep.toPath(anchors));
   }, [scene, nodeId, rep, anchors]);
 
-  const selection = useSelection({ initial: [nodeId], lock: true });
+  const selection = useSelection({ scene, initial: [nodeId], lock: true });
 
   const anchorsRef = useLatest(anchors);
   const onAnchorsChangeRef = useLatest(onAnchorsChange);

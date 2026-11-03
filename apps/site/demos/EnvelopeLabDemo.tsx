@@ -54,7 +54,7 @@ const SELECTED = [asNodeId('banner')];
 
 function EnvelopeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ mode: 'multi', initial: SELECTED });
+  const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { rows, cols, mapping, tolerance } = ctx.config;
   const settings = useMemo(() => ({ rows, cols, mapping, tolerance }), [rows, cols, mapping, tolerance]);
   useWarpLabActions(ctx.trial.id, 'envelope', settings);

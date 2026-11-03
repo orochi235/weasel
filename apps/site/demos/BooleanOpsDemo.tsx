@@ -112,6 +112,7 @@ function InteractivePanel() {
   });
 
   const selection = useSelection({
+    scene,
     mode: 'multi',
     initial: [asNodeId('rect'), asNodeId('circle')],
   });

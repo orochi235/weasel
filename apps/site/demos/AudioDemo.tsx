@@ -99,7 +99,7 @@ interface Kit {
 
 export function AudioDemo() {
   const scene = useScene<Dot>({ items: SOURCE });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
   const animator = useAnimator();
 
   const [kit, setKit] = useState<Kit | null>(null);

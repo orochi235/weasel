@@ -35,7 +35,7 @@ export function ImageDemo() {
         pose: { x: 300, y: 150, width: 160, height: 120 }, data: { image: { src: swatch('#a48bd4') } } },
     ],
   });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
 
   // Image-insert tool: drag on empty space to drop another copy of this src.
   const imageTool = useImageTool({ src: swatch('#d4a574') });

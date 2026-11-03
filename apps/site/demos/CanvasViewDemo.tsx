@@ -82,7 +82,7 @@ export function CanvasViewDemo() {
     systemLayers: [{ id: 'default' }],
     initial,
   });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   return (

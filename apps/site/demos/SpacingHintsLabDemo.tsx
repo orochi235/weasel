@@ -51,7 +51,7 @@ const createLabScene = () =>
 
 function SpacingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ mode: 'multi', initial: [STRAY_ID] });
+  const selection = useSelection({ scene, mode: 'multi', initial: [STRAY_ID] });
   const { spacing, align, tolerance, readout, modifier } = ctx.config;
   const spacingHints = useMemo(
     () => createSpacingHintsPreset({ spacing, align, tolerance, readout: readout && { modifier }, color: HINT_COLOR }),

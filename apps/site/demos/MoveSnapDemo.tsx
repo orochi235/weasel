@@ -29,7 +29,7 @@ export function MoveSnapDemo() {
       { id: 'token' as never, kind: 'mark', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { color: '#7fb069' } },
     ],
   });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
 
   const behaviors = useMemo(() => [
     snapToContainer<Pose>({

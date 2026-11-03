@@ -57,7 +57,7 @@ function nearestGridCell(p: Vec2, area: Dims): Vec2 {
 
 export function AnimationCards({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
   const nextId = useRef(1);
   const [size, setSize] = useState<Dims>({ width: W, height: H });
 
@@ -328,7 +328,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
       data: { color: '#7fb069' },
     }],
   });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
   const tracker = useVelocityTracker();
   const flight = useRef<Flight | null>(null);
   const size = useRef<Dims>({ width: FLICK_W, height: FLICK_H });

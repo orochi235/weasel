@@ -147,7 +147,7 @@ function StrokeAndFill() {
     // be its own undo entry.
     coalesceWindowMs: 300,
   });
-  const selection = useSelection({ initial: [SWATCH] });
+  const selection = useSelection({ scene, initial: [SWATCH] });
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [slot, setSlot] = useState<PaintSlot>('fill');
   const [tools, setTools] = useState<ToolsApi | null>(null);

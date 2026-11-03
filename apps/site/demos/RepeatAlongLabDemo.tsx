@@ -66,7 +66,7 @@ function createLabScene() {
 
 function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ initial: [TRACK] });
+  const selection = useSelection({ scene, initial: [TRACK] });
   const settings = settingsOf(ctx.config);
   const latest = useLatest(settings);
   // A repeat made from the bar or with Alt+Shift+R takes the panel's settings.

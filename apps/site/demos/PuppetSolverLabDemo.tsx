@@ -54,7 +54,7 @@ function SolverTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const [step, setStep] = useState<StepPick>(null);
   const create = useCallback(() => createLabScene(preset), [preset]);
   const scene = useTrialScene(ctx, create);
-  const selection = useSelection({ mode: 'multi', initial: SELECTED });
+  const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const puppet = usePuppetTool();
   const [readout] = useState(createReadout);
   const layers = useMemo(() => {

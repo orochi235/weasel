@@ -49,7 +49,7 @@ export function LassoDemo() {
   // press L to switch to lasso, drag a closed polygon, watch which rects
   // get selected based on the chosen mode.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
   const [mode, setMode] = useState<LassoHitMode>('intersect');
 
   return (

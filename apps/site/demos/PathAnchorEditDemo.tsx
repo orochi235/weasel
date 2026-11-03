@@ -34,7 +34,7 @@ export function PathAnchorEditDemo() {
       pathNode('wave', 'M280 200 C300 60 400 60 420 200 Z', '#e0a458'),
     ],
   });
-  const selection = useSelection();
+  const selection = useSelection({ scene });
 
   return (
     <DemoStage width={W} height={H}>

@@ -37,7 +37,7 @@ const tune: ActionTunings = { harmonizeAnchors: { bindings: [{ kind: 'key', key:
 
 function HarmonizeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit();
+  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
   const { comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);

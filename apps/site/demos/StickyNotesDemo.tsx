@@ -22,7 +22,7 @@ const INITIAL = [
 
 export function StickyNotesDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
     <div className="ckd-shape-tools-demo">
