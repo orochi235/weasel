@@ -151,12 +151,13 @@ export function offPageOps<TPose>(
 }
 
 /**
- * Split `scene`'s connectors across pages from now on: every live edit that
- * moves a connector's end, adds or rewrites a connector, or adds, removes,
- * reorders or renames a page splits, joins, and retags what it reached, in
- * its own history entry. Each end's page is its page ancestor. On
- * install nothing is recomputed. Returns the remover. A host without React
- * calls this; a component calls `useOffPageMarkers`.
+ * Split `scene`'s connectors across pages from now on: every live edit
+ * splits or joins the connectors whose ends it moved, and those it added or
+ * rewrote, and retags every split connector, since a page edit may have
+ * renamed or renumbered the page a tag names, all in that edit's own history
+ * entry. Each end's page is its page ancestor. On install nothing is
+ * recomputed. Returns the remover. A host without React calls this; a
+ * component calls `useOffPageMarkers`.
  */
 export function installOffPageMarkers<TPose>(
   scene: Scene<unknown, string, TPose>,
