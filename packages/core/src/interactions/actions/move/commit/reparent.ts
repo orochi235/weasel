@@ -11,6 +11,8 @@ import { carryPose, planeOf } from '../../planeInput';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession, ReparentOnDrop } from '../session';
 import { translateOps } from '../translate';
+import { translateNodeOps } from '../../moveNodes';
+import { outermost } from '@weasel-js/select';
 import { refusalOf } from '../../dropVerdict';
 import { worldBoundsOf, type MoveRefusal } from '../refusal';
 
@@ -95,6 +97,35 @@ export function landedLocalPose(
   return rebaseLocalPose(adapter, world, newParent as string | null, pc.compose, pc.decompose);
 }
 
+/** The ops for `ids`, descendants of a root moved into `newParent`: each one stored in the frame it is
+ *  moved into, on `newLayer` when given, at the world place the drag `delta` gives. One a moving frame
+ *  carries keeps only what it caught mid-glide, as in a translate. */
+export function landedCascadeOps(
+  session: MoveSession,
+  ids: readonly NodeId[],
+  newParent: NodeId | null,
+  delta: { dx: number; dy: number },
+  newLayer?: string,
+): Op[] {
+  const own = new Map<NodeId, { dx: number; dy: number }>();
+  for (const id of ids) {
+    const start = session.startPoses.get(id);
+    if (start === undefined || session.carried.has(id)) continue;
+    const d = session.descriptorOf(id);
+    const from = d.getBounds(start);
+    const to = d.getBounds(landedLocalPose(session, id, newParent, newLayer ?? session.scene.get(id)!.layer, delta));
+    const c = session.caught.get(id) ?? { dx: 0, dy: 0 };
+    own.set(id, { dx: to.x - from.x + c.dx, dy: to.y - from.y + c.dy });
+  }
+  return [
+    ...translateOps(session, ids.filter((id) => session.carried.has(id)), delta),
+    ...translateNodeOps(
+      session.scene, own.keys(), (id) => own.get(id) ?? null, session.descriptorOf, session.geometryProjection,
+      session.lifecycle.label,
+    ),
+  ];
+}
+
 /** Reparent and reposition each moved root as ops, keeping the world pose the
  *  drag showed, then the ops that bring uncarried descendants along. */
 export function reparentOps(
@@ -109,7 +140,8 @@ export function reparentOps(
   // The destination's children as each op will find them: an earlier root's
   // landing shifts where a later one goes.
   const siblings = [...(target.newParent === null ? scene.roots : scene.childrenOf(target.newParent))];
-  for (const id of session.ids) {
+  const roots = new Set(outermost(session.ids, (id) => scene.get(id)?.parent ?? null));
+  for (const id of roots) {
     if (!session.startPoses.has(id)) continue;
     const node = scene.get(id)!;
     const crossing = node.layer !== target.newLayer;
@@ -134,5 +166,6 @@ export function reparentOps(
     }));
     ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label }));
   }
-  return [...ops, ...translateOps(session, session.cascadeIds, delta)];
+  const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
+  return [...ops, ...landedCascadeOps(session, riders, target.newParent, delta, target.newLayer)];
 }
