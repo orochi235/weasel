@@ -34,7 +34,8 @@ export interface PropControlsOptions {
 
 /**
  * Reads component props through the project's own TypeScript, so a prop's type is what the compiler resolves it to.
- * `stories` are the program's roots, named up front so the program is built once. Null without `typescript`.
+ * `stories` are the program's roots, named up front so the program is built once. Null without `typescript`, or
+ * with TypeScript 7, which has no compiler API.
  */
 export async function createPropReader(
   root: string,
@@ -49,6 +50,7 @@ export async function createPropReader(
   } catch {
     return null;
   }
+  if (typeof tsm.createLanguageService !== 'function') return null;
   const { sys } = tsm;
   const configFile = tsm.findConfigFile(root, sys.fileExists);
   const read = configFile ? tsm.readConfigFile(configFile, sys.readFile) : undefined;
