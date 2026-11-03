@@ -71,6 +71,21 @@ describe('drawLayers retaining a layer', () => {
     expect(frames(layer(), [{ data: 1 }, { data: 1 }], false)).toEqual([undefined, undefined]);
   });
 
+  it('retains a layer running effects passes from its own, lower threshold', () => {
+    const effects = [{ program: { id: 'fx' } }];
+    const policy: LayerRetainPolicy = { minCommands: 5, minCommandsWithEffects: 2 };
+    const held = [{ data: 1 }, { data: 1 }];
+    expect(frames(layer({}, 2), held, policy)).toEqual([undefined, undefined]);
+    expect(frames(layer({ effects }, 2), held, policy)).toEqual([undefined, 'big']);
+    const inner = [{ kind: 'group' as const, effects, children: rects(2) }];
+    expect(frames(layer({ draw: () => inner }), held, policy)).toEqual([undefined, 'big']);
+    expect(frames(layer({ effects }, 1), held, policy)).toEqual([undefined, undefined]);
+    // Unset, it is the lesser of `minCommands` and the default's.
+    expect(frames(layer({ effects }, 2), held, { minCommands: 2 })).toEqual([undefined, 'big']);
+    expect(frames(layer({ effects }, 9), held, { minCommands: 250 })).toEqual([undefined, undefined]);
+    expect(frames(layer({ effects }, 10), held, { minCommands: 250 })).toEqual([undefined, 'big']);
+  });
+
   it('retains a layer carrying effects on the group that runs them, in either space', () => {
     const effects = [{ program: { id: 'fx' } }];
     expect(frames(layer({ effects }), [{ data: 1 }, { data: 1 }])).toEqual([undefined, 'big']);

@@ -111,7 +111,7 @@ export interface RenderLayer<TData> {
    * composite them as one quad instead of drawing its commands again — see
    * {@link LayerRetainPolicy} for when `drawLayers` does. `false` never
    * retains it, `true` retains it whatever its size; either way only a layer
-   * with `deps`, drawn through a cache, and without `effects`.
+   * with `deps`, drawn through a cache.
    */
   retain?: boolean;
   /**
