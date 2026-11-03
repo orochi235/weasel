@@ -17,4 +17,11 @@ describe('gridOnScreen', () => {
     expect(g.pitch[0]).toBeCloseTo(0.4);
     expect(g.pitch[1]).toBeCloseTo(0.8);
   });
+
+  it('gives a flipped axis a negative pitch, from the same origin', () => {
+    const g = gridOnScreen(grid, { x: 0, y: 100, scale: { x: 1, y: -2 } }, 1);
+    expect(g.pitch[0]).toBeCloseTo(0.4);
+    expect(g.pitch[1]).toBeCloseTo(-0.8);
+    expect(g.origin).toEqual([10, 160]);
+  });
 });

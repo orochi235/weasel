@@ -40,8 +40,11 @@ export function dither(options: GpuDitherOptions = {}): Effect[] {
     throw new Error(`dither: '${String(method)}' is error diffusion, which runs on the CPU only (ditherPixels)`);
   }
   const grid = options.grid === undefined || options.grid === 'screen' ? SCREEN : options.grid;
+  if (options.protect && grid === SCREEN) {
+    throw new Error('dither: a protect mask is in dots, so it needs an output grid, not the screen');
+  }
   const background = options.background ?? WHITE;
-  const reach = grid === SCREEN ? 0 : Math.ceil(Math.max(grid.pitch[0], grid.pitch[1]));
+  const reach = grid === SCREEN ? 0 : Math.ceil(Math.max(Math.abs(grid.pitch[0]), Math.abs(grid.pitch[1])));
   return [{
     program: PROGRAM,
     reach,

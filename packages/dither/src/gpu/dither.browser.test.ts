@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { WeaselRenderer, type DrawCommand } from '@weasel-js/renderer';
 import { ditherPixels } from '../ditherPixels';
 import { protectMask } from '../protectMask';
-import { dither } from './dither';
+import type { DitherOptions } from '../types';
+import { dither, type GpuDitherOptions } from './dither';
 import { protectTexture, type ProtectTexture } from './protectTexture';
 
 // Large enough that the group's 64 px effects buffer is not pulled back to the
@@ -18,25 +19,37 @@ const DOTS = 12;
 const GRAYS = [60, 100, 140, 210];
 
 const hex = (g: number) => `#${g.toString(16).padStart(2, '0').repeat(3)}`;
-const grayOfDot = (x: number) => GRAYS[Math.floor(x / 3)]!;
 
-/** Bands three dots wide, in device pixels at `k` pixels per dot. */
-function bands(k: number): DrawCommand[] {
+/** Bands three dots wide, in device pixels at `k` pixels per dot, starting
+ *  `offset` device pixels right of and below the grid's origin. */
+function bands(k: number, offset = 0): DrawCommand[] {
   return GRAYS.map((g, b) => ({
     kind: 'path',
-    path: { kind: 'rect', x: ORIGIN + b * 3 * k, y: ORIGIN, width: 3 * k, height: DOTS * k },
+    path: { kind: 'rect', x: ORIGIN + offset + b * 3 * k, y: ORIGIN + offset, width: 3 * k, height: DOTS * k },
     fill: { paint: { color: hex(g) } },
   }));
 }
 
-/** The same bands at one pixel per dot, as the CPU path sees an export. */
-function dotImage() {
+/** The same content as the CPU path sees an export at one pixel per dot:
+ *  each dot the mean of its k×k device pixels, over a transparent background. */
+function dotImage(k = 1, offset = 0) {
   const data = new Uint8ClampedArray(DOTS * DOTS * 4);
   for (let y = 0; y < DOTS; y++) {
     for (let x = 0; x < DOTS; x++) {
+      let covered = 0;
+      let sum = 0;
+      for (let dy = 0; dy < k; dy++) {
+        for (let dx = 0; dx < k; dx++) {
+          const cx = x * k + dx - offset;
+          const cy = y * k + dy - offset;
+          if (cx < 0 || cy < 0 || cx >= DOTS * k || cy >= DOTS * k) continue;
+          covered++;
+          sum += GRAYS[Math.floor(cx / (3 * k))]!;
+        }
+      }
       const i = (y * DOTS + x) * 4;
-      data.fill(grayOfDot(x), i, i + 3);
-      data[i + 3] = 255;
+      data.fill(covered ? sum / covered : 0, i, i + 3);
+      data[i + 3] = (255 * covered) / (k * k);
     }
   }
   return { width: DOTS, height: DOTS, data };
@@ -51,7 +64,8 @@ afterEach(() => {
   held = undefined;
 });
 
-/** Each dot's ink as the GPU drew it, read from the dot's top-left pixel. */
+/** The ink of each `k`×`k` cell of device pixels from the grid's origin, as
+ *  the GPU drew it. Every pixel of a cell must agree. */
 function render(commands: DrawCommand[], k: number): number[] {
   const canvas = document.createElement('canvas');
   canvas.width = SIZE;
@@ -64,7 +78,6 @@ function render(commands: DrawCommand[], k: number): number[] {
   const ink: number[] = [];
   for (let y = 0; y < DOTS; y++) {
     for (let x = 0; x < DOTS; x++) {
-      // Every pixel of a dot must agree; check them all, report the dot.
       const values = new Set<number>();
       for (let dy = 0; dy < k; dy++) {
         for (let dx = 0; dx < k; dx++) {
@@ -79,28 +92,50 @@ function render(commands: DrawCommand[], k: number): number[] {
   return ink;
 }
 
-const options = (k: number) => ({
+const options = (pitch: number) => ({
   ink: [0, 0, 0, 255] as const,
   blank: [255, 255, 255, 255] as const,
-  grid: { pitch: [k, k] as const, origin: [ORIGIN, ORIGIN] as const },
+  grid: { pitch: [pitch, pitch] as const, origin: [ORIGIN, ORIGIN] as const },
 });
+
+const group = (effects: GpuDitherOptions, children: DrawCommand[]): DrawCommand[] =>
+  [{ kind: 'group', effects: dither(effects), children }];
+
+const cpu = (image: ReturnType<typeof dotImage>, opts: DitherOptions) => Array.from(ditherPixels(image, opts));
 
 describe('dither effect against ditherPixels', () => {
   for (const method of ['threshold', 'bayer'] as const) {
-    for (const k of [1, 2, 3, 4]) {
+    // 6 takes 4×4 taps that fall between pixels; a flat dot still averages exactly.
+    for (const k of [1, 2, 3, 4, 6]) {
       it(`${method}, ${k} device px per dot`, () => {
-        const gpu = render([{ kind: 'group', effects: dither({ method, ...options(k) }), children: bands(k) }], k);
-        expect(gpu).toEqual(Array.from(ditherPixels(dotImage(), { method })));
+        expect(render(group({ method, ...options(k) }, bands(k)), k)).toEqual(cpu(dotImage(), { method }));
       });
     }
   }
 
-  it('bayer with the right half protected', async () => {
-    const mask = protectMask([{ x: 6, y: 0, width: 6, height: DOTS }], DOTS, DOTS);
+  // The content starts 2 px into the first dots, and the effects buffer 1 px
+  // before the content, so those dots' first taps lie outside the buffer and
+  // must count as transparent. At 175 every one of the edge dots turns on it.
+  for (const [method, threshold] of [['threshold', 175], ['bayer', 128]] as const) {
+    it(`${method}, content off the dot boundaries`, () => {
+      const k = 3;
+      const gpu = render(group({ method, threshold, ...options(k) }, bands(k, 2)), k);
+      expect(gpu).toEqual(cpu(dotImage(k, 2), { method, threshold }));
+    });
+  }
+
+  it('threshold, dots finer than a device pixel', () => {
+    // Each device pixel quantizes alone, as the CPU does at one dot per pixel.
+    expect(render(group({ method: 'threshold', ...options(0.5) }, bands(1)), 1))
+      .toEqual(cpu(dotImage(), { method: 'threshold' }));
+  });
+
+  it('bayer with the top right protected', async () => {
+    // Not symmetric in y, so a protect texture read upside down fails.
+    const mask = protectMask([{ x: 6, y: 0, width: 6, height: 5 }], DOTS, DOTS);
     held = await protectTexture(mask, DOTS, DOTS);
     const k = 2;
-    const effects = dither({ method: 'bayer', ...options(k), protect: held });
-    const gpu = render([{ kind: 'group', effects, children: bands(k) }], k);
-    expect(gpu).toEqual(Array.from(ditherPixels(dotImage(), { method: 'bayer', protect: mask })));
+    const gpu = render(group({ method: 'bayer', ...options(k), protect: held }, bands(k)), k);
+    expect(gpu).toEqual(cpu(dotImage(), { method: 'bayer', protect: mask }));
   });
 });

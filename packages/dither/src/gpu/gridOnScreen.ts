@@ -7,7 +7,9 @@ export interface DeviceGrid {
 }
 
 /** `grid` where `view` at `dpr` puts it. In a layer group's effect thunk,
- *  `dpr` is `dims.dpr`; in a node's draw, `ctx.pixelScale / view.scale.x`. */
+ *  `dpr` is `dims.dpr`; in a node's draw, `ctx.pixelScale / view.scale.x`.
+ *  A flipped axis gives a negative pitch, which keeps dots numbered in
+ *  document order: dot 0 still sits at the grid's document origin. */
 export function gridOnScreen(grid: OutputGrid, view: View, dpr: number): DeviceGrid {
   const sx = view.scale.x * dpr;
   const sy = view.scale.y * dpr;

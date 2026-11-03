@@ -27,6 +27,18 @@ describe('dither (GPU)', () => {
     expect(() => dither({ method: 'floyd-steinberg' as never })).toThrow(/CPU/);
   });
 
+  it('refuses a protect mask on the screen grid, since the mask is in dots', () => {
+    const protect = { texture: { id: 'tex_test' }, width: 1, height: 1 };
+    expect(() => dither({ protect })).toThrow(/output grid/);
+    expect(() => dither({ grid: 'screen', protect })).toThrow(/output grid/);
+  });
+
+  it('reaches one dot under a flipped axis, and keeps the signed pitch', () => {
+    const [fx] = dither({ grid: { pitch: [2.5, -3.2], origin: [5, 50] } });
+    expect(fx!.reach).toBe(4);
+    expect(fx!.uniforms).toMatchObject({ u_pitch: [2.5, -3.2] });
+  });
+
   it('passes a protect texture with its size', () => {
     const texture = { id: 'tex_test' };
     const [fx] = dither({ grid: { pitch: [2, 2], origin: [0, 0] }, protect: { texture, width: 12, height: 6 } });

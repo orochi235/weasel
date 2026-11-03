@@ -11,6 +11,9 @@ export interface ProtectTexture {
 /** A protect mask (from `protectMask`, in dot space) as a texture `dither`
  *  can read. The caller disposes it when the mask changes or the view goes. */
 export async function protectTexture(mask: Uint8Array, width: number, height: number): Promise<ProtectTexture> {
+  if (mask.length !== width * height) {
+    throw new RangeError(`protectTexture: mask holds ${mask.length} dots, ${width}×${height} needs ${width * height}`);
+  }
   const data = new Uint8ClampedArray(width * height * 4);
   for (let i = 0; i < width * height; i++) {
     const v = mask[i] ? 255 : 0;

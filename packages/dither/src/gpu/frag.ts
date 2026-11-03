@@ -40,27 +40,29 @@ vec2 uvOf(vec2 devicePx) {
 void main() {
   vec2 px = u_windowOrigin + vec2(v_uv.x, 1.0 - v_uv.y) * u_resolution;
   vec2 dotIndex = floor((px - u_gridOrigin) / u_pitch);
-  bool fine = u_pitch.x < 1.0 || u_pitch.y < 1.0;
+  vec2 size = abs(u_pitch);
+  bool fine = size.x < 1.0 || size.y < 1.0;
 
   float gray;
   if (fine) {
     gray = grayOf(texture(u_source, v_uv));
   } else {
+    // A negative pitch (a flipped axis) puts start on the dot's far edge and
+    // steps the taps back across it.
     vec2 start = u_gridOrigin + dotIndex * u_pitch;
-    vec2 taps = clamp(ceil(u_pitch), vec2(1.0), vec2(4.0));
+    vec2 taps = clamp(ceil(size), vec2(1.0), vec2(4.0));
     vec4 sum = vec4(0.0);
-    float n = 0.0;
     for (int j = 0; j < 4; j++) {
       if (float(j) >= taps.y) break;
       for (int i = 0; i < 4; i++) {
         if (float(i) >= taps.x) break;
         vec2 uv = uvOf(start + (vec2(float(i), float(j)) + 0.5) * u_pitch / taps);
+        // Past the buffer nothing was drawn: the tap is transparent.
         if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) continue;
         sum += texture(u_source, uv);
-        n += 1.0;
       }
     }
-    gray = grayOf(n > 0.0 ? sum / n : texture(u_source, v_uv));
+    gray = grayOf(sum / (taps.x * taps.y));
   }
 
   bool protectedDot = u_protectSize.x > 0.0
