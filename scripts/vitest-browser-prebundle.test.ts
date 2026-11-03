@@ -38,4 +38,9 @@ describe('browserPrebundle', () => {
   it('keeps its bundles in a cache directory of its own', () => {
     expect(browserPrebundle(root, options, ['run'], {}, false).cacheDir).toBe('node_modules/.vite-browser');
   });
+
+  it('gives each slice of a split run a cache directory of its own', () => {
+    const dir = (shard: string) => browserPrebundle(root, options, ['run', shard], {}, false).cacheDir;
+    expect([dir('--shard=1/3'), dir('--shard=3/3')]).toEqual(['node_modules/.vite-browser-1', 'node_modules/.vite-browser-3']);
+  });
 });
