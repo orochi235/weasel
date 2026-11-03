@@ -6,7 +6,7 @@ import { sameValue } from '../scene/sameValue';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId, Scene } from '../scene/types';
 import { treePreorder } from '../scene/treeOrder';
-import { PAGES_DOC_KEY, createPageRun, pageOfNode, pageRunOf, placedPagesOf, type PagesDoc } from './pageNodes';
+import { PAGES_DOC_KEY, createPageRun, pageNodeOf, pageOfNode, pageRunOf, placedPagesOf, type PagesDoc } from './pageNodes';
 import { followedPage, isFollower, keepOnPage, pageForBounds, pasteboardOn } from './pagePlacement';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -122,7 +122,7 @@ function moveIn(
       const d = poseDescriptorForNode(descriptor, s.get(id)!);
       return [id, shift.dx === 0 && shift.dy === 0 ? at : translatePoseViaDescriptor(at, shift.dx, shift.dy, d)];
     }));
-    s.move(root, (page ?? run) as NodeId);
+    s.move(root, page === null ? run : pageNodeOf(s, page)!);
     for (const id of subtree) {
       const local = rebaseLocalPose(poses, world.get(id), s.get(id)!.parent, compose, decompose);
       if (!sameValue(local, s.get(id)!.pose)) s.setPose(id, local);

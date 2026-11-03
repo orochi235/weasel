@@ -3,8 +3,8 @@ import { createScene, sceneFromJSON } from '../scene/scene';
 import { composeWorldPose } from '../scene/composePose';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId } from '../scene/types';
-import { createPageRun, isPaged, pageOfNode, pageRunOf } from './pageNodes';
-import { movePage, placedPagesOf, removePage, resizePage } from './pageEdits';
+import { createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf } from './pageNodes';
+import { movePage, pageMembers, pagesOf, placedPagesOf, removePage, renamePage, resizePage } from './pageEdits';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -95,5 +95,40 @@ describe('page nodes', () => {
     expect(pageOfNode(scene, grandchild)).toBe('b');
     expect(pageOfNode(scene, 'a' as NodeId)).toBe('a');
     expect(pageOfNode(scene, pageRunOf(scene)!)).toBeNull();
+  });
+});
+
+describe('a page whose id a node already holds', () => {
+  function collided() {
+    const scene = createScene<{ n: string }, 'paper' | 'ink', Pose>({ systemLayers: [{ id: 'paper' }, { id: 'ink' }] });
+    scene.add({ id: 'b' as NodeId, kind: 'mark', layer: 'ink', pose: { x: 0, y: 0, width: 5, height: 5 }, data: { n: 'b' } });
+    createPageRun(scene, [{ id: 'a', width: 100, height: 50 }, { id: 'b', width: 100, height: 50 }], { direction: 'row', gap: 10 });
+    return { scene, page: pageNodeOf(scene, 'b')! };
+  }
+
+  it('gets a fresh node id and keeps its page id', () => {
+    const { scene, page } = collided();
+    expect(page).not.toBe('b');
+    expect(scene.get(page)!.page).toEqual({ id: 'b' });
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['a', 'b']);
+    expect(placedPagesOf(scene).map((p) => p.id)).toEqual(['a', 'b']);
+    expect(pageNodeOf(scene, 'a')).toBe('a');
+    expect(pageNodeOf(scene, 'nope')).toBeNull();
+  });
+
+  it('answers the page edits and the page reads by its page id', () => {
+    const { scene, page } = collided();
+    const on = scene.add({ kind: 'mark', layer: 'ink', parent: page, pose: { x: 1, y: 1, width: 5, height: 5 }, data: { n: 'on' } });
+    expect(pageOfNode(scene, on)).toBe('b');
+    expect(pageMembers(scene).get('b')).toEqual([on]);
+    renamePage(scene, 'b', 'Back');
+    resizePage(scene, 'b', { width: 200, height: 50 });
+    movePage(scene, 'b', 0);
+    expect(pagesOf(scene)!.pages.map((p) => [p.id, p.name, p.width])).toEqual([['b', 'Back', 200], ['a', undefined, 100]]);
+    expect(scene.get(page)!.page).toEqual({ id: 'b', name: 'Back' });
+    removePage(scene, 'b');
+    expect(scene.get(page)).toBeUndefined();
+    expect(scene.get(on)).toBeUndefined();
+    expect(scene.get('b' as NodeId)!.data.n).toBe('b');
   });
 });

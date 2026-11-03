@@ -1,6 +1,6 @@
 import type { Bounds } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
-import { pageOfNode, pageRunOf } from 'core/pages/pageNodes';
+import { pageNodeOf, pageOfNode, pageRunOf } from 'core/pages/pageNodes';
 import { followerHome, keepOnPage, pageForPoint, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
 import { siteIn, type InsertSite } from './deps/insertSite';
 
@@ -50,7 +50,7 @@ export function pasteOnPages(
     const pageId = pages.get(root.id)!;
     const page = pageId === null || pasteboard ? null : placedPage(scene, pageId);
     return {
-      site: siteIn(scene, pageId as NodeId | null),
+      site: siteIn(scene, pageId === null ? null : pageNodeOf(scene, pageId)),
       shift: page ? keepOnPage(page, root.bounds) : { dx: 0, dy: 0 },
     };
   });

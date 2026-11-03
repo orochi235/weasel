@@ -1,4 +1,4 @@
-import type { NodeId } from '@weasel-js/core';
+import { pageNodeOf, type NodeId } from '@weasel-js/core';
 import {
   createSymmetry, HORIZONTAL_AXIS, isSymmetryGroup, VERTICAL_AXIS, type SymmetryController, type SymmetrySpec,
 } from '@weasel-js/symmetry';
@@ -40,7 +40,7 @@ export function useSymmetry(scene: DrawScene, page: { id?: string; x?: number; y
   const group = useRef<NodeId | null>(null);
 
   // A page frames what is on it, so the center is in its frame.
-  const onPage = page.id !== undefined && scene.get(page.id as NodeId)?.page !== undefined ? page.id as NodeId : null;
+  const onPage = page.id === undefined ? null : pageNodeOf(scene, page.id);
   const cx = (onPage === null ? page.x ?? 0 : 0) + page.width / 2;
   const cy = (onPage === null ? page.y ?? 0 : 0) + page.height / 2;
   useLayoutEffect(() => {

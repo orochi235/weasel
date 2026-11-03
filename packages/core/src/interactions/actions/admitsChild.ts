@@ -39,7 +39,8 @@ export function childVerdict(
   if (target?.pageRun !== undefined) {
     return ids.length > 0 && followerPages(scene, parent, ids).every((page) => page === null);
   }
-  if (target?.page !== undefined && followerPages(scene, parent, ids).some((page) => page !== undefined && page !== parent)) {
+  const own = target?.page === undefined ? null : pageOfNode(scene, parent);
+  if (own !== null && followerPages(scene, parent, ids).some((page) => page !== undefined && page !== own)) {
     return false;
   }
   if (canDropInto !== undefined) return canDropInto(parent as string, ids);

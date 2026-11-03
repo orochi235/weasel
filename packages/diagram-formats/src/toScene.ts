@@ -1,6 +1,7 @@
 /** A {@link DiagramDocument} as scene specs and document values: what every import draws from. */
 import {
-  contentRoots, layoutPages, placeOnPages, setPages, type NodeId, type Page, type PlacedPage, type Scene, type SerializedDoc,
+  createPageRun, layoutPages, pasteboardOn, placeOnPages, replaceDoc, type NodeId, type Page, type PlacedPage, type Scene,
+  type SerializedDoc,
 } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, diagramScene, diagramThemeFrom, diagramTypeDocValue, diagramTypeOfNotation, themeDocValue,
@@ -146,20 +147,21 @@ export function addOnPages<TData, TLayer extends string, TPose>(
 
 /**
  * Make `scene` hold `drawn` and nothing else, as one undo entry labeled
- * `label`: what it held is removed, the pages and everything in the page run
- * with it; its document values are `drawn`'s, every one `drawn` does not hold
- * cleared; its pages are `drawn`'s (`setPages`, which makes the run when there
- * is none); and its nodes go on them (`addOnPages`).
+ * `label`: everything it held is removed, locked or not, the page run and its
+ * pages with it; its document values are `drawn`'s (`replaceDoc`); its nodes
+ * are added, then its pages made under a new run that keeps the old one's
+ * pasteboard, a page whose id a node holds getting a fresh node id; and each
+ * root goes on its page (`placeOnPages`).
  */
 export function addDocumentScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, drawn: DocumentScene<TLayer>, label = 'Open',
 ): void {
   scene.batch(label, () => {
-    const held = contentRoots(scene);
-    if (held.length > 0) scene.removeMany(held);
-    for (const key of scene.doc.keys()) if (!(key in drawn.doc)) scene.doc.set(key, undefined);
-    for (const [key, value] of Object.entries(drawn.doc)) scene.doc.set(key, value);
-    setPages(scene, { pages: drawn.pages }, label);
-    addOnPages(scene, drawn.specs);
+    const pasteboard = pasteboardOn(scene);
+    scene.unlocked(() => { if (scene.roots.length > 0) scene.removeMany([...scene.roots]); });
+    replaceDoc(scene, drawn.doc);
+    const added = drawn.specs.map((spec) => scene.add(spec as never));
+    createPageRun(scene, drawn.pages, pasteboard ? { pasteboard } : {});
+    placeOnPages(scene, added.filter((id) => scene.get(id)?.parent == null));
   });
 }

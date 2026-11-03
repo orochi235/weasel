@@ -12,6 +12,8 @@ import { pageClip } from './pageClip';
 
 /** What makes a node a page (`SceneNode.page`): its name, and what other packages keep on it. */
 export interface PageInfo {
+  /** The page's id (`Page.id`), when its node's differs: a node already held that id when the page was made. */
+  readonly id?: string;
   readonly name?: string;
   /** Each entry under its owner's key (`'diagram:graph'`); every page edit carries it. */
   readonly meta?: Readonly<Record<string, unknown>>;
@@ -55,12 +57,35 @@ export function isPaged<TData, TLayer extends string, TPose>(scene: Scene<TData,
   return pageRunOf(scene) !== null;
 }
 
-/** The page `id` is on: its nearest ancestor that is a page, or `id` itself when it is one. `null` off every page. */
+/** The page id (`Page.id`) of page node `node`, holding `info`: the node's own id unless the page's was taken. */
+function pageIdOfNode(node: NodeId | string, info: unknown): string {
+  return (info as PageInfo).id ?? node;
+}
+
+/** The page `id` is on, by its page id (`Page.id`): its nearest ancestor that is a page, or `id` itself when it
+ *  is one. `null` off every page. */
 export function pageOfNode(scene: PageTreeReader, id: NodeId): string | null {
   for (let at: NodeId | null | undefined = id; at != null; at = scene.get(at)?.parent) {
-    if (scene.get(at)?.page !== undefined) return at;
+    const page = scene.get(at)?.page;
+    if (page !== undefined) return pageIdOfNode(at, page);
   }
   return null;
+}
+
+/** The node of the page whose id (`Page.id`) is `pageId`, or `null` when no page has it. A page's node id is
+ *  its page id unless another node held that id when the page was made. */
+export function pageNodeOf<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  pageId: string,
+): NodeId | null {
+  const own = scene.get(pageId as NodeId);
+  if (own?.page !== undefined && pageIdOfNode(pageId, own.page) === pageId) return pageId as NodeId;
+  const run = pageRunOf(scene);
+  if (run === null) return null;
+  return scene.childrenOf(run).find((id) => {
+    const page = scene.get(id)?.page;
+    return page !== undefined && pageIdOfNode(id, page) === pageId;
+  }) ?? null;
 }
 
 /** The page nodes under `run`, in page order. */
@@ -71,11 +96,12 @@ export function pageIdsOf<TData, TLayer extends string, TPose>(
   return scene.childrenOf(run).filter((id) => scene.get(id)?.page !== undefined);
 }
 
-/** Page `id` as a {@link Page}: its info, and the size its pose gives it. */
+/** Page node `id` as a {@link Page}: its page id, its info, and the size its pose gives it. */
 function pageFromNode(scene: AnyScene, id: NodeId): Page {
   const node = scene.get(id)!;
   const { width, height } = node.pose as RectPose;
-  return { id, width, height, ...node.page };
+  const { id: _id, ...info } = node.page!;
+  return { id: pageIdOfNode(id, node.page), width, height, ...info };
 }
 
 /** The scene's pages and their layout, read off the nodes, or `null` when it has no page run. */
@@ -126,9 +152,11 @@ export function runInfo(layout: PageLayoutOptions = {}, pasteboard?: boolean): P
   return pasteboard === undefined ? rest : { ...rest, pasteboard };
 }
 
-/** The `page` field for `page`: its name and meta, when it has them. */
-export function pageInfo(page: Page): PageInfo {
+/** The `page` field for `page` on node `node`: its id when the node's differs, and its name and meta, when it
+ *  has them. */
+export function pageInfo(page: Page, node: NodeId | string = page.id): PageInfo {
   return {
+    ...(node !== page.id ? { id: page.id } : {}),
     ...(page.name !== undefined ? { name: page.name } : {}),
     ...(page.meta !== undefined ? { meta: page.meta } : {}),
   };
@@ -145,7 +173,7 @@ export type CreatePageRunOptions<TLayer extends string> = PageLayoutOptions & {
 /**
  * Make the scene paged: add the page run, a root group laid out by
  * `pageRunLayout`, and a group under it for each of `pages`, whose id is the
- * page's. One undo entry. Returns the run's id. The run and its pages hold
+ * page's unless a node already holds it (`pageNodeOf`). One undo entry. Returns the run's id. The run and its pages hold
  * `data: undefined` whatever the scene's `TData`: a reader of every node's
  * `data` meets them too. Neither is pickable, and each page clips what is on
  * it to its rect (`pageClip`).
@@ -168,10 +196,12 @@ export function createPageRun<TData, TLayer extends string, TPose>(
   });
 }
 
-/** Add `page` as a node at the end of `run`, at `pose` in the run's frame. */
+/** Add `page` as a node at the end of `run`, at `pose` in the run's frame: under the page's id, or a fresh
+ *  one when a node already holds it. */
 export function addPageNode(scene: AnyScene, run: NodeId, page: Page, pose: RectPose): void {
+  const id = scene.get(page.id as NodeId) === undefined ? page.id as NodeId : scene.mintId();
   scene.add({
-    kind: 'group', layer: scene.get(run)!.layer, parent: run, id: page.id as NodeId,
-    pose, data: undefined, page: pageInfo(page), pickable: false, clipFromPose: pageClip,
+    kind: 'group', layer: scene.get(run)!.layer, parent: run, id,
+    pose, data: undefined, page: pageInfo(page, id), pickable: false, clipFromPose: pageClip,
   });
 }

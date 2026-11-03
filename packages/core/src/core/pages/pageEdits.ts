@@ -9,8 +9,8 @@ import { sameValue } from '../scene/sameValue';
 import type { NodeId, RectPose, Scene } from '../scene/types';
 import type { Page, PlacedPage } from './pages';
 import {
-  addPageNode, createPageRun, pageIdsOf, pageInfo, pagePoses, pageRunOf, pagesOf, placedPagesOf, runInfo, runPose,
-  type PagesDoc,
+  addPageNode, createPageRun, pageIdsOf, pageInfo, pageNodeOf, pageOfNode, pagePoses, pageRunOf, pagesOf, placedPagesOf,
+  runInfo, runPose, type PagesDoc,
 } from './pageNodes';
 
 export { PAGES_DOC_KEY, pagesOf, placedPagesOf, type PagesDoc } from './pageNodes';
@@ -41,7 +41,10 @@ export function pageMembers<TData, TLayer extends string, TPose>(
   placed: readonly PlacedPage[] = placedPagesOf(scene),
   _descriptor?: PoseDescriptor<unknown>,
 ): Map<string, NodeId[]> {
-  return new Map(placed.map((p) => [p.id, scene.get(p.id as NodeId) ? [...scene.childrenOf(p.id as NodeId)] : []]));
+  return new Map(placed.map((p) => {
+    const node = pageNodeOf(scene, p.id);
+    return [p.id, node === null ? [] : [...scene.childrenOf(node)]];
+  }));
 }
 
 /** Put `run`'s pages in `order`, each into the slot the `k`th page holds, so its other children stay put. */
@@ -55,12 +58,11 @@ function orderPages(scene: AnyScene, run: NodeId, order: readonly NodeId[]): voi
 }
 
 /** Bring page node `id` to `pose`, and to `page`'s name and meta. */
-function writePage(scene: AnyScene, page: Page, pose: RectPose): void {
-  const id = page.id as NodeId;
+function writePage(scene: AnyScene, id: NodeId, page: Page, pose: RectPose): void {
   const node = scene.get(id)!;
   const to = { ...(node.pose as RectPose), ...pose };
   if (!sameValue(node.pose, to)) scene.setPose(id, to);
-  const info = pageInfo(page);
+  const info = pageInfo(page, id);
   if (!sameValue(node.page, info)) scene.setPage(id, info);
 }
 
@@ -85,16 +87,17 @@ export function setPages<TData, TLayer extends string, TPose>(
     }
     const node = s.get(run)!;
     const keep = new Set(next.pages.map((p) => p.id));
-    const dropped = pageIdsOf(s, run).filter((id) => !keep.has(id));
+    const dropped = pageIdsOf(s, run).filter((id) => !keep.has(pageOfNode(s, id)!));
     if (dropped.length > 0) s.removeMany(dropped);
     const info = runInfo(next.layout, node.pageRun!.pasteboard);
     if (!sameValue(node.pageRun, info)) s.setPageRun(run, info);
     const poses = pagePoses(next.pages, next.layout);
     for (const page of next.pages) {
-      if (s.get(page.id as NodeId) === undefined) addPageNode(s, run, page, poses.get(page.id)!);
-      else writePage(s, page, poses.get(page.id)!);
+      const id = pageNodeOf(s, page.id);
+      if (id === null) addPageNode(s, run, page, poses.get(page.id)!);
+      else writePage(s, id, page, poses.get(page.id)!);
     }
-    orderPages(s, run, next.pages.map((p) => p.id as NodeId));
+    orderPages(s, run, next.pages.map((p) => pageNodeOf(s, p.id)!));
     const pose = runPose(next.pages, next.layout);
     if (!sameValue(s.get(run)!.pose, pose)) s.setPose(run, pose);
   });

@@ -4,7 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { followerHome, isFollower, keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
 import { pageAt, pageOfBounds, type PlacedPage } from 'core/pages/pages';
-import { pageOfNode, pageRunOf, placedPagesOf } from 'core/pages/pageNodes';
+import { pageNodeOf, pageOfNode, pageRunOf, placedPagesOf } from 'core/pages/pageNodes';
 import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
 import { refusalOf } from '../../dropVerdict';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -25,11 +25,12 @@ const STAY: RootDrop = { shift: { dx: 0, dy: 0 } };
 /** The node a release over `under` drops into on that page when the binding reparents on drop: a group on
  *  it under the pointer (`resolveDrop`), else `under` itself. `'refused'` when that drop is refused. */
 function containerOn(session: MoveSession, under: PlacedPage, at: { x: number; y: number }): NodeId | 'refused' {
-  if (session.reparentOnDrop() === 'off') return under.id as NodeId;
+  const page = pageNodeOf(session.scene, under.id)!;
+  if (session.reparentOnDrop() === 'off') return page;
   const drop = resolveDrop(session, at);
   if (drop !== null && 'refused' in drop) return 'refused';
   const inner = drop?.newParent ?? null;
-  return inner !== null && pageOfNode(session.scene, inner) === under.id ? inner : under.id as NodeId;
+  return inner !== null && pageOfNode(session.scene, inner) === under.id ? inner : page;
 }
 
 /**
@@ -62,7 +63,7 @@ export function pageDrops(
   const placed = placedPagesOf(scene);
   let under = pageAt(placed, at);
   if (under !== null) {
-    const verdict = session.verdict(under.id as NodeId);
+    const verdict = session.verdict(pageNodeOf(scene, under.id)!);
     if (refusalOf(verdict) !== null) return 'refused';
     if (verdict !== true) under = null;
   }
@@ -73,14 +74,15 @@ export function pageDrops(
   const drops = new Map<NodeId, RootDrop>();
   for (const id of ours) {
     const parent = scene.get(id)!.parent;
+    const from = parent === null ? null : pageOfNode(scene, parent);
     const bounds = session.descriptorOf(id).getBounds(draggedWorldPose(session, adapter, id, delta));
-    const takers = placed.filter((p) => p.id === parent || session.verdict(p.id as NodeId) === true);
+    const takers = placed.filter((p) => p.id === from || session.verdict(pageNodeOf(scene, p.id)!) === true);
     const page = under !== null && pageOfBounds([under], bounds) !== null ? under : pageOfBounds(takers, bounds);
-    let target: NodeId | null = page === null ? null : page === under ? into : page.id as NodeId;
+    let target: NodeId | null = page === null ? null : page === under ? into : pageNodeOf(scene, page.id);
     let landing = page;
     if (page === null && !pasteboard) {
       target = parent;
-      landing = placedPage(scene, parent!);
+      landing = placedPage(scene, from!);
     }
     const shift = landing !== null && !pasteboard ? keepOnPage(landing, bounds) : STAY.shift;
     if (target !== parent) drops.set(id, { into: target, shift });

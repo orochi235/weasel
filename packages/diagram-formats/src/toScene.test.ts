@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DIAGRAM_THEMES, DIAGRAM_THEME_KEY, edgeIdOf, type DiagramEdge, type DiagramSpec } from '@weasel-js/diagram';
+import {
+  DIAGRAM_THEMES, DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, edgeIdOf, type DiagramEdge, type DiagramSpec,
+} from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
-import { pagesOf } from '@weasel-js/core';
+import { asNodeId, pageNodeOf, pageOfNode, pagesOf } from '@weasel-js/core';
 import { addDocumentScene, documentSpecs } from './toScene';
+import { readDocument } from './formats';
 import { MEASURE, contentNodes, drawnScene } from './testing/docScene';
 import { asGraph } from './testing/asGraph';
 
@@ -152,5 +155,60 @@ describe('addDocumentScene', () => {
     expect([...scene.doc.keys()].sort()).toEqual(Object.keys(second.doc).sort());
     scene.undo();
     expect(scene.doc.get('app:stale')).toBe(1);
+  });
+
+  it('clears the diagram type a document without one replaces, and undo restores it', () => {
+    const scene = drawnScene(documentSpecs(DOC, { measure: MEASURE }));
+    const typed = scene.doc.get(DIAGRAM_TYPE_DOC_KEY);
+    expect(typed).toBeDefined();
+    const untyped = documentSpecs({ pages: [] }, { measure: MEASURE });
+    expect(DIAGRAM_TYPE_DOC_KEY in untyped.doc).toBe(false);
+    addDocumentScene(scene, untyped, 'Import');
+    expect(scene.doc.get(DIAGRAM_TYPE_DOC_KEY)).toBeUndefined();
+    scene.undo();
+    expect(scene.doc.get(DIAGRAM_TYPE_DOC_KEY)).toEqual(typed);
+  });
+
+  it('replaces a scene with roots on the pasteboard, and keeps the pasteboard on', () => {
+    const scene = drawnScene(documentSpecs(DOC, { measure: MEASURE }));
+    const run = scene.roots.find((id) => scene.get(id)!.pageRun !== undefined)!;
+    scene.untracked(() => {
+      scene.setPageRun(run, { ...scene.get(run)!.pageRun!, pasteboard: true });
+      scene.add({ id: asNodeId('loose'), kind: 'mark', layer: 'main', pose: { x: -500, y: -500, width: 10, height: 10 }, data: {} });
+    });
+    addDocumentScene(scene, documentSpecs(SECOND, { measure: MEASURE }), 'Import');
+    expect(scene.get(asNodeId('loose'))).toBeUndefined();
+    const next = scene.roots.find((id) => scene.get(id)!.pageRun !== undefined)!;
+    expect(scene.get(next)!.pageRun!.pasteboard).toBe(true);
+    expect(scene.get(asNodeId('a'))!.parent).toBe('one');
+  });
+
+  it('replaces locked content and a locked page', () => {
+    const scene = drawnScene(documentSpecs(DOC, { measure: MEASURE }));
+    scene.setLocked(asNodeId('b'), true);
+    scene.setLocked(asNodeId('two'), true);
+    expect(() => addDocumentScene(scene, documentSpecs(SECOND, { measure: MEASURE }), 'Import')).not.toThrow();
+    expect(scene.get(asNodeId('b'))).toBeUndefined();
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['one']);
+  });
+
+  it('loads a graph with a node named like its page, giving the page a node id of its own', async () => {
+    const { document } = await readDocument('digraph { "page-1" -> b }', 'g.dot');
+    expect(document.pages[0]!.id).toBe('page-1');
+    const scene = drawnScene(documentSpecs(document, { measure: MEASURE }));
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1']);
+    const page = pageNodeOf(scene, 'page-1')!;
+    expect(page).not.toBe('page-1');
+    expect(scene.get(asNodeId('page-1'))!.page).toBeUndefined();
+    expect(scene.get(asNodeId('page-1'))!.parent).toBe(page);
+    expect(pageOfNode(scene, asNodeId('page-1'))).toBe('page-1');
+  });
+
+  it('opens the same file twice over itself', async () => {
+    const { document } = await readDocument('digraph { "page-1" -> b }', 'g.dot');
+    const scene = drawnScene(documentSpecs(document, { measure: MEASURE }));
+    addDocumentScene(scene, documentSpecs(document, { measure: MEASURE }), 'Open');
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1']);
+    expect(pageOfNode(scene, asNodeId('b'))).toBe('page-1');
   });
 });

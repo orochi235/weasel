@@ -3,7 +3,7 @@ import { createScene } from '../scene/scene';
 import type { AddNodeSpec, NodeId } from '../scene/types';
 import { adoptLegacyPages, placeOnPages } from './legacyPages';
 import { PAGES_DOC_KEY, type PagesDoc } from './pageEdits';
-import { createPageRun, pageRunOf } from './pageNodes';
+import { createPageRun, pageNodeOf, pageOfNode, pageRunOf } from './pageNodes';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -23,6 +23,17 @@ const load = (initial: Spec[]) =>
   createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }], doc: { [PAGES_DOC_KEY]: TWO }, initial });
 
 describe('adoptLegacyPages', () => {
+  it('gives a page whose id a content node holds a node id of its own', () => {
+    const scene = load([rect('b', 115), rect('onA', 5)]);
+    expect(adoptLegacyPages(scene)).toBe(true);
+    const back = pageNodeOf(scene, 'b')!;
+    expect(back).not.toBe('b');
+    expect(scene.get(back)!.page).toEqual({ id: 'b', name: 'Back' });
+    expect(scene.get('b' as NodeId)!.parent).toBe(back);
+    expect(pageOfNode(scene, 'b' as NodeId)).toBe('b');
+    expect(scene.get('onA' as NodeId)!.parent).toBe('a');
+  });
+
   it('turns a pages doc into page nodes and moves each root into its page', () => {
     const scene = load([rect('onB', 115)]);
     const onB = 'onB' as NodeId;

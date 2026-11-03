@@ -6,6 +6,7 @@ import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame } from 'core/scene/effectivePose';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
+import { pageOfNode } from 'core/pages/pageNodes';
 import type { PlacedPage } from 'core/pages/pages';
 
 /** Where a new node lands: its parent, its layer, and how a world pose becomes its stored one. */
@@ -64,6 +65,7 @@ export interface InsertSiteOptions {
  */
 export function insertSite(sc: SiteScene, { at, into, canDropInto }: InsertSiteOptions = {}): InsertSite {
   const site = siteIn(sc, insertParent(sc, into, canDropInto, at));
-  const page = site.parent === null || pasteboardOn(sc) ? null : placedPage(sc, site.parent);
+  const pageId = site.parent === null || pasteboardOn(sc) || sc.get(site.parent)?.page === undefined ? null : pageOfNode(sc, site.parent);
+  const page = pageId === null ? null : placedPage(sc, pageId);
   return page === null ? site : { ...site, local: (p) => site.local(ontoPage(page, p)) };
 }

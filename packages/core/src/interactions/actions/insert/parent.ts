@@ -1,5 +1,5 @@
 import type { NodeId, Scene } from 'core/scene/types';
-import { isPaged } from 'core/pages/pageNodes';
+import { isPaged, pageNodeOf } from 'core/pages/pageNodes';
 import { pageForPoint } from 'core/pages/pagePlacement';
 import { admitsChild } from '../admitsChild';
 import type { CanDropIntoDep } from '../layoutDeps';
@@ -17,5 +17,6 @@ export function insertParent(
   if (into != null && scene.get(into as NodeId) !== undefined && admitsChild(scene, into as NodeId, [], canDropInto)) {
     return into as NodeId;
   }
-  return at !== undefined && isPaged(scene) ? pageForPoint(scene, at) as NodeId | null : null;
+  const page = at !== undefined && isPaged(scene) ? pageForPoint(scene, at) : null;
+  return page === null ? null : pageNodeOf(scene, page);
 }

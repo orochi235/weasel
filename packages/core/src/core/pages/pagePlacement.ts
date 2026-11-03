@@ -5,7 +5,7 @@
 import type { Bounds } from '@weasel-js/routing';
 import type { NodeId, Scene } from '../scene/types';
 import { pageAt, pageHolding, pageOfBounds, type PlacedPage } from './pages';
-import { pageOfNode, pageRunOf, placedPagesOf, type PageTreeReader } from './pageNodes';
+import { pageNodeOf, pageOfNode, pageRunOf, placedPagesOf, type PageTreeReader } from './pageNodes';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -48,7 +48,7 @@ export function followerHome<TData, TLayer extends string, TPose>(
   const run = pageRunOf(scene);
   const page = run === null ? undefined : followedPage(scene, node, pageOf);
   if (page === undefined) return null;
-  return page === null ? run : page as NodeId;
+  return page === null ? run : pageNodeOf(scene, page) ?? run;
 }
 
 /**
@@ -80,7 +80,7 @@ export function pageForBounds<TData, TLayer extends string, TPose>(
   return pasteboardOn(scene) ? pageOfBounds(placed, bounds) : pageHolding(placed, bounds);
 }
 
-/** Page `id` where it sits in world space, or `null` when `id` is not a page. */
+/** The page whose id (`Page.id`) is `id` where it sits in world space, or `null` when no page has it. */
 export function placedPage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   id: NodeId | string,
