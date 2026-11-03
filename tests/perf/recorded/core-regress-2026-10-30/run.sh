@@ -5,12 +5,12 @@
 # Run from the repo root as
 #   onto do --kind bench --solo --expect 15m --out tests/perf/recorded/core-regress-2026-10-30/<pass> -- \
 #     bash tests/perf/recorded/core-regress-2026-10-30/run.sh <pass> <label>:<sha|tree> ...
-# Each run appends one JSON record to <pass>/<node>/runs.jsonl.
+# Each run appends one JSON record to <pass>/<node>/runs.jsonl, under OUT (default: this directory).
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(git rev-parse --show-toplevel)"
 pass="$1"; shift
-out="$here/$pass/$(hostname -s)"
+out="${OUT:-$here}/$pass/$(hostname -s)"
 trees="$root/.bench-trees"
 rounds="${ROUNDS:-5}"
 mkdir -p "$out" "$trees"
