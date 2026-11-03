@@ -1423,6 +1423,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/EffectsDemo.tsx',
   },
   {
+    id: 'dither',
+    title: 'Dithering to 1-bit ink',
+    package: 'dither',
+    description: 'A 288 × 108 pt label quantized to black and white, live on the canvas and in an export under it. Gradients carry the tone a photograph would; the marks are plain bars and hairline rules, not an encoded barcode. Grid sets where the dots fall: Screen makes each device pixel a dot, and 180 or 300 dpi is an `OutputGrid` placed by `gridOnScreen(grid, view, dims.dpr)` inside a `LayerGroup` effect thunk, so each dot is a printer dot and grows as you zoom. Method and Threshold drive `dither(...)` on the canvas, which runs threshold and Bayer only, so it shows Bayer for the two error-diffusion methods, and `ditherPixels` on the export, which runs all four. Keep marks crisp shows two ways to keep the bars out of the dither: By layer puts `dither` on a group over `scene:art` and a plain threshold pass on one over `scene:marks`; By mask dithers the whole scene with the marks and their quiet zone protected through `protectRects` → `protectMask` → `protectTexture`; Off lets Bayer break the bar edges and rules up. The export is `renderSceneToPixels` at the grid\'s resolution, then `ditherPixels`, then `maskToRgba`.',
+    hint: 'zoom in: on a printer grid the dots grow with the page; on the screen grid they don\'t',
+    load: () => import('./demos/DitherDemo').then((m) => m.DitherDemo),
+    path: 'apps/site/demos/DitherDemo.tsx',
+  },
+  {
     id: 'color-matrix',
     title: 'Stacked color matrices',
     package: 'renderer',

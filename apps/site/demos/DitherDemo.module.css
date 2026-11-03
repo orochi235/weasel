@@ -1,0 +1,24 @@
+.export {
+  margin: var(--wzl-space-6) 0 0;
+}
+
+/* Two CSS pixels per point, as the canvas opens, whatever the export's resolution. */
+.print {
+  display: block;
+  width: 576px;
+  max-width: 100%;
+  aspect-ratio: 288 / 108;
+  image-rendering: pixelated;
+  background: #ffffff;
+  border: 1px solid var(--wzl-border);
+}
+
+.caption {
+  margin-top: var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}
+
+.readout {
+  min-width: 3ch;
+}
