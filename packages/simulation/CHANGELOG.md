@@ -1,5 +1,12 @@
 # @weasel-js/simulation
 
+## 1.16.1
+
+### Patch Changes
+
+- @weasel-js/clock@1.16.1
+  - @weasel-js/react@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

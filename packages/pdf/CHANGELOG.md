@@ -1,5 +1,30 @@
 # @weasel-js/pdf
 
+## 1.16.1
+
+### Patch Changes
+
+- 25378d9: An exported PDF's Arabic text reads back as written when a mark sits on a word's last letter: `بَبَ بت` used to come back from pdf.js as `بَب َ بت` and from poppler (`pdftotext`) as `ب بتبَ َ`, and now comes back from both as `بَبَ بت`. Each right-to-left mark's code now has a width that takes the pen back to just before its base, so poppler puts the mark ahead of the base in its word. Where a mark follows a space, or that width moves the pen back, the text also carries one extra glyph, raised far off the page so neither reader takes it for text, whose kern puts pdf.js's pen back where pdf.js measures the word gap from. Every glyph is drawn where it was.
+- 6b503a5: Seat a marker head the line stops short of on the shaft's cut end. The head's back now sits on the end of the shortened shaft and points along the shaft there, so a curving shaft enters the back of an arrowhead square instead of poking out its side; the tip lands the head's inset past the cut. The canvas, PDF, and outlined strokes place heads through `markerHeads`, and `markerSites` takes the insets as a new optional argument.
+  
+  SVG export follows the same rule: it cuts the stroked shaft back by each start and end head's inset and moves the head's `<marker>` reference point back to match, so any viewer's `orient="auto"` draws the head the way the canvas does. The element keeps its path as authored in `wzl:d`, and import reads it back, along with the kit marker it references. A mid marker, or an end too short to cut, references an unseated `-tip` def.
+  
+  PDF export strokes an inset-headed shaft natively, cut back by exact arc length, instead of filling a flattened outline, which showed facets on curves when zoomed. The cut is the new `insetPath` from `@weasel-js/stroke`, which the SVG writer uses too.
+  
+  A `TrialSceneCanvas` is now its trial's camera, so the lab header's zoom buttons, readout, and zoom keys drive a scene lab's view.
+- Updated dependencies [3afef45]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [3905b08]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [b45f2cc]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/renderer@1.16.1
+  - @weasel-js/stroke@1.16.1
+  - @weasel-js/text@1.16.1
+  - @weasel-js/font@1.16.1
+  - @weasel-js/paint@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes

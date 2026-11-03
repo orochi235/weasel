@@ -1,5 +1,46 @@
 # @weasel-js/editor
 
+## 1.16.1
+
+### Patch Changes
+
+- 6b9d157: `<EditorShell>` now gives every canvas in it default context menus: `editor.selection` on the selection (cut, copy, paste, duplicate, delete; group, ungroup; bring forward, send backward) and `editor.canvas` on empty canvas (paste, select all; undo, redo). An app adds to one by contributing a `MenuDef` with the same id on a canvas `ambient` entry, whose sections follow the editor's; `contextMenus={false}` installs none. The menus are exported as `EDITOR_CONTEXT_MENUS`, and the entry carrying them as `EDITOR_CONTEXT_MENUS_CONTRIBUTION`. This is new default behavior: an app under the shell that already defines its own selection or canvas menu now opens the editor's in its place, since the first matching menu wins, until it moves its items onto the shared ids or passes `contextMenus={false}`.
+  
+  Core adds `<AmbientContributionsProvider contributions>`: every `<SceneCanvas>` below it installs those entries ahead of its own `ambient`, a canvas's `ambient` entry of the same id replacing a provided one. Nested providers accumulate, an inner entry replacing an outer one of the same id.
+- 72330bf: Pages are scene nodes. A paged scene has a page run, a root group that lays out its pages in a column or a row, and each page is a group under it that frames and clips what is on it. Content on a page is that page's child, in the page's own coordinates with the origin at its top-left, so a page's content moves with it and dragging onto another page reparents. A scene with a page run is in Pages mode; one without is Continuous. Pages are 2D only.
+  
+  This is breaking for a consumer that wrote `core:pages` directly, or placed content on pages in world coordinates: the pages are no longer a document value, and a node on a page is positioned relative to it. Stored scenes convert on load: `adoptLegacyPages` turns a `core:pages` value into page nodes and moves each root onto the page holding it, as one untracked batch. `PAGES_DOC_KEY` remains only as the key that conversion reads.
+  
+  The page edits (`setPages`, `addPage`, `removePage`, `movePage`, `resizePage`, `renamePage`) and readers (`pagesOf`, `placedPagesOf`) keep their names and now work on the nodes. Content placed outside every page goes onto the nearest page unless the page run's `pasteboard` flag is on. A node that follows others (`dependsOn`, such as a connector) goes on the page its ends share, else into the page run. Pages and the run are never selected, deleted, copied or grouped by the scene tools, and the run refuses drops and inserts of anything but followers. A layer lock never locks a page or the run; only its own `locked` flag does. Group and the boolean group made from members on more than one page put the new group on the page the members overlap most. Turning the pasteboard off puts what sits off every page on the pages, in the same undo entry, and `setPages` on a Continuous scene puts what it holds on the new pages.
+  
+  Page and run nodes hold `data: undefined` whatever the scene's `TData`, so code walking `scene.nodes` and reading `data` must skip page structure (`isPageStructure`). A page's node id is its page id (`Page.id`) unless another node already held that id when the page was made: then the node gets a fresh id and `PageInfo.id` keeps the page id. `pagesOf`, `placedPagesOf`, `pageOfNode` and the page edits all speak page ids; `pageNodeOf` gives the node for one.
+  
+  - `@weasel-js/core` exports `createPageRun`, `pageRunOf`, `isPaged`, `pageOfNode`, `PAGE_RUN` and `pageRunLayout`, `PAGE_CLIP` and `pageClip`, `adoptLegacyPages`, `placeOnPages` (moves world-space specs onto their pages, measured by `AUTO_POSE_DESCRIPTOR` unless told otherwise), `addOnPages` (adds specs and places them), `pageNodeOf`, `pasteboardOn`, `replaceDoc` (makes a scene's document values a given set, clearing the rest), `followerHome`, `isPageStructure`, `withoutPageStructure`, `contentRoots`, and, from the routing barrel, `insertSite` with `InsertSite` and `InsertSiteOptions`, whose `descriptor` measures the insert against its page. Nodes gain `page` and `pageRun` fields, which save with the scene, and scenes gain `setPage` and `setPageRun`. `LayoutContainer` and `LayoutChild` gain an optional `node`.
+  - `@weasel-js/editor`: `usePages` takes `{ paging }` as its last argument, `'continuous'` (the default) or `'single'`, which settles the view fitted to one page through the new `usePageSettle`. `adoptSnapshotPages` converts a snapshot saved with `core:pages`, which `nodeSpecsFromSnapshot` now does; both take a `pages` option, the pages a snapshot with neither page nodes nor `core:pages` gets. `snapshotRebuildsTree` says whether a load rebuilds the tree, so the undo stack saved beside it is stale, and `useSessionPersistence` drops that stack, taking the same `pages` option. `usePageFit`'s `page` may be `null`.
+  - `@weasel-js/diagram`: `OffPageEdgeInput` is now `{ id, fromPage, toPage, offPage? }`, each end's page read from its page ancestor, and `OffPageSplitInput` loses `pages`. `OffPageMarkerOptions` loses `geometry` and its type parameter. A stencil drawn on a paged scene lands on the page under it.
+  - `@weasel-js/diagram-formats`: `DocumentScene` gains `pages`. `addDocumentScene` replaces a scene's content, pages and document values with a `DocumentScene` in one undo entry, locked content included, keeping the pasteboard setting; a node in it named like a page no longer collides with that page. `addOnPages` is now core's, re-exported here, and takes the scene's own spec type.
+- Updated dependencies [3afef45]
+- Updated dependencies [071906a]
+- Updated dependencies [214d5d5]
+- Updated dependencies [9533421]
+- Updated dependencies [6b9d157]
+- Updated dependencies [603dbc3]
+- Updated dependencies [5a2e82a]
+- Updated dependencies [07a8387]
+- Updated dependencies [72330bf]
+- Updated dependencies [0fcec39]
+- Updated dependencies [3905b08]
+- Updated dependencies [25a1ff7]
+- Updated dependencies [6b503a5]
+- Updated dependencies
+- Updated dependencies [eebe800]
+- Updated dependencies [017246d]
+  - @weasel-js/geom@1.16.1
+  - @weasel-js/core@1.16.1
+  - @weasel-js/ui@1.16.1
+  - @weasel-js/prefs@1.16.1
+  - @weasel-js/guides@1.16.1
+
 ## 1.16.0
 
 ### Patch Changes
