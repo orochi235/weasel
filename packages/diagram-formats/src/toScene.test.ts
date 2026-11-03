@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { DIAGRAM_THEMES, DIAGRAM_THEME_KEY, edgeIdOf, type DiagramEdge, type DiagramSpec } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
-import { documentSpecs } from './toScene';
-import { MEASURE } from './testing/docScene';
+import { pagesOf } from '@weasel-js/core';
+import { addDocumentScene, documentSpecs } from './toScene';
+import { MEASURE, contentNodes, drawnScene } from './testing/docScene';
 import { asGraph } from './testing/asGraph';
 
 const at = (specs: readonly DiagramSpec<string>[], id: string) => {
@@ -116,5 +117,30 @@ describe('documentSpecs on a page with nodes that have no place', () => {
       pages: [{ ...page, data: { ...page.data, nodes: page.data.nodes.map((n) => (n.id === 'c' ? { ...n, at: { x: 500, y: 20 } } : n)) } }],
     };
     expect(at(documentSpecs(pinned, { measure: MEASURE }).specs, 'c')).toEqual({ x: 500, y: 20 });
+  });
+});
+
+describe('addDocumentScene', () => {
+  const SECOND: DiagramDocument = {
+    pages: [{ kind: 'graph', id: 'one', name: 'Again', width: 500, height: 300, data: {
+      nodes: [{ id: 'a', lines: ['Again'], at: { x: 60, y: 60 } }, { id: 'z', lines: ['Z'], at: { x: 200, y: 60 } }],
+      edges: [{ id: 'az', from: 'a', to: 'z' }],
+    } }],
+  };
+
+  it('replaces what the scene held, pages and connectors in the run too, as one undo entry', () => {
+    const scene = drawnScene(documentSpecs(DOC, { measure: MEASURE }));
+    const depth = scene.historyEntries().length;
+    addDocumentScene(scene, documentSpecs(SECOND, { measure: MEASURE }), 'Import');
+    expect(pagesOf(scene)!.pages.map((p) => [p.id, p.name, p.width])).toEqual([['one', 'Again', 500]]);
+    const ids = contentNodes(scene).map((n) => n.id);
+    for (const gone of ['b', 'c', 'k', 'ab', 'ac']) expect(ids).not.toContain(gone);
+    expect(ids).toEqual(expect.arrayContaining(['a', 'z', 'az']));
+    expect(scene.get('a' as never)!.parent).toBe('one');
+    expect(scene.historyEntries().length).toBe(depth + 1);
+    scene.undo();
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['one', 'two']);
+    expect(contentNodes(scene).map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'c', 'k', 'ab', 'ac']));
+    expect(scene.get('z' as never)).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 /** A {@link DiagramDocument} as scene specs and document values: what every import draws from. */
 import {
-  createPageRun, layoutPages, pageRunOf, placeOnPages, setPages, type NodeId, type Page, type PlacedPage, type Scene, type SerializedDoc,
+  contentRoots, layoutPages, placeOnPages, setPages, type NodeId, type Page, type PlacedPage, type Scene, type SerializedDoc,
 } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, diagramScene, diagramThemeFrom, diagramTypeDocValue, diagramTypeOfNotation, themeDocValue,
@@ -145,18 +145,21 @@ export function addOnPages<TData, TLayer extends string, TPose>(
 }
 
 /**
- * Put `drawn` in `scene`, as one undo entry labeled `label`: its document
- * values, its pages as the scene's page run (made, or set to them when the
- * scene has one), and its nodes on them (`addOnPages`). A scene being
- * replaced is emptied first.
+ * Make `scene` hold `drawn` and nothing else, as one undo entry labeled
+ * `label`: what it held is removed, the pages and everything in the page run
+ * with it; its document values are `drawn`'s, a diagram type it does not name
+ * cleared; its pages are `drawn`'s (`setPages`, which makes the run when there
+ * is none); and its nodes go on them (`addOnPages`).
  */
 export function addDocumentScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, drawn: DocumentScene<TLayer>, label = 'Open',
 ): void {
   scene.batch(label, () => {
+    const held = contentRoots(scene);
+    if (held.length > 0) scene.removeMany(held);
+    if (!(DIAGRAM_TYPE_DOC_KEY in drawn.doc)) scene.doc.set(DIAGRAM_TYPE_DOC_KEY, undefined);
     for (const [key, value] of Object.entries(drawn.doc)) scene.doc.set(key, value);
-    if (pageRunOf(scene) === null) createPageRun(scene, drawn.pages);
-    else setPages(scene, { pages: drawn.pages }, label);
+    setPages(scene, { pages: drawn.pages }, label);
     addOnPages(scene, drawn.specs);
   });
 }
