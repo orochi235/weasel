@@ -106,10 +106,11 @@ export interface GroupDrawCommand {
    * what it drew covers the buffer; past that it is drawn again with a margin
    * of an eighth of the buffer each side. A move by a fraction of a pixel is
    * drawn straight through until it holds a frame. Not for a group holding a
-   * custom shader, a paint in screen units, a texture paint on text, or a
-   * group whose effects do not say how far they reach: none of those moves
-   * with the transform, so they are drawn straight through while it moves,
-   * as a layer whose margin does not fit `retainBudget` is.
+   * custom shader (its quad is in screen pixels), a paint in screen units, or a
+   * group whose effects do not say how far they reach (they may read any pixel
+   * of the buffer): none of those moves with the transform, so they are drawn
+   * straight through while it moves, as a layer whose margin does not fit
+   * `retainBudget` is.
    *
    * The composite matches drawing the group to within 8-bit rounding, except
    * at a pixel where an edge of the group crosses an edge drawn beneath it: the

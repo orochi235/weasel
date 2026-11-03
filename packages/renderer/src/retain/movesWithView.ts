@@ -12,10 +12,8 @@ const withoutView = new WeakMap<readonly DrawCommand[], boolean>();
  *
  * Not so for a custom shader, whose `bounds` are screen pixels; a paint in
  * screen units, the default, or in world units with no view matrix to follow;
- * a texture paint on text, which renders into a scratch buffer clamped to the
- * drawing buffer; and a group whose effects do not say how far they reach,
- * which run over the drawing buffer wherever its surface lies. Memoized by
- * array.
+ * and a group whose effects do not say how far they reach, which run over the
+ * drawing buffer wherever its surface lies. Memoized by array.
  */
 export function movesWithView(cmds: readonly DrawCommand[], hasViewMatrix: boolean): boolean {
   const memo = hasViewMatrix ? withView : withoutView;
@@ -34,8 +32,7 @@ function commandMoves(cmd: DrawCommand, hasViewMatrix: boolean): boolean {
     case 'path':
       return paintMoves(cmd.fill?.paint, hasViewMatrix) && paintMoves(cmd.stroke?.paint, hasViewMatrix);
     case 'text':
-      return cmd.runs.every((run) =>
-        paintMoves(run.fill?.paint, hasViewMatrix, true) && paintMoves(run.stroke?.paint, hasViewMatrix, true));
+      return cmd.runs.every((run) => paintMoves(run.fill?.paint, hasViewMatrix) && paintMoves(run.stroke?.paint, hasViewMatrix));
     case 'image':
     case 'sprites':
       return true;
@@ -44,9 +41,8 @@ function commandMoves(cmd: DrawCommand, hasViewMatrix: boolean): boolean {
   }
 }
 
-function paintMoves(paint: Paint | undefined, hasViewMatrix: boolean, onGlyphs = false): boolean {
+function paintMoves(paint: Paint | undefined, hasViewMatrix: boolean): boolean {
   if (!paint || paint.kind === undefined || paint.kind === 'solid') return true;
-  if (onGlyphs && paint.kind === 'texture') return false;
   const units = 'units' in paint ? paint.units : undefined;
   return units === 'local' || (units === 'world' && hasViewMatrix);
 }
