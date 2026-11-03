@@ -85,8 +85,16 @@ dispatcher, its actions, `resolveOverlays` and the pose feed, and every one of
 those lives in core. (Lifting `Scene` out was then blocked by a cycle through
 `RectPose`; that is gone as of 2026-11-03, with `RectPose` in
 `core/geometry/rectPose.ts` importing only `geom`.) So `kernel3d` takes core as a peer,
-the tier `svg`, `diagram` and `loupe` already occupy. Core still takes no diff,
-which is the constraint that mattered.
+the tier `svg`, `diagram` and `loupe` already occupy.
+
+**It imports `@weasel-js/core/engine`, not the main entry (2026-11-03).** That entry is the
+half of core a host of any dimension uses, and loads none of the 2D stack: a 3D host's
+bundle no longer carries the renderer, text or fonts. Getting there changed core: the box
+the transform actions measure became the `drawnBoxes` dep, the select tool's 2D picker
+became a default (`useSelectToolWith` takes none), and the dep schema split into
+`engineDeps.ts` and the 2D entries. `check:engine-boundary` holds the line. A separate
+`@weasel-js/engine` package was not built (2026-11-03): core reaches into
+about 127 of the engine's internal symbols, which a package would have to make public.
 
 Its prerequisite — making the action pipeline generic over point, camera and box
 — dissolved. `useGestureDispatcher` takes a `clientToWorld` hook and a 3D host
@@ -313,5 +321,6 @@ depends on the package — 6,302 lines across 31 files.
 
 - Rotation in the 2D camera. `View` stays affine and axis-aligned; multi-view
   setups differ by pan/zoom region, not angle. Content rotation lives in poses.
-- Any change to `@weasel-js/core` in service of 3D. If a phase needs one, that
-  is a signal the boundary moved and this doc is wrong.
+- A change to `@weasel-js/core` that makes 2D use worse in service of 3D. The
+  2026-11-03 seams left every `<SceneCanvas>` as it was; a host that builds its
+  deps by hand sources `inkBoxes` for stroke-inclusive boxes.
