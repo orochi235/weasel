@@ -106,6 +106,15 @@ When work merges, retire its entry here in the same change.
 
 ## Animation
 
+- **(P3) [agent] An animating stroke trim still rebuilds every stroke but an opaque solid one too large to batch,
+  and every head.** That one is built once with an arc length per vertex and clipped in the shader (stroke's
+  `clipRibbon`, renderer `draw/clippedTrim.ts`, 2026-11-03). Still keyed on the trim, so missing the mesh cache each
+  tween step: a translucent stroke (the clipped ribbon keeps whole quads at turns, so it would blend twice there), a
+  stroke the batch takes, one built in a stretched view's metric (which also insets its untrimmed copy a second time
+  each rebuild, to measure the dash decision's length), a vertex-colored one, and any paint but a solid; and the
+  marker cache, so heads rebuild every frame.
+  Closes when a trim tween on a 1,000-anchor translucent, gradient-painted, arrowheaded stroke makes no stroke-mesh
+  or marker cache miss after its first frame.
 - **(P3) [agent] GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts. Deferred from
   `docs/specs/2026-05-04-animation-primitive-design.md`.
   Closes when a running animation can be handed to `Element.animate` and a spec shows that path holding
