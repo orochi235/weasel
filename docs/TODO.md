@@ -30,6 +30,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P3) [agent] A dragged child beside its crossing ancestor misses the ancestor's page shift.** With the
+  pasteboard off, a root dropped off every page is shifted by `keepOnPage` so part of it stays on its page
+  (`pageDrops`, `packages/core/src/interactions/actions/move/commit/pageDrop.ts`). A non-root node selected
+  with that root moves by the drag alone, so it lands offset from the ancestor by the shift: a visual offset,
+  not data loss. Closes when a test of that multi-selection drag lands the child with the shift.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
