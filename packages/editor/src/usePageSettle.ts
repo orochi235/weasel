@@ -1,7 +1,7 @@
 import {
   fitViewToPage, pageHolding, pageInView, useLatest, viewportWorldRect, type PlacedPage, type View,
 } from '@weasel-js/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /** How the view moves through a document's pages: freely (`'continuous'`, the default), or coming to rest
  *  fitted to one page at a time (`'single'`). A view setting; the same document opens in either. */
@@ -57,8 +57,9 @@ function usePointerDown(on: boolean): boolean {
 /**
  * With `'single'` paging, brings the view to rest fitted to one page: `PAGE_SETTLE_MS` after the view last
  * moved, and never while a pointer is down, it goes to the page the view shows most of, or with none
- * showing the nearest. A view zoomed in past that page's fit is left where it is, to pan freely. Animated when `setView` is a view dep with `animate`. With `'continuous'` it does
- * nothing. `padding` is what the fit leaves around the page, in screen pixels.
+ * showing the nearest. A view zoomed in past that page's fit is left where it is, to pan freely, unless it
+ * was fitted to that page before the host's size changed, when it is fitted again. Animated when `setView`
+ * is a view dep with `animate`. With `'continuous'` it does nothing. `padding` is what the fit leaves around the page, in screen pixels.
  */
 export function usePageSettle(
   pages: { readonly placed: readonly PlacedPage[] },
@@ -71,6 +72,8 @@ export function usePageSettle(
   const single = paging === 'single';
   const down = usePointerDown(single);
   const latest = useLatest({ placed: pages.placed, view, dims, setView });
+  // The host size the view was last fitted at, while it stays fitted.
+  const fittedAt = useRef<{ width: number; height: number } | null>(null);
   const ready = single && !down && dims.width > 0 && dims.height > 0 && pages.placed.length > 0;
   useEffect(() => {
     if (!ready) return;
@@ -79,7 +82,14 @@ export function usePageSettle(
       const page = pageInView(placed, v, d) ?? pageHolding(placed, viewportWorldRect(v, d));
       if (!page) return;
       const to = fitViewToPage(page, d, v, { padding });
-      if (v.scale.x > to.scale.x * (1 + ZOOM_TOLERANCE)) return;
+      const was = fittedAt.current;
+      const resized = was !== null && (was.width !== d.width || was.height !== d.height)
+        && near(fitViewToPage(page, was, v, { padding }), v);
+      if (!resized && v.scale.x > to.scale.x * (1 + ZOOM_TOLERANCE)) {
+        fittedAt.current = null;
+        return;
+      }
+      fittedAt.current = { width: d.width, height: d.height };
       if (!near(to, v)) sendView(sink, to);
     }, PAGE_SETTLE_MS);
     return () => clearTimeout(timer);

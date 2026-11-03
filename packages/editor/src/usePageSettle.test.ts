@@ -122,4 +122,27 @@ describe('usePageSettle', () => {
     vi.advanceTimersByTime(1000);
     expect(setView).not.toHaveBeenCalled();
   });
+
+  it('refits a view fitted to its page when the host shrinks, and leaves one zoomed in alone', () => {
+    vi.useFakeTimers();
+    const setView = vi.fn();
+    const fitted = fit(A, BETWEEN);
+    const small = { width: 200, height: 200 };
+    const { rerender } = renderHook(({ view, dims }) => usePageSettle(pages, view, dims, setView, 'single'), {
+      initialProps: { view: fitted, dims: DIMS },
+    });
+    vi.advanceTimersByTime(150);
+    expect(setView).not.toHaveBeenCalled();
+    rerender({ view: fitted, dims: small });
+    vi.advanceTimersByTime(150);
+    expect(setView).toHaveBeenCalledWith(fitViewToPage(A, small, fitted, { padding: 24 }));
+
+    setView.mockClear();
+    const zoomed = { ...fitted, scale: { x: fitted.scale.x * 2, y: fitted.scale.y * 2 } };
+    rerender({ view: zoomed, dims: DIMS });
+    vi.advanceTimersByTime(150);
+    rerender({ view: zoomed, dims: small });
+    vi.advanceTimersByTime(150);
+    expect(setView).not.toHaveBeenCalled();
+  });
 });
