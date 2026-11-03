@@ -23,6 +23,12 @@ describe('createGridLayer', () => {
     expect(tree.filter((c) => c.kind === 'path')).toHaveLength(8);
   });
 
+  it('draws the visible grid for a y-up view', () => {
+    const layer = createGridLayer({ spacing: 10 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: -1 } }, { width: 100, height: 100, dpr: 1 });
+    expect(tree.filter((c) => c.kind === 'path').length).toBeGreaterThan(0);
+  });
+
   it('draw returns [] for zero-sized bounds', () => {
     const layer = createGridLayer({
       spacing: 10,

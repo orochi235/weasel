@@ -34,6 +34,13 @@ describe('createTiledLayer', () => {
     expect(out.map(offsetOf)).toEqual([[0, 0], [200, 0], [400, 0]]);
   });
 
+  it('draws the cells a flipped view shows', () => {
+    const { layer } = spyLayer();
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: { x: 200, y: 400 } });
+    const out = l.draw(undefined, { x: 400, y: 300, scale: { x: -1, y: -1 } }, dims);
+    expect(out.map(offsetOf)).toEqual([[0, 0], [200, 0], [400, 0]]);
+  });
+
   it('draws no copies once the view holds more of them than could be told apart', () => {
     const { layer, draw } = spyLayer();
     const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: { x: 200, y: 200 } });

@@ -1,5 +1,5 @@
 import type { DrawCommand } from '@weasel-js/core';
-import { subscribeToSources, type Dims, type RenderLayer } from '@weasel-js/core';
+import { subscribeToSources, viewportWorldRect, type Dims, type RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import { tiledProject } from './tiledProject';
 
@@ -86,10 +86,9 @@ export function createTiledLayer<TData>(
     draw: (data, view, dims) => {
       const p = axes(typeof period === 'function' ? period(view, dims) : period, Infinity);
       const b = axes(bleed, 0);
-      const spanX = dims.width / view.scale.x;
-      const spanY = dims.height / view.scale.y;
-      const kx = tiledProject(view.x, view.x + spanX, p.x, b.x);
-      const ky = tiledProject(view.y, view.y + spanY, p.y, b.y);
+      const shown = viewportWorldRect(view, dims);
+      const kx = tiledProject(shown.x, shown.x + shown.width, p.x, b.x);
+      const ky = tiledProject(shown.y, shown.y + shown.height, p.y, b.y);
 
       const out: DrawCommand[] = [];
       for (const layer of source) {

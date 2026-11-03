@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { View } from 'core/viewport/view';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { aimSpace2d, isRectAim, rectAim, viewForAim } from './aim';
+import { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from './aim';
 
 const CAM: View = { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } };
 const PIP = { width: 140, height: 105 };
@@ -44,6 +44,27 @@ describe('viewForAim', () => {
     const v: View = { x: -15, y: 20, scale: { x: 2, y: 0.5 } };
     const size = { width: 200, height: 100 };
     expect(viewForAim(viewportWorldRect(v, size), size, 'exact')).toEqual(v);
+  });
+
+  it.each([
+    { x: -15, y: 20, scale: { x: 2, y: -0.5 } },
+    { x: -15, y: 20, scale: { x: -2, y: 0.5 } },
+    { x: -15, y: 20, scale: { x: -2, y: -0.5 } },
+  ])('round-trips the flipped view %o through its aim', (v: View) => {
+    const size = { width: 200, height: 100 };
+    const rect = aimRectOf(v, size);
+    expect(rect.width).toBeGreaterThan(0);
+    expect(rect.height).toBeGreaterThan(0);
+    expect(viewForAim(rect, size, 'exact')).toEqual(v);
+  });
+
+  it('keeps an unflipped aim a plain rect', () => {
+    expect(aimRectOf({ x: 1, y: 2, scale: { x: 1, y: 1 } }, { width: 10, height: 10 })).toStrictEqual({ x: 1, y: 2, width: 10, height: 10 });
+  });
+
+  it('flips a contain fit about the same rect', () => {
+    const rect = { x: 10, y: 20, width: 50, height: 50, flip: { x: false, y: true } };
+    expect(viewForAim(rect, { width: 200, height: 100 }, 'contain')).toEqual({ x: -15, y: 70, scale: { x: 2, y: -2 } });
   });
 
   it('fits uniformly and centered under contain', () => {

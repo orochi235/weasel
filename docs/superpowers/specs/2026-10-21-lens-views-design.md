@@ -31,7 +31,7 @@ any weasel app can use, not only forge.
 | **camera** | A transform from world to screen and nothing else. 2D: `View`. 3D: kernel3d's `Camera3d`. |
 | **frame** | The rect a viewport paints into, in its host's screen px. |
 | **viewport** | A camera plus a frame. The root canvas view, a `<CanvasView>`, a viewport layer. |
-| **aim** | What a viewport shows, read in its world: the same information as the camera, given the frame. In 2D, the world rect `viewportWorldRect(view, frameSize)` returns. |
+| **aim** | What a viewport shows, read in its world: the same information as the camera, given the frame. In 2D, `aimRectOf(view, frameSize)`: the world rect `viewportWorldRect` returns, and the axes the camera flips. |
 | **held side** | Whether a viewport holds its camera (and derives its aim) or holds its aim (and derives its camera). Panning a PiP and moving a lens's reticle are the same edit seen from the two sides. |
 | **marker** | View A's aim drawn inside view B's frame. A lens's reticle is the lens's aim drawn in its host; a minimap's indicator is the root view's aim drawn in the minimap. |
 | **lens** | A tool: a viewport whose frame and aim are objects a user places, moves, resizes and undoes, with markers back to where it aims. |

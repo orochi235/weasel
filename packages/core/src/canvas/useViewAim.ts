@@ -9,23 +9,24 @@ import type { Dims } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
+import { aimRectOf, isRectAim, rectAim, viewForAim, type AimRect, type ViewAim } from 'domains/viewports/aim';
 import { useCanvasView, type CanvasViewState } from './useCanvasView';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 import { sizeOf, type useViewNesting } from './useViewNesting';
 import { IDENTITY_VIEW, UNMEASURED_DIMS, type ViewRegistry } from './viewRegistry';
 
 /** `held` carried by the camera move that turns the world rect `from` into `to`: panned and scaled
- *  with it, so the aim keeps its own shape rather than taking the frame's. */
-function carried(held: Bounds, from: Bounds, to: Bounds): Bounds {
+ *  with it, so the aim keeps its own shape rather than taking the frame's, and flipped as `to` is. */
+function carried(held: AimRect, from: Bounds, to: AimRect): AimRect {
   const kx = from.width > 0 ? to.width / from.width : 1;
   const ky = from.height > 0 ? to.height / from.height : 1;
-  return {
+  const rect = {
     x: to.x + (held.x - from.x) * kx,
     y: to.y + (held.y - from.y) * ky,
     width: held.width * kx,
     height: held.height * ky,
   };
+  return to.flip ? { ...rect, flip: to.flip } : rect;
 }
 
 type Nesting = ReturnType<typeof useViewNesting>;
@@ -51,7 +52,7 @@ export function useViewAim(args: {
   const live = useLatest({ view, onViewChange, aimProp, onAimChange });
 
   /** The rect an aim-held view holds, for a surface frame. */
-  const heldAt = useCallback((outer: View, dims: Dims): Bounds | undefined => {
+  const heldAt = useCallback((outer: View, dims: Dims): AimRect | undefined => {
     const a = live.current.aimProp;
     return typeof a === 'function' ? derivedAt(a, outer, dims) : a;
   }, [live, derivedAt]);
@@ -76,7 +77,7 @@ export function useViewAim(args: {
     const current = derivedCamera(...frame);
     if (!held || !current) return;
     const size = sizeOf(rectAt(...frame));
-    live.current.onAimChange?.(carried(held, viewportWorldRect(current, size), viewportWorldRect(next, size)));
+    live.current.onAimChange?.(carried(held, viewportWorldRect(current, size), aimRectOf(next, size)));
   }, [live, surfaceFrame, heldAt, derivedCamera, rectAt]);
 
   const state = useCanvasView({
@@ -94,7 +95,7 @@ export function useViewAim(args: {
 
   const aim = useCallback((): ViewAim => {
     const rect = heldAt(...surfaceFrame());
-    return rectAim(id, rect ?? viewportWorldRect(getView(), sizeOf(rectNow())));
+    return rectAim(id, rect ?? aimRectOf(getView(), sizeOf(rectNow())));
   }, [id, heldAt, surfaceFrame, getView, rectNow]);
 
   const setAim = useCallback((next: ViewAim): boolean => {

@@ -58,6 +58,18 @@ describe('SceneCanvas aims', () => {
     expect(api.current!.aimOf('nope')).toBeNull();
   });
 
+  it('round-trips a y-up root view through its aim unchanged', () => {
+    const flipped: View = { x: 10, y: 300, scale: { x: 1, y: -2 } };
+    const ref = createRef<SceneCanvasApi>();
+    const onFlipped = vi.fn<(v: View) => void>();
+    const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
+    render(<SceneCanvas scene={scene} layers={{}} width={400} height={300} view={flipped} onViewChange={onFlipped} ref={ref} />);
+    const aim = ref.current!.aimOf(null)!;
+    expect(aim.extent).toMatchObject({ x: 10, y: 150, width: 400, height: 150 });
+    act(() => { ref.current!.setAim(null, aim); });
+    expect(onFlipped).toHaveBeenLastCalledWith(flipped);
+  });
+
   it('writes the root aim through onViewChange', () => {
     act(() => { api.current!.setAim(null, rectAim(null, { x: 40, y: 40, width: 400, height: 300 })); });
     expect(onViewChange).toHaveBeenLastCalledWith({ x: 40, y: 40, scale: { x: 1, y: 1 } });

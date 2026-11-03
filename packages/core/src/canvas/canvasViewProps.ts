@@ -4,6 +4,7 @@ import type { CanvasViewCamera } from './canvasExtension';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { AimRect } from 'domains/viewports/aim';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 
 /** A rect on the surface, in CSS pixels from the canvas top-left. */
@@ -111,9 +112,9 @@ export interface CameraHeldViewProps {
 export interface AimHeldViewProps {
   /** What the view shows, as a world rect; its camera fits it to the frame, uniformly and centered.
    *  A thunk is read at each paint and event, measured like a thunked `view`. */
-  aim: Bounds | ((outer: View, dims: Dims) => Bounds);
+  aim: AimRect | ((outer: View, dims: Dims) => AimRect);
   /** A pan or zoom inside the view, or `setAim` on it, reported as the held rect that camera move carries. */
-  onAimChange?: (aim: Bounds) => void;
+  onAimChange?: (aim: AimRect) => void;
   view?: never;
   defaultView?: never;
   onViewChange?: never;
