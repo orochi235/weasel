@@ -12,6 +12,8 @@ export interface ScopeTree {
   readonly listeners: Emitter;
 }
 
+/** One node of a scope tree: its parent, its children and which child is active. `DepNode` and `ToolNode`
+ *  extend it with what each registry stores. */
 export class ScopeNode<N extends ScopeNode<N>> {
   readonly tree: ScopeTree;
   private readonly children: N[] = [];

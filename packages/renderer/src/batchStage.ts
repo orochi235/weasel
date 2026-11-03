@@ -23,6 +23,7 @@ export function doubledTo(from: number, need: number): number {
   return capacity;
 }
 
+/** The staged vertices and indices of one draw run, cut to its clip. `DrawBatch` extends it with the GL buffers. */
 export abstract class BatchStage {
   protected verts = new Float32Array(INITIAL_VERTICES * F);
   protected idx = new Uint32Array(INITIAL_INDICES);
