@@ -71,8 +71,21 @@ export const Bare = () => null;
     story('list', `import { List } from './Chart';\nexport default { component: List };\n`);
     story('bare', `import { Bare } from './Chart';\nexport default { component: Bare };\n`);
     story('native', `import { Chart } from './Chart';\nexport default { title: 'ui/Chart' };\nexport const A = Chart;\n`);
+    story(
+      'wrapper',
+      `import { Chart } from './Chart';\nfunction Demo(_props: { shown: boolean }) { return Chart; }\nexport default { component: Demo };\n`,
+    );
+    writeFileSync(at('meta.ts'), `export interface Meta<C = unknown> { title?: string; component?: C }\n`);
+    story(
+      'annotated',
+      `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst meta: Meta = { component: Chart };\nexport default meta;\n`,
+    );
+    story(
+      'annotatedWrapper',
+      `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nfunction Demo(_props: { shown: boolean }) { return Chart; }\nconst meta: Meta<typeof Demo> = { title: 'ui/Chart', component: Demo };\nexport default meta;\n`,
+    );
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'none'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'none'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -138,6 +151,17 @@ export const Bare = () => null;
 
   it('follows the fallback import for a meta with no component', () => {
     expect(api('native', 'Chart')?.ref?.type).toBe('ChartHandle');
+  });
+
+  it("reads the title's import, not a wrapper the story file declares itself", () => {
+    expect(api('wrapper', 'Chart')?.ref?.type).toBe('ChartHandle');
+    expect(prop(api('wrapper'), 'shown')).toBeDefined();
+  });
+
+  it('reads the assigned component through a typed meta', () => {
+    expect(prop(api('annotated'), 'count')?.default).toBe('3');
+    expect(api('annotated')?.ref?.type).toBe('ChartHandle');
+    expect(api('annotatedWrapper', 'Chart')?.ref?.type).toBe('ChartHandle');
   });
 
   it('returns null when nothing names a component', () => {

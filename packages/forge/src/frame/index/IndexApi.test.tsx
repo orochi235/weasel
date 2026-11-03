@@ -1,0 +1,111 @@
+import { render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import type { ApiTable } from '../../story/api';
+import { meta, story } from '../../story/define';
+import { loadNativeModule } from '../../story/native';
+import { runAxe } from '../a11y';
+import { type IndexEnv, IndexPage } from './IndexPage';
+
+const stories = loadNativeModule(
+  { default: meta({ title: 'ui/Chart' }), Basic: story({ render: () => <p>chart</p> }) },
+  'ui/Chart',
+);
+
+const API: ApiTable = {
+  props: [
+    { name: 'label', type: 'string', required: true, description: 'Shown beside the glyph.' },
+    { name: 'size', type: "'sm' | 'md'", required: false, default: "'md'" },
+    { name: 'loud', type: 'boolean', required: false, deprecated: 'use tone' },
+  ],
+  inherited: [{ from: 'DomProps', count: 2 }],
+  ref: {
+    type: 'ChartHandle',
+    members: [
+      { name: 'width', kind: 'property', signature: 'number', readonly: true },
+      { name: 'toModel', kind: 'method', signature: '(pt: Point) => Point', readonly: false, description: 'Maps a point.' },
+    ],
+  },
+};
+
+const envOf = (over: Partial<IndexEnv> = {}): IndexEnv => ({
+  title: 'ui/Chart',
+  stories,
+  descriptions: {},
+  globals: {},
+  decorators: [],
+  open: vi.fn(),
+  onError: vi.fn(),
+  api: API,
+  ...over,
+});
+
+const panel = () => screen.getByRole('complementary', { name: 'API' });
+/** The `dd` describing the prop or member named `name`. */
+const entry = (name: string) => within(panel()).getByText(name, { selector: 'code' }).closest('dt')?.nextElementSibling as HTMLElement;
+const hasText = (text: string) => (_: string, el: Element | null) => el?.textContent === text && !el.querySelector('p, li');
+
+describe('IndexApi', () => {
+  it('lists each prop with its type, default and description', () => {
+    render(<IndexPage env={envOf()} render={null} />);
+    expect(entry('label')).toHaveTextContent('string');
+    expect(entry('label')).toHaveTextContent('Shown beside the glyph.');
+    expect(entry('size')).toHaveTextContent("'sm' | 'md'");
+    expect(entry('size')).toHaveTextContent("Default: 'md'");
+  });
+
+  it('marks a required prop and a deprecated one', () => {
+    render(<IndexPage env={envOf()} render={null} />);
+    const label = within(panel()).getByText('label', { selector: 'code' }).closest('dt') as HTMLElement;
+    expect(within(label).getByText('required')).toBeTruthy();
+    expect(within(entry('loud')).getByText('Deprecated: use tone')).toBeTruthy();
+  });
+
+  it('collapses inherited props to one line per source', () => {
+    render(<IndexPage env={envOf()} render={null} />);
+    expect(within(panel()).getByText(hasText('+ 2 from DomProps'))).toBeTruthy();
+  });
+
+  it("lists the ref handle's methods before its properties", () => {
+    render(<IndexPage env={envOf()} render={null} />);
+    const ref = within(panel()).getByRole('heading', { name: 'Ref' });
+    expect(ref.nextElementSibling).toHaveTextContent('ChartHandle');
+    const names = within(panel()).getAllByRole('term').map((dt) => dt.querySelector('code')?.textContent);
+    expect(names.slice(-2)).toEqual(['toModel', 'width']);
+    expect(entry('toModel')).toHaveTextContent('(pt: Point) => Point');
+    expect(entry('width').previousElementSibling).toHaveTextContent('readonly');
+  });
+
+  it('names a platform ref type with no member list', () => {
+    render(<IndexPage env={envOf({ api: { ...API, ref: { type: 'HTMLDivElement', members: [] } } })} render={null} />);
+    expect(within(panel()).getByText('HTMLDivElement')).toBeTruthy();
+    expect(within(panel()).queryByText('toModel')).toBeNull();
+  });
+
+  it('says when a component takes no props', () => {
+    render(<IndexPage env={envOf({ api: { props: [], inherited: [], ref: null } })} render={null} />);
+    expect(within(panel()).getByText('Takes no props.')).toBeTruthy();
+    expect(within(panel()).queryByRole('heading', { name: 'Ref' })).toBeNull();
+  });
+
+  it('says when forge found no component', () => {
+    render(<IndexPage env={envOf({ api: null })} render={null} />);
+    expect(panel()).toHaveTextContent(/forge found no component/);
+  });
+
+  it('shows no panel for a gallery, or where no API was read', () => {
+    const { rerender } = render(<IndexPage env={envOf({ gallery: true })} render={null} />);
+    expect(screen.queryByRole('complementary', { name: 'API' })).toBeNull();
+    rerender(<IndexPage env={envOf({ api: undefined })} render={null} />);
+    expect(screen.queryByRole('complementary', { name: 'API' })).toBeNull();
+  });
+
+  it('is a part a custom page can place', () => {
+    render(<IndexPage env={envOf()} render={({ Api }) => <Api />} />);
+    expect(entry('label')).toHaveTextContent('string');
+  });
+
+  it('passes axe', async () => {
+    const { container } = render(<IndexPage env={envOf()} render={null} />);
+    expect((await runAxe(container, { page: false })).violations).toEqual([]);
+  });
+});

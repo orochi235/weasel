@@ -60,6 +60,8 @@ export interface IndexContext {
   /** The release the component first shipped in and when its source was created and last changed, as the generated
    *  page shows them. */
   History: ComponentType;
+  /** The component's props and what its `ref` exposes, as the generated page shows them beside its stories. */
+  Api: ComponentType;
   /** Whether the meta is tagged `gallery`. */
   gallery: boolean;
   /** Shows story `id` in this page's trial in its place. */

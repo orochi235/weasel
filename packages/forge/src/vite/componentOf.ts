@@ -11,7 +11,8 @@ export interface FoundComponent {
 
 /**
  * The component a story file's default export names as `component`, else the import named `fallback`: a native
- * `meta()` names none, and the title's last segment stands in for it, as it does in the dependency graph.
+ * `meta()` names none, and a wrapper declared in the story file is not the component, so the title's last segment
+ * stands in for either, as it does in the dependency graph.
  */
 export function componentOf(
   tsm: typeof ts,
@@ -23,12 +24,18 @@ export function componentOf(
   const exported = module && checker.tryGetMemberInModuleExports('default', module);
   if (!exported) return null;
   const meta = checker.getTypeOfSymbolAtLocation(resolved(tsm, checker, exported), source);
-  const named = meta.getProperty('component');
-  const symbol = named ? valueSymbol(tsm, checker, named) : fallback ? importNamed(tsm, checker, source, fallback) : undefined;
+  let named = meta.getProperty('component');
+  let symbol = named && assigned(tsm, checker, resolved(tsm, checker, exported));
+  // A wrapper the story file declares itself is the story's, not the component's, as the dependency graph reads it.
+  const local = !named || symbol?.getDeclarations()?.some((declaration) => declaration.getSourceFile() === source);
+  const imported = local && fallback ? importNamed(tsm, checker, source, fallback) : undefined;
+  if (imported) {
+    named = undefined;
+    symbol = imported;
+  }
   if (!named && !symbol) return null;
-  const type = checker.getNonNullableType(
-    named ? checker.getTypeOfSymbolAtLocation(named, source) : checker.getTypeOfSymbolAtLocation(symbol!, source),
-  );
+  // The value's own type: a meta typed `Meta` alone would otherwise give a props type of `any`.
+  const type = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(symbol ?? named!, source));
   const declaration = symbol?.getDeclarations()?.[0];
   for (const part of type.isUnion() ? type.types : [type]) {
     const [call] = part.getCallSignatures();
@@ -44,15 +51,28 @@ export function componentOf(
 const resolved = (tsm: typeof ts, checker: ts.TypeChecker, symbol: ts.Symbol): ts.Symbol =>
   symbol.flags & tsm.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
 
-/** The symbol the meta's `component` property is given, followed through imports. */
-function valueSymbol(tsm: typeof ts, checker: ts.TypeChecker, property: ts.Symbol): ts.Symbol | undefined {
-  const declaration = property.valueDeclaration;
-  let value: ts.Symbol | undefined;
-  if (declaration && tsm.isShorthandPropertyAssignment(declaration)) {
-    value = checker.getShorthandAssignmentValueSymbol(declaration);
-  } else if (declaration && tsm.isPropertyAssignment(declaration)) {
-    value = checker.getSymbolAtLocation(declaration.initializer);
+/**
+ * The symbol the meta object's `component` property is assigned, followed through imports: read from the object as
+ * written, since a typed meta's property is declared by its type, not by the object.
+ */
+function assigned(tsm: typeof ts, checker: ts.TypeChecker, meta: ts.Symbol): ts.Symbol | undefined {
+  const declaration = meta.getDeclarations()?.[0];
+  let node: ts.Node | undefined =
+    declaration && tsm.isVariableDeclaration(declaration)
+      ? declaration.initializer
+      : declaration && tsm.isExportAssignment(declaration)
+        ? declaration.expression
+        : undefined;
+  while (node && !tsm.isObjectLiteralExpression(node)) {
+    if (tsm.isCallExpression(node)) node = node.arguments[0];
+    else if (tsm.isParenthesizedExpression(node) || tsm.isAsExpression(node) || tsm.isSatisfiesExpression(node)) {
+      node = node.expression;
+    } else node = undefined;
   }
+  const property = node?.properties.find((p) => p.name && tsm.isIdentifier(p.name) && p.name.text === 'component');
+  let value: ts.Symbol | undefined;
+  if (property && tsm.isShorthandPropertyAssignment(property)) value = checker.getShorthandAssignmentValueSymbol(property);
+  else if (property && tsm.isPropertyAssignment(property)) value = checker.getSymbolAtLocation(property.initializer);
   return value && resolved(tsm, checker, value);
 }
 

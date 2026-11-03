@@ -77,12 +77,13 @@ function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps,
 }
 
 /** The plugins forge serves beside its own, as its options ask. */
-function companions(
-  options: ForgeOptions,
-  storyFiles: () => string[],
-  fallbackOf: (file: string) => string | undefined,
-): Plugin[] {
+function companions(options: ForgeOptions, files: () => Map<string, IndexEntry[]>): Plugin[] {
   const { storybookShims: shims, propControls: controls, api } = options;
+  const storyFiles = () => [...files().keys()];
+  const fallbackOf = (file: string) => {
+    const title = files().get(file)?.[0]?.title;
+    return title === undefined ? undefined : titleStandIn(title);
+  };
   const readings = { controls: controls !== false, api: api !== false };
   const narrowed = typeof controls === 'object' ? controls : undefined;
   return [
@@ -274,10 +275,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   }
 
   return [
-    ...companions(options, () => [...files().keys()], (file) => {
-      const title = files().get(file)?.[0]?.title;
-      return title === undefined ? undefined : titleStandIn(title);
-    }),
+    ...companions(options, files),
     {
       name: 'weaselforge',
       config(config, { command }) {

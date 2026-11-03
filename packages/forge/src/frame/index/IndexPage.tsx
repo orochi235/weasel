@@ -1,62 +1,28 @@
 // The components' own entries, not the barrel: the barrel would bring every weasel-ui component into each frame.
 import { Badge } from '@weasel-js/ui/components/Badge';
 import {
-  createContext,
   type MouseEvent,
   type ReactNode,
-  useContext,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import type { Globals } from '../../protocol/messages';
-import type { ApiTable } from '../../story/api';
 import { indexId } from '../../story/indexPages';
-import type { ComponentDeps, Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
+import type { IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
 import { useNearViewport } from '@weasel-js/react';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
 import { Description } from './Description';
+import { type IndexEnv, IndexEnvContext, useEnv } from './envContext';
+import { IndexApi } from './IndexApi';
 import { LabBadge } from './LabBadge';
 import { LibraryBadge } from './LibraryBadge';
 import num from '@weasel-js/theme/numeric.module.css';
 
-/** What every cell on an index page shares with the frame that hosts it. */
-export interface IndexEnv {
-  title: string;
-  /** The package the component ships in. */
-  library?: string;
-  description?: string;
-  stories: readonly LoadedStory[];
-  /** Per story id, the JSDoc above its export. */
-  descriptions: Readonly<Record<string, string>>;
-  /** A catalog or showcase rather than one component: every story of it is tagged `gallery`. */
-  gallery?: boolean;
-  /** The ids of the stories tagged `gallery`. */
-  galleries?: readonly string[];
-  /** The ids of the stories tagged `lab`: whole screens, which the page links to but does not embed. */
-  labs?: readonly string[];
-  /** The component's place in the component graph; absent until the graph arrives, and for a gallery. */
-  dependencies?: ComponentDeps;
-  /** The component's props and ref: null where forge found no component, absent where it read none or for a gallery. */
-  api?: ApiTable | null;
-  globals: Globals;
-  /** The frame config's, outermost. */
-  decorators: readonly Decorator[];
-  open: (id: string) => void;
-  onError: (error: unknown) => void;
-}
-
-export const IndexEnvContext = createContext<IndexEnv | null>(null);
-
-function useEnv(): IndexEnv {
-  const env = useContext(IndexEnvContext);
-  if (!env) throw new Error('An index page part rendered outside its index page');
-  return env;
-}
+export { type IndexEnv, IndexEnvContext } from './envContext';
 
 /** How far past the viewport a cell stays mounted. */
 const NEAR_MARGIN = '100%';
@@ -286,27 +252,33 @@ export function DefaultIndex() {
   const name = segments.pop();
   const { library } = env;
   if (library !== undefined && segments[0] === library) segments.shift();
+  const withApi = !env.gallery && env.api !== undefined;
   return (
-    <article className="fg-index">
-      <header className="fg-index__head">
-        {segments.length > 0 || library !== undefined ? (
-          <p className="fg-index__path">
-            {library !== undefined ? <LibraryBadge library={library} className="fg-index__library" /> : null}
-            {segments.join(' / ')}
-          </p>
-        ) : null}
-        <div className="fg-index__title-row">
-          <h1 className="fg-index__title">{name}</h1>
-          {env.gallery ? <GalleryBadge /> : null}
+    <div className="fg-index-page">
+      <article className={withApi ? 'fg-index fg-index--api' : 'fg-index'}>
+        <header className="fg-index__head">
+          {segments.length > 0 || library !== undefined ? (
+            <p className="fg-index__path">
+              {library !== undefined ? <LibraryBadge library={library} className="fg-index__library" /> : null}
+              {segments.join(' / ')}
+            </p>
+          ) : null}
+          <div className="fg-index__title-row">
+            <h1 className="fg-index__title">{name}</h1>
+            {env.gallery ? <GalleryBadge /> : null}
+          </div>
+          {env.description ? <Description text={env.description} className="fg-index__description" /> : null}
+          <IndexHistory />
+          <IndexDependencies />
+        </header>
+        <IndexApi />
+        <div className="fg-index__stories">
+          {env.stories.map((story) => (
+            <StorySection key={story.id} story={story} variants={withVariants.has(story.id)} />
+          ))}
         </div>
-        {env.description ? <Description text={env.description} className="fg-index__description" /> : null}
-        <IndexHistory />
-        <IndexDependencies />
-      </header>
-      {env.stories.map((story) => (
-        <StorySection key={story.id} story={story} variants={withVariants.has(story.id)} />
-      ))}
-    </article>
+      </article>
+    </div>
   );
 }
 
@@ -322,6 +294,7 @@ export function indexContext(env: IndexEnv): IndexContext {
     DefaultIndex,
     Dependencies: IndexDependencies,
     History: IndexHistory,
+    Api: IndexApi,
     gallery: env.gallery ?? false,
     open: env.open,
   };

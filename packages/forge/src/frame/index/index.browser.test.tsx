@@ -1,8 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import './index.css';
+import './api.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
+import type { ApiTable } from '../../story/api';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
 import type { LoadedStory } from '../../story/types';
@@ -131,4 +133,66 @@ test('in a narrow frame a story’s example wraps under its text instead of sque
   await page.viewport(1200, 800);
   const { text, example } = storyRow(420);
   expect(example.top).toBeGreaterThanOrEqual(text.bottom);
+});
+
+const API: ApiTable = {
+  props: Array.from({ length: 30 }, (_, i) => ({ name: `prop${i}`, type: 'string', required: false })),
+  inherited: [],
+  ref: null,
+};
+
+/** A generated page with an API panel, in a 600px-tall box as the trial's scroller is. */
+function apiPage(width: number, api: ApiTable = API) {
+  const stories = loadNativeModule(
+    {
+      default: meta({ title: 'ui/Long' }),
+      ...Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`S${i}`, story({ render: () => <p>story</p> })])),
+    },
+    'ui/Long',
+  );
+  const long = Array.from({ length: 20 }, () => 'A paragraph long enough to take a line or two of the column.').join('\n\n');
+  const env: IndexEnv = {
+    title: 'ui/Long',
+    stories,
+    descriptions: Object.fromEntries(stories.map((s) => [s.id, long])),
+    globals: {},
+    decorators: [],
+    open: () => {},
+    onError: () => {},
+    api,
+  };
+  const { container } = render(
+    <div className="host" style={{ width, height: 600 }}>
+      <IndexPage env={env} render={null} />
+    </div>,
+  );
+  const get = (selector: string) => container.querySelector<HTMLElement>(selector) as HTMLElement;
+  return { scroller: get('.fg-index-page'), aside: get('.fg-index-api'), head: get('.fg-index__head'), stories: get('.fg-index__stories') };
+}
+
+test('keeps the API column in view while the page scrolls', () => {
+  const { scroller, aside } = apiPage(1600);
+  scroller.scrollTop = 2000;
+  expect(scroller.scrollTop).toBe(2000);
+  expect(Math.abs(aside.getBoundingClientRect().top - scroller.getBoundingClientRect().top)).toBeLessThanOrEqual(1);
+  expect(aside.getBoundingClientRect().height).toBeLessThanOrEqual(600);
+  expect(aside.scrollHeight).toBeGreaterThan(aside.clientHeight);
+});
+
+test('puts the API beside the stories in a trial as wide as the workshop gives one', () => {
+  const { aside, stories } = apiPage(700);
+  expect(aside.getBoundingClientRect().left).toBeGreaterThanOrEqual(stories.getBoundingClientRect().right - 1);
+});
+
+test('stacks the API under the header below 560px', () => {
+  const { aside, head, stories } = apiPage(500);
+  expect(aside.getBoundingClientRect().top).toBeGreaterThanOrEqual(head.getBoundingClientRect().bottom - 1);
+  expect(aside.getBoundingClientRect().bottom).toBeLessThanOrEqual(stories.getBoundingClientRect().top + 1);
+});
+
+test('wraps a long type inside the column', () => {
+  const type = Array.from({ length: 40 }, (_, i) => `'option-${i}'`).join(' | ');
+  const { scroller, aside } = apiPage(1600, { props: [{ name: 'wide', type, required: false }], inherited: [], ref: null });
+  expect(scroller.scrollWidth).toBe(scroller.clientWidth);
+  expect(aside.scrollWidth).toBe(aside.clientWidth);
 });
