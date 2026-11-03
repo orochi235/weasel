@@ -1,5 +1,14 @@
 # @weasel-js/theme
 
+## 1.16.2
+
+### Patch Changes
+
+- @weasel-js/paint@1.16.2
+  - @weasel-js/prefs@1.16.2
+  - @weasel-js/react@1.16.2
+  - @weasel-js/registry@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

@@ -1,5 +1,50 @@
 # @weasel-js/ui
 
+## 1.16.2
+
+### Patch Changes
+
+- 1d819e4: Add `ui:cube`, the d6's cube drawn at the weight of the set's other glyphs, for a toolbar: a box tool, say.
+  
+  kernel3d's orbit tool sits in the `view` palette group with core's hand tool, so a palette orders it among the
+  navigation tools rather than after the ones that make things.
+  
+  labkit's 3D lab picks its tools from a `ToolPalette`, through routing's `useTools`, with select active from the start.
+- 15f94d3: A number field in a vertical `Bar` is now the bar's width rather than five characters wide, so it stands upright in any face. Five characters fit the kit's own face by half a pixel and overflowed a wider one, such as a Linux system sans, which turned the box on its side.
+- Updated dependencies [65d2e7c]
+- Updated dependencies [db1eb4e]
+- Updated dependencies [944faa2]
+- Updated dependencies [6c0b311]
+- Updated dependencies [f6f69c8]
+- Updated dependencies [8f2e1e1]
+- Updated dependencies [12d3c17]
+- Updated dependencies [6e3b081]
+- Updated dependencies [847875c]
+- Updated dependencies [12caf33]
+- Updated dependencies [f285e56]
+- Updated dependencies [6ecee1a]
+  - @weasel-js/core@1.16.2
+  - @weasel-js/animator@1.16.2
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/svg@1.16.2
+  - @weasel-js/plot@1.16.2
+  - @weasel-js/text@1.16.2
+  - @weasel-js/ui-logic@1.16.2
+  - @weasel-js/menu@1.16.2
+  - @weasel-js/gestures@1.16.2
+  - @weasel-js/clock@1.16.2
+  - @weasel-js/font@1.16.2
+  - @weasel-js/history@1.16.2
+  - @weasel-js/icons@1.16.2
+  - @weasel-js/modes@1.16.2
+  - @weasel-js/paint@1.16.2
+  - @weasel-js/prefs@1.16.2
+  - @weasel-js/quantity@1.16.2
+  - @weasel-js/react@1.16.2
+  - @weasel-js/registry@1.16.2
+  - @weasel-js/select@1.16.2
+  - @weasel-js/theme@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

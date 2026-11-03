@@ -1,5 +1,61 @@
 # @weasel-js/labkit
 
+## 1.16.2
+
+### Patch Changes
+
+- 1d819e4: Add `ui:cube`, the d6's cube drawn at the weight of the set's other glyphs, for a toolbar: a box tool, say.
+  
+  kernel3d's orbit tool sits in the `view` palette group with core's hand tool, so a palette orders it among the
+  navigation tools rather than after the ones that make things.
+  
+  labkit's 3D lab picks its tools from a `ToolPalette`, through routing's `useTools`, with select active from the start.
+- 6c0b311: Add `ENGINE_STANDARD_ACTIONS`, the kit-standard actions a host of any dimension registers with `useActionSet`:
+  undo and redo, area and lasso select, select all and clear, move, clone, transform again, insert and its
+  companions, nudge, duplicate, delete, group and ungroup, escape and cancel. It is in `@weasel-js/core/engine`
+  with `WeaselProvider`, `IconRegistryProvider`, `CANVAS_CONTEXT_ATTRIBUTES` and `watchDevicePixelRatio`.
+  
+  `deleteAction` no longer loads `@weasel-js/text`: `hiddenSourcesTakenWith` and `sourcesHiddenBy` moved to a module
+  of their own, still exported from the main entry as before.
+  
+  labkit's 3D lab now builds on `@weasel-js/core/engine`, and its tiled surface and config read nothing from core's
+  main entry.
+- cdcc60c: A lab's menu bar sits in its header, after the title, rather than in a row of its own above it, so a lab with both
+  has one top bar.
+- 9d12681: Requires `windease` 2.3.0 or later, which lays out only the panes it shows. `Split` with `sidebar={null}` now leaves its sidebar pane unshown, where it used to show the pane and hide it again so the strip would not keep the pane's room and draw its seam. What renders is unchanged.
+- Updated dependencies [1d819e4]
+- Updated dependencies [65d2e7c]
+- Updated dependencies [db1eb4e]
+- Updated dependencies [944faa2]
+- Updated dependencies [6c0b311]
+- Updated dependencies [f6f69c8]
+- Updated dependencies [8f2e1e1]
+- Updated dependencies [12d3c17]
+- Updated dependencies [0233f80]
+- Updated dependencies [6e3b081]
+- Updated dependencies [847875c]
+- Updated dependencies [12caf33]
+- Updated dependencies [f285e56]
+- Updated dependencies [6ecee1a]
+- Updated dependencies [15f94d3]
+  - @weasel-js/ui@1.16.2
+  - @weasel-js/kernel3d@1.16.2
+  - @weasel-js/core@1.16.2
+  - @weasel-js/animator@1.16.2
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/routing@1.16.2
+  - @weasel-js/svg@1.16.2
+  - @weasel-js/loupe@1.16.2
+  - @weasel-js/minimap@1.16.2
+  - @weasel-js/clock@1.16.2
+  - @weasel-js/icons@1.16.2
+  - @weasel-js/prefs@1.16.2
+  - @weasel-js/quantity@1.16.2
+  - @weasel-js/react@1.16.2
+  - @weasel-js/registry@1.16.2
+  - @weasel-js/storage@1.16.2
+  - @weasel-js/theme@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

@@ -1,5 +1,29 @@
 # @weasel-js/svg
 
+## 1.16.2
+
+### Patch Changes
+
+- f285e56: `svgNodesFromKit` writes a node with a `clipFromPose`, as every page has, as a group clipped to what that returns,
+  ahead of `clip: 'outline'`, so an SVG export of a tree that walks its pages cuts what overhangs a page at its edge as
+  the canvas does. `placeOnPages` and `addOnPages` take a `pageOf` option naming the page a root was on where it was
+  read from: that root goes on that page where it is, unmoved, rather than on the page holding most of it.
+- Updated dependencies [65d2e7c]
+- Updated dependencies [db1eb4e]
+- Updated dependencies [944faa2]
+- Updated dependencies [6c0b311]
+- Updated dependencies [f6f69c8]
+- Updated dependencies [8f2e1e1]
+- Updated dependencies [12d3c17]
+- Updated dependencies [6e3b081]
+- Updated dependencies [847875c]
+- Updated dependencies [12caf33]
+- Updated dependencies [f285e56]
+- Updated dependencies [6ecee1a]
+  - @weasel-js/core@1.16.2
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/stroke@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

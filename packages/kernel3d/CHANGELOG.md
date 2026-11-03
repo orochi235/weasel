@@ -1,5 +1,51 @@
 # @weasel-js/kernel3d
 
+## 1.16.2
+
+### Patch Changes
+
+- 1d819e4: Add `ui:cube`, the d6's cube drawn at the weight of the set's other glyphs, for a toolbar: a box tool, say.
+  
+  kernel3d's orbit tool sits in the `view` palette group with core's hand tool, so a palette orders it among the
+  navigation tools rather than after the ones that make things.
+  
+  labkit's 3D lab picks its tools from a `ToolPalette`, through routing's `useTools`, with select active from the start.
+- db1eb4e: Add `@weasel-js/core/engine`, the half of core a host of any dimension uses: the scene, selection, snapping, aim,
+  the dep contract, and the actions and tools such a host binds (`moveAction`, `insertAction`, `areaSelectAction`,
+  `useSelectToolWith`, `useActionSet`, `useStandardDeps`, and the rest). It loads none of the 2D stack (renderer,
+  text, font, stroke, text-dom, svg). kernel3d now imports from it, and from `@weasel-js/routing`.
+  
+  New in core's main entry too:
+  
+  - `useSelectToolWith`, the select tool over a `pickEvery` the host supplies. `useSelectTool` is unchanged and
+    supplies the kit's adapter walk as before.
+  - `useActionSet` and `useStandardDeps`, the two halves of `useStandardActions`, for a host that names its own
+    actions and should not load the kit's standard list.
+  - The `drawnBoxes` dep: how move, resize, rotate, flip, align, and distribute measure the box a node is shown with.
+    `<SceneCanvas>` sources the stroke-inclusive measure it always used (`inkBoxes`). **A host that builds its deps
+    by hand now gets each node's pose box unless it sources `drawnBoxes` itself.**
+  - `InsertExtras` no longer lists a typed `sticky` variant; sticky extras still match its open `{ kind: string }` case.
+- Updated dependencies [65d2e7c]
+- Updated dependencies [db1eb4e]
+- Updated dependencies [944faa2]
+- Updated dependencies [6c0b311]
+- Updated dependencies [f6f69c8]
+- Updated dependencies [8f2e1e1]
+- Updated dependencies [12d3c17]
+- Updated dependencies [0233f80]
+- Updated dependencies [6e3b081]
+- Updated dependencies [847875c]
+- Updated dependencies [12caf33]
+- Updated dependencies [f285e56]
+- Updated dependencies [6ecee1a]
+  - @weasel-js/core@1.16.2
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/routing@1.16.2
+  - @weasel-js/stroke@1.16.2
+  - @weasel-js/paint@1.16.2
+  - @weasel-js/prefs@1.16.2
+  - @weasel-js/react@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

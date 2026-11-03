@@ -1,5 +1,20 @@
 # @weasel-js/pdf
 
+## 1.16.2
+
+### Patch Changes
+
+- Updated dependencies [944faa2]
+- Updated dependencies [8f2e1e1]
+- Updated dependencies [12d3c17]
+- Updated dependencies [847875c]
+  - @weasel-js/renderer@1.16.2
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/stroke@1.16.2
+  - @weasel-js/text@1.16.2
+  - @weasel-js/font@1.16.2
+  - @weasel-js/paint@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

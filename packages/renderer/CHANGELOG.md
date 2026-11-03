@@ -1,5 +1,25 @@
 # @weasel-js/renderer
 
+## 1.16.2
+
+### Patch Changes
+
+- 944faa2: New package `@weasel-js/dither`: `ditherPixels` quantizes exported pixels to 1-bit ink by threshold, Bayer, Floyd–Steinberg or Atkinson, keeping protected regions at plain threshold, and `dither` is the same threshold and Bayer as a live renderer effect, on the screen grid or an output target's dot grid (`gridOnScreen`). The renderer gives every effect pass `u_windowOrigin`, where its buffer sits in the drawing buffer; a layer group's effect thunk now receives `LayerDims`, with `dpr`; geom exports `OutputGrid`.
+- 8f2e1e1: Export, as types only, the declarations the public `.d.ts` files already named but no entry exported: core's
+  `GestureLifecycleOptions`, renderer's `BatchStage`, and `ScopeNode`, `DepNode`, `ToolNode` and `LastOperationKeeper`
+  from `@weasel-js/routing/react`. A consumer whose own declaration emit has to name one of them no longer gets TS2742.
+- 12d3c17: Id frames, for picking and coverage masks. `WeaselRenderer.renderIds` draws a command list again into a buffer of its own, holding a second color attachment beside the color, and reads back which `GroupDrawCommand.pickId` each device pixel carries, culled to a `rect` when one is given. Every program writes the id output, a consumer's custom shaders and effects included, with no change to their source: the renderer adds it at compile time. A pixel takes the id of the last fragment to paint it at `minAlpha` or more, so a custom shader claims what it paints rather than its bounds, and a group's effects claim what they spread into. `idMask` turns an id buffer into a one-byte-per-pixel mask of chosen ids, the shape `ditherPixels`'s `protect` and `protectTexture` take.
+  
+  In core, every scene node's paint carries a `pickId` from `scenePickIds(scene)`, which names the node back; a canvas handle's `pickAt(x, y)` reads the id under a point of its last frame; and `RasterSession.renderIds` returns a headless render's ids. The dithering demo's "By mask" protects every dot a mark paints, plus its quiet zone, instead of rects alone.
+- Updated dependencies [944faa2]
+- Updated dependencies [847875c]
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/stroke@1.16.2
+  - @weasel-js/text@1.16.2
+  - @weasel-js/font@1.16.2
+  - @weasel-js/paint@1.16.2
+  - @weasel-js/registry@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

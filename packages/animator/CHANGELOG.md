@@ -1,5 +1,18 @@
 # @weasel-js/animator
 
+## 1.16.2
+
+### Patch Changes
+
+- 65d2e7c: Depends on `@msb235/blits` 0.18.0, up from 0.16.1. Neither release breaks anything the kit calls. Among their fixes: a seek back now finds a voice that an earlier forward seek played to its end, so scrubbing back over a finished effect shows it again; and a voice's `seek` throws a `RangeError` for a time that is not a finite number, where a `NaN` time used to leave the voice showing nothing.
+- Updated dependencies [944faa2]
+- Updated dependencies [847875c]
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/clock@1.16.2
+  - @weasel-js/paint@1.16.2
+  - @weasel-js/react@1.16.2
+  - @weasel-js/registry@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes
