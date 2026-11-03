@@ -14,12 +14,15 @@ export interface GroupFrame {
   alpha?: number;
   /** Row-major 4×5 color matrix (20 floats). Absent leaves the stack unchanged. */
   colorMatrix?: Float32Array | number[];
+  /** The id the frame's pixels carry into an id frame. Absent inherits. */
+  pickId?: number;
 }
 
 export class GroupState {
   private transformStack: GlMat3[] = [mat3.identity()];
   private alphaStack: number[] = [1];
   private colorMatrixStack: Float32Array[] = [IDENTITY_COLOR_MATRIX];
+  private pickIdStack: number[] = [0];
 
   get transform(): GlMat3 {
     return this.transformStack[this.transformStack.length - 1];
@@ -31,6 +34,11 @@ export class GroupState {
 
   get colorMatrix(): Float32Array {
     return this.colorMatrixStack[this.colorMatrixStack.length - 1];
+  }
+
+  /** The id what draws now carries into an id frame; 0 for none. */
+  get pickId(): number {
+    return this.pickIdStack[this.pickIdStack.length - 1];
   }
 
   push(frame: GroupFrame): void {
@@ -49,6 +57,7 @@ export class GroupState {
     this.transformStack.push(nextTransform);
     this.alphaStack.push(nextAlpha);
     this.colorMatrixStack.push(nextCM);
+    this.pickIdStack.push(frame.pickId ?? this.pickId);
   }
 
   /**
@@ -68,6 +77,7 @@ export class GroupState {
     this.transformStack.push(frame.transform ? mat3.multiply(current, frame.transform) : current);
     this.alphaStack.push(1);
     this.colorMatrixStack.push(IDENTITY_COLOR_MATRIX);
+    this.pickIdStack.push(frame.pickId ?? this.pickId);
     return composited;
   }
 
@@ -77,6 +87,7 @@ export class GroupState {
     this.transformStack.length = 1;
     this.alphaStack.length = 1;
     this.colorMatrixStack.length = 1;
+    this.pickIdStack.length = 1;
   }
 
   pop(): void {
@@ -86,5 +97,6 @@ export class GroupState {
     this.transformStack.pop();
     this.alphaStack.pop();
     this.colorMatrixStack.pop();
+    this.pickIdStack.pop();
   }
 }

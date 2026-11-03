@@ -166,7 +166,9 @@ describe('re-registered program source', () => {
     mark();
     r.render([shader(h, { u_b: 0.5 })]);
 
-    expect(uploads(rec, 'shaderSource').map((c) => c.args[1])).toContain(FRAG_B);
+    // The uploaded source carries the id output (`shaders/idOutput.ts`) after FRAG_B's own lines.
+    const body = FRAG_B.slice(FRAG_B.indexOf('void main'));
+    expect(uploads(rec, 'shaderSource').some((c) => String(c.args[1]).includes(body.replace('void main', 'void weasel_main')))).toBe(true);
     const [second] = createdPrograms();
     expect(second).toBeDefined();
     expect(uploads(rec, 'deleteProgram').map((c) => c.args[0])).toEqual([first]);

@@ -11,8 +11,11 @@
 export {
   WeaselRenderer, type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
+  type IdBuffer, type RenderIdsOptions,
   DEFAULT_RETAIN_BUDGET,
 } from './WeaselRenderer';
+export { idMask } from './draw/idRender';
+export { MAX_PICK_ID } from './shaders/idOutput';
 export type { BatchStage } from './batchStage';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
 export { DEFAULT_FLATTEN_TOLERANCE_PX, type FlattenTolerance } from './draw/flattenTolerance';

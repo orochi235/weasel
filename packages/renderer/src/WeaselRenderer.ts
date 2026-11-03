@@ -24,53 +24,29 @@ import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { inCssPixels, type FlattenTolerance } from './draw/flattenTolerance';
 import type { GlMat3 } from '@weasel-js/geom';
-import {
-  dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind,
-} from './draw';
+import { OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind } from './draw';
+import { drawStream, now } from './drawStream';
+import { drawIdFrame } from './draw/idRender';
+import { createIdComposite } from './draw/idComposite';
 import { DrawBatch } from './drawBatch';
-import {
-  CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
-  QUAD_VERTICES, QUAD_INDICES,
-} from './shaders/customPrelude';
-import { getProgramSource, type ProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
+import { QUAD_VERTICES, QUAD_INDICES } from './shaders/customPrelude';
+import type { ShaderProgramHandle } from './shaders/registerProgram';
+import { CustomPrograms } from './shaders/CustomPrograms';
 import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
 import { createWhiteTexture } from './cache/whiteTexture';
 import { paintDrawKindRegistry } from './paintKinds';
 import {
-  DEFAULT_RETAIN_BUDGET, type RenderOptions, type RenderSpanStats, type RenderStats,
-  type RenderTarget, type WeaselRendererOptions,
+  DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpanStats,
+  type RenderStats, type RenderTarget, type WeaselRendererOptions,
 } from './rendererTypes';
 
 export {
-  DEFAULT_RETAIN_BUDGET, type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats,
-  type RenderTarget, type RetainedStats, type WeaselRendererOptions,
+  DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpan,
+  type RenderSpanStats, type RenderStats, type RenderTarget, type RetainedStats, type WeaselRendererOptions,
 } from './rendererTypes';
-import { extractUniformArrays, extractUniformNames } from './shaders/extractUniformNames';
-
-/** Every uniform a custom program may be written through. Both stages, not
- *  just the fragment one: a name never looked up is written through `null`,
- *  which GL accepts silently, so the uniform keeps its zero default. */
-function customUniformNames(vertSrc: string, fragSrc: string): string[] {
-  return [...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(vertSrc), ...extractUniformNames(fragSrc)];
-}
-
-/** Compile a registered program's source against `gl`, with every uniform
- *  location and array base it may be written through. */
-function compileCustomProgram(gl: WebGL2RenderingContext, src: ProgramSource): ShaderProgram {
-  const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
-  const program = new ShaderProgram(gl, vertSrc, src.frag);
-  program.lookupUniforms(customUniformNames(vertSrc, src.frag));
-  program.lookupUniformArrays(new Map([...extractUniformArrays(vertSrc), ...extractUniformArrays(src.frag)]));
-  program.lookupAttributes(CUSTOM_ATTRIBUTES);
-  return program;
-}
 
 const NO_RETAINED = { composited: 0, redrawn: 0, declined: 0, bytes: 0 } as const;
-
-function now(): number {
-  return typeof performance !== 'undefined' ? performance.now() : Date.now();
-}
 
 /** Each glyph-paint program's fragment stage and the uniforms it looks up. */
 const GLYPH_PAINT_SOURCES: Record<GlyphPaintKind, readonly [string, readonly string[]]> = {
@@ -104,10 +80,7 @@ export class WeaselRenderer {
   private textureCache: GLTextureCache;
   private imageCache: GLImageCache;
   private gradRamps: GradientRampAtlas;
-  private programRegistry = new Map<string, ShaderProgram>();
-  /** The source each compiled custom program was built from — or, after a
-   *  failed recompile, the source that failed, so it is not retried every frame. */
-  private programSources = new Map<string, ProgramSource>();
+  private readonly programs: CustomPrograms;
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
   private drawBatch: DrawBatch;
@@ -127,9 +100,6 @@ export class WeaselRenderer {
    *  with effects asks, so a canvas without them pays no memory. */
   private readonly effectTargets: EffectTargets;
   private readonly retained: RetainedSurfaces;
-  /** Advanced when a program is compiled again over one already drawn with,
-   *  which leaves every retained surface drawn by the old one stale. */
-  private programEpoch = 0;
   private readonly paintScratch: PaintScratch;
   private imageMinification: ImageMinification;
   private flattenTolerance?: FlattenTolerance;
@@ -144,6 +114,8 @@ export class WeaselRenderer {
   /** What registered paint kinds hang their GPU state on. One per context
    *  generation: a restore releases it and opens the next. */
   private paintResources: OwnedPaintResources = createPaintResources();
+  /** The program an id frame hands a group's ids back with; built by the first. */
+  private idComposite: ShaderProgram | null = null;
 
   constructor(opts: WeaselRendererOptions) {
     if (!opts.gl && !opts.canvas) {
@@ -153,6 +125,7 @@ export class WeaselRenderer {
     if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
     this.gl = gl as WebGL2RenderingContext;
     this.effectTargets = new EffectTargets(this.gl);
+    this.programs = new CustomPrograms(this.gl);
     this.retained = new RetainedSurfaces(this.gl, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
     this.paintScratch = new PaintScratch(this.gl);
 
@@ -242,60 +215,7 @@ export class WeaselRenderer {
   registerProgram(handle: ShaderProgramHandle): void {
     // A disposed renderer must not compile programs into the cleared registry.
     if (this.disposed) return;
-    const src = getProgramSource(handle.id);
-    if (!src) {
-      throw new Error(`WeaselRenderer.registerProgram: program "${handle.id}" not found in source registry. `
-        + 'Call the module-level registerProgram() first.');
-    }
-    this.installProgram(handle.id, src, compileCustomProgram(this.gl, src));
-  }
-
-  private installProgram(id: string, src: ProgramSource, program: ShaderProgram): void {
-    const previous = this.programRegistry.get(id);
-    if (previous) {
-      this.gl.deleteProgram(previous.handle);
-      this.programEpoch++;
-    }
-    this.programRegistry.set(id, program);
-    this.programSources.set(id, src);
-  }
-
-  /** Recompile every program whose module-level source was re-registered
-   *  since it was compiled. A source that fails keeps the old program drawing. */
-  private refreshPrograms(): void {
-    for (const [id, compiled] of this.programSources) {
-      const src = getProgramSource(id);
-      if (!src || src === compiled) continue;
-      if (src.vert === compiled.vert && src.frag === compiled.frag) {
-        this.programSources.set(id, src);
-        continue;
-      }
-      try {
-        this.installProgram(id, src, compileCustomProgram(this.gl, src));
-      } catch (e) {
-        this.programSources.set(id, src);
-        console.error(`weasel: failed to recompile re-registered program "${id}"; still drawing the previous one:`, e);
-      }
-    }
-  }
-
-  /**
-   * The compiled program for `id`, compiling it against this context on first
-   * use. Unlike {@link registerProgram} this neither throws on a missing
-   * source nor on a compile failure: a paint kind asking for a program it
-   * never registered must decline the paint, not take down the frame.
-   */
-  private ensureProgram(id: string): ShaderProgram | null {
-    const existing = this.programRegistry.get(id);
-    if (existing) return existing;
-    if (this.disposed || !getProgramSource(id)) return null;
-    try {
-      this.registerProgram({ id });
-    } catch (e) {
-      console.error(`weasel: failed to compile paint program "${id}":`, e);
-      return null;
-    }
-    return this.programRegistry.get(id) ?? null;
+    this.programs.register(handle.id);
   }
 
   private glyphPaintProgram(kind: GlyphPaintKind): ShaderProgram {
@@ -393,6 +313,7 @@ export class WeaselRenderer {
     for (const lazy of this.lazyPrograms()) lazy.abandon();
     this.batchFill = createBatchFill(this.gl);
     this.glyphPaintPrograms.clear();
+    this.idComposite = null;
     this.meshCache = new GLMeshCache(this.gl);
     this.textureCache = new GLTextureCache(this.gl);
     this.imageCache.abandon();
@@ -403,16 +324,7 @@ export class WeaselRenderer {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gl, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gl);
-    for (const id of this.programRegistry.keys()) {
-      const src = getProgramSource(id);
-      if (!src) continue;
-      try {
-        this.programRegistry.set(id, compileCustomProgram(this.gl, src));
-        this.programSources.set(id, src);
-      } catch (e) {
-        console.error(`weasel: failed to recompile program "${id}" after context restore:`, e);
-      }
-    }
+    this.programs.restore(this.gl);
   }
 
   /** Free every GL resource this renderer created and detach its
@@ -434,10 +346,10 @@ export class WeaselRenderer {
     this.paintResources.release();
     for (const lazy of this.lazyPrograms()) lazy.release();
     for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) gl.deleteProgram(prog.handle);
+    if (this.idComposite) gl.deleteProgram(this.idComposite.handle);
+    this.idComposite = null;
     this.glyphPaintPrograms.clear();
-    for (const prog of this.programRegistry.values()) gl.deleteProgram(prog.handle);
-    this.programRegistry.clear();
-    this.programSources.clear();
+    this.programs.dispose();
     this.textureCache.free();
     this.imageCache.dispose();
     this.gradRamps.free();
@@ -466,24 +378,16 @@ export class WeaselRenderer {
     const spanStats: RenderSpanStats[] = [];
     this.stats = { drawCalls: 0, ms: 0, spans: spanStats, retained: NO_RETAINED };
     const gl = this.gl;
-    // Free GL resources whose Mesh was GC'd since the last frame. Done here,
-    // before any draws, because GL state is known clean — deleting from the
-    // FinalizationRegistry callback directly races a draw in flight.
-    this.meshCache.drainPendingDeletes();
     this.imageCache.beginFrame();
-    this.textureCache.sweep(textureRegistry);
-    this.refreshPrograms();
+    this.beginFrame();
     this.retained.beginFrame([
       glyphGeneration(), textureRegistry.getVersion(), paintDrawKindRegistry.getVersion(),
-      this.programEpoch, this.flattenTolerance, this.widthCss, this.heightCss, this.dpr,
+      this.programs.epoch, this.flattenTolerance, this.widthCss, this.heightCss, this.dpr,
     ]);
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
-    // A frame that threw part-way never unwound: its group stack, its staged
-    // vertices, the effect buffer it was drawing into, and whichever
-    // offscreen buffer it had bound are all still here.
-    this.groupState.reset();
-    this.drawBatch.reset();
+    // The effect buffer a frame that threw was drawing into, and whichever
+    // offscreen buffer it had bound, are still out on loan.
     this.effectTargets.reclaim();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.applyGlState();
@@ -494,65 +398,11 @@ export class WeaselRenderer {
       gl.stencilMask(0xFF);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     }
-    const device = this.deviceRect();
     const own = this.glRect();
-    const { pathFill, pathFillVColor, gradFill, patternFill } = this;
-    const ctx: DrawContext = {
-      gl,
-      get pathFill() { return pathFill.get(); },
-      get pathFillVColor() { return pathFillVColor.get(); },
-      batchFill: this.batchFill,
-      batchVariants: this.batchVariants,
-      get gradFill() { return gradFill.get(); },
-      get patternFill() { return patternFill.get(); },
-      meshCache: this.meshCache,
-      textureCache: this.textureCache,
-      imageCache: this.imageCache,
-      gradRamps: this.gradRamps,
-      programRegistry: this.programRegistry,
-      ensureProgram: (id) => this.ensureProgram(id),
-      glyphPaintProgram: (kind) => this.glyphPaintProgram(kind),
-      quadVbo: this.quadVbo,
-      quadIbo: this.quadIbo,
-      drawBatch: this.drawBatch,
-      whiteTexture: this.whiteTexture,
-      state: this.groupState,
-      widthCss: this.widthCss,
-      heightCss: this.heightCss,
-      clipDepth: 0,
-      clipStack: [],
-      flattenTolerance: inCssPixels(this.flattenTolerance, this.dpr),
-      textOutlineMinScreenSize: this.textOutlineMinScreenSize,
-      viewMatrix, screenMatrix: opts?.screen,
-      effectTargets: this.effectTargets,
-      retained: this.retained,
-      paintScratch: this.paintScratch,
-      renderTarget: null,
-      fragOrigin: [own.x, own.y],
-      deviceWidth: device.width,
-      deviceHeight: device.height,
-      restoreTargetRect: () => this.applyTarget(),
-      paintResources: this.paintResources,
-      stats: counters,
-    };
-    // A frame that threw part-way left its clip here.
-    this.drawBatch.clip = null;
-    const spans = opts?.spans ?? [];
-    let next = 0;
-    for (let si = 0; si < spans.length; si++) {
-      const span = spans[si];
-      for (; next < span.start; next++) dispatch(ctx, commands[next]);
-      const drawsBefore = counters.drawCalls;
-      const spanT0 = now();
-      for (; next < span.end; next++) dispatch(ctx, commands[next]);
-      // The stream's closing flush belongs to whatever it closes.
-      if (si === spans.length - 1 && next >= commands.length) flushBatch(ctx);
-      spanStats.push({ id: span.id, drawCalls: counters.drawCalls - drawsBefore, ms: now() - spanT0 });
-    }
-    for (; next < commands.length; next++) dispatch(ctx, commands[next]);
-    // The stream ended, so whatever is still staged has nothing left that
-    // could merge with it.
-    flushBatch(ctx);
+    const ctx = this.frameContext(viewMatrix, opts?.screen, counters, {
+      retained: this.retained, renderTarget: null, fragOrigin: [own.x, own.y],
+    });
+    drawStream(ctx, commands, opts?.spans ?? [], spanStats, counters);
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
@@ -565,6 +415,100 @@ export class WeaselRenderer {
     };
     this.stats.drawCalls = counters.drawCalls;
     this.stats.ms = now() - t0;
+  }
+
+  /**
+   * Draw `commands` as `render` would, into a buffer of the renderer's own
+   * rather than the canvas, and read back which `GroupDrawCommand.pickId`
+   * each device pixel ends up carrying. The canvas, `lastFrameStats` and
+   * retained surfaces are left as they were: a retained group is drawn
+   * straight through.
+   *
+   * The canvas's own frame cannot carry the ids beside its color: the default
+   * framebuffer takes one color attachment, and the canvas's is multisampled,
+   * which averages an id at every edge. So this is a second frame, culled to
+   * `rect`, and asking about one pixel draws only what can reach it.
+   *
+   * An empty buffer where the context is lost or the renderer disposed.
+   */
+  renderIds(commands: DrawCommand[], viewMatrix?: GlMat3, opts: RenderIdsOptions = {}): IdBuffer {
+    if (this.contextLost || this.disposed) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
+    const device = this.deviceRect();
+    this.beginFrame();
+    this.applyGlState();
+    this.idComposite ??= createIdComposite(this.gl);
+    const out = drawIdFrame(this.gl, this.effectTargets, this.idComposite, {
+      width: device.width, height: device.height, dpr: this.dpr, rect: opts.rect, minAlpha: opts.minAlpha,
+    }, commands, (renderTarget, ids, culled) => {
+      const ctx = this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids });
+      drawStream(ctx, culled, [], [], { drawCalls: 0 });
+    });
+    this.meshCache.freeTransient();
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    this.applyGlState();
+    this.applyTarget();
+    return out;
+  }
+
+  /** What every frame does before it draws. A frame that threw part-way never
+   *  unwound: its group stack and staged vertices are still here. */
+  private beginFrame(): void {
+    // Free GL resources whose Mesh was GC'd since the last frame. Done here,
+    // before any draws, because GL state is known clean — deleting from the
+    // FinalizationRegistry callback directly races a draw in flight.
+    this.meshCache.drainPendingDeletes();
+    this.textureCache.sweep(textureRegistry);
+    this.programs.refresh();
+    this.groupState.reset();
+    this.drawBatch.reset();
+    // A frame that threw part-way left its clip here.
+    this.drawBatch.clip = null;
+  }
+
+  /** The draw context of one frame; `target` says where it draws. */
+  private frameContext(
+    viewMatrix: GlMat3 | undefined, screenMatrix: GlMat3 | undefined,
+    stats: { drawCalls: number } | undefined,
+    target: Pick<DrawContext, 'renderTarget' | 'fragOrigin' | 'retained' | 'ids'>,
+  ): DrawContext {
+    const device = this.deviceRect();
+    const { pathFill, pathFillVColor, gradFill, patternFill } = this;
+    return {
+      gl: this.gl,
+      get pathFill() { return pathFill.get(); },
+      get pathFillVColor() { return pathFillVColor.get(); },
+      batchFill: this.batchFill,
+      batchVariants: this.batchVariants,
+      get gradFill() { return gradFill.get(); },
+      get patternFill() { return patternFill.get(); },
+      meshCache: this.meshCache,
+      textureCache: this.textureCache,
+      imageCache: this.imageCache,
+      gradRamps: this.gradRamps,
+      programRegistry: this.programs.registry,
+      ensureProgram: (id) => (this.disposed ? null : this.programs.ensure(id)),
+      glyphPaintProgram: (kind) => this.glyphPaintProgram(kind),
+      quadVbo: this.quadVbo,
+      quadIbo: this.quadIbo,
+      drawBatch: this.drawBatch,
+      whiteTexture: this.whiteTexture,
+      state: this.groupState,
+      widthCss: this.widthCss,
+      heightCss: this.heightCss,
+      clipDepth: 0,
+      clipStack: [],
+      flattenTolerance: inCssPixels(this.flattenTolerance, this.dpr),
+      textOutlineMinScreenSize: this.textOutlineMinScreenSize,
+      viewMatrix, screenMatrix,
+      effectTargets: this.effectTargets,
+      paintScratch: this.paintScratch,
+      deviceWidth: device.width,
+      deviceHeight: device.height,
+      restoreTargetRect: () => this.applyTarget(),
+      paintResources: this.paintResources,
+      stats,
+      ...target,
+    };
   }
 
   /** What the last `render()` cost: GL draw calls issued and CPU milliseconds

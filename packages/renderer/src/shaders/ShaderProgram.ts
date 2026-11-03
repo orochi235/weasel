@@ -7,6 +7,8 @@
  * via the recorder Proxy without further special-casing.
  */
 
+import { bindIdAttribute, withIdOutput } from './idOutput';
+
 /** The step of building a program that a `ShaderCompileError` came from. */
 export type ShaderStage = 'vertex' | 'fragment' | 'link';
 
@@ -32,9 +34,22 @@ export interface UniformArray {
  *  left to each program's linker. */
 export const POSITION_ATTRIBUTE_LOCATION = 0;
 
+/** Programs whose sources `withIdOutput` could not rewrite, which write
+ *  nothing at location 1. An id frame switches that attachment off for them. */
+export const PROGRAMS_WITHOUT_IDS: WeakSet<WebGLProgram> = new WeakSet();
+
+/** How a program is built beyond its sources. */
+export interface ShaderProgramOptions {
+  /** Add the id output (`shaders/idOutput.ts`). Default `true`; `false` for a
+   *  program that writes location 1 itself. */
+  ids?: boolean;
+}
+
 /** A linked GL program with its uniform and attribute locations cached by name. */
 export class ShaderProgram {
   readonly handle: WebGLProgram;
+  /** Whether the program writes the id output an id frame reads. */
+  readonly writesIds: boolean;
   private readonly uniforms = new Map<string, WebGLUniformLocation>();
   private readonly arrays = new Map<string, UniformArray>();
   private readonly attributes = new Map<string, number>();
@@ -43,7 +58,10 @@ export class ShaderProgram {
     private readonly gl: WebGL2RenderingContext,
     vertSrc: string,
     fragSrc: string,
+    options: ShaderProgramOptions = {},
   ) {
+    const rewritten = options.ids === false ? null : withIdOutput(vertSrc, fragSrc);
+    if (rewritten) ({ vert: vertSrc, frag: fragSrc } = rewritten);
     const vs = this.compile(gl.VERTEX_SHADER, vertSrc, 'vertex');
     let fs: WebGLShader;
     try {
@@ -61,6 +79,7 @@ export class ShaderProgram {
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.bindAttribLocation(program, POSITION_ATTRIBUTE_LOCATION, 'a_position');
+    if (rewritten) bindIdAttribute(gl, program);
     gl.linkProgram(program);
     // Flagged for deletion, attached shaders live exactly as long as the
     // program, so `deleteProgram` frees them too.
@@ -72,6 +91,8 @@ export class ShaderProgram {
       throw new ShaderCompileError('link', log);
     }
     this.handle = program;
+    this.writesIds = rewritten !== null;
+    if (!rewritten && options.ids !== false) PROGRAMS_WITHOUT_IDS.add(program);
   }
 
   private compile(type: number, source: string, stage: ShaderStage): WebGLShader {

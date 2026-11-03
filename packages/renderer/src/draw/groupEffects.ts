@@ -11,6 +11,8 @@ import { compositeOver, drawFullscreenQuad, insideBuffer, returnToRenderTarget, 
 import { applyClipTest } from './stencil';
 import { flushForOwnDraw } from './clip';
 import { flushBatch } from './flushBatch';
+import { drawBoth } from './idFrame';
+import { compositeIds } from './idComposite';
 
 type Dispatch = (ctx: DrawContext, cmd: DrawCommand) => void;
 
@@ -99,11 +101,17 @@ export function drawGroupWithEffects(
   const parentProjection = ctx.projection;
   const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
 
-  let front = targets.acquire(rect.width, rect.height);
+  const ids = ctx.ids;
+  // In an id frame the children's ids are drawn here and stay here while the
+  // passes, which read and write color alone, run on targets without them.
+  const own = targets.acquire(rect.width, rect.height, ids !== undefined);
+  let front = own;
+  const groupId = cmd.pickId ?? ctx.state.pickId;
   const composited = ctx.state.pushIsolated({
     transform: cmd.transform,
     alpha: cmd.alpha,
     colorMatrix: cmd.colorMatrix,
+    pickId: cmd.pickId,
   });
   ctx.clipDepth = 0;
   ctx.clipStack = [];
@@ -143,7 +151,7 @@ export function drawGroupWithEffects(
     gl.clear(gl.COLOR_BUFFER_BIT);
     drawFullscreenQuad(ctx, program, front.texture, rect.width, rect.height, effect.uniforms,
       undefined, effect.program.id, [rect.x, rect.y]);
-    targets.release(front);
+    if (front !== own) targets.release(front);
     front = back;
   }
   gl.enable(gl.BLEND);
@@ -162,8 +170,12 @@ export function drawGroupWithEffects(
     applyClipTest(ctx);
     const ownBlend = isOwnComposite(cmd.composite);
     if (ownBlend) applyComposite(gl, cmd.composite!);
+    if (ids) gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.NONE]);
     compositeOver(ctx, composite, front.texture, rect, composited);
     if (ownBlend) applyComposite(gl, 'source-over');
+    if (ids && own.ids) compositeIds(ctx, ids, front.texture, own.ids, rect, composited.alpha, groupId);
+    else if (ids) drawBoth(gl);
   }
-  targets.release(front);
+  if (front !== own) targets.release(front);
+  targets.release(own);
 }

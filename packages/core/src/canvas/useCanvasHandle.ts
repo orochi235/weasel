@@ -1,4 +1,4 @@
-import { useCallback, useImperativeHandle } from 'react';
+import { useCallback, useImperativeHandle, useRef } from 'react';
 import type React from 'react';
 import type { View } from 'core/viewport/view';
 import type { Dims } from 'core/layers/render';
@@ -10,7 +10,7 @@ import type { SurfaceFrame } from './useViewRegistrySurface';
 /** The handle's members the canvas builds elsewhere. */
 export type CanvasHandleApi = Omit<
   CanvasExtensionApi,
-  'element' | 'surface' | 'getSurfaceRect' | 'hitTestExtras' | 'ingest' | 'addView'
+  'element' | 'surface' | 'getSurfaceRect' | 'hitTestExtras' | 'ingest' | 'addView' | 'pickAt'
 > & { hitTestExtrasIn: HitTestExtrasIn };
 
 /** The elements the handle names, as of this render. */
@@ -20,13 +20,14 @@ export interface CanvasHandleTarget
   paintCanvas: HTMLCanvasElement | null | undefined;
 }
 
-/** The bare canvas's imperative handle. Its own-frame members answer against `frame`. */
+/** The bare canvas's imperative handle. Its own-frame members answer against `frame`.
+ *  Returns where the paint publishes the handle's `pickAt`, which needs its last frame. */
 export function useCanvasHandle(
   ref: React.ForwardedRef<CanvasExtensionApi>,
   target: CanvasHandleTarget,
   frame: SurfaceFrame,
   api: CanvasHandleApi,
-): void {
+): { current: CanvasExtensionApi['pickAt'] } {
   const { canvasRef, ownCanvasRef, detached, paintRectRef, inputElement, paintCanvas } = target;
   const { viewRef, dimsRef, helpersRef } = frame;
   const {
@@ -34,6 +35,8 @@ export function useCanvasHandle(
     subscribeResume, registerLayer, getView, setView, subscribeView,
     getPaintedVersion, paintedCursor, cursorSink, getDebug,
   } = api;
+  const pickRef = useRef<CanvasExtensionApi['pickAt']>(() => 0);
+  const pickAt = useCallback<CanvasExtensionApi['pickAt']>((x, y, options) => pickRef.current(x, y, options), []);
 
   const hitTestExtras = useCallback((worldX: number, worldY: number, at?: { view: View; dims: Dims }) => (
     hitTestExtrasIn(worldX, worldY, at?.view ?? viewRef.current, at?.dims ?? dimsRef.current, helpersRef.current)
@@ -65,9 +68,11 @@ export function useCanvasHandle(
     paintedCursor,
     cursorSink,
     getDebug,
+    pickAt,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintCanvas,
        getSurfaceRect, clientToWorld, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume,
        registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
-       paintedCursor, cursorSink, getDebug]);
+       paintedCursor, cursorSink, getDebug, pickAt]);
+  return pickRef;
 }

@@ -10,6 +10,7 @@ import { drawRetainedGroup } from './draw/retained';
 import { drawPath } from './draw/pathPaint';
 import { drawText } from './draw/text';
 import { drawImage, drawSprites } from './draw/image';
+import { flushBatch } from './draw/flushBatch';
 
 export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
@@ -49,10 +50,15 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
     if (cmd.clip) leaveClip(ctx);
     return;
   }
+  // A staged run draws with the id live when it flushes, so an id frame
+  // flushes wherever that id changes.
+  const newId = ctx.ids !== undefined && cmd.pickId !== undefined && cmd.pickId !== ctx.state.pickId;
+  if (newId) flushBatch(ctx);
   ctx.state.push({
     transform: cmd.transform,
     alpha: cmd.alpha,
     colorMatrix: cmd.colorMatrix,
+    pickId: cmd.pickId,
   });
   if (cmd.clip) {
     try {
@@ -64,6 +70,7 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
   }
   for (const child of cmd.children) dispatch(ctx, child);
   if (cmd.clip) leaveClip(ctx);
+  if (newId) flushBatch(ctx);
   ctx.state.pop();
 }
 

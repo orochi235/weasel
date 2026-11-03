@@ -324,15 +324,13 @@ Owner tags, after the priority (2026-10-26):
   edges, and only sometimes; that it is a precision or rounding path the GPU picks under load is
   inferred, not shown.
   Closes when the cause is found and fixed, or the bound set to what the GPU guarantees.
-- **(P2) [agent] Multiple render targets, with GPU picking as the first payload.** The renderer
-  writes one color attachment per draw (no `drawBuffers` in `packages/renderer`), so per-pixel side
-  data needs a second draw. Agreed 2026-11-03 to build it after dithering and output-grid clamping
-  (`@weasel-js/dither`'s `protect` input). First payload: a node-id buffer (an
-  unblended integer attachment) so hit-testing sees what custom shaders and effects paint; second,
-  coverage masks, which let dither protection use exact coverage instead of rects. Costs to design
-  for: custom fragment shaders must write the extra output (or the prelude injects it), WebGL2 core
-  has one blend state for every attachment, and each group and effect target grows by one.
-  Closes when a pick on the canvas reads the id buffer and dither's `protect` accepts its mask.
+- **(P3) [agent] A scene's picks do not read the id buffer.** `pickAt` on a canvas
+  handle reads an id frame (`WeaselRenderer.renderIds`, 2026-11-03), so it sees what a custom shader or
+  an effect paints, but the `nodeAtPoint` dep and the scene's other picks still walk node outlines on
+  the CPU (`pickEvery`, `pickWalk`). `nodeAtPoint`'s callers pass an `exclude` set, which a topmost-id read cannot honor
+  without drawing again with those nodes left out, and hover hit-tests on every pointer move, where an id
+  frame is a second draw of the frame; that is why it was not done in the same pass.
+  Closes when `<SceneCanvas>` can take its press picks from the id buffer, `exclude` included.
 - **(P2) [recheck] Label output: `.lbx` files, and raster printing over WebUSB.** Wanted (2026-11-03)
   alongside dithering and output-grid clamping, and left out of both arcs. lbx-editor does both today
   outside weasel: `.lbx` through bil-lbx, which describes objects rather than dots, and printing

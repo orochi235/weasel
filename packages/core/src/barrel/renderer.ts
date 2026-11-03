@@ -46,6 +46,10 @@ export { viewToMat3 } from '@weasel-js/renderer';
 // slot's `cull` option runs, for a custom layer to run over its own output.
 export { cullDrawCommands, type CullRect } from '@weasel-js/renderer';
 
+// An id frame's read-back, and the coverage mask of some of its ids — what
+// `pickAt` and `RasterSession.renderIds` stand on.
+export { idMask, MAX_PICK_ID, type IdBuffer } from '@weasel-js/renderer';
+
 // The renderer's 3x3 matrix namespace, operating on `GlMat3` — 9 elements,
 // column-major, in doubles; `mat3.toUniform` is the float32 copy a GL uniform
 // upload wants. `mat3.toAffine` and `mat3.fromAffine` convert to and from
