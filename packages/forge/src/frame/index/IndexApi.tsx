@@ -1,6 +1,7 @@
 // The component's own entry, not the barrel: the barrel would bring every weasel-ui component into each frame.
 import { Badge } from '@weasel-js/ui/components/Badge';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
+import { useOverflowing } from '../../shell/useOverflowing';
 import type { ApiMember, ApiProp, ApiRef, ApiTable } from '../../story/api';
 import { Description } from './Description';
 import { useEnv } from './envContext';
@@ -94,13 +95,15 @@ function ApiBody({ api }: { api: ApiTable }) {
   );
 }
 
-/** The component's props and what its `ref` exposes, read from its types. Nothing for a gallery, or where none was read. */
+/** The component's props and what its `ref` exposes, read from its types. Nothing where none was read, as for a gallery. */
 export function IndexApi() {
-  const { api, gallery } = useEnv();
-  if (gallery || api === undefined) return null;
+  const { api } = useEnv();
+  const [el, setEl] = useState<HTMLElement | null>(null);
+  const overflowing = useOverflowing(el);
+  if (api === undefined) return null;
   return (
-    // Scrolls on its own beside the stories, so it is a tab stop for the keyboard to scroll it.
-    <aside className="fg-index-api" aria-label="API" tabIndex={0}>
+    // While it scrolls on its own beside the stories, it is a tab stop for the keyboard to scroll it.
+    <aside ref={setEl} className="fg-index-api" aria-label="API" {...(overflowing ? { tabIndex: 0 } : {})}>
       {api === null ? (
         <p className="fg-index-api__note">
           forge found no component for this page, so it shows no API. It reads the meta&rsquo;s <code>component</code>,

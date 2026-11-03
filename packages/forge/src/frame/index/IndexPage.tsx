@@ -252,7 +252,7 @@ export function DefaultIndex() {
   const name = segments.pop();
   const { library } = env;
   if (library !== undefined && segments[0] === library) segments.shift();
-  const withApi = !env.gallery && env.api !== undefined;
+  const withApi = env.api !== undefined;
   return (
     <article className={withApi ? 'fg-index fg-index--api' : 'fg-index'}>
       <header className="fg-index__head">

@@ -215,9 +215,11 @@ test('stacks the API under the header below 560px', () => {
   expect(aside.getBoundingClientRect().bottom).toBeLessThanOrEqual(stories.getBoundingClientRect().top + 1);
 });
 
-test('wraps a long type inside the column', () => {
+test('wraps a long type and a long default inside the column', () => {
   const type = Array.from({ length: 40 }, (_, i) => `'option-${i}'`).join(' | ');
-  const { scroller, aside } = apiPage(1600, { props: [{ name: 'wide', type, required: false }], inherited: [], ref: null });
+  const url = `'https://example.com/${'a'.repeat(300)}'`;
+  const props = [{ name: 'wide', type, required: false, default: url }];
+  const { scroller, aside } = apiPage(1600, { props, inherited: [], ref: null });
   expect(scroller.scrollWidth).toBe(scroller.clientWidth);
   expect(aside.scrollWidth).toBe(aside.clientWidth);
 });

@@ -85,11 +85,11 @@
 
 .fg-index-api code {
   font-family: var(--wzl-font-mono);
+  overflow-wrap: anywhere;
 }
 
 .fg-index-api__type {
   color: var(--wzl-accent-fg);
-  overflow-wrap: anywhere;
 }
 
 .fg-index-api__default,

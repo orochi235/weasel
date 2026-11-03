@@ -92,11 +92,14 @@ describe('IndexApi', () => {
     expect(panel()).toHaveTextContent(/forge found no component/);
   });
 
-  it('shows no panel for a gallery, or where no API was read', () => {
-    const { rerender } = render(<IndexPage env={envOf({ gallery: true })} render={null} />);
+  it('shows no panel where no API was read, as for a gallery', () => {
+    render(<IndexPage env={envOf({ api: undefined })} render={null} />);
     expect(screen.queryByRole('complementary', { name: 'API' })).toBeNull();
-    rerender(<IndexPage env={envOf({ api: undefined })} render={null} />);
-    expect(screen.queryByRole('complementary', { name: 'API' })).toBeNull();
+  });
+
+  it('is not a tab stop while it holds nothing to scroll', () => {
+    render(<IndexPage env={envOf()} render={null} />);
+    expect(panel().hasAttribute('tabindex')).toBe(false);
   });
 
   it('is a part a custom page can place', () => {

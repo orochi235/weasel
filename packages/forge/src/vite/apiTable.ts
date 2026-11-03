@@ -35,7 +35,7 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
     if (RESERVED.has(name)) continue;
     const files = filesOf(prop);
     if (files.length > 0 && files.every(reading.skipped)) {
-      const from = containerName(reading.tsm, prop) ?? 'the platform';
+      const from = containerName(reading.tsm, prop) ?? packageOf(files[0]!);
       inherited.set(from, (inherited.get(from) ?? 0) + 1);
       continue;
     }
@@ -86,6 +86,15 @@ function writtenType({ tsm, checker, at }: ApiReading, symbol: ts.Symbol): strin
   const node = declaration && others.length === 0 && tsm.isPropertySignature(declaration) ? declaration.type : undefined;
   if (node && checker.getNonNullableType(checker.getTypeFromTypeNode(node)) === type) return node.getText().replace(/\s+/g, ' ');
   return checker.typeToString(type, undefined, tsm.TypeFormatFlags.NoTruncation);
+}
+
+/** The package a file is in, `@scope/name` or `name`, else the file's own name. */
+function packageOf(file: string): string {
+  const parts = file.split(/[\\/]/);
+  const at = parts.lastIndexOf('node_modules');
+  if (at < 0 || at + 1 >= parts.length) return parts.at(-1) ?? file;
+  const name = parts[at + 1]!;
+  return name.startsWith('@') && parts[at + 2] ? `${name}/${parts[at + 2]}` : name;
 }
 
 /** The interface, type alias or class a property is declared in, by name. */
