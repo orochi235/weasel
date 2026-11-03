@@ -590,6 +590,14 @@ run without it. `HVD_ALLOC=1` adds the allocation profile above.
 fractional pan, a screen-unit paint that opts out, and a still frame. Its runs are in
 `tests/perf/recorded/retain-pan-2026-10-27/`.
 
+`retain-redraw.spec.ts` times only the frame that draws every surface again, by the side of the tile
+it is drawn in, one fresh context at a time, with a CPU profile of each (`WEASEL_PERF_TRACE=1` adds a
+trace). On teitou on 2026-11-03, 4 margined layers of 1,000 commands at 2560x1600 took 4.8–5.4 ms tiled
+at 1024 against 5.0–5.9 untiled, in each of 4 contexts; at 512, 8.0–9.4. Before tiles culled the
+commands inside a layer's group, every tile staged every command, and the tiled frame took 16.5–18.3 ms
+(`tests/perf/recorded/retain-2026-11-03/`). Its timer-query column exceeds the frame's own time on tiled
+frames there, so read GPU time from it for untiled frames only.
+
 ## Timing a frame
 
 Specs that time the renderer draw **one frame per task** and take the median,

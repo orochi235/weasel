@@ -1,0 +1,59 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/retain-redraw.spec.ts
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Retained redraw — 4 x 1000 at 1280x800 dpr 2, on ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version); timer query on
+4 contexts x tiles none,512,1024,2048
+
+   1/16  context 1  tile none    5.865 ms/frame  cpu   2.640  gpu   2.765  draws    8  redrawn 4  peak  293.0 MiB
+      profile, ms/frame: 4.69 readPixels (:0) | 4.25 (program) (:0) | 3.37 (idle) (:0) | 0.52 placeGlyph (glyphCorners.ts:41) | 0.43 pushGlyph (drawBatch.ts:188) | 0.22 textBox (textBounds.ts:23)
+   2/16  context 1  tile  512    9.415 ms/frame  cpu   3.515  gpu  14.967  draws  116  redrawn 4  peak  106.7 MiB
+      profile, ms/frame: 5.11 readPixels (:0) | 3.32 (idle) (:0) | 1.08 (program) (:0) | 0.41 placeGlyph (glyphCorners.ts:41) | 0.41 textBox (textBounds.ts:23) | 0.40 cullToTile (tileCull.ts:47)
+   3/16  context 1  tile 1024    5.375 ms/frame  cpu   2.510  gpu  10.589  draws   36  redrawn 4  peak  133.7 MiB
+      profile, ms/frame: 3.35 (idle) (:0) | 3.26 readPixels (:0) | 1.32 (program) (:0) | 0.45 textBox (textBounds.ts:23) | 0.38 placeGlyph (glyphCorners.ts:41) | 0.20 pushGlyph (drawBatch.ts:188)
+   4/16  context 1  tile 2048    5.770 ms/frame  cpu   2.160  gpu   5.310  draws   12  redrawn 4  peak  238.3 MiB
+      profile, ms/frame: 3.66 readPixels (:0) | 3.37 (idle) (:0) | 1.53 (program) (:0) | 0.42 textBox (textBounds.ts:23) | 0.36 placeGlyph (glyphCorners.ts:41) | 0.22 pushGlyph (drawBatch.ts:188)
+   5/16  context 2  tile none    5.150 ms/frame  cpu   2.035  gpu   2.425  draws    8  redrawn 4  peak  293.0 MiB
+      profile, ms/frame: 4.58 readPixels (:0) | 3.37 (idle) (:0) | 1.85 (program) (:0) | 0.60 placeGlyph (glyphCorners.ts:41) | 0.35 pushGlyph (drawBatch.ts:188) | 0.24 textBox (textBounds.ts:23)
+   6/16  context 2  tile  512    8.025 ms/frame  cpu   2.680  gpu  13.716  draws  116  redrawn 4  peak  106.7 MiB
+      profile, ms/frame: 5.23 readPixels (:0) | 3.35 (idle) (:0) | 1.59 (program) (:0) | 0.44 textBox (textBounds.ts:23) | 0.40 placeGlyph (glyphCorners.ts:41) | 0.38 cullToTile (tileCull.ts:47)
+   7/16  context 2  tile 1024    4.895 ms/frame  cpu   2.015  gpu   8.951  draws   36  redrawn 4  peak  133.7 MiB
+      profile, ms/frame: 3.58 readPixels (:0) | 3.34 (idle) (:0) | 1.75 (program) (:0) | 0.43 textBox (textBounds.ts:23) | 0.33 placeGlyph (glyphCorners.ts:41) | 0.21 pushGlyph (drawBatch.ts:188)
+   8/16  context 2  tile 2048    4.805 ms/frame  cpu   1.640  gpu   4.289  draws   12  redrawn 4  peak  238.3 MiB
+      profile, ms/frame: 5.28 readPixels (:0) | 3.35 (idle) (:0) | 1.77 (program) (:0) | 0.42 textBox (textBounds.ts:23) | 0.33 placeGlyph (glyphCorners.ts:41) | 0.20 pushGlyph (drawBatch.ts:188)
+   9/16  context 3  tile none    4.985 ms/frame  cpu   2.030  gpu   2.431  draws    8  redrawn 4  peak  293.0 MiB
+      profile, ms/frame: 3.65 readPixels (:0) | 3.36 (idle) (:0) | 1.70 (program) (:0) | 0.53 placeGlyph (glyphCorners.ts:41) | 0.36 pushGlyph (drawBatch.ts:188) | 0.23 textBox (textBounds.ts:23)
+  10/16  context 3  tile  512    8.340 ms/frame  cpu   2.640  gpu  11.933  draws  116  redrawn 4  peak  106.7 MiB
+      profile, ms/frame: 5.32 readPixels (:0) | 3.35 (idle) (:0) | 1.57 (program) (:0) | 0.44 textBox (textBounds.ts:23) | 0.44 cullToTile (tileCull.ts:47) | 0.43 placeGlyph (glyphCorners.ts:41)
+  11/16  context 3  tile 1024    4.845 ms/frame  cpu   1.990  gpu   9.578  draws   36  redrawn 4  peak  133.7 MiB
+      profile, ms/frame: 3.31 (idle) (:0) | 3.08 readPixels (:0) | 1.67 (program) (:0) | 0.43 textBox (textBounds.ts:23) | 0.38 placeGlyph (glyphCorners.ts:41) | 0.22 pushGlyph (drawBatch.ts:188)
+  12/16  context 3  tile 2048    4.820 ms/frame  cpu   1.645  gpu   4.388  draws   12  redrawn 4  peak  238.3 MiB
+      profile, ms/frame: 3.44 readPixels (:0) | 3.35 (idle) (:0) | 1.59 (program) (:0) | 0.38 textBox (textBounds.ts:23) | 0.28 placeGlyph (glyphCorners.ts:41) | 0.20 pushGlyph (drawBatch.ts:188)
+  13/16  context 4  tile none    5.125 ms/frame  cpu   2.020  gpu   2.679  draws    8  redrawn 4  peak  293.0 MiB
+      profile, ms/frame: 4.09 readPixels (:0) | 3.36 (idle) (:0) | 1.78 (program) (:0) | 0.44 placeGlyph (glyphCorners.ts:41) | 0.38 pushGlyph (drawBatch.ts:188) | 0.19 visitNode (:281)
+  14/16  context 4  tile  512    8.350 ms/frame  cpu   2.630  gpu  15.983  draws  116  redrawn 4  peak  106.7 MiB
+      profile, ms/frame: 5.17 readPixels (:0) | 3.34 (idle) (:0) | 1.63 (program) (:0) | 0.47 textBox (textBounds.ts:23) | 0.43 placeGlyph (glyphCorners.ts:41) | 0.41 cullToTile (tileCull.ts:47)
+  15/16  context 4  tile 1024    5.175 ms/frame  cpu   1.965  gpu  11.197  draws   36  redrawn 4  peak  133.7 MiB
+      profile, ms/frame: 3.69 readPixels (:0) | 3.38 (idle) (:0) | 1.56 (program) (:0) | 0.47 textBox (textBounds.ts:23) | 0.29 placeGlyph (glyphCorners.ts:41) | 0.25 pushGlyph (drawBatch.ts:188)
+  16/16  context 4  tile 2048    5.090 ms/frame  cpu   1.625  gpu   4.757  draws   12  redrawn 4  peak  238.3 MiB
+      profile, ms/frame: 5.27 readPixels (:0) | 3.29 (idle) (:0) | 1.72 (program) (:0) | 0.47 textBox (textBounds.ts:23) | 0.33 placeGlyph (glyphCorners.ts:41) | 0.19 visitNode (:281)
+
+| context | tile none ms | cpu | gpu | tile 512 ms | cpu | gpu | tile 1024 ms | cpu | gpu | tile 2048 ms | cpu | gpu |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|  1 |   5.865 |   2.640 |   2.765 |   9.415 |   3.515 |  14.967 |   5.375 |   2.510 |  10.589 |   5.770 |   2.160 |   5.310 |
+|  2 |   5.150 |   2.035 |   2.425 |   8.025 |   2.680 |  13.716 |   4.895 |   2.015 |   8.951 |   4.805 |   1.640 |   4.289 |
+|  3 |   4.985 |   2.030 |   2.431 |   8.340 |   2.640 |  11.933 |   4.845 |   1.990 |   9.578 |   4.820 |   1.645 |   4.388 |
+|  4 |   5.125 |   2.020 |   2.679 |   8.350 |   2.630 |  15.983 |   5.175 |   1.965 |  11.197 |   5.090 |   1.625 |   4.757 |
+perf result: tests/perf/recorded/retain-2026-11-03/teitou/redraw-tiles/retain-redraw-2026-11-03T09-22-13Z.json
+  ✓  1 tests/perf/retain-redraw.spec.ts:79:1 › retained redraw by tile side, context by context (16.8s)
+
+  1 passed (18.0s)

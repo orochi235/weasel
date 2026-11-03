@@ -184,6 +184,25 @@ describe('a retained surface drawn in tiles', () => {
     }
   });
 
+  it('matches it with the content nested in groups each tile culls into', () => {
+    const p = pairOf();
+    const nested: DrawCommand = {
+      kind: 'group', transform: mat3.translated(mat3.identity(), 3.25, -1.5),
+      children: [
+        { kind: 'group', children: world() },
+        { kind: 'group', isolate: true, alpha: 0.6, children: world().slice(0, 40) },
+      ],
+    };
+    const layer = worldLayer([nested]);
+    expect(frame(p, 0, 0, layer)).toMatchObject({ max: 0, tiled: { redrawn: 1 } });
+    frame(p, 0, 0, layer);
+    for (const [x, y] of [[3.5, -2], [3.5 + W / 4, -2]]) {
+      const moved = frame(p, x, y, layer);
+      expect(moved.off, `at ${x}, ${y}`).toBeLessThanOrEqual(1);
+      expect(moved.max, `at ${x}, ${y}`).toBeLessThanOrEqual(64);
+    }
+  });
+
   it('matches it with a blur reaching across tile edges, in place and through a pan', () => {
     const p = pairOf();
     const layer = worldLayer([BLURRED]);

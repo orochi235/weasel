@@ -1,0 +1,40 @@
+smoke: start 2026-11-03T09:10:44Z retain-redraw WEASEL_PERF_CONTEXTS=1
+smoke: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 7
+smoke: Apple M5 Max (18 threads), node v26.13.0
+smoke: load before { 4.06 4.65 5.74 } "Device Utilization %"=43
+smoke: load after { 3.90 4.60 5.72 } "Device Utilization %"=51; end 2026-11-03T09:10:51Z
+cull-before-1: start 2026-11-03T09:17:56Z retain-redraw 
+cull-before-1: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 10
+cull-before-1: Apple M5 Max (18 threads), node v26.13.0
+cull-before-1: load before { 4.85 3.63 4.65 } "Device Utilization %"=46
+cull-before-1: load after { 4.37 3.61 4.62 } "Device Utilization %"=52; end 2026-11-03T09:18:17Z
+cull-after-1: start 2026-11-03T09:18:17Z retain-redraw 
+cull-after-1: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 11
+cull-after-1: Apple M5 Max (18 threads), node v26.13.0
+cull-after-1: load before { 4.37 3.61 4.62 } "Device Utilization %"=44
+cull-after-1: load after { 4.02 3.58 4.59 } "Device Utilization %"=51; end 2026-11-03T09:18:32Z
+cull-after-2: start 2026-11-03T09:18:32Z retain-redraw 
+cull-after-2: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 11
+cull-after-2: Apple M5 Max (18 threads), node v26.13.0
+cull-after-2: load before { 4.02 3.58 4.59 } "Device Utilization %"=44
+cull-after-2: load after { 3.77 3.55 4.56 } "Device Utilization %"=48; end 2026-11-03T09:18:48Z
+cull-before-2: start 2026-11-03T09:18:48Z retain-redraw 
+cull-before-2: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 10
+cull-before-2: Apple M5 Max (18 threads), node v26.13.0
+cull-before-2: load before { 3.77 3.55 4.56 } "Device Utilization %"=45
+cull-before-2: load after { 3.60 3.53 4.53 } "Device Utilization %"=35; end 2026-11-03T09:19:08Z
+redraw-tiles: start 2026-11-03T09:22:12Z retain-redraw WEASEL_PERF_TILES=none,512,1024,2048 WEASEL_PERF_CONTEXTS=4
+redraw-tiles: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 15
+redraw-tiles: Apple M5 Max (18 threads), node v26.13.0
+redraw-tiles: load before { 4.36 3.73 4.40 } "Device Utilization %"=44
+redraw-tiles: load after { 4.48 3.81 4.41 } "Device Utilization %"=54; end 2026-11-03T09:22:30Z
+dispatch-plain: start 2026-11-03T09:22:30Z layer-dispatch WEASEL_PERF_LAYERS=1,4 WEASEL_PERF_CMDS=1,10,30,100,300
+dispatch-plain: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 15
+dispatch-plain: Apple M5 Max (18 threads), node v26.13.0
+dispatch-plain: load before { 4.48 3.81 4.41 } "Device Utilization %"=44
+dispatch-plain: load after { 3.39 3.73 4.33 } "Device Utilization %"=52; end 2026-11-03T09:23:54Z
+dispatch-blur8: start 2026-11-03T09:23:54Z layer-dispatch WEASEL_PERF_BLUR=8 WEASEL_PERF_LAYERS=1,4 WEASEL_PERF_CMDS=1,10,30,100,300
+dispatch-blur8: tree 6b88d4c61f7ff705ae767157e1530c9c2d548d8b dirty-paths 15
+dispatch-blur8: Apple M5 Max (18 threads), node v26.13.0
+dispatch-blur8: load before { 3.39 3.73 4.33 } "Device Utilization %"=41
+dispatch-blur8: load after { 3.70 3.77 4.28 } "Device Utilization %"=50; end 2026-11-03T09:25:24Z
