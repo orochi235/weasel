@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { createHash } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
-import { APP_SOURCES } from './lib/packageEntries.mjs';
+import { APP_SOURCES, workspaceEntries } from './lib/packageEntries.mjs';
 import { isPathImport, pathImportsIn, reachByPath, resolvePath } from './vite-prebundle-reach.ts';
 import { sourcedStarsNamed } from './vite-prebundle-stars.ts';
 
@@ -92,6 +92,34 @@ export function sourcePackages(ws: Workspace, sourceDirs: readonly string[]): Se
   return source;
 }
 
+/** Each workspace specifier's source file, a `*` entry expanded to every directory it matches. */
+export function entryFiles(repoRoot: string): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const { dir, entries } of workspaceEntries(repoRoot)) {
+    for (const { specifier, source } of entries) {
+      if (!source) continue;
+      const [head, tail] = source.split('*');
+      if (tail === undefined) { out.set(specifier, join(dir, source)); continue; }
+      const holder = join(dir, head!);
+      if (!existsSync(holder)) continue;
+      for (const name of readdirSync(holder)) {
+        if (existsSync(join(holder, name + tail))) out.set(specifier.replace('*', name), join(holder, name + tail));
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Whether a specifier names a module served from source. `sourcedExternal` keeps such a module out of the bundles
+ * when a bundled module imports it, but the optimizer bundles an entry without asking, so listing it would load a
+ * second copy.
+ */
+export const namesSourced = (entries: ReadonlyMap<string, string>, sourced: ReadonlySet<string>) => (specifier: string) => {
+  const file = entries.get(specifier);
+  return file !== undefined && sourced.has(file);
+};
+
 /** The package a specifier names: `@weasel-js/ui/components/Icon` → `@weasel-js/ui`. */
 const packageOf = (specifier: string) => specifier.split('/').slice(0, 2).join('/');
 
@@ -124,12 +152,15 @@ function bundlesStale(cacheDir: string, inputs: readonly string[], files: readon
 }
 
 /** Leaves `sourced` modules out of the bundles: an import of one stays an import, of the dev server's copy. */
-function sourcedExternal(sourced: () => ReadonlySet<string>) {
+function sourcedExternal(sourced: () => ReadonlySet<string>, entries: ReadonlyMap<string, string>) {
   return {
     name: 'weasel:prebundle-sourced',
     resolveId(id: string, importer?: string) {
-      // An alias resolved before this plugin hands it an absolute path.
-      if (!importer || !(isPathImport(id) || isAbsolute(id))) return null;
+      if (!importer) return null;
+      // A workspace specifier reaches this plugin unresolved, so its entry module is looked up here.
+      const entry = entries.get(id);
+      if (entry) return sourced().has(entry) ? { id: entry, external: 'absolute' as const } : null;
+      if (!(isPathImport(id) || isAbsolute(id))) return null;
       const file = resolvePath(dirname(importer), id);
       return file && sourced().has(file) ? { id: file, external: 'absolute' as const } : null;
     },
@@ -219,8 +250,10 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
   const bundled = bundledDirs(repoRoot, sourceDirs, ws, source);
   const bundles = (specifier: string) => !source.has(packageOf(specifier));
   const isStory = (file: string) => STORY_FILE.test(file) && under(file, storyTrees);
+  const entries = entryFiles(repoRoot);
   let listed = new Set<string>();
   let sourced = new Set<string>();
+  let fromSourceEntry = (_specifier: string) => false;
   return {
     name: 'weasel:prebundle-workspace',
     apply: 'serve',
@@ -235,7 +268,8 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
         ...(options.servedFiles ?? []),
       ];
       sourced = sourcedFromBundled(servedFiles, bundled);
-      listed = new Set([...specifiersOf([...servedFiles, ...sourced])].filter(bundles));
+      fromSourceEntry = namesSourced(entries, sourced);
+      listed = new Set([...specifiersOf([...servedFiles, ...sourced])].filter((s) => bundles(s) && !fromSourceEntry(s)));
       const inBundles = filesUnder(bundled, (file) => read(file) && !isStory(file) && !sourced.has(file)).sort();
       const cacheDir = resolve(user.root ?? process.cwd(), user.cacheDir ?? 'node_modules/.vite');
       const stale = bundlesStale(cacheDir, [...sourced].sort(), inBundles);
@@ -249,7 +283,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
           include: [...listed].sort(),
           // Without the extensions the optimizer leaves every .tsx file external, served from source.
           extensions: ['.tsx', '.jsx'],
-          rolldownOptions: { plugins: [viteQueriesExternal(), sourcedExternal(() => sourced), sourcedStarsNamed(() => sourced)] },
+          rolldownOptions: { plugins: [viteQueriesExternal(), sourcedExternal(() => sourced, entries), sourcedStarsNamed(() => sourced)] },
         },
       };
     },
@@ -280,7 +314,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
         if (!fromSource(file)) return under(file, bundled) ? rebundle(relative(repoRoot, file)) : undefined;
         let code: string;
         try { code = readFileSync(file, 'utf8'); } catch { return; }
-        const fresh = specifiersIn(code).find((s) => bundles(s) && !listed.has(s));
+        const fresh = specifiersIn(code).find((s) => bundles(s) && !listed.has(s) && !fromSourceEntry(s));
         if (fresh) return rebundle(`${fresh} is newly imported`);
         const reached = pathImportsIn(code).map((s) => resolvePath(dirname(file), s));
         const bundledNow = reached.find((target) => target && under(target, bundled) && !sourced.has(target));
