@@ -23,6 +23,8 @@ export interface RemovalLog<TPose, TNode> {
   /** The removals since the last drain, a child removed with its parent
    *  carried beneath it. */
   drain(): PoseRemoval<TPose, TNode>[];
+  /** Whether any removal waits for a drain. */
+  held(): boolean;
 }
 
 export function createRemovalLog<TPose, TNode>(
@@ -73,5 +75,6 @@ export function createRemovalLog<TPose, TNode>(
       removals.clear();
       return out;
     },
+    held: () => removals.size > 0,
   };
 }

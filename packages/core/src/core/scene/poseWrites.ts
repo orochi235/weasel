@@ -87,6 +87,11 @@ export interface PoseWriteLog<TPose, TNode = unknown> {
   subscribe: ScenePoseReports<TPose, TNode>['onPoseWrite'];
   /** Run `fn` as an edit labeled `label`; an enclosing edit's label stands. */
   labeled<T>(label: string, via: 'call' | 'ops', fn: () => T): T;
+  /** `labeled` without the closure: label the edit opening now, unless an
+   *  enclosing one is labeled, and answer whether it took. One that took is
+   *  closed by `unlabel`. */
+  label(label: string, via: 'call' | 'ops'): boolean;
+  unlabel(): void;
   /** Run `fn` as a history step replaying recorded ops. */
   replaying<T>(fn: () => T): T;
   /** Run `fn` as a layout pass writing arranged poses. */
@@ -178,8 +183,8 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
   };
 
   function flush(): void {
+    if (pending.size === 0 && !removals.held()) return;
     const removed = removals.drain();
-    if (pending.size === 0 && removed.length === 0) return;
     const writes = [...pending.values()].filter((w) => !deepEqual(w.from, w.to));
     pending.clear();
     if (writes.length > 0 || removed.length > 0) listeners.emit(writes, removed);
@@ -207,6 +212,15 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
       } finally {
         editLabel = null;
       }
+    },
+    label(label, via) {
+      if (editLabel !== null) return false;
+      editLabel = label;
+      editVia = via;
+      return true;
+    },
+    unlabel() {
+      editLabel = null;
     },
     replaying: (fn) => around(fn, () => { replays++; }, () => { replays--; }),
     layout: (fn) => around(fn, () => { layouts++; }, () => { layouts--; }),
