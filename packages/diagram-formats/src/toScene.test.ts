@@ -149,7 +149,7 @@ describe('addDocumentScene', () => {
     scene.doc.set('app:stale', 1);
     const second = documentSpecs(SECOND, { measure: MEASURE });
     addDocumentScene(scene, second, 'Import');
-    expect(scene.doc.keys().sort()).toEqual(Object.keys(second.doc).sort());
+    expect([...scene.doc.keys()].sort()).toEqual(Object.keys(second.doc).sort());
     scene.undo();
     expect(scene.doc.get('app:stale')).toBe(1);
   });
