@@ -440,13 +440,17 @@
   inline-size: 8ch;
 }
 
-/* A side bar is as wide as its widest field, so its boxes keep to their contents. */
-.field[data-orientation='vertical']:is(.number, .text) input[type='text'] {
-  padding-inline: var(--wzl-space-1);
+/* A number box takes the bar's width, not a count of characters: 5ch fit the kit's face by half a pixel and
+   overflowed a wider one, which turned the box on its side. */
+.field[data-orientation='vertical'].number :has(> input[type='text']) {
+  box-sizing: border-box;
+  inline-size: var(--bar-side-max);
 }
 
-.field[data-orientation='vertical'].text input[type='text'] {
-  inline-size: 8ch;
+.field[data-orientation='vertical'].number input[type='text'] {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  inline-size: auto;
 }
 
 .field[data-orientation='vertical'] input[type='range'] {
