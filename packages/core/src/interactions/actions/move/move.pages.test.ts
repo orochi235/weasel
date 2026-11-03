@@ -4,6 +4,7 @@ import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId, type AddNodeSpec, type NodeId, type RectPose } from 'core/scene/types';
 import { PAGE_A, PAGE_B, ON_PAGE, pagedScene } from 'core/pages/pagedFixture';
 import { moveAction } from './action';
+import { unionOfChildren } from 'core/scene/kitRegistry';
 import { resolveDrop } from './commit/reparent';
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
@@ -118,6 +119,44 @@ describe('moveAction in a paged scene', () => {
     const landed = scene.get(asNodeId('left'))!;
     expect(landed.parent).toBe(PAGE_A);
     expect((landed.pose as RectPose).x).toBe(99);
+  });
+
+  it('moves a selected child with its group\'s shift when the group is kept on its page', () => {
+    // G at world 70..90 on page a, its child C at G's x 0; both selected and dragged far off page a.
+    const C = asNodeId('c');
+    const group = { ...rect(G, PAGE_A, 70), kind: 'group' as const };
+    const { scene } = drag(400, { ids: [G, C], add: [group, rect(C, G, 0)], from: { x: 75, y: 15 } });
+    expect(scene.get(G)!.parent).toBe(PAGE_A);
+    expect((scene.get(G)!.pose as RectPose).x).toBe(99);
+    expect((scene.get(C)!.pose as RectPose).x).toBe(0);
+  });
+
+  it('moves a selected child of an envelope with the envelope\'s shift when it is kept on its page', () => {
+    // The envelope E is its children, C at world 70..90 and D at 50..60, both stored in page a's frame.
+    // E and C are selected and dragged off page a; E (50..90) is shifted to 99..139 so 1 unit stays on.
+    const [E, C, D] = [asNodeId('e'), asNodeId('c'), asNodeId('d')];
+    const envelope = {
+      ...rect(E, PAGE_A, 50), kind: 'group' as const, dependsOn: 'children' as const, derivePose: unionOfChildren,
+    };
+    const narrow = rect(D, E, 50, { pose: { x: 50, y: 10, width: 10, height: 10 } });
+    const { scene } = drag(400, { ids: [E, C], add: [envelope, rect(C, E, 70), narrow], from: { x: 75, y: 15 } });
+    expect(scene.get(C)!.parent).toBe(E);
+    expect((scene.get(D)!.pose as RectPose).x).toBe(99);
+    // C lands 20 right of D, as it started.
+    expect((scene.get(C)!.pose as RectPose).x).toBe(119);
+  });
+
+  it('moves a selected child of an envelope into the page its envelope lands on, where it was dropped', () => {
+    const [E, C, D] = [asNodeId('e'), asNodeId('c'), asNodeId('d')];
+    const envelope = {
+      ...rect(E, PAGE_A, 50), kind: 'group' as const, dependsOn: 'children' as const, derivePose: unionOfChildren,
+    };
+    const narrow = rect(D, E, 50, { pose: { x: 50, y: 10, width: 10, height: 10 } });
+    // E (50..90) lands at 90..130, mostly on page b, whose frame starts at world 110.
+    const { scene } = drag(40, { ids: [E, C], add: [envelope, rect(C, E, 70), narrow], from: { x: 75, y: 15 } });
+    expect(scene.get(E)!.parent).toBe(PAGE_B);
+    expect((scene.get(D)!.pose as RectPose).x).toBe(-20);
+    expect((scene.get(C)!.pose as RectPose).x).toBe(0);
   });
 
   it('makes one dropped off every page a root, where it was dropped, with the pasteboard on', () => {

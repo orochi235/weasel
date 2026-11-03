@@ -7,6 +7,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeAtPointDep } from '../depSchema';
+import { unionOfChildren } from 'core/scene/kitRegistry';
 import { moveAction } from './action';
 
 const G = asNodeId('g');
@@ -54,5 +55,21 @@ describe('moveAction — reparentOnDrop of a container with children', () => {
     expect(scene.get(G)!.parent).toBeNull();
     expect(scene.get(G)!.pose).toEqual({ x: 0, y: 0, width: 20, height: 20 });
     expect(scene.get(C)!.pose).toEqual({ x: 5, y: 5, width: 10, height: 10 });
+  });
+});
+
+describe('moveAction — reparentOnDrop of an envelope', () => {
+  it('stores its children in the target\'s frame, where the drag left them', () => {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    scene.add({
+      id: G, kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 },
+      dependsOn: 'children', derivePose: unionOfChildren,
+    });
+    scene.add({ id: C, kind: 'mark', layer: 'main', parent: G, data: {}, pose: { x: 5, y: 5, width: 10, height: 10 } });
+    scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 } });
+    dragOntoTarget(scene as unknown as Scene<unknown, string, unknown>, 50);
+    expect(scene.get(G)!.parent).toBe(T);
+    // World x 55, in the target's frame at x 40.
+    expect(scene.get(C)!.pose).toEqual({ x: 15, y: 5, width: 10, height: 10 });
   });
 });

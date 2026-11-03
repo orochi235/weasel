@@ -11,9 +11,9 @@ import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
 import { refusalOf } from '../../dropVerdict';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
-import { rootTranslateOps, translateOps, unreleasedIds } from '../translate';
+import { rootTranslateOps, translateOps } from '../translate';
 import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
-import { landAbove, landedLocalPose, resolveDrop } from './reparent';
+import { landAbove, landedCascadeOps, landedLocalPose, resolveDrop } from './reparent';
 
 /** What a release does with one dragged root: add `shift` to the drag and, when `into` is given, move it into
  *  that container (a page, a group on one, or `null` for the top of the tree), just above `above` when given. */
@@ -135,9 +135,15 @@ function followOps(session: MoveSession, id: NodeId, into: NodeId | null, label:
   ];
 }
 
-/** `id`'s descendants that the drag carries along with it, but not `id`. */
-function cascadeOf(session: MoveSession, id: NodeId): NodeId[] {
-  return unreleasedIds(session, new Set(session.ids.filter((other) => other !== id))).filter((d) => d !== id);
+/** Each dragged node below one of `roots`, selected or not, keyed by that root. */
+function belowRoots(session: MoveSession, roots: ReadonlySet<NodeId>): Map<NodeId, NodeId[]> {
+  const out = new Map<NodeId, NodeId[]>();
+  for (const id of new Set([...session.ids, ...session.cascadeIds])) {
+    let cur = session.scene.get(id)?.parent ?? null;
+    while (cur !== null && !roots.has(cur)) cur = session.scene.get(cur)?.parent ?? null;
+    if (cur !== null) out.set(cur, [...(out.get(cur) ?? []), id]);
+  }
+  return out;
 }
 
 /** The commit for `drops`: each dragged root translated by the drag plus its shift, and moved into its new
@@ -159,11 +165,14 @@ export function pageDropOps(
   for (const [id, drop] of drops) {
     if (!dragged.has(id) && drop.into !== undefined) ops.push(...followOps(session, id, drop.into, label));
   }
+  const below = belowRoots(session, new Set([...drops.keys()].filter((id) => dragged.has(id))));
+  const ridden = new Set([...below.values()].flat());
   for (const id of session.ids) {
+    if (ridden.has(id)) continue;
     const drop = drops.get(id) ?? STAY;
     const d = { dx: delta.dx + drop.shift.dx, dy: delta.dy + drop.shift.dy };
     if (drop.into === undefined) {
-      ops.push(...rootTranslateOps(session, [id], d));
+      ops.push(...(drops.has(id) ? translateOps(session, [id, ...below.get(id) ?? []], d) : rootTranslateOps(session, [id], d)));
       continue;
     }
     const node = scene.get(id)!;
@@ -174,7 +183,7 @@ export function pageDropOps(
     ops.push(createTransformOp<unknown>({
       id: id as string, from: node.pose, to: landedLocalPose(session, id, drop.into, node.layer, d), label,
     }));
-    ops.push(...translateOps(session, cascadeOf(session, id), d));
+    ops.push(...landedCascadeOps(session, below.get(id) ?? [], drop.into, d));
   }
   return ops;
 }
