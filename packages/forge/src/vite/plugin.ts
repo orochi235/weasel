@@ -18,6 +18,7 @@ import { readShellFields } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
 import { MODULES, PREFIX, virtualModules } from './virtualModules.ts';
+import { titleStandIn } from './componentOf.ts';
 import { warnWhenWatchIsSilent } from './watchProbe.ts';
 import { watchRecovery } from './watchRecovery.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
@@ -40,6 +41,11 @@ export interface ForgeOptions {
    * which props are read.
    */
   propControls?: boolean | PropControlsOptions;
+  /**
+   * Show each component's API on its index page: every prop, and what its `ref` exposes, read from the component's
+   * TypeScript types. Needs `typescript` installed. Default true; `propControls`' `skip` narrows it the same way.
+   */
+  api?: boolean;
 }
 
 const SCRIPT = /\.[cm]?[jt]sx?$/;
@@ -71,12 +77,19 @@ function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps,
 }
 
 /** The plugins forge serves beside its own, as its options ask. */
-function companions(options: ForgeOptions, storyFiles: () => string[]): Plugin[] {
-  const { storybookShims: shims, propControls: controls } = options;
+function companions(options: ForgeOptions, files: () => Map<string, IndexEntry[]>): Plugin[] {
+  const { storybookShims: shims, propControls: controls, api } = options;
+  const storyFiles = () => [...files().keys()];
+  const fallbackOf = (file: string) => {
+    const title = files().get(file)?.[0]?.title;
+    return title === undefined ? undefined : titleStandIn(title);
+  };
+  const readings = { controls: controls !== false, api: api !== false };
+  const narrowed = typeof controls === 'object' ? controls : undefined;
   return [
     watchRecovery(),
     ...(shims === false ? [] : [storybookShims()]),
-    ...(controls === false ? [] : [propControls(storyFiles, controls === true ? undefined : controls)]),
+    ...(readings.controls || readings.api ? [propControls(storyFiles, fallbackOf, readings, narrowed)] : []),
   ];
 }
 
@@ -262,7 +275,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   }
 
   return [
-    ...companions(options, () => [...files().keys()]),
+    ...companions(options, files),
     {
       name: 'weaselforge',
       config(config, { command }) {

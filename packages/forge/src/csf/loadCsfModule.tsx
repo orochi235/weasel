@@ -16,6 +16,7 @@ import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } fr
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
+import { API_EXPORT } from '../story/api';
 import { PROP_ARG_TYPES_EXPORT } from './propArgTypes';
 import { timelineOf } from '../timeline/declare';
 
@@ -149,7 +150,7 @@ export function loadCsfModule(
   const propArgTypes = isPlainObject(mod[PROP_ARG_TYPES_EXPORT]) ? (mod[PROP_ARG_TYPES_EXPORT] as Record<string, ArgType>) : undefined;
 
   for (const [exportName, value] of Object.entries(mod)) {
-    if (exportName === PROP_ARG_TYPES_EXPORT) continue;
+    if (exportName === PROP_ARG_TYPES_EXPORT || exportName === API_EXPORT) continue;
     if (exportName === 'default' || exportName === '__namedExportsOrder' || exportName === '__esModule') continue;
     if (meta.includeStories && !matches(exportName, meta.includeStories)) continue;
     if (meta.excludeStories && matches(exportName, meta.excludeStories)) continue;

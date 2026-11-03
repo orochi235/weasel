@@ -1,0 +1,118 @@
+/* The trial's scroller bounds the API column (100cqh) and is what it sticks to. Where there is none, as in a frame
+   document, the column is bounded by the viewport, which is then the scroller. */
+.fg-story__scroll:has(.fg-index-api) {
+  container: fg-scroller / size;
+}
+
+.fg-index--api {
+  max-width: none;
+  container: fg-index / inline-size;
+}
+
+.fg-index--api > .fg-index__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: 'stories api';
+  column-gap: calc(var(--wzl-space-lg) * 1.5);
+}
+
+.fg-index__stories {
+  grid-area: stories;
+  min-width: 0;
+}
+
+.fg-index-api {
+  grid-area: api;
+  align-self: start;
+  position: sticky;
+  top: 0;
+  box-sizing: border-box;
+  max-height: 100cqh;
+  overflow: auto;
+  padding: var(--wzl-space-8) var(--wzl-space-lg);
+  border-inline-start: var(--wzl-border-w) solid var(--wzl-border);
+  font-size: var(--wzl-font-size-sm);
+}
+
+@container fg-index (width < 560px) {
+  .fg-index--api > .fg-index__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'api' 'stories';
+  }
+
+  .fg-index-api {
+    position: static;
+    max-height: none;
+    padding-inline: 0;
+    border-inline-start: none;
+  }
+}
+
+.fg-index-api__heading {
+  margin: 0 0 var(--wzl-space-6);
+  font-family: var(--wzl-panel-title-font);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-panel-title-weight);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wzl-fg-muted);
+}
+
+.fg-index-api__heading:not(:first-child) {
+  margin-top: calc(var(--wzl-space-lg) * 1.25);
+}
+
+.fg-index-api__list {
+  margin: 0;
+}
+
+.fg-index-api__name {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  margin-top: var(--wzl-space-8);
+  font-family: var(--wzl-font-mono);
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+.fg-index-api__name:first-child {
+  margin-top: 0;
+}
+
+.fg-index-api__entry {
+  margin: var(--wzl-space-2) 0 0;
+}
+
+.fg-index-api code {
+  font-family: var(--wzl-font-mono);
+  overflow-wrap: anywhere;
+}
+
+.fg-index-api__type {
+  color: var(--wzl-accent-fg);
+}
+
+.fg-index-api__default,
+.fg-index-api__deprecated,
+.fg-index-api__description,
+.fg-index-api__ref,
+.fg-index-api__note,
+.fg-index-api__inherited {
+  margin: var(--wzl-space-2) 0 0;
+  line-height: 1.5;
+}
+
+.fg-index-api__default,
+.fg-index-api__description,
+.fg-index-api__inherited,
+.fg-index-api__note {
+  color: var(--wzl-fg-muted);
+}
+
+.fg-index-api__deprecated {
+  color: var(--wzl-warning);
+}
+
+.fg-index-api__inherited {
+  margin-top: var(--wzl-space-8);
+}

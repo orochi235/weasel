@@ -1,11 +1,14 @@
 import '@weasel-js/theme/tokens.css';
 import './index.css';
+import './api.css';
+import '../../shell/shell.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
+import type { ApiTable } from '../../story/api';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
-import type { LoadedStory } from '../../story/types';
+import type { IndexRender, LoadedStory } from '../../story/types';
 import { type IndexEnv, IndexEnvContext, IndexPage, IndexStory } from './IndexPage';
 
 // A cell's box is layout, which jsdom does not compute.
@@ -131,4 +134,92 @@ test('in a narrow frame a story’s example wraps under its text instead of sque
   await page.viewport(1200, 800);
   const { text, example } = storyRow(420);
   expect(example.top).toBeGreaterThanOrEqual(text.bottom);
+});
+
+const API: ApiTable = {
+  props: Array.from({ length: 30 }, (_, i) => ({ name: `prop${i}`, type: 'string', required: false })),
+  inherited: [],
+  ref: null,
+};
+
+/** An index page with an API panel, in a 600px-tall trial scroller as the workshop gives it. */
+function apiPage(width: number, api: ApiTable = API, page: IndexRender | null = null) {
+  const stories = loadNativeModule(
+    {
+      default: meta({ title: 'ui/Long' }),
+      ...Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`S${i}`, story({ render: () => <p>story</p> })])),
+    },
+    'ui/Long',
+  );
+  const long = Array.from({ length: 20 }, () => 'A paragraph long enough to take a line or two of the column.').join('\n\n');
+  const env: IndexEnv = {
+    title: 'ui/Long',
+    stories,
+    descriptions: Object.fromEntries(stories.map((s) => [s.id, long])),
+    globals: {},
+    decorators: [],
+    open: () => {},
+    onError: () => {},
+    api,
+  };
+  const { container } = render(
+    <div className="fg-story" style={{ width, height: 600 }}>
+      <div className="fg-story__scroll">
+        <IndexPage env={env} render={page} />
+      </div>
+    </div>,
+  );
+  const get = (selector: string) => container.querySelector<HTMLElement>(selector) as HTMLElement;
+  return { scroller: get('.fg-story__scroll'), aside: get('.fg-index-api'), head: get('.fg-index__head'), stories: get('.fg-index__stories') };
+}
+
+/** Scrolls the trial 2000px and checks the API is pinned to its top and no taller than it. */
+function expectPinned({ scroller, aside }: { scroller: HTMLElement; aside: HTMLElement }) {
+  scroller.scrollTop = 2000;
+  expect(scroller.scrollTop).toBe(2000);
+  expect(Math.abs(aside.getBoundingClientRect().top - scroller.getBoundingClientRect().top)).toBeLessThanOrEqual(1);
+  expect(aside.getBoundingClientRect().height).toBeLessThanOrEqual(600);
+  expect(aside.scrollHeight).toBeGreaterThan(aside.clientHeight);
+}
+
+test("keeps the API column in view while the trial's own scroller scrolls", () => {
+  expectPinned(apiPage(1600));
+});
+
+test('scrolls a custom page that places the generated one under a story in the one trial scroller', () => {
+  expectPinned(apiPage(1600, API, ({ DefaultIndex }) => (
+    <>
+      <p className="intro">A story placed above the generated page.</p>
+      <DefaultIndex />
+    </>
+  )));
+});
+
+test("keeps a custom page's own Api within the trial's height", () => {
+  const { aside } = apiPage(1600, API, ({ Api }) => (
+    <div>
+      <Api />
+    </div>
+  ));
+  expect(aside.getBoundingClientRect().height).toBeLessThanOrEqual(600);
+});
+
+test('puts the API beside the stories in a trial as wide as the workshop gives one', () => {
+  const { aside, stories } = apiPage(700);
+  expect(aside.getBoundingClientRect().left).toBeGreaterThanOrEqual(stories.getBoundingClientRect().right - 1);
+});
+
+test('stacks the API under the header below 560px', () => {
+  const { aside, head, stories } = apiPage(500);
+  expect(aside.getBoundingClientRect().top).toBeGreaterThanOrEqual(head.getBoundingClientRect().bottom - 1);
+  expect(aside.getBoundingClientRect().bottom).toBeLessThanOrEqual(stories.getBoundingClientRect().top + 1);
+});
+
+test('wraps a long type and a long default inside the column', () => {
+  const type = Array.from({ length: 40 }, (_, i) => `'option-${i}'`).join(' | ');
+  const url = `'https://example.com/${'a'.repeat(300)}'`;
+  const props = [{ name: 'wide', type, required: false, default: url }];
+  const { scroller, aside } = apiPage(1600, { props, inherited: [], ref: null });
+  expect(scroller.scrollWidth).toBe(scroller.clientWidth);
+  expect(aside.scrollWidth).toBe(aside.clientWidth);
 });

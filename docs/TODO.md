@@ -578,8 +578,8 @@ as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
 - **(P2) [maintainer] Whether index pages' API panel should read typedoc's output instead of forge's own
-  compiler pass** (2026-11-02). The panel (in progress, branch `forge-api-panel`) lists a component's props and
-  its ref handle's methods from forge's TypeScript reader (`packages/forge/src/vite/propTypes.ts`): live in dev,
+  compiler pass** (2026-11-02). The panel lists a component's props and its ref handle's members from forge's
+  TypeScript reader (`apiTable` in `packages/forge/src/vite/apiTable.ts`): live in dev,
   following edits, and available to any project that installs forge. `npm run build:api` already runs typedoc
   over every package (`typedoc/`), which resolves `{@link}` and `@see`, overloads and inherited members, and
   could link each entry to the API reference; but its output exists only after a build, and a consumer of forge
