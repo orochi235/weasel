@@ -1,7 +1,8 @@
+import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import type { Plugin, ViteDevServer } from 'vite';
+import type { Plugin, ResolvedConfig, ViteDevServer } from 'vite';
 import { APP_SOURCES, workspaceEntries } from './lib/packageEntries.mjs';
 import { isPathImport, pathImportsIn, reachByPath, resolvePath } from './vite-prebundle-reach.ts';
 import { sourcedStarsNamed } from './vite-prebundle-stars.ts';
@@ -187,13 +188,30 @@ function viteQueriesExternal() {
  */
 export async function restartLeavingNothing(server: ViteDevServer, force = true): Promise<void> {
   const outgoing = server.environments as Record<string, object>;
-  await server.restart(force);
+  await server.restart(force && !(await rebundledApart(server.config)));
   if (server.environments === outgoing) return;
   for (const [name, env] of Object.entries(outgoing)) {
     for (const key of Object.keys(env)) if (!KEPT_AFTER_CLOSE.has(key)) delete (env as Record<string, unknown>)[key];
     delete outgoing[name];
   }
 }
+
+/**
+ * Re-bundles in a child process that writes the optimizer cache and exits, so the server restarts without forcing and
+ * reads that cache. rolldown's allocator, mimalloc, keeps what each bundling run used: in the server, forge's footprint
+ * reached 2.66 GB after 30 forced restarts, against 1.13 GB this way (`scripts/probe-dev-restarts.ts`). A config not
+ * read from a file cannot be handed over, so its server re-bundles itself.
+ */
+function rebundledApart(config: ResolvedConfig | undefined): Promise<boolean> {
+  if (!config?.configFile) return Promise.resolve(false);
+  const child = spawn(process.execPath, [APART, config.configFile, config.mode], { cwd: config.root, stdio: ['ignore', 'inherit', 'inherit'] });
+  return new Promise((done) => {
+    child.once('error', () => done(false));
+    child.once('exit', (code) => done(code === 0));
+  });
+}
+
+const APART = join(import.meta.dirname, 'vite-prebundle-apart.ts');
 
 // vite's dep optimizer cancels a run on close without waiting for it, and the run, with its 1 s "bundling" timer,
 // reads these until it ends: emptied, it throws outside any catch and the dev server exits (vite 8.3).

@@ -136,23 +136,3 @@ When work merges, retire its entry here in the same change.
   subpath.
   Closes when the maintainer has ruled on making the flag forge's default and the ruling is in place.
 
-- **(P3) [agent] A forge dev server keeps about 2.5 GB of native memory after its first thirty forced re-bundles.**
-  A saved package file restarts the server and forces the dep optimizer to re-bundle the workspace packages
-  (`restartLeavingNothing`, `scripts/vite-prebundle.ts`). The memory is mimalloc's, the allocator rolldown and oxc
-  use, and it levels off rather than leaking. On teitou with rolldown 1.2.16 (2026-11-03),
-  `scripts/probe-optimize-deps.ts` took the physical footprint from 0.26 GB to 1.23 GB at the first forced run,
-  2.15 GB at the 16th and 2.46 GB by the 32nd, then held there through the 100th; the JS heap stayed at 34 MB. At
-  exit mimalloc reported 2.6 GiB committed and 416 MiB still allocated. `scripts/probe-rolldown-rebuilds.mjs` runs
-  the same loop on rolldown's own API with a generated 1500-module input and no vite. It shows the same curve
-  on 1.2.16 and 1.2.11: on macOS the footprint levels off at 0.45–0.6 GB after about 60 builds, and under Linux
-  (docker, 5 CPUs) RSS levels off at 0.3–0.4 GB after about 10. With 1.2.16, mimalloc still had it committed with
-  under 4 MiB allocated, and esbuild on the same input stayed flat. So rolldown is not leaking, and no upstream
-  issue exists for this. vmmap prints mimalloc's regions as `IOAccelerator`, because mimalloc's default `os_tag` is
-  100, VM_MEMORY_IOACCELERATOR. Both probes now retag them through `scripts/lib/vmmap-regions.mjs`.
-  `MIMALLOC_PURGE_DELAY=0` cut the footprint by a quarter (rolldown 1.2.11, 16 runs). Separately, every server's
-  id-resolver plugin containers outlive it, held from a global handle on the `onWarn` callback rolldown's
-  `viteResolvePlugin` keeps (heap snapshot retainer paths). Emptying the outgoing config left 24 native plugin
-  wrappers after 6 restarts, against 44 after 4, and RSS where it was. Records:
-  `scripts/probe-dev-restarts.runs.jsonl`, `scripts/probe-rolldown-rebuilds.runs.jsonl`.
-  Closes when `probe-optimize-deps.ts --runs 40` on teitou ends under 1 GB of footprint, for example by
-  re-bundling in a child process that exits, or when the maintainer rules the high-water mark acceptable.

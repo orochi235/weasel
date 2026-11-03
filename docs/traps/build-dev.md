@@ -79,6 +79,18 @@ from source. So a browser test imports its own package by specifier wherever the
 needs: one relative import of a component serves it and everything it imports from source to every test
 file whose bundle reaches it, and passes.
 
+**Each re-bundle leaves native memory behind in the process that ran it.** rolldown and oxc allocate
+with mimalloc, which keeps memory committed after it is freed. This is retention, not a leak: in-process
+re-bundles of forge level off at about 2.5 GB, and rolldown alone, with no vite, shows the same curve.
+So a saved package file re-bundles in a child process that exits (`restartLeavingNothing`), and the
+server then restarts without forcing. On teitou (2026-11-03), 30 forced restarts left forge's server at
+1.13 GB of footprint, against 2.66 GB re-bundling in the server, and each restart took about 1.2 s longer.
+The maintainer ruled a 2.5 GB plateau acceptable (2026-11-03), so if the child ever has to go, the
+in-process re-bundle is fine. vmmap reports mimalloc's regions as `IOAccelerator`, since its default
+`os_tag` is 100 (VM_MEMORY_IOACCELERATOR); `scripts/lib/vmmap-regions.mjs` retags them. The probes are
+`scripts/probe-dev-restarts.ts` (a dev server), `scripts/probe-optimize-deps.ts` (the optimizer alone)
+and `scripts/probe-rolldown-rebuilds.mjs` (rolldown alone), each beside its `.runs.jsonl` of records.
+
 **`check:needs -- --write` redraws the README package table from every package's `dist/`.** Run in a
 tree with no fresh build, it strips real badges from core, routing and react; its own error suggests
 the flag. Add a new package's row by hand, matching a sibling's badges, and let the fleet check it.
