@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from '../scene/scene';
 import type { AddNodeSpec, NodeId } from '../scene/types';
 import { adoptLegacyPages } from './legacyPages';
+import { addPage } from './pageEdits';
 import { placeOnPages } from './placeOnPages';
 import { PAGES_DOC_KEY, type PagesDoc } from './pageEdits';
 import { createPageRun, pageNodeOf, pageOfNode, pageRunOf } from './pageNodes';
@@ -170,5 +171,39 @@ describe('turning the pasteboard off', () => {
     scene.undo();
     expect(scene.get('far' as NodeId)!).toMatchObject({ parent: null, pose: { x: 400 } });
     expect(scene.get(run)!.pageRun!.pasteboard).toBe(true);
+  });
+});
+
+describe('placing locked content on pages', () => {
+  type Two = { n: string };
+  const twoLayers = () => createScene<Two, 'paper' | 'ink', Pose>({ systemLayers: [{ id: 'paper' }, { id: 'ink' }] });
+  const far = { id: 'far' as NodeId, kind: 'mark' as const, layer: 'ink' as const, pose: { x: 400, y: 5, width: 10, height: 10 }, data: { n: 'far' } };
+
+  it('turning the pasteboard off moves a locked root on the pasteboard onto a page', () => {
+    const scene = twoLayers();
+    const run = createPageRun(scene, TWO.pages, { ...TWO.layout, pasteboard: true });
+    scene.add(far);
+    scene.setLocked(far.id, true);
+    scene.setPageRun(run, { ...scene.get(run)!.pageRun!, pasteboard: false });
+    expect(scene.get(far.id)!).toMatchObject({ parent: 'b', locked: true });
+  });
+
+  it('addPage on a Continuous scene moves a locked root, and one on a locked layer, onto the page', () => {
+    for (const lock of ['node', 'layer'] as const) {
+      const scene = twoLayers();
+      scene.add(far);
+      if (lock === 'node') scene.setLocked(far.id, true);
+      else scene.setLayerLocked('ink', true);
+      addPage(scene, { id: 'p', width: 100, height: 50 });
+      expect(scene.get(far.id)!.parent).toBe('p');
+    }
+  });
+
+  it('addPage succeeds with the pages\' layer locked', () => {
+    const scene = twoLayers();
+    createPageRun(scene, TWO.pages, TWO.layout);
+    scene.setLayerLocked('paper', true);
+    addPage(scene, { id: 'c', width: 100, height: 50 });
+    expect(scene.childrenOf(pageRunOf(scene)!)).toEqual(['a', 'b', 'c']);
   });
 });

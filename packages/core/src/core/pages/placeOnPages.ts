@@ -60,7 +60,8 @@ function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: Pos
  * pasteboard on, a root off every page stays where it is, and one on a page is
  * not moved. Content read from a format that places it in the world, such as
  * an opened file, goes onto its pages this way. Each root is measured by
- * `options.descriptor`, default `AUTO_POSE_DESCRIPTOR`, as an insert is.
+ * `options.descriptor`, default `AUTO_POSE_DESCRIPTOR`, as an insert is. A
+ * locked root, or one on a locked layer, is moved all the same.
  * Call inside the caller's batch; a scene without pages is left alone.
  */
 export function placeOnPages<TData, TLayer extends string, TPose>(
@@ -73,7 +74,7 @@ export function placeOnPages<TData, TLayer extends string, TPose>(
   if (run === null) return;
   const descriptor = options.descriptor ?? AUTO_POSE_DESCRIPTOR;
   const content = roots.filter((id) => id !== run && s.get(id)?.parent == null);
-  moveIn(s, destinations(s, content, descriptor), run, descriptor);
+  s.unlocked(() => moveIn(s, destinations(s, content, descriptor), run, descriptor));
 }
 
 /** `methods`, a scene's edits, with a `setPageRun` that, when it turns the run's pasteboard off, also puts
