@@ -28,6 +28,9 @@ export {
   DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource,
 } from './interactions/actions/depRegistry';
 export type { DepRegistry } from './interactions/actions/depRegistry';
+export type { ScopeNode } from './interactions/actions/scopeNode';
+export type { DepNode } from './interactions/actions/depNode';
+export type { LastOperationKeeper } from './interactions/actions/lastOperation';
 export {
   ActiveToolContextProvider, ActiveToolContextProviderIfRoot,
   useActiveToolContext, useOptionalActiveToolContext,
@@ -35,6 +38,7 @@ export {
 export type {
   ActiveToolContextValue, ActiveToolContextProviderProps,
 } from './interactions/actions/activeToolContext';
+export type { ToolNode } from './interactions/actions/activeToolContext';
 
 export {
   PointerContextProvider, createPointerStore, usePointerContext, usePointerPosition,

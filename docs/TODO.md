@@ -760,13 +760,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) [maintainer] Public declarations name types no entry exports** (2026-11-03). tsup 9's `.d.ts`
-  build warns about each: renderer's `index.d.ts` names `BatchStage`, routing's `react.d.ts` names `DepNode`,
-  `LastOperationKeeper`, `ScopeNode` and `ToolNode`, and core's `index.d.ts` names `GestureLifecycleOptions`.
-  tsup 8's output referenced the same types without warning. A consumer whose own declaration emit has to
-  name one gets TS2742. Open: export each from its entry, or keep it out of the public declarations.
-  Closes when `npm run build` prints no `still references private shared type exports` line.
-
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
