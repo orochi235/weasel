@@ -1,7 +1,7 @@
 # Dithering — design
 
 **Status: designed 2026-11-03, not built.** This is the first of three arcs: dither, then
-output-grid clamping (its own spec, not yet written), then multiple render targets (`docs/TODO.md`,
+output-grid clamping (`2026-11-03-output-grid-clamping-design.md`), then multiple render targets (`docs/TODO.md`,
 "Multiple render targets").
 
 For whoever builds `@weasel-js/dither`. It answers what the package contains, how a scene uses it
