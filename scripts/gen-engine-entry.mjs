@@ -22,9 +22,10 @@ const OUT = join(SRC, ENTRY);
 export const HOST = [
   'moveAction', 'insertAction', 'areaSelectAction',
   'useSelectToolWith', 'selectionMoveContribution', 'useGroupEntryContribution',
-  'useActionSet', 'useStandardDeps', 'StandardDeps',
+  'useActionSet', 'useStandardDeps', 'StandardDeps', 'ENGINE_STANDARD_ACTIONS',
   'createPoseFeed', 'FeedDelta', 'createEnteredGroupScope', 'useEnteredGroup',
   'documentOf', 'scenePoseFrame', 'GesturePreviewSource',
+  'WeaselProvider', 'IconRegistryProvider', 'CANVAS_CONTEXT_ATTRIBUTES', 'watchDevicePixelRatio',
 ];
 
 const HEADER = `// \`@weasel-js/core/engine\` — the half of core a host of any dimension uses: the scene, selection,
