@@ -72,7 +72,7 @@ function toSvg(out, category) {
   const pad = 20, legendH = 34;
   const width = Math.ceil(out.width + pad * 2), height = Math.ceil(out.height + pad * 2 + legendH);
   const parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" font-family="Menlo, monospace" font-size="12">`,
-    '<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L8,4L0,8z" fill="#888"/></marker></defs>',
+    '<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,2L8,4L0,6z" fill="#888"/></marker></defs>',
     `<rect width="100%" height="100%" fill="#fff"/><g transform="translate(${pad},${pad + legendH})">`];
   for (const e of out.edges) for (const s of e.sections ?? []) {
     const pts = [s.startPoint, ...(s.bendPoints ?? []), s.endPoint];
