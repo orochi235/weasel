@@ -1,0 +1,7 @@
+[
+  "@weasel-js/font",
+  "@weasel-js/renderer",
+  "@weasel-js/stroke",
+  "@weasel-js/svg",
+  "@weasel-js/text"
+]

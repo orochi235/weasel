@@ -63,6 +63,9 @@ jobs:
       # No source file or function grows past its cap; the allowlist's entries
       # only come down.
       - run: npm run check:size
+      # The engine half of core (scene, selection, snap, aim, the action contract) reaches
+      # no 2D package, even by type; the allowlist only shrinks. See the script header.
+      - run: npm run check:engine-boundary
       # The README's package marks (React, DOM, WebGL2, Web Audio) match what
       # each main entry's import graph measures. See scripts/package-traits.mjs.
       - run: npm run check:needs
