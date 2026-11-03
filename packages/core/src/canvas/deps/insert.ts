@@ -151,7 +151,7 @@ export function useInsertDepSource(
     const ad = adapterRef.current;
 
     const site = (at?: { x: number; y: number }) =>
-      insertSite(sc, registry.get('insertInto')?.get(), registry.get('canDropInto'), at);
+      insertSite(sc, { at, into: registry.get('insertInto')?.get(), canDropInto: registry.get('canDropInto') });
     const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
         const kind = extras.kind;
         const { parent, layer, local } = site(ends?.start ?? { x: bounds.x, y: bounds.y });

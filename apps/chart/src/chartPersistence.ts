@@ -73,17 +73,12 @@ export function loadChartHistory(): unknown {
   return readStored(CHART_HISTORY_KEY, (raw) => reviveTypedArrays(JSON.parse(raw) as unknown), () => null);
 }
 
-/** Clears every document value `doc` does not hold. Call inside the batch that replaces the chart. */
-function clearDocBut(scene: ChartScene, doc: SerializedDoc): void {
-  for (const key of scene.doc.keys()) if (!(key in doc)) scene.doc.set(key, undefined);
-}
-
 /** Replaces everything in the chart, nodes, pages and document values, with `file`, as one undo entry. */
 export function replaceChart(scene: ChartScene, file: ChartFile, label: string): void {
   scene.batch(label, () => {
     scene.removeMany([...scene.roots]);
     for (const spec of file.specs) scene.add(spec);
-    clearDocBut(scene, file.doc);
+    for (const key of scene.doc.keys()) if (!(key in file.doc)) scene.doc.set(key, undefined);
     for (const [key, value] of Object.entries(file.doc)) scene.doc.set(key, value);
   });
 }
@@ -91,8 +86,5 @@ export function replaceChart(scene: ChartScene, file: ChartFile, label: string):
 /** Replaces everything in the chart, nodes, pages and document values, with the diagram document `drawn`, placed on
  *  its pages, or on one page of the chart page size where it has none. One undo entry. */
 export function replaceChartWithDocument(scene: ChartScene, drawn: DocumentScene<ChartLayer>, label: string): void {
-  scene.batch(label, () => {
-    clearDocBut(scene, drawn.doc);
-    addDocumentScene(scene, drawn.pages.length > 0 ? drawn : { ...drawn, pages: [...CHART_PAGES.pages] }, label);
-  });
+  addDocumentScene(scene, drawn.pages.length > 0 ? drawn : { ...drawn, pages: [...CHART_PAGES.pages] }, label);
 }

@@ -6,7 +6,8 @@ import {
 } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import {
-  CHART_HISTORY_KEY, CHART_SCENE_KEY, chartFromJson, chartToJson, emptyChart, loadChartHistory, replaceChart, type ChartFile,
+  CHART_HISTORY_KEY, CHART_SCENE_KEY, chartFromJson, chartToJson, emptyChart, loadChartHistory, replaceChart,
+  replaceChartWithDocument, type ChartFile,
 } from './chartPersistence';
 
 const newScene = () => createScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY });
@@ -130,6 +131,20 @@ describe('chart persistence', () => {
     localStorage.setItem(CHART_HISTORY_KEY, '{"version":1}');
     expect(loadChartHistory()).toEqual({ version: 1 });
     localStorage.clear();
+  });
+
+  it('replaces the chart with a document as one undo entry, clearing what it lacks, on one page where it has none', () => {
+    const scene = reopened(twoBodiesAndAnEdge().scene);
+    setPages(scene, { pages: [{ id: 'old', width: 10, height: 10 }] }, 'Pages');
+    scene.doc.set('stale', 1);
+    const before = scene.historyIndex();
+    replaceChartWithDocument(scene, { specs: [], pages: [], doc: { kept: 2 } }, 'Import');
+    expect(scene.historyIndex()).toBe(before + 1);
+    expect(scene.doc.keys()).toEqual(['kept']);
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: CHART_PAGE.width, height: CHART_PAGE.height }]);
+    expect([...scene.nodes.values()].every((n) => isPageStructure(n))).toBe(true);
+    scene.undo();
+    expect(scene.doc.get('stale')).toBe(1);
   });
 
   it('rejects text that is not a saved chart', () => {

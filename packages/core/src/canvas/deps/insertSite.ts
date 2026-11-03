@@ -46,18 +46,23 @@ function ontoPage(page: PlacedPage, world: unknown): unknown {
   return dx === 0 && dy === 0 ? world : AUTO_POSE_DESCRIPTOR.translate!(world, dx, dy);
 }
 
+/** What {@link insertSite} places by. */
+export interface InsertSiteOptions {
+  /** The world point the insert is made at, which picks its page in a paged scene. */
+  at?: { x: number; y: number };
+  /** The container the insert is asked into, as the `insertInto` dep names it. */
+  into?: string | null;
+  /** The `canDropInto` dep, which may refuse `into`. */
+  canDropInto?: CanDropIntoDep;
+}
+
 /**
- * Where an insert lands ({@link siteIn}): the container the `insertInto` dep
- * names, when it admits the insert; else, in a paged scene, the page for `at`
- * (`insertParent`). A node landing on a page with the pasteboard off is moved
- * so part of it is on the page.
+ * Where an insert lands ({@link siteIn}): the container `into` names, when it
+ * admits the insert; else, in a paged scene, the page for `at`
+ * (`insertParent`); else the top of the tree. A node landing on a page with
+ * the pasteboard off is moved so part of it is on the page.
  */
-export function insertSite(
-  sc: SiteScene,
-  into: string | null | undefined,
-  canDropInto?: CanDropIntoDep,
-  at?: { x: number; y: number },
-): InsertSite {
+export function insertSite(sc: SiteScene, { at, into, canDropInto }: InsertSiteOptions = {}): InsertSite {
   const site = siteIn(sc, insertParent(sc, into, canDropInto, at));
   const page = site.parent === null || pasteboardOn(sc) ? null : placedPage(sc, site.parent);
   return page === null ? site : { ...site, local: (p) => site.local(ontoPage(page, p)) };

@@ -143,4 +143,14 @@ describe('addDocumentScene', () => {
     expect(contentNodes(scene).map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'c', 'k', 'ab', 'ac']));
     expect(scene.get('z' as never)).toBeUndefined();
   });
+
+  it('clears every document value the new document does not hold, and undo brings them back', () => {
+    const scene = drawnScene(documentSpecs(DOC, { measure: MEASURE }));
+    scene.doc.set('app:stale', 1);
+    const second = documentSpecs(SECOND, { measure: MEASURE });
+    addDocumentScene(scene, second, 'Import');
+    expect(scene.doc.keys().sort()).toEqual(Object.keys(second.doc).sort());
+    scene.undo();
+    expect(scene.doc.get('app:stale')).toBe(1);
+  });
 });

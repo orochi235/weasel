@@ -84,7 +84,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       const into = diagramDropParentAt(scene as unknown as DropParentScene, center, role);
       // Drawn in world; built in the frame of the container it lands in, else where core's inserts land: the page
       // for its center in a paged scene, or the top of the tree.
-      const site = into === null ? insertSite(scene as never, null, undefined, center) : null;
+      const site = into === null ? insertSite(scene as never, { at: center }) : null;
       const parent = into ?? site?.parent ?? null;
       const bounds = (site !== null ? site.local({ ...world }) : scenePoseFrame(scene as never).localUnder(into as NodeId, { ...world })) as Bounds;
       const common = { layer: layer(), newId: () => scene.mintId() as string, parent };

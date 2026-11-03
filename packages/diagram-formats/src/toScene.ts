@@ -147,7 +147,7 @@ export function addOnPages<TData, TLayer extends string, TPose>(
 /**
  * Make `scene` hold `drawn` and nothing else, as one undo entry labeled
  * `label`: what it held is removed, the pages and everything in the page run
- * with it; its document values are `drawn`'s, a diagram type it does not name
+ * with it; its document values are `drawn`'s, every one `drawn` does not hold
  * cleared; its pages are `drawn`'s (`setPages`, which makes the run when there
  * is none); and its nodes go on them (`addOnPages`).
  */
@@ -157,7 +157,7 @@ export function addDocumentScene<TData, TLayer extends string, TPose>(
   scene.batch(label, () => {
     const held = contentRoots(scene);
     if (held.length > 0) scene.removeMany(held);
-    if (!(DIAGRAM_TYPE_DOC_KEY in drawn.doc)) scene.doc.set(DIAGRAM_TYPE_DOC_KEY, undefined);
+    for (const key of scene.doc.keys()) if (!(key in drawn.doc)) scene.doc.set(key, undefined);
     for (const [key, value] of Object.entries(drawn.doc)) scene.doc.set(key, value);
     setPages(scene, { pages: drawn.pages }, label);
     addOnPages(scene, drawn.specs);

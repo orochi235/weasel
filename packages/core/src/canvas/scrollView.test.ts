@@ -90,7 +90,7 @@ describe('a scrolled container, as the view reads it', () => {
 
   it('lands an insert at the content position under the pointer', () => {
     const { scene, c } = scrolled();
-    const site = insertSite(scene as never, c);
+    const site = insertSite(scene as never, { into: c });
     expect(site.local(box(130, 120))).toEqual(box(30, 170));
   });
 });
