@@ -6,7 +6,8 @@ import { describe, it, expect } from 'vitest';
 import { faceGeneration, loadFontOutlines, registerFontOutlines, type OutlineFace } from '@weasel-js/font';
 import type { Path } from '@weasel-js/geom';
 import { deriveRecorded, emptyDepRecord, sameDeps } from './depMemo';
-import { noteFontRead, withFontReads } from './fontReads';
+import { noteFontRead } from './fontReads';
+import { addOutsideSource, outsideGeneration, withOutsideReads } from './outsideReads';
 import { createPathEffectDerivations } from './pathEffects/derive';
 import type { EffectSource } from './pathEffects/source';
 import { asNodeId, type DerivedDep, type NodeId } from './types';
@@ -44,20 +45,38 @@ function recorded(readsFonts: boolean) {
   return { record, ids, depOf };
 }
 
-describe('withFontReads', () => {
+describe('withOutsideReads', () => {
   it('reports a read only when one was noted', () => {
-    expect(withFontReads(() => 1)).toEqual({ value: 1, fonts: false });
-    expect(withFontReads(() => { noteFontRead(); return 2; })).toEqual({ value: 2, fonts: true });
+    expect(withOutsideReads(() => 1)).toEqual({ value: 1, outside: false });
+    expect(withOutsideReads(() => { noteFontRead(); return 2; })).toEqual({ value: 2, outside: true });
   });
 
   it('passes a read up to an enclosing call', () => {
-    const outer = withFontReads(() => withFontReads(() => noteFontRead()).fonts);
-    expect(outer).toEqual({ value: true, fonts: true });
+    const outer = withOutsideReads(() => withOutsideReads(() => noteFontRead()).outside);
+    expect(outer).toEqual({ value: true, outside: true });
   });
 
   it('recovers after fn throws', () => {
-    expect(() => withFontReads(() => { noteFontRead(); throw new Error('boom'); })).toThrow('boom');
-    expect(withFontReads(() => 0).fonts).toBe(false);
+    expect(() => withOutsideReads(() => { noteFontRead(); throw new Error('boom'); })).toThrow('boom');
+    expect(withOutsideReads(() => 0).outside).toBe(false);
+  });
+});
+
+describe('outsideGeneration', () => {
+  it('moves when any registered source moves, and stops counting a removed one', () => {
+    let mine = 0;
+    const remove = addOutsideSource(() => mine);
+    const before = outsideGeneration();
+    mine = 5;
+    expect(outsideGeneration()).toBe(before + 5);
+    remove();
+    expect(outsideGeneration()).toBe(before);
+  });
+
+  it('counts the face generation once fontReads is loaded', async () => {
+    const before = outsideGeneration();
+    await landFace();
+    expect(outsideGeneration()).toBeGreaterThan(before);
   });
 });
 
@@ -77,9 +96,9 @@ describe('depMemo with font reads', () => {
 
   it('a hit on a record that read fonts counts as a read for an enclosing derivation', () => {
     const fonts = recorded(true);
-    expect(withFontReads(() => sameDeps(fonts.record, fonts.ids, fonts.depOf))).toEqual({ value: true, fonts: true });
+    expect(withOutsideReads(() => sameDeps(fonts.record, fonts.ids, fonts.depOf))).toEqual({ value: true, outside: true });
     const plain = recorded(false);
-    expect(withFontReads(() => sameDeps(plain.record, plain.ids, plain.depOf)).fonts).toBe(false);
+    expect(withOutsideReads(() => sameDeps(plain.record, plain.ids, plain.depOf)).outside).toBe(false);
   });
 });
 
@@ -118,7 +137,7 @@ describe('path effect derivations with font reads', () => {
   it('a hit on a font-reading result counts as a read for the scene memo', () => {
     const s = setup(true);
     s.derive();
-    expect(withFontReads(() => s.derive()).fonts).toBe(true);
+    expect(withOutsideReads(() => s.derive()).outside).toBe(true);
     expect(s.reads()).toBe(2);
   });
 });
