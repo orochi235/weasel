@@ -73,13 +73,29 @@ describe('a page clips what is on it', () => {
 });
 
 describe('layer locks and visibility around pages', () => {
-  it('locking the paper\'s layer locks the pages, not what is on them', () => {
+  it('locking the paper\'s layer locks neither the pages nor what is on them', () => {
     const { scene, run } = pagedScene();
     scene.setLayerLocked('paper', true);
     const gates = nodeGates(scene);
-    expect([scene.isLocked(A), gates.locked(A), scene.isLocked(run)]).toEqual([true, true, true]);
+    expect([scene.isLocked(A), gates.locked(A), scene.isLocked(run), gates.locked(run)]).toEqual([false, false, false, false]);
     expect([scene.isLocked(R), gates.locked(R)]).toEqual([false, false]);
     expect(() => scene.setPose(R, { x: 0, y: 0, width: 5, height: 5 })).not.toThrow();
+  });
+
+  it('a locked paper layer still takes an insert onto a page, and a move into one', () => {
+    const { scene } = pagedScene();
+    scene.setLayerLocked('paper', true);
+    const added = asNodeId('added');
+    scene.add({ id: added, kind: 'mark', layer: 'ink', parent: B, pose: { x: 10, y: 10, width: 5, height: 5 }, data: {} });
+    expect(scene.get(added)!.parent).toBe(B);
+    scene.move(R, B);
+    expect(scene.get(R)!.parent).toBe(B);
+  });
+
+  it('a page\'s own lock still locks it and what is on it', () => {
+    const { scene } = pagedScene();
+    scene.setLocked(A, true);
+    expect([scene.isLocked(A), scene.isLocked(R)]).toEqual([true, true]);
   });
 
   it('locking the content\'s layer leaves the pages unlocked', () => {

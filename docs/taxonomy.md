@@ -981,8 +981,9 @@ nodes, each one undo entry. **Pages are 2D only**: a page is a flat sheet, and a
 
 A page or the run is **page structure** (`isPageStructure`): drawn, its content in reach, but never selected,
 picked, deleted, copied or grouped by the ordinary scene tools. Pressing empty paper does what pressing empty
-canvas does. Neither passes its layer's lock or hide down (2026-11-03): content answers to its own layer and its
-own ancestors' flags, so locking the paper's layer locks nothing on the pages. The run and pages go on the lowest
+canvas does. Neither takes its layer's lock, nor passes its layer's hide down (2026-11-03): only its own `locked`
+flag locks a page or the run, and content answers to its own layer and its own ancestors' flags, so locking the
+paper's layer locks neither the pages nor anything on them. The run and pages go on the lowest
 layer by default, since no child may sit below its parent. The run refuses drops and inserts of anything but
 followers (2026-11-03).
 
