@@ -19,17 +19,12 @@ jobs:
       # Pinned rather than `@latest` so a new npm major arrives as a commit
       # this job validates, not as a surprise mid-release.
       NPM_VERSION: 12.0.2
-    strategy:
-      matrix:
-        # The floor and the target. 22 is what `engines` promises, so it gets
-        # tested rather than assumed; 24 is Active LTS and what the other
-        # workflows run. Node 20 is gone — it went EOL 2026-04-30.
-        node: [22, 24]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
+          # One Node: .nvmrc's, which `engines` promises and the fleet runs.
+          node-version-file: .nvmrc
           cache: npm
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
@@ -172,9 +167,8 @@ jobs:
       # The site pages.yml deploys: demos, API docs, draw, chart, forge.
       # Left to pages.yml alone, a break here failed every deploy for three days
       # (an export with no typedoc category) while CI and every release stayed
-      # green. One matrix leg is enough — the site is not an engines promise.
-      - if: matrix.node == 24
-        run: |
+      # green.
+      - run: |
           npm run build:demo
           npm run build:draw
           npm run build:chart

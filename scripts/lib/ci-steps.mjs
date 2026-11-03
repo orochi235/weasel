@@ -2,7 +2,7 @@
  * The steps `.github/workflows/ci.yml` runs, read from the file so nothing restates them. Two fleet
  * jobs split them at the first `npm run build`: the gate project runs the checks above it on source
  * (`scripts/ci-checks.gate.ts`), and `test:fleet:postbuild` runs the build and everything after it
- * (`scripts/ci-run.mjs`). `test:fleet:matrix` runs all of them on the matrix's other Node versions.
+ * (`scripts/ci-run.mjs`).
  *
  * This reads the subset of YAML ci.yml is written in — one job, flat `env:` maps, and `run:` as a
  * plain scalar or a `|` block — not YAML in general.
@@ -12,7 +12,6 @@ export const CI_YML = new URL('../../.github/workflows/ci.yml', import.meta.url)
 const CHECK = /^npm run ((?:check:[\w-]+|audit:[\w-]+|typecheck|lint)\b.*?)\s*$/;
 const BUILD = /^npm run build\b/;
 const NODE_ONLY = /^matrix\.node\s*==\s*(\d+)$/;
-const INSTALL = /^npm ci\b/;
 const EXPRESSION = /\$\{\{.*?\}\}/;
 
 const indentOf = (line) => line.length - line.trimStart().length;
@@ -68,10 +67,6 @@ export const readCi = (text) => {
   const envAt = lines.findIndex((line, i) => i < at && indentOf(line) === jobIndent && /^\s*env:\s*$/.test(line));
   const env = envAt < 0 ? {} : readMap(lines, envAt + 1, jobIndent).map;
 
-  const matrixAt = lines.findIndex((line, i) => i < at && /^\s*matrix:\s*$/.test(line));
-  const matrix = matrixAt < 0 ? {} : readMap(lines, matrixAt + 1, indentOf(lines[matrixAt])).map;
-  const nodes = (/^\[(.*)\]$/.exec(matrix.node ?? '')?.[1] ?? '').split(',').map(Number).filter(Boolean);
-
   const steps = [];
   let i = at + 1;
   while (i < lines.length && (ignorable(lines[i]) || indentOf(lines[i]) > jobIndent)) {
@@ -80,7 +75,7 @@ export const readCi = (text) => {
     if (step.run) steps.push({ run: step.run, env: step.env, ...(step.if ? { if: step.if } : {}) });
     i = end;
   }
-  return { env, nodes, steps };
+  return { env, steps };
 };
 
 const firstBuild = (steps) => {
@@ -112,15 +107,4 @@ const onNode = (steps, nodeMajor) =>
 /** The first build and every step after it that runs on `nodeMajor`. */
 export const builtSteps = (steps, nodeMajor) => onNode(steps.slice(firstBuild(steps)), nodeMajor);
 
-/** The whole job on `nodeMajor`, from `npm ci` on: what comes before it sets up the runner. */
-export const jobSteps = (steps, nodeMajor) => {
-  const at = steps.findIndex((step) => INSTALL.test(step.run));
-  if (at < 0) throw new Error('ci.yml: no npm ci step');
-  return onNode(steps.slice(at), nodeMajor);
-};
 
-/** The matrix's Node majors other than `.nvmrc`'s, which every fleet node already runs. */
-export const offFleetNodes = (nodes, nvmrc) => {
-  const fleet = Number(/\d+/.exec(nvmrc)?.[0]);
-  return nodes.filter((major) => major !== fleet);
-};

@@ -256,8 +256,13 @@ cores, less 3 kept for it, leave jsdom at least 4 workers (`scripts/vitest-overl
 reading); that saved 16–23% on 10-, 14- and 18-core nodes on 2026-10-21. The reserve came from
 `scripts/bench-overlap-reserve.mjs`, whose runs are in `scripts/bench-overlap-reserve.runs.jsonl`.
 
-What a branch run selects, the gate, `test:fleet:postbuild`, the Node matrix, the draw view
-checkout and `dev:fleet`: `docs/fleet.md`.
+**Nothing outside the batch's runs gates a merge (2026-11-03).** A compatibility check (another Node
+version, another platform) runs on GitHub CI if it runs at all, never on the fleet and never before
+a merge; its failure is a TODO entry, not a blocker. Node is `.nvmrc`'s 24 only: CI's matrix and
+the fleet's Node 22 run are gone, and `engines` promises `>=24`.
+
+What a branch run selects, the gate, `test:fleet:postbuild`, the draw view checkout and
+`dev:fleet`: `docs/fleet.md`.
 
 
 ## Test and typecheck commands

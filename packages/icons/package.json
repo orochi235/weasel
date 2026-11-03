@@ -21,7 +21,7 @@
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": { "type": "git", "url": "git+https://github.com/orochi235/weasel.git", "directory": "packages/icons" },
   "bugs": { "url": "https://github.com/orochi235/weasel/issues" },
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=24" },
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": { "build": "tsup && cp src/icons.table.json dist/" },
   "dependencies": { "@weasel-js/registry": "1.16.1" },

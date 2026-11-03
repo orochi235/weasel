@@ -33,7 +33,7 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "dependencies": {
     "@weasel-js/registry": "1.16.1"
