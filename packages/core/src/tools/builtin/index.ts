@@ -3,7 +3,7 @@
 // `defineDragInsertTool` was removed earlier for the same reason: every
 // insert tool now declares its gesture via `Tool.bindings` and delegates
 // to the dispatcher's `insertAction`.
-export { useSelectTool, type UseSelectToolOptions } from './select';
+export { useSelectTool, useSelectToolWith, type UseSelectToolOptions } from './select';
 export {
   selectionMoveContribution,
   selectionMoveBindings,
