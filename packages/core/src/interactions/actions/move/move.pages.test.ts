@@ -4,6 +4,7 @@ import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId, type AddNodeSpec, type NodeId, type RectPose } from 'core/scene/types';
 import { PAGE_A, PAGE_B, ON_PAGE, pagedScene } from 'core/pages/pagedFixture';
 import { moveAction } from './action';
+import { resolveDrop } from './commit/reparent';
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 const R2 = asNodeId('r2');
@@ -76,6 +77,16 @@ describe('moveAction in a paged scene', () => {
     expect(pose).toMatchObject({ x: 10, y: 10 });
   });
 
+  it('lands a drop into a group on the other page just above the node under the pointer', () => {
+    const group = { ...rect(G, PAGE_B, 10), kind: 'group' as const, pose: { x: 10, y: 0, width: 60, height: 40 } };
+    const [low, high] = [asNodeId('low'), asNodeId('high')];
+    const { scene, node } = drag(40, {
+      add: [group, rect(low, G, 0), rect(high, G, 30)], params: { reparentOnDrop: 'above' }, nodeAtPoint: () => low,
+    });
+    expect(node.parent).toBe(G);
+    expect(scene.childrenOf(G)).toEqual([low, ON_PAGE, high]);
+  });
+
   it('moves each selected root by where its own box lands, not by the page under the pointer', () => {
     // r1 on page a at world 50, r2 on page b at world 160; grab r2 and nudge: r1 stays on page a.
     const r1 = asNodeId('r1');
@@ -144,5 +155,16 @@ describe('a node following others, when what it follows moves between pages', ()
     expect(scene.get(S2)!.parent).toBe(PAGE_B);
     expect(scene.get(F)!.parent).toBe(PAGE_B);
     expect(undoSteps).toBe(1);
+  });
+});
+
+describe('resolveDrop in a paged scene', () => {
+  it('stops at a page that refuses the drop, rather than climbing to the top of the tree', () => {
+    const { scene } = pagedScene();
+    scene.add(rect(R2, PAGE_B, 50));
+    const session = { scene, ids: [ON_PAGE], cascadeIds: [], nodeAtPoint: () => R2, verdict: () => false };
+    expect(resolveDrop(session as never, { x: 165, y: 15 })).toBeNull();
+    const admits = { ...session, verdict: (id: NodeId) => id === PAGE_B };
+    expect(resolveDrop(admits as never, { x: 165, y: 15 })).toMatchObject({ newParent: PAGE_B, hitSibling: R2 });
   });
 });
