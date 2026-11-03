@@ -1,6 +1,7 @@
 /** Which kinds of page a scene would export as, read from its top-level content alone. */
-import { contentRoots, pageHolding, pageOfNode, placedPagesOf, type Scene } from '@weasel-js/core';
-import { documentBoundsOf, sequenceRootOf } from '@weasel-js/diagram';
+import { contentRoots, placedPagesOf, type Scene } from '@weasel-js/core';
+import { sequenceRootOf } from '@weasel-js/diagram';
+import { exportPageOf } from './exportPage';
 import { plotRootOf } from '@weasel-js/plot';
 import type { PageKind } from './document';
 
@@ -20,9 +21,7 @@ export function scenePageKinds<TData, TLayer extends string, TPose>(scene: Scene
     const kind: PageKind | null = plotRootOf(node) !== null ? 'plot' : sequenceRootOf(node) !== null ? 'sequence' : null;
     if (kind === null) continue;
     kinds.add(kind);
-    const page = placed.length === 0
-      ? null
-      : pageOfNode(scene, id) ?? pageHolding(placed, documentBoundsOf(scene as never, node as never))?.id ?? null;
+    const page = exportPageOf(scene, placed, id);
     if (page !== null && !claimed.has(page)) claimed.set(page, kind);
   }
   if (placed.length === 0 ? kinds.size === 0 : placed.some((p) => !claimed.has(p.id))) kinds.add('graph');

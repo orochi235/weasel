@@ -1,16 +1,17 @@
 /** A diagram scene as a {@link DiagramDocument}: what every format writes from. */
 import {
-  composeWorldPose, isPageStructure, pageHolding, pageOfNode, placedPagesOf, scenePoseAdapter,
+  composeWorldPose, isPageStructure, pageOfNode, placedPagesOf, scenePoseAdapter,
   type NodeId, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, FLOWCHART_NOTATION, diagramLabelOf, diagramNotationOf, documentBoundsOf, endLabelIdOf, diagramThemeFrom, sequenceRootOf, type DataContainer,
+  DIAGRAM_THEME_KEY, FLOWCHART_NOTATION, diagramLabelOf, diagramNotationOf, endLabelIdOf, diagramThemeFrom, sequenceRootOf, type DataContainer,
   type DataEdge, type DataGroup, type DataNode, type DiagramTheme, type SequenceData,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage, PlotPage } from './document';
 import { graphPageSettingsOf } from './graphPageMeta';
 import { plotPageOf } from './plotPages';
 import { kindOf, readEdge, readGroup, readRegion, readShape, type EndLabelNodes, type ReadNode, type ReadScene } from './sceneReaders';
+import { exportPageOf } from './exportPage';
 
 /** Options for {@link documentFromScene}. */
 export interface DocumentFromSceneOptions {
@@ -66,17 +67,12 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   const placed = placedPagesOf(scene);
   const pages = placed.length > 0 ? placed : [contentPage(s)];
   const buckets = new Map(pages.map((p) => [p.id, { nodes: [], edges: [], groups: [], containers: [] } as PageBucket]));
-  const boxOf = (node: ReadNode) => documentBoundsOf(scene, node);
   const byId = new Map(pages.map((p) => [p.id, p]));
   const onPage = (id: string): string | null => pageOfNode(scene as never, id as NodeId);
   const pageCache = new Map<string, PlacedPage>();
   const pageOf = (node: ReadNode): PlacedPage => {
-    const under = onPage(node.id);
-    if (under !== null) return byId.get(under)!;
-    let root = node;
-    while (root.parent !== null) root = s.get(root.parent as never)!;
-    if (!pageCache.has(root.id)) pageCache.set(root.id, pageHolding(pages, boxOf(root))!);
-    return pageCache.get(root.id)!;
+    if (!pageCache.has(node.id)) pageCache.set(node.id, byId.get(exportPageOf(scene, pages, node.id as NodeId)!)!);
+    return pageCache.get(node.id)!;
   };
 
   const plots = new Map<string, PlotPage>();
