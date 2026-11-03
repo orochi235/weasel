@@ -166,6 +166,9 @@ export interface SvgKitTreeNode {
   /** The kit's `SceneNode.clip`: `'outline'` writes the node's children
    *  clipped to its outline, as core's `clipOutline` reads it. */
   clip?: NodeClip;
+  /** The kit's `SceneNode.clipFromPose`, which a page clips with: the
+   *  node's children are written clipped to what it returns, ahead of `clip`. */
+  clipFromPose?(pose: SvgKitPose): Path | null;
   /** The node's copies, as the kit's `SceneNode.copiesFromPose` draws them:
    *  each is written as a transformed group of its children. */
   copiesFromPose?(pose: SvgKitPose, node: never): readonly Matrix[] | null;
@@ -278,7 +281,9 @@ export function svgNodesFromKit<TId extends string>(
       }
       return children;
     };
-    const clip = node.clip === 'outline' ? clipOutline(node as never, node.pose) ?? undefined : undefined;
+    const clip = (node.clipFromPose
+      ? node.clipFromPose(node.pose)
+      : node.clip === 'outline' ? clipOutline(node as never, node.pose) : null) ?? undefined;
     const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
     const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
     const paint = groupPaintFromKit(own, below, node.pose);

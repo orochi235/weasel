@@ -23,6 +23,7 @@ import {
   fillInPoseFrame,
   isAnnotationNode,
   layoutTextPose,
+  pageOfNode,
   pageRunOf,
   pathEffectOf,
   pathEffectParts,
@@ -200,7 +201,9 @@ function poseOfIn<TLayer extends string>(
     stored(id) === undefined ? undefined : composeWorldPose(adapter, id, scene.composition.compose);
 }
 
-/** The `SceneSource` `sceneToSvgNodes` walks. `isPainted` drops what a hidden
+/** The `SceneSource` `sceneToSvgNodes` walks. Its roots are the scene's, the
+ *  page run's children in the run's place, so each page is a group clipping
+ *  what it holds, as the canvas clips it. `isPainted` drops what a hidden
  *  layer holds, so an export carries what the pixel path draws, and what an
  *  annotation layer holds, which is never printed. */
 function sceneSourceOf<TLayer extends string>(
@@ -211,9 +214,10 @@ function sceneSourceOf<TLayer extends string>(
     (scene.layers ?? []).filter((l) => !l.visible).map((l) => String(l.id)),
   );
   return {
-    roots: contentRoots(scene).map(String),
+    roots: scene.roots.flatMap((id) => (scene.get(id)?.pageRun === undefined ? [id] : scene.childrenOf(id))).map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
     get: (id) => scene.get(id as never),
+    pageIdOf: (id) => (scene.get(id as never)?.page === undefined ? undefined : pageOfNode(scene, id as never) ?? undefined),
     composition: scene.composition,
     isPainted: (id) => {
       const layer = scene.get(id as never)?.layer;
@@ -246,9 +250,9 @@ async function serializeWarm(nodes: SvgNode[], given: SerializeOptions): Promise
 }
 
 /**
- * Serialize a WeaselDraw scene to an SVG document string. The scene is read
- * when this is called; only the serialization waits for lazily loaded paint
- * kinds.
+ * Serialize a WeaselDraw scene to an SVG document string, each page's content
+ * in a group clipped to the page. The scene is read when this is called; only
+ * the serialization waits for lazily loaded paint kinds.
  */
 export function sceneToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,

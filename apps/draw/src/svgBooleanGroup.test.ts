@@ -52,7 +52,8 @@ describe('a boolean group through SVG', () => {
 
   it('writes the result as a visible path, in the group\'s paint, and its children hidden', async () => {
     const parsed = parseSvg(await save(makeScene()), { namespaces: SWILL_NAMESPACES });
-    const [g] = parsed.nodes;
+    const [page] = parsed.nodes as { children: unknown[] }[];
+    const [g] = page!.children as typeof parsed.nodes;
     expect(g!.kind).toBe('group');
     const [self, operands] = (g as { children: unknown[] }).children as [
       { kind: string; path: never; fill: unknown }, { boolean?: string; hidden?: boolean },

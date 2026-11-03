@@ -7,8 +7,8 @@
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
  * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
  * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, a live path
- * effect on its group (`svgEffects.ts`), and `role="mark"` on the group a mark with children
- * exports as.
+ * effect on its group (`svgEffects.ts`), `role="mark"` on the group a mark with children
+ * exports as, and `role="page"` with `page-id` on the clipped group a page's content saves in.
  */
 
 import type { BooleanShapeOp, Fill, NodeClip, Page, PlacedPage, TextStyle } from '@weasel-js/core';
@@ -218,11 +218,14 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  *
  * `id` comes from `wd:group-id` for containers and `wd:leaf-id` for leaves and effects, where
  * the file carries one; the caller maps it to the minted `NodeId`.
+ *
+ * A page's group is no draft: each top-level draft under one names that page's id as `page`.
  */
+interface DraftBase { id: string; parentId: string | null; clip?: NodeClip; hidden?: true; page?: string }
 export type SceneDraft =
-  | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; clip?: NodeClip; hidden?: true; boolean?: BooleanShapeOp }
-  | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
-  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true } & EffectAttrs);
+  | (DraftBase & { kind: 'mark'; obj: Obj; boolean?: BooleanShapeOp })
+  | (DraftBase & { kind: 'group'; pose: RectBounds; data: SvgKitLeafData })
+  | (DraftBase & { kind: 'effect'; pose: RectBounds; data: SvgKitLeafData } & EffectAttrs);
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -282,9 +285,15 @@ export function svgNodesToSceneDrafts(
 ): SceneDraft[] {
   const nodes = ('nodes' in input ? input.nodes : input).filter((n) => !isBackgroundNode(n));
   const effects = new Map<string, EffectAttrs>();
+  const pageOfGroup = new Map<string, string>();
   const used = new Set<string>();
   const idOf = (n: SvgNode): string => {
     const attrs = n.meta?.wd?.attrs;
+    if (n.kind === 'group' && attrs?.role === PAGE_ROLE && attrs['page-id']) {
+      const id = nextId();
+      pageOfGroup.set(id, attrs['page-id']);
+      return id;
+    }
     const carried = n.kind === 'group' ? attrs?.['group-id'] ?? attrs?.['leaf-id'] : attrs?.['leaf-id'];
     const id = carried !== undefined && !used.has(carried) ? carried : nextId();
     used.add(id);
@@ -298,15 +307,20 @@ export function svgNodesToSceneDrafts(
     keepEmpty: (g) => decodeEffectAttrs(g.meta?.wd?.attrs) !== null,
     mark: (g) => g.meta?.wd?.attrs?.role === MARK_ROLE,
   });
-  return drafts.map((d): SceneDraft => {
-    const hidden = d.hidden ? { hidden: true as const } : {};
-    const clip = d.clip ? { clip: d.clip } : {};
-    if (d.kind === 'mark') {
-      return { kind: 'mark', id: d.id, parentId: d.parentId, obj: d.data, ...clip, ...hidden, ...(d.boolean ? { boolean: d.boolean } : {}) };
-    }
-    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...clip, ...hidden };
+  return drafts.flatMap((d): SceneDraft[] => {
+    if (pageOfGroup.has(d.id)) return [];
+    const page = d.parentId === null ? undefined : pageOfGroup.get(d.parentId);
+    const base: DraftBase = {
+      id: d.id,
+      parentId: page === undefined ? d.parentId : null,
+      ...(d.clip ? { clip: d.clip } : {}),
+      ...(d.hidden ? { hidden: true as const } : {}),
+      ...(page === undefined ? {} : { page }),
+    };
+    if (d.kind === 'mark') return [{ kind: 'mark', ...base, obj: d.data, ...(d.boolean ? { boolean: d.boolean } : {}) }];
+    const group = { ...base, pose: d.pose, data: d.data };
     const effect = effects.get(d.id);
-    return effect === undefined ? { kind: 'group', ...group } : { kind: 'effect', ...group, ...effect };
+    return [effect === undefined ? { kind: 'group', ...group } : { kind: 'effect', ...group, ...effect }];
   });
 }
 
@@ -320,6 +334,8 @@ export interface SceneSource extends SvgKitTree<string> {
    *  group of the paths it shows. */
   objOf(id: string): Obj | EffectObj | undefined;
   isPainted?(id: string): boolean;
+  /** The page id (`Page.id`) of a page's node; `undefined` for any other node. */
+  pageIdOf?(id: string): string | undefined;
 }
 
 /**
@@ -341,13 +357,20 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
       if (!('effect' in obj)) return objToSvgNode(obj);
       return { kind: 'group', children: obj.parts.map(objToSvgNode), meta: { wd: { attrs: encodeEffectAttrs(obj) } } };
     },
-    group: (id, g) => ({ ...g, meta: { wd: { attrs: { 'group-id': id } } } }),
+    group: (id, g) => {
+      const page = source.pageIdOf?.(id);
+      const attrs = page === undefined ? { 'group-id': id } : { role: PAGE_ROLE, 'page-id': page };
+      return { ...g, meta: { wd: { attrs } } };
+    },
     mark: (_id, g) => ({ ...g, meta: { wd: { attrs: { role: MARK_ROLE } } } }),
   });
 }
 
 /** `wd:role` on the group a mark with children exports as; its first element is the mark. */
 const MARK_ROLE = 'mark';
+
+/** `wd:role` on the group a page's content saves in, clipped to the page; `wd:page-id` names the page. */
+const PAGE_ROLE = 'page';
 
 /** SVG's initial `fill`, for a path or text that names none. */
 const DEFAULT_IMPORT_FILL: Fill = { paint: { color: '#000000' } };
