@@ -30,6 +30,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P2) [agent] Wheel over a minimap zooms its main view about the point under the cursor.** `MinimapCanvas`
+  pans the main view on a press or drag but ignores the wheel, so each consumer wires its own: collego
+  converts the cursor to a world point through `computeFitView`, then zooms the main view about it, keeping
+  that point's place on the board (collego `packages/app/src/canvas/minimapZoom.ts`, 2026-11-02). The
+  maintainer wants this as the minimap's default (2026-11-02). Closes when a wheel over `MinimapCanvas` calls
+  `onMainViewChange` with that zoom, clamped by the main view's zoom limits, with a prop to turn it off.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
