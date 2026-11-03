@@ -13,6 +13,7 @@ export { useSessionPersistence, type SessionPersistenceOptions } from './useSess
 export { TextEditDepPublisher } from './TextEditDepPublisher';
 export { usePageGrid, type PageGridOptions } from './usePageGrid';
 export { EditorShell, type EditorShellProps } from './EditorShell';
+export { EDITOR_CONTEXT_MENUS, EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';
 export { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY, useEditorKeys, type EditorCommandOptions } from './editorCommands';
 export {
   useEditorPrefs, useOpenPreferences, EditorPrefsDialog,

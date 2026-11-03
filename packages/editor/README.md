@@ -23,7 +23,7 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 
 | Area | Exports |
 |---|---|
-| Shell | `EditorShell`, `EDITOR_ACTIONS`, `EDITOR_PREFERENCES_KEY`, `useEditorKeys` |
+| Shell | `EditorShell`, `EDITOR_ACTIONS`, `EDITOR_PREFERENCES_KEY`, `useEditorKeys`, `EDITOR_CONTEXT_MENUS`, `EDITOR_CONTEXT_MENUS_CONTRIBUTION` |
 | Preferences | `useEditorPrefs`, `useOpenPreferences`, `EditorPrefsDialog` |
 | Menu bar | `editorMenuBar`, `menu`, `menuRun`, `EDITOR_MENU_TITLES` |
 | Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession` |
@@ -49,6 +49,23 @@ no canvas holds the keys; once a canvas on that registry does, the canvas runs
 them. It registers `editor.preferences` (Mod+,) to open the preferences dialog,
 and draws the menu bar from `menus` on its own row, or, with `menuBar="inline"`,
 hands it to a `topbar` function to place.
+
+Every `<SceneCanvas>` in the shell gets the editor's context menus:
+`editor.selection` on a right-click on the selection (Cut, Copy, Paste,
+Duplicate, Delete; Group, Ungroup; Bring Forward, Bring to Front, Send Backward,
+Send to Back) and `editor.canvas` on empty canvas (Paste, Select All; Undo,
+Redo). An item whose action the canvas does not register drops out. To add to
+one, contribute a `MenuDef` with the same id on a canvas `ambient` entry; its
+sections follow the editor's, after a separator. To replace them, pass
+`contextMenus={false}` and contribute your own.
+
+```ts
+const enter = pref.group('', { path: pref.action('enterPathEdit') });
+const ambient = [{
+  id: 'myapp.menus', eligibility: { always: true },
+  menus: [{ id: 'editor.selection', when: { bodyTarget: 'selected-body' }, menu: pref.group('', { enter }) }],
+}];
+```
 
 A saved snapshot keeps a path's typed arrays tagged (`serializeReplacer`), and
 loading reads the tags back, along with the untagged shapes older saves wrote.

@@ -1,24 +1,17 @@
 import type { MenuDef } from '@weasel-js/core';
+import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
 
-const SELECTION = pref.group('', {
-  edit: pref.group('', {
-    cut: pref.action('clipboard.cut'), copy: pref.action('clipboard.copy'), paste: pref.action('clipboard.paste'),
-    duplicate: pref.action('duplicate'), delete: pref.action('delete'),
-  }),
-  group: pref.group('', { group: pref.action('group'), ungroup: pref.action('ungroup') }),
-  order: pref.group('', { forward: pref.action('reorder.forward'), backward: pref.action('reorder.backward') }),
-  enter: pref.group('', { path: pref.action('enterPathEdit'), text: pref.action('enterTextEdit') }),
-});
+const ENTER = pref.group('', { path: pref.action('enterPathEdit'), text: pref.action('enterTextEdit') });
 
-const CANVAS = pref.group('', {
-  edit: pref.group('', { paste: pref.action('clipboard.paste'), selectAll: pref.action('selectAll') }),
-  history: pref.group('', { undo: pref.action('undo'), redo: pref.action('redo') }),
-});
+const EDITOR_SELECTION = EDITOR_CONTEXT_MENUS.find((m) => m.id === 'editor.selection')!.menu;
 
-/** WeaselDraw's context menus: the selection's, the empty canvas's, and a layer row's. */
+/** The editor's selection menu with draw's part: what a layer row offers. */
+const SELECTION = { ...EDITOR_SELECTION, children: { ...EDITOR_SELECTION.children, enter: ENTER } };
+
+/** WeaselDraw's context menus: its part of the editor's selection menu, which the editor's defaults lack, and a
+ *  layer row's. */
 export const DRAW_MENUS: MenuDef[] = [
-  { id: 'draw.selection', when: { bodyTarget: 'selected-body' }, menu: SELECTION },
-  { id: 'draw.canvas', when: { bodyTarget: 'empty' }, menu: CANVAS },
+  { id: 'editor.selection', when: { bodyTarget: 'selected-body' }, menu: pref.group('', { enter: ENTER }) },
   { id: 'draw.layerRow', menu: SELECTION },
 ];

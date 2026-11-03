@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { WeaselProvider } from '@weasel-js/core';
+import { AmbientContributionsProvider, WeaselProvider } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
+import { EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';
 import { type EditorCommandOptions, PreferencesCommand, useEditorKeys } from './editorCommands';
 import {
   type EditorPrefs, EditorPrefsContext, EditorPrefsDialog, type EditorPrefsDialogProps, useOpenedPrefs,
@@ -29,14 +30,20 @@ export interface EditorShellProps<S extends PrefGroup = PrefGroup> {
   menuBarClassName?: string;
   /** The row of controls under the menu bar. A function receives the menu bar when it is inline, else `null`. */
   topbar?: ReactNode | ((menuBar: ReactNode) => ReactNode);
+  /**
+   * Default `true`: every `<SceneCanvas>` in the shell gets the editor's context menus, `editor.selection` and
+   * `editor.canvas` (`EDITOR_CONTEXT_MENUS`). An app adds to one by contributing a `MenuDef` with the same id in the
+   * canvas's `ambient`, whose sections follow the editor's. `false` installs none, for an app supplying its own.
+   */
+  contextMenus?: boolean;
   children?: ReactNode;
 }
 
 /**
  * The frame of an editor app: the kit's providers where none is in scope already (deps, actions, the active tool,
  * the selection, and the pointer), a dispatcher that runs the app's command keys with no canvas holding them, the
- * menu bar and topbar, the preferences store and dialog, and the context menu host. `children` render below the
- * topbar. Draws no element of its own: what it renders is laid out by the app's container.
+ * menu bar and topbar, the preferences store and dialog, the context menu host, and the default context menus
+ * (`contextMenus`). `children` render below the topbar. Draws no element of its own: what it renders is laid out by the app's container.
  */
 export function EditorShell<S extends PrefGroup = PrefGroup>(props: EditorShellProps<S>) {
   return (
@@ -46,8 +53,12 @@ export function EditorShell<S extends PrefGroup = PrefGroup>(props: EditorShellP
   );
 }
 
+const DEFAULT_AMBIENT = [EDITOR_CONTEXT_MENUS_CONTRIBUTION];
+const NO_AMBIENT: typeof DEFAULT_AMBIENT = [];
+
 function ShellBody({
-  prefs, prefsDialog, preferences, menus, menuTitles, menuBar = 'row', menuBarClassName, topbar, children,
+  prefs, prefsDialog, preferences, menus, menuTitles, menuBar = 'row', menuBarClassName, topbar, contextMenus = true,
+  children,
 }: EditorShellProps) {
   useEditorKeys();
   const store = useOpenedPrefs(prefs);
@@ -61,14 +72,16 @@ function ShellBody({
 
   return (
     <EditorPrefsContext.Provider value={prefsValue}>
-      {!inline && bar}
-      {top}
-      {children}
-      {store && preferences !== null && <PreferencesCommand options={preferences} open={open} />}
-      {store && (
-        <EditorPrefsDialog store={store} open={prefsOpen} onClose={() => setPrefsOpen(false)} dialog={prefsDialog} />
-      )}
-      <ContextMenuHost />
+      <AmbientContributionsProvider contributions={contextMenus ? DEFAULT_AMBIENT : NO_AMBIENT}>
+        {!inline && bar}
+        {top}
+        {children}
+        {store && preferences !== null && <PreferencesCommand options={preferences} open={open} />}
+        {store && (
+          <EditorPrefsDialog store={store} open={prefsOpen} onClose={() => setPrefsOpen(false)} dialog={prefsDialog} />
+        )}
+        <ContextMenuHost />
+      </AmbientContributionsProvider>
     </EditorPrefsContext.Provider>
   );
 }

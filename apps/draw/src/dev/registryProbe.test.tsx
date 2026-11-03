@@ -3,6 +3,7 @@ import { render, waitFor } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { DRAW_MENU_BAR } from '../menuBar';
+import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
 import { DRAW_MENUS } from '../menus';
 import { RegistryProbe } from './registryProbe';
 
@@ -174,7 +175,7 @@ describe('RegistryProbe', () => {
       }
     };
     walk(DRAW_MENU_BAR);
-    for (const m of DRAW_MENUS) walk(m.menu);
+    for (const m of [...DRAW_MENUS, ...EDITOR_CONTEXT_MENUS]) walk(m.menu);
     await waitFor(() => {
       const registered = new Set(snapshots.at(-1)?.actions.map((a) => a.id));
       expect(named.filter((id) => !registered.has(id))).toEqual([]);
