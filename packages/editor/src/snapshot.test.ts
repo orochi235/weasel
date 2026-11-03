@@ -1,4 +1,4 @@
-import { asNodeId, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
+import { asNodeId, type RectPose, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
 
@@ -112,11 +112,43 @@ describe('docFromSnapshot', () => {
   const base = { version: 2 as const, systemLayers: [{ id: 'default' as const }], nodes: [] };
 
   it('reads the document values a snapshot carries', () => {
-    expect(docFromSnapshot({ ...base, doc: { 'core:pages': { pages: [] } } })).toEqual({ 'core:pages': { pages: [] } });
+    expect(docFromSnapshot({ ...base, doc: { 'app:paper': { size: 'a4' } } })).toEqual({ 'app:paper': { size: 'a4' } });
   });
 
   it('answers undefined for a snapshot written before document values, or a malformed one', () => {
     expect(docFromSnapshot(base)).toBeUndefined();
     expect(docFromSnapshot({ ...base, doc: [1] as never })).toBeUndefined();
+  });
+});
+
+describe('a snapshot holding core:pages', () => {
+  const legacy: SerializedScene<{ fill?: string }, 'default', RectPose> = {
+    version: 3,
+    systemLayers: [{ id: 'default' }],
+    nodes: [{ id: 'r', kind: 'mark', layer: 'default', pose: { x: 115, y: 10, width: 10, height: 10 }, data: { fill: '#000' } }],
+    doc: {
+      'core:pages': { pages: [{ id: 'a', width: 100, height: 50 }, { id: 'b', width: 100, height: 50 }], layout: { direction: 'row', gap: 10 } },
+      'app:other': 1,
+    },
+  };
+
+  it('loads its pages as page nodes, with each root on its page', () => {
+    const specs = nodeSpecsFromSnapshot(legacy);
+    const run = specs.find((s) => s.pageRun !== undefined)!;
+    expect(run).toBeDefined();
+    expect(specs.filter((s) => s.page !== undefined).map((s) => [s.id, s.parent])).toEqual([['a', run.id], ['b', run.id]]);
+    const r = specs.find((s) => s.id === asNodeId('r'))!;
+    expect(r.parent).toBe('b');
+    expect(r.pose).toMatchObject({ x: 5, y: 10 });
+    expect(r.data).toEqual({ fill: '#000' });
+  });
+
+  it('loads without the core:pages value, its other values kept', () => {
+    expect(docFromSnapshot(legacy)).toEqual({ 'app:other': 1 });
+  });
+
+  it('is read the same way twice', () => {
+    expect(nodeSpecsFromSnapshot(legacy)).toEqual(nodeSpecsFromSnapshot(legacy));
+    expect((legacy.doc as Record<string, unknown>)['core:pages']).toBeDefined();
   });
 });

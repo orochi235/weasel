@@ -8,7 +8,7 @@
 import type {
   AddNodeSpec, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';
-import { specsFromSerialized } from '@weasel-js/core';
+import { PAGES_DOC_KEY, adoptLegacyPages, asNodeId, sceneFromJSON, specsFromSerialized } from '@weasel-js/core';
 import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
 
 /** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
@@ -46,12 +46,38 @@ export function reviveTypedArrays<T>(node: T): T {
   return node;
 }
 
+/**
+ * `json` with its pages as page nodes: a snapshot saved while a scene's pages were its `core:pages`
+ * value is built into a scene, converted there by core's `adoptLegacyPages`, and written out again.
+ * Any other snapshot comes back as it is. `registry` and `opts` are what the load reads it with.
+ */
+export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
+  json: SavedScene<TData, TLayer, TPose>,
+  registry: SceneRegistry<TPose, TData, TLayer> = {},
+  opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
+): SavedScene<TData, TLayer, TPose> {
+  if (json.doc?.[PAGES_DOC_KEY] === undefined) return json;
+  const taken = new Set<string>(json.nodes.map((n) => n.id));
+  let n = 0;
+  // The run is the one node adoption mints; a fixed id loads the same snapshot the same way every time.
+  const generateId = () => {
+    let id = 'page-run';
+    while (taken.has(id)) id = `page-run-${++n}`;
+    taken.add(id);
+    return asNodeId(id);
+  };
+  const scene = sceneFromJSON(json, { registry, unknownKeys: 'skip', generateId, ...opts });
+  adoptLegacyPages(scene);
+  return scene.toJSON();
+}
+
 /** The document values a persisted snapshot carries, shaped for `useScene`'s `doc` option, or
- *  `undefined` for a snapshot written before it had any. */
+ *  `undefined` for a snapshot written before it had any. A `core:pages` value is not among them:
+ *  `nodeSpecsFromSnapshot` loads those pages as nodes (`adoptSnapshotPages`). */
 export function docFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
 ): Readonly<Record<string, unknown>> | undefined {
-  const { doc } = json;
+  const { doc } = adoptSnapshotPages(json);
   return doc !== null && typeof doc === 'object' && !Array.isArray(doc) ? doc : undefined;
 }
 
@@ -59,7 +85,8 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
  *  `useScene`'s `initial` option: core's `specsFromSerialized`, so every field
  *  a save writes comes back. A key `registry` lacks leaves the node without
  *  that function rather than failing the load, unless `opts.unknownKeys` says
- *  `'throw'`; `opts.onSkip` hears each. `revive` rewrites each node's data on
+ *  `'throw'`; `opts.onSkip` hears each. Pages saved as a `core:pages` value
+ *  come back as page nodes. `revive` rewrites each node's data on
  *  the way in; the default revives typed arrays only. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
@@ -67,6 +94,6 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   revive: <T>(node: T) => T = reviveTypedArrays,
   opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return specsFromSerialized(json, registry, { unknownKeys: 'skip', ...opts })
+  return specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...opts })
     .map((spec) => ({ ...spec, data: revive(spec.data) }));
 }

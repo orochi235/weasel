@@ -27,4 +27,14 @@ describe('useSessionPersistence', () => {
     unmount();
     expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 3, nodes: [] });
   });
+
+  it('drops a saved undo stack recorded while the pages were a core:pages value', () => {
+    localStorage.setItem('test:scene', JSON.stringify({ version: 3, systemLayers: [{ id: 'main' }], nodes: [], doc: { 'core:pages': { pages: [] } } }));
+    localStorage.setItem('test:history', '{"not":"read"}');
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    const restore = vi.spyOn(scene, 'restoreHistory');
+    renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history' }));
+    expect(restore).not.toHaveBeenCalled();
+    expect(localStorage.getItem('test:history')).toBeNull();
+  });
 });

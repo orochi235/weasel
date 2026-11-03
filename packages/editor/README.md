@@ -27,10 +27,10 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 | Preferences | `useEditorPrefs`, `useOpenPreferences`, `EditorPrefsDialog` |
 | Menu bar | `editorMenuBar`, `menu`, `menuRun`, `EDITOR_MENU_TITLES` |
 | Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession` |
-| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `serializeReplacer`, `reviveTypedArrays` |
+| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `serializeReplacer`, `reviveTypedArrays` |
 | Files | `downloadBlob`, `pickFile`, `describeFileWarnings`, `reportFileWarnings` |
 | File commands | `useNewCommand`, `useOpenCommand`, `useSaveCommand`, `FILE_KEYS` |
-| Pages | `usePages`, `usePageFit`, `usePaperLayer`, `usePageGrid` |
+| Pages | `usePages`, `usePageSettle`, `usePageFit`, `usePaperLayer`, `usePageGrid` |
 | Text editing | `TextEditDepPublisher` |
 
 ```tsx
@@ -52,3 +52,28 @@ hands it to a `topbar` function to place.
 
 A saved snapshot keeps a path's typed arrays tagged (`serializeReplacer`), and
 loading reads the tags back, along with the untagged shapes older saves wrote.
+
+## Pages
+
+A document is in one of two modes, read from its scene: **Continuous**, with no
+pages, or **Pages**, where core's page run is a root holding one page node per
+page, and what is on a page is that node's child, clipped to it. `usePages`
+reads the page nodes and edits them through core's page edits; its `add()` on a
+Continuous scene creates the page run, so the first page added makes the
+document paged. `usePaperLayer` draws each page's paper, and `usePageFit` fits
+the view to a page, or to the world origin when there is none.
+
+Whether content may sit off every page, on a **pasteboard**, is the page run's
+`pasteboard` flag in core (`createPageRun(scene, pages, { pasteboard: true })`).
+It is off by default, and then nothing is left outside a page.
+
+**Paging** is a view setting, not part of the document. `usePages(..., { paging })`
+takes `'continuous'` (the default), where the view moves freely across pages,
+or `'single'`, where `usePageSettle` brings the view to rest fitted to one page
+150 ms after it last moved, never while a pointer is down. Pass a view dep with
+`animate` as the view setter and the settle animates.
+
+A snapshot saved while a scene's pages were its `core:pages` document value
+loads with them as page nodes: `nodeSpecsFromSnapshot` and `docFromSnapshot`
+convert it through core's `adoptLegacyPages`, and `useSessionPersistence`
+drops the undo stack saved beside it.

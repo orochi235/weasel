@@ -1,4 +1,4 @@
-import { defaultCommitAdapter, type Scene, useLatest } from '@weasel-js/core';
+import { PAGES_DOC_KEY, defaultCommitAdapter, type Scene, useLatest } from '@weasel-js/core';
 import { useEffect, useRef } from 'react';
 import { readStored } from './sessionStore';
 import { reviveTypedArrays, serializeReplacer } from './snapshot';
@@ -18,9 +18,15 @@ export interface SessionPersistenceOptions {
 
 const parseHistory = (raw: string): unknown => reviveTypedArrays(JSON.parse(raw));
 
+/** Whether the scene saved under `key` kept its pages as the `core:pages` value. Its undo stack was
+ *  recorded against a tree the load has since rebuilt into page nodes, so it would replay wrongly. */
+const savedWithLegacyPages = (key: string): boolean =>
+  readStored(key, (raw) => (JSON.parse(raw) as { doc?: Record<string, unknown> }).doc?.[PAGES_DOC_KEY] !== undefined, () => false);
+
 /**
  * Keeps a scene and its undo stack in local storage: restores the stack once on mount,
- * then saves them through `useAutosave` after each render.
+ * then saves them through `useAutosave` after each render. A stack saved beside a scene whose
+ * pages were its `core:pages` value is dropped, not restored.
  */
 export function useSessionPersistence<D, L extends string, P>(
   scene: Scene<D, L, P>,
@@ -40,9 +46,13 @@ export function useSessionPersistence<D, L extends string, P>(
   // history with the empty initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
-    const { historyKey, loadHistory } = optsRef.current;
+    const { sceneKey, historyKey, loadHistory } = optsRef.current;
     let snap: unknown = null;
-    try { snap = loadHistory ? loadHistory() : readStored(historyKey, parseHistory, () => null); } catch { /* treated as none */ }
+    if (savedWithLegacyPages(sceneKey)) {
+      try { localStorage.removeItem(historyKey); } catch { /* best-effort */ }
+    } else {
+      try { snap = loadHistory ? loadHistory() : readStored(historyKey, parseHistory, () => null); } catch { /* treated as none */ }
+    }
     if (snap) {
       try {
         scene.restoreHistory(snap as Parameters<typeof scene.restoreHistory>[0]);
