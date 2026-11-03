@@ -3,6 +3,7 @@ import type * as t from '@babel/types';
 import { dirname, relative, sep } from 'node:path';
 import { isGallery } from '../story/tags.ts';
 import type { ComponentDeps, DepGraph, IndexEntry } from '../story/types.ts';
+import { titleStandIn } from './componentOf.ts';
 
 /** Resolves an import as the bundler would: an absolute file, or null for anything that is not one. */
 export type ResolveImport = (specifier: string, importer: string) => Promise<string | null>;
@@ -135,7 +136,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
       const componentOf = async (entry: IndexEntry): Promise<Key | null> => {
         const mod = info(entry.file);
         if (!mod) return null;
-        const byTitle = entry.title.split('/').pop()?.replace(/\s+/g, '');
+        const byTitle = titleStandIn(entry.title);
         for (const local of [entry.componentName, byTitle]) {
           const imp = local ? mod.imports.get(local) : undefined;
           const key = imp ? await importKey(entry.file, imp) : null;

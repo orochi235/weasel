@@ -12,6 +12,7 @@ import {
   useState,
 } from 'react';
 import type { Globals } from '../../protocol/messages';
+import type { ApiTable } from '../../story/api';
 import { indexId } from '../../story/indexPages';
 import type { ComponentDeps, Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
@@ -40,6 +41,8 @@ export interface IndexEnv {
   labs?: readonly string[];
   /** The component's place in the component graph; absent until the graph arrives, and for a gallery. */
   dependencies?: ComponentDeps;
+  /** The component's props and ref: null where forge found no component, absent where it read none or for a gallery. */
+  api?: ApiTable | null;
   globals: Globals;
   /** The frame config's, outermost. */
   decorators: readonly Decorator[];

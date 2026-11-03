@@ -28,6 +28,7 @@ export function indexEnvOf(bundle: IndexBundle, { graph, globals, decorators, op
     galleries: bundle.galleries,
     labs: bundle.labs,
     ...(dependencies ? { dependencies } : {}),
+    ...(gallery || bundle.api === undefined ? {} : { api: bundle.api }),
     globals,
     decorators,
     open,

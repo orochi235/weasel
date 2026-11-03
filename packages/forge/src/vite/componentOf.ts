@@ -1,5 +1,8 @@
 import type ts from 'typescript';
 
+/** The local name standing in for a component a meta does not name: its title's last segment, spaces dropped. */
+export const titleStandIn = (title: string): string | undefined => title.split('/').pop()?.replace(/\s+/g, '');
+
 /** A story file's component: its props type, null when it takes none, and the declaration its symbol names. */
 export interface FoundComponent {
   props: ts.Type | null;

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { API_EXPORT } from '../story/api';
 import type { LoadedStory, StoryContext } from '../story/types';
 import { loadCsfModule } from './loadCsfModule';
 
@@ -60,6 +61,11 @@ describe('loadCsfModule', () => {
       ['ui-button--named', 'A named one', 'Named'],
       ['ui-button--legacy', 'Old name', 'Legacy'],
     ]);
+  });
+
+  it("lists no story for the plugin's API export", () => {
+    const mod = { default: { title: 'ui/Chip' }, Basic: {}, [API_EXPORT]: { props: [], inherited: [], ref: null } };
+    expect(loadCsfModule(mod, 'ui/Chip').map((s) => s.exportName)).toEqual(['Basic']);
   });
 
   it('honors includeStories as a list', () => {

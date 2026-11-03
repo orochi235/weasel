@@ -1,8 +1,7 @@
 import { dirname } from 'node:path';
 import type ts from 'typescript';
 import type { ArgShape, ArgType } from '../csf/argsToSchema.ts';
-import type { ApiTable } from '../story/api.ts';
-import { apiTable } from './apiTable.ts';
+import { apiTable, type ReadApi } from './apiTable.ts';
 import { componentOf } from './componentOf.ts';
 
 /** What a story file's component takes, as argTypes, and the files its props are declared in. */
@@ -18,7 +17,7 @@ export interface PropReader {
    * The API of the component `file`'s default export names, or else of the import named `fallback`; null when
    * neither names one.
    */
-  api(file: string, fallback?: string): ApiTable | null;
+  api(file: string, fallback?: string): ReadApi | null;
 }
 
 /** React's own declarations and TypeScript's libraries: every DOM attribute and event handler an element takes. */

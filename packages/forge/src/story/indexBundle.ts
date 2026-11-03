@@ -1,3 +1,4 @@
+import { API_EXPORT, type ApiTable } from './api';
 import { byComponent, indexId, isIndexId } from './indexPages';
 import { type Libraries, TITLE_LIBRARIES } from './library';
 import { indexRenderOf, loadStories } from './load';
@@ -19,6 +20,8 @@ export interface IndexBundle {
   stories: readonly LoadedStory[];
   descriptions: Readonly<Record<string, string>>;
   render: IndexRender | null;
+  /** The component's API, from its primary file: null where forge found no component, absent where it read none. */
+  api?: ApiTable | null;
 }
 
 /** What a document has loaded for an entry: one story, or a component's index page. */
@@ -52,6 +55,13 @@ const commonTags = (entries: readonly BundleEntry[]): string[] | undefined => {
   return common.length > 0 ? common : undefined;
 };
 
+/** A story module's API export: null as the plugin wrote it, undefined when it wrote none. */
+function apiOf(mod: Record<string, unknown> | undefined): ApiTable | null | undefined {
+  const api = mod?.[API_EXPORT];
+  if (api === null) return null;
+  return typeof api === 'object' && Array.isArray((api as ApiTable).props) ? (api as ApiTable) : undefined;
+}
+
 /**
  * The index page `id` names, loaded from every file its component's stories live in. Its description and library are
  * its primary file's. Rejects when no story of `index` belongs to the component.
@@ -68,6 +78,7 @@ export async function loadIndexBundle(id: string, source: IndexBundleSource): Pr
   const stories = entries.flatMap((e) => byFile.get(e.file)?.find((s) => s.exportName === e.exportName) ?? []);
   for (const story of stories) await prepare?.(story);
   const tags = commonTags(entries);
+  const api = apiOf(mods[files.indexOf(primary.file)]);
   return {
     title,
     library: libraries.of(primary),
@@ -77,5 +88,6 @@ export async function loadIndexBundle(id: string, source: IndexBundleSource): Pr
     stories,
     descriptions: Object.fromEntries(entries.flatMap((e) => (e.description ? [[e.id, e.description]] : []))),
     render: mods.map(indexRenderOf).find((render) => render !== null) ?? null,
+    ...(api === undefined ? {} : { api }),
   };
 }

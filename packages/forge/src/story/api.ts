@@ -38,6 +38,4 @@ export interface ApiTable {
   props: ApiProp[];
   inherited: ApiInherited[];
   ref: ApiRef | null;
-  /** The project files the API is declared in, watched so an edit to one reaches the story. */
-  sources: string[];
 }

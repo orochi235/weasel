@@ -13,11 +13,14 @@ export interface ApiReading {
 }
 
 /** React reserves these; neither is a prop the component reads. */
+/** An API as read, with the project files it is declared in, which the plugin watches and the page never sees. */
+export type ReadApi = ApiTable & { sources: string[] };
+
 const RESERVED = new Set(['ref', 'key']);
 const IN_PACKAGES = /[\\/]node_modules[\\/]/;
 
 /** Every prop of `props`, the props it inherits counted per declaring type, and what its `ref` exposes. */
-export function apiTable(reading: ApiReading, declaration: ts.Declaration | undefined, props: ts.Type | null): ApiTable {
+export function apiTable(reading: ApiReading, declaration: ts.Declaration | undefined, props: ts.Type | null): ReadApi {
   const { checker } = reading;
   const sources = new Set<string>();
   const record = (symbol: ts.Symbol) => {
