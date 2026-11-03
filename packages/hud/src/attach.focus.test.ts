@@ -32,6 +32,7 @@ function makeApi(element: HTMLElement): CanvasExtensionApi & { _layer?: RenderLa
     paintedCursor: createPaintedCursorState(),
     cursorSink: { setBase() {}, setOverride() {} },
     getDebug: () => null,
+    pickAt: () => 0,
   };
   return api;
 }

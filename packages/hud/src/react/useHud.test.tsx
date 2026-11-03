@@ -27,6 +27,7 @@ function makeApi(): CanvasExtensionApi {
     paintedCursor: createPaintedCursorState(),
     cursorSink: { setBase() {}, setOverride() {} },
     getDebug: () => null,
+    pickAt: () => 0,
   };
 }
 
