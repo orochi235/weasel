@@ -7,11 +7,11 @@ import type { Action } from '@weasel-js/routing';
 import { useActionsRegistry, useOptionalActiveToolContext, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import { type DepName, type DepSchema } from '@weasel-js/routing';
-// Reaches depSchema.ts so tsup's per-entry dts compiler resolves `DepSchema['selection']`
+// Reaches engineDeps.ts so tsup's per-entry dts compiler resolves `DepSchema['selection']`
 // here; `tsc --noEmit` happens to pick it up via test files, tsup does not. It MUST be
 // `import type` — a bare `import './depSchema'` makes esbuild emit a runtime import that it
 // then drops under the package's `sideEffects: false`, warning on every build.
-import type {} from './depSchema';
+import type {} from './engineDeps';
 
 /** The deps every standard action reads. */
 export interface StandardDeps {
