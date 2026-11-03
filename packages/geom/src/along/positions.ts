@@ -47,11 +47,12 @@ export function pointOnSegment(t: LengthTable, r: number, i: number, len: number
   return { point: linePoint(t, r, i, len), tangent: tangentNear(t, r, i) };
 }
 
-/** @internal {@link pointOnSegment}'s point alone, given the segment's `segmentArc` when the caller kept it. */
+/** @internal {@link pointOnSegment}'s point alone, given the segment's `segmentArc` when the caller kept it, and
+ *  written into `out` on a curve when given. */
 export function pointOnSegmentOnly(
-  t: LengthTable, r: number, i: number, len: number, arc: SegmentArc | null = segmentArc(t, r, i),
+  t: LengthTable, r: number, i: number, len: number, arc: SegmentArc | null = segmentArc(t, r, i), out?: Comps,
 ): Comps {
-  return arc ? bezierPoint(arc.coords, t.dim, arcParam(t, arc, r, i, len)) : linePoint(t, r, i, len);
+  return arc ? bezierPoint(arc.coords, t.dim, arcParam(t, arc, r, i, len), out) : linePoint(t, r, i, len);
 }
 
 function arcParam(t: LengthTable, arc: SegmentArc, r: number, i: number, len: number): number {

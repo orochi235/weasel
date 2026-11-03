@@ -1,10 +1,12 @@
 /** One segment of a run, given as flat control points, `dim` components each: two for a line, three for a quadratic, four for a cubic. */
 
-/** The point at parameter `t`, three components, those past `dim` 0. */
-export function bezierPoint(c: ArrayLike<number>, dim: number, t: number): [number, number, number] {
+/** The point at parameter `t`, three components, those past `dim` 0; written into `out` when given. */
+export function bezierPoint(
+  c: ArrayLike<number>, dim: number, t: number, out: [number, number, number] = [0, 0, 0],
+): [number, number, number] {
   const n = c.length / dim - 1;
   const u = 1 - t;
-  const out: [number, number, number] = [0, 0, 0];
+  if (dim === 2) out[2] = 0;
   if (n === 3) {
     const w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t;
     for (let k = 0; k < dim; k++) out[k] = w0 * c[k] + w1 * c[dim + k] + w2 * c[2 * dim + k] + w3 * c[3 * dim + k];

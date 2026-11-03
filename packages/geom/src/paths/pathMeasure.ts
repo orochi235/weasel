@@ -121,9 +121,10 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
   }
 
   const total = table.total;
+  const scratch: [number, number, number] = [0, 0, 0];
   const pointAt = (seg: Segment, s: number): Point => {
     if (seg.curve === undefined) seg.curve = segmentArc(table, seg.run, seg.seg);
-    const point = pointOnSegmentOnly(table, seg.run, seg.seg, s, seg.curve);
+    const point = pointOnSegmentOnly(table, seg.run, seg.seg, s, seg.curve, scratch);
     return { x: point[0], y: point[1] };
   };
   return {
