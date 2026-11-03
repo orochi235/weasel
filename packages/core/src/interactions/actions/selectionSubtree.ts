@@ -1,7 +1,7 @@
 import { outermost } from '@weasel-js/select';
 import type { NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { isPageStructure } from 'core/scene/nodeGates';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import type { PoseFrame } from './poseFrame';
 import type { TransformFinisher } from './transformFinish';
 import { createTransformOp } from 'core/ops/transform';
@@ -14,10 +14,8 @@ type AnyScene = Scene<unknown, string, unknown>;
  *  page run, which no action copies or moves. */
 export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[] {
   const parentOf = (id: string) => scene.get(asNodeId(id))?.parent ?? null;
-  return outermost(ids, parentOf).map((id) => asNodeId(id)).filter((id) => {
-    const node = scene.get(id);
-    return node !== undefined && !isPageStructure(node);
-  });
+  return withoutPageStructure(scene, outermost(ids, parentOf).map((id) => asNodeId(id)))
+    .filter((id) => scene.get(id) !== undefined);
 }
 
 /** Whether `id` draws a path derived from other nodes. Its pose is a

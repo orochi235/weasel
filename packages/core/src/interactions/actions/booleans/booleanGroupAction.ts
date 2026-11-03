@@ -1,5 +1,6 @@
 import type { BooleanShapeOp } from 'core/geometry/booleanOfPaths';
 import { booleanGroupFields } from 'core/scene/booleanGroup';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { scenePoseFrame } from '../poseFrame';
@@ -58,7 +59,7 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const { scene, selection } = deps;
       if (!scene || !selection) return;
-      const id = makeBooleanGroup(scene as AnyScene, selection.get());
+      const id = makeBooleanGroup(scene as AnyScene, withoutPageStructure(scene, selection.get()));
       if (id !== null) selection.set([id]);
     },
   },

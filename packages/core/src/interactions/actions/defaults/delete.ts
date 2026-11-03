@@ -6,7 +6,7 @@ import type { Action, ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
 import { hiddenSourcesTakenWith } from 'domains/pathEffects/effectSources';
-import { isPageStructure } from 'core/scene/nodeGates';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -61,12 +61,13 @@ export function buildDeleteOps(
   label: string,
   opts: BuildDeleteOptions = {},
 ): Op[] {
-  const all = opts.takeHiddenSources ? [...ids, ...hiddenSourcesTakenWith(scene, ids as readonly NodeId[])] : ids;
+  const own = withoutPageStructure(scene, ids);
+  const all = opts.takeHiddenSources ? [...own, ...hiddenSourcesTakenWith(scene, own as readonly NodeId[])] : own;
   const covered = new Set<string>();
   const ops: Op[] = [];
   for (const id of all) {
     const node = scene.get(id as NodeId);
-    if (!node || isPageStructure(node)) continue;
+    if (!node) continue;
     if (covered.has(id)) continue;
     for (const taken of scene.removalClosure([id as NodeId])) covered.add(taken);
     ops.push(createDeleteOp<Node<unknown, string, unknown>>({

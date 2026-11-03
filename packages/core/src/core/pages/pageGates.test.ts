@@ -9,8 +9,6 @@ import { pickWalk, scenePickSource } from '../../canvas/pickWalk';
 import { sceneToAdapter } from '../../canvas/sceneAdapter';
 import { doubleClickTarget } from '../../canvas/doubleClickTarget';
 import { pressTarget } from '../../tools/builtin/pressTarget';
-import { placedPagesOf } from './pageNodes';
-import { pagesLayer } from './pagesLayer';
 import { PAGE_CLIP } from './pageClip';
 import { ON_PAGE as R, PAGE_A as A, PAGE_B as B, pagedScene } from './pagedFixture';
 
@@ -74,13 +72,33 @@ describe('a page clips what is on it', () => {
   });
 });
 
-describe('the paper', () => {
-  it('hiding the content layer leaves the paper as it was', () => {
+describe('layer locks and visibility around pages', () => {
+  it('locking the paper\'s layer locks the pages, not what is on them', () => {
+    const { scene, run } = pagedScene();
+    scene.setLayerLocked('paper', true);
+    const gates = nodeGates(scene);
+    expect([scene.isLocked(A), gates.locked(A), scene.isLocked(run)]).toEqual([true, true, true]);
+    expect([scene.isLocked(R), gates.locked(R)]).toEqual([false, false]);
+    expect(() => scene.setPose(R, { x: 0, y: 0, width: 5, height: 5 })).not.toThrow();
+  });
+
+  it('locking the content\'s layer leaves the pages unlocked', () => {
+    const { scene, run } = pagedScene();
+    scene.setLayerLocked('ink', true);
+    const gates = nodeGates(scene);
+    expect([scene.isLocked(A), gates.locked(A), scene.isLocked(run), gates.locked(run)]).toEqual([false, false, false, false]);
+    expect(scene.isLocked(R)).toBe(true);
+  });
+
+  it('hiding the paper\'s layer leaves the content drawn, still clipped to its page', () => {
+    type Group = { kind: 'group'; clip?: Path; children: DrawCommand[] };
     const { scene } = pagedScene();
-    const paper = () => pagesLayer(placedPagesOf(scene), { fill: '#fff' }).draw(undefined, {} as never, {} as never);
-    const before = paper();
-    scene.setLayerVisible('ink', false);
-    expect(paper()).toEqual(before);
-    expect(before).toHaveLength(2);
+    scene.setLayerVisible('paper', false);
+    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } };
+    const layers = buildSceneTree(sceneToAdapter(scene) as never, (() => [cmd]) as never, { x: 0, y: 0, scale: { x: 1, y: 1 } }) as Group[];
+    expect(layers).toHaveLength(1);
+    const wrapped = layers[0]!.children.at(-1) as Group;
+    expect(wrapped.clip && boundsOfPath(wrapped.clip)).toMatchObject({ x: 0, y: 0, width: 100, height: 50 });
+    expect(JSON.stringify(wrapped.children)).toContain('"width":1');
   });
 });

@@ -7,7 +7,9 @@
  *   `hidden`. A layer hides only the nodes tagged to it; a hidden node hides
  *   its whole subtree, as SVG's `display="none"` does.
  * - **Locked**: it or any ancestor carries `locked`, or sits on a locked
- *   layer. A lock covers the whole subtree, whatever layers it spans.
+ *   layer. A lock covers the whole subtree, whatever layers it spans, except
+ *   that a page or the page run keeps its layer's lock to itself: locking the
+ *   paper's layer does not lock what is on the pages.
  * - **Structure**: it is a page or the page run. Drawn, and its content is
  *   in reach, but the node itself is never selected, picked, deleted,
  *   copied, grouped or dropped into by the ordinary scene tools; page edits
@@ -50,6 +52,13 @@ export function isPageStructure(node: { readonly page?: unknown; readonly pageRu
   return node !== undefined && (node.page !== undefined || node.pageRun !== undefined);
 }
 
+/** `ids` less pages and the page run, or `ids` itself when it holds neither: the ids a scene action
+ *  reads off a selection, which a caller's own selection api may have filled with anything. */
+export function withoutPageStructure<T extends string>(scene: GateSource, ids: readonly T[]): readonly T[] {
+  const out = (id: T) => isPageStructure(scene.get(id as string as NodeId));
+  return ids.some(out) ? ids.filter((id) => !out(id)) : ids;
+}
+
 /** The answers, for one read of a scene. Each takes an id, or the node a
  *  walk already holds, which saves looking it up. */
 export interface NodeGates {
@@ -72,6 +81,9 @@ export function nodeGates(scene: GateSource): NodeGates {
   const ownLock = lockedLayers === null
     ? (node: GatedNode) => node.locked === true
     : (node: GatedNode) => node.locked === true || lockedLayers.has(node.layer);
+  const passedLock = lockedLayers === null
+    ? ownLock
+    : (node: GatedNode) => node.locked === true || (!isPageStructure(node) && lockedLayers.has(node.layer));
 
   /** Whether `test` holds on the node at `parent` or any of its ancestors.
    *  Only ancestors are remembered, so a walk over a flat scene allocates
@@ -104,7 +116,7 @@ export function nodeGates(scene: GateSource): NodeGates {
   };
 
   const hiddenAbove = above(hidesSubtree);
-  const lockedAbove = above(ownLock);
+  const lockedAbove = above(passedLock);
   return {
     hidden(id) {
       const node = typeof id === 'string' ? scene.get(id as NodeId) : id;
@@ -162,7 +174,10 @@ export function isNodeHidden(scene: GateSource, id: NodeId): boolean {
 /** {@link NodeGates.locked} for one id. */
 export function isNodeLocked(scene: GateSource, id: NodeId): boolean {
   const layers = flaggedLayers(scene, 'locked');
-  return climbs(scene, id, layers === null
-    ? (node) => node.locked === true
-    : (node) => node.locked === true || layers.has(node.layer));
+  if (layers === null) return climbs(scene, id, (node) => node.locked === true);
+  const node = scene.get(id);
+  if (node === undefined) return false;
+  if (node.locked === true || layers.has(node.layer)) return true;
+  return node.parent != null && climbs(scene, node.parent, (above) => above.locked === true
+    || (!isPageStructure(above) && layers.has(above.layer)));
 }

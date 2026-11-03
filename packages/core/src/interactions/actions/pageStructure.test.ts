@@ -9,6 +9,11 @@ import { deleteAction } from './defaults/delete';
 import { duplicateSelection } from './defaults/duplicate';
 import { clipboardCutAction } from './clipboard/action';
 import { pickContainer } from './move/layout/container';
+import { groupAction, ungroupAction } from './defaults/group';
+import { areaSelectAction } from './defaults/areaSelect';
+import { hitTestArea } from 'canvas/deps/hitTestArea';
+import { pressTarget } from 'tools/builtin/pressTarget';
+import type { InvocationCtx } from '@weasel-js/routing';
 
 /** A selection that holds whatever it was given, as a caller's own api may. */
 function heldSelection(ids: string[]) {
@@ -50,5 +55,33 @@ describe('scene actions in a paged scene', () => {
       layout: { getLayout: (id: string) => scene.get(asNodeId(id))?.layout ?? null },
     };
     expect(pickContainer(session as never, [], { x: 20, y: 20 })).toBeNull();
+  });
+
+  it('group and ungroup with a page or the run forced into the selection change nothing', () => {
+    for (const action of [groupAction, ungroupAction]) {
+      const { scene, run: runId } = pagedScene();
+      const before = JSON.stringify(scene.toJSON().nodes);
+      run(action, { scene, selection: heldSelection([A, B, runId]) });
+      expect(JSON.stringify(scene.toJSON().nodes)).toBe(before);
+    }
+  });
+
+  it('a marquee starting on empty paper selects the content inside it, not the page', () => {
+    const { scene } = pagedScene();
+    const selection = heldSelection([]);
+    const tree = { getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null, getNode: (id: string) => scene.get(asNodeId(id)) };
+    const dep = {
+      hitTestArea: (bounds: never) => hitTestArea(scene, bounds),
+      targetOf: (id: string) => pressTarget(tree, id, null),
+      getSelection: selection.get,
+      setSelection: selection.set,
+    };
+    const invoker = areaSelectAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const at = (x: number, y: number) => ({ world: { x, y }, modifiers: { shift: false }, deps: { areaSelect: dep } }) as unknown as InvocationCtx;
+    const handle = invoker.start(at(5, 5), {});
+    handle.onMove!(at(99, 45));
+    handle.onEnd!(at(99, 45), 'commit');
+    expect(selection.get()).toEqual([R]);
   });
 });

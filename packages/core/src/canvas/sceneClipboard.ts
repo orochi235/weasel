@@ -17,7 +17,7 @@ import { asNodeId } from 'core/scene/types';
 import { hasChildren } from 'core/scene/treeShape';
 import { sourcesOf } from 'core/scene/dependents';
 import { definesFrame } from 'core/scene/effectivePose';
-import { isPageStructure } from 'core/scene/nodeGates';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import {
   NODE_FN_FIELDS, createNodeFnFields, fnFieldsOfNode, fnKeysOf, type FnBearingNode,
 } from 'core/scene/nodeFnFields';
@@ -110,8 +110,7 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
   };
   // An id an ancestor holds comes with that ancestor's subtree walk. A page
   // or the run is never copied, whatever selection named it.
-  for (const id of outermost(ids, parentOf)) {
-    if (isPageStructure(scene.get(asNodeId(id)))) continue;
+  for (const id of withoutPageStructure(scene, outermost(ids, parentOf))) {
     carrySources(id);
     capture(id, true);
   }

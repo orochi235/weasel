@@ -2,6 +2,7 @@ import type { Node, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
@@ -37,7 +38,7 @@ export const groupAction: Action & { requires: string[] } = {
       const applyOps = deps.applyOps;
       if (!selection || !scene) return;
 
-      const ids = selection.get();
+      const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
       if (ids.length === 0) return;
 
       const nodes = ids
@@ -132,7 +133,7 @@ export const ungroupAction: Action & { requires: string[] } = {
       const scene = deps.scene;
       if (!selection || !scene) return;
 
-      const ids = selection.get();
+      const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
       if (ids.length === 0) return;
 
       const containers = ids.filter((id) => dissolves(scene.get(id as NodeId)));
