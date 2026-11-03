@@ -39,7 +39,7 @@ export function addTemplatePage<TData, TLayer extends string, TPose>(
   const { page, specs } = pageSpecs(template.page(id, size), placeAt, draw);
   scene.batch('Add page', () => {
     addPage(scene, page, { index: at });
-    addOnPages(scene, specs as readonly AddNodeSpec<TData, TLayer, TPose>[]);
+    addOnPages(scene, specs as unknown as readonly AddNodeSpec<TData, TLayer, TPose>[]);
   });
   return id;
 }
