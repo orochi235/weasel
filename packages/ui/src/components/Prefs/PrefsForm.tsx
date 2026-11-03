@@ -63,8 +63,8 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
   orientation?: BarOrientation;
   /** Show a filter field that narrows the form to matching leaves. */
   filterable?: boolean;
-  /** Rail layout: how many rows the pane sets side by side. At 2 a block leaf,
-   *  an object leaf, or a leaf whose value is a list spans both. Default 1. */
+  /** Rail and list layouts: how many rows the pane sets side by side. At 2 a block leaf,
+   *  an object leaf, or a leaf whose value is a list spans both, and a group runs the full width. Default 1. */
   rowsAcross?: 1 | 2;
   /** Rail layout: put a handle between the rail and the pane that drags the
    *  rail wider or narrower. The width is the form's own and starts at the
@@ -249,7 +249,8 @@ export function PrefsForm(props: PrefsFormProps) {
   }
 
   return (
-    <FlatLayout root={root} ctx={ctx} drop={props.drop} list={layout === 'list'} selection={selection} className={className}
+    <FlatLayout root={root} ctx={ctx} drop={props.drop} list={layout === 'list'} across={layout === 'list' && props.rowsAcross === 2}
+      selection={selection} className={className}
       filterField={field} noMatches={<NoMatches query={query} onClear={() => setQuery('')} />} />
   );
 }
@@ -261,6 +262,8 @@ function FlatLayout(props: {
   ctx: WalkCtx;
   drop?: PrefDrop | null;
   list: boolean;
+  /** The list layout's `rowsAcross={2}`. */
+  across: boolean;
   selection: SelectionRoot;
   filterField: ReactNode;
   noMatches: ReactNode;
@@ -276,7 +279,8 @@ function FlatLayout(props: {
     <GroupBody key={key} ctx={ctx} group={child} path={path} depth={depth} />
   ));
   return (
-    <div className={[s.columnsLayout, props.className].filter(Boolean).join(' ')} {...formAttrs(drop)} {...selection}>
+    <div className={[s.columnsLayout, props.className].filter(Boolean).join(' ')} data-across={props.across ? 2 : undefined}
+      {...formAttrs(drop)} {...selection}>
       {props.filterField}
       {drawn === null ? props.noMatches : list ? (
         <div className={s.rows}>{children}</div>
