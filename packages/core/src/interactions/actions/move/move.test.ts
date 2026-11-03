@@ -51,6 +51,7 @@ interface StubScene {
   composition: typeof IDENTITY_POSE_COMPOSITION;
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
   children: Map<string, NodeId[]>;
+  roots: readonly NodeId[];
   get(id: NodeId): { pose: unknown } | undefined;
   applyBatch(ops: unknown[], label: string, adapter: unknown): void;
   childrenOf(id: NodeId): readonly NodeId[];
@@ -72,6 +73,7 @@ function makeStubScene(
     poses,
     batchLog,
     children,
+    roots: [],
     overrides: createPoseOverrides<unknown>((id) => (poses.has(id) ? { } : undefined)),
     composition: IDENTITY_POSE_COMPOSITION,
     childrenOf(id: NodeId): readonly NodeId[] {

@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { PAGES_DOC_KEY, createScene, type RectPose } from '@weasel-js/core';
-import { withDiagramRegistry, type DiagramSceneData } from '@weasel-js/diagram';
+import { pagesOf } from '@weasel-js/core';
+import type { DiagramSceneData } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
 import { documentFromScene } from '../fromScene';
 import { documentSpecs } from '../toScene';
-import { MEASURE, THEME, docScene, type DocScene } from '../testing/docScene';
+import { MEASURE, THEME, contentNodes, docScene, drawnScene, type DocScene } from '../testing/docScene';
 import { DRAW_XML } from './format';
 import { asGraph } from '../testing/asGraph';
 
@@ -12,17 +12,14 @@ import { asGraph } from '../testing/asGraph';
 async function throughXml(scene: DocScene): Promise<{ back: DocScene; doc: DiagramDocument; warnings: string[] }> {
   const written = DRAW_XML.write!(documentFromScene(scene));
   const { document: doc, warnings } = await DRAW_XML.read!(written.text);
-  const { specs, doc: values } = documentSpecs(doc, { measure: MEASURE, theme: THEME });
-  const back = createScene<unknown, string, RectPose>({
-    systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc: values, initial: specs as never,
-  });
+  const back = drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME }));
   return { back, doc, warnings: [...written.warnings, ...warnings] };
 }
 
 const poses = (scene: DocScene) => Object.fromEntries(
-  scene.renderOrderNodes().filter((n) => n.dependsOn === undefined).map((n) => [n.id, n.pose]),
+  contentNodes(scene).filter((n) => n.dependsOn === undefined).map((n) => [n.id, n.pose]),
 );
-const colors = (scene: DocScene) => Object.fromEntries(scene.renderOrderNodes().map((n) => {
+const colors = (scene: DocScene) => Object.fromEntries(contentNodes(scene).map((n) => {
   const d = n.data as DiagramSceneData;
   return [n.id, [(d.fill?.paint as { color?: string } | undefined)?.color, (d.stroke?.paint as { color?: string } | undefined)?.color]];
 }));
@@ -36,7 +33,7 @@ describe('a chart through draw-style XML and back', () => {
   });
 
   it('keeps the pages, their names, and their sizes', () => {
-    expect(result.back.doc.get(PAGES_DOC_KEY)).toEqual(scene.doc.get(PAGES_DOC_KEY));
+    expect(pagesOf(result.back)).toEqual(pagesOf(scene));
   });
 
   it('gives every shape, container, pool, lane, and title the same box', () => {

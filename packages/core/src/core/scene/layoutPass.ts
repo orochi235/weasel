@@ -30,12 +30,25 @@ import { definesFrame, documentPose, type PoseSource, type PosedNode } from './e
 import { asRectPose } from './kitRegistry';
 import { samePoseValue } from './poseSnapshot';
 import { strategyView } from './strategyView';
-import type { LayoutFrame, NodeId } from './types';
+import type { LayoutFrame, Node, NodeId, Scene } from './types';
 
 /** What the pass reads a scene through. */
 export interface LayoutPassSource<TPose> extends PoseSource<TPose> {
   get(id: NodeId): (PosedNode<TPose> & { parent: NodeId | null }) | undefined;
+  /** The node itself, handed to a strategy as `LayoutContainer.node` and `LayoutChild.node`. */
+  node?(id: NodeId): Node<unknown, string, unknown> | undefined;
   readonly composition: PoseComposition<TPose>;
+}
+
+/** A scene as the pass reads it, handing each strategy its nodes. */
+export function sceneLayoutSource<TPose>(scene: Scene<unknown, string, TPose>): LayoutPassSource<TPose> {
+  return {
+    overrides: scene.overrides,
+    composition: scene.composition,
+    get: (id) => scene.get(id),
+    childrenOf: (id) => scene.childrenOf(id),
+    node: (id) => scene.get(id) as Node<unknown, string, unknown> | undefined,
+  };
 }
 
 /** How the pass measures and resizes poses, with every default filled. */
@@ -115,11 +128,9 @@ export function runLayoutPass<TPose>(
       (p, from, to) => frame.remap(p, from, to, containerId),
     );
     if (view === null) return null;
-    const children: LayoutChild<TPose>[] = source.childrenOf(containerId).map((cid) => ({
-      id: cid as string,
-      pose: view.toStrategy(world(cid)),
-    }));
-    return { ...view, container: { id: containerId as string, bounds: view.bounds }, children };
+    const children: LayoutChild<TPose>[] = source.childrenOf(containerId)
+      .map((cid) => ({ id: cid as string, pose: view.toStrategy(world(cid)), node: source.node?.(cid) }));
+    return { ...view, container: { id: containerId as string, bounds: view.bounds, node: source.node?.(containerId) }, children };
   };
   const apply = (
     containerId: NodeId,

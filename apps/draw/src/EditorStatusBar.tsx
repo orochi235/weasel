@@ -1,4 +1,4 @@
-import { type SelectionApi, useActiveToolContext, type View } from '@weasel-js/core';
+import { isPageStructure, type SelectionApi, useActiveToolContext, type View } from '@weasel-js/core';
 import { qty, zoom } from '@weasel-js/quantity';
 import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
 import { ThemeSwitcher } from '@weasel-js/ui/components/ThemeSwitcher';
@@ -31,7 +31,7 @@ export function EditorStatusBar({
   let groupCount = 0;
   for (const id of scene.renderOrder()) {
     const n = scene.get(id);
-    if (n && n.kind === 'group') groupCount++;
+    if (n && n.kind === 'group' && !isPageStructure(n)) groupCount++;
   }
   const paintLabel = (p: ActivePaint): string =>
     p === null ? 'none' : solidColorOf(p) ?? p.kind ?? 'solid';

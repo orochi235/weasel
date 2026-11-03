@@ -11,6 +11,8 @@ import { unionAABB } from '../geometry/unionBounds';
 import type { RectPose, SceneRegistry } from './types';
 import { CLIP_NOTHING, clipNothing } from './clipNothing';
 import { BOOLEAN_OF_CHILDREN, booleanOfChildren } from './booleanOfChildren';
+import { PAGE_RUN, PAGE_RUN_LAYOUT } from '../pages/pageRunLayout';
+import { PAGE_CLIP, pageClip } from '../pages/pageClip';
 
 /** Registry key for {@link unionOfChildren}. */
 export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
@@ -64,6 +66,7 @@ export function withKitRegistry<TPose, TData = unknown, TLayer extends string = 
     ...registry,
     clipFromPose: {
       [CLIP_NOTHING]: clipNothing,
+      [PAGE_CLIP]: pageClip as NonNullable<SceneRegistry<TPose, TData, TLayer>['clipFromPose']>[string],
       ...registry.clipFromPose,
     },
     derivePath: {
@@ -77,6 +80,10 @@ export function withKitRegistry<TPose, TData = unknown, TLayer extends string = 
         SceneRegistry<TPose, TData, TLayer>['derivePose']
       >[string],
       ...registry.derivePose,
+    },
+    layout: {
+      [PAGE_RUN]: PAGE_RUN_LAYOUT as unknown as NonNullable<SceneRegistry<TPose, TData, TLayer>['layout']>[string],
+      ...registry.layout,
     },
   };
 }

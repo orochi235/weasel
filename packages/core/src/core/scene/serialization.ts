@@ -76,6 +76,8 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (n.units !== undefined) out.units = n.units;
     if (n.clip !== undefined) out.clip = n.clip;
     if (n.consumesChildren === true) out.consumesChildren = true;
+    if (n.page !== undefined) out.page = n.page;
+    if (n.pageRun !== undefined) out.pageRun = n.pageRun;
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -174,6 +176,8 @@ function currentSpecs<TData, TLayer extends string, TPose>(
     if (n.units !== undefined) spec.units = n.units;
     if (n.clip !== undefined) spec.clip = n.clip;
     if (n.consumesChildren === true) spec.consumesChildren = true;
+    if (n.page !== undefined) spec.page = n.page;
+    if (n.pageRun !== undefined) spec.pageRun = n.pageRun;
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'

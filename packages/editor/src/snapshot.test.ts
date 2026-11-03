@@ -1,6 +1,8 @@
-import { asNodeId, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
+import { RECT_POSE_DESCRIPTOR, asNodeId, type PoseDescriptor, type RectPose, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
+import {
+  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
+} from './snapshot';
 
 // Regression for the reload bug where a loader filtered `kind === 'mark'` and dropped `parent`,
 // losing containers and nesting even though `toJSON()` persisted the full tree.
@@ -112,11 +114,85 @@ describe('docFromSnapshot', () => {
   const base = { version: 2 as const, systemLayers: [{ id: 'default' as const }], nodes: [] };
 
   it('reads the document values a snapshot carries', () => {
-    expect(docFromSnapshot({ ...base, doc: { 'core:pages': { pages: [] } } })).toEqual({ 'core:pages': { pages: [] } });
+    expect(docFromSnapshot({ ...base, doc: { 'app:paper': { size: 'a4' } } })).toEqual({ 'app:paper': { size: 'a4' } });
   });
 
   it('answers undefined for a snapshot written before document values, or a malformed one', () => {
     expect(docFromSnapshot(base)).toBeUndefined();
     expect(docFromSnapshot({ ...base, doc: [1] as never })).toBeUndefined();
+  });
+});
+
+describe('a snapshot holding core:pages', () => {
+  const legacy: SerializedScene<{ fill?: string }, 'default', RectPose> = {
+    version: 3,
+    systemLayers: [{ id: 'default' }],
+    nodes: [{ id: 'r', kind: 'mark', layer: 'default', pose: { x: 115, y: 10, width: 10, height: 10 }, data: { fill: '#000' } }],
+    doc: {
+      'core:pages': { pages: [{ id: 'a', width: 100, height: 50 }, { id: 'b', width: 100, height: 50 }], layout: { direction: 'row', gap: 10 } },
+      'app:other': 1,
+    },
+  };
+
+  it('loads its pages as page nodes, with each root on its page', () => {
+    const specs = nodeSpecsFromSnapshot(legacy);
+    const run = specs.find((s) => s.pageRun !== undefined)!;
+    expect(run).toBeDefined();
+    expect(specs.filter((s) => s.page !== undefined).map((s) => [s.id, s.parent])).toEqual([['a', run.id], ['b', run.id]]);
+    const r = specs.find((s) => s.id === asNodeId('r'))!;
+    expect(r.parent).toBe('b');
+    expect(r.pose).toMatchObject({ x: 5, y: 10 });
+    expect(r.data).toEqual({ fill: '#000' });
+  });
+
+  it('loads without the core:pages value, its other values kept', () => {
+    expect(docFromSnapshot(legacy)).toEqual({ 'app:other': 1 });
+  });
+
+  it('is read the same way twice', () => {
+    expect(nodeSpecsFromSnapshot(legacy)).toEqual(nodeSpecsFromSnapshot(legacy));
+    expect((legacy.doc as Record<string, unknown>)['core:pages']).toBeDefined();
+  });
+
+  it('places each root by the descriptor it is handed', () => {
+    // Measures every pose 100 to the left of where its rect says: the rect at x 115 reads as on page a.
+    const shifted: PoseDescriptor<unknown> = {
+      ...(RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>),
+      getBounds: (pose) => {
+        const p = pose as RectPose;
+        return { x: p.x - 100, y: p.y, width: p.width, height: p.height };
+      },
+    };
+    const r = nodeSpecsFromSnapshot(legacy, {}, undefined, { descriptor: shifted }).find((s) => s.id === asNodeId('r'))!;
+    expect(r.parent).toBe('a');
+  });
+
+  it('converts once: a converted snapshot comes back as it is', () => {
+    const once = adoptSnapshotPages(legacy);
+    expect(adoptSnapshotPages(once)).toBe(once);
+    expect(adoptSnapshotPages(adoptSnapshotPages(legacy))).toEqual(once);
+  });
+});
+
+describe('a snapshot saved without pages', () => {
+  const plain: SerializedScene<{ fill?: string }, 'default', RectPose> = {
+    version: 3,
+    systemLayers: [{ id: 'default' }],
+    nodes: [{ id: 'r', kind: 'mark', layer: 'default', pose: { x: 500, y: 10, width: 10, height: 10 }, data: {} }],
+  };
+  const pages = { pages: [{ id: 'p', width: 100, height: 50 }] };
+
+  it('gets the fallback pages it is given, each root on one, and is left alone without them', () => {
+    const specs = nodeSpecsFromSnapshot(plain, {}, undefined, { pages });
+    expect(specs.filter((s) => s.page !== undefined).map((s) => s.id)).toEqual(['p']);
+    expect(specs.find((s) => s.id === asNodeId('r'))!).toMatchObject({ parent: 'p', pose: { x: 99 } });
+    expect(adoptSnapshotPages(plain)).toBe(plain);
+  });
+
+  it('rebuilds the tree, as a core:pages one does, and a paged one does not', () => {
+    expect([snapshotRebuildsTree(plain), snapshotRebuildsTree(plain, { pages })]).toEqual([false, true]);
+    const paged = adoptSnapshotPages(plain, {}, { pages });
+    expect(snapshotRebuildsTree(paged, { pages })).toBe(false);
+    expect(snapshotRebuildsTree({ nodes: [], doc: { 'core:pages': pages } })).toBe(true);
   });
 });

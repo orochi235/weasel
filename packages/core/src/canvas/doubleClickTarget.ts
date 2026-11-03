@@ -7,6 +7,8 @@ export interface DoubleClickTree {
   kindOf: (id: string) => string | undefined;
   /** The entered group, or null at the scene root. */
   scope: string | null;
+  /** The node itself, read for whether it is a page or the page run, which stops the walk. */
+  getNode: (id: string) => object | undefined;
 }
 
 /**
@@ -16,7 +18,7 @@ export interface DoubleClickTree {
  */
 export function doubleClickTarget(hitId: string, tree: DoubleClickTree): string {
   return pressTarget(
-    { getParent: tree.parentOf, getNode: (id) => ({ kind: tree.kindOf(id) }) },
+    { getParent: tree.parentOf, getNode: (id) => ({ ...tree.getNode(id), kind: tree.kindOf(id) }) },
     hitId,
     tree.scope,
   );

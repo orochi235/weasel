@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { PAGES_DOC_KEY, fitViewToBounds, layoutPages, type PagesDoc } from '@weasel-js/core';
+import { fitViewToBounds, layoutPages } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { isDiagramBody } from '@weasel-js/diagram';
@@ -27,10 +27,15 @@ afterEach(() => {
   localStorage.clear();
 });
 
-interface Saved { nodes: { kind: string; data: unknown; pose: { x: number } }[]; doc?: Record<string, unknown> }
-const saved = (): Saved => JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as Saved;
-const pageIds = () => (saved().doc?.[PAGES_DOC_KEY] as PagesDoc | undefined)?.pages.map((p) => p.id);
-const bodyX = () => saved().nodes.find(isDiagramBody)?.pose.x;
+interface SavedNode { id: string; kind: string; parent?: string; page?: unknown; data: unknown; pose: { x: number } }
+const saved = (): { nodes: SavedNode[] } => JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as { nodes: SavedNode[] };
+const pageIds = () => saved().nodes.filter((n) => n.page !== undefined).map((n) => n.id);
+/** The saved body's world x: its pose is in its page's frame, and the page's in the run's, which sits at the origin. */
+const bodyX = () => {
+  const { nodes } = saved();
+  const body = nodes.find(isDiagramBody);
+  return body && body.pose.x + (nodes.find((n) => n.id === body.parent)?.pose.x ?? 0);
+};
 const tabs = () => [...document.querySelectorAll<HTMLElement>('[role="tab"]')];
 const lit = () => tabs().findIndex((t) => t.getAttribute('aria-selected') === 'true');
 

@@ -1,5 +1,6 @@
 import type { UnitScope } from '@weasel-js/quantity';
 import type { NodeClip, SystemLayerSpec } from './types';
+import type { PageInfo, PageRunInfo } from '../pages/pageNodes';
 
 /** One layer as it appears in a snapshot. A snapshot written before layer
  *  kind was serialized carries neither field, and loads as a system layer —
@@ -63,6 +64,10 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   clip?: NodeClip;
   /** Mirrors `SceneNode.consumesChildren`. Omitted when the node draws its children. */
   consumesChildren?: boolean;
+  /** Mirrors `SceneNode.page`. Omitted on a node that is not a page. */
+  page?: PageInfo;
+  /** Mirrors `SceneNode.pageRun`. Omitted on a node that is not the page run. */
+  pageRun?: PageRunInfo;
 }
 
 /** A node as version 1 saves wrote it: the kinds were `leaf` and `container`. */

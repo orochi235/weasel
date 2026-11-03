@@ -23,6 +23,7 @@ function commit(extras: unknown, bounds = { x: 0, y: 0, width: 100, height: 100 
     renderOrder: () => [],
     get: () => undefined,
     mintId: () => 'n',
+    roots: [],
   } as unknown as Scene<unknown, string, unknown>;
   let reg!: DepRegistry;
   function Wire() {

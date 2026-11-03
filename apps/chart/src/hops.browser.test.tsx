@@ -8,7 +8,7 @@ import { createScene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, HOPS_DOC_KEY } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
-import { CHART_LAYERS, CHART_REGISTRY, chartDoc, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
+import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { CHART_SCENE_KEY, chartToJson } from './chartPersistence';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
@@ -28,7 +28,7 @@ const connector = (id: string, from: string, to: string, color: string) => ({
 /** A blue connector down x = 450 from y = 160 to 500, and a red one drawn over it along y = 330 from x = 300 to 600. */
 function seedChart(): void {
   const scene = createScene<ChartData, ChartLayer, ChartPose>({
-    systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, doc: chartDoc(),
+    systemLayers: CHART_LAYERS, registry: CHART_REGISTRY,
     initial: [
       box('a', 200, 300), box('b', 600, 300), box('c', 400, 100), box('d', 400, 500),
       connector('cd', 'c', 'd', '#0000ff'), connector('ab', 'a', 'b', '#ff0000'),

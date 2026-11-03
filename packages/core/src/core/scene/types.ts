@@ -22,6 +22,8 @@ import type { RegisteredOp } from './registeredOp';
 import type { SpecsFromSerializedOptions } from './serialization';
 import type { RectPose } from '../geometry/rectPose';
 import type { SceneRegistry } from './sceneRegistry';
+import type { PageInfo, PageRunInfo } from '../pages/pageNodes';
+import type { StatedNodeFields } from './statedFields';
 export type { RectPose, RegisteredOp, SceneArrivalHandler, SceneOptions, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
@@ -153,6 +155,10 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  worth in the enclosing scope's, and the magnification they are drawn at (`drawnAt`). It covers the
    *  children, not the node; `sceneUnitScopes` reads the chain. */
   units?: UnitScope;
+  /** Makes this node a page: a sheet whose pose is its rect, framing what is on it. A child of the page run. */
+  page?: PageInfo;
+  /** Makes this root the page run: the container that lays out its child pages (`pageRunLayout`). */
+  pageRun?: PageRunInfo;
 }
 
 /** A node that is drawn and picked as one thing — a shape, a label, an image.
@@ -176,8 +182,9 @@ export type Node<TData, TLayer extends string, TPose = RectPose> =
   | GroupNode<TData, TLayer, TPose>;
 
 /** What `Scene.add` needs to mint a node. Everything except the id is
- *  required; the id is generated unless one is supplied. */
-export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
+ *  required; the id is generated unless one is supplied. The stated fields
+ *  (`pickable`, `hidden`, `units`, `page`, …) mirror the node's. */
+export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> extends StatedNodeFields {
   kind: 'mark' | 'group';
   layer: TLayer;
   pose: TPose;
@@ -186,18 +193,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   index?: number;
   /** Explicit id wins over the Scene's `generateId` and the kit default. */
   id?: NodeId;
-  /** Mirrors `SceneNode.pickable`. Omit for the default, which is pickable. */
-  pickable?: boolean;
-  /** Mirrors `SceneNode.hidden`. */
-  hidden?: boolean;
-  /** Mirrors `SceneNode.locked`. */
-  locked?: boolean;
   /** Attach a clip-path function to the node; mirrors `SceneNode.clipFromPose`. */
   clipFromPose?: ClipFromPoseFn<TPose>;
-  /** Mirrors `SceneNode.clip`. */
-  clip?: NodeClip;
-  /** Mirrors `SceneNode.consumesChildren`. */
-  consumesChildren?: boolean;
   /** Mirrors `SceneNode.copiesFromPose`. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.dependsOn`. */
@@ -209,8 +206,6 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   derivePose?: DerivePoseFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.layout`. */
   layout?: LayoutStrategy<TPose>;
-  /** Mirrors `SceneNode.units`. */
-  units?: UnitScope;
 }
 
 /**

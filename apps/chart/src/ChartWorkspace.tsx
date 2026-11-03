@@ -15,9 +15,9 @@ import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
 import { ImportExportCommands } from './importExport';
 import {
-  CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
+  CHART_LAYERS, CHART_PAGE, CHART_PAGES, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
 } from './chartDocument';
-import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
+import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartHistory, loadChartSession } from './chartPersistence';
 import { NewChart } from './NewChartDialog';
 import { PlotDataSection } from './PlotDataSection';
 import { ChartPageStrip } from './pages/ChartPageStrip';
@@ -37,7 +37,7 @@ import { useChartSnap } from './useChartSnap';
 import './workspace.css';
 
 // Module consts: SceneCanvas keys its wiring off these props' identity.
-const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
+const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY, loadHistory: loadChartHistory, pages: CHART_PAGES };
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
 /** Delete takes a selected sequence part out of its sequence's data, and anything else out of the scene. */
 const ACTIONS = { delete: createSequenceDeleteAction({ measure: rendererMeasure }) };

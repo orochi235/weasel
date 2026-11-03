@@ -6,8 +6,8 @@ import {
 import type { PrefGroup } from '@weasel-js/prefs';
 import { downloadBlob, pickFile, reportFileWarnings, menuRun } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
-import { chartDoc, type ChartScene } from './chartDocument';
-import { replaceChart } from './chartPersistence';
+import type { ChartScene } from './chartDocument';
+import { replaceChartWithDocument } from './chartPersistence';
 import { can } from './menuBar';
 import type { ChartPages } from './pages/useChartPages';
 import { CHART_DEFAULT_THEME, chartThemeOf } from './theme/themeCommands';
@@ -29,8 +29,7 @@ export const FORMAT_EXPORT_RUN: PrefGroup = menuRun(FORMAT_EXPORT_ACTIONS);
 export async function importChart(scene: ChartScene, file: { name: string; text(): Promise<string> }): Promise<readonly string[]> {
   const { document, warnings } = await readDocument(await file.text(), file.name);
   const theme = diagramThemeFrom(document.theme, CHART_DEFAULT_THEME);
-  const { specs, doc } = documentSpecs(document, { layer: 'shapes', theme, measure: rendererMeasure });
-  replaceChart(scene, { specs, doc: chartDoc(doc) }, 'Import');
+  replaceChartWithDocument(scene, documentSpecs(document, { layer: 'shapes', theme, measure: rendererMeasure }), 'Import');
   return warnings;
 }
 

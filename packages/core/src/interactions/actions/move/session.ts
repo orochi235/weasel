@@ -16,6 +16,8 @@ import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { moveSources } from '../selectionSubtree';
 import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
+import { pageDrop } from './behaviors/pageDrop';
+import { isPaged } from 'core/pages/pageNodes';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 import { beginDragSnap, type DragSnap } from './dragSnap';
@@ -50,7 +52,8 @@ export interface MoveSession extends DragSnap {
   readonly descriptorOf: (id: NodeId | string) => PoseDescriptor<unknown>;
   readonly pc: PoseComposition<unknown>;
   /** The binding's behaviors, then the ones the action adds: a layout drop
-   *  when the `layout` dep is present, and reparent-on-drop. */
+   *  when the `layout` dep is present, a page drop in a paged scene, and
+   *  reparent-on-drop. */
   readonly behaviors: readonly MoveBehavior<unknown>[];
   /** Reused across the drag; behaviors mutate its `scratch`. */
   readonly gestureCtx: GestureContext<unknown>;
@@ -96,7 +99,7 @@ export interface MoveGesture {
 function verdictOf(
   canDropInto: CanDropIntoDep | undefined,
   ids: readonly NodeId[],
-  scene: { get(id: NodeId): { kind: string } | undefined },
+  scene: Scene<unknown, string, unknown>,
 ): (parent: NodeId) => DropVerdict {
   const roots = ids as readonly string[];
   return (parent) => childVerdict(scene, parent, roots, canDropInto);
@@ -136,12 +139,14 @@ export function beginMove(
   const { carried, frames } = captureFrames(scene, ids, startPoses);
 
   // Everything a move does beyond translating is a behavior: the binding's
-  // own, then the layout drop, then reparent-on-drop. On release the first to
+  // own, then the layout drop, then, in a paged scene, the page drop, then
+  // reparent-on-drop. On release the first to
   // answer owns the commit, so each preempts the ones after it.
   const gesture: MoveGesture = { session: () => session, frame };
   const behaviors: MoveBehavior<unknown>[] = [
     ...((opts?.behaviors ?? []) as MoveBehavior<unknown>[]),
     ...(layout ? [layoutDrop(gesture)] : []),
+    ...(isPaged(scene) ? [pageDrop(gesture)] : []),
     reparentOnDrop(gesture),
   ];
   const lifecycle = readGestureLifecycle(params, 'Move', behaviors);

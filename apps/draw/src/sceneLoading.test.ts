@@ -1,51 +1,95 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { RIGID_POSE_COMPOSITION, composeWorldPose, createScene, type RectPose } from '@weasel-js/core';
+import {
+  RIGID_POSE_COMPOSITION, SCENE_HISTORY_FORM, composeWorldPose, createScene, isPageStructure, pagesOf, type RectPose,
+} from '@weasel-js/core';
 import V2_CONTAINERS from './fixtures/v2-containers.scene.json';
 import { DOC_KEY } from './docPersistence';
 import { loadInitial, loadInitialDoc, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
 afterEach(() => localStorage.clear());
 
+const LETTER = { width: 816, height: 1056 };
+const node = (id: string, kind: string, x = 0) => ({ id, kind, layer: 'default', pose: { x, y: 0, width: 10, height: 10 }, data: {} });
+const save = (json: object) => localStorage.setItem(LS_KEY, JSON.stringify({ systemLayers: [{ id: 'default' }], ...json }));
+/** What `loadInitial` gives, as a scene. */
+const loaded = () => createScene({ systemLayers: [{ id: 'default' }], initial: loadInitial() as never });
+/** Every spec but the page run and the pages. */
+const content = () => loadInitial().filter((s) => !isPageStructure(s));
+
 describe('draw document values', () => {
-  it('starts a fresh drawing as one Letter page', () => {
-    expect(loadInitialDoc()).toEqual({ 'core:pages': { pages: [{ id: 'page-1', width: 816, height: 1056 }] } });
+  it('has none for a fresh drawing, and none of its pages for a saved one', () => {
+    expect(loadInitialDoc()).toBeUndefined();
+    save({ version: 2, nodes: [], doc: { 'core:pages': { pages: [{ id: 'page-1', ...LETTER }] }, units: 'mm' } });
+    expect(loadInitialDoc()).toEqual({ units: 'mm' });
+  });
+});
+
+describe('draw pages', () => {
+  it('starts a fresh drawing as one Letter page, the welcome rectangle on it', () => {
+    const scene = loaded();
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', ...LETTER }]);
+    expect(scene.get('starter-1' as never)).toMatchObject({ parent: 'page-1', pose: { x: 80, y: 80 } });
   });
 
-  it('brings back the pages a drawing saved', () => {
-    const pages = { pages: [{ id: 'page-1', width: 794, height: 1123 }, { id: 'page-2', name: 'Back', width: 816, height: 1056 }] };
-    localStorage.setItem(LS_KEY, JSON.stringify({ version: 2, nodes: [], doc: { 'core:pages': pages } }));
-    expect(loadInitialDoc()['core:pages']).toEqual(pages);
+  it('brings back the pages a drawing saved as a document value, each root on its page', () => {
+    const pages = [{ id: 'page-1', width: 794, height: 1123 }, { id: 'page-2', name: 'Back', ...LETTER }];
+    save({ version: 2, nodes: [node('m', 'mark', 794 + 40 + 5)], doc: { 'core:pages': { pages } } });
+    const scene = loaded();
+    expect(pagesOf(scene)?.pages).toEqual(pages);
+    expect(scene.get('m' as never)).toMatchObject({ parent: 'page-2', pose: { x: 5 } });
   });
 
   it('opens a drawing saved before pages as one page of the paper size its settings kept', () => {
-    localStorage.setItem(LS_KEY, JSON.stringify({ version: 2, nodes: [] }));
+    save({ version: 2, nodes: [node('m', 'mark', 5)] });
     localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'old.svg', backgroundColor: '#fff', paperSize: 'legal' }));
-    expect(loadInitialDoc()['core:pages']).toEqual({ pages: [{ id: 'page-1', width: 816, height: 1344 }] });
+    const scene = loaded();
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 816, height: 1344 }]);
+    expect(scene.get('m' as never)).toMatchObject({ parent: 'page-1', pose: { x: 5 } });
+  });
+
+  it('opens a drawing saved with page nodes as it was', () => {
+    const scene = loaded();
+    save(scene.toJSON());
+    const tree = (specs: readonly { id?: string; parent?: string | null }[]) => specs.map((n) => [n.id, n.parent ?? null]);
+    expect(tree(loadInitial())).toEqual(tree(scene.toJSON().nodes));
+    expect(loaded().get('starter-1' as never)).toMatchObject({ parent: 'page-1', pose: { x: 80 } });
+  });
+
+  it('drops the undo stack saved beside a drawing whose pages were not yet nodes, and keeps one beside one whose were', () => {
+    const history = JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] });
+    save({ version: 3, nodes: [] });
+    localStorage.setItem(SCENE_HISTORY_KEY, history);
+    loadInitial();
+    expect(loadSceneHistory()).toBeNull();
+    expect(localStorage.getItem(SCENE_HISTORY_KEY)).toBeNull();
+
+    save(loaded().toJSON());
+    localStorage.setItem(SCENE_HISTORY_KEY, history);
+    loadInitial();
+    expect(loadSceneHistory()).not.toBeNull();
   });
 });
 
 describe('draw scene loading', () => {
   it('starts with the welcome rectangle when nothing, or not a drawing, is saved', () => {
-    expect(loadInitial().map((s) => s.id)).toEqual(['starter-1']);
+    expect(content().map((s) => s.id)).toEqual(['starter-1']);
     localStorage.setItem(LS_KEY, JSON.stringify({ version: 4, nodes: [] }));
-    expect(loadInitial().map((s) => s.id)).toEqual(['starter-1']);
+    expect(content().map((s) => s.id)).toEqual(['starter-1']);
   });
 
   it('loads a saved drawing', () => {
     localStorage.setItem(LS_KEY, JSON.stringify({ version: 1, nodes: [] }));
-    expect(loadInitial()).toEqual([]);
+    expect(content()).toEqual([]);
   });
 
   it('loads a version 1 drawing with its containers as groups and its leaves as marks', () => {
-    const node = (id: string, kind: string) => ({ id, kind, layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     localStorage.setItem(LS_KEY, JSON.stringify({ version: 1, nodes: [node('c', 'container'), node('l', 'leaf')] }));
-    expect(loadInitial().map((s) => s.kind)).toEqual(['group', 'mark']);
+    expect(content().map((s) => s.kind)).toEqual(['group', 'mark']);
   });
 
   it('loads a version 2 drawing as saved', () => {
-    const node = (id: string, kind: string) => ({ id, kind, layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    localStorage.setItem(LS_KEY, JSON.stringify({ version: 2, nodes: [node('g', 'group'), node('m', 'mark')] }));
-    expect(loadInitial().map((s) => s.kind)).toEqual(['group', 'mark']);
+    save({ version: 2, nodes: [node('g', 'group'), node('m', 'mark')] });
+    expect(content().map((s) => s.kind)).toEqual(['group', 'mark']);
   });
 
   it('opens a version 2 drawing with every node where it drew, each child now in its container\'s frame', () => {

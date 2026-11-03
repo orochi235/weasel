@@ -34,16 +34,23 @@ them: what a menu asks on every render. Edges whose ends are on different pages 
 off-page tags.
 
 ```ts
-import { documentFromScene, documentSpecs } from '@weasel-js/diagram-formats';
+import { addDocumentScene, documentFromScene, documentSpecs } from '@weasel-js/diagram-formats';
 
 const doc = documentFromScene(scene);
-const { specs, doc: values } = documentSpecs(doc, { layer: 'shapes', measure });
-// values holds `core:pages` and `diagram:theme`; replace the scene's nodes with specs.
+addDocumentScene(scene, documentSpecs(doc, { layer: 'shapes', measure }), 'Import');
 ```
 
+`documentSpecs` answers with `specs` in world space, the `pages` they sit on,
+and the `doc` values (`diagram:theme`, the diagram type). `addDocumentScene(scene,
+drawn, label)` makes the scene hold that and nothing else, in one undo entry:
+what it held is removed, its document values become `drawn.doc`'s (any `drawn`
+lacks are cleared), its pages become `drawn.pages`, and each node goes into the
+page under it, in that page's frame (`addOnPages`, over core's `placeOnPages`).
+
 `documentFromScene(scene, { theme })` puts each shape, container, pool, and
-group on the page its outermost container overlaps most, or the first page
-when it overlaps none; a scene with no pages gets one page around everything.
+group on the page node it is under; one on the pasteboard goes on the page its
+outermost container overlaps most, or the nearest one when it overlaps none. A
+scene with no pages gets one page around everything.
 It keeps the colors the scene's theme would not give: those the author set by
 hand (the trait's `ownStyle`) and any that differ from the theme, as `colors`.
 A route or a port that layout chose, and an avoiding connector's computed
@@ -53,12 +60,12 @@ a field while its text still starts with its label. `theme` is what colors are
 compared against when the scene names none. A page holding a plot root (one
 `plotSpecs` made) is a plot page of the spec the root holds, edits included;
 anything else on that page is left out. A graph page takes the `notation`, `layout`, and
-`direction` its `core:pages` page keeps under `meta['diagram:graph']`
+`direction` its page node keeps under `meta['diagram:graph']`
 (`GRAPH_PAGE_META_KEY`, read with `graphPageSettingsOf`), where `documentSpecs`
 writes them.
 
 `documentSpecs(doc, { layer, theme, measure })` is the way back. Pages are
-placed with core's `layoutPages`, as `core:pages` places them. A page where a
+placed with core's `layoutPages`, as a scene's page run places them. A page where a
 node has no `at`, or a pool has no box, is laid out first with the layout its
 `layout` names (`{ name, options }`, a key of `LAYOUTS`, default `layered`), running the way its `direction` says, with whatever it places pinned; the
 result is kept as places and routes, a page that placed nothing is moved to sit

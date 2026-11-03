@@ -13,6 +13,7 @@ import type { PointerContextValue } from '@weasel-js/routing/react';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { translateEach } from '../selectionSubtree';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -67,7 +68,7 @@ function alignSelection(
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
   finish?: TransformFinisher,
 ): void {
-  const ids = selection.get();
+  const ids = withoutPageStructure(scene, selection.get());
   const frame = scenePoseFrame(scene);
   const boxes = boxesOver(frame);
   const poses = ids.map((id) => frame.world(id));

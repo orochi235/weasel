@@ -5,6 +5,7 @@
 import {
   boundsOfPath,
   composeWorldPose,
+  contentRoots,
   derivedDepOf,
   derivedPartsOf,
   documentOf,
@@ -109,8 +110,10 @@ export function pageSvgNodes(live: PageExportScene, page: PageRect): SvgNode[] {
   };
   const pathOf = (node: SceneNode) => (node.kind === 'mark' ? derivedDepOf(scene, node.id)?.path ?? null : null);
 
+  // The page run and pages frame what is on them; a page's export writes that content, not the frames.
+  const tops = contentRoots(scene);
   const tree: SvgKitTree = {
-    roots: scene.layers.flatMap((l) => scene.roots.filter((id) => scene.get(id)?.layer === l.id)),
+    roots: scene.layers.flatMap((l) => tops.filter((id) => scene.get(id)?.layer === l.id)),
     childrenOf: (id) => scene.childrenOf(id as never),
     get(id) {
       const node = scene.get(id as never);

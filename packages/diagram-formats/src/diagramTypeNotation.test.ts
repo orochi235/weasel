@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PAGES_DOC_KEY } from '@weasel-js/core';
+import { setPages } from '@weasel-js/core';
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_NOTATION, type DiagramTypeDoc } from '@weasel-js/diagram';
 import type { DiagramDocument, GraphPage } from './document';
 import { documentFromScene } from './fromScene';
@@ -26,7 +26,7 @@ describe('a chart\'s diagram type and its pages\' notation', () => {
   it('lets a page\'s own notation win over its chart\'s type', () => {
     const { scene } = authoredScene('umlClass');
     const pages = { pages: [{ id: 'p', width: 800, height: 600, meta: { [GRAPH_PAGE_META_KEY]: { notation: FLOWCHART_NOTATION } } }] };
-    scene.batch('Pages', () => scene.doc.set(PAGES_DOC_KEY, pages));
+    setPages(scene, pages, 'Pages');
     const page = documentFromScene(scene).pages[0] as GraphPage;
     expect(page.notation).toBeUndefined();
     expect(DIAGRAM_MERMAID.write!(documentFromScene(scene)).text).toMatch(/^flowchart/m);

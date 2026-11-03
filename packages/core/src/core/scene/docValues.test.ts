@@ -7,10 +7,10 @@ const LAYERS = [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }]
 describe('scene document values', () => {
   it('sets, reads, and lists a value', () => {
     const s = makeScene();
-    expect(s.doc.get('core:pages')).toBeUndefined();
-    s.doc.set('core:pages', { pages: [{ id: 'a', width: 10, height: 20 }] });
-    expect(s.doc.get('core:pages')).toEqual({ pages: [{ id: 'a', width: 10, height: 20 }] });
-    expect(s.doc.keys()).toEqual(['core:pages']);
+    expect(s.doc.get('test:sheets')).toBeUndefined();
+    s.doc.set('test:sheets', { pages: [{ id: 'a', width: 10, height: 20 }] });
+    expect(s.doc.get('test:sheets')).toEqual({ pages: [{ id: 'a', width: 10, height: 20 }] });
+    expect(s.doc.keys()).toEqual(['test:sheets']);
   });
 
   it('undoes and redoes a set, and a removal', () => {
@@ -66,16 +66,16 @@ describe('scene document values', () => {
   it('round-trips through toJSON, sceneFromJSON, and loadState', () => {
     const s = makeScene();
     expect(s.toJSON()).not.toHaveProperty('doc');
-    s.doc.set('core:pages', { pages: [] });
+    s.doc.set('test:sheets', { pages: [] });
     const json = JSON.parse(JSON.stringify(s.toJSON()));
-    expect(json.doc).toEqual({ 'core:pages': { pages: [] } });
+    expect(json.doc).toEqual({ 'test:sheets': { pages: [] } });
 
-    expect(sceneFromJSON<Data, Layer, typeof POSE>(json).doc.get('core:pages')).toEqual({ pages: [] });
+    expect(sceneFromJSON<Data, Layer, typeof POSE>(json).doc.get('test:sheets')).toEqual({ pages: [] });
 
     const other = makeScene();
     other.doc.set('stale', true);
     other.loadState(json);
-    expect(other.doc.keys()).toEqual(['core:pages']);
+    expect(other.doc.keys()).toEqual(['test:sheets']);
     expect(other.canUndo()).toBe(false);
   });
 

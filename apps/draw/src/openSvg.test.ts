@@ -1,18 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asNodeId, createScene, PAGES_DOC_KEY, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
+import { asNodeId, createScene, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { importSvgText, openSvgFile, openSvgText } from './openSvg';
+import { contentRoots } from '@weasel-js/core';
+import { drawScene } from './testScenes';
 import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 
 function sceneWithOneShape() {
   const legal = { width: 816, height: 1344 };
-  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
-    systemLayers: [{ id: 'default' }],
-    doc: { [PAGES_DOC_KEY]: { pages: [{ id: 'page-1', ...legal }, { id: 'page-2', ...legal }] } },
-  });
+  const scene = drawScene([{ id: 'page-1', ...legal }, { id: 'page-2', ...legal }]);
   scene.add({
-    kind: 'mark', layer: 'default', id: asNodeId('old'),
+    kind: 'mark', layer: 'default', id: asNodeId('old'), parent: asNodeId('page-1'),
     pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
   });
@@ -28,20 +27,29 @@ describe('openSvgText', () => {
     const scene = sceneWithOneShape();
     openSvgText(scene, svg(TWO), 'art.svg');
     expect(scene.get(asNodeId('old'))).toBeUndefined();
-    expect(scene.roots).toHaveLength(2);
-    expect(scene.get(scene.roots[0])!.kind).toBe('group');
-    expect(scene.childrenOf(scene.roots[0])).toHaveLength(1);
+    expect(contentRoots(scene)).toHaveLength(2);
+    expect(scene.get(contentRoots(scene)[0])!.kind).toBe('group');
+    expect(scene.childrenOf(contentRoots(scene)[0])).toHaveLength(1);
     expect(scene.historyEntries().at(-1)!.label).toBe('Open');
 
     scene.undo();
-    expect(scene.roots).toEqual([asNodeId('old')]);
+    expect(contentRoots(scene)).toEqual([asNodeId('old')]);
+  });
+
+  it('replaces locked content and a locked page', () => {
+    const scene = sceneWithOneShape();
+    scene.setLocked(asNodeId('old'), true);
+    scene.setLocked(asNodeId('page-2'), true);
+    expect(() => openSvgText(scene, svg(TWO), 'art.svg')).not.toThrow();
+    expect(scene.get(asNodeId('old'))).toBeUndefined();
+    expect(contentRoots(scene)).toHaveLength(2);
   });
 
   it('keeps hidden content, hidden, so an exported hidden node opens as it was', () => {
     const scene = sceneWithOneShape();
     openSvgText(scene, svg('<g display="none"><rect x="1" y="1" width="5" height="5"/></g><rect x="9" y="9" width="5" height="5" display="none"/>'), 'a.svg');
-    expect(scene.roots.map((id) => scene.get(id)!.hidden)).toEqual([true, true]);
-    expect(scene.isHidden(scene.childrenOf(scene.roots[0])[0])).toBe(true);
+    expect(contentRoots(scene).map((id) => scene.get(id)!.hidden)).toEqual([true, true]);
+    expect(scene.isHidden(scene.childrenOf(contentRoots(scene)[0])[0])).toBe(true);
   });
 
   it('names the document after the picked file', () => {
@@ -81,13 +89,13 @@ describe('a clipped group', () => {
   it('opens as a group declaring and holding its clip', () => {
     const scene = sceneWithOneShape();
     openSvgText(scene, svg(CLIPPED), 'a.svg');
-    expect(scene.get(scene.roots[0])).toMatchObject({ kind: 'group', clip: 'outline', data: clip });
+    expect(scene.get(contentRoots(scene)[0])).toMatchObject({ kind: 'group', clip: 'outline', data: clip });
   });
 
   it('imports as a group declaring and holding its clip', () => {
     const scene = sceneWithOneShape();
     importSvgText(scene, svg(CLIPPED));
-    expect(scene.get(scene.roots[1])).toMatchObject({ kind: 'group', clip: 'outline', data: clip });
+    expect(scene.get(contentRoots(scene)[1])).toMatchObject({ kind: 'group', clip: 'outline', data: clip });
   });
 });
 
@@ -116,7 +124,7 @@ describe('Save then Open: a mark with children', () => {
   const shape = (scene: Drawn) => {
     const order: NodeId[] = [];
     const walk = (id: NodeId) => { order.push(id); scene.childrenOf(id).forEach(walk); };
-    scene.roots.forEach(walk);
+    contentRoots(scene).forEach(walk);
     return order.map((id) => {
       const n = scene.get(id)!;
       return [n.kind, n.parent === null ? -1 : order.indexOf(n.parent)];
@@ -129,7 +137,7 @@ describe('Save then Open: a mark with children', () => {
     openSvgText(reopened, await sceneToSvgString(saved, PAGE), 'page.svg');
     expect(shape(reopened)).toEqual(shape(saved));
     expect(shape(reopened)).toEqual([['group', -1], ['mark', 0], ['mark', 1], ['mark', 1]]);
-    const mark = reopened.get(reopened.childrenOf(reopened.roots[0])[0])!;
+    const mark = reopened.get(reopened.childrenOf(contentRoots(reopened)[0])[0])!;
     expect(mark.data.fill).toMatchObject({ paint: { color: '#ff0000' } });
     expect(mark.clip).toBe(clip);
     expect(reopened.get(reopened.childrenOf(mark.id)[0])!.data.fill).toMatchObject({ paint: { color: '#0000ff' } });
@@ -140,12 +148,12 @@ describe('importSvgText', () => {
   it('adds the file to the document, as one undo entry labeled Import SVG', () => {
     const scene = sceneWithOneShape();
     importSvgText(scene, svg(TWO));
-    expect(scene.roots).toHaveLength(3);
-    expect(scene.roots[0]).toBe(asNodeId('old'));
+    expect(contentRoots(scene)).toHaveLength(3);
+    expect(contentRoots(scene)[0]).toBe(asNodeId('old'));
     expect(scene.historyEntries().at(-1)!.label).toBe('Import SVG');
 
     scene.undo();
-    expect(scene.roots).toEqual([asNodeId('old')]);
+    expect(contentRoots(scene)).toEqual([asNodeId('old')]);
   });
 });
 
@@ -184,7 +192,7 @@ describe('openSvgFile', () => {
     await openSvgFile(t);
     expect(t.leaveMode).toHaveBeenCalledOnce();
     expect(t.scene.get(asNodeId('old'))).toBeUndefined();
-    expect(t.scene.roots).toHaveLength(2);
+    expect(contentRoots(t.scene)).toHaveLength(2);
     expect(t.setFilename).toHaveBeenCalledWith('art.svg');
     expect(pagesOf(t.scene)?.pages[0]).toMatchObject({ width: 794, height: 1123 });
     expect(t.setBackgroundColor).toHaveBeenCalledWith('#ffffff');
@@ -195,7 +203,7 @@ describe('openSvgFile', () => {
     pick(null);
     const t = target();
     await openSvgFile(t);
-    expect(t.scene.roots).toEqual([asNodeId('old')]);
+    expect(contentRoots(t.scene)).toEqual([asNodeId('old')]);
     expect(t.setFilename).not.toHaveBeenCalled();
     expect(t.showFirstPage).not.toHaveBeenCalled();
     expect(t.leaveMode).not.toHaveBeenCalled();

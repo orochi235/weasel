@@ -594,20 +594,25 @@ Returned command trees must be treated as immutable: a cached tree is handed to 
 
 ## Page
 
-A document's pages are rects in one world space over one scene, so one view, one history, and one selection serve
-all of them (`packages/core/src/core/pages/`). `layoutPages` places a page list in order, `pageOfBounds` says which
-page an object is on (the one it overlaps most; one in the gaps is on none), `pageInView` which one a view mostly
-shows, `pagesLayer` paints the sheets, and `fitViewToPage` frames one.
+A paged document is one scene whose pages are nodes, so one view, one history, and one selection serve all of
+them (`packages/core/src/core/pages/`). The **page run** is a root group laid out by `pageRunLayout`, its pages in a
+column or a row with a gap; each **page** is a group under it whose pose is its rect, which frames what is on it
+(local coordinates, origin at its top-left) and clips it (`pageClip`). What is on a page is its child: membership is
+the tree. `createPageRun` makes a scene paged, `isPaged` and `pageRunOf` ask whether it is, `pageOfNode` names the
+page a node is under, and [taxonomy.md](./taxonomy.md#page) says how pages, followers, the pasteboard and paging
+relate.
 
-The page list itself is a document value under `core:pages` (see
-[scene-serialization.md](./scene-serialization.md#document-values)), a `PagesDoc` of pages and their layout options,
-read with `pagesOf` and `placedPagesOf`. `setPages` replaces it and moves each page's root nodes by however far
-their page moved, in one undo entry, so what is on a page stays put on that page; a node that derives from others
-follows them instead. `addPage`, `removePage` (which deletes what is on the page, and what derives from that),
-`movePage`, `resizePage`, and `renamePage` are built on it. A page's `meta` holds what other packages keep on it, each
-under its owner's key (diagram-formats keeps a graph page's notation and layout under `'diagram:graph'`); every edit
-carries it with the page. `PageTabs` in `@weasel-js/ui` is a strip of tabs over
-any page list; weaselchart uses all of it.
+The page edits keep their names over the nodes: `pagesOf` and `placedPagesOf` read the run as a page list and its
+layout, `setPages` replaces it in one undo entry, and `addPage`, `removePage` (which deletes what is on the page),
+`movePage`, `resizePage`, and `renamePage` are built on it. A page's content moves with it for free. A page's `meta`
+holds what other packages keep on it, each under its owner's key (diagram-formats keeps a graph page's notation and
+layout under `'diagram:graph'`); every edit carries it with the page. `layoutPages`, `pageAt`, `pageHolding`,
+`pageInView`, `fitViewToPage`, and `pagesLayer` work on the placed list. `PageTabs` in `@weasel-js/ui` is a strip of
+tabs over any page list.
+
+Specs built in world space go onto the pages with `addOnPages`, or `placeOnPages` once added, each root into the
+page under it in that page's frame; `setPages` does the same for what a Continuous scene holds when it makes the scene
+paged. A scene saved while its pages were the `core:pages` document value converts on load (`adoptLegacyPages`).
 
 ## Affordance
 

@@ -12,6 +12,7 @@ import { carryDragged, type DraggedChild } from './dragged';
 import { refusalOf } from '../../dropVerdict';
 import type { StrategyView } from 'core/scene/strategyView';
 import { boxOf, containerView, draggedInView } from './view';
+import { isPageStructure } from 'core/scene/nodeGates';
 
 export interface Bounds4 { x: number; y: number; width: number; height: number }
 
@@ -94,7 +95,7 @@ export function pickContainer(
   const testInside = (
     id: NodeId, cPose: unknown, aabb: Bounds4, layout: Layout, at: { x: number; y: number },
   ): boolean => {
-    const region = layout.dropRegion?.({ id: id as string, bounds: aabb }) ?? null;
+    const region = layout.dropRegion?.({ id: id as string, bounds: aabb, node: scene.get(id) }) ?? null;
     if (region) return regionContains(region, aabb, at);
     if (mode === 'region') return false;
     if (layout.contains) return layout.contains(cPose, at);
@@ -104,7 +105,8 @@ export function pickContainer(
     const layout = layoutDep.getLayout(id as string);
     if (!layout) return;
     const node = scene.get(id);
-    if (!node) return;
+    // Which page takes a drop is the pages' own rule, not a layout drop.
+    if (!node || isPageStructure(node)) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
     const worldAABB = g.getBounds(worldPose);
@@ -117,7 +119,7 @@ export function pickContainer(
     const view = containerView(pc, g, worldPose);
     const content = boxOf(g, view.toStrategy(childFrameAt(poseAdapter, id as string, worldPose)));
     if (refused === null && layout.acceptsDrop) {
-      const arg: LayoutContainer = { id: id as string, bounds: content };
+      const arg: LayoutContainer = { id: id as string, bounds: content, node };
       for (const c of dragged) {
         if (!layout.acceptsDrop(arg, draggedInView(view, carryDragged(session, c, plane).arg))) return;
       }

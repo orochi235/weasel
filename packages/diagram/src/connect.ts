@@ -19,6 +19,7 @@
  * on the body (`connectTargets`); with `startFrom: 'body'`, so can the press.
  */
 import {
+  followerHome,
   type Action,
   type DropVerdict,
   type GestureBinding,
@@ -188,7 +189,9 @@ export function grabPortBindings(
  * The default commit: one leaf node carrying the edge trait, added to
  * `deps.scene`. One `add` is one history entry, so the edge undoes in one.
  *
- * The edge lands on the **source node's** layer rather than the bottom one.
+ * The edge lands on the **source node's** layer rather than the bottom one,
+ * and in a paged scene on the page both its ends are on, else in the page run
+ * (`followerHome`).
  */
 export function commitEdgeToScene(
   edge: PendingEdge, ctx: InvocationCtx, opts: { stroke?: Stroke } = {},
@@ -201,12 +204,14 @@ export function commitEdgeToScene(
     router: edge.router,
   };
   const source = scene.get(edge.from.nodeId as never);
+  const dependsOn = [edge.from.nodeId as never, edge.to.nodeId as never];
   scene.add({
     kind: 'mark',
     layer: source?.layer ?? scene.layers[0]!.id,
+    parent: followerHome(scene as never, { dependsOn }) as never,
     pose: { x: 0, y: 0, width: 0, height: 0 } as never,
     data: { diagram: trait, stroke: opts.stroke ?? DEFAULT_EDGE_STROKE } as never,
-    dependsOn: [edge.from.nodeId as never, edge.to.nodeId as never],
+    dependsOn,
     // Without this the edge re-resolves on every dependency move and paints
     // nothing. `EDGE_DERIVE_PATH` rather than a fresh `edgeDerivePath()` so the
     // scene can find its registry key and the edge survives `toJSON`.

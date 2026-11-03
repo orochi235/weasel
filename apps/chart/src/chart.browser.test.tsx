@@ -7,10 +7,10 @@ import { page, userEvent } from 'vitest/browser';
 import { DIAGRAM_THEMES, isDiagramBody, themeEdgeStroke } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
-import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
+import { savedContent } from './testing/savedChart';
 import { carryStencil, click, doubleClick, drag } from './testing/pointer';
 
 const paper = DIAGRAM_THEMES.paper!;
@@ -33,10 +33,7 @@ interface SavedNode {
 }
 
 /** The chart as the session store last saved it. */
-function saved(): SavedNode[] {
-  const raw = localStorage.getItem(CHART_SCENE_KEY);
-  return raw ? (JSON.parse(raw) as { nodes: SavedNode[] }).nodes : [];
-}
+const saved = (): SavedNode[] => savedContent<SavedNode>();
 const bodies = () => saved().filter(isDiagramBody);
 const poseOf = (id: string) => saved().find((n) => n.id === id)!.pose!;
 const edges = () => saved().filter((n) => {
@@ -214,8 +211,7 @@ describe('WeaselChart chart mode', () => {
     const { host } = await mountApp();
     await carryStencil('decision', at(host, 400, 300));
     await expect.poll(() => bodies().length).toBe(1);
-    const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; data: unknown; pose: { x: number; y: number; width: number; height: number } }[] })
-      .nodes.find(isDiagramBody)!.pose;
+    const pose = bodies()[0]!.pose!;
     // A pointer event's client point is whole pixels, about a world unit at this zoom.
     expect(Math.abs(pose.x + pose.width / 2 - 400)).toBeLessThan(2);
     expect(Math.abs(pose.y + pose.height / 2 - 300)).toBeLessThan(2);
@@ -234,8 +230,7 @@ describe('WeaselChart chart mode', () => {
     expect(Math.abs(y + height / 2 - to.y)).toBeLessThan(1);
     await expect.poll(() => bodies().length).toBe(1);
     // Drawn at the size it lands: the body's box, its stroke around it.
-    const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; data: unknown; pose: { width: number; height: number } }[] })
-      .nodes.find(isDiagramBody)!.pose;
+    const pose = bodies()[0]!.pose!;
     expect(width / height).toBeCloseTo((pose.width + 2) / (pose.height + 2), 2);
     expect(document.querySelector('[data-stencil]')).toBeNull();
   });

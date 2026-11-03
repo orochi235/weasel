@@ -1,5 +1,8 @@
 /** A {@link DiagramDocument} as scene specs and document values: what every import draws from. */
-import { PAGES_DOC_KEY, layoutPages, type Page, type PlacedPage, type SerializedDoc } from '@weasel-js/core';
+import {
+  createPageRun, layoutPages, pageRunOf, pasteboardOn, placeOnPages, replaceDoc, type Page, type PlacedPage, type Scene,
+  type SerializedDoc,
+} from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, diagramScene, diagramThemeFrom, diagramTypeDocValue, diagramTypeOfNotation, themeDocValue,
   type DataEdge, type DiagramData, type DiagramSpec, type DiagramTheme, type DiagramType, type MeasureRowText,
@@ -21,9 +24,11 @@ export interface DocumentSpecsOptions<TLayer extends string = 'main'> {
   measure?: MeasureRowText;
 }
 
-/** What {@link documentSpecs} returns: the nodes, and the `core:pages`, `diagram:theme`, and `diagram:type` document values. */
+/** What {@link documentSpecs} returns: the nodes, placed in world space; the pages, in order; and the
+ *  `diagram:theme` and `diagram:type` document values. {@link addDocumentScene} puts it in a scene. */
 export interface DocumentScene<TLayer extends string = 'main'> {
   specs: DiagramSpec<TLayer>[];
+  pages: Page[];
   doc: SerializedDoc;
 }
 
@@ -55,13 +60,14 @@ function graphSpecs(pages: readonly { page: GraphPage; at: PlacedPage }[], cross
 
 /**
  * The scene a document draws as. Its pages are placed with core's
- * `layoutPages`, as a scene's `core:pages` places them. A graph page whose
+ * `layoutPages`, as a scene's page run places them, and its nodes are drawn
+ * there in world space. A graph page whose
  * nodes all have a place is drawn where they say; any other is laid out
  * first, with `layered`, its placed nodes pinned (and grows to hold the
  * result). A sequence page is drawn from its data, one root holding it, and
  * grows to hold its layout. A plot page is one plot root filling its page, its
  * marks under it (`plotSpecs`), drawn in the theme's colors. A graph page's
- * notation, layout, and direction go on its `core:pages` page, under
+ * notation, layout, and direction go on its page's `meta`, under
  * `meta['diagram:graph']`, where `documentFromScene` reads them back. When
  * every graph page's notation is one a diagram type claims, the scene opens as
  * that type (`diagram:type`), its stencils with it.
@@ -78,14 +84,15 @@ export function documentSpecs<TLayer extends string = 'main'>(
   const type = typeOfGraphs(pages);
   return {
     specs,
+    pages: pageList,
     doc: {
-      [PAGES_DOC_KEY]: { pages: pageList }, [DIAGRAM_THEME_KEY]: themeDocValue(theme),
+      [DIAGRAM_THEME_KEY]: themeDocValue(theme),
       ...(type !== null ? { [DIAGRAM_TYPE_DOC_KEY]: diagramTypeDocValue(type.id) } : {}),
     },
   };
 }
 
-/** `page` as a scene's `core:pages` lists it, its graph settings in its `meta`. */
+/** `page` as a scene's page, its graph settings in its `meta`. */
 function scenePageOf(page: DocumentPage): Page {
   const { id, name, width, height } = page;
   const meta = graphPageMeta(page);
@@ -110,7 +117,7 @@ function placedSpecs<TLayer extends string>(
 }
 
 /**
- * One more page for a scene: `page` as its `core:pages` lists it, and the nodes it draws as once placed where
+ * One more page for a scene: `page` as a scene's page, and the nodes it draws as once placed where
  * `placeAt` puts it, as `documentSpecs` draws a page. A graph page with no place for a node is laid out first; a
  * sequence page grows to hold its layout.
  */
@@ -127,4 +134,27 @@ export function pageSpecs<TLayer extends string = 'main'>(
 function typeOfGraphs(pages: readonly DocumentPage[]): DiagramType | null {
   const types = new Set(pages.flatMap((p) => (p.kind === 'graph' ? [diagramTypeOfNotation(p.notation)] : [])));
   return types.size === 1 ? [...types][0]! : null;
+}
+
+/**
+ * Make `scene` hold `drawn` and nothing else, as one undo entry labeled
+ * `label`: everything it held is removed, locked or not, the page run and its
+ * pages with it; its document values are `drawn`'s (`replaceDoc`); its nodes
+ * are added, then its pages made under a new run that keeps the old one's
+ * pasteboard and layer, a page whose id a node holds getting a fresh node
+ * id; and each root goes on its page (`placeOnPages`).
+ */
+export function addDocumentScene<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>, drawn: DocumentScene<TLayer>, label = 'Open',
+): void {
+  scene.batch(label, () => {
+    const pasteboard = pasteboardOn(scene);
+    const old = pageRunOf(scene);
+    const layer = old === null ? undefined : scene.get(old)!.layer;
+    scene.unlocked(() => { if (scene.roots.length > 0) scene.removeMany([...scene.roots]); });
+    replaceDoc(scene, drawn.doc);
+    const added = drawn.specs.map((spec) => scene.add(spec as never));
+    createPageRun(scene, drawn.pages, { ...(pasteboard ? { pasteboard } : {}), ...(layer !== undefined ? { layer } : {}) });
+    placeOnPages(scene, added.filter((id) => scene.get(id)?.parent == null));
+  });
 }

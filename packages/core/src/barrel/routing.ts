@@ -145,6 +145,7 @@ export type {
   SvgUnpacker,
   ViewApi,
 } from '../interactions/actions/depSchema';
+export { insertSite, type InsertSite, type InsertSiteOptions } from '../canvas/deps/insertSite';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export { refusalOf, type DropRefusal, type DropVerdict } from '../interactions/actions/dropVerdict';
 export {

@@ -9,10 +9,10 @@ import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { isDiagramBody } from '@weasel-js/diagram';
-import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
 import { at } from './testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
+import { savedContent, savedNodes } from './testing/savedChart';
 import { carryStencil, click, drag } from './testing/pointer';
 
 registerCanvasFont('sans-serif');
@@ -36,15 +36,12 @@ interface Saved {
   data: { diagram?: { outline?: string; container?: { role: string } } };
 }
 
-const saved = (): Saved[] => {
-  const raw = localStorage.getItem(CHART_SCENE_KEY);
-  return raw ? (JSON.parse(raw) as { nodes: Saved[] }).nodes : [];
-};
+const saved = (): Saved[] => savedContent<Saved>();
 const role = (r: string) => saved().filter((n) => n.data.diagram?.container?.role === r);
 const bodies = () => saved().filter(isDiagramBody);
 /** `id` as saved, posed where it draws: a member is stored in its container's frame. */
 const byId = (id: string): Saved => {
-  const all = saved();
+  const all = savedNodes<Saved>();
   return { ...all.find((n) => n.id === id)!, pose: worldPosesOf(all, RIGID_POSE_COMPOSITION).get(id)! };
 };
 const lanesInOrder = () => role('lane').sort((a, b) => a.pose.y - b.pose.y);
@@ -75,7 +72,7 @@ describe('WeaselChart containers', () => {
     expect(byId(body).pose.y).toBeCloseTo(before.y + 40, 0);
 
     await drag(canvas, at(host, before.x + 110, before.y + 70), at(host, 800, 600));
-    await expect.poll(() => byId(body).parent ?? null).toBeNull();
+    await expect.poll(() => byId(body).parent).toBe('page-1');
   });
 
   async function buildPool() {

@@ -21,8 +21,8 @@ export type { ReparentOnDrop };
  *
  * Behaviors from the binding's `opts.behaviors` fold into each frame; on
  * release the first non-`undefined` answer wins (`Op[]` commits, `null`
- * aborts). `beginMove` appends the action's own two: a layout drop and
- * reparent-on-drop.
+ * aborts). `beginMove` appends the action's own: a layout drop, a page drop
+ * in a paged scene, and reparent-on-drop.
  */
 export const moveAction: Action & { requires: string[] } = inPlane({
   id: 'move',

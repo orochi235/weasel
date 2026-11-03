@@ -1,4 +1,4 @@
-import { PAGES_DOC_KEY, type PagesDoc, type RectPose, type Scene, type SceneRegistry, type SerializedDoc } from '@weasel-js/core';
+import type { PagesDoc, RectPose, Scene, SceneRegistry } from '@weasel-js/core';
 import { withDiagramRegistry, type DiagramSceneData } from '@weasel-js/diagram';
 
 /** A chart is a diagram scene: stencil bodies, their text rows, edges and edge labels. */
@@ -18,8 +18,3 @@ export const CHART_PAGE = { width: 1056, height: 816 } as const;
 
 /** The pages of a new chart, and of one saved before charts had pages: one, at the chart page size. */
 export const CHART_PAGES: PagesDoc = { pages: [{ id: 'page-1', width: CHART_PAGE.width, height: CHART_PAGE.height }] };
-
-/** `doc` with its page list, or {@link CHART_PAGES} where it has none. */
-export function chartDoc(doc: SerializedDoc = {}): SerializedDoc {
-  return { ...doc, [PAGES_DOC_KEY]: doc[PAGES_DOC_KEY] ?? CHART_PAGES };
-}

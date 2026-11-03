@@ -6,10 +6,10 @@ import { reachableInGroup } from 'canvas/deps/enteredGroup';
 
 /**
  * Static descriptor for the `selectAll` Action. Selects every scene node the
- * user can see and reach — hidden and locked nodes (`nodeGates`), and nodes on
- * a layer the asking view does not paint, are left out, so Cmd+A then Delete cannot
- * take content that is off screen or locked. Inside an entered group it selects only what the
- * group holds.
+ * user can see and reach — hidden and locked nodes, pages and the page run
+ * (`nodeGates`), and nodes on a layer the asking view does not paint, are left
+ * out, so Cmd+A then Delete cannot take content that is off screen or locked.
+ * Inside an entered group it selects only what the group holds.
  */
 export const selectAllAction: Action & { requires: string[] } = {
   id: 'selectAll',
@@ -31,7 +31,8 @@ export const selectAllAction: Action & { requires: string[] } = {
           && !isAnnotationLayer(scene.layers.find((l) => l.id === n.layer))
           && view?.layerIsPainted?.(n.layer) !== false
           && !gates.hidden(n.id)
-          && !gates.locked(n.id))
+          && !gates.locked(n.id)
+          && !gates.structure(n))
         .map((n) => n.id);
       if (all.length === 0) return;
       deps.selection?.set(all);

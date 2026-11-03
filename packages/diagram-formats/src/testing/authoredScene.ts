@@ -1,5 +1,5 @@
 /** A chart authored as a user draws one: a diagram type, one page, and stencils placed from its groups. */
-import { PAGES_DOC_KEY, createScene, defaultCommitAdapter, type Op, type RectPose } from '@weasel-js/core';
+import { createPageRun, createScene, defaultCommitAdapter, type Op, type RectPose } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, STENCIL_GROUPS, commitEdgeToScene, containerBuild, diagramTypeDocValue,
   diagramTypeEdgeStroke, diagramTypeOf, isContainerStencil, lanesOf, stencilBuild, withDiagramRegistry, type ContainerStencil, type DiagramStencil,
@@ -18,8 +18,8 @@ export function stencilById(id: string): DiagramStencil | ContainerStencil {
   throw new Error(`no stencil "${id}"`);
 }
 
-/** A stencil to place: its id, where its center goes, and what its body goes in: an earlier placement by index, or a
- *  lane of one, `at` then in that container's frame. */
+/** A stencil to place: its id, where its center goes, and what its body goes in: by default the page, whose frame
+ *  is the world's; or an earlier placement by index, or a lane of one, `at` then in that container's frame. */
 export interface Placement { stencil: string; at: { x: number; y: number }; parent?: number | { pool: number; lane: number } }
 
 /** A one-page scene of diagram type `type`, each placement inserted as its stencil's tool inserts it. Returns
@@ -28,16 +28,13 @@ export function authoredScene(type: string, placements: readonly Placement[] = [
   const scene = createScene<unknown, string, RectPose>({
     systemLayers: [{ id: 'main' }],
     registry: withDiagramRegistry(),
-    doc: {
-      [PAGES_DOC_KEY]: { pages: [{ id: 'p', width: 2000, height: 1400 }] },
-      [DIAGRAM_THEME_KEY]: THEME.id,
-      [DIAGRAM_TYPE_DOC_KEY]: diagramTypeDocValue(type),
-    },
+    doc: { [DIAGRAM_THEME_KEY]: THEME.id, [DIAGRAM_TYPE_DOC_KEY]: diagramTypeDocValue(type) },
   });
+  scene.untracked(() => createPageRun(scene, [{ id: 'p', width: 2000, height: 1400 }]));
   let n = 0;
   const ids: string[] = [];
-  const parentOf = (p: Placement): string | null => {
-    if (p.parent === undefined) return null;
+  const parentOf = (p: Placement): string => {
+    if (p.parent === undefined) return 'p';
     if (typeof p.parent === 'number') return ids[p.parent]!;
     return lanesOf(scene as never, ids[p.parent.pool]!)[p.parent.lane]!;
   };
