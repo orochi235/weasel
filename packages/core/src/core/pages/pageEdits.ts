@@ -1,15 +1,15 @@
 /**
  * The edits that change a document's pages. A page is a node under the page
- * run, whose layout places it, so an edit writes the page nodes and the run
- * moves the pages; what is on a page is its children and goes with it,
- * stored poses untouched.
+ * run, so an edit writes the page nodes, each at the place the run's layout
+ * gives it; what is on a page is its children and goes with it, stored poses
+ * untouched.
  */
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import { sameValue } from '../scene/sameValue';
 import type { NodeId, RectPose, Scene } from '../scene/types';
 import type { Page, PlacedPage } from './pages';
 import {
-  addPageNode, createPageRun, pageIdsOf, pageInfo, pageRunOf, pagesOf, placedPagesOf, runInfo, runPose,
+  addPageNode, createPageRun, pageIdsOf, pageInfo, pagePoses, pageRunOf, pagesOf, placedPagesOf, runInfo, runPose,
   type PagesDoc,
 } from './pageNodes';
 
@@ -54,14 +54,12 @@ function orderPages(scene: AnyScene, run: NodeId, order: readonly NodeId[]): voi
   });
 }
 
-/** Bring page node `id` to `page`'s size, name and meta. */
-function writePage(scene: AnyScene, page: Page): void {
+/** Bring page node `id` to `pose`, and to `page`'s name and meta. */
+function writePage(scene: AnyScene, page: Page, pose: RectPose): void {
   const id = page.id as NodeId;
   const node = scene.get(id)!;
-  const pose = node.pose as RectPose;
-  if (pose.width !== page.width || pose.height !== page.height) {
-    scene.setPose(id, { ...pose, width: page.width, height: page.height });
-  }
+  const to = { ...(node.pose as RectPose), ...pose };
+  if (!sameValue(node.pose, to)) scene.setPose(id, to);
   const info = pageInfo(page);
   if (!sameValue(node.page, info)) scene.setPage(id, info);
 }
@@ -91,9 +89,10 @@ export function setPages<TData, TLayer extends string, TPose>(
     if (dropped.length > 0) s.removeMany(dropped);
     const info = runInfo(next.layout, node.pageRun!.pasteboard);
     if (!sameValue(node.pageRun, info)) s.setPageRun(run, info);
+    const poses = pagePoses(next.pages, next.layout);
     for (const page of next.pages) {
-      if (s.get(page.id as NodeId) === undefined) addPageNode(s, run, page);
-      else writePage(s, page);
+      if (s.get(page.id as NodeId) === undefined) addPageNode(s, run, page, poses.get(page.id)!);
+      else writePage(s, page, poses.get(page.id)!);
     }
     orderPages(s, run, next.pages.map((p) => p.id as NodeId));
     const pose = runPose(next.pages, next.layout);

@@ -40,7 +40,8 @@ function destinations(
  * root into the page holding it (`pageHolding`) at the world place it had,
  * and each node following others into the run, then drop the value. Not an
  * undo step: it is how the document loads. Returns whether there was a value
- * to convert, so a second call is `false` and changes nothing.
+ * to convert into a scene without pages, so a second call is `false` and
+ * changes nothing; a value beside an existing page run is dropped.
  */
 export function adoptLegacyPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -48,13 +49,15 @@ export function adoptLegacyPages<TData, TLayer extends string, TPose>(
 ): boolean {
   const s = scene as unknown as AnyScene;
   const doc = s.doc.get<PagesDoc>(PAGES_DOC_KEY);
-  if (doc === undefined || pageRunOf(s) !== null) return false;
+  if (doc === undefined) return false;
+  if (pageRunOf(s) !== null) {
+    s.untracked(() => s.doc.set(PAGES_DOC_KEY, undefined));
+    return false;
+  }
   const descriptor = options.descriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>);
   const going = destinations(s, doc, descriptor);
-  // Two passes: the run lays the pages out as its edit closes, and only then can a root be rebased into one.
-  const run = s.untracked(() => createPageRun(s, doc.pages, doc.layout));
   s.untracked(() => s.batch('Adopt pages', () => {
-    moveIn(s, going, run);
+    moveIn(s, going, createPageRun(s, doc.pages, doc.layout));
     s.doc.set(PAGES_DOC_KEY, undefined);
   }));
   return true;

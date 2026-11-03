@@ -146,6 +146,22 @@ describe('page edits', () => {
     expect(scene.get(id)!.pose.x).toBe(5);
   });
 
+  it('lays the pages out again when only the run\'s settings change', () => {
+    const { scene } = setup({ pages: [{ id: 'a', width: 100, height: 100 }, { id: 'b', width: 100, height: 40 }], layout: { gap: 20 } });
+    setPages(scene, { ...pagesOf(scene)!, layout: { gap: 20, align: 'center' } }, 'Align');
+    expect(placedPagesOf(scene).map((p) => [p.id, p.y])).toEqual([['a', 0], ['b', 30]]);
+    scene.undo();
+    expect(placedPagesOf(scene).map((p) => p.y)).toEqual([0, 0]);
+  });
+
+  it('places pages as the edit makes them, inside a caller\'s batch', () => {
+    const { scene } = setup();
+    scene.batch('Open', () => {
+      resizePage(scene, 'a', { width: 200, height: 100 });
+      expect(placedPagesOf(scene)[1]!.x).toBe(220);
+    });
+  });
+
   it('starts the run at its origin', () => {
     const { scene } = setup({ ...TWO, layout: { gap: 20, origin: { x: 50, y: 7 } } });
     expect(placedPagesOf(scene).map((p) => [p.x, p.y])).toEqual([[50, 7], [170, 7]]);

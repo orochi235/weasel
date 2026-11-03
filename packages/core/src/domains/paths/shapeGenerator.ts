@@ -140,7 +140,7 @@ export function regenerateShape<P extends PathInWorldPose>(
   next: ShapeGenerator,
 ): GeneratedShape<P> | null {
   const held = shapeGeneratorOf(node.data);
-  if (!held || !pathMatches((node.data as { path?: unknown }).path, held)) return null;
+  if (!held || !pathMatches((node.data as { path?: unknown } | undefined)?.path, held)) return null;
   const g = clampShapeGenerator(next);
   const was = boundsOfPath(shapeGeneratorPath(held));
   const { pose } = node;

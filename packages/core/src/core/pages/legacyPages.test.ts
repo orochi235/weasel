@@ -36,6 +36,24 @@ describe('adoptLegacyPages', () => {
     expect(scene.historyEntries()).toEqual([]);
   });
 
+  it('converts inside a caller\'s batch, rebasing against pages already in place', () => {
+    const scene = load([rect('onB', 115)]);
+    scene.batch('Open', () => {
+      adoptLegacyPages(scene);
+      expect(scene.get('onB' as NodeId)!.pose.x).toBe(5);
+    });
+    expect(scene.get('onB' as NodeId)!.pose.x).toBe(5);
+    expect(scene.get('onB' as NodeId)!.parent).toBe('b');
+  });
+
+  it('drops a pages doc left beside an existing page run', () => {
+    const scene = load([]);
+    adoptLegacyPages(scene);
+    scene.untracked(() => scene.doc.set(PAGES_DOC_KEY, TWO));
+    expect(adoptLegacyPages(scene)).toBe(false);
+    expect(scene.doc.get(PAGES_DOC_KEY)).toBeUndefined();
+  });
+
   it('does nothing the second time', () => {
     const scene = load([]);
     expect(adoptLegacyPages(scene)).toBe(true);

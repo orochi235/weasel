@@ -110,6 +110,13 @@ export function runPose(pages: readonly Page[], layout: PageLayoutOptions = {}):
   return { x, y, width: right - x, height: bottom - y };
 }
 
+/** Each page's pose in the run's frame, by id: where `pageRunLayout` places it. An edit writes these itself, so
+ *  the pages are in place while the edit is still open, before the run's layout pass has run. */
+export function pagePoses(pages: readonly Page[], layout: PageLayoutOptions = {}): Map<string, RectPose> {
+  return new Map(layoutPages(pages, { ...layout, origin: { x: 0, y: 0 } })
+    .map((p) => [p.id, { x: p.x, y: p.y, width: p.width, height: p.height }]));
+}
+
 /** The `pageRun` field for `layout` and `pasteboard`: every stated setting but `origin`. */
 export function runInfo(layout: PageLayoutOptions = {}, pasteboard?: boolean): PageRunInfo {
   const { origin: _origin, ...rest } = layout;
@@ -135,7 +142,9 @@ export type CreatePageRunOptions<TLayer extends string> = PageLayoutOptions & {
 /**
  * Make the scene paged: add the page run, a root group laid out by
  * `pageRunLayout`, and a group under it for each of `pages`, whose id is the
- * page's. One undo entry. Returns the run's id.
+ * page's. One undo entry. Returns the run's id. The run and its pages hold
+ * `data: undefined` whatever the scene's `TData`: a reader of every node's
+ * `data` meets them too.
  */
 export function createPageRun<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -149,15 +158,16 @@ export function createPageRun<TData, TLayer extends string, TPose>(
       kind: 'group', layer, pose: runPose(pages, layout), data: undefined,
       layout: PAGE_RUN_LAYOUT, pageRun: runInfo(layout, pasteboard),
     });
-    for (const page of pages) addPageNode(s, run, page);
+    const poses = pagePoses(pages, layout);
+    for (const page of pages) addPageNode(s, run, page, poses.get(page.id)!);
     return run;
   });
 }
 
-/** Add `page` as a node at the end of `run`; the run's layout places it. */
-export function addPageNode(scene: AnyScene, run: NodeId, page: Page): void {
+/** Add `page` as a node at the end of `run`, at `pose` in the run's frame. */
+export function addPageNode(scene: AnyScene, run: NodeId, page: Page, pose: RectPose): void {
   scene.add({
     kind: 'group', layer: scene.get(run)!.layer, parent: run, id: page.id as NodeId,
-    pose: { x: 0, y: 0, width: page.width, height: page.height }, data: undefined, page: pageInfo(page),
+    pose, data: undefined, page: pageInfo(page),
   });
 }
