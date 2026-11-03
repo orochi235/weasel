@@ -359,7 +359,7 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
     },
     group: (id, g) => {
       const page = source.pageIdOf?.(id);
-      const attrs = page === undefined ? { 'group-id': id } : { role: PAGE_ROLE, 'page-id': page };
+      const attrs: Record<string, string> = page === undefined ? { 'group-id': id } : { role: PAGE_ROLE, 'page-id': page };
       return { ...g, meta: { wd: { attrs } } };
     },
     mark: (_id, g) => ({ ...g, meta: { wd: { attrs: { role: MARK_ROLE } } } }),
