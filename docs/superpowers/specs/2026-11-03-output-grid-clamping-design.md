@@ -30,7 +30,9 @@ on every write. That is the gap this arc fills.
 
 `scene.doc` key `kit:outputGrid`, holding an `OutputGrid`: `{ pitch, origin: { x, y } }` in
 document units, one dot's size and where dot (0, 0)'s corner sits. Absent, nothing quantizes.
-lbx's is `{ pitch: 72 / dpi, origin: { x: 0, y: printableBandTop } }`.
+A P-touch label's is `{ pitch: 72 / dpi, origin: { x: 0, y: printableBand(tape, media).y } }`, with
+`printableBand` from `@weasel-js/ptouch` (branch `ptouch`, unmerged on 2026-11-03), which owns that
+math; don't copy it here.
 
 `OutputGrid` is a 2D raster, the target's dots, so a kernel3d scene does not set one; that is a
 stated choice. The rule below is generic over the pose type, so nothing outside the rect helpers
