@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
-import { commitOps, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
+import { commitOps, createPageRun, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
 import { DEFAULT_NODE_STYLE } from './fromData';
@@ -115,8 +115,9 @@ describe('useStencilTool', () => {
 });
 
 describe('useStencilInsert', () => {
-  function insertDep(opts?: StencilInsertOptions, under?: InsertDep) {
+  function insertDep(opts?: StencilInsertOptions, under?: InsertDep, pages?: { id: string; width: number; height: number }[]) {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    if (pages) createPageRun(scene, pages);
     const wrapper = ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children);
     const { result } = renderHook(() => {
       useDepSource('scene', () => scene as never);
@@ -183,5 +184,14 @@ describe('useStencilInsert', () => {
     expect(scene.get(shape)!.parent).toBe(second);
     const inner = dep.commit({ x: 200, y: 60, width: 0, height: 0 }, { kind: stencilKind('pool-columns') } as never)!;
     expect(scene.get(inner)!.parent).toBeNull();
+  });
+
+  it('puts a shape and a pool drawn on the second page on it, in its frame, where core puts an insert', () => {
+    const pages = [{ id: 'p1', width: 300, height: 300 }, { id: 'p2', width: 600, height: 300 }];
+    const { scene, dep } = insertDep({ containers: CONTAINER_STENCILS }, undefined, pages);
+    const shape = dep.commit({ x: 400, y: 100, width: 100, height: 60 }, { kind: stencilKind('process') } as never)!;
+    expect(scene.get(shape)).toMatchObject({ parent: 'p2', pose: { x: 60, y: 100 } });
+    const pool = dep.commit({ x: 600, y: 20, width: 240, height: 200 }, { kind: stencilKind('pool-rows') } as never)!;
+    expect(scene.get(pool)).toMatchObject({ parent: 'p2', pose: { x: 260, y: 20 } });
   });
 });

@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import {
-  commitOps, defineTool, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
+  commitOps, defineTool, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
   type ActionDeps, type InsertDep, type NodeId, type Op, type Tool,
 } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
@@ -81,9 +81,12 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       const center = { x: world.x + world.width / 2, y: world.y + world.height / 2 };
       const role = 'role' in stencil ? stencil.role : null;
       const { style, measure, font, containerStyle, laneStyles, theme } = optsRef.current;
-      const parent = diagramDropParentAt(scene as unknown as DropParentScene, center, role);
-      // Drawn in world; built in the frame of the container it lands in.
-      const bounds = parent === null ? world : scenePoseFrame(scene as never).localUnder(parent as NodeId, { ...world }) as Bounds;
+      const into = diagramDropParentAt(scene as unknown as DropParentScene, center, role);
+      // Drawn in world; built in the frame of the container it lands in, else where core's inserts land: the page
+      // for its center in a paged scene, or the top of the tree.
+      const site = into === null ? insertSite(scene as never, null, undefined, center) : null;
+      const parent = into ?? site?.parent ?? null;
+      const bounds = (site !== null ? site.local({ ...world }) : scenePoseFrame(scene as never).localUnder(into as NodeId, { ...world })) as Bounds;
       const common = { layer: layer(), newId: () => scene.mintId() as string, parent };
       if ('role' in stencil) {
         const boxStyle = containerStyle ?? style;
