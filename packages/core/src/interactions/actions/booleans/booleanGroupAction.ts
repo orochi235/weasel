@@ -1,8 +1,12 @@
 import type { BooleanShapeOp } from 'core/geometry/booleanOfPaths';
 import { booleanGroupFields } from 'core/scene/booleanGroup';
 import { withoutPageStructure } from 'core/scene/nodeGates';
+import { groupingSite } from 'core/pages/pagePlacement';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import { unionBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
+import { requiresContent } from '../defaults/requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { icon } from '../../../icons.gen';
 
@@ -11,8 +15,10 @@ type AnyScene = Scene<unknown, string, unknown>;
 const PAINT_KEYS = ['fill', 'stroke'] as const;
 
 /**
- * Put `ids` under a new boolean group of `op`, in the frontmost one's place, as
- * one undo entry; nothing moves on screen. The group wears the frontmost
+ * Put `ids` under a new boolean group of `op`, in the frontmost one's place
+ * in the container `groupingSite` names, as one undo entry; nothing moves on
+ * screen, unless the operands lie wholly off every page with the pasteboard
+ * off and move onto one. The group wears the frontmost
  * operand's `fill` and `stroke`. Returns its id, or `null` when fewer than two
  * of `ids` are nodes on one layer.
  */
@@ -24,16 +30,17 @@ export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: Bo
     .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   if (nodes.length < 2 || new Set(nodes.map((n) => n.layer)).size > 1) return null;
   const front = nodes.at(-1)!;
-  const parents = new Set(nodes.map((n) => n.parent ?? null));
-  const parent = parents.size === 1 ? front.parent ?? null : null;
+  const frame = scenePoseFrame(scene);
+  const worlds = new Map(nodes.map((n) => [n.id, frame.world(n.id)]));
+  const { translate, getBounds } = AUTO_POSE_DESCRIPTOR;
+  const { parent, shift } = groupingSite(scene, nodes.map((n) => n.id), unionBounds([...worlds.values()].map(getBounds)));
+  if (shift.dx !== 0 || shift.dy !== 0) for (const [id, p] of worlds) worlds.set(id, translate!(p, shift.dx, shift.dy));
   const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
   const at = siblings.indexOf(front.id);
   const own = (front.data ?? {}) as Record<string, unknown>;
   const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => k in own).map((k) => [k, own[k]])) };
-  const frame = scenePoseFrame(scene);
   let group: NodeId | null = null;
   scene.batch('Make Boolean Group', () => {
-    const worlds = new Map(nodes.map((n) => [n.id, frame.world(n.id)]));
     group = scene.add({
       ...booleanGroupFields(), layer: front.layer, pose: front.pose, data, parent,
       ...(at >= 0 ? { index: at + 1 } : {}),
@@ -63,5 +70,5 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
       if (id !== null) selection.set([id]);
     },
   },
-  enabled: (deps) => ((deps?.selection?.get().length ?? 0) >= 2 ? true : ActionDisabledReason.SelectionRequired),
+  enabled: requiresContent(2),
 };

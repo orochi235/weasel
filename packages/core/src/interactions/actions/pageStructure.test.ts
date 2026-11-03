@@ -10,6 +10,9 @@ import { duplicateSelection } from './defaults/duplicate';
 import { clipboardCutAction } from './clipboard/action';
 import { pickContainer } from './move/layout/container';
 import { groupAction, ungroupAction } from './defaults/group';
+import { makeBooleanGroupAction } from './booleans/booleanGroupAction';
+import { scenePoseFrame } from './poseFrame';
+import type { RectPose } from 'core/scene/types';
 import { areaSelectAction } from './defaults/areaSelect';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { pressTarget } from 'tools/builtin/pressTarget';
@@ -66,6 +69,15 @@ describe('scene actions in a paged scene', () => {
     }
   });
 
+  it('group, ungroup and the boolean group count no page or run toward being enabled', () => {
+    const { scene, run: runId } = pagedScene();
+    const deps = (ids: string[]) => ({ scene, selection: heldSelection(ids) }) as never;
+    expect(groupAction.enabled!(deps([A, runId]))).not.toBe(true);
+    expect(ungroupAction.enabled!(deps([A]))).not.toBe(true);
+    expect(makeBooleanGroupAction.enabled!(deps([R, A]))).not.toBe(true);
+    expect(groupAction.enabled!(deps([R, A]))).toBe(true);
+  });
+
   it('a marquee starting on empty paper selects the content inside it, not the page', () => {
     const { scene } = pagedScene();
     const selection = heldSelection([]);
@@ -84,4 +96,28 @@ describe('scene actions in a paged scene', () => {
     handle.onEnd!(at(99, 45), 'commit');
     expect(selection.get()).toEqual([R]);
   });
+});
+
+describe('grouping across pages', () => {
+  /** `R` (world 90..110 on page a) and a sliver on page b (world 110..113): their union overlaps a most. */
+  function twoPages() {
+    const { scene } = pagedScene();
+    const onB = scene.add({ kind: 'mark', layer: 'ink', parent: B, pose: { x: 0, y: 10, width: 3, height: 10 }, data: {} });
+    const frame = scenePoseFrame(scene);
+    const worlds = () => [R, onB].map((id) => frame.world(id) as RectPose);
+    return { scene, onB, before: worlds(), worlds };
+  }
+
+  for (const [name, action] of [['Group', groupAction], ['Make Boolean Group', makeBooleanGroupAction]] as const) {
+    it(`${name} puts the new group on the page the members overlap most, the others reparenting into it`, () => {
+      const { scene, onB, before, worlds } = twoPages();
+      const selection = heldSelection([R, onB]);
+      run(action, { scene, selection });
+      const [group] = selection.get();
+      expect(group).not.toBe(R);
+      expect(scene.get(asNodeId(group!))!.parent).toBe(A);
+      expect([scene.get(R)!.parent, scene.get(onB)!.parent]).toEqual([group, group]);
+      expect(worlds()).toEqual(before);
+    });
+  }
 });

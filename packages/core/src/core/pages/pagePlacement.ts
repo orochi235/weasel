@@ -160,3 +160,34 @@ export function keepOnPage(pageRect: Bounds, bounds: Bounds): { dx: number; dy: 
     dy: axisShift(pageRect.y, pageRect.y + pageRect.height, bounds.y, bounds.height),
   };
 }
+
+/** Where a new group of some nodes goes, and how far its members move with it. */
+export interface GroupingSite {
+  readonly parent: NodeId | null;
+  readonly shift: { readonly dx: number; readonly dy: number };
+}
+
+/**
+ * The container for a new grouping of `ids`, whose members' union in the
+ * world is `bounds`: the parent they share, unless it is the page run; else,
+ * in a paged scene, the page that union overlaps most (`pageForBounds`), with
+ * the pasteboard off moved so part of it is on that page (`keepOnPage`); else
+ * the top of the tree, which is also where the union goes with the
+ * pasteboard on and it off every page. The one rule for Group and for the
+ * boolean group.
+ */
+export function groupingSite<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  ids: readonly NodeId[],
+  bounds: Bounds | null,
+): GroupingSite {
+  const still = { dx: 0, dy: 0 };
+  const run = pageRunOf(scene);
+  const parents = new Set(ids.map((id) => scene.get(id)?.parent ?? null));
+  const [only] = parents;
+  if (parents.size === 1 && only !== run) return { parent: only ?? null, shift: still };
+  if (run === null || bounds === null) return { parent: null, shift: still };
+  const page = pageForBounds(scene, bounds);
+  if (page === null) return { parent: null, shift: still };
+  return { parent: pageNodeOf(scene, page.id), shift: pasteboardOn(scene) ? still : keepOnPage(page, bounds) };
+}
