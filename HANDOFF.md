@@ -6,10 +6,11 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## State (2026-11-02)
 
-- 1.15.2 is on npm (`npm view @weasel-js/core version`); `origin/main` is at a35efd56e. `main` adds 83
-  commits, unpushed, ending in the stroke trim (`StrokeTrim` on `Stroke`; spec
-  `docs/superpowers/specs/2026-11-01-stroke-trim-design.md`), merged through `batch/2026-11-02`, whose
-  `test:fleet` (33,819 passed) and `test:fleet:postbuild` were green on ec25c0247, the commit `main` now is.
+- 1.15.2 is on npm (`npm view @weasel-js/core version`). `main` and `origin/main` are at 3481a3b1c, pushed
+  2026-11-02, unreleased since 1.15.2: the stroke trim (`StrokeTrim` on `Stroke`; spec
+  `docs/superpowers/specs/2026-11-01-stroke-trim-design.md`), then seated arrowheads (a head's back on the
+  shaft's cut end, pointing along it, in canvas, SVG, and PDF) and the lab header's zoom driving scene labs.
+  `test:fleet` and `test:fleet:postbuild` were green on 3481a3b1c.
 - Nothing in flight. The stroke trim's changeset (`.changeset/stroke-trim.md`) is `patch` and spells out its
   breaking changes. GitHub's visual regression job may flag rounded corners beside curves (corners are now cut
   at exact arc length, up to 0.15 units from before), text-heavy shots (small-glyph area coverage) and
