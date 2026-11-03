@@ -5,8 +5,9 @@
 ---
 
 Add `@weasel-js/p-touch`, Brother P-touch labels from a scene. `renderLabel` draws a label at one pixel per
-printer dot over the band the printhead reaches, and `printLabel` sends it over WebUSB or Web Serial through
-obwat, split into pages at cut marks. `sceneToLbx` and `writeLbx` write an `.lbx` file with rects, open
+printer dot over the band the printhead reaches, and `printLabel` dithers it through `@weasel-js/dither` and
+sends it over WebUSB or Web Serial through obwat, split into pages at cut marks. `labelGrid` is the printer's
+dot grid in scene units, for `protectRects`. `sceneToLbx` and `writeLbx` write an `.lbx` file with rects, open
 polylines and plain text boxes as objects P-touch Editor can edit, and the rest drawn and placed as images.
 A `drawOne` can return `lbxObjects([...])` to write a node as an object its paint cannot say, such as a
 barcode.

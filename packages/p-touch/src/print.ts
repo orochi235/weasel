@@ -1,11 +1,11 @@
 /**
  * A rendered label to paper: dots, pages at the cut marks, and the job sent through obwat.
  */
+import { ditherPixels, maskToRgba, type DitherOptions } from '@weasel-js/dither';
 import {
   NoGrantedDeviceError,
   rgbaToRaster,
   type BrotherPrinter,
-  type DitherOptions,
   type MediaSpec,
   type PrinterStatus,
   type Raster1bpp,
@@ -30,6 +30,19 @@ export function sliceAtCuts(raster: Raster1bpp, cutsPt: readonly number[], dpi: 
   return pages;
 }
 
+const INK = [0, 0, 0, 255] as const;
+const BLANK = [255, 255, 255, 255] as const;
+
+/**
+ * `image` as the raster a printer lays down: dithered by `@weasel-js/dither`, then packed. The dots
+ * reach obwat as pure black on white, which its own threshold passes through unchanged.
+ */
+export function labelRaster(image: RgbaImage, media: MediaSpec, dither?: DitherOptions): Raster1bpp {
+  const mask = ditherPixels(image, dither);
+  const dots = maskToRgba(mask, image.width, image.height, { ink: INK, blank: BLANK });
+  return rgbaToRaster({ width: image.width, height: image.height, data: dots }, media);
+}
+
 /** What {@link printLabel} sends, and how. */
 export interface PrintLabelOptions {
   printer: BrotherPrinter;
@@ -40,7 +53,7 @@ export interface PrintLabelOptions {
   autoCut?: boolean;
   /** Where to cut along the label, in points: see {@link sliceAtCuts}. */
   cuts?: readonly number[];
-  /** How gray becomes dots. Default obwat's: a plain threshold. */
+  /** How gray becomes dots, as `ditherPixels` takes it; `labelGrid` places a `protect` mask's rects. Default a plain threshold. */
   dither?: DitherOptions;
   /**
    * When no printer has been granted yet, show the browser's device picker and print to what is
@@ -56,8 +69,7 @@ export interface PrintLabelOptions {
  */
 export async function printLabel(opts: PrintLabelOptions): Promise<PrinterStatus> {
   const { printer, image, media, autoCut = true, cuts = [], dither, requestDevice = false } = opts;
-  const raster = rgbaToRaster(image, media, dither);
-  const pages = sliceAtCuts(raster, cuts, media.dpi);
+  const pages = sliceAtCuts(labelRaster(image, media, dither), cuts, media.dpi);
   const job = { tapeWidthMm: media.tapeWidthMm, autoCut, marginDots: 0 };
   try {
     return await printer.print(pages, job);

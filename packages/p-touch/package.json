@@ -40,6 +40,7 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@weasel-js/dither": "1.16.1",
     "@weasel-js/geom": "1.16.1",
     "@weasel-js/paint": "1.16.1",
     "@weasel-js/renderer": "1.16.1",

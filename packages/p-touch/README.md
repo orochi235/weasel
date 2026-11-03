@@ -30,7 +30,10 @@ await printLabel({ printer, image, media, cuts: [72], requestDevice: true });
 
 `renderLabel` draws the label through the same renderer as the canvas, at one pixel per printer
 dot, over the band the printhead reaches (`printableBand`); content outside it does not print.
-`printLabel` turns gray into dots (`dither`, default a plain threshold), splits the label into
+`printLabel` turns gray into dots through `@weasel-js/dither` (`dither`, default a plain
+threshold; `labelRaster` is that step alone). To keep a barcode and its quiet zone out of the
+dither, pass a `protect` mask: `protectRects(items, rectOf, labelGrid({ tape, media }))` puts rects
+in dots, and `protectMask` fills them. It then splits the label into
 pages at `cuts`, and sends one job; with `requestDevice` it shows the browser's picker when no
 printer has been granted, which only works inside a user gesture. The printer session, its
 status and the device picker are [obwat](https://github.com/orochi235/obwat)'s

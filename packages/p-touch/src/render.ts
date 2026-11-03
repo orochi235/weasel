@@ -2,6 +2,7 @@
  * A label's scene to the pixels a printer lays down: one pixel per dot, the printable band only.
  */
 import { renderSceneToPixels, warmRender, type RasterImage, type RenderSceneToPixelsArgs } from '@weasel-js/core';
+import type { OutputGrid } from '@weasel-js/geom';
 import type { MediaSpec } from 'obwat';
 import type { Tape } from './tape';
 
@@ -39,6 +40,15 @@ export function labelRenderPlan({ length, tape, media, origin = { x: 0, y: 0 } }
     sourceRect: { x: origin.x, y: origin.y + band.y, width: length, height: band.height },
     scale: { x: dotsPerPt, y: dotsPerPt },
   };
+}
+
+/**
+ * The printer's dot grid in scene units: one dot's size, and the corner of the dot that prints
+ * first, at the top of the printable band. `protectRects` from `@weasel-js/dither` takes it to place
+ * rects a dither must leave at a plain threshold, such as a barcode and its quiet zone.
+ */
+export function labelGrid({ tape, media, origin = { x: 0, y: 0 } }: Omit<LabelGeometry, 'length'>): OutputGrid {
+  return { pitch: 72 / media.dpi, origin: { x: origin.x, y: origin.y + printableBand(tape, media).y } };
 }
 
 /** What {@link renderLabel} takes: the label's geometry, and what `renderSceneToPixels` takes besides its rect and scale. */

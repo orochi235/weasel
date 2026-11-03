@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NoGrantedDeviceError, Printers, type BrotherPrinter, type PrinterStatus, type Raster1bpp } from 'obwat';
-import { printLabel, sliceAtCuts } from './print';
-import { labelRenderPlan, printableBand } from './render';
+import { labelRaster, printLabel, sliceAtCuts } from './print';
+import { labelGrid, labelRenderPlan, printableBand } from './render';
 import { tapeForWidthMm, tapeNamed, TAPES } from './tape';
 
 const raster = (lines: number): Raster1bpp => ({
@@ -29,6 +29,37 @@ describe('labelRenderPlan', () => {
     const plan = labelRenderPlan({ length: 144, tape, media, origin: { x: 10, y: 20 } });
     expect(plan.sourceRect).toEqual({ x: 10, y: 20 + band.y, width: 144, height: band.height });
     expect(plan.scale).toEqual({ x: 2.5, y: 2.5 });
+  });
+});
+
+describe('labelGrid', () => {
+  it('puts dot (0, 0) at the top of the printable band, one dot per 72/dpi points', () => {
+    const tape = tapeForWidthMm(12)!;
+    const media = Printers.ptP710bt.media(12);
+    expect(labelGrid({ tape, media, origin: { x: 5, y: 7 } })).toEqual({ pitch: 0.4, origin: { x: 5, y: 7 + printableBand(tape, media).y } });
+  });
+});
+
+describe('labelRaster', () => {
+  const media = Printers.ptP710bt.media(12);
+  const gray = (v: number) => {
+    const data = new Uint8ClampedArray(8 * media.printableDots * 4);
+    for (let i = 0; i < data.length; i += 4) data.set([v, v, v, 255], i);
+    return { width: 8, height: media.printableDots, data };
+  };
+  const dots = (r: Raster1bpp) => r.rows.reduce((n, row) => n + row.reduce((m, b) => m + b.toString(2).split('1').length - 1, 0), 0);
+
+  it('lays a dot for every inked pixel and none for paper', () => {
+    expect(dots(labelRaster(gray(0), media))).toBe(8 * media.printableDots);
+    expect(dots(labelRaster(gray(255), media))).toBe(0);
+  });
+
+  it('dithers mid gray with the method asked for', () => {
+    const all = 8 * media.printableDots;
+    expect(dots(labelRaster(gray(140), media))).toBe(0);
+    const bayer = dots(labelRaster(gray(140), media, { method: 'bayer' }));
+    expect(bayer).toBeGreaterThan(all * 0.3);
+    expect(bayer).toBeLessThan(all * 0.6);
   });
 });
 

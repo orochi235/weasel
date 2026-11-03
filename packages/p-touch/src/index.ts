@@ -12,8 +12,8 @@
  */
 
 export { TAPES, tapeForWidthMm, tapeNamed, type Tape } from './tape';
-export { labelRenderPlan, printableBand, renderLabel, type LabelGeometry, type RenderLabelArgs } from './render';
-export { printLabel, sliceAtCuts, type PrintLabelOptions } from './print';
+export { labelGrid, labelRenderPlan, printableBand, renderLabel, type LabelGeometry, type RenderLabelArgs } from './render';
+export { labelRaster, printLabel, sliceAtCuts, type PrintLabelOptions } from './print';
 export { lbxConfig, writeLbx, type LbxPage, type LbxResult, type LbxSkip, type WriteLbxOptions } from './lbx/writeLbx';
 export { sceneToLbx, type SceneToLbxArgs } from './lbx/sceneLbx';
 export { lbxObjects } from './lbx/carried';
@@ -24,10 +24,9 @@ export { createBrotherPrinter, NoGrantedDeviceError, Printers } from 'obwat';
 export type {
   BrotherPrinter,
   BrotherPrinterOptions,
-  DitherAlgorithm,
-  DitherOptions,
   MediaSpec,
   PrinterStatus,
   Raster1bpp,
   RgbaImage,
 } from 'obwat';
+export type { DitherMethod, DitherOptions } from '@weasel-js/dither';
