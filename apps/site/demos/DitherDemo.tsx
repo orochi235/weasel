@@ -9,26 +9,29 @@ import {
 } from '@weasel-js/dither';
 import num from '@weasel-js/theme/numeric.module.css';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Button } from '@weasel-js/ui/components/Button';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 import { exportPage, type Crisp } from './ditherDemoExport';
 import {
-  INITIAL_NODES, PAGE, outputGrid, protectedRect,
+  INITIAL_NODES, PAGE, fitPage, outputGrid, protectedRect, wholeDots,
   type DitherLayer, type DitherNode, type DitherNodeData,
 } from './ditherDemoScene';
 import s from './DitherDemo.module.css';
 
 const W = 640;
-const H = 240;
-const ZOOM = 2;
-/** The page centered in the stage as it opens. */
-const START: View = {
-  x: -(W / ZOOM - PAGE.width) / 2,
-  y: -(H / ZOOM - PAGE.height) / 2,
-  scale: { x: ZOOM, y: ZOOM },
-};
+const H = 300;
+const STAGE = { width: W, height: H };
+const dpr = () => (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+
+/** The kit's default zoom stops at 8, and 300 dpi opens at 12.5 on a 1× screen. */
+const ZOOM_RANGE = { zoom: { min: 0.5, max: 48 }, pinchZoom: { min: 0.5, max: 48 } };
 
 type GridChoice = 'screen' | 180 | 300;
+/** Where a grid opens: on whole dots for a printer's, the whole page for the screen's. */
+const openingView = (grid: GridChoice): View =>
+  (grid === 'screen' ? fitPage(STAGE) : wholeDots(outputGrid(grid), STAGE, dpr()));
+
 const GRIDS = [
   { value: 'screen' as const, label: 'Screen' },
   { value: 180 as const, label: '180 dpi' },
@@ -66,6 +69,8 @@ export function DitherDemo() {
   });
   const version = scene.getVersion();
   const [grid, setGrid] = useState<GridChoice>(180);
+  const [view, setView] = useState<View>(() => openingView(180));
+  const pickGrid = (next: GridChoice) => { setGrid(next); setView(openingView(next)); };
   const [method, setMethod] = useState<DitherMethod>('bayer');
   const [threshold, setThreshold] = useState(128);
   const [crisp, setCrisp] = useState<Crisp>('layer');
@@ -130,6 +135,9 @@ export function DitherDemo() {
         if (!canvas || !ctx) return;
         canvas.width = image.width;
         canvas.height = image.height;
+        // One export pixel per device pixel: any other size drops or doubles rows.
+        canvas.style.setProperty('--print-w', `${image.width / dpr()}px`);
+        canvas.style.setProperty('--print-h', `${image.height / dpr()}px`);
         ctx.putImageData(new ImageData(image.data, image.width, image.height), 0, 0);
         setExported(`${image.width} × ${image.height} px`);
       })
@@ -151,9 +159,10 @@ export function DitherDemo() {
     <div className="ckd-stack">
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={['view']}
+          viewport={ZOOM_RANGE}
           initialActiveTool="hand"
-          defaultView={START}
+          view={view}
+          onViewChange={setView}
           className="ckd-canvas"
           scene={scene}
           backgroundFill={solid('#c9ccd1')}
@@ -165,17 +174,11 @@ export function DitherDemo() {
         />
       </DemoStage>
       <p className="ckd-hint">{notes}</p>
-      <figure className={s.export}>
-        <canvas ref={out} className={s.print} aria-label="Exported page" />
-        <figcaption className={s.caption}>
-          Export at {resolution}, {labelOf(method)}
-          {exported ? <span className={num.numeric}> · {exported}</span> : null}
-        </figcaption>
-      </figure>
       <div className="ckd-controls">
         <div className="ckd-control">
           Grid
-          <ToggleBar items={GRIDS} value={grid} onChange={(v) => { if (v !== null) setGrid(v); }} ariaLabel="Grid" size="sm" />
+          <ToggleBar items={GRIDS} value={grid} onChange={(v) => { if (v !== null) pickGrid(v); }} ariaLabel="Grid" size="sm" />
+          <Button size="sm" onClick={() => setView(fitPage(STAGE))}>Fit page</Button>
         </div>
         <div className="ckd-control">
           Method
@@ -191,6 +194,15 @@ export function DitherDemo() {
           <output className={`${num.numeric} ${s.readout}`}>{threshold}</output>
         </label>
       </div>
+      <figure className={s.export}>
+        <div className={s.pane}>
+          <canvas ref={out} className={s.print} aria-label="Exported page" />
+        </div>
+        <figcaption className={s.caption}>
+          Export at {resolution}, {labelOf(method)}
+          {exported ? <span className={num.numeric}> · {exported}</span> : null}
+        </figcaption>
+      </figure>
     </div>
   );
 }

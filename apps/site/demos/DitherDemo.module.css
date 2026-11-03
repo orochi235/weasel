@@ -2,15 +2,24 @@
   margin: var(--wzl-space-6) 0 0;
 }
 
-/* Two CSS pixels per point, as the canvas opens, whatever the export's resolution. */
+/* As wide as the canvas and short enough to fit an 800 px window; a 300 dpi
+   export, shown at one pixel per device pixel, scrolls inside it. */
+.pane {
+  width: fit-content;
+  max-width: min(640px, 100%);
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--wzl-border);
+}
+
+/* `--print-w` / `--print-h` are the export's size over devicePixelRatio, set
+   when it renders. */
 .print {
   display: block;
-  width: 576px;
-  max-width: 100%;
-  aspect-ratio: 288 / 108;
+  width: var(--print-w, 288px);
+  height: var(--print-h, 108px);
   image-rendering: pixelated;
   background: #ffffff;
-  border: 1px solid var(--wzl-border);
 }
 
 .caption {

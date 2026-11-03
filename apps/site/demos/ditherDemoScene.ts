@@ -1,4 +1,7 @@
-import { asNodeId, type Fill, type RectPose, type SceneNode } from '@weasel-js/core';
+import {
+  asNodeId, fitViewToBounds,
+  type Fill, type RectPose, type SceneNode, type View, type ViewportDims,
+} from '@weasel-js/core';
 import type { OutputGrid, Rect } from '@weasel-js/geom';
 
 /** A label, in points. */
@@ -16,6 +19,34 @@ export type DitherNode = SceneNode<DitherNodeData, DitherLayer, RectPose>;
 /** A grid every dot of which is `72 / dpi` points, from the page's corner. */
 export function outputGrid(dpi: number): OutputGrid {
   return { pitch: 72 / dpi, origin: { x: 0, y: 0 } };
+}
+
+/** The whole page in a canvas of `dims`. */
+export function fitPage(dims: ViewportDims): View {
+  return fitViewToBounds({ x: 0, y: 0, ...PAGE }, dims, { x: 0, y: 0, scale: { x: 1, y: 1 } });
+}
+
+/** Device pixels per dot that `wholeDots` opens at. */
+const PX_PER_DOT = 3;
+/** Between the art and the bars, so tone, a quiet zone and bar edges show at once. */
+const LOOK_AT = { x: 180, y: 54 };
+
+/**
+ * `grid` at `PX_PER_DOT` device pixels a dot, with its origin on a whole
+ * device pixel, so no dot straddles two. At a zoom fitting the page a 180 dpi
+ * dot is under a device pixel, and every dither looks alike.
+ */
+export function wholeDots(grid: OutputGrid, dims: ViewportDims, dpr: number): View {
+  const scale = PX_PER_DOT / (grid.pitch * dpr);
+  const device = scale * dpr;
+  // The view's corner, moved so the grid origin lands `round(...)` device pixels in.
+  const corner = (origin: number, center: number, span: number) =>
+    origin - Math.round((origin - (center - span / 2 / scale)) * device) / device;
+  return {
+    x: corner(grid.origin.x, LOOK_AT.x, dims.width),
+    y: corner(grid.origin.y, LOOK_AT.y, dims.height),
+    scale: { x: scale, y: scale },
+  };
 }
 
 const linear = (from: { x: number; y: number }, to: { x: number; y: number }, a: string, b: string): Fill => ({
