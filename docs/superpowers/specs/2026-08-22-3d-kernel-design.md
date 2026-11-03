@@ -95,6 +95,11 @@ became a default (`useSelectToolWith` takes none), and the dep schema split into
 `engineDeps.ts` and the 2D entries. `check:engine-boundary` holds the line. A separate
 `@weasel-js/engine` package was not built (2026-11-03): core reaches into
 about 127 of the engine's internal symbols, which a package would have to make public.
+Pages and the `RectPose` default stay in the engine files (2026-11-03). Page fields and
+`setPage`/`setPageRun` are scene structure, so cutting them would mean a second `Scene` type,
+or a 2D twin of every scene factory (`createScene`, `sceneFromJSON`, `useScene`), or 2D callers
+opting into pages; the 2D parts (page-run layout, page clip) are registry functions that run
+only for nodes declaring them.
 
 Its prerequisite — making the action pipeline generic over point, camera and box
 — dissolved. `useGestureDispatcher` takes a `clientToWorld` hook and a 3D host
