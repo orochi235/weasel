@@ -54,7 +54,7 @@ try {
   // The node builds the tree on `base`, which must be pushed, but the branch changes only what it
   // adds to local main: unpushed main commits would otherwise count as the branch's own changes.
   const local = git('merge-base', commit, 'main');
-  const newer = since ? git('merge-base', commit, since) : isAncestor(base, local) ? local : base;
+  const newer = since ? git('merge-base', commit, since) : isAncestor(local, base) ? base : local;
   const branchRun = Boolean(branch) && branch !== 'main' && !full;
   const select = branchRun ? Object.keys(diff(newer)) : undefined;
   const reshaped = branchRun
