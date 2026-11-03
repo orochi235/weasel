@@ -44,6 +44,8 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-02, measure: a measurement inside a frame declaring `units.drawnAt` reads that frame's true length
+  (30 world units in a 0.4× drawer read 75); ends in frames that disagree read in the scope they share.
 - 2026-11-02, stroke trim: the site's Stroke trim lab (`#lab-stroke-trim`) holds every case beside its exported
   SVG, with Write PDF. Seen there headless: rounded and stretched rounded paths, inner/center/outer squares, and
   canvas, SVG, and PDF agreeing (wall, zone `weasel`: 190854B0, FED374F8). Not yet looked at: zooming in on a cut
