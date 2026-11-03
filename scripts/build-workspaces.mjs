@@ -45,6 +45,7 @@ export const BUILD_ORDER = [
   '@weasel-js/diagram-elk',
   '@weasel-js/plot',
   '@weasel-js/diagram-formats',
+  '@weasel-js/p-touch',
   '@weasel-js/guides',
   '@weasel-js/kernel3d',
   '@weasel-js/parallax',

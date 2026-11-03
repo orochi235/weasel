@@ -333,15 +333,11 @@ Owner tags, after the priority (2026-10-26):
   for: custom fragment shaders must write the extra output (or the prelude injects it), WebGL2 core
   has one blend state for every attachment, and each group and effect target grows by one.
   Closes when a pick on the canvas reads the id buffer and dither's `protect` accepts its mask.
-- **(P2) [recheck] Label output: `.lbx` files, and raster printing over WebUSB.** Wanted (2026-11-03)
-  alongside dithering and output-grid clamping, and left out of both arcs. lbx-editor does both today
-  outside weasel: `.lbx` through bil-lbx, which describes objects rather than dots, and printing
-  through obwat, which takes an `RgbaImage`, dithers it with its own copy, and streams raster lines.
-  obwat stays standalone (2026-11-03), so how weasel reaches it, by depending on it or otherwise, is
-  undecided. A dithered export already feeds it unchanged: `maskToRgba` with opaque black ink and
-  white blank passes obwat's default threshold untouched.
-  Closes when a weasel scene can be saved as `.lbx` and printed to a P-touch from the browser through
-  kit API.
+- **(P2) [maintainer] `@weasel-js/p-touch` depends on an obwat Node cannot load.** obwat 0.3.0's dist
+  imports `./types` with no extension, so a Node consumer of p-touch fails at import, and the
+  `weasel-ui` vitest project inlines obwat to get past it (`vitest.config.ts`). The fix is on obwat's
+  `node-esm-imports` branch, waiting for a 0.3.1 publish. Closes when p-touch depends on `^0.3.1` and
+  the inline is gone.
 
 ---
 

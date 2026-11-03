@@ -1,0 +1,7 @@
+.preview {
+  width: 576px;
+  max-width: 100%;
+  image-rendering: pixelated;
+  border: 1px solid var(--wzl-border);
+  align-self: flex-start;
+}
