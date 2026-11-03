@@ -459,9 +459,9 @@
     minmax(min(180px, 60%), 260px);
 }
 
-/* `rowsAcross={2}`: two rows side by side. A leaf that spans both keeps to them, its label in the first column
+/* `rowsAcross={2}`, in the rail and list layouts: two rows side by side. A leaf that spans both keeps to them, its label in the first column
    and its control in the second; a stacked one has the whole line under its label already. */
-.railLayout[data-across='2'] :is(.rows, [data-wide] > .row:not(.rowStacked)) {
+:is(.railLayout, .columnsLayout)[data-across='2'] :is(.rows, [data-wide] > .row:not(.rowStacked)) {
   --_across-gap: var(--wzl-prefs-across-gap, 28px);
   display: grid;
   /* Two columns, each at least half the line, so never three; and one once half the line is too narrow for a row. */
@@ -472,13 +472,13 @@
 }
 
 /* The spanning leaf's label reads on the line of its control's first row. */
-.railLayout[data-across='2'] [data-wide] > .row:not(.rowStacked) {
+:is(.railLayout, .columnsLayout)[data-across='2'] [data-wide] > .row:not(.rowStacked) {
   align-items: baseline;
 }
 
 /* The label sits beside its control while both fit, and the control drops
    under it when they do not: a label never narrows below its own text. */
-.railLayout[data-across='2'] .row {
+:is(.railLayout, .columnsLayout)[data-across='2'] .row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--wzl-space-1) var(--wzl-space-3);
@@ -486,13 +486,13 @@
 
 /* One share of the row for every label short enough to take it, so a
    column's controls start at one x. */
-.railLayout[data-across='2'] .row > :first-child {
+:is(.railLayout, .columnsLayout)[data-across='2'] .row > :first-child {
   flex: 1 0 40%;
   min-inline-size: max-content;
   max-inline-size: 100%;
 }
 
-.railLayout[data-across='2'] .rowControl {
+:is(.railLayout, .columnsLayout)[data-across='2'] .rowControl {
   /* No `min-inline-size: 0`: a control wider than what is left of the line
      has to wrap under the label rather than run past the column. */
   flex: 1 1 var(--wzl-prefs-control-min, 80px);
@@ -500,14 +500,14 @@
 }
 
 /* A checkbox needs only its own width beside the label, not a field's. */
-.railLayout[data-across='2'] .rowControl:has(> input[type='checkbox']:only-child) {
+:is(.railLayout, .columnsLayout)[data-across='2'] .rowControl:has(> input[type='checkbox']:only-child) {
   flex-basis: auto;
   min-inline-size: 0;
 }
 
 /* Anything in the grid that is not one leaf's row is a group, and runs the full width. A fragment's children are
    in the grid too, though not children of it. */
-.railLayout[data-across='2'] :is(.rows, .fragment) > :is(:not(.rowSlot), [data-wide]) {
+:is(.railLayout, .columnsLayout)[data-across='2'] :is(.rows, .fragment) > :is(:not(.rowSlot), [data-wide]) {
   grid-column: 1 / -1;
 }
 
