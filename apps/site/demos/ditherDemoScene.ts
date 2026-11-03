@@ -103,7 +103,7 @@ const RULES: [string, RectPose, DitherNodeData][] = [
 ];
 
 const node = (layer: DitherLayer) => ([id, pose, data]: [string, RectPose, DitherNodeData]): DitherNode => ({
-  id: asNodeId(id), kind: 'mark', layer, pose, data,
+  id: asNodeId(id), kind: 'mark', layer, parent: null, pose, data,
 });
 
 export const INITIAL_NODES: DitherNode[] = [

@@ -1,5 +1,6 @@
 import { registerTexture, unregisterTexture, type TextureHandle } from '@weasel-js/renderer';
 
+/** A protect mask uploaded for `dither`, one texel per dot, with its size. */
 export interface ProtectTexture {
   texture: TextureHandle;
   width: number;

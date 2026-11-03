@@ -68,6 +68,7 @@
       "@weasel-js/diagram-formats": ["./packages/diagram-formats/src/index.ts"],
       "@weasel-js/diagram-formats/testing/*": ["./packages/diagram-formats/src/testing/*"],
       "@weasel-js/dither": ["./packages/dither/src/index.ts"],
+      "@weasel-js/dither/testing/*": ["./packages/dither/src/testing/*"],
       "@weasel-js/editor": ["./packages/editor/src/index.ts"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
       "@weasel-js/font/metrics": ["./packages/font/src/metrics.entry.ts"],

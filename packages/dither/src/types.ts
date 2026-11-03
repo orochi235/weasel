@@ -1,4 +1,6 @@
-export type DitherMethod = 'threshold' | 'bayer' | 'floyd-steinberg' | 'atkinson';
+/** How gray becomes ink: a plain cutoff, an ordered 4×4 Bayer matrix, or one
+ *  of two error-diffusion kernels (CPU only). */
+export type DitherMethod ='threshold' | 'bayer' | 'floyd-steinberg' | 'atkinson';
 
 /** 0–255 per channel. */
 export type Rgb = readonly [number, number, number];
@@ -13,6 +15,7 @@ export interface RgbaImage {
   data: Uint8ClampedArray | Uint8Array;
 }
 
+/** How `ditherPixels` quantizes an image. */
 export interface DitherOptions {
   /** Default `'threshold'`. */
   method?: DitherMethod;

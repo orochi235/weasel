@@ -10,6 +10,7 @@ const INK: Rgba = [0, 0, 0, 255];
 const BLANK: Rgba = [0, 0, 0, 0];
 const SCREEN: DeviceGrid = { pitch: [1, 1], origin: [0, 0] };
 
+/** How the `dither` effect quantizes what its group drew. */
 export interface GpuDitherOptions {
   /** Default `'threshold'`. Error diffusion runs on the CPU only. */
   method?: 'threshold' | 'bayer';
