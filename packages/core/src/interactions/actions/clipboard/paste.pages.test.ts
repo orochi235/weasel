@@ -34,6 +34,22 @@ describe('materializePaste in a paged scene', () => {
     expect(node!.pose as RectPose).toMatchObject({ x: 500, y: 300 });
   });
 
+  it('puts each of several pasted roots on the page under its own middle', () => {
+    const { scene } = pagedScene();
+    const r2 = scene.add({ kind: 'mark', layer: 'ink', parent: asNodeId('b'), pose: { x: 50, y: 10, width: 20, height: 10 }, data: {} });
+    const adapter = sceneToAdapter(scene);
+    // The two land at world 60..80 (page a) and 130..150 (page b).
+    const pasted = materializePaste(adapter as never, adapter.snapshotSelection([ON_PAGE, r2]), {
+      currentSelection: [], dropPoint: { x: 60, y: 10 },
+    })!;
+    scene.applyBatch(pasted.ops, 'Paste', adapter as never);
+    const [first, second] = pasted.newIds.map((id) => scene.get(asNodeId(id))!);
+    expect(first!.parent).toBe('a');
+    expect(first!.pose as RectPose).toMatchObject({ x: 60, y: 10 });
+    expect(second!.parent).toBe(PAGE_B);
+    expect(second!.pose as RectPose).toMatchObject({ x: 20, y: 10 });
+  });
+
   it('puts a pasted follower in the page run', () => {
     const { scene } = pagedScene();
     const end = scene.add({ kind: 'mark', layer: 'ink', parent: asNodeId('b'), pose: { x: 10, y: 10, width: 5, height: 5 }, data: {} });

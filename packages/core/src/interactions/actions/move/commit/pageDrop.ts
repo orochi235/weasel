@@ -3,29 +3,45 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { isFollower, keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
-import { pageAt } from 'core/pages/pages';
-import { placedPagesOf } from 'core/pages/pageNodes';
+import { pageAt, pageOfBounds, type PlacedPage } from 'core/pages/pages';
+import { pageOfNode, placedPagesOf } from 'core/pages/pageNodes';
 import { refusalOf } from '../../dropVerdict';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
 import { rootTranslateOps, translateOps, unreleasedIds } from '../translate';
 import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
-import { landedLocalPose } from './reparent';
+import { landedLocalPose, resolveDrop } from './reparent';
 
-/** What a release does with one dragged root: move it into `into` (a page, or `null` for the top of the
- *  tree), or keep its parent and add `shift` to the drag. */
-type RootDrop = { into: NodeId | null } | { shift: { dx: number; dy: number } };
+/** What a release does with one dragged root: add `shift` to the drag and, when `into` is given, move it into
+ *  that container (a page, a group on one, or `null` for the top of the tree). */
+interface RootDrop {
+  readonly into?: NodeId | null;
+  readonly shift: { readonly dx: number; readonly dy: number };
+}
 
 const STAY: RootDrop = { shift: { dx: 0, dy: 0 } };
 
+/** The node a release over `under` drops into on that page when the binding reparents on drop: a group on
+ *  it under the pointer (`resolveDrop`), else `under` itself. `'refused'` when that drop is refused. */
+function containerOn(session: MoveSession, under: PlacedPage, at: { x: number; y: number }): NodeId | 'refused' {
+  if (session.reparentOnDrop() === 'off') return under.id as NodeId;
+  const drop = resolveDrop(session, at);
+  if (drop !== null && 'refused' in drop) return 'refused';
+  const inner = drop?.newParent ?? null;
+  return inner !== null && pageOfNode(session.scene, inner) === under.id ? inner : under.id as NodeId;
+}
+
 /**
  * Where a release at `at` puts each dragged root that is a page's child or,
- * with the pasteboard on, a root of the scene: into the page under the
- * point; off every page, to the top of the tree with the pasteboard on, and
- * otherwise kept in its page, shifted so part of it is still on it. A page
- * that refuses the roots counts as no page, and one that refuses with a
- * reason refuses the move (`'refused'`). `null` when no root is either kind,
- * or none of them changes parent or shifts.
+ * with the pasteboard on, a root of the scene. Each root goes by where its own
+ * dragged box lands: on the page under the pointer when it overlaps that page
+ * (into a group there under the pointer, when the binding reparents on drop),
+ * else on the page it overlaps most. Off every page it goes to the top of the
+ * tree with the pasteboard on, and otherwise stays in its page. With the
+ * pasteboard off, each root ending on a page is shifted so part of it is on
+ * it. A page that refuses the roots silently is not landed on; a refusal with
+ * a reason refuses the move (`'refused'`). `null` when no root is either kind,
+ * or none changes parent or shifts.
  */
 export function pageDrops(
   session: MoveSession,
@@ -42,31 +58,43 @@ export function pageDrops(
   });
   if (ours.length === 0) return null;
 
-  let under = pageAt(placedPagesOf(scene), at)?.id as NodeId | undefined;
-  if (under !== undefined) {
-    const verdict = session.verdict(under);
+  const placed = placedPagesOf(scene);
+  let under = pageAt(placed, at);
+  if (under !== null) {
+    const verdict = session.verdict(under.id as NodeId);
     if (refusalOf(verdict) !== null) return 'refused';
-    if (verdict !== true) under = undefined;
+    if (verdict !== true) under = null;
   }
+  const into = under === null ? null : containerOn(session, under, at);
+  if (into === 'refused') return 'refused';
+
   const adapter = grabbedPoseAdapter(session, sceneViewPoseAdapter(scene));
   const drops = new Map<NodeId, RootDrop>();
   for (const id of ours) {
     const parent = scene.get(id)!.parent;
-    if (under !== undefined) {
-      if (under !== parent) drops.set(id, { into: under });
-    } else if (pasteboard) {
-      if (parent !== null) drops.set(id, { into: null });
-    } else {
-      const page = placedPage(scene, parent!)!;
-      const shift = keepOnPage(page, session.descriptorOf(id).getBounds(draggedWorldPose(session, adapter, id, delta)));
-      if (shift.dx !== 0 || shift.dy !== 0) drops.set(id, { shift });
+    const bounds = session.descriptorOf(id).getBounds(draggedWorldPose(session, adapter, id, delta));
+    const takers = placed.filter((p) => p.id === parent || session.verdict(p.id as NodeId) === true);
+    const page = under !== null && pageOfBounds([under], bounds) !== null ? under : pageOfBounds(takers, bounds);
+    let target: NodeId | null = page === null ? null : page === under ? into : page.id as NodeId;
+    let landing = page;
+    if (page === null && !pasteboard) {
+      target = parent;
+      landing = placedPage(scene, parent!);
     }
+    const shift = landing !== null && !pasteboard ? keepOnPage(landing, bounds) : STAY.shift;
+    if (target !== parent) drops.set(id, { into: target, shift });
+    else if (shift.dx !== 0 || shift.dy !== 0) drops.set(id, { shift });
   }
   return drops.size === 0 ? null : drops;
 }
 
-/** The commit for `drops`: each root moved into its page or the top of the tree at the world place the drag
- *  showed, with its descendants; each shifted root and every other dragged root translated. */
+/** `id`'s descendants that the drag carries along with it, but not `id`. */
+function cascadeOf(session: MoveSession, id: NodeId): NodeId[] {
+  return unreleasedIds(session, new Set(session.ids.filter((other) => other !== id))).filter((d) => d !== id);
+}
+
+/** The commit for `drops`: each dragged root translated by the drag plus its shift, and moved into its new
+ *  container at the world place that gives, its descendants with it. */
 export function pageDropOps(
   session: MoveSession,
   drops: ReadonlyMap<NodeId, RootDrop>,
@@ -75,22 +103,19 @@ export function pageDropOps(
   const { scene } = session;
   const label = session.lifecycle.label;
   const ops: Op[] = [];
-  const crossing = new Set<NodeId>();
-  for (const [id, drop] of drops) {
-    if (!('into' in drop)) continue;
+  for (const id of session.ids) {
+    const drop = drops.get(id) ?? STAY;
+    const d = { dx: delta.dx + drop.shift.dx, dy: delta.dy + drop.shift.dy };
+    if (drop.into === undefined) {
+      ops.push(...rootTranslateOps(session, [id], d));
+      continue;
+    }
     const node = scene.get(id)!;
-    crossing.add(id);
     ops.push(createReparentOp({ id: id as string, fromParentId: node.parent, toParentId: drop.into as string | null, label }));
     ops.push(createTransformOp<unknown>({
-      id: id as string, from: node.pose, to: landedLocalPose(session, id, drop.into, node.layer, delta), label,
+      id: id as string, from: node.pose, to: landedLocalPose(session, id, drop.into, node.layer, d), label,
     }));
-  }
-  const rest = new Set(session.ids.filter((id) => !crossing.has(id)));
-  const carried = unreleasedIds(session, rest).filter((id) => !crossing.has(id));
-  ops.push(...translateOps(session, carried, delta));
-  for (const id of rest) {
-    const { shift } = (drops.get(id) ?? STAY) as { shift: { dx: number; dy: number } };
-    ops.push(...rootTranslateOps(session, [id], { dx: delta.dx + shift.dx, dy: delta.dy + shift.dy }));
+    ops.push(...translateOps(session, cascadeOf(session, id), d));
   }
   return ops;
 }

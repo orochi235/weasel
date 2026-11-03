@@ -236,20 +236,18 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   }
   const site = env.landing?.();
   const into = site?.parent != null ? site : null;
-  // With no container named, a paged scene puts the roots on a page, the paste moved to reach it.
-  const paged = into === null ? pagedLanding(env, src.filter(isRoot), { dx, dy }, ctx?.dropPoint) : null;
-  if (paged) {
-    dx += paged.shift.dx;
-    dy += paged.shift.dy;
-  }
+  // With no container named, a paged scene puts each root on a page, moved with its subtree to reach it.
+  const paged = into === null ? pagedLandings(env, src.filter(isRoot), { dx, dy }, ctx?.dropPoint) : null;
+  const rootOf = (item: Item<TData, TLayer, TPose>): Item<TData, TLayer, TPose> =>
+    isRoot(item) ? item : rootOf(byId.get(item.parent as string)!);
   const landing = (item: Item<TData, TLayer, TPose>): InsertSite | null => {
     if (!isRoot(item)) return null;
-    if (paged) return isFollower(item) ? paged.follower : paged.other;
-    return into;
+    return paged ? paged.get(item.id)!.site : into;
   };
   const placed = (item: Item<TData, TLayer, TPose>): TPose => {
     if (ridesPastedFrame(item)) return copyField(item.pose);
-    const moved = env.translate(copyField(item.pose), dx, dy, item);
+    const shift = paged?.get(rootOf(item).id)!.shift ?? { dx: 0, dy: 0 };
+    const moved = env.translate(copyField(item.pose), dx + shift.dx, dy + shift.dy, item);
     return landing(item)?.local(moved) as TPose ?? moved;
   };
   // `src` is parents-before-children and this keeps it, so children re-attach
@@ -274,14 +272,16 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   } as Node<TData, TLayer, TPose>));
 }
 
-/** {@link pasteOnPages} for `roots` once moved by `offset`. */
-function pagedLanding<TData, TLayer extends string, TPose>(
+/** {@link pasteOnPages} for `roots` once moved by `offset`, by root id. */
+function pagedLandings<TData, TLayer extends string, TPose>(
   env: SceneClipboardEnv<TData, TLayer, TPose>,
   roots: readonly Item<TData, TLayer, TPose>[],
   offset: { dx: number; dy: number },
   dropPoint: { x: number; y: number } | null | undefined,
-): PageLanding | null {
-  const bounds = roots.filter((item) => !isFollower(item))
-    .map((item) => env.poseBounds(env.translate(item.pose, offset.dx, offset.dy, item), item));
-  return pasteOnPages(env.scene as never, bounds, dropPoint);
+): Map<string, PageLanding> | null {
+  const landings = pasteOnPages(env.scene as never, roots.map((item) => ({
+    follower: isFollower(item),
+    bounds: env.poseBounds(env.translate(item.pose, offset.dx, offset.dy, item), item),
+  })), dropPoint);
+  return landings && new Map(roots.map((item, i) => [item.id as string, landings[i]!]));
 }
