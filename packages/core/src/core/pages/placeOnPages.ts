@@ -76,13 +76,14 @@ export function placeOnPages<TData, TLayer extends string, TPose>(
   moveIn(s, destinations(s, content, descriptor), run, descriptor);
 }
 
-/** The page run's `setPageRun`, given the raw write: one that turns the run's pasteboard off also puts what
- *  sits at the top of the tree on the pages (`placeOnPages`), in the same batch. */
-export function settingPageRun<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>,
-  write: (id: NodeId, info: PageRunInfo | null) => void,
-): (id: NodeId, info: PageRunInfo | null) => void {
-  return (id, info) => {
+/** `methods`, a scene's edits, with a `setPageRun` that, when it turns the run's pasteboard off, also puts
+ *  what sits at the top of the tree on the pages (`placeOnPages`), in the same batch. */
+export function placingOnPageRunWrite<TData, TLayer extends string, TPose, M extends {
+  setPageRun(id: NodeId, info: PageRunInfo | null): void;
+}>(sceneOf: () => Scene<TData, TLayer, TPose>, methods: M): M {
+  const write = methods.setPageRun;
+  const setPageRun = (id: NodeId, info: PageRunInfo | null): void => {
+    const scene = sceneOf();
     const closes = scene.get(id)?.pageRun?.pasteboard === true && info !== null && info.pasteboard !== true;
     if (!closes) return write(id, info);
     scene.batch('Set page run', () => {
@@ -90,6 +91,7 @@ export function settingPageRun<TData, TLayer extends string, TPose>(
       placeOnPages(scene, scene.roots.filter((root) => root !== id));
     });
   };
+  return { ...methods, setPageRun };
 }
 
 /** Add `specs`, placed in world space, and put each root among them on its page (`placeOnPages`, with
