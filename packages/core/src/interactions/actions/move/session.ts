@@ -18,8 +18,7 @@ import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
-import type { SnapSession } from '../snapDep';
-import { lazySnapSession } from 'domains/snap/lazySession';
+import { beginDragSnap, type DragSnap } from './dragSnap';
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the
@@ -30,7 +29,7 @@ import { lazySnapSession } from 'domains/snap/lazySession';
 export type ReparentOnDrop = 'off' | 'top' | 'above';
 
 /** What a move captured at press. Nothing here changes during the drag. */
-export interface MoveSession {
+export interface MoveSession extends DragSnap {
   readonly scene: Scene<unknown, string, unknown>;
   /** The drag roots. */
   readonly ids: readonly NodeId[];
@@ -71,11 +70,6 @@ export interface MoveSession {
   readonly mayRefuse: boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
-  /** The drag's snapping, begun once the drag passes its threshold; null
-   *  with no `snap` dep. */
-  readonly snap: SnapSession | null;
-  /** The press, in the coordinates the drag's delta is measured in. */
-  readonly press: { x: number; y: number };
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -159,7 +153,6 @@ export function beginMove(
   const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);
 
-  const press = ctx.drag?.start ?? ctx.world;
   const verdict = verdictOf(ctx.deps.canDropInto, ids, scene);
   const session: MoveSession = {
     startPoses,
@@ -187,8 +180,7 @@ export function beginMove(
     admits: (parent) => verdict(parent) === true,
     mayRefuse: ctx.deps.canDropInto !== undefined,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
-    snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),
-    press,
+    ...beginDragSnap(ctx, ids),
   };
   return { session, readers };
 }

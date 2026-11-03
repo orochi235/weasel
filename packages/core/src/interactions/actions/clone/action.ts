@@ -21,6 +21,8 @@ import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geome
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { recordTransform } from '../transform-again/memory';
+import { beginDragSnap, snappedDelta } from '../move/dragSnap';
+import { SNAP_ROLES } from 'domains/snap/roles';
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -98,7 +100,8 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke', 'kitSettings'],
+  modifierRoles: SNAP_ROLES,
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke', 'kitSettings', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -136,6 +139,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
         applyOps,
       };
       const behaviors = startCloneBehaviors(ctx, opts, scene, scratch.ids, originPoses, descriptorOf);
+      const snap = beginDragSnap(ctx, scratch.ids);
 
       return {
         kind: 'clone',
@@ -145,7 +149,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
         previewHidesSource: false,
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          scratch.currentDelta = behaviors.shape(moveCtx, { dx: moveCtx.drag.delta.x, dy: moveCtx.drag.delta.y });
+          scratch.currentDelta = behaviors.shape(moveCtx, snappedDelta(snap, moveCtx));
           scratch.previews.clear();
           const { dx, dy } = scratch.currentDelta;
           if (dx === 0 && dy === 0) return;
@@ -161,6 +165,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
               if (committed) recordTransform(scene, { kind: 'duplicate', dx, dy }, selection.get());
             } else runBehaviorCancel(behaviors.list, behaviors.gctx);
           } finally {
+            snap.snap?.end();
             scratch.previews.clear();
             runBehaviorSettled(behaviors.list, behaviors.gctx, committed);
           }

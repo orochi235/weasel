@@ -18,7 +18,7 @@ and how a 3D host uses the same pipeline.
 A gesture never talks to a source. It hands the session the point the dispatcher gave it and gets
 back the point it should use. Points are ctx coordinates: world in 2D, screen in a 3D host.
 
-Gestures that snap: move, resize, rotate, insert (drag and click-place), pen and spiro placement,
+Gestures that snap: move and alt-drag clone, resize, rotate, insert (drag and click-place), pen and spiro placement,
 pen handles, anchor and handle drags in path edit, measure, the symmetry center and axis, and
 diagram's route handles.
 
