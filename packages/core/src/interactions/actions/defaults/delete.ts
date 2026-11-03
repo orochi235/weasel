@@ -5,7 +5,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
-import { hiddenSourcesTakenWith } from 'domains/pathEffects/effectSources';
+import { hiddenSourcesTakenWith } from 'domains/pathEffects/hiddenSources';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
