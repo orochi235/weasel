@@ -9,6 +9,9 @@ const STEPS = 16;
 const FOUR_AGREE = 1e-13;
 /** What measures a length inside a step: `segmentLength`'s refining rule, the eight-point rule, or the four-point one. */
 const REFINED = 0, EIGHT = 1, FOUR = 2;
+// Read once: a transpiler's CommonJS output reads an imported binding through a getter, eight times a query.
+const X8 = GL_X, W8 = GL_W;
+const X4_NEAR = G4_X[2], X4_FAR = G4_X[3], W4_NEAR = G4_W[2], W4_FAR = G4_W[3];
 /** How far below the tolerance the bend must bound a Newton step's remaining error for the step to stand unmeasured. */
 const SURE = 1e-2;
 
@@ -70,9 +73,9 @@ function bend2At(der: Float64Array, dim: number, t: number): number {
 /** The four-point rule over `a..b`, unrolled: what a query inside a step that allows it costs. */
 function four(der: Float64Array, dim: number, a: number, b: number): number {
   const mid = (a + b) / 2, half = (b - a) / 2;
-  const o0 = G4_X[3] * half, o1 = G4_X[2] * half;
-  return half * (G4_W[3] * (speedAt(der, dim, mid - o0) + speedAt(der, dim, mid + o0))
-    + G4_W[2] * (speedAt(der, dim, mid - o1) + speedAt(der, dim, mid + o1)));
+  const o0 = X4_FAR * half, o1 = X4_NEAR * half;
+  return half * (W4_FAR * (speedAt(der, dim, mid - o0) + speedAt(der, dim, mid + o0))
+    + W4_NEAR * (speedAt(der, dim, mid - o1) + speedAt(der, dim, mid + o1)));
 }
 
 function gauss(der: Float64Array, dim: number, a: number, b: number, xs: readonly number[], ws: readonly number[]): number {
@@ -94,7 +97,7 @@ export function arcLookup(coords: ArrayLike<number>, dim: 2 | 3): ArcLookup {
   const rule = new Uint8Array(STEPS);
   for (let k = 0; k < STEPS; k++) {
     const a = k / STEPS, b = (k + 1) / STEPS;
-    const g8 = gauss(der, dim, a, b, GL_X, GL_W);
+    const g8 = gauss(der, dim, a, b, X8, W8);
     const gap = Math.abs(g8 - gauss(der, dim, a, b, G4_X, G4_W));
     if (ok && !dipNear(roots, a, b) && gap <= PANEL_AGREE * size) {
       rule[k] = gap <= FOUR_AGREE * size ? FOUR : EIGHT;
@@ -112,7 +115,7 @@ function within(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, k: number,
   const r = lk.rule[k];
   const a = k / STEPS;
   if (r === FOUR) return four(lk.der, dim, a, t);
-  if (r === EIGHT) return gauss(lk.der, dim, a, t, GL_X, GL_W);
+  if (r === EIGHT) return gauss(lk.der, dim, a, t, X8, W8);
   return lengthOver(coords, dim, a, t, lk.size, lk.dips, 1);
 }
 
@@ -161,19 +164,37 @@ export function lookupT(coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, le
   const flat = lk.rule[k] !== REFINED;
   const tol = 1e-10 * total;
   let lo = a, top = (k + 1) / STEPS;
-  let t = a + hermiteShare(s[k + 1] - s[k], v[k] / STEPS, v[k + 1] / STEPS, length - s[k]) / STEPS;
+  const t = a + hermiteShare(s[k + 1] - s[k], v[k] / STEPS, v[k + 1] / STEPS, length - s[k]) / STEPS;
+  // One measured Newton step nearly always finishes; it stays out of the loop, which costs half again as much.
+  const err = s[k] + (lk.rule[k] === FOUR ? four(der, dim, a, t) : within(coords, dim, lk, k, t)) - length;
+  const dt = err / speedAt(der, dim, t);
+  const next = t - dt;
+  const inside = next > lo && next < top;
+  if (inside) {
+    if (Math.abs(err) < tol) return next;
+    // The step leaves an error of half the speed's change times dt², and the speed changes no faster than the bend.
+    const dt2 = dt * dt, cap = SURE * tol;
+    if (flat && bend2At(der, dim, t) * dt2 * dt2 < cap * cap) return next;
+  } else if (Math.abs(err) < tol) {
+    return t;
+  }
+  if (err > 0) top = t; else lo = t;
+  return settle(coords, dim, lk, k, length, inside ? next : (lo + top) / 2, lo, top);
+}
+
+/** {@link lookupT}'s Newton steps from `t`, held inside `lo..top` in step `k`, each measured. */
+function settle(
+  coords: ArrayLike<number>, dim: 2 | 3, lk: ArcLookup, k: number, length: number, t: number, lo: number, top: number,
+): number {
+  const tol = 1e-10 * lk.s[STEPS];
   for (let i = 0; i < 30; i++) {
-    const err = s[k] + within(coords, dim, lk, k, t) - length;
-    const sp = speedAt(der, dim, t);
-    const dt = sp > 0 ? err / sp : NaN;
-    const next = t - dt;
+    const err = lk.s[k] + within(coords, dim, lk, k, t) - length;
+    const sp = speedAt(lk.der, dim, t);
+    const next = sp > 0 ? t - err / sp : NaN;
     const inside = next > lo && next < top;
     if (Math.abs(err) < tol) return inside ? next : t;
     if (err > 0) top = t; else lo = t;
-    if (!inside) { t = (lo + top) / 2; continue; }
-    // The step leaves an error of half the speed's change times dt², and the speed changes no faster than the bend.
-    if (flat && bend2At(der, dim, t) * (dt * dt) ** 2 < (SURE * tol) ** 2) return next;
-    t = next;
+    t = inside ? next : (lo + top) / 2;
   }
   return t;
 }
