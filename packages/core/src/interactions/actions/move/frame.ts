@@ -5,6 +5,7 @@ import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BehaviorResult, GroupTransform } from '../../gestures/types';
 import { draggedStoredPose } from './delta';
 import { snappedDelta } from './dragSnap';
+import { quantizedPreview } from 'core/scene/outputGrid';
 import type { MoveFrame, MoveSession } from './session';
 
 function foldBehaviors(
@@ -58,8 +59,8 @@ export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx
   const previews = new Map<NodeId, unknown>();
   for (const [id, ori] of session.startPoses) {
     const dragged = draggedStoredPose(session, id, ori, dx, dy);
-    previews.set(id, session.carried.has(id) ? dragged : posed.get(id) ?? dragged);
+    previews.set(id, quantizedPreview(session.scene, id, session.carried.has(id) ? dragged : posed.get(id) ?? dragged));
   }
-  for (const [id, pose] of posed) if (!session.startPoses.has(id)) previews.set(id, pose);
+  for (const [id, pose] of posed) if (!session.startPoses.has(id)) previews.set(id, quantizedPreview(session.scene, id, pose));
   return { delta, previews, opaque, overlays };
 }

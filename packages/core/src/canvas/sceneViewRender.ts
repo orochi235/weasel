@@ -4,6 +4,7 @@
  * a `View`, and a per-node `drawOne`, render one frame.
  */
 
+import { drawnPoseOf } from 'core/scene/outputGrid';
 import type { WeaselRenderer } from '@weasel-js/renderer';
 import { cachedCanvasRenderer, paintCanvas, resolveDpr } from './canvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
@@ -149,6 +150,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   const derivedOnly = withDerivedPaths(scene, withInheritedPaints(shown, drawOne));
   const derived = withPaintOverrides(overrides, derivedOnly);
   const derivedPathAt = sceneDerivedPathOf(scene);
+  const drawnAt = drawnPoseOf(scene);
   const derivedPathOf = (node: Node<TData, TLayer, TPose>) => derivedPathAt(nodeAsShown(scene.overrides, node));
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
@@ -156,9 +158,11 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     v: View,
   ): DrawCommand[] => {
     const overrideAlpha = scene.overrides.read(node.id as NodeId)?.alpha ?? 1;
+    const shownNode = nodeAsShown(scene.overrides, node);
+    const at = drawnAt ? drawnAt(shownNode, pose) : pose;
     return wrapNodeOutput(
-      derived(nodeAsShown(scene.overrides, node), pose, v),
-      pose,
+      derived(shownNode, at, v),
+      at,
       (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
     );
   };

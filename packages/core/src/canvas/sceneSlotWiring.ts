@@ -15,6 +15,7 @@ import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derive
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { withShownNode } from './shownNodes';
+import { drawnPoseOf } from 'core/scene/outputGrid';
 
 /**
  * The alpha a view paints a node at: the view's own `alphaFor` times any
@@ -42,6 +43,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   const derived = withDerivedPaths(scene, withInheritedPaints(shown, slot.drawOne), slot.toPose);
   const painted = withPaintOverrides(overrides, derived);
   const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
+  const drawnAt = drawnPoseOf(scene);
   return {
     ...slot,
     ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
@@ -49,6 +51,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
       ? { paintBounds: withShownNode(scene.overrides, withInheritedPaintBounds(shown, slot.paintBounds)) }
       : {}),
     drawOne: withShownNode(scene.overrides, painted),
+    ...(drawnAt ? { drawnPose: (node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose) } : {}),
     derivedPathOf: (node) => derivedPathOf(nodeAsShown(scene.overrides, node)),
     alphaFor: composeAlphaFor(scene, alphaFor),
   };

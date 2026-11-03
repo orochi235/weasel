@@ -49,3 +49,45 @@ protect. Where tone must be dithered over such artwork, protect it:
 into the mask `ditherPixels` takes, and `protectTexture` uploads that mask
 for `dither`, which needs an output grid to read it. Inside it pixels quantize
 at plain threshold, and error diffusion neither enters nor leaves it.
+
+## Whole-dot marks
+
+Plain threshold still gives each edge to whichever dot it covers more than
+half of, so two bars of one module can print a dot apart and a hairline can
+vanish. Keep the marks on the dots in the document instead, with core's
+quantize rule:
+
+```ts
+import { OUTPUT_GRID_KEY, createScene, quantizeSize } from '@weasel-js/core';
+import { alignToGrid, snapToPitch } from '@weasel-js/geom';
+
+const scene = createScene({
+  systemLayers,
+  doc: { [OUTPUT_GRID_KEY]: { pitch: 72 / 180, origin: { x: 0, y: 0 } } },
+  quantize: {
+    // What the document holds: here a rule's thickness in whole dots, never under one.
+    stored: ({ data, pose }, grid, anchor) => data.mark === 'rule'
+      ? { pose: quantizeSize(pose, pose.width, snapToPitch(pose.height, grid.pitch), anchor) }
+      : null,
+    // Where it is drawn: its corner on a dot. Picking keeps the stored pose.
+    drawn: ({ data, pose }, grid) => (data.mark ? alignToGrid(pose, grid) : pose),
+  },
+});
+```
+
+The grid is a document value, `kit:outputGrid` in `scene.doc`, so setting it
+is an undoable edit, and the stored values re-snap inside that same edit
+(2026-11-03). `stored` runs on every committed write, whatever made it (a
+resize, typed W/H, align's match size, a paste, a data edit such as a stroke
+width), on a document as it is built or loaded, and on a resize's or a move's
+live preview. It answers data as well as a pose, since a stroke 1.5 dots wide
+prints as ragged as a barcode module (2026-11-03). Which values are stored
+and which only drawn is the rule's choice, per field (2026-11-03): a size that
+must still read true after the grid changes belongs in `stored`, so W and H
+show what prints; a position that moves with the grid's origin belongs in
+`drawn`.
+
+A barcode stores its module as a whole number of dots, and its width as that
+module times its modules: every module then prints alike wherever the code
+sits, and its W is the width it prints, which can be well off the width it was
+asked for when the module rounds down. The site's dither demo does this.

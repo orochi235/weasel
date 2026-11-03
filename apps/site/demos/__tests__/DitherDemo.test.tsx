@@ -26,6 +26,7 @@ describe('DitherDemo', () => {
     for (const name of ['Bayer', 'Floyd–Steinberg', 'Atkinson', 'Threshold']) await pick(name);
     await pick('300 dpi');
     for (const name of ['By mask', 'Off', 'By layer']) await pick(name);
+    for (const name of ['As drawn', 'Snapped to dots']) await pick(name);
 
     const range = container.querySelector('input[type="range"]')!;
     await act(async () => { fireEvent.change(range, { target: { value: '90' } }); });

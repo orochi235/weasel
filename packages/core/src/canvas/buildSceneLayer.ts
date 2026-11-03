@@ -28,6 +28,9 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    *  node's path: `<SceneCanvas>` resolves it from the scene, and
    *  `buildSceneLayer` called without one from its adapter. */
   drawOne: (obj: TNode, pose: TPose, view: View, ctx?: NodePaintCtx) => DrawCommand[];
+  /** Where an object is drawn, from its world pose: a scene's quantize rule's
+   *  `drawn` half. Only painting reads it; picking keeps the pose. */
+  drawnPose?: (obj: TNode, pose: TPose) => TPose;
   /** The path a container derives from its dependencies' poses, for the clip
    *  it imposes on its subtree — `drawOne`'s `ctx` carries the derived path a
    *  node *paints*, this one the clip it *imposes*. A scene-aware caller
@@ -123,6 +126,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
     ((obj: TNode) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
   const { drawOne, derivedPathOf } = withAdapterDerivedPaths(cfg, adapter, toPose);
   const postProcess = cfg.postProcess;
+  const drawnAt = cfg.drawnPose ?? ((_obj: TNode, pose: TPose) => pose);
   const finish = cfg.cull
     ? (cmds: DrawCommand[], view: View, dims: LayerDims): DrawCommand[] =>
       cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height }, dims.dpr)
@@ -139,8 +143,9 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       const hidden = hideIds();
       const a = adapter;
       if (a && cfg.objects === undefined && drawOne) {
-        const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
+        const filteredDrawOne = (obj: TNode, at: TPose, v: View): DrawCommand[] => {
           if (hidden && hidden.has(obj.id)) return [];
+          const pose = drawnAt(obj, at);
           const cmds = drawOne(obj, pose, v);
           if (debugSink) {
             const b = boundsOfFn ? boundsOfFn(obj.id) : null;
@@ -181,8 +186,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         if (hidden && hidden.has(obj.id)) continue;
         const pose: TPose = toPose(obj);
         if (drawOne && !culled?.(obj, pose)) {
-          const cmds = drawOne(obj, pose, view);
-          const wrapped = wrapNodeOutput(cmds, pose, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
+          const at = drawnAt(obj, pose);
+          const wrapped = wrapNodeOutput(drawOne(obj, at, view), at, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
           for (const cmd of wrapped) children.push(cmd);
         }
         if (debugSink) {

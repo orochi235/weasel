@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  SceneCanvas, defaultDrawOne, solid, useScene,
+  OUTPUT_GRID_KEY, SceneCanvas, defaultDrawOne, solid, useScene,
   type DrawCommand, type LayerGroup, type RectPose, type RenderLayer, type View,
 } from '@weasel-js/core';
 import {
@@ -14,8 +14,8 @@ import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 import { exportPage, marksMask, type Crisp } from './ditherDemoExport';
 import {
-  INITIAL_NODES, PAGE, fitPage, outputGrid, wholeDots,
-  type DitherLayer, type DitherNodeData,
+  DOT_RULE, INITIAL_NODES, PAGE, fitPage, outputGrid, wholeDots,
+  type DitherLayer, type DitherNode, type DitherNodeData,
 } from './ditherDemoScene';
 import s from './DitherDemo.module.css';
 
@@ -48,6 +48,15 @@ const CRISP: { value: Crisp; label: string }[] = [
   { value: 'mask', label: 'By mask' },
   { value: 'off', label: 'Off' },
 ];
+type Snap = 'on' | 'off';
+const SNAP: { value: Snap; label: string }[] = [
+  { value: 'on', label: 'Snapped to dots' },
+  { value: 'off', label: 'As drawn' },
+];
+/** The screen grid's export: one pixel per point. */
+const SCREEN_GRID = { pitch: 1, origin: { x: 0, y: 0 } };
+const exportGridOf = (grid: GridChoice) => (grid === 'screen' ? SCREEN_GRID : outputGrid(grid));
+const LAYERS = [{ id: 'art' as const }, { id: 'marks' as const }];
 const labelOf = (m: DitherMethod) => METHODS.find((x) => x.value === m)!.label;
 
 /** The paper, under the scene and outside every layer group, so the dither's
@@ -62,15 +71,25 @@ const PAPER: RenderLayer<unknown> = {
   }],
 };
 
+const barcodeWidth = (scene: { nodes: ReadonlyMap<unknown, DitherNode> }) =>
+  [...scene.nodes.values()].find((n) => n.data.mark === 'barcode')?.pose.width ?? 0;
+
 export function DitherDemo() {
-  const scene = useScene<DitherNodeData, DitherLayer, RectPose>({
-    systemLayers: [{ id: 'art' }, { id: 'marks' }],
-    initial: INITIAL_NODES,
+  // One document as drawn, and the same one keeping its marks on the output grid it holds.
+  const asDrawn = useScene<DitherNodeData, DitherLayer, RectPose>({ systemLayers: LAYERS, initial: INITIAL_NODES });
+  const onDots = useScene<DitherNodeData, DitherLayer, RectPose>({
+    systemLayers: LAYERS, initial: INITIAL_NODES, quantize: DOT_RULE, doc: { [OUTPUT_GRID_KEY]: exportGridOf(180) },
   });
+  const [snap, setSnap] = useState<Snap>('on');
+  const scene = snap === 'on' ? onDots : asDrawn;
   const version = scene.getVersion();
   const [grid, setGrid] = useState<GridChoice>(180);
   const [view, setView] = useState<View>(() => openingView(180));
-  const pickGrid = (next: GridChoice) => { setGrid(next); setView(openingView(next)); };
+  const pickGrid = (next: GridChoice) => {
+    setGrid(next);
+    setView(openingView(next));
+    onDots.doc.set(OUTPUT_GRID_KEY, exportGridOf(next));
+  };
   const [method, setMethod] = useState<DitherMethod>('bayer');
   const [threshold, setThreshold] = useState(128);
   const [crisp, setCrisp] = useState<Crisp>('layer');
@@ -123,7 +142,7 @@ export function DitherDemo() {
   const [exported, setExported] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    exportPage(scene, { grid: printGrid ?? { pitch: 1, origin: { x: 0, y: 0 } }, method, threshold, crisp })
+    exportPage(scene, { grid: printGrid ?? SCREEN_GRID, method, threshold, crisp })
       .then((image) => {
         if (!live) return;
         const canvas = out.current;
@@ -148,6 +167,7 @@ export function DitherDemo() {
     crisp === 'mask' && !printGrid
       ? 'By mask needs a printer grid on the canvas, so the canvas protects nothing on the screen grid; the export still does.'
       : '',
+    `Barcode: ${barcodeWidth(scene).toFixed(2)} pt wide.`,
   ].filter(Boolean).join(' ');
   const resolution = printGrid ? `${grid} dpi` : '1 px per point';
 
@@ -155,6 +175,7 @@ export function DitherDemo() {
     <div className="ckd-stack">
       <DemoStage width={W} height={H}>
         <SceneCanvas
+          key={snap}
           viewport={ZOOM_RANGE}
           initialActiveTool="hand"
           view={view}
@@ -183,6 +204,10 @@ export function DitherDemo() {
         <div className="ckd-control">
           Keep marks crisp
           <ToggleBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} ariaLabel="Keep marks crisp" size="sm" />
+        </div>
+        <div className="ckd-control">
+          Marks
+          <ToggleBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} ariaLabel="Marks" size="sm" />
         </div>
         <label className="ckd-control">
           Threshold

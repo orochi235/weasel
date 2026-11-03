@@ -17,6 +17,7 @@ import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
 import { clampToMinSize } from './behaviors/clampMinSize';
 import { edgeAspect, onDiagonal } from './aspect';
 import { snapMods } from 'domains/snap/roles';
+import { quantizedPreview } from 'core/scene/outputGrid';
 
 /** `ob` with the edges `anchor` leaves free moved by the drag delta, which is
  *  taken into the axes of the frame the box is drawn in first. A frame nothing
@@ -176,7 +177,9 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   const shaped = mods.constrain ? edgeAspect(drawn, drawnStart, box.anchor) : drawn;
   const constrained = insetBox(constrain(session.constraints, gctx, box.anchor, shaped), box.extents);
 
-  const { previews, proposed, lone } = posesInBox(session, constrained);
+  const { previews: boxed, proposed, lone } = posesInBox(session, constrained);
+  // The output grid is the invariant, so it shapes the poses after the snap and the constraints.
+  const previews = new Map([...boxed].map(([id, pose]) => [id, quantizedPreview(session.scene, id, pose, box.anchor)]));
   if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, outsetBox(boundsForRules(lone.g, lone.world), box.extents)]]);
   return { previews: holdInPlace(previews, session.held, session.poseFrame), proposed };
 }
