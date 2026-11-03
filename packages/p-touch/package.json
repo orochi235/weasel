@@ -2,6 +2,9 @@
   "name": "@weasel-js/p-touch",
   "version": "1.16.1",
   "description": "Brother P-touch labels from weasel scenes: .lbx files written from draw commands, and printing over WebUSB or Web Serial.",
+  "weasel": {
+    "tier": "other"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
