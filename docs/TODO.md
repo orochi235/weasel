@@ -30,6 +30,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P3) [maintainer] Whether an alt-drag clone should snap to its own source.** Clone snaps as move
+  does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names
+  the box being snapped and hides those nodes as targets. During a clone the source stays put, so the
+  copy cannot line up with the original's edges. Allowing it needs a separate exclude list on
+  `SnapBegin`; the copy starts on its source, so a short drag would snap back onto it.
+  Closes when the maintainer decides, and either the exclude list is built or this is recorded as
+  decided against.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
