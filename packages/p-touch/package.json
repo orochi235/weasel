@@ -1,0 +1,58 @@
+{
+  "name": "@weasel-js/p-touch",
+  "version": "1.16.1",
+  "description": "Brother P-touch labels from weasel scenes: .lbx files written from draw commands, and printing over WebUSB or Web Serial.",
+  "weasel": {
+    "tier": "other"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/p-touch"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@weasel-js/dither": "1.16.1",
+    "@weasel-js/geom": "1.16.1",
+    "@weasel-js/paint": "1.16.1",
+    "@weasel-js/renderer": "1.16.1",
+    "@weasel-js/text": "1.16.1",
+    "bil-lbx": "^0.3.1",
+    "obwat": "^0.3.1"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.16.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

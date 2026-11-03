@@ -1387,6 +1387,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PlotKindsDemo.tsx',
   },
   {
+    id: 'p-touch-label',
+    title: 'P-touch label',
+    package: 'p-touch',
+    description: 'A 24mm label on a scene in points, drawn by one drawOne that the canvas, renderLabel and sceneToLbx all share. The preview is renderLabel at the PT-P710BT\'s 180 dpi over the band its printhead reaches; Print sends it through printLabel over WebUSB, asking for the printer the first time. Download writes the same scene as an .lbx with the frame and the text as objects P-touch Editor can edit and the ellipse, which an .lbx object cannot state, as an image.',
+    hint: 'drag or resize a shape and watch the preview follow · Download .lbx · Print with a PT-P710BT plugged in',
+    load: () => import('./demos/PTouchLabelDemo').then((m) => m.PTouchLabelDemo),
+    path: 'apps/site/demos/PTouchLabelDemo.tsx',
+  },
+  {
     id: 'parallax',
     title: 'Parallax',
     package: 'parallax',
