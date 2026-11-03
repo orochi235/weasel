@@ -7,6 +7,9 @@ import type { DitherOptions, RgbaImage } from './types';
 export function ditherPixels(image: RgbaImage, options: DitherOptions = {}): Uint8Array {
   const { method = 'threshold', threshold = DEFAULT_THRESHOLD, background = WHITE, protect } = options;
   const { width, height } = image;
+  if (image.data.length !== width * height * 4) {
+    throw new RangeError(`ditherPixels: data holds ${image.data.length} bytes, a ${width}×${height} image needs ${width * height * 4}`);
+  }
   if (protect && protect.length !== width * height) {
     throw new RangeError(`ditherPixels: protect holds ${protect.length} pixels, the image ${width * height}`);
   }

@@ -10,4 +10,8 @@ describe('maskToRgba', () => {
     const out = maskToRgba(new Uint8Array([1, 0]), 2, 1, { ink: [200, 0, 0, 255], blank: [255, 255, 255, 255] });
     expect(Array.from(out)).toEqual([200, 0, 0, 255, 255, 255, 255, 255]);
   });
+
+  it('refuses a mask of the wrong size', () => {
+    expect(() => maskToRgba(new Uint8Array(3), 2, 2)).toThrow(RangeError);
+  });
 });

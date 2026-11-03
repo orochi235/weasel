@@ -20,6 +20,10 @@ describe('ditherPixels: threshold', () => {
     expect(Array.from(ditherPixels(clear, { background: [0, 0, 0] }))).toEqual([1]);
   });
 
+  it('refuses image data of the wrong length', () => {
+    expect(() => ditherPixels({ width: 2, height: 2, data: new Uint8ClampedArray(12) })).toThrow(RangeError);
+  });
+
   it('refuses a protect mask of the wrong size', () => {
     expect(() => ditherPixels(grayImage(2, 2, () => 0), { protect: new Uint8Array(3) })).toThrow(RangeError);
   });

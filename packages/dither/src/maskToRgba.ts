@@ -10,6 +10,9 @@ export function maskToRgba(
   height: number,
   colors: { ink?: Rgba; blank?: Rgba } = {},
 ): Uint8ClampedArray<ArrayBuffer> {
+  if (mask.length !== width * height) {
+    throw new RangeError(`maskToRgba: mask holds ${mask.length} pixels, ${width}×${height} needs ${width * height}`);
+  }
   const ink = colors.ink ?? INK;
   const blank = colors.blank ?? BLANK;
   const out = new Uint8ClampedArray(width * height * 4);

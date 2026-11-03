@@ -20,4 +20,9 @@ describe('protectMask', () => {
   it('is all zero for no rects', () => {
     expect(protectMask([], 3, 1)).toEqual(new Uint8Array(3));
   });
+
+  it('ignores a rect wholly outside the image', () => {
+    const rects = [{ x: -5, y: 0, width: 2, height: 2 }, { x: 9, y: 0, width: 2, height: 2 }, { x: 0, y: -4, width: 2, height: 2 }];
+    expect(protectMask(rects, 4, 2)).toEqual(new Uint8Array(8));
+  });
 });
