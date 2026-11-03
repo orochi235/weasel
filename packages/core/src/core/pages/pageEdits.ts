@@ -8,6 +8,7 @@ import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import { sameValue } from '../scene/sameValue';
 import type { NodeId, RectPose, Scene } from '../scene/types';
 import type { Page, PlacedPage } from './pages';
+import { placeOnPages } from './placeOnPages';
 import {
   addPageNode, createPageRun, pageIdsOf, pageInfo, pageNodeOf, pageOfNode, pagePoses, pageRunOf, pagesOf, placedPagesOf,
   runInfo, runPose, type PagesDoc,
@@ -19,7 +20,8 @@ export { PAGES_DOC_KEY, pagesOf, placedPagesOf, type PagesDoc } from './pageNode
 export interface PageEditOptions {
   /** The undo entry's label. */
   label?: string;
-  /** Accepted for compatibility and not read: membership is the tree, so nothing is measured. */
+  /** What measures each root when {@link setPages} makes a scene paged and puts its content on the pages
+   *  (`placeOnPages`). Not read otherwise: membership is the tree, so nothing is measured. */
   descriptor?: PoseDescriptor<unknown>;
 }
 
@@ -70,19 +72,23 @@ function writePage(scene: AnyScene, id: NodeId, page: Page, pose: RectPose): voi
  * Make the scene's pages `next`, as one undo entry labeled `label`: pages it
  * keeps are resized, renamed and reordered, new ones are added, and ones it
  * drops are deleted with everything on them and whatever follows that. A
- * scene with no page run gets one. Content keeps its place on its page.
+ * scene with no page run gets one, and what it held goes onto the pages
+ * (`placeOnPages`, measured with `options.descriptor`). Content keeps its
+ * place on its page.
  */
 export function setPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   next: PagesDoc,
   label: string,
-  _options: Pick<PageEditOptions, 'descriptor'> = {},
+  options: Pick<PageEditOptions, 'descriptor'> = {},
 ): void {
   const s = asAny(scene);
   s.batch(label, () => {
     const run = pageRunOf(s);
     if (run === null) {
+      const held = [...s.roots];
       createPageRun(s, next.pages, next.layout);
+      placeOnPages(s, held, options);
       return;
     }
     const node = s.get(run)!;

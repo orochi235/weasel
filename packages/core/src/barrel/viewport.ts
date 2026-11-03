@@ -80,7 +80,8 @@ export { createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf } from '../co
 export type { CreatePageRunOptions, PageInfo, PageRunInfo } from '../core/pages/pageNodes';
 export { PAGE_RUN, pageRunLayout } from '../core/pages/pageRunLayout';
 export { PAGE_CLIP, pageClip } from '../core/pages/pageClip';
-export { adoptLegacyPages, placeOnPages } from '../core/pages/legacyPages';
+export { adoptLegacyPages } from '../core/pages/legacyPages';
+export { placeOnPages } from '../core/pages/placeOnPages';
 export { followerHome, pasteboardOn } from '../core/pages/pagePlacement';
 export { zoomAt, axisZoomFactor } from '../core/viewport/zoomAt';
 export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from '../core/viewport/zoomBounds';

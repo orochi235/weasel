@@ -168,3 +168,18 @@ describe('page edits', () => {
     expect(pagesOf(scene)!.layout).toEqual({ gap: 20, origin: { x: 50, y: 7 } });
   });
 });
+
+describe('making a Continuous scene paged', () => {
+  it('puts every content root on a page, as one undo entry with the pages', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    const near = scene.add({ kind: 'mark', layer: 'l', pose: { x: 10, y: 10, width: 10, height: 10 }, data: { n: 'near' } });
+    const far = scene.add({ kind: 'mark', layer: 'l', pose: { x: 900, y: 10, width: 10, height: 10 }, data: { n: 'far' } });
+    addPage(scene, { id: 'p', width: 100, height: 100 });
+    expect(scene.roots).toEqual([pageRunOf(scene)]);
+    expect([scene.get(near)!.parent, scene.get(far)!.parent]).toEqual(['p', 'p']);
+    expect(scene.get(far)!.pose).toMatchObject({ x: 99 });
+    scene.undo();
+    expect(scene.roots).toEqual([near, far]);
+    expect(scene.get(far)!.pose).toMatchObject({ x: 900 });
+  });
+});

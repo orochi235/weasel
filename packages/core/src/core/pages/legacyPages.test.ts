@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '../scene/scene';
 import type { AddNodeSpec, NodeId } from '../scene/types';
-import { adoptLegacyPages, placeOnPages } from './legacyPages';
+import { adoptLegacyPages } from './legacyPages';
+import { placeOnPages } from './placeOnPages';
 import { PAGES_DOC_KEY, type PagesDoc } from './pageEdits';
 import { createPageRun, pageNodeOf, pageOfNode, pageRunOf } from './pageNodes';
 
