@@ -4,7 +4,9 @@
  * - `core` is @weasel-js/core alone.
  * - `base` is a package core depends on, directly or not. The graph decides it; the manifest repeats
  *   it so that core taking on a new dependency is a change someone sees.
- * - `plugin` is high-level functionality dropped into a canvas built on core.
+ * - `plugin` is high-level functionality a canvas takes in through its extension points: layers,
+ *   tools, actions and deps from core, effects and draw commands from the renderer. So it reaches a
+ *   package in `EXTENSION_POINTS`; a package that does is not thereby a plugin.
  * - `other` is the rest: hosts, apps, file formats, tooling. One that doesn't reach core at all is
  *   drawn as standalone, which is a fact about the graph and not declared.
  */
@@ -12,6 +14,9 @@ import { publishableWorkspaces } from './workspaces.mjs';
 
 export const TIERS = ['base', 'core', 'plugin', 'other'];
 export const SCOPE = '@weasel-js/';
+
+/** The packages that declare what a canvas accepts from outside it. */
+export const EXTENSION_POINTS = ['core', 'renderer'];
 
 /** Every publishable package by short name: its directory, declared tier and @weasel-js dependencies. */
 export function readPackages(root) {
@@ -56,8 +61,9 @@ export function tierProblems(packages) {
       problems.push(`${where} says "base", but core no longer depends on it; it is "plugin" or "other".`);
     } else if (base.has(name) && tier !== 'base') {
       problems.push(`${where} says "${tier}", but core depends on it, which makes it "base".`);
-    } else if (tier === 'plugin' && !closure(name).has('core')) {
-      problems.push(`${where} says "plugin", but it doesn't depend on core, so it has no canvas to drop into.`);
+    } else if (tier === 'plugin' && !EXTENSION_POINTS.some((p) => closure(name).has(p))) {
+      problems.push(`${where} says "plugin", but it reaches none of ${EXTENSION_POINTS.join(', ')}, ` +
+        'so it has no canvas extension point to plug into.');
     }
   }
   return problems;

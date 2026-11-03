@@ -25,14 +25,24 @@ describe('tierProblems', () => {
     ]);
   });
 
-  it('rejects a missing or unknown tier, a second core, and a plugin that never reaches core', () => {
-    const bad = graph([['core', 'core', []], ['a', undefined, []], ['b', 'extra', []], ['c', 'core', []], ['d', 'plugin', []]]);
+  it('rejects a missing or unknown tier, a second core, and a plugin that reaches no extension point', () => {
+    const bad = graph([
+      ['geom', 'base', []], ['core', 'core', ['geom']], ['a', undefined, []], ['b', 'extra', []],
+      ['c', 'core', []], ['d', 'plugin', ['geom']],
+    ]);
     expect(tierProblems(bad)).toEqual([
       expect.stringMatching(/a\/package\.json has no "weasel\.tier"/),
       expect.stringMatching(/"weasel\.tier": "extra"/),
       expect.stringMatching(/only @weasel-js\/core is "core"/),
-      expect.stringMatching(/no canvas to drop into/),
+      expect.stringMatching(/d\/package\.json.*no canvas extension point/),
     ]);
+  });
+
+  it('accepts a plugin that reaches the renderer and not core', () => {
+    const effects = graph([
+      ['renderer', 'base', []], ['core', 'core', ['renderer']], ['fx', 'plugin', ['renderer']],
+    ]);
+    expect(tierProblems(effects)).toEqual([]);
   });
 
   it("passes on the repo's own manifests", () => {

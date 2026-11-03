@@ -1,6 +1,6 @@
 import type { BlendFactors, CompositeOp, DrawCommand, Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
-import type { Dims } from './render';
+import type { LayerDims } from './dims';
 
 /**
  * Several consecutive layers composited as one.
@@ -33,7 +33,7 @@ export interface LayerGroup {
   layers: readonly string[];
   /** Passes over the group's combined pixels, in order. A thunk is re-read on
    *  every frame, so an animating radius costs no React render. */
-  effects?: readonly Effect[] | ((view: View, dims: Dims) => readonly Effect[]);
+  effects?: readonly Effect[] | ((view: View, dims: LayerDims) => readonly Effect[]);
   /** Opacity applied to the group's composited result, not to each member. */
   alpha?: number;
   /** 4×5 color matrix (row-major, 20 numbers) applied to the composited
@@ -96,7 +96,7 @@ export function wrapGroup(
   group: LayerGroup,
   children: DrawCommand[],
   view: View,
-  dims: Dims,
+  dims: LayerDims,
 ): DrawCommand[] {
   const declared = typeof group.effects === 'function'
     ? group.effects(view, dims)

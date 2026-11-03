@@ -11,6 +11,10 @@
  *   uniform sampler2D u_source   what has been drawn so far
  *   uniform vec2  u_resolution   source size in device pixels
  *   uniform vec2  u_texel        1.0 / u_resolution — one texel step
+ *   uniform vec2  u_windowOrigin  the source's top-left in the drawing
+ *                                 buffer, device pixels from its top left.
+ *                                 A fragment's own device pixel, top-down,
+ *                                 is u_windowOrigin + vec2(v_uv.x, 1.0 - v_uv.y) * u_resolution.
  *
  * PREMULTIPLIED ALPHA: `u_source` holds premultiplied RGBA. An effect that
  * weights neighboring samples (a blur) is doing the right thing on
@@ -34,7 +38,7 @@ export const EFFECT_ATTRIBUTES = ['a_position', 'a_uv'] as const;
 
 /** Uniforms the renderer sets on every effect pass. An effect must not
  *  redeclare them with different meanings; it may leave any of them out. */
-export const EFFECT_KIT_UNIFORMS = ['u_source', 'u_resolution', 'u_texel'] as const;
+export const EFFECT_KIT_UNIFORMS = ['u_source', 'u_resolution', 'u_texel', 'u_windowOrigin'] as const;
 
 /** The pass that puts a group's finished texture back into its parent.
  *  `u_alpha` and the color matrix are applied here rather than inside the

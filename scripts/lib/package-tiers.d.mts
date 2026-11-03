@@ -1,5 +1,6 @@
 export const TIERS: string[];
 export const SCOPE: string;
+export const EXTENSION_POINTS: string[];
 export interface TieredPackage {
   dir: string;
   tier: string | undefined;

@@ -52,6 +52,11 @@ export const REACT_FREE_ENTRIES = [
     dom: true,
   },
   {
+    spec: '@weasel-js/dither',
+    why: 'pixels to 1-bit ink, and the renderer effect that shows it live',
+    dom: true,
+  },
+  {
     spec: '@weasel-js/prefs',
     why: 'the schema and the store; the hooks live behind @weasel-js/prefs/react',
     dom: true,
