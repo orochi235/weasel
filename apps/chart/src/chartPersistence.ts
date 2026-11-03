@@ -1,9 +1,11 @@
 import {
-  AUTO_POSE_DESCRIPTOR, PAGES_DOC_KEY, isSerializedScene, type AddNodeSpec, type SavedScene, type SerializedDoc,
+  AUTO_POSE_DESCRIPTOR, isSerializedScene, replaceDoc, type AddNodeSpec, type SavedScene, type SerializedDoc,
 } from '@weasel-js/core';
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue } from '@weasel-js/diagram';
 import { addDocumentScene, type DocumentScene } from '@weasel-js/diagram-formats';
-import { docFromSnapshot, nodeSpecsFromSnapshot, readStored, reviveTypedArrays, serializeReplacer } from '@weasel-js/editor';
+import {
+  docFromSnapshot, nodeSpecsFromSnapshot, readStored, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
+} from '@weasel-js/editor';
 import {
   CHART_LAYERS, CHART_PAGES, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
 } from './chartDocument';
@@ -21,19 +23,15 @@ export interface ChartFile {
   doc: SerializedDoc;
 }
 
-const hasPageNodes = (json: ChartSnapshot): boolean => json.nodes.some((n) => n.pageRun !== undefined);
-
 /**
- * The chart `json` holds, its pages as page nodes. One that kept its pages as the `core:pages` value is converted
- * (`nodeSpecsFromSnapshot` adopts them), and one saved before charts had pages is given {@link CHART_PAGES} first, so
- * both go through the same conversion.
+ * The chart `json` holds, its pages as page nodes. One that kept its pages as the `core:pages` value is converted,
+ * and one saved before charts had pages is given {@link CHART_PAGES} (`nodeSpecsFromSnapshot`).
  */
 function chartOf(json: ChartSnapshot): ChartFile {
-  const paged = json.doc?.[PAGES_DOC_KEY] !== undefined || hasPageNodes(json);
-  const doc = paged ? json.doc : { ...json.doc, [PAGES_DOC_KEY]: CHART_PAGES };
   const systemLayers = (json.systemLayers as ChartSnapshot['systemLayers'] | undefined) ?? CHART_LAYERS;
   const specs = nodeSpecsFromSnapshot(
-    { ...json, systemLayers, doc } as ChartSnapshot, CHART_REGISTRY, reviveTypedArrays, { descriptor: AUTO_POSE_DESCRIPTOR },
+    { ...json, systemLayers } as ChartSnapshot, CHART_REGISTRY, reviveTypedArrays,
+    { descriptor: AUTO_POSE_DESCRIPTOR, pages: CHART_PAGES },
   );
   return { specs, doc: docFromSnapshot(json) ?? {} };
 }
@@ -59,14 +57,14 @@ export function loadChartSession(): ChartFile {
   return readStored(CHART_SCENE_KEY, chartFromJson, () => emptyChart());
 }
 
-/** The undo stack the last session left, or `null` where that session's chart had no page nodes: its stack was
- *  recorded against a tree the load has since rebuilt, so it would replay wrongly. */
+/** The undo stack the last session left, or `null` where that session's chart loads with its tree rebuilt
+ *  (`snapshotRebuildsTree`): its stack would replay wrongly. */
 export function loadChartHistory(): unknown {
-  const paged = readStored(CHART_SCENE_KEY, (raw) => {
+  const stale = readStored(CHART_SCENE_KEY, (raw) => {
     const json: unknown = JSON.parse(raw);
-    return isSerializedScene<ChartData, ChartLayer, ChartPose>(json) && hasPageNodes(json);
-  }, () => false);
-  if (!paged) {
+    return !isSerializedScene<ChartData, ChartLayer, ChartPose>(json) || snapshotRebuildsTree(json, { pages: CHART_PAGES });
+  }, () => true);
+  if (stale) {
     try { localStorage.removeItem(CHART_HISTORY_KEY); } catch { /* best-effort */ }
     return null;
   }
@@ -76,10 +74,9 @@ export function loadChartHistory(): unknown {
 /** Replaces everything in the chart, nodes, pages and document values, with `file`, as one undo entry. */
 export function replaceChart(scene: ChartScene, file: ChartFile, label: string): void {
   scene.batch(label, () => {
-    scene.removeMany([...scene.roots]);
+    scene.unlocked(() => scene.removeMany([...scene.roots]));
     for (const spec of file.specs) scene.add(spec);
-    for (const key of scene.doc.keys()) if (!(key in file.doc)) scene.doc.set(key, undefined);
-    for (const [key, value] of Object.entries(file.doc)) scene.doc.set(key, value);
+    replaceDoc(scene, file.doc);
   });
 }
 

@@ -21,7 +21,9 @@ export { DIAGRAM_DOT } from './dot/format';
 export { GRAPH_PAGE_META_KEY, graphPageSettingsOf, type GraphPageSettings } from './graphPageMeta';
 export { documentFromScene, type DocumentFromSceneOptions } from './fromScene';
 export { scenePageKinds } from './pageKinds';
-export { addDocumentScene, addOnPages, documentSpecs, pageSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';
+export { addDocumentScene, documentSpecs, pageSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';
+/** Core's `addOnPages`, kept here so imports of it from this package still work. */
+export { addOnPages } from '@weasel-js/core';
 export { PAGE_TEMPLATES, TEMPLATE_PAGE_SIZE, type PageTemplate, type PageTemplateGroup } from './templates/catalog';
 export { addTemplatePage, templateSpecs, type AddTemplatePageOptions } from './templates/templateScene';
 export { exportPageSvg, type ExportPageSvgOptions } from './pageSvg';

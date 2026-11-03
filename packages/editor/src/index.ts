@@ -4,7 +4,10 @@ export {
 } from './fileCommands';
 export { describeFileWarnings, reportFileWarnings, type FileDeed } from './fileWarnings';
 export { usePaperLayer, type PageSize } from './paperLayer';
-export { adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, type SnapshotLoadOptions } from './snapshot';
+export {
+  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
+  type SnapshotLoadOptions,
+} from './snapshot';
 export { readStored, writeSession, type SessionEntry } from './sessionStore';
 export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutosave';
 export { usePageFit } from './usePageFit';

@@ -1,6 +1,8 @@
 import { RECT_POSE_DESCRIPTOR, asNodeId, type PoseDescriptor, type RectPose, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
+import {
+  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
+} from './snapshot';
 
 // Regression for the reload bug where a loader filtered `kind === 'mark'` and dropped `parent`,
 // losing containers and nesting even though `toJSON()` persisted the full tree.
@@ -169,5 +171,28 @@ describe('a snapshot holding core:pages', () => {
     const once = adoptSnapshotPages(legacy);
     expect(adoptSnapshotPages(once)).toBe(once);
     expect(adoptSnapshotPages(adoptSnapshotPages(legacy))).toEqual(once);
+  });
+});
+
+describe('a snapshot saved without pages', () => {
+  const plain: SerializedScene<{ fill?: string }, 'default', RectPose> = {
+    version: 3,
+    systemLayers: [{ id: 'default' }],
+    nodes: [{ id: 'r', kind: 'mark', layer: 'default', pose: { x: 500, y: 10, width: 10, height: 10 }, data: {} }],
+  };
+  const pages = { pages: [{ id: 'p', width: 100, height: 50 }] };
+
+  it('gets the fallback pages it is given, each root on one, and is left alone without them', () => {
+    const specs = nodeSpecsFromSnapshot(plain, {}, undefined, { pages });
+    expect(specs.filter((s) => s.page !== undefined).map((s) => s.id)).toEqual(['p']);
+    expect(specs.find((s) => s.id === asNodeId('r'))!).toMatchObject({ parent: 'p', pose: { x: 99 } });
+    expect(adoptSnapshotPages(plain)).toBe(plain);
+  });
+
+  it('rebuilds the tree, as a core:pages one does, and a paged one does not', () => {
+    expect([snapshotRebuildsTree(plain), snapshotRebuildsTree(plain, { pages })]).toEqual([false, true]);
+    const paged = adoptSnapshotPages(plain, {}, { pages });
+    expect(snapshotRebuildsTree(paged, { pages })).toBe(false);
+    expect(snapshotRebuildsTree({ nodes: [], doc: { 'core:pages': pages } })).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 import {
-  AUTO_POSE_DESCRIPTOR, type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses, type NodeId,
-  pathEffectNode, placeOnPages, registeredPathEffects,
+  AUTO_POSE_DESCRIPTOR, type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses,
+  addOnPages, pathEffectNode, registeredPathEffects,
 } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
@@ -35,7 +35,7 @@ function booleanOfObj(obj: Obj, op: BooleanShapeOp) {
 /**
  * Call inside a batch. Every draft's id is minted first, so an effect can name
  * sources that come after it. Each root lands on the page holding it, where
- * the file put it in the world (`placeOnPages`). An effect whose sources the
+ * the file put it in the world (`addOnPages`). An effect whose sources the
  * file does not hold, or that the scene's registry cannot derive, opens as
  * the paths it exported as, and as nothing when it exported none; a live one
  * leaves those paths out.
@@ -72,9 +72,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
     specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }
   // A file's geometry is world; each pose is stored in its container's frame.
-  for (const spec of localizeWorldPoses(specs, scene.composition)) scene.add(spec);
-  const roots = specs.filter((spec) => spec.parent == null).map((spec) => spec.id as NodeId);
-  placeOnPages(scene, roots, { descriptor: AUTO_POSE_DESCRIPTOR });
+  addOnPages(scene, localizeWorldPoses(specs, scene.composition), { descriptor: AUTO_POSE_DESCRIPTOR });
 }
 
 /**

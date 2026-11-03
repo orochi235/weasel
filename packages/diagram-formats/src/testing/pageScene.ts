@@ -1,6 +1,7 @@
-import { createPageRun, createScene, placedPagesOf, type PlacedPage, type RectPose, type Scene } from '@weasel-js/core';
+import {
+  addOnPages, createPageRun, createScene, placedPagesOf, type PlacedPage, type RectPose, type Scene,
+} from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, installOffPageMarkers, withDiagramRegistry } from '@weasel-js/diagram';
-import { addOnPages } from '../toScene';
 
 /** The scene the export tests draw: two 200 by 100 pages, 40 apart. */
 export type PageScene = Scene<unknown, 'main', RectPose>;

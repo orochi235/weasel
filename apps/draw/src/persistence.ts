@@ -2,7 +2,7 @@
 
 import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@weasel-js/editor';
 import type {
-  AddNodeSpec, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
+  AddNodeSpec, PagesDoc, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';
 import { AUTO_POSE_DESCRIPTOR, solid } from '@weasel-js/core';
 
@@ -123,10 +123,14 @@ export const DRAW_LOAD_OPTIONS = {
 } as const satisfies Pick<SpecsFromSerializedOptions<unknown, string, unknown>, 'unknownKeys' | 'onSkip'>;
 
 /** The shared `nodeSpecsFromSnapshot` with the legacy-paint migration applied to each node's data, and
- *  a `core:pages` snapshot's roots placed on their pages by the bounds draw's canvas measures them by. */
+ *  a snapshot's roots placed on their pages by the bounds draw's canvas measures them by: its `core:pages`
+ *  value's, or `pages` for one saved without any. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry?: SceneRegistry<TPose, TData, TLayer>,
+  pages?: PagesDoc,
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return sharedNodeSpecs(json, registry, reviveSnapshot, { ...DRAW_LOAD_OPTIONS, descriptor: AUTO_POSE_DESCRIPTOR });
+  return sharedNodeSpecs(json, registry, reviveSnapshot, {
+    ...DRAW_LOAD_OPTIONS, descriptor: AUTO_POSE_DESCRIPTOR, ...(pages ? { pages } : {}),
+  });
 }

@@ -3,7 +3,7 @@ import {
   asNodeId,
   createScene,
   isSerializedScene,
-  PAGES_DOC_KEY,
+  type PagesDoc,
   rectPath,
   type SavedScene,
   SCENE_HISTORY_FORM,
@@ -12,7 +12,7 @@ import {
   solid,
   strokeOf
 } from '@weasel-js/core';
-import { docFromSnapshot, readStored } from '@weasel-js/editor';
+import { docFromSnapshot, readStored, snapshotRebuildsTree } from '@weasel-js/editor';
 import { loadDoc, PAPER_PRESETS } from './docPersistence';
 import { DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { onePage } from './pages/drawPages';
@@ -37,7 +37,7 @@ type DrawSpec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 export function loadInitial(): DrawSpec[] {
   return readStored(LS_KEY, (raw) => {
     const json = savedScene(raw);
-    rebuilt = !hasPageNodes(json);
+    rebuilt = snapshotRebuildsTree(json, { pages: fallbackPages() });
     return specsOf(json);
   }, () => {
     rebuilt = false;
@@ -54,7 +54,8 @@ export function loadInitialDoc(): SerializedDoc | undefined {
  *  saved beside it would replay against a tree that is gone. `null` before one has run. */
 let rebuilt: boolean | null = null;
 
-const hasPageNodes = (json: DrawSnapshot) => json.nodes.some((n) => n.pageRun !== undefined);
+/** The pages a drawing saved before draw had pages gets: one of the paper size its document settings kept. */
+export const fallbackPages = (): PagesDoc => onePage(PAPER_PRESETS[loadDoc().paperSize]);
 
 function savedScene(raw: string): DrawSnapshot {
   const json: unknown = JSON.parse(raw);
@@ -62,14 +63,12 @@ function savedScene(raw: string): DrawSnapshot {
   return json;
 }
 
-/** `json`'s nodes, its pages among them as page nodes. A drawing saved before draw had pages gets one
- *  page of the paper size its document settings kept. The pages are built in a scene of the drawing's
- *  layers, draw's own for one saved before its snapshots listed them. */
+/** `json`'s nodes, its pages among them as page nodes; a drawing saved before draw had pages gets
+ *  {@link fallbackPages}. The pages are built in a scene of the drawing's layers, draw's own for one saved
+ *  before its snapshots listed them. */
 function specsOf(json: DrawSnapshot): DrawSpec[] {
-  const paged = json.doc?.[PAGES_DOC_KEY] !== undefined || hasPageNodes(json);
-  const doc = paged ? json.doc : { ...json.doc, [PAGES_DOC_KEY]: onePage(PAPER_PRESETS[loadDoc().paperSize]) };
   const systemLayers = (json.systemLayers as DrawSnapshot['systemLayers'] | undefined) ?? DRAW_LAYERS;
-  return nodeSpecsFromSnapshot({ ...json, systemLayers, doc }, DRAW_REGISTRY);
+  return nodeSpecsFromSnapshot({ ...json, systemLayers }, DRAW_REGISTRY, fallbackPages());
 }
 
 function starterScene(): DrawSpec[] {
@@ -98,7 +97,7 @@ export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
  *  one saved beside a drawing whose pages were not yet nodes, returns null
  *  AND removes the key so a broken snapshot can't wedge every boot. */
 export function loadSceneHistory(): SerializedSceneHistory | null {
-  const stale = rebuilt ?? readStored(LS_KEY, (raw) => !hasPageNodes(savedScene(raw)), () => false);
+  const stale = rebuilt ?? readStored(LS_KEY, (raw) => snapshotRebuildsTree(savedScene(raw), { pages: fallbackPages() }), () => false);
   const snap = stale ? null : readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null);
   if (snap === null) {
     try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }

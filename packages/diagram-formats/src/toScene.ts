@@ -1,6 +1,6 @@
 /** A {@link DiagramDocument} as scene specs and document values: what every import draws from. */
 import {
-  createPageRun, layoutPages, pasteboardOn, placeOnPages, replaceDoc, type NodeId, type Page, type PlacedPage, type Scene,
+  createPageRun, layoutPages, pasteboardOn, placeOnPages, replaceDoc, type Page, type PlacedPage, type Scene,
   type SerializedDoc,
 } from '@weasel-js/core';
 import {
@@ -134,15 +134,6 @@ export function pageSpecs<TLayer extends string = 'main'>(
 function typeOfGraphs(pages: readonly DocumentPage[]): DiagramType | null {
   const types = new Set(pages.flatMap((p) => (p.kind === 'graph' ? [diagramTypeOfNotation(p.notation)] : [])));
   return types.size === 1 ? [...types][0]! : null;
-}
-
-/** Add `specs`, placed in world space, each root moved onto the page holding it in that page's frame, and each
- *  connector onto the page both its ends are on, else into the page run (`placeOnPages`). Call inside a batch. */
-export function addOnPages<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>, specs: readonly DiagramSpec<TLayer>[],
-): void {
-  for (const spec of specs) scene.add(spec as never);
-  placeOnPages(scene, specs.filter((s) => s.parent == null).map((s) => s.id as NodeId));
 }
 
 /**

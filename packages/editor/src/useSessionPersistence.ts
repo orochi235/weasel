@@ -1,7 +1,7 @@
-import { PAGES_DOC_KEY, defaultCommitAdapter, type Scene, useLatest } from '@weasel-js/core';
+import { defaultCommitAdapter, type PagesDoc, type SavedScene, type Scene, useLatest } from '@weasel-js/core';
 import { useEffect, useRef } from 'react';
 import { readStored } from './sessionStore';
-import { reviveTypedArrays, serializeReplacer } from './snapshot';
+import { reviveTypedArrays, serializeReplacer, snapshotRebuildsTree } from './snapshot';
 import { useAutosave } from './useAutosave';
 
 /** Where `useSessionPersistence` keeps a scene and its undo stack, and what it reports after a save. */
@@ -14,19 +14,21 @@ export interface SessionPersistenceOptions {
   loadHistory?: () => unknown;
   /** Called after every save attempt with whether the scene was written. */
   onSaved?: (ok: boolean) => void;
+  /** The pages the scene's load gives a snapshot saved without any (`SnapshotLoadOptions.pages`). */
+  pages?: PagesDoc;
 }
 
 const parseHistory = (raw: string): unknown => reviveTypedArrays(JSON.parse(raw));
 
-/** Whether the scene saved under `key` kept its pages as the `core:pages` value. Its undo stack was
- *  recorded against a tree the load has since rebuilt into page nodes, so it would replay wrongly. */
-const savedWithLegacyPages = (key: string): boolean =>
-  readStored(key, (raw) => (JSON.parse(raw) as { doc?: Record<string, unknown> }).doc?.[PAGES_DOC_KEY] !== undefined, () => false);
+/** Whether the scene saved under `key` loads with its tree rebuilt (`snapshotRebuildsTree`), so its undo
+ *  stack would replay wrongly. */
+const savedStale = (key: string, pages: PagesDoc | undefined): boolean =>
+  readStored(key, (raw) => snapshotRebuildsTree(JSON.parse(raw) as SavedScene<unknown, string, unknown>, { pages }), () => false);
 
 /**
  * Keeps a scene and its undo stack in local storage: restores the stack once on mount,
- * then saves them through `useAutosave` after each render. A stack saved beside a scene whose
- * pages were its `core:pages` value is dropped, not restored.
+ * then saves them through `useAutosave` after each render. A stack saved beside a scene that loads
+ * with its tree rebuilt (`snapshotRebuildsTree`, with `opts.pages`) is dropped, not restored.
  */
 export function useSessionPersistence<D, L extends string, P>(
   scene: Scene<D, L, P>,
@@ -46,9 +48,9 @@ export function useSessionPersistence<D, L extends string, P>(
   // history with the empty initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
-    const { sceneKey, historyKey, loadHistory } = optsRef.current;
+    const { sceneKey, historyKey, loadHistory, pages } = optsRef.current;
     let snap: unknown = null;
-    if (savedWithLegacyPages(sceneKey)) {
+    if (savedStale(sceneKey, pages)) {
       try { localStorage.removeItem(historyKey); } catch { /* best-effort */ }
     } else {
       try { snap = loadHistory ? loadHistory() : readStored(historyKey, parseHistory, () => null); } catch { /* treated as none */ }

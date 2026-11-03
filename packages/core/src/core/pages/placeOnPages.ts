@@ -5,7 +5,7 @@ import {
 import { composeWorldPose, rebaseLocalPose } from '../scene/composePose';
 import { sameValue } from '../scene/sameValue';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
-import type { NodeId, Scene } from '../scene/types';
+import type { AddNodeSpec, NodeId, Scene } from '../scene/types';
 import { treePreorder } from '../scene/treeOrder';
 import { pageNodeOf, pageRunOf, placedPagesOf } from './pageNodes';
 import {
@@ -74,6 +74,18 @@ export function placeOnPages<TData, TLayer extends string, TPose>(
   const descriptor = options.descriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>);
   const content = roots.filter((id) => id !== run && s.get(id)?.parent == null);
   moveIn(s, destinations(s, content, descriptor), run, descriptor);
+}
+
+/** Add `specs`, placed in world space, and put each root among them on its page (`placeOnPages`, with
+ *  `options`). Returns their ids, in order. Call inside the caller's batch. */
+export function addOnPages<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  specs: readonly AddNodeSpec<TData, TLayer, TPose>[],
+  options: { descriptor?: PoseDescriptor<unknown> } = {},
+): NodeId[] {
+  const added = specs.map((spec) => scene.add(spec));
+  placeOnPages(scene, added.filter((id) => scene.get(id)?.parent == null), options);
+  return added;
 }
 
 /** Move each root into its page, or into `run` when it has none, keeping where its subtree is in the world

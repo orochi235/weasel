@@ -1,8 +1,8 @@
-import { createPageRun, createScene, isPageStructure, type RectPose, type Scene } from '@weasel-js/core';
+import { addOnPages, createPageRun, createScene, isPageStructure, type RectPose, type Scene } from '@weasel-js/core';
 import {
   DIAGRAM_THEMES, DIAGRAM_THEME_KEY, diagramScene, withDiagramRegistry, type DiagramData, type MeasureRowText,
 } from '@weasel-js/diagram';
-import { addDocumentScene, addOnPages, type DocumentScene } from '../toScene';
+import { addDocumentScene, type DocumentScene } from '../toScene';
 
 /** The scene the document tests read. */
 export type DocScene = Scene<unknown, string, RectPose>;

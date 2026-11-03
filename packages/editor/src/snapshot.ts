@@ -6,9 +6,9 @@
 // wrote, which is why the walk here is our own.
 
 import type {
-  AddNodeSpec, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
+  AddNodeSpec, PagesDoc, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';
-import { PAGES_DOC_KEY, adoptLegacyPages, asNodeId, sceneFromJSON, specsFromSerialized } from '@weasel-js/core';
+import { PAGES_DOC_KEY, adoptLegacyPages, asNodeId, sceneFromJSON, setPages, specsFromSerialized } from '@weasel-js/core';
 import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
 
 /** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
@@ -46,26 +46,40 @@ export function reviveTypedArrays<T>(node: T): T {
   return node;
 }
 
-/** How a snapshot is read: `specsFromSerialized`'s options, and the pose descriptor that measures each
- *  root when a `core:pages` snapshot's roots are placed on their pages (default rect bounds). */
+/** How a snapshot is read: `specsFromSerialized`'s options; the pose descriptor that measures each root
+ *  when a snapshot's roots are placed on their pages (default core's `placeOnPages` default); and the pages
+ *  a snapshot with neither page nodes nor a `core:pages` value gets, one saved before its app had pages. */
 export type SnapshotLoadOptions<TData, TLayer extends string, TPose> = SpecsFromSerializedOptions<TData, TLayer, TPose> & {
   descriptor?: PoseDescriptor<unknown>;
+  pages?: PagesDoc;
 };
 
+/** Whether loading `json` with `opts` rebuilds its tree, its pages made nodes there and then: one saved with
+ *  its pages as the `core:pages` value, or without pages when `opts.pages` gives some. An undo stack saved
+ *  beside such a snapshot was recorded against a tree the load replaces, and would replay wrongly. */
+export function snapshotRebuildsTree(
+  json: Pick<SavedScene<unknown, string, unknown>, 'nodes' | 'doc'>,
+  opts: { pages?: PagesDoc } = {},
+): boolean {
+  if (json.nodes.some((n) => n.pageRun !== undefined)) return false;
+  return json.doc?.[PAGES_DOC_KEY] !== undefined || opts.pages !== undefined;
+}
+
 /**
- * `json` with its pages as page nodes: a snapshot saved while a scene's pages were its `core:pages`
- * value is built into a scene, converted there by core's `adoptLegacyPages` with `opts.descriptor`,
- * and written out again. Any other snapshot, a converted one included, comes back as it is.
- * `registry` and `opts` are what the load reads it with. The scene is built on the rigid
- * composition unless `opts.composition` says otherwise, so a scene on any other must pass its own.
+ * `json` with its pages as page nodes. A snapshot that {@link snapshotRebuildsTree} is built into a
+ * scene, given its pages there by core's `adoptLegacyPages` from its `core:pages` value, else by
+ * `setPages` from `opts.pages`, each root placed with `opts.descriptor`, and written out again. Any
+ * other snapshot, a converted one included, comes back as it is. `registry` and `opts` are what the
+ * load reads it with. The scene is built on the rigid composition unless `opts.composition` says
+ * otherwise, so a scene on any other must pass its own.
  */
 export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
   opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): SavedScene<TData, TLayer, TPose> {
-  if (json.doc?.[PAGES_DOC_KEY] === undefined) return json;
-  const { descriptor, ...read } = opts;
+  if (!snapshotRebuildsTree(json as never, opts)) return json;
+  const { descriptor, pages, ...read } = opts;
   const taken = new Set<string>(json.nodes.map((n) => n.id));
   let n = 0;
   // The run is the one node adoption mints; a fixed id loads the same snapshot the same way every time.
@@ -76,7 +90,8 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
     return asNodeId(id);
   };
   const scene = sceneFromJSON(json, { registry, unknownKeys: 'skip', generateId, ...read });
-  adoptLegacyPages(scene, descriptor ? { descriptor } : {});
+  const place = descriptor ? { descriptor } : {};
+  if (!adoptLegacyPages(scene, place)) scene.untracked(() => setPages(scene, pages!, 'Adopt pages', place));
   return scene.toJSON();
 }
 
@@ -98,15 +113,18 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
  *  a save writes comes back. A key `registry` lacks leaves the node without
  *  that function rather than failing the load, unless `opts.unknownKeys` says
  *  `'throw'`; `opts.onSkip` hears each. Pages saved as a `core:pages` value
- *  come back as page nodes. `revive` rewrites each node's data on
- *  the way in; the default revives typed arrays only. */
+ *  come back as page nodes, and a snapshot saved without pages gets
+ *  `opts.pages` (`adoptSnapshotPages`). `revive` rewrites each node's data on
+ *  the way in; the default revives typed arrays only. A scene composed other
+ *  than rigidly passes its own `opts.composition`, since the pages are made in
+ *  a scene built on it. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
   revive: <T>(node: T) => T = reviveTypedArrays,
   opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  const { descriptor: _descriptor, ...read } = opts;
+  const { descriptor: _descriptor, pages: _pages, ...read } = opts;
   return specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...read })
     .map((spec) => ({ ...spec, data: revive(spec.data) }));
 }
