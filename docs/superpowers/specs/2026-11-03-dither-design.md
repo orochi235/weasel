@@ -30,8 +30,11 @@ produces. It quantizes on one of two grids:
 | `DitherMethod` | `'threshold' \| 'bayer' \| 'floyd-steinberg' \| 'atkinson'` |
 | `ditherPixels(rgba, options)` | CPU. Returns a 1-bit mask (`Uint8Array`, 1 = ink). Every method. |
 | `dither(options)` | GPU. Returns `Effect[]`. `threshold` and `bayer` only; an error-diffusion method throws, since each of its pixels depends on the one before and no fragment shader can compute it. |
+| `gridOnScreen(grid, view, dpr)` | An `OutputGrid` in drawing-buffer device pixels, which is the form `dither` takes. |
+| `maskToRgba(mask, w, h, { ink, blank })` | A CPU mask painted in two colors. |
 | `protectMask(rects, width, height)` | Rectangles in pixel space to the per-pixel mask both paths take. Rects round outward and clip to the image. |
-| `protectRects(nodes, isProtected, grid)` | Nodes to rectangles in pixel space, from each node's painted bounds. `isProtected` returns `false` to leave a node to the dither, or a rect to protect (which may be larger than the node: lbx returns a barcode's quiet zone). |
+| `protectTexture(mask, width, height)` | That mask uploaded for `dither`, in dot space, so GPU protection needs an output grid. Returns a `dispose`. |
+| `protectRects(items, protectedRect, grid)` | Items to rectangles in dot space. `protectedRect` returns an item's rect in document units (its painted bounds, or larger: lbx returns a barcode's quiet zone), or `false` to leave it to the dither. The package does not depend on core, so the caller supplies the bounds. |
 
 Shared by both paths, defined once: the 4×4 Bayer matrix, luminance (Rec. 601, as obwat), and the
 default threshold, 128.
@@ -42,9 +45,9 @@ default threshold, 128.
 |---|---|---|
 | `method` | `'threshold'` | |
 | `threshold` | `128` | Gray below it is ink. |
-| `background` | white | What transparency composites over before luminance is taken. obwat hardcodes white tape. |
-| `ink`, `blank` | black, transparent | The two output colors. lbx draws ink in the cassette's color and leaves blank transparent so the tape shows through. |
-| `grid` | `'screen'` | An `OutputGrid`, or `'screen'`. |
+| `background` | white | What transparency composites over before luminance is taken, as `[r, g, b]` 0–255. obwat hardcodes white tape. |
+| `ink`, `blank` | black, transparent | The two output colors, as `[r, g, b, a]` 0–255 (GPU options and `maskToRgba`). lbx draws ink in the cassette's color and leaves blank transparent so the tape shows through. |
+| `grid` | `'screen'` | GPU only: `'screen'`, or an output grid from `gridOnScreen`. |
 | `protect` | none | A per-pixel mask (CPU: `Uint8Array`; GPU: a `TextureHandle`). Inside it, pixels quantize at plain `threshold`, and error diffusion neither enters nor leaves it, so no specks land in a quiet zone. |
 
 `protect` is a mask rather than a list of rects (2026-11-03) so that the multiple-render-targets arc
@@ -74,14 +77,18 @@ method and `protect`. The export can use error diffusion; the canvas shows Bayer
 At one dot per device pixel the GPU and CPU agree exactly. Away from that:
 
 - **A dot larger than a device pixel** (zoomed in) takes the mean of its footprint, sampled on at most
-  a 4×4 tap grid, then quantizes once and fills the whole dot. Up to 4 device pixels per dot the taps
-  cover every pixel and the result is exact; beyond that, dots straddling an edge can differ from the
-  export, while interiors cannot.
-- **A dot smaller than a device pixel** (zoomed out) cannot be shown. The pass quantizes on the
-  screen grid instead.
+  a 4×4 tap grid, then quantizes once and fills the whole dot. When the grid's pitch and origin are
+  whole device pixels, up to 4 per dot, the taps land on every pixel's center and the result is
+  exact. Otherwise dots straddling an edge can differ from the export, while flat interiors cannot.
+- **A dot smaller than a device pixel** (zoomed out) cannot be shown. Each pixel quantizes alone, on
+  the Bayer cell of its own device pixel.
 
-The group's texture is offset from the page, so a shader finds its dot through `u_fragOrigin`, as any
-shader reading `gl_FragCoord` must (`packages/renderer/src/shaders/registerProgram.ts`).
+An effect pass draws into a buffer covering only its group's window, and the renderer tells it the
+buffer's size but not where it sits. This arc adds a kit uniform, `u_windowOrigin`, the buffer's
+top-left in the drawing buffer, so the shader can find which dot a fragment is in (`u_fragOrigin`,
+the custom-shader equivalent, is not set for effect passes). It also types a layer group's effect
+thunk with `LayerDims` rather than `Dims`: core already passes one, and the thunk needs its `dpr` to
+place the grid.
 
 ## Tests
 
