@@ -24,21 +24,6 @@ When work merges, retire its entry here in the same change.
   with 9 interleaved runs of `core-regress-2026-10-30/run.sh`, or once each of those three costs is timed
   alone and none exceeds 0.02 µs, delete it as accepted.
 
-- **(P3) [agent] The unindexed area walk still costs 1.6 times what it did on 2026-10-11.** The 25%
-  marquee over 10,000 rect nodes (`walk.bench.ts`, the `full walk` row) takes 0.86 ms on msb-uai;
-  `hitTestArea` at 0a2eba982 (2026-10-11) takes 0.52 ms and at 43a827165 (2026-10-12) 0.66 ms (7
-  interleaved runs each, native imports, 2026-10-30). Before the 2026-10-30 cuts, `main` at b6d8ba184
-  took 1.25 ms; since them the gates take the candidate rather than looking it up, a marquee decides a
-  node from its bounds before building its outline thunks, and the walk builds no object or closure per
-  candidate. What is left is spread thin across every node's
-  reads (`effectivePose` and its override read, `showsComputedPath`, the gates, the region test); the
-  profile is `tests/perf/recorded/core-regress-2026-10-30/profile-base/`. Bisect with
-  `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (`bisect <good> <bad> native`), or
-  time commits side by side with `core-regress-2026-10-30/run.sh`.
-  Closes when the `full walk` row is within 0.05 ms of 43a827165's on msb-uai, 7 interleaved runs with
-  native imports, or once each per-node read named above is timed alone and none exceeds 0.02 ms over
-  the 10,000 nodes, delete it as accepted.
-
 ---
 
 ## Renderer and the batch

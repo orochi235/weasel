@@ -1,0 +1,50 @@
+{
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/conditions.txt": {
+    "size": 267,
+    "mtime": 1793693401526360666,
+    "inode": 754592624,
+    "sha256": "07bc0d18cdd71c1dc60d3c50b9dd5663fb981283b20183bd209f20645c90802c"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/prof/base-walk.cpuprofile.gz": {
+    "size": 19231,
+    "mtime": 1793693352736382000,
+    "inode": 754592626,
+    "sha256": "18ecb8d134ea732eacea7426a93c81fd71660906a33732ff00ffb60266402c8d"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/prof/base-walk.top.txt": {
+    "size": 2707,
+    "mtime": 1793693401440716645,
+    "inode": 754592627,
+    "sha256": "c4015afe8d41d7269b8f77f109fae3ff7d54e75aed48e3c69751045c62262c3a"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/prof/mid-walk.cpuprofile.gz": {
+    "size": 13770,
+    "mtime": 1793693354782023000,
+    "inode": 754592628,
+    "sha256": "729604f25030b3aeb228ddebd3df6c938208ba0f0400364edccc0caba183ed75"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/prof/mid-walk.top.txt": {
+    "size": 2516,
+    "mtime": 1793693401482072691,
+    "inode": 754592629,
+    "sha256": "5d822e5e97cb06476f1676bea2f647eb49916646989c99ba2128cd2820720fce"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/prof/new-walk.cpuprofile.gz": {
+    "size": 19941,
+    "mtime": 1793693350325757000,
+    "inode": 754592630,
+    "sha256": "8532fd910a50d8f217d47eb79961b08b7d54b316028c1de064bafdc398346cf0"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/prof/new-walk.top.txt": {
+    "size": 2580,
+    "mtime": 1793693401519639971,
+    "inode": 754592631,
+    "sha256": "ce757196c3f11b98bad8f7cb66a973b93c73a439779ddfac4402ff5767b7a769"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/agent-a2f0b48e55fc1bdc8/tests/perf/recorded/area-walk-2026-11-03/ab2/msb-uai/runs.jsonl": {
+    "size": 5318,
+    "mtime": 1793693401405143081,
+    "inode": 754592633,
+    "sha256": "3900ca59bea1ad53d81beed71f57301a4914c416652ce0bf0aa1e9bad0258484"
+  }
+}
