@@ -20,6 +20,9 @@ export interface CanvasRetainOptions {
   /** Drawing commands a layer must hold to be retained, when it does not say
    *  for itself. Default `DEFAULT_LAYER_RETAIN.minCommands`. */
   minCommands?: number;
+  /** The same for a layer that runs effects passes. Default
+   *  `LayerRetainPolicy.minCommandsWithEffects`'s. */
+  minCommandsWithEffects?: number;
   /** GPU memory, in bytes, retained layers may hold together:
    *  `WeaselRendererOptions.retainBudget`. 0 retains nothing. */
   budget?: number;

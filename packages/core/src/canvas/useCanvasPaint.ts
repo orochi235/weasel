@@ -49,8 +49,9 @@ export function usePaintedVersion(contentVersion: (() => number) | undefined): {
 
 function retainPolicy(retain: PaintInputs['retain']): LayerRetainPolicy | false {
   if (retain === false) return false;
-  const minCommands = retain?.minCommands;
-  return minCommands === undefined ? DEFAULT_LAYER_RETAIN : { minCommands };
+  const { minCommands, minCommandsWithEffects } = retain ?? {};
+  if (minCommands === undefined && minCommandsWithEffects === undefined) return DEFAULT_LAYER_RETAIN;
+  return { minCommands: minCommands ?? DEFAULT_LAYER_RETAIN.minCommands, minCommandsWithEffects };
 }
 
 /**

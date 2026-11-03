@@ -110,6 +110,7 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
       const { drawLayers } = await import(/* @vite-ignore */ `${base}/packages/core/src/core/layers/render.ts`);
       const { makeKindBuilders, imageBitmaps } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`);
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
+      const { worldLayers } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/retainLayers.ts`);
       await registerFont('sans-serif', { weight: 400, style: 'normal' }, '/weasel/inter/inter.json', '/weasel/inter/inter.png');
 
       let glRenderer = '';
@@ -125,36 +126,16 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
       }
       freshContext();
 
-      // Laid out over twice the canvas each way, then moved so it centers on it.
       const kinds = makeKindBuilders({ W: 2 * w, H: 2 * h, bitmaps: await imageBitmaps(6), pattern: { id: 'unused' }, shader: null });
-      /** Half solid, a third text, the rest image: no screen-unit paint, which
-       *  would keep a layer from moving with the view. */
-      const leaf = (i: number): unknown => {
-        const k = i % 6;
-        return k < 3 ? kinds.solid(i) : k < 5 ? kinds.text(i) : kinds.image(i);
-      };
-      const centered = new Float32Array([1, 0, 0, 0, 1, 0, -w / 2, -h / 2, 1]);
-
-      interface Layer { id: string; label: string; draw: () => unknown[]; deps?: () => readonly unknown[]; retain?: boolean }
       let tick = 0;
-      const live: Layer = {
+      const live = {
         id: 'live', label: 'live',
         draw: () => [{ kind: 'path', path: { kind: 'rect', x: 40 + (tick++ % 200), y: 40, width: 24, height: 24 }, fill: { paint: { kind: 'solid', color: '#e02040' } } }],
       };
-      const constDeps = [1] as const;
-      function stackFor(variant: string, n: number, m: number): Layer[] {
-        const out: Layer[] = [];
-        if (variant !== 'control') {
-          for (let l = 0; l < n; l++) {
-            const children = Array.from({ length: m }, (_, j) => leaf(l * 7919 + j));
-            if (variant === 'retainedFixed') children.push(kinds.gradient(l));
-            const cmds = [{ kind: 'group', transform: centered, children }];
-            out.push({ id: `L${l}`, label: `L${l}`, draw: () => cmds, deps: () => constDeps, retain: variant.startsWith('retained') });
-          }
-        }
-        out.push(live);
-        return out;
-      }
+      const stackFor = (variant: string, n: number, m: number): unknown[] => [
+        ...(variant === 'control' ? [] : worldLayers(kinds, n, m, w, h, { retain: variant.startsWith('retained'), fixed: variant === 'retainedFixed' })),
+        live,
+      ];
 
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       await report({ type: 'header', glRenderer, gcAvailable: typeof collect === 'function' });
@@ -164,7 +145,7 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
         for (const n of layerLadder) {
           for (const m of cmdLadder) {
             const { gl, canvas } = freshContext();
-            const stacks = new Map<string, { layers: Layer[]; cache: Map<string, unknown>; renderer: InstanceType<typeof WeaselRenderer>; x: number }>();
+            const stacks = new Map<string, { layers: unknown[]; cache: Map<string, unknown>; renderer: InstanceType<typeof WeaselRenderer>; x: number }>();
             for (const v of variants) {
               const renderer = new WeaselRenderer(v === 'control' ? { gl, canvas, width: w, height: h, dpr } : { gl, width: w, height: h, dpr, retainBudget: budget ?? undefined });
               // The renderer's own store; the tile side is not public API.

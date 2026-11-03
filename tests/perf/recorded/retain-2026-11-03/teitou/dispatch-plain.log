@@ -1,0 +1,253 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/layer-dispatch.spec.ts
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Layer dispatch — 1280x800 at dpr 2, on ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)
+collected between measurements: true
+210 cells (2 layer counts x 5 command counts x 7 variants x 3 runs)
+
+    1/210  run 1   1 x    1  control           0.330 ms/frame  cpu   0.040 ms      4 s
+    2/210  run 1   1 x    1  submit            0.300 ms/frame  cpu   0.035 ms      4 s
+    3/210  run 1   1 x    1  composite         0.410 ms/frame  cpu   0.040 ms      4 s
+    4/210  run 1   1 x    1  submitDirty       0.280 ms/frame  cpu   0.035 ms      4 s
+    5/210  run 1   1 x    1  compositeDirty    0.660 ms/frame  cpu   0.055 ms      4 s
+    6/210  run 1   1 x    1  retained          0.280 ms/frame  cpu   0.050 ms      4 s
+    7/210  run 1   1 x    1  retainedDirty     0.305 ms/frame  cpu   0.030 ms      4 s
+    8/210  run 1   1 x   10  control           0.260 ms/frame  cpu   0.035 ms      6 s
+    9/210  run 1   1 x   10  submit            0.335 ms/frame  cpu   0.040 ms      6 s
+   10/210  run 1   1 x   10  composite         0.330 ms/frame  cpu   0.040 ms      6 s
+   11/210  run 1   1 x   10  submitDirty       0.280 ms/frame  cpu   0.035 ms      6 s
+   12/210  run 1   1 x   10  compositeDirty    0.635 ms/frame  cpu   0.065 ms      6 s
+   13/210  run 1   1 x   10  retained          0.315 ms/frame  cpu   0.045 ms      6 s
+   14/210  run 1   1 x   10  retainedDirty     0.240 ms/frame  cpu   0.035 ms      6 s
+   15/210  run 1   1 x   30  control           0.485 ms/frame  cpu   0.035 ms      9 s
+   16/210  run 1   1 x   30  submit            0.380 ms/frame  cpu   0.075 ms      9 s
+   17/210  run 1   1 x   30  composite         0.415 ms/frame  cpu   0.030 ms      9 s
+   18/210  run 1   1 x   30  submitDirty       0.380 ms/frame  cpu   0.075 ms      9 s
+   19/210  run 1   1 x   30  compositeDirty    0.790 ms/frame  cpu   0.095 ms      9 s
+   20/210  run 1   1 x   30  retained          0.330 ms/frame  cpu   0.040 ms      9 s
+   21/210  run 1   1 x   30  retainedDirty     0.390 ms/frame  cpu   0.075 ms      9 s
+   22/210  run 1   1 x  100  control           0.275 ms/frame  cpu   0.040 ms     11 s
+   23/210  run 1   1 x  100  submit            0.415 ms/frame  cpu   0.100 ms     11 s
+   24/210  run 1   1 x  100  composite         0.360 ms/frame  cpu   0.040 ms     11 s
+   25/210  run 1   1 x  100  submitDirty       0.415 ms/frame  cpu   0.105 ms     11 s
+   26/210  run 1   1 x  100  compositeDirty    0.765 ms/frame  cpu   0.125 ms     11 s
+   27/210  run 1   1 x  100  retained          0.335 ms/frame  cpu   0.045 ms     11 s
+   28/210  run 1   1 x  100  retainedDirty     0.345 ms/frame  cpu   0.095 ms     11 s
+   29/210  run 1   1 x  300  control           0.295 ms/frame  cpu   0.035 ms     14 s
+   30/210  run 1   1 x  300  submit            0.655 ms/frame  cpu   0.180 ms     14 s
+   31/210  run 1   1 x  300  composite         0.390 ms/frame  cpu   0.030 ms     14 s
+   32/210  run 1   1 x  300  submitDirty       0.645 ms/frame  cpu   0.180 ms     14 s
+   33/210  run 1   1 x  300  compositeDirty    1.080 ms/frame  cpu   0.210 ms     14 s
+   34/210  run 1   1 x  300  retained          0.360 ms/frame  cpu   0.040 ms     14 s
+   35/210  run 1   1 x  300  retainedDirty     0.660 ms/frame  cpu   0.175 ms     14 s
+   36/210  run 1   4 x    1  control           0.275 ms/frame  cpu   0.030 ms     16 s
+   37/210  run 1   4 x    1  submit            0.325 ms/frame  cpu   0.045 ms     16 s
+   38/210  run 1   4 x    1  composite         1.440 ms/frame  cpu   0.030 ms     16 s
+   39/210  run 1   4 x    1  submitDirty       0.260 ms/frame  cpu   0.045 ms     16 s
+   40/210  run 1   4 x    1  compositeDirty    2.185 ms/frame  cpu   0.055 ms     16 s
+   41/210  run 1   4 x    1  retained          0.320 ms/frame  cpu   0.050 ms     16 s
+   42/210  run 1   4 x    1  retainedDirty     0.270 ms/frame  cpu   0.045 ms     16 s
+   43/210  run 1   4 x   10  control           0.255 ms/frame  cpu   0.120 ms     19 s
+   44/210  run 1   4 x   10  submit            0.430 ms/frame  cpu   0.145 ms     19 s
+   45/210  run 1   4 x   10  composite         1.390 ms/frame  cpu   0.120 ms     19 s
+   46/210  run 1   4 x   10  submitDirty       0.355 ms/frame  cpu   0.195 ms     19 s
+   47/210  run 1   4 x   10  compositeDirty    2.215 ms/frame  cpu   0.215 ms     19 s
+   48/210  run 1   4 x   10  retained          0.370 ms/frame  cpu   0.175 ms     19 s
+   49/210  run 1   4 x   10  retainedDirty     0.795 ms/frame  cpu   0.210 ms     19 s
+   50/210  run 1   4 x   30  control           0.160 ms/frame  cpu   0.100 ms     22 s
+   51/210  run 1   4 x   30  submit            0.300 ms/frame  cpu   0.250 ms     22 s
+   52/210  run 1   4 x   30  composite         1.050 ms/frame  cpu   0.095 ms     22 s
+   53/210  run 1   4 x   30  submitDirty       0.420 ms/frame  cpu   0.245 ms     22 s
+   54/210  run 1   4 x   30  compositeDirty    2.760 ms/frame  cpu   0.255 ms     22 s
+   55/210  run 1   4 x   30  retained          0.545 ms/frame  cpu   0.150 ms     22 s
+   56/210  run 1   4 x   30  retainedDirty     0.555 ms/frame  cpu   0.240 ms     22 s
+   57/210  run 1   4 x  100  control           0.215 ms/frame  cpu   0.060 ms     25 s
+   58/210  run 1   4 x  100  submit            0.735 ms/frame  cpu   0.420 ms     25 s
+   59/210  run 1   4 x  100  composite         1.610 ms/frame  cpu   0.085 ms     25 s
+   60/210  run 1   4 x  100  submitDirty       0.885 ms/frame  cpu   0.420 ms     25 s
+   61/210  run 1   4 x  100  compositeDirty    2.515 ms/frame  cpu   0.185 ms     25 s
+   62/210  run 1   4 x  100  retained          0.635 ms/frame  cpu   0.105 ms     25 s
+   63/210  run 1   4 x  100  retainedDirty     0.915 ms/frame  cpu   0.190 ms     25 s
+   64/210  run 1   4 x  300  control           0.255 ms/frame  cpu   0.100 ms     28 s
+   65/210  run 1   4 x  300  submit            2.985 ms/frame  cpu   1.455 ms     28 s
+   66/210  run 1   4 x  300  composite         1.635 ms/frame  cpu   0.125 ms     28 s
+   67/210  run 1   4 x  300  submitDirty       2.990 ms/frame  cpu   1.580 ms     28 s
+   68/210  run 1   4 x  300  compositeDirty    3.315 ms/frame  cpu   0.645 ms     28 s
+   69/210  run 1   4 x  300  retained          0.475 ms/frame  cpu   0.175 ms     28 s
+   70/210  run 1   4 x  300  retainedDirty     1.355 ms/frame  cpu   0.495 ms     28 s
+   71/210  run 2   1 x    1  control           0.195 ms/frame  cpu   0.125 ms     31 s
+   72/210  run 2   1 x    1  submit            0.240 ms/frame  cpu   0.095 ms     31 s
+   73/210  run 2   1 x    1  composite         0.365 ms/frame  cpu   0.100 ms     31 s
+   74/210  run 2   1 x    1  submitDirty       0.240 ms/frame  cpu   0.095 ms     31 s
+   75/210  run 2   1 x    1  compositeDirty    0.815 ms/frame  cpu   0.160 ms     31 s
+   76/210  run 2   1 x    1  retained          0.295 ms/frame  cpu   0.150 ms     31 s
+   77/210  run 2   1 x    1  retainedDirty     0.290 ms/frame  cpu   0.110 ms     31 s
+   78/210  run 2   1 x   10  control           0.240 ms/frame  cpu   0.085 ms     33 s
+   79/210  run 2   1 x   10  submit            0.370 ms/frame  cpu   0.120 ms     33 s
+   80/210  run 2   1 x   10  composite         0.305 ms/frame  cpu   0.100 ms     33 s
+   81/210  run 2   1 x   10  submitDirty       0.325 ms/frame  cpu   0.110 ms     33 s
+   82/210  run 2   1 x   10  compositeDirty    0.735 ms/frame  cpu   0.135 ms     33 s
+   83/210  run 2   1 x   10  retained          0.315 ms/frame  cpu   0.095 ms     33 s
+   84/210  run 2   1 x   10  retainedDirty     0.325 ms/frame  cpu   0.100 ms     33 s
+   85/210  run 2   1 x   30  control           0.185 ms/frame  cpu   0.080 ms     36 s
+   86/210  run 2   1 x   30  submit            0.395 ms/frame  cpu   0.215 ms     36 s
+   87/210  run 2   1 x   30  composite         0.335 ms/frame  cpu   0.095 ms     36 s
+   88/210  run 2   1 x   30  submitDirty       0.535 ms/frame  cpu   0.170 ms     36 s
+   89/210  run 2   1 x   30  compositeDirty    0.735 ms/frame  cpu   0.210 ms     36 s
+   90/210  run 2   1 x   30  retained          0.235 ms/frame  cpu   0.130 ms     36 s
+   91/210  run 2   1 x   30  retainedDirty     0.325 ms/frame  cpu   0.135 ms     36 s
+   92/210  run 2   1 x  100  control           0.320 ms/frame  cpu   0.140 ms     38 s
+   93/210  run 2   1 x  100  submit            0.460 ms/frame  cpu   0.335 ms     38 s
+   94/210  run 2   1 x  100  composite         0.425 ms/frame  cpu   0.110 ms     38 s
+   95/210  run 2   1 x  100  submitDirty       0.425 ms/frame  cpu   0.275 ms     38 s
+   96/210  run 2   1 x  100  compositeDirty    1.075 ms/frame  cpu   0.420 ms     38 s
+   97/210  run 2   1 x  100  retained          0.440 ms/frame  cpu   0.125 ms     38 s
+   98/210  run 2   1 x  100  retainedDirty     0.720 ms/frame  cpu   0.270 ms     38 s
+   99/210  run 2   1 x  300  control           0.415 ms/frame  cpu   0.095 ms     41 s
+  100/210  run 2   1 x  300  submit            0.800 ms/frame  cpu   0.365 ms     41 s
+  101/210  run 2   1 x  300  composite         0.450 ms/frame  cpu   0.100 ms     41 s
+  102/210  run 2   1 x  300  submitDirty       1.005 ms/frame  cpu   0.475 ms     41 s
+  103/210  run 2   1 x  300  compositeDirty    1.370 ms/frame  cpu   0.445 ms     41 s
+  104/210  run 2   1 x  300  retained          0.355 ms/frame  cpu   0.105 ms     41 s
+  105/210  run 2   1 x  300  retainedDirty     0.925 ms/frame  cpu   0.430 ms     41 s
+  106/210  run 2   4 x    1  control           0.300 ms/frame  cpu   0.140 ms     44 s
+  107/210  run 2   4 x    1  submit            0.400 ms/frame  cpu   0.190 ms     44 s
+  108/210  run 2   4 x    1  composite         1.230 ms/frame  cpu   0.155 ms     44 s
+  109/210  run 2   4 x    1  submitDirty       0.385 ms/frame  cpu   0.135 ms     44 s
+  110/210  run 2   4 x    1  compositeDirty    2.325 ms/frame  cpu   0.185 ms     44 s
+  111/210  run 2   4 x    1  retained          0.355 ms/frame  cpu   0.205 ms     44 s
+  112/210  run 2   4 x    1  retainedDirty     0.460 ms/frame  cpu   0.170 ms     44 s
+  113/210  run 2   4 x   10  control           0.235 ms/frame  cpu   0.095 ms     47 s
+  114/210  run 2   4 x   10  submit            0.380 ms/frame  cpu   0.105 ms     47 s
+  115/210  run 2   4 x   10  composite         1.460 ms/frame  cpu   0.075 ms     47 s
+  116/210  run 2   4 x   10  submitDirty       0.340 ms/frame  cpu   0.100 ms     47 s
+  117/210  run 2   4 x   10  compositeDirty    1.880 ms/frame  cpu   0.125 ms     47 s
+  118/210  run 2   4 x   10  retained          0.235 ms/frame  cpu   0.090 ms     47 s
+  119/210  run 2   4 x   10  retainedDirty     0.660 ms/frame  cpu   0.130 ms     47 s
+  120/210  run 2   4 x   30  control           0.245 ms/frame  cpu   0.115 ms     49 s
+  121/210  run 2   4 x   30  submit            0.470 ms/frame  cpu   0.255 ms     49 s
+  122/210  run 2   4 x   30  composite         1.455 ms/frame  cpu   0.100 ms     49 s
+  123/210  run 2   4 x   30  submitDirty       0.230 ms/frame  cpu   0.270 ms     49 s
+  124/210  run 2   4 x   30  compositeDirty    1.630 ms/frame  cpu   0.175 ms     49 s
+  125/210  run 2   4 x   30  retained          0.320 ms/frame  cpu   0.175 ms     49 s
+  126/210  run 2   4 x   30  retainedDirty     0.595 ms/frame  cpu   0.235 ms     49 s
+  127/210  run 2   4 x  100  control           0.205 ms/frame  cpu   0.125 ms     52 s
+  128/210  run 2   4 x  100  submit            1.275 ms/frame  cpu   0.790 ms     52 s
+  129/210  run 2   4 x  100  composite         1.565 ms/frame  cpu   0.130 ms     52 s
+  130/210  run 2   4 x  100  submitDirty       0.980 ms/frame  cpu   0.855 ms     52 s
+  131/210  run 2   4 x  100  compositeDirty    2.800 ms/frame  cpu   0.425 ms     52 s
+  132/210  run 2   4 x  100  retained          0.615 ms/frame  cpu   0.190 ms     52 s
+  133/210  run 2   4 x  100  retainedDirty     0.805 ms/frame  cpu   0.390 ms     52 s
+  134/210  run 2   4 x  300  control           0.210 ms/frame  cpu   0.065 ms     55 s
+  135/210  run 2   4 x  300  submit            2.710 ms/frame  cpu   1.115 ms     55 s
+  136/210  run 2   4 x  300  composite         1.405 ms/frame  cpu   0.090 ms     55 s
+  137/210  run 2   4 x  300  submitDirty       3.135 ms/frame  cpu   1.060 ms     55 s
+  138/210  run 2   4 x  300  compositeDirty    2.610 ms/frame  cpu   0.365 ms     55 s
+  139/210  run 2   4 x  300  retained          0.535 ms/frame  cpu   0.110 ms     55 s
+  140/210  run 2   4 x  300  retainedDirty     1.320 ms/frame  cpu   0.340 ms     55 s
+  141/210  run 3   1 x    1  control           0.255 ms/frame  cpu   0.125 ms     58 s
+  142/210  run 3   1 x    1  submit            0.285 ms/frame  cpu   0.090 ms     58 s
+  143/210  run 3   1 x    1  composite         0.260 ms/frame  cpu   0.080 ms     58 s
+  144/210  run 3   1 x    1  submitDirty       0.240 ms/frame  cpu   0.100 ms     58 s
+  145/210  run 3   1 x    1  compositeDirty    0.805 ms/frame  cpu   0.160 ms     58 s
+  146/210  run 3   1 x    1  retained          0.390 ms/frame  cpu   0.120 ms     58 s
+  147/210  run 3   1 x    1  retainedDirty     0.265 ms/frame  cpu   0.090 ms     58 s
+  148/210  run 3   1 x   10  control           0.335 ms/frame  cpu   0.130 ms     60 s
+  149/210  run 3   1 x   10  submit            0.405 ms/frame  cpu   0.105 ms     60 s
+  150/210  run 3   1 x   10  composite         0.415 ms/frame  cpu   0.110 ms     60 s
+  151/210  run 3   1 x   10  submitDirty       0.510 ms/frame  cpu   0.115 ms     60 s
+  152/210  run 3   1 x   10  compositeDirty    0.970 ms/frame  cpu   0.190 ms     60 s
+  153/210  run 3   1 x   10  retained          0.415 ms/frame  cpu   0.120 ms     60 s
+  154/210  run 3   1 x   10  retainedDirty     0.375 ms/frame  cpu   0.105 ms     60 s
+  155/210  run 3   1 x   30  control           0.275 ms/frame  cpu   0.085 ms     63 s
+  156/210  run 3   1 x   30  submit            0.435 ms/frame  cpu   0.135 ms     63 s
+  157/210  run 3   1 x   30  composite         0.365 ms/frame  cpu   0.075 ms     63 s
+  158/210  run 3   1 x   30  submitDirty       0.485 ms/frame  cpu   0.140 ms     63 s
+  159/210  run 3   1 x   30  compositeDirty    1.075 ms/frame  cpu   0.170 ms     63 s
+  160/210  run 3   1 x   30  retained          0.490 ms/frame  cpu   0.095 ms     63 s
+  161/210  run 3   1 x   30  retainedDirty     0.660 ms/frame  cpu   0.165 ms     63 s
+  162/210  run 3   1 x  100  control           0.345 ms/frame  cpu   0.110 ms     66 s
+  163/210  run 3   1 x  100  submit            0.400 ms/frame  cpu   0.260 ms     66 s
+  164/210  run 3   1 x  100  composite         0.385 ms/frame  cpu   0.060 ms     66 s
+  165/210  run 3   1 x  100  submitDirty       0.440 ms/frame  cpu   0.175 ms     66 s
+  166/210  run 3   1 x  100  compositeDirty    1.125 ms/frame  cpu   0.275 ms     66 s
+  167/210  run 3   1 x  100  retained          0.430 ms/frame  cpu   0.100 ms     66 s
+  168/210  run 3   1 x  100  retainedDirty     0.460 ms/frame  cpu   0.155 ms     66 s
+  169/210  run 3   1 x  300  control           0.290 ms/frame  cpu   0.135 ms     68 s
+  170/210  run 3   1 x  300  submit            0.825 ms/frame  cpu   0.505 ms     68 s
+  171/210  run 3   1 x  300  composite         0.385 ms/frame  cpu   0.125 ms     68 s
+  172/210  run 3   1 x  300  submitDirty       0.975 ms/frame  cpu   0.605 ms     68 s
+  173/210  run 3   1 x  300  compositeDirty    1.580 ms/frame  cpu   0.655 ms     68 s
+  174/210  run 3   1 x  300  retained          0.405 ms/frame  cpu   0.115 ms     68 s
+  175/210  run 3   1 x  300  retainedDirty     0.820 ms/frame  cpu   0.480 ms     68 s
+  176/210  run 3   4 x    1  control           0.340 ms/frame  cpu   0.085 ms     71 s
+  177/210  run 3   4 x    1  submit            0.225 ms/frame  cpu   0.075 ms     71 s
+  178/210  run 3   4 x    1  composite         1.435 ms/frame  cpu   0.070 ms     71 s
+  179/210  run 3   4 x    1  submitDirty       0.455 ms/frame  cpu   0.085 ms     71 s
+  180/210  run 3   4 x    1  compositeDirty    2.625 ms/frame  cpu   0.105 ms     71 s
+  181/210  run 3   4 x    1  retained          0.420 ms/frame  cpu   0.090 ms     71 s
+  182/210  run 3   4 x    1  retainedDirty     0.150 ms/frame  cpu   0.075 ms     71 s
+  183/210  run 3   4 x   10  control           0.340 ms/frame  cpu   0.115 ms     74 s
+  184/210  run 3   4 x   10  submit            0.710 ms/frame  cpu   0.180 ms     74 s
+  185/210  run 3   4 x   10  composite         1.455 ms/frame  cpu   0.100 ms     74 s
+  186/210  run 3   4 x   10  submitDirty       0.435 ms/frame  cpu   0.155 ms     74 s
+  187/210  run 3   4 x   10  compositeDirty    2.355 ms/frame  cpu   0.210 ms     74 s
+  188/210  run 3   4 x   10  retained          0.395 ms/frame  cpu   0.175 ms     74 s
+  189/210  run 3   4 x   10  retainedDirty     0.530 ms/frame  cpu   0.200 ms     74 s
+  190/210  run 3   4 x   30  control           0.310 ms/frame  cpu   0.110 ms     77 s
+  191/210  run 3   4 x   30  submit            0.555 ms/frame  cpu   0.170 ms     77 s
+  192/210  run 3   4 x   30  composite         1.355 ms/frame  cpu   0.100 ms     77 s
+  193/210  run 3   4 x   30  submitDirty       0.745 ms/frame  cpu   0.200 ms     77 s
+  194/210  run 3   4 x   30  compositeDirty    2.265 ms/frame  cpu   0.155 ms     77 s
+  195/210  run 3   4 x   30  retained          0.555 ms/frame  cpu   0.100 ms     77 s
+  196/210  run 3   4 x   30  retainedDirty     0.780 ms/frame  cpu   0.240 ms     77 s
+  197/210  run 3   4 x  100  control           0.195 ms/frame  cpu   0.145 ms     79 s
+  198/210  run 3   4 x  100  submit            0.980 ms/frame  cpu   0.625 ms     79 s
+  199/210  run 3   4 x  100  composite         1.470 ms/frame  cpu   0.130 ms     79 s
+  200/210  run 3   4 x  100  submitDirty       0.805 ms/frame  cpu   0.665 ms     79 s
+  201/210  run 3   4 x  100  compositeDirty    2.345 ms/frame  cpu   0.375 ms     79 s
+  202/210  run 3   4 x  100  retained          0.555 ms/frame  cpu   0.175 ms     79 s
+  203/210  run 3   4 x  100  retainedDirty     1.015 ms/frame  cpu   0.380 ms     79 s
+  204/210  run 3   4 x  300  control           0.130 ms/frame  cpu   0.120 ms     82 s
+  205/210  run 3   4 x  300  submit            2.460 ms/frame  cpu   1.365 ms     82 s
+  206/210  run 3   4 x  300  composite         1.285 ms/frame  cpu   0.100 ms     82 s
+  207/210  run 3   4 x  300  submitDirty       2.575 ms/frame  cpu   1.355 ms     82 s
+  208/210  run 3   4 x  300  compositeDirty    2.625 ms/frame  cpu   0.500 ms     82 s
+  209/210  run 3   4 x  300  retained          0.635 ms/frame  cpu   0.165 ms     82 s
+  210/210  run 3   4 x  300  retainedDirty     1.185 ms/frame  cpu   0.510 ms     82 s
+
+Layer dispatch — 1280x800 at dpr 2, on ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)
+median of 3 runs, ms per frame over the control (the live layer alone).
+"cpu" is the renderer's own render() time; "draws" counts draw calls.
+
+"dirty" redraws the first layer every frame: submitted again, or drawn into its texture.
+
+"retained" is the real path; "kept" is how many of its layers composited from a surface, and how many the budget declined.
+
+| layers | cmds | control | submit | composite | retained | submit dirty | composite dirty | retained dirty | submit cpu | retained cpu | draws s / c / r | kept / declined | composite / submit | retained / submit | dirty r / s |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|  1 |    1 |  0.255 |   0.030 |   0.110 |   0.040 |  -0.015 |   0.550 |   0.035 |   0.090 |   0.120 |    1 /   1 /   2 |  1 /  0 |   3.67 |   1.33 |  -2.33 |
+|  1 |   10 |  0.260 |   0.110 |   0.070 |   0.055 |   0.065 |   0.475 |   0.065 |   0.105 |   0.095 |    1 /   1 /   2 |  1 /  0 |   0.64 |   0.50 |   1.00 |
+|  1 |   30 |  0.275 |   0.120 |   0.090 |   0.055 |   0.210 |   0.515 |   0.115 |   0.135 |   0.095 |    1 /   1 /   2 |  1 /  0 |   0.75 |   0.46 |   0.55 |
+|  1 |  100 |  0.320 |   0.095 |   0.065 |   0.110 |   0.105 |   0.755 |   0.140 |   0.260 |   0.100 |    1 /   1 /   2 |  1 /  0 |   0.68 |   1.16 |   1.33 |
+|  1 |  300 |  0.295 |   0.505 |   0.095 |   0.065 |   0.680 |   1.075 |   0.525 |   0.365 |   0.105 |    1 /   1 /   2 |  1 /  0 |   0.19 |   0.13 |   0.77 |
+|  4 |    1 |  0.300 |   0.025 |   1.135 |   0.055 |   0.085 |   2.025 |  -0.030 |   0.075 |   0.090 |    1 /   1 /   5 |  4 /  0 |  45.40 |   2.20 |  -0.35 |
+|  4 |   10 |  0.255 |   0.175 |   1.200 |   0.115 |   0.100 |   1.960 |   0.405 |   0.145 |   0.175 |    1 /   1 /   5 |  4 /  0 |   6.86 |   0.66 |   4.05 |
+|  4 |   30 |  0.245 |   0.225 |   1.110 |   0.300 |   0.175 |   2.020 |   0.350 |   0.250 |   0.150 |    1 /   1 /   5 |  4 /  0 |   4.93 |   1.33 |   2.00 |
+|  4 |  100 |  0.205 |   0.775 |   1.360 |   0.410 |   0.680 |   2.310 |   0.710 |   0.625 |   0.175 |    1 /   1 /   5 |  4 /  0 |   1.75 |   0.53 |   1.04 |
+|  4 |  300 |  0.210 |   2.500 |   1.195 |   0.325 |   2.780 |   2.415 |   1.110 |   1.365 |   0.165 |    1 /   1 /   5 |  4 /  0 |   0.48 |   0.13 |   0.40 |
+
+perf result: tests/perf/recorded/retain-2026-11-03/teitou/dispatch-plain/layer-dispatch-2026-11-03T09-22-32Z.json
+  ✓  1 tests/perf/layer-dispatch.spec.ts:73:1 › layer dispatch: unchanged layers submitted against composited (1.4m)
+
+  1 passed (1.4m)

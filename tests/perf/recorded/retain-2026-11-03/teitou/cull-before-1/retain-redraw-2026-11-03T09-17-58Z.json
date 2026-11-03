@@ -1,0 +1,3184 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "retain-redraw",
+  "git": {
+    "sha": "6b88d4c61f7ff705ae767157e1530c9c2d548d8b",
+    "dirty": true
+  },
+  "timestamp": "2026-11-03T09:17:58.536Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 156.0.8078.4",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.2.0 arm64",
+    "node": "v26.13.0",
+    "loadavg": [
+      4.95,
+      3.67,
+      4.66
+    ]
+  },
+  "params": {
+    "viewport": "1280x800",
+    "dpr": 2,
+    "layers": 4,
+    "cmds": 1000,
+    "contexts": 6,
+    "tiles": [
+      "none",
+      "1024"
+    ],
+    "budgetMiB": "default",
+    "samples": 40,
+    "profiled": 30,
+    "trace": false
+  },
+  "items": [
+    {
+      "id": "c1 tile none",
+      "params": {
+        "context": 1,
+        "tile": "none",
+        "profile": [
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 4.278
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.298
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 2.897
+          },
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 0.475
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 0.414
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.209
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.168
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.143
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.097
+          },
+          {
+            "fn": "(garbage collector) (:0)",
+            "msPerFrame": 0.082
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.061
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.057
+          },
+          {
+            "fn": "visitChild (:336)",
+            "msPerFrame": 0.046
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.046
+          },
+          {
+            "fn": "screenBox (paintedBounds.ts:180)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.035
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.025
+          },
+          {
+            "fn": "commandBox (paintedBounds.ts:31)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "listBox (paintedBounds.ts:23)",
+            "msPerFrame": 0.015
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 7.725,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            4.725,
+            4.89,
+            5.12,
+            8.715,
+            7.08,
+            6.68,
+            6.985,
+            6.475,
+            8.7,
+            10.63,
+            9.51,
+            7.275,
+            5.57,
+            5.46,
+            6.585,
+            6.235,
+            8.38,
+            8.67,
+            8.355,
+            6.86,
+            7.365,
+            6.7,
+            7.105,
+            7.345,
+            8.405,
+            10.285,
+            9.455,
+            9.22,
+            7.725,
+            7.735,
+            8.895,
+            8.35,
+            8.445,
+            11.83,
+            9.955,
+            8.425,
+            8.095,
+            7.645,
+            7.62,
+            6.565
+          ]
+        },
+        "cpu": {
+          "value": 2.35,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            1.95,
+            2.13,
+            2.28,
+            2.475,
+            2.355,
+            2.395,
+            2.59,
+            2.35,
+            2.45,
+            2.545,
+            2.425,
+            2.135,
+            2.1,
+            1.97,
+            1.975,
+            2.025,
+            2.085,
+            2.165,
+            2.005,
+            2.2,
+            2.36,
+            2.265,
+            2.21,
+            2.315,
+            2.3,
+            2.455,
+            2.475,
+            2.525,
+            2.51,
+            2.475,
+            2.445,
+            2.485,
+            2.465,
+            2.44,
+            2.44,
+            2.435,
+            2.21,
+            2.265,
+            2.15,
+            2.235
+          ]
+        },
+        "gpu": {
+          "value": 5.000958,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            2.182458,
+            1.983124,
+            2.385083,
+            5.810499,
+            4.386416,
+            3.831333,
+            3.893874,
+            3.734458,
+            5.402749,
+            7.647083,
+            6.694208,
+            4.247583,
+            3.054291,
+            3.113958,
+            3.846666,
+            3.814833,
+            5.871625,
+            5.698083,
+            6.051375,
+            4.331625,
+            4.531875,
+            3.912125,
+            4.458083,
+            4.588249,
+            5.6955,
+            7.081874,
+            6.391416,
+            5.916249,
+            4.812874,
+            4.787333,
+            5.636541,
+            5.4285,
+            5.580916,
+            8.901958,
+            7.123874,
+            5.196458,
+            5.109958,
+            5.0355,
+            5.000958,
+            3.862833
+          ]
+        },
+        "drawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 307200000,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c1 tile 1024",
+      "params": {
+        "context": 1,
+        "tile": "1024",
+        "profile": [
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 4.23
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.362
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 2.785
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 2.273
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.17
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.996
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.883
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.452
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.401
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.344
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.317
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.317
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.301
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.296
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.241
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.221
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.219
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.209
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.189
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.183
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.172
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.159
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.153
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.133
+          },
+          {
+            "fn": "ensure (GLTextureCache.ts:34)",
+            "msPerFrame": 0.107
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 17.565,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            14.855,
+            15.905,
+            17.71,
+            17.74,
+            17.915,
+            17.445,
+            17.58,
+            18.63,
+            18.61,
+            20.385,
+            15.38,
+            15.19,
+            14.585,
+            14.685,
+            15.215,
+            16.845,
+            15.99,
+            15.59,
+            15.095,
+            16.39,
+            16.44,
+            16.945,
+            17.13,
+            18.065,
+            18.97,
+            19.065,
+            18.865,
+            20.13,
+            18.59,
+            18.425,
+            19.635,
+            18.535,
+            18.425,
+            19.41,
+            18.85,
+            17.505,
+            16.13,
+            16.07,
+            17.565,
+            17.04
+          ]
+        },
+        "cpu": {
+          "value": 15.7,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            13.97,
+            14.735,
+            15.7,
+            16.19,
+            15.355,
+            15.78,
+            15.955,
+            16.485,
+            16.235,
+            17.075,
+            13.955,
+            13.845,
+            13.225,
+            13.435,
+            13.45,
+            13.625,
+            13.72,
+            13.67,
+            13.235,
+            13.95,
+            15.005,
+            15.015,
+            15.63,
+            16.05,
+            16.24,
+            16.48,
+            16.48,
+            16.875,
+            16.77,
+            16.485,
+            16.91,
+            16.645,
+            16.375,
+            16.485,
+            16.79,
+            16.135,
+            14.685,
+            14.7,
+            14.955,
+            15.445
+          ]
+        },
+        "gpu": {
+          "value": 7.931666,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            2.693916,
+            3.599583,
+            5.723291,
+            9.989875,
+            7.807624,
+            6.360083,
+            7.161749,
+            6.222083,
+            11.368083,
+            11.834916,
+            7.152499,
+            6.546624,
+            4.934375,
+            6.759749,
+            7.120999,
+            9.170708,
+            12.643416,
+            10.171124,
+            9.039749,
+            7.668958,
+            7.210583,
+            7.858666,
+            7.034125,
+            9.646125,
+            15.926499,
+            10.319291,
+            10.032333,
+            10.632875,
+            9.060541,
+            8.414125,
+            10.382041,
+            8.448666,
+            11.468791,
+            13.883833,
+            11.516541,
+            7.931666,
+            7.528041,
+            7.003999,
+            7.697833,
+            6.893374
+          ]
+        },
+        "drawCalls": {
+          "value": 36,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 140148736,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c2 tile none",
+      "params": {
+        "context": 2,
+        "tile": "none",
+        "profile": [
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 3.583
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.344
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.163
+          },
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 0.514
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 0.422
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.203
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.173
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.153
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.118
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.067
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.05
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.04
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.036
+          },
+          {
+            "fn": "screenBox (paintedBounds.ts:180)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.027
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.025
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.025
+          },
+          {
+            "fn": "commandBox (paintedBounds.ts:31)",
+            "msPerFrame": 0.021
+          },
+          {
+            "fn": "drawGroup (draw.ts:27)",
+            "msPerFrame": 0.021
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "pushQuad (drawBatch.ts:155)",
+            "msPerFrame": 0.016
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.015
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 7.92,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            4.785,
+            4.155,
+            4.335,
+            4.43,
+            5.14,
+            6.14,
+            8.81,
+            6.105,
+            7.67,
+            9.13,
+            7.945,
+            9.205,
+            9.345,
+            8.195,
+            7.32,
+            7.915,
+            9.125,
+            8.535,
+            7.11,
+            6.665,
+            7.855,
+            6.52,
+            8.315,
+            7.835,
+            8.705,
+            10.34,
+            10.275,
+            6.685,
+            7.92,
+            7.275,
+            6.945,
+            9.615,
+            10.435,
+            8.5,
+            8.27,
+            8.74,
+            10.33,
+            9.065,
+            6.41,
+            6.865
+          ]
+        },
+        "cpu": {
+          "value": 2.35,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            1.95,
+            2.1,
+            2.12,
+            2.22,
+            2.3,
+            2.325,
+            2.5,
+            2.335,
+            2.35,
+            2.315,
+            2.445,
+            2.485,
+            2.455,
+            2.535,
+            2.32,
+            2.205,
+            2.295,
+            2.325,
+            2.455,
+            2.455,
+            2.375,
+            2.3,
+            2.32,
+            2.325,
+            2.45,
+            2.455,
+            2.43,
+            2.46,
+            2.445,
+            2.435,
+            2.49,
+            2.435,
+            2.45,
+            2.435,
+            2.43,
+            2.165,
+            1.99,
+            2.095,
+            2,
+            1.97
+          ]
+        },
+        "gpu": {
+          "value": 5.123583,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            2.002874,
+            1.674583,
+            1.789124,
+            1.777875,
+            2.459333,
+            3.397124,
+            5.518333,
+            3.368999,
+            4.998249,
+            6.42525,
+            5.123583,
+            5.939666,
+            6.460333,
+            5.312208,
+            4.433916,
+            5.308166,
+            6.463333,
+            5.818999,
+            4.234999,
+            3.855541,
+            4.840374,
+            3.805416,
+            5.566583,
+            5.098833,
+            5.845,
+            7.502875,
+            7.458999,
+            3.86125,
+            4.991833,
+            4.412083,
+            4.023374,
+            6.313333,
+            7.583249,
+            5.679875,
+            5.501249,
+            6.142708,
+            7.946833,
+            6.155583,
+            3.962666,
+            4.580416
+          ]
+        },
+        "drawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 307200000,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c2 tile 1024",
+      "params": {
+        "context": 2,
+        "tile": "1024",
+        "profile": [
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 4.158
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.356
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 3.099
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 2.606
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.855
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 1.038
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.81
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.413
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.374
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.336
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.315
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.289
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.276
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.256
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.244
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.235
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.189
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.184
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.183
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.158
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.137
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.135
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.132
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.127
+          },
+          {
+            "fn": "pushQuad (drawBatch.ts:155)",
+            "msPerFrame": 0.091
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 18.06,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            14.135,
+            15.29,
+            16.25,
+            15.955,
+            16.37,
+            17.28,
+            18.07,
+            18.38,
+            18.525,
+            18.395,
+            19.995,
+            19.3,
+            18.485,
+            18.65,
+            17.64,
+            17.01,
+            18.31,
+            17.995,
+            18.06,
+            17.73,
+            18.735,
+            17.71,
+            17.36,
+            18.24,
+            18.61,
+            18.83,
+            18.615,
+            17.88,
+            18.49,
+            18.42,
+            17.9,
+            18.21,
+            18.9,
+            19.125,
+            17.665,
+            16.075,
+            14.96,
+            15.875,
+            15.715,
+            14.66
+          ]
+        },
+        "cpu": {
+          "value": 16.2,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            13.175,
+            14.45,
+            14.865,
+            15.135,
+            15.41,
+            15.875,
+            16.14,
+            15.755,
+            15.47,
+            16.34,
+            16.24,
+            16.765,
+            16.535,
+            16.415,
+            15.1,
+            15.395,
+            16.165,
+            16.405,
+            16.335,
+            16.2,
+            16.315,
+            15.615,
+            15.845,
+            16.275,
+            16.33,
+            16.59,
+            16.855,
+            16.54,
+            16.415,
+            16.88,
+            16.28,
+            16.26,
+            16.81,
+            16.66,
+            15.71,
+            13.635,
+            13.225,
+            14.325,
+            14.09,
+            13.115
+          ]
+        },
+        "gpu": {
+          "value": 7.698916,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            3.153833,
+            3.189458,
+            3.427041,
+            3.315916,
+            3.346541,
+            4.766374,
+            6.838541,
+            9.337958,
+            13.300583,
+            10.858624,
+            12.259208,
+            10.308208,
+            7.181583,
+            8.401333,
+            10.865458,
+            10.342208,
+            9.41375,
+            9.599541,
+            7.045041,
+            5.810499,
+            7.698916,
+            6.917666,
+            7.643083,
+            7.457,
+            10.523916,
+            10.003999,
+            7.220208,
+            5.574874,
+            7.749125,
+            5.996583,
+            7.028083,
+            8.142208,
+            8.163625,
+            11.137208,
+            9.572374,
+            11.513541,
+            10.808916,
+            6.603083,
+            6.128083,
+            7.34225
+          ]
+        },
+        "drawCalls": {
+          "value": 36,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 140148736,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c3 tile none",
+      "params": {
+        "context": 3,
+        "tile": "none",
+        "profile": [
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.364
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 2.945
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.166
+          },
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 0.632
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 0.291
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.21
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.157
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.117
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.108
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.072
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.046
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "screenBox (paintedBounds.ts:180)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "commandBox (paintedBounds.ts:31)",
+            "msPerFrame": 0.016
+          },
+          {
+            "fn": "pushQuad (drawBatch.ts:155)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "batchPaint (gradient.ts:18)",
+            "msPerFrame": 0.015
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 7.855,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            4.04,
+            4.22,
+            4.34,
+            5.06,
+            5.62,
+            7.17,
+            13.69,
+            8.885,
+            8.44,
+            7.63,
+            8.64,
+            7.65,
+            8.17,
+            9.965,
+            7.42,
+            7.525,
+            7.59,
+            7.855,
+            8.605,
+            7.925,
+            5.64,
+            5.185,
+            6.47,
+            5.29,
+            6.15,
+            7.585,
+            8.5,
+            9.54,
+            9.875,
+            9.73,
+            8.315,
+            6.875,
+            7.165,
+            8.075,
+            7.53,
+            8.52,
+            8.85,
+            10.51,
+            9.225,
+            9.515
+          ]
+        },
+        "cpu": {
+          "value": 2.305,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            1.94,
+            2.15,
+            2.23,
+            2.21,
+            2.305,
+            2.315,
+            2.47,
+            2.435,
+            2.44,
+            2.43,
+            2.45,
+            2.335,
+            2.46,
+            2.415,
+            2.445,
+            2.205,
+            2.095,
+            1.985,
+            2.105,
+            2.025,
+            1.91,
+            1.96,
+            2.05,
+            2.045,
+            2.22,
+            2.12,
+            2.225,
+            2.35,
+            2.305,
+            2.43,
+            2.445,
+            2.46,
+            2.49,
+            2.35,
+            2.335,
+            2.43,
+            2.305,
+            2.325,
+            2.245,
+            2.305
+          ]
+        },
+        "gpu": {
+          "value": 4.970333,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            1.743291,
+            1.691333,
+            1.692833,
+            2.000125,
+            2.302625,
+            4.030999,
+            10.367166,
+            6.076458,
+            5.649875,
+            4.855541,
+            5.711166,
+            4.829166,
+            4.930124,
+            7.139333,
+            4.554916,
+            4.91775,
+            5.055541,
+            5.54575,
+            6.186375,
+            5.649708,
+            3.389125,
+            2.8145,
+            3.659375,
+            2.932916,
+            3.563458,
+            4.686458,
+            5.853083,
+            6.771375,
+            6.845708,
+            6.866208,
+            5.047874,
+            3.976291,
+            4.258708,
+            4.970333,
+            4.742291,
+            5.753999,
+            6.171833,
+            7.786666,
+            6.528958,
+            6.832041
+          ]
+        },
+        "drawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 307200000,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c3 tile 1024",
+      "params": {
+        "context": 3,
+        "tile": "1024",
+        "profile": [
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 4.276
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.355
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 2.831
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 2.58
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.835
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 1.067
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.975
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.378
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.377
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.352
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.3
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.297
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.265
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.255
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.25
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.244
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.225
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.195
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.173
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.159
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.148
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.132
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.103
+          },
+          {
+            "fn": "screenBox (paintedBounds.ts:180)",
+            "msPerFrame": 0.102
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.097
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 17.8,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            14.91,
+            15.405,
+            15.995,
+            16.18,
+            16.64,
+            17.77,
+            19.79,
+            19.9,
+            18.195,
+            18.665,
+            17.885,
+            18.1,
+            18.27,
+            18.325,
+            18.58,
+            15.675,
+            16.13,
+            16.18,
+            15.625,
+            14.545,
+            14.145,
+            14.345,
+            14.81,
+            15.97,
+            15.895,
+            16.575,
+            18.33,
+            18.39,
+            19.35,
+            18.315,
+            17.92,
+            17.775,
+            17.845,
+            18.025,
+            18.575,
+            17.755,
+            18.045,
+            18.575,
+            17.8,
+            16.6
+          ]
+        },
+        "cpu": {
+          "value": 15.775,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            13.96,
+            14.535,
+            15.13,
+            15.32,
+            15.62,
+            15.75,
+            16.71,
+            16.695,
+            16.545,
+            16.745,
+            15.96,
+            16.22,
+            16.255,
+            16.68,
+            16.745,
+            14,
+            13.565,
+            13.74,
+            13.65,
+            13.26,
+            12.975,
+            13.145,
+            13.56,
+            14.665,
+            14.32,
+            14.565,
+            15.315,
+            16.08,
+            16.25,
+            16.72,
+            16.385,
+            16.235,
+            16.24,
+            16.38,
+            16.65,
+            16.05,
+            16.025,
+            15.01,
+            15.775,
+            15.335
+          ]
+        },
+        "gpu": {
+          "value": 7.720833,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            2.655916,
+            2.648208,
+            2.798625,
+            3.069833,
+            3.975041,
+            7.929,
+            11.556708,
+            11.4335,
+            13.091083,
+            7.843708,
+            9.871458,
+            7.961958,
+            8.591708,
+            6.604583,
+            9.354333,
+            7.259875,
+            11.159875,
+            12.292083,
+            9.650124,
+            5.115,
+            6.315791,
+            5.031291,
+            4.706166,
+            5.812083,
+            5.376416,
+            8.188416,
+            13.304374,
+            9.987666,
+            12.027791,
+            6.941166,
+            7.042958,
+            5.641083,
+            5.970541,
+            7.185958,
+            7.720833,
+            7.185416,
+            9.99075,
+            14.053041,
+            10.95975,
+            5.573291
+          ]
+        },
+        "drawCalls": {
+          "value": 36,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 140148736,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c4 tile none",
+      "params": {
+        "context": 4,
+        "tile": "none",
+        "profile": [
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 4.795
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.37
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.276
+          },
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 0.563
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 0.391
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.208
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.193
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.118
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.097
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.051
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.046
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.036
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.036
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.036
+          },
+          {
+            "fn": "commandBox (paintedBounds.ts:31)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.03
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.025
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.021
+          },
+          {
+            "fn": "screenBox (paintedBounds.ts:180)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "drawInto (retained.ts:133)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "listBox (paintedBounds.ts:23)",
+            "msPerFrame": 0.015
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 7.76,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            5.79,
+            4.955,
+            5.665,
+            5.61,
+            8.355,
+            12.37,
+            6.59,
+            5.775,
+            5.815,
+            5.855,
+            6,
+            7.095,
+            8.985,
+            9.835,
+            8.495,
+            9.53,
+            8.545,
+            8.42,
+            7.475,
+            8.38,
+            7.3,
+            8.37,
+            8.905,
+            8.74,
+            9.45,
+            5.725,
+            5.415,
+            5.81,
+            5.825,
+            6.41,
+            8.525,
+            8.715,
+            7.225,
+            7.76,
+            7.385,
+            8.865,
+            8.49,
+            7.65,
+            8.68,
+            8.235
+          ]
+        },
+        "cpu": {
+          "value": 2.385,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            1.95,
+            2.08,
+            1.965,
+            2.05,
+            1.95,
+            2.125,
+            2.36,
+            2.11,
+            2.395,
+            2.28,
+            2.31,
+            2.335,
+            2.4,
+            2.305,
+            2.425,
+            2.425,
+            2.295,
+            2.385,
+            2.495,
+            2.445,
+            2.43,
+            2.44,
+            2.27,
+            2.255,
+            2.315,
+            2.32,
+            2.355,
+            2.39,
+            2.43,
+            2.33,
+            2.5,
+            2.425,
+            2.455,
+            2.46,
+            2.44,
+            2.45,
+            2.42,
+            2.43,
+            2.305,
+            2.445
+          ]
+        },
+        "gpu": {
+          "value": 4.909208,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            3.204374,
+            2.546,
+            2.918958,
+            3.112208,
+            5.587958,
+            9.454374,
+            3.751291,
+            3.234083,
+            3.05925,
+            3.207375,
+            3.294375,
+            4.307458,
+            5.953541,
+            6.764375,
+            5.637583,
+            6.594791,
+            5.436874,
+            5.645624,
+            4.587791,
+            5.578708,
+            4.421791,
+            5.509749,
+            6.298374,
+            6.053499,
+            6.320416,
+            3.018708,
+            2.682583,
+            3.054999,
+            3.038875,
+            3.62225,
+            5.232625,
+            5.870749,
+            4.331541,
+            4.897833,
+            4.599708,
+            5.674166,
+            5.679875,
+            4.909208,
+            5.931583,
+            5.389833
+          ]
+        },
+        "drawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 307200000,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c4 tile 1024",
+      "params": {
+        "context": 4,
+        "tile": "1024",
+        "profile": [
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 4.289
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.297
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 2.994
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 2.462
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.828
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 1.023
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.899
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.362
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.358
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.353
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.347
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.318
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.266
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.226
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.224
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.203
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.199
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.189
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.179
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.169
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.158
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.153
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.143
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.138
+          },
+          {
+            "fn": "commandBox (paintedBounds.ts:31)",
+            "msPerFrame": 0.093
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 17.84,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            14.445,
+            14.165,
+            15.14,
+            14.805,
+            16.06,
+            16.935,
+            15.91,
+            16.68,
+            17.695,
+            17.46,
+            17.865,
+            18.25,
+            18.07,
+            19.27,
+            18.795,
+            17.7,
+            17.685,
+            18.195,
+            18.2,
+            18.27,
+            17.82,
+            17.84,
+            17.865,
+            17.465,
+            17.695,
+            17.44,
+            17.435,
+            17.3,
+            17.565,
+            17.695,
+            19.015,
+            18.04,
+            18.6,
+            17.92,
+            18.565,
+            19.835,
+            18.55,
+            18.37,
+            18.05,
+            18.11
+          ]
+        },
+        "cpu": {
+          "value": 16.135,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            12.975,
+            13.045,
+            13.205,
+            13.49,
+            14.125,
+            15.315,
+            13.79,
+            14.53,
+            16.135,
+            15.85,
+            15.6,
+            16.435,
+            15.74,
+            16.255,
+            16.74,
+            16.055,
+            16.07,
+            16.22,
+            16.23,
+            16.37,
+            16.23,
+            15.325,
+            15.455,
+            15.38,
+            16.18,
+            16.195,
+            16.13,
+            16.1,
+            16.235,
+            16.215,
+            16.155,
+            16.32,
+            16.425,
+            16.305,
+            16.575,
+            16.875,
+            16.61,
+            15.705,
+            16.04,
+            16.365
+          ]
+        },
+        "gpu": {
+          "value": 8.144791,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            4.682875,
+            4.488708,
+            5.899541,
+            5.874708,
+            9.865249,
+            7.718625,
+            6.293125,
+            6.27775,
+            5.957666,
+            6.189624,
+            8.265,
+            9.782958,
+            7.976083,
+            11.875499,
+            10.578791,
+            7.027083,
+            6.656791,
+            8.517999,
+            8.144791,
+            8.239291,
+            8.716125,
+            13.594291,
+            9.754583,
+            9.110958,
+            5.907416,
+            4.983083,
+            4.890749,
+            4.839499,
+            4.699083,
+            7.087708,
+            11.887791,
+            6.620375,
+            10.796208,
+            8.004541,
+            9.289416,
+            10.450291,
+            10.33025,
+            9.019083,
+            8.968,
+            11.041041
+          ]
+        },
+        "drawCalls": {
+          "value": 36,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 140148736,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c5 tile none",
+      "params": {
+        "context": 5,
+        "tile": "none",
+        "profile": [
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.376
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 3.169
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.192
+          },
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 0.582
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 0.393
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.188
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.137
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.127
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.081
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.071
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.036
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.035
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.031
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.03
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "pushQuad (drawBatch.ts:155)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "listBox (paintedBounds.ts:23)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "batchPaint (gradient.ts:18)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "ensure (GLTextureCache.ts:34)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.015
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 7.95,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            4.405,
+            4.395,
+            5.785,
+            4.675,
+            4.775,
+            6.355,
+            7.07,
+            8.705,
+            7.175,
+            7.47,
+            7.96,
+            7.78,
+            10.425,
+            10.82,
+            8.05,
+            8.14,
+            7.825,
+            6.155,
+            6.485,
+            6.565,
+            6.42,
+            10.61,
+            8.54,
+            8.25,
+            9.09,
+            8.36,
+            8.65,
+            8.17,
+            8.5,
+            8.805,
+            9.21,
+            7.235,
+            6.895,
+            7.95,
+            8.3,
+            7.805,
+            8.865,
+            7.695,
+            8.495,
+            7.265
+          ]
+        },
+        "cpu": {
+          "value": 2.25,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            2,
+            2.065,
+            2.13,
+            2.195,
+            2.01,
+            2.07,
+            2.27,
+            2.21,
+            2.29,
+            2.3,
+            2.315,
+            2.5,
+            2.525,
+            2.44,
+            2.45,
+            2.415,
+            2.425,
+            2.435,
+            2.445,
+            2.435,
+            1.895,
+            2.44,
+            2.16,
+            1.99,
+            2.05,
+            2.09,
+            1.945,
+            1.95,
+            2.065,
+            1.95,
+            2.12,
+            2.24,
+            1.975,
+            2.13,
+            2.25,
+            2.32,
+            2.375,
+            2.25,
+            2.315,
+            2.32
+          ]
+        },
+        "gpu": {
+          "value": 5.097083,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            2.024958,
+            1.959333,
+            2.829166,
+            2.055583,
+            2.320541,
+            3.575083,
+            4.329416,
+            6.0965,
+            4.50825,
+            4.831708,
+            5.284041,
+            4.826375,
+            7.463708,
+            7.544958,
+            4.780708,
+            5.3145,
+            5.035458,
+            3.320249,
+            3.664624,
+            3.811833,
+            4.072333,
+            7.370125,
+            5.907666,
+            5.92975,
+            6.343416,
+            5.94575,
+            6.023458,
+            5.873708,
+            5.890791,
+            6.082666,
+            6.269916,
+            4.532374,
+            4.494958,
+            5.406624,
+            5.278624,
+            5.097083,
+            6.114875,
+            5.025333,
+            5.3485,
+            4.524749
+          ]
+        },
+        "drawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 307200000,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c5 tile 1024",
+      "params": {
+        "context": 5,
+        "tile": "1024",
+        "profile": [
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 4.239
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.355
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 3.014
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 2.415
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.864
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 1.119
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.937
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.393
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.337
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.296
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.295
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.27
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.26
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.225
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.204
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.199
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.194
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.184
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.184
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.178
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.173
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.128
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.127
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.112
+          },
+          {
+            "fn": "pushQuad (drawBatch.ts:155)",
+            "msPerFrame": 0.092
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 17.43,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            14.385,
+            15.165,
+            15.855,
+            14.575,
+            15.035,
+            15.99,
+            20.02,
+            17.43,
+            17.61,
+            18.08,
+            18.865,
+            18.655,
+            19.235,
+            18.62,
+            19.42,
+            18.295,
+            18.04,
+            17.995,
+            17.725,
+            18.965,
+            17.91,
+            18.265,
+            16.15,
+            15.5,
+            16.295,
+            15.925,
+            15.08,
+            15.355,
+            15.48,
+            16.18,
+            17.415,
+            15.53,
+            15.87,
+            16.95,
+            18.8,
+            18.175,
+            17.945,
+            16.535,
+            17.21,
+            18.755
+          ]
+        },
+        "cpu": {
+          "value": 15.275,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            13.41,
+            14.195,
+            14.92,
+            13.59,
+            13.875,
+            14.38,
+            14.565,
+            15.71,
+            16.01,
+            15.92,
+            16.39,
+            16.595,
+            16.9,
+            17.1,
+            16.82,
+            16.675,
+            16.495,
+            16.41,
+            16.17,
+            16.17,
+            16.355,
+            14.97,
+            13.595,
+            13.095,
+            14.405,
+            14.005,
+            13.195,
+            13.23,
+            13.14,
+            14.165,
+            15.275,
+            13.705,
+            13.85,
+            15.155,
+            15.54,
+            16.105,
+            16.185,
+            14.985,
+            15.66,
+            15.86
+          ]
+        },
+        "gpu": {
+          "value": 8.439791,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            3.588166,
+            3.164625,
+            3.898374,
+            3.85225,
+            4.382708,
+            6.342125,
+            17.841708,
+            7.045458,
+            7.701458,
+            8.488374,
+            9.804583,
+            10.858624,
+            15.871416,
+            7.788666,
+            8.299875,
+            7.494208,
+            5.340041,
+            5.677708,
+            5.415833,
+            8.872333,
+            9.642541,
+            12.657458,
+            11.816375,
+            12.628666,
+            7.073499,
+            9.225208,
+            10.631333,
+            9.642458,
+            9.203458,
+            9.031875,
+            8.618708,
+            8.439791,
+            8.086833,
+            7.271541,
+            9.742666,
+            10.390124,
+            7.734666,
+            7.128999,
+            7.511416,
+            10.230208
+          ]
+        },
+        "drawCalls": {
+          "value": 36,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 140148736,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c6 tile none",
+      "params": {
+        "context": 6,
+        "tile": "none",
+        "profile": [
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.371
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 3.362
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.237
+          },
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 0.574
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 0.403
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.206
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 0.169
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.122
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.087
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.067
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.051
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.041
+          },
+          {
+            "fn": "screenBox (paintedBounds.ts:180)",
+            "msPerFrame": 0.026
+          },
+          {
+            "fn": "listBox (paintedBounds.ts:23)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.02
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "commandBox (paintedBounds.ts:31)",
+            "msPerFrame": 0.015
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.01
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 8.43,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            4.645,
+            5.225,
+            6.27,
+            6.32,
+            5.895,
+            9.91,
+            8.77,
+            6.845,
+            7.015,
+            7.52,
+            6.345,
+            7.645,
+            8.55,
+            10.02,
+            8.38,
+            10.035,
+            11.17,
+            9.145,
+            9.88,
+            6.495,
+            6.98,
+            7.37,
+            7.89,
+            9.015,
+            8.735,
+            8.17,
+            10.265,
+            9.095,
+            9.845,
+            8.06,
+            9.18,
+            9.275,
+            8.49,
+            7.955,
+            9.4,
+            8.045,
+            8.935,
+            8.43,
+            7.53,
+            9.545
+          ]
+        },
+        "cpu": {
+          "value": 2.35,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            1.935,
+            2.13,
+            2.21,
+            2.155,
+            2.025,
+            1.94,
+            2.18,
+            1.83,
+            1.935,
+            1.96,
+            1.98,
+            2.085,
+            2.27,
+            2.205,
+            2.25,
+            2.28,
+            2.305,
+            2.445,
+            2.435,
+            2.455,
+            2.45,
+            2.435,
+            2.395,
+            2.335,
+            2.47,
+            1.92,
+            2.455,
+            2.35,
+            2.295,
+            2.45,
+            2.46,
+            2.44,
+            2.515,
+            2.46,
+            2.44,
+            2.445,
+            2.435,
+            2.465,
+            2.445,
+            2.43
+          ]
+        },
+        "gpu": {
+          "value": 5.588,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            2.354041,
+            2.762624,
+            3.235333,
+            3.316666,
+            3.436625,
+            7.637749,
+            5.774791,
+            4.757541,
+            4.786666,
+            4.864124,
+            3.975541,
+            5.128749,
+            5.473041,
+            7.184958,
+            5.695875,
+            6.956458,
+            8.439583,
+            6.307499,
+            6.768416,
+            3.700916,
+            4.120875,
+            4.53,
+            4.688916,
+            5.870708,
+            5.811625,
+            5.86825,
+            7.136916,
+            6.390583,
+            7.179458,
+            5.197874,
+            5.913583,
+            6.422625,
+            5.535791,
+            5.075499,
+            6.210125,
+            5.209791,
+            6.112124,
+            5.588,
+            4.647374,
+            6.294416
+          ]
+        },
+        "drawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 307200000,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    },
+    {
+      "id": "c6 tile 1024",
+      "params": {
+        "context": 6,
+        "tile": "1024",
+        "profile": [
+          {
+            "fn": "placeGlyph (glyphCorners.ts:41)",
+            "msPerFrame": 4.422
+          },
+          {
+            "fn": "(idle) (:0)",
+            "msPerFrame": 3.303
+          },
+          {
+            "fn": "pushGlyph (drawBatch.ts:188)",
+            "msPerFrame": 2.905
+          },
+          {
+            "fn": "(program) (:0)",
+            "msPerFrame": 1.984
+          },
+          {
+            "fn": "readPixels (:0)",
+            "msPerFrame": 1.912
+          },
+          {
+            "fn": "glyphCorners (glyphCorners.ts:9)",
+            "msPerFrame": 1.005
+          },
+          {
+            "fn": "drawTextGroup (text.ts:162)",
+            "msPerFrame": 0.865
+          },
+          {
+            "fn": "textBox (textBounds.ts:23)",
+            "msPerFrame": 0.407
+          },
+          {
+            "fn": "drawImage (image.ts:29)",
+            "msPerFrame": 0.397
+          },
+          {
+            "fn": "dispatch (draw.ts:11)",
+            "msPerFrame": 0.372
+          },
+          {
+            "fn": "bufferSubData (:0)",
+            "msPerFrame": 0.323
+          },
+          {
+            "fn": "pushRect (batch.ts:164)",
+            "msPerFrame": 0.269
+          },
+          {
+            "fn": "drawText (text.ts:36)",
+            "msPerFrame": 0.262
+          },
+          {
+            "fn": "stageImage (batch.ts:64)",
+            "msPerFrame": 0.254
+          },
+          {
+            "fn": "pushRect (drawBatch.ts:126)",
+            "msPerFrame": 0.239
+          },
+          {
+            "fn": "stageGlyphs (batch.ts:92)",
+            "msPerFrame": 0.215
+          },
+          {
+            "fn": "runTakes (batchRun.ts:47)",
+            "msPerFrame": 0.193
+          },
+          {
+            "fn": "getFont (src-CK2pwcvT.js:2139)",
+            "msPerFrame": 0.189
+          },
+          {
+            "fn": "areaGrowth (text.ts:147)",
+            "msPerFrame": 0.187
+          },
+          {
+            "fn": "laidOutText (textLayout.ts:28)",
+            "msPerFrame": 0.181
+          },
+          {
+            "fn": "visitNode (:281)",
+            "msPerFrame": 0.152
+          },
+          {
+            "fn": "cachedPaintRuns (src-DfehNonb.js:3258)",
+            "msPerFrame": 0.152
+          },
+          {
+            "fn": "cachedLayoutRuns (src-DfehNonb.js:3549)",
+            "msPerFrame": 0.132
+          },
+          {
+            "fn": "fitQuad (batchStage.ts:86)",
+            "msPerFrame": 0.118
+          },
+          {
+            "fn": "pushQuad (drawBatch.ts:155)",
+            "msPerFrame": 0.071
+          }
+        ]
+      },
+      "metrics": {
+        "net": {
+          "value": 18.28,
+          "unit": "ms",
+          "stat": "median of 40 single-frame samples less the least frame that draws",
+          "samples": [
+            15.095,
+            15.77,
+            16.72,
+            15.19,
+            15.765,
+            16.16,
+            15.15,
+            14.925,
+            14.76,
+            15.225,
+            15.13,
+            16.225,
+            18.385,
+            16.625,
+            16.845,
+            18.065,
+            19.695,
+            19.2,
+            18.85,
+            18.215,
+            18.28,
+            18.255,
+            17.57,
+            18.5,
+            18.275,
+            18.705,
+            19.415,
+            17.775,
+            18.39,
+            18.4,
+            19.15,
+            19.86,
+            18.97,
+            18.96,
+            19.28,
+            20.135,
+            20.13,
+            18.8,
+            18.685,
+            19.81
+          ]
+        },
+        "cpu": {
+          "value": 16.235,
+          "unit": "ms",
+          "stat": "median renderer.render() time",
+          "samples": [
+            14.03,
+            14.73,
+            15.67,
+            13.75,
+            13.305,
+            14.105,
+            13.495,
+            13.36,
+            13.2,
+            13.64,
+            13.19,
+            14.61,
+            16.58,
+            13.98,
+            14.96,
+            15.48,
+            16.235,
+            16.645,
+            16.865,
+            16.685,
+            16.375,
+            16.75,
+            16.04,
+            16.195,
+            16.195,
+            16.43,
+            15.725,
+            15.445,
+            16.265,
+            16.41,
+            16.91,
+            16.55,
+            16.835,
+            16.92,
+            17.055,
+            16.86,
+            16.69,
+            16.76,
+            16.7,
+            17.115
+          ]
+        },
+        "gpu": {
+          "value": 9.355249,
+          "unit": "ms",
+          "stat": "median timer-query time of the frame",
+          "samples": [
+            3.811791,
+            4.456874,
+            4.028416,
+            5.713291,
+            7.144458,
+            9.773749,
+            8.344166,
+            7.809208,
+            6.673166,
+            7.787083,
+            7.127,
+            8.457083,
+            7.434916,
+            10.424791,
+            9.215875,
+            10.897,
+            12.597958,
+            10.532875,
+            6.385708,
+            5.587125,
+            6.663541,
+            6.055125,
+            6.450375,
+            11.230083,
+            10.243291,
+            10.976291,
+            12.854,
+            11.02275,
+            12.398458,
+            10.838166,
+            9.987875,
+            10.526875,
+            9.774166,
+            8.059125,
+            11.214166,
+            10.975833,
+            11.127291,
+            10.592166,
+            9.140916,
+            9.355249
+          ]
+        },
+        "drawCalls": {
+          "value": 36,
+          "unit": "count",
+          "stat": "draw calls in the last timed frame"
+        },
+        "peakBytes": {
+          "value": 140148736,
+          "unit": "bytes",
+          "stat": "most GPU memory retained surfaces held at the end of a timed frame"
+        }
+      }
+    }
+  ]
+}

@@ -32,7 +32,9 @@
  * where 64 distinct ones would.
  *
  * `WEASEL_PERF_LAYERS` and `WEASEL_PERF_CMDS` override the ladders
- * (comma-separated). This reports; it does not gate. See `tests/perf/README.md`.
+ * (comma-separated). `WEASEL_PERF_BLUR=<radius>` wraps each submitted and
+ * retained layer's commands in a group blurred that far, to price a layer
+ * whose effects passes cost more than its commands. This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
 import { isolate } from './lib/isolate';
@@ -51,6 +53,7 @@ const ladder = (env: string | undefined, fallback: number[]) =>
   env?.split(',').map(Number).filter((n) => n >= 1) ?? fallback;
 const LAYERS = ladder(process.env.WEASEL_PERF_LAYERS, [1, 4, 16, 64]);
 const CMDS = ladder(process.env.WEASEL_PERF_CMDS, [10, 30, 100, 300, 1000]);
+const BLUR = Number(process.env.WEASEL_PERF_BLUR) || 0;
 
 const RUNS = rounds(3);
 /** Distinct cached-layer textures; layer l draws texture l % LAYER_TEXTURES. */
@@ -69,7 +72,7 @@ test.setTimeout(3_600_000);
 
 test('layer dispatch: unchanged layers submitted against composited', async ({ page, browser, browserName }) => {
   const run = startRun('layer-dispatch', {
-    viewport: `${W}x${H}`, dpr: DPR, layers: LAYERS, cmds: CMDS, runs: RUNS,
+    viewport: `${W}x${H}`, dpr: DPR, layers: LAYERS, cmds: CMDS, runs: RUNS, blur: BLUR,
   });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -115,7 +118,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
   await page.waitForSelector('canvas');
 
   const { glRenderer } = await page.evaluate(
-    async ({ root, w, h, dpr, layerLadder, cmdLadder, runs, variants, layerTextureCount }) => {
+    async ({ root, w, h, dpr, layerLadder, cmdLadder, runs, variants, layerTextureCount, blurRadius }) => {
       const report = (globalThis as unknown as {
         __layerReport: (m: unknown) => Promise<void>;
       }).__layerReport;
@@ -123,7 +126,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
       // One import of the renderer barrel, so the font registry the renderer
       // reads is the one written here; `render.ts` reaches the same module.
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer, registerFont, registerEffect } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
+      const { WeaselRenderer, registerFont, registerEffect, blur } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
       const { drawLayers } = await import(/* @vite-ignore */ `${base}/packages/core/src/core/layers/render.ts`);
       const { makeKindBuilders, imageBitmaps } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`);
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
@@ -218,7 +221,8 @@ void main() { outColor = texture(u_source, v_uv); }
         if (variant.startsWith('submit') || variant.startsWith('retained')) {
           const retain = variant.startsWith('retained');
           for (let l = 0; l < n; l++) {
-            const cmds = Array.from({ length: m }, (_, j) => leaf(l * 7919 + j));
+            const leaves = Array.from({ length: m }, (_, j) => leaf(l * 7919 + j));
+            const cmds = blurRadius > 0 ? [{ kind: 'group', effects: blur({ radius: blurRadius }), children: leaves }] : leaves;
             const deps = dirty && l === 0 ? dirtyDeps : () => constDeps;
             out.push({ id: `L${l}`, label: `L${l}`, draw: () => cmds, deps, retain });
           }
@@ -317,7 +321,7 @@ void main() { outColor = texture(u_source, v_uv); }
     },
     {
       root: repoRoot, w: W, h: H, dpr: DPR, layerLadder: LAYERS, cmdLadder: CMDS, layerTextureCount: LAYER_TEXTURES,
-      runs: RUNS, variants: [...VARIANTS],
+      runs: RUNS, variants: [...VARIANTS], blurRadius: BLUR,
     },
   );
 

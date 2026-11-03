@@ -3,7 +3,8 @@ import { compositeProgramId } from '../effects/composite';
 import { isOwnComposite, readsBackdrop } from '../effects/compositeOp';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
-import { boxWithin, contentBox, type DeviceBox, type DeviceRect } from '../retain/contentBounds';
+import { boxWithin, contentBox } from '../retain/contentBounds';
+import { boxTree, cullToTile } from '../retain/tileCull';
 import { movesWithView } from '../retain/movesWithView';
 import type { RetainedDraw, RetainedPixels } from '../retain/RetainedSurfaces';
 import type { DrawContext } from './drawContext';
@@ -122,7 +123,7 @@ export function drawRetainedGroup(
 /** Draw `children` into `draw.rect` of the surface, a tile at a time: each
  *  into the bottom-left of the scratch buffer behind `fbo`, under the group
  *  stack as it stands and inside `clips`, then resolved into its place. A
- *  child whose bounds miss a tile is not dispatched for it. */
+ *  command whose bounds miss a tile, at any depth, is not dispatched for it. */
 function drawInto(
   ctx: DrawContext, children: readonly DrawCommand[], clips: readonly RetainedClip[],
   fbo: WebGLFramebuffer, draw: RetainedDraw, dispatch: Dispatch,
@@ -144,7 +145,7 @@ function drawInto(
   // buffer's: the pixels are the ones drawing the surface whole leaves.
   const inside = insideBuffer(rect, width, height);
   ctx.projection = inside ? undefined : windowProjection(rect, scale);
-  const boxes = tiles.length > 1 ? children.map((c) => contentBox([c], ctx.state.transform, [], scale)) : null;
+  const tree = tiles.length > 1 ? boxTree(children, ctx.state.transform, scale) : null;
 
   for (const tile of tiles) {
     const bottom = tile.y + tile.height;
@@ -166,9 +167,7 @@ function drawInto(
     gl.stencilMask(0xFF);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     for (const clip of clips) enterGroupClip(ctx, clip.path, clip.transform);
-    for (let i = 0; i < children.length; i++) {
-      if (!boxes || boxMeets(boxes[i], tile)) dispatch(ctx, children[i]);
-    }
+    for (const child of tree ? cullToTile(tree, tile) : children) dispatch(ctx, child);
     flushBatch(ctx);
     draw.resolve(tile);
   }
@@ -179,8 +178,4 @@ function drawInto(
   ctx.projection = parentProjection;
   ctx.renderTarget = parentTarget;
   returnToRenderTarget(ctx, width, height, scissorWasOn);
-}
-
-function boxMeets(box: DeviceBox, rect: DeviceRect): boolean {
-  return box.x0 < rect.x + rect.width && box.x1 > rect.x && box.y0 < rect.y + rect.height && box.y1 > rect.y;
 }

@@ -12,13 +12,19 @@
  * last test holds a thin slanted stroke to that envelope; the rest allow a
  * few such pixels in content that mostly stays clear of it.
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
+import { registerFont } from '@weasel-js/font';
+import type { Paint } from '@weasel-js/paint';
 import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
 import type { RetainedStats } from '../rendererTypes';
 import { registerProgram } from '../shaders/registerProgram';
+import { registerTexture, unregisterTexture } from '../textures/registerTexture';
+import { registerPaintDrawKind } from '../paintKinds';
 import { blur, vignette } from '../effects/builtins';
+import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
+import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 
 const W = 64;
 const H = 48;
@@ -58,6 +64,44 @@ function world(extra: DrawCommand[] = []): DrawCommand[] {
 const SLANTED: DrawCommand[] = [
   { kind: 'path', path: pathFromD('M-10 5 L30 -8 L75 30 L12 52 Z'), stroke: { paint: { color: '#ffffff' }, width: 0.8 } },
 ];
+
+const FAMILY = 'retained-pan-inter';
+const KIND = 'retained-pan-tint';
+const TINT_VERT = `#version 300 es
+in vec2 a_position;
+uniform mat3 u_proj;
+uniform mat3 u_model;
+void main() { gl_Position = vec4((u_proj * u_model * vec3(a_position, 1.0)).xy, 0.0, 1.0); }
+`;
+const TINT_FRAG = '#version 300 es\nprecision highp float;\nout vec4 o;\nvoid main() { o = vec4(0.1, 0.9, 0.3, 1.0); }\n';
+let unregisterKind: (() => void) | undefined;
+
+beforeAll(async () => {
+  await registerFont(FAMILY, { weight: 400, style: 'normal' }, metricsUrl, atlasUrl);
+  unregisterKind = registerPaintDrawKind({
+    id: KIND,
+    programs: { [KIND]: { vert: TINT_VERT, frag: TINT_FRAG } },
+    bind: (ctx) => {
+      const program = ctx.program(KIND);
+      if (!program) return null;
+      ctx.gl.useProgram(program.handle);
+      ctx.setProjAndModel(program);
+      return program;
+    },
+  });
+});
+
+afterAll(() => unregisterKind?.());
+
+/** Lines of text across the buffer and past each edge, in `paint`. */
+const texts = (paint: Paint): DrawCommand[] => [[-14, 6], [50, 40], [20, -6], [20, 52], [2, 24]].map(([x, y]) => ({
+  kind: 'text', x, y,
+  runs: [{
+    text: 'HEHEH', fontFamily: FAMILY, fontSize: 9, fontWeight: 400, fontStyle: 'normal',
+    fill: { paint }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
+  }],
+  style: {},
+}));
 
 interface Pair { kept: WeaselRenderer; direct: WeaselRenderer; keptGl: WebGL2RenderingContext; directGl: WebGL2RenderingContext }
 const open: Pair[] = [];
@@ -225,6 +269,37 @@ describe('a retained world layer through a pan, in a real context', () => {
       expect(moved.stats, `at ${x}, ${y}`).toMatchObject({ composited: 1, redrawn: 0 });
       expect(moved.max, `at ${x}, ${y}`).toBeLessThanOrEqual(1);
     }
+  });
+
+  it('moves a layer holding pattern- and kind-painted text with the view, glyphs in the margin included', async () => {
+    const tile = new ImageData(4, 4);
+    for (let i = 0; i < 16; i++) tile.data.set((i + (i >> 2)) % 2 ? [255, 200, 0, 255] : [40, 0, 200, 255], i * 4);
+    const handle = registerTexture(await createImageBitmap(tile));
+    const children = [
+      ...texts({ kind: 'texture', texture: handle, units: 'world', width: 4, height: 4 }),
+      ...texts({ kind: KIND, units: 'local' } as unknown as Paint).map((t) => ({ ...t, y: (t as { y: number }).y + 9 }) as DrawCommand),
+    ];
+    const p = pairOf();
+    frame(p, 0, 0, children);
+    expect(frame(p, 0, 0, children).stats).toMatchObject({ composited: 1 });
+    const first = frame(p, 3.5, -2, children);
+    expect(first.stats).toMatchObject({ redrawn: 1 });
+    expect(first.off).toBeLessThanOrEqual(4);
+    for (const [x, y] of [[5, -3], [8, 1], [-1.5, 1.5], [11, -6.5]]) {
+      const moved = frame(p, x, y, children);
+      expect(moved.stats, `at ${x}, ${y}`).toMatchObject({ composited: 1, redrawn: 0 });
+      expect(moved.off, `at ${x}, ${y}`).toBeLessThanOrEqual(4);
+      // Both paints reached the canvas: the tint, and the pattern, the only red there.
+      let tint = 0, pattern = 0;
+      for (let i = 0; i < moved.direct.length; i += 4) {
+        const [r, g, b] = moved.direct.subarray(i, i + 3);
+        if (r < 40 && g > 210 && b > 60 && b < 100) tint++;
+        if (r > 120) pattern++;
+      }
+      expect(tint, `tint at ${x}, ${y}`).toBeGreaterThan(20);
+      expect(pattern, `pattern at ${x}, ${y}`).toBeGreaterThan(20);
+    }
+    unregisterTexture(handle);
   });
 
   it('draws a layer holding an effect with no reach straight through a move', () => {

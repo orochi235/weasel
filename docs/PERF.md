@@ -36,32 +36,15 @@ When work merges, retire its entry here in the same change.
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
   Closes when the consumer reports that run, or on 2026-12-01 with none, delete it.
 
-- **(P3) [agent] Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is drawn once into
-  its own texture and composited (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the policy is
-  `packages/core/src/core/layers/retain.ts`; `<Canvas retain>` sets the threshold and budget). A world layer is
-  retained through a pan by compositing its surface moved whole device pixels, drawn again with a margin of an
-  eighth of the buffer each side (`PAN_MARGIN`); since 7b048f4bf that includes layers holding effects that set
-  `reach`, isolated groups and composite groups. Left:
-
-  - **A redraw past one tile is slower, by a cause not found.** A retained surface is drawn in
-    1024-device-pixel tiles (`RETAIN_TILE`), so the multisampled scratch buffer is at most 38 MB at 4x.
-    Redrawing 4 layers with pan margins at 2560x1600 takes about 9.7 or about 15.5 ms depending on the job,
-    against 9 ms untiled, and in the slow jobs the renderer's CPU time rises to match. Culling and the resolve
-    copy are ruled out (`tests/perf/recorded/retain-tiles-2026-10-27/conditions.txt`). The default budget is
-    384 MiB (2026-10-27). Above about 15 canvas-sized layers with margins it still fills, and a margin goes to
-    whichever layer asks first rather than evicting a surface that cannot follow the pan.
-  - **Screen-unit paints opt a layer out of pan retaining, correctly** (2026-10-27): such a paint stays put on
-    the canvas while the geometry pans through it, so a moved surface would carry stale colors. The only exact
-    exception is a pan along which the paint is constant (a linear gradient panned along its stripes, a pattern
-    by whole tiles). Authored paints in the repo are mostly `bounds`/`local`/`world`, which do follow a pan.
-  - **Still opted out of pan retaining:** custom shaders, texture paints on text (the paint scratch is clamped
-    to the drawing buffer), and effects with no `reach`.
-  - **An effects layer uses the same 250-command threshold** as any other, though its passes cost far more than
-    its commands. Measure before changing it.
-
-  Closes when a tiled redraw of the 4 margined layers at 2560x1600 is within 1 ms of the untiled 9 ms on
-  one node, each opt-out above either retains through a pan or is deleted as accepted, and an effects
-  layer's threshold has been measured with `layer-dispatch.spec.ts`.
+- **(P3) [agent] A pan margin the retain budget refuses goes unevicted.** An unchanged layer of 250 commands or
+  more (10 when it runs effects passes) is drawn once into its own texture and composited
+  (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the policy is
+  `packages/core/src/core/layers/retain.ts`), and a world layer follows a pan by compositing its surface moved,
+  drawn again with a margin of an eighth of the buffer each side (`PAN_MARGIN`). The default budget is 384 MiB
+  (2026-10-27); above about 15 canvas-sized layers with margins at 2560x1600 it fills, and a margin goes to
+  whichever layer asks first rather than evicting a surface that cannot follow the pan, so the layers past it
+  are drawn straight through for the rest of the pan. Closes when `RetainedSurfaces.reserve` frees a surface
+  that cannot follow a pan before it refuses a margin to one that can.
 
 ---
 
