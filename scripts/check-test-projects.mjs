@@ -68,7 +68,7 @@ const projectsInCi = () => {
   const { scripts } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   const names = new Set();
   const take = (command) => {
-    if (!/\bvitest run\b/.test(command)) return;
+    if (!/\bvitest(-overlap\.mjs)? run\b/.test(command)) return;
     for (const m of command.matchAll(/--project=([\w-]+)/g)) names.add(m[1]);
   };
   for (const line of readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8').split('\n')) {
