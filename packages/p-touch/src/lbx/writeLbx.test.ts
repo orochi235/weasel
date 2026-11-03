@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { mat3, PathBuilder } from '@weasel-js/geom';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { ResolvedRun } from '@weasel-js/text';
-import { parseLbx, type ImageObject, type LineObject, type RectObject, type TextObject } from 'bil-lbx';
+import { parseLbx, type BarcodeObject, type ImageObject, type LineObject, type RectObject, type TextObject } from 'bil-lbx';
 import { tapeForWidthMm } from '../tape';
+import { lbxObjects } from './carried';
 import { lbxConfig, writeLbx } from './writeLbx';
 
 const tape = tapeForWidthMm(12)!;
@@ -108,6 +109,28 @@ describe('lbxConfig', () => {
     expect(fixed.config.cut).toEqual({ freeCut: [36, 72] });
     const auto = await lbxConfig({ ...page([]), autoLength: true });
     expect(auto.config.background!.width).toBeCloseTo(144 - 11.2, 9);
+  });
+});
+
+describe('lbxObjects', () => {
+  const barcode: BarcodeObject = { type: 'barcode', protocol: 'CODE128', data: 'A-123', position: { x: 2, y: 3, width: 40, height: 10 } };
+
+  it('puts carried objects in the file through the transforms above them, in paint order', async () => {
+    const { config, skipped } = await lbxConfig(page([
+      rect(0, 0, 5, 5, { fill: { paint: { color: '#000' } } }),
+      { kind: 'group', transform: mat3.translated(mat3.identity(), 10, 1), children: [lbxObjects([barcode])] },
+      rect(80, 0, 5, 5, { fill: { paint: { color: '#000' } } }),
+    ]));
+    expect(skipped).toEqual([]);
+    expect(config.objects.map((o) => o.type)).toEqual(['rect', 'barcode', 'rect']);
+    expect(config.objects[1]).toEqual({ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } });
+  });
+
+  it('skips carried objects under a rotation, which a position cannot say', async () => {
+    const turned = mat3.fromAffine([0, 1, -1, 0, 0, 0]);
+    const { config, skipped } = await lbxConfig(page([{ kind: 'group', transform: turned, children: [lbxObjects([barcode])] }]));
+    expect(config.objects).toEqual([]);
+    expect(skipped).toEqual([{ kind: 'group', detail: 'lbxObjects under a rotation, skew or mirror' }]);
   });
 });
 

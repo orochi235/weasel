@@ -7,7 +7,7 @@ import { createScene, type DrawCommand } from '@weasel-js/core';
 import { ellipsePath } from '@weasel-js/geom';
 import { parseLbx, type ImageObject, type RectObject } from 'bil-lbx';
 import type { RectPose } from 'core/scene/composePose';
-import { Printers, renderLabel, sceneToLbx, tapeForWidthMm } from '@weasel-js/p-touch';
+import { lbxObjects, Printers, renderLabel, sceneToLbx, tapeForWidthMm } from '@weasel-js/p-touch';
 
 const tape = tapeForWidthMm(12)!;
 const media = Printers.ptP710bt.media(12);
@@ -46,5 +46,15 @@ describe('sceneToLbx', () => {
     expect(image.position.x + image.position.width).toBeLessThan(65);
     expect(image.position.height).toBeGreaterThan(15);
     expect(image.position.height).toBeLessThan(17.5);
+  });
+
+  it('writes what a drawOne carries with lbxObjects as that object, through the scene walk', async () => {
+    const scene = labelScene();
+    const barcode = { type: 'barcode' as const, protocol: 'QRCODE' as const, data: 'weasel', position: { x: 0, y: 0, width: 20, height: 20 } };
+    scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 72, height: tape.widthPt }, data: { cmd: lbxObjects([barcode]) } });
+    const { bytes } = await sceneToLbx({ scene, drawOne, length: 72, tape, origin: { x: 0, y: -2 } });
+    const back = await parseLbx(bytes);
+    expect(back.objects.map((o) => o.type)).toEqual(['rect', 'image', 'barcode']);
+    expect(back.objects[2]!.position).toMatchObject({ x: 0, y: 2, width: 20, height: 20 });
   });
 });

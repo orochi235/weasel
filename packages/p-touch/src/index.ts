@@ -16,6 +16,8 @@ export { labelRenderPlan, printableBand, renderLabel, type LabelGeometry, type R
 export { printLabel, sliceAtCuts, type PrintLabelOptions } from './print';
 export { lbxConfig, writeLbx, type LbxPage, type LbxResult, type LbxSkip, type WriteLbxOptions } from './lbx/writeLbx';
 export { sceneToLbx, type SceneToLbxArgs } from './lbx/sceneLbx';
+export { lbxObjects } from './lbx/carried';
+export type { BarcodeObject, LabelConfig, LabelObject } from 'bil-lbx';
 
 // The printer session and the types the functions above take, so a label app needs one import.
 export { createBrotherPrinter, NoGrantedDeviceError, Printers } from 'obwat';

@@ -14,6 +14,7 @@ import {
   type LabelObject,
 } from 'bil-lbx';
 import type { Tape } from '../tape';
+import { carriedObjects, placeCarried } from './carried';
 import { lineObject, rectObject, textObject } from './shapes';
 import type { DrawState } from './style';
 
@@ -64,11 +65,18 @@ function placed(cmd: DrawCommand, state: DrawState): DrawCommand {
   return { kind: 'group', transform: state.transform, alpha: state.alpha, children: [cmd] };
 }
 
-function collect(commands: readonly DrawCommand[], state: DrawState, out: Item[]): void {
+function collect(commands: readonly DrawCommand[], state: DrawState, out: Item[], skipped: LbxSkip[]): void {
   for (const cmd of commands) {
+    const carried = carriedObjects(cmd);
+    if (carried) {
+      const placed = placeCarried(carried, state);
+      if (placed) for (const object of placed) out.push({ object });
+      else skipped.push({ kind: 'group', detail: 'lbxObjects under a rotation, skew or mirror' });
+      continue;
+    }
     if (cmd.kind === 'group' && plainGroup(cmd)) {
       const transform = cmd.transform ? mat3.multiply(Float64Array.from(state.transform), cmd.transform) : state.transform;
-      collect(cmd.children, { transform, alpha: state.alpha * (cmd.alpha ?? 1) }, out);
+      collect(cmd.children, { transform, alpha: state.alpha * (cmd.alpha ?? 1) }, out, skipped);
       continue;
     }
     const mapped =
@@ -153,8 +161,8 @@ function innermost(cmd: DrawCommand): DrawCommand {
 /** The `.lbx` label `page` describes, without the file: its paper, cuts and objects. */
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
   const items: Item[] = [];
-  collect(page.commands, { transform: mat3.identity(), alpha: 1 }, items);
   const skipped: LbxSkip[] = [];
+  collect(page.commands, { transform: mat3.identity(), alpha: 1 }, items, skipped);
   const objects = await settle(items, page, opts, skipped);
   const paper = {
     width: page.tape.widthPt,
