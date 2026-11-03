@@ -14,6 +14,7 @@ import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMesh, meshHandle, fillMeshHandle, flattenToleranceOf } from './mesh';
 import { alignedRibbon } from './alignedRibbon';
+import { drawClippedTrim } from './clippedTrim';
 import {
   atMeshOrigin, drawModel, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms,
 } from './uniforms';
@@ -197,6 +198,7 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
 }
 
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces): void {
+  if (drawClippedTrim(ctx, cmd, spaces, (ends) => drawRibbon(ctx, cmd, ends))) return;
   drawRibbon(ctx, cmd, strokeMesh(cmd.path, cmd.stroke, flattenToleranceOf(ctx), spaces));
 }
 

@@ -20,6 +20,10 @@ export { trimSpan } from './trim/trimSpan';
 export { trimmedPath, trimmedRuns } from './trim/trimmedPath';
 export { insetPath } from './trim/insetPath';
 export type { TrimmedPath, TrimmedRun } from './trim/trimmedPath';
+export { CLIP_CUT, CLIP_OPEN, CLIP_WHOLE, clipRibbon } from './trim/clipRibbon';
+export type { ClipRibbon, ClipSubpath } from './trim/clipRibbon';
+export { clipWindow } from './trim/clipWindow';
+export type { ClipWindow } from './trim/clipWindow';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
 export {
   screenSpaceKey, strokeSpaceOf, metricKey, polylineIntoMetric, polylineOutOfMetric, sameMetric,

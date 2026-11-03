@@ -1,4 +1,4 @@
-import { remapPerAnchor, resolveCornersWithSources, type Path } from '@weasel-js/geom';
+import { remapPerAnchor, resolveCornersWithSources, type Path, type RectPath } from '@weasel-js/geom';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
@@ -8,8 +8,7 @@ import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
 import { windowRibbon } from './ribbonWindow';
 import { windowTrim } from '../trim/windowPolylines';
-import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
-import { meetInnerEdges } from './innerJoins';
+import { expandPolyline, type RibbonOut, type RibbonStyle } from './expandPolyline';
 import {
   type StrokeMetric, coordsOutOfMetric, polylineOutOfMetric, rectIntoMetric, worldWidthInMetric,
   worldWidthInMetricAlongWorld,
@@ -69,51 +68,16 @@ export function tessellateStroke(
   stroke: Stroke,
   opts: StrokeOptions = {},
 ): Mesh {
-  // The renderer resolves `{ px }` against the accumulated transform before it
-  // gets here; a stroke that reaches the tessellator unresolved is read at
-  // scale 1, matching what the ribbon cache keys it under.
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  if (width <= 0) return EMPTY_MESH;
-  const join: Join = stroke.join ?? 'miter';
-  const cap: Cap = stroke.cap ?? 'butt';
-  const align = stroke.align ?? 'center';
-  const miterLimit = stroke.miterLimit ?? DEFAULT_MITER_LIMIT;
-  const varyingThreshold = stroke.varyingWidthJoinThreshold ?? DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD;
-
-  // RectPath fast path for inner/outer alignment: shift the rect by half-width
-  // so the ribbon's center alignment lands the stroke on the desired side of
-  // the original geometric edge. Arbitrary paths handle alignment via stencil
-  // clipping at the renderer level (not here).
+  const style = ribbonStyle(stroke);
+  if (style.width <= 0) return EMPTY_MESH;
   const metric = opts.metric;
-  const rectInMetric = metric && path.kind === 'rect' ? rectIntoMetric(path, metric) : null;
-  let workingPath: Path = rectInMetric ?? path;
-  if (workingPath.kind === 'rect' && align !== 'center') {
-    workingPath = { kind: 'rect', ...alignedStrokeRect(workingPath, align, width) };
-  }
-
-  // Per-point widths come first, in the space the points are in, so a trim
-  // interpolates them rather than re-reading an anchor's.
-  // Expanded here rather than inside `extractPolylines`, so each width moves
-  // to the anchors its corner's cut leaves.
-  const resolved = workingPath.kind === 'polygon' ? resolveCornersWithSources(workingPath) : null;
-  if (resolved) workingPath = resolved.path;
-  const given = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
-  const vertexWidths = given && resolved?.anchorSources ? remapPerAnchor(given, resolved.anchorSources, 1) : given;
-  const polylines = extractPolylines(workingPath, strokeFlattening(opts.flattenTolerance, width, vertexWidths ?? undefined));
-  const scale: WidthScale | undefined = !metric ? undefined
-    : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
-      : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
-  const verts: number[] = [];
-  const idx: number[] = [];
-  const anchorA: number[] = [];
-  const anchorB: number[] = [];
-  const anchorT: number[] = [];
+  const { polylines, rectInMetric } = strokePolylines(path, stroke, style.width, opts.flattenTolerance, metric);
+  const out: RibbonOut = { verts: [], idx: [], anchorA: [], anchorB: [], anchorT: [] };
 
   // Trim before dashing, so the dash pattern fits the visible line rather than
   // running off under a marker head.
   const ribbonSpace = metric ?? null;
   const from = rectInMetric ? ribbonSpace : null;
-  for (const pl of polylines) populateWidths(pl, vertexWidths, stroke.nib, width, scale);
   let runs: Polyline[];
   let phases: number[] | undefined;
   let dashLength: number | undefined;
@@ -128,118 +92,73 @@ export function tessellateStroke(
     runs = polylines.flatMap((pl) => trimInSpace(pl, from, ribbonSpace, opts.startInset, opts.endInset) ?? []);
   }
   for (const sub of dashPolylines(runs, stroke.dash, phases, dashLength)) {
-    expandPolyline(sub, width, join, cap, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT);
+    expandPolyline(sub, style, out);
   }
 
-  const vertices = new Float32Array(verts);
-  if (metric) coordsOutOfMetric(vertices, metric);
+  const mesh = ribbonMesh(out, path);
+  if (metric) coordsOutOfMetric(mesh.vertices, metric);
+  return mesh;
+}
+
+/** How `stroke` draws its ribbon, its `{ px }` width read at scale 1. */
+export function ribbonStyle(stroke: Stroke): RibbonStyle {
+  // The renderer resolves `{ px }` against the accumulated transform before it
+  // gets here; a stroke that reaches the tessellator unresolved is read at
+  // scale 1, matching what the ribbon cache keys it under.
   return {
-    vertices,
-    indices: new Uint32Array(idx),
-    anchorA: new Uint32Array(anchorA),
-    anchorB: new Uint32Array(anchorB),
-    anchorT: new Float32Array(anchorT),
-    ...(path.kind === 'polygon' && path.origin ? { origin: path.origin } : {}),
+    width: resolveStrokeWidth(stroke.width ?? 1, 1),
+    join: stroke.join ?? 'miter',
+    cap: stroke.cap ?? 'butt',
+    miterLimit: stroke.miterLimit ?? DEFAULT_MITER_LIMIT,
+    varyingThreshold: stroke.varyingWidthJoinThreshold ?? DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD,
   };
 }
 
-function expandPolyline(
-  pl: Polyline,
-  width: number,
-  join: Join,
-  cap: Cap,
-  miterLimit: number,
-  varyingThreshold: number,
-  verts: number[],
-  idx: number[],
-  anchorA: number[],
-  anchorB: number[],
-  anchorT: number[],
-): void {
-  const half = width / 2;
-  const pts = pl.points;
-  const ptCount = pts.length / 2;
-  const segCount = ptCount - 1;
-  if (segCount < 1) return;
-
-  // Anchor params per polyline point (set by extractPolylines; splitForDash
-  // re-derives them on dash boundaries). Default to A=B=0,t=0 if missing.
-  const plA = pl.anchorA ?? new Uint32Array(ptCount);
-  const plB = pl.anchorB ?? new Uint32Array(ptCount);
-  const plT = pl.anchorT ?? new Float32Array(ptCount);
-  // Per-point distance to each edge: derived from pl.widths and pl.offsets
-  // if present, else the uniform half. Indexing matches `pts`.
-  const W = pl.widths, O = pl.offsets;
-  const pos = (i: number) => (W ? W[i] / 2 : half) + (O ? O[i] : 0);
-  const neg = (i: number) => (W ? W[i] / 2 : half) - (O ? O[i] : 0);
-
-  const segs: Seg[] = [];
-  const segSrcIdx: number[] = [];  // For each seg, the polyline-point index of its start.
-  for (let s = 0; s < segCount; s++) {
-    const seg = makeSeg(pts[s * 2], pts[s * 2 + 1], pts[(s + 1) * 2], pts[(s + 1) * 2 + 1], pos(s), neg(s), pos(s + 1), neg(s + 1));
-    if (seg) {
-      segs.push(seg);
-      segSrcIdx.push(s);
-    }
-  }
-  let closerSrcIdx = -1;
-  if (pl.closed && segs.length >= 1) {
-    const last = segs[segs.length - 1];
-    const first = segs[0];
-    // Closer: from last point back to point 0, with the edges resolved at
-    // those source indices.
-    const closer = makeSeg(last.bx, last.by, first.ax, first.ay, pos(ptCount - 1), neg(ptCount - 1), pos(0), neg(0));
-    if (closer) {
-      segs.push(closer);
-      closerSrcIdx = ptCount - 1;  // start is the last polyline point.
-      segSrcIdx.push(closerSrcIdx);
-    }
-  }
-  if (segs.length === 0) return;
-
-  // Emit ribbon quads. For each emitted vertex, record the (A, B, t) of the
-  // source polyline point that the geometric vertex sits at. Per-end
-  // half-widths produce trapezoidal segments when the stroke tapers.
-  const segBaseIdx: number[] = [];
-  for (let s = 0; s < segs.length; s++) {
-    const seg = segs[s];
-    const startSrc = segSrcIdx[s];
-    // End-source index for the seg. For closer (closed-path wraparound), end is point 0.
-    const endSrc = (s === segs.length - 1 && pl.closed && closerSrcIdx >= 0) ? 0 : startSrc + 1;
-    const base = verts.length / 2;
-    segBaseIdx.push(base);
-    const { nxUnit: nx, nyUnit: ny } = seg;
-    // L0, R0 — at seg.ax/ay, the +n and −n edges.
-    verts.push(seg.ax + nx * seg.posA, seg.ay + ny * seg.posA);
-    anchorA.push(plA[startSrc]); anchorB.push(plB[startSrc]); anchorT.push(plT[startSrc]);
-    verts.push(seg.ax - nx * seg.negA, seg.ay - ny * seg.negA);
-    anchorA.push(plA[startSrc]); anchorB.push(plB[startSrc]); anchorT.push(plT[startSrc]);
-    // L1, R1 — at seg.bx/by.
-    verts.push(seg.bx + nx * seg.posB, seg.by + ny * seg.posB);
-    anchorA.push(plA[endSrc]); anchorB.push(plB[endSrc]); anchorT.push(plT[endSrc]);
-    verts.push(seg.bx - nx * seg.negB, seg.by - ny * seg.negB);
-    anchorA.push(plA[endSrc]); anchorB.push(plB[endSrc]); anchorT.push(plT[endSrc]);
-    idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+/**
+ * The polylines `stroke` is tessellated along, widths populated: `path`
+ * corner-resolved and flattened in world, or, for a rect under `metric`, in
+ * that metric's space (`rectInMetric`).
+ */
+export function strokePolylines(
+  path: Path, stroke: Stroke, width: number, flattenTolerance: number | undefined, metric?: StrokeMetric,
+): { polylines: Polyline[]; rectInMetric: RectPath | null } {
+  const align = stroke.align ?? 'center';
+  // RectPath fast path for inner/outer alignment: shift the rect by half-width
+  // so the ribbon's center alignment lands the stroke on the desired side of
+  // the original geometric edge. Arbitrary paths handle alignment via stencil
+  // clipping at the renderer level (not here).
+  const rectInMetric = metric && path.kind === 'rect' ? rectIntoMetric(path, metric) : null;
+  let workingPath: Path = rectInMetric ?? path;
+  if (workingPath.kind === 'rect' && align !== 'center') {
+    workingPath = { kind: 'rect', ...alignedStrokeRect(workingPath, align, width) };
   }
 
-  // Joins between consecutive segments.
-  const joinCount = pl.closed ? segs.length : segs.length - 1;
-  const inner = meetInnerEdges(segs, segBaseIdx, pl.closed, verts);
-  for (let j = 0; j < joinCount; j++) {
-    emitJoin(segs, segBaseIdx, j, join, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT, inner[j]);
-  }
+  // Per-point widths come first, in the space the points are in, so a trim
+  // interpolates them rather than re-reading an anchor's.
+  // Expanded here rather than inside `extractPolylines`, so each width moves
+  // to the anchors its corner's cut leaves.
+  const resolved = workingPath.kind === 'polygon' ? resolveCornersWithSources(workingPath) : null;
+  if (resolved) workingPath = resolved.path;
+  const given = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
+  const vertexWidths = given && resolved?.anchorSources ? remapPerAnchor(given, resolved.anchorSources, 1) : given;
+  const polylines = extractPolylines(workingPath, strokeFlattening(flattenTolerance, width, vertexWidths ?? undefined));
+  const scale: WidthScale | undefined = !metric ? undefined
+    : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
+      : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
+  for (const pl of polylines) populateWidths(pl, vertexWidths, stroke.nib, width, scale);
+  return { polylines, rectInMetric };
+}
 
-  // Caps, from the local edges at each end.
-  if (!pl.closed && cap !== 'butt') {
-    const first = segs[0];
-    const firstBase = segBaseIdx[0];
-    emitCap(first, firstBase + 0, firstBase + 1, false, first.posA, first.negA, cap, verts, idx, anchorA, anchorB, anchorT, plA[0], plB[0], plT[0]);
-
-    const last = segs[segs.length - 1];
-    const lastBase = segBaseIdx[segs.length - 1];
-    const lastSrc = segSrcIdx[segs.length - 1] + 1;
-    emitCap(last, lastBase + 2, lastBase + 3, true, last.posB, last.negB, cap, verts, idx, anchorA, anchorB, anchorT, plA[lastSrc], plB[lastSrc], plT[lastSrc]);
-  }
+/** What `out` holds, as a mesh placed where `path`'s own vertices are. */
+export function ribbonMesh(out: RibbonOut, path: Path): Mesh {
+  return {
+    vertices: new Float32Array(out.verts),
+    indices: new Uint32Array(out.idx),
+    anchorA: new Uint32Array(out.anchorA),
+    anchorB: new Uint32Array(out.anchorB),
+    anchorT: new Float32Array(out.anchorT),
+    ...(path.kind === 'polygon' && path.origin ? { origin: path.origin } : {}),
+  };
 }
 
 /**
