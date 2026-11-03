@@ -5,7 +5,9 @@
  */
 
 import { useMemo } from 'react';
-import { useDepRegistry, type InsertDep, type NodeId } from '@weasel-js/core';
+import { useDepRegistry } from '@weasel-js/routing/react';
+import { type InsertDep } from '@weasel-js/core/engine';
+import { type NodeId } from '@weasel-js/routing';
 import { createInsert, pose3, type ViewportSource } from '@weasel-js/kernel3d';
 import type { SolidScene } from './scene3d';
 

@@ -1,4 +1,4 @@
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/core/engine';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

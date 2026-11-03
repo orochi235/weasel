@@ -7,7 +7,7 @@
  */
 
 import { useMemo } from 'react';
-import { defineTool, type Tool } from '@weasel-js/core';
+import { defineTool, type Tool } from '@weasel-js/routing';
 
 export function useBoxTool(): Tool {
   return useMemo(() => defineTool({
