@@ -5,7 +5,8 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Scene } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
-import { drawnBoxes, type DrawnBoxes } from 'interactions/actions/drawnBoxes';
+import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
+import { inkBoxes } from 'canvas/inkBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectOf } from './probes2d';
@@ -138,7 +139,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
   return sceneSession2d({
     req,
     scene: opts.scene,
-    boxes: drawnBoxes({
+    boxes: inkBoxes({
       scene: opts.scene,
       view: { get: () => view, set: () => {} },
       ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),

@@ -8,7 +8,7 @@ import { scenePoseFrame, type PoseFrame } from './poseFrame';
 /** A scene-backed gesture's {@link GestureFrames}, read through the action's deps. */
 export function sceneGestureFrames(
   scene: Scene<unknown, string, unknown>,
-  deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke'>,
+  deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke' | 'drawnBoxes'>,
   frame: PoseFrame<unknown> = scenePoseFrame(scene),
 ): GestureFrames<unknown> {
   const view = deps.view;

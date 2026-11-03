@@ -201,6 +201,9 @@ declare module '@weasel-js/routing' {
      *  includes the stroke. From `<SceneCanvas geometry.boundsIncludeStroke>`;
      *  absent means `true`. */
     boundsIncludeStroke?: boolean;
+    /** How those actions measure the box a node is shown with. `<SceneCanvas>`
+     *  sources each shape's ink (`inkBoxes`); absent, the pose box alone. */
+    drawnBoxes?: import('./drawnBoxes').DrawnBoxesSource;
     /** Gesture dispatcher control surface, so an action can abort an
      *  in-flight handle (Escape cancels a drag, etc.). */
     dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };

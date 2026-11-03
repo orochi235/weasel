@@ -10,6 +10,7 @@ import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/typ
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { BoundsConstraint } from '../../gestures/types';
 import { resizeAction } from './action';
+import { inkBoxes } from 'canvas/inkBoxes';
 
 const ID = asNodeId('r');
 const STROKE = { paint: { kind: 'solid', color: '#000' }, width: 10 } as const;
@@ -30,7 +31,7 @@ function ctx(
     world: at,
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [ID] as NodeId[] }, scene, ...extra },
+    deps: { selection: { get: () => [ID] as NodeId[] }, scene, drawnBoxes: inkBoxes, ...extra },
     drag: {
       start, current: at, delta: { x: at.x - start.x, y: at.y - start.y },
       affordance: { kind: 'handle:bottom-right', targetIds: [ID as string], anchor: { x: 'min', y: 'min' } },

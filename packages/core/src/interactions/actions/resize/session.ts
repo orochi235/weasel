@@ -105,7 +105,7 @@ export function captureResize(
   scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   anchor: ResizeAnchor,
-  deps: Pick<ActionDeps, 'poseDescriptor' | 'resizePolicy' | 'view' | 'boundsIncludeStroke'>,
+  deps: Pick<ActionDeps, 'poseDescriptor' | 'resizePolicy' | 'view' | 'boundsIncludeStroke' | 'drawnBoxes'>,
 ): {
   place: ResizePlace;
   ruleOrigin: Bounds;
