@@ -1,6 +1,8 @@
 import { defaultNodeProperties, describePresets, FEATURE_PRESETS } from '@weasel-js/core';
+import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
 import { pathTools } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';
+import { mergeMenuDefs } from '@weasel-js/routing';
 import { bundlesAsset, type Asset, type Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { DRAW_MENU_BAR } from '../menuBar';
 import { DRAW_MENUS } from '../menus';
@@ -14,8 +16,8 @@ const PREFS_ID = 'prefs';
 const AS: Record<SurfaceKind, PrefGroupAs | undefined> = { bar: 'bar', menu: 'menu', panel: undefined };
 
 const MENU_LABELS: Record<string, string> = {
-  'draw.selection': 'Selection',
-  'draw.canvas': 'Canvas',
+  'editor.selection': 'Selection',
+  'editor.canvas': 'Canvas',
   'draw.layerRow': 'Layer row',
 };
 
@@ -28,7 +30,10 @@ const surfaces: Asset[] = SURFACE_ASSETS.map((a) => ({
 
 const menuBar: Asset = { id: 'menubar', label: 'Menu bar', kind: 'layout', over: PREFS_ID, root: DRAW_MENU_BAR };
 
-const menus: Asset[] = DRAW_MENUS.map((m) => {
+// As a canvas in the shell merges them: the editor's, then draw's own.
+const LIVE_MENUS = mergeMenuDefs([...EDITOR_CONTEXT_MENUS, ...DRAW_MENUS].map((def) => ({ def, owner: null })), null);
+
+const menus: Asset[] = LIVE_MENUS.map((m) => {
   const label = MENU_LABELS[m.id] ?? m.id;
   return { id: `menu:${m.id}`, label, kind: 'layout', over: PREFS_ID, root: drawnAs(m.menu, 'menu', label) };
 });

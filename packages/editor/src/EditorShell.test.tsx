@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { type ActionsRegistry, createScene, SceneCanvas, useActionsRegistry, useCommand } from '@weasel-js/core';
+import {
+  type ActionsRegistry, createScene, type MenuHost, SceneCanvas, useActionsRegistry, useCommand, useMenuHost,
+} from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { renderWithIcons as render } from '@weasel-js/ui/testing/withIcons';
@@ -105,5 +107,43 @@ describe('EditorShell', () => {
     render(<EditorShell menus={menus} topbar={topbar} />);
     expect(within(screen.getByTestId('topbar')).queryByRole('menubar')).toBeNull();
     expect(screen.getByRole('menubar')).toBeTruthy();
+  });
+
+  describe('context menus', () => {
+    let host: MenuHost | null = null;
+    function HostProbe() {
+      host = useMenuHost();
+      return null;
+    }
+    const rightClick = () => act(() => {
+      document.querySelector('canvas')!.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 32, clientY: 32 }),
+      );
+    });
+    const shown = () => host?.current()?.entries.flatMap((e) => (e.kind === 'item' ? [e.label] : [])) ?? null;
+
+    it('opens editor.canvas on a right-click on empty canvas', () => {
+      render(
+        <EditorShell>
+          <SceneCanvas features={['draw']} scene={scene()} layers={{}} width={64} height={64}>
+            <HostProbe />
+          </SceneCanvas>
+        </EditorShell>,
+      );
+      rightClick();
+      expect(shown()).toEqual(['Paste', 'Select All', 'Undo', 'Redo']);
+    });
+
+    it('installs none with `contextMenus={false}`', () => {
+      render(
+        <EditorShell contextMenus={false}>
+          <SceneCanvas features={['draw']} scene={scene()} layers={{}} width={64} height={64}>
+            <HostProbe />
+          </SceneCanvas>
+        </EditorShell>,
+      );
+      rightClick();
+      expect(shown()).toBeNull();
+    });
   });
 });
