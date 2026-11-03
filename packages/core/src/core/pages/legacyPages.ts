@@ -6,9 +6,8 @@ import { sameValue } from '../scene/sameValue';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId, Scene } from '../scene/types';
 import { treePreorder } from '../scene/treeOrder';
-import { pageHolding, pageOfBounds, type PlacedPage } from './pages';
-import { PAGES_DOC_KEY, createPageRun, pageRunOf, placedPagesOf, type PagesDoc } from './pageNodes';
-import { isFollower, keepOnPage, pasteboardOn } from './pagePlacement';
+import { PAGES_DOC_KEY, createPageRun, pageOfNode, pageRunOf, placedPagesOf, type PagesDoc } from './pageNodes';
+import { followedPage, isFollower, keepOnPage, pageForBounds, pasteboardOn } from './pagePlacement';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -20,27 +19,36 @@ interface Destination {
 
 const STILL = { dx: 0, dy: 0 };
 
-/** Where each of `roots` goes: the page holding its bounds, moved onto it when it lies wholly off it, the run
- *  for a node that follows others, or nowhere. With `pasteboard`, only a root on a page goes on it, unmoved. */
-function destinations(
-  scene: AnyScene,
-  roots: readonly NodeId[],
-  placed: readonly PlacedPage[],
-  descriptor: PoseDescriptor<unknown>,
-  pasteboard: boolean,
-): Map<NodeId, Destination> {
+/** Where each of `roots` goes, in their order: the page for its bounds (`pageForBounds`), moved onto it when
+ *  it lies wholly off it with the pasteboard off; a node following others where `followedPage` puts it, by
+ *  where the roots it follows go; or nowhere, a root left on the pasteboard. */
+function destinations(scene: AnyScene, roots: readonly NodeId[], descriptor: PoseDescriptor<unknown>): Map<NodeId, Destination> {
   const poses = scenePoseAdapter(scene);
-  const out = new Map<NodeId, Destination>();
+  const placed = placedPagesOf(scene);
+  const pasteboard = pasteboardOn(scene);
+  const content = new Map<NodeId, Destination>();
   for (const id of roots) {
     const node = scene.get(id)!;
-    if (isFollower(node)) {
-      out.set(id, { page: null, shift: STILL });
-      continue;
-    }
-    const world = composeWorldPose(poses, id, scene.composition.compose);
-    const bounds = poseDescriptorForNode(descriptor, node).getBounds(world);
-    const page = pasteboard ? pageOfBounds(placed, bounds) : pageHolding(placed, bounds);
-    if (page) out.set(id, { page: page.id, shift: pasteboard ? STILL : keepOnPage(page, bounds) });
+    if (isFollower(node)) continue;
+    const bounds = poseDescriptorForNode(descriptor, node).getBounds(composeWorldPose(poses, id, scene.composition.compose));
+    const page = pageForBounds(scene, bounds, placed);
+    if (page) content.set(id, { page: page.id, shift: pasteboard ? STILL : keepOnPage(page, bounds) });
+  }
+  const out = new Map<NodeId, Destination>();
+  const going = (id: NodeId) => out.get(id) ?? content.get(id);
+  const rootOf = (id: NodeId): NodeId => {
+    let at = id;
+    for (let up = scene.get(at)?.parent; up != null; up = scene.get(at)?.parent) at = up;
+    return at;
+  };
+  const pageOf = (dep: NodeId) => {
+    const root = rootOf(dep);
+    return roots.includes(root) ? going(root)?.page ?? null : pageOfNode(scene, dep);
+  };
+  for (const id of roots) {
+    const page = followedPage(scene, scene.get(id), pageOf);
+    const at = page === undefined ? content.get(id) : { page, shift: STILL };
+    if (at) out.set(id, at);
   }
   return out;
 }
@@ -48,7 +56,8 @@ function destinations(
 /**
  * Move each of `roots`, roots of a paged scene, onto the page holding it
  * (`pageHolding`) at the world place it has, shifted so part of it is on that
- * page, and each node following others into the page run. With the
+ * page, each in the order given. A node following others goes on the page
+ * every node it follows lands on, else into the page run. With the
  * pasteboard on, a root off every page stays where it is, and one on a page is
  * not moved. Content read from a format that places it in the world, such as
  * an opened file, goes onto its pages this way. Call inside the caller's
@@ -64,7 +73,7 @@ export function placeOnPages<TData, TLayer extends string, TPose>(
   if (run === null) return;
   const descriptor = options.descriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>);
   const content = roots.filter((id) => id !== run && s.get(id)?.parent == null);
-  moveIn(s, destinations(s, content, placedPagesOf(s), descriptor, pasteboardOn(s)), run, descriptor);
+  moveIn(s, destinations(s, content, descriptor), run, descriptor);
 }
 
 /**

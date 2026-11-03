@@ -1,6 +1,6 @@
 import {
   asNodeId, createDeleteOp, createMoveToIndexOp, createSetDataOp, createSetHiddenOp, createSetLockedOp,
-  defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageRunOf,
+  defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageRunOf, placedPagesOf, withoutPageStructure,
 } from '@weasel-js/core';
 import type { NodeId, Op, Scene, SceneNode, SelectionApi } from '@weasel-js/core';
 import type { LayerListItem, LayerListProps } from './LayerList';
@@ -71,6 +71,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
   // on it would serve the order from before. The page run lists as what it holds,
   // and a page as a fixed row of what is on it: pages are edited through the page API.
   const run = pageRunOf(scene);
+  const pages = new Map(placedPagesOf(scene).map((page) => [page.id, page]));
   const build = (ids: readonly NodeId[], extra: Partial<LayerListItem>): LayerListItem[] =>
     [...ids].reverse().flatMap((id) => {
       const node = scene.get(id);
@@ -78,14 +79,21 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       const kids = scene.childrenOf(id);
       if (id === run) return build(kids, extra);
       const children = kids.length > 0 ? { children: build(kids, extra) } : {};
-      if (node.page !== undefined) {
-        const index = scene.childrenOf(node.parent!).filter((p) => scene.get(p)?.page !== undefined).indexOf(id);
-        return [{ id, label: pageName(node.page, index), fixed: true, ...children }];
-      }
+      const page = pages.get(id);
+      if (page !== undefined) return [{ id, label: pageName(page, page.index), fixed: true, ...children }];
       return [{
         ...itemFor(node), ...extra, id, visible: node.hidden !== true, locked: node.locked === true, ...children,
       }];
     });
+
+  // The list's top level holds the run's children and the scene's own roots alike. A drag that stays there
+  // keeps its parent; one brought up from inside a container goes to the run, or with the pasteboard on, the root.
+  const topParent = (ids: readonly string[]): NodeId | null => {
+    const from = scene.get(asNodeId(ids[0]!))?.parent ?? null;
+    if (from === null || from === run) return from;
+    if (run === null) return null;
+    return scene.get(run)!.pageRun!.pasteboard === true ? null : run;
+  };
 
   const content = build(scene.roots.filter((id) => !isAnnotation(id)), annotations ? { removable: false } : {});
   const annotationRows: LayerListItem[] = annotations
@@ -111,11 +119,10 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
         annotations?.pick(notes.at(-1)!);
         return;
       }
-      selection.set(ids.filter((id) => !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId));
+      selection.set(withoutPageStructure(scene, ids.filter((id) => !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId)));
     },
     onReorder: ({ ids, parentId, index }) => {
-      // The list's top level is the page run's, in a paged scene.
-      const parent = parentId ?? run;
+      const parent = parentId ?? topParent(ids);
       const siblings = parent === null ? scene.roots : scene.childrenOf(asNodeId(parent));
       // `index` counts from the front among the siblings the drag left behind.
       const back = siblings.length - ids.length - index;

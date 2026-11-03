@@ -36,6 +36,11 @@ export interface PagesDoc {
 }
 
 type AnyScene = Scene<unknown, string, unknown>;
+
+/** What finding a node's page reads of a scene. A `Scene` satisfies it. */
+export interface PageTreeReader {
+  get(id: NodeId): { readonly parent?: NodeId | null; readonly page?: unknown } | undefined;
+}
 const asAny = <TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) =>
   scene as unknown as AnyScene;
 
@@ -51,10 +56,7 @@ export function isPaged<TData, TLayer extends string, TPose>(scene: Scene<TData,
 }
 
 /** The page `id` is on: its nearest ancestor that is a page, or `id` itself when it is one. `null` off every page. */
-export function pageOfNode<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>,
-  id: NodeId,
-): string | null {
+export function pageOfNode(scene: PageTreeReader, id: NodeId): string | null {
   for (let at: NodeId | null | undefined = id; at != null; at = scene.get(at)?.parent) {
     if (scene.get(at)?.page !== undefined) return at;
   }

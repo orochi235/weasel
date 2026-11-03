@@ -35,7 +35,14 @@ type DrawSpec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
  *  parse error yields a fresh starter scene, one page with one example
  *  rectangle on it, so the canvas isn't empty on first run. */
 export function loadInitial(): DrawSpec[] {
-  return readStored(LS_KEY, (raw) => specsOf(savedScene(raw)), starterScene);
+  return readStored(LS_KEY, (raw) => {
+    const json = savedScene(raw);
+    rebuilt = !hasPageNodes(json);
+    return specsOf(json);
+  }, () => {
+    rebuilt = false;
+    return starterScene();
+  });
 }
 
 /** The persisted scene's document values, or `undefined` for none. Its pages are nodes, not among them. */
@@ -43,11 +50,11 @@ export function loadInitialDoc(): SerializedDoc | undefined {
   return readStored(LS_KEY, (raw) => docFromSnapshot(savedScene(raw)), () => undefined);
 }
 
-/** Whether the drawing under {@link LS_KEY} was saved with its pages as nodes, or nothing is saved. One
- *  saved without is rebuilt on load, so an undo stack saved beside it would replay against a tree that is gone. */
-function savedWithPageNodes(): boolean {
-  return readStored(LS_KEY, (raw) => savedScene(raw).nodes.some((n) => n.pageRun !== undefined), () => true);
-}
+/** Whether the last {@link loadInitial} rebuilt a drawing saved without its pages as nodes, so an undo stack
+ *  saved beside it would replay against a tree that is gone. `null` before one has run. */
+let rebuilt: boolean | null = null;
+
+const hasPageNodes = (json: DrawSnapshot) => json.nodes.some((n) => n.pageRun !== undefined);
 
 function savedScene(raw: string): DrawSnapshot {
   const json: unknown = JSON.parse(raw);
@@ -59,7 +66,7 @@ function savedScene(raw: string): DrawSnapshot {
  *  page of the paper size its document settings kept. The pages are built in a scene of the drawing's
  *  layers, draw's own for one saved before its snapshots listed them. */
 function specsOf(json: DrawSnapshot): DrawSpec[] {
-  const paged = json.doc?.[PAGES_DOC_KEY] !== undefined || json.nodes.some((n) => n.pageRun !== undefined);
+  const paged = json.doc?.[PAGES_DOC_KEY] !== undefined || hasPageNodes(json);
   const doc = paged ? json.doc : { ...json.doc, [PAGES_DOC_KEY]: onePage(PAPER_PRESETS[loadDoc().paperSize]) };
   const systemLayers = (json.systemLayers as DrawSnapshot['systemLayers'] | undefined) ?? DRAW_LAYERS;
   return nodeSpecsFromSnapshot({ ...json, systemLayers, doc }, DRAW_REGISTRY);
@@ -91,7 +98,8 @@ export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
  *  one saved beside a drawing whose pages were not yet nodes, returns null
  *  AND removes the key so a broken snapshot can't wedge every boot. */
 export function loadSceneHistory(): SerializedSceneHistory | null {
-  const snap = savedWithPageNodes() ? readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null) : null;
+  const stale = rebuilt ?? readStored(LS_KEY, (raw) => !hasPageNodes(savedScene(raw)), () => false);
+  const snap = stale ? null : readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null);
   if (snap === null) {
     try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
   }

@@ -237,9 +237,13 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   const site = env.landing?.();
   const into = site?.parent != null ? site : null;
   // With no container named, a paged scene puts each root on a page, moved with its subtree to reach it.
-  const paged = into === null ? pagedLandings(env, src.filter(isRoot), { dx, dy }, ctx?.dropPoint) : null;
   const rootOf = (item: Item<TData, TLayer, TPose>): Item<TData, TLayer, TPose> =>
     isRoot(item) ? item : rootOf(byId.get(item.parent as string)!);
+  const rootIdOf = (id: string) => {
+    const item = byId.get(id);
+    return item && rootOf(item).id as string;
+  };
+  const paged = into === null ? pagedLandings(env, src.filter(isRoot), { dx, dy }, ctx?.dropPoint, rootIdOf) : null;
   const landing = (item: Item<TData, TLayer, TPose>): InsertSite | null => {
     if (!isRoot(item)) return null;
     return paged ? paged.get(item.id)!.site : into;
@@ -278,10 +282,12 @@ function pagedLandings<TData, TLayer extends string, TPose>(
   roots: readonly Item<TData, TLayer, TPose>[],
   offset: { dx: number; dy: number },
   dropPoint: { x: number; y: number } | null | undefined,
+  rootOf: (id: string) => string | undefined,
 ): Map<string, PageLanding> | null {
   const landings = pasteOnPages(env.scene as never, roots.map((item) => ({
-    follower: isFollower(item),
+    id: item.id as string,
     bounds: env.poseBounds(env.translate(item.pose, offset.dx, offset.dy, item), item),
+    ...(isFollower(item) ? { follows: sourcesOf(item).map((dep) => rootOf(dep) ?? dep) } : {}),
   })), dropPoint);
   return landings && new Map(roots.map((item, i) => [item.id as string, landings[i]!]));
 }

@@ -91,6 +91,15 @@ describe('adoptLegacyPages', () => {
     adoptLegacyPages(scene);
     expect(scene.get(link)!.parent).toBe(pageRunOf(scene));
   });
+
+  it('puts a follower of nodes all on one page on that page, in its slot', () => {
+    const scene = load([rect('a1', 5), {
+      id: 'mid' as NodeId, kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { n: 'mid' },
+      dependsOn: ['a1' as NodeId, 'a2' as NodeId],
+    }, rect('a2', 50)]);
+    adoptLegacyPages(scene);
+    expect(scene.childrenOf('a' as NodeId)).toEqual(['a1', 'mid', 'a2']);
+  });
 });
 
 describe('placeOnPages', () => {

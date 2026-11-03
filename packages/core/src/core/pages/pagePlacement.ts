@@ -4,8 +4,8 @@
  */
 import type { Bounds } from '@weasel-js/routing';
 import type { NodeId, Scene } from '../scene/types';
-import { pageAt, pageHolding, type PlacedPage } from './pages';
-import { pageRunOf, placedPagesOf } from './pageNodes';
+import { pageAt, pageHolding, pageOfBounds, type PlacedPage } from './pages';
+import { pageOfNode, pageRunOf, placedPagesOf, type PageTreeReader } from './pageNodes';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -22,6 +22,36 @@ export function isFollower(node: { readonly dependsOn?: unknown } | undefined): 
 }
 
 /**
+ * The page a node following others belongs on: the one every node it follows
+ * is on, by `pageOf` (default where each is now). `null` when they span pages
+ * or one is on none, and the node then belongs in the page run; `undefined`
+ * for a node that follows none. The one rule for where a follower goes.
+ */
+export function followedPage(
+  scene: PageTreeReader,
+  node: { readonly dependsOn?: unknown } | undefined,
+  pageOf: (id: NodeId) => string | null = (id) => pageOfNode(scene, id),
+): string | null | undefined {
+  if (!isFollower(node)) return undefined;
+  const pages = new Set((node!.dependsOn as NodeId[]).map(pageOf));
+  const [only] = pages;
+  return pages.size === 1 && only != null ? only : null;
+}
+
+/** Where `node`, following others, belongs ({@link followedPage}): a page, or else the page run. `null` for
+ *  a node that follows none, and in a scene without pages. */
+export function followerHome<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  node: { readonly dependsOn?: unknown } | undefined,
+  pageOf?: (id: NodeId) => string | null,
+): NodeId | null {
+  const run = pageRunOf(scene);
+  const page = run === null ? undefined : followedPage(scene, node, pageOf);
+  if (page === undefined) return null;
+  return page === null ? run : page as NodeId;
+}
+
+/**
  * The page under `world`. With no page there, `null` when the pasteboard is
  * on, else the page nearest the point (`pageHolding`). `null` in a scene
  * without pages.
@@ -35,6 +65,19 @@ export function pageForPoint<TData, TLayer extends string, TPose>(
   if (on !== null) return on.id;
   if (pasteboardOn(scene)) return null;
   return pageHolding(placed, { x: world.x, y: world.y, width: 0, height: 0 })?.id ?? null;
+}
+
+/**
+ * The page a world box goes on: the one holding it (`pageHolding`), or with
+ * the pasteboard on only one it overlaps (`pageOfBounds`). `null` off every
+ * page with the pasteboard on, and in a scene without pages.
+ */
+export function pageForBounds<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  bounds: Bounds,
+  placed: readonly PlacedPage[] = placedPagesOf(scene),
+): PlacedPage | null {
+  return pasteboardOn(scene) ? pageOfBounds(placed, bounds) : pageHolding(placed, bounds);
 }
 
 /** Page `id` where it sits in world space, or `null` when `id` is not a page. */

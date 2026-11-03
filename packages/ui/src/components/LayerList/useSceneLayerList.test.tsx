@@ -167,16 +167,16 @@ describe('useSceneLayerList — annotation layers', () => {
 });
 
 describe('useSceneLayerList in a paged scene', () => {
-  function paged() {
+  function paged(pasteboard = false) {
     const scene = createScene<{ name: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const run = createPageRun(scene, [{ id: 'p1', width: 50, height: 50 }, { id: 'p2', name: 'Back', width: 50, height: 50 }]);
+    const run = createPageRun(scene, [{ id: 'p1', width: 50, height: 50 }, { id: 'p2', name: 'Back', width: 50, height: 50 }], { pasteboard });
     for (const [id, page] of [['a', 'p1'], ['b', 'p1'], ['c', 'p2']] as const) {
       scene.add({ id: asNodeId(id), kind: 'mark', layer: 'main', parent: asNodeId(page), pose: box, data: { name: id } });
     }
     const itemFor = vi.fn((n: { data: { name: string } }) => ({ label: n.data.name }));
     const selection = { current: [], set: vi.fn() } as unknown as SelectionApi;
     const hook = renderHook(() => useSceneLayerList({ scene, selection, itemFor }));
-    return { scene, run, hook, itemFor };
+    return { scene, run, hook, itemFor, selection };
   }
 
   it('lists each page as a fixed row holding what is on it, and the run as what it holds', () => {
@@ -190,5 +190,22 @@ describe('useSceneLayerList in a paged scene', () => {
     const { hook, scene } = paged();
     hook.result.current.onReorder({ ids: ['a'], parentId: 'p1', index: 0 });
     expect(scene.childrenOf(asNodeId('p1'))).toEqual(['b', 'a']);
+  });
+
+  it('selects no page from a page row', () => {
+    const { hook, selection } = paged();
+    hook.result.current.onSelect(['p1', 'a']);
+    expect(selection.set).toHaveBeenCalledWith(['a']);
+  });
+
+  it('keeps a pasteboard root among the roots when it is reordered at the top level', () => {
+    const { hook, scene, run } = paged(true);
+    for (const id of ['x', 'y']) {
+      scene.add({ id: asNodeId(id), kind: 'mark', layer: 'main', pose: box, data: { name: id } });
+    }
+    hook.rerender();
+    hook.result.current.onReorder({ ids: ['x'], parentId: null, index: 0 });
+    expect(scene.get(asNodeId('x'))!.parent).toBeNull();
+    expect(scene.roots).toEqual([run, 'y', 'x']);
   });
 });

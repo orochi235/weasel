@@ -55,11 +55,18 @@ describe('draw pages', () => {
     expect(loaded().get('starter-1' as never)).toMatchObject({ parent: 'page-1', pose: { x: 80 } });
   });
 
-  it('drops the undo stack saved beside a drawing whose pages were not yet nodes', () => {
+  it('drops the undo stack saved beside a drawing whose pages were not yet nodes, and keeps one beside one whose were', () => {
+    const history = JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] });
     save({ version: 3, nodes: [] });
-    localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] }));
+    localStorage.setItem(SCENE_HISTORY_KEY, history);
+    loadInitial();
     expect(loadSceneHistory()).toBeNull();
     expect(localStorage.getItem(SCENE_HISTORY_KEY)).toBeNull();
+
+    save(loaded().toJSON());
+    localStorage.setItem(SCENE_HISTORY_KEY, history);
+    loadInitial();
+    expect(loadSceneHistory()).not.toBeNull();
   });
 });
 

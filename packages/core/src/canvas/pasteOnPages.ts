@@ -1,7 +1,7 @@
 import type { Bounds } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
-import { pageRunOf } from 'core/pages/pageNodes';
-import { keepOnPage, pageForPoint, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
+import { pageOfNode, pageRunOf } from 'core/pages/pageNodes';
+import { followerHome, keepOnPage, pageForPoint, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
 import { siteIn, type InsertSite } from './deps/insertSite';
 
 /** Where one pasted root lands in a paged scene, and how much further it moves, with its subtree, to get there. */
@@ -10,18 +10,21 @@ export interface PageLanding {
   shift: { dx: number; dy: number };
 }
 
-/** A pasted root as {@link pasteOnPages} reads it: whether it follows others, and its world box where the
- *  paste leaves it. */
+/** A pasted root as {@link pasteOnPages} reads it: its id, its world box where the paste leaves it, and, for
+ *  one that follows others, the id of the pasted root holding each node it follows (a node the paste does not
+ *  hold stays as it is, wherever it is in the scene). */
 export interface PastedRoot {
-  follower: boolean;
+  id: string;
   bounds: Bounds;
+  follows?: readonly string[];
 }
 
 const middle = (b: Bounds) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
 
 /**
  * Where a paste into a paged scene puts each of `roots`, in order. A root
- * that follows others goes in the page run. The rest each go on the page for
+ * that follows others goes on the page everything it follows lands on, else
+ * in the page run (`followerHome`). The rest each go on the page for
  * a point (`pageForPoint`): a lone one's is the paste's `dropPoint`, else its
  * middle, and each of several goes by its own middle. With the pasteboard
  * off, each moves so part of it is on its page. `null` in a scene without
@@ -34,11 +37,17 @@ export function pasteOnPages(
 ): PageLanding[] | null {
   const run = pageRunOf(scene);
   if (run === null) return null;
-  const lone = roots.filter((r) => !r.follower).length === 1;
+  const lone = roots.filter((r) => r.follows === undefined).length === 1;
   const pasteboard = pasteboardOn(scene);
+  const pages = new Map(roots.filter((root) => root.follows === undefined).map((root) =>
+    [root.id, pageForPoint(scene, lone && dropPoint ? dropPoint : middle(root.bounds))]));
+  const pageOf = (id: NodeId) => (pages.has(id) ? pages.get(id)! : pageOfNode(scene, id));
   return roots.map((root) => {
-    if (root.follower) return { site: siteIn(scene, run), shift: { dx: 0, dy: 0 } };
-    const pageId = pageForPoint(scene, lone && dropPoint ? dropPoint : middle(root.bounds));
+    if (root.follows !== undefined) {
+      const home = followerHome(scene, { dependsOn: root.follows }, pageOf);
+      return { site: siteIn(scene, home), shift: { dx: 0, dy: 0 } };
+    }
+    const pageId = pages.get(root.id)!;
     const page = pageId === null || pasteboard ? null : placedPage(scene, pageId);
     return {
       site: siteIn(scene, pageId as NodeId | null),

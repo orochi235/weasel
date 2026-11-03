@@ -97,14 +97,15 @@ function liveSteps(scene: ReturnType<typeof drawScene>) {
 }
 
 describe('a path effect through draw\'s SVG', () => {
-  it('reopens live, over the sources it was made from, in the page run above the pages', async () => {
+  it('reopens live, over the sources it was made from, in its slot on their page', async () => {
     const reopened = drawScene([]);
     openSvgText(reopened, await exportOf(withBlend()), 'x.svg');
 
     const [node] = effectsIn(reopened);
     expect(node!.data.pathEffect).toEqual({ kind: 'blend', steps: 3 });
     expect(contentRoots(reopened)).toHaveLength(3);
-    expect(reopened.get(node!.id)!.parent).toBe(pageRunOf(reopened));
+    expect(contentRoots(reopened)[1]).toBe(node!.id);
+    expect(reopened.get(node!.id)!.parent).toBe('page-1');
     const [a, b] = node!.dependsOn as NodeId[];
     expect(reopened.get(a!)!.pose.x).toBe(0);
     expect(reopened.get(b!)!.pose.x).toBe(300);
@@ -173,6 +174,22 @@ describe('a path effect through draw\'s SVG', () => {
     }
   });
 
+  it('reopens an effect between shapes on two pages in the page run', async () => {
+    const svg = await sceneToSvgString(drawScene([
+      box('a', 0, '#ff0000'),
+      { ...pathEffectNode({ kind: 'blend', steps: 3 }, [asNodeId('a'), asNodeId('b')], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('blend') } as Spec,
+      box('b', 500, '#0000ff'),
+    ]), {
+      filename: 'x.svg', backgroundColor: '#ffffff',
+      pages: layoutPages([{ id: 'page-1', width: 400, height: 300 }, { id: 'page-2', width: 400, height: 300 }]),
+    });
+    const reopened = drawScene([]);
+    openSvgText(reopened, svg, 'x.svg');
+    const [node] = effectsIn(reopened);
+    expect(reopened.get(node!.id)!.parent).toBe(pageRunOf(reopened));
+    expect((node!.dependsOn as NodeId[]).map((id) => reopened.get(id)!.parent)).toEqual(['page-1', 'page-2']);
+  });
+
   it('reopens an effect that paints nothing, though its group is empty', async () => {
     for (const effect of [
       { kind: 'blend', steps: 0 },
@@ -188,7 +205,7 @@ describe('a path effect through draw\'s SVG', () => {
       openSvgText(reopened, await exportOf(scene), 'x.svg');
       const [node] = effectsIn(reopened);
       expect(node?.data.pathEffect).toEqual(effect);
-      expect(reopened.get(node!.id)!.parent).toBe(pageRunOf(reopened));
+      expect(contentRoots(reopened)[1]).toBe(node!.id);
       expect(contentRoots(reopened)).toHaveLength(3);
 
       const alone = drawScene([]);

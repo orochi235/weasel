@@ -22,8 +22,9 @@ const rect = (id: NodeId, parent: NodeId | null, x: number, more: Partial<Spec> 
 function drag(dx: number, options: {
   pasteboard?: boolean; ids?: NodeId[]; add?: Spec[]; from?: { x: number; y: number };
   params?: Record<string, unknown>; nodeAtPoint?: (at: { x: number; y: number }) => NodeId | null;
+  scene?: ReturnType<typeof pagedScene>['scene'];
 } = {}) {
-  const { scene } = pagedScene({ pasteboard: options.pasteboard ?? false });
+  const scene = options.scene ?? pagedScene({ pasteboard: options.pasteboard ?? false }).scene;
   for (const spec of options.add ?? []) scene.add(spec);
   const ids = options.ids ?? [ON_PAGE];
   const from = options.from ?? { x: 95, y: 15 };
@@ -114,5 +115,34 @@ describe('moveAction in a paged scene', () => {
     const { node, pose } = drag(-50);
     expect(node.parent).toBe(PAGE_A);
     expect(pose).toMatchObject({ x: 40, y: 10 });
+  });
+});
+
+describe('a node following others, when what it follows moves between pages', () => {
+  const S2 = asNodeId('s2');
+  const F = asNodeId('f');
+
+  it('goes into the run when one of its nodes moves to another page, and back onto the page when it returns', () => {
+    const { scene } = drag(0, { add: [
+      rect(S2, PAGE_A, 10),
+      { ...rect(F, PAGE_A, 0), dependsOn: [ON_PAGE, S2] },
+    ] });
+    const run = scene.get(PAGE_A)!.parent;
+    drag(40, { scene });
+    expect(scene.get(ON_PAGE)!.parent).toBe(PAGE_B);
+    expect(scene.get(F)!.parent).toBe(run);
+    drag(-40, { scene, from: { x: 135, y: 15 } });
+    expect(scene.get(ON_PAGE)!.parent).toBe(PAGE_A);
+    expect(scene.get(F)!.parent).toBe(PAGE_A);
+  });
+
+  it('moves to the page everything it follows lands on, in the same undo step', () => {
+    const { scene, undoSteps } = drag(40, { ids: [ON_PAGE, S2], add: [
+      rect(S2, PAGE_A, 80),
+      { ...rect(F, PAGE_A, 0), dependsOn: [ON_PAGE, S2] },
+    ] });
+    expect(scene.get(S2)!.parent).toBe(PAGE_B);
+    expect(scene.get(F)!.parent).toBe(PAGE_B);
+    expect(undoSteps).toBe(1);
   });
 });

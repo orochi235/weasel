@@ -50,21 +50,34 @@ describe('materializePaste in a paged scene', () => {
     expect(second!.pose as RectPose).toMatchObject({ x: 20, y: 10 });
   });
 
-  it('puts a pasted follower in the page run', () => {
+  /** Paste `ON_PAGE`, `end` (on page b at `endX`) and a link following both, dropped at `drop`. */
+  function pasteLink(endX: number, drop: { x: number; y: number }) {
     const { scene } = pagedScene();
-    const end = scene.add({ kind: 'mark', layer: 'ink', parent: asNodeId('b'), pose: { x: 10, y: 10, width: 5, height: 5 }, data: {} });
+    const end = scene.add({ kind: 'mark', layer: 'ink', parent: asNodeId('b'), pose: { x: endX, y: 10, width: 20, height: 10 }, data: {} });
     const link = scene.add({
       kind: 'mark', layer: 'ink', parent: pageRunOf(scene)!, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
       dependsOn: [ON_PAGE, end], derivePose: (_n, deps) => deps[0]?.pose ?? null,
     });
     const adapter = sceneToAdapter(scene);
     const pasted = materializePaste(adapter as never, adapter.snapshotSelection([ON_PAGE, end, link]), {
-      currentSelection: [], dropPoint: { x: 20, y: 20 },
+      currentSelection: [], dropPoint: drop,
     })!;
     scene.applyBatch(pasted.ops, 'Paste', adapter as never);
     const copies = pasted.newIds.map((id) => scene.get(asNodeId(id))!);
     const follower = copies.find((n) => n.dependsOn !== undefined)!;
+    return { scene, follower, ends: copies.filter((n) => n !== follower) };
+  }
+
+  it('puts a pasted follower on the page its pasted ends land on', () => {
+    const { follower, ends } = pasteLink(10, { x: 20, y: 20 });
+    expect(ends.map((n) => n.parent)).toEqual(['a', 'a']);
+    expect(follower.parent).toBe('a');
+  });
+
+  it('puts a pasted follower whose ends land on two pages in the page run', () => {
+    // The ends land at world 60..80 (page a) and 130..150 (page b).
+    const { scene, follower, ends } = pasteLink(50, { x: 60, y: 10 });
+    expect(ends.map((n) => n.parent)).toEqual(['a', PAGE_B]);
     expect(follower.parent).toBe(pageRunOf(scene));
-    expect(copies.filter((n) => n !== follower).every((n) => n.parent === 'a')).toBe(true);
   });
 });
