@@ -324,6 +324,15 @@ Owner tags, after the priority (2026-10-26):
   edges, and only sometimes; that it is a precision or rounding path the GPU picks under load is
   inferred, not shown.
   Closes when the cause is found and fixed, or the bound set to what the GPU guarantees.
+- **(P2) [agent] Multiple render targets, with GPU picking as the first payload.** The renderer
+  writes one color attachment per draw (no `drawBuffers` in `packages/renderer`), so per-pixel side
+  data needs a second draw. Agreed 2026-11-03 to build it after dithering and output-grid clamping
+  (`docs/superpowers/specs/2026-11-03-dither-design.md`). First payload: a node-id buffer (an
+  unblended integer attachment) so hit-testing sees what custom shaders and effects paint; second,
+  coverage masks, which let dither protection use exact coverage instead of rects. Costs to design
+  for: custom fragment shaders must write the extra output (or the prelude injects it), WebGL2 core
+  has one blend state for every attachment, and each group and effect target grows by one.
+  Closes when a pick on the canvas reads the id buffer and dither's `protect` accepts its mask.
 
 ---
 
