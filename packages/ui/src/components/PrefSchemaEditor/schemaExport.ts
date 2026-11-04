@@ -82,8 +82,10 @@ function printNode(node: SchemaNode, depth: number, types: PrefTypes): string {
   const type = isPrefLeaf(node) ? findType(types, node.type) : undefined;
   const named = type && isValidKey(type.type!) ? type.type! : undefined;
   const attrs = named ? overridesOf(node as PrefLeaf, type!) : (node as unknown as Record<string, unknown>);
+  // A group's description is optional, and an empty one says nothing; a leaf's is required.
+  const bare = (k: string, x: unknown) => k === 'description' && x === '' && !isPrefLeaf(node);
   const rows = Object.entries(attrs)
-    .filter(([k, x]) => (named !== undefined || x !== undefined) && !(k === slot && kids))
+    .filter(([k, x]) => (named !== undefined || x !== undefined) && !(k === slot && kids) && !bare(k, x))
     .map(([k, x]) => `${pad(depth + 1)}${printKey(k)}: ${isEntry(node, k, x) ? printNode(x, depth + 1, types) : printValue(x, depth + 1)},`);
   if (named !== undefined) {
     return rows.length ? `{\n${pad(depth + 1)}...${named},\n${rows.join('\n')}\n${pad(depth)}}` : named;

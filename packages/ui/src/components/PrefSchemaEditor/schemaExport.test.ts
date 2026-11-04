@@ -22,6 +22,14 @@ describe('printSchema', () => {
     expect(printSchema(tree)).toContain(`unit: ${KEEP}`);
   });
 
+  it("leaves out a group's empty description and keeps a leaf's", () => {
+    const tree: PrefGroup = { name: 'R', description: '', children: {
+      g: { name: 'G', description: '', children: { b: { kind: 'boolean', name: 'B', description: '', default: true } } },
+    } };
+    const back = new Function(`return (${printSchema(tree)});`)();
+    expect(back).toEqual({ name: 'R', children: { g: { name: 'G', children: { b: { kind: 'boolean', name: 'B', description: '', default: true } } } } });
+  });
+
   it('prints a section inside an object leaf with its members, and names it in a change', () => {
     const leaf = { kind: 'boolean', name: 'W', description: '', default: true } as const;
     const tree: PrefGroup = { name: 'R', children: {
