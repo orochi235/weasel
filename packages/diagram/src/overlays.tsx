@@ -51,8 +51,13 @@ export function worldRectOf(scene: DiagramScene, id: string): Bounds | null {
   const route = diagramEdgeOf(node) === null ? null : drawn.derivedPathOf?.(id as NodeId) ?? null;
   const mid = route === null ? null : pointAlongPath(route, 0.5);
   if (mid != null) return { x: mid.point.x, y: mid.point.y, width: 0, height: 0 };
+  return drawnAABBOf(drawn, id as NodeId, worldPoseOf(scene, id), { includeStroke: false });
+}
+
+/** Where `id` is drawn this frame, in world units, a gesture's preview included. */
+export function worldPoseOf(scene: DiagramScene, id: string): RectPose {
   const live = { ...scenePoseAdapter(scene as never), getPose: (at: string) => effectivePose(scene, scene.get(at as NodeId)!) };
-  return drawnAABBOf(drawn, id as NodeId, composeWorldPose(live, id, scene.composition.compose as never), { includeStroke: false });
+  return composeWorldPose(live, id, scene.composition.compose as never) as RectPose;
 }
 
 const CENTER = 'center';

@@ -179,7 +179,7 @@ export function CompoundPathsDemo() {
               // drawOne: 'signature' is a custom screen-space RenderLayer
               // (Comic Sans signature text) and remains 2D-only; defer to v2.
             },
-            selectionOverlay: { handles: { size: HANDLE } },
+            selectionOverlay: { handles: { size: HANDLE }, outline: { follow: 'shape' } },
             signature: {
               layer: {
                 id: 'signature',

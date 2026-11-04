@@ -97,6 +97,7 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
                 fill: { paint: { color: node.data.color } },
               }],
             },
+            selectionOverlay: { outline: { follow: 'shape' } },
           }}
           data-panel={id}
         />
@@ -216,6 +217,7 @@ function InteractivePanel() {
                 fill: { paint: { color: node.data.color } },
               }],
             },
+            selectionOverlay: { outline: { follow: 'shape' } },
           }}
           data-panel="interactive"
         />

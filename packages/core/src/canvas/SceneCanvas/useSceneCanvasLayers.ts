@@ -141,11 +141,12 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
     planeOfNode: args.planeOfNode,
   }, overlayConfig);
 
+  const drawnScene = useMemo(() => drawnBoundsScene(scene), [scene]);
   const { layer: selectionOverlayLayer, rotationBadge } = useSelectionOverlayLayer<TPose>(
     merged.selectionOverlay,
     pathEditState.getEditingIds,
     poseDescriptor,
-    args.boundsIncludeStroke ? drawnBoundsScene(scene) : undefined,
+    { measured: args.boundsIncludeStroke ? drawnScene : undefined, shapes: drawnScene },
     resizeHandles,
   );
 

@@ -18,9 +18,10 @@ export function useSelectionOverlayLayer<TPose>(
   getOwnSuppressedIds: () => ReadonlySet<string>,
   /** What a slot's `poseById` is projected with when it names no descriptor. */
   poseDescriptor: PoseDescriptor<TPose>,
-  /** The nodes a slot's `poseById` answers for, so their chrome sits on the
-   *  stroke. Omitted when the canvas measures pose boxes alone. */
-  scene?: DrawnBoundsScene,
+  /** The canvas's nodes. `measured`, which a slot's `poseById` answers for so
+   *  their chrome sits on the stroke, is omitted when the canvas measures pose
+   *  boxes alone; `shapes` is what `outline.follow: 'shape'` traces. */
+  scenes: { measured?: DrawnBoundsScene | undefined; shapes?: DrawnBoundsScene | undefined } = {},
   /** The canvas's resize-handle layout, which its hit-test reads too. */
   resizeHandles?: ResizeHandleLayout,
 ): {
@@ -49,8 +50,10 @@ export function useSelectionOverlayLayer<TPose>(
       for (const id of own) merged.add(id);
       return merged;
     };
+    const shapeScene = cfg.outline?.follow === 'shape' ? cfg.scene ?? scenes.shapes : undefined;
     return createSelectionOverlayLayer<TPose>({
       ...cfg,
+      ...(shapeScene ? { scene: shapeScene } : {}),
       ...(resizeHandles ? { resizeHandles } : {}),
       getSuppressedIds,
       // A caller's pose lookup still needs a geometry to project with; without
@@ -59,10 +62,10 @@ export function useSelectionOverlayLayer<TPose>(
         ? {
             getPose: cfg.poseById,
             poseDescriptor: cfg.poseDescriptor ?? poseDescriptor,
-            ...(cfg.scene ?? scene ? { scene: cfg.scene ?? scene } : {}),
+            ...(cfg.scene ?? scenes.measured ? { scene: cfg.scene ?? scenes.measured } : {}),
           }
         : {}),
     });
-  }, [slot, getOwnSuppressedIds, poseDescriptor, scene, resizeHandles]);
+  }, [slot, getOwnSuppressedIds, poseDescriptor, scenes.measured, scenes.shapes, resizeHandles]);
   return { layer, rotationBadge };
 }

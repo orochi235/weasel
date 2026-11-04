@@ -39,7 +39,7 @@ describe('useSelectionOverlayLayer', () => {
       outline: { paint: { kind: 'solid', color: '#f00' } as const, width: 0, pad: 0 },
     };
     const { layer } = renderHook(() =>
-      useSelectionOverlayLayer(slot, () => NONE, AUTO_POSE_DESCRIPTOR as never, scene)).result.current;
+      useSelectionOverlayLayer(slot, () => NONE, AUTO_POSE_DESCRIPTOR as never, { measured: scene })).result.current;
     const data = { getChromeState: () => ({ selection: [asNodeId('a')], multiActive: false }) };
     const cmds = layer!.draw(data, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400, dpr: 1 });
     expect((cmds[0] as PathDrawCommand).path).toMatchObject({ x: -5, y: -5, width: 110, height: 110 });

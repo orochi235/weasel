@@ -35,6 +35,8 @@ import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 import { useSequenceTextEdit } from './sequence/textEdit';
 
+const SHAPE_OUTLINE = { outline: { follow: 'shape' as const } };
+
 export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 export type {
   DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, LabelMove, NodeResize, ReconnectChange, RouteChange,
@@ -108,7 +110,8 @@ function Inner({
   const controlled = view !== undefined;
   const fills = width === undefined || height === undefined;
   const [measured, setMeasured] = useState<CanvasSize | null>(null);
-  const { layers, box: pagesBox } = usePagesView(pages);
+  const { layers: pageLayers, box: pagesBox } = usePagesView(pages);
+  const layers = useMemo(() => ({ ...pageLayers, selectionOverlay: SHAPE_OUTLINE }), [pageLayers]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
   const current = useCallback(() => Array.from(source(), ({ node, pose }) => ({ ...node, pose })), [source]);
   const viewBounds = useMemo(

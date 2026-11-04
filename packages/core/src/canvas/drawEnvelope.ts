@@ -27,6 +27,12 @@ export function chromeStateFrom(data: unknown): ChromeState | null {
   return thunk(data, 'getChromeState')?.() ?? null;
 }
 
+/** Where this view shows `id` this frame, in-flight preview included, or
+ *  `undefined` when the caller passed plain data or the id is unknown. */
+export function effectivePoseFrom(data: unknown, id: string): unknown {
+  return thunk(data, 'getEffectivePose')?.(id) ?? undefined;
+}
+
 /** This view's chrome-caps predicate, or `null` when the caller passed plain
  *  data — the layer then paints unconditionally. */
 export function isVisibleFrom(data: unknown): ((id: string) => boolean) | null {
