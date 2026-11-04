@@ -4,6 +4,8 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { isPageStructure } from 'core/scene/nodeGates';
+import { pageOfNode } from 'core/pages/pageNodes';
+import { followerMoveOps, followerMoves } from '../../followerMoves';
 import { planeToPlane } from 'core/viewport/parallax';
 import { rebaseLocalPose } from 'core/scene/composePose';
 import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
@@ -153,7 +155,8 @@ export function landOps(
 }
 
 /** Reparent and reposition each moved root as ops, keeping the world pose the
- *  drag showed, then the ops that bring uncarried descendants along. */
+ *  drag showed, then the ops that bring uncarried descendants along, and the
+ *  followers whose page that changes (`followerMoves`). */
 export function reparentOps(
   session: MoveSession,
   target: DropTarget,
@@ -176,5 +179,11 @@ export function reparentOps(
     ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label }));
   }
   const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
-  return [...ops, ...landedCascadeOps(session, riders, target.newParent, delta, target.newLayer)];
+  const page = target.newParent === null ? null : pageOfNode(scene, target.newParent);
+  const landed = new Map([...roots].filter((id) => session.startPoses.has(id)).map((id) => [id as string, page]));
+  return [
+    ...ops,
+    ...landedCascadeOps(session, riders, target.newParent, delta, target.newLayer),
+    ...followerMoveOps(followerMoves(scene, landed), label),
+  ];
 }

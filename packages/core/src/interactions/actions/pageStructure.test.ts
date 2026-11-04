@@ -119,5 +119,15 @@ describe('grouping across pages', () => {
       expect([scene.get(R)!.parent, scene.get(onB)!.parent]).toEqual([group, group]);
       expect(worlds()).toEqual(before);
     });
+
+    it(`${name} moves a node following a member onto the page the member lands on`, () => {
+      const { scene, onB } = twoPages();
+      const link = scene.add({
+        kind: 'mark', layer: 'ink', parent: B, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+        dependsOn: [onB], derivePose: (_n, deps) => deps[0]?.pose ?? null,
+      });
+      run(action, { scene, selection: heldSelection([R, onB]) });
+      expect(scene.get(link)!.parent).toBe(A);
+    });
   }
 });

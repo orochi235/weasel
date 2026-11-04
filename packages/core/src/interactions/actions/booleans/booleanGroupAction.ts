@@ -2,6 +2,8 @@ import type { BooleanShapeOp } from 'core/geometry/booleanOfPaths';
 import { booleanGroupFields } from 'core/scene/booleanGroup';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { groupingSite } from 'core/pages/pagePlacement';
+import { pageOfNode } from 'core/pages/pageNodes';
+import { followerMoves } from '../followerMoves';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId, Scene } from 'core/scene/types';
@@ -18,7 +20,8 @@ const PAINT_KEYS = ['fill', 'stroke'] as const;
  * Put `ids` under a new boolean group of `op`, in the frontmost one's place
  * in the container `groupingSite` names, as one undo entry; nothing moves on
  * screen, unless the operands lie wholly off every page with the pasteboard
- * off and move onto one. The group wears the frontmost
+ * off and move onto one, and a node following one that changes page goes
+ * where `followerMoves` says. The group wears the frontmost
  * operand's `fill` and `stroke`. Returns its id, or `null` when fewer than two
  * of `ids` are nodes on one layer.
  */
@@ -39,6 +42,8 @@ export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: Bo
   const at = siblings.indexOf(front.id);
   const own = (front.data ?? {}) as Record<string, unknown>;
   const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => k in own).map((k) => [k, own[k]])) };
+  const page = parent === null ? null : pageOfNode(scene, parent);
+  const followers = followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page])));
   let group: NodeId | null = null;
   scene.batch('Make Boolean Group', () => {
     group = scene.add({
@@ -49,6 +54,10 @@ export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: Bo
       scene.move(n.id, group, i);
       scene.setPose(n.id, frame.localUnder(group, worlds.get(n.id)!) as never);
     });
+    for (const f of followers) {
+      scene.move(f.id, f.into);
+      scene.setPose(f.id, f.to);
+    }
   });
   return group;
 }

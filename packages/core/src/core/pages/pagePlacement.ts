@@ -102,6 +102,37 @@ export function followerLandings(
   return out;
 }
 
+/**
+ * The followers that move once each node `landed` names, with what is under
+ * it, lands on the page it gives (`null`: on none), each with the node it
+ * moves into (`homeOfPage`): any follower under the page run, outside what
+ * lands, whose page by the follower rule (`followerLandings`) is not the page
+ * it is on. Empty in a scene without pages. The one rule for every edit that
+ * moves content between pages.
+ */
+export function rehomedFollowers<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  landed: ReadonlyMap<string, string | null>,
+): Map<NodeId, NodeId> {
+  const out = new Map<NodeId, NodeId>();
+  const run = pageRunOf(scene);
+  if (run === null || landed.size === 0) return out;
+  const followers: FollowerOf[] = [];
+  const visit = (id: NodeId) => {
+    if (landed.has(id)) return;
+    const follower = asFollower(id, scene.get(id));
+    if (follower !== null) followers.push(follower);
+    for (const child of scene.childrenOf(id)) visit(child);
+  };
+  visit(run);
+  for (const [id, page] of followerLandings(scene, landed, followers)) {
+    if (page === pageOfNode(scene, id as NodeId)) continue;
+    const home = homeOfPage(scene, page);
+    if (home !== null) out.set(id as NodeId, home);
+  }
+  return out;
+}
+
 /** Node `id`, holding `node`, as a {@link FollowerOf}, or `null` when it follows none. */
 export function asFollower(id: string, node: { readonly dependsOn?: unknown } | undefined): FollowerOf | null {
   return isFollower(node) ? { id, dependsOn: node!.dependsOn as string[] } : null;

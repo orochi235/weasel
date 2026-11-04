@@ -1,13 +1,10 @@
-import { createReparentOp } from 'core/ops/reparent';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import {
-  asFollower, followerLandings, homeOfPage, isFollower, keepOnPage, pasteboardOn, placedPage,
-} from 'core/pages/pagePlacement';
+import { isFollower, keepOnPage, pasteboardOn, placedPage, rehomedFollowers } from 'core/pages/pagePlacement';
 import { pageAt, pageOfBounds, type PlacedPage } from 'core/pages/pages';
-import { pageNodeOf, pageOfNode, pageRunOf, placedPagesOf } from 'core/pages/pageNodes';
-import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
+import { pageNodeOf, pageOfNode, placedPagesOf } from 'core/pages/pageNodes';
+import { followerMove, followerMoveOps } from '../../followerMoves';
 import { refusalOf } from '../../dropVerdict';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
@@ -105,40 +102,12 @@ export function pageDrops(
     if (target !== parent) drops.set(id, { into: target, shift, above, ...(layer === undefined ? {} : { layer }) });
     else if (shift.dx !== 0 || shift.dy !== 0) drops.set(id, { shift });
   }
-  rehomeFollowers(session, drops);
-  return drops.size === 0 ? null : drops;
-}
-
-/** Add to `drops` each follower on a page or in the run whose home the drops change: it goes to the page
- *  everything it follows lands on, else into the run (`followerLandings`). */
-function rehomeFollowers(session: MoveSession, drops: Map<NodeId, RootDrop>): void {
-  const { scene } = session;
-  const run = pageRunOf(scene);
-  if (run === null || ![...drops.values()].some((d) => d.into !== undefined)) return;
   const landed = new Map<string, string | null>();
   for (const [id, { into }] of drops) {
     if (into !== undefined) landed.set(id, into === null ? null : pageOfNode(scene, into));
   }
-  const tops = [run, ...scene.childrenOf(run).filter((id) => scene.get(id)?.page !== undefined)];
-  const followers = tops.flatMap((top) => scene.childrenOf(top)).flatMap((id) => asFollower(id, scene.get(id)) ?? []);
-  for (const [id, page] of followerLandings(scene, landed, followers)) {
-    const home = homeOfPage(scene, page);
-    if (home !== null && home !== scene.get(id as NodeId)!.parent) drops.set(id as NodeId, { into: home, shift: STAY.shift });
-  }
-}
-
-/** A follower the drag did not take moved into `into` at the world place it has. */
-function followOps(session: MoveSession, id: NodeId, into: NodeId | null, label: string | undefined): Op[] {
-  const { scene, pc } = session;
-  const node = scene.get(id)!;
-  const adapter = sceneViewPoseAdapter(scene);
-  const world = composeWorldPose(adapter, id as string, pc.compose);
-  return [
-    createReparentOp({ id: id as string, fromParentId: node.parent, toParentId: into as string | null, label }),
-    createTransformOp<unknown>({
-      id: id as string, from: node.pose, to: rebaseLocalPose(adapter, world, into as string | null, pc.compose, pc.decompose), label,
-    }),
-  ];
+  for (const [id, into] of rehomedFollowers(scene, landed)) drops.set(id, { into, shift: STAY.shift });
+  return drops.size === 0 ? null : drops;
 }
 
 /** Each dragged node below one of `roots`, selected or not, keyed by that root. */
@@ -169,7 +138,7 @@ export function pageDropOps(
     return children.get(parent)!;
   };
   for (const [id, drop] of drops) {
-    if (!dragged.has(id) && drop.into !== undefined) ops.push(...followOps(session, id, drop.into, label));
+    if (!dragged.has(id) && drop.into !== undefined) ops.push(...followerMoveOps([followerMove(scene, id, drop.into)], label));
   }
   const below = belowRoots(session, new Set([...drops.keys()].filter((id) => dragged.has(id))));
   const ridden = new Set([...below.values()].flat());
