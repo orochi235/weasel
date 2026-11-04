@@ -7,10 +7,6 @@ const FIXTURE = `
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # the floor and the target
-        node: [22, 24]
     env:
       NPM_CONFIG_LOGLEVEL: error
       # a comment between entries
@@ -29,7 +25,7 @@ jobs:
         env:
           FORGE_BUILT: '1'
       - run: npm run check:manifests
-      - if: matrix.node == 24
+      - if: github.event_name == 'push'
         run: |
           npm run build:demo
           npm run build:draw
@@ -56,7 +52,7 @@ describe('readCi', () => {
       'npm run build:demo\nnpm run build:draw',
     ]);
     expect(ci.steps[7].env).toEqual({ FORGE_BUILT: '1' });
-    expect(ci.steps[9].if).toBe('matrix.node == 24');
+    expect(ci.steps[9].if).toBe("github.event_name == 'push'");
   });
 });
 
@@ -68,27 +64,23 @@ describe('the split at the first build', () => {
   });
 
   it('gives the post-build job every step from the build on', () => {
-    expect(builtSteps(steps, 24).map((step) => step.run)).toEqual([
+    expect(builtSteps(steps.slice(0, -1)).map((step) => step.run)).toEqual([
       'npm run build',
       'npx vitest run --project=forge-node a.test.ts',
       'npm run check:manifests',
-      'npm run build:demo\nnpm run build:draw',
     ]);
   });
 
-  it('keeps a step for one Node version only on that version', () => {
-    expect(builtSteps(steps, 22).map((step) => step.run)).not.toContain('npm run build:demo\nnpm run build:draw');
-  });
-
-  it('refuses a condition it cannot evaluate, rather than guess', () => {
-    const odd = readCi(FIXTURE.replace('matrix.node == 24', "github.event_name == 'push'"));
-    expect(() => builtSteps(odd.steps, 24)).toThrow(/github\.event_name/);
+  it('refuses a step condition, which it cannot evaluate off CI, rather than guess', () => {
+    expect(() => builtSteps(steps)).toThrow(/github\.event_name/);
+    const node = readCi(FIXTURE.replace("github.event_name == 'push'", 'matrix.node == 24'));
+    expect(() => builtSteps(node.steps)).toThrow(/matrix\.node/);
   });
 });
 
 describe('ci.yml itself', () => {
   const { steps } = readCi(readFileSync(join(import.meta.dirname, '../../.github/workflows/ci.yml'), 'utf8'));
-  const built = builtSteps(steps, 24).map((step) => step.run);
+  const built = builtSteps(steps).map((step) => step.run);
 
   it('splits so the post-build steps run only after a build', () => {
     expect(built[0]).toBe('npm run build');

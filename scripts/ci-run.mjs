@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * The node-side half of `scripts/fleet-ci.mjs`: from a clean install, ci.yml's steps on the Node it
- * runs under, one line per step as it finishes: its first build and every step after it. Not for a checkout anyone works in — it deletes the ignored build output
+ * The node-side half of `scripts/fleet-ci.mjs`: from a clean install, ci.yml's steps, one line per
+ * step as it finishes: its first build and every step after it. Not for a checkout anyone works in — it deletes the ignored build output
  * under packages/ and apps/ first, so a `dist` left by an earlier run cannot supply a file the build
  * no longer emits — and it refuses to start in a tree `fleet-ci.mjs` did not arm.
  */
@@ -48,8 +48,7 @@ if (!tree.ok) process.exit(1);
 const stamp = treeStamp(ROOT);
 
 const { env: jobEnv, steps } = readCi(readFileSync(CI_YML, 'utf8'));
-const nodeMajor = Number(process.versions.node.split('.')[0]);
-const plan = [{ run: 'npm ci', env: {} }, ...builtSteps(steps, nodeMajor)];
+const plan = [{ run: 'npm ci', env: {} }, ...builtSteps(steps)];
 const labels = plan.map((step) => step.run.replace(/\n/g, ' && '));
 const weights = planWeights(labels, readWeights());
 

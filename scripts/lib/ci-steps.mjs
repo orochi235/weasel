@@ -11,7 +11,6 @@ export const CI_YML = new URL('../../.github/workflows/ci.yml', import.meta.url)
 
 const CHECK = /^npm run ((?:check:[\w-]+|audit:[\w-]+|typecheck|lint)\b.*?)\s*$/;
 const BUILD = /^npm run build\b/;
-const NODE_ONLY = /^matrix\.node\s*==\s*(\d+)$/;
 const EXPRESSION = /\$\{\{.*?\}\}/;
 
 const indentOf = (line) => line.length - line.trimStart().length;
@@ -91,20 +90,17 @@ export const sourceChecks = (steps) =>
   });
 
 /**
- * The steps that run on `nodeMajor`. A condition other than a Node version, or a `${{ }}` in a
- * command, is refused: guessing would either skip a step CI runs or run one it skips.
+ * `steps`, refusing a step condition or a `${{ }}` in a command: evaluating either off CI would be a
+ * guess, which either skips a step CI runs or runs one it skips.
  */
-const onNode = (steps, nodeMajor) =>
-  steps.filter((step) => {
+const offCi = (steps) => {
+  for (const step of steps) {
     const expression = EXPRESSION.exec(step.run)?.[0];
     if (expression) throw new Error(`ci.yml: cannot evaluate ${expression} in "${step.run}" off CI`);
-    if (!step.if) return true;
-    const only = NODE_ONLY.exec(step.if.trim());
-    if (!only) throw new Error(`ci.yml: cannot evaluate the step condition "${step.if}" off CI`);
-    return Number(only[1]) === nodeMajor;
-  });
+    if (step.if) throw new Error(`ci.yml: cannot evaluate the step condition "${step.if}" off CI`);
+  }
+  return steps;
+};
 
-/** The first build and every step after it that runs on `nodeMajor`. */
-export const builtSteps = (steps, nodeMajor) => onNode(steps.slice(firstBuild(steps)), nodeMajor);
-
-
+/** The first build and every step after it. */
+export const builtSteps = (steps) => offCi(steps.slice(firstBuild(steps)));
