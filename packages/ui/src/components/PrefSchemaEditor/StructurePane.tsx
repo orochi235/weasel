@@ -259,7 +259,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
             width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'],
           };
         }}
-        foldBy="leading"
+        foldBy="leading" pressFolds={false}
         guides
         nodes={shown}
         empty={sought === '' ? undefined : 'Nothing matches.'}

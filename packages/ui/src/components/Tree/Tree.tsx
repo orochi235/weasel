@@ -53,8 +53,8 @@ const NO_MODS: PressModifiers = { shiftKey: false, ctrlKey: false, metaKey: fals
  * (or the selection holding it) among its siblings, and Alt+Left/Right outdent
  * it and indent it under the sibling above; each goes through `canDrop`.
  *
- * **Activating** a row — click, Enter, Space — toggles it if it is a branch,
- * selects it under `selectionMode`, and calls `onAction`. Clicking the twisty
+ * **Activating** a row — click, Enter, Space — toggles it if it is a branch
+ * (unless `pressFolds` is false), selects it under `selectionMode`, and calls `onAction`. Clicking the twisty
  * only toggles. A row with an `href` is a link as well: Cmd, Ctrl and Alt
  * clicks on it, and middle clicks, are the browser's, not activations.
  *
@@ -68,7 +68,7 @@ export const Tree = forwardRef(function Tree(
   {
     nodes, empty, className,
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
-    expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', hang = false, guides = false,
+    expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', pressFolds = true, hang = false, guides = false,
     selectionMode = 'none', selectionFollowsFocus = false, selectedIds, defaultSelectedIds, onSelectionChange,
     onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
   }: TreeProps,
@@ -121,7 +121,7 @@ export const Tree = forwardRef(function Tree(
 
   const activate = (node: TreeNode, mods: PressModifiers) => {
     if (node.disabled) return;
-    toggle(node);
+    if (pressFolds) toggle(node);
     if (selectable) select(node.id, mods);
     onAction?.(node.id, mods);
   };

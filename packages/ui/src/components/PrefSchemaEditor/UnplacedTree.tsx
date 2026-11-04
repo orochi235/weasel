@@ -78,7 +78,7 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onPick
       foldBy="leading"
       guides
       defaultExpandedIds={open}
-      selectionMode="multiple"
+      selectionMode="multiple" pressFolds={false}
       selectionFollowsFocus
       selectedIds={selected}
       // Only a row the schema holds has attributes to show, so a pick of one it does not hold changes nothing.

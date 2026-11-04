@@ -57,6 +57,10 @@ export interface TreeProps {
   /** What folds a branch on a click of its own. Default `'twisty'`, the mark in the row's gutter. `'leading'`
    *  draws no mark and gives the job to the branch's `leading`, which carries `data-open` while it is open. */
   foldBy?: 'twisty' | 'leading';
+  /** Whether activating a branch — a click on its row, Enter, Space — folds it as well. Default true. False suits a
+   *  tree whose selection drives something drawn beside it, where picking a branch to look at should not hide what
+   *  it holds; the twisty (or `leading`) and the arrow keys still fold it. */
+  pressFolds?: boolean;
   /** Hangs a leaf's `leading` in the gutter, where a branch has its mark, so a leaf's label starts at the same x
    *  with a glyph or without. For a list where only some leaves have one. No effect under `guides`. */
   hang?: boolean;

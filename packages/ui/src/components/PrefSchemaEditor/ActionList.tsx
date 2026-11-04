@@ -79,7 +79,7 @@ export function ActionList({ catalog, sought, ghost, onDrag, onDrop }: {
       onExpandedChange={(open) => {
         if (sought === '') setFolded(new Set([...branches].filter((id) => !open.has(id))));
       }}
-      selectionMode="multiple"
+      selectionMode="multiple" pressFolds={false}
       selectionFollowsFocus
       selectedIds={catalog.selected}
       onSelectionChange={catalog.pick}

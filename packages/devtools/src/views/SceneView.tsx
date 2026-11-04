@@ -59,7 +59,7 @@ export function SceneView({ client, rootId }: DevtoolsViewProps): ReactElement {
           empty={<p className={s.note}>{tree.error ?? 'The scene is empty.'}</p>}
           expandedIds={tree.expanded}
           onExpandedChange={tree.setExpanded}
-          selectionMode="single"
+          selectionMode="single" pressFolds={false}
           selectedIds={selected ? [selected] : []}
           onSelectionChange={(ids) => setSelected(ids.values().next().value ?? null)}
         />

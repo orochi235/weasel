@@ -119,6 +119,17 @@ describe('Tree — expansion', () => {
     expect(screen.queryByText('Apple')).toBeNull();
   });
 
+  it('selects a branch without folding it under pressFolds={false}, and its twisty still folds it', () => {
+    render(<Tree aria-label="Food" nodes={NODES} selectionMode="single" pressFolds={false} />);
+    fireEvent.click(screen.getByText('Fruit'));
+    expect(item('Fruit')).toHaveAttribute('aria-selected', 'true');
+    expect(item('Fruit')).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.keyDown(item('Fruit'), { key: 'Enter' });
+    expect(item('Fruit')).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(item('Fruit').querySelector('svg')!);
+    expect(item('Fruit')).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('folds by a branch\'s leading in place of the twisty, marking it while the branch is open', () => {
     const onAction = vi.fn();
     render(<Tree aria-label="Food" foldBy="leading" onAction={onAction} nodes={[
