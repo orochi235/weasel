@@ -67,11 +67,13 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
 
   const depRegistry = useOptionalDepRegistry();
   const pasteInto = useCallback(() => depRegistry?.get('insertInto')?.get() ?? null, [depRegistry]);
+  const canDropInto = useCallback(() => depRegistry?.get('canDropInto'), [depRegistry]);
   const adapter = useSceneAdapter(scene, {
     // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
     selection: selection.adapterMethods,
     poseDescriptor: descriptor,
     pasteInto,
+    canDropInto,
   });
 
   const selectTool = useSceneSelectTool({

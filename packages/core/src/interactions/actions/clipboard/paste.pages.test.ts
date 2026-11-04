@@ -35,6 +35,26 @@ describe('materializePaste in a paged scene', () => {
     expect(node!.pose as RectPose).toMatchObject({ x: 99 });
   });
 
+  it('puts a paste dropped on a page canDropInto refuses on the nearest page it admits', () => {
+    const { scene } = pagedScene();
+    const adapter = sceneToAdapter(scene, { canDropInto: () => (parent) => parent !== PAGE_B });
+    const pasted = materializePaste(adapter as never, adapter.snapshotSelection([ON_PAGE]), {
+      currentSelection: [], dropPoint: { x: 150, y: 20 },
+    })!;
+    scene.applyBatch(pasted.ops, 'Paste', adapter as never);
+    expect(scene.get(asNodeId(pasted.newIds[0]!))!.parent).toBe('a');
+  });
+
+  it('does not paste into the container insertInto names when canDropInto refuses it', () => {
+    const { scene } = pagedScene();
+    const adapter = sceneToAdapter(scene, { pasteInto: () => PAGE_B, canDropInto: () => (parent) => parent !== PAGE_B });
+    const pasted = materializePaste(adapter as never, adapter.snapshotSelection([ON_PAGE]), {
+      currentSelection: [], dropPoint: { x: 150, y: 20 },
+    })!;
+    scene.applyBatch(pasted.ops, 'Paste', adapter as never);
+    expect(scene.get(asNodeId(pasted.newIds[0]!))!.parent).toBe('a');
+  });
+
   it('puts a paste off every page at the top of the tree with the pasteboard on', () => {
     const { nodes: [node] } = paste([ON_PAGE], { x: 500, y: 300 }, true);
     expect(node!.parent).toBeNull();

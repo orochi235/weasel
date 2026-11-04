@@ -3,6 +3,7 @@ import type { Scene } from 'core/scene/types';
 import { pageNodeOf, pageRunOf } from 'core/pages/pageNodes';
 import { followerLandings, homeOfPage, keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
 import { takingPage } from 'interactions/actions/insert/parent';
+import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { siteIn, type InsertSite } from './deps/insertSite';
 
 /** Where one pasted root lands in a paged scene, and how much further it moves, with its subtree, to get there. */
@@ -27,7 +28,7 @@ const middle = (b: Bounds) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
  * that follows others goes on the page everything it follows lands on, else
  * in the page run (`followerLandings`), a follower of a pasted follower by
  * where that one lands. The rest each go on the page an insert at a point
- * would (`takingPage`): a lone one's is the paste's `dropPoint`, else its
+ * would (`takingPage`, asking `canDropInto`): a lone one's is the paste's `dropPoint`, else its
  * middle, and each of several goes by its own middle. With the pasteboard
  * off, each moves so part of it is on its page. `null` in a scene without
  * pages.
@@ -36,13 +37,14 @@ export function pasteOnPages(
   scene: Scene<unknown, string, unknown>,
   roots: readonly PastedRoot[],
   dropPoint: { x: number; y: number } | null | undefined,
+  canDropInto?: CanDropIntoDep,
 ): PageLanding[] | null {
   const run = pageRunOf(scene);
   if (run === null) return null;
   const lone = roots.filter((r) => r.follows === undefined).length === 1;
   const pasteboard = pasteboardOn(scene);
   const pages = new Map(roots.filter((root) => root.follows === undefined).map((root) =>
-    [root.id, takingPage(scene, lone && dropPoint ? dropPoint : middle(root.bounds))]));
+    [root.id, takingPage(scene, lone && dropPoint ? dropPoint : middle(root.bounds), canDropInto)]));
   const followerPages = followerLandings(scene, pages, roots.flatMap((root) =>
     root.follows === undefined ? [] : [{ id: root.id, dependsOn: root.follows }]));
   return roots.map((root) => {
