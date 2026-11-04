@@ -305,8 +305,8 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
             plugins: [viteQueriesExternal(), sourcedExternal(() => sourced, entries), sourcedStarsNamed(() => sourced)],
             // vite names a bundle's URL (`?v=`) from its config and lockfile, never the bundle's contents, and serves it
             // `immutable`: a re-bundle under the same name runs the old copy in the browser until a hard reload. The
-            // stamp is the contents, and a banner is part of the config vite hashes.
-            output: { banner: `/* weasel-prebundle ${stamp.slice(0, 12)} */` },
+            // stamp is the contents, and an intro is part of the config vite hashes.
+            output: { intro: `/* weasel-prebundle ${stamp.slice(0, 12)} */` },
           },
         },
       };
