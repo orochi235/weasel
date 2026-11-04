@@ -3,7 +3,10 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetsPage } from './AssetsPage';
 import { renderWithIcons } from '../testIcons';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 const tree = () => screen.getByRole('tree', { name: 'Schema structure' });
 const asset = (label: string) =>
@@ -65,5 +68,17 @@ describe('AssetsPage', () => {
     renderWithIcons(<AssetsPage />);
     fireEvent.click(asset('Menu bar'));
     expect(within(tree()).getByText('File')).toBeInTheDocument();
+  });
+
+  it('keeps an edit through a reload', () => {
+    renderWithIcons(<AssetsPage />);
+    fireEvent.click(within(tree()).getByText('view'));
+    const description = () => within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Description' });
+    fireEvent.change(description(), { target: { value: 'Grid and guides.' } });
+    fireEvent.blur(description());
+    cleanup();
+    renderWithIcons(<AssetsPage />);
+    fireEvent.click(within(tree()).getByText('view'));
+    expect(description()).toHaveValue('Grid and guides.');
   });
 });

@@ -31,6 +31,7 @@ const RENDERERS: Record<string, PrefRenderer> = {
 };
 
 const EDITOR_PREFS = { storage: localStorageAdapter, prefix: 'weaseldraw.schema-editor/' };
+const DRAFT_KEY = 'weaseldraw.assets';
 
 const noop = () => {};
 
@@ -44,7 +45,7 @@ export function AssetsPage() {
     <DevShell title="Assets">
       <RegistryProbe onSnapshot={noop} />
       <AssetEditor list className={s.editor} workspace={workspace} original={DRAW_WORKSPACE} onChange={setWorkspace}
-        codec={codec} kinds={KINDS} renderers={RENDERERS} prefs={editorPrefs} />
+        codec={codec} draftKey={DRAFT_KEY} kinds={KINDS} renderers={RENDERERS} prefs={editorPrefs} />
     </DevShell>
   );
 }
