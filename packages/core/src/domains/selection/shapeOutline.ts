@@ -9,9 +9,9 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/renderer';
 import {
-  boxToBox, identity, invert, meanScale, multiply, poseFrameOf, transformPath, type Affine, type Path,
+  boxToBox, identity, invert, meanScale, multiply, pathToAnchors, poseFrameOf, transformPath, type Affine, type Path,
 } from '@weasel-js/geom';
-import { offsetPath } from '@weasel-js/stroke';
+import { offsetPath, strokeToPath } from '@weasel-js/stroke';
 import type { CommandStroke } from '@weasel-js/paint';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
@@ -78,6 +78,8 @@ function edgeOf(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<
   const inherited = inheritedPaintIn(scene, node);
   const ink = findShapeInk(node, pose, { scale, ...(inherited === undefined ? {} : { inherited }) });
   const distance = (ink?.outset ?? 0) + (ink?.outsetPx ?? 0) / scale;
+  const open = isOpen(silhouette);
+  if (open && distance <= 0) return null;
   if (distance <= 0) {
     edges.delete(id);
     return silhouette;
@@ -89,9 +91,16 @@ function edgeOf(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<
     const carry = boxMove(held.pose, pose);
     if (carry) return transformPath(held.edge, carry);
   }
-  const edge = offsetPath(silhouette, distance);
+  const edge = open
+    ? strokeToPath(silhouette, { width: distance * 2, join: 'round', cap: 'round' })
+    : offsetPath(silhouette, distance);
   edges.set(id, { key, pose, distance, edge });
   return edge;
+}
+
+/** An open run encloses nothing, so its edge is the band its ink covers. */
+function isOpen(path: Path): boolean {
+  return path.kind !== 'rect' && !pathToAnchors(path).closed.every(Boolean);
 }
 
 /** The map taking a box pose's drawing onto another box pose's, or `null` when either is not a box. */

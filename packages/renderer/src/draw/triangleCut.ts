@@ -134,7 +134,8 @@ const scratch = { buf: new Float32Array(16) };
 
 /** `poly` cut to the side of the plane at `p` that `sign` names, as a new array. */
 function cut(poly: Float32Array, n: number, planes: Float64Array, p: number, sign: 1 | -1): [Float32Array, number] {
-  if (scratch.buf.length < (n + 1) * 2) scratch.buf = new Float32Array((n + 1) * 4);
+  // A degenerate polygon can cross the plane at every edge: up to 2n corners out.
+  if (scratch.buf.length < n * 4) scratch.buf = new Float32Array(n * 8);
   const m = clipPlane(poly, n, 2, sign * planes[p], sign * planes[p + 1], sign * planes[p + 2], scratch.buf);
   return [scratch.buf.slice(0, m * 2), m];
 }

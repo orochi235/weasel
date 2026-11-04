@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathContainsPoint, pathFromD, type Path } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import { createSelectionOverlayLayer } from './overlay';
@@ -18,6 +18,8 @@ function sceneOf() {
   mark('ring', { shape: 'ellipse', stroke: { paint: RED, width: 10 } });
   scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 60 } } as never);
   mark('child', { shape: 'rect' }, { parent: asNodeId('g') });
+  mark('wire', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: { paint: RED, width: 4 } });
+  mark('bare', { path: pathFromD('M 0 0 L 100 60') });
   return scene;
 }
 
@@ -82,5 +84,19 @@ describe("selection outline with follow: 'shape'", () => {
     const cmds = layerFor(scene, ['g']).draw(undefined, VIEW, DIMS);
     expect(traced(cmds)).toHaveLength(0);
     expect((cmds[0] as PathDrawCommand).kind).toBe('path');
+  });
+
+  it('traces an open path along the band its stroke covers', () => {
+    const scene = sceneOf();
+    const edge = traced(layerFor(scene, ['wire']).draw(undefined, VIEW, DIMS))[0].path as Path;
+    expect(pathContainsPoint(edge, 50, 1)).toBe(true);
+    expect(pathContainsPoint(edge, 99, 30)).toBe(true);
+    // Inside the corner the wire turns, where closing it would have filled.
+    expect(pathContainsPoint(edge, 70, 20)).toBe(false);
+  });
+
+  it('keeps the box for an open path with no stroke', () => {
+    const cmds = layerFor(sceneOf(), ['bare']).draw(undefined, VIEW, DIMS);
+    expect(traced(cmds)).toHaveLength(0);
   });
 });
