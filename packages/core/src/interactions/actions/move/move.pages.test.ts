@@ -88,6 +88,18 @@ describe('moveAction in a paged scene', () => {
     expect(pose).toMatchObject({ x: 10, y: 10 });
   });
 
+  it('moves one on a lower layer into a group on the other page onto the group\'s layer, in one undo step', () => {
+    const group = { ...rect(G, PAGE_B, 10), kind: 'group' as const, pose: { x: 10, y: 0, width: 60, height: 40 } };
+    const low = rect(asNodeId('low'), PAGE_A, 50, { layer: 'paper' });
+    const { node, pose, undoSteps } = drag(100, {
+      ids: [asNodeId('low')], add: [group, low], from: { x: 55, y: 15 }, params: { reparentOnDrop: 'top' }, nodeAtPoint: () => G,
+    });
+    expect(node).toMatchObject({ parent: G, layer: 'ink' });
+    // World x 150: page b at 110, the group at 10 in it.
+    expect(pose).toMatchObject({ x: 30, y: 10 });
+    expect(undoSteps).toBe(1);
+  });
+
   it('lands a drop into a group on the other page just above the node under the pointer', () => {
     const group = { ...rect(G, PAGE_B, 10), kind: 'group' as const, pose: { x: 10, y: 0, width: 60, height: 40 } };
     const [low, high] = [asNodeId('low'), asNodeId('high')];

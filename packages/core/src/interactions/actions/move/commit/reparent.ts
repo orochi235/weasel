@@ -126,6 +126,32 @@ export function landedCascadeOps(
   ];
 }
 
+/** The ops that move root `id` into `to` at `toIndex`, onto `layer` first when it is on another. */
+export function landOps(
+  session: MoveSession,
+  id: NodeId,
+  to: NodeId | null,
+  toIndex: number | undefined,
+  layer: string,
+): Op[] {
+  const node = session.scene.get(id)!;
+  const label = session.lifecycle.label;
+  const ops: Op[] = [];
+  let from = node.parent as string | null;
+  if (node.layer !== layer) {
+    // The scene refuses a layer change on a node whose parent is on another layer.
+    if (from !== null) {
+      ops.push(createReparentOp({
+        id: id as string, fromParentId: from, toParentId: null, label, coalesceKey: `reparent:${id}:orphan`,
+      }));
+      from = null;
+    }
+    ops.push(createSetLayerOp({ id: id as string, from: node.layer, to: layer, label }));
+  }
+  ops.push(createReparentOp({ id: id as string, fromParentId: from, toParentId: to as string | null, toIndex, label }));
+  return ops;
+}
+
 /** Reparent and reposition each moved root as ops, keeping the world pose the
  *  drag showed, then the ops that bring uncarried descendants along. */
 export function reparentOps(
@@ -144,26 +170,9 @@ export function reparentOps(
   for (const id of roots) {
     if (!session.startPoses.has(id)) continue;
     const node = scene.get(id)!;
-    const crossing = node.layer !== target.newLayer;
     const to = landedLocalPose(session, id, target.newParent, target.newLayer, delta);
-
-    let from = node.parent as string | null;
-    if (crossing) {
-      // The scene refuses a layer change on a node whose parent is on another layer.
-      if (from !== null) {
-        ops.push(createReparentOp({
-          id: id as string, fromParentId: from, toParentId: null, label, coalesceKey: `reparent:${id}:orphan`,
-        }));
-        from = null;
-      }
-      ops.push(createSetLayerOp({ id: id as string, from: node.layer, to: target.newLayer, label }));
-    }
-
     const toIndex = landAbove(siblings, id, mode === 'above' ? target.hitSibling : null);
-
-    ops.push(createReparentOp({
-      id: id as string, fromParentId: from, toParentId: target.newParent as string | null, toIndex, label,
-    }));
+    ops.push(...landOps(session, id, target.newParent, toIndex, target.newLayer));
     ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label }));
   }
   const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
