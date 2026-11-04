@@ -9,11 +9,13 @@ import { sourcedStarsNamed } from './vite-prebundle-stars.ts';
 
 const SPECIFIER = /(?:from|import)\s*\(?\s*'(@weasel-js\/[\w./-]+)'/g;
 const SOURCE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
+/** What a bundle is built from: rolldown inlines an imported JSON file, so editing one changes the bundle too. */
+const BUNDLED_FILE = /\.(ts|tsx|js|jsx|mjs|json)$/;
 const STORY_FILE = /\.stories\.(ts|tsx)$/;
 
-function sourceFilter(stories: boolean): (file: string) => boolean {
+function sourceFilter(stories: boolean, kind = SOURCE_FILE): (file: string) => boolean {
   const skipped = stories ? /\.(test|spec)\./ : /\.(test|spec|stories)\./;
-  return (file) => SOURCE_FILE.test(file) && !skipped.test(file) && !file.includes('/node_modules/');
+  return (file) => kind.test(file) && !skipped.test(file) && !file.includes('/node_modules/');
 }
 
 /** The workspace specifiers one source file imports, stylesheets left out: the optimizer only takes JS. */
@@ -267,6 +269,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
   const off = process.env.WEASEL_DEV_SOURCE === '1';
   const { sourceDirs, storyTrees } = storyServing(ownDirs, options.storyTrees ?? []);
   const read = sourceFilter((options.stories ?? false) || storyTrees.length > 0);
+  const input = sourceFilter((options.stories ?? false) || storyTrees.length > 0, BUNDLED_FILE);
   const ws = readWorkspace(repoRoot);
   const source = sourcePackages(ws, sourceDirs);
   const served = [...sourceDirs, ...[...source].map((name) => ws.dirs.get(name)!)];
@@ -294,7 +297,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       sourced = sourcedFromBundled(servedFiles, bundled);
       fromSourceEntry = namesSourced(entries, sourced);
       listed = new Set([...specifiersOf([...servedFiles, ...sourced])].filter((s) => bundles(s) && !fromSourceEntry(s)));
-      const inBundles = filesUnder(bundled, (file) => read(file) && !isStory(file) && !sourced.has(file)).sort();
+      const inBundles = filesUnder(bundled, (file) => input(file) && !isStory(file) && !sourced.has(file)).sort();
       stamp = bundleStamp([...sourced].sort(), inBundles);
       const imported = [...sourced].filter((file) => !isStory(file)).length;
       if (imported) console.info(`prebundle: serving ${imported} module(s) of bundled packages from source, since source imports them by path`);
@@ -342,8 +345,9 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       };
       const fromSource = (file: string) => under(file, served) || isStory(file) || sourced.has(file);
       const onFile = (file: string) => {
-        if (!read(file)) return;
+        if (!input(file)) return;
         if (!fromSource(file)) return under(file, bundled) ? rebundle(relative(repoRoot, file)) : undefined;
+        if (!read(file)) return;
         let code: string;
         try { code = readFileSync(file, 'utf8'); } catch { return; }
         const fresh = specifiersIn(code).find((s) => bundles(s) && !listed.has(s) && !fromSourceEntry(s));
@@ -354,7 +358,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       };
       server.watcher.on('change', onFile);
       server.watcher.on('add', onFile);
-      server.watcher.on('unlink', (file) => read(file) && !fromSource(file) && under(file, bundled) && rebundle(relative(repoRoot, file)));
+      server.watcher.on('unlink', (file) => input(file) && !fromSource(file) && under(file, bundled) && rebundle(relative(repoRoot, file)));
     },
   };
 }

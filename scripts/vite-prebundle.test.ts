@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { UserConfig, ViteDevServer } from 'vite';
@@ -246,5 +246,16 @@ describe('prebundleWorkspace stamp', () => {
     expect(start(cacheDir).force).toBe(true);
     expect(existsSync(join(cacheDir, 'weasel-prebundle.stamp'))).toBe(true);
     expect(start(cacheDir).force).toBe(false);
+  });
+
+  it('re-bundles when a JSON file the bundles inline changes', () => {
+    const cacheDir = join(repo, 'node_modules/.vite-json');
+    file('stamp/packages/kit/src/table.json', '{"a":1}');
+    const before = start(cacheDir).stamp;
+    file('stamp/packages/kit/src/table.json', '{"a":2}');
+    utimesSync(join(repo, 'packages/kit/src/table.json'), new Date(), new Date(Date.now() + 5000));
+    const after = start(cacheDir);
+    expect(after.stamp).not.toBe(before);
+    expect(after.force).toBe(true);
   });
 });
