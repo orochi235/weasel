@@ -250,7 +250,8 @@ export function changedAttributes(changes: readonly SchemaChange[], path: string
 }
 
 function brief(v: unknown): string {
-  return v === undefined ? '(unset)' : printValue(v).replace(/\s*\n\s*/g, ' ');
+  // On one line, the comma ending an object's or an array's last row has nothing left to separate.
+  return v === undefined ? '(unset)' : printValue(v).replace(/,\s*\n\s*([}\]])/g, ' $1').replace(/\s*\n\s*/g, ' ');
 }
 
 /** A list of schema changes as text, one line each. */

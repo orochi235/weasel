@@ -126,6 +126,13 @@ describe('diffSchemas', () => {
       { op: 'attr', path: 'a/x', key: 'min', from: 0, to: 5 },
     ])).toBe(['+ a/n  (number)', '− a/o  (group)', '↕ a/e → a/mode', '~ a/x.min  0 → 5'].join('\n'));
   });
+
+  it('prints an object or an array value on one line with no trailing comma', () => {
+    expect(formatChanges([{ op: 'attr', path: 'a/x', key: 'enableIf', from: undefined, to: { path: 'a.b', is: true } }]))
+      .toBe("~ a/x.enableIf  (unset) → { path: 'a.b', is: true }");
+    expect(formatChanges([{ op: 'attr', path: 'a/x', key: 'options', from: [], to: [{ value: 'p', label: 'P', hint: { a: 1, b: [2, 3] } }] }]))
+      .toBe("~ a/x.options  [] → [ { value: 'p', label: 'P', hint: { a: 1, b: [2, 3] } } ]");
+  });
 });
 
 describe('a section root', () => {
