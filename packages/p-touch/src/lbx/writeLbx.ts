@@ -70,8 +70,8 @@ function collect(commands: readonly DrawCommand[], state: DrawState, out: Item[]
     const carried = carriedObjects(cmd);
     if (carried) {
       const placed = placeCarried(carried, state);
-      if (placed) for (const object of placed) out.push({ object });
-      else skipped.push({ kind: 'group', detail: 'lbxObjects under a rotation, skew or mirror' });
+      if (typeof placed === 'string') skipped.push({ kind: 'group', detail: placed });
+      else for (const object of placed) out.push({ object });
       continue;
     }
     if (cmd.kind === 'group' && plainGroup(cmd)) {

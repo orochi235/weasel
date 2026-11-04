@@ -132,6 +132,16 @@ describe('lbxObjects', () => {
     expect(config.objects).toEqual([]);
     expect(skipped).toEqual([{ kind: 'group', detail: 'lbxObjects under a rotation, skew or mirror' }]);
   });
+
+  it('drops carried objects at alpha 0 and skips them under partial alpha', async () => {
+    const gone = await lbxConfig(page([{ kind: 'group', alpha: 0, children: [lbxObjects([barcode])] }]));
+    expect(gone.config.objects).toEqual([]);
+    expect(gone.skipped).toEqual([]);
+
+    const faded = await lbxConfig(page([{ kind: 'group', alpha: 0.5, children: [lbxObjects([barcode])] }]));
+    expect(faded.config.objects).toEqual([]);
+    expect(faded.skipped).toEqual([{ kind: 'group', detail: 'lbxObjects under partial opacity' }]);
+  });
 });
 
 describe('writeLbx', () => {
