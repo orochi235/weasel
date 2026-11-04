@@ -8,20 +8,20 @@
  *
  *   DISK    the file on disk contains <needle>
  *   SERVER  the dev server's transform output for that module contains it
- *   BUNDLE  no pre-bundled copy in node_modules/.vite/deps shadows the module
+ *   BUNDLE  no pre-bundled copy in any Vite cache dir (node_modules/.vite, .vite-draw, …) holds an old version of the module
  *
  * DISK yes + SERVER no  → the server's transform cache is stale. Restart it,
  *                         or `rm -rf node_modules/.vite`.
  * SERVER yes + page old → the server is fine; the page is. Hard-reload, and
  *                         suspect a module-level singleton that survived HMR
  *                         (a renderer, a registry, a cache built at import).
- * BUNDLE hit            → a pre-bundled copy is being imported instead of your
- *                         source. Alias or `optimizeDeps.exclude` the package.
+ * BUNDLE stale          → a pre-bundled copy predates the edit, and the page
+ *                         imports it. Restart the server that owns that cache dir.
  *
  * Exit code is 1 when any layer disagrees, so it drops into a script.
  */
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 import ports from './dev-ports.json' with { type: 'json' };
 
 const [modulePath, needle, origin = `http://localhost:${ports.site}`] = process.argv.slice(2);
@@ -79,23 +79,30 @@ if (!reachable) {
 results.push(['SERVER', reachable ? served : null, serverNote]);
 
 // ─── BUNDLE ──────────────────────────────────────────────────────────────────
-// A pre-bundled dep shadowing your source is the failure that survives every
-// restart, because the source is never consulted at all.
-const depsDir = resolve(process.cwd(), 'node_modules/.vite/deps');
-let shadowed = false;
-let bundleNote = 'no node_modules/.vite/deps (nothing pre-bundled)';
-if (existsSync(depsDir)) {
-  const hits = readdirSync(depsDir)
-    .filter((f) => f.endsWith('.js'))
-    .filter((f) => {
-      try { return readFileSync(resolve(depsDir, f), 'utf8').includes(needle); }
-      catch { return false; }
-    });
-  shadowed = hits.length > 0;
-  bundleNote = shadowed
-    ? `pre-bundled copy contains the needle: ${hits.join(', ')}`
-    : `${readdirSync(depsDir).length} pre-bundled files, none contain it`;
+// Each dev server pre-bundles the workspace into a cache dir of its own (`.vite`, `.vite-draw`, …), and a bundle
+// marks every module it holds with a `// <repo path>` comment. A bundle holding the module without the needle is a
+// stale copy, and the page runs it whatever the server serves at `/@fs`.
+const nodeModules = resolve(process.cwd(), 'node_modules');
+const cacheDirs = existsSync(nodeModules)
+  ? readdirSync(nodeModules).filter((d) => /^\.vite(-[\w-]+)?$/.test(d) && existsSync(resolve(nodeModules, d, 'deps')))
+  : [];
+const marker = `// ${relative(process.cwd(), abs).split(sep).join('/')}`;
+const holding = [];
+for (const dir of cacheDirs) {
+  const deps = resolve(nodeModules, dir, 'deps');
+  for (const f of readdirSync(deps).filter((n) => n.endsWith('.js'))) {
+    let body;
+    try { body = readFileSync(resolve(deps, f), 'utf8'); } catch { continue; }
+    if (body.includes(marker)) holding.push({ file: `${dir}/deps/${f}`, fresh: body.includes(needle) });
+  }
 }
+const staleCopies = holding.filter((h) => !h.fresh);
+const shadowed = staleCopies.length > 0;
+const bundleNote = holding.length === 0
+  ? `no pre-bundled copy in ${cacheDirs.length ? cacheDirs.map((d) => `node_modules/${d}/deps`).join(', ') : 'node_modules/.vite*/deps'}`
+  : shadowed
+    ? `pre-bundled copy without the needle: ${staleCopies.map((h) => h.file).join(', ')}`
+    : `pre-bundled copies hold the edit: ${holding.map((h) => h.file).join(', ')}`;
 results.push(['BUNDLE', !shadowed, bundleNote]);
 
 for (const [layer, ok, note] of results) {
@@ -111,8 +118,8 @@ if (!reachable) {
   console.log('\n→ Disk has it, server does not. The transform cache is stale:');
   console.log('    rm -rf node_modules/.vite && restart the dev server');
 } else if (onDisk && served && shadowed) {
-  console.log('\n→ Source is fresh but a pre-bundled copy shadows it.');
-  console.log('    Alias the package to source, or add it to optimizeDeps.exclude');
+  console.log('\n→ Source is fresh but a pre-bundled copy predates it, and the page runs that copy.');
+  console.log('    Restart the dev server that owns the cache dir named above.');
 } else if (onDisk && served) {
   console.log('\n→ Server is serving your edit. If the page still misbehaves it is');
   console.log('    client-side: hard-reload, and look for a module-level singleton');
