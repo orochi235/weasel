@@ -139,17 +139,17 @@ const under = (file: string, dirs: readonly string[]) => dirs.some((dir) => file
  */
 const PREBUNDLE_CODE = ['vite-prebundle.ts', 'vite-prebundle-reach.ts', 'vite-prebundle-stars.ts'].map((f) => join(import.meta.dirname, f));
 
-function bundlesStale(cacheDir: string, inputs: readonly string[], files: readonly string[]): boolean {
+function bundlesStale(cacheDir: string, inputs: readonly string[], files: readonly string[]): { stale: boolean; stamp: string } {
   const record = join(cacheDir, 'weasel-prebundle.stamp');
   const hash = createHash('sha1').update(inputs.join('\n'));
   // The bundles are this code's output too, so a change to it re-bundles.
   for (const own of PREBUNDLE_CODE) hash.update(readFileSync(own));
   for (const file of files) hash.update(`${file}:${statSync(file).mtimeMs}\n`);
   const now = hash.digest('hex');
-  if (existsSync(record) && readFileSync(record, 'utf8') === now) return false;
+  if (existsSync(record) && readFileSync(record, 'utf8') === now) return { stale: false, stamp: now };
   mkdirSync(cacheDir, { recursive: true });
   writeFileSync(record, now);
-  return true;
+  return { stale: true, stamp: now };
 }
 
 /** Leaves `sourced` modules out of the bundles: an import of one stays an import, of the dev server's copy. */
@@ -290,7 +290,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       listed = new Set([...specifiersOf([...servedFiles, ...sourced])].filter((s) => bundles(s) && !fromSourceEntry(s)));
       const inBundles = filesUnder(bundled, (file) => read(file) && !isStory(file) && !sourced.has(file)).sort();
       const cacheDir = resolve(user.root ?? process.cwd(), user.cacheDir ?? 'node_modules/.vite');
-      const stale = bundlesStale(cacheDir, [...sourced].sort(), inBundles);
+      const { stale, stamp } = bundlesStale(cacheDir, [...sourced].sort(), inBundles);
       const imported = [...sourced].filter((file) => !isStory(file)).length;
       if (imported) console.info(`prebundle: serving ${imported} module(s) of bundled packages from source, since source imports them by path`);
       return {
@@ -301,7 +301,13 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
           include: [...listed].sort(),
           // Without the extensions the optimizer leaves every .tsx file external, served from source.
           extensions: ['.tsx', '.jsx'],
-          rolldownOptions: { plugins: [viteQueriesExternal(), sourcedExternal(() => sourced, entries), sourcedStarsNamed(() => sourced)] },
+          rolldownOptions: {
+            plugins: [viteQueriesExternal(), sourcedExternal(() => sourced, entries), sourcedStarsNamed(() => sourced)],
+            // vite names a bundle's URL (`?v=`) from its config and lockfile, never the bundle's contents, and serves it
+            // `immutable`: a re-bundle under the same name runs the old copy in the browser until a hard reload. The
+            // stamp is the contents, and a banner is part of the config vite hashes.
+            output: { banner: `/* weasel-prebundle ${stamp.slice(0, 12)} */` },
+          },
         },
       };
     },
