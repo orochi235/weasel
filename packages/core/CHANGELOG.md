@@ -1,5 +1,95 @@
 # Changelog
 
+## 1.16.2
+
+### Patch Changes
+
+- 65d2e7c: Depends on `@msb235/blits` 0.18.0, up from 0.16.1. Neither release breaks anything the kit calls. Among their fixes: a seek back now finds a voice that an earlier forward seek played to its end, so scrubbing back over a finished effect shows it again; and a voice's `seek` throws a `RangeError` for a time that is not a finite number, where a `NaN` time used to leave the voice showing nothing.
+- db1eb4e: Add `@weasel-js/core/engine`, the half of core a host of any dimension uses: the scene, selection, snapping, aim,
+  the dep contract, and the actions and tools such a host binds (`moveAction`, `insertAction`, `areaSelectAction`,
+  `useSelectToolWith`, `useActionSet`, `useStandardDeps`, and the rest). It loads none of the 2D stack (renderer,
+  text, font, stroke, text-dom, svg). kernel3d now imports from it, and from `@weasel-js/routing`.
+  
+  New in core's main entry too:
+  
+  - `useSelectToolWith`, the select tool over a `pickEvery` the host supplies. `useSelectTool` is unchanged and
+    supplies the kit's adapter walk as before.
+  - `useActionSet` and `useStandardDeps`, the two halves of `useStandardActions`, for a host that names its own
+    actions and should not load the kit's standard list.
+  - The `drawnBoxes` dep: how move, resize, rotate, flip, align, and distribute measure the box a node is shown with.
+    `<SceneCanvas>` sources the stroke-inclusive measure it always used (`inkBoxes`). **A host that builds its deps
+    by hand now gets each node's pose box unless it sources `drawnBoxes` itself.**
+  - `InsertExtras` no longer lists a typed `sticky` variant; sticky extras still match its open `{ kind: string }` case.
+- 944faa2: New package `@weasel-js/dither`: `ditherPixels` quantizes exported pixels to 1-bit ink by threshold, Bayer, Floyd–Steinberg or Atkinson, keeping protected regions at plain threshold, and `dither` is the same threshold and Bayer as a live renderer effect, on the screen grid or an output target's dot grid (`gridOnScreen`). The renderer gives every effect pass `u_windowOrigin`, where its buffer sits in the drawing buffer; a layer group's effect thunk now receives `LayerDims`, with `dpr`; geom exports `OutputGrid`.
+- 6c0b311: Add `ENGINE_STANDARD_ACTIONS`, the kit-standard actions a host of any dimension registers with `useActionSet`:
+  undo and redo, area and lasso select, select all and clear, move, clone, transform again, insert and its
+  companions, nudge, duplicate, delete, group and ungroup, escape and cancel. It is in `@weasel-js/core/engine`
+  with `WeaselProvider`, `IconRegistryProvider`, `CANVAS_CONTEXT_ATTRIBUTES` and `watchDevicePixelRatio`.
+  
+  `deleteAction` no longer loads `@weasel-js/text`: `hiddenSourcesTakenWith` and `sourcesHiddenBy` moved to a module
+  of their own, still exported from the main entry as before.
+  
+  labkit's 3D lab now builds on `@weasel-js/core/engine`, and its tiled surface and config read nothing from core's
+  main entry.
+- f6f69c8: A move that drops a group whose box is its children (an envelope) now lands those children where the drag
+  showed them. Dropped into another group or onto another page, they used to keep their old coordinates in
+  the new container's frame, and land off by the distance between the two. Kept on its page with the
+  pasteboard off, an envelope's selected child now moves with the envelope's shift instead of by the drag
+  alone.
+  
+  A reparent-on-drop of a group selected with one of its own children keeps that child in the group, where it
+  used to be pulled out into the drop target beside it.
+- 8f2e1e1: Export, as types only, the declarations the public `.d.ts` files already named but no entry exported: core's
+  `GestureLifecycleOptions`, renderer's `BatchStage`, and `ScopeNode`, `DepNode`, `ToolNode` and `LastOperationKeeper`
+  from `@weasel-js/routing/react`. A consumer whose own declaration emit has to name one of them no longer gets TS2742.
+- 12d3c17: Id frames, for picking and coverage masks. `WeaselRenderer.renderIds` draws a command list again into a buffer of its own, holding a second color attachment beside the color, and reads back which `GroupDrawCommand.pickId` each device pixel carries, culled to a `rect` when one is given. Every program writes the id output, a consumer's custom shaders and effects included, with no change to their source: the renderer adds it at compile time. A pixel takes the id of the last fragment to paint it at `minAlpha` or more, so a custom shader claims what it paints rather than its bounds, and a group's effects claim what they spread into. `idMask` turns an id buffer into a one-byte-per-pixel mask of chosen ids, the shape `ditherPixels`'s `protect` and `protectTexture` take.
+  
+  In core, every scene node's paint carries a `pickId` from `scenePickIds(scene)`, which names the node back; a canvas handle's `pickAt(x, y)` reads the id under a point of its last frame; and `RasterSession.renderIds` returns a headless render's ids. The dithering demo's "By mask" protects every dot a mark paints, plus its quiet zone, instead of rects alone.
+- 6e3b081: Every package's `engines` now requires Node 24 or later, up from 22. Node 22 is no longer tested anywhere, so it is no longer promised.
+- 847875c: Keep a scene's marks on an output target's dot grid. The document holds the grid as `kit:outputGrid` (`OUTPUT_GRID_KEY`), so setting it is an undoable edit. A scene's new `quantize` option takes a `QuantizeRule`: its `stored` half answers the pose or data the document holds on the grid, and runs on every committed write, on every node when the grid changes (in the same undo entry), on a document as it is built or loaded, and on resize, move and insert previews; its `drawn` half answers where the scene walk draws a node, while picking keeps the stored pose. core adds `quantizeSize` and `outputGridOf`; geom adds `snapToPitch` (whole dots, never below one) and `alignToGrid`. The `insert` dep gains `peek`, the node `build` would insert with no id minted and the palette not advanced, which core's insert dep and diagram's stencil insert implement; an `insertPreview` overlay's new `lands` fits the preview to where the quantize rule lands the shape.
+- 12caf33: Add `@weasel-js/p-touch`, Brother P-touch labels from a scene. `renderLabel` draws a label at one pixel per
+  printer dot over the band the printhead reaches, and `printLabel` dithers it through `@weasel-js/dither` and
+  sends it over WebUSB or Web Serial through obwat, split into pages at cut marks. `labelGrid` is the printer's
+  dot grid in scene units, for `protectRects`. `sceneToLbx` and `writeLbx` write an `.lbx` file with rects, open
+  polylines and plain text boxes as objects P-touch Editor can edit, and the rest drawn and placed as images.
+  A `drawOne` can return `lbxObjects([...])` to write a node as an object its paint cannot say, such as a
+  barcode.
+  
+  Core gains `commandRasterizer`, the hook that draws commands a file format cannot express through a
+  `RasterSession`. It was `diagram-formats`' private `pageRasterizer`, which `exportPagesPdf` now uses from core.
+- f285e56: `svgNodesFromKit` writes a node with a `clipFromPose`, as every page has, as a group clipped to what that returns,
+  ahead of `clip: 'outline'`, so an SVG export of a tree that walks its pages cuts what overhangs a page at its edge as
+  the canvas does. `placeOnPages` and `addOnPages` take a `pageOf` option naming the page a root was on where it was
+  read from: that root goes on that page where it is, unmoved, rather than on the page holding most of it.
+- 6ecee1a: `renderSceneToPixels` and `RasterSession.render` take `layers`, naming the scene layers to draw the way a `LayerGroup` names its members: `'scene:<layerId>'` for one, `'scene'` for all. A name that matches none of the scene's layers throws.
+- Updated dependencies [65d2e7c]
+- Updated dependencies [944faa2]
+- Updated dependencies [8f2e1e1]
+- Updated dependencies [12d3c17]
+- Updated dependencies [0233f80]
+- Updated dependencies [847875c]
+  - @weasel-js/animator@1.16.2
+  - @weasel-js/renderer@1.16.2
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/routing@1.16.2
+  - @weasel-js/stroke@1.16.2
+  - @weasel-js/text@1.16.2
+  - @weasel-js/ui-logic@1.16.2
+  - @weasel-js/text-dom@1.16.2
+  - @weasel-js/gestures@1.16.2
+  - @weasel-js/cursor@1.16.2
+  - @weasel-js/font@1.16.2
+  - @weasel-js/history@1.16.2
+  - @weasel-js/icons@1.16.2
+  - @weasel-js/modes@1.16.2
+  - @weasel-js/paint@1.16.2
+  - @weasel-js/prefs@1.16.2
+  - @weasel-js/quantity@1.16.2
+  - @weasel-js/react@1.16.2
+  - @weasel-js/registry@1.16.2
+  - @weasel-js/select@1.16.2
+  - @weasel-js/simulation@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

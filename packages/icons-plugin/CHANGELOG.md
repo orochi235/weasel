@@ -1,5 +1,12 @@
 # @weasel-js/icons-plugin
 
+## 1.16.2
+
+### Patch Changes
+
+- f44d35d: Depends on `oxc-parser` 0.157.0, up from 0.156.0. The parser now rejects some TypeScript-only syntax in plain JavaScript files, such as an optional class member or a TypeScript default export; the plugin parses `.ts` and `.tsx` files as TypeScript, as before.
+- @weasel-js/icons@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

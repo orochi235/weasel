@@ -1,5 +1,34 @@
 # @weasel-js/diagram
 
+## 1.16.2
+
+### Patch Changes
+
+- 847875c: Keep a scene's marks on an output target's dot grid. The document holds the grid as `kit:outputGrid` (`OUTPUT_GRID_KEY`), so setting it is an undoable edit. A scene's new `quantize` option takes a `QuantizeRule`: its `stored` half answers the pose or data the document holds on the grid, and runs on every committed write, on every node when the grid changes (in the same undo entry), on a document as it is built or loaded, and on resize, move and insert previews; its `drawn` half answers where the scene walk draws a node, while picking keeps the stored pose. core adds `quantizeSize` and `outputGridOf`; geom adds `snapToPitch` (whole dots, never below one) and `alignToGrid`. The `insert` dep gains `peek`, the node `build` would insert with no id minted and the palette not advanced, which core's insert dep and diagram's stencil insert implement; an `insertPreview` overlay's new `lands` fits the preview to where the quantize rule lands the shape.
+- Updated dependencies [65d2e7c]
+- Updated dependencies [db1eb4e]
+- Updated dependencies [944faa2]
+- Updated dependencies [6c0b311]
+- Updated dependencies [f6f69c8]
+- Updated dependencies [8f2e1e1]
+- Updated dependencies [12d3c17]
+- Updated dependencies [6e3b081]
+- Updated dependencies [847875c]
+- Updated dependencies [12caf33]
+- Updated dependencies [f285e56]
+- Updated dependencies [6ecee1a]
+  - @weasel-js/core@1.16.2
+  - @weasel-js/animator@1.16.2
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/ui-logic@1.16.2
+  - @weasel-js/audio@1.16.2
+  - @weasel-js/clock@1.16.2
+  - @weasel-js/font@1.16.2
+  - @weasel-js/icons@1.16.2
+  - @weasel-js/react@1.16.2
+  - @weasel-js/registry@1.16.2
+  - @weasel-js/simulation@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

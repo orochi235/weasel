@@ -1,5 +1,32 @@
 # @weasel-js/routing
 
+## 1.16.2
+
+### Patch Changes
+
+- 8f2e1e1: Export, as types only, the declarations the public `.d.ts` files already named but no entry exported: core's
+  `GestureLifecycleOptions`, renderer's `BatchStage`, and `ScopeNode`, `DepNode`, `ToolNode` and `LastOperationKeeper`
+  from `@weasel-js/routing/react`. A consumer whose own declaration emit has to name one of them no longer gets TS2742.
+- 0233f80: Keys go where a press or a scroll landed, not to whichever dispatcher heard it last. Of nested surfaces, the
+  innermost one the event landed in takes them, though the wheel listens in the capture phase; of two dispatchers on
+  one surface, the first attached does. In labkit's 3D lab, whose trial camera listens on the instrument's own pane,
+  undo, delete and select all work again.
+- 847875c: Keep a scene's marks on an output target's dot grid. The document holds the grid as `kit:outputGrid` (`OUTPUT_GRID_KEY`), so setting it is an undoable edit. A scene's new `quantize` option takes a `QuantizeRule`: its `stored` half answers the pose or data the document holds on the grid, and runs on every committed write, on every node when the grid changes (in the same undo entry), on a document as it is built or loaded, and on resize, move and insert previews; its `drawn` half answers where the scene walk draws a node, while picking keeps the stored pose. core adds `quantizeSize` and `outputGridOf`; geom adds `snapToPitch` (whole dots, never below one) and `alignToGrid`. The `insert` dep gains `peek`, the node `build` would insert with no id minted and the palette not advanced, which core's insert dep and diagram's stencil insert implement; an `insertPreview` overlay's new `lands` fits the preview to where the quantize rule lands the shape.
+- Updated dependencies [944faa2]
+- Updated dependencies [847875c]
+  - @weasel-js/geom@1.16.2
+  - @weasel-js/menu@1.16.2
+  - @weasel-js/gestures@1.16.2
+  - @weasel-js/cursor@1.16.2
+  - @weasel-js/history@1.16.2
+  - @weasel-js/icons@1.16.2
+  - @weasel-js/modes@1.16.2
+  - @weasel-js/prefs@1.16.2
+  - @weasel-js/quantity@1.16.2
+  - @weasel-js/react@1.16.2
+  - @weasel-js/registry@1.16.2
+  - @weasel-js/select@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes
