@@ -72,6 +72,21 @@ describe('openDrawPrefs', () => {
     expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.surfaces')).toEqual({ layers: { collapsed: true } });
   });
 
+  it('carries the path editing aids into their group and drops the left sidebar width', async () => {
+    const backing = new Map<string, unknown>([
+      [`${PREFS_PREFIX}view.pathDirection`, true],
+      [`${PREFS_PREFIX}view.pathCorners`, false],
+      [`${PREFS_PREFIX}ui.leftSidebarWidth`, 80],
+      [`${PREFS_PREFIX}${VERSION_RECORD}`, 2],
+    ]);
+    const store = openDrawPrefs(createMemoryAdapter(backing));
+    expect(store.get('view.pathEditing.pathDirection')).toBe(true);
+    expect(store.get('view.pathEditing.pathCorners')).toBe(false);
+    expect(store.get('view.pathEditing.pathComb')).toBe(false);
+    await store.flush();
+    expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Balance|Corners)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
+  });
+
   it('keeps a surface map already stored over an old panel map', () => {
     const backing = new Map<string, unknown>([
       [`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true } }],
@@ -92,7 +107,7 @@ describe('openDrawPrefs', () => {
     const store = openDrawPrefs(createMemoryAdapter(backing));
     store.set('tools.pen.autoCommitOnClose', false);
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 2, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 3, value: false });
   });
 
   it('holds any tool id as the last tool', () => {
@@ -137,7 +152,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 2, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 3, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -172,7 +187,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 2, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 3, value: 40 });
     await store.close();
     warn.mockRestore();
   });

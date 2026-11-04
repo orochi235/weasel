@@ -9,10 +9,10 @@ import { drawPrefs, usePref } from './prefs';
 
 /** Each path-edit overlay's chrome id, and the View preference that shows it. */
 const OVERLAY_PREFS = {
-  [PATH_DIRECTION_CHROME_ID]: 'view.pathDirection',
-  [PATH_COMB_CHROME_ID]: 'view.pathComb',
-  [PATH_BALANCE_CHROME_ID]: 'view.pathBalance',
-  [PATH_CORNERS_CHROME_ID]: 'view.pathCorners',
+  [PATH_DIRECTION_CHROME_ID]: 'view.pathEditing.pathDirection',
+  [PATH_COMB_CHROME_ID]: 'view.pathEditing.pathComb',
+  [PATH_BALANCE_CHROME_ID]: 'view.pathEditing.pathBalance',
+  [PATH_CORNERS_CHROME_ID]: 'view.pathEditing.pathCorners',
 } as const;
 
 type OverlayId = keyof typeof OVERLAY_PREFS;
@@ -36,10 +36,10 @@ function prefsChromeRules(below: () => ChromeRulesDep | undefined): ChromeRulesD
  * dep the `pathEdit.show.*` toggles write, so a toggle sets the preference.
  */
 export function usePathOverlays(): { chromeVisibility: VisibilityRules; contribution: Contribution } {
-  const [direction] = usePref('view.pathDirection');
-  const [comb] = usePref('view.pathComb');
-  const [balance] = usePref('view.pathBalance');
-  const [corners] = usePref('view.pathCorners');
+  const [direction] = usePref('view.pathEditing.pathDirection');
+  const [comb] = usePref('view.pathEditing.pathComb');
+  const [balance] = usePref('view.pathEditing.pathBalance');
+  const [corners] = usePref('view.pathEditing.pathCorners');
   const chromeVisibility = useMemo<VisibilityRules>(() => ({
     [PATH_DIRECTION_CHROME_ID]: direction ? always : never,
     [PATH_COMB_CHROME_ID]: comb ? always : never,

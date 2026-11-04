@@ -18,7 +18,7 @@ import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RegistryEnumFilter } from './registry/types';
-import { dropPathToolsChrome, panelsToSurfaces } from './surfaces/prefsMigration';
+import { dropPathToolsChrome, panelsToSurfaces, pathAidsToGroup } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -96,14 +96,6 @@ export const PREFS = {
           min: 200,
           max: 600,
         },
-        leftSidebarWidth: {
-          kind: 'number',
-          name: 'Left sidebar width',
-          description: 'Reserved — the tool palette is fixed-width today.',
-          default: 56,
-          min: 40,
-          max: 200,
-        },
         surfaces: SURFACES_PREF,
         toolbars: TOOLBARS_PREF,
         showAnnotations: {
@@ -116,7 +108,7 @@ export const PREFS = {
     },
     view: {
       name: 'View',
-      description: 'Canvas overlays and zoom.',
+      description: 'The canvas: grid, snapping, symmetry, and path editing aids.',
       children: {
         gridVisible: {
           kind: 'boolean',
@@ -146,30 +138,6 @@ export const PREFS = {
           description: 'Pan no further than the drawing and its pages, plus a margin. Dragging something to the edge of the canvas scrolls the view to make room for it.',
           default: true,
         },
-        pathDirection: {
-          kind: 'boolean',
-          name: 'Show path direction',
-          description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
-          default: false,
-        },
-        pathComb: {
-          kind: 'boolean',
-          name: 'Show curvature comb',
-          description: 'While editing a path, draw its curvature comb: a tooth on each curve as long as the curve is tight there.',
-          default: false,
-        },
-        pathBalance: {
-          kind: 'boolean',
-          name: 'Show handle balance',
-          description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
-          default: false,
-        },
-        pathCorners: {
-          kind: 'boolean',
-          name: 'Show corner widgets',
-          description: 'While editing a path, draw a widget inside each corner that rounds it as you drag.',
-          default: true,
-        },
         symmetry: {
           kind: 'boolean',
           name: 'Symmetry',
@@ -186,12 +154,43 @@ export const PREFS = {
             { value: 'horizontal', label: 'Horizontal (top and bottom)' },
             { value: 'both', label: 'Both' },
           ],
+          enableIf: { path: 'view.symmetry', is: true },
         },
         spacingHints: {
           kind: 'boolean',
           name: 'Spacing hints',
           description: 'While moving, snap to gaps that match the spacing between other shapes and mark them. Hold Alt (Option on a Mac) over a shape to measure its distance from the selection.',
           default: true,
+        },
+        pathEditing: {
+          name: 'Path editing',
+          description: 'What path edit draws over the path it is editing.',
+          children: {
+            pathDirection: {
+              kind: 'boolean',
+              name: 'Show path direction',
+              description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
+              default: false,
+            },
+            pathComb: {
+              kind: 'boolean',
+              name: 'Show curvature comb',
+              description: 'While editing a path, draw its curvature comb: a tooth on each curve as long as the curve is tight there.',
+              default: false,
+            },
+            pathBalance: {
+              kind: 'boolean',
+              name: 'Show handle balance',
+              description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
+              default: false,
+            },
+            pathCorners: {
+              kind: 'boolean',
+              name: 'Show corner widgets',
+              description: 'While editing a path, draw a widget inside each corner that rounds it as you drag.',
+              default: true,
+            },
+          },
         },
       },
     },
@@ -296,7 +295,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {
