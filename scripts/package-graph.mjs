@@ -47,7 +47,8 @@ function classify(packages) {
   const edges = [];
   for (const [a, { deps, dir }] of packages) for (const c of deps) {
     if (deps.some((b) => b !== c && closure(b).has(c))) continue;
-    const viaEngine = c === 'core' && [...coreSpecifiers(dir)].every((s) => s === '@weasel-js/core/engine');
+    const specs = c === 'core' ? [...coreSpecifiers(dir)] : [];
+    const viaEngine = specs.length > 0 && specs.every((s) => s === '@weasel-js/core/engine');
     edges.push([a, viaEngine ? ENGINE : c]);
   }
   return { category, edges };
