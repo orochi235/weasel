@@ -80,20 +80,22 @@ results.push(['SERVER', reachable ? served : null, serverNote]);
 
 // ─── BUNDLE ──────────────────────────────────────────────────────────────────
 // Each dev server pre-bundles the workspace into a cache dir of its own (`.vite`, `.vite-draw`, …), and a bundle
-// marks every module it holds with a `// <repo path>` comment. A bundle holding the module without the needle is a
+// marks every module it holds with a `// <path>` comment. A bundle holding the module without the needle is a
 // stale copy, and the page runs it whatever the server serves at `/@fs`.
 const nodeModules = resolve(process.cwd(), 'node_modules');
 const cacheDirs = existsSync(nodeModules)
   ? readdirSync(nodeModules).filter((d) => /^\.vite(-[\w-]+)?$/.test(d) && existsSync(resolve(nodeModules, d, 'deps')))
   : [];
-const marker = `// ${relative(process.cwd(), abs).split(sep).join('/')}`;
+// The path in a marker is relative to the server's root, so `../` climbs out of an app's directory first.
+const escaped = relative(process.cwd(), abs).split(sep).join('/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const marker = new RegExp(`^// (?:\\.\\./)*${escaped}$`, 'm');
 const holding = [];
 for (const dir of cacheDirs) {
   const deps = resolve(nodeModules, dir, 'deps');
   for (const f of readdirSync(deps).filter((n) => n.endsWith('.js'))) {
     let body;
     try { body = readFileSync(resolve(deps, f), 'utf8'); } catch { continue; }
-    if (body.includes(marker)) holding.push({ file: `${dir}/deps/${f}`, fresh: body.includes(needle) });
+    if (marker.test(body)) holding.push({ file: `${dir}/deps/${f}`, fresh: body.includes(needle) });
   }
 }
 const staleCopies = holding.filter((h) => !h.fresh);
