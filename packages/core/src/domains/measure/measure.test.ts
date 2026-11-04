@@ -15,6 +15,9 @@ import { measureEndSource, type MeasureHit } from './measureHit';
 import type { SnapCollect } from 'domains/snap/types';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
+import { buildDepsFromRequires } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
+import { inkBoxes } from 'canvas/inkBoxes';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Pt = { x: number; y: number };
@@ -229,6 +232,22 @@ describe('transform by the measurement', () => {
     expect(lastTransform(rig.scene)).toMatchObject({ kind: 'rotate', angle: -Math.PI / 4 });
     rig.scene.undo();
     expect(rig.pose(rig.box).rotation ?? 0).toBeCloseTo(0, 12);
+  });
+
+  it('turns a selection about the center of the boxes it is drawn with, through its own `requires`', () => {
+    const rig = setup();
+    const stroke = { paint: { kind: 'solid', color: '#000' }, width: 20 };
+    const a = rig.scene.add({ kind: 'mark', layer: 'main', data: { shape: 'rect', stroke }, pose: { x: 0, y: 0, width: 50, height: 50, rotation: 0 } }) as string;
+    const b = rig.scene.add({ kind: 'mark', layer: 'main', data: { shape: 'rect' }, pose: { x: 100, y: 0, width: 50, height: 50, rotation: 0 } }) as string;
+    rig.selection.set([a, b]);
+    rig.measure({ x: 0, y: 0 }, { x: 0, y: -10 });
+    const bag: Record<string, unknown> = { ...rig.deps, drawnBoxes: inkBoxes };
+    const action = measureCommands(rig.ms).find((x) => x.id === MEASURE_ACTION_IDS.rotateBy)!;
+    const deps = buildDepsFromRequires(action, { get: (name: string) => bag[name] } as unknown as DepRegistry);
+    (action.invoker as ImmediateInvoker).run(deps, undefined);
+    // The ink spans x -10..150, so a quarter turn carries b's center onto x 70; the pose boxes' would be 75.
+    const pb = rig.pose(b);
+    expect(pb.x + pb.width / 2).toBeCloseTo(70, 9);
   });
 
   it('says why it cannot run: nothing measured, or nothing selected', () => {

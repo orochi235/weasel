@@ -66,7 +66,7 @@ function rotateBy(ms: Measurements): Action {
     label: ROTATE_LABEL,
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'transformFollowers'],
+    requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
     enabled: transformable(ms),
     invoker: {
       timing: 'immediate',
