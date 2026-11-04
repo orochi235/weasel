@@ -112,6 +112,11 @@ the publish; run either by hand to answer "did the last release land?".
 Within an hour of a publish a missing version may only be staged — npm has hidden
 a fresh upload for 55 minutes, and republishing it fails with E409 — so check with
 `npm run check:published -- --wait` before re-dispatching anything.
+`@weasel-js/hud` is held longest: it became visible last in 1.14.0, 1.16.0 and
+1.16.1 (17, 19 and 57 minutes after the first package), and in 1.16.1 it uploaded
+at 16:23 and listed at 17:15. It is the only package whose JavaScript inlines a
+base64 PNG (its default font atlas, ~196 KB of `createLoupe-*.js`); that npm's
+scan is slower for it is a guess nobody has tested.
 
 ## Notes
 
