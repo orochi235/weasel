@@ -139,17 +139,21 @@ const under = (file: string, dirs: readonly string[]) => dirs.some((dir) => file
  */
 const PREBUNDLE_CODE = ['vite-prebundle.ts', 'vite-prebundle-reach.ts', 'vite-prebundle-stars.ts'].map((f) => join(import.meta.dirname, f));
 
-function bundlesStale(cacheDir: string, inputs: readonly string[], files: readonly string[]): { stale: boolean; stamp: string } {
-  const record = join(cacheDir, 'weasel-prebundle.stamp');
+function bundleStamp(inputs: readonly string[], files: readonly string[]): string {
   const hash = createHash('sha1').update(inputs.join('\n'));
   // The bundles are this code's output too, so a change to it re-bundles.
   for (const own of PREBUNDLE_CODE) hash.update(readFileSync(own));
   for (const file of files) hash.update(`${file}:${statSync(file).mtimeMs}\n`);
-  const now = hash.digest('hex');
-  if (existsSync(record) && readFileSync(record, 'utf8') === now) return { stale: false, stamp: now };
+  return hash.digest('hex');
+}
+
+/** Whether `stamp` differs from the one recorded in `cacheDir`, recording it. */
+function recordStamp(cacheDir: string, stamp: string): boolean {
+  const record = join(cacheDir, 'weasel-prebundle.stamp');
+  if (existsSync(record) && readFileSync(record, 'utf8') === stamp) return false;
   mkdirSync(cacheDir, { recursive: true });
-  writeFileSync(record, now);
-  return { stale: true, stamp: now };
+  writeFileSync(record, stamp);
+  return true;
 }
 
 /** Leaves `sourced` modules out of the bundles: an import of one stays an import, of the dev server's copy. */
@@ -204,7 +208,8 @@ export async function restartLeavingNothing(server: ViteDevServer, force = true)
  */
 function rebundledApart(config: ResolvedConfig | undefined): Promise<boolean> {
   if (!config?.configFile) return Promise.resolve(false);
-  const child = spawn(process.execPath, [APART, config.configFile, config.mode], { cwd: config.root, stdio: ['ignore', 'inherit', 'inherit'] });
+  // The server's cwd, since vite resolves a relative `root` in the config file against it (`root: 'apps/site'`).
+  const child = spawn(process.execPath, [APART, config.configFile, config.mode], { cwd: process.cwd(), stdio: ['ignore', 'inherit', 'inherit'] });
   return new Promise((done) => {
     child.once('error', () => done(false));
     child.once('exit', (code) => done(code === 0));
@@ -272,10 +277,11 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
   let listed = new Set<string>();
   let sourced = new Set<string>();
   let fromSourceEntry = (_specifier: string) => false;
+  let stamp = '';
   return {
     name: 'weasel:prebundle-workspace',
     apply: 'serve',
-    config(user) {
+    config() {
       // vite's less/sass worker pool only unrefs its threads on close, so every restart left its workers running, each a
       // whole isolate (vite 8.3). Compiling on the main thread starts none.
       const css = { preprocessorMaxWorkers: 0 };
@@ -289,15 +295,12 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       fromSourceEntry = namesSourced(entries, sourced);
       listed = new Set([...specifiersOf([...servedFiles, ...sourced])].filter((s) => bundles(s) && !fromSourceEntry(s)));
       const inBundles = filesUnder(bundled, (file) => read(file) && !isStory(file) && !sourced.has(file)).sort();
-      const cacheDir = resolve(user.root ?? process.cwd(), user.cacheDir ?? 'node_modules/.vite');
-      const { stale, stamp } = bundlesStale(cacheDir, [...sourced].sort(), inBundles);
+      stamp = bundleStamp([...sourced].sort(), inBundles);
       const imported = [...sourced].filter((file) => !isStory(file)).length;
       if (imported) console.info(`prebundle: serving ${imported} module(s) of bundled packages from source, since source imports them by path`);
       return {
         css,
         optimizeDeps: {
-          // Only ever true: a `false` here would outrank the force a re-bundling restart asks for.
-          ...(stale && { force: true }),
           include: [...listed].sort(),
           // Without the extensions the optimizer leaves every .tsx file external, served from source.
           extensions: ['.tsx', '.jsx'],
@@ -310,6 +313,11 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
           },
         },
       };
+    },
+    configResolved(config) {
+      if (off || !recordStamp(config.cacheDir, stamp)) return;
+      // Each environment's optimizer reads its own resolved options. Never set false: it would outrank a forced restart.
+      for (const env of Object.values(config.environments)) env.optimizeDeps.force = true;
     },
     configureServer(server) {
       if (off || options.watch === false) return;

@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ViteDevServer } from 'vite';
+import type { UserConfig, ViteDevServer } from 'vite';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import { bundledDirs, entryFiles, namesSourced, restartLeavingNothing, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
+import { bundledDirs, entryFiles, namesSourced, prebundleWorkspace, restartLeavingNothing, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
 import { pathImportsIn } from './vite-prebundle-reach';
 
 const tree = mkdtempSync(join(tmpdir(), 'vite-prebundle-'));
@@ -220,5 +220,31 @@ describe('restartLeavingNothing', () => {
     await restartLeavingNothing(server);
     expect(outgoing).toEqual({});
     expect(Object.keys(client).sort()).toEqual(['_options', '_topLevelConfig', 'config', 'logger', 'name']);
+  });
+});
+
+describe('prebundleWorkspace stamp', () => {
+  const repo = join(tree, 'stamp');
+  file('stamp/packages/kit/package.json', JSON.stringify({ name: '@weasel-js/kit', exports: { '.': { types: './dist/index.d.ts' } } }));
+  file('stamp/packages/kit/src/index.ts', "export * from './a';");
+  file('stamp/packages/kit/src/a.ts', 'export const a = 1;');
+  file('stamp/apps/draw/src/main.ts', '');
+  file('stamp/apps/site/main.ts', "import { a } from '@weasel-js/kit';");
+
+  /** The plugin's config and configResolved hooks, as vite runs them: the stamp, and whether the bundles are forced. */
+  function start(cacheDir: string): { stamp: string; force: boolean } {
+    const plugin = prebundleWorkspace(repo, [join(repo, 'apps/site')], { watch: false });
+    const config = (plugin.config as (user: UserConfig) => UserConfig)({ root: 'apps/site' });
+    const client = { optimizeDeps: {} as { force?: boolean } };
+    (plugin.configResolved as (c: unknown) => void)({ cacheDir, environments: { client } });
+    const intro = (config.optimizeDeps!.rolldownOptions!.output as { intro: string }).intro;
+    return { stamp: intro, force: client.optimizeDeps.force === true };
+  }
+
+  it("keeps its record in vite's resolved cacheDir, whatever the user config's root says", () => {
+    const cacheDir = join(repo, 'node_modules/.vite');
+    expect(start(cacheDir).force).toBe(true);
+    expect(existsSync(join(cacheDir, 'weasel-prebundle.stamp'))).toBe(true);
+    expect(start(cacheDir).force).toBe(false);
   });
 });
