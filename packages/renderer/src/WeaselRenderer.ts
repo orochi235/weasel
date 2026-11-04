@@ -437,16 +437,12 @@ export class WeaselRenderer {
     this.beginFrame();
     this.applyGlState();
     this.idComposite ??= createIdComposite(this.gl);
+    const spec = { ...opts, width: device.width, height: device.height, dpr: this.dpr };
     try {
-      return drawIdFrame(this.gl, this.effectTargets, this.idComposite, {
-        width: device.width, height: device.height, dpr: this.dpr, rect: opts.rect, minAlpha: opts.minAlpha, exclude: opts.exclude,
-      }, commands, (renderTarget, ids, culled) => {
-        const ctx = this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids });
-        drawStream(ctx, culled, [], [], { drawCalls: 0 });
-      });
+      return drawIdFrame(this.gl, this.effectTargets, this.idComposite, spec, commands, (renderTarget, ids, culled) => drawStream(
+        this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids }), culled, [], [], { drawCalls: 0 }));
     } finally {
-      // A frame that threw (a bad `pickId`) must not leave a context another canvas shares bound
-      // to a target that went back to the pool.
+      // A throw must not leave a shared context bound to a target back in the pool.
       this.meshCache.freeTransient();
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
       this.applyGlState();
