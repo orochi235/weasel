@@ -1,6 +1,6 @@
 import type { Paint } from '@weasel-js/paint';
 import type { DrawCommand } from '../DrawCommand';
-import { effectsReach } from '../effects/types';
+import { effectsReach, type Effect } from '../effects/types';
 
 const withView = new WeakMap<readonly DrawCommand[], boolean>();
 const withoutView = new WeakMap<readonly DrawCommand[], boolean>();
@@ -12,8 +12,9 @@ const withoutView = new WeakMap<readonly DrawCommand[], boolean>();
  *
  * Not so for a custom shader, whose `bounds` are screen pixels; a paint in
  * screen units, the default, or in world units with no view matrix to follow;
- * and a group whose effects do not say how far they reach, which run over the
- * drawing buffer wherever its surface lies. Memoized by array.
+ * a group whose effects do not say how far they reach, which run over the
+ * drawing buffer wherever its surface lies; and a group running a
+ * `screenAnchored` effect. Memoized by array.
  */
 export function movesWithView(cmds: readonly DrawCommand[], hasViewMatrix: boolean): boolean {
   const memo = hasViewMatrix ? withView : withoutView;
@@ -27,7 +28,7 @@ export function movesWithView(cmds: readonly DrawCommand[], hasViewMatrix: boole
 function commandMoves(cmd: DrawCommand, hasViewMatrix: boolean): boolean {
   switch (cmd.kind) {
     case 'group':
-      if (cmd.effects && cmd.effects.length > 0 && !Number.isFinite(effectsReach(cmd.effects))) return false;
+      if (cmd.effects && cmd.effects.length > 0 && !effectsMove(cmd.effects)) return false;
       return movesWithView(cmd.children, hasViewMatrix);
     case 'path':
       return paintMoves(cmd.fill?.paint, hasViewMatrix) && paintMoves(cmd.stroke?.paint, hasViewMatrix);
@@ -39,6 +40,10 @@ function commandMoves(cmd: DrawCommand, hasViewMatrix: boolean): boolean {
     case 'shader':
       return false;
   }
+}
+
+function effectsMove(effects: readonly Effect[]): boolean {
+  return Number.isFinite(effectsReach(effects)) && !effects.some((e) => e.screenAnchored);
 }
 
 function paintMoves(paint: Paint | undefined, hasViewMatrix: boolean): boolean {

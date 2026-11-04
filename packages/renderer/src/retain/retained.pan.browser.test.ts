@@ -17,7 +17,7 @@ import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
 import { registerFont } from '@weasel-js/font';
 import type { Paint } from '@weasel-js/paint';
 import {
-  WeaselRenderer, registerProgram, registerTexture, unregisterTexture, registerPaintDrawKind, blur, vignette,
+  WeaselRenderer, registerProgram, registerTexture, unregisterTexture, registerPaintDrawKind, registerEffect, blur, vignette,
 } from '@weasel-js/renderer';
 import type { DrawCommand } from '../DrawCommand';
 import type { RetainedStats } from '../rendererTypes';
@@ -303,6 +303,28 @@ describe('a retained world layer through a pan, in a real context', () => {
   it('draws a layer holding an effect with no reach straight through a move', () => {
     const p = pairOf();
     const children = world([{ kind: 'group', effects: vignette({ amount: 0.5 }), children: world() }]);
+    frame(p, 0, 0, children);
+    frame(p, 0, 0, children);
+    const moved = frame(p, 1, 0, children);
+    expect(moved.stats).toMatchObject({ declined: 1, composited: 0, redrawn: 0 });
+    expect(moved.max).toBe(0);
+  });
+
+  it('draws a layer holding a screen-anchored effect straight through a move', () => {
+    // A checker over the drawing buffer's own pixels, as a Bayer dither picks its cell.
+    const checker = registerEffect('pan-test-checker', `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_source;
+uniform vec2 u_resolution;
+uniform vec2 u_windowOrigin;
+out vec4 o;
+void main() {
+  vec2 px = u_windowOrigin + vec2(v_uv.x, 1.0 - v_uv.y) * u_resolution;
+  o = texture(u_source, v_uv) * mod(floor(px.x) + floor(px.y), 2.0);
+}`);
+    const p = pairOf();
+    const children = world([{ kind: 'group', effects: [{ program: checker, reach: 0, screenAnchored: true }], children: world() }]);
     frame(p, 0, 0, children);
     frame(p, 0, 0, children);
     const moved = frame(p, 1, 0, children);

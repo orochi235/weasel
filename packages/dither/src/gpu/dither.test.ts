@@ -15,6 +15,12 @@ describe('dither (GPU)', () => {
     expect(fx!.uniforms).toMatchObject({ u_method: 1, u_pitch: [3.2, 3.2], u_gridOrigin: [5, 5] });
   });
 
+  it('is anchored to the screen when it picks a Bayer cell or a dot by device pixel, so a pan draws it again', () => {
+    expect(dither()[0]!.screenAnchored).toBeFalsy();
+    expect(dither({ method: 'bayer' })[0]!.screenAnchored).toBe(true);
+    expect(dither({ grid: { pitch: [2, 2], origin: [0, 0] } })[0]!.screenAnchored).toBe(true);
+  });
+
   it('premultiplies its colors and scales them to 0–1', () => {
     const [fx] = dither({ ink: [255, 0, 0, 128], blank: [0, 0, 0, 0], background: [255, 255, 255] });
     const ink = fx!.uniforms!.u_ink as number[];
