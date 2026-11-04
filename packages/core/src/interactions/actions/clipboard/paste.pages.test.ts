@@ -6,8 +6,9 @@ import { pageRunOf } from 'core/pages/pageNodes';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import { materializePaste } from './materializePaste';
 
-function paste(ids: string[], dropPoint: { x: number; y: number }, pasteboard = false) {
+function paste(ids: string[], dropPoint: { x: number; y: number }, pasteboard = false, locked: string[] = []) {
   const { scene } = pagedScene({ pasteboard });
+  for (const id of locked) scene.setLocked(asNodeId(id), true);
   const adapter = sceneToAdapter(scene);
   const pasted = materializePaste(adapter as never, adapter.snapshotSelection(ids), { currentSelection: [], dropPoint })!;
   scene.applyBatch(pasted.ops, 'Paste', adapter as never);
@@ -26,6 +27,12 @@ describe('materializePaste in a paged scene', () => {
     const { nodes: [node] } = paste([ON_PAGE], { x: 150, y: 20 });
     expect(node!.parent).toBe(PAGE_B);
     expect(node!.pose as RectPose).toMatchObject({ x: 40, y: 20 });
+  });
+
+  it('puts a paste dropped on a locked page on the nearest page that is not', () => {
+    const { nodes: [node] } = paste([ON_PAGE], { x: 150, y: 20 }, false, [PAGE_B]);
+    expect(node!.parent).toBe('a');
+    expect(node!.pose as RectPose).toMatchObject({ x: 99 });
   });
 
   it('puts a paste off every page at the top of the tree with the pasteboard on', () => {

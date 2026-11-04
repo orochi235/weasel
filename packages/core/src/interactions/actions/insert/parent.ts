@@ -5,12 +5,29 @@ import { pageHolding } from 'core/pages/pages';
 import { admitsChild } from '../admitsChild';
 import type { CanDropIntoDep } from '../layoutDeps';
 
+type AnyScene = Scene<unknown, string, unknown>;
+
+/** The page (its `Page.id`) new content at `at` goes on: the page for `at` (`pageForPoint`) when it admits
+ *  an insert (`admitsChild`), or failing that the nearest page to `at` that does. `null` when none does,
+ *  when `pageForPoint` names none, and in a scene without pages. The one rule for insert and paste. */
+export function takingPage(scene: AnyScene, at: { x: number; y: number }, canDropInto?: CanDropIntoDep): string | null {
+  const first = isPaged(scene) ? pageForPoint(scene, at) : null;
+  const point = { x: at.x, y: at.y, width: 0, height: 0 };
+  let left = placedPagesOf(scene).filter((p) => p.id !== first);
+  for (let page: string | null | undefined = first; page != null; ) {
+    const node = pageNodeOf(scene, page);
+    if (node !== null && admitsChild(scene, node, [], canDropInto)) return page;
+    page = pageHolding(left, point)?.id;
+    left = left.filter((p) => p.id !== page);
+  }
+  return null;
+}
+
 /** The node an insert lands in: the one the `insertInto` dep's `into` names when
  *  it exists and admits the insert; else, in a paged scene, the page for `at`
- *  (`pageForPoint`) when it admits the insert, or failing that the nearest page
- *  to `at` that does; else null, the top of the tree. */
+ *  ({@link takingPage}); else null, the top of the tree. */
 export function insertParent(
-  scene: Scene<unknown, string, unknown> | undefined,
+  scene: AnyScene | undefined,
   into: string | null | undefined,
   canDropInto?: CanDropIntoDep,
   at?: { x: number; y: number },
@@ -19,19 +36,6 @@ export function insertParent(
   if (into != null && scene.get(into as NodeId) !== undefined && admitsChild(scene, into as NodeId, [], canDropInto)) {
     return into as NodeId;
   }
-  const first = at !== undefined && isPaged(scene) ? pageForPoint(scene, at) : null;
-  if (first === null) return null;
-  const admits = (page: string) => {
-    const node = pageNodeOf(scene, page);
-    return node !== null && admitsChild(scene, node, [], canDropInto) ? node : null;
-  };
-  const point = { x: at!.x, y: at!.y, width: 0, height: 0 };
-  let left = placedPagesOf(scene).filter((p) => p.id !== first);
-  for (let page: string | undefined = first; page !== undefined; ) {
-    const node = admits(page);
-    if (node !== null) return node;
-    page = pageHolding(left, point)?.id;
-    left = left.filter((p) => p.id !== page);
-  }
-  return null;
+  const page = at === undefined ? null : takingPage(scene, at, canDropInto);
+  return page === null ? null : pageNodeOf(scene, page);
 }

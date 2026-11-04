@@ -171,6 +171,22 @@ describe('moveAction in a paged scene', () => {
     expect(pose).toMatchObject({ x: 50, y: 10 });
   });
 
+  it('does not drop onto a locked page, keeping the node on its own', () => {
+    const { scene } = pagedScene();
+    scene.setLocked(PAGE_B, true);
+    const { node, pose } = drag(40, { scene });
+    expect(node.parent).toBe(PAGE_A);
+    expect(pose.x).toBe(99);
+  });
+
+  it('does not drop into a group on a locked page when the binding reparents on drop', () => {
+    const { scene } = pagedScene();
+    scene.add({ ...rect(G, PAGE_B, 10), kind: 'group', pose: { x: 10, y: 0, width: 60, height: 40 } });
+    scene.setLocked(PAGE_B, true);
+    const { node } = drag(40, { scene, params: { reparentOnDrop: 'top' }, nodeAtPoint: () => G });
+    expect(node.parent).toBe(PAGE_A);
+  });
+
   it('leaves a move within one page a translate', () => {
     const { node, pose } = drag(-50);
     expect(node.parent).toBe(PAGE_A);
