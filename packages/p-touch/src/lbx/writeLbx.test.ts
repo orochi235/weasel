@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mat3, PathBuilder } from '@weasel-js/geom';
-import type { DrawCommand, TextDrawCommand } from '@weasel-js/renderer';
+import type { DrawCommand, GroupDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { ResolvedRun } from '@weasel-js/text';
 import { parseLbx, type BarcodeObject, type ImageObject, type LineObject, type RectObject, type TextObject } from 'bil-lbx';
 import { tapeForWidthMm } from '../tape';
@@ -131,6 +131,35 @@ describe('lbxObjects', () => {
     const { config, skipped } = await lbxConfig(page([{ kind: 'group', transform: turned, children: [lbxObjects([barcode])] }]));
     expect(config.objects).toEqual([]);
     expect(skipped).toEqual([{ kind: 'group', detail: 'lbxObjects under a rotation, skew or mirror' }]);
+  });
+
+  const frame = (clip: GroupDrawCommand['clip'], children: DrawCommand[]): DrawCommand =>
+    ({ kind: 'group', transform: mat3.translated(mat3.identity(), 10, 1), clip, children });
+
+  it('places carried objects inside a rect clip, and rasterizes the clipped paint around them in order', async () => {
+    const rasterize = vi.fn(async (_c: readonly DrawCommand[], r: { width: number; height: number }) => {
+      const data = new Uint8ClampedArray(r.width * r.height * 4).fill(255);
+      return { width: r.width, height: r.height, data };
+    });
+    const fill = { fill: { paint: { color: '#000' } } };
+    const { config, skipped } = await lbxConfig(page([
+      frame({ kind: 'rect', x: 0, y: 0, width: 60, height: 20 }, [rect(0, 0, 5, 5, fill), lbxObjects([barcode]), rect(50, 0, 5, 5, fill)]),
+    ]), { rasterize, rasterDpi: 72 });
+    expect(skipped).toEqual([]);
+    expect(config.objects.map((o) => o.type)).toEqual(['image', 'barcode', 'image']);
+    expect(config.objects[1]).toEqual({ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } });
+    const first = rasterize.mock.calls[0]![0][0] as GroupDrawCommand;
+    expect(first.clip).toEqual({ kind: 'rect', x: 0, y: 0, width: 60, height: 20 });
+  });
+
+  it('skips carried objects a clip would cut, or under a group the writer must rasterize', async () => {
+    const narrow = await lbxConfig(page([frame({ kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, [lbxObjects([barcode])])]));
+    expect(narrow.config.objects).toEqual([]);
+    expect(narrow.skipped).toEqual([{ kind: 'group', detail: 'lbxObjects not wholly inside an axis-aligned rect clip' }]);
+
+    const blended = await lbxConfig(page([{ kind: 'group', composite: 'lighter', children: [{ kind: 'group', children: [lbxObjects([barcode])] }] }]));
+    expect(blended.config.objects).toEqual([]);
+    expect(blended.skipped).toContainEqual({ kind: 'group', detail: 'lbxObjects under a group effect, isolate, color matrix or blend' });
   });
 
   it('drops carried objects at alpha 0 and skips them under partial alpha', async () => {

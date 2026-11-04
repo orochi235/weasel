@@ -2,7 +2,7 @@
  * A label's draw commands as a P-touch `.lbx` file.
  */
 import type { CommandRasterizer, RasterImage } from '@weasel-js/core';
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Path } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import {
   AUTO_LENGTH_MAX_PT,
@@ -16,7 +16,7 @@ import {
 import type { Tape } from '../tape';
 import { carriedObjects, placeCarried } from './carried';
 import { lineObject, rectObject, textObject } from './shapes';
-import type { DrawState } from './style';
+import { axisMap, type DrawState } from './style';
 
 /** One label: its size and the commands painted on it, in points with the origin at its top left. */
 export interface LbxPage {
@@ -55,35 +55,93 @@ export interface LbxResult {
 
 type Item = { object: LabelObject } | { raster: DrawCommand };
 
-function plainGroup(g: GroupDrawCommand): boolean {
-  const composite = g.composite ?? 'source-over';
-  return !g.clip && !g.effects?.length && !g.isolate && !g.colorMatrix && composite === 'source-over';
+/** A clip above the commands being walked, with the transform it is drawn under. */
+interface Clip {
+  path: Path;
+  transform: GlMat3;
 }
 
-/** `cmd` under `state`, as a command drawn in the page's frame. */
-function placed(cmd: DrawCommand, state: DrawState): DrawCommand {
-  return { kind: 'group', transform: state.transform, alpha: state.alpha, children: [cmd] };
+/** A group whose children cannot be drawn one at a time: an effect, isolate, color matrix or blend. */
+function rasterWhole(g: GroupDrawCommand): boolean {
+  return !!g.effects?.length || !!g.isolate || !!g.colorMatrix || (g.composite ?? 'source-over') !== 'source-over';
 }
 
-function collect(commands: readonly DrawCommand[], state: DrawState, out: Item[], skipped: LbxSkip[]): void {
+function hasCarrier(commands: readonly DrawCommand[]): boolean {
+  return commands.some((c) => carriedObjects(c) !== undefined || (c.kind === 'group' && hasCarrier(c.children)));
+}
+
+function countCarriers(commands: readonly DrawCommand[]): number {
+  let n = 0;
+  for (const c of commands) n += carriedObjects(c) ? 1 : c.kind === 'group' ? countCarriers(c.children) : 0;
+  return n;
+}
+
+/** `cmd` under `state` and `clips`, as a command drawn in the page's frame; undefined when a collapsed clip hides it. */
+function placed(cmd: DrawCommand, state: DrawState, clips: readonly Clip[]): DrawCommand | undefined {
+  let out: GroupDrawCommand = { kind: 'group', transform: state.transform, alpha: state.alpha, children: [cmd] };
+  for (let i = clips.length - 1; i >= 0; i--) {
+    const { path, transform } = clips[i]!;
+    const inverse = mat3.invert(transform);
+    if (!inverse) return undefined;
+    out = { kind: 'group', transform, clip: path, children: [{ ...out, transform: mat3.multiply(inverse, out.transform!) }] };
+  }
+  return out;
+}
+
+const CLIP_EPS = 1e-6;
+
+/** Whether every object, in the page's frame, lies inside every clip, each an axis-aligned rect. */
+function insideClips(objects: readonly LabelObject[], clips: readonly Clip[]): boolean {
+  return clips.every(({ path, transform }) => {
+    const map = path.kind === 'rect' ? axisMap(transform) : undefined;
+    if (!map || path.kind !== 'rect') return false;
+    const x0 = path.x * map.sx + map.tx, y0 = path.y * map.sy + map.ty;
+    const x1 = x0 + path.width * map.sx, y1 = y0 + path.height * map.sy;
+    return objects.every(({ position: p }) =>
+      p.x >= x0 - CLIP_EPS && p.y >= y0 - CLIP_EPS && p.x + p.width <= x1 + CLIP_EPS && p.y + p.height <= y1 + CLIP_EPS);
+  });
+}
+
+function collect(commands: readonly DrawCommand[], state: DrawState, clips: readonly Clip[], out: Item[], skipped: LbxSkip[]): void {
+  const raster = (cmd: DrawCommand) => {
+    const at = placed(cmd, state, clips);
+    if (at) out.push({ raster: at });
+  };
   for (const cmd of commands) {
     const carried = carriedObjects(cmd);
     if (carried) {
       const placed = placeCarried(carried, state);
       if (typeof placed === 'string') skipped.push({ kind: 'group', detail: placed });
-      else for (const object of placed) out.push({ object });
+      else if (placed.length > 0 && !insideClips(placed, clips)) {
+        skipped.push({ kind: 'group', detail: 'lbxObjects not wholly inside an axis-aligned rect clip' });
+      } else for (const object of placed) out.push({ object });
       continue;
     }
-    if (cmd.kind === 'group' && plainGroup(cmd)) {
-      const transform = cmd.transform ? mat3.multiply(Float64Array.from(state.transform), cmd.transform) : state.transform;
-      collect(cmd.children, { transform, alpha: state.alpha * (cmd.alpha ?? 1) }, out, skipped);
+    if (cmd.kind === 'group' && rasterWhole(cmd)) {
+      raster(cmd);
+      for (let n = countCarriers(cmd.children); n > 0; n--) {
+        skipped.push({ kind: 'group', detail: 'lbxObjects under a group effect, isolate, color matrix or blend' });
+      }
+      continue;
+    }
+    // Under a clip only the carriers can be objects, so a subtree without one stays whole.
+    const clipped = clips.length > 0 || (cmd.kind === 'group' && !!cmd.clip);
+    if (clipped && !(cmd.kind === 'group' && hasCarrier(cmd.children))) {
+      raster(cmd);
+      continue;
+    }
+    if (cmd.kind === 'group') {
+      // Without an isolate, a clipped group's children paint one by one, so each carries the clip on its own.
+      const transform = cmd.transform ? mat3.multiply(state.transform, cmd.transform) : state.transform;
+      const inner = cmd.clip ? [...clips, { path: cmd.clip, transform }] : clips;
+      collect(cmd.children, { transform, alpha: state.alpha * (cmd.alpha ?? 1) }, inner, out, skipped);
       continue;
     }
     const mapped =
       cmd.kind === 'path' ? (rectObject(cmd, state) ?? lineObject(cmd, state)) :
       cmd.kind === 'text' ? textObject(cmd, state) :
       undefined;
-    if (mapped === undefined) out.push({ raster: placed(cmd, state) });
+    if (mapped === undefined) raster(cmd);
     else for (const object of Array.isArray(mapped) ? mapped : [mapped]) out.push({ object });
   }
 }
@@ -162,7 +220,7 @@ function innermost(cmd: DrawCommand): DrawCommand {
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
   const items: Item[] = [];
   const skipped: LbxSkip[] = [];
-  collect(page.commands, { transform: mat3.identity(), alpha: 1 }, items, skipped);
+  collect(page.commands, { transform: mat3.identity(), alpha: 1 }, [], items, skipped);
   const objects = await settle(items, page, opts, skipped);
   const paper = {
     width: page.tape.widthPt,
