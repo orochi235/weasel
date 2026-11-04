@@ -12,6 +12,9 @@ import {
 } from '@weasel-js/core';
 import { registerProgram, type DrawCommand } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
+import { renderHook } from '@testing-library/react';
+import { useSceneAdapter } from 'canvas/useSceneAdapter';
+import { useSceneSelectTool } from 'canvas/SceneCanvas/useSceneSelectTool';
 
 /** Opaque inside the circle its bounds hold, transparent outside it. */
 const DISC = registerProgram('pick-at-browser-disc', '', `#version 300 es
@@ -71,6 +74,38 @@ describe('pickAt on a real canvas', () => {
     expect(node(42, 22)).toBe(under);
     expect(node(78, 22)).toBeNull();
     expect(node(95, 95)).toBeNull();
+  });
+});
+
+describe("geometry.picking: 'pixels' on a real canvas", () => {
+  it('picks by paint, and still finds the node a covering one hides', async () => {
+    const { scene, under, disc } = sceneOf();
+    const api = createRef<SceneCanvasApi>();
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    root = createRoot(host);
+    flushSync(() => root!.render(createElement(SceneCanvas, {
+      scene, width: 100, height: 100, dpr: 1, ref: api, layers: { scene: { drawOne } },
+    } as never)));
+    await settle();
+    const { result } = renderHook(() => useSceneSelectTool({
+      scene: scene as never, adapter: useSceneAdapter(scene) as never,
+      geometry: { picking: 'pixels', pickTolerancePx: 0 },
+      getView: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
+      readIds: () => api.current!.readIds,
+    }));
+    const pick = (x: number, y: number) => result.current.pickEvery({ x, y });
+    // Inside the disc's bounds, outside its circle: only what is beneath.
+    expect(pick(42, 22)).toEqual([under]);
+    expect(pick(60, 40)).toEqual([disc]);
+    // The disc covers `under` here, and the pick finds both.
+    expect(pick(45, 40)).toEqual([under, disc]);
+    expect(pick(95, 95)).toEqual([]);
+    expect(result.current.pickBest({ x: 45, y: 40 })).toBe(disc);
+    const without = api.current!.readIds({ x: 45, y: 40, width: 0, height: 0 }, {
+      exclude: new Set([scenePickIds(scene).idOf(disc)]),
+    });
+    expect(scenePickIds(scene).nodeOf(without.data[0])).toBe(under);
   });
 });
 

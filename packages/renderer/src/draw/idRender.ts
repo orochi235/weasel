@@ -13,7 +13,7 @@ import type { IdFrame } from './idFrame';
 const DEFAULT_MIN_ALPHA = 1 / 255;
 
 /** The drawing an id frame covers: device size and density, and what it was asked for. */
-export interface IdFrameSpec extends Pick<RenderIdsOptions, 'rect' | 'minAlpha'> {
+export interface IdFrameSpec extends Pick<RenderIdsOptions, 'rect' | 'minAlpha' | 'exclude'> {
   width: number;
   height: number;
   dpr: number;
@@ -21,15 +21,19 @@ export interface IdFrameSpec extends Pick<RenderIdsOptions, 'rect' | 'minAlpha'>
 
 type RootTarget = NonNullable<DrawContext['renderTarget']>;
 
-/** The device pixels `rect` touches, top-left origin, clamped to the drawing. */
+/** The device pixels `rect` touches, top-left origin, clamped to the drawing:
+ *  at least one pixel for a rect of no size, and none for one off the drawing. */
 export function idReadRect(spec: IdFrameSpec): { x: number; y: number; width: number; height: number } {
   const { width, height, dpr, rect } = spec;
   if (!rect) return { x: 0, y: 0, width, height };
-  const x0 = Math.min(width, Math.max(0, Math.floor(rect.x * dpr)));
-  const y0 = Math.min(height, Math.max(0, Math.floor(rect.y * dpr)));
-  const x1 = Math.min(width, Math.max(x0 + 1, Math.ceil((rect.x + rect.width) * dpr)));
-  const y1 = Math.min(height, Math.max(y0 + 1, Math.ceil((rect.y + rect.height) * dpr)));
-  return { x: x0, y: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) };
+  const fx = Math.floor(rect.x * dpr);
+  const fy = Math.floor(rect.y * dpr);
+  const x0 = Math.max(0, fx);
+  const y0 = Math.max(0, fy);
+  const x1 = Math.min(width, Math.max(fx + 1, Math.ceil((rect.x + rect.width) * dpr)));
+  const y1 = Math.min(height, Math.max(fy + 1, Math.ceil((rect.y + rect.height) * dpr)));
+  if (x1 <= x0 || y1 <= y0) return { x: Math.min(x0, width), y: Math.min(y0, height), width: 0, height: 0 };
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
 /**
@@ -50,7 +54,8 @@ export function drawIdFrame(
   const data = new Uint32Array(read.width * read.height);
   if (data.length === 0) return { ...read, data };
   const { width, height } = spec;
-  const culled = spec.rect ? cullDrawCommands(commands, mat3.identity(), spec.rect, spec.dpr) : commands;
+  const kept = spec.exclude && spec.exclude.size > 0 ? withoutPickIds(commands, spec.exclude) : commands;
+  const culled = spec.rect ? cullDrawCommands(kept, mat3.identity(), spec.rect, spec.dpr) : kept;
   const target = targets.acquire(width, height, true);
   const glY = height - read.y - read.height;
   const restore = (): void => {
@@ -82,6 +87,25 @@ export function drawIdFrame(
     for (let col = 0; col < read.width; col++) data[dst + col] = idOfTexel(bytes, src + col * 4);
   }
   return { ...read, data };
+}
+
+/** `cmds` without the groups whose `pickId` is in `exclude`; `cmds` itself when none is. */
+export function withoutPickIds(cmds: DrawCommand[], exclude: ReadonlySet<number>): DrawCommand[] {
+  let out: DrawCommand[] | null = null;
+  for (let i = 0; i < cmds.length; i++) {
+    const c = cmds[i];
+    let next: DrawCommand | null = c;
+    if (c.kind === 'group') {
+      if (c.pickId !== undefined && exclude.has(c.pickId)) next = null;
+      else {
+        const children = withoutPickIds(c.children, exclude);
+        if (children !== c.children) next = { ...c, children };
+      }
+    }
+    if (next !== c && out === null) out = cmds.slice(0, i);
+    if (out !== null && next !== null) out.push(next);
+  }
+  return out ?? cmds;
 }
 
 /**

@@ -318,13 +318,6 @@ Owner tags, after the priority (2026-10-26):
   edges, and only sometimes; that it is a precision or rounding path the GPU picks under load is
   inferred, not shown.
   Closes when the cause is found and fixed, or the bound set to what the GPU guarantees.
-- **(P3) [agent] A scene's picks do not read the id buffer.** `pickAt` on a canvas
-  handle reads an id frame (`WeaselRenderer.renderIds`, 2026-11-03), so it sees what a custom shader or
-  an effect paints, but the `nodeAtPoint` dep and the scene's other picks still walk node outlines on
-  the CPU (`pickEvery`, `pickWalk`). `nodeAtPoint`'s callers pass an `exclude` set, which a topmost-id read cannot honor
-  without drawing again with those nodes left out, and hover hit-tests on every pointer move, where an id
-  frame is a second draw of the frame; that is why it was not done in the same pass.
-  Closes when `<SceneCanvas>` can take its press picks from the id buffer, `exclude` included.
 
 ---
 

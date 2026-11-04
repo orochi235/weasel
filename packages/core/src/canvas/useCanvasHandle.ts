@@ -3,14 +3,17 @@ import type React from 'react';
 import type { View } from 'core/viewport/view';
 import type { Dims } from 'core/layers/render';
 import type { CanvasExtensionApi } from './canvasExtension';
+import type { IdBuffer } from '@weasel-js/renderer';
 import type { CanvasElements } from './useCanvasElements';
 import type { HitTestExtrasIn } from './useExtraLayers';
 import type { SurfaceFrame } from './useViewRegistrySurface';
 
+const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
+
 /** The handle's members the canvas builds elsewhere. */
 export type CanvasHandleApi = Omit<
   CanvasExtensionApi,
-  'element' | 'surface' | 'getSurfaceRect' | 'hitTestExtras' | 'ingest' | 'addView' | 'pickAt'
+  'element' | 'surface' | 'getSurfaceRect' | 'hitTestExtras' | 'ingest' | 'addView' | 'pickAt' | 'readIds'
 > & { hitTestExtrasIn: HitTestExtrasIn };
 
 /** The elements the handle names, as of this render. */
@@ -21,13 +24,13 @@ export interface CanvasHandleTarget
 }
 
 /** The bare canvas's imperative handle. Its own-frame members answer against `frame`.
- *  Returns where the paint publishes the handle's `pickAt`, which needs its last frame. */
+ *  Returns where the paint publishes the handle's `readIds`, which needs its last frame. */
 export function useCanvasHandle(
   ref: React.ForwardedRef<CanvasExtensionApi>,
   target: CanvasHandleTarget,
   frame: SurfaceFrame,
   api: CanvasHandleApi,
-): { current: CanvasExtensionApi['pickAt'] } {
+): { current: CanvasExtensionApi['readIds'] } {
   const { canvasRef, ownCanvasRef, detached, paintRectRef, inputElement, paintCanvas } = target;
   const { viewRef, dimsRef, helpersRef } = frame;
   const {
@@ -35,8 +38,10 @@ export function useCanvasHandle(
     subscribeResume, registerLayer, getView, setView, subscribeView,
     getPaintedVersion, paintedCursor, cursorSink, getDebug,
   } = api;
-  const pickRef = useRef<CanvasExtensionApi['pickAt']>(() => 0);
-  const pickAt = useCallback<CanvasExtensionApi['pickAt']>((x, y, options) => pickRef.current(x, y, options), []);
+  const readIdsRef = useRef<CanvasExtensionApi['readIds']>(() => NO_IDS);
+  const readIds = useCallback<CanvasExtensionApi['readIds']>((rect, options) => readIdsRef.current(rect, options), []);
+  const pickAt = useCallback<CanvasExtensionApi['pickAt']>(
+    (x, y, options) => readIdsRef.current({ x, y, width: 0, height: 0 }, options).data[0] ?? 0, []);
 
   const hitTestExtras = useCallback((worldX: number, worldY: number, at?: { view: View; dims: Dims }) => (
     hitTestExtrasIn(worldX, worldY, at?.view ?? viewRef.current, at?.dims ?? dimsRef.current, helpersRef.current)
@@ -69,10 +74,11 @@ export function useCanvasHandle(
     cursorSink,
     getDebug,
     pickAt,
+    readIds,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintCanvas,
        getSurfaceRect, clientToWorld, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume,
        registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
-       paintedCursor, cursorSink, getDebug, pickAt]);
-  return pickRef;
+       paintedCursor, cursorSink, getDebug, pickAt, readIds]);
+  return readIdsRef;
 }

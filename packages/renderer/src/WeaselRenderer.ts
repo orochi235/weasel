@@ -437,17 +437,21 @@ export class WeaselRenderer {
     this.beginFrame();
     this.applyGlState();
     this.idComposite ??= createIdComposite(this.gl);
-    const out = drawIdFrame(this.gl, this.effectTargets, this.idComposite, {
-      width: device.width, height: device.height, dpr: this.dpr, rect: opts.rect, minAlpha: opts.minAlpha,
-    }, commands, (renderTarget, ids, culled) => {
-      const ctx = this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids });
-      drawStream(ctx, culled, [], [], { drawCalls: 0 });
-    });
-    this.meshCache.freeTransient();
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-    this.applyGlState();
-    this.applyTarget();
-    return out;
+    try {
+      return drawIdFrame(this.gl, this.effectTargets, this.idComposite, {
+        width: device.width, height: device.height, dpr: this.dpr, rect: opts.rect, minAlpha: opts.minAlpha, exclude: opts.exclude,
+      }, commands, (renderTarget, ids, culled) => {
+        const ctx = this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids });
+        drawStream(ctx, culled, [], [], { drawCalls: 0 });
+      });
+    } finally {
+      // A frame that threw (a bad `pickId`) must not leave a context another canvas shares bound
+      // to a target that went back to the pool.
+      this.meshCache.freeTransient();
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+      this.applyGlState();
+      this.applyTarget();
+    }
   }
 
   /** What every frame does before it draws. A frame that threw part-way never

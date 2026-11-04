@@ -128,6 +128,14 @@ describe('renderIds, in a real context', () => {
     expect([...px]).toEqual([0, 255, 0, 255]);
   });
 
+  it('leaves out the groups an exclude names, so what is beneath them shows', () => {
+    const cmds = [tagged(1, box(0, 0, 40, 20)), tagged(2, box(10, 0, 20, 20), tagged(3, box(15, 0, 5, 20)))];
+    const ids = open().renderIds(cmds, undefined, { exclude: new Set([2]) });
+    expect([5, 12, 17, 25].map((x) => at(ids, x, 10))).toEqual([1, 1, 1, 1]);
+    const point = renderer!.renderIds(cmds, undefined, { rect: { x: 17, y: 10, width: 0, height: 0 }, exclude: new Set([3]) });
+    expect([...point.data]).toEqual([2]);
+  });
+
   it('gives a mask of the ids asked for', () => {
     const ids = open().renderIds([tagged(1, box(0, 0, 20, 20)), tagged(2, box(20, 0, 20, 20))]);
     const mask = idMask(ids, new Set([2]));

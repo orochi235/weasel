@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useInsertionEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { viewToMat3, type DrawCommand, type WeaselRenderer } from '@weasel-js/renderer';
+import { viewToMat3, type DrawCommand, type IdBuffer, type WeaselRenderer } from '@weasel-js/renderer';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
 import {
@@ -55,6 +55,8 @@ function retainPolicy(retain: PaintInputs['retain']): LayerRetainPolicy | false 
   return { minCommands: minCommands ?? DEFAULT_LAYER_RETAIN.minCommands, minCommandsWithEffects };
 }
 
+const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
+
 /**
  * Publish the canvas's paint into `paintRef`, which the frame loop calls. The paint binds the
  * leased renderer to whichever canvas pixels go to and draws the layer stack through the
@@ -67,7 +69,7 @@ export function useCanvasPaint(
   frame: PaintFrame,
   markPainted: () => void,
   requestRedraw: () => void,
-  pickRef: { current: CanvasExtensionApi['pickAt'] },
+  readIdsRef: { current: CanvasExtensionApi['readIds'] },
 ): void {
   const { paintTargetRef, ownCanvasRef, paintRectRef } = target;
   const { inputsRef, viewRef, gateRef, helpersRef } = frame;
@@ -137,15 +139,14 @@ export function useCanvasPaint(
     };
   }, []);
 
-  const pickAt = useCallback<CanvasExtensionApi['pickAt']>((x, y, options) => {
+  const readIds = useCallback<CanvasExtensionApi['readIds']>((rect, options) => {
     const last = lastFrameRef.current;
-    if (!last || last.renderer.isContextLost()) return 0;
-    const ids = last.renderer.renderIds(last.commands, viewToMat3(last.view), {
-      rect: { x, y, width: 0, height: 0 }, minAlpha: options?.minAlpha,
+    if (!last || last.renderer.isContextLost()) return NO_IDS;
+    return last.renderer.renderIds(last.commands, viewToMat3(last.view), {
+      rect, minAlpha: options?.minAlpha, exclude: options?.exclude,
     });
-    return ids.data[0] ?? 0;
   }, []);
   useInsertionEffect(() => {
-    pickRef.current = pickAt;
+    readIdsRef.current = readIds;
   });
 }
