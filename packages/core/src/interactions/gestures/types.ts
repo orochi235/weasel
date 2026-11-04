@@ -62,6 +62,12 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
    * node should land returns it as its `transform`.
    */
   offset?: (from: TPose, to: TPose) => { dx: number; dy: number };
+  /**
+   * The ops that move the followers (nodes whose `dependsOn` places them) whose
+   * page changes when each id in `landed` is reparented under its value, read
+   * before the edit applies. Set by move; a behavior that reparents appends them.
+   */
+  followerOps?: (landed: ReadonlyMap<string, string | null>, label?: string) => Op[];
   adapter: MoveAdapter<TNode, TPose>;
   /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid

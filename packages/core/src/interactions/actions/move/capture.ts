@@ -16,6 +16,7 @@ import { translateTargets } from '../selectionSubtree';
 import type { MoveGestureAdapter } from './gestureAdapter';
 import { catchGliding } from './layout/glide';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
+import { followerMoveOps, followerMoves } from '../followerMoves';
 
 /** Start pose of each root and descendant, the descendants in walk order, and
  *  the offsets of any caught mid-glide. */
@@ -141,6 +142,7 @@ export function buildGestureContext(
       const b = projection.getBounds(to);
       return { dx: b.x - a.x, dy: b.y - a.y };
     },
+    followerOps: (landed, label) => followerMoveOps(followerMoves(scene, landed), label),
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };
