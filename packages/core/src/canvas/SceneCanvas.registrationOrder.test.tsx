@@ -13,6 +13,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from './surfaceContribution';
 import type { InsertDep, SnapDep, TextEditDep } from 'interactions/actions/depSchema';
+import { poseBoxes, type DrawnBoxesSource } from 'interactions/actions/drawnBoxes';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -69,5 +70,23 @@ describe('SceneCanvas registration order', () => {
       </SceneCanvas>,
     );
     expect(deps!.get('snap')).toBe(snap);
+  });
+
+  it('snaps with a child\'s drawnBoxes, as the actions measure with', () => {
+    const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
+    const mine = vi.fn<DrawnBoxesSource>(poseBoxes);
+    function MyBoxes() {
+      useDepSource('drawnBoxes', () => mine);
+      return null;
+    }
+    render(
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}>
+        <MyBoxes />
+        <ConsumerOverrides />
+      </SceneCanvas>,
+    );
+    deps!.get('snap')!.begin({ gesture: 'move', press: { x: 5, y: 5 }, ids: [id] });
+    expect(mine).toHaveBeenCalled();
   });
 });

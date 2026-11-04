@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { Dispatcher, WorldPoint } from '@weasel-js/routing';
-import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
+import { useActionsRegistry, useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
@@ -12,6 +12,7 @@ import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
 import { inkBoxes } from 'canvas/inkBoxes';
+import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { ReflowTransition } from '../../layout/types';
@@ -125,6 +126,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   } = inputs;
   const { tune, viewport, ingestion } = props;
   const boundsIncludeStroke = props.geometry?.boundsIncludeStroke ?? true;
+  const depRegistry = useDepRegistry();
   const reflowTransition = props.reflowTransition as ReflowTransition<unknown> | null | undefined;
   const viewportZoom = useMemo(
     () => viewportZoomOption(viewport?.zoom, viewport?.animatedZoom),
@@ -196,7 +198,13 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useSnapDepSource(
     currentViewRef,
     {
-      scene, boxes: () => inkBoxes({ scene, poseDescriptor, view, boundsIncludeStroke }), sources: snap.sources,
+      scene,
+      // Read through the registry, so a consumer's `drawnBoxes` or `boundsIncludeStroke` reaches snapping as it reaches the actions.
+      boxes: () => drawnBoxes({
+        scene, poseDescriptor, view,
+        boundsIncludeStroke: depRegistry.get('boundsIncludeStroke'), drawnBoxes: depRegistry.get('drawnBoxes'),
+      }),
+      sources: snap.sources,
       ...(snap.registry ? { registry: snap.registry } : {}),
       ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
       ...(props.snap?.omit ? { omit: props.snap.omit } : {}),

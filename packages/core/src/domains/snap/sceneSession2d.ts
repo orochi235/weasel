@@ -5,7 +5,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Scene } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
-import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
+import type { DrawnBoxes, DrawnBoxesSource } from 'interactions/actions/drawnBoxes';
 import { inkBoxes } from 'canvas/inkBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
@@ -102,6 +102,9 @@ export interface SnapSession2dOptions {
   poseDescriptor?: PoseDescriptor<unknown>;
   /** Whether drawn boxes include the stroke. Default `true`. */
   boundsIncludeStroke?: boolean;
+  /** How each node's drawn box is measured: the host's `drawnBoxes` dep,
+   *  when its actions read one. Default `inkBoxes`, as `<SceneCanvas>` sources. */
+  drawnBoxes?: DrawnBoxesSource;
   /** How a pose's origin, the point a grid or a guide snaps, is read.
    *  Default `AUTO_ORIGIN_PROJECTION`: a rect's `{x, y}`, a path's bounds. */
   originProjection?: OriginProjection<unknown>;
@@ -139,7 +142,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
   return sceneSession2d({
     req,
     scene: opts.scene,
-    boxes: inkBoxes({
+    boxes: (opts.drawnBoxes ?? inkBoxes)({
       scene: opts.scene,
       view: { get: () => view, set: () => {} },
       ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
