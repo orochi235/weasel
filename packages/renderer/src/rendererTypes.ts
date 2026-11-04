@@ -40,7 +40,7 @@ export interface RenderIdsOptions extends Pick<RenderOptions, 'screen'> {
 }
 
 /** What an id frame read back: for each device pixel, the `pickId` of the
- *  last thing to paint it, 0 where nothing did or what did carried none. */
+ *  last thing that carries one to paint it, 0 where nothing did. */
 export interface IdBuffer {
   /** Where the buffer's top-left pixel sits, device pixels from the drawing's top-left. */
   x: number;

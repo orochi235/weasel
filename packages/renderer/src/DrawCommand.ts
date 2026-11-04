@@ -140,9 +140,11 @@ export interface GroupDrawCommand {
   /**
    * The id this group's pixels carry into an id frame
    * (`WeaselRenderer.renderIds`): an integer from 1 to `MAX_PICK_ID`, or 0 for
-   * pixels that claim nothing. Absent inherits the enclosing group's, and at
-   * the top of a frame that is 0. A pixel holds the id of the last thing to
-   * paint it with at least the frame's `minAlpha`, so custom shaders and
+   * pixels that claim nothing. Absent inherits the enclosing group's; paint
+   * with none above it carries none, and leaves the ids beneath it as they
+   * were, so chrome drawn over a node does not hide it. A pixel holds the id
+   * of the last thing carrying one to paint it with at least the frame's
+   * `minAlpha`, so custom shaders and
    * effects claim what they paint: a blur claims the pixels it spreads into,
    * with the id its children left there, else this group's. An ordinary frame
    * ignores it.

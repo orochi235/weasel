@@ -1,5 +1,6 @@
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { composeColorMatrix } from './colorMatrix';
+import { NO_PICK_ID } from '../shaders/idOutput';
 
 /** Row-major 4×5 color matrix identity. */
 export const IDENTITY_COLOR_MATRIX = new Float32Array([
@@ -22,7 +23,7 @@ export class GroupState {
   private transformStack: GlMat3[] = [mat3.identity()];
   private alphaStack: number[] = [1];
   private colorMatrixStack: Float32Array[] = [IDENTITY_COLOR_MATRIX];
-  private pickIdStack: number[] = [0];
+  private pickIdStack: number[] = [NO_PICK_ID];
 
   get transform(): GlMat3 {
     return this.transformStack[this.transformStack.length - 1];
