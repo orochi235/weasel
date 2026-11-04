@@ -57,7 +57,7 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "engines": {
-    "node": "^22.18.0 || >=24.11.0"
+    "node": ">=24.11.0"
   },
   "files": [
     "dist",
