@@ -237,8 +237,8 @@ describe('transform by the measurement', () => {
   it('turns a selection about the center of the boxes it is drawn with, through its own `requires`', () => {
     const rig = setup();
     const stroke = { paint: { kind: 'solid', color: '#000' }, width: 20 };
-    const a = rig.scene.add({ kind: 'mark', layer: 'main', data: { shape: 'rect', stroke }, pose: { x: 0, y: 0, width: 50, height: 50, rotation: 0 } }) as string;
-    const b = rig.scene.add({ kind: 'mark', layer: 'main', data: { shape: 'rect' }, pose: { x: 100, y: 0, width: 50, height: 50, rotation: 0 } }) as string;
+    const a = rig.scene.add({ kind: 'mark', layer: 'main', data: { shape: 'rect', stroke }, pose: { x: 0, y: 0, width: 50, height: 50, rotation: 0 } }) as NodeId;
+    const b = rig.scene.add({ kind: 'mark', layer: 'main', data: { shape: 'rect' }, pose: { x: 100, y: 0, width: 50, height: 50, rotation: 0 } }) as NodeId;
     rig.selection.set([a, b]);
     rig.measure({ x: 0, y: 0 }, { x: 0, y: -10 });
     const bag: Record<string, unknown> = { ...rig.deps, drawnBoxes: inkBoxes };

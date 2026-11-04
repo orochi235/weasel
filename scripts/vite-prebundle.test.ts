@@ -225,11 +225,12 @@ describe('restartLeavingNothing', () => {
 
 describe('prebundleWorkspace stamp', () => {
   const repo = join(tree, 'stamp');
+  const KIT = '@weasel-js/kit'; // apart, or vite-aliases.test reads the fixture as a real import
   file('stamp/packages/kit/package.json', JSON.stringify({ name: '@weasel-js/kit', exports: { '.': { types: './dist/index.d.ts' } } }));
   file('stamp/packages/kit/src/index.ts', "export * from './a';");
   file('stamp/packages/kit/src/a.ts', 'export const a = 1;');
   file('stamp/apps/draw/src/main.ts', '');
-  file('stamp/apps/site/main.ts', "import { a } from '@weasel-js/kit';");
+  file('stamp/apps/site/main.ts', `import { a } from '${KIT}';`);
 
   /** The plugin's config and configResolved hooks, as vite runs them: the stamp, and whether the bundles are forced. */
   function start(cacheDir: string): { stamp: string; force: boolean } {
