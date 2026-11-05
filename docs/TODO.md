@@ -373,6 +373,12 @@ Owner tags, after the priority (2026-10-26):
   `scaleBar` (quantity) already measure a frame's true lengths and could set the tick spacing. Filed
   rather than built with `drawnAt` (2026-10-31): a new chrome component, with a look to settle.
   Closes when a scene canvas can show rulers whose ticks read the frame's units.
+- **(P2) [agent] Copy and paste for an app whose own document owns the nodes.** `useClipboardOps` works for one,
+  but only through an `InsertAdapter` the app writes by hand: collego (2026-11-05, `packages/app/src/useCopyPaste.ts`)
+  stubs `insertNode`, routes `commitPaste` into its doc, and found by a crash that what `commitPaste` returns becomes
+  the next paste's clipboard, so it must be shaped like the snapshot's items. Neither the adapter docs nor
+  `useClipboardOps` say so. Closes when that contract is documented and an editor-level hook takes an app's
+  snapshot and commit functions, so a doc-owned app gets Copy, Paste, and their commands without writing an adapter.
 
 ---
 
