@@ -4,14 +4,16 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-11-05)
+## State (2026-11-06)
 
-- 1.16.2 is on npm (`npm view @weasel-js/core version`). `main` is at batch 2026-11-05's tip, da45bbc34, unpushed
-  past 1d87afe1c; its `test:fleet` run was green on that commit, and `test:fleet:postbuild` on df23a0e71, which
-  differs only in one test file's formatting. Unreleased is whatever `.changeset/` holds: among it core's
-  `useClipboard` and the editor's `useDocClipboard`, Switch and Checkbox labels on their words' baseline, a
-  diagram slot row's image and header row, and a node keeping its previous image until a new `src` decodes.
-- Nothing in flight. The WebGPU entry in `docs/TODO.md` waits on a ruling about the custom shader API.
+- 1.16.2 is on npm (`npm view @weasel-js/core version`). `main` is at c3cf61e3f, unpushed past 1d87afe1c; its
+  `test:fleet` and `test:fleet:postbuild` runs were green on that commit. Unreleased is whatever `.changeset/`
+  holds: among it custom shader programs taking their source by language (`{ glsl, wgsl }`, a breaking call
+  shape), core's `useClipboard` and the editor's `useDocClipboard`, Switch and Checkbox labels on their words'
+  baseline, a diagram slot row's image and header row, and a node keeping its previous image until a new `src`
+  decodes.
+- In flight: the WebGPU backend (`docs/TODO.md`, "WebGPU backend"), on branch `webgpu` in
+  `/Users/mike/src/weasel-webgpu`. Mike said to keep going until it is done (2026-11-06).
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
