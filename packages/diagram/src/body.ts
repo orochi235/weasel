@@ -35,8 +35,9 @@ export type Row =
   /** A row that carries ports on its own left and right edges. */
   | { kind: 'ports'; left?: readonly RowPort[]; right?: readonly RowPort[]; height?: number }
   /** Reserved space a consumer paints into. With a `width`, the body is at
-   *  least that wide and the slot's box is that wide, centered in its row. */
-  | { kind: 'slot'; height: number; width?: number; id?: string }
+   *  least that wide and the slot's box is that wide, centered in its row.
+   *  With an `image`, `diagramScene` fills the box with it. */
+  | { kind: 'slot'; height: number; width?: number; id?: string; image?: { src: string; opacity?: number } }
   /** A rule across the content box, drawn in the body's own stroke by the
    *  outline painter. `inset` stops it that far short of each side. */
   | { kind: 'divider'; inset?: number };

@@ -93,6 +93,12 @@ function rowsOf(n: DataNode): readonly Row[] {
   return n.rows ?? (n.lines ?? []).map((text): Row => ({ kind: 'label', text }));
 }
 
+/** A slot's scene node: its image, else an empty frame for one with an id, else none. */
+function slotData(row: Extract<Row, { kind: 'slot' }>, style: NodeStyle): DiagramSceneData | null {
+  if (row.image !== undefined) return { image: { ...row.image } };
+  return row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } };
+}
+
 /** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
 function nodeSpecs(
   n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
@@ -116,7 +122,7 @@ function nodeSpecs(
     }),
     row: (text, at) =>
       at.row.kind === 'slot'
-        ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
+        ? slotData(at.row, style)
         : text === '' ? null : { ...textData(text, at.row), bodyRow: at.index, ...(at.row.kind === 'field' ? { bodyField: at.row.label } : {}) },
     aside: (text, at) => ({ text, style: asideFace(look.text(at.row)), fill: asideFillOf(style), bodyRow: at.index, bodyAside: true }),
     portLabel: (text) => textData(text, undefined),

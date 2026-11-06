@@ -24,6 +24,7 @@ import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramV
 import { withDiagramRegistry } from './edge';
 import type { DiagramSceneData, DiagramSpec } from './dataTypes';
 import { useHeaderClick } from './headerClick';
+import { useReleasedImages } from './imageRelease';
 import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
@@ -104,6 +105,7 @@ function Inner({
   const mirror = useMirroredSelection(selection, selected, onSelect);
 
   useSceneSync(scene, specs, { onMove, onEditContainer });
+  useReleasedImages(specs);
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
