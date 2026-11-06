@@ -305,8 +305,6 @@ Owner tags, after the priority (2026-10-26):
   `measuredSegmentCommands` either stay on core's barrel as designed surface or have moved to an
   `internal` entry.
 
----
-
 ## Text
 
 - **(P3) [maintainer] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
@@ -672,6 +670,10 @@ only story runner in the repo.
   reset (it lands before `execute`), and a command left running by an earlier file (no test timed out in that run, and
   every `userEvent`/`commands` call is awaited). The test now records the event each `close` and `set` call ran
   in, and requires that Enter's keydown wrote the row, so the next failure names its trigger.
+  Also ruled out by reading (2026-11-05): the fading focus border is Enter handing focus to the panel, which every
+  pass does; the click's own events (its bubbled press opens a text row, its pointerup is disarmed, and vitest's
+  `focusIframe` calls `window.focus()` only with focus on `body`); and an earlier file's frame, which vitest
+  removes before it creates the next.
   Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
