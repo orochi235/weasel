@@ -305,31 +305,6 @@ Owner tags, after the priority (2026-10-26):
   `measuredSegmentCommands` either stay on core's barrel as designed surface or have moved to an
   `internal` entry.
 
-## Rendering & paint
-
-- **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
-  the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
-  (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code
-  (2026-10-29). It did not come back on teitou on 2026-10-31: 10 runs of the file at 39–44% GPU,
-  then 900 draws of that case in fresh contexts, 300 quiet and 600 with another context queuing heavy
-  fragment work before each, all exact, tiled against whole and each against the first draw
-  (`tests/perf/recorded/tiles-flake-2026-10-31`, whose `run.sh` repeats it). A difference of one
-  level in 24 pixels is not a flipped sample, which moves a pixel by up to 64. Seen a second time
-  on 2026-11-03 in "matches it with the content nested in groups each tile culls into", `{ max: 1,
-  off: 18 }`, on teitou with the browser project split into three Chromium processes beside the
-  `core` jsdom project, every slice re-optimizing its deps (1 of 3 such runs; 0 of 6 runs of the
-  split alone). A third, in a full fleet run of 30f39a982 on 2026-11-03 (a batch touching no renderer
-  code), printed its pixels through `exact()`: 24 off in the first case, each by one level in one
-  channel, tiled then whole: a flat blue fill `42 92 159` / `42 92 158` at (0,4), (22,4), (0,12),
-  (1,12), and along one diagonal edge (36,4), (32,5), (29,6), (27,7), (24,9), (23,10) a yellow
-  `204 179 38` / `205 178 38`, with a gray `98 107 124` / `98 108 124` at (33,4), (34,4). So the
-  tiled draw rounds differently from the whole one in flat interiors as well as on antialiased
-  edges, and only sometimes; that it is a precision or rounding path the GPU picks under load is
-  inferred, not shown.
-  Closes when the cause is found and fixed, or the bound set to what the GPU guarantees.
-
----
-
 ## Text
 
 - **(P3) [maintainer] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
@@ -706,11 +681,11 @@ only story runner in the repo.
   reset (it lands before `execute`), and a command left running by an earlier file (no test timed out in that run, and
   every `userEvent`/`commands` call is awaited). The test now records the event each `close` and `set` call ran
   in, and requires that Enter's keydown wrote the row, so the next failure names its trigger.
+  Also ruled out by reading (2026-11-05): the fading focus border is Enter handing focus to the panel, which every
+  pass does; the click's own events (its bubbled press opens a text row, its pointerup is disarmed, and vitest's
+  `focusIframe` calls `window.focus()` only with focus on `body`); and an earlier file's frame, which vitest
+  removes before it creates the next.
   Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
-- **(P3) [agent] `apps/chart` `pipeline.browser.test.tsx`'s "deletes the selected stage from Edit › Delete, and
-  Mod+Z on the canvas brings it back" failed once under load.** In the full fleet run of d266c0bc5 (2026-11-03,
-  node studio) `canvasSettled` (`apps/chart/src/testing/mountChartApp.tsx:47`) returned false; the file passed
-  alone on teitou minutes later. Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
   `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
