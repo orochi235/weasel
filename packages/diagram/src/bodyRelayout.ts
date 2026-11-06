@@ -1,18 +1,19 @@
 /**
  * Laying a built body out again once its text changes size. A body whose
- * rows are all text or dividers records how it stacks them (`DiagramNode.body`),
+ * rows are all text, a header, or dividers records how it stacks them (`DiagramNode.body`),
  * and each text row records its place (`bodyRow`), so the rows can be read
  * back from the scene and handed to the same layout `buildBody` used.
  */
 import {
-  layoutBody, measureBody, rowHeights, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle,
+  layoutBody, measureBody, rowHeights, sizeToBody, stackRows, type BodySpec, type MeasureRowText, type Row, type RowBox, type RowTextStyle,
 } from './body';
+import type { Bounds } from './outline';
 import type { BodyDivider, BodyLayout, DiagramNode } from './types';
 
 /** The `body` record a body built from `spec` carries, or `undefined` for one that cannot be laid
  *  out again from its text: one with a `ports` or `slot` row, or with port labels drawn outside it. */
 export function bodyLayoutOf(spec: BodySpec, trait: DiagramNode, measure?: MeasureRowText): { body: BodyLayout } | Record<string, never> {
-  if (trait.margin !== undefined || !spec.rows.every((r) => r.kind === 'label' || r.kind === 'field' || r.kind === 'divider')) return {};
+  if (trait.margin !== undefined || !spec.rows.every((r) => r.kind === 'header' || r.kind === 'label' || r.kind === 'field' || r.kind === 'divider')) return {};
   const dividers = dividersOf(spec.rows);
   return {
     body: {
@@ -28,19 +29,34 @@ function dividersOf(rows: readonly Row[]): BodyDivider[] {
   return rows.flatMap((r, index) => (r.kind !== 'divider' ? [] : [r.inset === undefined ? { index } : { index, inset: r.inset }]));
 }
 
-/** `layout`'s rows with no text to measure: each divider as itself, every other row as a slot of
- *  the height it was last laid out at. Null for a body saved without its heights. */
-export function recordedRows(layout: BodyLayout): Row[] | null {
-  if (layout.heights === undefined) return null;
+/** `trait`'s rows with no text to measure: each divider as itself, a header as an empty one, and
+ *  every other row as a slot. Null for a body saved without its heights. */
+function recordedRows(trait: DiagramNode): Row[] | null {
+  const layout = trait.body;
+  if (layout?.heights === undefined) return null;
   const dividers = new Map((layout.dividers ?? []).map((d) => [d.index, d]));
   return layout.heights.map((height, i): Row => {
+    if (i === 0 && trait.header !== undefined) return { kind: 'header', text: '' };
     const d = dividers.get(i);
     return d === undefined ? { kind: 'slot', height } : dividerRow(d);
   });
 }
 
+/** Where a built body's rows go when it is at `box`, from the row heights its trait records. Null
+ *  for a body that records none. */
+export function recordedLayout(trait: DiagramNode, box: Bounds): RowBox[] | null {
+  const layout = trait.body;
+  const rows = recordedRows(trait);
+  if (layout === undefined || rows === null || trait.outline === undefined) return null;
+  const spec = { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign };
+  return stackRows(spec, box, layout.heights!);
+}
+
 type Box = { x: number; y: number; width: number; height: number };
-type TextData = { text?: unknown; bodyRow?: unknown; style?: { fontSize?: number; fontFamily?: string; fontWeight?: number; fontStyle?: string } };
+type TextData = {
+  text?: unknown; bodyRow?: unknown;
+  style?: { fontSize?: number; fontFamily?: string; fontWeight?: number; fontStyle?: string; letterSpacing?: number };
+};
 
 /** A scene as {@link relayoutBodies} reads and writes it. */
 export interface RelayoutScene {
@@ -53,8 +69,9 @@ export interface RelayoutScene {
 const rowStyle = (s: TextData['style']): RowTextStyle => ({
   ...(s?.fontSize !== undefined ? { fontSize: s.fontSize } : {}),
   ...(s?.fontFamily !== undefined ? { fontFamily: s.fontFamily } : {}),
-  ...((s?.fontWeight ?? 400) >= 700 ? { bold: true } : {}),
+  ...(s?.fontWeight === 700 ? { bold: true } : s?.fontWeight !== undefined && s.fontWeight !== 400 ? { weight: s.fontWeight } : {}),
   ...(s?.fontStyle === 'italic' ? { italic: true } : {}),
+  ...(s?.letterSpacing ? { tracking: s.letterSpacing / (s.fontSize ?? 16) } : {}),
 });
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
@@ -82,13 +99,15 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
       const divider = dividers.get(i);
       if (divider !== undefined) return dividerRow(divider);
       const data = scene.get(rowNodes.get(i) as never)?.data as TextData | undefined;
-      return { kind: 'label', text: typeof data?.text === 'string' ? data.text : '', style: rowStyle(data?.style) };
+      const text = typeof data?.text === 'string' ? data.text : '';
+      return { kind: i === 0 && trait.header !== undefined ? 'header' : 'label', text, style: rowStyle(data?.style) };
     });
     const spec: BodySpec = { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign };
     const heights = rowHeights(spec, measure);
     if (layout.heights === undefined || heights.some((h, i) => h !== layout.heights![i])) {
       const data = node.data as { diagram: DiagramNode };
-      scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights } } } } as never);
+      const header = trait.header === undefined ? {} : { header: { height: heights[0]! } };
+      scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights }, ...header } } } as never);
     }
     const pose = node.pose as Box;
     const grown = sizeToBody(pose, measureBody(spec, measure));

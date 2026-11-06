@@ -42,6 +42,8 @@ export interface DataNode {
   gap?: number;
   /** Default `DiagramSceneOptions.verticalAlign`. */
   verticalAlign?: BodySpec['verticalAlign'];
+  /** Drawn as its `header` row alone, the box just the band. Ignored when the first row is not a header. */
+  collapsed?: boolean;
   /** Drawn over the box besides its rows: shapes in a unit square stretched
    *  over it, and text pinned to a point on it. */
   marks?: readonly DataMark[];
@@ -197,6 +199,10 @@ export interface NodeStyle {
   text: string;
   strokeWidth?: number;
   dash?: number[];
+  /** A header row's band. Default `stroke`. */
+  header?: string;
+  /** A header row's text. Default `fill`. */
+  headerText?: string;
 }
 
 /** What a node is drawn with when nothing says otherwise. */
@@ -231,6 +237,8 @@ export interface DiagramSceneData {
   diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark } | { offPageTag: OffPageTag };
   fill?: { paint: { color: string; opacity?: number } };
   stroke?: Stroke;
+  /** A body's header band, when it is not drawn in the stroke's paint. */
+  headerFill?: { paint: { color: string } };
   text?: string;
   style?: DiagramTextStyle;
   verticalAlign?: 'top' | 'center' | 'bottom';

@@ -78,8 +78,28 @@ const recolored = (paint: Paint | undefined, color: string): Paint | undefined =
 function paintBox(data: Data, look: Look): Data | null {
   const fill = look.own.has('fill') ? undefined : recolored(data.fill, look.style.fill);
   const stroke = look.own.has('stroke') || data.stroke === undefined ? undefined : recolored(data.stroke, look.style.stroke);
-  if (fill === undefined && stroke === undefined) return null;
-  return { ...data, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
+  const band = paintBand(data, look);
+  if (fill === undefined && stroke === undefined && band.headerFill === undefined) return null;
+  return { ...data, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}), ...band };
+}
+
+const isHeaderRow = (data: Data, owner: ThemedNode): boolean =>
+  data.bodyRow === 0 && traitOf(owner.data)?.header !== undefined;
+
+/** The color a box's text row takes, or `undefined` to leave it: a header row's is drawn against
+ *  its band, in the box's fill unless the theme names one, and is left once the author set either. */
+function rowColor(data: Data, owner: ThemedNode, look: Look): string | undefined {
+  if (!isHeaderRow(data, owner)) return look.own.has('text') ? undefined : look.style.text;
+  if (look.style.headerText !== undefined) return look.style.headerText;
+  return look.own.has('fill') || look.own.has('text') ? undefined : look.style.fill;
+}
+
+/** `data`'s header band in `look`'s, or `{}` when the band follows the stroke and should go on doing so. */
+function paintBand(data: Data, look: Look): { headerFill?: Paint } {
+  const want = look.style.header;
+  if (want === undefined || traitOf(data)?.header === undefined) return {};
+  const headerFill = recolored(data.headerFill as Paint | undefined, want);
+  return headerFill === undefined ? {} : { headerFill };
 }
 
 /** `data`'s text recolored to `color` (unless `undefined`), set in `family`, and its size moved by
@@ -169,7 +189,7 @@ export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: Reado
     const owner = ownerOf(node);
     const ownerLook = owner === null ? null : lookOf(owner);
     if (ownerLook === null || typeof data.text !== 'string' || (ids !== undefined && !ids.has(owner!))) continue;
-    write(node.id, paintText(data, ownerLook.own.has('text') ? undefined : ownerLook.style.text, theme.font.family, ownerLook.ownSize ? 0 : step));
+    write(node.id, paintText(data, rowColor(data, scene.get(owner as never)!, ownerLook), theme.font.family, ownerLook.ownSize ? 0 : step));
   }
   return out;
 }

@@ -133,9 +133,11 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
       const next = withTrait(data, { ...data.diagram, ownStyle: own });
       if (field !== 'text') next[field] = painted(data[field], color);
       scene.update(id as never, { data: next });
-      if (field !== 'text') continue;
-      for (const t of textNodesOf(scene, id, state.kind)) {
+      // A header row is drawn against its band, in the box's fill.
+      const header = data.diagram?.header !== undefined;
+      for (const t of field === 'stroke' ? [] : textNodesOf(scene, id, state.kind)) {
         const text = scene.get(t as never)!.data as Data;
+        if ((header && text.bodyRow === 0) !== (field === 'fill')) continue;
         scene.update(t as never, { data: { ...text, fill: painted(text.fill, color) } });
       }
     }

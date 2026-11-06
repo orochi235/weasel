@@ -14,8 +14,9 @@ import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
+import { trackingWidth } from './rowMeasure';
 import { edgeIdOf } from './edgeId';
-import { ownNodeStyle, withColors } from './dataColors';
+import { headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
 import { dataNodeStyle } from './dataStyles';
 import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
@@ -82,6 +83,15 @@ function graphEdgeOf(e: DataEdge, room: EdgeLabelRoom | null): GraphEdge {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
+/** Whether `n` is drawn collapsed: asked to be, and with a header to collapse to. */
+const folded = (n: DataNode): boolean => n.collapsed === true && n.rows?.[0]?.kind === 'header';
+
+/** The rows `n` is built from: its header alone when it is collapsed. */
+function rowsOf(n: DataNode): readonly Row[] {
+  if (folded(n)) return n.rows!.slice(0, 1);
+  return n.rows ?? (n.lines ?? []).map((text): Row => ({ kind: 'label', text }));
+}
+
 /** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
 function nodeSpecs(
   n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
@@ -89,7 +99,7 @@ function nodeSpecs(
 ): DiagramSpec[] {
   const { style } = look;
   const textData = (text: string, row: Row | undefined): DiagramSceneData =>
-    ({ text, style: look.text(row), fill: { paint: { color: style.text } } });
+    ({ text, style: look.text(row), fill: { paint: { color: rowTextColor(row, style) } } });
   const built = buildBody<DiagramSceneData, 'main', RectPose>(body, box, {
     id: n.id,
     layer: 'main',
@@ -101,6 +111,7 @@ function nodeSpecs(
       },
       fill: { paint: { color: style.fill } },
       stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
+      ...headerFillOf(trait, style),
     }),
     row: (text, at) =>
       at.row.kind === 'slot'
@@ -137,7 +148,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     ? (text, s) => opts.measure!(text, { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize })
     : (text, s) => {
         const size = s.fontSize ?? font.fontSize;
-        return { width: text.length * GLYPH * size, height: Math.ceil(LINE * size) };
+        return { width: text.length * GLYPH * size + trackingWidth(text, { ...s, fontSize: size }), height: Math.ceil(LINE * size) };
       };
 
   const ids = new Set<string>();
@@ -172,7 +183,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
 
   const bodies = data.nodes.map((n) => ({
     outline: n.outline ?? opts.outline ?? 'rect',
-    rows: n.rows ?? (n.lines ?? []).map((text): Row => ({ kind: 'label', text })),
+    rows: rowsOf(n),
     padding: n.padding ?? opts.padding ?? 8,
     gap: n.gap ?? opts.gap ?? 4,
     verticalAlign: n.verticalAlign ?? opts.verticalAlign ?? 'center',
@@ -183,7 +194,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   // for in-rank order, it starts from the data's own order.
   const seeds: GraphNode[] = data.nodes.map((n, i) => {
     const pose = sizeToBody(
-      { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: n.height ?? 0 },
+      { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: folded(n) ? 0 : n.height ?? 0 },
       measureBody(bodies[i]!, measure),
     );
     const { ports, outline, margin } = bodyTrait(bodies[i]!, pose, measure);

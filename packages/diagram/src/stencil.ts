@@ -6,6 +6,7 @@ import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, type Op, ty
 import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
+import { headerFillOf, rowTextColor } from './dataColors';
 import { DEFAULT_FONT } from './edgeLabel';
 import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './dataTypes';
 import { NODE_STROKE_WIDTH } from './dataTypes';
@@ -91,12 +92,13 @@ export function stencilBuild<TLayer extends string>(
         diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure), ...(stencil.themeRole !== undefined ? { style: stencil.themeRole } : {}) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
+        ...headerFillOf(trait, style),
       }),
-      row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field'
+      row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field' || box.row.kind === 'header'
         ? {
             text,
             style: rowTextStyle(box.row, opts.font ?? DEFAULT_FONT),
-            fill: { paint: { color: style.text } },
+            fill: { paint: { color: rowTextColor(box.row, style) } },
             bodyRow: box.index,
             ...(box.row.kind === 'field' ? { bodyField: box.row.label } : {}),
           }

@@ -11,6 +11,7 @@ import {
   type CanvasSize,
   type Scene,
   type SceneCanvasApi,
+  type SceneCanvasHit,
 } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
@@ -22,6 +23,7 @@ import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
 import { withDiagramRegistry } from './edge';
 import type { DiagramSceneData, DiagramSpec } from './dataTypes';
+import { useHeaderClick } from './headerClick';
 import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
@@ -70,7 +72,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHeaderClick, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
   onEditSequence,
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
@@ -97,7 +99,7 @@ function Inner({
     registry,
   });
   const selection = useSelection({ scene, mode: selectionMode === 'multiple' ? 'multi' : 'single' });
-  const onClick = useMirroredSelection(selection, selected, onSelect);
+  const mirror = useMirroredSelection(selection, selected, onSelect);
 
   useSceneSync(scene, specs, { onMove, onEditContainer });
 
@@ -110,6 +112,11 @@ function Inner({
   const [measured, setMeasured] = useState<CanvasSize | null>(null);
   const { layers, box: pagesBox } = usePagesView(pages);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
+  const { onPointerUpCapture, onClick: headerHit } = useHeaderClick(canvasRef, scene, onHeaderClick);
+  const onClick = useCallback((hit: SceneCanvasHit | null) => {
+    mirror();
+    headerHit(hit);
+  }, [mirror, headerHit]);
   const current = useCallback(() => Array.from(source(), ({ node, pose }) => ({ ...node, pose })), [source]);
   const viewBounds = useMemo(
     () => (bounded ? diagramViewBounds(specs, fitPadding ?? DEFAULT_FIT_PADDING, pagesBox) : undefined),
@@ -156,7 +163,7 @@ function Inner({
   const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
-    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className}>
+    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerUpCapture={onPointerUpCapture}>
       <SceneCanvas
         ref={canvasRef}
         scene={scene}

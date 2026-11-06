@@ -67,12 +67,19 @@ export function diagramShape<TPose>(
       const solid = solidPath && solidFill ? [{ kind: 'path' as const, path: solidPath, fill: solidFill }] : [];
       const trait = diagramNodeOf(node, opts.read);
       const rules = stroke && trait !== null ? bodyRules(trait, box).map((path) => ({ kind: 'path' as const, path, stroke })) : [];
-      return [{
-        kind: 'path',
-        path: outlinePath(outline, box),
-        ...(fill ? { fill } : {}),
-        ...(stroke ? { stroke } : {}),
-      }, ...solid, ...detail, ...rules, ...divider];
+      const path = outlinePath(outline, box);
+      const bandPaint = (d as { headerFill?: Fill }).headerFill ?? (declaredStroke ? { paint: declaredStroke.paint } : null);
+      const bandFill = trait?.header === undefined || bandPaint === null ? null : commandFill(bandPaint, box);
+      const band = trait?.header === undefined || !bandFill ? [] : [{
+        kind: 'group' as const,
+        clip: path,
+        children: [{ kind: 'path' as const, path: { kind: 'rect' as const, x: box.x, y: box.y, width: box.width, height: Math.min(trait.header.height, box.height) }, fill: bandFill }],
+      }];
+      // A band goes between the fill and the stroke, so the outline is drawn over its edge.
+      const body = band.length === 0
+        ? [{ kind: 'path' as const, path, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) }]
+        : [...(fill ? [{ kind: 'path' as const, path, fill }] : []), ...band, ...(stroke ? [{ kind: 'path' as const, path, stroke }] : [])];
+      return [...body, ...solid, ...detail, ...rules, ...divider];
     },
     // The drawn boundary, so picking and clipping follow the diamond rather
     // than its bounding box.

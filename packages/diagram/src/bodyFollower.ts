@@ -11,8 +11,7 @@ import {
   type TransformFollower,
   type TransformPreviewNode,
 } from '@weasel-js/core';
-import { layoutBody } from './body';
-import { recordedRows } from './bodyRelayout';
+import { recordedLayout } from './bodyRelayout';
 import type { Bounds } from './outline';
 import { diagramNodeOf } from './trait';
 import { posesMovedBy } from './waypointFollower';
@@ -25,18 +24,13 @@ function restacked(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: Reado
   for (const [id, pose] of frame) {
     const node = sc.get(id as never);
     const trait = node === undefined ? null : diagramNodeOf(node);
-    const layout = trait?.body;
-    if (node === undefined || layout === undefined || trait?.outline === undefined) continue;
+    if (node === undefined || trait?.body === undefined || trait.outline === undefined) continue;
     const before = geometry.getBounds(node.pose);
     const after = geometry.getBounds(pose);
     if (before.width === after.width && before.height === after.height) continue;
-    const rows = recordedRows(layout);
-    if (rows === null) continue;
     // Rows are stored in the body's own frame.
-    const boxes = layoutBody(
-      { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign },
-      { x: 0, y: 0, width: after.width, height: after.height },
-    );
+    const boxes = recordedLayout(trait, { x: 0, y: 0, width: after.width, height: after.height });
+    if (boxes === null) continue;
     for (const child of sc.childrenOf(id as never)) {
       const c = sc.get(child)!;
       const index = (c.data as { bodyRow?: unknown } | null)?.bodyRow;

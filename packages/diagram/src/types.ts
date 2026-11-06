@@ -84,6 +84,9 @@ export interface DiagramNode {
   /** On a built body whose rows are all text or dividers: how it stacks them, so it can be laid out
    *  again when their text changes size. Each row's text node carries its place as `bodyRow`. */
   body?: BodyLayout;
+  /** On a built body whose first row is a `header`: the band across its top, flush with its
+   *  bounds, which the outline painter fills. */
+  header?: { height: number };
 }
 
 /** How a built body stacks its rows: the `BodySpec` fields its layout reads, and how many rows. */

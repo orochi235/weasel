@@ -25,7 +25,7 @@ export interface BodyNodeSpec<TData, TLayer extends string, TPose> {
 
 /** What a built body's rows are handed to, one call per row.
  *
- *  `text` is the row's content already formatted — a `label`'s own text, or a
+ *  `text` is the row's content already formatted — a `label`'s or `header`'s own text, or a
  *  `field`'s `"label: value"` — so the common case needs no discrimination.
  *  Return `null` for a row the consumer paints itself; `ports` and `slot` rows
  *  arrive with `text` empty and are the usual ones to decline. */
@@ -107,7 +107,7 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
 
 /** A row's content as one string: empty for a row that carries no text. */
 function rowText(row: Row): string {
-  if (row.kind === 'label') return row.text;
+  if (row.kind === 'label' || row.kind === 'header') return row.text;
   if (row.kind === 'field') return `${row.label}: ${row.value}`;
   return '';
 }

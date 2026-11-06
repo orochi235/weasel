@@ -1,6 +1,8 @@
 /** Which of a data item's own colors `diagramScene` lists in its trait's `ownStyle`. */
+import type { Row } from './body';
 import type { EdgeStyle, NodeStyle } from './dataTypes';
 import type { StyleField } from './theme/styleField';
+import type { DiagramNode } from './types';
 
 const NODE_FIELDS: readonly StyleField[] = ['fill', 'stroke', 'text'];
 
@@ -25,3 +27,11 @@ export function withColors<T extends object>(style: T, colors: Partial<T> | unde
   for (const [k, v] of Object.entries(colors)) if (v !== undefined) (out as Record<string, unknown>)[k] = v;
   return out;
 }
+
+/** The color a body row's text is drawn in under `style`: a header's against its band. */
+export const rowTextColor = (row: Row | undefined, style: NodeStyle): string =>
+  row?.kind === 'header' ? style.headerText ?? style.fill : style.text;
+
+/** The `headerFill` a body's data carries: none unless it has a header and `style` names its band. */
+export const headerFillOf = (trait: DiagramNode, style: NodeStyle): { headerFill?: { paint: { color: string } } } =>
+  trait.header !== undefined && style.header !== undefined ? { headerFill: { paint: { color: style.header } } } : {};

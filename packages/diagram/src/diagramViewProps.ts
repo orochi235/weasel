@@ -86,6 +86,9 @@ export interface DiagramViewProps {
    *  picked node reports it again. The canvas keeps the pick even if
    *  `selected` does not follow it; only a change to `selected` is pushed in. */
   onSelect?: (id: string | null, ids: readonly string[]) => void;
+  /** Reports a click (not a drag) on a node's header band — its `header` row —
+   *  with the node's id, after `onSelect`. To collapse it, write `collapsed`. */
+  onHeaderClick?: (nodeId: string) => void;
   /** Reports the node, group or edge the pointer comes to be over, and `null`
    *  once it is over none or leaves the canvas. An edge answers only while
    *  edges are picked (`pickEdges`). */

@@ -11,14 +11,18 @@
  * Text measurement is a seam rather than an import: measuring needs a 2D
  * context, which a geometry module has no business owning.
  */
-import { cssFamilyName } from '@weasel-js/font/metrics';
 import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
 import { marginOf, portLabelsOf, withLabels } from './portLabels';
 import { DEFAULT_PORTS } from './ports';
+import { FALLBACK_LINE, trackingWidth } from './rowMeasure';
 import type { DiagramNode, PortSpec } from './types';
 
 /** One line of body content. */
 export type Row =
+  /** A title band across the top of the node, flush with its bounds rather
+   *  than inset by the outline or the padding, filled in the body's stroke.
+   *  Only ever the first row. */
+  | { kind: 'header'; text: string; style?: RowTextStyle; id?: string }
   /** Text. `label` is the node's name; `field` is a named value. A row with
    *  an `id` gets a scene node of that name under the body's, so it can be
    *  found again; one without is named by its place. Not a bare number. */
@@ -50,6 +54,10 @@ export interface RowTextStyle {
   fontFamily?: string;
   bold?: boolean;
   italic?: boolean;
+  /** Extra space after each character, in em. */
+  tracking?: number;
+  /** A numeric font weight, over `bold`. */
+  weight?: number;
 }
 
 /** Measures one run of text. Returns its advance width and its line height. */
@@ -97,36 +105,28 @@ export interface RowPortBox extends Bounds {
 
 const DEFAULT_PADDING = 8;
 const DEFAULT_GAP = 4;
-/** What a row is worth when nothing measures its text, so a body laid out
- *  headlessly is not zero-height. */
-const FALLBACK_LINE = 16;
+/** The space above and below a header row's text, inside its band. */
+export const HEADER_PAD = 4;
 /** The height a divider row takes; its rule runs through the middle. */
 export const DIVIDER_HEIGHT = 4;
 
-/** Adapts the kit's `measureText` for a caller holding a 2D context. Pass the
- *  same context the renderer measures with, or the floor will not match what
- *  is painted. */
-export function canvasMeasure(
-  ctx: { measureText(text: string): { width: number } ; font: string },
-): MeasureRowText {
-  return (text, style) => {
-    const size = style.fontSize ?? FALLBACK_LINE;
-    ctx.font = `${style.italic === true ? 'italic ' : ''}${style.bold === true ? 'bold ' : ''}${size}px ${cssFamilyName(style.fontFamily ?? 'sans-serif')}`;
-    return { width: ctx.measureText(text).width, height: Math.ceil(size * 1.2) };
-  };
-}
+export { canvasMeasure } from './rowMeasure';
 
 /** What each row is worth on its own, before padding and gaps. */
 function measureRow(row: Row, measure: MeasureRowText | undefined): { width: number; height: number } {
   const text = (s: string, style?: RowTextStyle): { width: number; height: number } =>
     measure === undefined
       ? {
-          width: s.length * (style?.fontSize ?? FALLBACK_LINE) * 0.6,
+          width: s.length * (style?.fontSize ?? FALLBACK_LINE) * 0.6 + trackingWidth(s, style),
           height: style?.fontSize === undefined ? FALLBACK_LINE : Math.ceil(style.fontSize * 1.2),
         }
       : measure(s, style ?? {});
 
   switch (row.kind) {
+    case 'header': {
+      const t = text(row.text, row.style);
+      return { width: t.width, height: t.height + HEADER_PAD * 2 };
+    }
     case 'label':
       return text(row.text, row.style);
     case 'field': {
@@ -164,20 +164,31 @@ export function rowHeights(spec: BodySpec, measure?: MeasureRowText): number[] {
 export function measureBody(spec: BodySpec, measure?: MeasureRowText): BodyFloor {
   const padding = spec.padding ?? DEFAULT_PADDING;
   const gap = spec.gap ?? DEFAULT_GAP;
+  const { header, rows } = splitHeader(spec.rows);
   let width = 0;
   let height = 0;
-  for (const [i, row] of spec.rows.entries()) {
+  for (const [i, row] of rows.entries()) {
     const m = measureRow(row, measure);
     width = Math.max(width, m.width);
     height += m.height + (i > 0 ? gap : 0);
   }
   // The rows fit the *content* box; the node's own box has to be whatever
   // contains that, or a diamond's label lands outside the diamond.
-  const box = boxForContent(spec.outline, {
+  const box = header !== undefined && rows.length === 0 ? { width: 0, height: 0 } : boxForContent(spec.outline, {
     width: width + padding * 2,
     height: height + padding * 2,
   });
-  return { minWidth: box.width, minHeight: box.height };
+  if (header === undefined) return { minWidth: box.width, minHeight: box.height };
+  const band = measureRow(header, measure);
+  return { minWidth: Math.max(box.width, band.width + padding * 2), minHeight: box.height + band.height };
+}
+
+/** `rows` with its header taken off the front. Throws on a header anywhere else. */
+function splitHeader(rows: readonly Row[]): { header?: Extract<Row, { kind: 'header' }>; rows: readonly Row[] } {
+  const late = rows.findIndex((r, i) => i > 0 && r.kind === 'header');
+  if (late !== -1) throw new Error(`body: a 'header' row must be the first row, but row ${late} is one`);
+  const first = rows[0];
+  return first?.kind === 'header' ? { header: first, rows: rows.slice(1) } : { rows };
 }
 
 /**
@@ -199,23 +210,48 @@ export function layoutBody(
   bounds: Bounds,
   measure?: MeasureRowText,
 ): RowBox[] {
+  return stackRows(spec, bounds, rowHeights(spec, measure));
+}
+
+/** {@link layoutBody} from row heights already measured: `heights[i]` is row `i`'s. A header's
+ *  box is its text's, inside the band. */
+export function stackRows(spec: BodySpec, bounds: Bounds, heights: readonly number[]): RowBox[] {
   const padding = spec.padding ?? DEFAULT_PADDING;
   const gap = spec.gap ?? DEFAULT_GAP;
-  const inner = contentBox(spec.outline, bounds);
+  const { header, rows } = splitHeader(spec.rows);
+  const out: RowBox[] = [];
+  let below = bounds;
+  if (header !== undefined) {
+    const band = Math.min(heights[0] ?? 0, bounds.height);
+    out.push({
+      row: header, index: 0, x: bounds.x + padding, y: bounds.y + HEADER_PAD,
+      width: Math.max(bounds.width - padding * 2, 0), height: Math.max(band - HEADER_PAD * 2, 0),
+    });
+    below = { x: bounds.x, y: bounds.y + band, width: bounds.width, height: bounds.height - band };
+  }
+  const first = header === undefined ? 0 : 1;
+  const own = heights.slice(first, first + rows.length);
+  const inner = contentBox(spec.outline, below);
   const width = Math.max(inner.width - padding * 2, 0);
-  const heights = rowHeights(spec, measure);
-  const used = heights.reduce((sum, h) => sum + h, 0) + gap * Math.max(heights.length - 1, 0);
+  const used = own.reduce((sum, h) => sum + h, 0) + gap * Math.max(own.length - 1, 0);
   const slack = Math.max(inner.height - padding * 2 - used, 0);
   const share = { top: 0, center: 0.5, bottom: 1 }[spec.verticalAlign ?? 'center'];
   let y = inner.y + padding + slack * share;
-  return spec.rows.map((row, index) => {
-    const h = heights[index];
-    const box: RowBox = row.kind === 'divider'
+  for (const [i, row] of rows.entries()) {
+    const index = i + first;
+    const h = own[i]!;
+    out.push(row.kind === 'divider'
       ? { row, index, x: inner.x + (row.inset ?? 0), y, width: Math.max(inner.width - 2 * (row.inset ?? 0), 0), height: h }
-      : rowBox(row, index, inner.x + padding, width, y, h);
+      : rowBox(row, index, inner.x + padding, width, y, h));
     y += h + gap;
-    return box;
-  });
+  }
+  return out;
+}
+
+/** How tall `spec`'s header band is, or `undefined` for a body without one. */
+export function headerHeight(spec: BodySpec, measure?: MeasureRowText): number | undefined {
+  const { header } = splitHeader(spec.rows);
+  return header === undefined ? undefined : measureRow(header, measure).height;
 }
 
 /** A row other than a divider: the padded width, or a sized slot's width centered in it. */
@@ -277,7 +313,9 @@ export function layoutRowPorts(
 export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowText): DiagramNode {
   const outline = spec.outline;
   const compass = withLabels(spec.ports ?? DEFAULT_PORTS, spec.portLabels);
-  if (bounds.height <= 0) return { outline, ports: compass };
+  const band = headerHeight(spec, measure);
+  const header = band === undefined ? {} : { header: { height: band } };
+  if (bounds.height <= 0) return { outline, ports: compass, ...header };
 
   const rowPorts: PortSpec[] = [];
   let hasLeft = false;
@@ -296,7 +334,7 @@ export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowTe
   }
   const kept = spec.ports !== undefined ? compass : compass.filter((p) =>
     !(p.id === 'w' && hasLeft) && !(p.id === 'e' && hasRight));
-  const trait: DiagramNode = { outline, ports: [...kept, ...rowPorts] };
+  const trait: DiagramNode = { outline, ports: [...kept, ...rowPorts], ...header };
   const margin = marginOf(bounds, portLabelsOf(trait, bounds, labelSize(measure)).map((l) => l.box));
   return margin === undefined ? trait : { ...trait, margin };
 }
