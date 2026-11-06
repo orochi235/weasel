@@ -235,7 +235,8 @@ export function shapeCoversPoint<TData, TPose>(
   const parts = derivedPartsOf(opts.derivedPath);
   if (parts !== undefined) return partsCover(node, parts, pose, x, y, opts);
   const ink = findShapeInk(node, pose, { scale: opts.scale, inherited: opts.inherited }) ?? DEFAULT_INK;
-  const trimmed = ink.trim === undefined ? undefined : trimmedOutlineOf(node, pose, sil, ink.trim, opts.derivedPath);
+  const trim = ink.stroke?.trim;
+  const trimmed = trim === undefined ? undefined : trimmedOutlineOf(node, pose, sil, trim, opts.derivedPath);
   return inkCovers(sil, ink, trimmed, x, y, opts);
 }
 

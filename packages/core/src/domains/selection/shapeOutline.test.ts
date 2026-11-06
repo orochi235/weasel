@@ -19,6 +19,7 @@ function sceneOf() {
   scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 60 } } as never);
   mark('child', { shape: 'rect' }, { parent: asNodeId('g') });
   mark('wire', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: { paint: RED, width: 4 } });
+  mark('arrowed', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: { paint: RED, width: 4, markerEnd: 'arrow', dash: [6, 4] } });
   mark('bare', { path: pathFromD('M 0 0 L 100 60') });
   return scene;
 }
@@ -98,5 +99,15 @@ describe("selection outline with follow: 'shape'", () => {
   it('keeps the box for an open path with no stroke', () => {
     const cmds = layerFor(sceneOf(), ['bare']).draw(undefined, VIEW, DIMS);
     expect(traced(cmds)).toHaveLength(0);
+  });
+
+  it("traces an arrowed wire's head without widening the rest of it", () => {
+    const edge = traced(layerFor(sceneOf(), ['arrowed']).draw(undefined, VIEW, DIMS))[0].path as Path;
+    expect(pathContainsPoint(edge, 50, 1)).toBe(true);
+    // Unbroken where the dash would leave a gap.
+    expect(pathContainsPoint(edge, 8, 1)).toBe(true);
+    expect(pathContainsPoint(edge, 50, 4)).toBe(false);
+    // The head, wider than the line, near the end.
+    expect(boundsOfPath(edge).x + boundsOfPath(edge).width).toBeGreaterThan(104);
   });
 });

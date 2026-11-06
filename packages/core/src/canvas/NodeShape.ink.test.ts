@@ -28,33 +28,41 @@ function pathNode(data: Record<string, unknown>): Node<unknown, string, RectPose
 
 const POSE: RectPose = { x: 0, y: 0, width: 100, height: 100 };
 
+/** {@link findShapeInk} without the stroke it reports, which the tests on `stroke` check. */
+function reachOf(...args: Parameters<typeof findShapeInk>) {
+  const ink = findShapeInk(...args);
+  if (ink === null) return null;
+  const { stroke: _stroke, ...reach } = ink;
+  return reach;
+}
+
 describe('findShapeInk', () => {
   it('reports a filled path with no stroke', () => {
-    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') } }), POSE))
+    expect(reachOf(pathNode({ fill: { paint: solid('#f00') } }), POSE))
       .toEqual({ filled: true, outset: 0, inset: 0 });
   });
 
   it('reports a stroke-only path as unfilled', () => {
     // Matches `paint`: no fill declared and a stroke present means the
     // painter emits no fill at all (the pencil case).
-    expect(findShapeInk(pathNode({ stroke: strokeOf('#000', 2) }), POSE))
+    expect(reachOf(pathNode({ stroke: strokeOf('#000', 2) }), POSE))
       .toEqual({ filled: false, outset: 1, inset: 1 });
   });
 
   it('treats fill: null as unfilled', () => {
-    expect(findShapeInk(pathNode({ fill: null, stroke: strokeOf('#000', 3) }), POSE))
+    expect(reachOf(pathNode({ fill: null, stroke: strokeOf('#000', 3) }), POSE))
       .toEqual({ filled: false, outset: 1.5, inset: 1.5 });
   });
 
   it('treats stroke: null and zero width as unstroked', () => {
-    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') }, stroke: null }), POSE))
+    expect(reachOf(pathNode({ fill: { paint: solid('#f00') }, stroke: null }), POSE))
       .toMatchObject({ outset: 0, inset: 0 });
-    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') }, stroke: strokeOf('#000', 0) }), POSE))
+    expect(reachOf(pathNode({ fill: { paint: solid('#f00') }, stroke: strokeOf('#000', 0) }), POSE))
       .toMatchObject({ outset: 0, inset: 0 });
   });
 
   it('reports no fill when neither fill nor stroke is declared', () => {
-    expect(findShapeInk(pathNode({}), POSE)).toEqual({ filled: false, outset: 0, inset: 0 });
+    expect(reachOf(pathNode({}), POSE)).toEqual({ filled: false, outset: 0, inset: 0 });
   });
 
   it('reports kit:shape as filled only when it declares a fill', () => {
@@ -62,9 +70,9 @@ describe('findShapeInk', () => {
       id: asNodeId('s'), kind: 'mark', layer: 'main', pose: POSE,
       data: { shape: 'star', points: 5, stroke: strokeOf('#000', 6), ...data },
     } as unknown as Node<unknown, string, RectPose>);
-    expect(findShapeInk(star({}), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
-    expect(findShapeInk(star({ fill: { paint: solid('#f00') } }), POSE)).toEqual({ filled: true, outset: 3, inset: 3 });
-    expect(findShapeInk(star({ fill: null }), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
+    expect(reachOf(star({}), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
+    expect(reachOf(star({ fill: { paint: solid('#f00') } }), POSE)).toEqual({ filled: true, outset: 3, inset: 3 });
+    expect(reachOf(star({ fill: null }), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
   });
 });
 
@@ -162,7 +170,7 @@ describe('shapeCoversPoint — painters with no opinion', () => {
     const opaque = {
       id: asNodeId('x'), kind: 'mark', layer: 'main', pose: POSE, data: { fill: { paint: solid('#f00') } },
     } as unknown as Node<unknown, string, RectPose>;
-    expect(findShapeInk(opaque, POSE)).toBeNull();
+    expect(reachOf(opaque, POSE)).toBeNull();
     expect(shapeCoversPoint(opaque, POSE, 50, 50)).toBe(true);
     expect(shapeCoversPoint(opaque, POSE, 200, 200)).toBe(false);
   });
@@ -174,18 +182,18 @@ describe('findShapeInk — a Stroke object on the node', () => {
 
   it('takes the width off the stroke', () => {
     const n = strokeNode({ paint: { color: '#000' }, width: 10 });
-    expect(findShapeInk(n, POSE)).toEqual({ filled: false, outset: 5, inset: 5 });
+    expect(reachOf(n, POSE)).toEqual({ filled: false, outset: 5, inset: 5 });
   });
 
   it('defaults a width-less Stroke to 1, as the renderer does', () => {
-    expect(findShapeInk(strokeNode({ paint: { color: '#000' } }), POSE))
+    expect(reachOf(strokeNode({ paint: { color: '#000' } }), POSE))
       .toEqual({ filled: false, outset: 0.5, inset: 0.5 });
   });
 
   it('gives an inner stroke no reach outside the outline, and an outer one none inside', () => {
-    expect(findShapeInk(strokeNode({ paint: { color: '#000' }, width: 8, align: 'inner' }), POSE))
+    expect(reachOf(strokeNode({ paint: { color: '#000' }, width: 8, align: 'inner' }), POSE))
       .toEqual({ filled: false, outset: 0, inset: 8 });
-    expect(findShapeInk(strokeNode({ paint: { color: '#000' }, width: 8, align: 'outer' }), POSE))
+    expect(reachOf(strokeNode({ paint: { color: '#000' }, width: 8, align: 'outer' }), POSE))
       .toEqual({ filled: false, outset: 8, inset: 0 });
   });
 
@@ -195,8 +203,8 @@ describe('findShapeInk — a Stroke object on the node', () => {
   it('reports a { px } width as a reach in screen pixels, at any scale', () => {
     const n = strokeNode({ paint: { color: '#000' }, width: { px: 8 } });
     const screen = { filled: false, outset: 0, inset: 0, outsetPx: 4, insetPx: 4 };
-    expect(findShapeInk(n, POSE, { scale: 2 })).toEqual(screen);
-    expect(findShapeInk(n, POSE)).toEqual(screen);
+    expect(reachOf(n, POSE, { scale: 2 })).toEqual(screen);
+    expect(reachOf(n, POSE)).toEqual(screen);
   });
 
   // Each head's reach is measured where it is built: on screen for a { px }
@@ -217,14 +225,14 @@ describe('findShapeInk — a Stroke object on the node', () => {
     it('reaches a { px } head on a world-width line in screen pixels', () => {
       const off = bar();
       const n = strokeNode({ paint: { color: '#000' }, width: 2, markerEnd: { key: 'test-ink-bar', size: { px: 5 } } });
-      expect(findShapeInk(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 1, inset: 1, outsetPx: 10, insetPx: 0 });
+      expect(reachOf(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 1, inset: 1, outsetPx: 10, insetPx: 0 });
       off();
     });
 
     it('reaches a world-sized head on a { px } line in world units', () => {
       const off = bar();
       const n = strokeNode({ paint: { color: '#000' }, width: { px: 8 }, markerEnd: { key: 'test-ink-bar', size: 3 } });
-      expect(findShapeInk(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 6, inset: 0, outsetPx: 4, insetPx: 4 });
+      expect(reachOf(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 6, inset: 0, outsetPx: 4, insetPx: 4 });
       off();
     });
   });
@@ -243,7 +251,7 @@ describe('findShapeInk — a Stroke object on the node', () => {
       { priority: 'high' },
     );
     try {
-      expect(findShapeInk(pathNode({ custom: true }), POSE))
+      expect(reachOf(pathNode({ custom: true }), POSE))
         .toEqual({ filled: false, outset: 6, inset: 1 });
     } finally {
       dispose();
@@ -294,8 +302,16 @@ describe('a stroke with no paint', () => {
   it('reaches no further than an unstroked node for picking', () => {
     // `ink` and `paint` have to agree, or a node is grabbable across a width
     // it does not draw.
-    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') }, stroke: paintless }), POSE))
+    expect(reachOf(pathNode({ fill: { paint: solid('#f00') }, stroke: paintless }), POSE))
       .toEqual({ filled: true, outset: 0, inset: 0 });
+  });
+});
+
+describe('findShapeInk — the stroke drawn along the silhouette', () => {
+  it('reports the resolved stroke of a path or shape node', () => {
+    const stroke = strokeOf('#000', 4);
+    expect(findShapeInk(pathNode({ stroke }), POSE)?.stroke).toMatchObject({ width: 4 });
+    expect(findShapeInk(pathNode({}), POSE)).not.toHaveProperty('stroke');
   });
 });
 
@@ -308,13 +324,17 @@ describe('findShapeInk — text', () => {
     data: { text: 'Away', ...data },
   } as unknown as Node<unknown, string, RectPose>);
 
+  it('reports no stroke for text, whose stroke follows its glyphs', () => {
+    expect(findShapeInk(textNode({ stroke: strokeOf('#000', 4) }), POSE)).not.toHaveProperty('stroke');
+  });
+
   it('gives a stroked text node the same reach as any other kind', () => {
-    expect(findShapeInk(textNode({ stroke: strokeOf('#000', 4) }), POSE))
+    expect(reachOf(textNode({ stroke: strokeOf('#000', 4) }), POSE))
       .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 
   it('stays filled when no fill is declared — undeclared text is black text', () => {
-    expect(findShapeInk(textNode({}), POSE))
+    expect(reachOf(textNode({}), POSE))
       .toEqual({ filled: true, outset: 0, inset: 0 });
   });
 
@@ -322,7 +342,7 @@ describe('findShapeInk — text', () => {
     // `fill: null` paints no glyph fill, but the silhouette is line boxes
     // rather than glyph ink: reporting it unfilled would leave a word
     // grabbable at its line-box edge and nowhere near the letters.
-    expect(findShapeInk(textNode({ fill: null, stroke: strokeOf('#000', 4) }), POSE))
+    expect(reachOf(textNode({ fill: null, stroke: strokeOf('#000', 4) }), POSE))
       .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 });

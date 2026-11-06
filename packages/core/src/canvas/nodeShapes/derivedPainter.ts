@@ -9,7 +9,7 @@ import { derivesPath } from './memo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { strokedBounds } from './strokedBounds';
 import { inkCovers, trimmedOutline, type PickReach, type TrimmedOutline } from './pickOutline';
-import { inkReach, inkTrim, withAnimatedStrokeTrim, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, inkStroke, withAnimatedStrokeTrim, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import {
   INHERIT, resolveFill, resolveStroke, strokeTrimKey, type PaintedFill, type PaintedStroke,
 } from '@weasel-js/paint';
@@ -128,7 +128,7 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     return {
       filled: resolveFill(d?.fill, ctx?.inherited?.fill) !== null,
       ...inkReach(stroke, ctx?.scale),
-      ...inkTrim(stroke),
+      ...inkStroke(stroke),
     };
   },
 };

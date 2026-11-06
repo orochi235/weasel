@@ -12,12 +12,13 @@ import {
   boxToBox, identity, invert, meanScale, multiply, pathToAnchors, poseFrameOf, transformPath, type Affine, type Path,
 } from '@weasel-js/geom';
 import { offsetPath, strokeToPath } from '@weasel-js/stroke';
-import type { CommandStroke } from '@weasel-js/paint';
+import type { CommandStroke, Stroke } from '@weasel-js/paint';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { inheritedPaintIn } from 'core/scene/inheritedPaint';
 import { findShapeInk } from 'canvas/NodeShape';
 import { nodeOutline } from 'domains/paths/strokeOutline';
+import { strokeRegion } from 'interactions/actions/outlines/strokeRegion';
 import type { DrawnBoundsScene } from 'canvas/drawnBounds';
 
 /** How a shape outline reads one node each frame. */
@@ -91,14 +92,24 @@ function edgeOf(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<
     const carry = boxMove(held.pose, pose);
     if (carry) return transformPath(held.edge, carry);
   }
-  const edge = open
-    ? strokeToPath(silhouette, { width: distance * 2, join: 'round', cap: 'round' })
-    : offsetPath(silhouette, distance);
+  const edge = open ? inkBand(silhouette, ink?.stroke, pose, distance, scale) : offsetPath(silhouette, distance);
+  if (edge.kind === 'polygon' && edge.commands.length === 0) return null;
   edges.set(id, { key, pose, distance, edge });
   return edge;
 }
 
-/** An open run encloses nothing, so its edge is the band its ink covers. */
+/**
+ * The region an open path's ink covers: its stroke's ribbon, caps and heads
+ * and all, unbroken by any dash; a band reaching `distance` either side when
+ * the painter does not say what stroke it draws.
+ */
+function inkBand(path: Path, stroke: Stroke | undefined, pose: unknown, distance: number, scale: number): Path {
+  if (stroke === undefined) return strokeToPath(path, { width: distance * 2, join: 'round', cap: 'round' });
+  const { dash: _dash, ...unbroken } = stroke;
+  return strokeRegion(path, unbroken, poseFrameOf(pose), { scale });
+}
+
+/** An open run encloses nothing, so its edge is the region its ink covers. */
 function isOpen(path: Path): boolean {
   return path.kind !== 'rect' && !pathToAnchors(path).closed.every(Boolean);
 }
