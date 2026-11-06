@@ -4,18 +4,14 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-11-03)
+## State (2026-11-05)
 
-- 1.16.1 is on npm (`npm view @weasel-js/core version`). `main` is at 53008c834 (2026-11-03), unpushed past
-  58d39a8ed. Unreleased since 1.16.1 is whatever `.changeset/` holds: among it `@weasel-js/core/engine` with
-  kernel3d and the 3D lab built on it, `ENGINE_STANDARD_ACTIONS`, keys staying with the surface a press landed
-  in, a lab's menu bar in its header, the dither package, and the Node 24 floor. The batch run on bd0f69a2a
-  (`test:fleet`, `test:fleet:postbuild`) was green, and so was batch 2026-11-03-agents on 53008c834: id frames and
-  `pickAt`, `renderSceneToPixels`'s `layers`, the scene's `quantize` rule with the output grid as a document
-  value, per-page clips in saved SVG, envelope drops, and the vertical bar's number box.
-- Nothing in flight.
-- The windease fix for a never-shown node is on windease's `main` (24ec47d) and not yet released (npm has
-  2.2.0); the weasel TODO entry says what follows its release.
+- 1.16.2 is on npm (`npm view @weasel-js/core version`). `main` is at batch 2026-11-05's tip, da45bbc34, unpushed
+  past 1d87afe1c; its `test:fleet` run was green on that commit, and `test:fleet:postbuild` on df23a0e71, which
+  differs only in one test file's formatting. Unreleased is whatever `.changeset/` holds: among it core's
+  `useClipboard` and the editor's `useDocClipboard`, Switch and Checkbox labels on their words' baseline, a
+  diagram slot row's image and header row, and a node keeping its previous image until a new `src` decodes.
+- Nothing in flight. The WebGPU entry in `docs/TODO.md` waits on a ruling about the custom shader API.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
