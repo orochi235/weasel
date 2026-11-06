@@ -24,7 +24,7 @@ import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramV
 import { withDiagramRegistry } from './edge';
 import type { DiagramSceneData, DiagramSpec } from './dataTypes';
 import { useHeaderClick } from './headerClick';
-import { useReleasedImages } from './imageRelease';
+import { useHeldImages, useReleasedImages } from './imageRelease';
 import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
@@ -90,7 +90,8 @@ function Inner({
     return placer === null ? out : placer(out);
   }, [avoid, placer, given]);
   const hopped = useMemo(() => (hops === undefined ? routed : createSpecHops(hops)(routed)), [hops, routed]);
-  const specs = useMemo(() => (edgesPick ? withPickableEdges(hopped) : hopped), [edgesPick, hopped]);
+  const picked = useMemo(() => (edgesPick ? withPickableEdges(hopped) : hopped), [edgesPick, hopped]);
+  const specs = useHeldImages(picked);
   useEffect(() => {
     const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
     return () => disposers.forEach((dispose) => dispose());

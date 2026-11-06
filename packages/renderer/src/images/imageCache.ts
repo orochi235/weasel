@@ -18,6 +18,10 @@ import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } fro
 export interface ImageNodeData {
   image: {
     src: string;
+    /** A `src` drawn in this one's place while it decodes, so swapping a
+     *  picture does not flash the loading placeholder. Read only once it has
+     *  decoded; never loaded on its own account. */
+    previous?: string;
     opacity?: number;
     /** The part of the bitmap drawn into the pose rect, as fractions of the
      *  bitmap's width and height from its top-left. Omitted draws the whole
