@@ -1,7 +1,8 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { Paint } from '@weasel-js/paint';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
-import type { ShaderProgram } from '../shaders/ShaderProgram';
+import { POSITION_ATTRIBUTE_LOCATION, type ShaderProgram } from '../shaders/ShaderProgram';
+import type { GpuBuffer, GpuGeometry } from '../gpu/types';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import { canBatchMesh, solidColor, stagePlain } from './batch';
 import { flushForOwnDraw, retryUncut } from './clip';
@@ -38,31 +39,38 @@ export function expandAnchorColors(perAnchor: ArrayLike<number>, mesh: Anchors, 
   return colors;
 }
 
-interface VertexColorBinding { vbo: WebGLBuffer; location: number | undefined }
-
-/** Point the bound mesh VAO's a_vertexColor at a fresh buffer of per-vertex
- *  colors. Pair with `detachVertexColors` before the VAO is unbound. */
-export function attachVertexColors(
-  gl: WebGL2RenderingContext, prog: ShaderProgram, perAnchor: number[], handle: GLMeshHandle,
-): VertexColorBinding {
-  const vbo = gl.createBuffer();
-  if (!vbo) throw new Error('attachVertexColors: createBuffer returned null');
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, expandAnchorColors(perAnchor, handle), gl.DYNAMIC_DRAW);
-  const location = prog.attribute('a_vertexColor');
-  if (location !== undefined) {
-    gl.enableVertexAttribArray(location);
-    gl.vertexAttribPointer(location, 4, gl.FLOAT, false, 0, 0);
-  }
-  return { vbo, location };
+/** A mesh's geometry with per-vertex colors beside its positions, for one draw. */
+export interface VertexColorGeometry {
+  readonly geometry: GpuGeometry;
+  /** What `releaseVertexColors` frees: the colors and the geometry naming
+   *  them, `null` where the program reads no `a_vertexColor`. */
+  readonly made: { readonly geometry: GpuGeometry; readonly colors: GpuBuffer } | null;
 }
 
-// Order matters: a buffer deleted after its VAO is unbound stays attached to
-// that VAO and is not freed until the mesh is, and one deleted while its
-// attribute is still enabled leaves the VAO unable to draw.
-export function detachVertexColors(gl: WebGL2RenderingContext, { vbo, location }: VertexColorBinding): void {
-  if (location !== undefined) gl.disableVertexAttribArray(location);
-  gl.deleteBuffer(vbo);
+/** `handle`'s geometry with `a_vertexColor` read from a fresh buffer of
+ *  per-vertex colors. Pair with `releaseVertexColors` after the draw. */
+export function withVertexColors(
+  ctx: DrawContext, prog: ShaderProgram, perAnchor: number[], handle: GLMeshHandle,
+): VertexColorGeometry {
+  const location = prog.attribute('a_vertexColor');
+  if (location === undefined) return { geometry: handle.geometry, made: null };
+  const gpu = ctx.gpu;
+  const colors = gpu.createBuffer('vertex', expandAnchorColors(perAnchor, handle), 'dynamic');
+  const geometry = gpu.createGeometry({
+    vertexBuffers: [
+      { buffer: handle.vertices, stride: 0, attributes: [{ location: POSITION_ATTRIBUTE_LOCATION, components: 2, offset: 0 }] },
+      { buffer: colors, stride: 0, attributes: [{ location, components: 4, offset: 0 }] },
+    ],
+    indexBuffer: handle.indices,
+    indexFormat: 'uint32',
+  });
+  return { geometry, made: { geometry, colors } };
+}
+
+export function releaseVertexColors(ctx: DrawContext, { made }: VertexColorGeometry): void {
+  if (!made) return;
+  ctx.gpu.deleteGeometry(made.geometry);
+  ctx.gpu.deleteBuffer(made.colors);
 }
 
 /** Reused across stagings: `pushMesh` copies out of it before it is written again. */

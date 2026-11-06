@@ -1,5 +1,7 @@
 import { createPaintResources, type OwnedPaintResources } from './paintResources';
-import { ShaderProgram } from './shaders/ShaderProgram';
+import type { ShaderProgram } from './shaders/ShaderProgram';
+import type { GpuBuffer, GpuDevice, GpuPassDesc, GpuTexture } from './gpu/types';
+import { openWebGL } from './gpu/webgl/openWebGL';
 import {
   LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC,
   BatchVariantPrograms, createBatchFill,
@@ -56,7 +58,8 @@ const GLYPH_PAINT_SOURCES: Record<GlyphPaintKind, readonly [string, readonly str
 };
 
 /**
- * The WebGL2 renderer: takes a list of draw commands and paints them.
+ * The renderer: takes a list of draw commands and paints them, through the
+ * GPU layer (`gpu/`) over WebGL2.
  *
  * It knows nothing about the scene — commands are the whole interface, which
  * is what lets layers, HUD widgets and overlays all draw through the same
@@ -64,7 +67,7 @@ const GLYPH_PAINT_SOURCES: Record<GlyphPaintKind, readonly [string, readonly str
  * frames and keyed by identity, so re-issuing the same command is cheap.
  */
 export class WeaselRenderer {
-  private readonly gl: WebGL2RenderingContext;
+  private readonly gpu: GpuDevice;
   private stats: RenderStats = { drawCalls: 0, ms: 0, spans: [], retained: NO_RETAINED };
   /** Built on the first frame that draws with each, so a one-shot render of
    *  plain shapes builds the batch program alone. */
@@ -81,12 +84,11 @@ export class WeaselRenderer {
   private imageCache: GLImageCache;
   private gradRamps: GradientRampAtlas;
   private readonly programs: CustomPrograms;
-  private quadVbo: WebGLBuffer | null = null;
-  private quadIbo: WebGLBuffer | null = null;
+  private quad: { vertices: GpuBuffer; indices: GpuBuffer } | null = null;
   private drawBatch: DrawBatch;
   /** 1x1 white, so a batch flush sampling no image still samples something —
    *  see `shaders/batchFill.ts`. */
-  private whiteTexture: WebGLTexture | null = null;
+  private whiteTexture: GpuTexture | null = null;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -118,26 +120,19 @@ export class WeaselRenderer {
   private idComposite: ShaderProgram | null = null;
 
   constructor(opts: WeaselRendererOptions) {
-    if (!opts.gl && !opts.canvas) {
-      throw new Error('WeaselRenderer requires either gl or canvas');
-    }
-    const gl = opts.gl ?? opts.canvas!.getContext('webgl2', { stencil: true });
-    if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
-    this.gl = gl as WebGL2RenderingContext;
-    this.effectTargets = new EffectTargets(this.gl);
-    this.programs = new CustomPrograms(this.gl);
-    this.retained = new RetainedSurfaces(this.gl, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
-    this.paintScratch = new PaintScratch(this.gl);
+    const { device, lossTarget } = openWebGL(opts);
+    this.gpu = device;
+    this.effectTargets = new EffectTargets(this.gpu);
+    this.programs = new CustomPrograms(this.gpu);
+    this.retained = new RetainedSurfaces(this.gpu, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
+    this.paintScratch = new PaintScratch(this.gpu);
 
     // Bits 0-7 are load-bearing: bit 0 for even-odd fills and stenciled
     // strokes, bits 1-7 for clip depth (`renderer/draw.ts`). Without a stencil
     // buffer both render wrong rather than not at all, so refuse the context
     // instead of painting a plausible lie. A stub that cannot answer is not a
     // stencil-less context — only an explicit `false` is.
-    const attrs = typeof this.gl.getContextAttributes === 'function'
-      ? this.gl.getContextAttributes()
-      : null;
-    if (attrs && attrs.stencil === false) {
+    if (this.gpu.limits.stencil === false) {
       throw new Error(
         'WeaselRenderer: the supplied WebGL2 context has no stencil buffer. '
         + 'Create it with { stencil: true } — clips and even-odd fills need one.',
@@ -157,30 +152,29 @@ export class WeaselRenderer {
       this.canvas.width = Math.round(opts.width * opts.dpr);
       this.canvas.height = Math.round(opts.height * opts.dpr);
     }
-    const lossTarget: Partial<EventTarget> | null = this.canvas ?? this.gl.canvas ?? null;
-    if (lossTarget && typeof lossTarget.addEventListener === 'function') {
-      this.lossTarget = lossTarget as EventTarget;
+    const events: Partial<EventTarget> | null = this.canvas ?? lossTarget;
+    if (events && typeof events.addEventListener === 'function') {
+      this.lossTarget = events as EventTarget;
       this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
       this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
     }
 
-    this.applyGlState();
-    this.applyTarget();
+    this.gpu.beginFrame();
 
-    this.pathFill = new LazyProgram(this.gl, PATH_FILL_SPEC);
-    this.pathFillVColor = new LazyProgram(this.gl, PATH_FILL_VCOLOR_SPEC);
-    this.gradFill = new LazyProgram(this.gl, GRAD_FILL_SPEC);
-    this.patternFill = new LazyProgram(this.gl, PATTERN_FILL_SPEC);
-    this.batchVariants = new BatchVariantPrograms(this.gl);
-    this.batchFill = createBatchFill(this.gl);
+    this.pathFill = new LazyProgram(this.gpu, PATH_FILL_SPEC);
+    this.pathFillVColor = new LazyProgram(this.gpu, PATH_FILL_VCOLOR_SPEC);
+    this.gradFill = new LazyProgram(this.gpu, GRAD_FILL_SPEC);
+    this.patternFill = new LazyProgram(this.gpu, PATTERN_FILL_SPEC);
+    this.batchVariants = new BatchVariantPrograms(this.gpu);
+    this.batchFill = createBatchFill(this.gpu);
 
-    this.meshCache = new GLMeshCache(this.gl);
-    this.textureCache = new GLTextureCache(this.gl);
-    this.imageCache = new GLImageCache(this.gl, this.imageMinification);
-    this.gradRamps = new GradientRampAtlas(this.gl);
+    this.meshCache = new GLMeshCache(this.gpu);
+    this.textureCache = new GLTextureCache(this.gpu);
+    this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
+    this.gradRamps = new GradientRampAtlas(this.gpu);
     this.uploadQuadGeometry();
-    this.drawBatch = new DrawBatch(this.gl, this.batchFill);
-    this.whiteTexture = createWhiteTexture(this.gl);
+    this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
+    this.whiteTexture = createWhiteTexture(this.gpu);
   }
 
   private lazyPrograms(): LazyProgram[] {
@@ -188,20 +182,12 @@ export class WeaselRenderer {
   }
 
   private uploadQuadGeometry(): void {
-    const gl = this.gl;
-    this.quadVbo = gl.createBuffer();
-    this.quadIbo = gl.createBuffer();
-    if (!this.quadVbo || !this.quadIbo) {
-      throw new Error('WeaselRenderer: failed to create quad geometry buffers');
-    }
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadVbo);
-    gl.bufferData(gl.ARRAY_BUFFER, QUAD_VERTICES, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.quadIbo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, QUAD_INDICES, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    this.quad = {
+      vertices: this.gpu.createBuffer('vertex', QUAD_VERTICES, 'static'),
+      indices: this.gpu.createBuffer('index', QUAD_INDICES, 'static'),
+    };
   }
+
 
   /**
    * Compile a consumer-registered shader program against this renderer's GL context.
@@ -222,27 +208,11 @@ export class WeaselRenderer {
     const existing = this.glyphPaintPrograms.get(kind);
     if (existing) return existing;
     const [frag, uniforms] = GLYPH_PAINT_SOURCES[kind];
-    const program = new ShaderProgram(this.gl, GLYPH_PAINT_VERT_SRC, frag);
+    const program = this.gpu.createProgram({ glsl: { vert: GLYPH_PAINT_VERT_SRC, frag } });
     program.lookupUniforms(uniforms);
     program.lookupAttributes(GLYPH_PAINT_ATTRIBUTES);
     this.glyphPaintPrograms.set(kind, program);
     return program;
-  }
-
-  /** The blend, depth, cull, clear-color, color-mask, VAO, and unpack-flip
-   *  state every frame assumes.
-   *  Applied per `render()` rather than once at construction because a
-   *  co-tenant sharing this context moves all of it between our frames. */
-  private applyGlState(): void {
-    const gl = this.gl;
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.disable(gl.DEPTH_TEST);
-    gl.disable(gl.CULL_FACE);
-    gl.clearColor(0, 0, 0, 0);
-    gl.colorMask(true, true, true, true);
-    gl.bindVertexArray(null);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   }
 
   /** This renderer's rect in device pixels, top-left origin. A tile rounds its
@@ -256,32 +226,25 @@ export class WeaselRenderer {
     return { x, y, width, height: Math.round((oy + this.heightCss) * this.dpr) - y };
   }
 
-  /** Viewport and scissor for this frame. Re-applied inside `render()` because
-   *  a co-tenant on the same context moves both between our frames. */
-  private applyTarget(): void {
-    const gl = this.gl;
-    const { x, y, width, height } = this.glRect();
-    gl.viewport(x, y, width, height);
-    if (!this.target) {
-      gl.disable(gl.SCISSOR_TEST);
-      return;
-    }
-    gl.scissor(x, y, width, height);
-    gl.enable(gl.SCISSOR_TEST);
+  /** The canvas pass this renderer draws in: its rect, scissored to it when
+   *  it shares the drawing buffer. Begun anew each `render()`, because a
+   *  co-tenant on the same context moves viewport and scissor between frames. */
+  private canvasPass(): GpuPassDesc {
+    const rect = this.glRect();
+    return { target: null, viewport: rect, scissor: this.target ? rect : null };
   }
 
   /** This renderer's rect as GL addresses it, from the buffer's bottom left. */
   private glRect(): { x: number; y: number; width: number; height: number } {
     const { x, y, width, height } = this.deviceRect();
     if (!this.target) return { x: 0, y: 0, width, height };
-    return { x, y: this.gl.drawingBufferHeight - y - height, width, height };
+    return { x, y: this.gpu.canvasSize().height - y - height, width, height };
   }
 
   /** Confine this renderer to a rect of its drawing buffer, or pass null to
    *  give it the whole buffer back. Takes effect from the next `render()`. */
   setTarget(target: RenderTarget | null): void {
     this.target = target;
-    this.applyTarget();
   }
 
   getTarget(): RenderTarget | null {
@@ -299,10 +262,8 @@ export class WeaselRenderer {
 
   private onContextRestored(): void {
     this.contextLost = false;
-    this.applyGlState();
-    this.applyTarget();
-    // Every framebuffer, texture and renderbuffer the pool held died with the
-    // context. `releaseAll` deletes handles that are already gone, which is a
+    this.gpu.beginFrame();
+    // Every target and texture the pool held died with the context. `releaseAll` deletes handles that are already gone, which is a
     // no-op, and drops the bookkeeping that would otherwise hand a dead FBO to
     // the next group with effects.
     this.effectTargets.releaseAll();
@@ -311,23 +272,23 @@ export class WeaselRenderer {
     this.paintResources.release();
     this.paintResources = createPaintResources();
     for (const lazy of this.lazyPrograms()) lazy.abandon();
-    this.batchFill = createBatchFill(this.gl);
+    this.batchFill = createBatchFill(this.gpu);
     this.glyphPaintPrograms.clear();
     this.idComposite = null;
-    this.meshCache = new GLMeshCache(this.gl);
-    this.textureCache = new GLTextureCache(this.gl);
+    this.meshCache = new GLMeshCache(this.gpu);
+    this.textureCache = new GLTextureCache(this.gpu);
     this.imageCache.abandon();
-    this.imageCache = new GLImageCache(this.gl, this.imageMinification);
-    this.gradRamps = new GradientRampAtlas(this.gl);
+    this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
+    this.gradRamps = new GradientRampAtlas(this.gpu);
     markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
-    this.drawBatch = new DrawBatch(this.gl, this.batchFill);
-    this.whiteTexture = createWhiteTexture(this.gl);
-    this.programs.restore(this.gl);
+    this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
+    this.whiteTexture = createWhiteTexture(this.gpu);
+    this.programs.restore();
   }
 
-  /** Free every GL resource this renderer created and detach its
+  /** Free every GPU resource this renderer created and detach its
    *  context-loss listeners. Idempotent. The context itself is left alone, so
    *  a caller-owned context can host renderer after renderer without
    *  accumulating anything.
@@ -337,7 +298,7 @@ export class WeaselRenderer {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    const gl = this.gl;
+    const gpu = this.gpu;
     if (this.lossTarget) {
       this.lossTarget.removeEventListener('webglcontextlost', this.boundOnLost);
       this.lossTarget.removeEventListener('webglcontextrestored', this.boundOnRestored);
@@ -345,18 +306,21 @@ export class WeaselRenderer {
     this.meshCache.dispose();
     this.paintResources.release();
     for (const lazy of this.lazyPrograms()) lazy.release();
-    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) gl.deleteProgram(prog.handle);
-    if (this.idComposite) gl.deleteProgram(this.idComposite.handle);
+    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) gpu.deleteProgram(prog);
+    if (this.idComposite) gpu.deleteProgram(this.idComposite);
     this.idComposite = null;
     this.glyphPaintPrograms.clear();
     this.programs.dispose();
     this.textureCache.free();
     this.imageCache.dispose();
     this.gradRamps.free();
-    if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
-    if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
+    if (this.quad) {
+      gpu.deleteBuffer(this.quad.vertices);
+      gpu.deleteBuffer(this.quad.indices);
+    }
+    this.quad = null;
     this.drawBatch.dispose();
-    if (this.whiteTexture) gl.deleteTexture(this.whiteTexture);
+    if (this.whiteTexture) gpu.deleteTexture(this.whiteTexture);
     this.whiteTexture = null;
     this.effectTargets.releaseAll();
     this.retained.releaseAll();
@@ -377,7 +341,7 @@ export class WeaselRenderer {
     const counters = { drawCalls: 0 };
     const spanStats: RenderSpanStats[] = [];
     this.stats = { drawCalls: 0, ms: 0, spans: spanStats, retained: NO_RETAINED };
-    const gl = this.gl;
+    const gpu = this.gpu;
     this.imageCache.beginFrame();
     this.beginFrame();
     this.retained.beginFrame([
@@ -389,20 +353,19 @@ export class WeaselRenderer {
     // The effect buffer a frame that threw was drawing into, and whichever
     // offscreen buffer it had bound, are still out on loan.
     this.effectTargets.reclaim();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    this.applyGlState();
-    this.applyTarget();
-    // Ensure all stencil bits are cleared regardless of any mask left over
-    // from the previous frame's clip ops.
-    if (this.target?.clear !== false) {
-      gl.stencilMask(0xFF);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-    }
-    const own = this.glRect();
+    gpu.beginFrame();
+    const canvas = this.canvasPass();
+    // Every stencil bit cleared, whatever the previous frame's clips left.
+    gpu.beginPass(this.target?.clear !== false ? { ...canvas, clear: { color: true, stencil: true } } : canvas);
+    const own = canvas.viewport;
     const ctx = this.frameContext(viewMatrix, opts?.screen, counters, {
-      retained: this.retained, renderTarget: null, fragOrigin: [own.x, own.y],
+      retained: this.retained, renderTarget: null, fragOrigin: [own.x, own.y], canvasPass: canvas,
     });
-    drawStream(ctx, commands, opts?.spans ?? [], spanStats, counters);
+    try {
+      drawStream(ctx, commands, opts?.spans ?? [], spanStats, counters);
+    } finally {
+      gpu.endPass();
+    }
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
@@ -435,27 +398,28 @@ export class WeaselRenderer {
     if (this.contextLost || this.disposed) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
     const device = this.deviceRect();
     this.beginFrame();
-    this.applyGlState();
-    this.idComposite ??= createIdComposite(this.gl);
+    const gpu = this.gpu;
+    gpu.beginFrame();
+    this.idComposite ??= createIdComposite(gpu);
     const spec = { ...opts, width: device.width, height: device.height, dpr: this.dpr };
     try {
-      return drawIdFrame(this.gl, this.effectTargets, this.idComposite, spec, commands, (renderTarget, ids, culled) => drawStream(
+      return drawIdFrame(gpu, this.effectTargets, this.idComposite, spec, commands, (renderTarget, ids, culled) => drawStream(
         this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids }), culled, [], [], { drawCalls: 0 }));
     } finally {
       // A throw must not leave a shared context bound to a target back in the pool.
       this.meshCache.freeTransient();
-      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-      this.applyGlState();
-      this.applyTarget();
+      gpu.beginFrame();
+      gpu.beginPass(this.canvasPass());
+      gpu.endPass();
     }
   }
 
   /** What every frame does before it draws. A frame that threw part-way never
    *  unwound: its group stack and staged vertices are still here. */
   private beginFrame(): void {
-    // Free GL resources whose Mesh was GC'd since the last frame. Done here,
-    // before any draws, because GL state is known clean — deleting from the
-    // FinalizationRegistry callback directly races a draw in flight.
+    // Free GPU resources whose Mesh was GC'd since the last frame. Done here,
+    // before any draws — deleting from the FinalizationRegistry callback
+    // directly races a draw in flight.
     this.meshCache.drainPendingDeletes();
     this.textureCache.sweep(textureRegistry);
     this.programs.refresh();
@@ -469,12 +433,12 @@ export class WeaselRenderer {
   private frameContext(
     viewMatrix: GlMat3 | undefined, screenMatrix: GlMat3 | undefined,
     stats: { drawCalls: number } | undefined,
-    target: Pick<DrawContext, 'renderTarget' | 'fragOrigin' | 'retained' | 'ids'>,
+    target: Pick<DrawContext, 'renderTarget' | 'fragOrigin' | 'retained' | 'ids' | 'canvasPass'>,
   ): DrawContext {
     const device = this.deviceRect();
     const { pathFill, pathFillVColor, gradFill, patternFill } = this;
     return {
-      gl: this.gl,
+      gpu: this.gpu,
       get pathFill() { return pathFill.get(); },
       get pathFillVColor() { return pathFillVColor.get(); },
       batchFill: this.batchFill,
@@ -488,8 +452,7 @@ export class WeaselRenderer {
       programRegistry: this.programs.registry,
       ensureProgram: (id) => (this.disposed ? null : this.programs.ensure(id)),
       glyphPaintProgram: (kind) => this.glyphPaintProgram(kind),
-      quadVbo: this.quadVbo,
-      quadIbo: this.quadIbo,
+      quad: this.quad,
       drawBatch: this.drawBatch,
       whiteTexture: this.whiteTexture,
       state: this.groupState,
@@ -504,7 +467,6 @@ export class WeaselRenderer {
       paintScratch: this.paintScratch,
       deviceWidth: device.width,
       deviceHeight: device.height,
-      restoreTargetRect: () => this.applyTarget(),
       paintResources: this.paintResources,
       stats,
       ...target,
@@ -535,7 +497,7 @@ export class WeaselRenderer {
     if (next === this.imageMinification) return;
     this.imageMinification = next;
     this.imageCache.dispose();
-    this.imageCache = new GLImageCache(this.gl, next);
+    this.imageCache = new GLImageCache(this.gpu, next);
   }
 
   resize(dims: { width: number; height: number; dpr: number }): void {
@@ -546,10 +508,9 @@ export class WeaselRenderer {
       this.canvas.width = Math.round(dims.width * dims.dpr);
       this.canvas.height = Math.round(dims.height * dims.dpr);
     }
-    this.applyTarget();
   }
 
-  /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
+  /** @internal */ _gpu(): GpuDevice { return this.gpu; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill.get(); }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor.get(); }
   /** @internal */ _drawBatch(): DrawBatch { return this.drawBatch; }

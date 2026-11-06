@@ -1,15 +1,13 @@
 import { boxWithin, type DeviceBox, type DeviceRect } from './contentBounds';
 import { keepKey, keyShift, sameKey, sameStamp, type RetainedKey } from './retainedKey';
-import {
-  createScratch, createSurfaceTexture, deleteScratch, deleteSurfaceTexture, resolveInto,
-  type Scratch, type SurfaceTexture,
-} from './surfaceGl';
+import type { GpuDevice, GpuTarget, GpuTexture } from '../gpu/types';
 
 export type { RetainedClip, RetainedKey } from './retainedKey';
 
 interface Surface {
-  /** `null` while `rect` is empty: there are no pixels to keep. */
-  gl: SurfaceTexture | null;
+  /** Its pixels, one texel per device pixel; `null` while `rect` is empty:
+   *  there are no pixels to keep. */
+  target: GpuTarget | null;
   /** The part of the drawing buffer the texture covers, and its size. */
   rect: DeviceRect;
   key: RetainedKey | null;
@@ -51,15 +49,15 @@ export const RETAIN_TILE = 1024;
 /** A retained group's kept pixels: `texture` covers `rect` of the drawing
  *  buffer, and is `null` when `rect` is empty. */
 export interface RetainedPixels {
-  texture: WebGLTexture | null;
+  texture: GpuTexture | null;
   rect: DeviceRect;
 }
 
 /** A surface about to be drawn: for each of `tiles`, draw it into the
- *  bottom-left of `fbo` and `resolve` it; then `commit`. `fbo` is `null` and
- *  `tiles` empty when the rect is empty and there is nothing to draw. */
+ *  bottom-left of `target` and `resolve` it; then `commit`. `target` is `null`
+ *  and `tiles` empty when the rect is empty and there is nothing to draw. */
 export interface RetainedDraw {
-  fbo: WebGLFramebuffer | null;
+  target: GpuTarget | null;
   /** The rect of the drawing buffer the surface covers. */
   rect: DeviceRect;
   /** `rect` cut into rects of the drawing buffer no wider or taller than the
@@ -84,12 +82,12 @@ export interface RetainedDraw {
  * what drawing it there leaves, in a second scratch buffer kept the same way.
  */
 export class RetainedSurfaces {
-  private readonly gl: WebGL2RenderingContext;
+  private readonly gpu: GpuDevice;
   private budget: number;
   private readonly samples: number;
   private readonly surfaces = new Map<string, Surface>();
   /** By sample count. Shared: retained draws never nest. */
-  private readonly scratches = new Map<number, Scratch>();
+  private readonly scratches = new Map<number, GpuTarget>();
   private width = 0;
   private height = 0;
   private frame = 0;
@@ -100,20 +98,17 @@ export class RetainedSurfaces {
   redrawn = 0;
   declined = 0;
 
-  constructor(gl: WebGL2RenderingContext, budget: number) {
-    this.gl = gl;
+  constructor(gpu: GpuDevice, budget: number) {
+    this.gpu = gpu;
     this.budget = budget;
-    // The default framebuffer's sample count, read while it is bound.
-    const samples: unknown = gl.getParameter(gl.SAMPLES);
-    this.samples = typeof samples === 'number' && samples > 1 ? samples : 0;
+    const samples = gpu.limits.samples;
+    this.samples = samples !== undefined && samples > 1 ? samples : 0;
   }
 
   /** GPU memory held now, scratch buffer included. */
   get bytes(): number {
     let n = this.keptBytes();
-    for (const [samples, held] of this.scratches) {
-      n += held.width * held.height * (Math.max(1, samples) * 8 + (held.resolved ? 4 : 0));
-    }
+    for (const held of this.scratches.values()) n += held.bytes;
     return n;
   }
 
@@ -224,22 +219,22 @@ export class RetainedSurfaces {
       return null;
     }
     const surface: Surface = existing ?? {
-      gl: null, rect, key: null, stamp: [], frame: this.frame, samples, reach: null, panned: false, seen: null,
+      target: null, rect, key: null, stamp: [], frame: this.frame, samples, reach: null, panned: false, seen: null,
     };
     this.surfaces.set(id, surface);
     this.fitSurface(surface, rect);
     surface.frame = this.frame;
     surface.samples = samples;
     this.redrawn++;
-    const scratch = surface.gl ? this.scratchFor(samples, scratchW, scratchH) : null;
+    const scratch = surface.target ? this.scratchFor(samples, scratchW, scratchH) : null;
     const at = surface.rect;
     return {
-      fbo: scratch?.fbo ?? null,
+      target: scratch,
       rect: at,
       tiles: scratch ? tilesOf(at, this.tile) : [],
       resolve: (tile) => {
-        if (!scratch || !surface.gl) return;
-        resolveInto(this.gl, scratch, surface.gl, tile.width, tile.height, tile.x - at.x, at.y + at.height - tile.y - tile.height);
+        if (!scratch || !surface.target) return;
+        this.gpu.resolve(scratch, surface.target, tile.width, tile.height, tile.x - at.x, at.y + at.height - tile.y - tile.height);
       },
       commit: (key) => {
         surface.key = keepKey(key);
@@ -306,11 +301,13 @@ export class RetainedSurfaces {
 
   /** The scratch buffer with `samples` at `width × height`, reallocated if
    *  it is not. */
-  private scratchFor(samples: number, width: number, height: number): Scratch {
+  private scratchFor(samples: number, width: number, height: number): GpuTarget {
     const held = this.scratches.get(samples);
     if (held && held.width === width && held.height === height) return held;
     this.dropScratch(samples);
-    const scratch = createScratch(this.gl, width, height, samples);
+    // Multisampled as the canvas is, so a surface's edges match what drawing
+    // it on the canvas would have produced.
+    const scratch = this.gpu.createTarget({ width, height, samples, stencil: true });
     this.scratches.set(samples, scratch);
     return scratch;
   }
@@ -320,19 +317,22 @@ export class RetainedSurfaces {
   private fitSurface(surface: Surface, rect: DeviceRect): void {
     const was = surface.rect;
     surface.rect = { ...rect };
-    if (surface.gl && was.width === rect.width && was.height === rect.height) return;
+    if (surface.target && was.width === rect.width && was.height === rect.height) return;
     this.deleteSurface(surface);
-    if (rect.width > 0 && rect.height > 0) surface.gl = createSurfaceTexture(this.gl, rect.width, rect.height);
+    // One texel per device pixel, sampled at its center: nothing to filter.
+    if (rect.width > 0 && rect.height > 0) {
+      surface.target = this.gpu.createTarget({ width: rect.width, height: rect.height, filter: 'nearest' });
+    }
   }
 
   private deleteSurface(surface: Surface): void {
-    if (surface.gl) deleteSurfaceTexture(this.gl, surface.gl);
-    surface.gl = null;
+    if (surface.target) this.gpu.deleteTarget(surface.target);
+    surface.target = null;
   }
 
   private dropScratch(samples: number): void {
     const held = this.scratches.get(samples);
-    if (held) deleteScratch(this.gl, held);
+    if (held) this.gpu.deleteTarget(held);
     this.scratches.delete(samples);
   }
 }
@@ -341,7 +341,7 @@ export class RetainedSurfaces {
 function pixelsOf(surface: Surface, dx: number, dy: number): RetainedPixels {
   const { rect } = surface;
   return {
-    texture: surface.gl?.texture ?? null,
+    texture: surface.target?.color ?? null,
     rect: dx === 0 && dy === 0 ? rect : { ...rect, x: rect.x + dx, y: rect.y + dy },
   };
 }

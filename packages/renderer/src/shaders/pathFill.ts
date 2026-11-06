@@ -6,7 +6,7 @@
  * to the straight-alpha color BEFORE premultiplication.
  *
  * Output (both variants): PREMULTIPLIED alpha.
- * Blend: caller sets `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
+ * Blend: premultiplied, `ONE, ONE_MINUS_SRC_ALPHA`.
  */
 
 export const VERT_SRC = /* glsl */ `#version 300 es

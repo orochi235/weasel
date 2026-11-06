@@ -1,4 +1,5 @@
-import { ShaderProgram } from './ShaderProgram';
+import type { GpuDevice } from '../gpu/types';
+import type { ShaderProgram } from './ShaderProgram';
 import {
   VERT_SRC,
   FRAG_SRC,
@@ -19,6 +20,7 @@ import {
   BATCH_FILL_UNIFORMS,
   BATCH_HULL_UNIFORMS,
   BATCH_FILL_ATTRIBUTES,
+  BATCH_TEXTURE_SLOTS,
 } from './batchFill';
 import {
   GRAD_VERT_SRC,
@@ -42,6 +44,22 @@ export interface ProgramSpec {
   readonly frag: string;
   readonly uniforms: readonly string[];
   readonly attributes: readonly string[];
+  readonly arrays?: ReadonlyMap<string, { type: string; size: number }>;
+}
+
+/** The batch's sampler array, which a flush fills slot by slot. */
+const BATCH_ARRAYS: ReadonlyMap<string, { type: string; size: number }> = new Map([
+  ['u_samplers', { type: 'sampler2D', size: BATCH_TEXTURE_SLOTS }],
+]);
+
+/** `spec` compiled on `gpu`, every name it is written through looked up. */
+function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
+  const { vert, frag, uniforms, attributes, arrays } = spec;
+  const program = gpu.createProgram({ glsl: { vert, frag } });
+  program.lookupUniforms(uniforms);
+  if (arrays) program.lookupUniformArrays(arrays);
+  program.lookupAttributes(attributes);
+  return program;
 }
 
 /**
@@ -52,22 +70,16 @@ export interface ProgramSpec {
 export class LazyProgram {
   private program: ShaderProgram | null = null;
 
-  constructor(private readonly gl: WebGL2RenderingContext, private readonly spec: ProgramSpec) {}
+  constructor(private readonly gpu: GpuDevice, private readonly spec: ProgramSpec) {}
 
   get(): ShaderProgram {
-    if (!this.program) {
-      const { vert, frag, uniforms, attributes } = this.spec;
-      const program = new ShaderProgram(this.gl, vert, frag);
-      program.lookupUniforms(uniforms);
-      program.lookupAttributes(attributes);
-      this.program = program;
-    }
+    this.program ??= buildProgram(this.gpu, this.spec);
     return this.program;
   }
 
   /** Delete the program if it was built. It builds again on the next `get`. */
   release(): void {
-    if (this.program) this.gl.deleteProgram(this.program.handle);
+    if (this.program) this.gpu.deleteProgram(this.program);
     this.program = null;
   }
 
@@ -88,12 +100,15 @@ export const GRAD_FILL_SPEC: ProgramSpec = {
 };
 export const BATCH_FILL_MATRICES_SPEC: ProgramSpec = {
   vert: BATCH_VERT_SRC, frag: BATCH_MATRICES_FRAG_SRC, uniforms: BATCH_FILL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
+  arrays: BATCH_ARRAYS,
 };
 const BATCH_FILL_HULL_SPEC: ProgramSpec = {
   vert: BATCH_VERT_SRC, frag: BATCH_HULL_FRAG_SRC, uniforms: BATCH_HULL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
+  arrays: BATCH_ARRAYS,
 };
 const BATCH_FILL_MATRICES_HULL_SPEC: ProgramSpec = {
   vert: BATCH_VERT_SRC, frag: BATCH_MATRICES_HULL_FRAG_SRC, uniforms: BATCH_HULL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
+  arrays: BATCH_ARRAYS,
 };
 const TRIMMED_RIBBON_SPEC: ProgramSpec = {
   vert: TRIMMED_RIBBON_VERT_SRC, frag: TRIMMED_RIBBON_FRAG_SRC,
@@ -105,11 +120,11 @@ export const PATTERN_FILL_SPEC: ProgramSpec = {
 
 /** Built eagerly: nearly every frame draws with it, and `DrawBatch` binds its
  *  attributes at construction. */
-export function createBatchFill(gl: WebGL2RenderingContext): ShaderProgram {
-  const program = new ShaderProgram(gl, BATCH_VERT_SRC, BATCH_FRAG_SRC);
-  program.lookupUniforms(BATCH_FILL_UNIFORMS);
-  program.lookupAttributes(BATCH_FILL_ATTRIBUTES);
-  return program;
+export function createBatchFill(gpu: GpuDevice): ShaderProgram {
+  return buildProgram(gpu, {
+    vert: BATCH_VERT_SRC, frag: BATCH_FRAG_SRC, uniforms: BATCH_FILL_UNIFORMS,
+    attributes: BATCH_FILL_ATTRIBUTES, arrays: BATCH_ARRAYS,
+  });
 }
 
 /** The batch program's other builds, which a run picks by what it holds, and
@@ -155,18 +170,18 @@ export class BatchVariantPrograms implements BatchVariants {
   /** Indexed by `matrices + 2 * hulls`. */
   private readonly area: LazyProgram[];
 
-  constructor(gl: WebGL2RenderingContext) {
-    // The default framebuffer's, read while it is bound.
-    this.hulls = gl.getParameter(gl.SAMPLES) === 0;
-    this.matrices = new LazyProgram(gl, BATCH_FILL_MATRICES_SPEC);
-    this.hull = new LazyProgram(gl, BATCH_FILL_HULL_SPEC);
-    this.matricesHull = new LazyProgram(gl, BATCH_FILL_MATRICES_HULL_SPEC);
-    this.trimmed = new LazyProgram(gl, TRIMMED_RIBBON_SPEC);
-    this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gl, {
+  constructor(gpu: GpuDevice) {
+    this.hulls = gpu.limits.samples === 0;
+    this.matrices = new LazyProgram(gpu, BATCH_FILL_MATRICES_SPEC);
+    this.hull = new LazyProgram(gpu, BATCH_FILL_HULL_SPEC);
+    this.matricesHull = new LazyProgram(gpu, BATCH_FILL_MATRICES_HULL_SPEC);
+    this.trimmed = new LazyProgram(gpu, TRIMMED_RIBBON_SPEC);
+    this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gpu, {
       vert: BATCH_AREA_VERT_SRC,
       frag: batchAreaFragSrc(matrices, hulls),
       uniforms: hulls ? BATCH_HULL_UNIFORMS : BATCH_FILL_UNIFORMS,
       attributes: BATCH_FILL_ATTRIBUTES,
+      arrays: BATCH_ARRAYS,
     })));
   }
 

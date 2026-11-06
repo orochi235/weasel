@@ -9,7 +9,8 @@ import type { ClipEntry, DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMeshHandle } from './mesh';
 import { projFor, setProjAndModel } from './uniforms';
-import { ancestorMask } from './stencil';
+import { PARITY_WRITE, clipPop, clipPush } from './stencil';
+import type { GpuStencilState } from '../gpu/types';
 import { flushBatch } from './flushBatch';
 
 /** `enterClip` for a group command, refusing one past the stencil's budget. */
@@ -225,24 +226,17 @@ export function flushForOwnDraw(ctx: DrawContext): void {
   if (ctx.clipStack.length > 0) materializeClips(ctx);
 }
 
-/**
- * Rasterize a path into the stencil buffer. The caller sets stencilFunc /
- * stencilOp / stencilMask and colorMask before calling.
- */
-function rasterizePathToStencil(ctx: DrawContext, path: Path, model: GlMat3): void {
-  const gl = ctx.gl;
+/** Rasterize a path into the stencil buffer under `stencil`, writing no color. */
+function rasterizePathToStencil(ctx: DrawContext, path: Path, model: GlMat3, stencil: GpuStencilState): void {
   const handle = fillMeshHandle(ctx, path);
-  gl.useProgram(ctx.pathFill.handle);
-  gl.bindVertexArray(handle.vao);
   const o = path.kind === 'polygon' ? path.origin : undefined;
   setProjAndModel(ctx, ctx.pathFill, o ? mat3.translated(model, o.x, o.y) : model);
-  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
-  gl.bindVertexArray(null);
+  drawTriangles(ctx, ctx.pathFill, handle.geometry, handle.indexCount, { stencil, colorWrite: false });
 }
 
 /**
  * Push a clip level: sets stencil bit `newDepth` where the path covers and all
- * ancestor clip bits are already set. Restores stencilMask(0xFF) on exit.
+ * ancestor clip bits are already set.
  */
 export function pushClip(
   ctx: DrawContext, path: Path, newDepth: number, model: GlMat3 = ctx.state.transform,
@@ -250,45 +244,21 @@ export function pushClip(
   // First, not last: a run staged outside the clip would otherwise draw under
   // a mask it never had.
   flushBatch(ctx);
-  const gl = ctx.gl;
-  const ancestors = ancestorMask(newDepth - 1);
-  const newBit = 1 << newDepth;
-  const ref = ancestors | newBit;
-
-  gl.enable(gl.STENCIL_TEST);
-  gl.colorMask(false, false, false, false);
   if (fillMeshHandle(ctx, path).requiresStencil) {
     // Fans, one per contour: their union is not the path. Parity goes on
     // bit 0, the clip bit is written where parity is odd, and drawing the
     // fans a third time returns bit 0 to zero.
-    gl.stencilMask(0x01);
-    gl.stencilFunc(gl.ALWAYS, 0, 0x01);
-    gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
-    rasterizePathToStencil(ctx, path, model);
-    gl.stencilMask(newBit);
-    gl.stencilFunc(gl.EQUAL, ref | 0x01, ancestors | 0x01);
-    gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-    rasterizePathToStencil(ctx, path, model);
-    gl.stencilMask(0x01);
-    gl.stencilFunc(gl.ALWAYS, 0, 0x01);
-    gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
-    rasterizePathToStencil(ctx, path, model);
+    rasterizePathToStencil(ctx, path, model, PARITY_WRITE);
+    rasterizePathToStencil(ctx, path, model, clipPush(newDepth, true));
+    rasterizePathToStencil(ctx, path, model, PARITY_WRITE);
   } else {
-    gl.stencilMask(newBit);
-    gl.stencilFunc(gl.EQUAL, ref, ancestors);
-    gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-    rasterizePathToStencil(ctx, path, model);
+    rasterizePathToStencil(ctx, path, model, clipPush(newDepth, false));
   }
-
-  gl.colorMask(true, true, true, true);
-  // Restore full mask so subsequent draw functions don't inherit a narrowed mask.
-  gl.stencilMask(0xFF);
 }
 
 /**
  * Pop a clip level: rasterizes the same path again, clearing bit
- * `oldDepth + 1` where the matching push set it. Restores stencilMask(0xFF)
- * on exit.
+ * `oldDepth + 1` where the matching push set it.
  */
 export function popClip(
   ctx: DrawContext, path: Path, oldDepth: number, model: GlMat3 = ctx.state.transform,
@@ -296,22 +266,5 @@ export function popClip(
   // First, not last: past here the mask is gone, and these pixels belonged
   // inside it. A run staged below this bit does not test it, so it lives on.
   if (ctx.batchState !== undefined && ctx.batchState.clipDepth > oldDepth) flushBatch(ctx);
-  const gl = ctx.gl;
-  // Re-enable stencil: child draw functions (evenodd/stenciled-stroke) disable
-  // it at their end; we must set it before writing the clear pass.
-  gl.enable(gl.STENCIL_TEST);
-
-  const oldBit = 1 << (oldDepth + 1);
-  const ref = ancestorMask(oldDepth) | oldBit;
-
-  gl.colorMask(false, false, false, false);
-  gl.stencilMask(oldBit);
-  gl.stencilFunc(gl.EQUAL, ref, ref);
-  gl.stencilOp(gl.KEEP, gl.KEEP, gl.ZERO);
-
-  rasterizePathToStencil(ctx, path, model);
-
-  gl.colorMask(true, true, true, true);
-  // Restore full mask so subsequent draw functions don't inherit a narrowed mask.
-  gl.stencilMask(0xFF);
+  rasterizePathToStencil(ctx, path, model, clipPop(oldDepth));
 }

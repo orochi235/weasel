@@ -11,6 +11,8 @@ import { WeaselRenderer } from '../WeaselRenderer';
 import { flushBatch, type DrawContext } from '../draw';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from '../drawBatch';
 import { paintModeOf } from '../shaders/batchFill';
+import { webglDevice } from '../gpu/webgl/WebGLDevice';
+import { glProgramHandle } from '../gpu/webgl/GlProgram';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -30,18 +32,21 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
   };
   r._batchVariants().get(true, false);
   // The build a run holding small glyphs draws with, which takes the same vertices.
-  const areaBuild = r._batchVariants().get(false, false, true).handle;
+  const areaBuild = glProgramHandle(r._batchVariants().get(false, false, true));
+  recorder.reset();
+  const gpu = webglDevice(recorder.gl);
+  // A frame's start, as `render` begins one: what the device believes it holds.
+  gpu.beginFrame();
   recorder.reset();
   const ctx: DrawContext = {
-    gl: recorder.gl,
+    gpu,
     ...programs,
     meshCache: r._meshCache(),
     textureCache: r._textureCache(),
     imageCache: r._imageCache(),
     gradRamps: r._gradRamps(),
     programRegistry: new Map(),
-    quadVbo: null,
-    quadIbo: null,
+    quad: null,
     drawBatch: r._drawBatch(),
     whiteTexture: null,
     state: r._groupState(),
@@ -60,49 +65,41 @@ const AREA_BUILDS = new WeakMap<DrawContext, unknown>();
 /** Whether `handle` is a batch build a plain run draws with: the default, or
  *  the one a run holding small glyphs takes. */
 export function isBatchBuild(ctx: DrawContext, handle: unknown): boolean {
-  return handle === ctx.batchFill.handle || handle === AREA_BUILDS.get(ctx);
+  return handle === glProgramHandle(ctx.batchFill) || handle === AREA_BUILDS.get(ctx);
 }
 
-/**
- * A vertex-data upload, whichever call carried it. The text ring writes into a
- * slot whose buffer it already owns, so its geometry arrives by
- * `bufferSubData`; every other draw path still mints a buffer and uses
- * `bufferData`.
- */
-const isVertexUpload = (c: { name: string; args: readonly unknown[] }): boolean =>
-  (c.name === 'bufferData' && c.args[1] instanceof Float32Array)
-  || (c.name === 'bufferSubData' && c.args[2] instanceof Float32Array);
-
-/**
- * The floats an upload actually sent.
- *
- * A `bufferSubData` from the batch names a window into a scratch array it
- * reuses across frames, so the recorded argument is the whole scratch with the
- * previous run's tail still in it.
- */
-const uploadFloats = (c: { name: string; args: readonly unknown[] }): Float32Array => {
-  const data = (c.name === 'bufferData' ? c.args[1] : c.args[2]) as Float32Array;
-  if (c.name !== 'bufferSubData') return data;
+/** The floats a batch upload sent: `bufferSubData` names a window into a
+ *  scratch array the batch reuses across frames, so the recorded argument is
+ *  the whole scratch with the previous run's tail still in it. */
+function batchUpload(c: { name: string; args: readonly unknown[] }): Float32Array | null {
+  if (c.name !== 'bufferSubData' || c.args[0] !== 0x8892 || !(c.args[2] instanceof Float32Array)) return null;
+  const data = c.args[2];
   const srcOffset = typeof c.args[3] === 'number' ? c.args[3] : 0;
   const length = typeof c.args[4] === 'number' ? c.args[4] : data.length - srcOffset;
   return data.subarray(srcOffset, srcOffset + length);
-};
+}
 
 /**
  * Every vertex the batch staged this frame, concatenated, after draining
  * whatever run is still open.
  *
  * `dispatch` alone leaves a run staged — only a flush uploads it — so a test
- * reading geometry has to close the frame the way `render` would.
+ * reading geometry has to close the frame the way `render` would. An upload
+ * counts when the next draw is a batch build's: a flush writes its vertices
+ * before it binds its program.
  */
 export function stagedVertices(ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array {
   flushBatch(ctx);
   const runs: Float32Array[] = [];
+  let pending: Float32Array[] = [];
   let bound: unknown = null;
   for (const c of calls) {
     if (c.name === 'useProgram') bound = c.args[0];
-    if (isBatchBuild(ctx, bound) && isVertexUpload(c) && c.args[0] === 0x8892) {
-      runs.push(uploadFloats(c));
+    const upload = batchUpload(c);
+    if (upload) pending.push(upload);
+    if (c.name === 'drawElements') {
+      if (isBatchBuild(ctx, bound)) runs.push(...pending);
+      pending = [];
     }
   }
   const total = runs.reduce((n, r) => n + r.length, 0);

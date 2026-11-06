@@ -1,4 +1,5 @@
-import { ShaderProgram } from './ShaderProgram';
+import type { GpuDevice } from '../gpu/types';
+import type { ShaderProgram } from './ShaderProgram';
 import { CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS, CUSTOM_VERT_SRC } from './customPrelude';
 import { extractUniformArrays, extractUniformNames } from './extractUniformNames';
 import { getProgramSource, sameProgramSource, type ProgramSource } from './registerProgram';
@@ -10,13 +11,13 @@ function customUniformNames(vertSrc: string, fragSrc: string): string[] {
   return [...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(vertSrc), ...extractUniformNames(fragSrc)];
 }
 
-/** Compile a registered program's source against `gl`, with every uniform
+/** Compile a registered program's source on `gpu`, with every uniform
  *  location and array base it may be written through. */
-function compileCustomProgram(gl: WebGL2RenderingContext, id: string, src: ProgramSource): ShaderProgram {
+function compileCustomProgram(gpu: GpuDevice, id: string, src: ProgramSource): ShaderProgram {
   if (!src.glsl) throw new NoGlslError(id);
   const { frag } = src.glsl;
   const vertSrc = src.glsl.vert ?? CUSTOM_VERT_SRC;
-  const program = new ShaderProgram(gl, vertSrc, frag);
+  const program = gpu.createProgram({ glsl: { vert: vertSrc, frag } });
   program.lookupUniforms(customUniformNames(vertSrc, frag));
   program.lookupUniformArrays(new Map([...extractUniformArrays(vertSrc), ...extractUniformArrays(frag)]));
   program.lookupAttributes(CUSTOM_ATTRIBUTES);
@@ -44,7 +45,7 @@ export class CustomPrograms {
    *  is reported once and not compiled again every frame. */
   private readonly declined = new Map<string, ProgramSource>();
 
-  constructor(private gl: WebGL2RenderingContext) {}
+  constructor(private readonly gpu: GpuDevice) {}
 
   /** Compile `id`'s registered source. Throws when there is none, or on a
    *  compile failure. */
@@ -54,13 +55,13 @@ export class CustomPrograms {
       throw new Error(`WeaselRenderer.registerProgram: program "${id}" not found in source registry. `
         + 'Call the module-level registerProgram() first.');
     }
-    this.install(id, src, compileCustomProgram(this.gl, id, src));
+    this.install(id, src, compileCustomProgram(this.gpu, id, src));
   }
 
   private install(id: string, src: ProgramSource, program: ShaderProgram): void {
     const previous = this.registry.get(id);
     if (previous) {
-      this.gl.deleteProgram(previous.handle);
+      this.gpu.deleteProgram(previous);
       this.epoch++;
     }
     this.registry.set(id, program);
@@ -78,7 +79,7 @@ export class CustomPrograms {
         continue;
       }
       try {
-        this.install(id, src, compileCustomProgram(this.gl, id, src));
+        this.install(id, src, compileCustomProgram(this.gpu, id, src));
       } catch (e) {
         this.sources.set(id, src);
         console.error(`weasel: failed to recompile re-registered program "${id}"; still drawing the previous one:`, e);
@@ -108,14 +109,13 @@ export class CustomPrograms {
     return this.registry.get(id) ?? null;
   }
 
-  /** Compile every program again on a restored context, `gl`. */
-  restore(gl: WebGL2RenderingContext): void {
-    this.gl = gl;
+  /** Compile every program again on a restored context. */
+  restore(): void {
     for (const id of this.registry.keys()) {
       const src = getProgramSource(id);
       if (!src) continue;
       try {
-        this.registry.set(id, compileCustomProgram(gl, id, src));
+        this.registry.set(id, compileCustomProgram(this.gpu, id, src));
         this.sources.set(id, src);
       } catch (e) {
         console.error(`weasel: failed to recompile program "${id}" after context restore:`, e);
@@ -125,7 +125,7 @@ export class CustomPrograms {
 
   /** Delete every compiled program. */
   dispose(): void {
-    for (const prog of this.registry.values()) this.gl.deleteProgram(prog.handle);
+    for (const prog of this.registry.values()) this.gpu.deleteProgram(prog);
     this.registry.clear();
     this.sources.clear();
     this.declined.clear();

@@ -127,7 +127,7 @@ export function getProgramSource(id: string): ProgramSource | null {
  *   `outColor = vec4(rgb * a, a);`  ← correct
  *   `outColor = vec4(rgb, a);`      ← WRONG — over-brightens translucent regions
  *
- * The renderer uses `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)` to match.
+ * The renderer blends premultiplied (`ONE, ONE_MINUS_SRC_ALPHA`) to match.
  * Opaque fragments (a=1) are unaffected; only fragments with a < 1 differ.
  *
  * **Re-registration behavior:**

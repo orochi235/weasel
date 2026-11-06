@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from '../testing/glRecorder';
+import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { GLTextureCache } from './GLTextureCache';
 
 describe('GLTextureCache — a texture of color texels sent as bytes', () => {
@@ -7,7 +8,7 @@ describe('GLTextureCache — a texture of color texels sent as bytes', () => {
 
   it('uploads them as RGBA as held, minified through mipmaps', () => {
     const { gl, calls } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     cache.uploadRGBA('page', 8, 8, texels);
 
     const upload = calls.find((c) => c.name === 'texImage2D')!;
@@ -22,7 +23,7 @@ describe('GLTextureCache — a texture of color texels sent as bytes', () => {
 
   it('patches a rect and builds the mipmaps again', () => {
     const { gl, calls, reset } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     cache.uploadRGBA('page', 8, 8, texels);
     const texture = calls.find((c) => c.name === 'createTexture')!.result;
     reset();

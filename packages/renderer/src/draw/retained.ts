@@ -8,8 +8,8 @@ import { boxTree, cullToTile } from '../retain/tileCull';
 import { movesWithView } from '../retain/movesWithView';
 import type { RetainedDraw, RetainedPixels } from '../retain/RetainedSurfaces';
 import type { DrawContext } from './drawContext';
-import { compositeOver, insideBuffer, returnToRenderTarget, windowProjection } from './effects';
-import { applyClipTest } from './stencil';
+import { compositeOver, windowProjection } from './effects';
+import type { GpuTarget } from '../gpu/types';
 import { enterGroupClip } from './clip';
 import { flushBatch } from './flushBatch';
 
@@ -36,16 +36,14 @@ const scratchTargets = new WeakSet<object>();
  * pixel instead and that pixel comes out as much as 30 levels off.
  *
  * The surface covers only the device pixels the group can paint
- * (`contentBounds`), drawn under the canvas's own projection through a
- * viewport offset by the rect's corner, and composited as a quad over that
- * rect alone. A group that owns a surface of its own draws it, effects
+ * (`contentBounds`), drawn under the canvas's own projection moved to each
+ * tile's corner, and composited as a quad over that rect alone. A group that owns a surface of its own draws it, effects
  * and all, into the retained one. Inside a group's effects buffer it composites
  * into that buffer instead, at the same offset.
  *
  * On the default framebuffer, a group whose pixels move with its transform
  * (`movesWithView`) may be composited from a surface drawn before a pan,
- * moved; `RetainedSurfaces.lookup` decides when. A surface reaching past the
- * buffer for that is drawn under a projection aimed at its own rect.
+ * moved; `RetainedSurfaces.lookup` decides when.
  */
 export function drawRetainedGroup(
   ctx: DrawContext, cmd: GroupDrawCommand, ownsSurface: boolean, dispatch: Dispatch,
@@ -104,7 +102,7 @@ export function drawRetainedGroup(
     }
     // Staged geometry belongs to the buffer underneath.
     flushBatch(ctx);
-    if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, draw, dispatch);
+    if (draw.target) drawInto(ctx, drawn, clips, draw.target, draw, dispatch);
     pixels = draw.commit(key);
   }
   ctx.state.pop();
@@ -113,62 +111,52 @@ export function drawRetainedGroup(
   if (!texture) return true;
   flushBatch(ctx);
   const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
-  if (composite) {
-    applyClipTest(ctx, 0);
-    compositeOver(ctx, composite, texture, rect, COMPOSITE_AS_DRAWN);
-  }
+  // The clips were drawn inside: the composite tests none.
+  if (composite) compositeOver(ctx, composite, texture, rect, COMPOSITE_AS_DRAWN);
   return true;
 }
 
 /** Draw `children` into `draw.rect` of the surface, a tile at a time: each
- *  into the bottom-left of the scratch buffer behind `fbo`, under the group
- *  stack as it stands and inside `clips`, then resolved into its place. A
- *  command whose bounds miss a tile, at any depth, is not dispatched for it. */
+ *  into the bottom-left of the scratch buffer `scratch`, under the group stack
+ *  as it stands and inside `clips`, then resolved into its place. A command
+ *  whose bounds miss a tile, at any depth, is not dispatched for it. */
 function drawInto(
   ctx: DrawContext, children: readonly DrawCommand[], clips: readonly RetainedClip[],
-  fbo: WebGLFramebuffer, draw: RetainedDraw, dispatch: Dispatch,
+  scratch: GpuTarget, draw: RetainedDraw, dispatch: Dispatch,
 ): void {
-  const gl = ctx.gl;
+  const gpu = ctx.gpu;
   const width = ctx.deviceWidth!;
   const height = ctx.deviceHeight!;
-  const { rect, tiles } = draw;
+  const { tiles } = draw;
   const parentTarget = ctx.renderTarget ?? null;
   const parentClipDepth = ctx.clipDepth;
   const parentClipStack = ctx.clipStack;
   const parentBatchClip = ctx.drawBatch.clip;
   const parentProjection = ctx.projection;
-  const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
   const scale = width / ctx.widthCss;
-  // Inside the buffer, the frame's own projection; reaching past it, one aimed
-  // at the whole surface. Either way every tile shares it, its viewport slid
-  // whole pixels so the tile's bottom-left corner lands on the scratch
-  // buffer's: the pixels are the ones drawing the surface whole leaves.
-  const inside = insideBuffer(rect, width, height);
-  ctx.projection = inside ? undefined : windowProjection(rect, scale);
   const tree = tiles.length > 1 ? boxTree(children, ctx.state.transform, scale) : null;
 
+  gpu.endPass();
   for (const tile of tiles) {
     const bottom = tile.y + tile.height;
-    const restore = (): void => {
-      if (inside) gl.viewport(-tile.x, bottom - height, width, height);
-      else gl.viewport(rect.x - tile.x, bottom - rect.y - rect.height, rect.width, rect.height);
-      gl.scissor(0, 0, tile.width, tile.height);
-      gl.enable(gl.SCISSOR_TEST);
-    };
-    const target = { fbo, restore, fragOrigin: [-tile.x, bottom - height] as const, window: tile };
+    // Every tile's projection is the canvas's moved to the tile's corner,
+    // which lands on the scratch buffer's: the pixels are the ones drawing
+    // the surface whole leaves.
+    ctx.projection = windowProjection(tile, scale);
+    const corner = { x: 0, y: 0, width: tile.width, height: tile.height };
+    const pass = { target: scratch, viewport: corner, scissor: corner };
+    const target = { pass, fragOrigin: [-tile.x, bottom - height] as const, window: tile };
     scratchTargets.add(target);
     ctx.renderTarget = target;
     ctx.clipDepth = 0;
     ctx.clipStack = [];
     ctx.drawBatch.clip = null;
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    restore();
-    gl.stencilMask(0xFF);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    gpu.beginPass({ ...pass, clear: { color: true, stencil: true } });
     for (const clip of clips) enterGroupClip(ctx, clip.path, clip.transform);
     for (const child of tree ? cullToTile(tree, tile) : children) dispatch(ctx, child);
     flushBatch(ctx);
+    gpu.endPass();
     draw.resolve(tile);
   }
 
@@ -177,5 +165,6 @@ function drawInto(
   ctx.drawBatch.clip = parentBatchClip;
   ctx.projection = parentProjection;
   ctx.renderTarget = parentTarget;
-  returnToRenderTarget(ctx, width, height, scissorWasOn);
+  const resume = parentTarget ? parentTarget.pass : ctx.canvasPass;
+  if (resume) gpu.beginPass(resume);
 }

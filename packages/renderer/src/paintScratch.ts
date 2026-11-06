@@ -9,9 +9,12 @@
  * clipped — the clip applies to the glyphs sampling it.
  */
 
+import type { GpuDevice, GpuTarget } from './gpu/types';
+
 export interface PaintScratchTarget {
-  readonly fbo: WebGLFramebuffer;
-  readonly texture: WebGLTexture;
+  /** Its color, sampled NEAREST: the region is laid on the device-pixel grid,
+   *  so every fragment reading it lands on a texel center and NEAREST is exact. */
+  readonly target: GpuTarget;
   /** Texture size, at least the region asked for. */
   readonly width: number;
   readonly height: number;
@@ -20,12 +23,9 @@ export interface PaintScratchTarget {
 const MIN_SIDE = 64;
 
 export class PaintScratch {
-  private readonly gl: WebGL2RenderingContext;
   private target: PaintScratchTarget | null = null;
 
-  constructor(gl: WebGL2RenderingContext) {
-    this.gl = gl;
-  }
+  constructor(private readonly gpu: GpuDevice) {}
 
   /** A buffer at least `width` × `height` device pixels. Its contents are
    *  whatever the last user left; the caller clears the region it uses. */
@@ -35,7 +35,7 @@ export class PaintScratch {
     const w = Math.max(have?.width ?? 0, pow2(width));
     const h = Math.max(have?.height ?? 0, pow2(height));
     this.release();
-    this.target = this.create(w, h);
+    this.target = { target: this.gpu.createTarget({ width: w, height: h, filter: 'nearest' }), width: w, height: h };
     return this.target;
   }
 
@@ -43,29 +43,8 @@ export class PaintScratch {
    *  handles are already dead and only the bookkeeping has to go. */
   release(): void {
     if (!this.target) return;
-    this.gl.deleteFramebuffer(this.target.fbo);
-    this.gl.deleteTexture(this.target.texture);
+    this.gpu.deleteTarget(this.target.target);
     this.target = null;
-  }
-
-  private create(width: number, height: number): PaintScratchTarget {
-    const gl = this.gl;
-    const texture = gl.createTexture()!;
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    // The region is laid on the device-pixel grid, so every fragment reading
-    // it lands on a texel center and NEAREST is exact.
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-
-    const fbo = gl.createFramebuffer()!;
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    return { fbo, texture, width, height };
   }
 }
 

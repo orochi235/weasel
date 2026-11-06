@@ -17,9 +17,11 @@ import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 import type { FlattenTolerance } from './flattenTolerance';
 import type { IdFrame } from './idFrame';
+import type { GpuBuffer, GpuDevice, GpuPassDesc, GpuTexture } from '../gpu/types';
 
 export interface DrawContext {
-  gl: WebGL2RenderingContext;
+  /** The GPU layer every draw goes through. */
+  gpu: GpuDevice;
   pathFill: ShaderProgram;
   pathFillVColor: ShaderProgram;
   /** The program a batch flush draws a run under one color matrix with —
@@ -44,8 +46,9 @@ export interface DrawContext {
    *  first use. Absent without a renderer behind the context, and then such
    *  glyphs draw nothing. */
   glyphPaintProgram?(kind: GlyphPaintKind): ShaderProgram;
-  quadVbo: WebGLBuffer | null;
-  quadIbo: WebGLBuffer | null;
+  /** The kit quad a shader command and an effect pass draw: `QUAD_VERTICES`
+   *  and `QUAD_INDICES`. */
+  quad: { readonly vertices: GpuBuffer; readonly indices: GpuBuffer } | null;
   /** Staging for the batch. Draws are deferred into it, so a caller driving
    *  `dispatch` itself must `flushBatch` when the stream ends. */
   drawBatch: DrawBatch;
@@ -55,7 +58,7 @@ export interface DrawContext {
   batchState?: StagedBatchState;
   /** 1x1 white texture, bound for a flush that samples no image so a solid
    *  vertex's `texture() * color` is its color. */
-  whiteTexture: WebGLTexture | null;
+  whiteTexture: GpuTexture | null;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -97,16 +100,14 @@ export interface DrawContext {
    *  answer an unregistered effect program gets, and the one that keeps a
    *  frame on screen. */
   effectTargets?: EffectTargets;
-  /** Where this renderer is currently drawing. `null` is the default
-   *  framebuffer. Tracked here rather than read back with `getParameter`
-   *  because a group's effects nest, and each has to restore its parent's.
-   *  `restore` puts back the viewport and scissor of a target that does not
-   *  draw to the whole of `fbo` from its corner, `fragOrigin` where that
-   *  target puts the drawing buffer's bottom-left corner, `[0, 0]` absent,
-   *  and `window` the rect of the drawing buffer it holds, the whole buffer
+  /** Where this renderer is currently drawing. `null` is the canvas.
+   *  Tracked here because a group's effects nest, and each has to resume its
+   *  parent's pass. `pass` is how to resume it, `fragOrigin` where that target
+   *  puts the drawing buffer's bottom-left corner, `[0, 0]` absent, and
+   *  `window` the rect of the drawing buffer it holds, the whole buffer
    *  absent. */
   renderTarget?: {
-    readonly fbo: WebGLFramebuffer; restore?(): void; readonly fragOrigin?: readonly [number, number];
+    readonly pass: GpuPassDesc; readonly fragOrigin?: readonly [number, number];
     readonly window?: DeviceRect;
   } | null;
   /** Where the default framebuffer puts this renderer's bottom-left corner,
@@ -125,11 +126,10 @@ export interface DrawContext {
   /** Device-pixel size of the drawing buffer. */
   deviceWidth?: number;
   deviceHeight?: number;
-  /** Put the viewport and scissor back to the renderer's own rect after a
-   *  group's effects have borrowed them for an offscreen pass. The renderer
-   *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
-   *  its y-flip here would be a second thing to keep in step. */
-  restoreTargetRect?(): void;
+  /** The canvas pass the renderer draws in, without its clear: what a draw
+   *  back on the canvas resumes after an offscreen pass. The renderer owns its
+   *  rect — see `WeaselRenderer.canvasPass`. */
+  canvasPass?: GpuPassDesc;
   /** Where a registered paint kind renders for atlas glyphs to sample. Absent
    *  without a renderer behind the context, and then such glyphs draw
    *  nothing. */

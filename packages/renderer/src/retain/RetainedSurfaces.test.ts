@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { mat3, pathFromD } from '@weasel-js/geom';
 import { makeGLRecorder } from '../testing/glRecorder';
+import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { RetainedSurfaces } from './RetainedSurfaces';
 import type { RetainedKey } from './retainedKey';
 import { contentBounds } from './contentBounds';
@@ -26,14 +27,15 @@ function key(): RetainedKey {
 describe('RetainedSurfaces', () => {
   it('allocates each surface and the scratch buffer at the rect it covers, not the drawing buffer', () => {
     const rec = makeGLRecorder();
-    const store = new RetainedSurfaces(rec.gl, Infinity);
+    const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     store.beginFrame([]);
     store.reserve('a', W, H, { x: 100, y: 50, width: 40, height: 30 })!.commit(key());
 
     const textures = rec.calls.filter((c) => c.name === 'texImage2D').map((c) => [c.args[3], c.args[4]]);
     const storage = rec.calls.filter((c) => c.name === 'renderbufferStorage').map((c) => [c.args[2], c.args[3]]);
-    expect(textures).toEqual([[40, 30]]);
-    expect(storage).toEqual([[40, 30], [40, 30]]);
+    // The surface, and the single-sampled scratch buffer's color; its stencil.
+    expect(textures).toEqual([[40, 30], [40, 30]]);
+    expect(storage).toEqual([[40, 30]]);
     // The recorder reports no multisampling: 4 bytes a pixel kept, 8 drawn in.
     expect(store.bytes).toBe(40 * 30 * 4 + 40 * 30 * 8);
     expect(store.bytes).toBeLessThan(W * H * 4);
@@ -41,7 +43,7 @@ describe('RetainedSurfaces', () => {
 
   it('keeps one scratch buffer as large as the largest surface, and shrinks it when that one goes', () => {
     const rec = makeGLRecorder();
-    const store = new RetainedSurfaces(rec.gl, Infinity);
+    const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     const k = key();
     store.beginFrame([]);
     store.reserve('big', W, H, { x: 0, y: 0, width: 40, height: 30 })!.commit(k);
@@ -57,10 +59,10 @@ describe('RetainedSurfaces', () => {
 
   it('holds no texture for a group with nothing on screen, and still keeps its key', () => {
     const rec = makeGLRecorder();
-    const store = new RetainedSurfaces(rec.gl, Infinity);
+    const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     store.beginFrame([]);
     const draw = store.reserve('gone', W, H, { x: 0, y: 0, width: 0, height: 0 })!;
-    expect(draw.fbo).toBeNull();
+    expect(draw.target).toBeNull();
     const k = key();
     expect(draw.commit(k).texture).toBeNull();
     expect(rec.calls.some((c) => c.name === 'texImage2D' || c.name === 'createRenderbuffer')).toBe(false);
@@ -69,7 +71,7 @@ describe('RetainedSurfaces', () => {
   });
 
   it('counts the surfaces it keeps against the budget, not the scratch buffer they are drawn in', () => {
-    const store = new RetainedSurfaces(makeGLRecorder().gl, 40 * 30 * 4 + 10 * 10 * 4);
+    const store = new RetainedSurfaces(webglDevice(makeGLRecorder().gl), 40 * 30 * 4 + 10 * 10 * 4);
     store.beginFrame([]);
     expect(store.reserve('a', W, H, { x: 0, y: 0, width: 40, height: 30 })).not.toBeNull();
     expect(store.reserve('b', W, H, { x: 0, y: 0, width: 10, height: 11 })).toBeNull();
@@ -78,7 +80,7 @@ describe('RetainedSurfaces', () => {
 
   it('frees the scratch buffer after a frame that redraws nothing', () => {
     const rec = makeGLRecorder();
-    const store = new RetainedSurfaces(rec.gl, Infinity);
+    const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     const k = key();
     store.beginFrame([]);
     store.reserve('a', W, H, { x: 0, y: 0, width: 40, height: 30 })!.commit(k);
@@ -89,12 +91,13 @@ describe('RetainedSurfaces', () => {
     expect(store.lookup('a', W, H, k)).toMatchObject({ kind: 'kept' });
     store.endFrame();
     expect(store.bytes).toBe(40 * 30 * 4);
-    expect(rec.calls.filter((c) => c.name === 'deleteRenderbuffer')).toHaveLength(2);
+    expect(rec.calls.filter((c) => c.name === 'deleteRenderbuffer')).toHaveLength(1);
+    expect(rec.calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(1);
   });
 
   it('draws a surface larger than a tile in tiles, through a scratch buffer no larger than one', () => {
     const rec = makeGLRecorder();
-    const store = new RetainedSurfaces(rec.gl, Infinity);
+    const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     store.tile = 32;
     store.beginFrame([]);
     const draw = store.reserve('a', W, H, { x: 10, y: 20, width: 70, height: 40 })!;
@@ -105,7 +108,7 @@ describe('RetainedSurfaces', () => {
     for (const tile of draw.tiles) draw.resolve(tile);
     draw.commit(key());
     const storage = rec.calls.filter((c) => c.name === 'renderbufferStorage').map((c) => [c.args[2], c.args[3]]);
-    expect(storage).toEqual([[32, 32], [32, 32]]);
+    expect(storage).toEqual([[32, 32]]);
     // Each tile lands at its place from the texture's bottom-left.
     const blits = rec.calls.filter((c) => c.name === 'blitFramebuffer').map((c) => c.args.slice(4, 8));
     expect(blits).toEqual([
