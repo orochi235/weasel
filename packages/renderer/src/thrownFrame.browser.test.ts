@@ -61,7 +61,7 @@ describe('the frame after one that threw', () => {
 
   it('draws to the canvas after a throw inside a group with effects', () => {
     const { gl, renderer } = setup();
-    const effects = [{ program: registerEffect('browser-fx-thrown', COPY_FRAG) }];
+    const effects = [{ program: registerEffect('browser-fx-thrown', { glsl: COPY_FRAG }) }];
     expect(() => renderer.render([{ kind: 'group', effects, children: [THROWS] }])).toThrow();
     renderer.render([HALF_RED]);
     expectHalfRed(center(gl));
@@ -69,7 +69,7 @@ describe('the frame after one that threw', () => {
 
   it('takes back the effect buffer a thrown frame was holding', () => {
     const { gl, renderer } = setup();
-    const effects = [{ program: registerEffect('browser-fx-thrown', COPY_FRAG) }];
+    const effects = [{ program: registerEffect('browser-fx-thrown', { glsl: COPY_FRAG }) }];
     const frame: DrawCommand[] = [{ kind: 'group', effects, children: [THROWS] }];
     const created = vi.spyOn(gl, 'createFramebuffer');
     expect(() => renderer.render(frame)).toThrow();

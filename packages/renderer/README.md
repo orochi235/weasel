@@ -44,7 +44,8 @@ that can share a draw call are merged into one.
 ## Shaders and effects
 
 `registerProgram` registers a fragment shader a `kind: 'shader'` command draws
-with, and `registerTexture` a texture it can sample. `registerEffect` adds a
+with, in GLSL, WGSL or both (WebGL draws from the GLSL; WGSL waits for the
+WebGPU backend), and `registerTexture` a texture it can sample. `registerEffect` adds a
 full-screen pass a group names in `effects`; `blur` and `vignette` are built in.
 
 ## Text and images

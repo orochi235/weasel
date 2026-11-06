@@ -180,7 +180,7 @@ A render layer can draw with its own fragment shader. Register the program once,
 ```tsx
 import { registerProgram } from '@weasel-js/core/renderer';
 
-const stripes = registerProgram('stripes', '', `#version 300 es
+const stripes = registerProgram('stripes', { glsl: { frag: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 uniform float u_time;
@@ -188,7 +188,7 @@ out vec4 outColor;
 void main() {
   float v = 0.5 + 0.5 * sin(v_uv.x * 40.0 + u_time);
   outColor = vec4(vec3(v), 1.0);
-}`);
+}` } });
 
 // Inside a RenderLayer's draw:
 return [{
@@ -199,7 +199,7 @@ return [{
 }];
 ```
 
-An empty vertex source selects the kit's vertex shader, which provides the `v_uv`, `v_screen`, `v_world` and `v_worldLocal` varyings and sets `u_bounds`, `u_view`, `u_proj` and `u_worldOrigin` itself. Far from the origin `v_world` is as coarse as any float32 that size; `v_worldLocal` is the same point measured from `u_worldOrigin`, a world point near the bounds, and stays exact, so a periodic pattern reads `mod(u_worldOrigin, P) + v_worldLocal`. Uniforms take a number, a 2–4 element tuple, a `Float32Array`, or a `TextureHandle` from `registerTexture`. Output **premultiplied** alpha — `vec4(rgb * a, a)` — or translucent pixels come out too bright. `bounds` is in CSS pixels.
+`glsl` is the program's GLSL; a `wgsl` beside it is held for the WebGPU backend, which is not built yet. Leaving out `vert` selects the kit's vertex shader, which provides the `v_uv`, `v_screen`, `v_world` and `v_worldLocal` varyings and sets `u_bounds`, `u_view`, `u_proj` and `u_worldOrigin` itself. Far from the origin `v_world` is as coarse as any float32 that size; `v_worldLocal` is the same point measured from `u_worldOrigin`, a world point near the bounds, and stays exact, so a periodic pattern reads `mod(u_worldOrigin, P) + v_worldLocal`. Uniforms take a number, a 2–4 element tuple, a `Float32Array`, or a `TextureHandle` from `registerTexture`. Output **premultiplied** alpha — `vec4(rgb * a, a)` — or translucent pixels come out too bright. `bounds` is in CSS pixels.
 
 ## Subpath imports
 

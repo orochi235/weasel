@@ -277,7 +277,7 @@ function bindMesh(ctx: PaintBindContext, fill: Paint): PaintProgram | null {
  *  slots and registers the whole entry. */
 export const meshDrawKind: PaintDrawKind = {
   id: MESH_GRADIENT_KIND,
-  programs: { [MESH_PROGRAM_ID]: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC } },
+  programs: { [MESH_PROGRAM_ID]: { glsl: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC } } },
   bind: bindMesh,
   inPoseFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);

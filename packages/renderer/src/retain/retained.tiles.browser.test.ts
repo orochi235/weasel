@@ -168,7 +168,7 @@ describe('a retained surface drawn in tiles', () => {
     const p = pairOf();
     const shader: DrawCommand = {
       kind: 'shader', bounds: { x: 2, y: 3, w: 40, h: 30 }, uniforms: {},
-      program: registerProgram('tiles-by-origin', '', BY_ORIGIN),
+      program: registerProgram('tiles-by-origin', { glsl: { frag: BY_ORIGIN } }),
     };
     const children = [...world(), shader];
     const layer = (): DrawCommand => ({ kind: 'group', retain: 'L', children });

@@ -52,7 +52,7 @@ afterEach(() => { _resetProgramRegistryForTests(); });
 
 describe('array uniforms', () => {
   it('uploads a Float32Array to the array base in one call', () => {
-    const h = registerProgram('arr-vec3', '', frag('uniform vec3 u_ripples[8];'));
+    const h = registerProgram('arr-vec3', { glsl: { frag: frag('uniform vec3 u_ripples[8];') } });
     r.registerProgram(h);
     const data = new Float32Array(24).map((_, i) => i);
     mark();
@@ -71,13 +71,13 @@ uniform vec2 u_offsets[4];
 void main() { gl_Position = vec4(a_position + u_offsets[0], 0.0, 1.0); }
 `;
     mark();
-    r.registerProgram(registerProgram('arr-vert', vert, frag('')));
+    r.registerProgram(registerProgram('arr-vert', { glsl: { vert: vert, frag: frag('') } }));
     const asked = uploads(rec, 'getUniformLocation').map((c) => c.args[1]);
     expect(asked).toContain('u_offsets[0]');
   });
 
   it('picks the upload call from the declared element type', () => {
-    const h = registerProgram('arr-types', '', frag(`
+    const h = registerProgram('arr-types', { glsl: { frag: frag(`
       uniform float u_f[4];
       uniform vec2 u_v[3];
       uniform vec4 u_c[2];
@@ -86,7 +86,7 @@ void main() { gl_Position = vec4(a_position + u_offsets[0], 0.0, 1.0); }
       uniform uint u_u[2];
       uniform mat2 u_m[2];
       uniform mat4 u_m4[2];
-    `));
+    `) } });
     r.registerProgram(h);
     mark();
     r.render([shader(h, {
@@ -118,7 +118,7 @@ void main() { gl_Position = vec4(a_position + u_offsets[0], 0.0, 1.0); }
   });
 
   it('uploads a prefix shorter than the declared size, and nothing for an empty one', () => {
-    const h = registerProgram('arr-short', '', frag('uniform vec3 u_ripples[8];'));
+    const h = registerProgram('arr-short', { glsl: { frag: frag('uniform vec3 u_ripples[8];') } });
     r.registerProgram(h);
     mark();
     r.render([shader(h, { u_ripples: [1, 2, 3, 4, 5, 6] })]);
@@ -130,14 +130,14 @@ void main() { gl_Position = vec4(a_position + u_offsets[0], 0.0, 1.0); }
   });
 
   it('rejects a value longer than the declaration or not a whole number of elements', () => {
-    const h = registerProgram('arr-bad', '', frag('uniform vec3 u_ripples[8];'));
+    const h = registerProgram('arr-bad', { glsl: { frag: frag('uniform vec3 u_ripples[8];') } });
     r.registerProgram(h);
     expect(() => r.render([shader(h, { u_ripples: new Float32Array(27) })])).toThrow(/u_ripples.*vec3\[8\]/);
     expect(() => r.render([shader(h, { u_ripples: new Float32Array(7) })])).toThrow(/multiple of 3/);
   });
 
   it('still writes one slot through its own key', () => {
-    const h = registerProgram('arr-slot', '', frag('uniform vec3 u_ripples[8];'));
+    const h = registerProgram('arr-slot', { glsl: { frag: frag('uniform vec3 u_ripples[8];') } });
     r.registerProgram(h);
     mark();
     r.render([shader(h, { 'u_ripples[2]': [1, 2, 3] })]);
@@ -156,13 +156,13 @@ describe('re-registered program source', () => {
   }
 
   it('recompiles on the next frame, deletes the program it replaces, and draws with the new one', () => {
-    const h = registerProgram('hot', '', FRAG_A);
+    const h = registerProgram('hot', { glsl: { frag: FRAG_A } });
     mark();
     r.registerProgram(h);
     const [first] = createdPrograms();
     r.render([shader(h, { u_a: 1 })]);
 
-    registerProgram('hot', '', FRAG_B);
+    registerProgram('hot', { glsl: { frag: FRAG_B } });
     mark();
     r.render([shader(h, { u_b: 0.5 })]);
 
@@ -178,10 +178,10 @@ describe('re-registered program source', () => {
   });
 
   it('does not recompile when the same source is registered again', () => {
-    const h = registerProgram('hot-same', '', FRAG_A);
+    const h = registerProgram('hot-same', { glsl: { frag: FRAG_A } });
     r.registerProgram(h);
     r.render([shader(h, { u_a: 1 })]);
-    registerProgram('hot-same', '', FRAG_A);
+    registerProgram('hot-same', { glsl: { frag: FRAG_A } });
     mark();
     r.render([shader(h, { u_a: 1 })]);
     expect(uploads(rec, 'compileShader')).toHaveLength(0);
@@ -196,14 +196,14 @@ describe('re-registered program source', () => {
       },
     });
     const renderer = new WeaselRenderer({ gl, width: 10, height: 10, dpr: 1 });
-    const h = registerProgram('hot-broken', '', FRAG_A);
+    const h = registerProgram('hot-broken', { glsl: { frag: FRAG_A } });
     mark();
     renderer.registerProgram(h);
     const [first] = createdPrograms();
 
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     failing = true;
-    registerProgram('hot-broken', '', FRAG_B);
+    registerProgram('hot-broken', { glsl: { frag: FRAG_B } });
     mark();
     renderer.render([shader(h, { u_a: 1 })]);
     renderer.render([shader(h, { u_a: 1 })]);
@@ -218,7 +218,7 @@ describe('re-registered program source', () => {
 
 describe('a shader command whose program this renderer has not compiled', () => {
   it('compiles it on first draw, from the module-level source', () => {
-    const h = registerProgram('lazy-shader', '', frag(''));
+    const h = registerProgram('lazy-shader', { glsl: { frag: frag('') } });
     mark();
     r.render([shader(h, {})]);
     expect(uploads(rec, 'linkProgram')).toHaveLength(1);

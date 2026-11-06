@@ -71,7 +71,7 @@ function atGl(px: Uint8Array, x: number, y: number, width = DW): number[] {
 }
 
 function layer(id: string, frag: string): (retain?: string) => GroupDrawCommand {
-  const program = registerProgram(id, '', frag);
+  const program = registerProgram(id, { glsl: { frag: frag } });
   const children: DrawCommand[] = [{ kind: 'shader', program, uniforms: {}, bounds: { x: 8, y: 6, w: 20, h: 14 } }];
   return (retain) => ({ kind: 'group', retain, children });
 }

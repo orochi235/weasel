@@ -17,7 +17,7 @@ import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { useSceneSelectTool } from 'canvas/SceneCanvas/useSceneSelectTool';
 
 /** Opaque inside the circle its bounds hold, transparent outside it. */
-const DISC = registerProgram('pick-at-browser-disc', '', `#version 300 es
+const DISC = registerProgram('pick-at-browser-disc', { glsl: { frag: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 out vec4 outColor;
@@ -25,7 +25,7 @@ void main() {
   float a = length(v_uv - 0.5) < 0.5 ? 1.0 : 0.0;
   outColor = vec4(0.0, 0.0, a, a);
 }
-`);
+` } });
 
 interface Data { disc?: boolean }
 

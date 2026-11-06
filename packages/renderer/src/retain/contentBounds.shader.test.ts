@@ -11,7 +11,7 @@ const FILL = 'out vec4 o; void main() { o = vec4(1.0); }';
 afterEach(() => _resetProgramRegistryForTests());
 
 function shader(id: string, vert: string, frag: string): ShaderDrawCommand {
-  return { kind: 'shader', program: registerProgram(id, vert, frag), uniforms: {}, bounds: { x: 100, y: 50, w: 40, h: 20 } };
+  return { kind: 'shader', program: registerProgram(id, { glsl: { vert: vert, frag: frag } }), uniforms: {}, bounds: { x: 100, y: 50, w: 40, h: 20 } };
 }
 
 const bound = (cmd: ShaderDrawCommand) => contentBounds([cmd], mat3.translated(mat3.identity(), 300, 300), [], 2, W, H);

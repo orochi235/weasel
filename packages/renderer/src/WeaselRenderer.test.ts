@@ -171,7 +171,7 @@ in vec2 a_position;
 uniform mat3 u_restoredModel;
 void main() { gl_Position = vec4((u_restoredModel * vec3(a_position, 1.0)).xy, 0.0, 1.0); }
 `;
-    r.registerProgram(registerProgram('restore-vert-uniform-prog', vert, MINIMAL_FRAG));
+    r.registerProgram(registerProgram('restore-vert-uniform-prog', { glsl: { vert: vert, frag: MINIMAL_FRAG } }));
     canvas.dispatchEvent('webglcontextlost');
     recorder.reset();
     canvas.dispatchEvent('webglcontextrestored');
@@ -252,7 +252,7 @@ describe('dispose', () => {
   it('deletes a consumer-registered program alongside the built-ins', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
-    const handle = registerProgram('dispose-test-prog', '', MINIMAL_FRAG);
+    const handle = registerProgram('dispose-test-prog', { glsl: { frag: MINIMAL_FRAG } });
     r.registerProgram(handle);
     rec.reset();
     r.dispose();
@@ -311,7 +311,7 @@ uniform mat3 u_ownMatrix;
 void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0)).xy, 0.0, 1.0); }
 `;
     rec.reset();
-    r.registerProgram(registerProgram('vert-uniform-prog', vert, MINIMAL_FRAG));
+    r.registerProgram(registerProgram('vert-uniform-prog', { glsl: { vert: vert, frag: MINIMAL_FRAG } }));
 
     // A proxy: the recorder answers every `getUniformLocation`, so this cannot
     // prove a location exists — only that the renderer asked for these names.
@@ -328,7 +328,7 @@ void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0))
   it('deletes the program it replaces when a handle is re-registered', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
-    const handle = registerProgram('reregister-test-prog', '', MINIMAL_FRAG);
+    const handle = registerProgram('reregister-test-prog', { glsl: { frag: MINIMAL_FRAG } });
     r.registerProgram(handle);
     rec.reset();
     r.registerProgram(handle);
@@ -339,7 +339,7 @@ void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0))
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     r.dispose();
-    const handle = registerProgram('post-dispose-prog', '', MINIMAL_FRAG);
+    const handle = registerProgram('post-dispose-prog', { glsl: { frag: MINIMAL_FRAG } });
     rec.reset();
     r.registerProgram(handle);
     const names = rec.calls.map((c) => c.name);

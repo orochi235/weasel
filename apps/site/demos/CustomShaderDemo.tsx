@@ -82,9 +82,9 @@ void main() {
 }`;
 
 // Module-scope registration — runs once per page load.
-const PLASMA_PROGRAM:  ShaderProgramHandle = registerProgram('demo-plasma',  '', PLASMA_FRAG);
-const RIPPLE_PROGRAM:  ShaderProgramHandle = registerProgram('demo-ripple',  '', RIPPLE_FRAG);
-const VORONOI_PROGRAM: ShaderProgramHandle = registerProgram('demo-voronoi', '', VORONOI_FRAG);
+const PLASMA_PROGRAM:  ShaderProgramHandle = registerProgram('demo-plasma',  { glsl: { frag: PLASMA_FRAG } });
+const RIPPLE_PROGRAM:  ShaderProgramHandle = registerProgram('demo-ripple',  { glsl: { frag: RIPPLE_FRAG } });
+const VORONOI_PROGRAM: ShaderProgramHandle = registerProgram('demo-voronoi', { glsl: { frag: VORONOI_FRAG } });
 const SHADERS = [PLASMA_PROGRAM, RIPPLE_PROGRAM, VORONOI_PROGRAM];
 
 interface Ripple { x: number; y: number; t: number; }

@@ -420,13 +420,13 @@ describe('a registered paint kind on text', () => {
   it('lands in a group\'s effect buffer, not the frame under it', () => {
     // Red and blue trade places, so glyphs that escaped to the default
     // framebuffer would read unswapped.
-    const swap = registerEffect('test:swap-rb', `#version 300 es
+    const swap = registerEffect('test:swap-rb', { glsl: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_source;
 out vec4 outColor;
 void main() { outColor = texture(u_source, v_uv).bgra; }
-`);
+` });
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'mark', layer: 'main', pose: POSE,

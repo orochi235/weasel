@@ -131,7 +131,7 @@ describe('paint-kind registry', () => {
   });
 
   it('registers the shader programs a kind declares, and re-registering the same source is not a duplicate', () => {
-    const programs = { 'test-declared': { vert: '', frag: WASH_FRAG } };
+    const programs = { 'test-declared': { glsl: { frag: WASH_FRAG } } };
     dispose = registerPaintKind({ ...washEntry(), programs });
     expect(getProgramSource('test-declared')).toEqual(programs['test-declared']);
     // registerProgram throws on a duplicate id in production.
@@ -262,7 +262,7 @@ describe('paint-kind registry', () => {
   });
 
   it('paints a registered kind through its own program', () => {
-    registerProgram(WASH_PROGRAM, '', WASH_FRAG);
+    registerProgram(WASH_PROGRAM, { glsl: { frag: WASH_FRAG } });
     dispose = registerPaintKind(washEntry());
     const recorder = makeGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
@@ -308,7 +308,7 @@ describe('paint kinds loaded on demand', () => {
   });
 
   it('draws nothing for a cold kind, starts its load, and draws it once it lands', async () => {
-    registerProgram(WASH_PROGRAM, '', WASH_FRAG);
+    registerProgram(WASH_PROGRAM, { glsl: { frag: WASH_FRAG } });
     const load = vi.fn(async () => washEntry());
     registerPaintKindLoader('test-wash', load);
     const recorder = makeGLRecorder();

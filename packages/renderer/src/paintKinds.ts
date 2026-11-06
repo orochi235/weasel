@@ -12,7 +12,9 @@ import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import { getProgramSource, registerProgram, type ProgramSource } from './shaders/registerProgram';
+import {
+  getProgramSource, registerProgram, sameProgramSource, type ProgramSource,
+} from './shaders/registerProgram';
 
 /** A compiled GL program. A paint kind gets one from
  *  {@link PaintBindContext.program} and hands it back from `bind`. */
@@ -149,7 +151,7 @@ export function registerPaintDrawKind(entry: PaintDrawKind): () => void {
   }
   for (const [id, src] of Object.entries(entry.programs ?? {})) {
     const have = getProgramSource(id);
-    if (!have || have.vert !== src.vert || have.frag !== src.frag) registerProgram(id, src.vert, src.frag);
+    if (!have || !sameProgramSource(have, src)) registerProgram(id, src);
   }
   return KINDS.push(entry.id, entry);
 }

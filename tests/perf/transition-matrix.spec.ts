@@ -124,7 +124,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
         'sans-serif', { weight: 400, style: 'normal' },
         '/weasel/inter/inter.json', '/weasel/inter/inter.png',
       );
-      const shaderHandle = registerProgram('perf-transition-panel', '', PANEL_FRAG);
+      const shaderHandle = registerProgram('perf-transition-panel', { glsl: { frag: PANEL_FRAG } });
 
       const renderer = new WeaselRenderer({ gl, canvas, width: W, height: H, dpr: 1 });
       renderer.registerProgram(shaderHandle);

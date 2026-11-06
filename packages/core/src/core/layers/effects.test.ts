@@ -36,7 +36,7 @@ const RECT: DrawCommand = {
 function setup(effectIds: string[]) {
   const recorder = makeGLRecorder();
   const renderer = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 50, dpr: 2 });
-  const effects = effectIds.map((id) => ({ program: registerEffect(id, TINT_FRAG) }));
+  const effects = effectIds.map((id) => ({ program: registerEffect(id, { glsl: TINT_FRAG }) }));
   return { recorder, renderer, effects };
 }
 
@@ -137,7 +137,7 @@ describe('group effects', () => {
     const { recorder, renderer } = setup([]);
     // Registered as a source, never compiled onto this renderer, and the
     // fragment shader is nonsense so `ensureProgram` cannot rescue it.
-    const program = registerProgram('fx-broken', 'not glsl', 'not glsl');
+    const program = registerProgram('fx-broken', { glsl: { vert: 'not glsl', frag: 'not glsl' } });
     renderer.render([{ kind: 'group', effects: [{ program }], children: [RECT] }]);
     // The rect still reached the buffer, and the frame ended on the default one.
     expect(recorder.calls.some((c) => c.name === 'drawElements')).toBe(true);

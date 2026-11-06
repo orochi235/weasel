@@ -55,9 +55,9 @@ export function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBo
  * surface that does not start at the drawing buffer's corner.
  */
 function shaderBox(cmd: ShaderDrawCommand): ScreenBox | null {
-  const src = getProgramSource(cmd.program.id);
-  if (!src || src.vert !== '') return null;
-  if (/\bgl_FragCoord\b/.test(src.frag) && !/\bu_fragOrigin\b/.test(src.frag)) return null;
+  const glsl = getProgramSource(cmd.program.id)?.glsl;
+  if (!glsl || glsl.vert !== undefined) return null;
+  if (/\bgl_FragCoord\b/.test(glsl.frag) && !/\bu_fragOrigin\b/.test(glsl.frag)) return null;
   const { x, y, w, h } = cmd.bounds;
   return { minX: Math.min(x, x + w), minY: Math.min(y, y + h), maxX: Math.max(x, x + w), maxY: Math.max(y, y + h) };
 }

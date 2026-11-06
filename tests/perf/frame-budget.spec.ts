@@ -188,7 +188,7 @@ void main() {
   float a = 0.85;
   outColor = vec4(vec3(v, 0.4, 1.0 - v) * a, a);
 }`;
-      const panelProgram = registerProgram('perf-frame-budget-panel', '', PANEL_FRAG);
+      const panelProgram = registerProgram('perf-frame-budget-panel', { glsl: { frag: PANEL_FRAG } });
       freshRenderer();
 
       /** Six distinct bitmaps, not one: a single texture would never rebind,

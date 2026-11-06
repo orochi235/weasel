@@ -53,8 +53,8 @@ void main() {
 }
 `;
 
-const BLUR = registerEffect('weasel:blur', BLUR_FRAG);
-const VIGNETTE = registerEffect('weasel:vignette', VIGNETTE_FRAG);
+const BLUR = registerEffect('weasel:blur', { glsl: BLUR_FRAG });
+const VIGNETTE = registerEffect('weasel:vignette', { glsl: VIGNETTE_FRAG });
 
 /**
  * Gaussian blur, as a horizontal pass followed by a vertical one.

@@ -37,7 +37,7 @@ void main() { outColor = vec4(0.0, 0.0, 0.0, 1.0); }`;
 
 describe('Canvas shaders prop', () => {
   it('registers shaders supplied at mount on the renderer it builds', async () => {
-    const handle = registerProgram('canvas-shaders-mount', '', FRAGMENT);
+    const handle = registerProgram('canvas-shaders-mount', { glsl: { frag: FRAGMENT } });
     const spy = vi.spyOn(WeaselRenderer.prototype, 'registerProgram');
 
     render(<Canvas width={100} height={100} layers={{}} shaders={[handle]} />);
@@ -48,8 +48,8 @@ describe('Canvas shaders prop', () => {
   });
 
   it('registers a shader added after mount', async () => {
-    const first = registerProgram('canvas-shaders-first', '', FRAGMENT);
-    const second = registerProgram('canvas-shaders-second', '', FRAGMENT);
+    const first = registerProgram('canvas-shaders-first', { glsl: { frag: FRAGMENT } });
+    const second = registerProgram('canvas-shaders-second', { glsl: { frag: FRAGMENT } });
 
     const { rerender } = render(
       <Canvas width={100} height={100} layers={{}} shaders={[first]} />,
@@ -67,12 +67,12 @@ describe('Canvas shaders prop', () => {
   // Nothing else on this canvas asks for a frame, so the renderer's own
   // recompile-on-next-frame would never run without this repaint.
   it('repaints when a program it names is re-registered with new source', async () => {
-    const handle = registerProgram('canvas-shaders-hot', '', FRAGMENT);
+    const handle = registerProgram('canvas-shaders-hot', { glsl: { frag: FRAGMENT } });
     render(<Canvas width={100} height={100} layers={{}} shaders={[handle]} />);
     await settle();
 
     const spy = vi.spyOn(WeaselRenderer.prototype, 'render');
-    registerProgram('canvas-shaders-hot', '', FRAGMENT.replace('0.0, 0.0, 0.0', '1.0, 0.0, 0.0'));
+    registerProgram('canvas-shaders-hot', { glsl: { frag: FRAGMENT.replace('0.0, 0.0, 0.0', '1.0, 0.0, 0.0') } });
     await waitForFrame();
 
     expect(spy).toHaveBeenCalled();
@@ -80,12 +80,12 @@ describe('Canvas shaders prop', () => {
   });
 
   it('does not repaint for a program it does not name', async () => {
-    const handle = registerProgram('canvas-shaders-mine', '', FRAGMENT);
+    const handle = registerProgram('canvas-shaders-mine', { glsl: { frag: FRAGMENT } });
     render(<Canvas width={100} height={100} layers={{}} shaders={[handle]} />);
     await settle();
 
     const spy = vi.spyOn(WeaselRenderer.prototype, 'render');
-    registerProgram('canvas-shaders-theirs', '', FRAGMENT);
+    registerProgram('canvas-shaders-theirs', { glsl: { frag: FRAGMENT } });
     await waitForFrame();
 
     expect(spy).not.toHaveBeenCalled();

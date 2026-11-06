@@ -19,7 +19,7 @@ export const COMPOSITE_PROGRAM_ID = 'weasel:effect-composite';
  */
 export function compositeProgramId(): string {
   if (!getProgramSource(COMPOSITE_PROGRAM_ID)) {
-    registerProgram(COMPOSITE_PROGRAM_ID, EFFECT_VERT_SRC, COMPOSITE_FRAG_SRC);
+    registerProgram(COMPOSITE_PROGRAM_ID, { glsl: { vert: EFFECT_VERT_SRC, frag: COMPOSITE_FRAG_SRC } });
   }
   return COMPOSITE_PROGRAM_ID;
 }

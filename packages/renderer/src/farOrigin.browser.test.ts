@@ -87,7 +87,7 @@ describe('paints far from the origin, in a real context', () => {
   });
 
   it("draws a shader command's world point as it does at the origin", () => {
-    const program = registerProgram('far-origin-ramp', '', `#version 300 es
+    const program = registerProgram('far-origin-ramp', { glsl: { frag: `#version 300 es
 precision highp float;
 in vec2 v_worldLocal;
 uniform vec2 u_worldOrigin;
@@ -96,7 +96,7 @@ void main() {
   float x = fract(mod(u_worldOrigin.x, 1.0) + v_worldLocal.x);
   outColor = vec4(x, 0.0, 0.0, 1.0);
 }
-`);
+` } });
     const at = (): DrawCommand[] => [{ kind: 'shader', program, uniforms: {}, bounds: { x: 0, y: 0, w: ZOOM, h: 16 } }];
     // The ramp is the world point's fraction, so the near run starts at FAR's.
     expectSame(row(FAR - Math.floor(FAR), at), row(FAR, at));
