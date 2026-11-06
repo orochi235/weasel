@@ -400,11 +400,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] A `Switch` or `Checkbox` in a baseline-aligned row sits off its neighbors' baseline.** The toggle
-  label (`_toggleLabel`) is an `inline-flex` row with `align-items: center`, so it reports the track's baseline, not
-  its text's: collego's top bar measured its "Drawers" 1 px above the words beside it (2026-11-05). collego fixes it
-  locally with `align-items: baseline` on the label and `align-self: center` on the track (`packages/app/src/Topbar.css`).
-  Closes when the label's own row takes its text's baseline.
 - **(P2) [maintainer] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
   (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
   itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl

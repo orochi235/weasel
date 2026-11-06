@@ -56,5 +56,6 @@
 }
 
 .label {
+  composes: toggleText from '../toggleLabel.module.css';
   line-height: 1.2;
 }
