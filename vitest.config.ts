@@ -325,7 +325,8 @@ export default defineConfig({
             enabled: true,
             // A fake audio sink: on a node whose output device does not run, a real one leaves an
             // AudioContext "running" with its clock stopped, and the tests sound on every node.
-            provider: playwright({ launchOptions: { args: ['--disable-audio-output'] } }),
+            // Without --enable-unsafe-webgpu, headless Chromium's requestAdapter() returns null.
+            provider: playwright({ launchOptions: { args: ['--disable-audio-output', '--enable-unsafe-webgpu'] } }),
             commands: browserCommands,
             headless: true,
             instances: [{ browser: 'chromium' }],
