@@ -34,10 +34,13 @@ export interface RenderIdsOptions extends Pick<RenderOptions, 'screen'> {
    *  `1 / 255`: every pixel painted visibly. 0.5 claims the pixels whose
    *  centers a shape covers. A fragment of alpha 0 never claims. */
   minAlpha?: number;
+  /** Groups whose `pickId` is in this set are left out of the frame, children
+   *  and all, so a read shows what is beneath them. */
+  exclude?: ReadonlySet<number>;
 }
 
 /** What an id frame read back: for each device pixel, the `pickId` of the
- *  last thing to paint it, 0 where nothing did or what did carried none. */
+ *  last thing that carries one to paint it, 0 where nothing did. */
 export interface IdBuffer {
   /** Where the buffer's top-left pixel sits, device pixels from the drawing's top-left. */
   x: number;

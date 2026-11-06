@@ -38,6 +38,10 @@ export const POSITION_ATTRIBUTE_LOCATION = 0;
  *  nothing at location 1. An id frame switches that attachment off for them. */
 export const PROGRAMS_WITHOUT_IDS: WeakSet<WebGLProgram> = new WeakSet();
 
+/** Programs built with `ids: false`, which write location 1 themselves under
+ *  draw buffers their caller sets. An id frame leaves those buffers alone. */
+export const PROGRAMS_WRITING_OWN_IDS: WeakSet<WebGLProgram> = new WeakSet();
+
 /** How a program is built beyond its sources. */
 export interface ShaderProgramOptions {
   /** Add the id output (`shaders/idOutput.ts`). Default `true`; `false` for a
@@ -92,7 +96,8 @@ export class ShaderProgram {
     }
     this.handle = program;
     this.writesIds = rewritten !== null;
-    if (!rewritten && options.ids !== false) PROGRAMS_WITHOUT_IDS.add(program);
+    if (options.ids === false) PROGRAMS_WRITING_OWN_IDS.add(program);
+    else if (!rewritten) PROGRAMS_WITHOUT_IDS.add(program);
   }
 
   private compile(type: number, source: string, stage: ShaderStage): WebGLShader {

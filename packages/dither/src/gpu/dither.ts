@@ -49,6 +49,7 @@ export function dither(options: GpuDitherOptions = {}): Effect[] {
   return [{
     program: PROGRAM,
     reach,
+    screenAnchored: method === 'bayer' || grid !== SCREEN,
     uniforms: {
       u_method: method === 'bayer' ? 1 : 0,
       u_threshold: options.threshold ?? DEFAULT_THRESHOLD,

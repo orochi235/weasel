@@ -8,9 +8,12 @@ import type { LayoutPass } from '../layout/types';
 import type { MoveSession } from '../session';
 import { rebaseTransformOp } from './rebase';
 import { opInWorld } from '../layout/view';
+import { pageOfNode } from 'core/pages/pageNodes';
+import { followerMoveOps, followerMoves } from '../../followerMoves';
 
 /** The ops of a drop a layout container accepted: reparents, then each
- *  placement's `commitDrop`, then the source containers' reflow. */
+ *  placement's `commitDrop`, then the source containers' reflow, then the
+ *  followers whose page the reparents change (`followerMoves`). */
 export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
   const lp = pass;
   const pc = session.pc;
@@ -33,8 +36,11 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
   // Every reparent precedes every drop.
   const reparentOps: Op[] = [];
   const dropOps: Op[] = [];
+  const page = pageOfNode(session.scene, asNodeId(destId));
+  const landed = new Map<string, string | null>();
   for (const placement of lp.placements) {
     if (placement.dragged.sourceContainerId !== destId) {
+      landed.set(placement.dragged.id, page);
       reparentOps.push(createReparentOp({
         id: placement.dragged.id,
         fromParentId: placement.dragged.sourceContainerId,
@@ -65,5 +71,6 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
       label: 'Source reflow',
     }));
   }
-  return [...reparentOps, ...dropOps, ...reflowOps];
+  const followerOps = followerMoveOps(followerMoves(session.scene, landed), session.lifecycle.label);
+  return [...reparentOps, ...dropOps, ...reflowOps, ...followerOps];
 }

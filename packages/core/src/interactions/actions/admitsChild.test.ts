@@ -47,3 +47,14 @@ describe('childVerdict on a page', () => {
     expect(childVerdict(scene, PAGE_A, [link], undefined)).toBe(false);
   });
 });
+
+describe('childVerdict on a locked container', () => {
+  it('refuses a page locked by its own flag, and a group under it, whatever canDropInto says', () => {
+    const { scene } = pagedScene();
+    const g = scene.add({ kind: 'group', layer: 'ink', parent: PAGE_B, pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    scene.setLocked(PAGE_B, true);
+    expect(childVerdict(scene, PAGE_B, [ON_PAGE], () => true)).toBe(false);
+    expect(childVerdict(scene, g, [ON_PAGE], () => true)).toBe(false);
+    expect(childVerdict(scene, PAGE_A, [ON_PAGE], () => true)).toBe(true);
+  });
+});

@@ -7,13 +7,14 @@ import { useInsertDepSource } from 'canvas/deps/insert';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { ON_PAGE, PAGE_A, PAGE_B, pagedScene } from 'core/pages/pagedFixture';
 import { insertParent } from './parent';
-import type { RectPose } from 'core/scene/types';
+import type { NodeId, RectPose } from 'core/scene/types';
 import { insertAction } from './action';
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
-function draw(from: { x: number; y: number }, to: { x: number; y: number }, pasteboard = false) {
+function draw(from: { x: number; y: number }, to: { x: number; y: number }, pasteboard = false, locked: NodeId[] = []) {
   const { scene } = pagedScene({ pasteboard });
+  for (const id of locked) scene.setLocked(id, true);
   const adapter = sceneToAdapter(scene);
   let reg!: DepRegistry;
   function Wire() {
@@ -39,6 +40,12 @@ describe('insertAction in a paged scene', () => {
     const { node, pose } = draw({ x: 102, y: 20 }, { x: 107, y: 40 });
     expect(node.parent).toBe(PAGE_A);
     expect(pose).toMatchObject({ x: 99, y: 20, width: 5, height: 20 });
+  });
+
+  it('puts a rect drawn on a locked page on the nearest page that is not', () => {
+    const { node, pose } = draw({ x: 150, y: 20 }, { x: 170, y: 40 }, false, [PAGE_B]);
+    expect(node.parent).toBe(PAGE_A);
+    expect(pose).toMatchObject({ x: 99, y: 20 });
   });
 
   it('puts one drawn in the gap at the top of the tree with the pasteboard on', () => {

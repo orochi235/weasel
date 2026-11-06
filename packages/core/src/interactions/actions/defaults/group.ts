@@ -4,6 +4,8 @@ import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { groupingSite } from 'core/pages/pagePlacement';
+import { pageOfNode } from 'core/pages/pageNodes';
+import { followerMoveOps, followerMoves } from '../followerMoves';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { poseDescriptorOf } from '../poseDescriptorDep';
@@ -23,7 +25,8 @@ import { icon } from '../../../icons.gen';
  * the members lie wholly off every page and move onto one. The container takes the world
  * envelope of its members' ink, and each member is re-expressed in that
  * container's frame. The container is a frame, so its pose is authored rather
- * than derived from its members, whose poses are expressed in it.
+ * than derived from its members, whose poses are expressed in it. A node
+ * following a member that changes page goes where `followerMoves` says.
  */
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
@@ -101,6 +104,9 @@ export const groupAction: Action & { requires: string[] } = {
           label: 'Group',
         }));
       }
+
+      const page = parent === null ? null : pageOfNode(scene, parent);
+      ops.push(...followerMoveOps(followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page]))), 'Group'));
 
       if (applyOps) applyOps(ops, 'Group');
       else scene.applyBatch(ops, 'Group', defaultCommitAdapter(scene, selection.adapterMethods));

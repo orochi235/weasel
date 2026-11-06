@@ -6,6 +6,7 @@ import { doubleClickTarget } from '../doubleClickTarget';
 import { useEnteredGroup } from '../deps/enteredGroup';
 import { createEnteredGroupScope } from 'domains/selection/enteredGroupScope';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { CanvasExtensionApi } from '../canvasExtension';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { composeAlphaFor } from '../sceneSlotWiring';
@@ -34,8 +35,11 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   viewRef: RefObject<View>;
   selectTool: UseSceneSelectToolArgs<TData, TLayer, TPose>['selectTool'];
   kinds: NodeKinds<TData>;
+  /** The surface's handle, whose id frames `geometry.picking: 'pixels'` reads. */
+  canvasApiRef: RefObject<CanvasExtensionApi | null>;
 }) {
-  const { scene, selection, descriptor, viewRef } = args;
+  const { scene, selection, descriptor, viewRef, canvasApiRef } = args;
+  const readIds = useCallback(() => canvasApiRef.current?.readIds ?? null, [canvasApiRef]);
   const { geometry, alphaFor, layerVisibility, layerOrder, isPointerInteractive } = args.props;
   const { kindOf, kindOfNode } = args.kinds;
 
@@ -63,11 +67,13 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
 
   const depRegistry = useOptionalDepRegistry();
   const pasteInto = useCallback(() => depRegistry?.get('insertInto')?.get() ?? null, [depRegistry]);
+  const canDropInto = useCallback(() => depRegistry?.get('canDropInto'), [depRegistry]);
   const adapter = useSceneAdapter(scene, {
     // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
     selection: selection.adapterMethods,
     poseDescriptor: descriptor,
     pasteInto,
+    canDropInto,
   });
 
   const selectTool = useSceneSelectTool({
@@ -83,6 +89,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     isPointerInteractive: reachable,
+    readIds,
     selectTool: args.selectTool,
   });
 

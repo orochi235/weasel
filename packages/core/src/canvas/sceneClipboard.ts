@@ -25,6 +25,7 @@ import { statedFields } from 'core/scene/statedFields';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import type { InsertSite } from './deps/insertSite';
 import { isFollower } from 'core/pages/pagePlacement';
+import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { pasteOnPages, type PageLanding } from './pasteOnPages';
 
 /** What the seam needs from the adapter it serves. */
@@ -38,6 +39,8 @@ export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
   /** Where the pasted cluster's roots land; absent, or naming no parent, they keep their layer, at the top of the
    *  tree or, in a paged scene, where `pasteOnPages` puts them. */
   landing?: () => InsertSite;
+  /** The `canDropInto` dep, read at each paste: a page it refuses is passed over as an insert's would be. */
+  canDropInto?: () => CanDropIntoDep | undefined;
 }
 
 // Spread-level copy per the clipboard contract: mutating a snapshot's
@@ -288,6 +291,6 @@ function pagedLandings<TData, TLayer extends string, TPose>(
     id: item.id as string,
     bounds: env.poseBounds(env.translate(item.pose, offset.dx, offset.dy, item), item),
     ...(isFollower(item) ? { follows: sourcesOf(item).map((dep) => rootOf(dep) ?? dep) } : {}),
-  })), dropPoint);
+  })), dropPoint, env.canDropInto?.());
   return landings && new Map(roots.map((item, i) => [item.id as string, landings[i]!]));
 }

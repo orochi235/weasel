@@ -3,13 +3,14 @@
  * container under the pointer, the container that would hold it, and its
  * place among that container's members.
  */
-import type { Bounds, OngoingOverlay, RectPose, Scene, Vec2 } from '@weasel-js/core';
+import { nodeOutline, type Bounds, type NodeId, type OngoingOverlay, type RectPose, type Scene, type Vec2 } from '@weasel-js/core';
+import { asPolygonPath, flatSubpaths } from '@weasel-js/geom';
 import { nearestGap } from '@weasel-js/ui-logic';
 import { bodyAt } from './connectTargets';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { diagramContainerOf } from './containers/trait';
 import type { DiagramSceneData } from './dataTypes';
-import { worldRectOf } from './overlays';
+import { worldPoseOf, worldRectOf } from './overlays';
 import type { ParticipantSource } from './portAffordance';
 import { sequenceSlots, type ReorderGap } from './reorder';
 import { membersOf } from './reorderModel';
@@ -61,10 +62,22 @@ export function itemDropTargetAt(
   return { target: node ?? container, container, index: place?.index ?? null, at: point, gap: place?.gap ?? null };
 }
 
-/** The outline of `id`'s box, as a closed run. */
-export function outlineOf(scene: DiagramScene, id: string, role: string): OngoingOverlay | null {
+/** How closely a drop outline follows a curve, in world units. */
+const OUTLINE_TOLERANCE = 0.5;
+
+/** The outline of `id` as closed runs: its shape's, or a container's box. */
+export function outlineOf(scene: DiagramScene, id: string, role: string): OngoingOverlay[] {
+  const node = scene.get(id as NodeId);
+  const shape = node === undefined || diagramContainerOf(node) !== null ? null : nodeOutline(node as never, worldPoseOf(scene, id));
+  if (shape !== null) {
+    return flatSubpaths(asPolygonPath(shape), OUTLINE_TOLERANCE).closed.map((run) => {
+      const points: Vec2[] = [];
+      for (let i = 0; i + 1 < run.length; i += 2) points.push({ x: run[i], y: run[i + 1] });
+      return { kind: 'polyline', points: [...points, points[0]], role };
+    });
+  }
   const b = worldRectOf(scene, id);
-  if (b === null) return null;
+  if (b === null) return [];
   const points = [{ x: b.x, y: b.y }, { x: b.x + b.width, y: b.y }, { x: b.x + b.width, y: b.y + b.height }, { x: b.x, y: b.y + b.height }, { x: b.x, y: b.y }];
-  return { kind: 'polyline', points, role };
+  return [{ kind: 'polyline', points, role }];
 }

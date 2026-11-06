@@ -96,7 +96,7 @@ function CanvasInner<TPose>(
   const { paintedCursor, paintedCursorLayer, cursorSink } = usePaintedCursor(canvasRef, requestRedraw);
 
   const frame = { viewRef, dimsRef, helpersRef: helpersForLayersRef };
-  const pickRef = useCanvasHandle(ref, { ...elements, inputElement, paintCanvas: paintInto?.canvas }, frame, {
+  const readIdsRef = useCanvasHandle(ref, { ...elements, inputElement, paintCanvas: paintInto?.canvas }, frame, {
     hitTestExtrasIn, clientToWorld: toWorld, requestRedraw, subscribeFrame, subscribeBeforePaint,
     subscribeResume, registerLayer, getView, setView, subscribeView,
     getPaintedVersion, paintedCursor, cursorSink, getDebug,
@@ -141,7 +141,7 @@ function CanvasInner<TPose>(
     announceControlled();
   });
 
-  useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted, requestRedraw, pickRef);
+  useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted, requestRedraw, readIdsRef);
   useEffect(() => clearSubscribers, [clearSubscribers]);
 
   useToolCursor(cursorSink, tools, detached ? inputElement : null, style?.cursor);

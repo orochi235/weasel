@@ -183,6 +183,19 @@ describe('making a Continuous scene paged', () => {
     expect(scene.get(far)!.pose).toMatchObject({ x: 900 });
   });
 
+  it('leaves a scene with no pages as it is, with no undo entry, on an edit that adds none', () => {
+    const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    const r = scene.add({ kind: 'mark', layer: 'l', pose: { x: 900, y: 10, width: 10, height: 10 }, data: { n: 'r' } });
+    const entries = scene.historyIndex();
+    renamePage(scene, 'a', 'A');
+    movePage(scene, 'a', 1);
+    resizePage(scene, 'a', { width: 10, height: 10 });
+    removePage(scene, 'a');
+    expect(pagesOf(scene)).toBeNull();
+    expect(scene.roots).toEqual([r]);
+    expect(scene.historyIndex()).toBe(entries);
+  });
+
   it('measures the content by the descriptor the page edit is given', () => {
     const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
     const r = scene.add({ kind: 'mark', layer: 'l', pose: { x: 120, y: 10, width: 10, height: 10 }, data: { n: 'r' } });

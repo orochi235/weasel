@@ -13,6 +13,8 @@ import { translateOps, unreleasedIds } from '../translate';
 import { rebaseTransformOp } from './rebase';
 import { poseDescriptorForNode } from 'core/geometry/poseDescriptor';
 import { boxOf, containerView, draggedInView, opInWorld } from '../layout/view';
+import { pageOfNode } from 'core/pages/pageNodes';
+import { followerMoveOps, followerMoves } from '../../followerMoves';
 
 function releaseFrom(
   session: MoveSession,
@@ -128,9 +130,12 @@ export function layoutReleaseOps(
     }
   }
   if (released.size === 0 && exits.size === 0) return undefined;
+  const { scene } = session;
+  const landed = new Map([...exits].map(([id, to]) => [id as string, to === null ? null : pageOfNode(scene, to)]));
   return [
     ...releasedOps,
     ...exitOps,
+    ...followerMoveOps(followerMoves(scene, landed), session.lifecycle.label),
     ...translateOps(
       session,
       unreleasedIds(session, released).filter((id) => !exits.has(id)),

@@ -15,12 +15,13 @@ export function useSceneAdapter<TData, TLayer extends string, TPose>(
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
   const {
-    selection, commitInsert, insertLayer, poseDescriptor, pasteInto,
+    selection, commitInsert, insertLayer, poseDescriptor, pasteInto, canDropInto,
   } = options;
   return useMemo(
     () => sceneToAdapter(scene, {
-      selection, commitInsert, insertLayer, poseDescriptor, ...(pasteInto ? { pasteInto } : {}),
+      selection, commitInsert, insertLayer, poseDescriptor,
+      ...(pasteInto ? { pasteInto } : {}), ...(canDropInto ? { canDropInto } : {}),
     }),
-    [scene, selection, commitInsert, insertLayer, poseDescriptor, pasteInto],
+    [scene, selection, commitInsert, insertLayer, poseDescriptor, pasteInto, canDropInto],
   );
 }

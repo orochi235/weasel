@@ -126,9 +126,11 @@ export function snapToContainer<TPose>(args: {
       const snap = s.committedSnap ?? ctx.snap;
       if (!snap) return;
       const ops: Op[] = [];
+      const landed = new Map<string, string | null>();
       const reparent = (id: string): void => {
         const oldParent = ctx.adapter.getParent(id);
         if (oldParent !== snap.parentId) {
+          landed.set(id, snap.parentId);
           ops.push(createReparentOp({
             id,
             fromParentId: oldParent,
@@ -152,6 +154,7 @@ export function snapToContainer<TPose>(args: {
         reparent(id);
         if (was !== snap.parentId) ops.push(...keptInPlace(ctx, snap.parentId, id, moved, reparentLabel));
       }
+      if (landed.size > 0 && ctx.followerOps) ops.push(...ctx.followerOps(landed, reparentLabel));
       return ops;
     },
   };

@@ -11,8 +11,9 @@ there. A trigger one package owns — its `package.json`, a `tsconfig`, its vite
 that package's tests and its dependents' instead (`SCOPED` beside `triggers`), and so does a lockfile
 change that touches only workspace entries, such as a version bump; one that changes an external
 package runs everything. A file read at build time rather than imported,
-such as an icon definition a plugin generates from, selects nothing on a branch and is caught only by
-the full run on `main` after the merge. Add such a path to `triggers` once it has slipped through.
+such as an icon definition a plugin generates from, selects nothing on a branch or in a batch run,
+which selects the same way; only CI's run of every project on the push to `main` (`.github/workflows/ci.yml`)
+catches it. Add such a path to `triggers` once it has slipped through.
 A changed path is one the branch adds to local `main`, or to `origin/main` when that is newer: the
 node builds on the pushed merge-base, but unpushed `main` commits are not the branch's changes.
 `--since <ref>` selects from what the branch adds past `<ref>` instead, for a branch stacked on one
@@ -51,7 +52,8 @@ listed in `scripts/lib/gate-inputs.mjs`; the log shows each as skipped, with a `
 saying why. A change to ci.yml, the gate, `scripts/lib/`, a manifest, the lockfile or a tsconfig runs
 them all. `check:test-projects` asks only whether the branch adds or deletes a test file, since an
 edit to one cannot change which project collects it. A script that starts reading a new path needs
-that path added there, or a branch changing only it will skip the check; `main` still runs it.
+that path added there, or a branch changing only it will skip the check; CI still runs it on every
+pull request and push to `main`.
 
 **Typecheck keeps its build info between runs.** `.tsbuildinfo/` is ignored, so onto's sync leaves
 it in the node's tree, and tsc rechecks only files whose content, or whose imports' exported types,

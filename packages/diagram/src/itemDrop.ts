@@ -115,8 +115,7 @@ export function createItemDropAction(opts: ItemDropOptions): Action {
             const { drop, gap, verdict } = now;
             if (!open || drop.target === null || verdict === false) return null;
             const reason = refusalOf(verdict);
-            const box = outlineOf(scene, drop.target, reason === null ? 'target' : 'refused');
-            const out: OngoingOverlay[] = box === null ? [] : [box];
+            const out: OngoingOverlay[] = outlineOf(scene, drop.target, reason === null ? 'target' : 'refused');
             if (reason !== null) out.push({ kind: 'reason', at: drop.at, text: reason });
             else if (gap !== null) out.push({ kind: 'polyline', points: [gap.a, gap.b], role: 'insert' });
             return out;

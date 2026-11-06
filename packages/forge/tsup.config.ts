@@ -24,7 +24,7 @@ export default defineConfig([
     entry: { cli: 'src/cli/cli.ts' },
     format: ['esm'],
     platform: 'node',
-    target: 'node22',
+    target: 'node24',
     banner: { js: '#!/usr/bin/env node' },
     external,
     clean: false,

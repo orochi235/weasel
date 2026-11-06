@@ -23,6 +23,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 import ports from './dev-ports.json' with { type: 'json' };
+import { moduleRegions } from './lib/bundle-regions.mjs';
 
 const [modulePath, needle, origin = `http://localhost:${ports.site}`] = process.argv.slice(2);
 
@@ -79,23 +80,24 @@ if (!reachable) {
 results.push(['SERVER', reachable ? served : null, serverNote]);
 
 // ─── BUNDLE ──────────────────────────────────────────────────────────────────
-// Each dev server pre-bundles the workspace into a cache dir of its own (`.vite`, `.vite-draw`, …), and a bundle
-// marks every module it holds with a `// <path>` comment. A bundle holding the module without the needle is a
-// stale copy, and the page runs it whatever the server serves at `/@fs`.
+// Each dev server pre-bundles the workspace into a cache dir of its own (`.vite`, `.vite-draw`, …). A bundle
+// holding the module without the needle is a stale copy, and the page runs it whatever the server serves at
+// `/@fs`. `.vite-browser*` belongs to the browser test project, which no dev server reads.
 const nodeModules = resolve(process.cwd(), 'node_modules');
 const cacheDirs = existsSync(nodeModules)
-  ? readdirSync(nodeModules).filter((d) => /^\.vite(-[\w-]+)?$/.test(d) && existsSync(resolve(nodeModules, d, 'deps')))
+  ? readdirSync(nodeModules).filter((d) =>
+    /^\.vite(-[\w-]+)?$/.test(d) && !/^\.vite-browser(-\d+)?$/.test(d) && existsSync(resolve(nodeModules, d, 'deps')))
   : [];
-// The path in a marker is relative to the server's root, so `../` climbs out of an app's directory first.
-const escaped = relative(process.cwd(), abs).split(sep).join('/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const marker = new RegExp(`^// (?:\\.\\./)*${escaped}$`, 'm');
+const modulePathInRepo = relative(process.cwd(), abs).split(sep).join('/');
 const holding = [];
 for (const dir of cacheDirs) {
   const deps = resolve(nodeModules, dir, 'deps');
   for (const f of readdirSync(deps).filter((n) => n.endsWith('.js'))) {
     let body;
     try { body = readFileSync(resolve(deps, f), 'utf8'); } catch { continue; }
-    if (marker.test(body)) holding.push({ file: `${dir}/deps/${f}`, fresh: body.includes(needle) });
+    for (const region of moduleRegions(body, modulePathInRepo)) {
+      holding.push({ file: `${dir}/deps/${f}`, fresh: region.includes(needle) });
+    }
   }
 }
 const staleCopies = holding.filter((h) => !h.fresh);

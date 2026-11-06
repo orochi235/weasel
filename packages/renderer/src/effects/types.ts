@@ -14,10 +14,16 @@ export interface Effect {
   /**
    * How far, in device pixels, the pass can carry a pixel from where it was
    * drawn — a blur's radius. Unset when its result depends on more than the
-   * pixels that near, such as where in the buffer it is: such a pass is
-   * bounded only by the buffer, and so is every group that runs it.
+   * pixels that near, such as how far it lies from the buffer's edges: such a
+   * pass is bounded only by the buffer, and so is every group that runs it.
    */
   reach?: number;
+  /**
+   * The pass's result depends on where in the drawing buffer each pixel lies
+   * (it reads `u_windowOrigin`), as a Bayer dither picks its cell: its output
+   * cannot be moved with a pan, so a group running it is drawn again instead.
+   */
+  screenAnchored?: boolean;
 }
 
 /**

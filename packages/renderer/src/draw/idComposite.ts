@@ -1,7 +1,7 @@
 /** How a group drawn into a buffer of its own hands its ids to its parent. */
 import { ShaderProgram } from '../shaders/ShaderProgram';
 import { EFFECT_VERT_SRC } from '../effects/effectPrelude';
-import { checkPickId, idChannels } from '../shaders/idOutput';
+import { NO_PICK_ID, checkPickId, idChannels } from '../shaders/idOutput';
 import type { DeviceRect } from '../retain/contentBounds';
 import type { DrawContext } from './drawContext';
 import { compositeOver } from './effects';
@@ -10,8 +10,8 @@ import { drawBoth, type IdFrame } from './idFrame';
 /**
  * Hand a group's ids back to its parent after its color composited: every
  * pixel the composite claims takes the id the group's children wrote there,
- * or, where an effect painted past them, the group's own. A pixel it does not
- * claim keeps the parent's.
+ * or, where an effect painted past them, the group's own, unless the group
+ * carries none. A pixel it does not claim keeps the parent's.
  */
 export function compositeIds(
   ctx: DrawContext, ids: IdFrame, color: WebGLTexture, own: WebGLTexture, rect: DeviceRect,
@@ -19,14 +19,17 @@ export function compositeIds(
 ): void {
   const gl = ctx.gl;
   const program = ids.composite;
-  checkPickId(groupId);
+  const claims = groupId !== NO_PICK_ID;
+  if (claims) checkPickId(groupId);
   gl.useProgram(program.handle);
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, own);
   const unit = program.uniform('u_ids');
   if (unit !== undefined) gl.uniform1i(unit, 1);
   const group = program.uniform('u_groupId');
-  if (group !== undefined) gl.uniform4f(group, ...idChannels(groupId), ids.minAlpha);
+  // A negative red channel says the group carries no id of its own.
+  const [r, g, b]: [number, number, number] = claims ? idChannels(groupId) : [-1, 0, 0];
+  if (group !== undefined) gl.uniform4f(group, r, g, b, ids.minAlpha);
   gl.activeTexture(gl.TEXTURE0);
   gl.drawBuffers([gl.NONE, gl.COLOR_ATTACHMENT1]);
   compositeOver(ctx, program, color, rect, { alpha, colorMatrix: IDENTITY });
@@ -52,7 +55,11 @@ void main() {
   float a = texture(u_source, v_uv).a * u_alpha;
   vec4 inner = texelFetch(u_ids, ivec2(v_uv * u_resolution), 0);
   bool claims = a > 0.0 && a >= u_groupId.a;
-  o_id = claims ? (inner.a > 0.5 ? inner : vec4(u_groupId.rgb, 1.0)) : vec4(0.0);
+  o_id = vec4(0.0);
+  if (claims) {
+    if (inner.a > 0.5) o_id = inner;
+    else if (u_groupId.r >= 0.0) o_id = vec4(u_groupId.rgb, 1.0);
+  }
 }
 `;
 

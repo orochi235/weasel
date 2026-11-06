@@ -92,7 +92,8 @@ function sameEffects(a: readonly Effect[] | undefined, b: readonly Effect[] | un
   if ((a?.length ?? 0) !== (b?.length ?? 0)) return false;
   for (let i = 0; i < (a?.length ?? 0); i++) {
     const x = a![i], y = b![i];
-    if (x.program.id !== y.program.id || x.reach !== y.reach || !sameUniforms(x.uniforms, y.uniforms)) return false;
+    if (x.program.id !== y.program.id || x.reach !== y.reach || x.screenAnchored !== y.screenAnchored) return false;
+    if (!sameUniforms(x.uniforms, y.uniforms)) return false;
   }
   return true;
 }

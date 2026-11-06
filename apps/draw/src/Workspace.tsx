@@ -218,6 +218,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
               paper: { layer: paperLayer, before: 'grid' },
               ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
               modeTint: { layer: workspaceTint, after: 'grid' },
+              selectionOverlay: { outline: { follow: 'shape' } },
             }}
             decorationLayer={modality.decorationLayer}
             alphaFor={alphaFor}

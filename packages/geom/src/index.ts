@@ -41,6 +41,7 @@ export {
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
 export { pointInPolygon, ringSignedArea, segmentsCross } from './polyline';
+export { flatSubpaths, type FlatSubpaths } from './pathSubpaths';
 export { distance, distance2, lerpPoint, pointSegmentDist, pointSegmentDist2, segmentT } from './points2';
 export {
   anchorAtLength, closingAnchor, lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable,

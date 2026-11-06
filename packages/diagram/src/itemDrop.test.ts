@@ -1,15 +1,20 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, type DiagramData, type DiagramSceneData } from './fromData';
 import { createItemDropAction, DIAGRAM_ITEM_CARRY, type ItemDrop } from './itemDrop';
 import { sceneParticipants } from './portLayer';
+import { registerDiagramShape } from './shape';
+
+let unregister = () => {};
+beforeAll(() => { unregister = registerDiagramShape(); });
+afterAll(() => unregister());
 
 const node = (id: string, x: number, y: number) => ({ id, lines: [id], width: 60, height: 40, at: { x, y }, pinned: true });
 
 /** `row` reorders its three members along x; `bag` holds `b1` and does not reorder; `free` stands outside both. */
 const DATA: DiagramData = {
-  nodes: [node('r1', 60, 140), node('r2', 160, 140), node('r3', 260, 140), node('b1', 460, 140), node('free', 60, 400)],
+  nodes: [node('r1', 60, 140), node('r2', 160, 140), node('r3', 260, 140), node('b1', 460, 140), node('free', 60, 400), { ...node('dia', 60, 600), outline: 'diamond' }],
   edges: [],
   containers: [
     { id: 'row', role: 'container', label: 'Row', members: ['r1', 'r2', 'r3'], reorder: 'x', box: { x: 40, y: 100, width: 320, height: 100 }, pinned: true },
@@ -33,6 +38,25 @@ function setup(opts: Partial<Parameters<typeof createItemDropAction>[0]> = {}) {
 }
 
 describe('the item drop', () => {
+  it("outlines a target shape along its outline, and a container along its box", () => {
+    const { carry, ctxAt } = setup();
+    const targetRun = (x: number, y: number) => {
+      const handle = carry(0, 0);
+      handle.onMove!(ctxAt(x, y));
+      const run = overlaysOf(handle).find((o) => o.kind === 'polyline' && o.role === 'target');
+      return run?.kind === 'polyline' ? run.points : [];
+    };
+    // A box's run has a vertex on each corner of its bounds; a diamond's has none.
+    const diamond = targetRun(90, 620);
+    const xs = diamond.map((p) => p.x), ys = diamond.map((p) => p.y);
+    const atCorner = (p: { x: number; y: number }) =>
+      (p.x === Math.min(...xs) || p.x === Math.max(...xs)) && (p.y === Math.min(...ys) || p.y === Math.max(...ys));
+    expect(diamond.length).toBeGreaterThan(3);
+    expect(diamond.some(atCorner)).toBe(false);
+    expect(diamond[0]).toEqual(diamond[diamond.length - 1]);
+    expect(targetRun(600, 230)).toContainEqual({ x: 440, y: 100 });
+  });
+
   it('reports a drop between two members of a reorderable container at their gap', () => {
     const { report, carry, ctxAt } = setup();
     const handle = carry(0, 0);

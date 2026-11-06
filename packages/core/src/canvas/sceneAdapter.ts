@@ -37,6 +37,7 @@ import { composeChildFrame, composesFrames, composeWorldPose, frameAtOrAbove, ty
 import { memoizeCompose } from 'core/scene/composeFrame';
 import { scrolledFrames } from 'core/scene/scrollOffsets';
 import { insertSite } from './deps/insertSite';
+import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { scenePickIds } from './scenePickIds';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
@@ -177,6 +178,8 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   poseDescriptor?: PoseDescriptor<TPose>;
   /** The container a paste lands in, read at each paste: `<SceneCanvas>` passes the `insertInto` dep's. */
   pasteInto?: () => string | null;
+  /** The `canDropInto` dep, read at each paste: `<SceneCanvas>` passes its dep registry's. */
+  canDropInto?: () => CanDropIntoDep | undefined;
 }
 
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
@@ -206,7 +209,11 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     worldPoseOf: (id) => adapter.getWorldPose(id),
     frameAtOrAbove: (id) => frameAtOrAbove(adapter, id),
     poseBounds,
-    translate, ...(options.pasteInto ? { landing: () => insertSite(scene as never, { into: options.pasteInto!() }) } : {}),
+    translate,
+    ...(options.pasteInto ? {
+      landing: () => insertSite(scene as never, { into: options.pasteInto!(), canDropInto: options.canDropInto?.() }),
+    } : {}),
+    ...(options.canDropInto ? { canDropInto: options.canDropInto } : {}),
   };
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {

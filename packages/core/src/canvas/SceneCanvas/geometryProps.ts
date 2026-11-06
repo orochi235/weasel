@@ -19,15 +19,25 @@ export interface SceneCanvasGeometry {
    *   actually lays down: its silhouette filled or not per the painter's `ink`, plus
    *   its outline widened by the stroke half-width and `pickTolerancePx`.
    *
-   * Painters with no silhouette keep the pose-rect answer either way. Ignored when
-   * `pickEvery` is supplied: that override owns the test.
+   * - `'pixels'` — what the canvas last painted, read from its id frames
+   *   (`CanvasExtensionApi.readIds`): a custom shader, an effect, or a texture's
+   *   transparent parts pick as they look, not as their outline. Nodes covered by
+   *   others are still found, so an action excluding the ones it drags sees what
+   *   is beneath them. Each pick draws the frame again, culled to a few pixels,
+   *   once per layer of the stack under the point, and hover picks on every
+   *   pointer move. It falls back to `'shape'` before the first paint, without
+   *   WebGL2, and for a pick asked for a view other than the surface's own.
+   *
+   * Painters with no silhouette keep the pose-rect answer under `'shape'`. Ignored
+   * when `pickEvery` is supplied: that override owns the test.
    */
-  picking?: 'pose' | 'shape';
+  picking?: 'pose' | 'shape' | 'pixels';
   /**
    * Grab slop around a shape's outline, in **screen** pixels, so the target keeps
    * its apparent size at any zoom. Default 4. It widens the outline test under
    * `picking: 'shape'` and grows the pose-rect pre-filter so those outline hits
-   * survive it. Set `0` for exact geometry.
+   * survive it; under `'pixels'` a node painted within this many pixels of the
+   * point, along each axis, is hit. Set `0` for exact geometry.
    */
   pickTolerancePx?: number;
   /**

@@ -6,6 +6,10 @@ import { PAGE_A, PAGE_B, ON_PAGE, pagedScene } from 'core/pages/pagedFixture';
 import { moveAction } from './action';
 import { unionOfChildren } from 'core/scene/kitRegistry';
 import { resolveDrop } from './commit/reparent';
+import { createTransformOp } from 'core/ops/transform';
+import type { LayoutStrategy } from '../../../layout/types';
+import type { SnapTarget } from 'core/adapters/types';
+import { snapToContainer } from './behaviors/snapToContainer';
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 const R2 = asNodeId('r2');
@@ -86,6 +90,18 @@ describe('moveAction in a paged scene', () => {
     expect(node.parent).toBe(G);
     // World x 130: page b at 110, the group at 10 in it.
     expect(pose).toMatchObject({ x: 10, y: 10 });
+  });
+
+  it('moves one on a lower layer into a group on the other page onto the group\'s layer, in one undo step', () => {
+    const group = { ...rect(G, PAGE_B, 10), kind: 'group' as const, pose: { x: 10, y: 0, width: 60, height: 40 } };
+    const low = rect(asNodeId('low'), PAGE_A, 50, { layer: 'paper' });
+    const { node, pose, undoSteps } = drag(100, {
+      ids: [asNodeId('low')], add: [group, low], from: { x: 55, y: 15 }, params: { reparentOnDrop: 'top' }, nodeAtPoint: () => G,
+    });
+    expect(node).toMatchObject({ parent: G, layer: 'ink' });
+    // World x 150: page b at 110, the group at 10 in it.
+    expect(pose).toMatchObject({ x: 30, y: 10 });
+    expect(undoSteps).toBe(1);
   });
 
   it('lands a drop into a group on the other page just above the node under the pointer', () => {
@@ -171,6 +187,22 @@ describe('moveAction in a paged scene', () => {
     expect(pose).toMatchObject({ x: 50, y: 10 });
   });
 
+  it('does not drop onto a locked page, keeping the node on its own', () => {
+    const { scene } = pagedScene();
+    scene.setLocked(PAGE_B, true);
+    const { node, pose } = drag(40, { scene });
+    expect(node.parent).toBe(PAGE_A);
+    expect(pose.x).toBe(99);
+  });
+
+  it('does not drop into a group on a locked page when the binding reparents on drop', () => {
+    const { scene } = pagedScene();
+    scene.add({ ...rect(G, PAGE_B, 10), kind: 'group', pose: { x: 10, y: 0, width: 60, height: 40 } });
+    scene.setLocked(PAGE_B, true);
+    const { node } = drag(40, { scene, params: { reparentOnDrop: 'top' }, nodeAtPoint: () => G });
+    expect(node.parent).toBe(PAGE_A);
+  });
+
   it('leaves a move within one page a translate', () => {
     const { node, pose } = drag(-50);
     expect(node.parent).toBe(PAGE_A);
@@ -196,6 +228,17 @@ describe('a node following others, when what it follows moves between pages', ()
     expect(scene.get(F)!.parent).toBe(PAGE_A);
   });
 
+  it('goes into the run from inside a group on the page when one of its nodes moves to another page', () => {
+    const { scene } = drag(0, { add: [
+      rect(S2, PAGE_A, 10),
+      { ...rect(G, PAGE_A, 30), kind: 'group' },
+      { ...rect(F, G, 0), dependsOn: [ON_PAGE, S2] },
+    ] });
+    drag(40, { scene });
+    expect(scene.get(ON_PAGE)!.parent).toBe(PAGE_B);
+    expect(scene.get(F)!.parent).toBe(scene.get(PAGE_A)!.parent);
+  });
+
   it('moves to the page everything it follows lands on, in the same undo step', () => {
     const { scene, undoSteps } = drag(40, { ids: [ON_PAGE, S2], add: [
       rect(S2, PAGE_A, 80),
@@ -204,6 +247,93 @@ describe('a node following others, when what it follows moves between pages', ()
     expect(scene.get(S2)!.parent).toBe(PAGE_B);
     expect(scene.get(F)!.parent).toBe(PAGE_B);
     expect(undoSteps).toBe(1);
+  });
+});
+
+describe('a node following others, when a drop into a container moves what it follows to another page', () => {
+  const [G1, G2, G3, N, M, C] = ['g1', 'g2', 'g3', 'n', 'm', 'c'].map(asNodeId);
+  const group = (id: NodeId, parent: NodeId, x: number) =>
+    ({ ...rect(id, parent, x), kind: 'group' as const, pose: { x, y: 0, width: 40, height: 40 } });
+
+  /** `n` in group g1 on page a, `m` on page a, and g2 on page b; `c`, following `n` and `m`, under `cParent`. */
+  function dragNIntoG2(cParent: (scene: ReturnType<typeof pagedScene>['scene']) => NodeId) {
+    const { scene } = pagedScene();
+    scene.add(group(G1, PAGE_A, 0));
+    scene.add(rect(N, G1, 5));
+    scene.add(rect(M, PAGE_A, 50));
+    scene.add(group(G2, PAGE_B, 10));
+    scene.add(group(G3, PAGE_A, 60));
+    scene.add({ ...rect(C, cParent(scene), 0), dependsOn: [N, M] });
+    // n sits at world 5..25 on page a; +130 puts it over g2, at world 135..155 on page b.
+    const { undoSteps } = drag(130, { scene, ids: [N], from: { x: 10, y: 15 }, params: { reparentOnDrop: 'top' }, nodeAtPoint: () => G2 });
+    return { scene, run: scene.get(PAGE_A)!.parent, undoSteps };
+  }
+
+  it('moves one on the old page into the run, in the same undo step', () => {
+    const { scene, run, undoSteps } = dragNIntoG2(() => PAGE_A);
+    expect(scene.get(N)!.parent).toBe(G2);
+    expect(scene.get(C)!.parent).toBe(run);
+    expect(undoSteps).toBe(1);
+  });
+
+  it('moves one nested in a group on the old page into the run', () => {
+    const { scene, run } = dragNIntoG2(() => G3);
+    expect(scene.get(C)!.parent).toBe(run);
+  });
+
+  it('moves one on the old page into the run when snapToContainer takes what it follows to the other page', () => {
+    const { scene } = pagedScene();
+    scene.add(group(G1, PAGE_A, 0));
+    scene.add(rect(N, G1, 5));
+    scene.add(rect(M, PAGE_A, 50));
+    scene.add(group(G2, PAGE_B, 10));
+    scene.add({ ...rect(C, PAGE_A, 0), dependsOn: [N, M] });
+    const target: SnapTarget<RectPose> = { parentId: G2, slotPose: { x: 130, y: 10, width: 20, height: 10 } };
+    const invoker = moveAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const base = { world: { x: 10, y: 15 }, modifiers: MODS, deps: { selection: { get: () => [N] }, scene } };
+    const to = { x: 140, y: 15 };
+    const at = { ...base, world: to, drag: { start: base.world, current: to, delta: { x: 130, y: 0 } } } as unknown as InvocationCtx;
+    const entries = scene.historyEntries().length;
+    const handle = invoker.start(base as unknown as InvocationCtx, {
+      behaviors: [snapToContainer<RectPose>({ dwellMs: 0, isInstant: () => true, findTarget: () => target }) as never],
+    } as BindingOpts);
+    handle.onMove!(at);
+    handle.onEnd!(at, 'commit');
+    expect(scene.get(N)!.parent).toBe(G2);
+    expect(scene.get(C)!.parent).toBe(scene.get(PAGE_A)!.parent);
+    expect(scene.historyEntries().length - entries).toBe(1);
+  });
+
+  it('moves one on the old page into the run when a layout container on the other page takes what it follows', () => {
+    const { scene } = pagedScene();
+    scene.add(group(G1, PAGE_A, 0));
+    scene.add(rect(N, G1, 5));
+    scene.add(rect(M, PAGE_A, 50));
+    scene.add(group(G2, PAGE_B, 10));
+    scene.add({ ...rect(C, PAGE_A, 0), dependsOn: [N, M] });
+    const slot = { x: 130, y: 10, width: 20, height: 10 };
+    const layout = {
+      snap: { pickTarget: (targets: unknown[]) => targets[0] ?? null },
+      childPoses: () => new Map(),
+      getDropTargets: () => [{ pose: slot, origin: { x: slot.x, y: slot.y } }],
+      reflowPoses: () => new Map(),
+      commitDrop: (_c: unknown, _k: unknown, dragged: { id: string; originPose: RectPose }, target: { pose: RectPose }) =>
+        [createTransformOp<RectPose>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
+    } as unknown as LayoutStrategy<unknown>;
+    const invoker = moveAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const base = {
+      world: { x: 10, y: 15 }, modifiers: MODS,
+      deps: { selection: { get: () => [N] }, scene, layout: { getLayout: (id: string) => (id === G2 ? layout : null) } },
+    };
+    const to = { x: 140, y: 15 };
+    const drag = { start: base.world, current: to, delta: { x: 130, y: 0 } };
+    const handle = invoker.start(base as unknown as InvocationCtx, { params: {} } as BindingOpts);
+    handle.onMove!({ ...base, world: to, drag } as unknown as InvocationCtx);
+    handle.onEnd!({ ...base, world: to, drag } as unknown as InvocationCtx, 'commit');
+    expect(scene.get(N)!.parent).toBe(G2);
+    expect(scene.get(C)!.parent).toBe(scene.get(PAGE_A)!.parent);
   });
 });
 

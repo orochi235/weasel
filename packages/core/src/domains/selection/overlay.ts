@@ -8,7 +8,6 @@
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
-import { mat3, type GlMat3 } from '@weasel-js/renderer';
 import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -18,19 +17,19 @@ import { targetCorners, targetTransformOf, type TargetTransform } from 'core/geo
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { alignedStrokeRect, type CommandStroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
-import {
-  rotationHandle,
-  DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from 'interactions/actions/rotate/handle';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
+import { effectivePoseFrom, previewPoseIn, previewSourcesFrom } from 'canvas/drawEnvelope';
+import { rotationHandleCommands } from './rotationBadge';
+import { createShapeOutliner, shapeOutlineCommands, viewScaleOf } from './shapeOutline';
 import {
-  handleCommandsFor, rectPathFor, resolveHandles, type ResizeHandleLayout, type ResolvedHandles, type SelectionHandleStyle,
+  handleCommandsFor, rectPathFor, resolveHandles, type ResizeHandleLayout, type SelectionHandleStyle,
 } from './handleCommands';
 
 export type { SelectionHandleStyle };
@@ -91,7 +90,11 @@ export interface SelectionOverlayLayerOpts<TPose>
    * walks expanded leaf ids via `getChildren`, which is generic over strings.
    */
   getPose?: (id: string) => TPose | null;
-  outline?: CommandStroke & { pad?: number };
+  /** The outline's stroke, its width in screen pixels. `follow: 'shape'`
+   *  traces each node's silhouette from its drawn edge outward, where `pad`
+   *  does not apply; a group, or a node with no silhouette, keeps its box.
+   *  Needs `scene`. Default `'box'`. */
+  outline?: CommandStroke & { pad?: number; follow?: 'box' | 'shape' };
   /** Pass `false` to render outlines only. */
   handles?: SelectionHandleStyle | false;
   /** Where to paint handles, in the bounds' own frame. Replaces the kit's
@@ -136,7 +139,7 @@ function resolveOutlineStroke(opts?: CommandStroke & { pad?: number }): {
   }
   return {
     stroke: {
-      paint: opts.paint,
+      paint: opts.paint ?? DEFAULT_OUTLINE.paint,
       width: opts.width ?? DEFAULT_OUTLINE.width,
       dash: opts.dash,
       cap: opts.cap,
@@ -226,115 +229,6 @@ function screenCorners(
   });
 }
 
-/** GL helper: emit a curved double-headed arrow, the rotate badge above the
- *  rect. The arc opens *toward* the object (apex on top, mouth pointing
- *  down), with an arrowhead at each endpoint pointing along the tangent. */
-function rotationHandleCommands(
-  worldB: Bounds,
-  handles: ResolvedHandles,
-  distance: number,
-  view: View,
-): DrawCommand[] {
-  const hWorld = rotationHandle(worldB, distance, view.scale);
-  const rotation = hWorld.angle;
-  const t = viewToTransform(view);
-  const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
-  const size = handles.size;
-  const arcRadius = size;
-  const ARC_HALF_ANGLE = (Math.PI * 240) / 360 / 2; // 120°
-  const N_SEGS = 18;
-  const arcWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1) * 1.5;
-  const stroke: CommandStroke = {
-    paint: handles.fill.paint,
-    width: arcWidth,
-    cap: 'round',
-    join: 'round',
-  };
-  // The arc as a polyline in handle-local coords, centered on the handle
-  // anchor: apex at -y, endpoints at +y near the rect side.
-  const cmds: number[] = [PATH_M];
-  const xs: number[] = [];
-  const ys: number[] = [];
-  for (let i = 0; i <= N_SEGS; i++) {
-    const t = i / N_SEGS;
-    const angle = ARC_HALF_ANGLE - t * ARC_HALF_ANGLE * 2;
-    xs.push(arcRadius * Math.sin(angle));
-    ys.push(-arcRadius * Math.cos(angle));
-    if (i > 0) cmds.push(PATH_L);
-  }
-  const arcCoords: number[] = [];
-  for (let i = 0; i < xs.length; i++) {
-    arcCoords.push(xs[i], ys[i]);
-  }
-  const arcPath: PolygonPath = {
-    kind: 'polygon',
-    commands: new Uint8Array(cmds),
-    coords: new Float32Array(arcCoords),
-    fillRule: 'nonzero',
-  };
-  // Arrowheads: small filled triangles at each endpoint, pointing along
-  // the tangent (away from the arc body).
-  const headLen = size * 0.6;
-  const headWidth = size * 0.4;
-  const arrowHead = (endX: number, endY: number, tx: number, ty: number): PolygonPath => {
-    // Normalize tangent.
-    const len = Math.hypot(tx, ty) || 1;
-    const ux = tx / len;
-    const uy = ty / len;
-    // Perpendicular (rotate tangent 90° CCW).
-    const px = -uy;
-    const py = ux;
-    // Triangle: tip is endX+ux*headLen, base is endX (with +/- headWidth/2 along p).
-    const tipX = endX + ux * headLen;
-    const tipY = endY + uy * headLen;
-    const baseLeftX = endX + px * (headWidth / 2);
-    const baseLeftY = endY + py * (headWidth / 2);
-    const baseRightX = endX - px * (headWidth / 2);
-    const baseRightY = endY - py * (headWidth / 2);
-    return {
-      kind: 'polygon',
-      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L]),
-      coords: new Float32Array([tipX, tipY, baseLeftX, baseLeftY, baseRightX, baseRightY, tipX, tipY]),
-      fillRule: 'nonzero',
-    };
-  };
-  // Endpoint A (right side, angle = +ARC_HALF_ANGLE). Arc point:
-  // (sin(a)·R, -cos(a)·R). Tangent (d/da) = (cos(a)·R, sin(a)·R).
-  const angleA = ARC_HALF_ANGLE;
-  const endAX = arcRadius * Math.sin(angleA);
-  const endAY = -arcRadius * Math.cos(angleA);
-  const tangentAX = Math.cos(angleA);
-  const tangentAY = Math.sin(angleA);
-  // Endpoint B (left side, angle = -ARC_HALF_ANGLE): tangent in the
-  // outward direction is the negation of the above.
-  const angleB = -ARC_HALF_ANGLE;
-  const endBX = arcRadius * Math.sin(angleB);
-  const endBY = -arcRadius * Math.cos(angleB);
-  const tangentBX = -Math.cos(angleB);
-  const tangentBY = -Math.sin(angleB);
-  const headA = arrowHead(endAX, endAY, tangentAX, tangentAY);
-  const headB = arrowHead(endBX, endBY, tangentBX, tangentBY);
-  // Build transform: translate(scx, scy) [* rotate(rotation)].
-  let transform = mat3.translated(mat3.identity(), scx, scy);
-  if (rotation !== 0) {
-    const c = Math.cos(rotation);
-    const s = Math.sin(rotation);
-    const rot = new Float32Array([c, s, 0, -s, c, 0, 0, 0, 1]) as GlMat3;
-    transform = mat3.multiply(transform, rot);
-  }
-  return [
-    {
-      kind: 'group',
-      transform,
-      children: [
-        { kind: 'path', path: arcPath, stroke },
-        { kind: 'path', path: headA, fill: handles.fill },
-        { kind: 'path', path: headB, fill: handles.fill },
-      ],
-    },
-  ];
-}
-
 /** Which passes a selection layer runs. The three exported factories differ
  *  only in this — everything else they do is shared, so a fix to one is a fix
  *  to all three. */
@@ -358,6 +252,7 @@ function buildSelectionLayer<TPose>(
   const poseBounds = getPose
     ? containerAwareBoundsResolver(getPose, d, opts.getChildren, opts.isContainer, opts.scene)
     : null;
+  const shapeOutliner = opts.outline?.follow === 'shape' && opts.scene ? createShapeOutliner() : null;
   const rotationHandleDistance = passes.handles
     ? rotationBadgeOf(opts)?.distancePx ?? null
     : null;
@@ -406,7 +301,18 @@ function buildSelectionLayer<TPose>(
         const outlineIds = suppressed && suppressed.size > 0
           ? outlineIdsRaw.filter((id) => !suppressed.has(id as unknown as string))
           : outlineIdsRaw;
-        for (const cmd of outlineCommandsFor(outlineIds, resolveTargetBounds, stroke, pad, view)) out.push(cmd);
+        let boxed = outlineIds as readonly string[];
+        if (shapeOutliner && opts.scene) {
+          const previews = previewSourcesFrom(data);
+          const traced = shapeOutliner.outline(boxed, {
+            scene: opts.scene,
+            poseOf: (id) => effectivePoseFrom(data, id) ?? getPose?.(id as never) ?? opts.scene!.get(id as NodeId)?.pose,
+            inFlight: (id) => previewPoseIn(previews, id) != null,
+          }, viewScaleOf(view));
+          for (const cmd of shapeOutlineCommands(traced.paths, stroke, view)) out.push(cmd);
+          boxed = traced.boxed;
+        }
+        for (const cmd of outlineCommandsFor(boxed, resolveTargetBounds, stroke, pad, view)) out.push(cmd);
       }
       if (!handles) return out;
       if (showHandles) {

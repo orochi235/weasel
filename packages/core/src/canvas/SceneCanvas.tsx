@@ -87,7 +87,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
     extensions: enabled.pathEdit, selectTool: selectToolOpts,
   });
-  const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults, kinds });
+  const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults, kinds, canvasApiRef });
   const { adapter, boundsOf, planeOfNode } = picking;
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
   const groupEntry = useGroupEntryContribution({ pickHit: picking.pickBest, tree: adapter, boxOf: boundsOf });

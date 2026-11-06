@@ -79,6 +79,9 @@ export function bindIdAttribute(gl: WebGL2RenderingContext, program: WebGLProgra
   gl.bindAttribLocation(program, ID_ATTRIBUTE_LOCATION, ID_ATTRIBUTE);
 }
 
+/** The id of paint no group gave one: it leaves the ids beneath it as they were. */
+export const NO_PICK_ID = -1;
+
 /** Throws unless `id` is one an id frame can carry. */
 export function checkPickId(id: number): void {
   if (!Number.isInteger(id) || id < 0 || id > MAX_PICK_ID) {

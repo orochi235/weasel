@@ -23,6 +23,9 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { scenePointQuery } from './scenePointQuery';
 import type { SceneCanvasGeometry } from './geometryProps';
 import type { WorldPoint } from '@weasel-js/routing';
+import type { CanvasExtensionApi } from '../canvasExtension';
+import { pixelPickEvery } from '../pixelPick';
+import { scenePickIds } from '../scenePickIds';
 
 /**
  * Default grab slop around a shape's outline, in screen pixels.
@@ -81,6 +84,8 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   /** `<SceneCanvas isPointerInteractive>`: a node it rejects is left out of every hit, so
    *  whatever is beneath it answers instead. */
   isPointerInteractive?: (id: string) => boolean;
+  /** The surface's id frames, which `geometry.picking: 'pixels'` reads. */
+  readIds?: () => CanvasExtensionApi['readIds'] | null;
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;
@@ -145,7 +150,7 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
-  const { scene, adapter, geometry, selectTool: opts, getView, alphaOf, layerIsPainted, isPointerInteractive } = args;
+  const { scene, adapter, geometry, selectTool: opts, getView, alphaOf, layerIsPainted, isPointerInteractive, readIds } = args;
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const pickEveryProp = geometry?.pickEvery;
@@ -153,7 +158,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // Default. The pose rect is the wrong answer for anything that isn't a rectangle, so `'pose'`
   // is the opt-out rather than the baseline. Cheap to leave on: the rect pre-filter rejects every
   // node the pointer isn't over first, and the survivors' silhouettes are memoized per node.
-  const shapePicking = (geometry?.picking ?? 'shape') === 'shape';
+  const picking = geometry?.picking ?? 'shape';
+  const shapePicking = picking !== 'pose';
   const kitPickTolerancePx = useKitSetting('targets.pickTolerancePx');
   const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const includeStroke = geometry?.boundsIncludeStroke ?? true;
@@ -163,6 +169,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const wiredHitBody = usePointPick({
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
     alphaOf, layerIsPainted, isPointerInteractive,
+    readIds: picking === 'pixels' ? readIds : undefined,
   });
 
   // Read through a ref: this is the chrome's bounds source, and a caller's
@@ -237,10 +244,11 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   alphaOf: ((id: string) => number) | undefined;
   layerIsPainted: ((layer: string) => boolean) | undefined;
   isPointerInteractive: ((id: string) => boolean) | undefined;
+  readIds: UseSceneSelectToolArgs<TData, TLayer, TPose>['readIds'];
 }): (world: WorldPoint, view?: PickView | null) => string[] {
   const {
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
-    alphaOf, layerIsPainted, isPointerInteractive,
+    alphaOf, layerIsPainted, isPointerInteractive, readIds,
   } = args;
   // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
   // every node whose pose contains the world point. Order matches the
@@ -256,7 +264,19 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
         if (r == null) return [];
         return Array.isArray(r) ? r : [r];
       }
-      const asked = view ?? getView?.() ?? null;
+      const own = getView?.() ?? null;
+      const asked = view ?? own;
+      const read = readIds?.();
+      if (read && own && askedOwnView(view, own)) {
+        const camera = cameraOf(own);
+        if (camera) {
+          const screen = {
+            x: (world.x - camera.x) * camera.scale.x, y: (world.y - camera.y) * camera.scale.y,
+          };
+          const hits = pixelPickEvery(read, scenePickIds(scene), screen, pickTolerancePx, paintOrderOf(scene));
+          if (hits) return hits;
+        }
+      }
       const viewAlpha = view?.alphaOf ?? alphaOf;
       const viewLayers = view?.layerIsPainted ?? layerIsPainted;
       const camera = cameraOf(asked);
@@ -272,11 +292,35 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
       return pickWalk<TPose>(src, pointQuery(world.x, world.y, asked?.scale ?? { x: 1, y: 1 }));
     };
   }, [scene, pickEveryProp, shapePicking, pickTolerancePx, getView,
-      alphaOf, layerIsPainted, d]);
+      alphaOf, layerIsPainted, d, readIds]);
   const wiredHitBody = useMemo(() => {
     if (!isPointerInteractive) return walk;
     return (world: WorldPoint, view?: PickView | null): string[] =>
       walk(world, view).filter((id) => isPointerInteractive(id) !== false);
   }, [walk, isPointerInteractive]);
   return wiredHitBody;
+}
+
+/** Whether a pick asked with `view` is asked for the surface's own camera and gates, which
+ *  are what its id frames were painted with. */
+function askedOwnView(view: PickView | null | undefined, own: Pick<PickView, 'scale' | 'x' | 'y'>): boolean {
+  if (!view) return true;
+  if (view.alphaOf || view.layerIsPainted) return false;
+  return view.scale.x === own.scale.x && view.scale.y === own.scale.y
+    && (view.x === undefined || view.x === own.x) && (view.y === undefined || view.y === own.y);
+}
+
+const ORDER = new WeakMap<readonly unknown[], Map<string, number>>();
+
+/** Each node's place in `scene`'s paint order, cached until a structural edit. */
+function paintOrderOf(scene: { renderOrderNodes(): readonly { id: string }[] }): (id: string) => number {
+  const nodes = scene.renderOrderNodes();
+  let index = ORDER.get(nodes);
+  if (!index) {
+    index = new Map();
+    for (let i = 0; i < nodes.length; i++) index.set(nodes[i].id, i);
+    ORDER.set(nodes, index);
+  }
+  const at = index;
+  return (id) => at.get(id) ?? -1;
 }

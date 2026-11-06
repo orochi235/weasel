@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { createScene } from 'core/scene/scene';
 import type { RectPose, Scene } from 'core/scene/types';
+import { poseBoxes } from 'interactions/actions/drawnBoxes';
 import { createSnapSession2d } from './sceneSession2d';
 import type { SnapCollect, SnapSource } from './types';
 
@@ -30,6 +31,16 @@ describe('createSnapSession2d', () => {
     expect(seen[0].drawnBox?.(a)).toEqual({ x: -5, y: -5, width: 110, height: 110 });
     expect(seen[0].drawnBox?.(b)).toEqual({ x: 200, y: 0, width: 100, height: 100 });
     expect(seen[0].probes.map((p) => p.id)).toEqual(['box.min', 'box.center', 'box.max']);
+  });
+
+  it('measures with the host\'s drawnBoxes source, the one its actions read', () => {
+    const { scene, a } = fixture();
+    const seen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, sources: [spy(seen)], gesture: 'move', press: { x: 0, y: 0 }, ids: [a],
+      drawnBoxes: poseBoxes,
+    }).at({ x: 0, y: 0 }, { suspend: false, constrain: false });
+    expect(seen[0].drawnBox?.(a)).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 
   it('carries no subject box for a point gesture', () => {

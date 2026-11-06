@@ -4,7 +4,7 @@ import type { View } from '../core/viewport/view';
 import type { IngestItem } from '@weasel-js/routing';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
-import type { DrawCommand } from '@weasel-js/renderer';
+import type { DrawCommand, IdBuffer } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
 import type { ViewAim } from '../domains/viewports/aim';
@@ -40,6 +40,14 @@ export interface ViewAt {
  * subscribe to the canvas it derives from.
  */
 export type CanvasViewCamera = Pick<CanvasExtensionApi, 'getView' | 'setView' | 'subscribeView'>;
+
+/** How {@link CanvasExtensionApi.readIds} and `pickAt` read an id frame. */
+export interface CanvasIdReadOptions {
+  /** The least alpha, 0 to 1, a fragment claims its pixel with. Default `1 / 255`. */
+  minAlpha?: number;
+  /** `pickId`s whose paint is left out, so the read shows what is beneath it. */
+  exclude?: ReadonlySet<number>;
+}
 
 /**
  * The **base imperative ref handle** shared by the canvas components. For
@@ -164,7 +172,13 @@ export interface CanvasExtensionApi {
    * A 3D host (`@weasel-js/kernel3d`) draws with its consumer's renderer rather
    * than this one, so this sees none of what it draws; it picks by ray.
    */
-  pickAt(x: number, y: number, options?: { minAlpha?: number }): number;
+  pickAt(x: number, y: number, options?: CanvasIdReadOptions): number;
+  /**
+   * The ids the canvas last painted over `rect`, CSS pixels from its surface's
+   * top-left, one per device pixel it touches: {@link pickAt} for an area. An
+   * empty buffer before the first paint or while the context is lost.
+   */
+  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): IdBuffer;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;

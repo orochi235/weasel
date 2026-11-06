@@ -35,8 +35,13 @@ function placeObject(obj: LabelObject, map: AxisMap): LabelObject {
   return { ...obj, position, points };
 }
 
-/** `objects` in the page's frame under `state`, or undefined under a rotation, skew or mirror. */
-export function placeCarried(objects: readonly LabelObject[], state: DrawState): LabelObject[] | undefined {
+/**
+ * `objects` in the page's frame under `state`: none at alpha 0, or the reason they cannot go in the
+ * file, since an `.lbx` object has no opacity and a position cannot say a rotation.
+ */
+export function placeCarried(objects: readonly LabelObject[], state: DrawState): LabelObject[] | string {
+  if (state.alpha <= 0) return [];
+  if (Math.abs(state.alpha - 1) > 1e-3) return 'lbxObjects under partial opacity';
   const map = axisMap(state.transform);
-  return map && objects.map((obj) => placeObject(obj, map));
+  return map ? objects.map((obj) => placeObject(obj, map)) : 'lbxObjects under a rotation, skew or mirror';
 }
