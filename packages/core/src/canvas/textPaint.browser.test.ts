@@ -261,7 +261,7 @@ const SPLIT_KIND: PaintKindEntry = {
   seed: () => SPLIT,
   colorOf: () => undefined,
   programs: {
-    'test:split': {
+    'test:split': { glsl: {
       vert: `#version 300 es
 in vec2 a_position;
 uniform mat3 u_proj;
@@ -285,7 +285,7 @@ void main() {
   outColor = vec4(c * u_alpha, u_alpha);
 }
 `,
-    },
+    } },
   },
   bind(ctx) {
     const inverse = ctx.spaceInverse('world');

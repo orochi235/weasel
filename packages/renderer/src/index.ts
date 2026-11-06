@@ -73,7 +73,7 @@ export {
 export {
   registerTexture, unregisterTexture, textureRegistry, type TextureEntry, type TextureHandle,
 } from './textures/registerTexture';
-export { registerEffect, effectsReach, type Effect, type EffectSource } from './effects/types';
+export { registerEffect, effectsReach, type Effect, type EffectProgramSource } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export type { CompositeOp, BlendFactor, BlendFactors } from './effects/compositeOp';
 export { isOwnComposite, leavesUncovered, readsBackdrop } from './effects/compositeOp';

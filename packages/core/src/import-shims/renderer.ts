@@ -48,7 +48,7 @@ export type {
   CullRect,
   DrawCommand,
   Effect,
-  EffectSource,
+  EffectProgramSource,
   GlMat3,
   GroupDrawCommand,
   ImageDrawCommand,

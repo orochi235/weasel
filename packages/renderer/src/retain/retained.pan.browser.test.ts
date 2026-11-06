@@ -78,7 +78,7 @@ beforeAll(async () => {
   await registerFont(FAMILY, { weight: 400, style: 'normal' }, metricsUrl, atlasUrl);
   unregisterKind = registerPaintDrawKind({
     id: KIND,
-    programs: { [KIND]: { vert: TINT_VERT, frag: TINT_FRAG } },
+    programs: { [KIND]: { glsl: { vert: TINT_VERT, frag: TINT_FRAG } } },
     bind: (ctx) => {
       const program = ctx.program(KIND);
       if (!program) return null;

@@ -20,7 +20,7 @@ export type {
   ShaderLanguage,
   ShaderSource,
   Effect,
-  EffectSource,
+  EffectProgramSource,
   CompositeOp,
   BlendFactor,
   BlendFactors,

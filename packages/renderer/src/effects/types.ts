@@ -44,7 +44,7 @@ export function effectsReach(effects: readonly Effect[]): number {
 }
 
 /** An effect's fragment shader, in GLSL, WGSL or both; the kit supplies each vertex stage. */
-export type EffectSource =
+export type EffectProgramSource =
   | { glsl: string; wgsl?: string }
   | { glsl?: string; wgsl: string };
 
@@ -58,7 +58,7 @@ export type EffectSource =
  * `effectPrelude.ts`. A WGSL one is held for the WebGPU backend, which sets
  * its contract; WebGL draws an effect only from its GLSL.
  */
-export function registerEffect(id: string, source: EffectSource): ShaderProgramHandle {
+export function registerEffect(id: string, source: EffectProgramSource): ShaderProgramHandle {
   if (source.glsl === undefined && source.wgsl === undefined) {
     throw new Error(`weasel registerEffect: effect "${id}" has no source; pass \`glsl\`, \`wgsl\` or both.`);
   }
