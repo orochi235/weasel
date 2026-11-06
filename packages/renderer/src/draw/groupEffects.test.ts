@@ -45,8 +45,8 @@ describe('effectsWindow', () => {
 });
 
 describe('an offscreen pass', () => {
-  // WebGPU refuses a viewport past its target's bounds, so a buffer's offset
-  // rides the projection instead.
+  // WebGPU refuses a viewport past its target's bounds, so an effects
+  // buffer's offset rides the projection instead.
   const viewportsOf = (commands: DrawCommand[]): number[][] => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 400, height: 300, dpr: 1 });
@@ -58,12 +58,6 @@ describe('an offscreen pass', () => {
   it('for a group\'s effects sets no viewport left of or below its buffer\'s corner', () => {
     const viewports = viewportsOf([{ kind: 'group', effects: blur({ radius: 4 }), children: [rect(200, 100, 20, 10)] }]);
     expect(viewports.length).toBeGreaterThan(1);
-    for (const [x, y] of viewports) expect(Math.min(x, y)).toBeGreaterThanOrEqual(0);
-  });
-
-  it('for a retained group\'s surface does not either', () => {
-    const viewports = viewportsOf([{ kind: 'group', retain: 'r', children: [rect(200, 100, 20, 10)] }]);
-    expect(viewports).toContainEqual([0, 0, 22, 12]);
     for (const [x, y] of viewports) expect(Math.min(x, y)).toBeGreaterThanOrEqual(0);
   });
 });

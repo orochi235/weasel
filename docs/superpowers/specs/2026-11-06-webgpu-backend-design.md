@@ -44,9 +44,12 @@ key, the reference is dynamic. Blend modes are the premultiplied default and the
 `effects/compositeOp.ts`, plus off.
 
 Two GL tricks go, on both backends: the negative-origin viewport (`groupEffects.ts`, `retained.ts`) moves
-into the projection, since WebGPU validates viewport bounds (done in stage 1; `compositeOver` in
-`draw/effects.ts` still sets a viewport over the composited rect, which reaches past an effects buffer's edge or
-starts left of it when that buffer is offset, and stage 4 has to aim the quad instead); and the pick id moves from a disabled generic
+into the projection, since WebGPU validates viewport bounds. Stage 1 did this for a group's effects buffer only
+(2026-11-06). A retained group's tiles keep one projection and slide the viewport: a projection per tile rounds
+differently at the seams, and `retained.tiles.browser.test.ts` fails on it (4 pixels off by up to 40 levels).
+`compositeOver` in `draw/effects.ts` also still sets a viewport over the composited rect, which reaches past an
+effects buffer's edge when that buffer is offset. So the WebGPU backend clamps such a viewport to its target and
+folds the rest into the clip position in the kit's vertex entry point (stage 4); and the pick id moves from a disabled generic
 vertex attribute to a uniform, written to attachment 1 only when the draw state's `ids` is set (WebGL:
 `drawBuffers`; WebGPU: that target's `writeMask`).
 

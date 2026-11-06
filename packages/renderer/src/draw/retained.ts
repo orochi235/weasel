@@ -8,7 +8,7 @@ import { boxTree, cullToTile } from '../retain/tileCull';
 import { movesWithView } from '../retain/movesWithView';
 import type { RetainedDraw, RetainedPixels } from '../retain/RetainedSurfaces';
 import type { DrawContext } from './drawContext';
-import { compositeOver, windowProjection } from './effects';
+import { compositeOver, insideBuffer, windowProjection } from './effects';
 import type { GpuTarget } from '../gpu/types';
 import { enterGroupClip } from './clip';
 import { flushBatch } from './flushBatch';
@@ -36,8 +36,9 @@ const scratchTargets = new WeakSet<object>();
  * pixel instead and that pixel comes out as much as 30 levels off.
  *
  * The surface covers only the device pixels the group can paint
- * (`contentBounds`), drawn under the canvas's own projection moved to each
- * tile's corner, and composited as a quad over that rect alone. A group that owns a surface of its own draws it, effects
+ * (`contentBounds`), drawn under the canvas's own projection through a
+ * viewport offset by each tile's corner, and composited as a quad over that
+ * rect alone. A group that owns a surface of its own draws it, effects
  * and all, into the retained one. Inside a group's effects buffer it composites
  * into that buffer instead, at the same offset.
  *
@@ -127,7 +128,7 @@ function drawInto(
   const gpu = ctx.gpu;
   const width = ctx.deviceWidth!;
   const height = ctx.deviceHeight!;
-  const { tiles } = draw;
+  const { rect, tiles } = draw;
   const parentTarget = ctx.renderTarget ?? null;
   const parentClipDepth = ctx.clipDepth;
   const parentClipStack = ctx.clipStack;
@@ -136,15 +137,22 @@ function drawInto(
   const scale = width / ctx.widthCss;
   const tree = tiles.length > 1 ? boxTree(children, ctx.state.transform, scale) : null;
 
+  // Inside the buffer, the frame's own projection; reaching past it, one aimed
+  // at the whole surface. Either way every tile shares it, its viewport slid
+  // whole pixels so the tile's corner lands on the scratch buffer's: a
+  // projection per tile rounds differently and moves edges at the seams
+  // (`retained.tiles.browser.test.ts`). The slide reaches past the target, so
+  // a WebGPU backend has to fold it into the clip position instead.
+  const inside = insideBuffer(rect, width, height);
+  ctx.projection = inside ? undefined : windowProjection(rect, scale);
+
   gpu.endPass();
   for (const tile of tiles) {
     const bottom = tile.y + tile.height;
-    // Every tile's projection is the canvas's moved to the tile's corner,
-    // which lands on the scratch buffer's: the pixels are the ones drawing
-    // the surface whole leaves.
-    ctx.projection = windowProjection(tile, scale);
-    const corner = { x: 0, y: 0, width: tile.width, height: tile.height };
-    const pass = { target: scratch, viewport: corner, scissor: corner };
+    const viewport = inside
+      ? { x: -tile.x, y: bottom - height, width, height }
+      : { x: rect.x - tile.x, y: bottom - rect.y - rect.height, width: rect.width, height: rect.height };
+    const pass = { target: scratch, viewport, scissor: { x: 0, y: 0, width: tile.width, height: tile.height } };
     const target = { pass, fragOrigin: [-tile.x, bottom - height] as const, window: tile };
     scratchTargets.add(target);
     ctx.renderTarget = target;
