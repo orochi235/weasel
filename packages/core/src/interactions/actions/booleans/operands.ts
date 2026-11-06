@@ -9,7 +9,7 @@ import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
 import type { PaintedPath } from '../outlines/replaceWithPaths';
-import { strokeRegion } from '../outlines/strokeRegion';
+import { strokeRegion } from 'domains/paths/strokeRegion';
 import type { BooleansAdapter } from './booleans';
 
 /**

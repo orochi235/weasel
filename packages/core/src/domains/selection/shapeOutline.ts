@@ -18,7 +18,7 @@ import type { View } from 'core/viewport/view';
 import { inheritedPaintIn } from 'core/scene/inheritedPaint';
 import { findShapeInk } from 'canvas/NodeShape';
 import { nodeOutline } from 'domains/paths/strokeOutline';
-import { strokeRegion } from 'interactions/actions/outlines/strokeRegion';
+import { strokeRegion } from 'domains/paths/strokeRegion';
 import type { DrawnBoundsScene } from 'canvas/drawnBounds';
 
 /** How a shape outline reads one node each frame. */

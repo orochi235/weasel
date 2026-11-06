@@ -9,7 +9,7 @@ import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { NodeId } from 'core/scene/types';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { replaceWithPaths, type PaintedPath } from './replaceWithPaths';
-import { strokeRegion, type StrokeRegionOptions } from './strokeRegion';
+import { strokeRegion, type StrokeRegionOptions } from 'domains/paths/strokeRegion';
 
 /** Outcome of {@link applyOutlineStroke}. */
 export type OutlineStrokeResult =
