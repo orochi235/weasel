@@ -717,9 +717,10 @@ only story runner in the repo.
 
 ## Backends (WebGL future)
 
-- **(P3) [maintainer] WebGPU backend.** Separate future spec. Needs a ruling first (2026-11-05): the public
-  custom shader API (`registerProgram`, `kind: 'shader'`, the GLSL contract in `shaders/customPrelude.ts`) takes
-  GLSL, so a WebGPU backend either takes WGSL instead, takes both, or translates one to the other.
+- **(P3) [agent] WebGPU backend.** Separate future spec. Ruled that custom shaders take both languages
+  (2026-11-06): `registerProgram` takes a GLSL source, a WGSL source, or both, each backend uses its own, and the
+  WebGPU renderer falls back to WebGL for a scene using a program with no WGSL. The kit's own GLSL programs get
+  WGSL ports. Several arcs: the API and fallback first, then the backend.
   Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
