@@ -1,7 +1,7 @@
 import { BATCH_ATTRIBUTE_LOCATIONS, BATCH_TEXTURE_SLOTS } from '../../../shaders/batchFill';
 import { textureWgsl, uniformsWgsl } from './common';
 import { GLYPH_CELL_WGSL } from './glyphCell';
-import { GLYPH_COVERAGE_WGSL } from './glyphCoverage';
+import { GLYPH_COVERAGE_WGSL } from '@weasel-js/font';
 import { GRAD_PAINT_WGSL } from './gradFill';
 import { ID_OUT_WGSL } from './idOut';
 import type { WgslPaint } from './paintVertex';

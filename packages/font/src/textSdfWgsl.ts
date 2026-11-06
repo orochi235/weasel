@@ -1,17 +1,11 @@
-import { GLYPH_AREA_MARGIN } from '@weasel-js/font';
+import { GLYPH_AREA_FROM, GLYPH_AREA_FULL, GLYPH_AREA_MARGIN } from './textSdf';
 
 /**
- * `GLYPH_COVERAGE_GLSL` and `GLYPH_POINT_COVERAGE_GLSL` (`@weasel-js/font`'s
- * `textSdf.ts`) in WGSL, the same math under the same names. The area build
+ * `GLYPH_COVERAGE_GLSL` and `GLYPH_POINT_COVERAGE_GLSL` (`textSdf.ts`) in WGSL, the same math under the same names. The area build
  * calls `fn glyphTap(uv: vec2f) -> vec4f`, which the program defines with
  * `textureSampleLevel`, since the taps run inside a branch on a derivative.
  * A caller must reach `glyphCoverage` in uniform control flow: it takes `dpdx`.
  */
-
-/** `GLYPH_AREA_FROM` and `GLYPH_AREA_FULL`, which `@weasel-js/font` does not
- *  export; a test holds them to the GLSL's. */
-export const GLYPH_AREA_FROM = 0.2;
-export const GLYPH_AREA_FULL = 0.3;
 
 const AREA_TAPS_WGSL = /* wgsl */ `
   let area = smoothstep(${GLYPH_AREA_FROM.toFixed(2)}, ${GLYPH_AREA_FULL.toFixed(2)}, fieldPerPx);

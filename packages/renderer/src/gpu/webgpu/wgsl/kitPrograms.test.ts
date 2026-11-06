@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { GLYPH_COVERAGE_GLSL } from '@weasel-js/font';
 import { BATCH_FILL_UNIFORMS, BATCH_HULL_UNIFORMS, BATCH_TEXTURE_SLOTS } from '../../../shaders/batchFill';
 import { GLYPH_GRAD_UNIFORMS, GLYPH_PATTERN_UNIFORMS, GLYPH_TEXTURE_UNIFORMS } from '../../../shaders/glyphPaint';
 import { GRAD_FILL_UNIFORMS } from '../../../shaders/gradFill';
@@ -10,7 +9,6 @@ import { MESH_UNIFORMS } from '../../../meshPaint/meshShader';
 import { reflectWgsl } from '../wgslReflect';
 import { createUniformBlock } from '../wgslUniforms';
 import { batchFillWgsl } from './batchFill';
-import { GLYPH_AREA_FROM, GLYPH_AREA_FULL } from './glyphCoverage';
 import { KIT_WGSL_PROGRAMS } from './kitPrograms';
 
 const COMPOSITE = ['u_source', 'u_alpha', 'u_colorMatrix', 'u_colorBias'];
@@ -41,10 +39,6 @@ describe('the kit WGSL programs', () => {
       : [n]).filter((n) => !declared.has(n));
     expect(missing).toEqual([]);
     if (p.outputs !== 'id' && !p.effect) expect(declared.has('u_weaselId')).toBe(true);
-  });
-
-  it('takes area coverage over the GLSL\'s range', () => {
-    expect(GLYPH_COVERAGE_GLSL).toContain(`smoothstep(${GLYPH_AREA_FROM.toFixed(2)}, ${GLYPH_AREA_FULL.toFixed(2)}, fieldPerPx)`);
   });
 
   it('pairs each batch texture with a sampler but the white texel', () => {

@@ -5,7 +5,7 @@ import {
 import { HULL_PLANES } from '../../../batchHull';
 import { STRAIGHT_RGB_WGSL, uniformsWgsl } from './common';
 import { GLYPH_CELL_WGSL } from './glyphCell';
-import { GLYPH_COVERAGE_WGSL, GLYPH_POINT_COVERAGE_WGSL } from './glyphCoverage';
+import { GLYPH_COVERAGE_WGSL, GLYPH_POINT_COVERAGE_WGSL } from '@weasel-js/font';
 import { HULL_COVERAGE_WGSL, HULL_MEMBERS } from './hullCoverage';
 import { ID_OUT_WGSL } from './idOut';
 
