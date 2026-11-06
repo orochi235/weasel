@@ -45,6 +45,13 @@ describe('a data node with a header', () => {
     expect((boxOf(specs).data?.diagram as DiagramNode).ports).toHaveLength(4);
   });
 
+  it('keeps the width a long body row gives it open', () => {
+    const long: DataNode = { ...NODE, rows: [{ kind: 'header', text: 'T' }, { kind: 'label', text: 'a body row far wider than the title' }] };
+    const open = boxOf(scene(long)).pose as { width: number };
+    expect(open.width).toBeGreaterThan(100);
+    expect((boxOf(scene({ ...long, collapsed: true })).pose as { width: number }).width).toBe(open.width);
+  });
+
   it('is drawn whole when collapsed with no header to collapse to', () => {
     const plain: DataNode = { ...NODE, rows: NODE.rows!.slice(1) };
     expect(boxOf(scene({ ...plain, collapsed: true })).pose).toEqual(boxOf(scene(plain)).pose);

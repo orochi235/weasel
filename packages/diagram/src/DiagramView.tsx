@@ -115,7 +115,7 @@ function Inner({
   const { layers: pageLayers, box: pagesBox } = usePagesView(pages);
   const layers = useMemo(() => ({ ...pageLayers, selectionOverlay: SHAPE_OUTLINE }), [pageLayers]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  const { onPointerUpCapture, onClick: headerHit } = useHeaderClick(canvasRef, scene, onHeaderClick);
+  const { onPointerDownCapture, onClick: headerHit } = useHeaderClick(canvasRef, scene, onHeaderClick);
   const onClick = useCallback((hit: SceneCanvasHit | null) => {
     mirror();
     headerHit(hit);
@@ -166,7 +166,7 @@ function Inner({
   const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
-    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerUpCapture={onPointerUpCapture}>
+    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerDownCapture={onPointerDownCapture}>
       <SceneCanvas
         ref={canvasRef}
         scene={scene}

@@ -5,7 +5,7 @@
  * back from the scene and handed to the same layout `buildBody` used.
  */
 import {
-  layoutBody, measureBody, rowHeights, sizeToBody, stackRows, type BodySpec, type MeasureRowText, type Row, type RowBox, type RowTextStyle,
+  headerOf, layoutBody, measureBody, rowHeights, sizeToBody, stackRows, type BodySpec, type MeasureRowText, type Row, type RowBox, type RowTextStyle,
 } from './body';
 import type { Bounds } from './outline';
 import type { BodyDivider, BodyLayout, DiagramNode } from './types';
@@ -49,7 +49,7 @@ export function recordedLayout(trait: DiagramNode, box: Bounds): RowBox[] | null
   const rows = recordedRows(trait);
   if (layout === undefined || rows === null || trait.outline === undefined) return null;
   const spec = { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign };
-  return stackRows(spec, box, layout.heights!);
+  return stackRows(spec, box, layout.heights!, trait.header);
 }
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -100,14 +100,18 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
       if (divider !== undefined) return dividerRow(divider);
       const data = scene.get(rowNodes.get(i) as never)?.data as TextData | undefined;
       const text = typeof data?.text === 'string' ? data.text : '';
-      return { kind: i === 0 && trait.header !== undefined ? 'header' : 'label', text, style: rowStyle(data?.style) };
+      const style = rowStyle(data?.style);
+      // The band records its text's line box, so the room left either side of it is the header's pad.
+      const band = i === 0 ? trait.header : undefined;
+      return band === undefined ? { kind: 'label', text, style } : { kind: 'header', text, style, pad: (band.height - band.text.height) / 2 };
     });
     const spec: BodySpec = { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign };
     const heights = rowHeights(spec, measure);
-    if (layout.heights === undefined || heights.some((h, i) => h !== layout.heights![i])) {
+    const band = headerOf(spec, measure);
+    const moved = band !== undefined && (trait.header?.height !== band.height || trait.header.text.y !== band.text.y || trait.header.text.height !== band.text.height);
+    if (layout.heights === undefined || moved || heights.some((h, i) => h !== layout.heights![i])) {
       const data = node.data as { diagram: DiagramNode };
-      const header = trait.header === undefined ? {} : { header: { height: heights[0]! } };
-      scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights }, ...header } } } as never);
+      scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights }, ...(band ? { header: band } : {}) } } } as never);
     }
     const pose = node.pose as Box;
     const grown = sizeToBody(pose, measureBody(spec, measure));

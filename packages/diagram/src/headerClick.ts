@@ -17,26 +17,27 @@ export function onHeaderBand(scene: DiagramScene, id: string, at: { x: number; y
 
 /**
  * Hears clicks on header bands. The canvas's click names only the node, so
- * the pointer's release is kept to say where on it the click landed: wire
- * `onPointerUpCapture` to an element around the canvas, and call `onClick`
+ * the press is kept to say where on it the click landed — not the release,
+ * which reaches a wrapper only after the canvas has reported the click: wire
+ * `onPointerDownCapture` to an element around the canvas, and call `onClick`
  * from the canvas's own.
  */
 export function useHeaderClick(
   canvasRef: RefObject<SceneCanvasApi | null>,
   scene: DiagramScene,
   onHeaderClick: ((nodeId: string) => void) | undefined,
-): { onPointerUpCapture: (e: PointerEvent) => void; onClick: (hit: SceneCanvasHit | null) => void } {
-  const released = useRef<{ x: number; y: number } | null>(null);
+): { onPointerDownCapture: (e: PointerEvent) => void; onClick: (hit: SceneCanvasHit | null) => void } {
+  const pressed = useRef<{ x: number; y: number } | null>(null);
   const latest = useLatest(onHeaderClick);
-  const onPointerUpCapture = useCallback((e: PointerEvent) => {
-    released.current = { x: e.clientX, y: e.clientY };
+  const onPointerDownCapture = useCallback((e: PointerEvent) => {
+    pressed.current = { x: e.clientX, y: e.clientY };
   }, []);
   const onClick = useCallback((hit: SceneCanvasHit | null) => {
-    const at = released.current;
+    const at = pressed.current;
     const canvas = canvasRef.current;
     if (hit === null || at === null || canvas === null || latest.current === undefined) return;
     const [x, y] = canvas.clientToWorld(at.x, at.y);
     if (onHeaderBand(scene, hit.id, { x, y })) latest.current(hit.id);
   }, [canvasRef, scene, latest]);
-  return { onPointerUpCapture, onClick };
+  return { onPointerDownCapture, onClick };
 }

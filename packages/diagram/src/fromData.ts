@@ -14,6 +14,7 @@ import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
+import { faceCapCenter } from './faceCapCenter';
 import { trackingWidth } from './rowMeasure';
 import { edgeIdOf } from './edgeId';
 import { headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
@@ -147,8 +148,12 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const measure: MeasureRowText = opts.measure
     ? (text, s) => opts.measure!(text, { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize })
     : (text, s) => {
-        const size = s.fontSize ?? font.fontSize;
-        return { width: text.length * GLYPH * size + trackingWidth(text, { ...s, fontSize: size }), height: Math.ceil(LINE * size) };
+        const face = { ...s, fontSize: s.fontSize ?? font.fontSize, fontFamily: s.fontFamily ?? font.fontFamily };
+        const capCenter = faceCapCenter(face);
+        return {
+          width: text.length * GLYPH * face.fontSize + trackingWidth(text, face), height: Math.ceil(LINE * face.fontSize),
+          ...(capCenter !== undefined ? { capCenter } : {}),
+        };
       };
 
   const ids = new Set<string>();
@@ -193,9 +198,12 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   // Seeded on the diagonal in source order, so whichever axis a layout reads
   // for in-rank order, it starts from the data's own order.
   const seeds: GraphNode[] = data.nodes.map((n, i) => {
+    // A collapsed node keeps the width its rows would give it open, so it does not jump on a toggle.
+    const floor = measureBody(bodies[i]!, measure);
+    const width = folded(n) ? Math.max(floor.minWidth, measureBody({ ...bodies[i]!, rows: n.rows! }, measure).minWidth) : floor.minWidth;
     const pose = sizeToBody(
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: folded(n) ? 0 : n.height ?? 0 },
-      measureBody(bodies[i]!, measure),
+      { minWidth: width, minHeight: floor.minHeight },
     );
     const { ports, outline, margin } = bodyTrait(bodies[i]!, pose, measure);
     return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}),
