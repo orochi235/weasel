@@ -225,7 +225,9 @@ describe('Split', () => {
   it('renders the content alone, with no sidebar pane or seam, when the sidebar is null', async () => {
     const { container } = renderBody({ sidebar: null, sidebarClassName: 'lk-x__side' });
     // After the strip's first layout pass, not before: a sidebar node that was never shown must take no room.
-    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
     expect(screen.getByText('instrument output')).toBeInTheDocument();
     expect(container.querySelector('.lk-x__side')).toBeNull();
     expect(screen.queryByRole('separator')).toBeNull();
