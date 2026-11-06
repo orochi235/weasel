@@ -14,7 +14,7 @@ import {
   type SceneCanvasHit,
 } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactElement, type Ref, type RefObject } from 'react';
 import { createSpecRouter } from './avoid/specRoutes';
 import { diagramCanDropInto, type CanReparent } from './containers/canDropInto';
 import { createSpecHops } from './hops/specHops';
@@ -165,7 +165,6 @@ function Inner({
   const textEditor = useSequenceTextEdit(scene, onEditSequence);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
-  const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
     <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerDownCapture={onPointerDownCapture}>
@@ -188,11 +187,25 @@ function Inner({
       >
         <DropRules scene={scene} canReparent={canReparent} />
       </SceneCanvas>
+      <Overlays canvasRef={canvasRef} scene={scene} overlays={overlays} />
+    </div>
+  );
+}
+
+/** Each overlay's content, kept over the node it targets. */
+function Overlays({ canvasRef, scene, overlays }: {
+  canvasRef: RefObject<SceneCanvasApi | null>;
+  scene: Scene<DiagramSceneData, 'main', RectPose>;
+  overlays: Parameters<typeof useOverlayPlacement>[2];
+}): ReactElement {
+  const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
+  return (
+    <>
       {overlays.map((o) => {
         const key = o.key ?? o.target;
         return <div key={key} ref={overlayRef(key)} data-wzl-diagram-overlay="">{o.content}</div>;
       })}
-    </div>
+    </>
   );
 }
 
