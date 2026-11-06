@@ -33,8 +33,9 @@ function restacked(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: Reado
     if (boxes === null) continue;
     for (const child of sc.childrenOf(id as never)) {
       const c = sc.get(child)!;
-      const index = (c.data as { bodyRow?: unknown } | null)?.bodyRow;
-      const box = typeof index === 'number' ? boxes[index] : undefined;
+      const data = c.data as { bodyRow?: unknown; bodyAside?: unknown } | null;
+      const row = typeof data?.bodyRow === 'number' ? boxes[data.bodyRow] : undefined;
+      const box = data?.bodyAside === true ? row?.aside : row;
       if (box !== undefined) out.push({ id: child as string, pose: { ...(c.pose as Bounds), x: box.x, y: box.y, width: box.width, height: box.height } });
     }
   }

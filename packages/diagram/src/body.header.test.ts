@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HEADER_PAD, bodyTrait, canvasMeasure, layoutBody, measureBody, rowHeights, type BodySpec, type MeasureRowText } from './body';
+import { HEADER_ASIDE_GAP, HEADER_PAD, bodyTrait, canvasMeasure, layoutBody, measureBody, rowHeights, type BodySpec, type MeasureRowText } from './body';
 import { bodyLayoutOf, recordedLayout } from './bodyRelayout';
 import { faceCapCenter } from './faceCapCenter';
 import { capCenterFrom } from './rowMeasure';
@@ -103,6 +103,28 @@ describe('a header row\'s text in its band', () => {
     expect(seen).toEqual([['Oswald', 400, 'normal']]);
     expect(faceCapCenter({ fontFamily: 'Oswald', fontSize: 10 }, () => ({ ascent: 0.9, descent: 0.3 }))).toBeUndefined();
     expect(faceCapCenter({ fontSize: 10 }, lookup)).toBeUndefined();
+  });
+});
+
+describe('a header\'s aside', () => {
+  const s = spec([{ kind: 'header', text: 'TITLE', aside: 'v2' }, { kind: 'label', text: 'a' }]);
+  const bounds = { x: 10, y: 30, width: 200, height: 80 };
+
+  it('widens the floor by the gap and its own width', () => {
+    expect(measureBody(s, measure).minWidth).toBe(50 + HEADER_ASIDE_GAP + 20 + 16);
+  });
+
+  it('sits against the right padding on the title\'s line, and narrows the title\'s box to clear it', () => {
+    const [head] = layoutBody(s, bounds, measure);
+    expect(head!.aside).toEqual({ x: 210 - 8 - 20, y: head!.y, width: 20, height: head!.height });
+    expect(head!.x + head!.width).toBe(head!.aside!.x - HEADER_ASIDE_GAP);
+  });
+
+  it('is recorded on the band, and laid out again from it', () => {
+    const trait = { ...bodyTrait(s, bounds, measure), ...bodyLayoutOf(s, { outline: 'rect' }, measure) };
+    expect(trait.header?.aside).toEqual({ width: 20 });
+    const wider = { ...bounds, width: 300 };
+    expect(recordedLayout(trait, wider)![0]!.aside).toEqual(layoutBody(s, wider, measure)[0]!.aside);
   });
 });
 

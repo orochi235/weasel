@@ -93,6 +93,8 @@ export interface DiagramNode {
 export interface HeaderBand {
   height: number;
   text: { y: number; height: number };
+  /** Its `aside`'s measured width, which sits on the title's line. */
+  aside?: { width: number };
 }
 
 /** How a built body stacks its rows: the `BodySpec` fields its layout reads, and how many rows. */

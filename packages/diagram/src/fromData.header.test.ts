@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, type RectPose } from '@weasel-js/core';
 import { HEADER_PAD } from './body';
+import { relayoutBodies, type RelayoutScene } from './bodyRelayout';
+import { HEADER_ASIDE_OPACITY } from './dataColors';
 import { withDiagramRegistry } from './edge';
 import { themeWrites, type ThemedScene } from './theme/themeWrites';
 import { DIAGRAM_THEMES } from './theme/themes';
@@ -72,6 +74,47 @@ describe('a theme applied to a body with a header', () => {
     const [title, row] = textsOf(specs).map((t) => writes.get(t.id!)?.fill?.paint.color);
     expect(title).toBe(blueprint.roles.default!.fill);
     expect(row).toBe(blueprint.roles.default!.text);
+  });
+});
+
+describe('a data node whose header has an aside', () => {
+  const WITH: DataNode = { ...NODE, width: 200, rows: [{ kind: 'header', text: 'Title', aside: 'v2' }, ...NODE.rows!.slice(1)] };
+  const asideOf = (specs: ReturnType<typeof scene>) => textsOf(specs).find((t) => t.data?.bodyAside === true)!;
+
+  it('draws it right-aligned against the right padding, on the title\'s line, in the title\'s color at reduced opacity', () => {
+    const specs = scene(WITH);
+    const [title] = textsOf(specs);
+    const aside = asideOf(specs);
+    const pose = aside.pose as { x: number; y: number; width: number };
+    expect(aside.data).toMatchObject({ text: 'v2', bodyRow: 0, style: { align: 'right' }, fill: { paint: { color: DEFAULT_NODE_STYLE.fill, opacity: HEADER_ASIDE_OPACITY } } });
+    expect(pose.x + pose.width).toBe(200 - 8);
+    expect(pose.y).toBe((title!.pose as { y: number }).y);
+  });
+
+  it('is kept when the node collapses', () => {
+    const specs = scene({ ...WITH, collapsed: true });
+    expect(textsOf(specs).map((t) => t.data?.text)).toEqual(['Title', 'v2']);
+    expect((asideOf(specs).pose as { x: number; width: number }).x).toBe((asideOf(scene(WITH)).pose as { x: number }).x);
+  });
+
+  it('is recolored by a theme alongside the title, keeping its opacity', () => {
+    const blueprint = DIAGRAM_THEMES.blueprint!;
+    const specs = scene(WITH);
+    const sc = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), initial: specs as never });
+    const fill = (themeWrites(sc as unknown as ThemedScene, blueprint).get(asideOf(specs).id!) as { fill: unknown }).fill;
+    expect(fill).toEqual({ paint: { color: blueprint.roles.default!.fill, opacity: HEADER_ASIDE_OPACITY } });
+  });
+
+  it('moves with the band when its body is laid out again with a longer aside', () => {
+    const specs = scene(WITH);
+    const sc = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), initial: specs as never });
+    const id = asideOf(specs).id!;
+    sc.update(id as never, { data: { ...(sc.get(id as never)!.data as object), text: 'a much longer aside text' } });
+    relayoutBodies(sc as unknown as RelayoutScene, ['n']);
+    const box = sc.get('n' as never)!.pose as { width: number };
+    const pose = sc.get(id as never)!.pose as { x: number; width: number };
+    expect(pose.x + pose.width).toBe(box.width - 8);
+    expect((sc.get('n' as never)!.data as { diagram: DiagramNode }).diagram.header?.aside?.width).toBe(pose.width);
   });
 });
 

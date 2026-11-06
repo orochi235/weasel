@@ -22,8 +22,9 @@ export type Row =
   /** A title band across the top of the node, flush with its bounds rather
    *  than inset by the outline or the padding, filled in the body's stroke.
    *  Only ever the first row. `pad` is the room above and below its text,
-   *  default {@link HEADER_PAD}. */
-  | { kind: 'header'; text: string; style?: RowTextStyle; id?: string; pad?: number }
+   *  default {@link HEADER_PAD}. `aside` is a second text, set right in the
+   *  same face, at least {@link HEADER_ASIDE_GAP} clear of the title. */
+  | { kind: 'header'; text: string; style?: RowTextStyle; id?: string; pad?: number; aside?: string }
   /** Text. `label` is the node's name; `field` is a named value. A row with
    *  an `id` gets a scene node of that name under the body's, so it can be
    *  found again; one without is named by its place. Not a bare number. */
@@ -94,6 +95,8 @@ export interface BodyFloor {
 export interface RowBox extends Bounds {
   row: Row;
   index: number;
+  /** A header's `aside`: its box, against the band's right padding. */
+  aside?: Bounds;
 }
 
 /** Where one row port's label sits, in the same frame as the row box it was
@@ -110,6 +113,8 @@ const DEFAULT_PADDING = 8;
 const DEFAULT_GAP = 4;
 /** The space above and below a header row's text, inside its band. */
 export const HEADER_PAD = 4;
+/** The least room between a header's title and its `aside`. */
+export const HEADER_ASIDE_GAP = 8;
 /** The height a divider row takes; its rule runs through the middle. */
 export const DIVIDER_HEIGHT = 4;
 
@@ -128,7 +133,10 @@ function headerBand(row: Extract<Row, { kind: 'header' }>, measure: MeasureRowTe
   const t = measureText(row.text, row.style, measure);
   const pad = row.pad ?? HEADER_PAD;
   const height = t.height + pad * 2;
-  return { width: t.width, height, text: { y: t.capCenter === undefined ? pad : height / 2 - t.capCenter, height: t.height } };
+  const text = { y: t.capCenter === undefined ? pad : height / 2 - t.capCenter, height: t.height };
+  if (row.aside === undefined) return { width: t.width, height, text };
+  const aside = measureText(row.aside, row.style, measure).width;
+  return { width: t.width + HEADER_ASIDE_GAP + aside, height, text, aside: { width: aside } };
 }
 
 /** What each row is worth on its own, before padding and gaps. */
@@ -238,7 +246,14 @@ export function stackRows(spec: BodySpec, bounds: Bounds, heights: readonly numb
     const tall = Math.min(heights[0] ?? 0, bounds.height);
     const pad = header.pad ?? HEADER_PAD;
     const text = band?.text ?? { y: pad, height: Math.max(tall - pad * 2, 0) };
-    out.push({ row: header, index: 0, x: bounds.x + padding, y: bounds.y + text.y, width: Math.max(bounds.width - padding * 2, 0), height: text.height });
+    const inner = Math.max(bounds.width - padding * 2, 0);
+    const asideWidth = header.aside === undefined ? undefined : Math.min(band?.aside?.width ?? 0, inner);
+    const y = bounds.y + text.y;
+    out.push({
+      row: header, index: 0, x: bounds.x + padding, y, height: text.height,
+      width: asideWidth === undefined ? inner : Math.max(inner - asideWidth - HEADER_ASIDE_GAP, 0),
+      ...(asideWidth === undefined ? {} : { aside: { x: bounds.x + bounds.width - padding - asideWidth, y, width: asideWidth, height: text.height } }),
+    });
     below = { x: bounds.x, y: bounds.y + tall, width: bounds.width, height: bounds.height - tall };
   }
   const first = header === undefined ? 0 : 1;
@@ -264,8 +279,8 @@ export function stackRows(spec: BodySpec, bounds: Bounds, heights: readonly numb
 export function headerOf(spec: BodySpec, measure?: MeasureRowText): HeaderBand | undefined {
   const { header } = splitHeader(spec.rows);
   if (header === undefined) return undefined;
-  const { height, text } = headerBand(header, measure);
-  return { height, text };
+  const { width: _, ...band } = headerBand(header, measure);
+  return band;
 }
 
 /** A row other than a divider: the padded width, or a sized slot's width centered in it. */

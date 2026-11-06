@@ -17,7 +17,7 @@ import { buildBody } from './buildBody';
 import { faceCapCenter } from './faceCapCenter';
 import { trackingWidth } from './rowMeasure';
 import { edgeIdOf } from './edgeId';
-import { headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
+import { asideFillOf, headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
 import { dataNodeStyle } from './dataStyles';
 import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
@@ -30,7 +30,7 @@ import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
 import { grownBy } from './footprint';
 import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import { LABEL_PLACEMENT } from './labelTrait';
-import { rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
+import { asideFace, rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
 import { layered } from './layered';
 import { LAYOUTS } from './layoutAction';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPlan } from './layout';
@@ -118,6 +118,7 @@ function nodeSpecs(
       at.row.kind === 'slot'
         ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
         : text === '' ? null : { ...textData(text, at.row), bodyRow: at.index, ...(at.row.kind === 'field' ? { bodyField: at.row.label } : {}) },
+    aside: (text, at) => ({ text, style: asideFace(look.text(at.row)), fill: asideFillOf(style), bodyRow: at.index, bodyAside: true }),
     portLabel: (text) => textData(text, undefined),
   });
   return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);
