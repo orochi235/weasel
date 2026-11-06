@@ -222,12 +222,16 @@ describe('Split', () => {
     expect(screen.getByRole('separator')).toHaveAccessibleName(/outline/i);
   });
 
-  it('renders the content alone, with no sidebar pane or seam, when the sidebar is null', () => {
+  it('renders the content alone, with no sidebar pane or seam, when the sidebar is null', async () => {
     const { container } = renderBody({ sidebar: null, sidebarClassName: 'lk-x__side' });
+    // After the strip's first layout pass, not before: a sidebar node that was never shown must take no room.
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
     expect(screen.getByText('instrument output')).toBeInTheDocument();
     expect(container.querySelector('.lk-x__side')).toBeNull();
     expect(screen.queryByRole('separator')).toBeNull();
+    expect(container.querySelector('.windease-affordance-hit')).toBeNull();
     const pane = container.querySelector('[data-node="lk-split-content"]') as HTMLElement;
+    expect(pane.style.left).toBe('0px');
     expect(pane.style.width).toBe(`${VIEWPORT.w}px`);
   });
 
