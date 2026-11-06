@@ -15,6 +15,10 @@ export { usePages, type DocPages, type UsePagesOptions } from './usePages';
 export { PAGE_SETTLE_MS, usePageSettle, type Paging, type ViewSink } from './usePageSettle';
 export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
+export {
+  DOC_CLIPBOARD_ACTIONS, DOC_CLIPBOARD_KEYS, useDocClipboard,
+  type DocClipboardCommandOptions, type DocClipboardOptions,
+} from './useDocClipboard';
 export { usePageGrid, type PageGridOptions } from './usePageGrid';
 export { EditorShell, type EditorShellProps } from './EditorShell';
 export { EDITOR_CONTEXT_MENUS, EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';

@@ -208,7 +208,9 @@ export interface InsertAdapter<TNode extends { id: string }> {
    *  is supplied. */
   commitInsert?(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
   /** Materialize the new nodes from a clipboard snapshot, in order.
-   *  Optional — required only for paste. */
+   *  Optional — required only for paste. What it returns becomes the
+   *  clipboard the next paste reads, so each node must be shaped like an item
+   *  `snapshotSelection` produces, not merely carry an `id`. */
   commitPaste?(
     clipboard: ClipboardSnapshot,
     offset: { dx: number; dy: number },

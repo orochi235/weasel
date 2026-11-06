@@ -106,6 +106,7 @@ export type {
 
 // ─── Action hooks: selection-driven keyboard / button actions ───────────────
 export {
+  useClipboard,
   useClipboardOps,
   WEASEL_CLIPBOARD_MIME,
   WEASEL_CLIPBOARD_MIME_WEB,
@@ -117,6 +118,8 @@ export {
 } from '../interactions/actions/clipboard';
 export type {
   ClipboardFlavors,
+  PastedItems,
+  UseClipboardOptions,
   UseClipboardOpsOptions,
   UseClipboardOpsReturn,
 } from '../interactions/actions/clipboard';
