@@ -34,17 +34,27 @@ export async function mountChartApp(): Promise<{ host: HTMLElement; canvas: HTML
   return { host, canvas: host.querySelector('canvas')! };
 }
 
+/** How many frames the canvas gets to catch up with its host: a handful pass when it does. */
+const SETTLE_FRAMES = 600;
+
 /**
  * Waits until the workspace's canvas has caught up with the host's layout, then for the frames that refit and draw
  * it. The host shrinks once the toolbar's palette fills in, but the canvas learns that from a `ResizeObserver`,
- * which a long first frame can hold back past any fixed wait.
+ * which a long first frame can hold back past any fixed wait. Counted in frames, not time: a main thread stalled
+ * past a poll's deadline gives up before it looks again, though the resize it was waiting for landed in the stall.
  */
 export async function canvasSettled(host: HTMLElement): Promise<void> {
-  await expect.poll(() => {
+  const sizes = () => {
     const canvas = host.querySelector('canvas')?.getBoundingClientRect();
     const box = host.getBoundingClientRect();
-    return canvas !== undefined && Math.abs(canvas.width - box.width) < 0.5 && Math.abs(canvas.height - box.height) < 0.5;
-  }).toBe(true);
+    return { canvas: canvas && { width: canvas.width, height: canvas.height }, host: { width: box.width, height: box.height } };
+  };
+  const fits = ({ canvas, host: box }: ReturnType<typeof sizes>) =>
+    canvas !== undefined && Math.abs(canvas.width - box.width) < 0.5 && Math.abs(canvas.height - box.height) < 0.5;
+  for (let i = 0; !fits(sizes()); i++) {
+    if (i === SETTLE_FRAMES) throw new Error(`the canvas still does not fill its host after ${SETTLE_FRAMES} frames: ${JSON.stringify(sizes())}`);
+    await frames();
+  }
   await frames(2);
 }
 
