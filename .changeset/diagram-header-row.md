@@ -1,5 +1,5 @@
 ---
-'@weasel-js/diagram': minor
+'@weasel-js/diagram': patch
 '@weasel-js/diagram-formats': patch
 ---
 
