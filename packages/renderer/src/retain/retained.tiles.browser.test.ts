@@ -6,10 +6,18 @@
  * single-sampled inside an effects buffer.
  *
  * Tiles share the surface's projection and slide their viewport by whole
- * pixels, so they agree exactly but for one thing: the GPU adds the
+ * pixels, so their samples agree exactly but for one thing: the GPU adds the
  * viewport's offset in float32, and where an edge runs within that rounding
  * error of a sample, the sample flips. One flipped sample in a frame is the
  * allowance.
+ *
+ * Their resolved pixels may still differ by one level. A tile that is not the
+ * whole scratch buffer resolves through a renderbuffer, where a surface drawn
+ * whole resolves straight into its texture, and GLES leaves how a resolve
+ * rounds a pixel whose samples average to half a level to the implementation.
+ * Chromium on macOS rounds them both ways from run to run: the one failure
+ * that named its pixels found them all in one such tile, on edges, each one
+ * level off in one channel.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
@@ -25,6 +33,8 @@ const DW = W * DPR;
 const DH = H * DPR;
 /** Odd, so tile edges cross every kind of content at odd offsets. */
 const TILE = 37;
+/** How far a resolve may round one channel of a pixel either way. */
+const RESOLVE_ROUNDING = 1;
 
 const GROUND: DrawCommand[] = [
   { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: W, height: H }, fill: { paint: { color: '#336699' } } },
@@ -117,9 +127,10 @@ function read(gl: WebGL2RenderingContext, r: WeaselRenderer, commands: DrawComma
   return px;
 }
 
-/** How many pixels differ at all, by how much at most, and the first few
- *  that do, tiled then whole, so a failure names where they are: the
- *  page screenshot cannot show these canvases. */
+/** How many pixels differ by more than a resolve rounds, by how much any
+ *  differs at most, and the first few past that rounding, tiled then whole,
+ *  so a failure names where they are: the page screenshot cannot show these
+ *  canvases. */
 function diff(a: Uint8Array, b: Uint8Array): { max: number; off: number; first: string[] } {
   let max = 0;
   let off = 0;
@@ -128,7 +139,7 @@ function diff(a: Uint8Array, b: Uint8Array): { max: number; off: number; first: 
     let d = 0;
     for (let c = 0; c < 4; c++) d = Math.max(d, Math.abs(a[i + c] - b[i + c]));
     max = Math.max(max, d);
-    if (d === 0) continue;
+    if (d <= RESOLVE_ROUNDING) continue;
     off++;
     const p = i / 4;
     if (first.length < 12) first.push(`${p % DW},${Math.floor(p / DW)}: ${a.subarray(i, i + 4).join(' ')} / ${b.subarray(i, i + 4).join(' ')}`);
@@ -144,9 +155,9 @@ function frame(p: Pair, x: number, y: number, layer: (view: GlMat3) => DrawComma
   return { ...diff(tiled, whole), tiled: p.tiled.lastFrameStats().retained, whole: p.whole.lastFrameStats().retained };
 }
 
-/** Asserts tiled and whole agree exactly, naming the pixels that do not: `toMatchObject` leaves `first` out of its diff. */
+/** Asserts tiled and whole agree to within a resolve's rounding, naming the pixels that do not: `toMatchObject` leaves `first` out of its diff. */
 function exact<T extends { max: number; off: number; first: string[] }>(r: T, label = 'tiled against whole'): T {
-  expect(r.max, `${label}: ${r.off} pixel(s) differ, first ${r.first.join('; ')}`).toBe(0);
+  expect(r.max, `${label}: ${r.off} pixel(s) differ, first ${r.first.join('; ')}`).toBeLessThanOrEqual(RESOLVE_ROUNDING);
   return r;
 }
 
