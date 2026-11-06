@@ -131,8 +131,10 @@ export type { PaintKind, PaintKindEntry, PaintKindEditorProps, PaintKindFamily }
 export type {
   PaintDrawKind,
   PaintBindContext,
-  PaintProgram,
+  PaintBinding,
   PaintResources,
+  PaintTexture,
+  PaintUniform,
 } from '@weasel-js/renderer';
 export type { ProgramSource } from '@weasel-js/renderer';
 export type { ShaderProgram } from '@weasel-js/renderer';

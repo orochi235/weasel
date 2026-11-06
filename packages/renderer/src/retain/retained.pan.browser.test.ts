@@ -79,13 +79,7 @@ beforeAll(async () => {
   unregisterKind = registerPaintDrawKind({
     id: KIND,
     programs: { [KIND]: { glsl: { vert: TINT_VERT, frag: TINT_FRAG } } },
-    bind: (ctx) => {
-      const program = ctx.program(KIND);
-      if (!program) return null;
-      ctx.gl.useProgram(program.handle);
-      ctx.setProjAndModel(program);
-      return program;
-    },
+    bind: () => ({ program: KIND }),
   });
 });
 

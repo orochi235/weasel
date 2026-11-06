@@ -289,14 +289,8 @@ void main() {
   },
   bind(ctx) {
     const inverse = ctx.spaceInverse('world');
-    const program = ctx.program('test:split');
-    if (!inverse || !program) return null;
-    ctx.gl.useProgram(program.handle);
-    ctx.setProjAndModel(program);
-    ctx.gl.uniformMatrix3fv(program.uniform('u_worldInv')!, false, inverse);
-    ctx.gl.uniform1f(program.uniform('u_split')!, SPLIT_X);
-    ctx.gl.uniform1f(program.uniform('u_alpha')!, ctx.alpha);
-    return program;
+    if (!inverse) return null;
+    return { program: 'test:split', uniforms: { u_worldInv: inverse, u_split: SPLIT_X, u_alpha: ctx.alpha } };
   },
 };
 

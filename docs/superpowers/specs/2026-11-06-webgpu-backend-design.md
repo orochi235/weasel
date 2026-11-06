@@ -22,13 +22,21 @@ masks into a pipeline:
 
 | Layer call | WebGL2 | WebGPU |
 |---|---|---|
-| `beginPass({ target, color, stencil, viewport, scissor })` | bind framebuffer, viewport, scissor, `clear` | `beginRenderPass`, `loadOp: 'clear' \| 'load'` |
+| `beginPass({ target, viewport, scissor, clear })` | bind framebuffer, viewport, scissor, `clear` inside the scissor | `beginRenderPass`, `loadOp: 'clear'` for an unscissored clear, else `'load'` and a clear draw |
 | `setViewport` / `setScissor` mid-pass | `viewport` / `scissor` | `setViewport` / `setScissorRect` |
-| `draw({ program, blend, colorWrite, stencil, ids }, bindings, geometry, count)` | apply cached state, `uniform*`, `drawElements` | pipeline from a cache keyed on the state, uniforms packed into a ring buffer at a dynamic offset |
+| `draw({ program, blend, colorWrite, stencil, ids }, geometry, count, firstIndex)` | apply the state that differs from the last draw, bind the program's textures, `drawElements` | pipeline from a cache keyed on the state and the geometry's layout, the program's uniforms packed into a ring buffer at a dynamic offset |
+| `program.set*(name, …)`, `program.setTexture(name, texture, index)` | `uniform*` at once; a unit per sampler, bound at draw | written into the program's CPU copy of its uniform struct; textures and samplers in its bind group |
 | `clearStencilBits(mask)` | `stencilMask(mask); clear(STENCIL)` | a full-target draw, write mask `mask`, op `zero` |
-| `resolve(msaaTarget, into, rect)` | the two `blitFramebuffer`s of `surfaceGl.ts` | `resolveTarget`, then `copyTextureToTexture` |
-| `readIds(rect)` → `Promise` | `readPixels` | `copyTextureToBuffer`, `mapAsync` |
-| textures: `rgba8`, `r8`, mipmapped `rgba8` | `texImage2D`, `generateMipmap` | `writeTexture` / `copyExternalImageToTexture({ premultipliedAlpha: true })`, mips drawn level by level |
+| `resolve(msaaTarget, into, width, height, x, y)`, outside a pass | the two `blitFramebuffer`s that were `surfaceGl.ts` | `resolveTarget`, then `copyTextureToTexture` |
+| `readIds(target, rect)` → `Promise`; `readIdsSync` where the backend has it | `readPixels` | `copyTextureToBuffer`, `mapAsync`; no sync form |
+| `createTexture(format, sampling, data)`, `writeTexture`, `writeSubTexture`, `generateMipmaps`, `setSampling`: `rgba8`, `r8`, mipmapped `rgba8` | `texImage2D`, `texSubImage2D`, `generateMipmap`, `texParameteri` | `writeTexture` / `copyExternalImageToTexture({ premultipliedAlpha: true })`, mips drawn level by level, a sampler per sampling |
+| `createBuffer` / `writeBuffer` / `resizeBuffer`, `createGeometry({ vertexBuffers, indexBuffer, indexFormat })` | buffers and a VAO | buffers; the layout goes in the pipeline key |
+
+Uniforms and textures are held by the program until set again, as GL holds them, so the draw-time state carries
+neither (2026-11-06, stage 1). Rects in the layer (viewport, scissor, read and resolve rects) count from the
+target's bottom-left corner as GL does, and the WebGPU backend flips them against the target's height
+(2026-11-06, stage 1: the draw code's tile and read arithmetic is all bottom-up, and flipping it once in one
+backend is less to get wrong than rewriting it). The layer is `packages/renderer/src/gpu/types.ts`.
 
 Stencil states are a closed set (clip test at a depth, parity write, parity paint, clip push simple and
 even-odd, clip pop, aligned fill, aligned ribbon inner and outer): compare, masks and op go in the pipeline
@@ -36,7 +44,9 @@ key, the reference is dynamic. Blend modes are the premultiplied default and the
 `effects/compositeOp.ts`, plus off.
 
 Two GL tricks go, on both backends: the negative-origin viewport (`groupEffects.ts`, `retained.ts`) moves
-into the projection, since WebGPU validates viewport bounds; and the pick id moves from a disabled generic
+into the projection, since WebGPU validates viewport bounds (done in stage 1; `compositeOver` in
+`draw/effects.ts` still sets a viewport over the composited rect, which reaches past an effects buffer's edge or
+starts left of it when that buffer is offset, and stage 4 has to aim the quad instead); and the pick id moves from a disabled generic
 vertex attribute to a uniform, written to attachment 1 only when the draw state's `ids` is set (WebGL:
 `drawBuffers`; WebGPU: that target's `writeMask`).
 

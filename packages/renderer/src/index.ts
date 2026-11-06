@@ -93,10 +93,12 @@ export {
   isPaintKindKnown,
   warmPaintKinds,
   type PaintBindContext,
+  type PaintBinding,
   type PaintDrawKind,
   type PaintDrawKindLoader,
-  type PaintProgram,
   type PaintResources,
+  type PaintTexture,
+  type PaintUniform,
 } from './paintKinds';
 export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';

@@ -1,7 +1,7 @@
 /**
  * The renderer's half of a paint kind: what it takes to draw one.
  *
- * Solids, patterns and the three gradients are branches inside the GL
+ * Solids, patterns and the three gradients are branches inside the
  * renderer and never come through here. A kind beyond those registers its
  * bind slot, its frame conversions and its shaders, and the renderer consults
  * this registry for any kind it does not recognize.
@@ -11,14 +11,28 @@ import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
-import type { ShaderProgram } from './shaders/ShaderProgram';
+import type { GpuTexture } from './gpu/types';
 import {
-  getProgramSource, registerProgram, sameProgramSource, type ProgramSource,
+  getProgramSource, registerProgram, sameProgramSource, type ProgramSource, type ShaderUniform,
 } from './shaders/registerProgram';
 
-/** A compiled GL program. A paint kind gets one from
- *  {@link PaintBindContext.program} and hands it back from `bind`. */
-export type PaintProgram = ShaderProgram;
+/** A texture a paint kind made through {@link PaintBindContext.createTexture},
+ *  or the ramp atlas {@link PaintBindContext.ramp} hands back. Opaque: only
+ *  the renderer reads it. */
+export type PaintTexture = GpuTexture;
+
+/** A uniform value a paint kind hands back: anything a shader command's
+ *  `uniforms` take, or a {@link PaintTexture}. */
+export type PaintUniform = ShaderUniform | PaintTexture;
+
+/** What a paint kind's `bind` hands back: the program to draw with and the
+ *  uniforms to draw it under, by name. The renderer binds them on whichever
+ *  backend it runs, and sends `u_proj`, `u_model` and `u_origin` itself. */
+export interface PaintBinding {
+  /** A `registerProgram` id, typically one the kind's `programs` declares. */
+  readonly program: string;
+  readonly uniforms?: Readonly<Record<string, PaintUniform>>;
+}
 
 /**
  * The lifetime a paint kind's GPU state belongs to: one renderer on one live
@@ -28,7 +42,7 @@ export type PaintProgram = ShaderProgram;
  */
 export interface PaintResources {
   /** Run `release` once, when this lifetime ends: the renderer is disposed, or
-   *  its context was lost and restored. Free every GL object made under it
+   *  its context was lost and restored. Free every texture made under it
    *  there. */
   onRelease(release: () => void): void;
 }
@@ -38,22 +52,8 @@ export interface PaintResources {
  * needs. The full `DrawContext` is not consumer surface.
  */
 export interface PaintBindContext {
-  readonly gl: WebGL2RenderingContext;
   /** The group alpha this draw inherits — multiply it into the paint's own. */
   readonly alpha: number;
-  /**
-   * The compiled program for a `registerProgram` id, compiled against this
-   * renderer on first use. `null` when no source is registered under `id` or
-   * compilation failed.
-   */
-  program(id: string): PaintProgram | null;
-  /**
-   * Send `u_proj` and `u_model`, which every kit vertex shader takes, and
-   * `u_origin` where the program declares it. A vertex shader placing
-   * `u_model * vec3(a_position - u_origin, 1.0)` stays exact far from the
-   * origin; one using `u_model * vec3(a_position, 1.0)` is float32 there.
-   */
-  setProjAndModel(program: PaintProgram): void;
   /**
    * `u_worldInv` for a paint declaring `units` — the inverse of the transform
    * from the paint's space to the frame the geometry arrives in. Paired with
@@ -83,16 +83,22 @@ export interface PaintBindContext {
    *  frames of one renderer, so it is the key for a kind's texture cache. */
   readonly resources: PaintResources;
   /**
-   * Bake a stop ramp into the frame's ramp atlas, bind that atlas to a texture
-   * unit, and return the `v` the ramp's own row sits at — every ramp in a
-   * frame shares one texture, so a paint must sample at the returned `v` and
-   * not at a constant.
+   * Bake a stop ramp into the frame's ramp atlas and return the atlas and the
+   * `v` the ramp's own row sits at — every ramp in a frame shares one
+   * texture, so a paint must sample at the returned `v` and not at a constant.
    *
    * `space` is the blend the stops are baked through, defaulting to `'rgb'`.
    * It is part of the atlas key, so the same stops under two spaces take two
    * rows rather than colliding.
    */
-  bindRamp(stops: GradStop[], unit: number, space?: ColorSpace): number;
+  ramp(stops: GradStop[], space?: ColorSpace): { readonly texture: PaintTexture; readonly v: number };
+  /**
+   * A `width × height` texture of premultiplied RGBA8 texels, its first row
+   * sampled at `v = 0`, bilinear and clamped. It lives until `deleteTexture`,
+   * which a kind caching one calls from `resources.onRelease`.
+   */
+  createTexture(width: number, height: number, pixels: Uint8Array | Uint8ClampedArray): PaintTexture;
+  deleteTexture(texture: PaintTexture): void;
 }
 
 /**
@@ -104,13 +110,9 @@ export interface PaintBindContext {
 export interface PaintDrawKind {
   id: string;
   /**
-   * Render slot: bind program, uniforms and textures for `fill` and return the
-   * bound program; `null` declines the paint.
-   *
-   * Binding is split from drawing on purpose — a caller owning its own stencil
-   * state (an inner/outer-aligned stroke, an even-odd fill) must issue its own
-   * draw call, and the kit's draw wrapper would clobber that state. Shader
-   * output must be premultiplied: `outColor = vec4(rgb * a, a)`.
+   * Render slot: the program and uniforms that paint `fill`; `null` declines
+   * the paint. Shader output must be premultiplied:
+   * `outColor = vec4(rgb * a, a)`.
    *
    * The geometry is not always the node's own. Text below the outline tier
    * paints by drawing a quad over its glyphs' screen box into an offscreen
@@ -118,14 +120,14 @@ export interface PaintDrawKind {
    * `v_world` through `spaceInverse`, not from where `a_position` happens to
    * lie.
    */
-  bind?(ctx: PaintBindContext, fill: Paint): PaintProgram | null;
+  bind?(ctx: PaintBindContext, fill: Paint): PaintBinding | null;
   /** Bounds frame → the frame the node is painted in. */
   inPoseFrame?(fill: Paint, box: FillPoseBox): Paint;
   /** The inverse. Required whenever `inPoseFrame` is supplied. */
   toBoundsFrame?(fill: Paint, box: FillPoseBox): Paint;
   /**
-   * Shader programs `bind` looks up through `ctx.program`, keyed by program
-   * id; registering the kind registers them. Declaring them here rather than
+   * Shader programs `bind` names, keyed by program id; registering the kind
+   * registers them. Declaring them here rather than
    * calling `registerProgram` at import keeps a kind loaded by
    * {@link registerPaintDrawKindLoader} free of the shader registry.
    */

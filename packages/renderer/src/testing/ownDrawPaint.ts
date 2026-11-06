@@ -13,13 +13,7 @@ export function registerOwnDrawPaint(): () => void {
   return registerPaintDrawKind({
     id: OWN_DRAW_KIND,
     programs: { [OWN_DRAW_PROGRAM]: { glsl: { vert: VERT_SRC, frag: FRAG_SRC } } },
-    bind: (ctx) => {
-      const prog = ctx.program(OWN_DRAW_PROGRAM);
-      if (!prog) return null;
-      ctx.gl.useProgram(prog.handle);
-      ctx.setProjAndModel(prog);
-      return prog;
-    },
+    bind: () => ({ program: OWN_DRAW_PROGRAM }),
   });
 }
 

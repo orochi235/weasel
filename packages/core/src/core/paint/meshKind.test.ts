@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from 'core/paint/paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
@@ -7,7 +7,8 @@ import type { MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { MESH_BAKE_SIZE } from '@weasel-js/renderer/mesh';
 import 'core/paint/registerMesh';
 import type { Paint } from '@weasel-js/paint';
-import type { PaintBindContext, PaintProgram } from '@weasel-js/renderer';
+import type { PaintBindContext } from '@weasel-js/renderer';
+import { webglDevice } from '@weasel-js/renderer/testing/glRecorder';
 
 const BOX = { x: 10, y: 20, width: 200, height: 100 };
 
@@ -23,28 +24,20 @@ function bindContext(deviceScale = 1): {
   gl: WebGL2RenderingContext;
   calls: () => string[];
   argsOf: (name: string) => readonly unknown[][];
-  program: PaintProgram;
 } {
   const rec = makeGLRecorder();
   const releases: Array<() => void> = [];
-  const uniforms = new Map<string, object>();
-  const program = {
-    handle: {} as WebGLProgram,
-    uniform: (name: string) => {
-      if (!uniforms.has(name)) uniforms.set(name, { name });
-      return uniforms.get(name) as WebGLUniformLocation;
-    },
-  } as unknown as PaintProgram;
+  const gpu = webglDevice(rec.gl);
+  const sampling = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;
   const ctx: PaintBindContext = {
-    gl: rec.gl,
     alpha: 1,
-    program: () => program,
-    setProjAndModel: vi.fn(),
     spaceInverse: () => scaling(1),
     spaceToDevice: () => scaling(deviceScale),
     maxTextureSize: 16384,
     resources: { onRelease: (fn) => { releases.push(fn); } },
-    bindRamp: () => 0,
+    ramp: () => ({ texture: { kind: 'texture' }, v: 0 }),
+    createTexture: (width, height, data) => gpu.createTexture('rgba8', sampling, { width, height, data }),
+    deleteTexture: (texture) => gpu.deleteTexture(texture),
   };
   return {
     ctx,
@@ -52,7 +45,6 @@ function bindContext(deviceScale = 1): {
     gl: rec.gl,
     calls: () => rec.calls.map((c) => c.name),
     argsOf: (name) => rec.calls.filter((c) => c.name === name).map((c) => [...c.args]),
-    program,
   };
 }
 
