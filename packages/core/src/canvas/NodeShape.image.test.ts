@@ -55,6 +55,38 @@ describe('kit:image painter', () => {
     expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp, x: 10, y: 20, w: 30, h: 40 });
   });
 
+  it('draws its previous picture while a new src decodes, then the new one', async () => {
+    const old = fakeBitmap();
+    const next = fakeBitmap();
+    let land: (b: ImageBitmap) => void = () => {};
+    __setImageLoaderForTests((src) => (src === 'old' ? Promise.resolve(old) : new Promise<ImageBitmap>((r) => { land = r; })));
+    getImageBitmap('old');
+    await flush();
+    const swapped = imageNode('new', { previous: 'old' });
+    const painter = findNodeShape(swapped)!;
+    expect(painter.paint(swapped, POSE)[0]).toMatchObject({ kind: 'image', image: old });
+    land(next);
+    await flush();
+    expect(painter.paint(swapped, POSE)[0]).toMatchObject({ kind: 'image', image: next });
+  });
+
+  it('shows the placeholder, and loads nothing, for a previous picture that never decoded', () => {
+    const asked: string[] = [];
+    __setImageLoaderForTests((src) => { asked.push(src); return new Promise<ImageBitmap>(() => {}); });
+    const node = imageNode('new', { previous: 'gone' });
+    expect(findNodeShape(node)!.paint(node, POSE)[0]!.kind).toBe('path');
+    expect(asked).toEqual(['new']);
+  });
+
+  it('shows the failure, not the previous picture, once the new src fails', async () => {
+    __setImageLoaderForTests((src) => (src === 'old' ? Promise.resolve(fakeBitmap()) : Promise.reject(new Error('boom'))));
+    getImageBitmap('old');
+    const node = imageNode('new', { previous: 'old' });
+    findNodeShape(node)!.paint(node, POSE);
+    await flush();
+    expect(findNodeShape(node)!.paint(node, POSE)[0]!.kind).toBe('path');
+  });
+
   it('reports the pose rect as its silhouette', () => {
     expect(findShapeSilhouette(imageNode('a'), POSE)).toMatchObject({
       kind: 'rect', x: 10, y: 20, width: 30, height: 40,

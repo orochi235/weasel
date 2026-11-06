@@ -34,6 +34,14 @@ export function drawnSize(
   };
 }
 
+/** `image.previous`'s bitmap while `image.src` is still on its way: never once `src` has failed,
+ *  and never one that would have to load. */
+function previousBitmap(image: ImageNodeData['image'], size: ImageRasterSize | undefined): ImageBitmap | undefined {
+  const prev = image.previous;
+  if (prev === undefined || imageStatus(image.src) === 'error' || imageStatus(prev) !== 'ready') return undefined;
+  return getImageBitmap(prev, size);
+}
+
 /** Raster-image painter. Renders `data.image.src` (URL / blob: / data-URI)
  *  via an `ImageDrawCommand` once the bitmap has decoded; until then it paints
  *  a faint placeholder outline so the node stays visible + selectable (a
@@ -51,9 +59,10 @@ export const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   paint: (node, pose, ctx) => {
     const d = node.data as ImageNodeData;
     const p = pose;
+    const size = drawnSize(p, d.image.source, ctx?.pixelScale);
     const bmp = ctx?.resolveImage
       ? ctx.resolveImage(node as unknown as Node<unknown, string, unknown>)
-      : getImageBitmap(d.image.src, drawnSize(p, d.image.source, ctx?.pixelScale));
+      : getImageBitmap(d.image.src, size) ?? previousBitmap(d.image, size);
     if (bmp) {
       return [{
         kind: 'image',

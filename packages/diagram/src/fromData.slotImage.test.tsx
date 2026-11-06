@@ -1,7 +1,9 @@
-import { renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { getImageBitmap } from '@weasel-js/core';
+import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SLOT_FRAME, diagramScene, type DataNode } from './fromData';
-import { imageSrcsOf, useReleasedImages } from './imageRelease';
+import { imagesNeeded, useHeldImages, useReleasedImages, withPreviousImages } from './imageRelease';
 
 const released = vi.hoisted(() => [] as string[]);
 vi.mock('@weasel-js/core', async (original) => ({
@@ -30,6 +32,44 @@ describe('a slot row with an image', () => {
   });
 });
 
+describe('a swapped picture', () => {
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+  const spec = (src: string, previous?: string) => ({ id: 'n/0', data: { image: { src, ...(previous ? { previous } : {}) } } });
+  let land: (b: ImageBitmap) => void = () => {};
+  const bmp = { width: 2, height: 2, close() {} } as unknown as ImageBitmap;
+  beforeEach(() => {
+    _resetImageCacheForTests();
+    __setImageLoaderForTests((src) => (src === 'b' ? new Promise<ImageBitmap>((r) => { land = r; }) : Promise.resolve(bmp)));
+  });
+
+  it('carries the last picture its node decoded as previous, and none for a node that never decoded one', async () => {
+    expect(withPreviousImages([spec('b')], new Map([['n/0', { src: 'a' }]]))[0]!.data.image).toEqual({ src: 'b' });
+    getImageBitmap('a');
+    await flush();
+    expect(withPreviousImages([spec('b')], new Map([['n/0', { src: 'a' }]]))[0]!.data.image).toEqual({ src: 'b', previous: 'a' });
+    // Swapped again before `b` decoded: `a` is still the last picture shown.
+    expect(withPreviousImages([spec('c')], new Map([['n/0', { src: 'b', previous: 'a' }]]))[0]!.data.image).toEqual({ src: 'c', previous: 'a' });
+  });
+
+  it('holds the old picture until the new one decodes, then frees it', async () => {
+    const { result, rerender, unmount } = renderHook(({ specs }) => {
+      const held = useHeldImages(specs);
+      useReleasedImages(held);
+      return held;
+    }, { initialProps: { specs: [spec('a')] } });
+    getImageBitmap('a');
+    await flush();
+    rerender({ specs: [spec('b')] });
+    expect(result.current[0]!.data.image).toEqual({ src: 'b', previous: 'a' });
+    getImageBitmap('b');
+    await act(flush);
+    expect(released).toEqual([]);
+    await act(async () => { land(bmp); await flush(); });
+    expect(released).toEqual(['a']);
+    unmount();
+  });
+});
+
 describe('useReleasedImages', () => {
   const specsWith = (...srcs: string[]) => srcs.map((src) => ({ data: { image: { src } } }));
 
@@ -43,6 +83,7 @@ describe('useReleasedImages', () => {
   });
 
   it('reads the sources from specs that draw images, and no others', () => {
-    expect([...imageSrcsOf([{ data: { image: { src: 'x' } } }, { data: { text: 'y' } }, {}])]).toEqual(['x']);
+    expect([...imagesNeeded([{ data: { image: { src: 'x' } } }, { data: { text: 'y' } }, {}])]).toEqual(['x']);
+    expect([...imagesNeeded([{ data: { image: { src: 'x', previous: 'p' } } }])]).toEqual(['x', 'p']);
   });
 });
