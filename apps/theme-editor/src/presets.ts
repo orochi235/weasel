@@ -75,10 +75,13 @@ export function parseLive(raw: string | null): LabState | null {
     return null;
   }
   if (typeof parsed !== 'object' || parsed === null) return null;
-  const state = parsed as Partial<LabState>;
-  // A state stored before a constraint existed would leave that field
-  // undefined and the generator would read NaN out of it, so every field is
-  // filled from the current defaults rather than trusted.
+  return stateOf(parsed);
+}
+
+/** A stored state with every field filled from the current defaults rather than trusted: one stored before a
+ *  constraint existed would leave that field undefined, and the generator would read NaN out of it. */
+function stateOf(stored: unknown): LabState {
+  const state = (typeof stored === 'object' && stored !== null ? stored : {}) as Partial<LabState>;
   return {
     c: { ...INITIAL.c, ...state.c },
     surfaceKey: state.surfaceKey === 'light' ? 'light' : 'dark',
@@ -113,10 +116,9 @@ export function parseSaved(raw: string | null): Preset[] {
     return [];
   }
   if (!Array.isArray(parsed)) return [];
-  return parsed.filter(
-    (p): p is Preset =>
-      typeof p === 'object' && p !== null && typeof (p as Preset).name === 'string',
-  );
+  return parsed
+    .filter((p): p is Preset => typeof p === 'object' && p !== null && typeof (p as Preset).name === 'string')
+    .map((p) => ({ name: p.name, state: stateOf(p.state) }));
 }
 
 export function loadSaved(): Preset[] {
