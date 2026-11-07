@@ -82,6 +82,29 @@ describe('strokeToPath', () => {
     expect(boundsOfPath(out)).toMatchObject({ y: -2.5, height: 5 });
   });
 
+  it('keeps an inner or outer stroke on its side of a rect drawn with a negative width or height', () => {
+    const flipped = { kind: 'rect' as const, x: 10, y: 10, width: -10, height: -10 };
+    const outer = strokeToPath(flipped, { paint: PAINT, width: 2, align: 'outer' });
+    expect(boundsOfPath(outer)).toMatchObject({ x: -2, y: -2, width: 14, height: 14 });
+    const inner = strokeToPath(flipped, { paint: PAINT, width: 2, align: 'inner' });
+    expect(boundsOfPath(inner)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+  });
+
+  it('reads the dashes of a screen-width stroke as screen pixels at the scale it is given', () => {
+    const out = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: { px: 2 }, dash: [10, 10] }, { scale: 2 });
+    expect(pathContainsPoint(out, 2, 0)).toBe(true);
+    expect(pathContainsPoint(out, 7, 0)).toBe(false);
+    expect(pathContainsPoint(out, 12, 0)).toBe(true);
+  });
+
+  it('reads a screen marker size at the scale it is given, for the head and the line it stops', () => {
+    const stroke = { paint: PAINT, width: 1, markerEnd: { key: 'arrow', size: { px: 4 } } };
+    const out = strokeToPath(line(0, 0, 100, 0), stroke, { scale: 2 });
+    // 2 world units per marker unit: the arrow reaches 3 to either side.
+    expect(boundsOfPath(out)).toMatchObject({ y: -3, height: 6 });
+    expect(pathContainsPoint(out, 50, 0)).toBe(true);
+  });
+
   it('includes a marker head, and stops the line under it', () => {
     const plain = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: 4 });
     const headed = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: 4, markerEnd: 'diamond-hollow' });

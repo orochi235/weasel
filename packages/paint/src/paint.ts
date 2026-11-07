@@ -251,11 +251,14 @@ export function alignedStrokeRect(
   // with the geometric edge. For 'outer', shift outward.
   const sign = align === 'inner' ? -1 : 1;
   const d = (sign * width) / 2;
+  // A negative extent runs its axis backward, so the shift does too.
+  const dx = rect.width < 0 ? -d : d;
+  const dy = rect.height < 0 ? -d : d;
   return {
-    x: rect.x - d,
-    y: rect.y - d,
-    width: rect.width + 2 * d,
-    height: rect.height + 2 * d,
+    x: rect.x - dx,
+    y: rect.y - dy,
+    width: rect.width + 2 * dx,
+    height: rect.height + 2 * dy,
   };
 }
 

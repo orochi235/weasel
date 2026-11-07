@@ -6,7 +6,7 @@ import type { MarkerRef, Stroke } from '@weasel-js/paint';
 import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
 import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
-import { markerKeyOf, resolveMarkerSize } from './markerInset';
+import { markerKeyOf, resolveMarkerSize, strokeInsets } from './markerInset';
 import { markerSites, type MarkerSite } from './markerSites';
 import { strokeFlattening } from './tessellate/flattening';
 import { windowTrim } from './trim/windowPolylines';
@@ -126,7 +126,7 @@ export function markerPlacements(
     want[role] = true;
   }
 
-  const insets = headInsets(refs, strokeWidth);
+  const insets = strokeInsets(stroke, strokeWidth);
   const out: MarkerPlacement[] = [];
   for (const { polyline: pl, fromClosed } of headRuns(path, stroke, polylines)) {
     for (const [space, want] of groups) {
@@ -152,18 +152,6 @@ export function markerPolylines(
   path: Path, stroke: Stroke, strokeWidth: number, flattenTolerance: number | undefined,
 ): Polyline[] {
   return extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths));
-}
-
-/** How far the line stops short of the start and end heads, in the units each head is sized in. */
-function headInsets(
-  refs: { start?: MarkerRef; end?: MarkerRef }, strokeWidth: number,
-): { start: number; end: number } {
-  const of = (ref: MarkerRef | undefined): number => {
-    if (ref === undefined) return 0;
-    const inset = getMarker(markerKeyOf(ref))?.inset ?? 0;
-    return inset === 0 ? 0 : inset * resolveMarkerSize(ref, strokeWidth);
-  };
-  return { start: of(refs.start), end: of(refs.end) };
 }
 
 /** The runs heads sit on: `polylines`, windowed as the ribbon is under a trim,
