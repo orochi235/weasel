@@ -7,7 +7,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Membership, Warnings, graphPage } from '../../graphRead';
-import { checkProps, dashOf, nodeColors, px } from '../common/styles';
+import { checkProps, dashOf, mermaidColor, nodeColors, px } from '../common/styles';
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
 import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
@@ -171,11 +171,13 @@ class MermaidReader {
 }
 
 
-function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps): Partial<EdgeStyle> | undefined {
+function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps, warnings: Warnings): Partial<EdgeStyle> | undefined {
   const colors: Partial<EdgeStyle> = { ...base };
   for (const [k, v] of props) {
-    if (k === 'stroke') colors.stroke = v;
-    else if (k === 'color') colors.label = v;
+    if (k === 'stroke' || k === 'color') {
+      const color = mermaidColor(v, warnings);
+      if (color !== undefined) colors[k === 'stroke' ? 'stroke' : 'label'] = color;
+    }
     else if (k === 'stroke-width') colors.width = px(v);
     else if (k === 'stroke-dasharray') colors.dash = dashOf(v);
   }
@@ -202,18 +204,18 @@ export function readFlowchart(text: string): ImportResult {
   if (chart.directives > 0) r.warnings.add('Mermaid configuration directives were dropped.');
   r.walk(chart.stmts, null);
   const nodes: DataNode[] = [...r.nodes].map(([id, d]) => {
-    const colors = nodeColors(r.propsOf(id, true));
+    const colors = nodeColors(r.propsOf(id, true), r.warnings);
     return { id, lines: d.lines, outline: d.outline, ...(colors !== undefined ? { colors } : {}) };
   });
   const edges = r.edges.map(({ edge, index }) => {
     const props = [...(r.linkStyles.get('default') ?? []), ...(r.linkStyles.get(index) ?? [])];
-    const colors = edgeColors(edge.colors, props);
+    const colors = edgeColors(edge.colors, props, r.warnings);
     const { colors: _c, ...rest } = edge;
     return colors !== undefined ? { ...rest, colors } : rest;
   });
   const containers: DataContainer[] = [...r.subgraphs].map(([id, title]) => {
     const members = r.membership.members(id);
-    const colors = nodeColors(r.propsOf(id, false));
+    const colors = nodeColors(r.propsOf(id, false), r.warnings);
     return {
       id, role: 'container', label: title !== undefined ? textLines(title).join(' ') : id,
       ...(members.length > 0 ? { members } : {}),

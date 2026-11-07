@@ -124,7 +124,7 @@ describe('reading DOT', () => {
     const p = asGraph(document.pages[0]!);
     expect(p.data.nodes[0]!.colors).toEqual({ text: 'navy' });
     expect(p.data.edges[0]!.colors).toBeUndefined();
-    expect(warnings).toContain('DOT colors in a scheme a diagram does not have were dropped: /blues9/3, /accent3/1.');
+    expect(warnings).toContain('DOT colors a diagram cannot draw were dropped: /blues9/3, /accent3/1.');
   });
 
   it('lists the attributes it dropped in one warning', () => {

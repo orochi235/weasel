@@ -47,12 +47,14 @@ function hsvHex(h: number, s: number, v: number): string {
   return rgbaToHex([f(5), f(3), f(1)]);
 }
 
-/** A color as CSS reads it: the first of a list, an HSV triple as hex, and an X11 or SVG scheme dropped. `undefined`
+/** A color as CSS reads it: the first of a list, an HSV triple as hex, `none` as transparent, and an X11 or SVG scheme
+ *  dropped. `undefined`
  *  for a color in another scheme, such as Brewer's `/blues9/3`, which names an entry of a palette CSS does not have. */
 export function dotColor(value: string): string | undefined {
   const first = value.split(':')[0]!.split(';')[0]!.trim();
   const hsv = /^([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)$/.exec(first);
   if (hsv !== null) return hsvHex(Number(hsv[1]), Number(hsv[2]), Number(hsv[3]));
+  if (first.toLowerCase() === 'none') return 'transparent';
   const scheme = /^\/([^/]*)\/(.*)$/.exec(first);
   if (scheme === null) return first;
   return /^(?:|x11|svg)$/i.test(scheme[1]!) ? scheme[2] : undefined;

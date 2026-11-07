@@ -5,7 +5,9 @@
 import { sequenceLayout, type NodeStyle, type SeqBox, type SeqFragment, type SeqParticipant, type SeqStep, type SequenceData } from '@weasel-js/diagram';
 import type { ImportResult, SequencePage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { drawableColor } from '../../colorCheck';
 import { lineError } from '../../lineError';
+import { mermaidColor } from '../common/styles';
 import { PAGE_MARGIN } from '../../pageLayout';
 import { FRAGMENTS, parseSequence, type SeqStmt } from './parse';
 import { TYPE_OUTLINES, plainText } from './syntax';
@@ -13,28 +15,15 @@ import { TYPE_OUTLINES, plainText } from './syntax';
 type Draft = Omit<SeqFragment, 'sections'> & { sections: { label?: string; steps: SeqStep[] }[] };
 type Open = { kind: 'fragment'; frag: Draft; line: number } | { kind: 'box'; box: SeqBox & { members: string[] }; line: number };
 
-/** A box's or a rect's color, and the box's label after it. */
-function colorAndLabel(rest: string): { color?: string; label?: string } {
-  const color = /^(rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-f]{3,8}\b|transparent\b|[a-z]+(?=\s|$))/i.exec(rest)?.[0];
-  const isColor = color !== undefined && (!/^[a-z]+$/i.test(color) || CSS_NAMES.has(color.toLowerCase().replace(/gr[ae]y/, 'gray')));
+/** A box's or a rect's color, and the box's label after it. A bare word is a color only where it names one; a color
+ *  written as a function or in hex that a diagram cannot draw is dropped, with a warning. */
+function colorAndLabel(rest: string, warnings: Warnings): { color?: string; label?: string } {
+  const color = /^(rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-f]{3,8}\b|[a-z]+(?=\s|$))/i.exec(rest)?.[0];
+  const isColor = color !== undefined && (!/^[a-z]+$/i.test(color) || drawableColor(color));
   const label = (isColor ? rest.slice(color!.length) : rest).trim();
-  return { ...(isColor && color!.toLowerCase() !== 'transparent' ? { color } : {}), ...(label !== '' ? { label: plainText(label) } : {}) };
+  const drawn = isColor && color!.toLowerCase() !== 'transparent' ? mermaidColor(color, warnings) : undefined;
+  return { ...(drawn !== undefined ? { color: drawn } : {}), ...(label !== '' ? { label: plainText(label) } : {}) };
 }
-
-/** The CSS color names Mermaid takes as a box's first word, each gray among them in its "a" spelling, as a name is matched. */
-const CSS_NAMES = new Set((
-  'aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse '
-  + 'chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkkhaki darkmagenta '
-  + 'darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkturquoise darkviolet '
-  + 'deeppink deepskyblue dimgray dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green '
-  + 'greenyellow honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral '
-  + 'lightcyan lightgoldenrodyellow lightgray lightgreen lightpink lightsalmon lightseagreen lightskyblue lightslategray '
-  + 'lightsteelblue lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple '
-  + 'mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite '
-  + 'navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink '
-  + 'plum powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue '
-  + 'slateblue slategray snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen'
-).split(' '));
 
 class SequenceReader {
   readonly warnings = new Warnings();
@@ -98,7 +87,7 @@ class SequenceReader {
         return;
       }
       case 'rect': {
-        const { color } = colorAndLabel(s.color);
+        const { color } = colorAndLabel(s.color, this.warnings);
         const frag: Draft = { kind: 'fragment', id: this.id('f'), type: 'region', sections: [{ steps: [] }], ...(color ? { colors: { fill: color } } : {}) };
         this.list.push(frag);
         this.open.push({ kind: 'fragment', frag, line: s.line });
@@ -107,7 +96,7 @@ class SequenceReader {
       case 'section': return this.section(s);
       case 'box': {
         if (this.open.length > 0) throw lineError('Mermaid', s.line, 'a box must be at the top level');
-        const { color, label } = colorAndLabel(s.rest);
+        const { color, label } = colorAndLabel(s.rest, this.warnings);
         const box = { id: this.id('b'), members: [] as string[], ...(label ? { label } : {}), ...(color ? { colors: { fill: color } as Partial<NodeStyle> } : {}) };
         this.boxes.push(box);
         this.open.push({ kind: 'box', box, line: s.line });
