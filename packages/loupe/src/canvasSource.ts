@@ -182,7 +182,7 @@ export function createCanvasSource(
       if (!frame) return null;
       const x = Math.floor(p.x);
       const y = Math.floor(p.y);
-      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return null;
+      if (!(x >= 0 && y >= 0 && x < canvas.width && y < canvas.height)) return null;
       if (!probe) {
         const c = makeCanvas(1, 1);
         probe = context2d(c, true);
