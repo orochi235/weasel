@@ -36,7 +36,7 @@ function Scalar({ value }: { value: SerializedValue }): ReactElement {
   if (typeof value === 'boolean') return <span className={s.keyword}>{String(value)}</span>;
   if (typeof value === 'string') {
     if (value.startsWith('ƒ ')) return <span className={s.fn}>{value}</span>;
-    if (value === '[cycle]' || value === '…' || value.startsWith('… ')) return <span className={s.muted}>{value}</span>;
+    if (value === '[cycle]' || value === '…' || value.startsWith('… ') || value.startsWith('[threw: ')) return <span className={s.muted}>{value}</span>;
     return <span className={s.string}>{JSON.stringify(value)}</span>;
   }
   if (isObj(value) && value.$type === 'Date') return <span className={s.tag}>Date {String(value.value)}</span>;

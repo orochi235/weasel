@@ -51,4 +51,9 @@ describe('serialize', () => {
     class Pose { x = 1; }
     expect(serialize(new Pose())).toEqual({ $class: 'Pose', x: 1 });
   });
+
+  it('writes a getter that throws as what it threw, and keeps the other keys', () => {
+    const node = { a: 1, get broken(): number { throw new Error('not ready'); }, b: 2 };
+    expect(serialize(node)).toEqual({ a: 1, broken: '[threw: Error: not ready]', b: 2 });
+  });
 });

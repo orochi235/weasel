@@ -24,6 +24,27 @@ const TYPED = [
   Int32Array, Uint32Array, Float32Array, Float64Array, BigInt64Array, BigUint64Array,
 ];
 
+/** What a getter threw, as the value it stands for: an app's `data` may compute a field that is not ready yet. */
+class Threw {
+  constructor(readonly error: unknown) {}
+}
+
+function read(obj: object, key: string): unknown {
+  try {
+    return (obj as Record<string, unknown>)[key];
+  } catch (error) {
+    return new Threw(error);
+  }
+}
+
+function describeThrown(error: unknown): string {
+  try {
+    return String(error);
+  } catch {
+    return 'unprintable';
+  }
+}
+
 const tagOf = (value: object): string => Object.prototype.toString.call(value).slice(8, -1);
 
 function isTyped(value: object): value is ArrayBufferView {
@@ -52,6 +73,7 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
       case 'function': return `ƒ ${v.name || 'anonymous'}`;
     }
     if (v === null) return null;
+    if (v instanceof Threw) return `[threw: ${describeThrown(v.error)}]`;
     const obj = v as object;
     if (open.has(obj)) return '[cycle]';
     if (level >= depth) return '…';
@@ -81,7 +103,7 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
         if (name && name !== 'Object') out.$class = name;
       }
       const keys = Object.keys(obj);
-      for (const key of keys.slice(0, items)) out[key] = walk((obj as Record<string, unknown>)[key], level + 1);
+      for (const key of keys.slice(0, items)) out[key] = walk(read(obj, key), level + 1);
       if (keys.length > items) out['…'] = cut(keys.length);
       return out;
     } finally {
