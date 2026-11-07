@@ -354,7 +354,7 @@ function MyScene() {
 - **Animation events / observability.** Since shipped as `animator.watch` (lifecycle events) and `animator.live()` (a snapshot of what is running).
 - **Synchronized animations / staggers.** "Animate these N objects with a 50ms stagger" as a one-liner. Easy to build on the primitive; defer the convenience helper.
 - **Animation-aware undo.** Today, mid-animation undo cancels the animation and jumps to pre-animation state. A "rewind the animation" undo (run it backwards) is interesting but not requested. Defer.
-- **GPU/web-animations bridge.** `useAnimator` ticks in JS and writes through `setPose`. For very large concurrent counts (100+), a `Web Animations API` bridge could offload to compositor. Defer until the use case appears.
+- **GPU/web-animations bridge.** Since shipped for DOM elements as `createElementTarget` (2026-11-06; `docs/concepts.md`, "Element targets and the compositor"). Scene nodes are drawn by WebGL and stay on the main thread.
 - **Scroll-driven / pointer-driven progress.** Animation progress driven by an external value (scroll position) rather than time. Different model; spec separately when needed.
 - **Easing function library.** v1 ships four named easings + custom `(t) => t`. A wider library (`easeOutBack`, `easeInElastic`, etc.) is a one-file addition when wanted.
 - **Animator pause / resume / time-scale.** No global pause or 0.5x-time. Useful for debugging; defer.

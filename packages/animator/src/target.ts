@@ -151,6 +151,17 @@ export interface Behind {
   move: RowMove | null;
 }
 
+/** A run handed to the browser's compositor, as the target it moves reaches it. */
+export interface Handoff {
+  /** Its axes now, on its own clock. */
+  read(): number[];
+  /** Takes it back to the main thread for the rest of its run, before something else moves the
+   *  target: there it adds to them as any animation would. */
+  release(): void;
+  /** Cancels it, as `Target.stop` does. */
+  stop(): void;
+}
+
 /** What an animator keeps on a target it is moving. */
 export interface TargetState<T = unknown> {
   readonly get: () => T;
@@ -190,6 +201,8 @@ export interface TargetState<T = unknown> {
   slot: Reader | null;
   /** What that sum has changed by since: animations started, stopped or redirected. */
   adjust: number[];
+  /** The run handed to the compositor that alone moves it; null while none does. */
+  handoff: Handoff | null;
   /** Whether its owner has been told `adjust` holds something. */
   stale: boolean;
 }
@@ -276,6 +289,7 @@ function heldAxes<T>(s: TargetState<T>, committed: T): number[] {
 
 /** The value `s` shows now. */
 export function readTarget<T>(s: TargetState<T>): T {
+  if (s.handoff) return s.axes.from(s.handoff.read());
   const committed = s.get();
   if (s.live === 0) return committed;
   const { axes } = s;
@@ -295,6 +309,11 @@ export function readTarget<T>(s: TargetState<T>): T {
 
 /** The value `s` shows now, as its axes, in `out` from `at`. */
 export function readTargetInto<T>(s: TargetState<T>, out: AxisBuffer, at: number): void {
+  if (s.handoff) {
+    const a = s.handoff.read();
+    for (let i = 0; i < a.length; i++) out[at + i] = a[i]!;
+    return;
+  }
   const committed = s.get();
   const { axes } = s;
   const moving = s.live > 0;
@@ -344,6 +363,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     slot: null,
     adjust: new Array<number>(axes.count).fill(0),
     stale: false,
+    handoff: null,
   };
   const target: Target<T> = {
     read: () => readTarget(s),
@@ -352,13 +372,18 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     axes,
     axisIndexes: (wanted) => axisIndexes(axes, wanted),
     committed: opts.get,
-    commit: opts.set,
-    get active() { return s.live > 0; },
+    commit: (value) => {
+      s.handoff?.release();
+      opts.set(value);
+    },
+    get active() { return s.live > 0 || s.handoff !== null; },
     stop(o) {
-      const owner = s.owner;
-      if (!owner) return;
+      if (!s.owner && !s.handoff) return;
       s.discard = o?.commit === false;
-      try { owner.stop(s as unknown as TargetState); } finally { s.discard = false; }
+      try {
+        s.handoff?.stop();
+        s.owner?.stop(s as unknown as TargetState);
+      } finally { s.discard = false; }
     },
   };
   states.set(target, s as unknown as TargetState);

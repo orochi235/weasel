@@ -1,0 +1,112 @@
+  waiting for room
+teitou  chosen: 14.8 cores free, 33.9G available (npx: 5 past runs, worst 1.9 cores / 12.3G)
+  msb-uai  scored 1.35 against teitou's 2.33
+  keiei    refuses repo:orochi235/weasel
+  orochi   refuses rotation
+  studio   it wants the node to itself, and the node is promised to webgpu-s2-browser-gl
+  base   6f870bd8
+  delta  5 file(s), 0 deleted
+  sent   2 new file(s), 3 already there
+  commits sent directly, 39.2 KiB (not on origin)
+  updated weasel on teitou at 6f870bd8 + 5 uncommitted file(s)
+  job    b5cede67 on teitou
+
+onto: waapi-bridge is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 1 test using 1 worker
+
+compositor handoff — 24 measurements, 60 frames each; load 4.2 4.8 6.9 on 18 cores
+    1/24  pass 1  drift main        4000  page   60.0 fps (missed   0)  drawn   60.5 fps  main busy   563 comp    28 ms/s  start      29 ms  keyframes    0  on compositor     0/ 4000  load   4.2
+         main thread, ms/s self: FunctionCall 290.55, UpdateLayoutTree 98.59, Layerize 68.18, PrePaint 38.54, ThreadControllerImpl::RunTask 25.51, Paint 17.77
+onto: progress 1/24
+    2/24  pass 1  drift compositor  4000  page   58.1 fps (missed   2)  drawn   60.9 fps  main busy     0 comp   549 ms/s  start     202 ms  keyframes    4  on compositor  4000/ 4000  load   4.0
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.24, BlinkScheduler_PerformMicrotaskCheckpoint 0.1, FunctionCall 0.01
+onto: progress 2/24
+    3/24  pass 1  drift compositor  4000  page   57.1 fps (missed   3)  drawn   60.9 fps  main busy     0 comp   604 ms/s  start     214 ms  keyframes    4  on compositor  4000/ 4000  load   4.6
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.26, BlinkScheduler_PerformMicrotaskCheckpoint 0.08, FunctionCall 0.01
+onto: progress 3/24
+    4/24  pass 1  drift main        4000  page   60.0 fps (missed   0)  drawn   60.9 fps  main busy   642 comp    33 ms/s  start      19 ms  keyframes    0  on compositor     0/ 4000  load   4.6
+         main thread, ms/s self: FunctionCall 328.31, UpdateLayoutTree 128.81, Layerize 82.94, PrePaint 37.49, ThreadControllerImpl::RunTask 21.94, Paint 18.83
+onto: progress 4/24
+    5/24  pass 1  drift main        6000  page   59.0 fps (missed   1)  drawn   59.9 fps  main busy   874 comp    31 ms/s  start      25 ms  keyframes    0  on compositor     0/ 6000  load   4.9
+         main thread, ms/s self: FunctionCall 440.66, UpdateLayoutTree 168.28, Layerize 111.63, PrePaint 57.21, ThreadControllerImpl::RunTask 34.17, Paint 28.17
+onto: progress 5/24
+    6/24  pass 1  drift compositor  6000  page   23.4 fps (missed  60)  drawn   44.9 fps  main busy     0 comp   755 ms/s  start     311 ms  keyframes    4  on compositor  6000/ 6000  load   5.8
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.21, BlinkScheduler_PerformMicrotaskCheckpoint 0.07, FunctionCall 0.01
+onto: progress 6/24
+    7/24  pass 1  drift compositor  6000  page   24.5 fps (missed  60)  drawn   40.0 fps  main busy     0 comp   736 ms/s  start     322 ms  keyframes    4  on compositor  6000/ 6000  load   6.0
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.17, BlinkScheduler_PerformMicrotaskCheckpoint 0.06, FunctionCall 0.01
+onto: progress 7/24
+    8/24  pass 1  drift main        6000  page   57.2 fps (missed   3)  drawn   58.2 fps  main busy   989 comp    42 ms/s  start      29 ms  keyframes    0  on compositor     0/ 6000  load   5.9
+         main thread, ms/s self: FunctionCall 519.78, UpdateLayoutTree 162.97, Layerize 157.86, PrePaint 60.72, Paint 30.28, ThreadControllerImpl::RunTask 27.95
+onto: progress 8/24
+    9/24  pass 1  drift main        8000  page   46.2 fps (missed  18)  drawn   45.4 fps  main busy   999 comp    30 ms/s  start      41 ms  keyframes    0  on compositor     0/ 8000  load   5.6
+         main thread, ms/s self: FunctionCall 505.02, UpdateLayoutTree 170.14, Layerize 137.08, PrePaint 81, ThreadControllerImpl::RunTask 41.45, Paint 37.49
+onto: progress 9/24
+   10/24  pass 1  drift compositor  8000  page   16.7 fps (missed  59)  drawn   30.0 fps  main busy    35 comp   860 ms/s  start     393 ms  keyframes    4  on compositor  8000/ 8000  load   5.5
+         main thread, ms/s self: ThreadControllerImpl::RunTask 17.08, UpdateLayoutTree 12.73, PrePaint 2.75, Layerize 1.31, Paint 1.28, BlinkScheduler_PerformMicrotaskCheckpoint 0.08
+onto: progress 10/24
+   11/24  pass 1  drift compositor  8000  page   16.2 fps (missed  59)  drawn   30.9 fps  main busy     0 comp   869 ms/s  start     421 ms  keyframes    4  on compositor  8000/ 8000  load   6.7
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.22, BlinkScheduler_PerformMicrotaskCheckpoint 0.05, FunctionCall 0.02
+onto: progress 11/24
+   12/24  pass 1  drift main        8000  page   42.9 fps (missed  24)  drawn   40.4 fps  main busy   999 comp    38 ms/s  start      33 ms  keyframes    0  on compositor     0/ 8000  load   6.4
+         main thread, ms/s self: FunctionCall 510.37, Layerize 191.47, UpdateLayoutTree 132.49, PrePaint 74.62, ThreadControllerImpl::RunTask 32.08, Paint 26.1
+onto: progress 12/24
+   13/24  pass 1  slide main        4000  page   60.0 fps (missed   0)  drawn   60.7 fps  main busy   577 comp    25 ms/s  start      13 ms  keyframes    0  on compositor     0/ 4000  load   6.1
+         main thread, ms/s self: FunctionCall 335.27, UpdateLayoutTree 101.09, Layerize 50.63, PrePaint 32.07, ThreadControllerImpl::RunTask 22.91, Paint 17.16
+onto: progress 13/24
+   14/24  pass 1  slide compositor  4000  page   60.0 fps (missed   0)  drawn   59.9 fps  main busy    14 comp   504 ms/s  start     204 ms  keyframes    4  on compositor  4000/ 4000  load   6.0
+         main thread, ms/s self: ThreadControllerImpl::RunTask 6.57, UpdateLayoutTree 5.41, PrePaint 0.77, Layerize 0.65, Paint 0.29, BlinkScheduler_PerformMicrotaskCheckpoint 0.09
+onto: progress 14/24
+   15/24  pass 1  slide compositor  4000  page   57.1 fps (missed   3)  drawn   59.8 fps  main busy     0 comp   479 ms/s  start     224 ms  keyframes    4  on compositor  4000/ 4000  load   5.9
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.24, BlinkScheduler_PerformMicrotaskCheckpoint 0.09, FunctionCall 0.02
+onto: progress 15/24
+   16/24  pass 1  slide main        4000  page   60.0 fps (missed   0)  drawn   60.4 fps  main busy   585 comp    31 ms/s  start      16 ms  keyframes    0  on compositor     0/ 4000  load   6.7
+         main thread, ms/s self: FunctionCall 308.15, UpdateLayoutTree 107.91, Layerize 69.75, PrePaint 35, ThreadControllerImpl::RunTask 26.62, Paint 16.73
+onto: progress 16/24
+   17/24  pass 1  slide main        6000  page   60.0 fps (missed   0)  drawn   60.7 fps  main busy   749 comp    26 ms/s  start      19 ms  keyframes    0  on compositor     0/ 6000  load   6.3
+         main thread, ms/s self: FunctionCall 397.89, UpdateLayoutTree 132.51, Layerize 85.29, PrePaint 53.2, ThreadControllerImpl::RunTask 27.21, Paint 26.28
+onto: progress 17/24
+   18/24  pass 1  slide compositor  6000  page   30.0 fps (missed  56)  drawn   53.9 fps  main busy    23 comp   751 ms/s  start     301 ms  keyframes    4  on compositor  6000/ 6000  load   6.3
+         main thread, ms/s self: ThreadControllerImpl::RunTask 10.34, UpdateLayoutTree 8.95, PrePaint 1.9, Layerize 1.08, Paint 0.77, BlinkScheduler_PerformMicrotaskCheckpoint 0.09
+onto: progress 18/24
+   19/24  pass 1  slide compositor  6000  page   25.9 fps (missed  60)  drawn   55.0 fps  main busy     0 comp   810 ms/s  start     322 ms  keyframes    4  on compositor  6000/ 6000  load   6.1
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.29, BlinkScheduler_PerformMicrotaskCheckpoint 0.1, FunctionCall 0.01
+onto: progress 19/24
+   20/24  pass 1  slide main        6000  page   60.0 fps (missed   0)  drawn   60.3 fps  main busy   909 comp    36 ms/s  start      24 ms  keyframes    0  on compositor     0/ 6000  load   6.1
+         main thread, ms/s self: FunctionCall 477.5, UpdateLayoutTree 173.03, Layerize 123.26, PrePaint 54.09, ThreadControllerImpl::RunTask 29.2, Paint 25.44
+onto: progress 20/24
+   21/24  pass 1  slide main        8000  page   59.0 fps (missed   1)  drawn   59.8 fps  main busy   943 comp    30 ms/s  start      26 ms  keyframes    0  on compositor     0/ 8000  load   6.5
+         main thread, ms/s self: FunctionCall 467.92, UpdateLayoutTree 187.99, Layerize 119.19, PrePaint 73.01, ThreadControllerImpl::RunTask 33.98, Paint 32.09
+onto: progress 21/24
+   22/24  pass 1  slide compositor  8000  page   22.5 fps (missed  60)  drawn   36.0 fps  main busy     0 comp   713 ms/s  start     390 ms  keyframes    4  on compositor  8000/ 8000  load   6.9
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.22, BlinkScheduler_PerformMicrotaskCheckpoint 0.06, FunctionCall 0.01
+onto: progress 22/24
+   23/24  pass 1  slide compositor  8000  page   20.0 fps (missed  59)  drawn   33.9 fps  main busy     0 comp   691 ms/s  start     400 ms  keyframes    4  on compositor  8000/ 8000  load   7.2
+         main thread, ms/s self: ThreadControllerImpl::RunTask 0.2, BlinkScheduler_PerformMicrotaskCheckpoint 0.05, FunctionCall 0.01
+onto: progress 23/24
+   24/24  pass 1  slide main        8000  page   58.1 fps (missed   2)  drawn   57.2 fps  main busy   994 comp    43 ms/s  start      34 ms  keyframes    0  on compositor     0/ 8000  load   7.8
+         main thread, ms/s self: FunctionCall 542.07, UpdateLayoutTree 169.2, Layerize 115.98, PrePaint 72.01, ThreadControllerImpl::RunTask 34.64, Paint 31.48
+onto: progress 24/24
+
+| shape | count | main: page / drawn fps | compositor: page / drawn fps |
+|---|---:|---:|---:|
+| drift |  4000 |   60.0 /   60.7 |   57.6 /   60.9 |
+| drift |  6000 |   58.1 /   59.0 |   23.9 /   42.5 |
+| drift |  8000 |   44.5 /   42.9 |   16.5 /   30.4 |
+| slide |  4000 |   60.0 /   60.6 |   58.6 /   59.8 |
+| slide |  6000 |   60.0 /   60.5 |   27.9 /   54.4 |
+| slide |  8000 |   58.5 /   58.5 |   21.3 /   34.9 |
+perf result: tests/perf/results/handoff-smoke4/compositor-handoff-2026-11-07T01-24-49Z.json
+  ✓  1 tests/perf/compositor-handoff.spec.ts:137:1 › compositor handoff: frame rate against concurrent count (2.2m)
+
+  1 passed (2.3m)
+  1 files  55.4 KiB  → 0 already local (0 bytes)
+  fetching 1 files (55.4 KiB)
+  [1/1] compositor-handoff-2026-11-07T01-24-49Z.json  55.4 KiB
+  ✓ 1 files, 55.4 KiB in 0s
+  cleared 1 file (55.4 KiB) from teitou; .onto-out/handoff-smoke4 holds the only copy

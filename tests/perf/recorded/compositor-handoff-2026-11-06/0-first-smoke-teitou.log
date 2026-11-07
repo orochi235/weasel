@@ -1,0 +1,76 @@
+  waiting for room
+teitou  chosen: 15.8 cores free, 33.5G available (npx: 5 past runs, worst 1.9 cores / 3.0G)
+  msb-uai  scored 4.58 against teitou's 6.93
+  keiei    refuses repo:orochi235/weasel
+  orochi   refuses rotation
+  studio   it wants the node to itself, and the node is promised to worker-render-browser
+  base   009e1f07
+  delta  5 file(s), 0 deleted
+  sent   5 new file(s), 0 already there
+  commits sent directly, 30.5 KiB (not on origin)
+  updated weasel on teitou at 009e1f07 + 5 uncommitted file(s)
+  job    62661c8c on teitou
+
+onto: waapi-bridge is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 1 test using 1 worker
+
+compositor handoff — 8 measurements, 60 frames each; load 4.3 6.7 8.1 on 18 cores
+    1/8  pass 1  main         500  page   60.0 fps (missed   0)  drawn   59.5 fps  on compositor     0/  500  load   4.3
+onto: progress 1/8
+    2/8  pass 1  compositor   500  page   60.0 fps (missed   0)  drawn   59.6 fps  on compositor   500/  500  load   4.6
+onto: progress 2/8
+    3/8  pass 1  compositor   500  page   60.0 fps (missed   0)  drawn   59.5 fps  on compositor   500/  500  load   4.3
+onto: progress 3/8
+    4/8  pass 1  main         500  page   60.0 fps (missed   0)  drawn   60.3 fps  on compositor     0/  500  load   4.3
+onto: progress 4/8
+    5/8  pass 1  main        4000  page   60.0 fps (missed   0)  drawn   61.1 fps  on compositor     0/ 4000  load   4.4
+onto: progress 5/8
+    6/8  pass 1  compositor  4000  page   13.1 fps (missed  60)  drawn   19.8 fps  on compositor     0/    0  load   4.9
+onto: progress 6/8
+    7/8  pass 1  compositor  4000  page   12.5 fps (missed  60)  drawn   10.9 fps  on compositor     0/    0  load   4.7
+onto: progress 7/8
+    8/8  pass 1  main        4000  page   60.0 fps (missed   0)  drawn   60.9 fps  on compositor     0/ 4000  load   4.7
+onto: progress 8/8
+  ✘  1 tests/perf/compositor-handoff.spec.ts:100:1 › compositor handoff: frame rate against concurrent count (44.6s)
+
+
+  1) tests/perf/compositor-handoff.spec.ts:100:1 › compositor handoff: frame rate against concurrent count 
+
+    Error: compositor 4000: runs on the compositor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 4000
+    Received: 0
+
+      165 |   for (const s of samples) {
+      166 |     expect(s.drawFrames, `${s.approach} ${s.count}: the trace recorded no DrawFrame`).toBeGreaterThan(0);
+    > 167 |     expect(s.onCompositor, `${s.approach} ${s.count}: runs on the compositor`).toBe(s.approach === 'compositor' ? s.count : 0);
+          |                                                                                ^
+      168 |   }
+      169 |
+      170 |   run.machine(await browserFingerprint(page, browser, browserName));
+        at /Users/mike/.config/onto/work/weasel/tests/perf/compositor-handoff.spec.ts:167:80
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/perf/compositor-handoff.spec.ts:100:1 › compositor handoff: frame rate against concurrent count 
+onto do: job finished but its output did not come back: 400 Bad Request: no such path in the "weasel" tree: tests/perf/results/handoff-smoke

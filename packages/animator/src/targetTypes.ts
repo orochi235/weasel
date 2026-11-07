@@ -4,6 +4,10 @@ import type { Target } from './target';
 import type { ShownArray, TargetTable } from './targetTable';
 import type { AnimationHandle, Interpolate, InterpolatorFactory } from './types';
 
+/** Whether an animation on an element target is handed to the browser's compositor:
+ *  `'off'` never (the default), `'auto'` where it can be, `'require'` or else throw saying why not. */
+export type CompositorMode = 'auto' | 'off' | 'require';
+
 /** What every animation on a {@link Target} takes. */
 interface OnTarget<T> {
   /** The value to move. */
@@ -19,6 +23,12 @@ interface OnTarget<T> {
   interrupt?: boolean;
   /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
   label?: string;
+  /** On a target `createElementTarget` made, whether the run goes to `Element.animate` and plays
+   *  off the main thread. Default `'off'`. With `'auto'` it does wherever it runs alone on its
+   *  target, has no `onTick`, and its style is all compositor properties. Past a few thousand
+   *  elements the compositor can be the slower path, by a margin that depends on the machine and
+   *  on how busy the main thread is, so the caller opts in. */
+  compositor?: CompositorMode;
 }
 
 /** A tween on a {@link Target}. `to` is committed as it starts, and it contributes what is left

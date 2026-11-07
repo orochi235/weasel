@@ -49,10 +49,6 @@ When work merges, retire its entry here in the same change.
   marker cache, so heads rebuild every frame.
   Closes when a trim tween on a 1,000-anchor translucent, gradient-painted, arrowheaded stroke makes no stroke-mesh
   or marker cache miss after its first frame.
-- **(P3) [agent] GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts. Deferred from
-  `docs/specs/2026-05-04-animation-primitive-design.md`.
-  Closes when a running animation can be handed to `Element.animate` and a spec shows that path holding
-  60 fps at a concurrent count where the main-thread path drops frames.
 
 ---
 
