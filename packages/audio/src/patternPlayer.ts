@@ -32,10 +32,10 @@ export type PatternEvent = PatternNote | PatternNoise | PatternHit;
 export interface PatternPlayerOptions {
   /** Beats per minute. */
   tempo: number;
-  /** Steps per beat. Default 4, so a step is a sixteenth note in 4/4. */
+  /** Steps per beat, a whole number. Default 4, so a step is a sixteenth note in 4/4. */
   stepsPerBeat?: number;
   events?: readonly PatternEvent[];
-  /** Steps in one pass. Default: through the last event, rounded up to a whole
+  /** Steps in one pass, a whole number. Default: through the last event, rounded up to a whole
    *  beat. */
   length?: number;
   /** Default true. */
@@ -71,6 +71,12 @@ export interface PatternPlayer {
 
 let nextPlayer = 1;
 
+export const checkSteps = (what: string, n: number): void => {
+  if (!Number.isInteger(n) || n < 1) {
+    throw new RangeError(`@weasel-js/audio: a pattern's ${what} is a whole number of steps, 1 or more, got ${n}`);
+  }
+};
+
 /** Steps in one pass of `events` when no length is given: through the last
  *  event, rounded up to a whole beat. */
 export function patternLength(events: readonly PatternEvent[], stepsPerBeat = 4): number {
@@ -79,7 +85,7 @@ export function patternLength(events: readonly PatternEvent[], stepsPerBeat = 4)
   return Math.max(1, Math.ceil((last + 1) / stepsPerBeat)) * stepsPerBeat;
 }
 
-const checkTempo = (bpm: number): void => {
+export const checkTempo = (bpm: number): void => {
   if (!(bpm > 0) || !Number.isFinite(bpm)) {
     throw new RangeError(`@weasel-js/audio: tempo must be a positive number of bpm, got ${bpm}`);
   }
@@ -99,6 +105,7 @@ const checkTempo = (bpm: number): void => {
 export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOptions): PatternPlayer {
   checkTempo(opts.tempo);
   const stepsPerBeat = opts.stepsPerBeat ?? 4;
+  checkSteps('steps per beat', stepsPerBeat);
   const loop = opts.loop ?? true;
   const key = `\u0000pattern:${nextPlayer++}`;
 
@@ -107,6 +114,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   let length = 1;
   let byStep = new Map<number, PatternEvent[]>();
   const setEvents = (events: readonly PatternEvent[], len?: number): void => {
+    if (len !== undefined) checkSteps('length', len);
     byStep = new Map();
     for (const e of events) {
       const step = Math.floor(e.step);

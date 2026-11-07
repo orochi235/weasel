@@ -1,5 +1,5 @@
 import { resolveEnvelope } from './envelope';
-import { patternLength, type PatternEvent, type PatternHit } from './patternPlayer';
+import { checkSteps, checkTempo, patternLength, type PatternEvent, type PatternHit } from './patternPlayer';
 
 /** Options for `patternVoicePeaks`. The first four mean what they mean to
  *  `createPatternPlayer`, and should be the values the player is given. */
@@ -29,7 +29,10 @@ export function patternVoicePeaks(
   events: readonly PatternEvent[],
   opts: PatternLoadOptions,
 ): Record<string, number> {
+  checkTempo(opts.tempo);
   const stepsPerBeat = opts.stepsPerBeat ?? 4;
+  checkSteps('steps per beat', stepsPerBeat);
+  if (opts.length !== undefined) checkSteps('length', opts.length);
   const stepMs = 60_000 / opts.tempo / stepsPerBeat;
   const passMs = (opts.length ?? patternLength(events, stepsPerBeat)) * stepMs;
   // The engine takes a voice's slot when its booking fires, which is up to a
