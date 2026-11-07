@@ -379,6 +379,11 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
+  (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
+  `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to
+  2.5 s. Either the second number becomes the end time, or the first becomes relative to `start`
+  (2026-11-07). Closes when the maintainer has picked one and the readout and its test follow it.
 - **(P2) [maintainer] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
   (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
   itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl
