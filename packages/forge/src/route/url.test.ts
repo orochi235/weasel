@@ -123,6 +123,13 @@ describe('decodeKnob', () => {
 });
 
 describe('knobsToParams', () => {
+  it('compares a story arg holding a cycle to its default, after a port has cloned it, without throwing', () => {
+    const tree: Record<string, unknown> = { name: 'root' };
+    tree.self = tree;
+    const csf = argsToSchema({ tree, label: 'x' }, {}, {});
+    expect(knobsToParams(csf, structuredClone(csf.defaults()))).toEqual({});
+  });
+
   it('writes only the leaves that differ from their defaults, grouped ones by dotted path', () => {
     const config = {
       ...schema.defaults(),
