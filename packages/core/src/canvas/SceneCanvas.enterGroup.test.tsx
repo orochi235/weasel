@@ -4,7 +4,7 @@
  * Nodes outside the entered group take no hits.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { act, cleanup } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
@@ -13,7 +13,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { BindingOverrides } from '@weasel-js/routing';
-import { createEnteredGroup, type EnteredGroupApi } from './deps/enteredGroup';
+import { createEnteredGroup, useEnteredGroup, type EnteredGroupApi } from './deps/enteredGroup';
 import { SceneCanvas } from './SceneCanvas';
 
 beforeAll(() => {
@@ -59,7 +59,7 @@ function setup(opts: { entered?: (scene: never) => EnteredGroupApi; overrides?: 
   const escape = () => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   });
-  return { enter, press, doubleClick, escape, entered, selection: () => [...sel.current] };
+  return { scene, enter, press, doubleClick, escape, entered, selection: () => [...sel.current] };
 }
 
 describe('entering a group on a canvas', () => {
@@ -108,6 +108,16 @@ describe('entering a group on a canvas', () => {
     const t = setup({ entered: (scene) => createEnteredGroup(scene) });
     t.doubleClick(15);
     expect(t.entered!.get()).toBe('g');
+  });
+
+  it('without an enteredGroup prop, enters the scene\'s own, which useEnteredGroup reads from outside', () => {
+    const t = setup();
+    const { result } = renderHook(() => useEnteredGroup(t.scene));
+    t.doubleClick(15);
+    expect(result.current.get()).toBe('g');
+    act(() => result.current.leaveAll());
+    t.press(15);
+    expect(t.selection()).toEqual(['g']);
   });
 
   it('keeps the group on an outside press once group.leave.press is unbound', () => {

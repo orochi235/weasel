@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, renderHook } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
@@ -95,6 +95,31 @@ describe('createEnteredGroup', () => {
     off();
     e.enter(outer);
     expect(fn).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('useEnteredGroup', () => {
+  it('gives every component on one scene the same entered group', () => {
+    const { scene, inner } = build();
+    const seen: Array<NodeId | null> = [];
+    const stores: ReturnType<typeof useEnteredGroup>[] = [];
+    function Reader() {
+      const e = useEnteredGroup(scene);
+      stores.push(e);
+      return null;
+    }
+    render(<><Reader /><Reader /></>);
+    stores[0]!.enter(inner);
+    for (const e of stores) seen.push(e.get());
+    expect(seen).toEqual([inner, inner]);
+  });
+
+  it('keeps a separate store per scene', () => {
+    const a = build();
+    const b = build();
+    const { result } = renderHook(() => [useEnteredGroup(a.scene), useEnteredGroup(b.scene)] as const);
+    result.current[0].enter(a.inner);
+    expect(result.current[1].get()).toBeNull();
   });
 });
 
