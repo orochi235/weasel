@@ -10,6 +10,7 @@ import { type Contour, type Seg, evalSeg, signedArea, subSeg } from './contourSe
 import { parseContours, extentOf } from './contours';
 import { type Along, type LineSeg, arrangeLines, linkFaces } from './arrangement';
 import { type Cycles, type Linked, cyclesOf, cycleWindings, leftmost } from './faceCycles';
+import { type Polish, type PolishStats, polishCrossings } from './crossingPolish';
 
 /** Two faces whose boundaries share `length` of edge; `a` is -1 for the uncovered side, else `a < b`. */
 export interface FaceNeighbor {
@@ -30,6 +31,7 @@ export interface CurveFaceSet {
   neighbors: FaceNeighbor[];
   /** Per input, whether its largest contour turns with its fill on the right. */
   clockwise: boolean[];
+  polish: PolishStats;
 }
 
 /** The flattening the arrangement is cut from: each chord, the input segment it lies along, and its parameters there. */
@@ -163,13 +165,17 @@ function hosts(a: Linked, c: Cycles, minArea: number): Map<number, number> {
 }
 
 /** A cycle as curve segments: each run of edges along one input segment written as one piece of it. */
-function loopOf(a: Kept, flat: Flat, cycle: readonly number[]): Contour {
+function loopOf(a: Kept, flat: Flat, polish: Polish, cycle: readonly number[]): Contour {
+  const n = flat.segs.length;
   const parts = cycle.map((h) => {
     const al = a.along[h >> 1][0];
     const [s0, s1] = h & 1 ? [al.s1, al.s0] : [al.s0, al.s1];
     const t0 = flat.t0[al.seg], dt = flat.t1[al.seg] - t0;
-    return { seg: flat.seg[al.seg], ta: t0 + s0 * dt, tb: t0 + s1 * dt, from: a.origin[h], to: a.origin[h ^ 1] };
+    const seg = flat.seg[al.seg], from = a.origin[h], to = a.origin[h ^ 1];
+    const ta = polish.t.get(from * n + seg) ?? t0 + s0 * dt, tb = polish.t.get(to * n + seg) ?? t0 + s1 * dt;
+    return { seg, ta, tb, from, to };
   });
+  const at = (v: number) => polish.at.get(v) ?? { x: a.xs[v], y: a.ys[v] };
   const joins = (p: (typeof parts)[number], q: (typeof parts)[number]) =>
     p.seg === q.seg && p.tb === q.ta && (p.tb > p.ta) === (q.tb > q.ta);
   let start = parts.findIndex((p, i) => !joins(parts[(i - 1 + parts.length) % parts.length], p));
@@ -180,7 +186,7 @@ function loopOf(a: Kept, flat: Flat, cycle: readonly number[]): Contour {
     let last = first;
     for (i++; i < parts.length && joins(last, parts[(start + i) % parts.length]); i++) last = parts[(start + i) % parts.length];
     const src = flat.segs[first.seg];
-    const p = { x: a.xs[first.from], y: a.ys[first.from] }, q = { x: a.xs[last.to], y: a.ys[last.to] };
+    const p = at(first.from), q = at(last.to);
     if (src.length === 2) { out.push([p, q]); continue; }
     const forward = last.tb > first.ta;
     const piece = forward ? subSeg(src, first.ta, last.tb, p, q) : subSeg(src, last.tb, first.ta, q, p);
@@ -206,14 +212,16 @@ const maskOf = (sources: readonly number[]): bigint => sources.reduce((m, i) => 
  * connected region with its holes, and which faces share edges. The
  * arrangement is cut from a flattening within `tolerance` of every curve;
  * each face's boundary is written as pieces of the input curves, their ends
- * where the flattening crosses. Faces come fewest covering inputs first, then
- * by which, then left to right.
+ * where the flattening crosses, moved onto the curves' own crossing where
+ * `polishCrossings` can do so safely (`polish`, on by default). Faces come
+ * fewest covering inputs first, then by which, then left to right.
  */
-export function curveFaces(paths: readonly Path[], tolerance?: number): CurveFaceSet {
+export function curveFaces(paths: readonly Path[], tolerance?: number, polish = true): CurveFaceSet {
   const operands = paths.map((p) => parseContours(p));
   const clockwise = operands.map(clockwiseFirst);
   const extent = extentOf(operands.flat()) || 1;
-  const flat = flatten(operands, tolerance ?? extent * 1e-5);
+  const tol = tolerance ?? extent * 1e-5;
+  const flat = flatten(operands, tol);
   const arr = arrangeLines(flat.lines);
   const rules = paths.map((p): PathFillRule => (p.kind === 'polygon' ? p.fillRule : 'nonzero'));
   const first = cyclesOf(arr);
@@ -223,6 +231,8 @@ export function curveFaces(paths: readonly Path[], tolerance?: number): CurveFac
   const minArea = 1e-12 * extent * extent;
   const host = hosts(kept, c, minArea);
   const outsides = new Set(c.outside.values());
+  const moved = polish ? polishCrossings(kept, flat, tol, extent)
+    : { at: new Map(), t: new Map(), stats: { crossings: 0, polished: 0, largestMove: 0, largestShare: 0 } };
 
   const faceOf = new Int32Array(c.cycles.length).fill(-1);
   const found: { face: CurveFace; mask: bigint; at: [number, number]; cycle: number }[] = [];
@@ -232,13 +242,13 @@ export function curveFaces(paths: readonly Path[], tolerance?: number): CurveFac
     faceOf[i] = found.length;
     const sources = key.split(',').map(Number);
     const v = leftmost(kept, cycle);
-    found.push({ face: { loops: [loopOf(kept, flat, cycle)], sources }, mask: maskOf(sources), at: [kept.xs[v], kept.ys[v]], cycle: i });
+    found.push({ face: { loops: [loopOf(kept, flat, moved, cycle)], sources }, mask: maskOf(sources), at: [kept.xs[v], kept.ys[v]], cycle: i });
   });
   for (const [piece, outside] of c.outside) {
     const h = host.get(piece)!;
     const f = h < 0 ? -1 : faceOf[h];
     faceOf[outside] = f;
-    if (f >= 0) found[f].face.loops.push(loopOf(kept, flat, c.cycles[outside]));
+    if (f >= 0) found[f].face.loops.push(loopOf(kept, flat, moved, c.cycles[outside]));
   }
 
   const order = found.map((_, i) => i).sort((i, j) => {
@@ -249,7 +259,7 @@ export function curveFaces(paths: readonly Path[], tolerance?: number): CurveFac
   });
   const rank = new Int32Array(found.length);
   order.forEach((f, r) => { rank[f] = r; });
-  return { faces: order.map((f) => found[f].face), neighbors: neighborsOf(kept, c, faceOf, rank), clockwise };
+  return { faces: order.map((f) => found[f].face), neighbors: neighborsOf(kept, c, faceOf, rank), clockwise, polish: moved.stats };
 }
 
 /** Each pair of faces sharing edges, and the length they share. */

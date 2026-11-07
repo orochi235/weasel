@@ -3,7 +3,10 @@ import polygonClipping from 'polygon-clipping';
 import { pathFaceArrangement, type MultiPolygon } from './index';
 import { PATH_L } from '../commands';
 import type { Path, PolygonPath } from '../path';
-import { area, circle, fine, hasCurves, mpArea, rect } from './curveShapes.fixtures';
+import { area, circle, fine, hasCurves, mpArea, rect, rng, shape } from './curveShapes.fixtures';
+import { curveFaces, type CurveFaceSet } from './curveFaces';
+import { parseContours } from './contours';
+import { intersectSegments } from '../intersect/segmentIntersections';
 import { DIGITS, glyphCell } from './glyphCell.fixture';
 
 /** One path drawing both of `a`'s and `b`'s contours. */
@@ -74,5 +77,51 @@ describe('pathFaceArrangement', () => {
 
   it('answers nothing for no inputs', () => {
     expect(pathFaceArrangement([])).toEqual({ faces: [], neighbors: [] });
+  });
+});
+
+/** What a polish must not change: the faces, their covers, and who neighbors whom. */
+const topology = (set: CurveFaceSet) => ({
+  covers: set.faces.map((f) => f.sources.join(',')),
+  loops: set.faces.map((f) => f.loops.map((l) => l.length)),
+  neighbors: set.neighbors.map((n) => [n.a, n.b, n.length]),
+});
+
+describe('polishing crossings onto the curves', () => {
+  it('moves two circles\' crossings onto the curves\' own crossings', () => {
+    const inputs = [circle(0, 0, 10), circle(12, 0, 8)];
+    const [ca, cb] = inputs.map((p) => parseContours(p).flat());
+    const exact = ca.flatMap((s) => cb.flatMap((t) => intersectSegments(s, t)));
+    expect(exact.length).toBe(2);
+    const gap = (set: CurveFaceSet) => Math.max(...exact.map((h) =>
+      Math.min(...set.faces[2].loops[0].map((s) => Math.hypot(s[0].x - h.x, s[0].y - h.y)))));
+    const on = curveFaces(inputs);
+    expect(on.polish).toMatchObject({ crossings: 2, polished: 2 });
+    expect(gap(on)).toBeLessThan(1e-9);
+    expect(gap(curveFaces(inputs, undefined, false))).toBeGreaterThan(1e-7);
+  });
+
+  it('leaves the faces, their covers, and their neighbors as the flattening cut them', () => {
+    const next = rng(0x9011);
+    let polished = 0;
+    for (let trial = 0; trial < 20; trial++) {
+      const inputs = [shape(next), shape(next), shape(next), shape(next)];
+      const on = curveFaces(inputs), off = curveFaces(inputs, undefined, false);
+      expect(topology(on), `trial ${trial}`).toEqual(topology(off));
+      polished += on.polish.polished;
+    }
+    expect(polished).toBeGreaterThan(0);
+  });
+
+  it('leaves glyphs overlaid in one cell cut as before, and moves no crossing past what the flattening can misplace', () => {
+    const glyphs = glyphCell(DIGITS);
+    const on = curveFaces(glyphs), off = curveFaces(glyphs, undefined, false);
+    expect(topology(on)).toEqual(topology(off));
+    expect(on.polish.polished).toBeGreaterThan(on.polish.crossings * 0.8);
+    // Each move stays within 1.05 · 2 · tolerance / sin θ of its chords, and the sine floor of 0.05 caps that.
+    expect(on.polish.largestShare).toBeGreaterThan(0);
+    expect(on.polish.largestShare).toBeLessThanOrEqual(1);
+    const tolerance = 1e-5 * Math.hypot(100, 100);
+    expect(on.polish.largestMove).toBeLessThanOrEqual((1.05 * 2 * tolerance) / 0.05);
   });
 });

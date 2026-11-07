@@ -122,8 +122,12 @@ export interface FaceArrangementOptions {
  * The arrangement is cut and traced on a fine flattening of the outlines, so
  * curves that touch or run nearly along each other are resolved as their
  * flattenings are: where two curves lie within `tolerance` of each other
- * they may part into slivers. Its cost grows with the flattening's chords and
- * their crossings, not with the number of inputs or their subsets.
+ * they may part into slivers. Where two curves cross cleanly, the crossing is
+ * then moved onto the curves' own intersection; it stays where the flattening
+ * put it where the curves meet nearly tangent or the move would disturb any
+ * face. Its cost grows with the
+ * flattening's chords and their crossings, not with the number of inputs or
+ * their subsets.
  */
 export function pathFaceArrangement(paths: readonly Path[], options: FaceArrangementOptions = {}): FaceArrangement {
   if (paths.length === 0) return { faces: [], neighbors: [] };
