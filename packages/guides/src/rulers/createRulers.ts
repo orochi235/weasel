@@ -96,13 +96,11 @@ export function createRulers(opts: RulersOptions): Rulers {
     { spec: { kind: 'hover', motion: 'leave' }, actionId: pointer.id, opts: { id: `${id}.leave`, params: { over: false } } },
     { spec: { kind: 'drag', target: { kindOf: onRuler }, mods: MODS_ANY }, actionId: guide.id, opts: { id: `${id}.drag` } },
   ];
-  const draftLayer = {
-    ...createGuidesLayer({
-      getGuides: () => (state.draft ? [state.draft] : []), extent: 'full', id: `${id}-draft`, label: 'Guide being placed',
-      ...(opts.guideColor ? { color: opts.guideColor } : {}),
-    }),
-    subscribe: (listener: () => void) => draftChanged.subscribe(listener),
-  };
+  const draftLayer = createGuidesLayer({
+    getGuides: () => (state.draft ? [state.draft] : []), extent: 'full', id: `${id}-draft`, label: 'Guide being placed',
+    subscribe: (listener) => draftChanged.subscribe(listener),
+    ...(opts.guideColor ? { color: opts.guideColor } : {}),
+  });
   let api: CanvasExtensionApi | null = null;
 
   const contribution: SurfaceContribution = {
