@@ -99,16 +99,18 @@ export function domPositionToCharOffset(
 ): number {
   const pieces = overlayPieces(parent);
   let total = 0;
-  if (node.nodeType === Node.TEXT_NODE) {
+  const isText = node.nodeType === Node.TEXT_NODE;
+  if (isText) {
     for (const piece of pieces) {
       if (!('text' in piece)) { total += 1; continue; }
       if (piece.text === node) return total + offset;
       total += piece.text.data.length;
     }
-    return total;
+    // An empty text node is no piece, so it is placed among them as an element position is.
+    total = 0;
   }
   const point = document.createRange();
-  point.setStart(node, Math.max(0, Math.min(offset, node.childNodes.length)));
+  point.setStart(node, Math.max(0, Math.min(offset, isText ? (node as Text).data.length : node.childNodes.length)));
   point.collapse(true);
   for (const piece of pieces) {
     if ('text' in piece) {
