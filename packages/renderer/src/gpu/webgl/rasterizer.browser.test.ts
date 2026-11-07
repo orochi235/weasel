@@ -8,10 +8,9 @@
 import { expect, it } from 'vitest';
 
 it('draws WebGL on the GPU, or on SwiftShader on Linux', () => {
-  const gl = document.createElement('canvas').getContext('webgl2')!;
+  const gl = document.createElement('canvas').getContext('webgl2', { stencil: true })!;
   const info = gl.getExtension('WEBGL_debug_renderer_info');
   const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
   gl.getExtension('WEBGL_lose_context')?.loseContext();
-  console.info(`browser project rasterizer: ${name}`);
   expect(/swiftshader/i.test(name), name).toBe(/Linux/.test(navigator.userAgent));
 });

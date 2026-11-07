@@ -717,24 +717,17 @@ only story runner in the repo.
 
 ## Backends (WebGL future)
 
-- **(P3) [agent] The browser project draws WebGL on SwiftShader, not the node's GPU.** Headless Chromium
-  gives WebGL SwiftShader unless launched with `--enable-gpu` (measured on msb-uai, 2026-11-06, with main's
-  launch flags as well as the `webgpu` branch's). So a test whose claim is about the GPU has not run on one on
-  the fleet: `retained.tiles.browser.test.ts` is named as what catches ANGLE Metal's multisampled blit
-  overreach (`docs/traps/rendering.md`), and its allowances were measured on SwiftShader. Only the parity
-  files run in the `browser (gpu)` instance. Closes when the browser project runs on the GPU and its files pass
-  there, or the trap and the tile test say which rasterizer they hold for.
 - **(P3) [agent] WebGL draws a straight-alpha ImageBitmap as if premultiplied.** WebGL ignores
   `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for an `ImageBitmap` and uploads what it holds, so a bitmap made with
   `premultiplyAlpha: 'none'` reaches the shader straight, where the image cache promises premultiplied texels:
   a translucent one comes out too bright (the parity suite measured 48 levels in blue). WebGPU premultiplies it.
   Default bitmaps hold premultiplied texels and draw right on both. Closes when the image cache premultiplies a
   straight bitmap's texels on WebGL too, or refuses it.
-- **(P2) [agent] GitHub CI's `browser (gpu)` instance loses its WebGPU instance mid-test.** On the push of
-  e6af210ab (CI run 42340342009), `canvasBackend.browser.test.tsx` (`mapAsync`: "A valid external Instance
+- **(P2) [agent] GitHub CI's `browser (webgpu)` instance loses its WebGPU instance mid-test.** It was
+  `browser (gpu)` before 2026-11-07. On the push of e6af210ab (CI run 42340342009), `canvasBackend.browser.test.tsx` (`mapAsync`: "A valid external Instance
   reference no longer exists") and `paintPrelude.browser.test.ts` ("Instance dropped in popErrorScope") failed
   on the runner. The instance launched with `--enable-gpu` alone, which the traps entry already found loses
-  the device on the GPU-less runner; it now takes `HOST_GPU_ARGS` (`scripts/chromium-gpu-args.ts`), the visual
+  the device on the GPU-less runner; the whole browser project now takes `HOST_GPU_ARGS` (`scripts/chromium-gpu-args.ts`), the visual
   job's SwiftShader set on Linux. `WeaselRenderer.dispose` retires only its own resources and never destroys
   the shared device, so it is not the cause (read, 2026-11-07). Closes when `npm run test:browser` passes on
   GitHub CI.
