@@ -27,4 +27,13 @@ describe('UnitField at an endless end', () => {
     fireEvent.keyDown(down.field, { key: 'ArrowDown' });
     expect(down.onChange).toHaveBeenCalledWith(10);
   });
+
+  it('leaves the increment stepper live at the bound, as the arrow key steps past it', () => {
+    render(<UnitField value={10} onChange={() => {}} minValue={0} maxValue={10} endless="max" steppers aria-label="Cap" />);
+    expect(screen.getByRole('button', { name: 'Increment' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Decrement' })).not.toBeDisabled();
+    cleanup();
+    render(<UnitField value={Infinity} onChange={() => {}} minValue={0} maxValue={10} endless="max" steppers aria-label="Cap" />);
+    expect(screen.getByRole('button', { name: 'Increment' })).toBeDisabled();
+  });
 });
