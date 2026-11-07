@@ -117,6 +117,22 @@ describe('the background relay', () => {
     expect(again.received).toEqual([yo]);
   });
 
+  it('tells the panel a frame’s roots are gone when a new content script takes the frame over', () => {
+    const { page, panel } = setup();
+    const p = panel(1);
+    p.postMessage(yo);
+    const old = page(1);
+    old.postMessage(sup(root('root-1'), root('root-2')));
+    const next = page(1);
+    expect(old.closed).toBe(true);
+    expect(p.received.slice(1)).toEqual([
+      { type: 'root-removed', protocol: P, rootId: 'root-1' },
+      { type: 'root-removed', protocol: P, rootId: 'root-2' },
+    ]);
+    next.postMessage(sup(root('root-1', 'again')));
+    expect(p.received.at(-1)).toEqual({ type: 'root-added', protocol: P, root: root('root-1', 'again') });
+  });
+
   it('keeps each frame’s roots apart, and routes a request to the frame that owns the root', () => {
     const { page, panel } = setup();
     const p = panel(1);

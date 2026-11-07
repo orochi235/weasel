@@ -95,21 +95,31 @@ export function createRelay({ wake }: RelayOptions): Relay {
     } satisfies PageMessage);
   }
 
+  function dropRoots(t: Tab, frame: Frame): void {
+    for (const rootId of frame.roots.keys()) {
+      t.panel?.postMessage({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId } satisfies PageMessage);
+    }
+    frame.roots.clear();
+  }
+
   function connectPage(port: PortLike): void {
     const tabId = port.sender?.tab?.id;
     if (tabId === undefined) return port.disconnect();
     const frameId = port.sender?.frameId ?? 0;
     const t = tab(tabId);
-    t.frames.get(frameId)?.port.disconnect();
+    const replaced = t.frames.get(frameId);
+    // A port's own disconnect fires no onDisconnect on it, so the roots it held are dropped here.
+    if (replaced) {
+      replaced.port.disconnect();
+      dropRoots(t, replaced);
+    }
     const frame: Frame = { port, roots: new Map() };
     t.frames.set(frameId, frame);
     port.onMessage.addListener((m) => fromPage(t, frameId, frame, m as PageMessage));
     port.onDisconnect.addListener(() => {
       if (t.frames.get(frameId) !== frame) return;
       t.frames.delete(frameId);
-      for (const rootId of frame.roots.keys()) {
-        t.panel?.postMessage({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId } satisfies PageMessage);
-      }
+      dropRoots(t, frame);
       prune(tabId);
     });
     if (t.yo) port.postMessage(t.yo);
