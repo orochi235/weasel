@@ -65,18 +65,20 @@ export function createFrameWriter(): FrameWriter {
       const scene = inputs.scene as AnyScene;
       const msg: FrameMessage = { type: 'frame' };
       const version = scene.getContentVersion();
+      let delta: ReturnType<typeof diff.next> = null;
       if (version !== sceneVersion) {
-        const delta = diff.next(scene);
+        delta = diff.next(scene);
         sceneVersion = version;
         if (delta) msg.scene = delta;
-        // The worker drops every alpha with its scene, so a reset sends them all again.
+        // The worker's scene drops its alphas, overrides and scroll offsets on a reset, so a
+        // reset sends them all again.
         if (delta?.reset) alphas.clear();
       }
-      if (overridesDirty) {
+      if (overridesDirty || delta?.reset) {
         overridesDirty = false;
         msg.overrides = wireOverrides(scene);
       }
-      if (scene.scroll.getGeneration() !== scrollAt) {
+      if (scene.scroll.getGeneration() !== scrollAt || delta?.reset) {
         scrollAt = scene.scroll.getGeneration();
         msg.scroll = wireScroll(scene);
       }
