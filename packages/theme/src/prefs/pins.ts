@@ -1,4 +1,4 @@
-import { isPrefScope, prefLeaves, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
+import { isPrefScope, PREF_ELSE, prefLeaves, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
 import { selectionKey, type Selection, type Varying } from '../axes.ts';
 import type { PinValue } from '../definition.ts';
 import { defineTheme, type Theme } from '../theme.ts';
@@ -14,10 +14,24 @@ export interface ThemePrefsSource {
   isSet(path: string): boolean;
 }
 
-function pinOf(leaf: PrefLeaf, held: unknown): Varying<PinValue> {
+/** The options of the selector at `path`: an axis's enum. */
+type OptionsOf = (path: string) => readonly string[];
+
+function optionsIn(schema: PrefGroup): OptionsOf {
+  const leaves = prefLeaves(schema);
+  return (path) => {
+    const leaf = leaves.get(path);
+    return leaf?.kind === 'enum' ? leaf.options.map((option) => String(option.value)) : [];
+  };
+}
+
+/** `held` in theme's `{ by, … }` form, each option without a value of its own given the scope's shared one. */
+function pinOf(leaf: PrefLeaf, held: unknown, options: OptionsOf): Varying<PinValue> {
   if (!isPrefScope(held)) return cssOfPref(leaf, held);
   const out: Record<string, unknown> = { by: themeAxisOf(held.$by) ?? held.$by };
-  for (const [value, member] of Object.entries(held.$in)) out[value] = pinOf(leaf, member);
+  const shared = Object.hasOwn(held, PREF_ELSE);
+  for (const value of shared ? options(held.$by) : []) out[value] = pinOf(leaf, held[PREF_ELSE], options);
+  for (const [value, member] of Object.entries(held.$in)) out[value] = pinOf(leaf, member, options);
   return out as Varying<PinValue>;
 }
 
@@ -40,9 +54,10 @@ export function themePrefsSelection(store: ThemePrefsSource): Selection {
  */
 export function themePrefsPins(store: ThemePrefsSource): Record<string, Varying<PinValue>> {
   const out: Record<string, Varying<PinValue>> = {};
+  const options = optionsIn(store.schema);
   for (const [path, leaf] of prefLeaves(store.schema)) {
     if (themeAxisOf(path) !== undefined || !store.isSet(path)) continue;
-    out[themeTokenOf(path)] = pinOf(leaf, store.scope(path) ?? store.get(path));
+    out[themeTokenOf(path)] = pinOf(leaf, store.scope(path) ?? store.get(path), options);
   }
   return out;
 }

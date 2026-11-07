@@ -128,6 +128,8 @@ describe('values a store kept when every token was split by every axis', () => {
     store.set('surface.surface', '#fffdf8', { at: { 'axis.mode': 'light' } });
     expect(store.get('surface.surface')).toBe('#222222');
     expect(store.get('surface.surface', { at: { 'axis.mode': 'light' } })).toBe('#fffdf8');
+    expect(themePrefsPins(store)).toEqual({ surface: { by: 'mode', dark: '#222222', light: '#fffdf8' } });
+    expect(resolveTheme(themeFromPrefs(store, weaselTheme), { mode: 'dark' })['--wzl-surface' as never]).toBe('#222222');
   });
 
   it('reads a value split along an axis the token no longer scopes as before, and the first write flattens it to what reads now', () => {
