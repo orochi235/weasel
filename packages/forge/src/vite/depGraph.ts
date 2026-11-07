@@ -17,7 +17,7 @@ export interface DepGraphBuilder {
   build(entries: readonly IndexEntry[], resolve: ResolveImport): Promise<DepGraph>;
   /** Drops what was read from `file`. True when the graph had read it, so the graph may have changed. */
   invalidate(file: string): boolean;
-  /** Drops every cached import resolution, keeping the parsed files. */
+  /** Drops every cached import resolution and every file that could not be read, keeping the parsed files. */
   reset(): void;
 }
 
@@ -81,6 +81,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
 
     reset() {
       resolutions.clear();
+      for (const [file, parsed] of modules) if (parsed === null) modules.delete(file);
     },
 
     async build(entries, resolve) {
