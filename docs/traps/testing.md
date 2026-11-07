@@ -86,3 +86,10 @@ mounts: in `Lab.messages.test.tsx` that read as a play rate of 0 and one state r
 fails every retry at once; guard on a per-test fixture that ends with the attempt instead: labkit's
 `live` (`packages/labkit/src/testing/liveTest.ts`), which also logs the stack of each step a failed
 test was still waiting on.
+
+**A WebGPU canvas in the document loses the device, in every tab, after a few frames on the fleet's
+headless Chromium.** Clearing an attached 40×40 canvas each frame for 20 frames lost it with "A valid
+external Instance reference no longer exists", while a detached canvas drew 20 frames without trouble
+(teitou, 2026-11-06). Every tab shares one Chromium, so the loss fails the other WebGPU files running beside
+it, WebGL ones too ("WeaselRenderer requires either gl or canvas"). A WebGPU browser test draws to a canvas
+it never appends, as `parityHarness.ts` and `canvasBackend.browser.test.tsx` do.
