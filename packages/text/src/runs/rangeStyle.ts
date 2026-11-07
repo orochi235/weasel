@@ -84,9 +84,10 @@ function valueAt(run: StyledRun, key: StyleKey): StyledRun[StyleKey] {
   return value;
 }
 
-/** The structural values. Everything else is a primitive, and
- *  `applyStyleToRange` spreads runs, so reference identity isn't reliable. */
-const STRUCTURAL_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>(['fill', 'stroke']);
+/** The values that can be objects — a paint, or a `ScreenLength` given as
+ *  `{ px }`. Everything else is a primitive, and `applyStyleToRange` spreads
+ *  runs, so reference identity isn't reliable. */
+const STRUCTURAL_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>(['fill', 'stroke', 'fontSize', 'letterSpacing']);
 
 function sameValue(key: StyleKey, a: unknown, b: unknown): boolean {
   return STRUCTURAL_KEYS.has(key) ? deepEqual(a, b) : Object.is(a, b);
