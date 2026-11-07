@@ -175,7 +175,8 @@ above it.
 `f.schema` states the config once — values, types and controls — and the trial
 renders the settings panel from it. `render` returns the instrument's own DOM;
 returning `null` alongside `canvas` means the canvas layers are the whole
-picture.
+picture. Where the instrument can work out a good value for a lever, declare
+the lever [auto](#auto) rather than adding an "Auto" checkbox beside it.
 
 A value is addressed by its path: `bins` above sits at `config.bins` and is
 written as `setConfig('bins', 40)`. `f.group` nests one —
@@ -226,6 +227,15 @@ has a real number to draw. `.initial(auto)` opts in and opens the field auto
 instead of pinned at its default. A field that says none of these, like `seed`,
 has no dot and no gesture: the default for a value the instrument cannot
 receive as `undefined`, like a color going straight to a uniform.
+
+**Make a lever auto wherever the instrument can work out a good value for
+it**: a count from the data, a spacing from the size, a scale that fits the
+view. Use `.auto(fn)` when the config is enough to compute it, `.auto()` when
+only the instrument can, at run time (it then substitutes the value itself,
+and the row reads "auto" with no number), and `.initial(auto)` when the
+computed value is the better place to start. Don't put a separate "Auto X"
+checkbox beside the lever: the pin dot is that checkbox. Leave a lever
+pinned-only when `undefined` must never reach the instrument.
 
 Nothing stores the sentinel. It is normalized at every boundary into the
 trial's set of unpinned paths, and the pinned value stays in the config
