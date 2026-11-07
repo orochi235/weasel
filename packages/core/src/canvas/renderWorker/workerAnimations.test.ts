@@ -38,4 +38,39 @@ describe('the worker animator', () => {
     expect(anims.animator.isActive()).toBe(false);
     expect(() => anims.run([{ op: 'play', id: 8, key: 'nope' }], scene)).toThrow(/nope/);
   });
+
+  it('lets go of a run that ends on its own', () => {
+    const anims = createWorkerAnimations({
+      fade: ({ animator }) => animator.tween({ from: 0, to: 1, ms: 100, onTick: () => {} }),
+    }, () => {});
+    let t = 0;
+    for (let id = 1; id <= 50; id++) {
+      anims.at({ time: t }, false);
+      anims.run([{ op: 'play', id, key: 'fade' }], scene);
+      anims.advance();
+      t += 150;
+      anims.at({ time: t }, false);
+      anims.advance();
+    }
+    anims.at({ time: 0 }, false);
+    anims.run([{ op: 'play', id: 51, key: 'fade' }, { op: 'pause', id: 51 }], scene);
+    anims.at({ time: t + 1000 }, false);
+    anims.advance();
+    expect(anims.animator.isActive()).toBe(true);
+    // The paused run is still the page's to steer; the fifty that ended are not.
+    expect(anims.live()).toBe(1);
+    anims.run([{ op: 'cancel', id: 51 }], scene);
+    expect(anims.live()).toBe(0);
+  });
+
+  it('lets go of a run another took the key of, or a key cancel stopped', () => {
+    const anims = createWorkerAnimations({
+      glow: ({ animator }) => animator.tween({ from: 0, to: 1, ms: 100, cancelKey: 'glow', onTick: () => {} }),
+    }, () => {});
+    anims.at({ time: 0 }, false);
+    anims.run([{ op: 'play', id: 1, key: 'glow' }, { op: 'play', id: 2, key: 'glow' }], scene);
+    expect(anims.live()).toBe(1);
+    anims.run([{ op: 'cancelKey', key: 'glow' }], scene);
+    expect(anims.live()).toBe(0);
+  });
 });

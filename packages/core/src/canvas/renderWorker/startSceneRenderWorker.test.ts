@@ -124,7 +124,17 @@ describe('startSceneRenderWorker, the worker animator', () => {
     for (const fn of listeners) fn();
     expect(due).toHaveBeenCalled();
     client.sync();
-    expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 } });
+    // The time the last frame stood at was on the page's timeline, not the clock's.
+    expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 }, resumed: true });
+    answer({ type: 'drawn' });
+    // A seek made while the page's frames were away still plays.
+    client.resumed();
+    client.sync();
+    expect(frames(posted).at(-1)).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 } });
+    answer({ type: 'drawn' });
+    client.update({ clock: undefined });
+    client.sync();
+    expect(frames(posted).at(-1)).toEqual({ type: 'frame', at: AT, resumed: true });
     void scene;
   });
 
@@ -141,5 +151,48 @@ describe('startSceneRenderWorker, the worker animator', () => {
     answer({ type: 'image', src: 'b.svg' });
     client.dispose();
     expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores what the worker says after dispose', () => {
+    const { client, answer } = start();
+    const due = vi.fn();
+    client.subscribe(due);
+    client.dispose();
+    vi.mocked(answerImage).mockClear();
+    answer({ type: 'image', src: 'late.svg' });
+    answer({ type: 'dirty' });
+    client.animator.play('fade').cancel();
+    expect(answerImage).not.toHaveBeenCalled();
+    expect(due).not.toHaveBeenCalled();
+  });
+
+  it('watches no scene it is handed after dispose', () => {
+    const { client } = start();
+    const due = vi.fn();
+    client.subscribe(due);
+    client.dispose();
+    const other = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    client.update({ scene: other });
+    other.add({ id: asNodeId('b'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    expect(due).not.toHaveBeenCalled();
+  });
+
+  it('sends the whole frame again after one the worker could not be sent', () => {
+    const { scene, client, posted, worker } = start();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const postMessage = worker.postMessage.bind(worker);
+    worker.postMessage = (m: ToWorker) => {
+      structuredClone(m);
+      postMessage(m);
+    };
+    scene.update(asNodeId('a'), { data: { onTap: () => {} } });
+    client.update({ extraCommands: [] });
+    expect(client.sync()).toBe(true);
+    expect(frames(posted)).toHaveLength(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    scene.update(asNodeId('a'), { data: {} });
+    client.sync();
+    expect(frames(posted)[0]).toMatchObject({ scene: { reset: expect.anything() }, view: VIEW, extraCommands: [] });
+    warn.mockRestore();
   });
 });

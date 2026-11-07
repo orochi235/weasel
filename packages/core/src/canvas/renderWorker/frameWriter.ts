@@ -19,6 +19,8 @@ export interface FrameWriter {
   forgetScene(): void;
   /** Send the pose overrides next frame. */
   overridesChanged(): void;
+  /** The last frame written never reached the worker: send everything next frame. */
+  lost(): void;
 }
 
 /** Each node whose alpha differs from what `sent` holds, updating `sent` to match. */
@@ -33,9 +35,17 @@ function alphaChanges(scene: AnyScene, alphaFor: ((id: string) => number) | unde
   }
   for (const id of sent.keys()) {
     if (scene.nodes.has(id as never)) continue;
+    // The worker's entry outlives the node, and would dim a node put back under its id.
+    out.push([id, 1]);
     sent.delete(id);
   }
   return out;
+}
+
+/** Whether the scene holds any pose override. */
+function overridden(scene: AnyScene): boolean {
+  for (const _ of scene.overrides.ids()) return true;
+  return false;
 }
 
 export function createFrameWriter(): FrameWriter {
@@ -51,13 +61,18 @@ export function createFrameWriter(): FrameWriter {
     sent[key] = value;
     return true;
   };
+  const forgetScene = () => {
+    diff.forget();
+    sceneVersion = -1;
+    overridesDirty = true;
+    scrollAt = -1;
+    alphas.clear();
+  };
   return {
-    forgetScene() {
-      diff.forget();
-      sceneVersion = -1;
-      overridesDirty = true;
-      scrollAt = -1;
-      alphas.clear();
+    forgetScene,
+    lost() {
+      forgetScene();
+      for (const key of Object.keys(sent) as (keyof typeof sent)[]) delete sent[key];
     },
     overridesChanged() { overridesDirty = true; },
     write(inputs) {
@@ -65,18 +80,22 @@ export function createFrameWriter(): FrameWriter {
       const scene = inputs.scene as AnyScene;
       const msg: FrameMessage = { type: 'frame' };
       const version = scene.getContentVersion();
+      let delta: ReturnType<typeof diff.next> = null;
       if (version !== sceneVersion) {
-        const delta = diff.next(scene);
+        delta = diff.next(scene);
         sceneVersion = version;
         if (delta) msg.scene = delta;
-        // The worker drops every alpha with its scene, so a reset sends them all again.
+        // The worker's scene drops its alphas, overrides and scroll offsets on a reset, so a
+        // reset sends them all again.
         if (delta?.reset) alphas.clear();
       }
-      if (overridesDirty) {
+      // What crosses of an override reads the node: its shown data is a function of the stored
+      // data, and one for a node not yet added does not cross at all.
+      if (overridesDirty || delta?.reset || (delta && overridden(scene))) {
         overridesDirty = false;
         msg.overrides = wireOverrides(scene);
       }
-      if (scene.scroll.getGeneration() !== scrollAt) {
+      if (scene.scroll.getGeneration() !== scrollAt || delta?.reset) {
         scrollAt = scene.scroll.getGeneration();
         msg.scroll = wireScroll(scene);
       }

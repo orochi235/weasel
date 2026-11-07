@@ -60,7 +60,8 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   subscribe(fn: () => void): () => void;
   /** The worker's animator, which plays the programs its module registered. */
   readonly animator: WorkerAnimator;
-  /** The host's frame loop is back after time nobody saw: the worker's animator does not count it. */
+  /** The host's frame loop is back after time nobody saw: the worker's animator does not count it,
+   *  unless it follows a clock, whose position stands whatever the frame loop missed. */
   resumed(): void;
   /** The `pickId`s the worker's last frame painted over `rect`, CSS pixels from the canvas's
    *  top-left: `WeaselRenderer.renderIds` on that frame, a round trip away. Empty before the
@@ -70,6 +71,34 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   snapshot(): Promise<ImageBitmap | null>;
   /** Stop the worker, and with it the canvas's context. */
   dispose(): void;
+}
+
+/** Ask for a frame whenever the scene, its overrides or scroll offsets, or the clock move. */
+function watchInputs(
+  inputs: SceneRenderInputs<unknown, string, unknown>, due: () => void, overridesChanged: () => void,
+): () => void {
+  const { scene, clock } = inputs;
+  const offClock = clock ? [clock.clock.subscribe(due), clock.onFrame(due)] : [];
+  const offScene = scene.subscribe(due);
+  const offOverrides = scene.overrides.subscribe(() => { overridesChanged(); due(); });
+  const offScroll = scene.scroll.subscribe(due);
+  return () => { offScene(); offOverrides(); offScroll(); for (const off of offClock) off(); };
+}
+
+/** Answer the worker's request for an image from the page's cache, unless `onDispose` fires first. */
+function answerFromPage(
+  request: Extract<FromWorker, { type: 'image' }>,
+  post: (msg: ToWorker, transfer: Transferable[]) => void,
+  onDispose: (fn: () => void) => () => void,
+): void {
+  let answered = false;
+  let unhook = () => {};
+  const stop = answerImage(request, (answer) => {
+    answered = true;
+    unhook();
+    post(answer, answer.bitmap ? [answer.bitmap] : []);
+  });
+  if (!answered) unhook = onDispose(stop);
 }
 
 /** Start painting `inputs.scene` into `canvas` from `worker`, a worker whose module calls
@@ -87,6 +116,11 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   let owed = false;
   let disposed = false;
   let warned = false;
+  const warnOnce = (what: string, detail: unknown) => {
+    if (warned) return;
+    warned = true;
+    console.warn(`weasel: ${what}`, detail);
+  };
   const snapshots = createRequests<ImageBitmap | null>();
   const idReads = createRequests<IdBuffer>();
   /** Each image request still waiting on the page's cache hears this to stop. */
@@ -95,21 +129,21 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
 
   const ops: AnimationOp[] = [];
   let resumed = false;
-  const animator = workerAnimator((op) => { ops.push(op); due.emit(); });
+  const animator = workerAnimator((op) => {
+    if (disposed) return;
+    ops.push(op);
+    due.emit();
+  });
 
   let unwatch = () => {};
   const watch = () => {
     unwatch();
-    const { scene, clock } = inputs;
-    const offClock = clock ? [clock.clock.subscribe(due.emit), clock.onFrame(due.emit)] : [];
-    const offScene = scene.subscribe(due.emit);
-    const offOverrides = scene.overrides.subscribe(() => { frames.overridesChanged(); due.emit(); });
-    const offScroll = scene.scroll.subscribe(due.emit);
-    unwatch = () => { offScene(); offOverrides(); offScroll(); for (const off of offClock) off(); };
+    unwatch = watchInputs(inputs, due.emit, frames.overridesChanged);
   };
   watch();
 
   worker.addEventListener('message', (event: MessageEvent<FromWorker>) => {
+    if (disposed) return;
     const msg = event.data;
     if (msg.type === 'drawn') {
       inFlight = false;
@@ -117,26 +151,11 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     } else if (msg.type === 'dirty') due.emit();
     else if (msg.type === 'snapshot') snapshots.settle(msg.id, msg.bitmap);
     else if (msg.type === 'ids') idReads.settle(msg.id, msg.ids);
-    else if (msg.type === 'image') {
-      let answered = false;
-      let unhook = () => {};
-      const stop = answerImage(msg, (answer) => {
-        answered = true;
-        unhook();
-        post(answer, answer.bitmap ? [answer.bitmap] : []);
-      });
-      if (!answered) unhook = disposing.subscribe(stop);
-    } else if (msg.type === 'error' && !warned) {
-      warned = true;
-      console.warn('weasel: the render worker failed:', msg.message);
-    }
+    else if (msg.type === 'image') answerFromPage(msg, post, disposing.subscribe);
+    else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
   });
 
-  worker.addEventListener('error', (event) => {
-    if (warned) return;
-    warned = true;
-    console.warn('weasel: the render worker did not start:', event.message);
-  });
+  worker.addEventListener('error', (event) => warnOnce('the render worker did not start:', event.message));
 
   const dpr = resolveDpr(initial.dpr);
   const offscreen = canvas.transferControlToOffscreen();
@@ -144,11 +163,14 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
 
   return {
     update(next) {
+      if (disposed) return;
       const sceneMoved = next.scene !== undefined && next.scene !== inputs.scene;
       const clockMoved = 'clock' in next && next.clock !== inputs.clock;
       inputs = { ...inputs, ...next };
       if (sceneMoved) frames.forgetScene();
       if (sceneMoved || clockMoved) watch();
+      // The last frame's time stands on the old clock's timeline, or the page's.
+      if (clockMoved) resumed = true;
     },
     sync() {
       if (disposed) return false;
@@ -159,13 +181,24 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       if (resumed) msg.resumed = true;
       resumed = false;
       if (ops.length > 0) msg.animations = ops.splice(0);
+      try {
+        post(msg);
+      } catch (e) {
+        // Something in the frame cannot be cloned. Nothing of it arrived, so the next frame
+        // carries everything, and the animator calls go with it.
+        frames.lost();
+        if (msg.animations) ops.unshift(...msg.animations);
+        if (msg.resumed) resumed = true;
+        warnOnce('a frame could not be sent:', e);
+        return true;
+      }
       inFlight = true;
-      post(msg);
       return true;
     },
     subscribe: due.subscribe,
     animator,
-    resumed() { resumed = true; },
+    // On a clock the clock's position is the time, hidden or not, as `useAnimator({ clock })` has it.
+    resumed() { if (!inputs.clock) resumed = true; },
     readIds(rect, options) {
       if (disposed) return Promise.resolve(EMPTY_IDS());
       return idReads.ask((id) => post({

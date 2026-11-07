@@ -16,7 +16,7 @@ import type { SceneViewDrawOne } from '../nodeShapeTypes';
 import type { PaintBoundsFn } from '../paintCull';
 import { buildSceneViewCommands } from '../sceneViewRender';
 import type { FrameInputs, FromWorker, ToWorker } from './protocol';
-import { createSceneMirror, type SceneMirrorOptions } from './sceneMirror';
+import { createSceneMirror, type SceneMirror, type SceneMirrorOptions } from './sceneMirror';
 import { createWorkerAnimations, type WorkerAnimation } from './workerAnimations';
 import { loadFromPage } from './workerImages';
 
@@ -120,8 +120,17 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     }
     const { scene } = mirror;
     animations.at(msg.at, msg.resumed === true);
-    if (scene && msg.animations) animations.run(msg.animations, scene);
+    let failed: unknown;
+    if (scene && msg.animations) {
+      try { animations.run(msg.animations, scene); } catch (e) { failed = e; }
+    }
     animations.advance();
+    paint(scene);
+    if (failed !== undefined) throw failed;
+  };
+
+  const paint = (scene: SceneMirror['scene']): void => {
+    if (!painting) return;
     const { renderer, view, size, inputs } = painting;
     if (!scene || !view || renderer.isContextLost()) return;
     // `defaultDrawOne` reads the density it paints at here, as it reads `window`'s on the page.
@@ -169,7 +178,9 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     try {
       receive(msg);
     } catch (e) {
+      // The page waits on these answers.
       if (msg.type === 'frame') post({ type: 'drawn' });
+      else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: NO_IDS() });
       post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
     }
   });
@@ -185,9 +196,10 @@ function readIds(painting: Painting | null, msg: Extract<ToWorker, { type: 'read
   });
 }
 
+/** What `canvas` shows, or `null` when it shows nothing or cannot be read: the page waits on it. */
 async function snapshot(canvas: OffscreenCanvas | null): Promise<ImageBitmap | null> {
   if (!canvas || canvas.width === 0 || canvas.height === 0) return null;
-  return createImageBitmap(canvas);
+  return createImageBitmap(canvas).catch(() => null);
 }
 
 /**

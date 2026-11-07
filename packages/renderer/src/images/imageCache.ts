@@ -215,6 +215,8 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
       if (cache.get(src) !== entry) return;
       v.pending = undefined;
       v.failed.add(target);
+      // A reader waiting on a larger raster hears that none is coming.
+      notify();
     },
   );
 }
@@ -257,6 +259,8 @@ export function isBitmapSrc(src: string): boolean {
  */
 export function adoptBitmapSrc(src: string, bitmap: ImageBitmap): void {
   if (mintedHere(src)) throw new Error(`weasel imageCache: ${src} was minted here; there is nothing to adopt`);
+  const old = cache.get(src)?.bitmap;
+  if (old && old !== bitmap) releaseImageSource(old);
   cache.set(src, { status: 'ready', bitmap, readAt: ++reads });
   enforceBudget(src);
   notify();
@@ -299,6 +303,13 @@ export function imageNaturalSize(src: string): ImageRasterSize | undefined {
   if (entry?.vector) return entry.vector.natural;
   const bitmap = entry?.bitmap ?? held.get(src)?.deref();
   return bitmap ? { width: bitmap.width, height: bitmap.height } : undefined;
+}
+
+/** Whether a load of `src`, or a re-raster of a vector source at another size, is in flight:
+ *  whether {@link subscribeImageReady} will hear of a new bitmap for it. */
+export function imagePending(src: string): boolean {
+  const entry = cache.get(src);
+  return entry?.status === 'loading' || entry?.vector?.pending !== undefined;
 }
 
 /** Current load status for `src` (`'idle'` if never requested). */

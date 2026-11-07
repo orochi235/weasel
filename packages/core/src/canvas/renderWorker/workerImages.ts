@@ -5,7 +5,7 @@
  * answers from its own image cache with a copy it transfers.
  */
 import {
-  getImageBitmap, imageStatus, isBitmapSrc, isVectorImageSrc, loadImageBitmap, setImageLoader, subscribeImageReady,
+  getImageBitmap, imagePending, imageStatus, isBitmapSrc, isVectorImageSrc, loadImageBitmap, setImageLoader, subscribeImageReady,
   type ImageRasterSize,
 } from '@weasel-js/renderer';
 import type { FromWorker, ToWorker } from './protocol';
@@ -50,8 +50,9 @@ export function answerImage(
   const attempt = (): boolean => {
     const bitmap = getImageBitmap(src, size);
     const bigEnough = !size || (bitmap && bitmap.width >= size.width && bitmap.height >= size.height);
-    // A raster smaller than asked for is a re-raster in flight: wait for one landing, no longer.
-    if (bitmap && (bigEnough || tries > 0)) {
+    // A raster smaller than asked for waits for one re-raster landing, no longer, and for none when
+    // the page starts none: its texture side may be smaller than the worker's.
+    if (bitmap && (bigEnough || tries > 0 || !imagePending(src))) {
       // A copy, so the page's own stays whole and the worker's cache can own the one it gets.
       createImageBitmap(bitmap).then(
         (copy) => reply({ type: 'image', src, bitmap: copy }),
@@ -59,7 +60,9 @@ export function answerImage(
       );
       return true;
     }
-    if (imageStatus(src) === 'error') {
+    // A name the page minted and has let go of never loads again.
+    const status = imageStatus(src);
+    if (status === 'error' || (!bitmap && isBitmapSrc(src) && status === 'idle')) {
       reply({ type: 'image', src, error: `weasel: could not load ${src}` });
       return true;
     }
