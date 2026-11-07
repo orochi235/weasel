@@ -1,5 +1,55 @@
 # @weasel-js/guides
 
+## 1.17.0
+
+### Patch Changes
+
+- d53bb96: Rulers along the top and left of a 2D canvas. `createRulers` (guides) returns a contribution for `<SceneCanvas ambient>` that follows the view and the pointer, claims presses on the ruler strips, and turns a drag off a ruler into a guide, a drag on a guide into a move, and a drop back on a ruler into a removal, each one undo step through `addGuideOp`, `replaceGuideOp`, and `removeGuideOp`. `<Rulers>` (ui) draws them, and `rulers.settled` leaves the guide being moved out of a guides layer while the rulers draw it where it is going. The labeled step is the one `scaleBar` picks, and the labels read in the unit scopes of the frame under the pointer, falling back to the document's, so inside a frame declaring `drawnAt` they read its true lengths. The rulers' look is provisional: theme tokens only, to be settled.
+  
+  Alongside: `useGuides()` gains `subscribe`, which `createGuidesLayer` takes so a canvas repaints when a guide comes or goes; `guideSnapSource` offers nothing for a guide whose id the gesture excludes; and `scaleBar` now says which `unit` its label is written in.
+- Updated dependencies [d28ff77]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [4264abb]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [d53bb96]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/core@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/quantity@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

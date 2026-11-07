@@ -1,5 +1,123 @@
 # @weasel-js/labkit
 
+## 1.17.0
+
+### Patch Changes
+
+- d28ff77: Depends on `@msb235/blits` 0.20.0, up from 0.18.0. Neither release breaks anything the kit calls. Among their fixes: a seek back over children that a forward seek passed plays them in order again on the next frame, `inert` no longer reads true after a seek back while a staggered subject still has motion to come, so a frame loop sleeping on it wakes, and a child whose rate is written every frame keeps a bounded history instead of one entry per write.
+- fafbe09: The README and `.auto()`'s documentation now say to make a lever auto wherever the instrument can work out a good
+  value for it, rather than adding an "Auto" checkbox beside it.
+- ea04495: A words or action leaf given a `.dialog` now draws its dialog row, as the panel's layout already assumed, instead of its built-in row. Which rows a lab or instrument draws itself is decided in one place.
+- 5d11b8b: Marks saved in the old vertex format are no longer collapsed to a point when their scene loads before the target declares its content size; they stay as saved until the size is known.
+- 5e6bfd8: A `.resettable()` group's reset button judges each value the way its row shows it, so it stays disabled for a missing value, for a list or object equal to its default, and for an encoded leaf whose stored value reads as its default. Resetting an encoded leaf clears it rather than storing the option value in place of what its encoding writes.
+- 18fa747: A mark's staleness reads each `positionDependsOn` key as a dotted config path, so a value nested under an `f.group` is checked, and compares values by their contents, so a list or object value no longer reads as stale after a reload.
+- 3a4cc62: A number pref's slider can space its track other than linearly. A number leaf takes `scale`: `'linear'`, `'log'`, `'sqrt'`, or a `{ to, from }` pair, and labkit's `NumberNode` takes `.scale(...)`, so a segment count where 1–100 matters most, `f.number(16).range(1, 1000).step(1).scale('log')`, gives 1–10, 10–100 and 100–1000 a third of the track each. Only the track changes: the typed value, `step`, `stops`, the arrow keys and the stored value stay in the value's own units. Under a `unit` the scale spaces the shown values. A `'log'` track over a range not above zero warns once in development and is drawn linear. `PropertyField`'s number field takes `scale` as a `ContinuousScaleFactory`, as `Slider` does, and draws its stops where the scale puts them; ui's `prefNumberScale` turns a leaf's `scale`, or a factory, into one, naming its caller in the log warning when given a label. `BandEditor` resolves its `scale` through it too, so its log default now also falls back to linear, rather than throwing, while an edge drag stretches the axis down to zero or below. `PrefSchemaEditor` offers linear, log and sqrt for a number leaf. Additive.
+  
+  `@weasel-js/plot/scales` adds `powScale({ domain, range, exponent })`, which keeps a negative value's sign so a square-root scale (`exponent: 0.5`) takes zero and negatives, and `warpScale({ domain, range, to, from })`, a scale linear in `to(value)`. Both tick and label in value units, as `linearScale` does. `Scale.kind` and `ContinuousScale.kind` gain `'pow'` and `'warp'`.
+- df080bc: `<SceneViewCanvas worker>` paints its scene from a worker. The component hands its canvas to the worker with `transferControlToOffscreen`, and on each frame sends it only what changed: the changed nodes in their saved form, the pose overrides, and the view, size, and layer settings. The worker keeps its own copy of the scene and draws it with its own renderer. Hit-testing, input, and overlays stay on the page. The worker's module imports `serveSceneRender` from the new `@weasel-js/core/render-worker` entry and registers whatever paints a node there: node shapes, fonts, paint kinds, shader programs (GLSL, WGSL, or both), and the scene registry. `alphaFor` still applies: the page calls it and sends the alphas that changed, and scroll offsets cross too. `workerRef` gives `snapshot()` in place of `toBlob`, which a transferred canvas no longer allows. A host that is not React drives `startSceneRenderWorker` from its own frame loop.
+  
+  The worker runs no loop of its own: it paints when the page's frame loop sends a frame, so it paints nothing while the canvas is off screen or the tab is hidden. A worker decodes raster images itself, and asks the page for an SVG source, which needs an `<img>` to rasterize.
+  
+  The renderer's `canvas` option takes an `OffscreenCanvas`. The image cache's own loader decodes rasters with `fetch` and `createImageBitmap` where there is no `<img>`, and `setImageLoader` replaces it. A worker's `self.fonts` loads invalidate glyphs the way `document.fonts` loads do.
+  
+  A worker view runs its own animator. The worker module registers animation programs by key (`serveSceneRender({ animations })`), and the page plays them through `workerRef.current.animator.play(key, params)` and steers them by id or key; their vertex-color and trim overrides paint as an `animator` does on the page. The animator moves on the page's frames, so it stops while the canvas is unseen, and given `clock` it follows a page clock: its pause holds the animations, and a seek back plays them backward. `hostAnimator` in `@weasel-js/animator` is that animator for any host that runs its own frames.
+  
+  An image node can draw a `bitmapSrc` bitmap in a worker view: the worker asks the page for it and is sent a copy. `bitmapSrc` names now carry a token of the realm that minted them, and `adoptBitmapSrc` puts a bitmap minted in another realm into the image cache under its name.
+  
+  `<SceneCanvas worker>` paints the scene layers from a render worker and the rest of the layer stack on the page: the layers below the scene and above it (grid, ghosts, selection and path-edit chrome, consumer layers) each paint into a page canvas of their own, stacked with the worker's, and the top one takes input. A page layer placed between two scene layers gives each part of the scene its own worker. The handle's `readIds` and `pickAt` read every canvas of the stack, the worker's a round trip away and in the page's `scenePickIds` numbering, and `readIdsSync` answers `null` there, so `geometry.picking: 'pixels'` walks the shapes. A prop worker mode cannot honor is a type error: `animator`, `paintInto`, `inputElement`, `backend`, and a scene slot's functions; the worker's canvas and the page's beside it paint with WebGL 2. The handle's `worker` gives the worker's animator and a snapshot of the whole stack.
+  
+  This changes `SceneCanvasProps` and `SceneViewCanvasProps` into unions of a page-painted and a worker-painted branch, which breaks a wrapper that writes `Omit<SceneCanvasProps<…>, K>`: an `Omit` of a union merges its branches, and the merged props are assignable to neither. Distribute it instead, `SceneCanvasProps<…> extends infer P ? (P extends unknown ? Omit<P, K> : never) : never`, as `LeanSceneCanvasProps` and labkit's `TrialSceneCanvasProps` now do. `SceneViewCanvas` also takes `dpr`.
+- Updated dependencies [38e8c77]
+- Updated dependencies [986134b]
+- Updated dependencies [a7f57b8]
+- Updated dependencies [b0c009e]
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [46a7b46]
+- Updated dependencies [b5cd64f]
+- Updated dependencies [ceb8c55]
+- Updated dependencies [efcc47a]
+- Updated dependencies [d28ff77]
+- Updated dependencies [a551c73]
+- Updated dependencies [217246e]
+- Updated dependencies [9e2e425]
+- Updated dependencies [5067c7a]
+- Updated dependencies [561550a]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [b9f95c2]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [6d8b8af]
+- Updated dependencies [2eaa495]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [aedd380]
+- Updated dependencies [e989ef7]
+- Updated dependencies [c59a02a]
+- Updated dependencies [e6cf896]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [4264abb]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [d53bb96]
+- Updated dependencies [8b67fa6]
+- Updated dependencies [2d57bf9]
+- Updated dependencies [5c0ea38]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [4298e0d]
+- Updated dependencies [73b1dc5]
+- Updated dependencies [a14eca6]
+- Updated dependencies [3ea2786]
+- Updated dependencies [953361f]
+- Updated dependencies [e603f3f]
+- Updated dependencies [34da47e]
+- Updated dependencies [5491ac0]
+- Updated dependencies [fed446b]
+- Updated dependencies [ad2f2a3]
+- Updated dependencies [00fa523]
+- Updated dependencies [1f1c990]
+- Updated dependencies [34203da]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/animator@1.17.0
+  - @weasel-js/react@1.17.0
+  - @weasel-js/core@1.17.0
+  - @weasel-js/clock@1.17.0
+  - @weasel-js/ui@1.17.0
+  - @weasel-js/routing@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/loupe@1.17.0
+  - @weasel-js/prefs@1.17.0
+  - @weasel-js/quantity@1.17.0
+  - @weasel-js/svg@1.17.0
+  - @weasel-js/theme@1.17.0
+  - @weasel-js/minimap@1.17.0
+  - @weasel-js/kernel3d@1.17.0
+  - @weasel-js/icons@1.17.0
+  - @weasel-js/registry@1.17.0
+  - @weasel-js/storage@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

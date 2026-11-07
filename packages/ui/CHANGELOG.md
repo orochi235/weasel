@@ -1,5 +1,118 @@
 # @weasel-js/ui
 
+## 1.17.0
+
+### Patch Changes
+
+- a551c73: A mixed `Checkbox`, and a mixed boolean `PropertyField` drawn as a checkbox, keep their mixed mark through a click their owner does not answer — a read-only box, or a controlled one whose owner leaves it mixed. The browser cleared `indeterminate` on the click, and nothing put it back until the next render.
+- 6d8b8af: `domFocusScope` leaves out of its tab order a control that a disabled `<fieldset>` disables, as the browser's Tab does. It read only the control's own `disabled`, so `moveFocus` could name a control that never took focus.
+- 2eaa495: `DataGrid`, `ListEditor`, and `TokenField` place the drop seam during a reorder drag by `dropSide` from `@weasel-js/ui-logic`, the rule `ItemList` already uses, instead of each restating it.
+- 3a4cc62: A number pref's slider can space its track other than linearly. A number leaf takes `scale`: `'linear'`, `'log'`, `'sqrt'`, or a `{ to, from }` pair, and labkit's `NumberNode` takes `.scale(...)`, so a segment count where 1–100 matters most, `f.number(16).range(1, 1000).step(1).scale('log')`, gives 1–10, 10–100 and 100–1000 a third of the track each. Only the track changes: the typed value, `step`, `stops`, the arrow keys and the stored value stay in the value's own units. Under a `unit` the scale spaces the shown values. A `'log'` track over a range not above zero warns once in development and is drawn linear. `PropertyField`'s number field takes `scale` as a `ContinuousScaleFactory`, as `Slider` does, and draws its stops where the scale puts them; ui's `prefNumberScale` turns a leaf's `scale`, or a factory, into one, naming its caller in the log warning when given a label. `BandEditor` resolves its `scale` through it too, so its log default now also falls back to linear, rather than throwing, while an edge drag stretches the axis down to zero or below. `PrefSchemaEditor` offers linear, log and sqrt for a number leaf. Additive.
+  
+  `@weasel-js/plot/scales` adds `powScale({ domain, range, exponent })`, which keeps a negative value's sign so a square-root scale (`exponent: 0.5`) takes zero and negatives, and `warpScale({ domain, range, to, from })`, a scale linear in `to(value)`. Both tick and label in value units, as `linearScale` does. `Scale.kind` and `ContinuousScale.kind` gain `'pow'` and `'warp'`.
+- d53bb96: Rulers along the top and left of a 2D canvas. `createRulers` (guides) returns a contribution for `<SceneCanvas ambient>` that follows the view and the pointer, claims presses on the ruler strips, and turns a drag off a ruler into a guide, a drag on a guide into a move, and a drop back on a ruler into a removal, each one undo step through `addGuideOp`, `replaceGuideOp`, and `removeGuideOp`. `<Rulers>` (ui) draws them, and `rulers.settled` leaves the guide being moved out of a guides layer while the rulers draw it where it is going. The labeled step is the one `scaleBar` picks, and the labels read in the unit scopes of the frame under the pointer, falling back to the document's, so inside a frame declaring `drawnAt` they read its true lengths. The rulers' look is provisional: theme tokens only, to be settled.
+  
+  Alongside: `useGuides()` gains `subscribe`, which `createGuidesLayer` takes so a canvas repaints when a guide comes or goes; `guideSnapSource` offers nothing for a guide whose id the gesture excludes; and `scaleBar` now says which `unit` its label is written in.
+- 8b67fa6: The schema editor no longer opens a rail page after it has unmounted: a drag held on a rail entry left its half-second timer running when the editor went away mid-drag.
+- 2d57bf9: `Tree` takes `pressFolds` (default `true`). Set to `false`, activating a branch — a click on its row, Enter, Space — selects it without folding it; the twisty, a `leading` that folds, and the arrow keys still fold. The schema editor's structure, unplaced and actions trees, and devtools' scene tree, set it, so picking a group to edit or inspect no longer hides what it holds.
+  
+  The schema editor's printed literal leaves out a group's or a section's empty `description`, which the type makes optional, and its Changes list prints an object or an array value on one line without a trailing comma.
+- 5c0ea38: `useScrollSpy`'s `scrollTo` holds the section it was sent to on every call, not only the first. A second call ran the first call's release after taking its own hold, which dropped that hold at once, so the rail flickered through the sections the scroll passed on its way.
+- 00fa523: A `Switch` or `Checkbox` reports its words' baseline, not its control's, so in a baseline-aligned row its label lines up with the text beside it. The track or box still centers on the words.
+- 1f1c990: A `UnitField` with `steppers` and an `endless` end no longer disables its stepper at that bound, where the arrow key still steps on to infinity. Each stepper is now disabled exactly when its arrow key has nowhere left to step, typed text included.
+- Updated dependencies [38e8c77]
+- Updated dependencies [986134b]
+- Updated dependencies [a7f57b8]
+- Updated dependencies [b0c009e]
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [46a7b46]
+- Updated dependencies [b5cd64f]
+- Updated dependencies [ceb8c55]
+- Updated dependencies [efcc47a]
+- Updated dependencies [d28ff77]
+- Updated dependencies [217246e]
+- Updated dependencies [9e2e425]
+- Updated dependencies [5067c7a]
+- Updated dependencies [561550a]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [b37adcc]
+- Updated dependencies [8bcf2c8]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [52fd33e]
+- Updated dependencies [e989ef7]
+- Updated dependencies [5d66b8b]
+- Updated dependencies [e6cf896]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [1d6fe9b]
+- Updated dependencies [a4b3961]
+- Updated dependencies [d29469c]
+- Updated dependencies [5f43e16]
+- Updated dependencies [4264abb]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [d53bb96]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [9778eee]
+- Updated dependencies [4298e0d]
+- Updated dependencies [73b1dc5]
+- Updated dependencies [a14eca6]
+- Updated dependencies [3ea2786]
+- Updated dependencies [953361f]
+- Updated dependencies [e603f3f]
+- Updated dependencies [34da47e]
+- Updated dependencies [5491ac0]
+- Updated dependencies [fed446b]
+- Updated dependencies [ad2f2a3]
+- Updated dependencies [34203da]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/animator@1.17.0
+  - @weasel-js/react@1.17.0
+  - @weasel-js/core@1.17.0
+  - @weasel-js/clock@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/history@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/menu@1.17.0
+  - @weasel-js/plot@1.17.0
+  - @weasel-js/prefs@1.17.0
+  - @weasel-js/quantity@1.17.0
+  - @weasel-js/guides@1.17.0
+  - @weasel-js/modes@1.17.0
+  - @weasel-js/svg@1.17.0
+  - @weasel-js/theme@1.17.0
+  - @weasel-js/font@1.17.0
+  - @weasel-js/text@1.17.0
+  - @weasel-js/ui-logic@1.17.0
+  - @weasel-js/gestures@1.17.0
+  - @weasel-js/icons@1.17.0
+  - @weasel-js/registry@1.17.0
+  - @weasel-js/select@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

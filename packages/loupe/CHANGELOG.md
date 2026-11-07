@@ -1,5 +1,21 @@
 # @weasel-js/loupe
 
+## 1.17.0
+
+### Patch Changes
+
+- aedd380: `pixelHex` turns an RGBA pixel's bytes into the `#rrggbb` a loupe reports, or `null` for a fully transparent one. A canvas source and the HUD loupe both report colors through it, where each had its own copy.
+- Updated dependencies [6539d70]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [454e8e1]
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

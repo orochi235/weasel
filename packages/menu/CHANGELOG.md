@@ -1,5 +1,16 @@
 # @weasel-js/menu
 
+## 1.17.0
+
+### Patch Changes
+
+- 5d66b8b: A number, text, or color row's access letter highlights the row, where Enter then edits it. It did nothing: only an item's letter chose it and only a submenu's opened it.
+- Updated dependencies [4264abb]
+- Updated dependencies [d53bb96]
+  - @weasel-js/quantity@1.17.0
+  - @weasel-js/ui-logic@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

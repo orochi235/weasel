@@ -1,5 +1,80 @@
 # @weasel-js/rig
 
+## 1.17.0
+
+### Patch Changes
+
+- Updated dependencies [38e8c77]
+- Updated dependencies [986134b]
+- Updated dependencies [a7f57b8]
+- Updated dependencies [b0c009e]
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [46a7b46]
+- Updated dependencies [b5cd64f]
+- Updated dependencies [ceb8c55]
+- Updated dependencies [efcc47a]
+- Updated dependencies [d28ff77]
+- Updated dependencies [13ca1ea]
+- Updated dependencies [d3820c9]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [b9f95c2]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [b37adcc]
+- Updated dependencies [8bcf2c8]
+- Updated dependencies [e3a95da]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [c59a02a]
+- Updated dependencies [e6cf896]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [3517855]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [ee7d8ce]
+- Updated dependencies [cb58393]
+- Updated dependencies [5b39acd]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [e95d9fc]
+- Updated dependencies [9f29268]
+- Updated dependencies [34203da]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/animator@1.17.0
+  - @weasel-js/react@1.17.0
+  - @weasel-js/core@1.17.0
+  - @weasel-js/renderer@1.17.0
+  - @weasel-js/routing@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/history@1.17.0
+  - @weasel-js/prefs@1.17.0
+  - @weasel-js/icons@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

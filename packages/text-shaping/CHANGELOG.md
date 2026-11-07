@@ -1,5 +1,11 @@
 # @weasel-js/text-shaping
 
+## 1.17.0
+
+### Patch Changes
+
+- @weasel-js/bidi@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

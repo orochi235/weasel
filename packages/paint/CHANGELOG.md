@@ -1,5 +1,11 @@
 # @weasel-js/paint
 
+## 1.17.0
+
+### Patch Changes
+
+- 52fd33e: `lerpPaint` keeps each gradient stop's alpha. Interpolating two gradients dropped it, so a stop that faded to transparent came back opaque, at every `t` including 0 and 1.
+
 ## 1.16.2
 
 No changes in this release.

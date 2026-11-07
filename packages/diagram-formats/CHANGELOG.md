@@ -1,5 +1,79 @@
 # @weasel-js/diagram-formats
 
+## 1.17.0
+
+### Patch Changes
+
+- 20aef2e: A body takes a `header` row, `{ kind: 'header', text, style?, id?, pad?, aside? }`, only as its first row. It is a band across the top of the node, flush with its bounds rather than inset by the outline or the padding, as tall as its text's line plus `pad` (default `HEADER_PAD`) above and below, with its text set left at the body's padding; the other rows lay out below it as before. Its text is centered on the face's caps, midway between baseline and cap height, where the measure reports the face's metrics, and on its line box where it does not. The band is filled in the node's stroke and clipped to its outline, so a `roundRect` keeps its rounded corners, and its text is drawn in the node's fill. `NodeStyle` takes `header` and `headerText` to color the two otherwise. A node's minimum width covers the header's text and its padding.
+  
+  A header's `aside` is a second text in the band, set right at the body's padding from the right edge in the title's face, on the title's line, in the title's color at `HEADER_ASIDE_OPACITY` (0.7). The band's minimum width then covers title, `HEADER_ASIDE_GAP` (8), aside and the padding on both sides, and the title's box stops that gap short of the aside's. Its text node carries `bodyAside: true` beside its title's `bodyRow`. A theme recolors it with the title, and laying the body out again (`relayoutBodies`, a resize) moves it with the band. `diagram-formats` reads a header row back from a scene as a header, with its `aside` and `pad`.
+  
+  `MeasureRowText` may return `capCenter`, how far below the top of a line box the caps' middle falls. `rendererMeasure` and `diagramScene`'s own estimate read it from the registered face's metrics, and `canvasMeasure` from the context's font and glyph bounds.
+  
+  `DataNode` takes `collapsed`: a node whose first row is a header is built as that row alone, sized to its band and as wide as it would be open. One with no header is drawn whole.
+  
+  `DiagramView` takes `onHeaderClick(nodeId)`, called on a click (not a drag) anywhere on a node's header band, its text included, after `onSelect`.
+  
+  `RowTextStyle` takes `tracking` (extra space after each character, in em) and `weight` (a numeric font weight, over `bold`). Both reach the row's scene text as `letterSpacing` and `fontWeight`, and `canvasMeasure`, `rendererMeasure` and `diagramScene`'s own estimate measure with them.
+  
+  `roundRectOutline(maxRadius)` makes a rounded-rect outline with its own corner radius, to register under a name of its own: `registerOutline('card', roundRectOutline(5))`. The built-in `roundRect` is `roundRectOutline(10)`.
+- 8ba6e02: DOT: an id or page name ending in a backslash, or holding one before a quote, was written so the file no longer parsed; backslashes in quoted names are now written doubled and read back as one. A `width`, `height`, or `penwidth` that is not a number is dropped with a warning instead of reaching the diagram as `NaN`. Edge labels read `\E`, `\T`, and `\H` as the edge, its tail, and its head, and a strict graph's repeated edge statements set their attributes on the one edge it keeps instead of being thrown away.
+- b721b11: Reading draw-style XML whose cells name each other as parents in a circle, or a cell naming itself, no longer hangs or overflows the stack: such cells are read as sitting on the page.
+- 4af03f6: A numbered character reference past the last code point, such as `&#99999999;`, in a DOT HTML label threw a `RangeError` and failed the whole import; it is now kept as written, as draw-style XML already kept it. Both readers now decode references the one way.
+- c802f4f: Writing Mermaid lost text that Mermaid reads as markup: a label holding `&amp;` or `&#65;` came back as `&` or `A`, and one wrapped in backticks came back as a markdown string with the backticks gone. The writer now spells such an `&` as `#38;` and such a leading backtick as `#96;`.
+- Updated dependencies [08ebffc]
+- Updated dependencies [8e0ac8a]
+- Updated dependencies [d28ff77]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [fd16536]
+- Updated dependencies [20aef2e]
+- Updated dependencies [1d87afe]
+- Updated dependencies [1b720a8]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [52fd33e]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [1d6fe9b]
+- Updated dependencies [a4b3961]
+- Updated dependencies [d29469c]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [4298e0d]
+- Updated dependencies [73b1dc5]
+- Updated dependencies [a14eca6]
+- Updated dependencies [3ea2786]
+- Updated dependencies [953361f]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/diagram@1.17.0
+  - @weasel-js/core@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/plot@1.17.0
+  - @weasel-js/svg@1.17.0
+  - @weasel-js/pdf@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

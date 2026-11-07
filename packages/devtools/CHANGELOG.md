@@ -1,5 +1,57 @@
 # @weasel-js/devtools
 
+## 1.17.0
+
+### Patch Changes
+
+- 2d57bf9: `Tree` takes `pressFolds` (default `true`). Set to `false`, activating a branch — a click on its row, Enter, Space — selects it without folding it; the twisty, a `leading` that folds, and the arrow keys still fold. The schema editor's structure, unplaced and actions trees, and devtools' scene tree, set it, so picking a group to edit or inspect no longer hides what it holds.
+  
+  The schema editor's printed literal leaves out a group's or a section's empty `description`, which the type makes optional, and its Changes list prints an object or an array value on one line without a trailing comma.
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [d28ff77]
+- Updated dependencies [a551c73]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [6d8b8af]
+- Updated dependencies [2eaa495]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [d53bb96]
+- Updated dependencies [8b67fa6]
+- Updated dependencies [2d57bf9]
+- Updated dependencies [5c0ea38]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [00fa523]
+- Updated dependencies [1f1c990]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/react@1.17.0
+  - @weasel-js/core@1.17.0
+  - @weasel-js/ui@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

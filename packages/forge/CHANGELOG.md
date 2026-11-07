@@ -1,5 +1,83 @@
 # @weasel-js/forge
 
+## 1.17.0
+
+### Patch Changes
+
+- 7c6c73d: The story index reads CSF2 annotations assigned after a story, such as `Primary.storyName = 'Main'` and `Primary.parameters = { forge: { isolate: '…' } }`, which the running story already honored. The tree and test names now show the assigned name, and an assigned isolate reason isolates the story.
+- 1f4f404: The workshop's component graph reads a component file again when it is created after being deleted, as a branch switch does, instead of leaving the component out until its next edit.
+- a3d10e7: Require Node 24.11 or later, like every other package; forge alone still allowed Node 22.18.
+- e4db063: A story arg named `t` is no longer written to the URL, where it read back as the playhead and reset the knob on every reload. Issue reopen links leave it out too.
+- 716f94b: The workshop's component graph now rebuilds once more when a file changes while a rebuild is already running, instead of dropping that edit until the next one.
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [d28ff77]
+- Updated dependencies [a551c73]
+- Updated dependencies [217246e]
+- Updated dependencies [9e2e425]
+- Updated dependencies [5067c7a]
+- Updated dependencies [561550a]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [6d8b8af]
+- Updated dependencies [2eaa495]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [fafbe09]
+- Updated dependencies [ea04495]
+- Updated dependencies [5d11b8b]
+- Updated dependencies [5e6bfd8]
+- Updated dependencies [18fa747]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [d53bb96]
+- Updated dependencies [8b67fa6]
+- Updated dependencies [2d57bf9]
+- Updated dependencies [5c0ea38]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [4298e0d]
+- Updated dependencies [73b1dc5]
+- Updated dependencies [a14eca6]
+- Updated dependencies [3ea2786]
+- Updated dependencies [953361f]
+- Updated dependencies [e603f3f]
+- Updated dependencies [34da47e]
+- Updated dependencies [5491ac0]
+- Updated dependencies [fed446b]
+- Updated dependencies [ad2f2a3]
+- Updated dependencies [00fa523]
+- Updated dependencies [1f1c990]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/react@1.17.0
+  - @weasel-js/core@1.17.0
+  - @weasel-js/clock@1.17.0
+  - @weasel-js/labkit@1.17.0
+  - @weasel-js/ui@1.17.0
+  - @weasel-js/prefs@1.17.0
+  - @weasel-js/svg@1.17.0
+  - @weasel-js/theme@1.17.0
+  - @weasel-js/icons@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

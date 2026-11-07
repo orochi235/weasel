@@ -1,5 +1,72 @@
 # @weasel-js/hud
 
+## 1.17.0
+
+### Patch Changes
+
+- 7537b86: A window drag that was canceled put the window back where the drag started without telling `onMove` or `onResize`, so a consumer tracking its bounds kept the dragged ones. A pixel-mode loupe resized and then canceled kept a readback sized for the dragged lens, stretched to the wrong magnification until the aim next moved. The restored bounds now go through the same callback the drag used.
+- aedd380: `pixelHex` turns an RGBA pixel's bytes into the `#rrggbb` a loupe reports, or `null` for a fully transparent one. A canvas source and the HUD loupe both report colors through it, where each had its own copy.
+- 84a8be0: `renderer.readPixels(rect)` reads back what the canvas's last frame left inside a rect of device pixels counted from its top-left, as premultiplied RGBA with rows top-down, on either backend. `readPixelsSync` answers at once on WebGL and throws on WebGPU. A WebGPU canvas keeps its last frame for this, as a WebGL canvas's preserved drawing buffer does. Core's `readCanvasPixels(canvas, rect)` reads a weasel canvas through whichever renderer paints it, and `canvasPaintsWith(canvas)` says which backend that is.
+  
+  The loupe's pixel mode works on WebGPU canvases: it reads its region through `readCanvasPixels`, and answers the color under the aim from that region.
+  
+  A WGSL program's uniform struct is laid out by WGSL's own rules, so where the browser has `uniform_buffer_standard_layout` an `array<vec2f, N>` or `array<f32, N>` member gets its real 8- or 4-byte stride rather than 16. Where it lacks the feature, a uniform struct that breaks the stricter uniform rules is refused when the program is built, naming the member, rather than drawing from misplaced values.
+- Updated dependencies [d28ff77]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [52fd33e]
+- Updated dependencies [aedd380]
+- Updated dependencies [e989ef7]
+- Updated dependencies [5d66b8b]
+- Updated dependencies [e6cf896]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [e603f3f]
+- Updated dependencies [34da47e]
+- Updated dependencies [5491ac0]
+- Updated dependencies [fed446b]
+- Updated dependencies [ad2f2a3]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/core@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/loupe@1.17.0
+  - @weasel-js/menu@1.17.0
+  - @weasel-js/theme@1.17.0
+  - @weasel-js/font@1.17.0
+  - @weasel-js/ui-logic@1.17.0
+  - @weasel-js/gestures@1.17.0
+  - @weasel-js/icons@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

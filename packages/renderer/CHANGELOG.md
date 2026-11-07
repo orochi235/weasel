@@ -1,5 +1,111 @@
 # @weasel-js/renderer
 
+## 1.17.0
+
+### Patch Changes
+
+- 13ca1ea: `blur()` with an infinite or NaN radius draws the group unblurred. Its taps were spaced at NaN, so the group came out blank, and its reach was unbounded, so every frame ran the passes over the whole drawing buffer.
+- d3820c9: A `chunks` tile draws a chunk crossing its edge again past the opposite edge, in the raster tile and in the shapes `tileGeometry` gives an SVG export. Such a chunk was cut off where the tile ended and nothing continued it in the next, so a chunks fill showed flat-sided chunks along a grid at the tile size.
+- 7e3d359: Rotate by Measurement turns a stroked selection about the center of its drawn boxes, as a rotate drag does, rather than its pose boxes'.
+  
+  Inside `<SceneCanvas>`, snapping measures with the `drawnBoxes` and `boundsIncludeStroke` deps, so a host that overrides them snaps to the same boxes its move, align, resize and rotate measure. `createSnapSession2d` takes a `drawnBoxes` source for a host without a canvas.
+  
+  `Effect` gains `screenAnchored`, for a pass whose result depends on where in the drawing buffer a pixel lies. A retained layer running one is drawn again through a pan instead of being moved, and `dither()` sets it for a Bayer pass or an output grid, whose pattern used to slide with the content and snap back.
+- d5cc782: The renderer draws through a backend-neutral GPU layer, with WebGL2 its only backend so far. What it paints is unchanged. Breaking for code written against the renderer's GL surface:
+  
+  - A registered paint kind's `bind` no longer touches GL. It returns `{ program, uniforms }`: the id of a registered program and its uniform values by name, which the renderer binds, sending `u_proj`, `u_model` and `u_origin` itself. `PaintBindContext` loses `gl`, `program` and `setProjAndModel`; `bindRamp(stops, unit, space)` becomes `ramp(stops, space)`, returning the atlas texture and its row's `v`; and it gains `createTexture` and `deleteTexture` for a kind that bakes its own texture. `PaintProgram` is gone; `PaintBinding`, `PaintTexture` and `PaintUniform` are new.
+  - `ShaderProgram` is the layer's program handle. It exposes no `WebGLProgram` and no uniform locations: uniforms and textures are set by name (`set1f`, `set`, `setTexture`, …), and `has(name)` replaces `uniform(name) !== undefined`.
+  - `UniformArray` drops `location`.
+- e3a95da: `imagePending(src)` says whether a load of `src`, or a re-raster of a vector source at another size, is in flight: whether `subscribeImageReady` will hear of a new bitmap for it.
+- ee9bc7f: An image node's `data.image` takes `previous`: a `src` the `kit:image` painter draws in place of `src` while `src` decodes, so swapping a node's picture no longer flashes the loading placeholder. It is drawn only once it has decoded and never loaded on its own account, and the failure mark still shows once `src` fails.
+- 3517855: Outlined text keys its glyph stroke ribbons on the stroke's `nib`, `trim`, `vertexWidths` and `varyingWidthJoinThreshold`. They were left out, so two runs stroking the same glyph at the same width shared whichever ribbon was built first: a calligraphic outline could draw with a round pen, or a trimmed one whole.
+- 8e888a9: Pick by what a canvas painted. `<SceneCanvas geometry={{ picking: 'pixels' }}>` takes its presses, hover and the
+  `nodeAtPoint` dep from the canvas's id frames, so a custom shader, an effect, or a texture's transparent parts pick
+  as they look rather than as their outline. Each pick reads the few pixels around the point, leaving out the nodes it
+  has already found, so a node covered by another is still found and an `exclude` sees what is beneath the nodes it
+  names. It falls back to `'shape'` before the first paint, without WebGL2, and for a pick asked for another view.
+  
+  The canvas handle gains `readIds(rect, options)`, the ids the canvas last painted over a rect; `pickAt` reads through
+  it, and both take `exclude`, the `pickId`s to leave out. `WeaselRenderer.renderIds` takes `exclude` as well.
+  
+  In an id frame, paint that no group gives a `pickId` now leaves the ids beneath it as they were, instead of claiming
+  its pixels for 0, so selection chrome or any other untagged overlay drawn over a node no longer hides it from a pick.
+  A group with `pickId: 0` still claims its pixels for nothing.
+  
+  An id read for a point off the drawing now reads nothing, where it used to read the nearest edge pixel when the point
+  was left of or above the drawing, and `renderIds` restores the context's framebuffer when a frame throws.
+- ee7d8ce: A vector source whose re-raster at a larger size fails now fires `subscribeImageReady`, as a failed load does. A reader waiting for the sharper raster heard nothing before, and waited on whatever image landed next.
+- cb58393: A retained layer that follows a pan now gets its margin when the retain budget is full but holds surfaces of layers that cannot follow the pan. Such a layer (a custom shader, a paint in screen units, or effects that do not say how far they reach) is drawn straight through while it moves and drawn again once it holds, so its kept pixels are dead weight for the pan; the renderer now frees them, largest first, before it refuses a margin or any other surface. Before, the margin went to whichever layer asked first, and the layers past the budget were drawn straight through for the rest of the pan. A layer refused a margin earlier in the pan gets one as soon as freeing those surfaces would make room.
+- 5b39acd: `setImageMinification` draws retained groups again. Their surfaces were kept across the change, so an image inside one went on showing the old filtering until something else about the group changed.
+- 454e8e1: The selection outline can follow a node's shape instead of its box. Set `outline: { follow: 'shape' }` on the `selectionOverlay` slot, or on `createSelectionOverlayLayer` / `createSelectionOutlineLayer` with `scene`, and each node's silhouette is stroked outward from its drawn edge (past its own stroke, when it has one) at the outline's width in screen pixels. An open path, such as a wire, is outlined around the band its stroke covers. A group, an unstroked open path, or a node with no outline to trace keeps its box, and `pad` applies to boxes only. Additive; the default stays `'box'`. An `outline` given without a `paint` now keeps the default color rather than painting nothing.
+  
+  `nodeOutline` takes an optional pose and silhouette context, for reading a node's outline somewhere other than its stored pose.
+  
+  `DiagramView` outlines selected shapes along their outlines, and an item carried over a shape highlights the shape rather than its box; a container keeps its box in both.
+  
+  `@weasel-js/geom` exports `flatSubpaths`, a path flattened into point runs split by whether each encloses area.
+  
+  `@weasel-js/renderer` no longer throws `RangeError: offset is out of bounds` cutting an inner or outer stroke against a fill made of sliver triangles.
+- e78e03c: `registerProgram` and `registerEffect` take a program's source by shading language, so a program can carry WGSL for the coming WebGPU backend beside its GLSL. This breaks every caller: `registerProgram(id, '', frag)` is now `registerProgram(id, { glsl: { frag } })`, `registerProgram(id, vert, frag)` is `registerProgram(id, { glsl: { vert, frag } })`, and `registerEffect(id, frag)` is `registerEffect(id, { glsl: frag })`. A paint kind's `programs` entries take the same shape. Leaving out `vert` selects the kit's vertex shader; an empty string no longer does. The WebGL renderer draws from `glsl` and draws nothing for a program with only `wgsl`, reporting that once. A program that fails to compile is now reported once per source, not on every frame, and is not compiled again until its source is re-registered. WGSL sources are held but not yet drawn by anything.
+- e95d9fc: An `ImageBitmap` made with `premultiplyAlpha: 'none'` now draws right on WebGL, as an image command and as a `registerTexture` pattern, where it used to come out too bright wherever it was translucent. WebGL uploads a bitmap as it holds its pixels, and nothing reports which kind those are, so a bitmap bound for an image texture is drawn once into a scratch 2D canvas, which premultiplies a straight one and leaves a premultiplied one as it is, and the texture is uploaded from that. WebGPU already premultiplied both.
+- 9f29268: An animating stroke trim no longer rebuilds a translucent, vertex-colored, gradient- or pattern-painted stroke too large to batch, one built in a stretched view's metric, nor any stroke's marker heads. Such a stroke is clipped from its one cached ribbon in the shader, as an opaque solid one already was, and paints each pixel once through the stencil, so it does not darken where its ribbon turns. An untrimmed stroke too large to batch draws from the same ribbon, so a tween that ends at the full stroke looks as the stroke does with its trim removed; a translucent one no longer darkens at a sharp turn, and a vertex-colored one gives a sharp turn's overlap to the segment before it rather than splitting it at the bisector. Heads are built once and drawn under the transform that places them, so a trim only moves them. A head's own paint (`MarkerEntry.fill` or `outline.paint` other than `'line'`) is now resolved against the head's unplaced box and turns with the head, as a node's box paint turns with the node, where it was resolved against the placed head's axis-aligned box.
+  
+  `@weasel-js/stroke` adds `markerPlacements`, `markerShape`, `markerPlacementMap` and `markerPolylines`, which say where each head goes without building it.
+- d90931a: The renderer can draw with WebGPU. `new WeaselRenderer({ gpu: { device, canvas }, width, height, dpr })` builds one synchronously from a `GPUDevice` the caller holds, and `requestRendererDevice()` returns the page's one shared device, or `null` where WebGPU is unavailable. `gpu.antialias: false` draws the canvas single-sampled, as WebGL's `antialias` context attribute does; the default is 4× multisampled. A lost device is reported once and the renderer draws nothing after it.
+  
+  `renderIdsAsync` reads ids back as a promise on either backend. `renderIds` stays synchronous on WebGL and throws on WebGPU, naming `renderIdsAsync`.
+  
+  On WebGPU a program or effect draws from its WGSL. A custom program's WGSL supplies `fn fragment(in: Varyings) -> vec4f`, and optionally `fn vertex(v: KitVertex) -> Varyings`, inside the kit's prelude; its own uniforms are a struct at `@group(1) @binding(0)`, its textures group-1 variables each beside a `<name>_sampler`. An effect's WGSL supplies `fn effect(in: EffectVaryings) -> vec4f`. Coordinates are top-left: `kit.fragOrigin` is the drawing buffer's corner counted from the top. A program or effect without WGSL draws nothing on WebGPU and is reported once. The built-in blur and vignette carry WGSL.
+  
+  A registered paint kind's WGSL supplies `fn fragment(in: PaintVaryings) -> vec4f`, and optionally `fn vertex(v: PaintVertex) -> PaintVaryings`, inside the kit's paint prelude, which reads the path vertex and declares `kit.proj`, `model`, `worldInv` and `origin`. `renderer.backend` says whether a renderer draws with `'webgl2'` or `'webgpu'`.
+  
+  Core's canvases take `backend: 'webgl2' | 'webgpu' | 'auto'` (`<Canvas>`, `<SceneCanvas>`, `<DrawCanvas>`, `<SceneViewCanvas>`), default `'webgl2'`, and `CanvasBackendProvider` sets it for every canvas beneath it. `'auto'` takes WebGPU where a device is available and every program registered so far has WGSL. The choice is made at a canvas's first paint, which waits for the device; a tile of a shared canvas always paints with WebGL 2.
+  
+  Breaking: `CanvasExtensionApi.pickAt` and `readIds` now return promises, so they read ids on WebGPU too. `readIdsSync` answers at once on WebGL and returns `null` on WebGPU; `geometry.picking: 'pixels'` reads it and walks the shapes where it is `null`.
+  
+  <!-- bump-approved: minor: maintainer — 1.17.0 release requested 2026-11-07 -->
+- 84a8be0: `renderer.readPixels(rect)` reads back what the canvas's last frame left inside a rect of device pixels counted from its top-left, as premultiplied RGBA with rows top-down, on either backend. `readPixelsSync` answers at once on WebGL and throws on WebGPU. A WebGPU canvas keeps its last frame for this, as a WebGL canvas's preserved drawing buffer does. Core's `readCanvasPixels(canvas, rect)` reads a weasel canvas through whichever renderer paints it, and `canvasPaintsWith(canvas)` says which backend that is.
+  
+  The loupe's pixel mode works on WebGPU canvases: it reads its region through `readCanvasPixels`, and answers the color under the aim from that region.
+  
+  A WGSL program's uniform struct is laid out by WGSL's own rules, so where the browser has `uniform_buffer_standard_layout` an `array<vec2f, N>` or `array<f32, N>` member gets its real 8- or 4-byte stride rather than 16. Where it lacks the feature, a uniform struct that breaks the stricter uniform rules is refused when the program is built, naming the member, rather than drawing from misplaced values.
+- df080bc: `<SceneViewCanvas worker>` paints its scene from a worker. The component hands its canvas to the worker with `transferControlToOffscreen`, and on each frame sends it only what changed: the changed nodes in their saved form, the pose overrides, and the view, size, and layer settings. The worker keeps its own copy of the scene and draws it with its own renderer. Hit-testing, input, and overlays stay on the page. The worker's module imports `serveSceneRender` from the new `@weasel-js/core/render-worker` entry and registers whatever paints a node there: node shapes, fonts, paint kinds, shader programs (GLSL, WGSL, or both), and the scene registry. `alphaFor` still applies: the page calls it and sends the alphas that changed, and scroll offsets cross too. `workerRef` gives `snapshot()` in place of `toBlob`, which a transferred canvas no longer allows. A host that is not React drives `startSceneRenderWorker` from its own frame loop.
+  
+  The worker runs no loop of its own: it paints when the page's frame loop sends a frame, so it paints nothing while the canvas is off screen or the tab is hidden. A worker decodes raster images itself, and asks the page for an SVG source, which needs an `<img>` to rasterize.
+  
+  The renderer's `canvas` option takes an `OffscreenCanvas`. The image cache's own loader decodes rasters with `fetch` and `createImageBitmap` where there is no `<img>`, and `setImageLoader` replaces it. A worker's `self.fonts` loads invalidate glyphs the way `document.fonts` loads do.
+  
+  A worker view runs its own animator. The worker module registers animation programs by key (`serveSceneRender({ animations })`), and the page plays them through `workerRef.current.animator.play(key, params)` and steers them by id or key; their vertex-color and trim overrides paint as an `animator` does on the page. The animator moves on the page's frames, so it stops while the canvas is unseen, and given `clock` it follows a page clock: its pause holds the animations, and a seek back plays them backward. `hostAnimator` in `@weasel-js/animator` is that animator for any host that runs its own frames.
+  
+  An image node can draw a `bitmapSrc` bitmap in a worker view: the worker asks the page for it and is sent a copy. `bitmapSrc` names now carry a token of the realm that minted them, and `adoptBitmapSrc` puts a bitmap minted in another realm into the image cache under its name.
+  
+  `<SceneCanvas worker>` paints the scene layers from a render worker and the rest of the layer stack on the page: the layers below the scene and above it (grid, ghosts, selection and path-edit chrome, consumer layers) each paint into a page canvas of their own, stacked with the worker's, and the top one takes input. A page layer placed between two scene layers gives each part of the scene its own worker. The handle's `readIds` and `pickAt` read every canvas of the stack, the worker's a round trip away and in the page's `scenePickIds` numbering, and `readIdsSync` answers `null` there, so `geometry.picking: 'pixels'` walks the shapes. A prop worker mode cannot honor is a type error: `animator`, `paintInto`, `inputElement`, `backend`, and a scene slot's functions; the worker's canvas and the page's beside it paint with WebGL 2. The handle's `worker` gives the worker's animator and a snapshot of the whole stack.
+  
+  This changes `SceneCanvasProps` and `SceneViewCanvasProps` into unions of a page-painted and a worker-painted branch, which breaks a wrapper that writes `Omit<SceneCanvasProps<…>, K>`: an `Omit` of a union merges its branches, and the merged props are assignable to neither. Distribute it instead, `SceneCanvasProps<…> extends infer P ? (P extends unknown ? Omit<P, K> : never) : never`, as `LeanSceneCanvasProps` and labkit's `TrialSceneCanvasProps` now do. `SceneViewCanvas` also takes `dpr`.
+- Updated dependencies [6539d70]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [52fd33e]
+- Updated dependencies [c29b1f7]
+- Updated dependencies [454e8e1]
+- Updated dependencies [8fd23c2]
+- Updated dependencies [9f29268]
+- Updated dependencies [d90931a]
+- Updated dependencies [df080bc]
+- Updated dependencies [305c461]
+- Updated dependencies [a3ff22a]
+- Updated dependencies [15a5e1d]
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/stroke@1.17.0
+  - @weasel-js/font@1.17.0
+  - @weasel-js/text@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

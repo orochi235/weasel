@@ -1,5 +1,52 @@
 # @weasel-js/d3
 
+## 1.17.0
+
+### Patch Changes
+
+- 8259400: An interrupted transition now ends. `selection.interrupt(name)` used to cancel only the tweens already running, so an item still waiting out its `delay` started anyway, and the transition's `end()` never resolved and fired neither `'end'` nor `'interrupt'`. A second transition of the same name starting on a node left the first one hanging the same way. Both now stop the node's item through the whole chain, and the transition fires `'interrupt'` and resolves `end()` once its other items finish. The `interrupt` docs also no longer claim that leaving out `name` interrupts every transition: it interrupts the unnamed ones, as it always did.
+- Updated dependencies [38e8c77]
+- Updated dependencies [986134b]
+- Updated dependencies [a7f57b8]
+- Updated dependencies [b0c009e]
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [46a7b46]
+- Updated dependencies [b5cd64f]
+- Updated dependencies [ceb8c55]
+- Updated dependencies [efcc47a]
+- Updated dependencies [d28ff77]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [34203da]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/animator@1.17.0
+  - @weasel-js/core@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

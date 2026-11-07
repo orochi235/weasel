@@ -1,5 +1,12 @@
 # @weasel-js/modes
 
+## 1.17.0
+
+### Patch Changes
+
+- 9778eee: Doc fixes. `useSimulation`'s `onEnd` and `alphaMin` said the loop ends only with `alphaTarget` at 0; it ends, as d3-force's does, once alpha falls below `alphaMin`, whatever the target. `ModeDefinition` counted four shortcut fields where it has five, `discard` among them.
+- @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes
