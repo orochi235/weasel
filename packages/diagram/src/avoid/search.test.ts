@@ -6,7 +6,7 @@ import { routeEdge } from './edgeRoute';
 import { interestingPoints, searchWindow } from './grid';
 import { MinHeap } from './heap';
 import { ObstacleIndex, type EdgeObstacles } from './obstacles';
-import { searchLeg, type LegSource, type LegTarget } from './search';
+import { legEnds, searchLeg, type LegSource, type LegTarget } from './search';
 import { DX, DY, dirOf, type Dir } from './turns';
 import { blocks, inflate, type AvoidObstacle, type Box } from './types';
 
@@ -54,6 +54,23 @@ describe('routeEdge', () => {
     expect(route[1]!.x).toBeLessThan(0);
     expect(route[1]!.y).toBe(30);
     expect(isOrthogonal(route)).toBe(true);
+  });
+
+  it('arrives at a port facing away from the source, with no obstacle corner past it', () => {
+    const below = rectShape('below', 0, 300);
+    const left = rectShape('left', -600, 0);
+    for (const [edge, shapes] of [
+      [edgeBetween('down', a, below, 's', 's'), [a, below]],
+      [edgeBetween('back', a, left, 'e', 'w'), [a, left]],
+      [edgeBetween('loop', a, a, 'e', 'n'), [a]],
+    ] as const) {
+      const route = routeEdge(edge, routeContext([...shapes]));
+      expect(route, edge.id).not.toBeNull();
+      expect(isOrthogonal(route!)).toBe(true);
+      for (const shape of shapes) {
+        for (let k = 1; k + 2 < route!.length; k++) expect(entersBox(route![k]!, route![k + 1]!, shape.box), edge.id).toBe(false);
+      }
+    }
   });
 
   it('passes the waypoints in order, each as a vertex', () => {
@@ -129,8 +146,7 @@ describe('routeEdge', () => {
  * step's blockage asked of the obstacles directly. Slow, and only here.
  */
 function denseCost(sources: readonly LegSource[], targets: readonly LegTarget[], obstacles: EdgeObstacles, window: Box, bend: number): number | null {
-  const ends = [...sources.map((s) => s.point), ...targets.map((t) => t.point)];
-  const points = interestingPoints(window, obstacles.near(window), ends);
+  const points = interestingPoints(window, obstacles.near(window), legEnds(sources, targets));
   const xs = [...new Set(points.map((p) => p.x))].sort((a, b) => a - b);
   const ys = [...new Set(points.map((p) => p.y))].sort((a, b) => a - b);
   const id = (p: { x: number; y: number }) => xs.indexOf(p.x) * ys.length + ys.indexOf(p.y);
