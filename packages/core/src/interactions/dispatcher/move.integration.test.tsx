@@ -57,7 +57,7 @@ function RegisterDeps({ scene, selection }: { scene: Scene<D, L, P>; selection: 
   registry.register('scene', () => scene);
   registry.register('selection', () => selection);
   registry.register('clipboard', () => ({ copy: () => {}, paste: () => {}, isEmpty: () => true }));
-  registry.register('history', () => ({ undo: () => scene.undo(), redo: () => scene.redo(), canUndo: () => scene.canUndo(), canRedo: () => scene.canRedo() }));
+  registry.register('history', () => scene.history);
   return null;
 }
 
