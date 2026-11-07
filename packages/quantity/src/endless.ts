@@ -25,9 +25,9 @@ export interface EndlessTrack {
 }
 
 /** The added stop sits one `step` beyond the range, or a twentieth of the
- *  range where the track has no step. */
+ *  range where the track has no step, or 1 where the range has no width either. */
 export function endlessTrack(min: number, max: number, step: number | undefined, endless: Endless | undefined): EndlessTrack {
-  const gap = step !== undefined && step > 0 ? step : (max - min) / 20;
+  const gap = step !== undefined && step > 0 ? step : (max - min) / 20 || 1;
   const lo = endlessAt(endless, -1) ? min - gap : min;
   const hi = endlessAt(endless, 1) ? max + gap : max;
   return {
