@@ -2,7 +2,6 @@ import {
   asNodeId,
   createScene,
   type Scene,
-  type SerializedScene,
   sceneFromJSON,
 } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
@@ -17,10 +16,10 @@ import {
   fromShape,
   roundFrac,
   roundPoints,
-  toShape,
   worldToFrac,
 } from './frac';
 import { MarkHistory } from './history';
+import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
   Annotation,
@@ -82,34 +81,6 @@ export interface CaptureDeps {
 }
 
 const NO_CONTENT = { w: 0, h: 0 };
-
-/** Where a mark's vertices sit in its own bounds, from points in the content
- *  box. A point has none to store: its bounds are its position. */
-function shapeFor(
-  kind: AnnotationData['kind'],
-  points: readonly FracPoint[] | undefined,
-  frac: FracRect,
-): readonly FracPoint[] | undefined {
-  if (!points || kind === 'point') return undefined;
-  return roundPoints(toShape(points, frac));
-}
-
-type SerializedMarks = SerializedScene<AnnotationData, 'marks', MarkPose>;
-
-/** Scenes saved before vertices followed the bounds hold them as `points` in
- *  the content box. Restated against each mark's bounds as saved. */
-function migrateLegacyPoints(
-  raw: SerializedMarks,
-  content: { w: number; h: number },
-): SerializedMarks {
-  const nodes = raw.nodes.map((n) => {
-    const { points, ...data } = n.data as AnnotationData & { points?: readonly FracPoint[] };
-    if (!points || data.shape) return n;
-    const shape = shapeFor(data.kind, points, worldToFrac(n.pose, content));
-    return { ...n, data: { ...data, ...(shape ? { shape } : {}) } };
-  });
-  return { ...raw, nodes };
-}
 
 /** A mark's id is its target and its node. One scene per target, so a node id
  *  is only unique within one — and an annotation is addressed by both. */

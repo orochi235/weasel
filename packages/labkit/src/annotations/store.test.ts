@@ -503,6 +503,23 @@ describe('a moved mark', () => {
     expectNear(drawn(store), LINE.points ?? []);
     expect(store.get('naive/n1')?.points).toEqual(LINE.points);
   });
+
+  it('keeps points saved that way as they are while their target is not declared', () => {
+    const legacy = {
+      version: 1,
+      scenes: {
+        naive: {
+          version: 1,
+          systemLayers: [{ id: 'marks' }],
+          nodes: [{ id: 'n1', kind: 'mark', layer: 'marks', pose: { x: 25.6, y: 34, width: 128, height: 68 }, data: { target: 'naive', kind: 'line', points: LINE.points } }],
+        },
+      },
+    };
+    const store = annotationsFromJSON(legacy, () => []);
+    store.sceneFor('naive');
+    const [node] = store.toJSON().scenes.naive?.nodes ?? [];
+    expect(node?.data).toEqual({ target: 'naive', kind: 'line', points: LINE.points });
+  });
 });
 
 describe('paintedMarks', () => {
