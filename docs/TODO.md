@@ -297,14 +297,6 @@ Owner tags, after the priority (2026-10-26):
   `packages/core/src/domains/paths/pathSnap/`).
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
-- **(P3) [maintainer] Are the snap readout's drawing helpers public API?** Decision for the maintainer
-  (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
-  `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
-  public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
-  which `audit:jsdoc` treats as a sibling-package surface.
-  Closes when the maintainer has ruled, and `tickedSegment`, `pillCommands` and
-  `measuredSegmentCommands` either stay on core's barrel as designed surface or have moved to an
-  `internal` entry.
 
 ## Text
 
@@ -333,7 +325,7 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [maintainer] A direct scene call made while a journal is open lands on the scene's own stack.**
+- **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
   Ruled 2026-10-12 to leave it for now. Routing them means `recorder.record` and the history facade
@@ -344,8 +336,8 @@ Owner tags, after the priority (2026-10-26):
   unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
-  Closes when the maintainer reopens the 2026-10-12 ruling and the direct calls reach the open journal,
-  or rules today's split final.
+  Ruled (2026-11-07), reopening 2026-10-12's: route them to the open journal.
+  Closes when the direct calls reach the open journal and `scene.recordedForm.test.ts` pins that instead.
 - **(P2) [recheck] Rulers along the workspace edges, reading the unit scope of the frame under the
   pointer.** weasel has none; guides are dragged off a ruler only in name. `ScaleBar` (ui) and
   `scaleBar` (quantity) already measure a frame's true lengths and could set the tick spacing. Filed
@@ -555,17 +547,16 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) [maintainer] Whether index pages' API panel should read typedoc's output instead of forge's own
-  compiler pass** (2026-11-02). The panel lists a component's props and its ref handle's members from forge's
+- **(P2) [agent] Index pages' API panel reads typedoc's output where a build has made one** (2026-11-02). The panel lists a component's props and its ref handle's members from forge's
   TypeScript reader (`apiTable` in `packages/forge/src/vite/apiTable.ts`): live in dev,
   following edits, and available to any project that installs forge. `npm run build:api` already runs typedoc
   over every package (`typedoc/`), which resolves `{@link}` and `@see`, overloads and inherited members, and
   could link each entry to the API reference; but its output exists only after a build, and a consumer of forge
   may not run typedoc at all. Not decided: keep the reader, switch to typedoc, or read typedoc's JSON as a
-  richer source where a build has made one. Closes when the maintainer has ruled: on keep, delete the entry; on
-  either other answer, when the panel reads typedoc's JSON.
+  richer source where a build has made one. Ruled (2026-11-07): the last, with forge's reader as the fallback.
+  Closes when the panel reads typedoc's JSON when present.
 
-- **(P3) [maintainer] Whether forge's vite plugin should wait for writes to settle, as the repo's own dev servers do.**
+- **(P3) [agent] forge's vite plugin should wait for writes to settle off macOS, as the repo's own dev servers do.**
   On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
   server serving the first text until the next save. Every dev server here (and vitest's watcher) off macOS now waits for
   the write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30); macOS skips the
@@ -574,8 +565,8 @@ only story runner in the repo.
   served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
   stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
   fsevents reports a path's next change about 100 ms after its last, and median 113 → 115 ms (p90 118 → 148).
-  Closes when the maintainer has ruled whether `forge()` waits for writes to settle off macOS, and either
-  it does, with `replacedFile.test.ts` no longer rewriting until served, or the entry is deleted.
+  Ruled (2026-11-07): it should. Closes when `forge()` waits off macOS and `replacedFile.test.ts` no longer
+  rewrites until served.
 
 - **(P3) [maintainer] Whether the workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
