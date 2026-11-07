@@ -10,9 +10,14 @@ import { useAnimator } from '@weasel-js/animator/react';
 
 export type Approach = 'main' | 'compositor';
 
+/** `drift`: one straight run across, two keyframes. `wave`: sweeps back and forth, a keyframe at
+ *  every turn — the many-keyframe case. */
+export type Shape = 'drift' | 'wave';
+
 export interface Cell {
   approach: Approach;
   count: number;
+  shape: Shape;
 }
 
 export interface FrameStats {
@@ -46,7 +51,7 @@ function Host({ ready }: { ready: (a: Animator) => void }) {
 }
 
 /** Tears the last cell down and starts `cell`: `count` dots, each sweeping its own way. */
-export async function setup(cell: Cell): Promise<{ painted: boolean; startMs: number }> {
+export async function setup(cell: Cell): Promise<{ painted: boolean; startMs: number; keyframes: number }> {
   animator?.cancelAll();
   root?.unmount();
   stage().replaceChildren();
@@ -78,16 +83,18 @@ export async function setup(cell: Cell): Promise<{ painted: boolean; startMs: nu
       ms: RUN_MS,
       easing: 'linear',
       interpolator: () => (u) => {
-        const s = wave(u * SWEEPS + i / 7);
+        const s = cell.shape === 'wave' ? wave(u * SWEEPS + i / 7) : 2 * u - 1;
         return { x: 60 * s * Math.cos(angle), y: 60 * s * Math.sin(angle), o: 0.6 + 0.4 * Math.abs(s) };
       },
       compositor: cell.approach === 'compositor' ? 'require' : 'off',
     });
   }
   const startMs = performance.now() - started;
+  const anims = stage().firstElementChild?.getAnimations() ?? [];
+  const keyframes = anims.length ? (anims[0]!.effect as KeyframeEffect).getKeyframes().length : 0;
   await frames(2);
   const first = stage().firstElementChild;
-  return { painted: !!first && first.getBoundingClientRect().width > 0, startMs };
+  return { painted: !!first && first.getBoundingClientRect().width > 0, startMs, keyframes };
 }
 
 const frames = (n: number): Promise<number[]> => new Promise((done) => {
