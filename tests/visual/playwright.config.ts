@@ -10,6 +10,10 @@ const repoRoot = resolve(here, '../..');
 const port = Number(process.env.WEASEL_VISUAL_PORT ?? ports.visual);
 // `./fixture` carries it into every page.goto as `?backend=`.
 const webgpu = process.env.WEASEL_VISUAL_BACKEND === 'webgpu';
+const WEBGPU_ARGS = [
+  '--enable-unsafe-webgpu', '--enable-features=Vulkan', '--enable-gpu',
+  '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--use-webgpu-adapter=swiftshader',
+];
 
 export default defineConfig({
   testDir: here,
@@ -38,7 +42,7 @@ export default defineConfig({
     // Without --enable-unsafe-webgpu headless Chromium has no WebGPU adapter;
     // on Linux its adapter also needs Vulkan, which SwiftShader provides.
     launchOptions: {
-      args: ['--disable-accelerated-2d-canvas', ...(webgpu ? ['--enable-unsafe-webgpu', '--enable-features=Vulkan'] : [])],
+      args: ['--disable-accelerated-2d-canvas', ...(webgpu ? WEBGPU_ARGS : [])],
     },
   },
   // Playwright's built-in snapshot dir is NOT used. diff.ts manages its own
