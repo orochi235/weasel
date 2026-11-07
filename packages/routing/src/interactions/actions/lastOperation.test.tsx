@@ -122,6 +122,31 @@ describe('the last operation', () => {
     expect(history.undoDepth()).toBe(1);
   });
 
+  it('lets go of an adjustment that committed more than one entry, rather than stacking the next on it', () => {
+    const { doc, history, registry, store } = setup();
+    const twice: Action = {
+      ...widen(doc, history),
+      id: 'widenTwice',
+      invoker: {
+        timing: 'immediate',
+        run: (_deps, params) => {
+          const by = typeof params?.by === 'number' ? params.by : 1;
+          history.applyOps([setWidth(doc, doc.width + by)], 'Widen');
+          if (by < 5) return;
+          history.seal();
+          history.applyOps([setWidth(doc, doc.width + by)], 'Widen');
+        },
+      },
+    };
+    act(() => { registry.register(twice); });
+    act(() => { registry.trigger('widenTwice', { by: 3 }); });
+    act(() => { store.adjust({ by: 5 }); });
+    expect(doc.width).toBe(20);
+    expect(store.get()).toBeNull();
+    act(() => { expect(store.adjust({ by: 2 })).toBe(false); });
+    expect(doc.width).toBe(20);
+  });
+
   it('makes the values used the action\'s params for its next run', () => {
     const { doc, registry, store } = setup();
     act(() => { registry.trigger('widen', { by: 3 }); });

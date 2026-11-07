@@ -83,10 +83,13 @@ interface Held {
   unobserve: () => void;
 }
 
-/** Watch `stack` from now: `stop` answers the id of the entry pushed meanwhile when exactly one was, later
- *  pushes having coalesced into it, and nothing else changed the history. Seals first, so the entry stands alone
- *  rather than coalescing into the one before it. */
-function watchEntry(stack: EditStack): { stop(): number | null } {
+/** What a {@link watchEntry} saw: the id of the entry pushed meanwhile when exactly one was, later pushes having
+ *  coalesced into it, and `clean` unless the history changed any other way. */
+interface Watched { entry: number | null; clean: boolean }
+
+/** Watch `stack` from now until `stop`. Seals first, so the entry stands alone rather than coalescing into the
+ *  one before it. */
+function watchEntry(stack: EditStack): { stop(): Watched } {
   stack.seal();
   let entry: number | null = null;
   let clean = true;
@@ -97,13 +100,13 @@ function watchEntry(stack: EditStack): { stop(): number | null } {
   return {
     stop: () => {
       off();
-      return clean ? entry : null;
+      return clean ? { entry, clean } : { entry: null, clean };
     },
   };
 }
 
-/** Run `run`, and the id of the entry it pushed as {@link watchEntry} counts it. */
-function soleEntry<T>(stack: EditStack, run: () => T): { out: T; entry: number | null } {
+/** Run `run`, and what {@link watchEntry} saw it do. */
+function soleEntry<T>(stack: EditStack, run: () => T): Watched & { out: T } {
   const watch = watchEntry(stack);
   let out: T;
   try {
@@ -112,7 +115,7 @@ function soleEntry<T>(stack: EditStack, run: () => T): { out: T; entry: number |
     watch.stop();
     throw err;
   }
-  return { out, entry: watch.stop() };
+  return { out, ...watch.stop() };
 }
 
 /** `params`, reduced to the leaves of `schema`, each filled from its default where `params` has none. */
@@ -160,23 +163,26 @@ export class LastOperationKeeper implements LastOperationStore {
     }
     const values = formValues(held.op.schema, { ...held.op.values, ...patch });
     this.busy = true;
+    let clean = true;
     try {
       if (held.entry !== null) stack.undo();
       held.restore?.();
-      held.entry = soleEntry(stack, () => {
+      ({ entry: held.entry, clean } = soleEntry(stack, () => {
         try {
           held.rerun(values);
         } catch (err) {
           console.error(`weasel last operation: rerunning "${held.op.id}" threw`, err);
         }
-      }).entry;
+      }));
     } finally {
       this.busy = false;
     }
     held.op = { ...held.op, values };
     this.remember(held.op.id, values);
     held.keep(values);
-    this.listeners.emit();
+    // More than one entry: the next adjustment could undo only one of them.
+    if (!clean) this.dismiss();
+    else this.listeners.emit();
     return true;
   };
 
@@ -231,7 +237,7 @@ export class LastOperationKeeper implements LastOperationStore {
         try {
           onEnd.call(handle, endCtx, reason);
         } finally {
-          entry = watch.stop();
+          entry = watch.stop().entry;
         }
         if (reason !== 'commit' || entry === null) return;
         const resolved = { ...host.paramsOf(id, resolveParams(opts?.params)), ...handle.params?.() };
