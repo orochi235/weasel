@@ -717,12 +717,20 @@ only story runner in the repo.
 
 ## Backends (WebGL future)
 
-- **(P3) [agent] WebGPU backend.** Separate future spec. Ruled that custom shaders take both languages
-  (2026-11-06), and `registerProgram`/`registerEffect` now take `{ glsl, wgsl }`, WebGL drawing from `glsl`. Left:
-  the WGSL contract for the kit's uniforms and varyings (an unset `wgsl.vert` means the kit's vertex stage for
-  wherever the program is drawn, a shader quad or an effect pass), WGSL ports of the kit's own programs, and the
-  WebGPU renderer, which falls back to WebGL for a scene using a program with no WGSL.
+- **(P3) [agent] WebGPU backend.** Design and stage list: `docs/superpowers/specs/2026-11-06-webgpu-backend-design.md`.
+  On branch `webgpu` (2026-11-06): the WebGPU device, every kit program in WGSL, `WeaselRendererOptions.gpu`,
+  `requestRendererDevice`, `renderIdsAsync`, and a parity suite against WebGL. Left: core's `backend` option,
+  WGSL for the apps' shaders, the visual suite's WebGPU run, and two parity cases a row of pixels apart: in
+  `parity.browser.test.ts` "a filled curve with a stroke" (14 pixels along the top of the stroke, WebGPU inking
+  what WebGL leaves; moving the path 0.01 CSS px keeps them, 0.1 removes them) and in
+  `parity.passes.browser.test.ts` the retained group panned to (-21, 5) (1 pixel on the curved stroke).
   Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
+- **(P3) [agent] WebGL draws a straight-alpha ImageBitmap as if premultiplied.** WebGL ignores
+  `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for an `ImageBitmap` and uploads what it holds, so a bitmap made with
+  `premultiplyAlpha: 'none'` reaches the shader straight, where the image cache promises premultiplied texels:
+  a translucent one comes out too bright (the parity suite measured 48 levels in blue). WebGPU premultiplies it.
+  Default bitmaps hold premultiplied texels and draw right on both. Closes when the image cache premultiplies a
+  straight bitmap's texels on WebGL too, or refuses it.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or

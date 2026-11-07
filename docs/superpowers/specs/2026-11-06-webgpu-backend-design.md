@@ -1,6 +1,6 @@
 # WebGPU backend for WeaselRenderer — design
 
-**Status: unbuilt (2026-11-06).** Work in flight on branch `webgpu` (`/Users/mike/src/weasel-webgpu`); the
+**Status: partly built (2026-11-06).** Work in flight on branch `webgpu` (`/Users/mike/src/weasel-webgpu`); the
 stage list at the end says which parts have landed. Delete this file when the last stage merges, moving
 the WGSL contract into `packages/renderer/README.md` first.
 
@@ -49,7 +49,7 @@ into the projection, since WebGPU validates viewport bounds. Stage 1 did this fo
 differently at the seams, and `retained.tiles.browser.test.ts` fails on it (4 pixels off by up to 40 levels).
 `compositeOver` in `draw/effects.ts` also still sets a viewport over the composited rect, which reaches past an
 effects buffer's edge when that buffer is offset. So the WebGPU backend clamps such a viewport to its target and
-folds the rest into the clip position in the kit's vertex entry point (stage 4); and the pick id moves from a disabled generic
+folds the rest into the clip position: every WGSL vertex entry point passes its position through `weasel_clip`, a scale and offset at bind group 2 the device sets per draw; and the pick id moves from a disabled generic
 vertex attribute to a uniform, written to attachment 1 only when the draw state's `ids` is set (WebGL:
 `drawBuffers`; WebGPU: that target's `writeMask`).
 
@@ -101,7 +101,7 @@ fn fragment(in: Varyings) -> vec4f {            // premultiplied
 
 ## Choosing a backend
 
-- `new WeaselRenderer({ gpu: { device, context } })` builds a WebGPU renderer synchronously from a device
+- `new WeaselRenderer({ gpu: { device, canvas } })` builds a WebGPU renderer synchronously from a device
   the caller already holds. `requestRendererDevice()` returns the process's one shared `GPUDevice`, or
   `null` where WebGPU is unavailable.
 - Core's canvas paint options take `backend: 'webgl2' | 'webgpu' | 'auto'`, default `'webgl2'` until the
@@ -136,15 +136,24 @@ fn fragment(in: Varyings) -> vec4f {            // premultiplied
 
 ## Stages
 
-Each stage ends green on its own tests and merges through a batch.
+Each stage ends green on its own tests and merges through a batch. The work landed in a different order
+from the plan; this list says what is on the branch (2026-11-06).
 
-1. GPU layer and its WebGL implementation; all draw code moved onto it; paint kinds and `DrawContext` made
-   backend-neutral; viewport and id-attribute changes. No pixel changes.
-2. WGSL reflection and uniform packing; the WebGPU implementation of passes, pipelines, buffers and
-   textures; `pathFill` in WGSL; a first parity test.
-3. WGSL for the rest of the kit's programs, including the batch builds, glyph coverage from
-   `@weasel-js/font`, gradients, patterns, mesh paint and the effect builtins.
-4. Effects, retained surfaces and MSAA resolve, ids and `renderIdsAsync` on WebGPU; mipmaps.
-5. The custom WGSL contract (preludes, entry points), construction API, core's `backend` option, WGSL for
-   every shader the repo registers (demos, `dither`, apps).
-6. Parity suite over the visual demos; the visual suite's WebGPU run.
+1. **Landed.** GPU layer and its WebGL implementation; all draw code moved onto it; paint kinds and
+   `DrawContext` made backend-neutral; viewport and id-attribute changes. No pixel changes.
+2. **Landed.** WGSL reflection and uniform packing; WGSL for every kit program, the batch builds, glyph
+   coverage from `@weasel-js/font`, gradients, patterns, mesh paint, composites and the effect builtins;
+   the custom and effect preludes; WGSL for the custom-shader demo and `dither`.
+3. **Landed.** `WebGPUDevice` (`gpu/webgpu/`): passes, pipelines, the uniform ring, buffers, textures and
+   mipmaps, targets, MSAA resolve, ids and `renderIdsAsync`, the viewport fold (`weasel_clip`, bind group 2).
+   Kit programs carry their WGSL; `WeaselRendererOptions.gpu` and `requestRendererDevice()` build a renderer
+   on it. The parity suite (`gpu/webgpu/parity*.browser.test.ts`) draws one corpus through both backends in
+   one page and diffs the pixels; two stroke cases are still a row of pixels apart (TODO entry).
+4. Core's `backend` option, and WGSL for every shader the apps register.
+5. Parity suite over the visual demos; the visual suite's WebGPU run.
+
+What the fleet's browsers impose on a WebGPU canvas, found building stage 3: headless Chromium's
+SwiftShader adapter hands back invalid textures for a `bgra8unorm` canvas, so every canvas is configured
+`rgba8unorm`; and an off-screen canvas's texture is invalid on every frame after its first until the
+context is configured again, which the parity harness does before each frame. The GPU's 4× sample pattern
+and SwiftShader's differ, so multisampled parity is compared away from edges.
