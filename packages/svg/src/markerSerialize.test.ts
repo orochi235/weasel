@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pathFromD } from '@weasel-js/core';
+import { getMarker, pathFromD, registerMarker } from '@weasel-js/core';
 import { serializeSvg } from './serialize';
 import { parseSvg } from './parse';
 import type { SvgNode } from './types';
@@ -70,6 +70,22 @@ describe('marker serialization', () => {
     const { nodes, warnings } = parseSvg(out);
     expect(warnings).toEqual([]);
     expect((nodes[0] as { stroke?: { markerMid?: string } }).stroke?.markerMid).toBe('dot');
+  });
+});
+
+describe('a marker key that is not an XML id', () => {
+  it('writes a well-formed def and reads the key back', () => {
+    const key = 'my "arrow" & <co>';
+    const arrow = getMarker('arrow')!;
+    const unregister = registerMarker({ ...arrow, id: key });
+    try {
+      const svg = serializeSvg(line({ markerEnd: key }));
+      const { nodes, warnings } = parseSvg(svg);
+      expect(warnings).toEqual([]);
+      expect((nodes[0] as { stroke?: { markerEnd?: string } }).stroke?.markerEnd).toBe(key);
+    } finally {
+      unregister();
+    }
   });
 });
 

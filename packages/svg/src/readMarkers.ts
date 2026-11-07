@@ -13,6 +13,7 @@ import { deriveStyle, type StyleContext } from './cascade';
 import { readProperty } from './properties';
 import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
+import { shortHash } from './markerDefs';
 import { readPaint } from './readPaint';
 
 type MarkerRole = 'start' | 'mid' | 'end';
@@ -180,15 +181,6 @@ function asPolygon(path: Path): PolygonPath {
   };
 }
 
-/** FNV-1a, for a key that tells apart two documents' same-named markers. */
-function shortHash(s: string): string {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return (h >>> 0).toString(36);
-}
 
 /**
  * One `<marker>` as a `MarkerEntry` for a reference in `role` from a stroke
