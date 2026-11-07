@@ -113,14 +113,23 @@ function holdClock(core: PointerDispatchCore): { clock: RecognizerClock; routeTo
   };
 }
 
-/** Edge panning's reads of the held pointers' last samples: where the
- *  longest-held one is, and each sent again as of now through `resend`. */
+/** The reads of the held pointers' last samples: where the longest-held one
+ *  is, and each sent again as of now through `resend`, with the modifiers as
+ *  they are or as a key just changed them. */
 function heldMoves(
   /** Each held pointer's last sample, in press order. */
-  last: ReadonlyMap<number, PointerSample>,
+  last: Map<number, PointerSample>,
   resend: (s: PointerSample) => void,
-): Pick<PointerInput, 'heldAt' | 'repeatHeld'> {
+): Pick<PointerInput, 'heldAt' | 'repeatHeld' | 'modifiersChanged'> {
   return {
+    modifiersChanged(e) {
+      for (const s of [...last.values()]) {
+        if (s.altKey === e.altKey && s.ctrlKey === e.ctrlKey && s.metaKey === e.metaKey && s.shiftKey === e.shiftKey) continue;
+        const next = { ...s, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, timeStamp: performance.now() };
+        last.set(s.pointerId, next);
+        resend(next);
+      }
+    },
     heldAt() {
       for (const s of last.values()) return { clientX: s.clientX, clientY: s.clientY };
       return null;
@@ -241,15 +250,6 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       for (const session of [...sessions.values()]) session.cancel();
     },
     ...heldMoves(lastSample, (s) => { routeAt(s.pointerId, s.clientX, s.clientY); recognizer.move(s); }),
-    modifiersChanged(e) {
-      for (const s of [...lastSample.values()]) {
-        if (s.altKey === e.altKey && s.ctrlKey === e.ctrlKey && s.metaKey === e.metaKey && s.shiftKey === e.shiftKey) continue;
-        const next = { ...s, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, timeStamp: performance.now() };
-        lastSample.set(s.pointerId, next);
-        routeAt(s.pointerId, s.clientX, s.clientY);
-        recognizer.move(next);
-      }
-    },
     dispose() {
       recognizer.reset();
       for (const session of sessions.values()) session.cancel();
