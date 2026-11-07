@@ -41,6 +41,7 @@ export function svgStrokeFromKit(raw: Stroke | null | undefined, box: SvgKitPose
     ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
     ...(stroke.join !== undefined ? { join: stroke.join } : {}),
     ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
+    ...(stroke.dashOffset ? { dashOffset: stroke.dashOffset } : {}),
     ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.align !== undefined ? { align: stroke.align } : {}),
     ...(stroke.markerStart !== undefined ? { markerStart: stroke.markerStart } : {}),

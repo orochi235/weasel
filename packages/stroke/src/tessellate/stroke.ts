@@ -91,7 +91,7 @@ export function tessellateStroke(
   } else {
     runs = polylines.flatMap((pl) => trimInSpace(pl, from, ribbonSpace, opts.startInset, opts.endInset) ?? []);
   }
-  for (const sub of dashPolylines(runs, stroke.dash, phases, dashLength)) {
+  for (const sub of dashPolylines(runs, stroke.dash, phases, dashLength, stroke.dashOffset)) {
     expandPolyline(sub, style, out);
   }
 

@@ -22,6 +22,8 @@ export {
   contrastRatio,
   dashForStrokeStyle,
   dashPattern,
+  dashPhase,
+  scaledDash,
   decomposePatternTransform,
   hexToRgbBytes,
   INHERIT,

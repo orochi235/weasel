@@ -51,7 +51,7 @@ export function outlineStrokeMesh(
   if (!(emWidth > 0)) return null;
   const key = [
     glyphKey, emWidth, stroke.join ?? 'miter', stroke.cap ?? 'butt',
-    stroke.miterLimit ?? '', stroke.align ?? 'center', (stroke.dash ?? []).join(','),
+    stroke.miterLimit ?? '', stroke.align ?? 'center', (stroke.dash ?? []).join(','), stroke.dashOffset ?? 0,
     stroke.nib ? `${stroke.nib.angle}:${stroke.nib.ratio}` : '', stroke.varyingWidthJoinThreshold ?? '',
     stroke.vertexWidths?.length ? JSON.stringify(stroke.vertexWidths) : '', strokeTrimKey(stroke.trim),
     metricKey(metric),

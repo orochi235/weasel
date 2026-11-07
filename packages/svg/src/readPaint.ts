@@ -72,6 +72,8 @@ export function readStroke(
   if (join) stroke.join = join;
   const dash = styleValue(style, 'stroke-dasharray', onWarn);
   if (dash) stroke.dash = dash;
+  const dashOffset = styleValue(style, 'stroke-dashoffset', onWarn);
+  if (dashOffset) stroke.dashOffset = dashOffset;
   const miterLimit = styleValue(style, 'stroke-miterlimit', onWarn);
   if (miterLimit != null) stroke.miterLimit = miterLimit;
   for (const [attr, field] of [
@@ -98,7 +100,7 @@ export function readStroke(
  */
 const STROKE_KEYS: readonly InheritedPropertyName[] = [
   'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap',
-  'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
+  'stroke-linejoin', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-miterlimit',
   'marker-start', 'marker-mid', 'marker-end',
 ];
 
@@ -141,6 +143,7 @@ export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
   if (stroke.cap) out.cap = stroke.cap;
   if (stroke.join) out.join = stroke.join;
   if (stroke.dash) out.dash = stroke.dash;
+  if (stroke.dashOffset) out.dashOffset = stroke.dashOffset;
   if (stroke.miterLimit != null) out.miterLimit = stroke.miterLimit;
   if (stroke.markerStart) out.markerStart = stroke.markerStart;
   if (stroke.markerMid) out.markerMid = stroke.markerMid;

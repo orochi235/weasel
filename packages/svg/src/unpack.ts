@@ -115,6 +115,7 @@ export function strokeDataFromSvg(
     ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
     ...(stroke.join !== undefined ? { join: stroke.join } : {}),
     ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
+    ...(stroke.dashOffset ? { dashOffset: stroke.dashOffset } : {}),
     ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.markerStart !== undefined ? { markerStart: stroke.markerStart } : {}),
     ...(stroke.markerMid !== undefined ? { markerMid: stroke.markerMid } : {}),

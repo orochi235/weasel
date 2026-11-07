@@ -19,7 +19,7 @@ const stroked = (path: Path, stroke: object, fill?: object): DrawCommand =>
 describe('writeStroke under a trim', () => {
   it('strokes the cut path natively, its dash starting at the cut', async () => {
     const c = await content([stroked(line, { dash: [4, 2], trim: { start: 0.2 } })]);
-    expect(c).toContain('[4 2] 10 d\n10 0 m\n50 0 l\nS\n');
+    expect(c).toContain('[4 2] 4 d\n10 0 m\n50 0 l\nS\n');
   });
 
   it('writes nothing of a stroke whose window is empty', async () => {
@@ -36,7 +36,7 @@ describe('writeStroke under a trim', () => {
 
   it('restarts the pattern for a run after one cut mid-pattern', async () => {
     const c = await content([stroked(pathFromD('M0 0 L10 0 M20 0 L30 0'), { dash: [2, 2], trim: { start: 0.25 } })]);
-    expect(c).toContain('[2 2] 5 d\n5 0 m\n10 0 l\nS\n');
+    expect(c).toContain('[2 2] 1 d\n5 0 m\n10 0 l\nS\n');
     expect(c).toContain('[2 2] 0 d\n20 0 m\n30 0 l\nS\n');
   });
 

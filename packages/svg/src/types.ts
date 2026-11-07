@@ -106,8 +106,9 @@ export interface SvgStroke {
   /** The kit stroke's `trim`, measured along the path as written. SVG has no
    *  trim, so the serializer strokes only the span it draws; `parseSvg` never sets it. */
   trim?: Stroke['trim'];
-  /** `stroke-dashoffset`: where along its pattern the dash starts. Written for
-   *  a trimmed run that starts mid-pattern; `parseSvg` never sets it. */
+  /** `stroke-dashoffset`, the kit stroke's `dashOffset`: how far into its
+   *  pattern each subpath starts. A trimmed run that starts mid-pattern is
+   *  written with its own phase added. */
   dashOffset?: number;
 }
 

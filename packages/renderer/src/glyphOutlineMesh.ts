@@ -4,7 +4,7 @@
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { LaidOutGroup, LaidOutOutlineGlyph } from '@weasel-js/text';
-import { strokeHasInk } from '@weasel-js/paint';
+import { scaledDash, strokeHasInk } from '@weasel-js/paint';
 import { strokeSpaceOf } from '@weasel-js/stroke';
 import type { GlMat3 } from '@weasel-js/geom';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
@@ -59,9 +59,9 @@ export function outlineGroupStrokeMesh(
       );
       const pxPerEm = quantizeStrokeScale(width.px, space.scale);
       if (!(pxPerEm > 0)) return null;
-      const dash = stroke.dash?.map((v) => v / pxPerEm);
+      const dashed = scaledDash(stroke, 1 / pxPerEm);
       return outlineStrokeMesh(
-        glyph.key, glyph.d, width.px / pxPerEm, { ...stroke, dash }, space.metric ?? undefined,
+        glyph.key, glyph.d, width.px / pxPerEm, dashed, space.metric ?? undefined,
       );
     });
   }
@@ -69,7 +69,7 @@ export function outlineGroupStrokeMesh(
     glyph.scale > 0
       ? outlineStrokeMesh(
         glyph.key, glyph.d, quantizeEmWidth(width / glyph.scale),
-        { ...stroke, dash: stroke.dash?.map((v) => v / glyph.scale) },
+        scaledDash(stroke, 1 / glyph.scale),
       )
       : null);
 }

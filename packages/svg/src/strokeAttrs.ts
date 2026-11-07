@@ -74,9 +74,7 @@ export function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServe
   attrs.push(...strokeWidthAttrs(width));
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
   if (stroke.join) attrs.push(`stroke-linejoin="${stroke.join}"`);
-  if (stroke.dash && stroke.dash.length > 0) {
-    attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
-  }
+  attrs.push(...dashAttrs(stroke));
   if (stroke.miterLimit != null) attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
   attrs.push(...markerAttrs(stroke, registry, warn));
   return attrs;
@@ -99,14 +97,21 @@ export function strokeAttrsFor(
   if (stroke.join) {
     attrs.push(`stroke-linejoin="${stroke.join}"`);
   }
-  if (stroke.dash && stroke.dash.length > 0) {
-    attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
-    if (stroke.dashOffset) attrs.push(`stroke-dashoffset="${trimNumber(stroke.dashOffset)}"`);
-  }
+  attrs.push(...dashAttrs(stroke));
   if (stroke.miterLimit != null) {
     attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
   }
   attrs.push(...markerAttrs(stroke, registry, warn, seat));
+  return attrs;
+}
+
+/** `stroke-dasharray` and `stroke-dashoffset`, the offset only beside a dash it moves. */
+function dashAttrs(stroke: { dash?: readonly number[]; dashOffset?: number }): string[] {
+  if (!stroke.dash || stroke.dash.length === 0) return [];
+  const attrs = [`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`];
+  if (stroke.dashOffset && Number.isFinite(stroke.dashOffset)) {
+    attrs.push(`stroke-dashoffset="${trimNumber(stroke.dashOffset)}"`);
+  }
   return attrs;
 }
 

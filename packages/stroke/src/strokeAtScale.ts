@@ -1,4 +1,4 @@
-import type { MarkerRef, Stroke } from '@weasel-js/paint';
+import { scaledDash, type MarkerRef, type Stroke } from '@weasel-js/paint';
 import { resolveMarkerSize } from './markerInset';
 import { resolveStrokeWidth } from './tessellate/stroke';
 
@@ -9,8 +9,8 @@ import { resolveStrokeWidth } from './tessellate/stroke';
  */
 export function strokeAtScale(stroke: Stroke, scale: number): Stroke & { width: number } {
   const width = resolveStrokeWidth(stroke.width ?? 1, scale);
-  const out: Stroke & { width: number } = { ...stroke, width };
-  if (typeof stroke.width === 'object' && stroke.dash && scale > 0) out.dash = stroke.dash.map((d) => d / scale);
+  const out: Stroke & { width: number } = typeof stroke.width === 'object' && scale > 0
+    ? { ...scaledDash(stroke, 1 / scale), width } : { ...stroke, width };
   for (const role of ['markerStart', 'markerMid', 'markerEnd'] as const) {
     const ref: MarkerRef | undefined = stroke[role];
     if (typeof ref === 'object' && typeof ref.size === 'object') {

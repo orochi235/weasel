@@ -1,5 +1,7 @@
 import { joinPaths, type Path, type PolygonPath, splitByClosure, splitSubpaths } from '@weasel-js/geom';
-import { type CommandPaint, type CommandStroke, dashPattern, isSolidPaint, type Stroke } from '@weasel-js/paint';
+import {
+  type CommandPaint, type CommandStroke, dashPattern, dashPhase, isSolidPaint, type Stroke,
+} from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
 import { dashLength, insetPath, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
 import { solidColor } from './color';
@@ -30,7 +32,9 @@ export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: numbe
   // PDF draws nothing for an all-zero dash and rejects a negative one; the renderer strokes both solid.
   // A non-finite one never gets here: no line is drawn for it.
   const dash = dashPattern(stroke.dash, length);
-  if (dash !== 'solid' && dash !== 'non-finite') out.op('d', `[${dash.map(num).join(' ')}]`, phase);
+  if (dash === 'solid' || dash === 'non-finite') return;
+  // Wrapped into one cycle, as the renderer's dasher reads it; PDF has no rule for a negative phase.
+  out.op('d', `[${dash.map(num).join(' ')}]`, num(dashPhase(dash, phase + (stroke.dashOffset ?? 0))));
 }
 
 /** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */
