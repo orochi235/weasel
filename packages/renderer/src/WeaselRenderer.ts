@@ -175,7 +175,6 @@ export class WeaselRenderer {
     };
   }
 
-
   /**
    * Compile a consumer-registered shader program against this renderer's GL context.
    *
