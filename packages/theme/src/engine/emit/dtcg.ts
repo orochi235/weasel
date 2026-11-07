@@ -1,5 +1,6 @@
 import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes.ts';
-import { AXES_EXT, overrideKey, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
+import type { SerializableColorList } from '../../colorListItems.ts';
+import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
 import { refTarget } from '../../dtcg/resolve.ts';
 import { ALPHA_EXT, SCOPE_EXT, type RawToken, type TokenValue } from '../../dtcg/types.ts';
 import { themeAxes } from '../../resolveTheme.ts';
@@ -19,7 +20,11 @@ export interface DtcgExport {
   readonly defaultMode?: string;
   readonly primitives: Record<string, DtcgGroup>;
   readonly modes: Record<string, Record<string, DtcgGroup>>;
-  readonly $extensions?: { readonly [AXES_EXT]?: DtcgAxesExtension };
+  readonly $extensions?: {
+    readonly [AXES_EXT]?: DtcgAxesExtension;
+    readonly [RAMPS_EXT]?: Readonly<Record<string, readonly string[]>>;
+    readonly [TINTS_EXT]?: SerializableColorList;
+  };
 }
 
 /**
@@ -31,6 +36,7 @@ export interface DtcgExport {
  * other axis at its default value: what a tool that ignores extensions reads.
  * The other values travel under `$extensions["com.weasel.axes"]`, one override
  * layer per combination of non-default values some token actually varies by.
+ * The theme's own ramps and tints travel under `com.weasel.ramps` and `com.weasel.tints`.
  */
 export function toDTCG(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
@@ -112,12 +118,16 @@ export function toDTCG(theme: Theme): DtcgExport {
     }
   }
 
-  const ext: DtcgAxesExtension = { axes, varies, overrides };
+  const extensions = {
+    ...(Object.keys(axes).length > 0 ? { [AXES_EXT]: { axes, varies, overrides } satisfies DtcgAxesExtension } : {}),
+    ...(theme.ramps && Object.keys(theme.ramps).length > 0 ? { [RAMPS_EXT]: theme.ramps } : {}),
+    ...(theme.tints !== undefined ? { [TINTS_EXT]: theme.tints } : {}),
+  };
   return {
     name: theme.name,
     ...(axes.mode ? { defaultMode: axes.mode.default } : {}),
     primitives: base.primitives,
     modes: base.modes,
-    ...(Object.keys(axes).length > 0 ? { $extensions: { [AXES_EXT]: ext } } : {}),
+    ...(Object.keys(extensions).length > 0 ? { $extensions: extensions } : {}),
   };
 }

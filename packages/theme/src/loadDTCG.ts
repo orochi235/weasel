@@ -1,6 +1,7 @@
 import { isPlainObject } from '@weasel-js/registry';
 import { mergeAxes, type AxisDef, type AxisDefs, type Selection, type Varying } from './axes';
-import { AXES_EXT, overrideKey, type DtcgAxesExtension } from './dtcg/axesExtension';
+import type { SerializableColorList } from './colorListItems';
+import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from './dtcg/axesExtension';
 import { flattenTokens } from './dtcg/flatten';
 import type { FlatTokens, RawToken } from './dtcg/types';
 import { themeAxes } from './resolveTheme';
@@ -41,12 +42,26 @@ function readAxesExtension(raw: unknown): DtcgAxesExtension | undefined {
   };
 }
 
+function readRamps(raw: unknown): Record<string, readonly string[]> | undefined {
+  if (raw === undefined) return undefined;
+  const ok = isRecord(raw) && Object.values(raw).every((steps) => Array.isArray(steps) && steps.every((s) => typeof s === 'string'));
+  if (!ok) throw new Error(`DTCG "$extensions.${RAMPS_EXT}" needs ramp names mapped to lists of step names`);
+  return raw as Record<string, readonly string[]>;
+}
+
+function readTints(raw: unknown): SerializableColorList | undefined {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw) && !isRecord(raw)) throw new Error(`DTCG "$extensions.${TINTS_EXT}" needs a color list`);
+  return raw as SerializableColorList;
+}
+
 /**
  * Build a `Theme` from a DTCG document — the interchange path, for tokens
  * exported by a design tool rather than authored in TS. A token a mode leaves
  * out takes the document's primitive of the same name, or else the base theme's.
  * Axes besides mode come from `$extensions["com.weasel.axes"]`, the encoding
  * `toDTCG` writes; a document without it loads with mode as its only axis.
+ * Ramps and tints come from `com.weasel.ramps` and `com.weasel.tints`.
  */
 export function loadDTCG(doc: DtcgDocument): Theme {
   if (typeof doc.name !== 'string' || doc.name === '') {
@@ -112,5 +127,7 @@ export function loadDTCG(doc: DtcgDocument): Theme {
     if (v !== undefined) tokens[name] = v;
   }
 
-  return { name: doc.name, extends: base, axes, tokens };
+  const ramps = readRamps(doc.$extensions?.[RAMPS_EXT]);
+  const tints = readTints(doc.$extensions?.[TINTS_EXT]);
+  return { name: doc.name, extends: base, axes, tokens, ...(ramps ? { ramps } : {}), ...(tints !== undefined ? { tints } : {}) };
 }
