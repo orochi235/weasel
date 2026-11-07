@@ -42,8 +42,9 @@ export interface OpenedLabStore {
   store: LabStore;
   /** Every record of the lab, `usePersistedState` values included. */
   records: RecordCache;
-  /** Send queued writes and stop hearing other writers. */
-  close(): Promise<void>;
+  /** Send queued writes and stop hearing other writers. Resolves whether every write landed, as
+   *  `RecordCache.close` does. */
+  close(): Promise<boolean>;
 }
 
 /**
@@ -88,7 +89,7 @@ export async function openLabStore(options: OpenLabStoreOptions): Promise<Opened
     close: async () => {
       closed = true;
       unbind();
-      await records.close();
+      return records.close();
     },
   };
 }

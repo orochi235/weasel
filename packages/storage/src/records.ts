@@ -45,8 +45,9 @@ export interface RecordCache {
    *  opened with them, and when a later read lands for one whose first read
    *  failed. Never resolves for a cache closed or stopped before that. */
   whenRead(): Promise<void>;
-  /** Send queued writes, stop hearing other writers, and stop retrying. */
-  close(): Promise<void>;
+  /** Send queued writes, stop hearing other writers, and stop retrying.
+   *  Resolves as `flush` does; a write still queued after it is never sent. */
+  close(): Promise<boolean>;
 }
 
 /** The parts of a cache only its opener uses. */
@@ -252,9 +253,9 @@ function buildCache(
     read,
     whenRead: () => hasRead,
     close: async () => {
-      if (closed) return;
+      if (closed) return queue.size === 0;
       stopRetrying();
-      await queue.flush();
+      const sent = await queue.flush();
       closed = true;
       queue.stopRetrying();
       unsubscribe?.();
@@ -262,6 +263,7 @@ function buildCache(
         window.removeEventListener('pagehide', onPageHide);
         document.removeEventListener('visibilitychange', onVisibility);
       }
+      return sent;
     },
     onOverruled: overruledEmitter.subscribe,
     seed: (entries) => {

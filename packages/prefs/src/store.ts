@@ -75,7 +75,8 @@ export interface PrefsStore<S extends PrefGroup> {
   whenRead(): Promise<void>;
   /** Resolves true when every queued write reached storage. */
   flush(): Promise<boolean>;
-  close(): Promise<void>;
+  /** Resolves as `flush` does, with the writes it sends before closing. */
+  close(): Promise<boolean>;
 }
 
 /** Every record of `cache` but the version's, as a nested tree of unrepaired values. */
@@ -205,7 +206,7 @@ export function createPrefsStore<S extends PrefGroup>(
       onClose?.();
       stopCache();
       changed = createEmitter();
-      await cache.close();
+      return cache.close();
     },
   };
 }
