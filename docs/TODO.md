@@ -730,14 +730,6 @@ only story runner in the repo.
   a translucent one comes out too bright (the parity suite measured 48 levels in blue). WebGPU premultiplies it.
   Default bitmaps hold premultiplied texels and draw right on both. Closes when the image cache premultiplies a
   straight bitmap's texels on WebGL too, or refuses it.
-- **(P2) [agent] A worker canvas's `pickAt` answers with the worker's pick ids, which the page cannot name.**
-  `<SceneCanvas worker>`'s worker numbers nodes in its own copy of the scene (`scenePickIds` of the mirror,
-  as it first paints each), and the page's `scenePickIds(scene)` numbers them as the page first asks, so
-  `scenePickIds(scene).nodeOf(await ref.pickAt(x, y))` can name the wrong node or none (read, not run,
-  2026-11-06). `geometry.picking: 'pixels'` is unaffected: it reads `readIdsSync`, which is `null` there.
-  The fix is a protocol change: the worker answers an id read with node ids, or the page sends the numbers
-  it gave. Closes when a worker canvas's `pickAt` decodes through the page's `scenePickIds` to the node
-  painted there, with a browser test that picks two nodes painted in another order than the page named them.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or

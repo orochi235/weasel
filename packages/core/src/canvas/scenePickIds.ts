@@ -15,10 +15,24 @@ export interface ScenePickIds {
   nodeOf(pickId: number): NodeId | null;
 }
 
-function createScenePickIds(): ScenePickIds {
+interface OwnPickIds extends ScenePickIds {
+  /** Give `id` the number `n`, as another realm's copy of the scene numbered it. */
+  adopt(id: string, n: number): void;
+}
+
+function createScenePickIds(): OwnPickIds {
   const byNode = new Map<string, number>();
   const byPick: string[] = [''];
   return {
+    adopt(id, n) {
+      const was = byNode.get(id);
+      if (was === n) return;
+      if (was !== undefined) delete byPick[was];
+      const held = byPick[n];
+      if (held !== undefined && held !== '') byNode.delete(held);
+      byNode.set(id, n);
+      byPick[n] = id;
+    },
     idOf(id) {
       let n = byNode.get(id);
       if (n === undefined) {
@@ -38,7 +52,13 @@ function createScenePickIds(): ScenePickIds {
   };
 }
 
-const BY_SCENE = new WeakMap<object, ScenePickIds>();
+const BY_SCENE = new WeakMap<object, OwnPickIds>();
+
+function pickIdsOf(scene: object): OwnPickIds {
+  let ids = BY_SCENE.get(scene);
+  if (!ids) BY_SCENE.set(scene, (ids = createScenePickIds()));
+  return ids;
+}
 
 /**
  * The pick ids of `scene`'s nodes. Numbers are given as nodes are first
@@ -47,7 +67,15 @@ const BY_SCENE = new WeakMap<object, ScenePickIds>();
  * can give the same number to different nodes.
  */
 export function scenePickIds(scene: object): ScenePickIds {
-  let ids = BY_SCENE.get(scene);
-  if (!ids) BY_SCENE.set(scene, (ids = createScenePickIds()));
-  return ids;
+  return pickIdsOf(scene);
+}
+
+/**
+ * Number `scene`'s nodes as `pairs` say, `[nodeId, pickId]` each, so a copy of a scene in
+ * another realm (a render worker's) paints the numbers the original's `scenePickIds` gave.
+ * Not consumer surface.
+ */
+export function adoptScenePickIds(scene: object, pairs: Iterable<readonly [string, number]>): void {
+  const ids = pickIdsOf(scene);
+  for (const [id, n] of pairs) ids.adopt(id, n);
 }

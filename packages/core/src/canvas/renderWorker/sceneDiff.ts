@@ -3,6 +3,7 @@
  * last delta, in the scene's saved form, so function fields cross as registry keys.
  */
 import type { Scene, SerializedNode } from '../../core/scene/types';
+import { scenePickIds } from '../scenePickIds';
 import type { SceneDelta, WireNode } from './protocol';
 
 /** Reports a scene's changes, one delta per call, against what it reported last. */
@@ -48,7 +49,9 @@ export function createSceneDiff(): SceneDiff {
       const frame = JSON.stringify([json.systemLayers, json.doc ?? null]);
       const was = sent;
       sent = { nodes, order, frame };
-      if (!was || was.frame !== frame) return { reset: json };
+      const pickIds = scenePickIds(scene);
+      const numbered = (ids: Iterable<string>): [string, number][] => [...ids].map((id) => [id, pickIds.idOf(id)]);
+      if (!was || was.frame !== frame) return { reset: json, pickIds: numbered(order) };
 
       const changed: WireNode[] = [];
       for (const n of nodes.values()) {
@@ -59,8 +62,10 @@ export function createSceneDiff(): SceneDiff {
       for (const id of was.nodes.keys()) if (!nodes.has(id)) removed.push(id);
       const moved = !sameOrder(was.order, order);
       if (changed.length === 0 && removed.length === 0 && !moved) return null;
+      const added = changed.filter((n) => !was.nodes.has(n.id)).map((n) => n.id);
       return {
         ...(changed.length > 0 ? { nodes: changed } : {}),
+        ...(added.length > 0 ? { pickIds: numbered(added) } : {}),
         ...(removed.length > 0 ? { removed } : {}),
         ...(moved ? { order } : {}),
       };

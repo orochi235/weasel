@@ -166,7 +166,9 @@ alpha 0, the way the page leaves its committed paint out, and the page paints it
 
 **Ids are a round trip away.** `readIds(rect)` and `pickAt(x, y)` read every canvas of the stack,
 the worker's last frame through `WeaselRenderer.renderIds` there, and give each pixel the id of the
-highest canvas that painted one. `readIdsSync` answers `null` in worker mode rather than answer from
+highest canvas that painted one. The worker numbers nodes as the page's `scenePickIds(scene)` does,
+since each scene delta carries the page's numbers for the nodes it introduces, so
+`scenePickIds(scene).nodeOf(await ref.pickAt(x, y))` names the node on either side. `readIdsSync` answers `null` in worker mode rather than answer from
 part of the stack, as it does on a WebGPU canvas, so `geometry.picking: 'pixels'` walks the shapes
 instead. Caching a whole id frame per frame would cost an id render every frame to save a round trip
 a pick rarely needs, so the reads stay on demand.

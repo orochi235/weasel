@@ -3,6 +3,7 @@ import { createScene } from '../../core/scene/scene';
 import { asNodeId, type AddNodeSpec, type RectPose, type Scene } from '../../core/scene/types';
 import { createSceneDiff } from './sceneDiff';
 import { createSceneMirror, wireOverrides, wireScroll } from './sceneMirror';
+import { scenePickIds } from '../scenePickIds';
 
 type D = { fill?: string };
 type S = Scene<D, 'main' | 'top', RectPose>;
@@ -57,6 +58,26 @@ describe('the render worker scene copy', () => {
     sync();
     expect(copy().toJSON()).toEqual(page.toJSON());
     expect([...copy().renderOrder()]).toEqual([...page.renderOrder()]);
+  });
+
+  it('numbers nodes as the page does, though the copy is asked in another order', () => {
+    const page = sceneOf();
+    const diff = createSceneDiff();
+    const mirror = createSceneMirror();
+    // The page numbers c and b first, as a pick of them would.
+    const pageIds = scenePickIds(page);
+    const [c, b] = [pageIds.idOf('c'), pageIds.idOf('b')];
+    const sync = () => { const d = diff.next(page as unknown as Scene<unknown, string, unknown>); if (d) mirror.apply(structuredClone(d)); };
+    sync();
+    const copyIds = scenePickIds(mirror.scene!);
+    for (const k of ['g', 'a', 'b', 'c']) expect(copyIds.nodeOf(pageIds.idOf(k))).toBe(k);
+    expect([copyIds.idOf('c'), copyIds.idOf('b')]).toEqual([c, b]);
+    page.remove(id('a'));
+    page.add(box('d', 9));
+    sync();
+    expect(copyIds.nodeOf(pageIds.idOf('d'))).toBe('d');
+    expect(copyIds.idOf('d')).toBe(pageIds.idOf('d'));
+    expect(copyIds.nodeOf(pageIds.idOf('c'))).toBe('c');
   });
 
   it('resets when the layer stack changes', () => {

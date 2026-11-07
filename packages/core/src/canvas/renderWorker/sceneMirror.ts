@@ -5,6 +5,7 @@
 import { sceneFromJSON } from '../../core/scene/scene';
 import { reconcileSpecs } from '../../core/scene/reconcileSpecs';
 import { specsFromSerialized } from '../../core/scene/serialization';
+import { adoptScenePickIds } from '../scenePickIds';
 import type { AddNodeSpec, NodeId, Scene, SerializedLayer, SerializedScene } from '../../core/scene/types';
 import type { SceneDelta, WireNode, WireOverride, WireScroll } from './protocol';
 
@@ -47,7 +48,9 @@ export function createSceneMirror(options: SceneMirrorOptions = {}): SceneMirror
   return {
     get scene() { return scene; },
     apply(delta) {
-      if (delta.reset) return reset(delta.reset);
+      if (delta.reset) reset(delta.reset);
+      if (delta.pickIds) adoptScenePickIds(scene!, delta.pickIds);
+      if (delta.reset) return;
       if (!scene) throw new Error('weasel render worker: a scene delta arrived before the scene');
       for (const id of delta.removed ?? []) {
         nodes.delete(id);

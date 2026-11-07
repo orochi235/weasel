@@ -18,6 +18,9 @@ export interface SceneDelta {
   nodes?: WireNode[];
   removed?: string[];
   order?: string[];
+  /** The page's `scenePickIds` number of each node the worker has not been told one for, so its
+   *  id frames name nodes as the page does. */
+  pickIds?: [string, number][];
 }
 
 /** One pose override as it crosses. `data` is what the override's function answered for the

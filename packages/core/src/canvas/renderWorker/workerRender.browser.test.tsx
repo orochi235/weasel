@@ -6,7 +6,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement, createRef, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneViewCanvas, asNodeId, createScene, type FollowedClock, type WorkerCanvasHandle } from '@weasel-js/core';
+import {
+  SceneViewCanvas, asNodeId, createScene, scenePickIds, startSceneRenderWorker,
+  type FollowedClock, type WorkerCanvasHandle,
+} from '@weasel-js/core';
 import { createClock } from '@weasel-js/clock';
 import { bitmapSrc } from '@weasel-js/renderer';
 
@@ -170,5 +173,48 @@ describe('a scene view painted by a worker', () => {
     expect(await until(handle.current!, 75, 25, [255, 255, 0])).toEqual([255, 255, 0, 255]);
     // The page's own bitmap stays whole: the worker was sent a copy.
     expect(made.width).toBe(8);
+  });
+});
+
+describe('a scene painted by a worker a host drives itself', () => {
+  it('reads ids in the page\'s numbering, after an insert and a remove too', async () => {
+    const scene = createScene<Data, 'main', Pose>({
+      systemLayers: [{ id: 'main' }],
+      initial: ['a', 'b', 'c'].map((k, i) => ({
+        id: asNodeId(k), kind: 'mark' as const, layer: 'main' as const, pose: { x: 5 + 30 * i, y: 10, width: 20, height: 30 }, data: solid('#ff0000'),
+      })),
+    });
+    // The page numbers c and b before the worker paints anything, as a pick of them would.
+    const ids = scenePickIds(scene);
+    ids.idOf('c');
+    ids.idOf('b');
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    const worker = new Worker(new URL('./testing/sceneRender.worker.ts', import.meta.url), { type: 'module' });
+    const client = startSceneRenderWorker(worker, canvas, { scene, view: VIEW, width: 100, height: 50, dpr: 1 });
+    const named = async (x: number, y: number, want: string | null) => {
+      let last: string | null = null;
+      for (let i = 0; i < 300; i++) {
+        client.sync();
+        const read = await client.readIds({ x, y, width: 0, height: 0 });
+        last = ids.nodeOf(read.data[0] ?? 0);
+        if (last === want) return last;
+        await frame();
+      }
+      return last;
+    };
+    try {
+      expect(await named(15, 20, 'a')).toBe('a');
+      expect(await named(45, 20, 'b')).toBe('b');
+      expect(await named(75, 20, 'c')).toBe('c');
+      scene.add({ id: asNodeId('d'), kind: 'mark', layer: 'main', pose: { x: 5, y: 42, width: 90, height: 6 }, data: solid('#0000ff') });
+      scene.remove(asNodeId('b'));
+      expect(await named(50, 45, 'd')).toBe('d');
+      expect(await named(45, 20, null)).toBeNull();
+      expect(await named(75, 20, 'c')).toBe('c');
+    } finally {
+      client.dispose();
+      canvas.remove();
+    }
   });
 });
