@@ -1,4 +1,4 @@
-import { ALPHA_EXT, SCOPE_EXT, type FlatTokens, type RawToken, type TokenValue } from './types';
+import { ALPHA_EXT, isSafeTokenName, SCOPE_EXT, unsafeTokenName, type FlatTokens, type RawToken, type TokenValue } from './types';
 
 interface DtcgToken {
   $value: TokenValue;
@@ -36,6 +36,7 @@ export function flattenTokens(doc: Record<string, unknown>): FlatTokens {
       if (!type) {
         throw new Error(`Token "${leaf}" has no $type and its group "${groupName}" declares none`);
       }
+      if (!isSafeTokenName(leaf)) throw new Error(unsafeTokenName(leaf));
       if (leaf in out) {
         throw new Error(`Duplicate token name "${leaf}" — leaf keys must be unique across type groups`);
       }

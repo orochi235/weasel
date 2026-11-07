@@ -1,7 +1,7 @@
 import { isPlainObject } from '@weasel-js/registry';
 import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../axes.ts';
 import type { PinObject, PinValue, ThemeDefinition } from '../definition.ts';
-import type { RawToken, TokenValue } from '../dtcg/types.ts';
+import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from '../dtcg/types.ts';
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate.ts';
 import { axisIssues } from './axisIssues.ts';
 import { mergeChain, type Lookup } from './merge.ts';
@@ -285,20 +285,16 @@ const isPinObject = (v: PinValue): v is PinObject =>
   isPlainObject(v) && 'value' in v;
 
 const NAMED_LAYERS = ['ramps', 'scales', 'semantics', 'components', 'pins'] as const;
-/** A reference reads a dot as a group, and a name reaches CSS custom properties and the generated module unescaped. */
-const SAFE_NAME = /^[A-Za-z0-9_-]+$/;
-const isSafeName = (name: string) => SAFE_NAME.test(name);
-const UNSAFE = (name: string) => `"${name}" cannot name a token: use letters, digits, "-" and "_"`;
 
 function withoutUnsafeNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinition {
   let out = def;
   for (const layer of NAMED_LAYERS) {
     const entries = def[layer];
-    if (!entries || Object.keys(entries).every(isSafeName)) continue;
+    if (!entries || Object.keys(entries).every(isSafeTokenName)) continue;
     for (const n of Object.keys(entries)) {
-      if (!isSafeName(n)) issues.push({ kind: 'invalid', path: `${layer}.${n}`, message: UNSAFE(n) });
+      if (!isSafeTokenName(n)) issues.push({ kind: 'invalid', path: `${layer}.${n}`, message: unsafeTokenName(n) });
     }
-    out = { ...out, [layer]: Object.fromEntries(Object.entries(entries).filter(([n]) => isSafeName(n))) };
+    out = { ...out, [layer]: Object.fromEntries(Object.entries(entries).filter(([n]) => isSafeTokenName(n))) };
   }
   return out;
 }
@@ -368,9 +364,9 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
       issues.push({ kind: 'invalid', path: `${path}.steps`, message: '"by" is reserved and cannot name a step' });
       return { ok: false, steps };
     }
-    const unsafe = steps?.find((s) => !isSafeName(s));
+    const unsafe = steps?.find((s) => !isSafeTokenName(s));
     if (unsafe !== undefined) {
-      issues.push({ kind: 'invalid', path: `${path}.steps`, message: UNSAFE(unsafe) });
+      issues.push({ kind: 'invalid', path: `${path}.steps`, message: unsafeTokenName(unsafe) });
       return { ok: false, steps };
     }
     return settled && steps ? { ok: true, r, steps } : { ok: false, steps };

@@ -45,4 +45,10 @@ describe('flattenTokens', () => {
       }),
     ).toThrow(/duplicate.*line/i);
   });
+
+  it('throws on a leaf name a custom property cannot carry', () => {
+    expect(() => flattenTokens({ dimension: { $type: 'dimension', 'font size': { $value: '12px' } } })).toThrow(
+      /"font size" cannot name a token/,
+    );
+  });
 });
