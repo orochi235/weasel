@@ -1,7 +1,8 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
 import { isBuiltinPref, type PrefLeaf, prefLeafValue } from '@weasel-js/prefs';
+import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
-import type { PropertyControlProps } from '@weasel-js/ui/components/Properties';
+import { type PropertyControlProps, stepDisplay } from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import type { CSSProperties, DOMAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
 import { auto as autoValue } from '../config/auto';
@@ -11,20 +12,12 @@ import { summarizeLeaf } from './inDialog';
 /** A color leaf whose default is empty: unset is a value of its own, not black. */
 export const clearable = (leaf: PrefLeaf): boolean => leaf.kind === 'color' && leaf.default === '';
 
-/** The number of decimals a step implies: `0.05` shows two, `1` none. */
-function decimalsOf(step: number | undefined): number {
-  if (step === undefined || !Number.isFinite(step) || step <= 0) return 0;
-  const text = String(step);
-  const exp = /e-(\d+)$/.exec(text);
-  if (exp) return Number(exp[1]);
-  const dot = text.indexOf('.');
-  return dot === -1 ? 0 : text.length - dot - 1;
-}
-
 /** What a cell shows of a value it opens a popover to edit. */
 function summaryOf(field: PropertyControlProps | null, leaf: PrefLeaf, value: unknown): ReactNode {
   if (field?.kind === 'number') {
-    return typeof field.value === 'number' ? field.value.toFixed(decimalsOf(field.step)) : '—';
+    return typeof field.value === 'number'
+      ? qty(field.value, field.display ?? stepDisplay(field.step)).text
+      : '—';
   }
   if (field?.kind === 'enum') {
     const option = field.options.find((o) => o.value === field.value);

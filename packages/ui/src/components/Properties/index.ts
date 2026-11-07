@@ -24,6 +24,7 @@ export type {
 } from './PropertyField';
 export { PropertyControl, PropertyField } from './PropertyField';
 export { PropertyReadout } from './PropertyReadout';
+export { stepDisplay } from './NumberControls';
 export type { PropertyHelpProps } from './PropertyHelp';
 export { PropertyHelp } from './PropertyHelp';
 export type {

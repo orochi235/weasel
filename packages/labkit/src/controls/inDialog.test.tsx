@@ -1,4 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
+import { compact } from '@weasel-js/quantity';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -117,6 +118,14 @@ describe('summarizeLeaf', () => {
   it('writes a number with a unit as its field shows it', () => {
     expect(summarizeLeaf(angle, Math.PI)).toBe('180°');
     expect(summarizeLeaf(plain, 3)).toBe('3');
+  });
+
+  it("writes a number through its display, and infinity as its endless end's word", () => {
+    const budget = { ...plain, display: compact() } as const;
+    expect(summarizeLeaf(budget, 2_000_000)).toBe('2.00M');
+    const timeout = { ...plain, max: 5000, endless: 'max', infinity: 'never' } as const;
+    expect(summarizeLeaf(timeout, Infinity)).toBe('never');
+    expect(summarizeLeaf(timeout, 250)).toBe('250');
   });
 
   it("writes an object's fields that have a unit so, and leaves the rest", () => {

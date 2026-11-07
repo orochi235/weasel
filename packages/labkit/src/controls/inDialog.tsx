@@ -10,6 +10,9 @@ import {
   prefVariantOf,
   resolvePrefUnit,
 } from '@weasel-js/prefs';
+import { qty } from '@weasel-js/quantity';
+import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
+import { stepDisplay } from '@weasel-js/ui/components/Properties';
 import { leafCanAuto } from '../config/autoConfig';
 import type { ControlRenderer, InDialogOptions } from '../config/types';
 import { DraftDialogRow } from './DraftDialogRow';
@@ -26,14 +29,21 @@ export function summarizeValue(value: unknown): string {
   return typeof value === 'object' ? JSON.stringify(value) : String(value);
 }
 
+/** `value` as `leaf`'s field writes it — through its `display` or its unit, and infinity as the word its
+ *  `endless` end gives it — or `undefined` where the leaf says nothing of how it shows. */
+export function numberText(leaf: PrefNumber, value: number): string | undefined {
+  if (leaf.display === undefined && leaf.infinity === undefined && Number.isFinite(value))
+    return leaf.unit === undefined ? undefined : resolvePrefUnit(leaf.unit).format(value);
+  const field = prefFieldProps(leaf, { value, setValue: () => {} });
+  if (field?.kind !== 'number' || typeof field.value !== 'number') return undefined;
+  const text = qty(field.value, field.display ?? stepDisplay(field.step)).text;
+  return Number.isFinite(value) && field.unit ? `${text}${field.unit}` : text;
+}
+
 /** `value` with each number that has a unit as its field writes it, at any depth of a compound leaf. */
 function shownValue(leaf: PrefLeaf, value: unknown): unknown {
-  if (leaf.kind === 'number') {
-    const { unit } = leaf as PrefNumber;
-    return unit !== undefined && typeof value === 'number'
-      ? resolvePrefUnit(unit).format(value)
-      : value;
-  }
+  if (leaf.kind === 'number')
+    return typeof value === 'number' ? (numberText(leaf as PrefNumber, value) ?? value) : value;
   if (leaf.kind === 'list') {
     const { item } = leaf as PrefList;
     return Array.isArray(value) ? value.map((entry) => shownValue(item, entry)) : value;

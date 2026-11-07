@@ -30,10 +30,10 @@ export function scopedPrefUnit(
 /**
  * `leaf` as a surface showing it where `scopes` enclose the value draws it:
  * a number leaf whose `measure` is `'length'` and that names no `unit` of its
- * own takes {@link scopedPrefUnit}'s, and an object leaf's children are read
- * the same way. Every surface showing a scene node's fields reads its leaves
- * through this. The same leaf comes back where nothing changes, and with no
- * scopes.
+ * own takes {@link scopedPrefUnit}'s, and so does each one an object leaf's
+ * children, or a list's, a map's or a union's entries, hold. Every surface
+ * showing a scene node's fields reads its leaves through this. The same leaf
+ * comes back where nothing changes, and with no scopes.
  */
 export function prefLeafInScopes<L extends PrefLeaf>(leaf: L, scopes: readonly UnitScope[] | undefined): L {
   if (!scopes || scopes.length === 0) return leaf;
@@ -41,9 +41,23 @@ export function prefLeafInScopes<L extends PrefLeaf>(leaf: L, scopes: readonly U
   if (isBuiltinPref(l) && l.kind === 'number' && l.measure === 'length' && !l.unit) {
     return { ...leaf, unit: scopedPrefUnit(scopes) };
   }
-  if (isBuiltinPref(l) && l.kind === 'object') {
+  if (!isBuiltinPref(l)) return leaf;
+  if (l.kind === 'object') {
     const children = membersInScopes(l.children, scopes);
     return children === l.children ? leaf : { ...leaf, children };
+  }
+  if (l.kind === 'list' || l.kind === 'map') {
+    const item = prefLeafInScopes(l.item, scopes);
+    return item === l.item ? leaf : { ...leaf, item };
+  }
+  if (l.kind === 'union') {
+    let changed = false;
+    const variants = Object.fromEntries(Object.entries(l.variants).map(([key, v]) => {
+      const next = prefLeafInScopes(v, scopes);
+      if (next !== v) changed = true;
+      return [key, next];
+    }));
+    return changed ? { ...leaf, variants } : leaf;
   }
   return leaf;
 }

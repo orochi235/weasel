@@ -3,6 +3,7 @@ import { deepEqual } from '@weasel-js/registry';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { isRecord, valueAtPath, withValueAtPath } from '../config/path';
+import { isEncodedLeaf, storedDefault } from '../config/storedDefault';
 import { icon } from '../icons.gen';
 import { leafValueAt } from './fields';
 
@@ -14,19 +15,13 @@ function leavesUnder(group: PrefGroup, at: string): [string, PrefLeaf][] {
   });
 }
 
-const isEncoded = (leaf: PrefLeaf): boolean =>
-  (leaf as { encoding?: unknown }).encoding !== undefined;
-
 /** What the row at `path` shows: an encoded leaf's stored value read through its encoding. */
 function shownAt(config: Record<string, unknown>, path: string, leaf: PrefLeaf): unknown {
-  if (!isEncoded(leaf)) return leafValueAt(config, path, leaf);
+  if (!isEncodedLeaf(leaf)) return leafValueAt(config, path, leaf);
   const dot = path.lastIndexOf('.');
   const within = dot === -1 ? config : valueAtPath(config, path.slice(0, dot));
   return prefShownValue(leaf, valueAtPath(config, path), isRecord(within) ? within : undefined);
 }
-
-// An encoded leaf's default is the option it reads as, not what it stores; holding nothing reads as it.
-const resetValue = (leaf: PrefLeaf): unknown => (isEncoded(leaf) ? undefined : leaf.default);
 
 /** The heading button of a `.resettable()` group: writes the group's value at its path, once, with each leaf
  *  beneath it at its default, and is disabled while every row reads its default. */
@@ -54,7 +49,7 @@ export function ResetGroup({
       disabled={changed.length === 0}
       onClick={() => {
         const reset = changed.reduce(
-          (at, [p, leaf]) => withValueAtPath(at, p, resetValue(leaf)),
+          (at, [p, leaf]) => withValueAtPath(at, p, storedDefault(leaf)),
           config,
         );
         setConfig(path, valueAtPath(reset, path));
