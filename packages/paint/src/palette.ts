@@ -1,6 +1,6 @@
 import { parseColor } from './color';
 import { oklabToSrgbU8, oklchToOklab } from './colorSpaces';
-import { parseHexBytes } from './hex';
+import { byteHex, parseHexBytes } from './hex';
 
 /**
  * A color given directly. `coords` are in the order CSS Color 4 uses for
@@ -124,8 +124,6 @@ export function* resolvePaletteColors(
   }
 }
 
-const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
-
 /** `#rrggbb`, or `#rrggbbaa` below full opacity. `null` for a space the kit
  *  cannot convert, or fewer than three coordinates. */
 export function colorLiteralToHex(color: ColorLiteral): string | null {
@@ -146,7 +144,7 @@ export function colorLiteralToHex(color: ColorLiteral): string | null {
       return null;
   }
   const a = color.alpha ?? 1;
-  return `#${rgb.map(hex2).join('')}${a < 1 ? hex2(a * 255) : ''}`;
+  return `#${rgb.map(byteHex).join('')}${a < 1 ? byteHex(a * 255) : ''}`;
 }
 
 /**

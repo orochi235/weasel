@@ -1,6 +1,6 @@
 // sRGB ↔ OKLab conversion. Reference: https://bottosson.github.io/posts/oklab/
 
-import { hexToRgbBytes } from './hex';
+import { byteHex, hexToRgbBytes } from './hex';
 import { shortArc } from './shortArc';
 
 const SRGB_TO_LINEAR: Float64Array = (() => {
@@ -257,8 +257,6 @@ export interface OklchDeg {
   readonly H: number;
 }
 
-const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
-
 /**
  * OKLCh (hue in degrees) to `#rrggbb`. Over-saturated requests come back at
  * the gamut boundary: `oklabToSrgbU8` clips chroma at constant lightness, which
@@ -267,7 +265,7 @@ const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).to
 export function oklchDegToHex(L: number, C: number, hueDeg: number): string {
   const [l, a, b] = oklchToOklab(L, C, (hueDeg * Math.PI) / 180);
   const [r, g, bl] = oklabToSrgbU8(l, a, b);
-  return `#${hex2(r)}${hex2(g)}${hex2(bl)}`;
+  return `#${byteHex(r)}${byteHex(g)}${byteHex(bl)}`;
 }
 
 /** A hex color (`#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`, alpha ignored) to
