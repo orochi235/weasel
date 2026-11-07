@@ -316,6 +316,8 @@ export interface LiveAnimation extends AnimationInfo {
   readonly timeScale: number;
   /** Virtual ms its clock has advanced since it started. */
   readonly elapsed: number;
+  /** Handed to `Element.animate`: the browser's compositor shows it, and no frame ticks it. */
+  readonly compositor?: true;
   /** 0 to 1, for a tween or a timeline (the playhead over its duration).
    *  Absent where there is no end to measure against: physics, composites. */
   readonly progress?: number;

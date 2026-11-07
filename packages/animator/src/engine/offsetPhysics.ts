@@ -9,7 +9,7 @@ import { createSpringVoices, type SpringVoices, type SpringVoicesOptions } from 
 const any = (a: readonly number[]): boolean => a.some((x) => x !== 0);
 
 /** The spring's constants, refused where blits' closed forms cannot solve them. */
-function constantsFor(o: Parameters<typeof resolveSpringConstants>[0], kind: AnimationKind, toward: boolean) {
+export function constantsFor(o: Parameters<typeof resolveSpringConstants>[0], kind: AnimationKind, toward: boolean) {
   const c = resolveSpringConstants(o);
   if (!(c.damping > 0) || !(c.mass > 0) || (toward && !(c.stiffness > 0))) {
     throw new Error(`${kind}: an animation on a target needs positive damping and mass, and stiffness to reach \`to\``);
@@ -71,7 +71,6 @@ export function startOffsetPhysics<T>(
   const ax = s.axes;
   let dest = o.to == null ? null : axesFor(ax, o.to, 'to');
   const constants = constantsFor(o, kind, dest != null);
-  const { stiffness } = constants;
   const given = o.from === undefined ? null : axesFor(ax, o.from, 'from');
   let velocity = o.velocity === undefined ? null : axesFor(ax, o.velocity, 'velocity');
   const restThreshold = o.restThreshold ?? 0.01;
@@ -88,6 +87,7 @@ export function startOffsetPhysics<T>(
     velocity ??= ctx.velocityUnder(o.cancelKey, s as never);
     ctx.interrupt(o.cancelKey, seed);
   }
+  s.handoff?.release();
   const before = ax.to(s.get());
   const committed = dest ? takeUp(s) : before;
   const start = travel(ax, given ?? committed, dest ?? committed);
@@ -164,7 +164,7 @@ export function startOffsetPhysics<T>(
         return;
       }
       const to = axesFor(ax, next, 'setTarget');
-      if (!(stiffness > 0)) throw new Error(`${kind}: setTarget needs a positive stiffness`);
+      if (!(constants.stiffness > 0)) throw new Error(`${kind}: setTarget needs a positive stiffness`);
       // The committed value moves under the voices, which shift by as much the other way.
       const shift = travel(ax, ax.to(s.get()), to);
       s.set(next);

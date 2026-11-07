@@ -8,7 +8,7 @@ export function decayAsPhysics<T>(o: DecayOptions<T> | TargetDecayOptions<T>): P
     stiffness: 0, damping: -Math.log(o.friction ?? 0.95), mass: 1, restThreshold: o.threshold ?? 0.5,
     onTick: o.onTick, onDone: o.onDone, cancelKey: o.cancelKey, label: o.label,
   };
-  if (o.target) return { ...shared, target: o.target, interrupt: o.interrupt };
+  if (o.target) return { ...shared, target: o.target, interrupt: o.interrupt, compositor: o.compositor };
   return {
     ...shared,
     from: o.from,

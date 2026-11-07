@@ -19,6 +19,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   } as AnimationSeed;
   // Ahead of reading the committed value: an interrupted animation commits where it stopped.
   if (o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
+  s.handoff?.release();
   const committed = ax.to(s.get());
   const base = takeUp(s);
   const from = o.from === undefined ? ax.from(base) : o.from;
