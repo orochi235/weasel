@@ -4,11 +4,20 @@
  * its own, read back as premultiplied RGBA bytes with rows top-down, and
  * compared channel by channel.
  *
- * WebGL runs on the machine's GPU and WebGPU on headless Chromium's
- * SwiftShader adapter, whose 4× sample patterns differ: a multisampled edge
- * pixel can come out a sample apart. So cases compare single-sampled canvases
- * (`antialias: false`) everywhere, and multisampled ones away from edges.
+ * Both backends have to draw on one GPU (`requireGpu`). On SwiftShader,
+ * which headless Chromium gives both unless launched with `--enable-gpu`,
+ * they part at edges for reasons that are not the renderer's: it snaps
+ * vertices to 1/16 px, so an edge within 1/32 px of a row of pixel centers
+ * lands on it and the fill rule's tie-break decides the row, and that rule
+ * runs bottom-up on WebGL's framebuffer and top-down on WebGPU's; and it clips
+ * geometry to the viewport for real, so a retained tile's viewport, which
+ * WebGPU clamps to the scratch buffer, cuts the triangles crossing its edge at
+ * new snapped vertices (2026-11-06: 14 pixels on a stroke, and 1 at a tile
+ * seam, each matching on the GPU). On one GPU multisampled edge pixels still
+ * part, by up to 57 levels, so multisampled canvases are compared away from
+ * edges.
  */
+import type { TestContext } from 'vitest';
 import type { GlMat3 } from '@weasel-js/geom';
 import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
@@ -62,6 +71,23 @@ export async function parityDevice(): Promise<GPUDevice> {
  *  attempts into a texture it cannot make. */
 export function takeErrors(): string[] {
   return errors.splice(0).filter((e) => !e.includes('CopyTextureForBrowser'));
+}
+
+/** What each backend draws on: the WebGL renderer string and the WebGPU adapter. */
+export async function rasterizers(): Promise<{ gl: string; gpu: string }> {
+  const gpuDevice = await parityDevice();
+  const gl = document.createElement('canvas').getContext('webgl2', { stencil: true, preserveDrawingBuffer: true })!;
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+  gl.getExtension('WEBGL_lose_context')?.loseContext();
+  const a = gpuDevice.adapterInfo;
+  return { gl: name, gpu: [a.vendor, a.architecture, a.description].filter(Boolean).join(' ') };
+}
+
+/** Skip the test, naming both, unless WebGL and WebGPU draw on a GPU rather than SwiftShader. */
+export async function requireGpu(ctx: TestContext): Promise<void> {
+  const { gl, gpu } = await rasterizers();
+  if (/swiftshader/i.test(gl) || /swiftshader/i.test(gpu)) ctx.skip(`parity needs a GPU under both backends; WebGL: ${gl}; WebGPU: ${gpu}`);
 }
 
 /** Run `fn` inside a validation scope, keeping its first error under `label`. */
@@ -176,8 +202,8 @@ export function diff(a: Uint8Array, b: Uint8Array, width: number, interiorOnly =
   return { max, over, first };
 }
 
-/** Render `commands` on both backends and compare what each canvas holds. */
-export async function renderBoth(b: Backends, commands: DrawCommand[], view?: GlMat3, interiorOnly = false): Promise<Diff> {
+/** Render `commands` on both backends: what each canvas holds, rows top-down. */
+export async function renderEach(b: Backends, commands: DrawCommand[], view?: GlMat3): Promise<{ gl: Uint8Array; gpu: Uint8Array }> {
   b.gl.render(commands, view);
   const gl = readGl(b);
   const gpu = await scoped(b.device, 'the frame', () => {
@@ -188,6 +214,12 @@ export async function renderBoth(b: Backends, commands: DrawCommand[], view?: Gl
     b.gpu.render(commands, view);
     return readGpu(b);
   });
+  return { gl, gpu };
+}
+
+/** Render `commands` on both backends and compare what each canvas holds. */
+export async function renderBoth(b: Backends, commands: DrawCommand[], view?: GlMat3, interiorOnly = false): Promise<Diff> {
+  const { gl, gpu } = await renderEach(b, commands, view);
   return diff(gl, gpu, b.width, interiorOnly);
 }
 

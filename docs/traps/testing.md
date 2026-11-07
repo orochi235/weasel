@@ -93,3 +93,9 @@ external Instance reference no longer exists", while a detached canvas drew 20 f
 (teitou, 2026-11-06). Every tab shares one Chromium, so the loss fails the other WebGPU files running beside
 it, WebGL ones too ("WeaselRenderer requires either gl or canvas"). A WebGPU browser test draws to a canvas
 it never appends, as `parityHarness.ts` and `canvasBackend.browser.test.tsx` do.
+
+**Headless Chromium draws WebGL on SwiftShader unless launched with `--enable-gpu`.** A browser test
+that reads pixels is measuring SwiftShader's rasterizer, which snaps vertices to 1/16 px and clips
+geometry to the viewport for real, not the node's GPU. The renderer's parity files run in the browser
+project's `browser (gpu)` instance for this (2026-11-06); print `WEBGL_debug_renderer_info`'s
+`UNMASKED_RENDERER_WEBGL` before trusting a claim about what a GPU does.

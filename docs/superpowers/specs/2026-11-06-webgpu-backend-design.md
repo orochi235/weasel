@@ -112,7 +112,13 @@ kinds got a prelude of the same shape (`gpu/webgpu/wgsl/paintPrelude.ts`).
   `--enable-unsafe-webgpu`, which gives headless Chromium a SwiftShader adapter (probed on teitou,
   2026-11-06; without the flag `requestAdapter` returns `null`).
 - A parity suite renders one corpus of command lists through both backends in the same page and diffs the
-  pixels. It is the evidence the fleet can produce, since the visual baselines are Linux captures.
+  pixels. It is the evidence the fleet can produce, since the visual baselines are Linux captures. It runs in
+  the browser project's `browser (gpu)` instance, launched with `--enable-gpu`, so both backends draw on the
+  node's GPU (ANGLE Metal and Dawn Metal), and skips where either is on SwiftShader. Headless Chromium puts
+  WebGL on SwiftShader too without that flag, and there the backends part at edges for SwiftShader's reasons
+  (`testing/parityHarness.ts`; measured 2026-11-06).
+- One divergence is the APIs' own: a horizontal edge exactly on a row of pixel centers inks the row below it
+  on WebGPU and the row above it on WebGL, whose window coordinates run bottom-up. A parity case pins it.
 - The visual suite takes `WEASEL_VISUAL_BACKEND=webgpu`, which the site reads as `?backend=webgpu`. The TODO
   entry closes when that run passes on CI.
 
@@ -146,5 +152,5 @@ SwiftShader adapter hands back invalid textures for a `bgra8unorm` canvas, so ev
 context is configured again, which the parity harness does before each frame. A WebGPU canvas in the
 document loses the device for the whole page once it has been presented for a few frames
 (`docs/traps/testing.md`), so the fleet's WebGPU tests draw only to canvases outside it, and the visual
-suite's WebGPU run, whose canvases are on the page, may meet the same on CI's headless Chromium. The GPU's 4× sample pattern
-and SwiftShader's differ, so multisampled parity is compared away from edges.
+suite's WebGPU run, whose canvases are on the page, may meet the same on CI's headless Chromium. Multisampled edge pixels part
+even on one GPU, so multisampled parity is compared away from edges.

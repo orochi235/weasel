@@ -42,6 +42,11 @@ const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true,
 
 const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'];
 const BROWSER_SETUP = './vitest.browser.setup.ts';
+// WebGL against WebGPU, pixel for pixel, on the node's GPU. Headless Chromium draws both on SwiftShader
+// otherwise, whose 1/16-pixel vertex snap and frustum clipping part them at edges for reasons that are
+// not the renderer's (packages/renderer/src/testing/parityHarness.ts).
+const GPU_TESTS = ['packages/renderer/src/**/parity*.browser.test.ts'];
+const BROWSER_ARGS = ['--disable-audio-output', '--enable-unsafe-webgpu'];
 const withPrebundle = browserPrebundle(import.meta.dirname, { name: 'browser', tests: BROWSER_TESTS, setupFiles: [BROWSER_SETUP] });
 // Both browser projects print every module load that fails: see the command it calls.
 const REQUEST_LOG_SETUP = './scripts/vitest-request-log.setup.ts';
@@ -326,10 +331,16 @@ export default defineConfig({
             // A fake audio sink: on a node whose output device does not run, a real one leaves an
             // AudioContext "running" with its clock stopped, and the tests sound on every node.
             // Without --enable-unsafe-webgpu, headless Chromium's requestAdapter() returns null.
-            provider: playwright({ launchOptions: { args: ['--disable-audio-output', '--enable-unsafe-webgpu'] } }),
+            provider: playwright({ launchOptions: { args: BROWSER_ARGS } }),
             commands: browserCommands,
             headless: true,
-            instances: [{ browser: 'chromium' }],
+            instances: [
+              { browser: 'chromium', exclude: ['**/node_modules/**', '**/dist/**', ...GPU_TESTS] },
+              {
+                browser: 'chromium', name: 'browser (gpu)', include: GPU_TESTS,
+                provider: playwright({ launchOptions: { args: [...BROWSER_ARGS, '--enable-gpu'] } }),
+              },
+            ],
           },
         },
       },

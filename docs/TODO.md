@@ -723,12 +723,15 @@ only story runner in the repo.
   `pickAt` / `readIds`, a paint-kind WGSL prelude, and the visual suite's `WEASEL_VISUAL_BACKEND=webgpu` run
   with its CI job (`visual-regression-webgpu`, not gating). Left: that job has never run (it needs a push),
   `geometry.picking: 'pixels'` walks the shapes on WebGPU because the pick must answer inside the pointer
-  event, a tile of a shared canvas stays on WebGL, and two parity cases a row of pixels apart: in
-  `parity.browser.test.ts` "a filled curve with a stroke" (14 pixels along the top of the stroke, WebGPU inking
-  what WebGL leaves; moving the path 0.01 CSS px keeps them, 0.1 removes them) and in
-  `parity.passes.browser.test.ts` the retained group panned to (-21, 5) (1 pixel on the curved stroke). The
-  WebGL side is not stage 1's: main's renderer draws the stroke case the same pixel for pixel.
+  event, a tile of a shared canvas stays on WebGL.
   Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
+- **(P3) [agent] The browser project draws WebGL on SwiftShader, not the node's GPU.** Headless Chromium
+  gives WebGL SwiftShader unless launched with `--enable-gpu` (measured on msb-uai, 2026-11-06, with main's
+  launch flags as well as the `webgpu` branch's). So a test whose claim is about the GPU has not run on one on
+  the fleet: `retained.tiles.browser.test.ts` is named as what catches ANGLE Metal's multisampled blit
+  overreach (`docs/traps/rendering.md`), and its allowances were measured on SwiftShader. Only the parity
+  files run in the `browser (gpu)` instance. Closes when the browser project runs on the GPU and its files pass
+  there, or the trap and the tile test say which rasterizer they hold for.
 - **(P3) [agent] WebGL draws a straight-alpha ImageBitmap as if premultiplied.** WebGL ignores
   `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for an `ImageBitmap` and uploads what it holds, so a bitmap made with
   `premultiplyAlpha: 'none'` reaches the shader straight, where the image cache promises premultiplied texels:
