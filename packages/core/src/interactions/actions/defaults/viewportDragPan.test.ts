@@ -305,6 +305,7 @@ describe('viewportDragPanAction inertia', () => {
     view: ViewApi,
     params: Record<string, unknown> | undefined,
     reason: 'commit' | 'cancel' = 'commit',
+    holdMs = 0,
   ) {
     let now = 1000;
     const spy = vi.spyOn(performance, 'now').mockImplementation(() => now);
@@ -314,6 +315,7 @@ describe('viewportDragPanAction inertia', () => {
         now += 16;
         handle.onMove!(makeCtx(view, { delta: { x: step, y: step } }));
       }
+      now += holdMs;
       handle.onEnd!(makeCtx(view), reason);
     } finally {
       spy.mockRestore();
@@ -328,6 +330,15 @@ describe('viewportDragPanAction inertia', () => {
     // Dragging right moves the camera left, so the coast must continue left.
     expect(calls[0].velocity.vx).toBeLessThan(0);
     expect(calls[0].velocity.vy).toBeLessThan(0);
+  });
+
+  it('does not coast after the pointer came to rest before the release', () => {
+    const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    fling(view, { inertia: {} }, 'commit', 500);
+    for (const c of calls) {
+      expect(c.velocity.vx).toBeCloseTo(0);
+      expect(c.velocity.vy).toBeCloseTo(0);
+    }
   });
 
   it('does not coast when the gesture was cancelled', () => {
