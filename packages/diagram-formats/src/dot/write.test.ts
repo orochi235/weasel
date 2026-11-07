@@ -169,6 +169,29 @@ describe('writing DOT', () => {
     expect(topology(p.data)).toEqual([['ends\\', 'say "\\"', undefined]]);
   });
 
+  it('writes an unlabeled cluster nested in a labeled one so it does not read back with its parent\'s label', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a' }],
+      edges: [],
+      containers: [
+        { id: 'outer', role: 'container', label: 'Outer', members: ['inner'] },
+        { id: 'inner', role: 'container', members: ['a'] },
+      ],
+    };
+    expect(back(pageOf(data)).data.containers?.map((c) => [c.id, c.label])).toEqual([['outer', 'Outer'], ['inner', undefined]]);
+  });
+
+  it('writes a lane, which draws no fill, so it does not read back with its pool\'s fill', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a' }],
+      edges: [],
+      containers: [{ id: 'p', role: 'pool', label: 'Pool', lanes: [{ id: 'l', members: ['a'] }] }],
+    };
+    const containers = back(pageOf(data)).data.containers!;
+    expect(containers.find((c) => c.id === 'p')!.colors?.fill).toBeDefined();
+    expect(containers.find((c) => c.id === 'l')!.colors?.fill).toBeUndefined();
+  });
+
   it('warns that a trimmed connector was written whole', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
     expect(writeDot(pageOf(data)).warnings).toEqual(['DOT draws a connector whole; trims were dropped.']);

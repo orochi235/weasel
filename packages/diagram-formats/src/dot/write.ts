@@ -41,18 +41,27 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   ]);
 }
 
-function writeCluster(out: GraphOut, c: Cluster, placed: boolean, indent: string, lines: string[]): void {
+/** What a cluster around this one set, which Graphviz carries into this one unless it sets its own. */
+interface Inherited { label: boolean; filled: boolean }
+
+function writeCluster(
+  out: GraphOut, c: Cluster, placed: boolean, indent: string, lines: string[], inherited: Inherited = { label: false, filled: false },
+): void {
   lines.push(`${indent}subgraph ${dotId(`cluster_${c.id}`)} {`);
   const inner = `${indent}  `;
-  if (c.label !== undefined) lines.push(`${inner}label=${quoteLabel([c.label])};`);
+  const filled = c.style?.fill !== undefined;
+  if (c.label !== undefined || inherited.label) lines.push(`${inner}label=${quoteLabel(c.label !== undefined ? [c.label] : [])};`);
+  if (!filled && inherited.filled) lines.push(`${inner}style="";`);
   if (c.style !== undefined) {
-    if (c.style.fill !== undefined) lines.push(`${inner}style=filled;`, `${inner}${color('fillcolor', c.style.fill)};`);
+    if (filled) lines.push(`${inner}style=filled;`, `${inner}${color('fillcolor', c.style.fill)};`);
     for (const [key, value] of [['color', c.style.stroke], ['fontcolor', c.style.text]] as const) {
       if (value !== undefined) lines.push(`${inner}${color(key, value)};`);
     }
   }
   for (const id of c.nodes) lines.push(`${inner}${dotId(id)}${nodeAttrs(out, out.byId.get(id)!, placed)};`);
-  for (const child of c.clusters) writeCluster(out, child, placed, inner, lines);
+  for (const child of c.clusters) writeCluster(out, child, placed, inner, lines, {
+    label: inherited.label || c.label !== undefined, filled: inherited.filled || filled,
+  });
   lines.push(`${indent}}`);
 }
 
