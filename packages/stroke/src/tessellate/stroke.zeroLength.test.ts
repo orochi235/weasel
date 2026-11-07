@@ -49,4 +49,22 @@ describe('tessellateStroke on zero-length runs', () => {
     expect(e.x1).toBeCloseTo(2 * Math.SQRT2, 5);
     expect(e.y1).toBeCloseTo(2 * Math.SQRT2, 5);
   });
+
+  it('draws the zero-length dash due exactly at an open line\'s end', () => {
+    const mesh = tessellateStroke(pathFromD('M0 0L40 0'), { ...ink, cap: 'round', dash: [0, 10] });
+    const e = extent(mesh.vertices);
+    expect([e.x0, e.x1].map((v) => +v.toFixed(5))).toEqual([-2, 42]);
+  });
+
+  it('draws that dot once on a closed line, where the end is the start', () => {
+    const square = tessellateStroke(pathFromD('M0 0L10 0L10 10L0 10Z'), { ...ink, cap: 'round', dash: [0, 10] });
+    const dots = new Set<string>();
+    for (let i = 0; i < square.vertices.length; i += 2) {
+      dots.add(`${Math.round(square.vertices[i] / 10)},${Math.round(square.vertices[i + 1] / 10)}`);
+    }
+    expect(dots.size).toBe(4);
+    // Four corners, each a disc drawn once: no doubled fan at the start.
+    const once = tessellateStroke(pathFromD('M0 0L10 0'), { ...ink, cap: 'round', dash: [0, 20] });
+    expect(square.indices.length).toBe(4 * once.indices.length);
+  });
 });
