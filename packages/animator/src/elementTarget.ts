@@ -4,8 +4,28 @@ import { createTarget, stateOf, type Target, type TargetAxes, type TargetState }
  *  (`transform`, `opacity`), or a custom property (`--x`). */
 export type ElementStyle = Readonly<Record<string, string | number>>;
 
-/** An element whose inline style a target writes and whose `animate` it may hand a run to. */
-export type StyledElement = Element & ElementCSSInlineStyle;
+/** The part of a Web Animations `Animation` a handed-off run drives. Typed here rather than
+ *  from lib.dom so the root entry typechecks without the DOM; a browser's `Animation` is one. */
+export interface ElementAnimation {
+  playbackRate: number;
+  /** In ms. lib.dom also admits a `CSSNumericValue`, which the animator never writes. */
+  startTime: number | object | null;
+  /** In ms, as `startTime`. */
+  currentTime: number | object | null;
+  onfinish: ((event: never) => unknown) | null;
+  pause(): void;
+  cancel(): void;
+}
+
+/** An element whose inline style a target writes and whose `animate` it may hand a run to: any
+ *  `HTMLElement` or `SVGElement`, typed structurally so the root entry needs no lib.dom. */
+export interface StyledElement {
+  readonly style: { setProperty(property: string, value: string): void };
+  animate(
+    keyframes: Record<string, string | number>[],
+    options: { duration: number; fill: 'both'; easing: string },
+  ): ElementAnimation;
+}
 
 /** What {@link createElementTarget} takes. */
 export interface ElementTargetOptions<T> {

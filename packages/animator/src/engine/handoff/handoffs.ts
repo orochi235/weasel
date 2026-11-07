@@ -1,3 +1,4 @@
+import type { ElementAnimation } from '../../elementTarget';
 import type { AnimationContext } from '../context';
 import type { Table } from '../table';
 
@@ -15,7 +16,7 @@ export interface HandoffHost {
 /** A run handed to `Element.animate`, as the animator keeps it in step. */
 export interface Placed {
   readonly id: number;
-  readonly animation: Animation;
+  readonly animation: ElementAnimation;
   /** Its own clock's reading at its motion's start. */
   readonly offset: number;
 }

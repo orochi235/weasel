@@ -3,7 +3,7 @@ export { hostAnimator, type AnimatorHost, type HostedAnimator } from './hostAnim
 export { createTarget, type AxisBuffer, type Target, type TargetAxes, type TargetOptions } from './target';
 export type { AxisName, AxisRef } from './axisNames';
 export {
-  COMPOSITOR_PROPERTIES, createElementTarget, type ElementStyle, type ElementTargetOptions, type StyledElement,
+  COMPOSITOR_PROPERTIES, createElementTarget, type ElementAnimation, type ElementStyle, type ElementTargetOptions, type StyledElement,
 } from './elementTarget';
 export type { CompositorMode } from './targetTypes';
 export { createTargetTable, type ShownArray, type TargetTable, type TargetTableOptions } from './targetTable';

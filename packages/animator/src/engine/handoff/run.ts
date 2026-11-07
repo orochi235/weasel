@@ -1,4 +1,4 @@
-import type { ElementBinding } from '../../elementTarget';
+import type { ElementAnimation, ElementBinding } from '../../elementTarget';
 import type { TargetState } from '../../target';
 import type { AnimationHandle } from '../../types';
 import type { AnimationSeed } from '../context';
@@ -30,7 +30,7 @@ export interface Run {
   replace(motion: Motion): void;
 }
 
-function animate(binding: ElementBinding, s: TargetState, motion: Motion): Animation {
+function animate(binding: ElementBinding, s: TargetState, motion: Motion): ElementAnimation {
   const ms = Math.max(motion.ms, 1);
   const times = sampleTimes(ms, binding.sampleRate, MOST_KEYFRAMES);
   const rows = times.map((t) => motion.at(t));
@@ -64,7 +64,7 @@ export function launch(
   let finished = false;
   /** Asks for the frame that ends the run once the browser animation has: the run asks for no
    *  frames until then. */
-  const onFinish = (animation: Animation): void => {
+  const onFinish = (animation: ElementAnimation): void => {
     animation.onfinish = () => {
       if (gone || animation !== placed.animation) return;
       finished = true;

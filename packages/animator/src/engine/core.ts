@@ -197,6 +197,7 @@ function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => nu
 }
 
 function defaultWall(): number {
-  const t = typeof document !== 'undefined' ? document.timeline?.currentTime : null;
+  const doc = (globalThis as { document?: { timeline?: { currentTime?: unknown } } }).document;
+  const t = doc?.timeline?.currentTime;
   return typeof t === 'number' ? t : performance.now();
 }
