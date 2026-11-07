@@ -116,16 +116,6 @@ When work merges, retire its entry here in the same change.
 
 ## forge and dev servers
 
-- **(P3) [agent] A forge dev server keeps every restarted server's resolver plugins, and grows about 7 MB a restart.**
-  A saved package file restarts the server (`scripts/vite-prebundle.ts`), and the outgoing server's id-resolver
-  plugin containers outlive it, held from a global handle on the `onWarn` callback rolldown's `viteResolvePlugin`
-  keeps (heap snapshot retainer paths, 2026-10-29). Emptying the outgoing config left 24 native plugin wrappers
-  after 6 restarts, against 44 after 4, and RSS where it was. Measured on teitou (2026-11-03,
-  `scripts/probe-dev-restarts.ts`, re-bundle in a child process), from restart 1 to 30: RSS 1,374 → 1,572 MB,
-  JS heap 99.8 → 124.4 MB, `external` 23.9 → 54.6 MB, each climbing steadily. Records:
-  `scripts/probe-dev-restarts.runs.jsonl`.
-  Closes when `probe-dev-restarts.ts` grows RSS under 1 MB a restart from restart 1 to 30 on teitou.
-
 - **(P3) [maintainer] forge serves ui and labkit file by file unless `WEASEL_DEV_BUNDLE_STORIES=1`.** Their
   stories import through package specifiers, so the flag bundles both (`scripts/vite-prebundle.ts`).
   Measured 2026-10-21: a forge load falls from 1,624 requests to 1,270, and at 20 ms of emulated

@@ -87,9 +87,13 @@ server then restarts without forcing. On teitou (2026-11-03), 30 forced restarts
 1.13 GB of footprint, against 2.66 GB re-bundling in the server, and each restart took about 1.2 s longer.
 The maintainer ruled a 2.5 GB plateau acceptable (2026-11-03), so if the child ever has to go, the
 in-process re-bundle is fine. vmmap reports mimalloc's regions as `IOAccelerator`, since its default
-`os_tag` is 100 (VM_MEMORY_IOACCELERATOR); `scripts/lib/vmmap-regions.mjs` retags them. The probes are
-`scripts/probe-dev-restarts.ts` (a dev server), `scripts/probe-optimize-deps.ts` (the optimizer alone)
-and `scripts/probe-rolldown-rebuilds.mjs` (rolldown alone), each beside its `.runs.jsonl` of records.
+`os_tag` is 100 (VM_MEMORY_IOACCELERATOR); `scripts/lib/vmmap-regions.mjs` retags them. A restart reloads the config
+file, and vite's default loader imports each load as a new ES module, which Node never frees: forge kept about
+2 MB of bundled config a restart and grew 12.4 MB of RSS, until `restartLeavingNothing` switched restarts to the
+module runner's loader, under which RSS fell 1.0 MB a restart from restart 1 to 30 (teitou, 2026-11-06). The
+probes are `scripts/probe-dev-restarts.ts` (a dev server; `scripts/heap-retainers.mjs` reads its snapshots),
+`scripts/probe-optimize-deps.ts` (the optimizer alone) and `scripts/probe-rolldown-rebuilds.mjs` (rolldown alone),
+each beside its `.runs.jsonl` of records.
 
 **`check:needs -- --write` redraws the README package table from every package's `dist/`.** Run in a
 tree with no fresh build, it strips real badges from core, routing and react; its own error suggests
