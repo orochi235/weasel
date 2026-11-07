@@ -8,8 +8,8 @@ import type { Path } from '@weasel-js/core';
 import { isSolidPaint } from '@weasel-js/core';
 import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type {
-  SerializeOptions, SvgGroupNode,
-  SvgNode, SvgImageNode,
+  SerializeOptions, SvgGroupNode, SvgInherits,
+  SvgNode, SvgImageNode, SvgPathNode, SvgTextNode,
 } from './types';
 import { serializePathD } from './path-serializer';
 import { pathAsSvgDraws } from './openSubpathFill';
@@ -130,11 +130,19 @@ function nodeXml(
   painted: ReadonlySet<string> = NOTHING_PAINTED,
 ): string {
   const kind = kindXml(node, registry, namespaces, warn, layoutOf, painted);
-  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, node.inherits, painted) : kind;
+  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node), painted) : kind;
   if (!node.hidden) return xml;
   // An outlined stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
     .replace(/<path (?=[^>]*:role="stroke-outline")/, '<path display="none" ');
+}
+
+/** What a leaf takes from its group. An outlined stroke never does: its path
+ *  states a zero width that the group's stroke would otherwise replace. */
+function leafInherits(node: SvgPathNode | SvgTextNode): SvgInherits | undefined {
+  if (!node.inherits?.stroke || node.kind !== 'path' || !writesOutline(node.stroke)) return node.inherits;
+  const { stroke: _, ...rest } = node.inherits;
+  return rest;
 }
 
 function kindXml(
