@@ -1,18 +1,16 @@
-import { type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/prefs';
+import type { PrefLeaf, PrefNumber } from '@weasel-js/prefs';
 import { useMemo } from 'react';
 import { autoResolverOf, leafCanAuto, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
-import { summarizeLeaf, summarizeValue } from './inDialog';
+import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
 
-/** An auto value as tooltip text. A number with a unit reads as its field shows it. Any other computed
+/** An auto value as tooltip text. A number with a unit or a display reads as its field shows it. Any other computed
  *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
 function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
   if (typeof value !== 'number') return summarizeLeaf(leaf, value);
-  const unit = leaf.kind === 'number' ? (leaf as PrefNumber).unit : undefined;
-  return unit === undefined
-    ? summarizeValue(Number(value.toPrecision(6)))
-    : resolvePrefUnit(unit).format(value);
+  const text = leaf.kind === 'number' ? numberText(leaf as PrefNumber, value) : undefined;
+  return text ?? summarizeValue(Number(value.toPrecision(6)));
 }
 
 /** What a row reads its auto state from. */

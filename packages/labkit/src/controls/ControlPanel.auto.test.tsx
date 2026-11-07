@@ -89,6 +89,29 @@ describe('<ControlPanel> auto', () => {
     expect(described[0]).toHaveAccessibleDescription('auto 13.3333');
   });
 
+  it("quotes an auto number through its display and its endless end's word", () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            timeout: f
+              .number(100)
+              .range(0, 5000)
+              .endless('never')
+              .auto(() => Infinity),
+          }),
+          [],
+        )}
+        config={{ timeout: 100 }}
+        auto={new Set()}
+        setConfig={() => {}}
+      />,
+    );
+    fireEvent.pointerMove(document.body, { pointerType: 'mouse' });
+    fireEvent.pointerEnter(screen.getByText('Timeout'), { pointerType: 'mouse' });
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/^auto never$/);
+  });
+
   it('writes the sentinel when the dot turns a row auto', async () => {
     const setConfig = vi.fn();
     render(
