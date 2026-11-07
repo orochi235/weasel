@@ -142,7 +142,8 @@ export function useVisibleRaf(
     if (!aliveRef.current) return;
     syncObserver();
     pendingRef.current = true;
-    if (!isVisible()) { syncGate(); return; }
+    // Still suspended though visible: a swapped target cleared the gate, and the resume is owed.
+    if (!isVisible() || suspendedRef.current) { syncGate(); return; }
     scheduleRaf();
   }, [isVisible, scheduleRaf, syncGate, syncObserver]);
 

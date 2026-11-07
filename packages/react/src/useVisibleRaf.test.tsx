@@ -241,6 +241,29 @@ describe('useVisibleRaf', () => {
     expect(frame).toHaveBeenCalledTimes(1);
   });
 
+  it('resumes, rebase first, when a suspended loop\'s target is swapped for one not yet reported', () => {
+    const clock = makeClock();
+    const a = document.createElement('div');
+    const b = document.createElement('div');
+    let target: Element = a;
+    const order: string[] = [];
+    const { loop } = mount(() => order.push('frame'), {
+      ...clock,
+      target: () => target,
+      onResume: () => order.push('resume'),
+      onSuspend: () => order.push('suspend'),
+    });
+    act(() => { loop().request(); });
+    act(() => { setIntersecting(false); });
+    target = b;
+    act(() => { loop().request(); });
+    act(() => { clock.flush(); });
+    expect(order).toEqual(['suspend', 'resume', 'frame']);
+
+    act(() => { setHidden(true); });
+    expect(order).toEqual(['suspend', 'resume', 'frame', 'suspend']);
+  });
+
   it('cancels a held request without running it later', () => {
     const clock = makeClock();
     const frame = vi.fn();
