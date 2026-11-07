@@ -29,6 +29,8 @@ export interface WorkerAnimations {
   run(ops: readonly AnimationOp[], scene: Scene<unknown, string, unknown>): void;
   /** Advance to the frame's time. */
   advance(): void;
+  /** How many runs the page can still steer by id: each one played and not yet ended. */
+  live(): number;
 }
 
 export function createWorkerAnimations(
@@ -43,6 +45,18 @@ export function createWorkerAnimations(
   const hosted = hostAnimator({ now: () => now, requestFrame: () => { if (!following) requestFrame(); } });
   const { animator } = hosted;
   const handles = new Map<number, AnimationHandle>();
+  /** The page's id for each run, by the animator's id on its handle. */
+  const pageIds = new Map<number, number>();
+  /** Runs that stopped while their program was still starting them. */
+  let stoppedDuringPlay: Set<number> | null = null;
+  animator.watch((e) => {
+    if (e.type !== 'end' && e.type !== 'cancel' && e.type !== 'interrupt' && e.type !== 'error') return;
+    stoppedDuringPlay?.add(e.animation.id);
+    const id = pageIds.get(e.animation.id);
+    if (id === undefined) return;
+    pageIds.delete(e.animation.id);
+    handles.delete(id);
+  });
   const one = (id: number, fn: (h: AnimationHandle) => void) => {
     const h = handles.get(id);
     if (h) fn(h);
@@ -52,18 +66,23 @@ export function createWorkerAnimations(
       case 'play': {
         const program = programs[op.key];
         if (!program) throw new Error(`weasel render worker: no animation registered as "${op.key}"`);
-        const handle = program({ animator, scene, params: op.params });
-        if (handle) handles.set(op.id, handle);
+        const stopped = new Set<number>();
+        stoppedDuringPlay = stopped;
+        let handle: AnimationHandle | void;
+        try { handle = program({ animator, scene, params: op.params }); } finally { stoppedDuringPlay = null; }
+        if (!handle || stopped.has(handle.id)) return;
+        handles.set(op.id, handle);
+        pageIds.set(handle.id, op.id);
         return;
       }
-      case 'cancel': one(op.id, (h) => h.cancel()); handles.delete(op.id); return;
+      case 'cancel': one(op.id, (h) => { h.cancel(); pageIds.delete(h.id); }); handles.delete(op.id); return;
       case 'pause': one(op.id, (h) => h.pause()); return;
       case 'resume': one(op.id, (h) => h.resume()); return;
       case 'scale': one(op.id, (h) => h.setTimeScale(op.scale)); return;
       case 'cancelKey': animator.cancelKey(op.key); return;
       case 'pauseKey': animator.pauseKey(op.key); return;
       case 'resumeKey': animator.resumeKey(op.key); return;
-      case 'cancelAll': animator.cancelAll(); handles.clear(); return;
+      case 'cancelAll': animator.cancelAll(); handles.clear(); pageIds.clear(); return;
       case 'pauseAll': animator.pause(); return;
       case 'resumeAll': animator.resume(); return;
       case 'scaleAll': animator.setTimeScale(op.scale);
@@ -88,6 +107,7 @@ export function createWorkerAnimations(
       }
       if (failed !== undefined) throw failed;
     },
+    live: () => handles.size,
     advance() {
       if (!clock) return hosted.tick(now);
       following = true;
