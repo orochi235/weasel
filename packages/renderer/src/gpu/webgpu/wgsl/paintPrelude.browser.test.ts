@@ -3,7 +3,6 @@
  * its GLSL draws on WebGL, through the shared harness.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Paint } from '@weasel-js/paint';
 import { mat3 } from '@weasel-js/geom';
 import { registerPaintDrawKind } from '../../../paintKinds';
 import type { DrawCommand } from '../../../DrawCommand';
@@ -70,10 +69,10 @@ afterEach(() => closeBackends());
 describe('a paint kind on the paint prelude', () => {
   it('draws the same stripes on both backends', async () => {
     const b = await openBackends({ width: W, height: H, dpr: 1 });
-    const stripes: DrawCommand = {
+    const stripes = {
       kind: 'path', path: { kind: 'rect', x: 4, y: 4, width: 40, height: 24 },
-      fill: { paint: { kind: KIND } as unknown as Paint },
-    };
+      fill: { paint: { kind: KIND } },
+    } as unknown as DrawCommand;
     const d = await renderBoth(b, [stripes]);
     expect(d.over, report('paint prelude stripes', d)).toBe(0);
     // Both backends bound the paint, so the match is of stripes, not of two blanks.
