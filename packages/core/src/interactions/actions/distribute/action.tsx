@@ -1,15 +1,13 @@
 import type { IconRef } from '@weasel-js/icons';
 import type { Scene } from 'core/scene/types';
-import type { PoseDescriptor } from '../resize/geometry';
-import { poseDescriptorOf } from '../poseDescriptorDep';
 import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import type { DistributeAxis, DistributeMode } from './distribute';
 import { planDistribute } from './plan';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { translateEach } from '../selectionSubtree';
+import { moveEachOps } from '../moveNodes';
 import { withoutPageStructure } from 'core/scene/nodeGates';
-import { transformFinisher, type TransformFinisher } from '../transformFinish';
-import type { Action } from '@weasel-js/routing';
+import { commitTransformOps } from '../transformFinish';
+import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -36,13 +34,12 @@ const ICON_FOR: Record<DistributeAxis, IconRef> = {
  * frame.
  */
 function distributeSelection(
+  deps: ActionDeps,
   selection: SelectionApi,
   scene: Scene<unknown, string, unknown>,
   axis: DistributeAxis,
   mode: DistributeMode,
-  geom: PoseDescriptor<unknown>,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
-  finish?: TransformFinisher,
 ): void {
   const ids = withoutPageStructure(scene, selection.get());
   if (ids.length < 3) return;
@@ -57,9 +54,9 @@ function distributeSelection(
 
   const moves = items.map((it, i) => {
     const delta = targets[i] - (axis === 'x' ? it.b.x : it.b.y);
-    return { id: it.id, dx: axis === 'x' ? delta : 0, dy: axis === 'y' ? delta : 0 };
+    return { ids: [it.id], dx: axis === 'x' ? delta : 0, dy: axis === 'y' ? delta : 0 };
   });
-  scene.batch('Distribute', () => translateEach(scene, frame, geom, moves, finish, 'Distribute'));
+  commitTransformOps(deps, moveEachOps(scene, moves, deps, 'Distribute'), 'Distribute');
 }
 
 // ---------------------------------------------------------------------------
@@ -73,7 +70,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',
@@ -82,10 +79,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         const scene = deps.scene;
         if (!selection || !scene) return;
         const mode = (params?.mode as DistributeMode | undefined) ?? 'centers';
-        distributeSelection(
-          selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor), (frame) => drawnBoxes(deps, frame),
-          transformFinisher(deps),
-        );
+        distributeSelection(deps, selection, scene, axis, mode, (frame) => drawnBoxes(deps, frame));
       },
     } satisfies ImmediateInvoker,
     // Deps-aware, matching `distributeSelection`'s own `ids.length < 3` guard:

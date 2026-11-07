@@ -22,6 +22,9 @@ function makeScene(poses: Record<string, Pose>) {
     composition: IDENTITY_POSE_COMPOSITION,
     setPose,
     batch: vi.fn((_label: string, fn: () => void) => fn()),
+    applyBatch: vi.fn((ops: { apply(a: unknown): void }[], _label: string, adapter: unknown) => {
+      for (const op of ops) op.apply(adapter);
+    }),
     nodes: new Map(), roots: [], layers: [],
     childrenOf: vi.fn().mockReturnValue([]), ancestorsOf: vi.fn().mockReturnValue([]),
     renderOrder: vi.fn().mockReturnValue([]),
@@ -85,7 +88,7 @@ describe('distributeHorizontalAction descriptor', () => {
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b', 'c']);
     runDescriptor(distributeHorizontalAction, { selection, scene });
-    expect(scene.batch).toHaveBeenCalledOnce();
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
     // centers: a center=5, c center=105 → b center should land at 55, so x=50
     // a and c are anchors; only b moves
     expect(setPose).toHaveBeenCalledOnce();
