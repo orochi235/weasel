@@ -6,17 +6,15 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## State (2026-11-06)
 
-- 1.16.2 is on npm (`npm view @weasel-js/core version`). `main` is at c3cf61e3f, unpushed past 1d87afe1c; its
-  `test:fleet` and `test:fleet:postbuild` runs were green on that commit. Unreleased is whatever `.changeset/`
-  holds: among it custom shader programs taking their source by language (`{ glsl, wgsl }`, a breaking call
-  shape), core's `useClipboard` and the editor's `useDocClipboard`, Switch and Checkbox labels on their words'
-  baseline, a diagram slot row's image and header row, and a node keeping its previous image until a new `src`
-  decodes.
-- In flight: the WebGPU backend (`docs/TODO.md`, "WebGPU backend"), on branch `webgpu` in
-  `/Users/mike/src/weasel-webgpu`. Mike said to keep going until it is done (2026-11-06).
-- Also in flight (2026-11-06), one agent each in `.worktrees/<branch>`, merging as one batch: `retain-evict`,
-  `browser-shard-split`, `forge-restart-leak`, `waapi-bridge`, and `worker-render` (the `docs/PERF.md` entries
-  for each).
+- 1.16.2 is on npm (`npm view @weasel-js/core version`). `main` is at 0a2faa768, unpushed past 1d87afe1c; its
+  `test:fleet` and `test:fleet:postbuild` runs were green on that commit (batch/2026-11-06). Unreleased is
+  whatever `.changeset/` holds: among it the WebGPU backend (`backend: 'webgl2' | 'webgpu' | 'auto'`, with
+  `readIds`/`pickAt` now async and `readIdsSync` beside them, both breaking), `<SceneCanvas worker>` and
+  `<SceneViewCanvas worker>` (props now a union, also breaking for `Omit` wrappers), the animator's element
+  targets with an opt-in compositor handoff, retain-budget eviction of surfaces that cannot follow a pan,
+  custom shader programs taking their source by language, and core's `useClipboard`.
+- The CI visual suite has run on both backends only for `webgpu` alone (run 42333043838), not for the merged
+  batch; it runs on push.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
