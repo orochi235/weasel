@@ -1,5 +1,6 @@
 import type { Rect } from '@weasel-js/geom';
 import type { View } from './view';
+import { normalizeZoom } from './zoomBounds';
 
 /** One value for both axes, or a separate value per axis. */
 export type ScalarOrXY = number | { x: number; y: number };
@@ -25,7 +26,8 @@ function asXY(v: ScalarOrXY): { x: number; y: number } {
  *
  * `pan` controls how much the plane translates with the camera (1 = normal,
  * 0 = locked to `anchor`, >1 = leads). `zoom` controls how much it scales
- * with camera zoom (1 = normal, 0 = fixed at identity scale). `anchor`
+ * with camera zoom (1 = normal, 0 = fixed at identity scale); a flipped camera
+ * axis stays flipped in the plane. `anchor`
  * (default origin) is the camera position at which all planes agree.
  *
  * Identity holds: `pan=1, zoom=1` returns a view equal to `outer`.
@@ -37,11 +39,15 @@ export function deriveParallaxView(outer: View, opts: ParallaxOpts): View {
   return {
     x: a.x + (outer.x - a.x) * p.x,
     y: a.y + (outer.y - a.y) * p.y,
-    scale: {
-      x: 1 + (outer.scale.x - 1) * z.x,
-      y: 1 + (outer.scale.y - 1) * z.y,
-    },
+    scale: { x: trackZoom(outer.scale.x, z.x), y: trackZoom(outer.scale.y, z.y) },
   };
+}
+
+/** A plane's scale on one axis: its magnitude moves from 1 toward the camera's
+ *  by `factor`, and it keeps the camera's sign, so a y-up camera's planes are y-up. */
+function trackZoom(outer: number, factor: number): number {
+  const magnitude = normalizeZoom(1 + (Math.abs(outer) - 1) * factor);
+  return outer < 0 ? -magnitude : magnitude;
 }
 
 /** How a point of the camera's world lands in a plane's world, per axis:

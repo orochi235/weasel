@@ -63,6 +63,22 @@ describe('deriveParallaxView', () => {
     const inner = deriveParallaxView(outer, { pan: 1, zoom: 0.5 });
     expect(inner.scale).toEqual({ x: 1.5, y: 1.5 });
   });
+
+  it('keeps a flipped camera axis flipped, tracking zoom by its magnitude', () => {
+    const yUp: View = { x: 0, y: 0, scale: { x: 2, y: -2 } };
+    expect(deriveParallaxView(yUp, { pan: 1, zoom: 0 }).scale).toEqual({ x: 1, y: -1 });
+    expect(deriveParallaxView(yUp, { pan: 1, zoom: 0.5 }).scale).toEqual({ x: 1.5, y: -1.5 });
+    // Half-way from 1 toward -1 used to land on a scale of 0.
+    const flipped: View = { x: 0, y: 0, scale: { x: 1, y: -1 } };
+    expect(deriveParallaxView(flipped, { pan: 1, zoom: 0.5 }).scale).toEqual({ x: 1, y: -1 });
+  });
+
+  it('never carries a leading zoom through zero to the other side', () => {
+    const out: View = { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } };
+    const { scale } = deriveParallaxView(out, { pan: 1, zoom: 2 });
+    expect(scale.x).toBeGreaterThan(0);
+    expect(scale.y).toBeGreaterThan(0);
+  });
 });
 
 const screenOf = (v: View, p: { x: number; y: number }) => ({
