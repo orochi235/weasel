@@ -14,6 +14,9 @@ For the session picking this up: what is in flight and what has no other home. O
   decodes.
 - In flight: the WebGPU backend (`docs/TODO.md`, "WebGPU backend"), on branch `webgpu` in
   `/Users/mike/src/weasel-webgpu`. Mike said to keep going until it is done (2026-11-06).
+- Also in flight (2026-11-06), one agent each in `.worktrees/<branch>`, merging as one batch: `retain-evict`,
+  `browser-shard-split`, `forge-restart-leak`, `waapi-bridge`, and `worker-render` (the `docs/PERF.md` entries
+  for each).
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
