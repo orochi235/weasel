@@ -257,7 +257,7 @@ await mkdir(tarballDir, { recursive: true });
 await mkdir(nodeModules, { recursive: true });
 
 /**
- * Third-party runtime dependencies **declared** by the packages being packed.
+ * Third-party runtime dependencies and peers **declared** by the packages being packed.
  *
  * These are marked external for the consumer bundle below, because this clean
  * tree has no `npm install` step. Collected from each package's own manifest
@@ -280,7 +280,8 @@ for (const name of PACKAGES) {
   await mkdir(dest, { recursive: true });
   // --strip-components=1 drops npm's `package/` wrapper directory.
   execFileSync('tar', ['-xzf', join(tarballDir, tarball), '-C', dest, '--strip-components=1']);
-  for (const dep of Object.keys({ ...JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8')).dependencies })) {
+  const manifest = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8'));
+  for (const dep of Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })) {
     if (!dep.startsWith('@weasel-js/')) thirdPartyDeps.add(dep);
   }
 }
