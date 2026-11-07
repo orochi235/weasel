@@ -11,7 +11,7 @@
 export {
   WeaselRenderer, type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
-  type IdBuffer, type RenderIdsOptions,
+  type IdBuffer, type RenderIdsOptions, type RendererBackend,
   DEFAULT_RETAIN_BUDGET,
 } from './WeaselRenderer';
 export { idMask } from './draw/idRender';

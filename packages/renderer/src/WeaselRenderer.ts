@@ -37,12 +37,13 @@ import { createWhiteTexture } from './cache/whiteTexture';
 import { paintDrawKindRegistry } from './paintKinds';
 import {
   DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpanStats,
-  type RenderStats, type RenderTarget, type WeaselRendererOptions,
+  type RenderStats, type RenderTarget, type RendererBackend, type WeaselRendererOptions,
 } from './rendererTypes';
 
 export {
   DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpan,
-  type RenderSpanStats, type RenderStats, type RenderTarget, type RetainedStats, type WeaselRendererOptions,
+  type RenderSpanStats, type RenderStats, type RenderTarget, type RendererBackend, type RetainedStats,
+  type WeaselRendererOptions,
 } from './rendererTypes';
 
 const NO_RETAINED = { composited: 0, redrawn: 0, declined: 0, bytes: 0 } as const;
@@ -232,13 +233,12 @@ export class WeaselRenderer {
     this.target = target;
   }
 
-  getTarget(): RenderTarget | null {
-    return this.target;
-  }
+  getTarget(): RenderTarget | null { return this.target; }
 
-  isContextLost(): boolean {
-    return this.contextLost;
-  }
+  isContextLost(): boolean { return this.contextLost; }
+
+  /** The GPU API this renderer draws with. */
+  get backend(): RendererBackend { return this.gpu.language === 'wgsl' ? 'webgpu' : 'webgl2'; }
 
   private onContextLost(e: Event): void {
     e.preventDefault();

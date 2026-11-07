@@ -9,6 +9,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { CanvasDebugSink, DebugConfig } from '../debug/types';
 import type { ToolsApi } from '../tools/overlayBinding';
 import type { DrawnBoundsScene } from './drawnBounds';
+import type { CanvasBackend } from './canvasBackend';
 import type { GestureSource } from './gestureBounds';
 import type { CanvasLayers } from './layerSlots';
 import type { CanvasViewState } from './useCanvasView';
@@ -55,6 +56,11 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    *  an image's mipmaps the first time a frame draws it at half size or less;
    *  `'linear'`, one tap, aliases it. Changing it re-uploads every image. */
   imageMinification?: ImageMinification;
+
+  /** The GPU API the canvas paints with; see `CanvasBackend`. Read once, when
+   *  its first renderer is built. Default the nearest `CanvasBackendProvider`'s,
+   *  else `'webgl2'`. */
+  backend?: CanvasBackend;
 
   /** Which unchanged layers the renderer keeps as pixels between frames and
    *  composites as one quad, instead of drawing their commands again — see

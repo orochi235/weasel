@@ -16,7 +16,7 @@ import {
 import type { Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import { useCanvasSurface } from './useCanvasSurface';
-import type { CanvasRendererLease } from './canvasRenderer';
+import type { CanvasBackend, CanvasRendererLease } from './canvasRenderer';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import { sceneViewFrame } from './sceneViewRender';
@@ -69,6 +69,10 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> exten
   /** Forwarded ref to the underlying `<canvas>`. Consumers attach their own
    *  pointer listeners or call `toBlob` for snapshots through this. */
   canvasRef?: Ref<HTMLCanvasElement>;
+  /** The GPU API the canvas paints with; see `CanvasBackend`. Read once, when
+   *  its first renderer is built. Default the nearest `CanvasBackendProvider`'s,
+   *  else `'webgl2'`. */
+  backend?: CanvasBackend;
 }
 
 function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
@@ -111,7 +115,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     });
     return lease.paint(canvas, commands, view, { width, height });
   };
-  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, onCommit: 'paint', size: { width, height } });
+  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, onCommit: 'paint', size: { width, height }, backend: props.backend });
 
   // Override writes never bump the scene version, so the version subscription
   // above cannot see them.

@@ -91,6 +91,8 @@ export {
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
 export type { CanvasProps, CanvasRetainOptions } from '../canvas/Canvas';
+export type { CanvasBackend } from '../canvas/canvasBackend';
+export { CanvasBackendProvider } from '../canvas/canvasBackendContext';
 export type { ViewPoseAdapter } from '../canvas/useViewHelpers';
 export type { CameraProps, CanvasViewState } from '../canvas/useCanvasView';
 export type { CanvasHelpers, CanvasViewHelpers, CanvasSurfaceHelpers } from '../canvas/useViewHelpers';

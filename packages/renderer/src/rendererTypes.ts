@@ -83,6 +83,9 @@ export interface RetainedStats {
   bytes: number;
 }
 
+/** The GPU API a renderer draws with. */
+export type RendererBackend = 'webgl2' | 'webgpu';
+
 /** Construction options for {@link WeaselRenderer}. Pass `gpu` to draw with
  *  WebGPU, else `gl` or `canvas`; a WebGL context passed in must have a
  *  stencil buffer. */
