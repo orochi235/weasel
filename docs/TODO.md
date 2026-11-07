@@ -640,6 +640,15 @@ only story runner in the repo.
   Closes when the next failure's stdout names the problem it saw, which makes it a fix, or on 2026-11-30
   with no second sighting, delete it.
 
+- **(P2) [agent] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" fails in full
+  fleet runs, with the same numbers every time.** The input box's left reads 534.3125 against the visible part's
+  533.078125 (tolerance 0.5): at 98d525569 on 2026-10-28, and at 51d4a8f9f and a54066909 on 2026-11-07 (both on
+  teitou, the first changing only package manifests). It passed in the full run of e0591848d the same morning, and
+  3 of 3 alone on studio at a54066909. A steady 1.23 px is not a reflow still settling: a `waitFor` that re-read
+  both rects on every attempt failed the same way. The box takes its rect from `placement`, which only the
+  surface's painter sets (`registerPainter` in `AnnotationOverlay.tsx`), so a layout shift with no frame painted
+  after it leaves the box where the last frame put it (read from the code, not confirmed). Closes when the box
+  follows its target without a new frame and the test passes in a full run.
 - **(P3) [waiting] `MenuTextValue.browser.test.tsx`'s "commits it on Enter without closing" closed the menu once under load.**
   In the full fleet run of 7168695bf (2026-11-03) `close` was called once, with no arguments, by the time Enter
   had committed `Nested`; the file passed alone on the fleet minutes later, and in about 45 other full runs. The failure
