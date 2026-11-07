@@ -6,14 +6,12 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## State (2026-11-07)
 
-- 1.17.0 is on npm (all 54 packages), published from a5278f120 by dispatching Release on a branch at that
-  commit after its first run was canceled. 1.17.1 is what `.changeset/` holds now: blits taken as `^1.0.0`
-  (core, animator, clock, labkit), forge depending on TypeScript 6 itself, and the diagram NodeInk stroke
-  change from another host. The root also took a dev-dependency sweep with zod and minimatch overrides
-  (`npm audit` 41 → 1; the one left is typedoc's, filed).
-- The batch for 1.17.1 (branch `blinken-fixes`) ran `test:fleet --full` at a54066909: 35048 passed, 1 failed,
-  `AnnotationOverlay.clip.browser.test.tsx`, which fails in full runs on main as well (filed as a P2 with the
-  evidence); `test:fleet:postbuild` passed. The revert on top restores that test file to e0591848d's.
+- 1.17.1 is on npm (all 54 packages, 2026-11-07), after 1.17.0 the same day. 1.17.0 was published from a5278f120
+  by dispatching Release on a branch at that commit after its first run was canceled. 1.17.1 added blits as
+  `^1.0.0` (core, animator, clock, labkit), forge depending on TypeScript 6 itself, the diagram NodeInk stroke
+  change, and a root dev-dependency sweep with zod and minimatch overrides (`npm audit` 41 → 1, typedoc's, filed).
+- 1.17.1's batch `test:fleet --full` at a54066909: 35048 passed, 1 failed, `AnnotationOverlay.clip.browser.test.tsx`,
+  which fails in full runs on main as well (filed as a P2 with the evidence); `test:fleet:postbuild` passed.
 - CI on 1218c89e3 passed, including the Linux browser job with the SwiftShader flag; the visual suite passed.
 - Release no longer repeats `check:manifests`, `check:treeshake` and `check:react-free`: postbuild runs them.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
