@@ -269,6 +269,14 @@ describe('writeText', () => {
     expect(fine).not.toMatch(/ d\n/);
   });
 
+  it('draws no marker heads on the glyph outlines of an outlined stroke, as the renderer draws none', async () => {
+    const stroke = { paint: { color: '#ff0000' }, width: 2, align: 'inner' as const };
+    const plain = (await render(textCmd([run('H', { stroke })]))).content;
+    _resetLayoutCacheForTests();
+    const marked = (await render(textCmd([run('H', { stroke: { ...stroke, markerMid: 'dot' } })]))).content;
+    expect(marked).toBe(plain);
+  });
+
   it('fills a run but draws no stroke for a non-finite dash, as the renderer does', async () => {
     const { content, skipped } = await render(textCmd([run('H', { stroke: { paint: { color: '#ff0000' }, width: 2, dash: [2, NaN] } })]));
     expect(content).not.toContain('\n2 Tr\n');
