@@ -33,6 +33,8 @@ function alphaChanges(scene: AnyScene, alphaFor: ((id: string) => number) | unde
   }
   for (const id of sent.keys()) {
     if (scene.nodes.has(id as never)) continue;
+    // The worker's entry outlives the node, and would dim a node put back under its id.
+    out.push([id, 1]);
     sent.delete(id);
   }
   return out;
