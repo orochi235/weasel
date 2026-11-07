@@ -1,5 +1,23 @@
 # @weasel-js/diagram
 
+## 1.17.1
+
+### Patch Changes
+
+- Updated dependencies [f45b9b5]
+- Updated dependencies [629d02b]
+  - @weasel-js/core@1.17.1
+  - @weasel-js/animator@1.17.1
+  - @weasel-js/clock@1.17.1
+  - @weasel-js/simulation@1.17.1
+  - @weasel-js/audio@1.17.1
+  - @weasel-js/font@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/icons@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/ui-logic@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

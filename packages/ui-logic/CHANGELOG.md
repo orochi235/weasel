@@ -1,5 +1,12 @@
 # @weasel-js/ui-logic
 
+## 1.17.1
+
+### Patch Changes
+
+- @weasel-js/geom@1.17.1
+  - @weasel-js/quantity@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

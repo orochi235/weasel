@@ -1,5 +1,30 @@
 # @weasel-js/labkit
 
+## 1.17.1
+
+### Patch Changes
+
+- f45b9b5: Take `@msb235/blits` as `^1.0.0` instead of pinning `0.20.0` exactly, so an app on blits 1.x shares one copy with weasel rather than installing a second beside it. blits 1.0.0's one breaking change reserves the shader-patch name `lag`, which weasel does not use.
+- Updated dependencies [f45b9b5]
+- Updated dependencies [629d02b]
+  - @weasel-js/core@1.17.1
+  - @weasel-js/animator@1.17.1
+  - @weasel-js/clock@1.17.1
+  - @weasel-js/kernel3d@1.17.1
+  - @weasel-js/loupe@1.17.1
+  - @weasel-js/minimap@1.17.1
+  - @weasel-js/svg@1.17.1
+  - @weasel-js/ui@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/icons@1.17.1
+  - @weasel-js/prefs@1.17.1
+  - @weasel-js/quantity@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/routing@1.17.1
+  - @weasel-js/storage@1.17.1
+  - @weasel-js/theme@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

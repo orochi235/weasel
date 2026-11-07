@@ -1,5 +1,22 @@
 # @weasel-js/routing
 
+## 1.17.1
+
+### Patch Changes
+
+- @weasel-js/cursor@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/gestures@1.17.1
+  - @weasel-js/history@1.17.1
+  - @weasel-js/icons@1.17.1
+  - @weasel-js/menu@1.17.1
+  - @weasel-js/modes@1.17.1
+  - @weasel-js/prefs@1.17.1
+  - @weasel-js/quantity@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/select@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes
