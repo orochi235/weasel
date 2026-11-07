@@ -44,6 +44,9 @@ export interface PointerInput {
   /** Send every held pointer's last move again, as of now: under a view that
    *  has moved since, the same client point is a new world point. */
   repeatHeld(): void;
+  /** A key changed the modifiers: send each held pointer's last move again
+   *  with the new ones, so a drag answers Shift or Alt without waiting for the pointer to move. */
+  modifiersChanged(e: KeyboardEvent): void;
   /** Drop every held pointer and timer without dispatching. */
   dispose(): void;
 }
@@ -110,14 +113,23 @@ function holdClock(core: PointerDispatchCore): { clock: RecognizerClock; routeTo
   };
 }
 
-/** Edge panning's reads of the held pointers' last samples: where the
- *  longest-held one is, and each sent again as of now through `resend`. */
+/** The reads of the held pointers' last samples: where the longest-held one
+ *  is, and each sent again as of now through `resend`, with the modifiers as
+ *  they are or as a key just changed them. */
 function heldMoves(
   /** Each held pointer's last sample, in press order. */
-  last: ReadonlyMap<number, PointerSample>,
+  last: Map<number, PointerSample>,
   resend: (s: PointerSample) => void,
-): Pick<PointerInput, 'heldAt' | 'repeatHeld'> {
+): Pick<PointerInput, 'heldAt' | 'repeatHeld' | 'modifiersChanged'> {
   return {
+    modifiersChanged(e) {
+      for (const s of [...last.values()]) {
+        if (s.altKey === e.altKey && s.ctrlKey === e.ctrlKey && s.metaKey === e.metaKey && s.shiftKey === e.shiftKey) continue;
+        const next = { ...s, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, timeStamp: performance.now() };
+        last.set(s.pointerId, next);
+        resend(next);
+      }
+    },
     heldAt() {
       for (const s of last.values()) return { clientX: s.clientX, clientY: s.clientY };
       return null;

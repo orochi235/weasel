@@ -206,3 +206,22 @@ describe('fitViewToBounds — mode', () => {
     });
   });
 });
+
+describe('fitViewToBounds on a y-up camera', () => {
+  it('keeps the flipped axis flipped, and shows the bounds', () => {
+    const yUp: View = { x: 0, y: 0, scale: { x: 1, y: -1 } };
+    const v = fitViewToBounds({ x: 0, y: 0, width: 100, height: 100 }, { width: 200, height: 200 }, yUp, { padding: 0 });
+    expect(v.scale).toEqual({ x: 2, y: -2 });
+    // Both corners land on screen: screen = (world - view) * scale.
+    const sy = (wy: number) => (wy - v.y) * v.scale.y;
+    expect(Math.min(sy(0), sy(100))).toBeCloseTo(0);
+    expect(Math.max(sy(0), sy(100))).toBeCloseTo(200);
+  });
+
+  it("puts the bounds' on-screen top at the padding under anchor 'start'", () => {
+    const yUp: View = { x: 0, y: 0, scale: { x: 1, y: -1 } };
+    const v = fitViewToBounds({ x: 0, y: 0, width: 10, height: 1000 }, { width: 100, height: 100 },
+      yUp, { padding: 10, minScale: 1, anchor: 'start' });
+    expect((1000 - v.y) * v.scale.y).toBeCloseTo(10);
+  });
+});

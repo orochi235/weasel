@@ -7,6 +7,7 @@ import type { Bounds } from 'tools/builtin/select';
 import { applyToPoint, pointInPath, strokeHitTest, type Affine } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { framedBounds } from 'core/geometry/poseDescriptor';
+import { positiveBox } from 'core/geometry/unionBounds';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'core/geometry/autoPoseDescriptor';
 import { poseFrameInverseOf, poseFrameOf, poseLinearOf } from '@weasel-js/geom';
 import { hasSlop, slopForStrokeHit, type ScreenSlop } from 'core/viewport/screenSlop';
@@ -17,7 +18,7 @@ export function aabbOfPose<TPose>(
   pose: TPose,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): Bounds {
-  return descriptor.getBounds(pose);
+  return positiveBox(descriptor.getBounds(pose));
 }
 
 /** Default slop for the stroke-distance hit-test on paths, in world units. Independent of

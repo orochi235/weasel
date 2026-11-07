@@ -40,7 +40,7 @@ export type {
 } from 'core/scene/nestedHit';
 
 // ─── Groups: union the bounds of a node set ─────────────────────────────────
-export { unionBounds, unionAABB, axisAlignedBounds } from '../core/geometry/unionBounds';
+export { unionBounds, unionAABB, axisAlignedBounds, positiveBox } from '../core/geometry/unionBounds';
 export type { RectPose } from '../core/geometry/unionBounds';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────

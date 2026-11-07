@@ -5,6 +5,11 @@ import type { OngoingHandle } from '../actions/invoker';
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
+/** The channel a gesture no entry owns is engaged on: an ambient action's or a
+ *  UI-driven one. No entry has this id, so only the any-channel (`'*'`) phase
+ *  atoms see it. */
+export const UNOWNED_CHANNEL = '*unowned';
+
 export interface InFlightGestures {
   /** Live: it changes as gestures open and end. */
   readonly handles: ReadonlyMap<string, OngoingHandle>;
@@ -21,7 +26,8 @@ export interface InFlightGestures {
   take(gestureId: string): OngoingHandle | undefined;
   /** Take every gesture out of flight. */
   takeAll(): Array<[string, OngoingHandle]>;
-  /** The ids of the entries that own a gesture in flight: the matcher's `engagedChannels`. */
+  /** The ids of the entries that own a gesture in flight, and {@link UNOWNED_CHANNEL}
+   *  for one no entry owns: the matcher's `engagedChannels`. */
   engagedOwners(): ReadonlySet<string>;
   /** What the gesture begun last currently is, where its handle or action says. See
    *  `OngoingHandle.cursor` and `Action.activeCursor`. */
@@ -68,9 +74,7 @@ export function createInFlightGestures(): InFlightGestures {
     engagedOwners() {
       if (owners.size === 0) return EMPTY_ENGAGED;
       const out = new Set<string>();
-      for (const owner of owners.values()) {
-        if (owner != null) out.add(owner);
-      }
+      for (const owner of owners.values()) out.add(owner ?? UNOWNED_CHANNEL);
       return out;
     },
     cursor() {

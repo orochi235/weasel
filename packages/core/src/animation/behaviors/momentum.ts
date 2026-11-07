@@ -114,6 +114,8 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       const samples = getScratch(ctx.scratch, SAMPLES) ?? [];
       if (samples.length < 2) return undefined;
       const last = samples[samples.length - 1];
+      // A pointer that came to rest before the release throws nothing.
+      if (now() - last.t > sampleMs) return undefined;
       // Find the oldest sample within `sampleMs` of `last`.
       const cutoff = last.t - sampleMs;
       let first = samples[0];

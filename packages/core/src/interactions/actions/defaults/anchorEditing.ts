@@ -43,7 +43,7 @@ import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
-import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
+import { nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { icon } from '../../../icons.gen';
 import { pathOperationTags } from '../pathGestureTags';
 import type { ImmediateParams } from '@weasel-js/routing';
@@ -189,8 +189,8 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
     group: 'nudgeAnchors',
     icon: NUDGE_ICON[dir],
     defaultBinding: [
-      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                        opts: { id: `nudgeAnchors.${dir}.small`, params: { magnitude: 'small' } } },
-      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { id: `nudgeAnchors.${dir}.big`, params: { magnitude: 'big' } } },
+      { spec: nudgeSpec(dir, false), opts: { id: `nudgeAnchors.${dir}.small`, params: { magnitude: 'small' } } },
+      { spec: nudgeSpec(dir, true), opts: { id: `nudgeAnchors.${dir}.big`, params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors', 'pathSymmetry'],

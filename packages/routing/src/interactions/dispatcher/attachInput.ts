@@ -107,6 +107,8 @@ export function attachInput(
     // modifiers when `keyboard: false` turns gesture key dispatch off.
     listeners.on(window, 'keydown', hover.onKey);
     listeners.on(window, 'keyup', hover.onKey);
+    listeners.on(window, 'keydown', pointer.modifiersChanged);
+    listeners.on(window, 'keyup', pointer.modifiersChanged);
     listeners.on(canvas, 'pointerleave', hover.onLeave);
     listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
     listeners.on(canvas, 'pointermove', pointer.onHoverMove);

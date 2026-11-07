@@ -155,6 +155,19 @@ describe('areaSelectAction descriptor', () => {
     expect(dep.calls.setSelection[0]).toEqual([]);
   });
 
+  it('onEnd("commit") selects what a straight vertical or horizontal marquee crosses', () => {
+    const invoker = getOngoingInvoker(areaSelectAction);
+    for (const to of [{ x: 10, y: 120 }, { x: 110, y: 20 }]) {
+      const dep = makeAreaSelectDep(['node-2'], ['node-1']);
+      const ctx = makeCtx({ world: { x: 10, y: 20 }, dep });
+      const handle = invoker.start(ctx, undefined);
+      handle.onMove!({ ...ctx, world: to });
+      handle.onEnd!({ ...ctx, world: to }, 'commit');
+      expect(dep.calls.hitTestArea).toHaveLength(1);
+      expect(dep.calls.setSelection).toEqual([['node-2']]);
+    }
+  });
+
   it('onEnd("commit") preserves selection on zero-size marquee with shift held', () => {
     const invoker = getOngoingInvoker(areaSelectAction);
     const dep = makeAreaSelectDep([], ['node-1']);

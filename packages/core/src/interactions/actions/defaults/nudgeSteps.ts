@@ -1,4 +1,5 @@
 import { arrowMove } from '@weasel-js/ui-logic';
+import type { GestureBinding } from '@weasel-js/routing';
 
 /** The arrow-key nudge shared by nodes and path anchors: one direction per
  *  key, a small step bare and a big one with Shift. */
@@ -16,4 +17,16 @@ export const NUDGE_LABEL: Record<NudgeDirection, string> = {
  *  for the Shift step, anything else for the small one. */
 export function nudgeDelta(dir: NudgeDirection, magnitude: unknown): { dx: number; dy: number } {
   return arrowMove(NUDGE_KEY[dir], magnitude === 'big')!;
+}
+
+/** The key a nudge in `dir` binds, Shift held for the big step. Not while any
+ *  gesture is in flight: a drag holds the poses it started from, so an arrow
+ *  mid-drag would land a nudge the drag's preview hides. */
+export function nudgeSpec(dir: NudgeDirection, big: boolean): GestureBinding['spec'] {
+  return {
+    kind: 'key',
+    key: NUDGE_KEY[dir],
+    ...(big ? { mods: { shift: true } } : {}),
+    phase: [{ channel: '*', phase: 'initial' }],
+  };
 }
