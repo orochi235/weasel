@@ -1,5 +1,47 @@
 # @weasel-js/editor
 
+## 1.17.2
+
+### Patch Changes
+
+- 223fb74: `reviveTypedArrays` reads a `commands` or `coords` field as an older save's untagged typed array only when it holds numbers. Node data or op args with such a field holding anything else, such as `commands: ['undo', 'redo']` or `coords: { lat, lng }`, used to come back from a reload as a typed array of zeros.
+- Updated dependencies [d15e917]
+- Updated dependencies [72b9bde]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [ffa4118]
+- Updated dependencies [d162fbb]
+- Updated dependencies [7d0c465]
+- Updated dependencies [f15f881]
+- Updated dependencies [1dda7c2]
+- Updated dependencies [dab1602]
+- Updated dependencies [35c291a]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [9298f90]
+- Updated dependencies [c98432d]
+- Updated dependencies [5f8b357]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [4825659]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [132af78]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/guides@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/ui@1.17.2
+  - @weasel-js/prefs@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

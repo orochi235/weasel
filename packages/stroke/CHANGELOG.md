@@ -1,5 +1,25 @@
 # @weasel-js/stroke
 
+## 1.17.2
+
+### Patch Changes
+
+- 32e0dd5: An inner or outer stroke on a rect with a negative width or height (a pose flipped by a drag past its opposite edge) stays on its own side of the rect. `alignedStrokeRect` used to shift such an axis the wrong way, so an outer stroke drew inside the rect along it and an inner one outside.
+- caf38d2: New `strokeAtScale(stroke, scale)` in stroke resolves every `{ px }` length of a stroke at a view scale the way the renderer does: the width, each marker size, and the dashes of a `{ px }` width. `strokeToPath` now reads a `{ px }` stroke's dashes at its `scale` option, where it used to take them as world units. A node's stroked bounds, measured at a view scale without a screen map, now size a `{ px }` marker head at that scale instead of at 1.
+- 33c0cbd: `Stroke.dashOffset` sets how far into `dash` each subpath starts, as SVG's `stroke-dashoffset` and Canvas2D's `lineDashOffset` do. A negative offset starts before the pattern's beginning, and a non-finite one reads as 0. The canvas, `writePdf` and `serializeSvg` all draw it. `parseSvg` reads `stroke-dashoffset`, which it used to drop with no warning, and `svgNodesToKitDrafts` and `svgStrokeFromKit` carry it. A `{ px }` stroke resolves the offset with its dash, `lerpStroke` interpolates it, and a stroke-mesh cache entry is keyed on it.
+  
+  New in `@weasel-js/paint`, and re-exported from `@weasel-js/core`: `dashPhase(pattern, phase)` wraps a phase into one cycle of a pattern, and `scaledDash(stroke, k)` scales a dash and its offset together. A trimmed stroke's PDF dash phase is now written wrapped into one cycle (`[4 2] 4 d` where it used to write `[4 2] 10 d`), which draws the same.
+- f6e234a: `strokeToPath` reads a marker sized `{ px }` at its `scale` option, as it does a `{ px }` width. A head under any scale but 1 used to come back sized as though the view were at 1, along with the gap cut from the line under it.
+- Updated dependencies [32e0dd5]
+- Updated dependencies [dd926dc]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

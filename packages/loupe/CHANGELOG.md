@@ -1,5 +1,15 @@
 # @weasel-js/loupe
 
+## 1.17.2
+
+### Patch Changes
+
+- fd664e3: A canvas source's `sample` answers `null` for a point whose x or y is NaN. Such a point passed the off-canvas check, and a browser skips a `drawImage` given a NaN rect, so the sample reported whatever pixel the previous one had read.
+- Updated dependencies [dd926dc]
+- Updated dependencies [90024bc]
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

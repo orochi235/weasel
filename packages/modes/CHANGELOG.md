@@ -1,5 +1,12 @@
 # @weasel-js/modes
 
+## 1.17.2
+
+### Patch Changes
+
+- 8eed13c: `createModeDecorations`: releasing an older registration of a painter no longer removes the live one when the same function was registered again for that mode, as a remounting effect does.
+- @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

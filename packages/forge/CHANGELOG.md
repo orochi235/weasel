@@ -1,5 +1,68 @@
 # @weasel-js/forge
 
+## 1.17.2
+
+### Patch Changes
+
+- 2e19b2f: A list knob whose entries are numbers or booleans (`f.list([1], f.number(0))`, or a story arg typed `number[]`) is read back from forge's URL. `decodeKnob` used to refuse any list whose entries were not strings, so such a knob fell back to its default on reload and in a shared link.
+- 060b0ee: `stableStringify` writes a bigint as `{"$type":"bigint","value":"10"}` and a reference to an object that contains it as `{"$type":"cycle"}`, the tags devtools serialization uses, instead of throwing. Forge compares story args with it, so a story whose args hold a cyclic object used to throw once its config came back through the frame's port; it now compares that config with its default as it should.
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [4eaadcc]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [cda0a20]
+- Updated dependencies [ffa4118]
+- Updated dependencies [d162fbb]
+- Updated dependencies [7d0c465]
+- Updated dependencies [f15f881]
+- Updated dependencies [1dda7c2]
+- Updated dependencies [dab1602]
+- Updated dependencies [3fc1b5e]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [9298f90]
+- Updated dependencies [c98432d]
+- Updated dependencies [5f8b357]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [4825659]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [2dceec4]
+- Updated dependencies [c5325ff]
+- Updated dependencies [08a964d]
+- Updated dependencies [fb36b4f]
+- Updated dependencies [cb57c41]
+- Updated dependencies [2e36630]
+- Updated dependencies [10f448b]
+- Updated dependencies [3c8c5af]
+- Updated dependencies [cd0738d]
+- Updated dependencies [8c4bf4d]
+- Updated dependencies [c7dae1d]
+- Updated dependencies [c2a7267]
+- Updated dependencies [26187c9]
+- Updated dependencies [132af78]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/clock@1.17.2
+  - @weasel-js/labkit@1.17.2
+  - @weasel-js/ui@1.17.2
+  - @weasel-js/svg@1.17.2
+  - @weasel-js/theme@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

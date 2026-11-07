@@ -1,5 +1,31 @@
 # @weasel-js/d3
 
+## 1.17.2
+
+### Patch Changes
+
+- a4baf39: `d3Bind(...).join()` throws, before touching the scene, when two data share a key, naming the key and both indices. Two such data used to fail with the scene's `id collision` when they entered, and when they updated a node already there, the later one silently won and the selection held its id twice.
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [cda0a20]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [e13e539]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/animator@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

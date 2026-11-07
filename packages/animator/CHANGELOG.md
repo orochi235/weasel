@@ -1,5 +1,26 @@
 # @weasel-js/animator
 
+## 1.17.2
+
+### Patch Changes
+
+- 3dfa153: Pin `@msb235/blits` at exactly `1.1.0` again, in place of 1.17.1's `^1.0.0`. An app taking blits as a `^1` range still shares this one copy with weasel.
+- Updated dependencies [32e0dd5]
+- Updated dependencies [3dfa153]
+- Updated dependencies [4eaadcc]
+- Updated dependencies [dd926dc]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/clock@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

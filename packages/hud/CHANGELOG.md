@@ -1,5 +1,54 @@
 # @weasel-js/hud
 
+## 1.17.2
+
+### Patch Changes
+
+- Updated dependencies [d15e917]
+- Updated dependencies [32e0dd5]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [fd664e3]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [1dda7c2]
+- Updated dependencies [d08837f]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [05acca8]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [3c8c5af]
+- Updated dependencies [cd0738d]
+- Updated dependencies [8c4bf4d]
+- Updated dependencies [c7dae1d]
+- Updated dependencies [c2a7267]
+- Updated dependencies [26187c9]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/loupe@1.17.2
+  - @weasel-js/menu@1.17.2
+  - @weasel-js/ui-logic@1.17.2
+  - @weasel-js/theme@1.17.2
+  - @weasel-js/gestures@1.17.2
+  - @weasel-js/font@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

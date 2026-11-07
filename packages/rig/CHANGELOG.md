@@ -1,5 +1,49 @@
 # @weasel-js/rig
 
+## 1.17.2
+
+### Patch Changes
+
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [c08dc7d]
+- Updated dependencies [cda0a20]
+- Updated dependencies [963e595]
+- Updated dependencies [25bbbd5]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [9298f90]
+- Updated dependencies [d12d868]
+- Updated dependencies [5f8b357]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/animator@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/history@1.17.2
+  - @weasel-js/routing@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/renderer@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

@@ -1,5 +1,56 @@
 # @weasel-js/path-tools
 
+## 1.17.2
+
+### Patch Changes
+
+- cda0a20: Undoing an insert restores the selection from before it. The insert and place actions clear the selection at the press, and the pen and spiro tools select the path they finish or continue; each of those changes now commits in the same undo entry as the node, so under an `applyOps` history that knows nothing about the selection, undo no longer leaves it empty or still on the node it removed. A pen join commits its selection the same way.
+  
+  This changes two dep contracts, which breaks a consumer's own `insert` or `editAnchors` dep. Both take a `CommitSelection` (`from`, the selection before the change, and `selectNode`): `InsertDep.commit` as a fourth argument and `EditAnchorsDep.applyEdit` as a fifth, both named `select`. A dep that applies ops appends `commitSelectionOps(select, id, label)` to its batch. An insert that applies none must set the selection itself, to the new node with `selectNode` and to nothing otherwise; an edit that commits nothing changes no selection. A dep that ignores `select` leaves the selection empty after an insert, and the pen and spiro tools no longer select what they draw or continue through it. These batches now carry a `setSelection` op, so a consumer history's adapter needs `setSelection`. kernel3d's `createInsert` passes `select` to `mint` as a third argument.
+- 85c08f8: The path-effect commands (applying an effect, Expand, Set and Release Spine, Set and Release Effect Path) and Trim put their selection change in their own undo entry, through `commitOps`'s `select`. Undo now restores the selection they started from under a consumer's `applyOps` history, where it used to leave their result selected. An `applyOps` adapter sees a `setSelection` op at the end of these batches.
+- 90024bc: Trim segment and Extend to next path now reach a stroke as far on screen as every other picker does under non-uniform zoom; they used to take the smaller of the two axes' world extents and could miss a stroke a few pixels from the click. geom adds `pxReach(px, scale)`, the one conversion of a screen-pixel radius to a world distance that core's anchor clicks, rig, Girth and Smudge now share.
+- Updated dependencies [d15e917]
+- Updated dependencies [32e0dd5]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [25bbbd5]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [9298f90]
+- Updated dependencies [d12d868]
+- Updated dependencies [5f8b357]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [f6e234a]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/stroke@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/routing@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/renderer@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/cursor@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

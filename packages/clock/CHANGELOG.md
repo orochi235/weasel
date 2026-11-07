@@ -1,5 +1,18 @@
 # @weasel-js/clock
 
+## 1.17.2
+
+### Patch Changes
+
+- 3dfa153: Pin `@msb235/blits` at exactly `1.1.0` again, in place of 1.17.1's `^1.0.0`. An app taking blits as a `^1` range still shares this one copy with weasel.
+- 4eaadcc: `clock.ramp(to, over)` throws a `RangeError` when `over` is not finite. A ramp over `Infinity` never
+  arrived, so the clock never went inert and kept the frame loop running at a rate that never moved;
+  `NaN` silently set the rate at once. An `over` of 0 or less still sets the rate at once.
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/react@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

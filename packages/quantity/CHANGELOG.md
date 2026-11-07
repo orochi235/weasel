@@ -1,5 +1,14 @@
 # @weasel-js/quantity
 
+## 1.17.2
+
+### Patch Changes
+
+- 5cb2995: `endlessTrack` keeps infinity reachable on a range with no width and no step. With `min` equal to `max` its infinity stop used to sit on the range's own end, so a slider or spin field over it could never reach infinity. The stop now sits one unit out.
+- 4c781a6: A negative number in a locale that writes a bidi mark before its sign (`ar-EG`) now shows the real minus sign in every kind and is spoken "minus …": `bytes`, `unit`, `roman`, `multiplier` and `formatNumber` kept the ASCII hyphen there, and no kind spoke the sign. `signed` and `spokenSign` look past such a mark, and every kind writes its sign through `signed`.
+- a08b740: `scientific` keeps its exponent in a locale that writes its own digits: in `ar-EG`, 1,234,567 showed as `١٫٢٣ × 10`, with the power dropped, and `1.23e6`'s form wrote `NaN` for it. Text in such a locale's digits now also reads back.
+- 29f15a5: `spinKey` lands a step that would cross an endless bound on the bound itself, as a slider thumb does: Page Up from 5 on a 0–10 field whose top is endless went straight to infinity, and so did an arrow from 9.5 with a step of 1. The next press past the bound reaches infinity as before. Every number field and menu value that spins through `spinKey` follows.
+
 ## 1.17.1
 
 No changes in this release.

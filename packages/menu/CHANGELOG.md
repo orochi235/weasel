@@ -1,5 +1,20 @@
 # @weasel-js/menu
 
+## 1.17.2
+
+### Patch Changes
+
+- 1dda7c2: Menus follow a right-to-left layout. `keyStep`, `planKey` and a controller's `key` take an optional direction: under `'rtl'` Left opens a submenu and Right closes one, and an edge still reports forward as 1 and back as -1. `placeMenu`, `placeSubmenu` and `placeMenuUnder` take one too, and under `'rtl'` open to the left first (a menu under a button right-aligns to it). `ContextMenuHost`'s panels read the direction from their own computed `direction`, and `MenuBar` steps between titles by its bar's, so Left moves to the next title.
+- Updated dependencies [5cb2995]
+- Updated dependencies [4c781a6]
+- Updated dependencies [d08837f]
+- Updated dependencies [a08b740]
+- Updated dependencies [29f15a5]
+- Updated dependencies [05acca8]
+  - @weasel-js/quantity@1.17.2
+  - @weasel-js/ui-logic@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

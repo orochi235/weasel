@@ -1,5 +1,41 @@
 # @weasel-js/pdf
 
+## 1.17.2
+
+### Patch Changes
+
+- 35c291a: SVG export and PDF read a stroke's `dash` through `dashPattern`, the rule the canvas uses, so the three draw the same thing:
+  
+  - `serializeSvg` strokes solid a dash too fine for its path's whole, untrimmed length, and an all-zero or negative one, where it used to write the `stroke-dasharray` as given. A leaf whose group's dash it would otherwise inherit states `stroke-dasharray="none"`.
+  - A dash with a non-finite entry draws no line in either writer, and its marker heads still draw. The PDF writer used to drop the whole path, its fill included, and report a skip. `serializeSvg` used to write NaN as `0`, a solid line. A text run's stroke with such a dash draws nothing.
+  
+  `dashPattern` is now exported from `@weasel-js/core` as well as `@weasel-js/paint`.
+- 1a6ad20: `writePdf` draws no marker heads on a text stroke it writes as glyph outlines (an aligned stroke, a gradient one, or faked bold), as the canvas draws none on text. A `markerMid` used to put a head on every vertex of every glyph.
+- 33c0cbd: `Stroke.dashOffset` sets how far into `dash` each subpath starts, as SVG's `stroke-dashoffset` and Canvas2D's `lineDashOffset` do. A negative offset starts before the pattern's beginning, and a non-finite one reads as 0. The canvas, `writePdf` and `serializeSvg` all draw it. `parseSvg` reads `stroke-dashoffset`, which it used to drop with no warning, and `svgNodesToKitDrafts` and `svgStrokeFromKit` carry it. A `{ px }` stroke resolves the offset with its dash, `lerpStroke` interpolates it, and a stroke-mesh cache entry is keyed on it.
+  
+  New in `@weasel-js/paint`, and re-exported from `@weasel-js/core`: `dashPhase(pattern, phase)` wraps a phase into one cycle of a pattern, and `scaledDash(stroke, k)` scales a dash and its offset together. A trimmed stroke's PDF dash phase is now written wrapped into one cycle (`[4 2] 4 d` where it used to write `[4 2] 10 d`), which draws the same.
+- Updated dependencies [32e0dd5]
+- Updated dependencies [dd926dc]
+- Updated dependencies [c089c61]
+- Updated dependencies [cc591ff]
+- Updated dependencies [e6e7a72]
+- Updated dependencies [d162fbb]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [fce3d09]
+- Updated dependencies [d12d868]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [f6e234a]
+- Updated dependencies [d3654a1]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/stroke@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/text@1.17.2
+  - @weasel-js/renderer@1.17.2
+  - @weasel-js/font@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

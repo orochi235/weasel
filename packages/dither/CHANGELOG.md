@@ -1,5 +1,17 @@
 # @weasel-js/dither
 
+## 1.17.2
+
+### Patch Changes
+
+- 561322a: `ditherPixels`, `maskToRgba`, `protectMask` and `protectTexture` throw a `RangeError` naming the size for a width or height that is negative, fractional or not finite. `ditherPixels` used to quantize a -1×-1 image as one pixel, and the others failed inside a typed-array constructor or returned a mask of the wrong size.
+- Updated dependencies [dd926dc]
+- Updated dependencies [d12d868]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/renderer@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes
