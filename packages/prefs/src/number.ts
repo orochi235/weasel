@@ -1,4 +1,4 @@
-// The number leaf: its bounds, step, stops, unit and display.
+// The number leaf: its bounds, step, stops, scale, unit and display.
 
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefBoundAt } from './bounds';
@@ -7,6 +7,18 @@ import type { PrefNumberUnit } from './unit';
 
 /** How a schema-driven UI should present a number pref. */
 export type PrefNumberControl = 'input' | 'slider';
+
+/**
+ * How a slider spaces values along its track: `'linear'`, the default;
+ * `'log'`, even ratios at even distances, for a range above zero; `'sqrt'`,
+ * which spreads out the low end less than a log does and takes zero and
+ * negatives; or `to` and `from`, a warp the track is linear in and its inverse.
+ */
+export type PrefNumberScale =
+  | 'linear'
+  | 'log'
+  | 'sqrt'
+  | { to(value: number): number; from(warped: number): number };
 
 /** What every number leaf carries; {@link PrefNumber} adds `clearable`. */
 export interface PrefNumberBase extends PrefValueBase<'number', number | undefined> {
@@ -32,6 +44,14 @@ export interface PrefNumberBase extends PrefValueBase<'number', number | undefin
    *  `max`: each is drawn on the track, a drag passing near one lands on it
    *  (alt held passes it by), and a key step crossing one stops there. */
   stops?: readonly number[];
+  /** How the slider spaces values along its track — `.range(1, 1000)` with
+   *  `'log'` gives 1–10, 10–100 and 100–1000 a third each. It changes only
+   *  where a value sits on the track: the typed value, `step`, `stops`, the
+   *  arrow keys and the stored value stay in the value's own units. Under a
+   *  `unit` the slider runs in the shown unit, so the scale spaces shown
+   *  values. A `'log'` track over a range not above zero warns once in
+   *  development and is drawn linear. */
+  scale?: PrefNumberScale;
   /** Which end of a slider gets a stop for ±Infinity, one step beyond the range. */
   endless?: 'min' | 'max' | 'both';
   /** The word infinity shows as — `'never'`, `'uncapped'`. Default `∞`. */

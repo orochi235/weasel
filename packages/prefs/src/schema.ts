@@ -16,7 +16,7 @@ import type { PrefScopeSpec } from './scopeSpec';
 import type { PrefUnion } from './union';
 import type { PrefNumber } from './number';
 
-export type { PrefNumber, PrefNumberBase, PrefNumberControl } from './number';
+export type { PrefNumber, PrefNumberBase, PrefNumberControl, PrefNumberScale } from './number';
 
 /** The value types a built-in pref leaf can hold. */
 export type PrefKind =
