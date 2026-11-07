@@ -1,5 +1,24 @@
 # @weasel-js/kernel3d
 
+## 1.17.3
+
+### Patch Changes
+
+- Updated dependencies [f9e1b14]
+- Updated dependencies [5bda052]
+- Updated dependencies [49cd9bb]
+- Updated dependencies [13c6f66]
+- Updated dependencies [778f26d]
+- Updated dependencies [778f26d]
+- Updated dependencies [56446ad]
+  - @weasel-js/core@1.17.3
+  - @weasel-js/routing@1.17.3
+  - @weasel-js/geom@1.17.3
+  - @weasel-js/stroke@1.17.3
+  - @weasel-js/paint@1.17.3
+  - @weasel-js/prefs@1.17.3
+  - @weasel-js/react@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes

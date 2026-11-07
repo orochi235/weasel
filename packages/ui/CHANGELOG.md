@@ -1,5 +1,49 @@
 # @weasel-js/ui
 
+## 1.17.3
+
+### Patch Changes
+
+- 5bda052: A command can say why it is disabled in its own words: `useCommand`'s `enabled` may now return a sentence, as an action's `enabled` already could, and the palette and bar buttons show it the way they show an action's. Menus now say why too: a menu item entry carries `disabledReason`, `resolveMenu` fills it from the action's or command's answer, and a DOM menu shows a disabled row's reason in a tooltip once the highlight rests on the row, keeping its shortcut, and gives it to assistive tech as the row's description.
+- ce9b42d: A disabled button can say why. `Button`, `ButtonBar` and `ToggleBar` items, `MenuButton`, `ToolButton` and `CloseButton` take a `disabledReason`. Given one, a disabled button keeps its tooltip, which reads `Name: reason`, stays hoverable and focusable (marked `aria-disabled` rather than `disabled`), ignores presses (a disabled submit button submits nothing), and gives the reason to assistive tech as its description. Without one, a disabled button is natively disabled with no tooltip, as before. Bar action buttons already worked this way and now share the same path.
+- 542dab5: An auto setting now falls off as soon as anyone touches it. An auto row keeps its control live, ghosted in the secondary accent, at the value in effect (the instrument's report, else the resolver's, else the leaf's default), and any edit pins the path at the new value: a slider drag or arrow key, a typed number, an enum pick, a checkbox toggle. There is no need to click the label or the pin dot first; they still hand the row back to auto. A slider whose readout is the word takes the keyboard itself, so `getByRole('slider', { name })` and the arrow keys reach it. A standalone `<ControlPanel>` that keeps its own auto set unpins a row it edits.
+  
+  This is breaking for `@weasel-js/ui`'s `<PropertyRow>`: `autoControl` is gone, and every auto row draws its control the way `autoControl="dimmed"` did. Clicking a row's label back to pinned now pins at the value the row draws, which for a field with no report and no resolver is its default rather than the last pinned value.
+- 13d7e65: A `Popover` used on its own, outside any other weasel overlay, now portals into the nearest themed ancestor of where
+  it is rendered, so it draws in that root's theme instead of the page's. A `ToastRegion` given no container does the
+  same and still sits fixed in the viewport's corner. In a light app root on a page that resolves dark, both used to
+  draw dark. Tooltips, dialogs, and menus already behaved this way. `@weasel-js/ui/portal-host` gains `useOverlayTarget`,
+  the resolution `Popover` uses.
+- Updated dependencies [f9e1b14]
+- Updated dependencies [5bda052]
+- Updated dependencies [778f26d]
+- Updated dependencies [49cd9bb]
+- Updated dependencies [13c6f66]
+- Updated dependencies [778f26d]
+- Updated dependencies [56446ad]
+  - @weasel-js/core@1.17.3
+  - @weasel-js/animator@1.17.3
+  - @weasel-js/menu@1.17.3
+  - @weasel-js/gestures@1.17.3
+  - @weasel-js/geom@1.17.3
+  - @weasel-js/guides@1.17.3
+  - @weasel-js/plot@1.17.3
+  - @weasel-js/svg@1.17.3
+  - @weasel-js/text@1.17.3
+  - @weasel-js/ui-logic@1.17.3
+  - @weasel-js/clock@1.17.3
+  - @weasel-js/font@1.17.3
+  - @weasel-js/history@1.17.3
+  - @weasel-js/icons@1.17.3
+  - @weasel-js/modes@1.17.3
+  - @weasel-js/paint@1.17.3
+  - @weasel-js/prefs@1.17.3
+  - @weasel-js/quantity@1.17.3
+  - @weasel-js/react@1.17.3
+  - @weasel-js/registry@1.17.3
+  - @weasel-js/select@1.17.3
+  - @weasel-js/theme@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes

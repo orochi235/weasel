@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/devtools",
-  "version": "1.17.2",
+  "version": "1.17.3",
   "description": "A devtools panel for weasel canvases: each canvas's scene tree, state, dispatch trace and frame stats, read and steered over the devtools hook's protocol.",
   "weasel": {
     "tier": "plugin"
@@ -43,12 +43,12 @@
     "build": "vite build && tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@weasel-js/react": "1.17.2",
-    "@weasel-js/ui": "1.17.2",
-    "@weasel-js/registry": "1.17.2"
+    "@weasel-js/react": "1.17.3",
+    "@weasel-js/ui": "1.17.3",
+    "@weasel-js/registry": "1.17.3"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.17.2",
+    "@weasel-js/core": "1.17.3",
     "react": ">=18",
     "react-dom": ">=18"
   },

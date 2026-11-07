@@ -1,5 +1,9 @@
 # @weasel-js/quantity
 
+## 1.17.3
+
+No changes in this release.
+
 ## 1.17.2
 
 ### Patch Changes

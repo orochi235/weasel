@@ -1,5 +1,28 @@
 # @weasel-js/routing
 
+## 1.17.3
+
+### Patch Changes
+
+- 5bda052: A command can say why it is disabled in its own words: `useCommand`'s `enabled` may now return a sentence, as an action's `enabled` already could, and the palette and bar buttons show it the way they show an action's. Menus now say why too: a menu item entry carries `disabledReason`, `resolveMenu` fills it from the action's or command's answer, and a DOM menu shows a disabled row's reason in a tooltip once the highlight rests on the row, keeping its shortcut, and gives it to assistive tech as the row's description.
+- 778f26d: When the canvas holding the keys unmounts, the keys now go back to the canvas used before it that is still mounted, including one that took them with `claimKeys`, instead of to no canvas. Closing a lightbox canvas that was pressed in no longer leaves the board beside it deaf to Cmd+Z until it is pressed again. Of two canvases on one actions registry, the first to unmount keeps the keys for the other, and a canvas whose listeners are bound again (a channel switched on or off) keeps them. A hand-built `ActionsRegistry`'s `dropKeys()` now means "leave the key order", called once the last canvas on that registry unmounts.
+- 778f26d: A key or a paste typed inside an open modal dialog no longer reaches a canvas behind it: a dialog with `aria-modal="true"`, a `<dialog>` opened with `showModal()`, or a dialog that has made the canvas inert or `aria-hidden`, as React Aria's modal dialogs do. Backspace on a button in a dialog no longer deletes the selection behind it. A canvas inside the dialog keeps its keys.
+- Updated dependencies [5bda052]
+- Updated dependencies [778f26d]
+- Updated dependencies [13c6f66]
+  - @weasel-js/menu@1.17.3
+  - @weasel-js/gestures@1.17.3
+  - @weasel-js/geom@1.17.3
+  - @weasel-js/cursor@1.17.3
+  - @weasel-js/history@1.17.3
+  - @weasel-js/icons@1.17.3
+  - @weasel-js/modes@1.17.3
+  - @weasel-js/prefs@1.17.3
+  - @weasel-js/quantity@1.17.3
+  - @weasel-js/react@1.17.3
+  - @weasel-js/registry@1.17.3
+  - @weasel-js/select@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes

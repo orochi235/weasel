@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.17.3
+
+### Patch Changes
+
+- f9e1b14: `@weasel-js/core` and `@weasel-js/animator` take `@msb235/blits` as a peer dependency at `^1.1.0` instead of a dependency pinned at exactly `1.1.0`. An app on any blits 1.x from 1.1.0 up now shares its own copy with weasel instead of getting a second one nested inside it. npm installs the peer automatically; an app that installs blits itself keeps the version it chose.
+- 49cd9bb: `useEnteredGroup(scene)` now returns the scene's one entered group, the same store from every component that calls it, so two components on one scene no longer disagree on which group is entered. A `<SceneCanvas>` given no `enteredGroup` uses that same store, so a component outside the canvas can read and drive the canvas's entered group with `useEnteredGroup(scene)` without passing it in. This changes behavior for a caller that counted on a private store per call: use `createEnteredGroup(scene)` for a separate one, and pass it as `<SceneCanvas enteredGroup>`.
+- 778f26d: When the canvas holding the keys unmounts, the keys now go back to the canvas used before it that is still mounted, including one that took them with `claimKeys`, instead of to no canvas. Closing a lightbox canvas that was pressed in no longer leaves the board beside it deaf to Cmd+Z until it is pressed again. Of two canvases on one actions registry, the first to unmount keeps the keys for the other, and a canvas whose listeners are bound again (a channel switched on or off) keeps them. A hand-built `ActionsRegistry`'s `dropKeys()` now means "leave the key order", called once the last canvas on that registry unmounts.
+- 56446ad: The minimap's view indicator now strokes in the theme's `--wzl-accent`, the color its crosshair already used, read
+  off the minimap's canvas and re-read when a theme or mode attribute above it changes; it was white in every theme.
+  An `indicatorStyle.stroke` still wins. `computeIndicatorCommand` takes the default stroke as a fifth argument, and
+  the linked crosshair now follows a theme change too rather than keeping the color it read when attached. Core
+  exports `watchThemeOf`, which reports when the colors read off an element may have changed.
+- Updated dependencies [f9e1b14]
+- Updated dependencies [5bda052]
+- Updated dependencies [778f26d]
+- Updated dependencies [13c6f66]
+- Updated dependencies [778f26d]
+- Updated dependencies [778f26d]
+  - @weasel-js/animator@1.17.3
+  - @weasel-js/routing@1.17.3
+  - @weasel-js/gestures@1.17.3
+  - @weasel-js/geom@1.17.3
+  - @weasel-js/renderer@1.17.3
+  - @weasel-js/stroke@1.17.3
+  - @weasel-js/text@1.17.3
+  - @weasel-js/ui-logic@1.17.3
+  - @weasel-js/text-dom@1.17.3
+  - @weasel-js/cursor@1.17.3
+  - @weasel-js/font@1.17.3
+  - @weasel-js/history@1.17.3
+  - @weasel-js/icons@1.17.3
+  - @weasel-js/modes@1.17.3
+  - @weasel-js/paint@1.17.3
+  - @weasel-js/prefs@1.17.3
+  - @weasel-js/quantity@1.17.3
+  - @weasel-js/react@1.17.3
+  - @weasel-js/registry@1.17.3
+  - @weasel-js/select@1.17.3
+  - @weasel-js/simulation@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes

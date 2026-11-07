@@ -1,5 +1,41 @@
 # @weasel-js/labkit
 
+## 1.17.3
+
+### Patch Changes
+
+- 542dab5: An auto setting now falls off as soon as anyone touches it. An auto row keeps its control live, ghosted in the secondary accent, at the value in effect (the instrument's report, else the resolver's, else the leaf's default), and any edit pins the path at the new value: a slider drag or arrow key, a typed number, an enum pick, a checkbox toggle. There is no need to click the label or the pin dot first; they still hand the row back to auto. A slider whose readout is the word takes the keyboard itself, so `getByRole('slider', { name })` and the arrow keys reach it. A standalone `<ControlPanel>` that keeps its own auto set unpins a row it edits.
+  
+  This is breaking for `@weasel-js/ui`'s `<PropertyRow>`: `autoControl` is gone, and every auto row draws its control the way `autoControl="dimmed"` did. Clicking a row's label back to pinned now pins at the value the row draws, which for a field with no report and no resolver is its default rather than the last pinned value.
+- 87ba10e: A value an instrument reports with `reportAuto` from an effect of the commit that turns its path back to auto now shows: unpinning a lever whose instrument reports right away read bare `auto`, and the hidden control kept the old pinned value, until something re-reported later. Reporting `null` now withdraws a report as `undefined` does, where it read `auto · None`.
+- Updated dependencies [f9e1b14]
+- Updated dependencies [5bda052]
+- Updated dependencies [ce9b42d]
+- Updated dependencies [49cd9bb]
+- Updated dependencies [13c6f66]
+- Updated dependencies [778f26d]
+- Updated dependencies [778f26d]
+- Updated dependencies [542dab5]
+- Updated dependencies [56446ad]
+- Updated dependencies [13d7e65]
+  - @weasel-js/core@1.17.3
+  - @weasel-js/animator@1.17.3
+  - @weasel-js/routing@1.17.3
+  - @weasel-js/ui@1.17.3
+  - @weasel-js/geom@1.17.3
+  - @weasel-js/minimap@1.17.3
+  - @weasel-js/kernel3d@1.17.3
+  - @weasel-js/loupe@1.17.3
+  - @weasel-js/svg@1.17.3
+  - @weasel-js/clock@1.17.3
+  - @weasel-js/icons@1.17.3
+  - @weasel-js/prefs@1.17.3
+  - @weasel-js/quantity@1.17.3
+  - @weasel-js/react@1.17.3
+  - @weasel-js/registry@1.17.3
+  - @weasel-js/storage@1.17.3
+  - @weasel-js/theme@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes
