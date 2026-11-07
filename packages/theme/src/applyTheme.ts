@@ -1,4 +1,4 @@
-import { fullSelection, type Selection } from './axes';
+import { fullSelection, wzlAttr, type Selection } from './axes';
 import { blendTheme, type AxisWeights } from './blendTheme';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
@@ -41,7 +41,7 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection =
     .map(([name, value]) => `${name}: ${value};`)
     .join(' ');
   const names = Object.keys(axes);
-  const selector = `[data-wzl-theme='${theme.name}']${names.map((a) => `[data-wzl-${a}='${sel[a]}']`).join('')}`;
+  const selector = `${wzlAttr('theme', theme.name)}${names.map((a) => wzlAttr(a, sel[a])).join('')}`;
   // Held before the last one is let go, so re-applying the same rule rewrites nothing.
   const { variant, release: releaseRule } = holdRule(styleRootOf(el), selector, body);
   holds.get(el)?.();

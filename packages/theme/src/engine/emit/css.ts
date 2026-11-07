@@ -1,4 +1,4 @@
-import { enumerateSelections, fullSelection, pickAll, type AxisDefs, type Selection } from '../../axes.ts';
+import { enumerateSelections, fullSelection, pickAll, wzlAttr, type AxisDefs, type Selection } from '../../axes.ts';
 import { tokenAt } from '../../chainTokens.ts';
 import { mixAlpha } from '../../dtcg/color.ts';
 import { refTarget, resolveTokens } from '../../dtcg/resolve.ts';
@@ -127,7 +127,7 @@ function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string
     for (const combo of combinations(axes, set)) {
       const scheme = schemeAxis ? schemeOf(plan.schemes, schemeAxis, combo[schemeAxis]) : undefined;
       if (ownFirst.length === 0 && !scheme) continue;
-      const attrs = set.map((a) => `[data-wzl-${a}='${combo[a]}']`).join('');
+      const attrs = set.map((a) => wzlAttr(a, combo[a])).join('');
       const decls = ownFirst.flatMap((name) => {
         const token = plan.value(name, combo);
         return token ? [`  --wzl-${name}: ${cssValue(name, token)};`] : [];
@@ -204,7 +204,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
 
   const reset = Object.keys(rootValues).filter((n) => redeclared.has(n) && (def.deps[n]?.all.length ?? 0) === 0);
   if (reset.length > 0) {
-    lines.push(`[data-wzl-theme='${theme}'] {`, ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, rootValues[n])};`), '}', '');
+    lines.push(`${wzlAttr('theme', theme)} {`, ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, rootValues[n])};`), '}', '');
   }
 
   blocks(
@@ -218,7 +218,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
       own: (n) => def.deps[n]?.own ?? [],
       value: (n, sel) => pickAll(def.baked.tokens, fullSelection(axes, sel))[n],
     },
-    (attrs) => [`[data-wzl-theme='${theme}']${attrs},`, `${attrs} {`],
+    (attrs) => [`${wzlAttr('theme', theme)}${attrs},`, `${attrs} {`],
   );
 
   for (const plan of others) {
@@ -226,14 +226,14 @@ export function emitCss(themes: readonly EmitInput[]): string {
     if (invariant.length > 0) {
       // `[data-wzl-theme='x']` alone already ties the default's `:root` on specificity and wins on source
       // order, since the default emits first; `:root[...]` guards only against that emission order changing.
-      lines.push(`:root[data-wzl-theme='${plan.theme}'],`, `[data-wzl-theme='${plan.theme}'] {`);
+      lines.push(`:root${wzlAttr('theme', plan.theme)},`, `${wzlAttr('theme', plan.theme)} {`);
       for (const n of invariant) {
         const token = plan.value(n, {});
         if (token) lines.push(`  --wzl-${n}: ${cssValue(n, token)};`);
       }
       lines.push('}', '');
     }
-    blocks(lines, plan, (attrs) => [`[data-wzl-theme='${plan.theme}']${attrs} {`]);
+    blocks(lines, plan, (attrs) => [`${wzlAttr('theme', plan.theme)}${attrs} {`]);
   }
 
   return lines.join('\n');

@@ -61,6 +61,11 @@ export function enumerateSelections(axes: AxisDefs): Selection[] {
   return out;
 }
 
+/** The selector matching `data-wzl-<attr>` equal to `value`, quoted so any theme name or axis value reads as itself. */
+export function wzlAttr(attr: string, value: string): string {
+  return `[data-wzl-${attr}='${value.replace(/[\\']/g, '\\$&').replace(/\n/g, '\\a ')}']`;
+}
+
 /** `mode=dark,density=compact`, axes in declaration order. */
 export function selectionKey(axes: AxisDefs, selection: Selection): string {
   const full = fullSelection(axes, selection);
