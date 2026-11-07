@@ -77,6 +77,16 @@ export function describeAdapterContract(name: string, setup: () => AdapterHarnes
       );
     });
 
+    it('lists every key under a prefix, whatever follows it', async () => {
+      const { adapter } = setup();
+      for (const key of ['lk:x:\uffff', 'lk:x:\uffffz', 'lk:x:\uffff\uffff', 'lk:x;', 'lk:\uffffz', 'lk:\ufffe']) {
+        await adapter.set(key, 1);
+      }
+      const keys = async (prefix: string) => (await adapter.list(prefix)).map(([key]) => key).sort();
+      expect(await keys('lk:x:')).toEqual(['lk:x:\uffff', 'lk:x:\uffffz', 'lk:x:\uffff\uffff']);
+      expect(await keys('lk:\uffff')).toEqual(['lk:\uffffz']);
+    });
+
     it('deletes a key', async () => {
       const { adapter } = setup();
       await adapter.set('lk:x:gone', { a: 1 });

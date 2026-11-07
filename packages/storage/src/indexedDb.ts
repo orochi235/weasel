@@ -13,6 +13,15 @@ interface NodeChannel extends BroadcastChannel {
   unref?: () => void;
 }
 
+/** Every string key starting with `prefix`: up to, not including, the first string past them all. */
+function prefixRange(prefix: string): IDBKeyRange {
+  for (let i = prefix.length - 1; i >= 0; i--) {
+    const unit = prefix.charCodeAt(i);
+    if (unit < 0xffff) return IDBKeyRange.bound(prefix, prefix.slice(0, i) + String.fromCharCode(unit + 1), false, true);
+  }
+  return IDBKeyRange.lowerBound(prefix);
+}
+
 /** The channel named `name`, opened on first call; null where there is no `BroadcastChannel`. */
 function lazyChannel(name: string): () => NodeChannel | null {
   let channel: NodeChannel | null = null;
@@ -119,7 +128,7 @@ export function createIndexedDbAdapter({
       }),
     list: (prefix) =>
       run('readonly', (s) => {
-        const range = IDBKeyRange.bound(prefix, `${prefix}￿`);
+        const range = prefixRange(prefix);
         const keys = s.getAllKeys(range);
         const values = s.getAll(range);
         return () =>
