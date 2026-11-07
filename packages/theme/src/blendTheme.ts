@@ -1,4 +1,4 @@
-import { interpolateSrgb, parseColor, rgbaToHex } from '@weasel-js/paint';
+import { mixRgbaWeighted, parseColor, rgbaToHex } from '@weasel-js/paint';
 import { fullSelection, type Selection } from './axes.ts';
 import { readCssNumber } from './cssNumber.ts';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme.ts';
@@ -29,25 +29,11 @@ function blendNumbers(members: readonly Weighted[]): string | undefined {
 }
 
 function blendColors(members: readonly Weighted[]): string | undefined {
-  let mixed: [number, number, number, number] | undefined;
-  let total = 0;
-  for (const { css, weight } of members) {
-    let next: readonly [number, number, number, number];
-    try {
-      next = parseColor(css);
-    } catch {
-      return undefined;
-    }
-    total += weight;
-    if (!mixed) {
-      mixed = [...next];
-      continue;
-    }
-    const t = weight / total;
-    const [r, g, b] = interpolateSrgb([mixed[0], mixed[1], mixed[2]], [next[0], next[1], next[2]], t, 'oklch');
-    mixed = [r, g, b, mixed[3] + (next[3] - mixed[3]) * t];
+  try {
+    return rgbaToHex(mixRgbaWeighted(members.map(({ css, weight }) => ({ color: parseColor(css), weight }))));
+  } catch {
+    return undefined;
   }
-  return rgbaToHex(mixed!);
 }
 
 function blend(members: readonly Weighted[]): string {
@@ -58,7 +44,7 @@ function blend(members: readonly Weighted[]): string {
 /**
  * `theme` partway between values of its axes: resolved at every selection
  * `weights` gives a share to, and each token folded from what it resolved to
- * there. A color mixes in OKLCH and a number with one unit throughout mixes
+ * there. A color mixes in OKLCH, premultiplied by alpha as `color-mix()` mixes, and a number with one unit throughout mixes
  * linearly; any other value is the heaviest selection's, the first on a tie.
  * It is the resolved values that mix, never the rules behind them, so a token
  * that is an alias in one mode and a literal in the other blends like any

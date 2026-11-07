@@ -218,8 +218,37 @@ describe('colorLiteralToCss', () => {
     expect(colorLiteralToCss({ space: 'oklch', coords: [1, 0, 0] })).toBe('#ffffff');
   });
 
-  it('writes any other space as a color() function', () => {
+  it('writes a predefined space as a color() function', () => {
     expect(colorLiteralToCss({ space: 'display-p3', coords: [1, 0, 0] })).toBe('color(display-p3 1 0 0)');
     expect(colorLiteralToCss({ space: 'display-p3', coords: [1, 0, 0], alpha: 0.25 })).toBe('color(display-p3 1 0 0 / 0.25)');
+  });
+
+  it('writes a space CSS gives a function of its own as that function', () => {
+    expect(colorLiteralToCss({ space: 'hsl', coords: [210, 50, 40] })).toBe('hsl(210 50% 40%)');
+    expect(colorLiteralToCss({ space: 'hwb', coords: [210, 10, 20], alpha: 0.5 })).toBe('hwb(210 10% 20% / 0.5)');
+    expect(colorLiteralToCss({ space: 'lab', coords: [50, 20, -30] })).toBe('lab(50 20 -30)');
+    expect(colorLiteralToCss({ space: 'lch', coords: [50, 30, 120] })).toBe('lch(50 30 120)');
+  });
+
+  // CSS Color 4: these spaces have functions of their own; color() takes only the predefined ones.
+  const VALID = [
+    /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/,
+    /^(?:hsl|hwb)\(-?[\d.]+ -?[\d.]+% -?[\d.]+%(?: \/ [\d.]+)?\)$/,
+    /^(?:lab|lch|oklab|oklch)\(-?[\d.]+ -?[\d.]+ -?[\d.]+(?: \/ [\d.]+)?\)$/,
+    /^color\((?:srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65) -?[\d.]+ -?[\d.]+ -?[\d.]+(?: \/ [\d.]+)?\)$/,
+  ];
+  const SPACES = ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'xyz', 'xyz-d50', 'xyz-d65', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'];
+
+  it('writes every space CSS names in one of its valid forms', () => {
+    for (const space of SPACES) {
+      for (const alpha of [undefined, 0.5]) {
+        const css = colorLiteralToCss({ space, coords: [0.4, 0.2, 0.1], ...(alpha === undefined ? {} : { alpha }) });
+        expect(VALID.some((form) => form.test(css ?? '')), `${space}: ${css}`).toBe(true);
+      }
+    }
+  });
+
+  it('is null for a space CSS has no notation for', () => {
+    expect(colorLiteralToCss({ space: 'cmyk', coords: [0, 0, 0, 1] })).toBeNull();
   });
 });

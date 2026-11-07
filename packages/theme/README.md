@@ -222,6 +222,9 @@ axes at once adds layers for their combinations. This follows the same idea as
 the DTCG resolver module's modifiers and Tokens Studio's theme groups: a base
 set plus per-dimension overrides rather than one mode per combination.
 
+A theme's own ramps (ramp name to step names) and tint list ride beside it in
+`$extensions["com.weasel.ramps"]` and `$extensions["com.weasel.tints"]`.
+
 ## Editing tokens
 
 `src/generated/` is generated — never edit it. Change `themes/weasel.json`,

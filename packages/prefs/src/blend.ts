@@ -1,6 +1,6 @@
 // How the alternatives of a split value fold into one, by kind.
 
-import { hexToRgba, interpolateSrgb, rgbaToHex } from '@weasel-js/paint';
+import { hexToRgba, mixRgbaWeighted, rgbaToHex } from '@weasel-js/paint';
 import type { PrefWeighted } from './scope';
 import type { PrefLeaf } from './schema';
 
@@ -25,28 +25,12 @@ const blendNumber: PrefBlend = (members, leaf) => {
   return sum / total;
 };
 
-type Rgba = [number, number, number, number];
-
 const blendColor: PrefBlend = (members, leaf) => {
-  let mixed: Rgba | undefined;
-  let total = 0;
-  for (const { value, weight } of members) {
-    let next: Rgba;
-    try {
-      next = hexToRgba(value as string);
-    } catch {
-      return heaviest(members, leaf);
-    }
-    total += weight;
-    if (!mixed) {
-      mixed = next;
-      continue;
-    }
-    const t = weight / total;
-    const [r, g, b] = interpolateSrgb([mixed[0], mixed[1], mixed[2]], [next[0], next[1], next[2]], t, 'oklch');
-    mixed = [r, g, b, mixed[3] + (next[3] - mixed[3]) * t];
+  try {
+    return rgbaToHex(mixRgbaWeighted(members.map(({ value, weight }) => ({ color: hexToRgba(value as string), weight }))));
+  } catch {
+    return heaviest(members, leaf);
   }
-  return rgbaToHex(mixed!);
 };
 
 /** The blends of the built-in kinds that have one. Every other kind takes its heaviest member. */

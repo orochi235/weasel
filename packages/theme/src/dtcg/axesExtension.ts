@@ -3,6 +3,12 @@ import type { AxisDefs, Selection } from '../axes.ts';
 /** The `$extensions` key on a DTCG export's root that carries every axis besides mode. */
 export const AXES_EXT = 'com.weasel.axes';
 
+/** The `$extensions` key on a DTCG export's root that carries the ramps a theme declares itself: ramp name → step names. */
+export const RAMPS_EXT = 'com.weasel.ramps';
+
+/** The `$extensions` key on a DTCG export's root that carries a theme's own tint list. */
+export const TINTS_EXT = 'com.weasel.tints';
+
 /** The token groups of one layer: plain values, and values per mode. */
 export interface DtcgLayer {
   readonly primitives: Record<string, Record<string, unknown>>;

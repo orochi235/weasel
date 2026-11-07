@@ -2,7 +2,7 @@ import { isPlainObject } from '@weasel-js/registry';
 import { isByAxis, type AxisDefs, type Varying } from './axes.ts';
 import type { SerializableColorList } from './colorListItems.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
-import type { RawToken, TokenValue } from './dtcg/types.ts';
+import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from './dtcg/types.ts';
 import { BAKED_THEMES } from './generated/themes.ts';
 
 /**
@@ -66,7 +66,10 @@ export function defineTheme(input: ThemeInput): Theme {
     );
   }
   const tokens: Record<string, Varying<RawToken>> = {};
-  for (const [name, v] of Object.entries({ ...input.components, ...input.pins })) tokens[name] = toRaw(v);
+  for (const [name, v] of Object.entries({ ...input.components, ...input.pins })) {
+    if (!isSafeTokenName(name)) throw new Error(`Theme "${input.name}": ${unsafeTokenName(name)}`);
+    tokens[name] = toRaw(v);
+  }
   return {
     name: input.name,
     extends: input.extends === undefined ? weaselTheme : input.extends,

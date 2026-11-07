@@ -1,11 +1,11 @@
 import { isPlainObject } from '@weasel-js/registry';
 import { pick, type Selection, type Varying } from '../axes.ts';
 import type { PinObject, SemanticRule } from '../definition.ts';
+import { refTarget } from '../dtcg/resolve.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
 import { contrast, toLch } from './color/oklch.ts';
 import type { Issue } from './types.ts';
 
-const TOKEN_REF = /^\{([^}.]+)\}$/;
 const HEX = /^#[0-9a-f]{6}$/i;
 const MAX_DEPTH = 32;
 
@@ -44,8 +44,6 @@ interface Env {
 
 const isRecord = isPlainObject;
 
-const refTarget = (value: TokenValue): string | undefined =>
-  typeof value === 'string' ? TOKEN_REF.exec(value.trim())?.[1] : undefined;
 
 export function deriveSemantics(
   rules: Readonly<Record<string, Varying<SemanticRule>>>,
@@ -79,9 +77,9 @@ export function deriveSemantics(
   const color = (value: TokenValue | undefined, depth = 0): string | undefined => {
     if (typeof value !== 'string' || depth > MAX_DEPTH) return undefined;
     const v = value.trim();
-    const m = TOKEN_REF.exec(v);
-    if (!m) return HEX.test(v) ? v.toLowerCase() : undefined;
-    return solid(ctx.pinned(m[1]) ?? ctx.tokens[m[1]] ?? get(m[1])?.token ?? ctx.component(m[1]), depth + 1);
+    const m = refTarget(v);
+    if (m === null) return HEX.test(v) ? v.toLowerCase() : undefined;
+    return solid(ctx.pinned(m) ?? ctx.tokens[m] ?? get(m)?.token ?? ctx.component(m), depth + 1);
   };
   const solid = (t: { readonly value: TokenValue; readonly alpha?: number } | undefined, depth = 0) =>
     t && t.alpha === undefined ? color(t.value, depth) : undefined;
@@ -102,7 +100,7 @@ export function deriveSemantics(
     const pin = ctx.pinned(name);
     if (pin) {
       const target = refTarget(pin.value);
-      return target === undefined ? undefined : positionAt(target, depth + 1);
+      return target === null ? undefined : positionAt(target, depth + 1);
     }
     return Object.hasOwn(rules, name) ? get(name)?.position : undefined;
   };
@@ -241,9 +239,9 @@ export function checkSemantics(
       const t = tokens[n];
       if (t.alpha !== undefined || typeof t.value !== 'string') return undefined;
       const v = t.value.trim();
-      const m = TOKEN_REF.exec(v);
-      if (!m) return HEX.test(v) ? v.toLowerCase() : undefined;
-      n = m[1];
+      const m = refTarget(v);
+      if (m === null) return HEX.test(v) ? v.toLowerCase() : undefined;
+      n = m;
     }
   };
 

@@ -1,4 +1,4 @@
-import { enumerateSelections, fullSelection, pickAll, type AxisDefs, type Selection } from '../../axes.ts';
+import { axisScheme, enumerateSelections, fullSelection, pickAll, wzlAttr, type AxisDefs, type Selection } from '../../axes.ts';
 import { tokenAt } from '../../chainTokens.ts';
 import { mixAlpha } from '../../dtcg/color.ts';
 import { refTarget, resolveTokens } from '../../dtcg/resolve.ts';
@@ -34,16 +34,6 @@ function combinations(axes: AxisDefs, set: readonly string[]): Selection[] {
   let out: Record<string, string>[] = [{}];
   for (const axis of set) out = out.flatMap((s) => Object.keys(axes[axis].values).map((v) => ({ ...s, [axis]: v })));
   return out;
-}
-
-/** The value's scheme, or `normal` when a sibling value has one, so a nested scheme-less value resets it.
- *  A value the theme doesn't declare at all falls back to its tokens from the theme's own default value,
- *  so it takes that value's scheme too, rather than a blanket reset. */
-function schemeOf(axes: AxisDefs, axis: string, value: string): string | undefined {
-  const def = axes[axis];
-  if (!def) return undefined;
-  if (!(value in def.values)) return schemeOf(axes, axis, def.default);
-  return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
 }
 
 function checkSchemes({ name, axes }: BakedTheme): void {
@@ -125,9 +115,9 @@ function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string
     const schemeAxis = set.length === 1 ? set[0] : undefined;
 
     for (const combo of combinations(axes, set)) {
-      const scheme = schemeAxis ? schemeOf(plan.schemes, schemeAxis, combo[schemeAxis]) : undefined;
+      const scheme = schemeAxis ? axisScheme(plan.schemes, schemeAxis, combo[schemeAxis]) : undefined;
       if (ownFirst.length === 0 && !scheme) continue;
-      const attrs = set.map((a) => `[data-wzl-${a}='${combo[a]}']`).join('');
+      const attrs = set.map((a) => wzlAttr(a, combo[a])).join('');
       const decls = ownFirst.flatMap((name) => {
         const token = plan.value(name, combo);
         return token ? [`  --wzl-${name}: ${cssValue(name, token)};`] : [];
@@ -204,7 +194,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
 
   const reset = Object.keys(rootValues).filter((n) => redeclared.has(n) && (def.deps[n]?.all.length ?? 0) === 0);
   if (reset.length > 0) {
-    lines.push(`[data-wzl-theme='${theme}'] {`, ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, rootValues[n])};`), '}', '');
+    lines.push(`${wzlAttr('theme', theme)} {`, ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, rootValues[n])};`), '}', '');
   }
 
   blocks(
@@ -218,7 +208,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
       own: (n) => def.deps[n]?.own ?? [],
       value: (n, sel) => pickAll(def.baked.tokens, fullSelection(axes, sel))[n],
     },
-    (attrs) => [`[data-wzl-theme='${theme}']${attrs},`, `${attrs} {`],
+    (attrs) => [`${wzlAttr('theme', theme)}${attrs},`, `${attrs} {`],
   );
 
   for (const plan of others) {
@@ -226,14 +216,14 @@ export function emitCss(themes: readonly EmitInput[]): string {
     if (invariant.length > 0) {
       // `[data-wzl-theme='x']` alone already ties the default's `:root` on specificity and wins on source
       // order, since the default emits first; `:root[...]` guards only against that emission order changing.
-      lines.push(`:root[data-wzl-theme='${plan.theme}'],`, `[data-wzl-theme='${plan.theme}'] {`);
+      lines.push(`:root${wzlAttr('theme', plan.theme)},`, `${wzlAttr('theme', plan.theme)} {`);
       for (const n of invariant) {
         const token = plan.value(n, {});
         if (token) lines.push(`  --wzl-${n}: ${cssValue(n, token)};`);
       }
       lines.push('}', '');
     }
-    blocks(lines, plan, (attrs) => [`[data-wzl-theme='${plan.theme}']${attrs} {`]);
+    blocks(lines, plan, (attrs) => [`${wzlAttr('theme', plan.theme)}${attrs} {`]);
   }
 
   return lines.join('\n');

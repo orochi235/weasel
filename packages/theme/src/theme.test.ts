@@ -35,6 +35,11 @@ describe('defineTheme', () => {
     );
   });
 
+  it('refuses a token name a custom property cannot carry, as derive does', () => {
+    expect(() => defineTheme({ name: 'x', pins: { 'font size': '12px' } })).toThrow(/"font size" cannot name a token/);
+    expect(() => defineTheme({ name: 'x', components: { 'a.b': '1px' } })).toThrow(/"a\.b" cannot name a token/);
+  });
+
   it('exposes the built-in theme with both modes', () => {
     expect(Object.keys(weaselTheme.axes.mode.values).sort()).toEqual(['dark', 'light']);
   });

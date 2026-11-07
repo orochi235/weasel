@@ -70,7 +70,6 @@ export {
   srgbFloatToOklab,
   oklabToSrgbU8,
   lerpOklab,
-  mixOklab,
   oklabToOklch,
   oklchToOklab,
   lerpOklch,
@@ -89,6 +88,7 @@ export {
   type ColorSpace,
   type OklchDeg,
 } from './colorSpaces';
+export { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 export { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';
 export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
 export { parseHexBytes, hexToRgbBytes } from './hex';
@@ -116,6 +116,7 @@ export {
   resolvePaletteColor,
   resolvePaletteColors,
   colorLiteralToCss,
+  cssColorNotation,
   colorLiteralToHex,
   cssColorLiteral,
   hexToColorLiteral,

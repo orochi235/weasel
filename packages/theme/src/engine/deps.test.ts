@@ -40,6 +40,11 @@ describe('axisDependencies', () => {
     expect(deps.hatch).toEqual({ own: [], all: ['mode', 'density'] });
   });
 
+  it('follows a reference written with its type group, as resolveTheme reads it', () => {
+    const grouped = axisDependencies({ ...D, pins: { ...D.pins, rim: '{color.surface}' } });
+    expect(grouped.rim).toEqual({ own: [], all: ['mode'] });
+  });
+
   it('counts a token that reaches density only through a chain of references', () => {
     expect(deps.chip).toEqual({ own: [], all: ['density'] });
   });

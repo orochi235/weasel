@@ -1,5 +1,5 @@
 import { hslToSrgb, linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
-import { parseHexBytes } from './hex';
+import { byteHex, parseHexBytes } from './hex';
 
 /**
  * Parse a CSS color string into [r, g, b, a] with 0..1 components.
@@ -119,7 +119,7 @@ export function tryNormalizeHex(input: string, form?: HexForm): string | undefin
   const hashed = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   const bytes = parseHexBytes(hashed);
   if (!bytes) return undefined;
-  const digits = bytes.map((n) => n.toString(16).padStart(2, '0')).join('');
+  const digits = bytes.map(byteHex).join('');
   const alpha = form ? form === 'rgba' : hashed.length === 5 || hashed.length === 9;
   return `#${alpha ? digits : digits.slice(0, 6)}`;
 }
@@ -139,7 +139,7 @@ export function hexToRgba(input: string): [number, number, number, number] {
 export function rgbaToHex(rgba: readonly [number, number, number, number] | readonly [number, number, number]): string {
   const [r, g, b] = rgba;
   const a = rgba.length === 4 ? rgba[3] : 1;
-  const f = (n: number) => Math.max(0, Math.min(255, Math.round(n * 255))).toString(16).padStart(2, '0');
+  const f = (n: number) => byteHex(n * 255);
   const base = `#${f(r)}${f(g)}${f(b)}`;
   return a >= 1 ? base : `${base}${f(a)}`;
 }

@@ -5,7 +5,7 @@
  * muddy brown.
  */
 import { parseColor, rgbaToHex } from './color';
-import { mixOklab } from './colorSpaces';
+import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
 import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from './paint';
 

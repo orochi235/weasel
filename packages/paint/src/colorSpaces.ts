@@ -1,6 +1,6 @@
 // sRGB ↔ OKLab conversion. Reference: https://bottosson.github.io/posts/oklab/
 
-import { hexToRgbBytes } from './hex';
+import { byteHex, hexToRgbBytes } from './hex';
 import { shortArc } from './shortArc';
 
 const SRGB_TO_LINEAR: Float64Array = (() => {
@@ -114,25 +114,6 @@ export function lerpOklab(
     from[1] + (to[1] - from[1]) * t,
     from[2] + (to[2] - from[2]) * t,
   ];
-}
-
-/**
- * `color-mix(in oklab, a p%, b)` for two 0..1 sRGBA colors, `p` as 0..1: the
- * channels mix premultiplied by alpha, as CSS does, so a transparent side
- * lends the result its opacity and none of its color.
- */
-export function mixOklab(
-  a: readonly [number, number, number, number],
-  b: readonly [number, number, number, number],
-  p: number,
-): [number, number, number, number] {
-  const alpha = a[3] * p + b[3] * (1 - p);
-  if (alpha === 0) return [0, 0, 0, 0];
-  const la = srgbFloatToOklab(a[0], a[1], a[2]);
-  const lb = srgbFloatToOklab(b[0], b[1], b[2]);
-  const mix = (i: number) => (la[i] * a[3] * p + lb[i] * b[3] * (1 - p)) / alpha;
-  const [r, g, bl] = oklabToSrgbU8(mix(0), mix(1), mix(2));
-  return [r / 255, g / 255, bl / 255, alpha];
 }
 
 /** Convert OKLab (L, a, b) to OKLCh (L, C, h). h is in radians, range [-π, π]. */
@@ -257,8 +238,6 @@ export interface OklchDeg {
   readonly H: number;
 }
 
-const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
-
 /**
  * OKLCh (hue in degrees) to `#rrggbb`. Over-saturated requests come back at
  * the gamut boundary: `oklabToSrgbU8` clips chroma at constant lightness, which
@@ -267,7 +246,7 @@ const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).to
 export function oklchDegToHex(L: number, C: number, hueDeg: number): string {
   const [l, a, b] = oklchToOklab(L, C, (hueDeg * Math.PI) / 180);
   const [r, g, bl] = oklabToSrgbU8(l, a, b);
-  return `#${hex2(r)}${hex2(g)}${hex2(bl)}`;
+  return `#${byteHex(r)}${byteHex(g)}${byteHex(bl)}`;
 }
 
 /** A hex color (`#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`, alpha ignored) to
@@ -362,10 +341,10 @@ function lerpHueDeg(h1: number, h2: number, t: number, method: HueInterpolation)
 
 type Polar = readonly [radius: number, hueDeg: number, axis: number];
 
-function lerpPolar(a: Polar, b: Polar, t: number, method: HueInterpolation): [number, number, number] {
+function lerpPolar(a: Polar, b: Polar, t: number, method: HueInterpolation, hueT: number): [number, number, number] {
   const h1 = a[0] < ACHROMATIC_EPS ? b[1] : a[1];
   const h2 = b[0] < ACHROMATIC_EPS ? a[1] : b[1];
-  return [a[0] + (b[0] - a[0]) * t, lerpHueDeg(h1, h2, t, method), a[2] + (b[2] - a[2]) * t];
+  return [a[0] + (b[0] - a[0]) * t, lerpHueDeg(h1, h2, hueT, method), a[2] + (b[2] - a[2]) * t];
 }
 
 type Rgb = readonly [number, number, number];
@@ -403,6 +382,18 @@ export function interpolateSrgb(
   space: ColorInterpolationSpace = 'oklch',
   hue: HueInterpolation = 'shorter',
 ): [number, number, number] {
+  return interpolateSrgbSplit(from, to, t, t, space, hue);
+}
+
+/** {@link interpolateSrgb} with the hue of a polar space at `hueT` and everything else at `t`, as a premultiplied mix needs. */
+export function interpolateSrgbSplit(
+  from: Rgb,
+  to: Rgb,
+  t: number,
+  hueT: number,
+  space: ColorInterpolationSpace,
+  hue: HueInterpolation,
+): [number, number, number] {
   switch (space) {
     case 'srgb':
       return lerp3(from, to, t);
@@ -420,7 +411,7 @@ export function interpolateSrgb(
         const [L, C, h] = oklabToOklch(...srgbToOklabFloat(c));
         return [C, (((h * 180) / Math.PI) % 360 + 360) % 360, L];
       };
-      const [C, H, L] = lerpPolar(polar(from), polar(to), t, hue);
+      const [C, H, L] = lerpPolar(polar(from), polar(to), t, hue, hueT);
       const [l, a, b] = oklchToOklab(L, C, (H * Math.PI) / 180);
       return oklabToSrgbClipped(l, a, b);
     }
@@ -429,7 +420,7 @@ export function interpolateSrgb(
         const [h, s, l] = srgbToHsl(c[0], c[1], c[2]);
         return [s, h, l];
       };
-      const [s, h, l] = lerpPolar(polar(from), polar(to), t, hue);
+      const [s, h, l] = lerpPolar(polar(from), polar(to), t, hue, hueT);
       return hslToSrgb(h, s, l);
     }
   }

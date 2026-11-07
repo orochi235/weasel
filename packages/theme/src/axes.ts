@@ -61,6 +61,21 @@ export function enumerateSelections(axes: AxisDefs): Selection[] {
   return out;
 }
 
+/** The `color-scheme` an axis value writes: its own, or `normal` when a sibling value has one, so a nested
+ *  scheme-less value resets it. A value the axis doesn't declare takes its default's, whose tokens it falls
+ *  back to, rather than a blanket reset. */
+export function axisScheme(axes: AxisDefs, axis: string, value: string): string | undefined {
+  const def = axes[axis];
+  if (!def) return undefined;
+  if (!(value in def.values)) return axisScheme(axes, axis, def.default);
+  return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
+}
+
+/** The selector matching `data-wzl-<attr>` equal to `value`, quoted so any theme name or axis value reads as itself. */
+export function wzlAttr(attr: string, value: string): string {
+  return `[data-wzl-${attr}='${value.replace(/[\\']/g, '\\$&').replace(/\n/g, '\\a ')}']`;
+}
+
 /** `mode=dark,density=compact`, axes in declaration order. */
 export function selectionKey(axes: AxisDefs, selection: Selection): string {
   const full = fullSelection(axes, selection);

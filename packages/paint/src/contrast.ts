@@ -1,8 +1,6 @@
 import { parseColor } from './color';
 import { oklabToSrgbU8, srgbToLinear, srgbU8ToOklab } from './colorSpaces';
-import { parseHexBytes } from './hex';
-
-const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+import { byteHex, parseHexBytes } from './hex';
 
 /**
  * A line color that reads against `background` — a grid, a rule, a guide
@@ -20,7 +18,7 @@ export function contrastLineColor(background: string, strength: number): string 
   const [L, A, B] = srgbU8ToOklab(rgb[0], rgb[1], rgb[2]);
   const next = L > 0.5 ? Math.max(0, L - strength) : Math.min(1, L + strength);
   const [r, g, b] = oklabToSrgbU8(next, A, B);
-  return `#${hex2(r)}${hex2(g)}${hex2(b)}`;
+  return `#${byteHex(r)}${byteHex(g)}${byteHex(b)}`;
 }
 
 /** WCAG 2.x relative luminance of an sRGB color, channels 0..1: 0 for black, 1 for white. */

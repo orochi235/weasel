@@ -21,6 +21,11 @@ describe('blendTheme', () => {
     expect(blendTheme(weaselTheme, { mode: { dark: 0.75, light: 0.25 } })['--wzl-surface']).toBe(rgbaToHex([r, g, bl, 1]));
   });
 
+  it('mixes alpha premultiplied, as color-mix() does, so a blend toward transparent keeps its hue', () => {
+    const theme = defineTheme({ name: 'x', pins: { info: { by: 'mode', dark: '#ff0000', light: 'transparent' } } });
+    expect(blendTheme(theme, { mode: { dark: 1, light: 1 } })['--wzl-info']).toBe('#ff000080');
+  });
+
   it('mixes a number in its unit, across two axes at once', () => {
     const at = (density: string): number => Number.parseFloat(resolveTheme(weaselTheme, { density })['--wzl-control-h']);
     const half = blendTheme(weaselTheme, { density: { compact: 1, roomy: 1 }, mode: { dark: 1, light: 1 } });

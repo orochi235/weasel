@@ -20,6 +20,12 @@ describe('toDTCG', () => {
     for (const mode of ['dark', 'light']) expect(resolveTheme(back, { mode })).toEqual(resolveTheme(t, { mode }));
   });
 
+  it('round-trips the ramps and tints a theme declares itself', () => {
+    const back = loadDTCG({ ...toDTCG(weaselTheme), extends: null });
+    expect(back.ramps).toEqual(weaselTheme.ramps);
+    expect(back.tints).toEqual(weaselTheme.tints);
+  });
+
   it("round-trips a pin's scope", () => {
     const t = defineTheme({ name: 'x', pins: { 'gray-50': { value: '#f5f5f6', type: 'color', scope: ['density'] } } });
     const back = loadDTCG({ ...toDTCG(t), extends: weaselTheme });

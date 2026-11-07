@@ -47,6 +47,21 @@ describe('applyTheme', () => {
     expect(text).toContain('--wzl-accent: #ff0000');
   });
 
+  it('writes a rule that matches its element when the theme name holds a quote or a backslash', () => {
+    const el = document.createElement('div');
+    document.body.append(el);
+    applyTheme(el, defineTheme({ name: "bob's \\ theme", pins: { 'accent-base': '#ff0000' } }), { mode: 'dark' });
+    const rules = [...document.adoptedStyleSheets, ...document.styleSheets].flatMap((s) => [...s.cssRules]) as CSSStyleRule[];
+    expect(rules.some((r) => r.selectorText !== undefined && el.matches(r.selectorText))).toBe(true);
+    el.remove();
+  });
+
+  it("writes the selected axis value's color scheme, as the stylesheet does", () => {
+    const sepia = defineTheme({ name: 'sepia', axes: { mode: { default: 'dark', values: { sepia: { scheme: 'light' } } } } });
+    applyTheme(document.createElement('div'), sepia, { mode: 'sepia' });
+    expect(readSheetText()).toContain('color-scheme: light');
+  });
+
   it('re-emits when a theme is redefined under the same name', () => {
     // `defineTheme` takes a caller-supplied name and enforces no uniqueness,
     // so an edit-and-reload (HMR, a theme editor) produces a new Theme with

@@ -163,7 +163,7 @@
     "longestFunction": 208
   },
   "packages/paint/src/colorSpaces.ts": {
-    "lines": 436
+    "lines": 427
   },
   "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 520
@@ -195,7 +195,7 @@
     "longestFunction": 208
   },
   "packages/theme/src/engine/derive.ts": {
-    "lines": 478,
+    "lines": 474,
     "longestFunction": 172
   },
   "packages/ui/src/components/Badge/Badge.tsx": {

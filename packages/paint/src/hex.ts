@@ -13,6 +13,11 @@ export function parseHexBytes(input: string): [number, number, number, number] |
   return [byte(0), byte(2), byte(4), long.length === 8 ? byte(6) : 255];
 }
 
+/** The kit's one hex color writer: a 0..255 channel as two hex digits, rounded and clamped. */
+export function byteHex(v: number): string {
+  return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+}
+
 /** A hex color's red, green, and blue as 0..255, its alpha dropped. Throws on anything {@link parseHexBytes} does not read. */
 export function hexToRgbBytes(input: string): [number, number, number] {
   const bytes = parseHexBytes(input);

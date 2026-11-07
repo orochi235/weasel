@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray, mixOklab, hexToOklchDeg } from './colorSpaces';
+import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray, hexToOklchDeg } from './colorSpaces';
+import { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 
 describe('srgbU8 ↔ Oklab', () => {
   it('round-trips every byte triple within ±1 per channel', () => {
@@ -100,6 +101,34 @@ describe('mixOklab', () => {
     const got = u8(mixOklab(hex('#2e1f7a'), [0, 0, 0, 0], 0.3));
     [46, 30, 123].forEach((v, i) => expect(Math.abs(got[i] - v)).toBeLessThanOrEqual(1));
     expect(got[3]).toBeCloseTo(0.3);
+  });
+});
+
+describe('mixRgba', () => {
+  it('keeps the hue of the opaque side in OKLCH too, rather than drifting toward black', () => {
+    const got = mixRgba([1, 0, 0, 1], [0, 0, 0, 0], 0.5);
+    [1, 0, 0].forEach((v, i) => expect(got[i]).toBeCloseTo(v, 6));
+    expect(got[3]).toBe(0.5);
+  });
+
+  it('is the plain interpolation between two opaque colors', () => {
+    const got = mixRgba([1, 1, 1, 1], [0, 0, 0, 1], 1);
+    [1, 1, 1, 1].forEach((v, i) => expect(got[i]).toBeCloseTo(v, 6));
+  });
+
+  it('is transparent black where both sides are transparent', () => {
+    expect(mixRgba([1, 0, 0, 0], [0, 0, 1, 0], 0.5)).toEqual([0, 0, 0, 0]);
+  });
+});
+
+describe('mixRgbaWeighted', () => {
+  it('weighs each color by its share, premultiplied', () => {
+    const got = mixRgbaWeighted([
+      { color: [0, 0, 1, 1], weight: 1 },
+      { color: [0, 0, 0, 0], weight: 3 },
+    ]);
+    [0, 0, 1].forEach((v, i) => expect(got[i]).toBeCloseTo(v, 6));
+    expect(got[3]).toBeCloseTo(0.25);
   });
 });
 

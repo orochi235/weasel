@@ -45,4 +45,36 @@ describe('flattenTokens', () => {
       }),
     ).toThrow(/duplicate.*line/i);
   });
+
+  it('throws on a leaf name a custom property cannot carry', () => {
+    expect(() => flattenTokens({ dimension: { $type: 'dimension', 'font size': { $value: '12px' } } })).toThrow(
+      /"font size" cannot name a token/,
+    );
+  });
+
+  const valueOf = (type: string, $value: unknown) => flattenTokens({ g: { $type: type, t: { $value } } }).t.value;
+
+  it('writes an object dimension or duration as a CSS length or time', () => {
+    expect(valueOf('dimension', { value: 8, unit: 'px' })).toBe('8px');
+    expect(valueOf('dimension', { value: 0.5, unit: 'rem' })).toBe('0.5rem');
+    expect(valueOf('duration', { value: 120, unit: 'ms' })).toBe('120ms');
+  });
+
+  it('writes an object color in CSS’s own notation for its space, converting nothing', () => {
+    expect(valueOf('color', { colorSpace: 'srgb', components: [1, 0, 0.5] })).toBe('#ff0080');
+    expect(valueOf('color', { colorSpace: 'srgb', components: [1, 0, 0], alpha: 0.5 })).toBe('#ff000080');
+    expect(valueOf('color', { colorSpace: 'oklch', components: [0.7, 0.3, 150] })).toBe('oklch(0.7 0.3 150)');
+    expect(valueOf('color', { colorSpace: 'hsl', components: [210, 50, 40], alpha: 0.25 })).toBe('hsl(210 50% 40% / 0.25)');
+    expect(valueOf('color', { colorSpace: 'display-p3', components: [1, 0, 0] })).toBe('color(display-p3 1 0 0)');
+    expect(valueOf('color', { colorSpace: 'lch', components: [50, 0, 'none'] })).toBe('lch(50 0 none)');
+  });
+
+  it('keeps an sRGB color outside the gamut rather than clamping it into hex', () => {
+    expect(valueOf('color', { colorSpace: 'srgb', components: [1.2, 0, -0.1] })).toBe('color(srgb 1.2 0 -0.1)');
+  });
+
+  it('throws naming the token for a value it cannot write as CSS', () => {
+    expect(() => valueOf('color', { colorSpace: 'cmyk', components: [0, 0, 0, 1] })).toThrow(/"t".*cmyk/);
+    expect(() => valueOf('shadow', { color: '#000', offsetX: '0px', offsetY: '1px', blur: '2px', spread: '0px' })).toThrow(/"t".*shadow/);
+  });
 });
