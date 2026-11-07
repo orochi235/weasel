@@ -9,6 +9,10 @@
  * loop would make the browser run main-thread frames a compositor animation does not need. On the
  * main-thread path the animator's own loop runs them, so the two agree.
  *
+ * **Load.** A cell either leaves the main thread to the animator, or keeps it busy 8 ms of every
+ * 16 with tasks of the page's own, as an app's work would. A compositor animation goes on without
+ * the main thread; a main-thread one waits for it.
+ *
  * **ABBA order.** Each count runs `main compositor compositor main`, reversed on the next pass.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
@@ -24,13 +28,16 @@ import type { Approach, Cell, FrameStats, Shape } from './lib/compositorHandoff.
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-const ALL_COUNTS = [1000, 2000, 4000, 8000, 16000];
+const ALL_COUNTS = [2000, 4000, 6000, 8000];
 /** `CH_COUNTS=2000,6000` narrows the sweep. */
 const only = process.env.CH_COUNTS?.split(',').map(Number).filter(Number.isFinite);
 const COUNTS = only?.length ? only : ALL_COUNTS;
-const ALL_SHAPES: Shape[] = ['drift', 'slide', 'wave'];
+const ALL_SHAPES: Shape[] = ['drift', 'slide'];
 /** `CH_SHAPES=drift` narrows the sweep. */
 const SHAPES = (process.env.CH_SHAPES?.split(',').filter((x): x is Shape => ALL_SHAPES.includes(x as Shape))) ?? ALL_SHAPES;
+const ALL_LOADS = [0, 8];
+/** `CH_LOADS=8` narrows the sweep. */
+const LOADS = process.env.CH_LOADS?.split(',').map(Number).filter(Number.isFinite) ?? ALL_LOADS;
 const FRAMES = Number(process.env.CH_FRAMES ?? 120);
 /** ms run after a cell starts and before it is measured. */
 const WARMUP_MS = 2000;
@@ -137,14 +144,14 @@ const fmt = (x: number, w = 6, d = 1) => x.toFixed(d).padStart(w);
 test('compositor handoff: frame rate against concurrent count', async ({ page, browser, browserName }) => {
   const plan: (Cell & { pass: number })[] = [];
   for (let pass = 1; pass <= PASSES; pass++) {
-    for (const shape of SHAPES) for (const count of COUNTS) {
+    for (const load of LOADS) for (const shape of SHAPES) for (const count of COUNTS) {
       const ab: Approach[] = pass % 2 ? ['main', 'compositor'] : ['compositor', 'main'];
-      for (const approach of [...ab, ...[...ab].reverse()]) plan.push({ approach, count, shape, pass });
+      for (const approach of [...ab, ...[...ab].reverse()]) plan.push({ approach, count, shape, load, pass });
     }
   }
   test.setTimeout(120_000 + plan.length * 30_000);
   const run = startRun('compositor-handoff', {
-    counts: COUNTS, shapes: SHAPES, frames: FRAMES, warmupMs: WARMUP_MS, passes: PASSES, viewport: '1280x800', order: 'ABBA per count, reversed on alternate passes',
+    counts: COUNTS, shapes: SHAPES, loads: LOADS, frames: FRAMES, warmupMs: WARMUP_MS, passes: PASSES, viewport: '1280x800', order: 'ABBA per count, reversed on alternate passes',
   });
   const errors: string[] = [];
   const hmrNoise = /websocket|\[vite\]/i;
@@ -170,8 +177,8 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
   const samples: Sample[] = [];
   const unpainted: string[] = [];
   for (const [i, cell] of plan.entries()) {
-    const { painted, startMs, keyframes } = await call(page, 'setup', { approach: cell.approach, count: cell.count, shape: cell.shape });
-    if (!painted) unpainted.push(`${cell.shape} ${cell.approach} ${cell.count}`);
+    const { painted, startMs, keyframes } = await call(page, 'setup', { approach: cell.approach, count: cell.count, shape: cell.shape, load: cell.load });
+    if (!painted) unpainted.push(`${cell.shape} ${cell.approach} ${cell.count} load ${cell.load}`);
     await call(page, 'wait', WARMUP_MS);
     const free = await call(page, 'measure', FRAMES, null);
     const t = await traced(page, browser);
@@ -194,7 +201,7 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
     };
     samples.push(s);
     console.log(
-      `  ${String(i + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  ${cell.shape.padEnd(5)} ${cell.approach.padEnd(10)} ${String(cell.count).padStart(5)}`
+      `  ${String(i + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  load ${String(cell.load).padStart(2)}  ${cell.shape.padEnd(5)} ${cell.approach.padEnd(10)} ${String(cell.count).padStart(5)}`
       + `  page ${fmt(1000 / s.rafInterval)} fps (missed ${String(s.rafMissed).padStart(3)})  drawn ${fmt(s.drawFps)} fps`
       + `  main busy ${fmt(s.mainBusy, 5, 0)} comp ${fmt(s.compositorBusy, 5, 0)} ms/s  start ${fmt(s.startMs, 7, 0)} ms  keyframes ${String(s.keyframes).padStart(4)}`
       + `  on compositor ${String(s.onCompositor).padStart(5)}/${String(s.live).padStart(5)}  load ${fmt(s.load1, 5)}`,
@@ -207,19 +214,19 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
   expect(errors).toEqual([]);
   expect(unpainted, 'a cell that paints nothing measures free').toEqual([]);
   for (const s of samples) {
-    const id = `${s.shape} ${s.approach} ${s.count}`;
+    const id = `${s.shape} ${s.approach} ${s.count} load ${s.load}`;
     expect(s.drawFrames, `${id}: the trace recorded no DrawFrame`).toBeGreaterThan(0);
     expect(s.onCompositor, `${id}: runs on the compositor`).toBe(s.approach === 'compositor' ? s.count : 0);
   }
 
   run.machine(await browserFingerprint(page, browser, browserName));
-  const lines = ['', '| shape | count | main: page / drawn fps | compositor: page / drawn fps |', '|---|---:|---:|---:|'];
-  for (const shape of SHAPES) for (const count of COUNTS) {
+  const lines = ['', '| load | shape | count | main: page / drawn fps | compositor: page / drawn fps |', '|---:|---|---:|---:|---:|'];
+  for (const load of LOADS) for (const shape of SHAPES) for (const count of COUNTS) {
     const cells = (['main', 'compositor'] as const).map((approach) => {
-      const ss = samples.filter((s) => s.shape === shape && s.count === count && s.approach === approach);
+      const ss = samples.filter((s) => s.load === load && s.shape === shape && s.count === count && s.approach === approach);
       const page = ss.map((s) => +(1000 / s.rafInterval).toFixed(2));
       const drawn = ss.map((s) => +s.drawFps.toFixed(2));
-      run.item(`${shape} ${approach} ${count}`, {
+      run.item(`load ${load} ${shape} ${approach} ${count}`, {
         pageFps: metric(med(page), 'fps', `median of ${ss.length} untraced windows of ${FRAMES} frames, 1000 / mean rAF interval`, page),
         drawnFps: metric(med(drawn), 'fps', `median of ${ss.length} traced windows, DrawFrame events a second in the page's renderer`, drawn),
         startMs: metric(med(ss.map((s) => +s.startMs.toFixed(1))), 'ms', 'median, ms to start every run of the cell', ss.map((s) => +s.startMs.toFixed(1))),
@@ -228,10 +235,10 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
         missed: metric(med(ss.map((s) => s.rafMissed)), 'count', 'median of untraced windows, rAF intervals over 25 ms', ss.map((s) => s.rafMissed)),
         load1: metric(med(ss.map((s) => +s.load1.toFixed(2))), 'load', 'median 1-minute load as each sample finished', ss.map((s) => +s.load1.toFixed(2))),
         keyframes: metric(ss[0]?.keyframes ?? 0, 'count', 'keyframes in the first element\'s browser animation'),
-      }, { shape, approach, count, intervals: ss.map((s) => s.intervals), mainTop: ss.map((s) => s.mainTop) });
+      }, { load, shape, approach, count, intervals: ss.map((s) => s.intervals), mainTop: ss.map((s) => s.mainTop) });
       return `${fmt(med(page))} / ${fmt(med(drawn))}`;
     });
-    lines.push(`| ${shape.padEnd(5)} | ${String(count).padStart(5)} | ${cells[0]} | ${cells[1]} |`);
+    lines.push(`| ${String(load).padStart(2)} | ${shape.padEnd(5)} | ${String(count).padStart(5)} | ${cells[0]} | ${cells[1]} |`);
   }
   console.log(lines.join('\n'));
   run.write();

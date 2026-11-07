@@ -18,6 +18,8 @@ export interface Cell {
   approach: Approach;
   count: number;
   shape: Shape;
+  /** ms of other main-thread work in every 16: an app's own tasks, run as tasks, not frames. */
+  load: number;
 }
 
 export interface FrameStats {
@@ -41,6 +43,20 @@ const SWEEPS = RUN_MS / 2000;
 const wave = (x: number): number => 1 - 4 * Math.abs(x - Math.floor(x + 0.5));
 
 let root: Root | null = null;
+let stopLoad: (() => void) | null = null;
+
+/** Keeps the main thread busy `ms` of every 16 with tasks of its own, as an app's work would. */
+function startLoad(ms: number): () => void {
+  let on = true;
+  const burn = (): void => {
+    if (!on) return;
+    const until = performance.now() + ms;
+    while (performance.now() < until) { /* the work */ }
+    setTimeout(burn, 16 - ms);
+  };
+  setTimeout(burn, 0);
+  return () => { on = false; };
+}
 let animator: Animator | null = null;
 const stage = (): HTMLElement => document.getElementById('stage')!;
 
@@ -52,6 +68,8 @@ function Host({ ready }: { ready: (a: Animator) => void }) {
 
 /** Tears the last cell down and starts `cell`: `count` dots, each sweeping its own way. */
 export async function setup(cell: Cell): Promise<{ painted: boolean; startMs: number; keyframes: number }> {
+  stopLoad?.();
+  stopLoad = null;
   animator?.cancelAll();
   root?.unmount();
   stage().replaceChildren();
@@ -92,6 +110,7 @@ export async function setup(cell: Cell): Promise<{ painted: boolean; startMs: nu
     });
   }
   const startMs = performance.now() - started;
+  if (cell.load > 0) stopLoad = startLoad(cell.load);
   const anims = stage().firstElementChild?.getAnimations() ?? [];
   const keyframes = anims.length ? (anims[0]!.effect as KeyframeEffect).getKeyframes().length : 0;
   await frames(2);
@@ -131,6 +150,8 @@ export async function measure(n: number, mark: string | null): Promise<FrameStat
 export const wait = (ms: number): Promise<void> => new Promise((done) => { setTimeout(done, ms); });
 
 export function teardown(): void {
+  stopLoad?.();
+  stopLoad = null;
   animator?.cancelAll();
   root?.unmount();
   root = null;
