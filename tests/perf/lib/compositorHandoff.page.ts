@@ -10,9 +10,9 @@ import { useAnimator } from '@weasel-js/animator/react';
 
 export type Approach = 'main' | 'compositor';
 
-/** `drift`: one straight run across, two keyframes. `wave`: sweeps back and forth, a keyframe at
- *  every turn — the many-keyframe case. */
-export type Shape = 'drift' | 'wave';
+/** `drift`: one straight run across, moving and fading. `slide`: the same move with no fade, so
+ *  one property. `wave`: sweeps back and forth, a keyframe at every turn — the many-keyframe case. */
+export type Shape = 'drift' | 'slide' | 'wave';
 
 export interface Cell {
   approach: Approach;
@@ -72,7 +72,9 @@ export async function setup(cell: Cell): Promise<{ painted: boolean; startMs: nu
     const target = createElementTarget({
       element: el,
       value: { x: 0, y: 0, o: 1 },
-      style: (v) => ({ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.o }),
+      style: cell.shape === 'slide'
+        ? (v) => ({ transform: `translate(${v.x}px, ${v.y}px)` })
+        : (v) => ({ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.o }),
     });
     const angle = (i * 2.399) % (2 * Math.PI);
     // Sweeps back and forth across one long run, so the motion changes every frame of every
@@ -108,11 +110,16 @@ const frames = (n: number): Promise<number[]> => new Promise((done) => {
   requestAnimationFrame(tick);
 });
 
-/** The page's own frames over `n` of them, between two marks a trace can find. */
+/** The page's own frames over `n` of them; or, given `mark`, `n` frames' time at 60 Hz between two
+ *  marks a trace can find, with no frame asked for: a page frame loop of its own would make the
+ *  browser run the main thread's frame every vsync, which a compositor animation does not need. */
 export async function measure(n: number, mark: string | null): Promise<FrameStats> {
-  if (mark) performance.mark(`${mark}-start`);
-  const stamps = await frames(n + 1);
-  if (mark) performance.mark(`${mark}-end`);
+  let stamps: number[] = [];
+  if (mark) {
+    performance.mark(`${mark}-start`);
+    await wait((n * 1000) / 60);
+    performance.mark(`${mark}-end`);
+  } else stamps = await frames(n + 1);
   const live = animator?.live() ?? [];
   return {
     intervals: stamps.slice(1).map((t, i) => t - stamps[i]!),

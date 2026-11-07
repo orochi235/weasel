@@ -3,10 +3,11 @@
  * `Element.animate`: the frame rate each holds as the count of concurrent animations grows.
  *
  * **Two frame rates per cell.** The page's own (rAF intervals, from an untraced window) is the
- * main thread's. The compositor's is the `DrawFrame` events a Chromium trace records in the page's
- * renderer over a second window: a compositor animation draws frames the main thread never sees,
- * so the page's own rate cannot speak for it. On the main-thread path the two agree, since every
- * frame there waits on the main thread.
+ * main thread's. The drawn rate is the `DrawFrame` events a Chromium trace records in the page's
+ * renderer over a second window in which the page asks for no frames: a compositor animation draws
+ * frames the main thread never sees, so the page's own rate cannot speak for it, and a page frame
+ * loop would make the browser run main-thread frames a compositor animation does not need. On the
+ * main-thread path the animator's own loop runs them, so the two agree.
  *
  * **ABBA order.** Each count runs `main compositor compositor main`, reversed on the next pass.
  *
@@ -27,7 +28,7 @@ const ALL_COUNTS = [1000, 2000, 4000, 8000, 16000];
 /** `CH_COUNTS=2000,6000` narrows the sweep. */
 const only = process.env.CH_COUNTS?.split(',').map(Number).filter(Number.isFinite);
 const COUNTS = only?.length ? only : ALL_COUNTS;
-const ALL_SHAPES: Shape[] = ['drift', 'wave'];
+const ALL_SHAPES: Shape[] = ['drift', 'slide', 'wave'];
 /** `CH_SHAPES=drift` narrows the sweep. */
 const SHAPES = (process.env.CH_SHAPES?.split(',').filter((x): x is Shape => ALL_SHAPES.includes(x as Shape))) ?? ALL_SHAPES;
 const FRAMES = Number(process.env.CH_FRAMES ?? 120);
