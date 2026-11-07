@@ -259,6 +259,8 @@ export function isBitmapSrc(src: string): boolean {
  */
 export function adoptBitmapSrc(src: string, bitmap: ImageBitmap): void {
   if (mintedHere(src)) throw new Error(`weasel imageCache: ${src} was minted here; there is nothing to adopt`);
+  const old = cache.get(src)?.bitmap;
+  if (old && old !== bitmap) releaseImageSource(old);
   cache.set(src, { status: 'ready', bitmap, readAt: ++reads });
   enforceBudget(src);
   notify();
