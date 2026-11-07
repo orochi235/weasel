@@ -163,6 +163,15 @@ describe('timeScale', () => {
     expect(timeScale({ domain: [jan1, Infinity], range: [0, 1] }).ticks()).toEqual([]);
   });
 
+  it('ticks a domain reaching past the instants a Date holds, without hanging', () => {
+    const ticks = timeScale({ domain: [1e16, 2e16], range: [0, 1] }).ticks();
+    expect(ticks).toEqual([]);
+    const wide = timeScale({ domain: [0, 2e16], range: [0, 1] }).ticks();
+    expect(wide.length).toBeGreaterThan(0);
+    expect(wide.every((t) => Number.isFinite(t) && t <= 8.64e15)).toBe(true);
+    expect(timeScale({ domain: [0, 1e300], range: [0, 1] }).ticks().every(Number.isFinite)).toBe(true);
+  });
+
   it('ticks on hours within a day', () => {
     const s = timeScale({ domain: [jan1, jan1 + day], range: [0, 1] });
     expect(s.ticks().map(s.format)).toEqual(['2026-01-01', '06:00', '12:00', '18:00', '2026-01-02']);

@@ -54,10 +54,16 @@ function monthStart(month: number): number {
   return at.getTime();
 }
 
-/** Every instant on `interval`'s grid from `lo` to `hi`. */
+/** The furthest instant from the epoch a `Date` holds, either way. */
+const MAX_INSTANT = 8.64e15;
+
+/** Every instant on `interval`'s grid from `lo` to `hi`, within what a `Date` holds. */
 function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   const out: number[] = [];
   if (!Number.isFinite(lo) || !Number.isFinite(hi)) return out;
+  lo = Math.max(lo, -MAX_INSTANT);
+  hi = Math.min(hi, MAX_INSTANT);
+  if (lo > hi) return out;
   if (interval.ms !== undefined) {
     for (let t = Math.ceil(lo / interval.ms) * interval.ms; t <= hi; t += interval.ms) out.push(t);
     return out;
@@ -67,8 +73,9 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   month = Math.ceil(month / interval.months) * interval.months;
   for (;; month += interval.months) {
     const t = monthStart(month);
+    // NaN past the last month a Date holds.
+    if (!(t <= hi)) break;
     if (t < lo) continue;
-    if (t > hi) break;
     out.push(t);
   }
   return out;
