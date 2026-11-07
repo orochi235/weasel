@@ -41,6 +41,17 @@ describe('createAudioEngine queue hygiene', () => {
     expect(queue.pending()).toBe(0);
   });
 
+  it('refuses a time that is not finite rather than queueing what can never come due', async () => {
+    const { engine, queue } = harness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    expect(() => engine.play(sound, { when: Number.NaN })).toThrow(RangeError);
+    expect(() => engine.playNote({ pitch: 220, when: Number.POSITIVE_INFINITY })).toThrow(RangeError);
+    expect(() => engine.schedule(Number.NaN, () => {})).toThrow(RangeError);
+    expect(queue.pending()).toBe(0);
+    expect(engine.activeVoices()).toBe(0);
+  });
+
   it('empties the queue on dispose', async () => {
     const { engine, queue } = harness();
     await engine.unlock();

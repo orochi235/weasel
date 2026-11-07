@@ -112,6 +112,7 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
       handle = null;
     },
     schedule(when, fire, key, entryOpts) {
+      if (!Number.isFinite(when)) throw new RangeError(`@weasel-js/audio: a time to schedule at is finite, not ${when}`);
       const waited = when > opts.now() + lookahead;
       queue.push({ when, fire, key, waited: waited && entryOpts?.reportLate !== false });
       if (running && !flushQueued && !waited) {

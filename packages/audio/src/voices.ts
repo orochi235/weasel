@@ -229,6 +229,9 @@ export function createVoices(deps: VoicesDeps): Voices {
 
   return {
     launch(common, starter) {
+      if (common.when !== undefined && !Number.isFinite(common.when)) {
+        throw new RangeError(`@weasel-js/audio: a voice starts at a finite time, not ${common.when}`);
+      }
       const id = nextVoiceId++;
 
       if (deps.disposed()) {
