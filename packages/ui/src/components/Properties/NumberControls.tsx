@@ -4,6 +4,7 @@ import {
   type ReactNode,
   type RefObject,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -16,6 +17,7 @@ import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
+import { trackPlace } from './sliderScale';
 import { catchStop, useTrackStops } from './sliderStops';
 
 /**
@@ -174,12 +176,17 @@ function SliderTrack(p: PropertyNumberFieldProps) {
   const { min, max, step, settle, onTrack } = sliderBounds(p);
   const live = p.onInput ?? p.onChange;
   const commit = p.onInput ? p.onChange : undefined;
-  const range = useCommitListener(commit && ((raw) => commit(settle(Number(raw)))));
-  const stops = useTrackStops(p.stops, min, max);
+  const place = useMemo(() => trackPlace(p.scale, min, max, step, p.stops), [p.scale, min, max, step, p.stops]);
+  const range = useCommitListener(commit && ((raw) => commit(settle(place.fromInput(Number(raw))))));
+  const stops = useTrackStops(p.stops, min, max, place.fraction);
   const known = isKnown(p);
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
   const value = known ? onTrack(p.value as number) : min;
+  const keyed = (next: number) => {
+    live(settle(next));
+    commit?.(settle(next));
+  };
   return (
     // The shared skin with no fill: `InlineRange`'s filled-to-value track is its
     // own, and the property rows' 18% track is the one the kit converges on.
@@ -193,14 +200,20 @@ function SliderTrack(p: PropertyNumberFieldProps) {
       // The readout is the keyboard's way in, and steps as the track would; a
       // tab stop here too would be two stops for one value.
       tabIndex={-1}
-      min={min}
-      max={max}
-      step={step}
-      value={value}
+      min={place.min}
+      max={place.max}
+      step={place.step}
+      value={place.toInput(value)}
       disabled={p.mixed || p.disabled}
       onPointerDown={stops.onPointerDown}
+      onKeyDown={(e) => {
+        const next = place.keyStep(e.key, value);
+        if (next === null) return;
+        e.preventDefault();
+        keyed(next);
+      }}
       onChange={(e) => {
-        const v = settle(stops.settle(e.currentTarget, value, Number(e.target.value)));
+        const v = settle(stops.settle(e.currentTarget, value, place.fromInput(Number(e.target.value))));
         dlog('property-panel', 'slider', { name: p.name, value: v });
         live(v);
       }}

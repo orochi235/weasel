@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Inherit, Paint, PaintKind } from '@weasel-js/core';
 import type { PaintInherit } from '../PaintInput';
 import type { Display, Endless, UnitTable } from '@weasel-js/quantity';
+import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
 
 /** One choice of an enum field. */
 export interface PropertyOption<T extends string> {
@@ -101,6 +102,10 @@ export interface PropertyNumberFieldProps extends FieldBase {
    *  the `targets.sliderStopSnapPx` kit setting of one lands on it unless alt
    *  is held, and an arrow key stepping across one stops there. */
   stops?: readonly number[];
+  /** How a slider spaces values along its track, as `Slider`'s `scale` does — `logScale` from
+   *  `@weasel-js/plot/scales` for even ratios. Only the track moves: typed values, `step`, `stops` and the
+   *  arrow keys stay in value units. Default linear. */
+  scale?: ContinuousScaleFactory;
   /**
    * Suffix after the value. A string becomes a dim word unit (`px`); pass JSX
    * like `<sup>°</sup>` for a symbol. Display only — the value stays a number.
