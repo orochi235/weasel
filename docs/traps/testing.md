@@ -86,3 +86,9 @@ mounts: in `Lab.messages.test.tsx` that read as a play rate of 0 and one state r
 fails every retry at once; guard on a per-test fixture that ends with the attempt instead: labkit's
 `live` (`packages/labkit/src/testing/liveTest.ts`), which also logs the stack of each step a failed
 test was still waiting on.
+
+**Headless Chromium draws WebGL on SwiftShader unless launched with `--enable-gpu`.** A browser test
+that reads pixels is measuring SwiftShader's rasterizer, which snaps vertices to 1/16 px and clips
+geometry to the viewport for real, not the node's GPU. The renderer's parity files run in the browser
+project's `browser (gpu)` instance for this (2026-11-06); print `WEBGL_debug_renderer_info`'s
+`UNMASKED_RENDERER_WEBGL` before trusting a claim about what a GPU does.

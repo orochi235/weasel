@@ -130,7 +130,13 @@ fn fragment(in: Varyings) -> vec4f {            // premultiplied
   `--enable-unsafe-webgpu`, which gives headless Chromium a SwiftShader adapter (probed on teitou,
   2026-11-06; without the flag `requestAdapter` returns `null`).
 - A parity suite renders one corpus of command lists through both backends in the same page and diffs the
-  pixels. It is the evidence the fleet can produce, since the visual baselines are Linux captures.
+  pixels. It is the evidence the fleet can produce, since the visual baselines are Linux captures. It runs in
+  the browser project's `browser (gpu)` instance, launched with `--enable-gpu`, so both backends draw on the
+  node's GPU (ANGLE Metal and Dawn Metal), and skips where either is on SwiftShader. Headless Chromium puts
+  WebGL on SwiftShader too without that flag, and there the backends part at edges for SwiftShader's reasons
+  (`testing/parityHarness.ts`; measured 2026-11-06).
+- One divergence is the APIs' own: a horizontal edge exactly on a row of pixel centers inks the row below it
+  on WebGPU and the row above it on WebGL, whose window coordinates run bottom-up. A parity case pins it.
 - The visual suite takes `WEASEL_VISUAL_BACKEND=webgpu`, which the site reads as `?backend=webgpu`. The TODO
   entry closes when that run passes on CI.
 
@@ -148,12 +154,12 @@ from the plan; this list says what is on the branch (2026-11-06).
    mipmaps, targets, MSAA resolve, ids and `renderIdsAsync`, the viewport fold (`weasel_clip`, bind group 2).
    Kit programs carry their WGSL; `WeaselRendererOptions.gpu` and `requestRendererDevice()` build a renderer
    on it. The parity suite (`gpu/webgpu/parity*.browser.test.ts`) draws one corpus through both backends in
-   one page and diffs the pixels; two stroke cases are still a row of pixels apart (TODO entry).
+   one page and diffs the pixels.
 4. Core's `backend` option, and WGSL for every shader the apps register.
 5. Parity suite over the visual demos; the visual suite's WebGPU run.
 
 What the fleet's browsers impose on a WebGPU canvas, found building stage 3: headless Chromium's
 SwiftShader adapter hands back invalid textures for a `bgra8unorm` canvas, so every canvas is configured
 `rgba8unorm`; and an off-screen canvas's texture is invalid on every frame after its first until the
-context is configured again, which the parity harness does before each frame. The GPU's 4× sample pattern
-and SwiftShader's differ, so multisampled parity is compared away from edges.
+context is configured again, which the parity harness does before each frame. Multisampled edge pixels part
+even on one GPU, so multisampled parity is compared away from edges.

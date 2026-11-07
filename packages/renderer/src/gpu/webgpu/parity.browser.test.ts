@@ -5,12 +5,14 @@
  * evidence the WebGPU backend matches. Every case logs its line of the parity
  * table (`report`) whether or not it passes.
  */
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { registerFont } from '@weasel-js/font';
 import { registerTexture, unregisterTexture, type TextureHandle } from '../../textures/registerTexture';
 import type { DrawCommand } from '../../DrawCommand';
-import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report } from '../../testing/parityHarness';
+import {
+  closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, renderEach, report, requireGpu,
+} from '../../testing/parityHarness';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 
@@ -31,14 +33,16 @@ beforeAll(async () => {
   await registerFont(FAMILY, { weight: 400, style: 'normal' }, metricsUrl, atlasUrl);
 });
 
+beforeEach(requireGpu);
+
 afterEach(() => {
   closeBackends();
   for (const h of registered.splice(0)) unregisterTexture(h);
 });
 
 /** Compare single-sampled canvases everywhere, or with `antialias`
- *  multisampled ones away from edges, where the two adapters' sample patterns
- *  cannot part them. */
+ *  multisampled ones away from edges, where the backends' edge pixels part
+ *  even on one GPU. */
 async function expectParity(name: string, commands: DrawCommand[], dpr = 1, antialias = false): Promise<void> {
   const b = await openBackends({ width: W, height: H, dpr, antialias });
   const d = await renderBoth(b, [GROUND, ...commands], undefined, antialias);
@@ -152,6 +156,16 @@ describe('WebGL and WebGPU draw the same pixels', () => {
       { kind: 'path', path: pathFromD('M8 40 C 14 2, 40 4, 56 30 L 30 44 Z'), fill: { paint: { color: 'rgba(58, 125, 68, 0.8)' } }, stroke: { paint: { color: '#1b1b3a' }, width: 3 } },
       { kind: 'group', clip: pathFromD('M40 4 A12 12 0 1 1 39.99 4 Z'), children: [rect(20, 0, 44, 30, '#2060c0')] },
     ], 2, true);
+  });
+
+  it('an edge on a row of pixel centers takes the row below it on WebGPU, above it on WebGL', async () => {
+    // The fill rule's tie-break runs in each API's window coordinates, which
+    // are bottom-up on WebGL and top-down on WebGPU. Device rows 10.5 to 20.5.
+    const b = await openBackends({ width: W, height: H, dpr: 2 });
+    const { gl, gpu } = await renderEach(b, [GROUND, rect(4, 5.25, 8, 5, '#000000')]);
+    const inked = (px: Uint8Array) => Array.from({ length: b.height }, (_, y) => y).filter((y) => px[(y * b.width + 12) * 4] === 0);
+    expect(inked(gl)).toEqual(Array.from({ length: 10 }, (_, i) => 11 + i));
+    expect(inked(gpu)).toEqual(Array.from({ length: 10 }, (_, i) => 10 + i));
   });
 
   it('a group under alpha and a color matrix', async () => {
