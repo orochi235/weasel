@@ -114,41 +114,46 @@ export function describeAdapterContract(name: string, setup: () => AdapterHarnes
       expect([...(back as Uint8Array)]).toEqual([1, 2, 255]);
     });
 
-    it("reports another writer's changes under its prefix, and nothing else", async () => {
-      const { adapter, foreign } = setup();
-      if (!foreign) {
-        expect(adapter.subscribe).toBeUndefined();
-        return;
-      }
-      if (!adapter.subscribe) throw new Error(`${name} has a foreign writer but no subscribe`);
-      const heard: StorageChange[] = [];
-      const off = adapter.subscribe('lk:x:', (changes) => heard.push(...changes));
-      try {
-        await adapter.set('lk:x:own', 'mine');
-        await foreign.set('lk:y:elsewhere', 'not this prefix');
-        await settle();
-        expect(heard).toEqual([]);
+    subscriptionCases(name, setup);
+  });
+}
 
-        await foreign.set('lk:x:theirs', { from: 'peer' });
-        await until(() => heard.length > 0);
-        expect(heard).toEqual([['lk:x:theirs', { from: 'peer' }]]);
-
-        await foreign.delete('lk:x:theirs');
-        await until(() => heard.length > 1);
-        expect(heard[1]).toEqual(['lk:x:theirs', undefined]);
-      } finally {
-        off();
-      }
-    });
-
-    it('stops reporting once unsubscribed', async () => {
-      const { adapter, foreign } = setup();
-      if (!foreign || !adapter.subscribe) return;
-      const heard: StorageChange[] = [];
-      adapter.subscribe('lk:x:', (changes) => heard.push(...changes))();
-      await foreign.set('lk:x:late', 1);
+/** The contract's cases for `subscribe`: reporting another writer's changes, and only theirs. */
+function subscriptionCases(name: string, setup: () => AdapterHarness): void {
+  it("reports another writer's changes under its prefix, and nothing else", async () => {
+    const { adapter, foreign } = setup();
+    if (!foreign) {
+      expect(adapter.subscribe).toBeUndefined();
+      return;
+    }
+    if (!adapter.subscribe) throw new Error(`${name} has a foreign writer but no subscribe`);
+    const heard: StorageChange[] = [];
+    const off = adapter.subscribe('lk:x:', (changes) => heard.push(...changes));
+    try {
+      await adapter.set('lk:x:own', 'mine');
+      await foreign.set('lk:y:elsewhere', 'not this prefix');
       await settle();
       expect(heard).toEqual([]);
-    });
+
+      await foreign.set('lk:x:theirs', { from: 'peer' });
+      await until(() => heard.length > 0);
+      expect(heard).toEqual([['lk:x:theirs', { from: 'peer' }]]);
+
+      await foreign.delete('lk:x:theirs');
+      await until(() => heard.length > 1);
+      expect(heard[1]).toEqual(['lk:x:theirs', undefined]);
+    } finally {
+      off();
+    }
+  });
+
+  it('stops reporting once unsubscribed', async () => {
+    const { adapter, foreign } = setup();
+    if (!foreign || !adapter.subscribe) return;
+    const heard: StorageChange[] = [];
+    adapter.subscribe('lk:x:', (changes) => heard.push(...changes))();
+    await foreign.set('lk:x:late', 1);
+    await settle();
+    expect(heard).toEqual([]);
   });
 }

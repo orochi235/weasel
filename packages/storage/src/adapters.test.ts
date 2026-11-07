@@ -108,7 +108,6 @@ describe('localStorageAdapter', () => {
   it('warns about a negative zero and an array with holes, which JSON reads back changed', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await localStorageAdapter.set('lk:w:zero', { at: -0 });
-    // eslint-disable-next-line no-sparse-arrays
     await localStorageAdapter.set('lk:w:holes', [1, , 3]);
     expect(warn).toHaveBeenCalledTimes(2);
     warn.mockRestore();

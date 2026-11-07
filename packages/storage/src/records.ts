@@ -90,6 +90,20 @@ export function createRecordCache(options: CreateRecordCacheOptions): OwnedRecor
   return buildCache(options, false).cache;
 }
 
+/** Run `flush` whenever the page hides or goes away. Returns the stop. */
+function flushOnLeave(flush: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const onVisibility = (): void => {
+    if (document.visibilityState === 'hidden') flush();
+  };
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', onVisibility);
+  return () => {
+    window.removeEventListener('pagehide', flush);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
+}
+
 /** `startUnread` leaves the cache waiting on a first read: `cache.read()`
  *  makes it, and `failed` reports one made elsewhere that threw. */
 function buildCache(
@@ -212,16 +226,7 @@ function buildCache(
     return reading;
   }
 
-  const onPageHide = (): void => {
-    void queue.flush();
-  };
-  const onVisibility = (): void => {
-    if (document.visibilityState === 'hidden') void queue.flush();
-  };
-  if (typeof window !== 'undefined') {
-    window.addEventListener('pagehide', onPageHide);
-    document.addEventListener('visibilitychange', onVisibility);
-  }
+  const stopFlushingOnLeave = flushOnLeave(() => void queue.flush());
 
   const remove = (name: string): void => {
     // An unread cache cannot tell what storage holds, so it queues the delete.
@@ -259,10 +264,7 @@ function buildCache(
       closed = true;
       queue.stopRetrying();
       unsubscribe?.();
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('pagehide', onPageHide);
-        document.removeEventListener('visibilitychange', onVisibility);
-      }
+      stopFlushingOnLeave();
       return sent;
     },
     onOverruled: overruledEmitter.subscribe,

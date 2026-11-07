@@ -178,7 +178,7 @@
     "longestFunction": 125
   },
   "packages/storage/src/records.ts": {
-    "longestFunction": 185
+    "longestFunction": 174
   },
   "packages/svg/src/gradients.ts": {
     "lines": 525
