@@ -94,7 +94,7 @@ describe('offsetPathAction', () => {
   const ongoing = offsetPathAction.invoker as OngoingInvoker;
 
   it('adds a grown copy behind the source, keeping the source in view, and selects it', () => {
-    const { deps, batches, selection } = setup({ a: square(100), b: square(10) }, ['b']);
+    const { deps, batches } = setup({ a: square(100), b: square(10) }, ['b']);
     const handle = ongoing.start(ctx(deps, { distance: 0 }), {});
     expect(handle.previewIds!()).toBeNull();
     expect(handle.previewHidesSource).toBe(false);
@@ -105,7 +105,7 @@ describe('offsetPathAction', () => {
     expect(insert.node!.id).toBe('new-1');
     expect(insert.slot).toEqual({ index: 1 });
     expect(insert.node!.data).toEqual({ tag: 'b' });
-    expect(selection.set).toHaveBeenLastCalledWith(['new-1']);
+    expect((batches[0].ops.at(-1)!.args as { to: readonly string[] }).to).toEqual(['new-1']);
   });
 
   it('offsets a rectangle stored as a rect path, the copy holding a polygon', () => {

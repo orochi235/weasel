@@ -3,7 +3,12 @@ import { booleanGroupFields } from 'core/scene/booleanGroup';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { groupingSite } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
-import { followerMoves } from '../followerMoves';
+import { followerMoveOps, followerMoves } from '../followerMoves';
+import { commitOps, defaultCommitAdapter } from '../defaultCommitAdapter';
+import { createInsertOp } from 'core/ops/create';
+import { createReparentOp } from 'core/ops/reparent';
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId, Scene } from 'core/scene/types';
@@ -17,15 +22,20 @@ type AnyScene = Scene<unknown, string, unknown>;
 const PAINT_KEYS = ['fill', 'stroke'] as const;
 
 /**
- * Put `ids` under a new boolean group of `op`, in the frontmost one's place
- * in the container `groupingSite` names, as one undo entry; nothing moves on
+ * The ops that put `ids` under a new boolean group of `op`, in the frontmost one's place
+ * in the container `groupingSite` names, labeled `label`; nothing moves on
  * screen, unless the operands lie wholly off every page with the pasteboard
  * off and move onto one, and a node following one that changes page goes
  * where `followerMoves` says. The group wears the frontmost
- * operand's `fill` and `stroke`. Returns its id, or `null` when fewer than two
+ * operand's `fill` and `stroke`. Null when fewer than two
  * of `ids` are nodes on one layer.
  */
-export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: BooleanShapeOp = 'union'): NodeId | null {
+export function booleanGroupOps(
+  scene: AnyScene,
+  ids: readonly string[],
+  op: BooleanShapeOp = 'union',
+  label = 'Make Boolean Group',
+): { ops: Op[]; group: NodeId } | null {
   const order = new Map([...scene.renderOrder()].map((id, i) => [id as string, i]));
   const nodes = ids
     .map((id) => scene.get(id as NodeId))
@@ -44,22 +54,29 @@ export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: Bo
   const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => k in own).map((k) => [k, own[k]])) };
   const page = parent === null ? null : pageOfNode(scene, parent);
   const followers = followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page])));
-  let group: NodeId | null = null;
-  scene.batch('Make Boolean Group', () => {
-    group = scene.add({
-      ...booleanGroupFields(), layer: front.layer, pose: front.pose, data, parent,
+  const group = scene.mintId();
+  const ops: Op[] = [
+    createInsertOp({
+      node: { ...booleanGroupFields(), id: group, layer: front.layer, pose: front.pose, data, parent } as Node<unknown, string, unknown>,
       ...(at >= 0 ? { index: at + 1 } : {}),
-    });
-    nodes.forEach((n, i) => {
-      scene.move(n.id, group, i);
-      scene.setPose(n.id, frame.localUnder(group, worlds.get(n.id)!) as never);
-    });
-    for (const f of followers) {
-      scene.move(f.id, f.into);
-      scene.setPose(f.id, f.to);
-    }
+      label,
+    }),
+  ];
+  nodes.forEach((n, i) => {
+    ops.push(createReparentOp({ id: n.id, fromParentId: n.parent ?? null, toParentId: group, toIndex: i, label }));
+    // The group derives its pose from its members, so it is no frame: they keep the frame it sits in.
+    ops.push(createTransformOp<unknown>({ id: n.id, from: n.pose, to: frame.localUnder(parent, worlds.get(n.id)!), label }));
   });
-  return group;
+  ops.push(...followerMoveOps(followers, label));
+  return { ops, group };
+}
+
+/** {@link booleanGroupOps} committed straight to `scene` as one undo entry. Returns the group's id, or null. */
+export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: BooleanShapeOp = 'union'): NodeId | null {
+  const made = booleanGroupOps(scene, ids, op);
+  if (!made) return null;
+  scene.applyBatch(made.ops, 'Make Boolean Group', defaultCommitAdapter(scene));
+  return made.group;
 }
 
 /** Put the selection under a new boolean group, a union until its operation is changed. */
@@ -69,14 +86,14 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
   icon: icon('booleanGroup'),
   group: 'pathfinder',
   eligible: { capability: 'creates-shapes' },
-  requires: ['scene', 'selection'],
+  requires: ['scene', 'selection', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
       const { scene, selection } = deps;
       if (!scene || !selection) return;
-      const id = makeBooleanGroup(scene as AnyScene, withoutPageStructure(scene, selection.get()));
-      if (id !== null) selection.set([id]);
+      const made = booleanGroupOps(scene as AnyScene, withoutPageStructure(scene, selection.get()));
+      if (made) commitOps(deps, made.ops, 'Make Boolean Group', { select: [made.group] });
     },
   },
   enabled: requiresContent(2),

@@ -2,6 +2,7 @@ import type { Node, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
+import { createDeleteOp } from 'core/ops/delete';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { groupingSite } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
@@ -132,7 +133,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   group: 'structure',
   defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'ungroup.key' } }],
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection'],
+  requires: ['scene', 'selection', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -147,34 +148,41 @@ export const ungroupAction: Action & { requires: string[] } = {
       if (containers.length === 0) return;
 
       const frame = scenePoseFrame(scene);
-
-      scene.batch('Ungroup', () => {
-        const freed: NodeId[] = [];
-        for (const containerId of containers) {
-          const container = scene.get(containerId as NodeId);
-          if (!container || !dissolves(container)) continue;
-
-          const parent = container.parent ?? null;
-          const baseIndex =
-            parent === null
-              ? scene.roots.indexOf(containerId as NodeId)
-              : scene.childrenOf(parent).indexOf(containerId as NodeId);
-
-          const children = [...scene.childrenOf(containerId as NodeId)];
-          // Read every world pose before the first move: the frame resolves
-          // through the live scene, and the container is about to leave it.
-          const worlds = new Map<NodeId, unknown>();
-          for (const childId of children) worlds.set(childId, frame.world(childId));
-          children.forEach((childId, i) => {
-            scene.move(childId, parent, baseIndex < 0 ? undefined : baseIndex + i);
-            scene.setPose(childId, frame.localUnder(parent, worlds.get(childId)!) as never);
-            freed.push(childId);
-          });
-
-          scene.remove(containerId as NodeId);
+      const dissolving = new Set<string>(containers);
+      const depth = (id: string): number => scene.ancestorsOf(id as NodeId).length;
+      // Where a container's children go: its parent, or past it when that dissolves too, which an
+      // outer container, handled first, has by then.
+      const landing = (id: string): NodeId | null => {
+        let at = scene.get(id as NodeId)!.parent ?? null;
+        while (at !== null && dissolving.has(at)) at = scene.get(at)!.parent ?? null;
+        return at;
+      };
+      const ops: Op[] = [];
+      const freed: NodeId[] = [];
+      for (const containerId of [...containers].sort((x, y) => depth(x) - depth(y))) {
+        const container = scene.get(containerId as NodeId)!;
+        const parent = landing(containerId);
+        const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(containerId as NodeId);
+        // Each child lands just under the container, in order, wherever the container then sits.
+        for (const childId of scene.childrenOf(containerId as NodeId)) {
+          ops.push(createReparentOp({
+            id: childId as string,
+            fromParentId: containerId as string,
+            toParentId: parent as string | null,
+            toSlot: { index, before: containerId as string },
+            label: 'Ungroup',
+          }));
+          ops.push(createTransformOp<unknown>({
+            id: childId as string,
+            from: scene.get(childId)!.pose,
+            to: frame.localUnder(parent, frame.world(childId)),
+            label: 'Ungroup',
+          }));
+          if (!dissolving.has(childId)) freed.push(childId);
         }
-        selection.set(freed);
-      });
+        ops.push(createDeleteOp({ node: { ...container, parent }, index, label: 'Ungroup' }));
+      }
+      commitOps(deps, ops, 'Ungroup', { select: freed });
     },
   },
   enabled: (deps) => {
