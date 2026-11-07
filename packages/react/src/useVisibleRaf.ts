@@ -54,7 +54,11 @@ export interface VisibleRaf {
 
 const documentHidden = (): boolean => typeof document !== 'undefined' && document.hidden;
 
-const resolveTarget = (target: VisibleRafTarget | undefined): Element | null =>
+/** Whether a frame may run, given the loop's options and its element's last intersection report. */
+const gateOpen = (opts: VisibleRafOptions, intersecting: boolean): boolean =>
+  opts.dangerouslyRunWhenHidden === true || (!documentHidden() && intersecting);
+
+const resolveTarget =(target: VisibleRafTarget | undefined): Element | null =>
   typeof target === 'function' ? target() : (target?.current ?? null);
 
 /**
@@ -82,12 +86,7 @@ export function useVisibleRaf(
   const handleRef = useRef<VisibleRaf | null>(null);
   const syncGateRef = useRef<() => void>(() => {});
 
-  const isVisible = useCallback(
-    (): boolean =>
-      optsRef.current.dangerouslyRunWhenHidden === true ||
-      (!documentHidden() && intersectingRef.current),
-    [optsRef],
-  );
+  const isVisible = useCallback(() => gateOpen(optsRef.current, intersectingRef.current), [optsRef]);
 
   const cancelRaf = useCallback(() => {
     if (rafRef.current === null) return;
