@@ -51,22 +51,22 @@ export interface CrosshairRect { x: number; y: number; w: number; h: number }
 
 /**
  * The linked crosshair at (`x`, `y`) as rects in the caller's units, where one
- * screen pixel is `unitsPerPx` of them: four halo rects to paint first, then
- * four bars. A painter with no weasel renderer — a 2D canvas — draws the same
- * crosshair from these.
+ * screen pixel is `unitsPerPx.x` of them across and `unitsPerPx.y` down (their
+ * signs are ignored): four halo rects to paint first, then four bars. A painter
+ * with no weasel renderer — a 2D canvas — draws the same crosshair from these.
  */
 export function crosshairRects(
-  x: number, y: number, unitsPerPx: number,
+  x: number, y: number, unitsPerPx: { x: number; y: number },
 ): { halo: CrosshairRect[]; bars: CrosshairRect[] } {
-  const k = unitsPerPx;
-  const arm = ARM * k, gap = GAP * k, t = THICK * k, h = HALO * k;
+  const kx = Math.abs(unitsPerPx.x), ky = Math.abs(unitsPerPx.y);
   const bars: CrosshairRect[] = [
-    { x: x - gap - arm, y: y - t / 2, w: arm, h: t },
-    { x: x + gap, y: y - t / 2, w: arm, h: t },
-    { x: x - t / 2, y: y - gap - arm, w: t, h: arm },
-    { x: x - t / 2, y: y + gap, w: t, h: arm },
+    { x: x - (GAP + ARM) * kx, y: y - (THICK / 2) * ky, w: ARM * kx, h: THICK * ky },
+    { x: x + GAP * kx, y: y - (THICK / 2) * ky, w: ARM * kx, h: THICK * ky },
+    { x: x - (THICK / 2) * kx, y: y - (GAP + ARM) * ky, w: THICK * kx, h: ARM * ky },
+    { x: x - (THICK / 2) * kx, y: y + GAP * ky, w: THICK * kx, h: ARM * ky },
   ];
-  const halo = bars.map((b) => ({ x: b.x - h, y: b.y - h, w: b.w + 2 * h, h: b.h + 2 * h }));
+  const hx = HALO * kx, hy = HALO * ky;
+  const halo = bars.map((b) => ({ x: b.x - hx, y: b.y - hy, w: b.w + 2 * hx, h: b.h + 2 * hy }));
   return { halo, bars };
 }
 
@@ -89,7 +89,7 @@ export function createLinkedCursorLayer(opts: {
       const p = pointer();
       const here = viewIdOf(data);
       if (!p || p.viewId === here || (views && !views.includes(here))) return [];
-      const { halo, bars } = crosshairRects(p.world.x, p.world.y, 1 / view.scale.x);
+      const { halo, bars } = crosshairRects(p.world.x, p.world.y, { x: 1 / view.scale.x, y: 1 / view.scale.y });
       const rect = (r: CrosshairRect, c: string): DrawCommand => ({
         kind: 'path',
         path: { kind: 'rect', x: r.x, y: r.y, width: r.w, height: r.h },
