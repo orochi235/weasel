@@ -4,15 +4,16 @@
  * snapshots and compares them without knowing what any of them mean.
  */
 
-/** The values of `keys` in `config`, for storing beside a new mark. Keys the
+import { deepEqual } from '@weasel-js/registry';
+import { hasConfigPath, valueAtPath } from '../config/path';
+
+/** The values of `keys` in `config`, each a dotted path, for storing beside a new mark. Keys the
  *  config does not carry are omitted rather than stored as undefined, so the
  *  snapshot says what was known rather than what was asked. */
 export function seenFrom(config: unknown, keys: readonly string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  if (config === null || typeof config !== 'object') return out;
-  const src = config as Record<string, unknown>;
   for (const k of keys) {
-    if (k in src) out[k] = src[k];
+    if (hasConfigPath(config, k)) out[k] = valueAtPath(config, k);
   }
   return out;
 }
@@ -32,10 +33,9 @@ export function isStale(
 ): boolean {
   if (!seen || keys.length === 0) return false;
   if (config === null || typeof config !== 'object') return false;
-  const src = config as Record<string, unknown>;
   for (const k of keys) {
     if (!(k in seen)) continue;
-    if (!Object.is(seen[k], src[k])) return true;
+    if (!deepEqual(seen[k], valueAtPath(config, k))) return true;
   }
   return false;
 }
