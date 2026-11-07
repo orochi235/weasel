@@ -20,6 +20,12 @@ describe('toDTCG', () => {
     for (const mode of ['dark', 'light']) expect(resolveTheme(back, { mode })).toEqual(resolveTheme(t, { mode }));
   });
 
+  it("round-trips a pin's scope", () => {
+    const t = defineTheme({ name: 'x', pins: { 'gray-50': { value: '#f5f5f6', type: 'color', scope: ['density'] } } });
+    const back = loadDTCG({ ...toDTCG(t), extends: weaselTheme });
+    expect(back.tokens['gray-50']).toMatchObject({ value: '#f5f5f6', scope: ['density'] });
+  });
+
   const valueOf = (groups: Record<string, Record<string, unknown>>, type: string, name: string) =>
     (groups[type]?.[name] as { $value?: unknown } | undefined)?.$value;
 

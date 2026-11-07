@@ -446,7 +446,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     }
     const obj = seeded(isPinObject(picked.value) ? picked.value : { value: picked.value }, path);
     if (!obj) return undefined;
-    return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description };
+    return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description, scope: obj.scope };
   };
 
   for (const [name, v] of Object.entries(components)) {

@@ -1,6 +1,6 @@
 import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes.ts';
 import { AXES_EXT, overrideKey, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
-import { ALPHA_EXT, type RawToken, type TokenValue } from '../../dtcg/types.ts';
+import { ALPHA_EXT, SCOPE_EXT, type RawToken, type TokenValue } from '../../dtcg/types.ts';
 import { themeAxes } from '../../resolveTheme.ts';
 import type { Theme } from '../../theme.ts';
 
@@ -58,10 +58,14 @@ export function toDTCG(theme: Theme): DtcgExport {
 
   const put = (into: Record<string, DtcgGroup>, name: string, t: RawToken) => {
     into[t.type] ??= { $type: t.type };
+    const extensions = {
+      ...(t.alpha !== undefined ? { [ALPHA_EXT]: t.alpha } : {}),
+      ...(t.scope !== undefined ? { [SCOPE_EXT]: t.scope } : {}),
+    };
     into[t.type][name] = {
       $value: alias(t.value),
       ...(t.description ? { $description: t.description } : {}),
-      ...(t.alpha !== undefined ? { $extensions: { [ALPHA_EXT]: t.alpha } } : {}),
+      ...(Object.keys(extensions).length > 0 ? { $extensions: extensions } : {}),
     };
   };
 
