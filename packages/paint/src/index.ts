@@ -116,6 +116,7 @@ export {
   resolvePaletteColor,
   resolvePaletteColors,
   colorLiteralToCss,
+  cssColorNotation,
   colorLiteralToHex,
   cssColorLiteral,
   hexToColorLiteral,

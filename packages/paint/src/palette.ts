@@ -5,7 +5,7 @@ import { byteHex, parseHexBytes } from './hex';
 /**
  * A color given directly. `coords` are in the order CSS Color 4 uses for
  * `space` — `srgb` as 0..1 r, g, b; `oklab` as L, a, b; `oklch` as L, C and a
- * hue in degrees. `space` is open: a palette may carry colors in spaces the kit
+ * hue in degrees; `hsl` as a hue in degrees and 0..100 saturation and lightness. `space` is open: a palette may carry colors in spaces the kit
  * cannot convert, and `colorLiteralToHex` answers `null` for those.
  */
 export interface ColorLiteral {
@@ -147,17 +147,36 @@ export function colorLiteralToHex(color: ColorLiteral): string | null {
   return `#${rgb.map(byteHex).join('')}${a < 1 ? byteHex(a * 255) : ''}`;
 }
 
+/** Spaces CSS spells as a function of their own, with the coordinates it writes as percentages. */
+const FUNCTIONAL_SPACES: Readonly<Record<string, readonly number[]>> = { hsl: [1, 2], hwb: [1, 2], lab: [], lch: [], oklab: [], oklch: [] };
+/** Spaces CSS reaches only through `color()`. */
+const PREDEFINED_SPACES = new Set(['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'xyz', 'xyz-d50', 'xyz-d65']);
+
+/**
+ * Three coordinates in `space` written the way CSS writes that space, with
+ * nothing converted: `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()` and `oklch()`
+ * as their own functions, the predefined spaces through `color()`. `hsl` and
+ * `hwb` take their second and third coordinates as 0..100. `'none'` is CSS's
+ * missing component. `null` for a space CSS has no notation for, or a count
+ * other than three.
+ */
+export function cssColorNotation(space: string, coords: readonly (number | 'none')[], alpha = 1): string | null {
+  if (coords.length !== 3) return null;
+  const slash = alpha < 1 ? ` / ${alpha}` : '';
+  const percent = FUNCTIONAL_SPACES[space];
+  if (percent) return `${space}(${coords.map((c, i) => (c !== 'none' && percent.includes(i) ? `${c}%` : c)).join(' ')}${slash})`;
+  if (PREDEFINED_SPACES.has(space)) return `color(${space} ${coords.join(' ')}${slash})`;
+  return null;
+}
+
 /**
  * A literal as a CSS color: hex where `colorLiteralToHex` has one, else
- * `color(<space> …)`, which is the form CSS gives every predefined space.
- * `null` for fewer than three coordinates.
+ * {@link cssColorNotation}. `null` for fewer than three coordinates, or a
+ * space CSS has no notation for.
  */
 export function colorLiteralToCss(color: ColorLiteral): string | null {
   if (color.coords.length < 3) return null;
-  const hex = colorLiteralToHex(color);
-  if (hex) return hex;
-  const a = color.alpha ?? 1;
-  return `color(${color.space} ${color.coords.join(' ')}${a < 1 ? ` / ${a}` : ''})`;
+  return colorLiteralToHex(color) ?? cssColorNotation(color.space, color.coords.slice(0, 3), color.alpha);
 }
 
 /** Any color string `parseColor` reads, as an `srgb` literal. Throws, as it does, on one it cannot. */

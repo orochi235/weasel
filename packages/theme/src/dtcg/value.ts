@@ -1,4 +1,4 @@
-import { rgbaToHex } from '@weasel-js/paint';
+import { cssColorNotation, rgbaToHex } from '@weasel-js/paint';
 import type { TokenValue } from './types.ts';
 
 /**
@@ -48,11 +48,6 @@ export function parseTokenValue(type: string, text: string): TokenValue {
   return raw;
 }
 
-/** Spaces CSS spells as a function of their own, with the components it writes as percentages. */
-const FUNCTIONAL: Readonly<Record<string, readonly number[]>> = { hsl: [1, 2], hwb: [1, 2], lab: [], lch: [], oklab: [], oklch: [] };
-/** Spaces CSS reaches through `color()`. */
-const PREDEFINED = new Set(['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'xyz', 'xyz-d50', 'xyz-d65']);
-
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** A DTCG color object in CSS's own notation for its space: hex for an in-gamut sRGB color, nothing converted. */
@@ -65,11 +60,7 @@ function colorObject(v: Record<string, unknown>): string | undefined {
   if (space === 'srgb' && [r, g, b].every((c) => typeof c === 'number' && c >= 0 && c <= 1)) {
     return rgbaToHex([r as number, g as number, b as number, alpha]);
   }
-  const slash = alpha === 1 ? '' : ` / ${alpha}`;
-  const percent = FUNCTIONAL[space];
-  if (percent) return `${space}(${components.map((c, i) => (c !== 'none' && percent.includes(i) ? `${c}%` : c)).join(' ')}${slash})`;
-  if (PREDEFINED.has(space)) return `color(${space} ${components.join(' ')}${slash})`;
-  return undefined;
+  return cssColorNotation(space, components as (number | 'none')[], alpha) ?? undefined;
 }
 
 /**
