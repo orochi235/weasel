@@ -51,7 +51,7 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
 export interface PowScaleOptions {
   domain: readonly [number, number];
   range: readonly [number, number];
-  /** Not zero. 0.5 is a square-root scale. */
+  /** Not zero, and positive for a domain reaching zero. 0.5 is a square-root scale. */
   exponent: number;
 }
 
@@ -66,6 +66,10 @@ export interface PowScale extends WarpScale {
 export function powScale(opts: PowScaleOptions): PowScale {
   const k = opts.exponent;
   if (!(k !== 0 && Number.isFinite(k))) throw new Error(`powScale: an exponent of ${k} does not warp`);
+  const [d0, d1] = opts.domain;
+  if (k < 0 && !(Math.min(d0, d1) > 0 || Math.max(d0, d1) < 0)) {
+    throw new Error(`powScale: an exponent of ${k} sends zero to infinity, and a domain of ${d0}..${d1} reaches it`);
+  }
   const raise = (p: number) => (v: number) => Math.sign(v) * Math.abs(v) ** p;
   return { ...warpScale({ domain: opts.domain, range: opts.range, to: raise(k), from: raise(1 / k) }), kind: 'pow', exponent: k };
 }

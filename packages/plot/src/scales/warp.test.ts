@@ -48,6 +48,13 @@ describe('powScale', () => {
     expect(sqrt.invert(0.25)).toBeCloseTo(-25, 12);
   });
 
+  it('refuses a negative exponent over a domain reaching zero, which it sends to infinity', () => {
+    expect(() => powScale({ domain: [0, 10], range: [0, 1], exponent: -1 })).toThrow(/zero/);
+    expect(() => powScale({ domain: [-5, 5], range: [0, 1], exponent: -1 })).toThrow(/zero/);
+    const inverse = powScale({ domain: [1, 10], range: [0, 1], exponent: -1 });
+    expect(inverse.invert(inverse.map(4))).toBeCloseTo(4, 12);
+  });
+
   it('refuses an exponent of zero', () => {
     expect(() => powScale({ domain: [0, 1], range: [0, 1], exponent: 0 })).toThrow(/exponent/);
   });
