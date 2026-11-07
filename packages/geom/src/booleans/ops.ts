@@ -102,6 +102,7 @@ export interface FaceArrangement {
   neighbors: FaceNeighbor[];
 }
 
+/** Options for {@link pathFaceArrangement}. */
 export interface FaceArrangementOptions {
   /**
    * How far the flattening the arrangement is cut from may stray from a

@@ -4,7 +4,7 @@ import { pathFaceArrangement, type MultiPolygon } from './index';
 import { PATH_L } from '../commands';
 import type { Path, PolygonPath } from '../path';
 import { area, circle, fine, hasCurves, mpArea, rect } from './curveShapes.fixtures';
-import { DIGITS, glyphCell } from './glyphCell.fixtures';
+import { DIGITS, glyphCell } from './glyphCell.fixture';
 
 /** One path drawing both of `a`'s and `b`'s contours. */
 const both = (a: PolygonPath, b: PolygonPath): PolygonPath => ({
