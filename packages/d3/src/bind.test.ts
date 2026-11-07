@@ -152,6 +152,27 @@ describe('d3Bind — diff and op emission', () => {
         .join();
     }).toThrow(/pose/);
   });
+
+  it('throws on two data sharing a key, whether they enter or update', () => {
+    const scene = setupScene();
+    const twice: Datum[] = [
+      { id: 'a', label: 'A', x: 1 },
+      { id: 'a', label: 'A2', x: 2 },
+    ];
+    const join = () =>
+      d3Bind(scene.current, twice, { key: (d) => d.id })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .data((d) => ({ label: d.label }))
+        .join();
+    expect(() => act(() => void join())).toThrow(/key "a".*0 and 1/);
+    act(() => {
+      d3Bind(scene.current, [twice[0]], { key: (d) => d.id })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .join();
+    });
+    expect(() => act(() => void join())).toThrow(/key "a".*0 and 1/);
+    expect(scene.current.get('a' as never)?.pose.x).toBe(1);
+  });
 });
 
 describe('d3Bind selection — filter / each', () => {

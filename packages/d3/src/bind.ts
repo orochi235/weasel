@@ -60,7 +60,7 @@ export function d3Bind<
       }
 
       // Compute the diff.
-      const dataKeys = data.map((d, i) => asNodeId(options.key(d, i)));
+      const dataKeys = keysOf(data, options.key);
       const dataKeySet = new Set(dataKeys);
       const enterIndices: number[] = [];
       const updateIndices: number[] = [];
@@ -160,6 +160,20 @@ export function d3Bind<
   };
 
   return binding;
+}
+
+/** Each datum's node id; throws on two data sharing one. */
+function keysOf<TData>(data: readonly TData[], key: (d: TData, i: number) => string): NodeId[] {
+  const firstAt = new Map<NodeId, number>();
+  return data.map((d, i) => {
+    const id = asNodeId(key(d, i));
+    const first = firstAt.get(id);
+    if (first !== undefined) {
+      throw new Error(`d3Bind.join: key "${id}" is given to data ${first} and ${i}; each datum needs a key of its own`);
+    }
+    firstAt.set(id, i);
+    return id;
+  });
 }
 
 /** @internal */
