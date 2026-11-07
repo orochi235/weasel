@@ -1,3 +1,4 @@
+import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link linearScale}. */
@@ -126,6 +127,7 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
   const span = d1 - d0;
   const map = (v: number) => (span === 0 ? (r0 + r1) / 2 : r0 + ((v - d0) / span) * (r1 - r0));
   const step = (count = DEFAULT_TICKS) => tickStep(d0, d1, count);
+  const format = (v: number): string => formatNumber(v, step());
   return {
     kind: 'linear',
     domain,
@@ -136,10 +138,10 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
     tickStep: step,
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
     ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),
-    format: (v) => formatNumber(v, step()),
-    tickFormat: (count) => {
+    format,
+    tickFormat(count) {
       const s = step(count);
-      return (v) => formatNumber(v, s);
+      return replacedFormat(this, format) ?? ((v) => formatNumber(v, s));
     },
   };
 }

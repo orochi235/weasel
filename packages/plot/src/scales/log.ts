@@ -1,4 +1,5 @@
 import { formatNumber } from './linear';
+import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link logScale}. */
@@ -55,6 +56,8 @@ export function logScale(opts: LogScaleOptions): LogScale {
     invert: (at) => base ** (r1 === r0 ? l0 : l0 + ((at - r0) / (r1 - r0)) * (l1 - l0)),
     ticks,
     format,
-    tickFormat: () => format,
+    tickFormat() {
+      return replacedFormat(this, format) ?? format;
+    },
   };
 }

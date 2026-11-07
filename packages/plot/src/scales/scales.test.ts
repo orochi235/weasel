@@ -47,6 +47,14 @@ describe('linearScale', () => {
     expect(linearScale({ domain: [-1e308, 1e308], range: [0, 1] }).ticks()).toEqual([-1e308, -5e307, 0, 5e307, 1e308]);
   });
 
+  it('keeps a replaced format in the formatter for any tick count', () => {
+    const pct = (v: number) => `${v}%`;
+    expect({ ...linearScale({ domain: [0, 1], range: [0, 1] }), format: pct }.tickFormat(20)(0.05)).toBe('0.05%');
+    expect({ ...logScale({ domain: [1, 100], range: [0, 1] }), format: pct }.tickFormat()(10)).toBe('10%');
+    expect({ ...timeScale({ domain: [0, 864e5], range: [0, 1] }), format: () => 'T' }.tickFormat(30)(0)).toBe('T');
+    expect({ ...bandScale({ domain: ['a'], range: [0, 1] }), format: (k: string) => k.toUpperCase() }.tickFormat()('a')).toBe('A');
+  });
+
   it('widens a nice domain to whole steps', () => {
     expect(niceDomain([3, 97])).toEqual([0, 100]);
     expect(niceDomain([-13, 42])).toEqual([-20, 50]);
