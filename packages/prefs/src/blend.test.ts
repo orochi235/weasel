@@ -41,6 +41,10 @@ describe('blendPref', () => {
     expect(blendPref(leaf('color', { alpha: true }), at(['#ff000000', 0.5], ['#ff0000ff', 0.5]))).toBe('#ff000080');
   });
 
+  it('mixes alpha premultiplied, so a blend toward a transparent color keeps the other one’s hue', () => {
+    expect(blendPref(leaf('color', { alpha: true }), at(['#00000000', 0.5], ['#0000ffff', 0.5]))).toBe('#0000ff80');
+  });
+
   it('takes the heaviest color where one of them is not a hex color', () => {
     expect(blendPref(leaf('color'), at(['#000000', 0.4], ['rebeccapurple', 0.6]))).toBe('rebeccapurple');
   });
