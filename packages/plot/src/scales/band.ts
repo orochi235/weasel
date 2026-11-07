@@ -53,6 +53,7 @@ export function bandScale(opts: BandScaleOptions): BandScale {
     position: (key) => start(key) + bandwidth / 2,
     invert: (at) => {
       if (n === 0) return undefined;
+      if (step === 0) return domain[0];
       const i = Math.round((at - r0) / step - outer - (1 - inner) / 2);
       return domain[Math.min(n - 1, Math.max(0, i))];
     },

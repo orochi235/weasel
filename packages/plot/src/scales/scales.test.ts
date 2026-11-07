@@ -118,6 +118,12 @@ describe('bandScale', () => {
     expect(s.invert(999)).toBe('d');
   });
 
+  it('inverts a zero-width range to a key, as every band sits at that point', () => {
+    const flat = bandScale({ domain: ['a', 'b'], range: [5, 5] });
+    expect(flat.invert(5)).toBe('a');
+    expect(flat.invert(9)).toBe('a');
+  });
+
   it('ticks and formats its categories', () => {
     expect(s.ticks()).toEqual(['a', 'b', 'c', 'd']);
     expect(s.format('c')).toBe('c');
