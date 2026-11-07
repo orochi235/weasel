@@ -59,6 +59,11 @@ describe('resolveSchemaMenu: action leaves', () => {
     expect(resolveSchemaMenu(s, sources(), { x: 1, y: 2 })[0]).toMatchObject({ disabled: false });
     expect(resolveSchemaMenu(s, sources())[0]).toMatchObject({ disabled: true });
   });
+  it('carries why a row is disabled: a symbolic reason or a sentence', () => {
+    const said: Action = { id: 'said', label: 'Said', invoker: immediate, enabled: () => 'Nothing to repeat' };
+    const es = resolveSchemaMenu(menu({ p: act('paste'), s: act('said'), c: act('cut') }), sources({ actions: () => [...actions, said] }));
+    expect(es.map((e) => e.kind === 'item' && e.disabledReason)).toEqual([ActionDisabledReason.NotApplicable, 'Nothing to repeat', undefined]);
+  });
   it('runs through trigger with the menu params and the point, the point winning', () => {
     const src = sources();
     run(resolveSchemaMenu(menu({ cut: act('cut') }), src, { x: 3, y: 4 }, { nodeId: 'n1', world: { x: 99, y: 99 } })[0]);

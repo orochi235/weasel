@@ -36,6 +36,9 @@ export type MenuButtonProps<T extends string = string> = {
    *  no field frame: for a heading that opens a list. */
   bare?: boolean;
   isDisabled?: boolean;
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
+   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
+  disabledReason?: string;
   className?: string;
   'aria-label'?: string;
   /** Receives the trigger `<button>`, to move focus to it. */
@@ -63,6 +66,7 @@ export function MenuButton<T extends string = string>({
   portalContainer,
   shortcut,
   tooltip,
+  disabledReason,
   buttonRef,
 }: MenuButtonProps<T>) {
   const trigger = useMenuTrigger(portalContainer);
@@ -91,8 +95,9 @@ export function MenuButton<T extends string = string>({
     <>
       {trigger.anchor}
       <SegmentTooltip
-        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label })}
+        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label, disabled: isDisabled, disabledReason })}
         disabled={isDisabled}
+        disabledReason={disabledReason}
       >
         <button
           ref={setButton}

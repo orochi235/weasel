@@ -54,6 +54,7 @@ export const Tooltips: Story = {
     <div style={{ display: 'flex', gap: 12 }}>
       <MenuButton {...args} label="New" shortcut="⌘N" items={INSTRUMENTS} onAction={() => {}} />
       <MenuButton {...args} label="Debug" tooltip="Debug surfaces" items={INSTRUMENTS} onAction={() => {}} />
+      <MenuButton {...args} label="Export" isDisabled disabledReason="Nothing to export" items={INSTRUMENTS} onAction={() => {}} />
     </div>
   ),
 };

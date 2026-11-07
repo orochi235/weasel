@@ -24,6 +24,9 @@ export interface MenuItemEntry {
   icon?: unknown;
   shortcut?: MenuShortcut;
   disabled?: boolean;
+  /** Why a disabled row cannot be chosen: a sentence, or a symbolic code a renderer maps to words, such as
+   *  `@weasel-js/routing`'s `ActionDisabledReason`. */
+  disabledReason?: string;
   /** `undefined` for a row with no on/off state. */
   checked?: boolean;
   /** A checked row that is one of a set held by exactly one, as an enum's options are: read as a radio row. */

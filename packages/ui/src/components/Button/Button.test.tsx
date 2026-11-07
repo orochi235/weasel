@@ -223,3 +223,39 @@ describe('Button tooltip', () => {
     expect(btn.getAttribute('aria-describedby')).toBeNull();
   });
 });
+
+describe('a disabled Button', () => {
+  it('stays focusable with a reason, read in the tooltip and as its description', () => {
+    render(<Button disabled disabledReason="Nothing has changed">Save</Button>);
+    const btn = screen.getByRole('button', { name: 'Save' });
+    expect(btn).not.toBeDisabled();
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
+    expect(btn).toHaveAttribute('aria-description', 'Nothing has changed');
+    keyboardFocus(btn);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Save: Nothing has changed');
+    expect(btn.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('ignores presses and submits nothing while it explains itself', () => {
+    const onClick = vi.fn();
+    const onSubmit = vi.fn((e: { preventDefault(): void }) => e.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <Button type="submit" onClick={onClick} disabled disabledReason="Fill in a name">Create</Button>
+      </form>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('stays natively disabled with no reason, its tooltip off', () => {
+    render(<Button disabled shortcut="⌘S">Save</Button>);
+    const btn = screen.getByRole('button', { name: 'Save' });
+    expect(btn).toBeDisabled();
+    expect(btn).not.toHaveAttribute('aria-disabled');
+    keyboardFocus(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});

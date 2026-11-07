@@ -179,6 +179,20 @@ export const Disabled: Story = {
   ),
 };
 
+/** A disabled button with a `disabledReason` keeps its tooltip, which says why: hover or focus one. Undo, with no
+ *  reason, is natively disabled and shows nothing. */
+export const DisabledWithReason: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <Button {...args} disabled disabledReason="Nothing has changed since the last save">Save</Button>
+      <Button {...args} iconOnly ariaLabel="Add layer" shortcut="⇧⌘N" disabled disabledReason="The document is locked">
+        <PlusIcon />
+      </Button>
+      <Button {...args} disabled shortcut="⌘Z">Undo</Button>
+    </div>
+  ),
+};
+
 export const FullWidth: Story = {
   args: { stance: 'confirm', fullWidth: true, children: 'Submit' },
   render: (args) => (

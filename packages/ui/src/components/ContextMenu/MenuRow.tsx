@@ -3,12 +3,19 @@ import type { MenuController, MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
 import { resolveIcon } from '../../icons/resolveIcon';
+import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { AccessLabel } from './AccessLabel';
 import { MenuNumberValue, MenuTextValue } from './MenuValue';
 import { MenuColorValue, editsColor } from './MenuColorValue';
 import s from './ContextMenu.module.css';
 
 const leftToBrowser = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey;
+
+/** Why a disabled item row cannot be chosen, in words, or `undefined` for a row with nothing to say. */
+export function disabledReasonText(e: MenuEntry | undefined): string | undefined {
+  return e?.kind === 'item' && e.disabled && e.disabledReason
+    ? DEFAULT_REASON_LABELS[e.disabledReason] ?? e.disabledReason : undefined;
+}
 
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at
  *  the highlighted row with `aria-activedescendant`. An item with an `href` is an `a`. A number or text row
@@ -34,6 +41,7 @@ export function MenuRow(props: {
   const link = e.kind === 'item' && e.href !== undefined;
   const current = e.kind === 'item' && e.current;
   const picks = e.kind === 'color' && editsColor(e);
+  const why = disabledReasonText(e);
 
   const onClick = (ev: MouseEvent) => {
     const browser = link && !e.disabled && leftToBrowser(ev);
@@ -47,6 +55,7 @@ export function MenuRow(props: {
     className: current ? `${s.row} ${s.current}` : s.row,
     'data-highlighted': highlighted || undefined,
     'aria-disabled': e.disabled || (e.kind === 'color' && !e.set) || undefined,
+    'aria-description': why,
     'aria-checked': checkable ? e.checked : undefined,
     'aria-current': current ? ('page' as const) : undefined,
     'aria-haspopup': e.kind === 'submenu' ? ('menu' as const) : picks ? ('dialog' as const) : undefined,

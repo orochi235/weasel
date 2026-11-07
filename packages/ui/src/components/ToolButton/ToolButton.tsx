@@ -14,6 +14,9 @@ export interface ToolButtonProps {
   active?: boolean;
   /** Disabled state — passes through to the underlying button. */
   disabled?: boolean;
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
+   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
+  disabledReason?: string;
   /**
    * When true, sets `aria-disabled="true"` on the button without using the
    * native `disabled` attribute. This keeps the button focusable and reachable
@@ -50,13 +53,13 @@ export interface ToolButtonProps {
  */
 export function ToolButton(props: ToolButtonProps) {
   const {
-    icon, label, shortcut, active, disabled, ariaDisabled,
+    icon, label, shortcut, active, disabled, disabledReason, ariaDisabled,
     onClick, onPointerDown, onDragStart, title, className, menu,
   } = props;
-  const content = segmentTooltipContent({ tooltip: title, shortcut, label }) ?? label;
+  const content = segmentTooltipContent({ tooltip: title, shortcut, label, disabled, disabledReason }) ?? label;
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
-    <SegmentTooltip content={content} disabled={disabled}>
+    <SegmentTooltip content={content} disabled={disabled} disabledReason={disabledReason}>
       <button
         ref={menu?.ref}
         id={menu?.id}

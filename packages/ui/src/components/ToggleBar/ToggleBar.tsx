@@ -13,6 +13,9 @@ export type ToggleBarItem<V extends string | number = string> = {
   label?: ReactNode;
   ariaLabel?: string;
   disabled?: boolean;
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
+   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
+  disabledReason?: string;
 } & SegmentTooltipFields;
 
 /** Segment height and type scale for a {@link ToggleBar}. */
@@ -146,7 +149,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
           key: String(item.value),
           state,
           draw: (place) => (
-            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled}>
+            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
               <button
                 type="button"
                 role={mode === 'multiple' ? undefined : 'radio'}

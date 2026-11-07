@@ -14,6 +14,9 @@ export type ButtonBarItem<V extends string | number = string> = {
   label?: ReactNode;
   ariaLabel?: string;
   disabled?: boolean;
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
+   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
+  disabledReason?: string;
   onAction: () => void;
 } & SegmentTooltipFields;
 
@@ -64,7 +67,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
         key: String(item.value),
         state: 'off' as const,
         draw: (place) => (
-          <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled}>
+          <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
             <button
               type="button"
               aria-label={item.ariaLabel}

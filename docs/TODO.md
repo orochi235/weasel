@@ -379,14 +379,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] A command cannot say why it is disabled.** `useCommand`'s `enabled` is typed
-  `() => true | ActionDisabledReason` (`routing/src/interactions/actions/useCommand.ts:12`), while the action layer
-  accepts a sentence (`ActionUnavailable`), so a menu item driven by a command has no way to explain itself
-  (collego, 2026-11-07). Closes when `enabled` may return a sentence and a menu shows it the way it shows an action's.
-- **(P2) [agent] A disabled `Button` turns off its own tooltip.** `Button` passes `disabled` to `SegmentTooltip`
-  (`ui/src/components/Button/Button.tsx:145`), so the one control that most needs to explain itself shows nothing
-  on hover (collego, 2026-11-07). Closes when a disabled button's tooltip still shows, carrying a disabled reason
-  when one is given.
 
 - **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
   (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
