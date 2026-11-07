@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pathFromD } from '@weasel-js/core';
+import { getMarker, pathFromD, registerMarker } from '@weasel-js/core';
 import { serializeSvg } from './serialize';
 import { parseSvg } from './parse';
 import type { SvgNode } from './types';
@@ -18,6 +18,22 @@ describe('marker serialization', () => {
     const id = /marker-end="url\(#([^)]+)\)"/.exec(out)![1];
     expect(out).toContain(`<marker id="${id}"`);
     expect(out.indexOf('<defs>')).toBeLessThan(out.indexOf('marker-end='));
+  });
+
+  it('says so when it leaves out a marker no registry entry backs', () => {
+    const warnings: string[] = [];
+    const out = serializeSvg(line({ markerEnd: 'never-registered' }), { onWarn: (m) => warnings.push(m) });
+    expect(out).not.toContain('marker-end');
+    expect(warnings).toEqual(['marker "never-registered" is not registered, so the stroke is written without it']);
+  });
+
+  it('says so for a text stroke too', () => {
+    const warnings: string[] = [];
+    serializeSvg([{
+      kind: 'text', x: 0, y: 0, width: 10, height: 10, text: 'a',
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 1, markerEnd: 'never-registered' },
+    } as SvgNode], { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toContain('marker "never-registered" is not registered, so the stroke is written without it');
   });
 
   it('emits one def for a key used many times', () => {
@@ -54,6 +70,37 @@ describe('marker serialization', () => {
     const { nodes, warnings } = parseSvg(out);
     expect(warnings).toEqual([]);
     expect((nodes[0] as { stroke?: { markerMid?: string } }).stroke?.markerMid).toBe('dot');
+  });
+});
+
+describe('a marker key that is not an XML id', () => {
+  it('writes a well-formed def and reads the key back', () => {
+    const key = 'my "arrow" & <co>';
+    const arrow = getMarker('arrow')!;
+    const unregister = registerMarker({ ...arrow, id: key });
+    try {
+      const svg = serializeSvg(line({ markerEnd: key }));
+      const { nodes, warnings } = parseSvg(svg);
+      expect(warnings).toEqual([]);
+      expect((nodes[0] as { stroke?: { markerEnd?: string } }).stroke?.markerEnd).toBe(key);
+    } finally {
+      unregister();
+    }
+  });
+});
+
+describe('a marker key that is not an XML id, unregistered by the time it is read', () => {
+  it('reads both references of a seated head back under the key, with its inset', () => {
+    const arrow = getMarker('arrow')!;
+    const key = 'my tick';
+    const unregister = registerMarker({ ...arrow, id: key, inset: 2 });
+    const svg = serializeSvg(line({ markerStart: key, markerEnd: { key, size: 3 } }));
+    unregister();
+    const parsed = parseSvg(svg);
+    expect(parsed.warnings).toEqual([]);
+    expect(parsed.markers?.map((m) => [m.id, m.inset])).toEqual([[key, 2]]);
+    const stroke = (parsed.nodes[0] as { stroke?: Record<string, unknown> }).stroke!;
+    expect([stroke.markerStart, stroke.markerEnd]).toEqual([key, { key, size: 3 }]);
   });
 });
 

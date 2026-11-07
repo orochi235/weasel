@@ -1,8 +1,10 @@
 import type { Rect } from '@weasel-js/geom';
+import { checkImageSize } from './shared';
 
 /** A per-pixel protect mask (1 = protected) from rects in pixel space. Rects
  *  round outward to whole pixels and clip to the image. */
 export function protectMask(rects: Iterable<Rect>, width: number, height: number): Uint8Array {
+  checkImageSize('protectMask', width, height);
   const mask = new Uint8Array(width * height);
   for (const r of rects) {
     const x0 = Math.max(0, Math.floor(r.x));

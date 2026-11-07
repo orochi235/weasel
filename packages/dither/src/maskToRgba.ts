@@ -1,3 +1,4 @@
+import { checkImageSize } from './shared';
 import type { Rgba } from './types';
 
 const INK: Rgba = [0, 0, 0, 255];
@@ -10,6 +11,7 @@ export function maskToRgba(
   height: number,
   colors: { ink?: Rgba; blank?: Rgba } = {},
 ): Uint8ClampedArray<ArrayBuffer> {
+  checkImageSize('maskToRgba', width, height);
   if (mask.length !== width * height) {
     throw new RangeError(`maskToRgba: mask holds ${mask.length} pixels, ${width}×${height} needs ${width * height}`);
   }

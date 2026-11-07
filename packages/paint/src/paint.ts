@@ -161,6 +161,10 @@ export interface Stroke {
    *  the width's units: world, or screen pixels on a `{ px }` stroke, as SVG's
    *  `non-scaling-stroke` measures them. */
   dash?: number[];
+  /** How far into `dash` each subpath starts, in the dash's units: SVG's
+   *  `stroke-dashoffset` and Canvas2D's `lineDashOffset`. Negative starts
+   *  before the pattern's beginning; a non-finite one reads as 0. */
+  dashOffset?: number;
   /** The stretch of the path drawn; omitted, all of it. See {@link StrokeTrim}. */
   trim?: StrokeTrim;
   /** Marker at the first vertex of each open subpath, rotated to point back
@@ -332,6 +336,30 @@ export function dashPattern(
     if ((length / period) * dash.length > MAX_DASH_RUNS) return 'solid';
   }
   return dash;
+}
+
+/**
+ * Where in `pattern` (one {@link dashPattern} returned) a line starts that sits
+ * `phase` along it: `phase` wrapped into one cycle, `0` up to but not including
+ * the period — twice the sum for an odd-length pattern, whose dashes and gaps
+ * swap each pass. Negative and non-finite phases are read as SVG reads them.
+ */
+export function dashPhase(pattern: readonly number[], phase: number): number {
+  if (!Number.isFinite(phase) || phase === 0) return 0;
+  const cycle = pattern.reduce((a, b) => a + b, 0) * (pattern.length % 2 + 1);
+  if (!(cycle > 0)) return 0;
+  const wrapped = phase % cycle;
+  return wrapped < 0 ? wrapped + cycle : wrapped;
+}
+
+/** `stroke`'s dash and dash offset, each length multiplied by `k`: the two move together. */
+export function scaledDash<T extends Pick<Stroke, 'dash' | 'dashOffset'>>(stroke: T, k: number): T {
+  if (stroke.dash === undefined && stroke.dashOffset === undefined) return stroke;
+  return {
+    ...stroke,
+    ...(stroke.dash ? { dash: stroke.dash.map((d) => d * k) } : {}),
+    ...(stroke.dashOffset !== undefined ? { dashOffset: stroke.dashOffset * k } : {}),
+  };
 }
 
 /**

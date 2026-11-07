@@ -62,6 +62,8 @@ export {
   STROKE_DASH_RATIOS,
   dashForStrokeStyle,
   dashPattern,
+  dashPhase,
+  scaledDash,
   MAX_DASH_RUNS,
   strokeDashStyleOf,
 } from './paint';

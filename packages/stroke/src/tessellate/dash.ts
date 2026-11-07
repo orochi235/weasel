@@ -1,6 +1,6 @@
 import type { Path } from '@weasel-js/geom';
 import { anchorParamsBetween, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
-import { dashPattern } from '@weasel-js/paint';
+import { dashPattern, dashPhase } from '@weasel-js/paint';
 
 /** A polyline whose points may also carry their arc length along a longer
  *  line it was cut from, which dashing carries to each dash. */
@@ -64,16 +64,18 @@ function toPolyline(run: Run, closed = false): MeasuredPolyline {
  * stroke operator would, so no subpath goes solid while its neighbor dashes.
  * `length` is the path length that decision reads, the polylines' own by
  * default; a trimmed stroke passes its untrimmed one. `phases[i]` starts
- * `polylines[i]`'s pattern that far in (see {@link splitForDash}).
+ * `polylines[i]`'s pattern that far in (see {@link splitForDash}), and
+ * `offset`, the stroke's `dashOffset`, moves every one of them further.
  */
 export function dashPolylines(
   polylines: readonly MeasuredPolyline[], pattern: readonly number[] | undefined, phases?: readonly number[],
-  length = polylinesLength(polylines),
+  length = polylinesLength(polylines), offset = 0,
 ): MeasuredPolyline[] {
   const dash = dashPattern(pattern, length);
   if (dash === 'solid') return [...polylines];
   if (dash === 'non-finite') return [];
-  return polylines.flatMap((pl, i) => splitForDash(pl, dash, phases?.[i] ?? 0));
+  const at = Number.isFinite(offset) ? offset : 0;
+  return polylines.flatMap((pl, i) => splitForDash(pl, dash, (phases?.[i] ?? 0) + at));
 }
 
 /**
@@ -130,9 +132,8 @@ export function splitForDash(pl: MeasuredPolyline, pattern: readonly number[], p
   let dashIdx = 0;
   let dashRemaining = dash[0];
   let onPhase = true;
-  if (phase > 0) {
-    // An odd-length pattern swaps on and off each pass, so it repeats every two.
-    let into = phase % (dash.reduce((a, b) => a + b, 0) * (dash.length % 2 + 1));
+  let into = dashPhase(dash, phase);
+  if (into > 0) {
     while (into >= dash[dashIdx]) {
       into -= dash[dashIdx];
       dashIdx = (dashIdx + 1) % dash.length;

@@ -11,6 +11,13 @@ export const DEFAULT_THRESHOLD = 128;
 
 export const WHITE: Rgb = [255, 255, 255];
 
+/** Throws unless `width` and `height` are whole numbers of pixels, zero included. */
+export function checkImageSize(caller: string, width: number, height: number): void {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 0 || height < 0) {
+    throw new RangeError(`${caller}: a ${width}×${height} image is not a whole number of pixels`);
+  }
+}
+
 /** The gray an ordered dither compares against at dot (x, y): below it is ink. */
 export function bayerCutoff(x: number, y: number, threshold: number): number {
   const m = BAYER_4X4[(((y % 4) + 4) % 4) * 4 + (((x % 4) + 4) % 4)]!;

@@ -46,6 +46,10 @@ export function outlineCommand(
   const run = cmd.runs[g.run];
   const out: PathDrawCommand = { kind: 'path', path };
   if (paint !== 'stroke' && fillHasInk(run.fill)) out.fill = run.fill as CommandFill;
-  if (strokeHasInk(run.stroke)) out.stroke = run.stroke as CommandStroke;
+  if (strokeHasInk(run.stroke)) {
+    // The renderer strokes a glyph's outline with no heads, so none are drawn on it here either.
+    const { markerStart: _s, markerMid: _m, markerEnd: _e, ...line } = run.stroke as CommandStroke;
+    out.stroke = line;
+  }
   return out;
 }

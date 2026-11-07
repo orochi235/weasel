@@ -246,6 +246,7 @@ export const PROPERTIES = {
   'stroke-linecap': inherited(readLinecap),
   'stroke-linejoin': inherited(readLinejoin),
   'stroke-dasharray': inherited(readDashArray),
+  'stroke-dashoffset': inherited(worldLength),
   'stroke-miterlimit': inherited(readMiterLimit),
   'marker-start': inherited(readMarkerRef),
   'marker-mid': inherited(readMarkerRef),

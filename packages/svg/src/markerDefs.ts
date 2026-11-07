@@ -48,14 +48,36 @@ export function markerDefOf(ref: MarkerRef, seated: boolean): { id: string; def:
   const key = typeof ref === 'string' ? ref : ref.key;
   const size = typeof ref === 'string' ? undefined : ref.size;
   const asSeated = seated && seats(ref);
-  const sized = size === undefined ? key : `${key}-s${typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}`;
+  const base = idOfKey(key);
+  const sized = size === undefined ? base : `${base}-s${typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}`;
   const id = !asSeated && seats(ref) ? `${sized}-tip` : sized;
   return { id, def: { key, ...(size === undefined ? {} : { size }), seated: asSeated } };
 }
 
+/** FNV-1a, for a key that tells apart two documents' same-named markers. */
+export function shortHash(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
+/** What an attribute and an unquoted `url(#…)` both hold as written: no space, quote, markup, or bracket. */
+const SAFE_ID = /^[^\s"'&<>()#\\]+$/;
+
+/** `key` as an id an attribute and a `url(#…)` can both hold: itself when it
+ *  is one, else its safe characters and a hash of the whole, so two keys that
+ *  differ only in what is replaced stay apart. */
+function idOfKey(key: string): string {
+  if (SAFE_ID.test(key)) return key;
+  return `m-${key.replace(/[^\w.-]/g, '_')}-${shortHash(key)}`;
+}
+
 /** Whether `def` is written with an attribute in the private namespace. */
 export function defUsesPrivateNamespace(def: MarkerDef): boolean {
-  return def.size !== undefined || writesInset(getMarker(def.key));
+  return def.size !== undefined || writesInset(getMarker(def.key)) || idOfKey(def.key) !== def.key;
 }
 
 /** The `<marker>` def for an entry with no `toSvg` of its own. Unsized, one

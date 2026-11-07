@@ -58,7 +58,7 @@ function strokeRuns(cut: TrimmedPath, stroke: SvgStroke): SvgPathNode[] {
   const dashed = (stroke.dash?.length ?? 0) > 0;
   return trimmedRuns(cut, dashed, true).map(({ path, dashPhase, fromClosed }) => {
     const s = fromClosed ? withoutEndMarkers(stroke) : stroke;
-    return { kind: 'path', path, fill: NONE, stroke: dashed && dashPhase > 0 ? { ...s, dashOffset: dashPhase } : s };
+    return { kind: 'path', path, fill: NONE, stroke: dashed && dashPhase > 0 ? { ...s, dashOffset: dashPhase + (s.dashOffset ?? 0) } : s };
   });
 }
 

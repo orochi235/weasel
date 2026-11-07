@@ -16,6 +16,16 @@ describe('outline stroke mesh cache', () => {
     expect(Array.from(nibbed!.vertices)).not.toEqual(Array.from(plain!.vertices));
   });
 
+  it('draws an inner or outer stroke on its own side of the glyph edge, as writePdf does', () => {
+    const xs = (align: 'inner' | 'center' | 'outer') => {
+      const v = Array.from(outlineStrokeMesh('k|sq', SQUARE, 0.1, { align })!.vertices).filter((_, i) => i % 2 === 0);
+      return [Math.min(...v), Math.max(...v)].map((n) => Math.round(n * 1e4) / 1e4);
+    };
+    expect(xs('center')).toEqual([-0.05, 1.05]);
+    expect(xs('inner')).toEqual([0, 1]);
+    expect(xs('outer')).toEqual([-0.1, 1.1]);
+  });
+
   it('keys a trim, so a trimmed outline does not reuse the whole ribbon', () => {
     const whole = outlineStrokeMesh('k|line', LINE, 0.1, {});
     const half = outlineStrokeMesh('k|line', LINE, 0.1, { trim: { start: 0, end: 0.5 } });

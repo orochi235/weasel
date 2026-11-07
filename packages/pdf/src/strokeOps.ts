@@ -1,10 +1,12 @@
 import { joinPaths, type Path, type PolygonPath, splitByClosure, splitSubpaths } from '@weasel-js/geom';
-import { type CommandPaint, type CommandStroke, dashPattern, isSolidPaint, type Stroke } from '@weasel-js/paint';
+import {
+  type CommandPaint, type CommandStroke, dashPattern, dashPhase, isSolidPaint, type Stroke,
+} from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
 import { dashLength, insetPath, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
-import { NonFiniteNumber, num } from './num';
+import { num } from './num';
 import { pathOps } from './pathOps';
 
 const CAPS = { butt: 0, round: 1, square: 2 } as const;
@@ -28,9 +30,11 @@ export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: numbe
   out.op('j', JOINS[stroke.join ?? 'miter']);
   out.op('M', stroke.miterLimit ?? 4);
   // PDF draws nothing for an all-zero dash and rejects a negative one; the renderer strokes both solid.
+  // A non-finite one never gets here: no line is drawn for it.
   const dash = dashPattern(stroke.dash, length);
-  if (dash === 'non-finite') throw new NonFiniteNumber(`pdf: cannot write non-finite dash ${stroke.dash}`);
-  if (dash !== 'solid') out.op('d', `[${dash.map(num).join(' ')}]`, phase);
+  if (dash === 'solid' || dash === 'non-finite') return;
+  // Wrapped into one cycle, as the renderer's dasher reads it; PDF has no rule for a negative phase.
+  out.op('d', `[${dash.map(num).join(' ')}]`, num(dashPhase(dash, phase + (stroke.dashOffset ?? 0))));
 }
 
 /** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */
@@ -46,7 +50,8 @@ export function resolveStroke(
 function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: DrawState, width: number): void {
   const paint = stroke.paint;
   const cut = trimmedPath(path, stroke.trim);
-  if (!paint || !isSolidPaint(paint) || !cut) return;
+  // The renderer draws no line for a non-finite dash, and still draws its heads.
+  if (!paint || !isSolidPaint(paint) || !cut || dashPattern(stroke.dash) === 'non-finite') return;
   const { rgb, alpha } = solidColor(paint, state);
   const { out } = ctx;
   out.op('q');

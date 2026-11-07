@@ -54,4 +54,10 @@ describe('lerpFill and lerpStroke', () => {
     expect(lerpStroke({ width: 2, cap: 'round' }, { width: 6 }, 0.25)).toEqual({ width: 3, cap: 'round' });
     expect(lerpStroke(null, { width: 4, paint: { color: '#000000' } }, 0.5)).toMatchObject({ width: 2 });
   });
+
+  it('slides a dash offset, from none as zero', () => {
+    expect(lerpStroke({ width: 1, dash: [4, 4], dashOffset: 2 }, { width: 1, dash: [4, 4], dashOffset: 6 }, 0.25))
+      .toEqual({ width: 1, dash: [4, 4], dashOffset: 3 });
+    expect(lerpStroke({ width: 1, dash: [4, 4] }, { width: 1, dash: [4, 4], dashOffset: 8 }, 0.5)?.dashOffset).toBe(4);
+  });
 });

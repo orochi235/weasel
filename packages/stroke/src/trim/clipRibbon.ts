@@ -93,7 +93,7 @@ export function clipRibbon(
   const strokeIn = strokePolylines(path, stroke, style.width, opts.flattenTolerance, metric);
   const polylines = strokeIn.polylines.map((pl) => (metric && !strokeIn.rectInMetric ? into(pl, metric) : pl));
   const dashLength = stroke.dash === undefined ? undefined : untrimmedWorldLength(polylines, si, ei);
-  const dash = (pls: MeasuredPolyline[]) => dashPolylines(pls, stroke.dash, undefined, dashLength);
+  const dash = (pls: MeasuredPolyline[]) => dashPolylines(pls, stroke.dash, undefined, dashLength, stroke.dashOffset);
   const out: RibbonOut = { verts: [], idx: [], anchorA: [], anchorB: [], anchorT: [], lengths: [] };
   const trim: number[] = [];
   const tag = (from: number, lo: number, hi: number, kind: number) => {

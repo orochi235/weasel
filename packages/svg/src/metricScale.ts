@@ -7,7 +7,7 @@
  * A `{ px }` length is pinned to the screen and never scaled.
  */
 import type { ScreenLength, StyledRun, TextStyle } from '@weasel-js/core';
-import { resolveTextStyle, scaleVertexWidth, type VertexWidth } from '@weasel-js/core';
+import { resolveTextStyle, scaledDash, scaleVertexWidth, type VertexWidth } from '@weasel-js/core';
 
 export function scaleLength(v: ScreenLength, scale: number): ScreenLength {
   return typeof v === 'number' ? v * scale : v;
@@ -16,6 +16,7 @@ export function scaleLength(v: ScreenLength, scale: number): ScreenLength {
 interface StrokeMetrics {
   width?: ScreenLength;
   dash?: number[];
+  dashOffset?: number;
   vertexWidths?: VertexWidth[];
 }
 
@@ -28,8 +29,7 @@ export function scaleStroke<T extends StrokeMetrics>(stroke: T, scale: number): 
   if (typeof width === 'object') return vertexWidths ? { ...stroke, ...scaledVertices } : stroke;
   const out = { ...stroke, ...scaledVertices };
   if (width !== undefined) out.width = width * scale;
-  if (out.dash) out.dash = out.dash.map((n) => n * scale);
-  return out;
+  return scaledDash(out, scale);
 }
 
 export function scaleRuns(runs: readonly StyledRun[], scale: number): StyledRun[] {

@@ -32,6 +32,8 @@ describe('stroke ribbon cache', () => {
     expect(strokeMesh(path, { ...base, miterLimit: 2 }, undefined)).not.toBe(first);
     expect(strokeMesh(path, { ...base, align: 'inner' }, undefined)).not.toBe(first);
     expect(strokeMesh(path, { ...base, dash: [2, 2] }, undefined)).not.toBe(first);
+    const dashed = strokeMesh(path, { ...base, dash: [2, 2] }, undefined);
+    expect(strokeMesh(path, { ...base, dash: [2, 2], dashOffset: 1 }, undefined)).not.toBe(dashed);
   });
 
   it('misses when the nib changes, and hits on an equal one', () => {
