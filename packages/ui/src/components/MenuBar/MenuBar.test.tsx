@@ -113,6 +113,15 @@ describe('MenuBar', () => {
     expect(menu.getAttribute('aria-activedescendant')).toBe(screen.getByRole('menuitem', { name: 'Undo' }).id);
   });
 
+  it('moves focus to the first and last title on Home and End', () => {
+    const { file, edit } = setup();
+    act(() => file.focus());
+    fireEvent.keyDown(file, { key: 'End' });
+    expect(document.activeElement).toBe(edit);
+    fireEvent.keyDown(edit, { key: 'Home' });
+    expect(document.activeElement).toBe(file);
+  });
+
   it('moves to the neighboring menu, open, on Left or Right inside one', () => {
     const { file } = setup();
     act(() => file.focus());
