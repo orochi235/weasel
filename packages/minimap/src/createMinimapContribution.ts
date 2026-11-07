@@ -19,7 +19,7 @@ import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
 } from './actions';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
-import { accentColorOf, FALLBACK_ACCENT } from '@weasel-js/core';
+import { accentColorOf, FALLBACK_ACCENT, watchThemeOf } from '@weasel-js/core';
 
 
 /**
@@ -28,6 +28,16 @@ import { accentColorOf, FALLBACK_ACCENT } from '@weasel-js/core';
  * `ownViews` are the view ids this surface paints; the crosshair shows in any
  * of them the pointer is not over.
  */
+/** Hands `set` the theme's accent on `api`'s element now and whenever its theme changes, repainting on each change. */
+function followAccent(api: CanvasExtensionApi, set: (color: string) => void): () => void {
+  const read = () => set(accentColorOf(api.element));
+  read();
+  return watchThemeOf(() => api.element, () => {
+    read();
+    api.requestRedraw();
+  });
+}
+
 function linkedCursor(id: string, ownViews: readonly (string | null)[]) {
   let pointer: PointerWorldPos = null;
   let color = FALLBACK_ACCENT;
@@ -37,7 +47,7 @@ function linkedCursor(id: string, ownViews: readonly (string | null)[]) {
   const attach = (api: CanvasExtensionApi, deps: ContributionDepReader): (() => void) => {
     const store = deps.get('pointer');
     if (!store) return () => {};
-    color = accentColorOf(api.element);
+    const stopAccent = followAccent(api, (c) => { color = c; });
     pointer = store.get();
     const off = store.subscribe(() => {
       const prev = pointer;
@@ -46,6 +56,7 @@ function linkedCursor(id: string, ownViews: readonly (string | null)[]) {
     });
     return () => {
       off();
+      stopAccent();
       pointer = null;
       api.requestRedraw();
     };
@@ -138,9 +149,11 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
   };
 
   const cursor = linkedCursor(`${id}.cursor`, [null, id]);
+  let accent = FALLBACK_ACCENT;
   const indicator = createIndicatorLayer({
     viewId: id,
     root: () => deps?.get('rootView'),
+    color: () => accent,
     ...(opts.indicatorStyle ? { style: opts.indicatorStyle } : {}),
   });
 
@@ -163,11 +176,13 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     overlay: [indicator, cursor.layer],
     attach: (api, reader) => {
       deps = reader;
+      const stopAccent = followAccent(api, (c) => { accent = c; });
       const detachCursor = cursor.attach(api, reader);
       // The fit camera had no scene until now.
       api.requestRedraw();
       return () => {
         detachCursor();
+        stopAccent();
         deps = null;
         cached = null;
       };

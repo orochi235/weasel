@@ -3,7 +3,7 @@ import { composeWorldPose, documentPose, effectivePose, scenePoseAdapter, viewpo
 import type { NodeId, PoseAdapter, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
-import { poseDescriptorForNode, type PoseDescriptor } from '@weasel-js/core';
+import { FALLBACK_ACCENT, poseDescriptorForNode, type PoseDescriptor } from '@weasel-js/core';
 import type { PathDrawCommand } from '@weasel-js/core';
 
 /** Inset (CSS px) around the fit rect on each side. Matches the spec note. */
@@ -32,7 +32,7 @@ export type MinimapFit<TData, TLayer extends string, TPose> =
 
 /** Style for the visible-window indicator rect drawn over the minimap. */
 export interface IndicatorStyle {
-  /** Stroke color (any CSS color). Defaults to `'#ffffff'`. */
+  /** Stroke color (any CSS color). Defaults to the theme's `--wzl-accent`, the color of the minimap's crosshair. */
   stroke?: string;
   /** Stroke width in CSS px. Defaults to `1`. */
   width?: number;
@@ -40,7 +40,6 @@ export interface IndicatorStyle {
   dash?: number[];
 }
 
-const DEFAULT_INDICATOR_STROKE = '#ffffff';
 const DEFAULT_INDICATOR_WIDTH = 1;
 const DEFAULT_INDICATOR_DASH: readonly number[] = [2, 3];
 
@@ -151,13 +150,15 @@ export function computeFitView<TData, TLayer extends string, TPose>(
  * canvas's visible world rect as a dashed-stroke `path` rect with no fill, in
  * world coordinates. Pass the `minimapView` it will be drawn through, so the
  * stroke width and dash come out in CSS px at any fit scale; without it they
- * are in world units.
+ * are in world units. `themeStroke` is the stroke when `style` names none: the
+ * theme's accent as read off the minimap's element (`accentColorOf`).
  */
 export function computeIndicatorCommand(
   mainView: View,
   mainViewDims: ViewportDims,
   style: IndicatorStyle = {},
   minimapView?: View,
+  themeStroke: string = FALLBACK_ACCENT,
 ): PathDrawCommand {
   // World-space rect, returned as-is: the caller wraps the command list in a
   // group transformed by the minimap's view, and screen coords here would get
@@ -168,7 +169,7 @@ export function computeIndicatorCommand(
     kind: 'path',
     path: { kind: 'rect', x, y, width, height },
     stroke: {
-      paint: { kind: 'solid', color: style.stroke ?? DEFAULT_INDICATOR_STROKE },
+      paint: { kind: 'solid', color: style.stroke ?? themeStroke },
       width: (style.width ?? DEFAULT_INDICATOR_WIDTH) * px,
       dash: (style.dash ?? DEFAULT_INDICATOR_DASH).map((d) => d * px),
     },

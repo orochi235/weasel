@@ -13,6 +13,7 @@ import { createScene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { CanvasExtensionApi } from '@weasel-js/core';
 import type { ViewApi } from '@weasel-js/core';
+import type { ContributionDepReader, PathDrawCommand, RenderLayer, SurfaceContribution } from '@weasel-js/core';
 import { createPointerStore } from '@weasel-js/routing/react';
 import { createMinimapContribution, createLinkedCursorContribution } from './createMinimapContribution';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
@@ -152,6 +153,31 @@ describe('minimap chrome', () => {
     const [cmd] = layer.draw({ viewId: 'minimap' }, mirrored, { width: 100, height: 80, dpr: 1 });
     expect(cmd).toEqual(computeIndicatorCommand(root.get(), { width: 400, height: 300 }, { width: 2 }, mirrored));
     expect((cmd as { stroke: { width: number } }).stroke.width).toBeCloseTo(25);
+  });
+
+  it('strokes the indicator in the theme\'s accent, following a theme change, unless its style names a stroke', async () => {
+    const strokeOf = (layer: RenderLayer<unknown>) =>
+      (layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 })[0] as PathDrawCommand).stroke?.paint;
+    const host = document.body.appendChild(document.createElement('div'));
+    const element = host.appendChild(document.createElement('canvas'));
+    element.style.setProperty('--wzl-accent', '#123456');
+    const api = { element, requestRedraw: vi.fn() } as unknown as CanvasExtensionApi;
+    const reader = { get: (k: string) => (k === 'rootView' ? root : undefined) } as unknown as ContributionDepReader;
+    const themed = createMinimapContribution({ rect: RECT });
+    const styled = createMinimapContribution({ rect: RECT, indicatorStyle: { stroke: '#ff00aa' } });
+    const detach = [themed.attach!(api, reader), styled.attach!(api, reader)];
+    const indicatorOf = (c: SurfaceContribution) => (c.overlay as RenderLayer<unknown>[])[0]!;
+    expect(strokeOf(indicatorOf(themed))).toEqual({ kind: 'solid', color: '#123456' });
+    expect(strokeOf(indicatorOf(styled))).toEqual({ kind: 'solid', color: '#ff00aa' });
+
+    element.style.setProperty('--wzl-accent', '#abcdef');
+    api.requestRedraw = vi.fn();
+    host.setAttribute('data-wzl-mode', 'light');
+    await Promise.resolve();
+    expect(api.requestRedraw).toHaveBeenCalled();
+    expect(strokeOf(indicatorOf(themed))).toEqual({ kind: 'solid', color: '#abcdef' });
+    for (const d of detach) (d as () => void)();
+    host.remove();
   });
 
   it('paints the crosshair in views the pointer is not over, at a fixed screen size', () => {

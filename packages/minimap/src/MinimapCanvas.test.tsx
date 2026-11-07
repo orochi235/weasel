@@ -403,6 +403,36 @@ describe('<MinimapCanvas>', () => {
     expect((indicator.stroke?.width as number) * scale).toBeCloseTo(3, 6);
     expect(indicator.stroke?.dash?.map((d) => d * scale)).toEqual([expect.closeTo(5, 6), expect.closeTo(2, 6)]);
   });
+
+  it('strokes the indicator in the theme\'s accent by default, and follows a theme change', async () => {
+    const canvasRef = createRef<HTMLCanvasElement>();
+    render(
+      <div>
+        <MinimapCanvas
+          scene={makeScene()}
+          mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+          mainViewDims={{ width: 400, height: 300 }}
+          onMainViewChange={() => {}}
+          width={100}
+          height={100}
+          drawOne={drawOne}
+          canvasRef={canvasRef}
+        />
+      </div>,
+    );
+    const indicatorPaint = () => {
+      const root = renderMock.mock.calls.at(-1)![0][0] as GroupDrawCommand;
+      return (root.children.at(-1) as PathDrawCommand).stroke?.paint;
+    };
+    expect(indicatorPaint()).not.toEqual({ kind: 'solid', color: '#ffffff' });
+    canvasRef.current!.style.setProperty('--wzl-accent', '#123456');
+    await act(async () => {
+      canvasRef.current!.parentElement!.setAttribute('data-wzl-mode', 'light');
+      await Promise.resolve();
+    });
+    await act(() => frame());
+    expect(indicatorPaint()).toEqual({ kind: 'solid', color: '#123456' });
+  });
 });
 
 /** Resolves after the next animation frame — where the frame loop's paint lands. */

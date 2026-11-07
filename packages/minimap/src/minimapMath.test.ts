@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
+import { FALLBACK_ACCENT, IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
@@ -358,12 +358,14 @@ describe('computeIndicatorCommand', () => {
     expect(cmd.path).toMatchObject({ x: -380, y: -500, width: 400, height: 600 });
   });
 
-  it('default style is white 1px [2,3] dash', () => {
+  it('default style is the theme stroke, 1px [2,3] dash', () => {
     const cmd = computeIndicatorCommand(
       { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { width: 100, height: 100 },
     );
-    expect(cmd.stroke?.paint).toEqual({ kind: 'solid', color: '#ffffff' });
+    expect(cmd.stroke?.paint).toEqual({ kind: 'solid', color: FALLBACK_ACCENT });
+    const themed = computeIndicatorCommand({ x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 }, {}, undefined, '#123456');
+    expect(themed.stroke?.paint).toEqual({ kind: 'solid', color: '#123456' });
     expect(cmd.stroke?.width).toBe(1);
     expect(cmd.stroke?.dash).toEqual([2, 3]);
   });
