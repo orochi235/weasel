@@ -26,3 +26,7 @@ export const checkSpeed = (speed: number): void => {
 export const checkOrigin = (origin: number): void => {
   if (!Number.isFinite(origin)) throw new RangeError(`a clock's origin is finite, not ${origin}`);
 };
+
+export const checkLoop = (loop: boolean | number): void => {
+  if (typeof loop === 'number' && Number.isNaN(loop)) throw new RangeError("a clock's loop is a count of passes, not NaN");
+};

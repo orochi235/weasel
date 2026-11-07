@@ -3,7 +3,7 @@ import { followMix } from './mixFollow';
 import { passesOf, placeOf } from './place';
 import { type Ramp, stepRamp } from './ramp';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
-import { checkDuration, checkOrigin, checkRate, checkSpeed, ratesOf } from './validate';
+import { checkDuration, checkLoop, checkOrigin, checkRate, checkSpeed, ratesOf } from './validate';
 
 /** Where `clock` stands, for a record to reopen it at; `declared` is the
  *  duration its spec gave, and `declaredOrigin` the origin. */
@@ -127,6 +127,7 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   checkDuration(duration);
   checkOrigin(origin);
   checkSpeed(declared.speed);
+  checkLoop(declared.loop);
   const finite = Number.isFinite(run.duration) && Number.isFinite(duration);
   const { pass, into } = finite ? passOf(run) : { pass: 0, into: run.elapsed };
   const shown = run.origin + into;
@@ -225,6 +226,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
       return run.loop;
     },
     set loop(next: boolean | number) {
+      checkLoop(next);
       const { pass, into } = passOf(run);
       run.loop = next;
       run.span = run.duration * passesOf(run.loop);
@@ -278,6 +280,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   checkOrigin(origin);
   if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
+  checkLoop(loop);
   const run: Run = {
     duration,
     loop,

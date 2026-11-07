@@ -210,6 +210,14 @@ describe('createClock', () => {
       expect(clock.elapsed).toBe(0);
     });
 
+    it('refuses a loop that is NaN, declared or set', () => {
+      expect(() => createClock({ duration: 100, loop: Number.NaN })).toThrow(RangeError);
+      const handle = createClock({ duration: 100, loop: 2 });
+      expect(() => { handle.clock.loop = Number.NaN; }).toThrow(RangeError);
+      expect(() => handle.declare({ duration: 100, loop: Number.NaN })).toThrow(RangeError);
+      expect(handle.clock.loop).toBe(2);
+    });
+
     it('wakes a paused clock for one frame', () => {
       const wake = vi.fn();
       const { clock } = started({});
