@@ -58,6 +58,17 @@ describe('elkPlan', () => {
     expect(plan.groups.has('G')).toBe(true);
   });
 
+  it('lays out groups whose parents form a cycle, and what they hold, at the top level', async () => {
+    const graph = graphOf([node('a', { group: 'G' }), node('b')], [{ id: 'ab', from: 'a', to: 'b' }], [
+      { id: 'G', members: ['a'], inset: INSET, parent: 'H' },
+      { id: 'H', members: ['a'], inset: INSET, parent: 'G' },
+      { id: 'S', members: [], inset: INSET, parent: 'S' },
+    ]);
+    const plan = await elkPlan(graph);
+    expect([...plan.routes.keys()]).toEqual(['ab']);
+    expect([...plan.groups.keys()].sort()).toEqual(['G', 'H', 'S']);
+  });
+
   it('ranks a chain down the page, each node below the last', async () => {
     const graph = graphOf([node('a'), node('b'), node('c')], [
       { id: 'ab', from: 'a', to: 'b' },
