@@ -12,7 +12,7 @@
 import { pathFromD } from '@weasel-js/geom';
 import { tessellateStroke } from '@weasel-js/stroke';
 import { metricKey, type StrokeMetric } from '@weasel-js/stroke';
-import type { Stroke } from '@weasel-js/paint';
+import { strokeTrimKey, type Stroke } from '@weasel-js/paint';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { OUTLINE_FLATTEN_TOLERANCE } from './outlineMeshCache';
 
@@ -52,6 +52,8 @@ export function outlineStrokeMesh(
   const key = [
     glyphKey, emWidth, stroke.join ?? 'miter', stroke.cap ?? 'butt',
     stroke.miterLimit ?? '', stroke.align ?? 'center', (stroke.dash ?? []).join(','),
+    stroke.nib ? `${stroke.nib.angle}:${stroke.nib.ratio}` : '', stroke.varyingWidthJoinThreshold ?? '',
+    stroke.vertexWidths?.length ? JSON.stringify(stroke.vertexWidths) : '', strokeTrimKey(stroke.trim),
     metricKey(metric),
   ].join('|');
 
