@@ -54,6 +54,7 @@ export interface DevtoolsClient {
 }
 
 interface Pending {
+  rootId: string;
   resolve(result: unknown): void;
   reject(err: Error): void;
 }
@@ -71,17 +72,28 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
     listeners.emit();
   };
 
+  // The page never answers a request about a root that went, and the relay drops one in flight to a frame that went.
+  const dropFor = (gone: (rootId: string) => boolean): void => {
+    for (const [id, p] of pending) {
+      if (!gone(p.rootId)) continue;
+      pending.delete(id);
+      p.reject(new Error(`the root ${p.rootId} is gone`));
+    }
+  };
+
   const receive = (m: PageMessage): void => {
     if (state.status === 'closed') return;
     switch (m.type) {
       case 'sup':
         set({ status: 'connected', kitVersion: m.kitVersion, roots: m.roots, error: null });
+        dropFor((id) => !m.roots.some((r) => r.id === id));
         return;
       case 'root-added':
         set({ roots: [...state.roots.filter((r) => r.id !== m.root.id), m.root] });
         return;
       case 'root-removed':
         set({ roots: state.roots.filter((r) => r.id !== m.rootId) });
+        dropFor((id) => id === m.rootId);
         return;
       case 'changed': {
         const areas = Object.keys(m.areas) as DevtoolsArea[];
@@ -113,7 +125,7 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
       if (state.status === 'closed') return Promise.reject(new Error('the devtools connection is closed'));
       const requestId = nextId++;
       return new Promise((resolve, reject) => {
-        pending.set(requestId, { resolve: resolve as (r: unknown) => void, reject });
+        pending.set(requestId, { rootId, resolve: resolve as (r: unknown) => void, reject });
         transport.send({ ...body, protocol: DEVTOOLS_PROTOCOL, requestId, rootId } as DevtoolsRequest);
       });
     },
