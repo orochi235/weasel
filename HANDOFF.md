@@ -21,6 +21,11 @@ For the session picking this up: what is in flight and what has no other home. O
   fleet-green, and unpushed. The second batch changes how untrimmed strokes too large to batch are drawn, so the
   CI visual suite may show edge pixels move; and the Linux browser job now launches every file with the
   SwiftShader flag set, untried on CI.
+- A third 2026-11-07 batch (batch/2026-11-07c: a sweep of core, ui, labkit, forge, theme, routing, diagram, text, svg,
+  and the small packages and apps, plus rulers in guides and ui) is on `main` at 4a6f72ebe, unpushed. Its
+  `test:fleet` ran green on 9ae52cb44 and `test:fleet:postbuild` on bdf528f34, which differs from it by a test file;
+  the merge into `main` adds only another session's TODO rulings. A modifier-held tool now takes its own gestures
+  in routing's dispatcher, and the symmetry controller's `create` takes its center in world coordinates.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
