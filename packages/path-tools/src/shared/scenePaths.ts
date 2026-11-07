@@ -4,7 +4,7 @@
  * stop or cut them.
  */
 import type { ActionDeps } from '@weasel-js/routing';
-import type { Path } from '@weasel-js/geom';
+import { type Path, pxReach } from '@weasel-js/geom';
 import { type NodeId, nodeOutline, type PathNode, resolveEditablePathOf, type SceneNode } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
@@ -35,7 +35,7 @@ export function pressOf(deps: ActionDeps, params: unknown): StrokePress | null {
   const at = p?.press ?? p?.world;
   if (!at) return null;
   const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
-  const radius = (p?.radiusPx ?? DEFAULT_STROKE_REACH_PX) / Math.max(Math.abs(scale.x), Math.abs(scale.y));
+  const radius = pxReach(p?.radiusPx ?? DEFAULT_STROKE_REACH_PX, scale);
   return { at, radius };
 }
 

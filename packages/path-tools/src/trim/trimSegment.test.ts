@@ -78,6 +78,13 @@ describe('trimPathAction', () => {
     expect(Array.from(to.path.coords)).toEqual([20, 0, 30, 0, 30, 20, 0, 20, 0, 0, 10, 0]);
   });
 
+  it('reaches a stroke as far on screen as the other pickers do under non-uniform zoom', () => {
+    const view = { get: () => ({ scale: { x: 1, y: 4 } }) };
+    const { deps } = setup({ top: 'M0 -5 H30', bottom: 'M0 5 H30', post: 'M15 -10 V10' }, [], { view });
+    // 4 world units right of the post is 4 px on screen, inside the default 6 px reach.
+    expect(planTrim(deps, { press: { x: 19, y: 0 } })?.target.id).toBe('post');
+  });
+
   it('does nothing off every stroke, or on one nothing crosses', () => {
     const { deps, batches } = setup({ line: 'M0 0 H30', lone: 'M0 50 H30', ...walls });
     run(trimPathAction, deps, { press: { x: 15, y: 25 } });

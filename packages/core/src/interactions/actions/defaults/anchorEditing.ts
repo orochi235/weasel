@@ -39,7 +39,7 @@ import {
   type AnchorSet,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { pxExtent } from '@weasel-js/geom';
+import { pxReach } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
@@ -58,8 +58,7 @@ function anchorClickSlop(deps: ActionDeps | undefined): number {
   const px = deps?.kitSettings?.get('targets.anchorClickPx') ?? ANCHOR_CLICK_PX;
   const scale = deps?.view?.get().scale;
   if (!scale) return px;
-  const extent = pxExtent(px, scale);
-  return Math.max(extent.x, extent.y);
+  return pxReach(px, scale);
 }
 
 /** The `editAnchors` dep while a path is open, or null. */

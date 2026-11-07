@@ -1,4 +1,4 @@
-import { pxExtent } from '@weasel-js/geom';
+import { pxReach } from '@weasel-js/geom';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import { placeSkeleton, type RigNodeData } from '@weasel-js/core';
@@ -26,6 +26,5 @@ export function placedRig(
 
 /** `px` screen pixels as a distance in the scene, at the view's current scale. */
 export function sceneReach(deps: ActionDeps, px: number): number {
-  const e = pxExtent(px, deps.view?.get().scale ?? { x: 1, y: 1 });
-  return Math.max(e.x, e.y);
+  return pxReach(px, deps.view?.get().scale ?? { x: 1, y: 1 });
 }

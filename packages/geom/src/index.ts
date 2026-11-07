@@ -181,7 +181,7 @@ export {
 } from './easings';
 export { cubicBezierEasing, resolveEasing, type BezierEasing, type EasingSpec } from './easingSpec';
 export { meanScale } from './meanScale';
-export { pxExtent, pxExtentInFrame, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
+export { pxExtent, pxExtentInFrame, pxReach, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';
 export {
   boxFrameOf, poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type FramedBox, type PoseLinear,

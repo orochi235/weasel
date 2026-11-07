@@ -42,6 +42,15 @@ export function pxExtent(px: number, scale: Scale2, rotation = 0): { x: number; 
   };
 }
 
+/** `px` screen pixels as one world distance: the larger of its per-axis
+ *  extents, so a radius test against it reaches at least `px` on screen along
+ *  either axis. For geometry that takes a scalar tolerance; prefer
+ *  {@link withinPxRadius} where the comparison can stay on screen. */
+export function pxReach(px: number, scale: Scale2): number {
+  const e = pxExtent(px, scale);
+  return Math.max(e.x, e.y);
+}
+
 /** World delta → screen delta. Only the scale participates: translation
  *  cancels in a difference, and the kit's views carry no skew. */
 export function scaleDelta(dx: number, dy: number, scale: Scale2): { x: number; y: number } {

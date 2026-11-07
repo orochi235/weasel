@@ -6,7 +6,7 @@ import {
   type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
-import { pxExtent, smudgePath, type PolygonPath } from '@weasel-js/geom';
+import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
 import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
 import { commitOps, drawnAABBOf, reshapeOps, withPath, type PathNode, type SceneNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
@@ -62,8 +62,7 @@ function discMeetsBox(c: Point, r: number, b: { x: number; y: number; width: num
 
 /** The brush's radius in world units: `radiusPx` on screen at the view's `scale`. */
 function worldRadius(scale: { x: number; y: number } | undefined, radiusPx: number): number {
-  const reach = pxExtent(radiusPx, scale ?? { x: 1, y: 1 });
-  return Math.max(reach.x, reach.y);
+  return pxReach(radiusPx, scale ?? { x: 1, y: 1 });
 }
 
 /** One dab: where the pointer moved to, and the view's scale as it did. */

@@ -1,7 +1,7 @@
 import type { Action, ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
-import { meanScale, pathToAnchors, pxExtent, type PolygonPath, type Point } from '@weasel-js/geom';
+import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
 import { commitOps, reshapeTo, type Scene } from '@weasel-js/core';
 import {
@@ -70,8 +70,7 @@ const found = (deps: ActionDeps, env: GirthEnv, reachPx = env.reachPx()) => {
   const scene = deps.scene as AnyScene | undefined;
   if (!scene) return null;
   const s = deps.view?.get().scale ?? { x: 1, y: 1 };
-  const e = pxExtent(reachPx, s);
-  return { scene, scale: meanScale(s), reach: Math.max(e.x, e.y) };
+  return { scene, scale: meanScale(s), reach: pxReach(reachPx, s) };
 };
 
 const focusOf = (path: PolygonPath, widths: readonly VertexWidth[], fallback: number, grab?: GirthFocus['grab']): GirthFocus => ({
