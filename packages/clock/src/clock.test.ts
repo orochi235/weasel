@@ -257,6 +257,27 @@ describe('createClock', () => {
       expect(clock.elapsed).toBeCloseTo(200 + 300);
     });
 
+    it('ends the run where a ramp reaches its end and turns back within one frame', () => {
+      const { clock } = started({ rate: 1, duration: 1000 });
+      clock.seek(999);
+      clock.sync(0);
+      clock.ramp(-1, 100);
+      clock.sync(60);
+      expect(clock.elapsed).toBe(1000);
+      expect(clock.ended).toBe(true);
+      expect(clock.rate).toBe(0);
+    });
+
+    it('stops at the start where a ramp reaches it and turns forward within one frame', () => {
+      const { clock } = started({ rate: -1, duration: 1000 });
+      clock.seek(1);
+      clock.sync(0);
+      clock.ramp(1, 100);
+      clock.sync(60);
+      expect(clock.elapsed).toBe(0);
+      expect(clock.rate).toBe(0);
+    });
+
     it('is replaced by a rate write', () => {
       const { clock } = started({ rate: 1 });
       clock.ramp(5, 1000);

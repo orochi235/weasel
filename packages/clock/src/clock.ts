@@ -157,13 +157,15 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   const wasChanged = run.changed;
   const before = run.elapsed;
   if (!Number.isNaN(run.last) && !run.slept) {
-    run.elapsed += advance(run, hub, Math.max(0, timestamp - run.last));
-    if (run.elapsed >= run.span && run.rate > 0) {
+    const moved = advance(run, hub, Math.max(0, timestamp - run.last));
+    run.elapsed += moved;
+    // A ramp that turns back within the frame still reached the end on its way there.
+    if (run.elapsed >= run.span && (run.rate > 0 || moved > 0)) {
       run.elapsed = run.span;
       run.rate = 0;
       run.ramp = null;
       hub.subs.emit();
-    } else if (run.elapsed <= 0 && run.rate < 0) {
+    } else if (run.elapsed <= 0 && (run.rate < 0 || moved < 0)) {
       run.elapsed = 0;
       run.rate = 0;
       run.ramp = null;
