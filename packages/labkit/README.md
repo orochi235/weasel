@@ -248,7 +248,9 @@ The instrument's own `config` still reads the path as `undefined`; the report
 is for the panel. A report outranks the path's resolver, since it is what the
 instrument actually used. It is never stored: a report for a pinned path is
 ignored, pinning the path drops it, and going auto again shows no number until
-the instrument reports afresh. `reportAuto(path, undefined)` withdraws one. A
+the instrument reports afresh, which a report from an effect of the commit that
+unpinned it counts as. `reportAuto(path, undefined)` or `reportAuto(path, null)`
+withdraws one. A
 `<ControlPanel>` drawn outside a trial takes the same values as its `reported`
 map.
 
