@@ -2,6 +2,7 @@ import type { Path } from '@weasel-js/geom';
 import {
   type CommandPaint,
   type CommandStroke,
+  dashPattern,
   fillHasInk,
   isSolidPaint,
   type SolidPaint,
@@ -250,7 +251,9 @@ export async function writeSegment(
   const run = cmd.runs[first.run];
   const fill = fillHasInk(run.fill) ? (run.fill!.paint as CommandPaint) : undefined;
   const box = inkBox(seg, dx, dy);
-  const rawStroke = strokeHasInk(run.stroke) ? (run.stroke as CommandStroke & { paint: CommandPaint }) : undefined;
+  // A glyph carries no heads, so a dash that draws no line draws nothing.
+  const rawStroke = strokeHasInk(run.stroke) && dashPattern(run.stroke.dash) !== 'non-finite'
+    ? (run.stroke as CommandStroke & { paint: CommandPaint }) : undefined;
   const stroke = rawStroke && resolveStroke(box, rawStroke, state);
   const nativeStroke = stroke && isNative(stroke.stroke) && isSolidPaint(stroke.stroke.paint);
   const solidFill = !fill || isSolidPaint(fill);

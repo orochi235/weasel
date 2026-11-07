@@ -100,6 +100,7 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   const leaves = new Map<string | undefined, ElkNode[]>();
   // A node or group naming a group the graph does not hold sits at the top level, as it would with no group named.
   const known = (group: string | undefined) => (group !== undefined && index.groups.has(elkIdOf.get(group) ?? '') ? group : undefined);
+  const parentOf = groupParents(groups, known);
   for (const n of graph.nodes) {
     pushTo(leaves, known(n.group), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
   }
@@ -107,7 +108,7 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   const boxOf = (g: GraphGroup): ElkNode => ({
     id: elkIdOf.get(g.id)!,
     layoutOptions: groupOptions(g, transposed),
-    children: [...groups.filter((c) => known(c.parent) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])],
+    children: [...groups.filter((c) => parentOf.get(c.id) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])],
   });
 
   const elkEdges: ElkExtendedEdge[] = edges.map((e, i) => {
@@ -127,10 +128,27 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   const root: ElkNode = {
     id: 'root',
     layoutOptions,
-    children: [...groups.filter((g) => known(g.parent) === undefined).map(boxOf), ...(leaves.get(undefined) ?? [])],
+    children: [...groups.filter((g) => parentOf.get(g.id) === undefined).map(boxOf), ...(leaves.get(undefined) ?? [])],
     edges: elkEdges,
   };
   return { root, index };
+}
+
+/** Each group's parent as ELK nests it: the one it names, where the graph holds it, and none for a group whose parents
+ *  lead back to itself, which would otherwise never be reached from the root. */
+function groupParents(groups: readonly GraphGroup[], known: (group: string | undefined) => string | undefined): Map<string, string | undefined> {
+  const named = new Map(groups.map((g) => [g.id, known(g.parent)]));
+  const out = new Map<string, string | undefined>();
+  for (const g of groups) {
+    const seen = new Set<string>();
+    let at: string | undefined = g.id;
+    while (at !== undefined && !seen.has(at)) {
+      seen.add(at);
+      at = named.get(at);
+    }
+    out.set(g.id, at === g.id ? undefined : named.get(g.id));
+  }
+  return out;
 }
 
 function leafOf(node: GraphNode, id: string, ports: ReadonlySet<string> | undefined): ElkNode {

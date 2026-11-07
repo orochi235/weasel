@@ -125,6 +125,26 @@ describe('connectDevtools', () => {
     await expect(client.request(t.root.id, { type: 'get-state' })).resolves.toMatchObject({ activeTool: 'select' });
   });
 
+  it('rejects a request still pending about a root the page removes, and keeps the rest', async () => {
+    const page = new Set<(m: PageMessage) => void>();
+    const sent: PanelMessage[] = [];
+    const transport: PanelTransport = {
+      send: (m) => { sent.push(m); },
+      onMessage: (l) => { page.add(l); return () => page.delete(l); },
+    };
+    const emit = (m: PageMessage): void => { for (const l of page) l(m); };
+    const client = connectDevtools(transport);
+    const info = (id: string) => ({ id, label: id, dimension: '2d' as const });
+    emit({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [info('a'), info('b')] });
+    const onA = client.request('a', { type: 'get-state' });
+    const onB = client.request('b', { type: 'get-state' });
+    emit({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId: 'a' });
+    await expect(onA).rejects.toThrow(/gone/);
+    const last = sent.at(-1) as { requestId: number };
+    emit({ type: 'result', protocol: DEVTOOLS_PROTOCOL, requestId: last.requestId, result: null });
+    await expect(onB).resolves.toBeNull();
+  });
+
   it('reports a page that speaks another protocol', () => {
     let deliver: (m: PageMessage) => void = () => {};
     const transport: PanelTransport = { send: () => {}, onMessage: (l) => { deliver = l; return () => {}; } };

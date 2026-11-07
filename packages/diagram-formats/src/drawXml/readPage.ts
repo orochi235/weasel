@@ -44,7 +44,7 @@ function readNode({ page, idOf, warn }: Reader, cell: RawCell): DataNode {
     width: box.width,
     height: box.height,
     ...optional('verticalAlign', verticalAlignOf(cell.style)),
-    ...optional('colors', nodeColorsOf(cell.style)),
+    ...optional('colors', nodeColorsOf(cell.style, warn)),
   };
 }
 
@@ -59,7 +59,7 @@ function readRegion(r: Reader, cell: RawCell): DataContainer {
   const { page, idOf } = r;
   const id = idOf.get(cell)!;
   const box = page.boxOf(cell);
-  const common = { id, ...optional('label', labelOf(cell)), box, ...optional('colors', nodeColorsOf(cell.style)) };
+  const common = { id, ...optional('label', labelOf(cell)), box, ...optional('colors', nodeColorsOf(cell.style, r.warn)) };
   if (page.kindOf(cell) === 'container') {
     const members = membersOf(r, cell);
     return { ...common, role: 'container', ...(members.length > 0 ? { members } : {}) };
@@ -73,7 +73,7 @@ function readRegion(r: Reader, cell: RawCell): DataContainer {
       const members = membersOf(r, lane);
       return {
         id: idOf.get(lane)!, ...optional('label', labelOf(lane)), size: axis === 'y' ? b.height : b.width,
-        ...(members.length > 0 ? { members } : {}), ...optional('colors', nodeColorsOf(lane.style)),
+        ...(members.length > 0 ? { members } : {}), ...optional('colors', nodeColorsOf(lane.style, r.warn)),
       };
     });
   return { ...common, role: 'pool', axis, lanes };

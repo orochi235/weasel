@@ -4,7 +4,7 @@ import { escapeAttr } from './xmlEscape';
 import { isSolidPaint, type Stroke, type StrokeAlign } from '@weasel-js/core';
 import type { ScreenLength, SvgPaint, SvgStroke } from './types';
 import { trimNumber } from './transform';
-import type { PaintServerRegistry } from './gradients';
+import { WEASEL_NS_PREFIX, type PaintServerRegistry } from './gradients';
 
 export type Warn = (message: string) => void;
 
@@ -61,34 +61,30 @@ function strokeWidthAttrs(width: ScreenLength): string[] {
 /**
  * Attributes for a kit `Stroke` — the shape text carries, whose `paint` is a
  * `Paint` rather than an `SvgPaint`. Absent, unpainted, or zero-width
- * emits nothing at all.
+ * emits nothing at all, and `null` is `stroke="none"`. An inner or outer one
+ * draws nothing here: it is written at zero width with its own in the
+ * private namespace, for `alignedTextXml`'s copies to draw.
  */
-export function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry, warn: Warn): string[] {
+export function coreStrokeAttrs(stroke: Stroke | null | undefined, registry: PaintServerRegistry, warn: Warn): string[] {
+  if (stroke === null) return ['stroke="none"'];
   const paint = stroke?.paint;
   if (!stroke || !paint) return [];
   const width = stroke.width ?? 1;
-  if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
-  warnStrokeAlign(stroke.align, warn);
+  const w = typeof width === 'object' ? width.px : width;
+  if (!(w > 0)) return [];
   const attrs: string[] = [`stroke="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`];
   attrs.push(...opacityAttr('stroke-opacity', paint.opacity));
-  attrs.push(...strokeWidthAttrs(width));
+  if (stroke.align === 'inner' || stroke.align === 'outer') {
+    attrs.push(...strokeWidthAttrs(typeof width === 'object' ? { px: 0 } : 0));
+    attrs.push(`${WEASEL_NS_PREFIX}:stroke-width="${trimNumber(w)}"`, `${WEASEL_NS_PREFIX}:stroke-align="${stroke.align}"`);
+  } else {
+    attrs.push(...strokeWidthAttrs(width));
+  }
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
   if (stroke.join) attrs.push(`stroke-linejoin="${stroke.join}"`);
-  if (stroke.dash && stroke.dash.length > 0) {
-    attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
-  }
+  attrs.push(...dashAttrs(stroke));
   if (stroke.miterLimit != null) attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
-  for (const [field, attr] of [
-    ['markerStart', 'marker-start'],
-    ['markerMid', 'marker-mid'],
-    ['markerEnd', 'marker-end'],
-  ] as const) {
-    const ref = stroke[field];
-    if (ref === undefined) continue;
-    const id = registry.markerId(ref);
-    if (id === undefined) continue;
-    attrs.push(`${attr}="url(#${id})"`);
-  }
+  attrs.push(...markerAttrs(stroke, registry, warn));
   return attrs;
 }
 
@@ -109,13 +105,30 @@ export function strokeAttrsFor(
   if (stroke.join) {
     attrs.push(`stroke-linejoin="${stroke.join}"`);
   }
-  if (stroke.dash && stroke.dash.length > 0) {
-    attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
-    if (stroke.dashOffset) attrs.push(`stroke-dashoffset="${trimNumber(stroke.dashOffset)}"`);
-  }
+  attrs.push(...dashAttrs(stroke));
   if (stroke.miterLimit != null) {
     attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
   }
+  attrs.push(...markerAttrs(stroke, registry, warn, seat));
+  return attrs;
+}
+
+/** `stroke-dasharray` and `stroke-dashoffset`, the offset only beside a dash it moves. */
+function dashAttrs(stroke: { dash?: readonly number[]; dashOffset?: number }): string[] {
+  if (!stroke.dash || stroke.dash.length === 0) return [];
+  const attrs = [`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`];
+  if (stroke.dashOffset && Number.isFinite(stroke.dashOffset)) {
+    attrs.push(`stroke-dashoffset="${trimNumber(stroke.dashOffset)}"`);
+  }
+  return attrs;
+}
+
+/** `marker-*` attributes for the heads `stroke` names that the marker registry knows. */
+function markerAttrs(
+  stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'markerEnd'>, registry: PaintServerRegistry, warn: Warn,
+  seat?: { start: boolean; end: boolean },
+): string[] {
+  const attrs: string[] = [];
   for (const [field, attr] of [
     ['markerStart', 'marker-start'],
     ['markerMid', 'marker-mid'],
@@ -125,7 +138,10 @@ export function strokeAttrsFor(
     if (ref === undefined) continue;
     const seated = field === 'markerStart' ? seat?.start : field === 'markerEnd' ? seat?.end : false;
     const id = registry.markerId(ref, seated ?? false);
-    if (id === undefined) continue;
+    if (id === undefined) {
+      warn(`marker "${typeof ref === 'string' ? ref : ref.key}" is not registered, so the stroke is written without it`);
+      continue;
+    }
     attrs.push(`${attr}="url(#${id})"`);
   }
   return attrs;

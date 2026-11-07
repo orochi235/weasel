@@ -13,7 +13,7 @@
  * opacity wraps the two in one group holding it, so they composite as one
  * layer.
  */
-import { strokeToPath, vertexHalfWidths, type Stroke, type VertexWidth } from '@weasel-js/core';
+import { dashPattern, strokeToPath, vertexHalfWidths, type Stroke, type VertexWidth } from '@weasel-js/core';
 import type { Path } from '@weasel-js/geom';
 import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { serializePathD } from './path-serializer';
@@ -40,7 +40,9 @@ function attrOf(el: Element, name: string): string | null {
 /** Whether `stroke` is written as an outline. */
 export function writesOutline(stroke: SvgStroke | undefined): boolean {
   return (stroke?.vertexWidths?.length ?? 0) > 0 || stroke?.nib !== undefined
-    || stroke?.align === 'inner' || stroke?.align === 'outer';
+    || stroke?.align === 'inner' || stroke?.align === 'outer'
+    // No line, and heads still to draw: only the outline holds them alone.
+    || (stroke?.dash !== undefined && dashPattern(stroke.dash) === 'non-finite');
 }
 
 /** Whether any path under `nodes` writes an outline, and so needs the
@@ -95,6 +97,7 @@ export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: reado
     ...(stroke.cap ? { cap: stroke.cap } : {}),
     ...(stroke.join ? { join: stroke.join } : {}),
     ...(stroke.dash ? { dash: stroke.dash } : {}),
+    ...(stroke.dashOffset ? { dashOffset: stroke.dashOffset } : {}),
     ...(stroke.miterLimit != null ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.align ? { align: stroke.align } : {}),
     ...(stroke.markerStart ? { markerStart: stroke.markerStart } : {}),
@@ -119,7 +122,7 @@ export function strokeGroupXml(opacity: string, inner: string): string {
 export function unwrapStrokeGroup(el: Element, node: SvgNode | SvgNode[] | null): SvgNode | SvgNode[] | null {
   if (attrOf(el, ROLE) !== GROUP || !node || Array.isArray(node) || node.kind !== 'group') return node;
   const [only] = node.children;
-  if (node.children.length !== 1 || only.kind !== 'path') return node;
+  if (node.children.length !== 1 || (only.kind !== 'path' && only.kind !== 'text')) return node;
   return node.opacity != null ? { ...only, opacity: node.opacity * (only.opacity ?? 1) } : only;
 }
 

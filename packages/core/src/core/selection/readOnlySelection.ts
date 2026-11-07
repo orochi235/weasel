@@ -37,6 +37,7 @@ export function readOnlySelection(api: SelectionApi): SelectionApi {
     toggle: ignore,
     clear: ignore,
     applyClick: ignore,
+    intentOf: api.intentOf,
     adapterMethods,
   };
   apiViews.set(api, view);

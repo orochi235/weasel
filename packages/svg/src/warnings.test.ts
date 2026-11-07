@@ -91,12 +91,11 @@ describe('serializeSvg says what SVG 1.1 cannot carry', () => {
     expect(warningsFor([rect(stroke), rect(stroke)])).toEqual([]);
   });
 
-  it('warns for a text stroke, or a run stroke, aligned off its edge', () => {
-    expect(warningsFor([text({ stroke: { paint: black, width: 1, align: 'outer' } })])[0])
-      .toContain('outer');
+  it('does not warn for a text stroke, or a run stroke, aligned off its edge, which a clipped or masked copy draws', () => {
+    expect(warningsFor([text({ stroke: { paint: black, width: 1, align: 'outer' } })])).toEqual([]);
     expect(warningsFor([text({
       text: 'hi', runs: [{ text: 'hi', stroke: { paint: black, width: 1, align: 'inner' } }],
-    })])[0]).toContain('inner');
+    })])).toEqual([]);
   });
 
   it('warns for wrapped and vertically aligned text', () => {

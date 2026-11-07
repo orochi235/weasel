@@ -64,7 +64,7 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined, spaces:
     stroke.join ?? 'miter',
     stroke.miterLimit ?? '',
     stroke.align ?? 'center',
-    (stroke.dash ?? []).join(','),
+    (stroke.dash ?? []).join(','), stroke.dashOffset ?? 0,
     stroke.varyingWidthJoinThreshold ?? '',
     stroke.nib ? `${stroke.nib.angle}:${stroke.nib.ratio}` : '',
     flattenTolerance ?? '',

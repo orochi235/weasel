@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/diagram';
 import type { GraphPage } from '../document';
 import { laidOutPage, needsLayout } from '../pageLayout';
+import { DIRECTION_ATTR } from './cells';
 import type { Box } from './pageCells';
 import type { Warn } from './readStyle';
 import { writeEdge } from './writeEdge';
@@ -138,6 +139,7 @@ export function writePage(page: GraphPage, index: number, theme: DiagramTheme, w
 
   const model = attrs([
     ['grid', '1'], ['gridSize', '10'], ['page', '1'], ['pageScale', '1'], ['pageWidth', laid.width], ['pageHeight', laid.height],
+    [DIRECTION_ATTR, page.direction],
   ]);
   return `  <diagram${attrs([['id', page.id], ['name', pageName(page, index)]])}>\n    <mxGraphModel${model}>\n      <root>\n`
     + `        <mxCell${attrs([['id', root]])} />\n        <mxCell${attrs([['id', layer], ['parent', root]])} />\n`

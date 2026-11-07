@@ -73,6 +73,16 @@ describe('scientific', () => {
     }
   });
 
+  it('keeps the exponent where the locale writes its own digits, and reads it back', () => {
+    for (const value of [1_234_567, -0.000123]) {
+      for (const display of [scientific(), scientific({ form: 'e' })]) {
+        const shown = present(value, display, { locale: 'ar-EG' }).text;
+        expect(shown, shown).toMatch(value > 1 ? /(⁶|e6)$/ : /(⁻⁴|e−4)$/);
+        expect(parseAs(shown, display, { locale: 'ar-EG' }), shown).toBeCloseTo(Number(value.toPrecision(3)), 12);
+      }
+    }
+  });
+
   it("reads a mantissa in the locale's form", () => {
     expect(parseAs('2,5 × 10³', scientific(), { locale: 'de-DE' })).toBe(2500);
   });

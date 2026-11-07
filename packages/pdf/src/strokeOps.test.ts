@@ -168,11 +168,31 @@ describe('writeStroke', () => {
     expect(await stroked([1e-9, 1e-9])).not.toMatch(/ d\n/);
   });
 
-  it('drops a stroke whose dash has a non-finite entry, as the renderer draws none', async () => {
+  it('draws no stroke for a dash with a non-finite entry, as the renderer draws none, and keeps the fill', async () => {
+    const square = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     const { content: c, skipped } = await render([
-      { kind: 'path', path: line, stroke: { paint: ink, width: 1, dash: [4, NaN] } },
+      { kind: 'path', path: square, fill: { paint: ink }, stroke: { paint: ink, width: 1, dash: [4, NaN] } },
     ]);
     expect(c).not.toMatch(/\nS\n/);
-    expect(skipped.map((k) => k.kind)).toEqual(['command']);
+    expect(c).toMatch(/\nf\n/);
+    expect(skipped).toEqual([]);
+  });
+
+  it('writes a dash offset as the phase, wrapped into one cycle as the renderer reads it', async () => {
+    const stroked = (dashOffset: number, dash = [4, 2]) =>
+      content([{ kind: 'path', path: line, stroke: { paint: ink, width: 1, dash, dashOffset } }]);
+    expect(await stroked(1.5)).toContain('[4 2] 1.5 d\n');
+    expect(await stroked(-1)).toContain('[4 2] 5 d\n');
+    expect(await stroked(13)).toContain('[4 2] 1 d\n');
+    expect(await stroked(7, [3])).toContain('[3] 1 d\n');
+    expect(await stroked(NaN)).toContain('[4 2] 0 d\n');
+  });
+
+  it('still draws the heads of a stroke whose dash draws no line, as the renderer does', async () => {
+    const { content: c } = await render([
+      { kind: 'path', path: line, stroke: { paint: ink, width: 1, dash: [4, NaN], markerEnd: 'arrow' } },
+    ]);
+    expect(c).not.toMatch(/\nS\n/);
+    expect(c).toMatch(/\nf\n/);
   });
 });

@@ -52,6 +52,16 @@ describe('reading Mermaid', () => {
     expect(p.data.edges[7]!.colors).toEqual({ markerEnd: null });
   });
 
+  it('reads an edge id as the edge\'s id, and drops an edge\'s metadata with a warning', () => {
+    const { document, warnings } = readFlowchart('flowchart TD\nA e1@--> B --> C\nA & B e2@-.- C\ne1@{ animate: true }');
+    const p = asGraph(document.pages[0]!);
+    expect(p.data.edges.map((e) => [e.id, e.from, e.to])).toEqual([
+      ['e1', 'A', 'B'], ['B-C', 'B', 'C'], ['e2', 'A', 'C'], ['B-C-2', 'B', 'C'],
+    ]);
+    expect(p.data.nodes.map((n) => n.id)).toEqual(['A', 'B', 'C']);
+    expect(warnings).toContain('Mermaid edge metadata was dropped.');
+  });
+
   it('reads heads at either end', () => {
     const p = page('flowchart TD\nA <--> B o--o C --o D --- E');
     expect(p.data.edges.map((e) => e.colors)).toEqual([

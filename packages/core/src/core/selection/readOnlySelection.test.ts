@@ -20,6 +20,7 @@ function makeApi(): SelectionApi {
     toggle: (id) => set(get().includes(id) ? get().filter((x) => x !== id) : [...get(), id]),
     clear: () => set([]),
     contains: (id) => get().includes(id),
+    intentOf: () => 'replace' as const,
     applyClick: (id) => set([id]),
     adapterMethods: { getSelection: get, setSelection: set },
   };

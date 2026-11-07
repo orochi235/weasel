@@ -8,8 +8,8 @@ import type { Path } from '@weasel-js/core';
 import { isSolidPaint } from '@weasel-js/core';
 import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type {
-  SerializeOptions, SvgGroupNode,
-  SvgNode, SvgImageNode,
+  SerializeOptions, SvgGroupNode, SvgInherits,
+  SvgNode, SvgImageNode, SvgPathNode, SvgTextNode,
 } from './types';
 import { serializePathD } from './path-serializer';
 import { pathAsSvgDraws } from './openSubpathFill';
@@ -22,11 +22,13 @@ import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
 import { withTrimsDrawn } from './trimmedStroke';
+import { withDashesResolved } from './resolvedDashes';
 import { type SeatedPathNode, withSeatedHeads } from './seatedHeads';
 import {
   writesOutline, strokeGroupXml, strokeOutlineXml, outlinedStrokeAttrs, writesOutlines,
 } from './strokeOutlineSvg';
 import { textXml } from './serializeText';
+import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
 import { RAD_TO_DEG } from '@weasel-js/geom';
@@ -37,7 +39,7 @@ import { RAD_TO_DEG } from '@weasel-js/geom';
  */
 export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): string {
   const registry = new PaintServerRegistry();
-  const nodes = withTrimsDrawn(given);
+  const nodes = withTrimsDrawn(withDashesResolved(given));
   registerPaintServers(nodes, registry);
 
   const bounds = opts.viewBox ?? computeBounds(given);
@@ -130,11 +132,20 @@ function nodeXml(
   painted: ReadonlySet<string> = NOTHING_PAINTED,
 ): string {
   const kind = kindXml(node, registry, namespaces, warn, layoutOf, painted);
-  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, node.inherits, painted) : kind;
+  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node), painted) : kind;
   if (!node.hidden) return xml;
   // An outlined stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
     .replace(/<path (?=[^>]*:role="stroke-outline")/, '<path display="none" ');
+}
+
+/** What a leaf takes from its group. An outlined stroke never does: its element
+ *  states a zero width that the group's stroke would otherwise replace. */
+function leafInherits(node: SvgPathNode | SvgTextNode): SvgInherits | undefined {
+  const outlined = node.kind === 'path' ? writesOutline(node.stroke) : hasAlignedTextStroke(node);
+  if (!node.inherits?.stroke || !outlined) return node.inherits;
+  const { stroke: _, ...rest } = node.inherits;
+  return rest;
 }
 
 function kindXml(
@@ -142,7 +153,10 @@ function kindXml(
   painted: ReadonlySet<string>,
 ): string {
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted);
-  if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
+  if (node.kind === 'text') {
+    const layout = layoutOf?.(node);
+    return alignedTextXml(node, registry, namespaces, warn, layout) ?? textXml(node, registry, namespaces, warn, layout);
+  }
   if (node.kind === 'image') return imageXml(node, namespaces);
   const asDrawn = pathAsSvgDraws(node);
   const drawn = asDrawn.kind === 'path' ? withSeatedHeads(asDrawn) : asDrawn;

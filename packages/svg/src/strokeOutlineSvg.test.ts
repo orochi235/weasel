@@ -149,5 +149,15 @@ describe('a stroke aligned inside or outside its edge in SVG', () => {
   it('leaves a centered stroke as SVG draws it', () => {
     expect(serializeSvg([aligned('center')])).not.toContain('stroke-outline');
   });
+
+  // Taking the group's stroke would hand the path its stroke-width back,
+  // drawing a centered stroke under the outline.
+  it('keeps its zero native width when it inherits the stroke from its group', () => {
+    const leaf = aligned('inner');
+    const svg = serializeSvg([{ kind: 'group', stroke: leaf.stroke, children: [{ ...leaf, inherits: { stroke: true } }] }]);
+    const path = /<path d="[^"]*"[^>]*wzl:stroke-align[^>]*>/.exec(svg)![0];
+    expect(path).toContain('stroke-width="0"');
+    expect(outlineBox(svg)).toEqual([0, 100]);
+  });
 });
 

@@ -1,4 +1,4 @@
-import type { CommandPaint, MarkerRef, CommandStroke } from '@weasel-js/paint';
+import { scaledDash, type CommandPaint, type MarkerRef, type CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from './DrawCommand';
 import type { GlMat3 } from '@weasel-js/geom';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
@@ -44,7 +44,7 @@ export function resolveStrokeLengths(
     && !isPxMarker(markerMid) && !isPxMarker(markerEnd)) {
     return { cmd, spaces: WORLD };
   }
-  const resolved: CommandStroke & { paint: CommandPaint } = { ...stroke };
+  let resolved: CommandStroke & { paint: CommandPaint } = { ...stroke };
   const { scale, metric } = strokeSpaceOf(transform[0], transform[1], transform[3], transform[4]);
   const screen = (pxPerUnit: number): ScreenSpace | undefined =>
     metric === null ? undefined : { metric, pxPerUnit };
@@ -52,7 +52,7 @@ export function resolveStrokeLengths(
   if (typeof stroke.width === 'object') {
     const pxPerUnit = snap(stroke.width.px, scale);
     resolved.width = resolveStrokeWidth(stroke.width, pxPerUnit);
-    if (stroke.dash && pxPerUnit > 0) resolved.dash = stroke.dash.map((d) => d / pxPerUnit);
+    if (pxPerUnit > 0) resolved = scaledDash(resolved, 1 / pxPerUnit);
     ribbon = screen(pxPerUnit);
   }
   const head = (ref: MarkerRef | undefined): ScreenSpace | undefined => {

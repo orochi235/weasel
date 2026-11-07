@@ -17,6 +17,8 @@ export interface MermaidNodeRef {
 }
 
 export interface MermaidLink {
+  /** The id written before it, as in `A e1@--> B`. */
+  id?: string;
   stroke: 'normal' | 'thick' | 'dotted' | 'invisible';
   start?: LinkHead;
   end?: LinkHead;
@@ -163,9 +165,13 @@ export function parseFlowchart(text: string): MermaidFlowchart {
     const line = where();
     const groups = [group()];
     const links: MermaidLink[] = [];
-    for (let t = peek(); t?.kind === 'link'; t = peek()) {
+    for (let t = peek(); t?.kind === 'link' || t?.kind === 'edge-id'; t = peek()) {
       i++;
-      const { kind: _k, line: _l, ...link } = t;
+      const id = t.kind === 'edge-id' ? t.value : undefined;
+      if (id !== undefined) t = tokens[i++]!;
+      if (t.kind !== 'link') throw fail('a link');
+      const { kind: _k, line: _l, ...rest } = t;
+      const link: MermaidLink = { ...(id !== undefined ? { id } : {}), ...rest };
       const pipe = peek();
       if (pipe?.kind === 'pipe') {
         i++;

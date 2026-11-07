@@ -98,6 +98,7 @@ describe('PROPERTIES is the parser\'s one pathway', () => {
     'stroke-linecap': stroked('round', 'triangle'),
     'stroke-linejoin': stroked('bevel', 'arcs'),
     'stroke-dasharray': stroked('4 2', '4 -2'),
+    'stroke-dashoffset': shape('3', '1vw', 'stroke: black; stroke-dasharray: 4 2;'),
     'stroke-miterlimit': stroked('8', '0.5'),
     'marker-start': stroked('url(#m)', 'url(a.svg#m)'),
     'marker-mid': stroked('url(#m)', 'url(a.svg#m)'),

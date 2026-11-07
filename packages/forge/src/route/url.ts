@@ -66,7 +66,7 @@ export function reservedParams(params: Readonly<Record<string, string>>): Record
 export interface KnobLeaf {
   kind: string | null;
   default: unknown;
-  annotations?: { options?: readonly { value: string }[] };
+  annotations?: { options?: readonly { value: string }[]; item?: { kind?: unknown } };
 }
 
 type Codec = 'number' | 'boolean' | 'string' | 'enum' | 'json';
@@ -105,13 +105,21 @@ export function encodeKnob(value: unknown): string | undefined {
   }
 }
 
+/** The `typeof` a list entry of leaf kind `kind` has; null for an entry whose kind no primitive type names. */
+function itemType(kind: unknown): 'string' | 'number' | 'boolean' | null {
+  if (kind === 'number' || kind === 'boolean') return kind;
+  return kind === 'string' || kind === 'enum' || kind === 'color' ? 'string' : null;
+}
+
 /** Whether `value` is something a leaf of codec `codec` could hold, so a well-formed param of the wrong type is refused. */
 function fits(codec: Codec, value: unknown, leaf: KnobLeaf): boolean {
   if (codec !== 'json') return true;
   const d = leaf.default;
   if (Array.isArray(d)) {
     if (!Array.isArray(value)) return false;
-    return leaf.kind !== 'list' || value.every((item) => typeof item === 'string');
+    if (leaf.kind !== 'list') return true;
+    const entry = itemType(leaf.annotations?.item?.kind ?? 'string');
+    return entry === null || value.every((item) => typeof item === entry);
   }
   if (isPlainObject(d)) return isPlainObject(value);
   return true;

@@ -20,6 +20,13 @@ describe('moveItems', () => {
   it('gathers scattered items in their order, whatever order they are named in', () => {
     expect(moveItems(L, [4, 0, 2], 2)).toEqual(['b', 'a', 'c', 'e', 'd']);
   });
+  it('ignores an index outside the list and holds a gap past either end at that end', () => {
+    expect(moveItems(L, [-1, 1], 3)).toEqual(['a', 'c', 'b', 'd', 'e']);
+    expect(moveItems(L, [1, 9], 3)).toEqual(['a', 'c', 'b', 'd', 'e']);
+    expect(moveItems(L, [-2], 3)).toEqual(L);
+    expect(moveItems(L, [0], 99)).toEqual(['b', 'c', 'd', 'e', 'a']);
+    expect(moveItems(L, [4], -3)).toEqual(['e', 'a', 'b', 'c', 'd']);
+  });
   it('leaves the list as it was for a drop beside the item', () => {
     expect(moveItems(L, [2], 2)).toEqual(L);
     expect(moveItems(L, [2], 3)).toEqual(L);

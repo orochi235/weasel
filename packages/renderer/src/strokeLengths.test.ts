@@ -20,4 +20,9 @@ describe('resolveStrokeLengths', () => {
     expect(stroke.width).toBeCloseTo(2 / 0.75, 12);
     expect(stroke.dash?.[0]).toBeCloseTo(3 / 0.75, 12);
   });
+
+  it("resolves a { px } stroke's dash offset with its dash", () => {
+    const offset = { ...cmd, stroke: { ...cmd.stroke, dashOffset: 1.5 } };
+    expect(resolveStrokeLengths(scale075, offset, { quantize: false }).cmd.stroke.dashOffset).toBeCloseTo(1.5 / 0.75, 12);
+  });
 });

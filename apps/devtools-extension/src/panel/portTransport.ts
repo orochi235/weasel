@@ -3,7 +3,7 @@
  * background is stopped when idle, which drops the port; the transport then
  * opens another and says `yo` again, so the page starts a fresh session.
  */
-import type { PageMessage, PanelMessage, PanelTransport } from '@weasel-js/core/devtools-protocol';
+import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage, type PanelTransport } from '@weasel-js/core/devtools-protocol';
 import { createEmitter } from '@weasel-js/registry';
 import type { PortLike } from '../browserApi';
 import { PORT_PANEL, type PanelHello } from '../envelope';
@@ -19,6 +19,13 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
   let yo: PanelMessage | null = null;
   let closed = false;
   let port: PortLike | null = null;
+  /** The requests sent on the current port that it has not answered; a port that drops never will. */
+  const asked = new Set<number>();
+  const answer = (requestId: number): void =>
+    listeners.emit({
+      type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId,
+      message: 'weasel devtools: the connection to the page restarted',
+    });
 
   const open = (): PortLike | null => {
     if (closed) return null;
@@ -30,10 +37,17 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
       return null;
     }
     const p = port;
-    p.onMessage.addListener((m) => listeners.emit(m as PageMessage));
+    p.onMessage.addListener((m) => {
+      const message = m as PageMessage;
+      if ((message.type === 'result' || message.type === 'error') && message.requestId !== null) asked.delete(message.requestId);
+      listeners.emit(message);
+    });
     p.onDisconnect.addListener(() => {
       if (port !== p) return;
       port = null;
+      const lost = [...asked];
+      asked.clear();
+      for (const requestId of lost) answer(requestId);
       const opened = open();
       if (opened && yo) opened.postMessage(yo);
     });
@@ -46,7 +60,9 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
     send(message) {
       if (message.type === 'yo') yo = message;
       else if (message.type === 'bye') yo = null;
-      (port ?? open())?.postMessage(message);
+      const p = port ?? open();
+      if (p && 'requestId' in message) asked.add(message.requestId);
+      p?.postMessage(message);
     },
     onMessage: listeners.subscribe,
     close() {

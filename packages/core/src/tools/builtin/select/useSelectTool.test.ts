@@ -6,17 +6,19 @@ import { useSelectTool } from './useSelectTool';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
+import { intentOf, type SelectPolicy } from '@weasel-js/select';
 
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
 const NO_MODS: Mods = { alt: false, ctrl: false, meta: false, shift: false };
 
 /** A `SelectionApi` stub exposing only what the two select actions touch. */
-function selectionStub(current: string[]) {
+function selectionStub(current: string[], policy: SelectPolicy = { mode: 'multi', toggle: 'shift' }) {
   const applyClick = vi.fn();
   const set = vi.fn();
   const clear = vi.fn();
+  const intent = (mods: Mods) => intentOf(mods, policy);
   return {
-    api: { get: () => current, current, applyClick, set, clear } as never,
+    api: { get: () => current, current, applyClick, set, clear, intentOf: intent } as never,
     applyClick,
     set,
     clear,
@@ -247,6 +249,50 @@ describe('useSelectTool', () => {
     const plain = selectionStub(['a']);
     press(tool, plain.api);
     expect(plain.applyClick).toHaveBeenCalledWith('a', NO_MODS);
+  });
+
+  describe("under the selection's own keys: Cmd toggles, Shift ranges", () => {
+    const keys: SelectPolicy = { mode: 'multi', toggle: 'meta', range: 'shift' };
+    const run = (tool: { actions?: readonly Action[] }, id: string, selection: unknown, mods: Partial<Mods>) => {
+      const action = actionOf(tool, id);
+      if (action.invoker?.timing !== 'immediate') throw new Error('expected immediate');
+      action.invoker.run({ selection } as unknown as ActionDeps, { world: { x: 50, y: 50 }, mods: { ...NO_MODS, ...mods } });
+    };
+
+    it('a Cmd-press on a member of a multi-selection toggles it on the press', () => {
+      const tool = mount({ pickEvery: () => ['a'] });
+      const sel = selectionStub(['a', 'b'], keys);
+      press(tool, sel.api, { mods: { meta: true } });
+      expect(sel.applyClick).toHaveBeenCalledWith('a', { ...NO_MODS, meta: true });
+    });
+
+    it('extendClickLocked holds back a Cmd-press, and the range key, but not a plain press', () => {
+      const tool = mount({ pickEvery: () => ['a'], extendClickLocked: () => true });
+      const sel = selectionStub(['a'], keys);
+      press(tool, sel.api, { mods: { meta: true } });
+      press(tool, sel.api, { mods: { shift: true } });
+      expect(sel.applyClick).not.toHaveBeenCalled();
+      press(tool, sel.api);
+      expect(sel.applyClick).toHaveBeenCalledWith('a', NO_MODS);
+    });
+
+    it('a Shift-press that only replaces defers on a member of a multi-selection, as a plain press does', () => {
+      const tool = mount({ pickEvery: () => ['a'] });
+      const sel = selectionStub(['a', 'b'], { mode: 'multi', toggle: 'meta' });
+      press(tool, sel.api, { mods: { shift: true } });
+      expect(sel.applyClick).not.toHaveBeenCalled();
+    });
+
+    it('select.deep holds back an extending press while extendClickLocked, by the same keys', () => {
+      const tool = mount({ pickEvery: () => ['a'], extendClickLocked: () => true });
+      const ranging = selectionStub(['a'], keys);
+      run(tool, 'select.deep', ranging.api, { meta: true, shift: true });
+      expect(ranging.applyClick).not.toHaveBeenCalled();
+      // Shift neither toggles nor ranges here, so the lock does not apply.
+      const replacing = selectionStub(['a'], { mode: 'multi', toggle: 'meta' });
+      run(tool, 'select.deep', replacing.api, { meta: true, shift: true });
+      expect(replacing.applyClick).toHaveBeenCalledWith('a', { ctrl: false, meta: false, shift: true });
+    });
   });
 
   it('both selection actions carry the creates-selection capability rule', () => {

@@ -77,6 +77,7 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
       },
       clear() { selState = []; },
       contains(nid: NodeId) { return selState.includes(nid); },
+      intentOf: () => 'replace' as const,
       applyClick(nid: NodeId, _mods: unknown) { selState = [nid]; },
       adapterMethods: {
         getSelection: () => [...selState],
@@ -243,6 +244,7 @@ function makeSelectionStub(initial: NodeId[] = []) {
     },
     clear() { selState = []; },
     contains(id: NodeId) { return selState.includes(id); },
+    intentOf: () => 'replace' as const,
     applyClick(id: NodeId, _mods: unknown) { selState = [id]; },
     adapterMethods: {
       getSelection: () => [...selState],

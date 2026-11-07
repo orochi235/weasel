@@ -72,8 +72,14 @@ export function rootOptions(opts: ElkLayoutOptions = {}): Record<string, string>
     'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
     'elk.json.shapeCoords': 'ROOT',
     'elk.json.edgeCoords': 'ROOT',
-    ...opts.layoutOptions,
+    ...shortIds(opts.layoutOptions ?? {}),
   };
+}
+
+/** `options` with each full `org.eclipse.elk.` id written as its `elk.` alias, so it replaces the option derived under
+ *  that alias rather than sitting beside it, where ELK and {@link minimumTransposed} would each pick a different one. */
+function shortIds(options: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(Object.entries(options).map(([k, v]) => [k.replace(/^org\.eclipse\.elk\./, 'elk.'), v]));
 }
 
 let bundled: Promise<ElkRunner> | undefined;

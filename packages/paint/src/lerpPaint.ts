@@ -137,11 +137,15 @@ export function lerpStroke(a: Stroke | null | undefined, b: Stroke | null | unde
   const paint = lerpPaint(a?.paint, b?.paint, t);
   const zero = (s: Stroke): ScreenLength => (typeof s.width === 'object' ? { px: 0 } : 0);
   const width = lerpWidth(a == null ? zero(b!) : a.width, b == null ? zero(a!) : b.width, t);
-  const { paint: _p, width: _w, vertexColors: _vc, vertexWidths: _vw, ...rest } = near;
-  void _p; void _w; void _vc; void _vw;
+  const { paint: _p, width: _w, vertexColors: _vc, vertexWidths: _vw, dashOffset: _o, ...rest } = near;
+  void _p; void _w; void _vc; void _vw; void _o;
+  // An offset slides the pattern, so it moves smoothly where the dash itself snaps.
+  const from = a?.dashOffset, to = b?.dashOffset;
+  const dashOffset = from === undefined && to === undefined ? undefined : (from ?? 0) + ((to ?? 0) - (from ?? 0)) * t;
   return {
     ...rest,
     ...(paint === undefined ? {} : { paint }),
     ...(width === undefined ? {} : { width }),
+    ...(dashOffset === undefined ? {} : { dashOffset }),
   };
 }

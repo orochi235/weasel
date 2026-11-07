@@ -530,6 +530,7 @@ describe('<CanvasView> hit-testing', () => {
     set: () => {},
     add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {},
     contains: () => false,
+    intentOf: () => 'replace' as const,
     applyClick: () => {},
     adapterMethods: { getSelection: () => [] as NodeId[], setSelection: () => {} },
   };
@@ -671,6 +672,7 @@ describe('<CanvasView> state a render abandons', () => {
       get: () => [...ids],
       set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {},
       contains: (id: NodeId) => ids.includes(id),
+      intentOf: () => 'replace' as const,
       applyClick: () => {},
       adapterMethods: { getSelection: () => [...ids], setSelection: () => {} },
     } as unknown as SelectionApi;

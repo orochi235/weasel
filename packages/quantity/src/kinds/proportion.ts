@@ -1,4 +1,4 @@
-import { escapeMarkup, intlParts, numberPart, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
+import { escapeMarkup, intlParts, numberPart, signed, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
 import { latinDigits, MINUS_SIGN, parseNumber, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
@@ -261,7 +261,7 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
     if (!Number.isFinite(value)) return [{ type: 'number', value: String(value) }];
     const [n, den] = readableFraction(value, d.maxDenominator ?? 64);
     return [
-      { type: 'antecedent', value: String(n).replace(/^-/, MINUS_SIGN) },
+      { type: 'antecedent', value: signed(String(n)) },
       { type: 'literal', value: ':' },
       { type: 'consequent', value: String(den) },
     ];
@@ -269,7 +269,7 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
   speak: (value, d) => {
     if (!Number.isFinite(value)) return String(value);
     const [n, den] = readableFraction(value, d.maxDenominator ?? 64);
-    return spokenSign(`${String(n).replace(/^-/, MINUS_SIGN)} to ${den}`);
+    return spokenSign(`${signed(String(n))} to ${den}`);
   },
   parse: (text) => {
     const m = /^\s*(.+?)\s*:\s*(.+?)\s*$/.exec(text);
@@ -327,8 +327,7 @@ function zoomParts(z: number): Part[] {
   const n = (v: number, grouping = false) =>
     ({
       type: 'number',
-      value: unsignedZero(v, (x) => x.toLocaleString('en-US', { useGrouping: grouping, maximumFractionDigits: 1 }))
-        .replace(/^-/, MINUS_SIGN),
+      value: signed(unsignedZero(v, (x) => x.toLocaleString('en-US', { useGrouping: grouping, maximumFractionDigits: 1 }))),
     });
   if (z <= 2) return [n(Math.round(z * 100)), { type: 'percentSign', value: '%' }];
   if (z >= 100) return [n(Math.round(z), true), { type: 'symbol', value: 'x' }];

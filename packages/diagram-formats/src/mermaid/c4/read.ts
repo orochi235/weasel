@@ -9,6 +9,7 @@ import type { ImportResult } from '../../document';
 import { Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { lineError } from '../../lineError';
 import { pageNameOf } from '../common/lines';
+import { mermaidColor } from '../common/styles';
 import { ELEMENT_WIDTH, elementRows, hasTechnology, kindOfMacro, outlineOf, roleOf } from './kinds';
 import { parseC4, type C4Args, type C4Header, type C4Stmt } from './parse';
 
@@ -113,9 +114,9 @@ class C4Reader {
     const [alias] = s.args.positional;
     const { bgColor, fontColor, borderColor, ...rest } = s.args.named;
     for (const key of Object.keys(rest)) this.warnings.list('Mermaid C4 arguments a diagram does not hold were dropped', `$${key}`);
+    const [fill, stroke, text] = [bgColor, borderColor, fontColor].map((c) => mermaidColor(c, this.warnings));
     const colors: Partial<NodeStyle> = {
-      ...(bgColor !== undefined ? { fill: bgColor } : {}), ...(borderColor !== undefined ? { stroke: borderColor } : {}),
-      ...(fontColor !== undefined ? { text: fontColor } : {}),
+      ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}), ...(text !== undefined ? { text } : {}),
     };
     const node = this.nodes.get(alias ?? '');
     const box = this.containers.findIndex((c) => c.id === alias);
@@ -128,7 +129,8 @@ class C4Reader {
     const [from, to] = s.args.positional;
     const { textColor, lineColor, ...rest } = s.args.named;
     for (const key of Object.keys(rest)) this.warnings.list('Mermaid C4 arguments a diagram does not hold were dropped', `$${key}`);
-    const colors: Partial<EdgeStyle> = { ...(lineColor !== undefined ? { stroke: lineColor } : {}), ...(textColor !== undefined ? { label: textColor } : {}) };
+    const [stroke, label] = [lineColor, textColor].map((c) => mermaidColor(c, this.warnings));
+    const colors: Partial<EdgeStyle> = { ...(stroke !== undefined ? { stroke } : {}), ...(label !== undefined ? { label } : {}) };
     for (const [i, e] of this.edges.entries()) {
       if (e.from === from && e.to === to) this.edges[i] = { ...e, colors: { ...e.colors, ...colors } };
     }
