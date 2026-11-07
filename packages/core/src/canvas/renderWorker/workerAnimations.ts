@@ -25,6 +25,7 @@ export interface WorkerAnimations {
   readonly animator: Animator;
   /** Take the frame's time, before anything plays at it. */
   at(time: FrameTime | undefined, resumed: boolean): void;
+  /** Apply every op, then throw the first one's error that failed. */
   run(ops: readonly AnimationOp[], scene: Scene<unknown, string, unknown>): void;
   /** Advance to the frame's time. */
   advance(): void;
@@ -81,7 +82,11 @@ export function createWorkerAnimations(
       if (resumed) hosted.resumed();
     },
     run(ops, scene) {
-      for (const op of ops) apply(op, scene);
+      let failed: unknown;
+      for (const op of ops) {
+        try { apply(op, scene); } catch (e) { failed ??= e; }
+      }
+      if (failed !== undefined) throw failed;
     },
     advance() {
       if (!clock) return hosted.tick(now);
