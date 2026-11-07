@@ -18,7 +18,7 @@ export interface PlayOptions {
   pan?: number;
   /** World position; spatialized against the engine listener. */
   position?: SpatialPoint;
-  /** Engine time in ms (see `engine.now()`). Default: as soon as possible. */
+  /** Engine time in ms (see `engine.now()`). Default: as soon as possible. Throws when not finite. */
   when?: number;
   /** `stopKey(key)` stops every voice sharing this key. */
   cancelKey?: string;

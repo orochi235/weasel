@@ -54,7 +54,11 @@ export interface VisibleRaf {
 
 const documentHidden = (): boolean => typeof document !== 'undefined' && document.hidden;
 
-const resolveTarget = (target: VisibleRafTarget | undefined): Element | null =>
+/** Whether a frame may run, given the loop's options and its element's last intersection report. */
+const gateOpen = (opts: VisibleRafOptions, intersecting: boolean): boolean =>
+  opts.dangerouslyRunWhenHidden === true || (!documentHidden() && intersecting);
+
+const resolveTarget =(target: VisibleRafTarget | undefined): Element | null =>
   typeof target === 'function' ? target() : (target?.current ?? null);
 
 /**
@@ -80,13 +84,9 @@ export function useVisibleRaf(
   const observerRef = useRef<IntersectionObserver | null>(null);
   const observedRef = useRef<Element | null>(null);
   const handleRef = useRef<VisibleRaf | null>(null);
+  const syncGateRef = useRef<() => void>(() => {});
 
-  const isVisible = useCallback(
-    (): boolean =>
-      optsRef.current.dangerouslyRunWhenHidden === true ||
-      (!documentHidden() && intersectingRef.current),
-    [optsRef],
-  );
+  const isVisible = useCallback(() => gateOpen(optsRef.current, intersectingRef.current), [optsRef]);
 
   const cancelRaf = useCallback(() => {
     if (rafRef.current === null) return;
@@ -100,7 +100,9 @@ export function useVisibleRaf(
       // Released before the frame runs, so a `request()` issued from inside it
       // schedules the next one instead of being swallowed.
       rafRef.current = null;
-      if (!aliveRef.current || !pendingRef.current || !isVisible()) return;
+      if (!aliveRef.current || !pendingRef.current) return;
+      // Hidden with no event to say so (the escape hatch lifted while hidden): suspend, so a return re-arms it.
+      if (!isVisible()) { syncGateRef.current(); return; }
       pendingRef.current = false;
       frameRef.current(time, handleRef.current!);
     });
@@ -142,7 +144,8 @@ export function useVisibleRaf(
     if (!aliveRef.current) return;
     syncObserver();
     pendingRef.current = true;
-    if (!isVisible()) { syncGate(); return; }
+    // Still suspended though visible: a swapped target cleared the gate, and the resume is owed.
+    if (!isVisible() || suspendedRef.current) { syncGate(); return; }
     scheduleRaf();
   }, [isVisible, scheduleRaf, syncGate, syncObserver]);
 
@@ -156,6 +159,7 @@ export function useVisibleRaf(
   // driven from one of those would otherwise be declined on the second mount.
   useLayoutEffect(() => {
     aliveRef.current = true;
+    syncGateRef.current = syncGate;
     document.addEventListener('visibilitychange', syncGate);
     if (typeof IntersectionObserver !== 'undefined') {
       observerRef.current = new IntersectionObserver((entries) => {

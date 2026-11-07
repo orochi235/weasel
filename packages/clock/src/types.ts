@@ -74,7 +74,8 @@ export interface Clock {
   /** Passes, as `ClockSpec.loop`. A write that shortens the run past `elapsed`
    *  keeps the time within the pass, in the last pass left. */
   loop: boolean | number;
-  /** Move `rate` to `to` linearly over `over` real ms; position stays continuous. */
+  /** Move `rate` to `to` linearly over `over` real ms; position stays continuous. An `over` of 0 or
+   *  less sets the rate at once; one that is not finite throws. */
   ramp(to: number, over: number): void;
   /** Move to `elapsed` ms from the start, clamped to the run. Never runs state
    *  forward to meet it. Throws on a clock that is not seekable, and on a time

@@ -15,6 +15,14 @@ describe('patternVoicePeaks', () => {
     expect(peaks).toEqual({ music: 2, sfx: 1 });
   });
 
+  it('rejects the tempo, length and steps per beat the player rejects', () => {
+    const events = [{ step: 0, pitch: 220 }];
+    expect(() => patternVoicePeaks(events, { ...base, tempo: 0 })).toThrow(RangeError);
+    expect(() => patternVoicePeaks(events, { ...base, length: Number.NaN })).toThrow(RangeError);
+    expect(() => patternVoicePeaks(events, { ...base, length: 0 })).toThrow(RangeError);
+    expect(() => patternVoicePeaks(events, { ...base, stepsPerBeat: 0 })).toThrow(RangeError);
+  });
+
   it('holds a note through its release', () => {
     const events = [
       { step: 0, pitch: 220, envelope: { release: 200 } },

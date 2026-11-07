@@ -225,6 +225,28 @@ describe('useVisibleRaf', () => {
     expect(frame).toHaveBeenCalledTimes(1);
   });
 
+  it('resumes on return when the escape hatch is lifted while hidden', () => {
+    const clock = makeClock();
+    const frame = vi.fn((_t: number, l: VisibleRaf) => l.request());
+    const onResume = vi.fn();
+    const loopRef = { current: null as VisibleRaf | null };
+    const opts = { ...clock, onResume };
+    const view = render(<Host loopRef={loopRef} frame={frame} options={{ ...opts, dangerouslyRunWhenHidden: true }} />);
+    act(() => { setHidden(true); });
+    act(() => { loopRef.current!.request(); });
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+
+    view.rerender(<Host loopRef={loopRef} frame={frame} options={opts} />);
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+
+    act(() => { setHidden(false); });
+    act(() => { clock.flush(); });
+    expect(onResume).toHaveBeenCalledTimes(1);
+    expect(frame).toHaveBeenCalledTimes(2);
+  });
+
   it('suspends while the named element is out of the viewport', () => {
     const clock = makeClock();
     const frame = vi.fn();
@@ -239,6 +261,29 @@ describe('useVisibleRaf', () => {
     act(() => { setIntersecting(true); });
     act(() => { clock.flush(); });
     expect(frame).toHaveBeenCalledTimes(1);
+  });
+
+  it('resumes, rebase first, when a suspended loop\'s target is swapped for one not yet reported', () => {
+    const clock = makeClock();
+    const a = document.createElement('div');
+    const b = document.createElement('div');
+    let target: Element = a;
+    const order: string[] = [];
+    const { loop } = mount(() => order.push('frame'), {
+      ...clock,
+      target: () => target,
+      onResume: () => order.push('resume'),
+      onSuspend: () => order.push('suspend'),
+    });
+    act(() => { loop().request(); });
+    act(() => { setIntersecting(false); });
+    target = b;
+    act(() => { loop().request(); });
+    act(() => { clock.flush(); });
+    expect(order).toEqual(['suspend', 'resume', 'frame']);
+
+    act(() => { setHidden(true); });
+    expect(order).toEqual(['suspend', 'resume', 'frame', 'suspend']);
   });
 
   it('cancels a held request without running it later', () => {

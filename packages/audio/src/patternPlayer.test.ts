@@ -216,6 +216,18 @@ describe('createPatternPlayer', () => {
     expect(() => player.setTempo(-1)).toThrow(RangeError);
   });
 
+  it('rejects a length that is not a whole number of steps, or steps per beat', async () => {
+    const { engine } = await harness();
+    for (const length of [0, -4, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => createPatternPlayer(engine, { tempo: 120, length })).toThrow(RangeError);
+    }
+    for (const stepsPerBeat of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => createPatternPlayer(engine, { tempo: 120, stepsPerBeat })).toThrow(RangeError);
+    }
+    const player = createPatternPlayer(engine, { tempo: 120 });
+    expect(() => player.setEvents([], 0)).toThrow(RangeError);
+  });
+
   it('does nothing on a second start', async () => {
     const { engine, run } = await harness();
     const onStep = vi.fn();

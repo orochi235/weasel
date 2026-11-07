@@ -194,6 +194,13 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
   };
 }
 
+/** Throws on a start time that could never come due. */
+export function checkWhen(when: number | undefined): void {
+  if (when !== undefined && !Number.isFinite(when)) {
+    throw new RangeError(`@weasel-js/audio: a voice starts at a finite time, not ${when}`);
+  }
+}
+
 export function createVoices(deps: VoicesDeps): Voices {
   const { ctx, chains, warn } = deps;
   const live = new Map<number, LiveVoice>();
@@ -229,6 +236,7 @@ export function createVoices(deps: VoicesDeps): Voices {
 
   return {
     launch(common, starter) {
+      checkWhen(common.when);
       const id = nextVoiceId++;
 
       if (deps.disposed()) {
