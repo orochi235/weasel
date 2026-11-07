@@ -148,4 +148,17 @@ describe('<ControlPanel reported>', () => {
     expect(screen.getByText('auto')).toBeInTheDocument();
     expect(screen.queryByText(/auto · /)).toBeNull();
   });
+
+  it('reads a reported null as no report', () => {
+    const { container } = render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ count: f.number(3).range(1, 20).quote() }), [])}
+        config={{ count: 3 }}
+        auto={new Set(['count'])}
+        reported={new Map([['count', null]])}
+        setConfig={() => {}}
+      />,
+    );
+    expect(container.querySelector('[class*=readoutText]')).toHaveTextContent(/^auto$/);
+  });
 });
