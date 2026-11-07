@@ -1,5 +1,22 @@
 # @weasel-js/rig
 
+## 1.17.1
+
+### Patch Changes
+
+- Updated dependencies [f45b9b5]
+- Updated dependencies [629d02b]
+  - @weasel-js/core@1.17.1
+  - @weasel-js/animator@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/history@1.17.1
+  - @weasel-js/icons@1.17.1
+  - @weasel-js/prefs@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/renderer@1.17.1
+  - @weasel-js/routing@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

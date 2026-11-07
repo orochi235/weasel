@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.17.1
+
+### Patch Changes
+
+- f45b9b5: Take `@msb235/blits` as `^1.0.0` instead of pinning `0.20.0` exactly, so an app on blits 1.x shares one copy with weasel rather than installing a second beside it. blits 1.0.0's one breaking change reserves the shader-patch name `lag`, which weasel does not use.
+- 629d02b: `NodeInk` carries the resolved `stroke` drawn along a node's silhouette in place of `trim`, which is now `ink.stroke?.trim`. A custom painter that reported `trim` reports `stroke` instead; text reports none, since its stroke follows its glyphs. Breaking for a painter or reader of `NodeInk.trim`.
+  
+  A shape-following selection outline traces an open path by its own stroke's region, caps and heads included and dashes ignored, so a wire with an arrowhead is outlined around the line and the head rather than in a band as wide as the head.
+- Updated dependencies [f45b9b5]
+  - @weasel-js/animator@1.17.1
+  - @weasel-js/simulation@1.17.1
+  - @weasel-js/cursor@1.17.1
+  - @weasel-js/font@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/gestures@1.17.1
+  - @weasel-js/history@1.17.1
+  - @weasel-js/icons@1.17.1
+  - @weasel-js/modes@1.17.1
+  - @weasel-js/paint@1.17.1
+  - @weasel-js/prefs@1.17.1
+  - @weasel-js/quantity@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/renderer@1.17.1
+  - @weasel-js/routing@1.17.1
+  - @weasel-js/select@1.17.1
+  - @weasel-js/stroke@1.17.1
+  - @weasel-js/text@1.17.1
+  - @weasel-js/text-dom@1.17.1
+  - @weasel-js/ui-logic@1.17.1
+
 ## 1.17.0
 
 ### Minor Changes

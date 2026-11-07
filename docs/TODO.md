@@ -641,13 +641,15 @@ only story runner in the repo.
   Closes when the next failure's stdout names the problem it saw, which makes it a fix, or on 2026-11-30
   with no second sighting, delete it.
 
-- **(P3) [waiting] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" failed once
-  in a full fleet run.** At 98d525569 on 2026-10-28 (teitou) the browser project read 534.3125 against
-  533.078125 (tolerance 0.5); the same file passed 3 of 3 alone on the fleet at that commit and 3 of 3 at
-  its parent. A 1.23 px miss suggests layout read before a reflow settled under load (inferred). Delete the
-  entry if the next full runs pass it.
-  Closes when 10 full fleet runs after 2026-10-28 pass it, or at its next failure, which makes it a fix.
-
+- **(P2) [agent] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" fails in full
+  fleet runs, with the same numbers every time.** The input box's left reads 534.3125 against the visible part's
+  533.078125 (tolerance 0.5): at 98d525569 on 2026-10-28, and at 51d4a8f9f and a54066909 on 2026-11-07 (both on
+  teitou, the first changing only package manifests). It passed in the full run of e0591848d the same morning, and
+  3 of 3 alone on studio at a54066909. A steady 1.23 px is not a reflow still settling: a `waitFor` that re-read
+  both rects on every attempt failed the same way. The box takes its rect from `placement`, which only the
+  surface's painter sets (`registerPainter` in `AnnotationOverlay.tsx`), so a layout shift with no frame painted
+  after it leaves the box where the last frame put it (read from the code, not confirmed). Closes when the box
+  follows its target without a new frame and the test passes in a full run.
 - **(P3) [waiting] `MenuTextValue.browser.test.tsx`'s "commits it on Enter without closing" closed the menu once under load.**
   In the full fleet run of 7168695bf (2026-11-03) `close` was called once, with no arguments, by the time Enter
   had committed `Nested`; the file passed alone on the fleet minutes later, and in about 45 other full runs. The failure
@@ -708,14 +710,6 @@ only story runner in the repo.
 
 ## Backends (WebGL future)
 
-- **(P2) [agent] GitHub CI's `browser (webgpu)` instance loses its WebGPU instance mid-test.** It was
-  `browser (gpu)` before 2026-11-07. On the push of e6af210ab (CI run 42340342009), `canvasBackend.browser.test.tsx` (`mapAsync`: "A valid external Instance
-  reference no longer exists") and `paintPrelude.browser.test.ts` ("Instance dropped in popErrorScope") failed
-  on the runner. The instance launched with `--enable-gpu` alone, which the traps entry already found loses
-  the device on the GPU-less runner; the whole browser project now takes `HOST_GPU_ARGS` (`scripts/chromium-gpu-args.ts`), the visual
-  job's SwiftShader set on Linux. `WeaselRenderer.dispose` retires only its own resources and never destroys
-  the shared device, so it is not the cause (read, 2026-11-07). Closes when `npm run test:browser` passes on
-  GitHub CI.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
@@ -734,6 +728,21 @@ only story runner in the repo.
   Ruled (2026-11-07): crop to the head at 16 and 32 px. Closes when `gen-icons.ts` draws those two sizes so.
 
 ## Release-gate & build hygiene
+
+- **(P3) [agent] jsdom 31 fails nine weasel-ui tests on how it serializes CSS.** Tried and held at 30.1.3 in the
+  2026-11-07 dependency sweep (fleet run of 1002ad7a6). The failures: `theme/src/react.test.tsx` (a rule's selector
+  now reads `[data-wzl-mode="light"]`, the test looks for single quotes), three in
+  `text-dom/src/useTextEdit.overlayStyle.test.ts` (`text-align: justify` and its last-line siblings read back as
+  `''`), `useTextEdit.overlayFrame.test.ts` and `.overlayGeometry.test.ts` (the overlay's transform),
+  `ui/src/paintGradientTrack.test.tsx`, `prefs/src/KitSettingsFromPrefs.test.tsx`, and
+  `animator/src/engine/handoff/handoffPhysics.test.tsx`. Each is either a test reading jsdom's own spelling,
+  to be made spelling-independent, or a jsdom regression to report upstream.
+  Closes when weasel runs on jsdom 31 with all nine passing.
+- **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
+  overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,
+  which minimatch 11 removed (`build:forge` exited "mini.matchOne is not a function", 2026-11-07), so it keeps
+  10.2.x, and `npm audit` reports this one finding. Closes when a typedoc release takes minimatch 11 and the
+  override covers it, leaving `npm audit` at 0.
 
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone

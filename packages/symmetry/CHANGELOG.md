@@ -1,5 +1,15 @@
 # @weasel-js/symmetry
 
+## 1.17.1
+
+### Patch Changes
+
+- Updated dependencies [f45b9b5]
+- Updated dependencies [629d02b]
+  - @weasel-js/core@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/registry@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

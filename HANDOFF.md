@@ -4,31 +4,18 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-11-06)
+## State (2026-11-07)
 
-- 1.16.2 is on npm (`npm view @weasel-js/core version`). `main` is at 0a2faa768, unpushed past 1d87afe1c; its
-  `test:fleet` and `test:fleet:postbuild` runs were green on that commit (batch/2026-11-06). Unreleased is
-  whatever `.changeset/` holds: among it the WebGPU backend (`backend: 'webgl2' | 'webgpu' | 'auto'`, with
-  `readIds`/`pickAt` now async and `readIdsSync` beside them, both breaking), `<SceneCanvas worker>` and
-  `<SceneViewCanvas worker>` (props now a union, also breaking for `Omit` wrappers), the animator's element
-  targets with an opt-in compositor handoff, retain-budget eviction of surfaces that cannot follow a pan,
-  custom shader programs taking their source by language, and core's `useClipboard`.
-- The CI visual suite has run on both backends only for `webgpu` alone (run 42333043838), not for the merged
-  batch; it runs on push.
-- 2026-11-07's overnight audit batch (74 bug fixes across eight areas) and a second batch closing five `[agent]`
-  entries (straight-alpha bitmaps on WebGL, trim tweens without rebuilds, the browser project on the node's GPU,
-  browser files dealt across Chromiums, browser tests on package specifiers) are on `main` at 6fe6c8a14,
-  fleet-green, and unpushed. The second batch changes how untrimmed strokes too large to batch are drawn, so the
-  CI visual suite may show edge pixels move; and the Linux browser job now launches every file with the
-  SwiftShader flag set, untried on CI.
-- A third 2026-11-07 batch (batch/2026-11-07c: a sweep of core, ui, labkit, forge, theme, routing, diagram, text, svg,
-  and the small packages and apps, plus rulers in guides and ui) is on `main` at 4a6f72ebe, unpushed. Its
-  `test:fleet` ran green on 9ae52cb44 and `test:fleet:postbuild` on bdf528f34, which differs from it by a test file;
-  the merge into `main` adds only another session's TODO rulings. A modifier-held tool now takes its own gestures
-  in routing's dispatcher, and the symmetry controller's `create` takes its center in world coordinates.
-- Release 1.17.0 (2026-11-07): `minor` approved on `@weasel-js/core` in `.changeset/webgpu-backend.md` (9dcd2bc8c).
-  `test:fleet` (35046 passed, 0 failed) and `test:fleet:postbuild` (13/13 steps) ran green on e0591848d, which
-  includes batch/2026-11-07d; 9dcd2bc8c adds only that changeset. Next: push, let CI's visual suite run, release.
+- 1.17.0 is on npm (all 54 packages), published from a5278f120 by dispatching Release on a branch at that
+  commit after its first run was canceled. 1.17.1 is what `.changeset/` holds now: blits taken as `^1.0.0`
+  (core, animator, clock, labkit), forge depending on TypeScript 6 itself, and the diagram NodeInk stroke
+  change from another host. The root also took a dev-dependency sweep with zod and minimatch overrides
+  (`npm audit` 41 → 1; the one left is typedoc's, filed).
+- The batch for 1.17.1 (branch `blinken-fixes`) ran `test:fleet --full` at a54066909: 35048 passed, 1 failed,
+  `AnnotationOverlay.clip.browser.test.tsx`, which fails in full runs on main as well (filed as a P2 with the
+  evidence); `test:fleet:postbuild` passed. The revert on top restores that test file to e0591848d's.
+- CI on 1218c89e3 passed, including the Linux browser job with the SwiftShader flag; the visual suite passed.
+- Release no longer repeats `check:manifests`, `check:treeshake` and `check:react-free`: postbuild runs them.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
