@@ -1,6 +1,7 @@
 import type { IconRef } from '@weasel-js/icons';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
+import type { AutoReports } from '../config/autoReports';
 import type { ResolvedConfig } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
@@ -194,6 +195,9 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   /** The trial's unpinned paths. `config` stays raw, so a control drawn from
    *  it sits at the value un-pinning writes back. */
   auto: ReadonlySet<string>;
+  /** The values the instrument reported for its auto paths (`RenderContext.reportAuto`), which the
+   *  settings panel quotes. Absent for a chrome mounted without a trial. */
+  reported?: AutoReports;
   setConfig: (key: string, value: unknown) => void;
   /** The lab's values for the schema `configSchema` is drawn over, which `config` does not hold.
    *  `setConfig` writes a path of that schema there. */

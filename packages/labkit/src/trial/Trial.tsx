@@ -1,19 +1,5 @@
-import {
-  createPointerStore,
-  type History,
-  PointerContextProvider,
-  WeaselProvider,
-} from '@weasel-js/core';
-import {
-  memo,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { createPointerStore, PointerContextProvider, WeaselProvider } from '@weasel-js/core';
+import { memo, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationTargets } from '../annotations/AnnotationTargets';
@@ -24,6 +10,7 @@ import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraReg
 import type { TrialContribution } from '../chrome/types';
 import { TrialClockContext, TrialRootContext } from '../clock/contexts';
 import { useTrialClockSetup } from '../clock/useTrialClockSetup';
+import { useAutoReports } from '../config/autoReports';
 import { useOverAccess } from '../config/over';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
@@ -39,12 +26,11 @@ import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { DEFAULT_VIEW } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
-import { LoupeSwitchContext } from './loupeSwitch';
+import { LoupeSwitchContext, useLoupeSwitch } from './loupeSwitch';
 import { MissingTrial } from './MissingTrial';
-import type { LoupeBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
-import { TrialHistoryContext, useMountedHistory } from './trialHistory';
+import { TrialHistoryContext, useHistoryVersion, useMountedHistory } from './trialHistory';
 import { trialUndoBindings } from './trialUndo';
 import { useKeptMarks } from './useKeptMarks';
 import { TrialOrbitProvider } from './useOrbitView';
@@ -131,17 +117,12 @@ function TrialRuntime({
   // Everything below reads `config`; `record.config` is the panel's view, and
   // reaches it through `record` on `TrialChrome`.
   const schema = useConfigSchema(instrument);
-  const { config } = useResolvedConfig(schema, record.config, record.auto);
+  const { config, auto } = useResolvedConfig(schema, record.config, record.auto);
+  const { reports, report: reportAuto } = useAutoReports(auto);
   const over = useOverAccess(schema.over);
 
   const { layerVisibility, layerOrder, setOrder, setShown } = useTrialLayerState();
-  const [loupeOn, setLoupeOn] = useState(false);
-  const [lenses, setLenses] = useState(0);
-  const mountLens = useCallback(() => {
-    setLenses((n) => n + 1);
-    return () => setLenses((n) => n - 1);
-  }, []);
-  const loupeSwitch = useMemo(() => ({ on: loupeOn, mount: mountLens }), [loupeOn, mountLens]);
+  const { loupeSwitch, loupeBindings } = useLoupeSwitch();
 
   const rootRef = useRef<HTMLElement | null>(null);
   const clockTarget = useCallback(() => rootRef.current, []);
@@ -237,6 +218,7 @@ function TrialRuntime({
       updateTrialState(record.id, next);
     },
     setConfig,
+    reportAuto,
     ...(over ? { over } : {}),
     trial: {
       id: record.id,
@@ -265,9 +247,6 @@ function TrialRuntime({
     own: ownHistory,
     snapshots,
   });
-
-  const loupeBindings: LoupeBindings | undefined =
-    lenses > 0 ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) } : undefined;
 
   const dragDropResult = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
@@ -404,6 +383,7 @@ function TrialRuntime({
                   isLastTrial={isLast}
                   undoBindings={undoBindings}
                   setConfig={setConfig}
+                  reported={reports}
                   trialChrome={extraChrome}
                   chrome={chrome}
                   suppress={suppress}
@@ -421,12 +401,4 @@ function TrialRuntime({
       </TrialOrbitProvider>
     </TrialIdProvider>
   );
-}
-
-const NO_SUBSCRIBE = () => () => {};
-
-/** `history`, re-rendering the caller whenever it changes. */
-function useHistoryVersion(history: History | undefined): History | undefined {
-  useSyncExternalStore(history?.subscribe ?? NO_SUBSCRIBE, () => history?.getVersion() ?? 0);
-  return history;
 }

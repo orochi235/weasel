@@ -490,12 +490,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every beveled control under both themes and kept or retuned
   its hooks.
 
-- **(P2) [agent] An auto lever whose value only the instrument knows can't show it.** `.auto()` with no
-  resolver reads `undefined` and the instrument substitutes its own value, so the row reads "auto" with no
-  number — segmento's Count, which a worker works out after each build (2026-11-07). `.auto(fn)` sees only
-  the config. The instrument needs a way to report the value it used for an auto path (a call beside
-  `setConfig`, say), which the ghosted control then draws, never stored and dropped once the path is pinned.
-  Closes when an instrument can report an auto path's value and its row draws that number.
 - **(P3) [agent] Two control choices are labkit's alone, and two controls draw an enum their own way.**
   Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as

@@ -13,6 +13,7 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
+import type { AutoReports } from '../config/autoReports';
 import { useLabOverValues } from '../config/over';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
@@ -58,6 +59,8 @@ export interface TrialChromeProps {
   /** The trial's one config write, which `Trial` hands its instrument too.
    *  Omitted, a chrome mounted without a trial makes its own. */
   setConfig?: (path: string, value: unknown) => void;
+  /** What the instrument reported for its auto paths, which the settings panel quotes. */
+  reported?: AutoReports;
   /** Supplied when the instrument declares a `job`. */
   job?: JobHandle;
   /** Supplied while a lens is mounted in the trial. The lens itself is the
@@ -108,6 +111,7 @@ export function TrialChrome({
   isLastTrial,
   undoBindings,
   setConfig: setConfigProp,
+  reported,
   job,
   loupe,
   trialChrome,
@@ -127,7 +131,6 @@ export function TrialChrome({
   const setTrialSectionCollapsed = useStore(storeCtx.store, (s) => s.setTrialSectionCollapsed);
   const panels = useTrialPanels(storeCtx.store, trialId);
 
-  // The view is opaque to labkit: a trial's camera reads its zoom; without one, a 2D view has it.
   const view2d = chromeView(record.view);
 
   const configSchema = useConfigSchema(instrument);
@@ -142,7 +145,6 @@ export function TrialChrome({
   const overValues = useLabOverValues();
 
   const title = record.title ?? instrument.title ?? instrument.name;
-  const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
 
   // A trial's own camera zooms about the view's middle, in the instrument's range, as the lab's does.
   const cameras = useContext(CameraRegistryContext);
@@ -181,9 +183,10 @@ export function TrialChrome({
       configFields: instrument.config ? [] : (instrument.configSchema?.() ?? []),
       config: record.config,
       auto,
+      reported,
       setConfig,
       overValues,
-      collapsedSections,
+      collapsedSections: record.collapsedSections ?? NO_SECTIONS,
       setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
       undockedPanels: panels.undocked,
       undockPanel: panels.undockPanel,
@@ -214,11 +217,11 @@ export function TrialChrome({
     setActiveTool,
     configSchema,
     auto,
+    reported,
     overValues,
     panels,
     setTrialTitle,
     setTrialSectionCollapsed,
-    collapsedSections,
     camera,
   ]);
 

@@ -69,8 +69,9 @@ export function useRowAuto(source: RowAutoSource) {
   const value = resolvedValue ?? pinned;
   const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // What the row would read as auto, pinned or not: the config resolved with
-  // this path unpinned beside the ones that already are.
-  const resolves = canAuto && autoResolverOf(leaf) !== undefined;
+  // this path unpinned beside the ones that already are. An auto row the
+  // instrument reported a value for has one to quote, resolver or not.
+  const resolves = canAuto && (autoResolverOf(leaf) !== undefined || resolvedValue !== undefined);
   const unpinned = useUnpinned(source, resolves, isAutoRow);
   const onAutoChange = canAuto && !unpinned.cycles ? setAuto : undefined;
   const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value, leaf);

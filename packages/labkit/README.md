@@ -199,9 +199,8 @@ growing a schema never strands a saved trial or a snapshot.
 
 A field can be **auto**: nobody is pinning it, and the instrument decides what
 it should be. Shift-click a row in the settings panel, or click the pin dot
-beside its label, and the control draws ghosted at whatever the value resolved
-to. Shift-click again — or just grab the control — and it pins back at the
-value it was holding all along.
+beside its label, and the row reads "auto", quoting the value it resolved to in
+its help tooltip. Shift-click again and it pins back at that value.
 
 `auto` is a value, so it goes wherever a config value goes:
 
@@ -231,11 +230,27 @@ receive as `undefined`, like a color going straight to a uniform.
 **Make a lever auto wherever the instrument can work out a good value for
 it**: a count from the data, a spacing from the size, a scale that fits the
 view. Use `.auto(fn)` when the config is enough to compute it, `.auto()` when
-only the instrument can, at run time (it then substitutes the value itself,
-and the row reads "auto" with no number), and `.initial(auto)` when the
-computed value is the better place to start. Don't put a separate "Auto X"
-checkbox beside the lever: the pin dot is that checkbox. Leave a lever
-pinned-only when `undefined` must never reach the instrument.
+only the instrument can, at run time, and `.initial(auto)` when the computed
+value is the better place to start. Don't put a separate "Auto X" checkbox
+beside the lever: the pin dot is that checkbox. Leave a lever pinned-only when
+`undefined` must never reach the instrument.
+
+An instrument that works an auto value out itself says what it came to with
+`reportAuto`, and the row quotes that number as it would a resolver's, through
+the leaf's own display, and pins at it:
+
+```ts
+// In the instrument's component, handed `ctx.reportAuto`, once a build settles:
+useEffect(() => reportAuto('count', built.count), [reportAuto, built.count]);
+```
+
+The instrument's own `config` still reads the path as `undefined`; the report
+is for the panel. A report outranks the path's resolver, since it is what the
+instrument actually used. It is never stored: a report for a pinned path is
+ignored, pinning the path drops it, and going auto again shows no number until
+the instrument reports afresh. `reportAuto(path, undefined)` withdraws one. A
+`<ControlPanel>` drawn outside a trial takes the same values as its `reported`
+map.
 
 Nothing stores the sentinel. It is normalized at every boundary into the
 trial's set of unpinned paths, and the pinned value stays in the config
