@@ -50,3 +50,16 @@ describe('a WebGPU device drawing with a program the GPU refuses', () => {
     error.mockRestore();
   });
 });
+
+describe('a WebGPU device reading back across a device loss', () => {
+  it('answers no ids, as a lost WebGL context does, rather than rejecting, and frees the readback buffer', async () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const target = gpu.createTarget({ width: 8, height: 8, ids: true });
+    fake.failMaps = true;
+    const before = fake.buffers.length;
+    await expect(gpu.readIds(target, { x: 0, y: 0, width: 2, height: 2 })).resolves.toEqual(new Uint8Array(16));
+    await expect(gpu.readCanvas({ x: 0, y: 0, width: 2, height: 2 })).resolves.toEqual(new Uint8Array(16));
+    expect(fake.buffers.slice(before).filter((b) => !b.destroyed)).toEqual([]);
+  });
+});

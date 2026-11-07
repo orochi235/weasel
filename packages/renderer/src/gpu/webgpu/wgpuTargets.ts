@@ -210,9 +210,15 @@ export function encodeReadTexture(
     { texture, origin: [from.x, from.y] }, { buffer, bytesPerRow: stride, rowsPerImage: rows }, [width, rows],
   );
   return async () => {
-    await buffer.mapAsync(MapMode.READ);
-    const mapped = new Uint8Array(buffer.getMappedRange());
     const out = new Uint8Array(width * rows * 4);
+    try {
+      await buffer.mapAsync(MapMode.READ);
+    } catch {
+      // The device was lost: nothing was drawn, as GL reads nothing back from a lost context.
+      buffer.destroy();
+      return out;
+    }
+    const mapped = new Uint8Array(buffer.getMappedRange());
     // Read top-down; the layer's rows run bottom-up.
     for (let row = 0; row < rows; row++) {
       out.set(mapped.subarray(row * stride, row * stride + width * 4), (rows - 1 - row) * width * 4);
