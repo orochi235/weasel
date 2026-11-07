@@ -44,6 +44,9 @@ export interface PointerInput {
   /** Send every held pointer's last move again, as of now: under a view that
    *  has moved since, the same client point is a new world point. */
   repeatHeld(): void;
+  /** A key changed the modifiers: send each held pointer's last move again
+   *  with the new ones, so a drag answers Shift or Alt without waiting for the pointer to move. */
+  modifiersChanged(e: KeyboardEvent): void;
   /** Drop every held pointer and timer without dispatching. */
   dispose(): void;
 }
@@ -238,6 +241,15 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       for (const session of [...sessions.values()]) session.cancel();
     },
     ...heldMoves(lastSample, (s) => { routeAt(s.pointerId, s.clientX, s.clientY); recognizer.move(s); }),
+    modifiersChanged(e) {
+      for (const s of [...lastSample.values()]) {
+        if (s.altKey === e.altKey && s.ctrlKey === e.ctrlKey && s.metaKey === e.metaKey && s.shiftKey === e.shiftKey) continue;
+        const next = { ...s, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, timeStamp: performance.now() };
+        lastSample.set(s.pointerId, next);
+        routeAt(s.pointerId, s.clientX, s.clientY);
+        recognizer.move(next);
+      }
+    },
     dispose() {
       recognizer.reset();
       for (const session of sessions.values()) session.cancel();
