@@ -47,10 +47,11 @@ export interface SceneRenderServeOptions {
   retainBudget?: number;
 }
 
-/** The two ends of a worker's message channel the host uses. */
+/** The two ends of a worker's message channel the host uses: a worker's own scope, or a
+ *  `MessagePort`. What crosses it is the page's and the host's private business. */
 export interface RenderPort {
-  postMessage(message: FromWorker, transfer?: Transferable[]): void;
-  addEventListener(type: 'message', listener: (event: MessageEvent<ToWorker>) => void): void;
+  postMessage(message: unknown, transfer?: Transferable[]): void;
+  addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
 }
 
 interface Painting {
@@ -84,9 +85,13 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   const drawOne = (options.drawOne ?? defaultDrawOne) as SceneViewDrawOne<unknown, string, unknown>;
   const paintBounds = (options.paintBounds ?? paintBoundsFor(drawOne)) as PaintBoundsFn<AnyNode, unknown> | undefined;
   const mirror = createSceneMirror(options.scene);
-  const dirty = () => port.postMessage({ type: 'dirty' });
+  const post = (msg: FromWorker, transfer?: Transferable[]): void => {
+    if (transfer) port.postMessage(msg, transfer);
+    else port.postMessage(msg);
+  };
+  const dirty = () => post({ type: 'dirty' });
   const animations = createWorkerAnimations(options.animations ?? {}, dirty);
-  const answerImage = loadFromPage((src, size) => port.postMessage({ type: 'image', src, size }));
+  const answerImage = loadFromPage((src, size) => post({ type: 'image', src, size }));
   subscribeImageReady(dirty);
   subscribeGlyphReady(dirty);
   let painting: Painting | null = null;
@@ -143,28 +148,29 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       }
       case 'frame':
         frame(msg);
-        port.postMessage({ type: 'drawn' });
+        post({ type: 'drawn' });
         return;
       case 'snapshot':
         void snapshot(painting?.canvas ?? null).then((bitmap) =>
-          port.postMessage({ type: 'snapshot', id: msg.id, bitmap }, bitmap ? [bitmap] : []));
+          post({ type: 'snapshot', id: msg.id, bitmap }, bitmap ? [bitmap] : []));
         return;
       case 'image':
         answerImage(msg);
         return;
       case 'readIds': {
         const ids = readIds(painting, msg);
-        port.postMessage({ type: 'ids', id: msg.id, ids }, [ids.data.buffer]);
+        post({ type: 'ids', id: msg.id, ids }, [ids.data.buffer]);
       }
     }
   };
 
   port.addEventListener('message', (event) => {
+    const msg = event.data as ToWorker;
     try {
-      receive(event.data);
+      receive(msg);
     } catch (e) {
-      if (event.data.type === 'frame') port.postMessage({ type: 'drawn' });
-      port.postMessage({ type: 'error', message: e instanceof Error ? e.message : String(e) });
+      if (msg.type === 'frame') post({ type: 'drawn' });
+      post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
     }
   });
 }

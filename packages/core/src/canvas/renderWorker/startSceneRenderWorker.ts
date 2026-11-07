@@ -8,9 +8,10 @@ import { createEmitter } from '@weasel-js/registry';
 import type { DrawCommand, IdBuffer } from '@weasel-js/renderer';
 import type { Scene } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
+import type { CanvasIdReadOptions } from '../canvasExtension';
 import { resolveDpr } from '../canvasRenderer';
 import type { SceneViewLayers } from '../sceneViewRender';
-import type { FromWorker, IdRect, ToWorker } from './protocol';
+import type { FromWorker, ToWorker } from './protocol';
 import { createFrameWriter } from './frameWriter';
 import { createRequests } from './requests';
 import type { AnimationOp } from './protocol';
@@ -64,7 +65,7 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   /** The `pickId`s the worker's last frame painted over `rect`, CSS pixels from the canvas's
    *  top-left: `WeaselRenderer.renderIds` on that frame, a round trip away. Empty before the
    *  first frame and after dispose. */
-  readIds(rect: IdRect, options?: { minAlpha?: number; exclude?: ReadonlySet<number> }): Promise<IdBuffer>;
+  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer>;
   /** What the canvas shows now. `null` when it shows nothing yet. */
   snapshot(): Promise<ImageBitmap | null>;
   /** Stop the worker, and with it the canvas's context. */
