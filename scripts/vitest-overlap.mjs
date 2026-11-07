@@ -4,7 +4,8 @@
 // alone would leave the browser project waiting for every jsdom file. Takes vitest's own arguments.
 // The browser project itself runs as several processes, each its own Chromium and slice of the files
 // (`scripts/lib/browser-shards.mjs`), whether beside the rest or alone; WEASEL_BROWSER_PROCESSES
-// overrides how many.
+// overrides how many. The slices are cut by the durations vitest last recorded for each file;
+// WEASEL_SHARD_SPLIT=hash cuts them by count, as vitest's `--shard` does.
 //
 // The other process gets the node's idle cores less the browser project's reserve
 // (`scripts/lib/node-load.mjs`); WEASEL_JSDOM_WORKERS overrides the count, and WEASEL_OVERLAP=1 or 0
@@ -14,8 +15,9 @@ import { writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { cpus } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
-import { browserProcesses, browserShards } from './lib/browser-shards.mjs';
+import { browserProcesses, browserShards, durationsEnv } from './lib/browser-shards.mjs';
 import { mergeProgress } from './lib/merge-progress.mjs';
 import { roomToOverlap, sampleLoad } from './lib/node-load.mjs';
 
@@ -68,7 +70,10 @@ const emit = (line) => {
 // The suite's last total belongs to the merged bar. A child told 1 reports the tests it has
 // collected and skips its own estimate, which would otherwise overshoot that total.
 const expected = Number(process.env.ONTO_EXPECT_TESTS) || 0;
-const env = { ...process.env, ONTO_EXPECT_TESTS: expected ? '1' : '' };
+// A caller's own --shard (`onto test --spread`) slices across nodes, whose recorded durations differ,
+// so only the split made here goes by them.
+const split = args.some((a) => a.startsWith('--shard')) ? {} : durationsEnv(fileURLToPath(new URL('..', import.meta.url)));
+const env = { ...process.env, ONTO_EXPECT_TESTS: expected ? '1' : '', ...split };
 const merge = mergeProgress(runs.length, expected);
 
 const children = runs.map((argv, i) => {

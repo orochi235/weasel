@@ -21,6 +21,7 @@ import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 import { devWatch } from './scripts/vite-watch.ts';
+import { DurationSequencer } from './scripts/vitest-duration-sequencer.ts';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -96,6 +97,7 @@ export default defineConfig({
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
+    sequence: { sequencer: DurationSequencer },
     // vitest's default (RAM / workers) never recycles a vm worker, and one that lives the whole run
     // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/TODO.md).
     vmMemoryLimit: '1gb',
