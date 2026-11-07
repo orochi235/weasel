@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { chartPrefs } from './prefs';
-import { at } from './testing/canvasPixels';
+import { at, readClientPixels } from './testing/canvasPixels';
 import { bodies, chartSession, offWhitePixels, poseOf, saved, type SavedNode } from './testing/chartSession';
 import { mountChartApp as mountApp } from './testing/mountChartApp';
 import { carryStencil, drag } from './testing/pointer';
