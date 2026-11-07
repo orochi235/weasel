@@ -9,7 +9,7 @@
  * If this demo has interactive controls that affect the canvas (e.g. buttons,
  * drag handles), add steps 2+ following the pattern below.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 

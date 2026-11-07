@@ -38,8 +38,8 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
     paintedCursor: createPaintedCursorState(),
     cursorSink: { setBase() {}, setOverride() {} },
     getDebug: () => null,
-    pickAt: () => 0, readIds: () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }),
-    readIdsAsync: async () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }), pickAtAsync: async () => 0, worker: null,
+    pickAt: async () => 0,
+    readIds: async () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }), readIdsSync: () => null, worker: null,
   };
   return api;
 }
@@ -194,8 +194,8 @@ describe('attachHud', () => {
         paintedCursor: createPaintedCursorState(),
         cursorSink: { setBase() {}, setOverride() {} },
         getDebug: () => null,
-        pickAt: () => 0, readIds: () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }),
-        readIdsAsync: async () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }), pickAtAsync: async () => 0, worker: null,
+        pickAt: async () => 0,
+        readIds: async () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }), readIdsSync: () => null, worker: null,
       };
       const theme = { ...resolveTheme(weaselTheme, { mode: 'dark' }), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });

@@ -5,6 +5,7 @@ import type { DrawCommand } from './DrawCommand';
 import { viewToMat3 } from '@weasel-js/geom';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
 
 /**
  * Far from the origin and zoomed in: the view translation is near 1.68e7,
@@ -37,13 +38,14 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
     };
     const lefts = PANS.map((k) => {
       const { rec, r } = frame([rect], k * STEP_PX);
+      // A flush writes its vertices, then draws them under the batch program.
       let bound: unknown = null;
+      let pending: Float32Array | null = null;
       let verts: Float32Array | null = null;
       for (const c of rec.calls) {
         if (c.name === 'useProgram') bound = c.args[0];
-        if (bound === r._batchFill().handle && c.name === 'bufferSubData' && c.args[2] instanceof Float32Array) {
-          verts = c.args[2];
-        }
+        if (c.name === 'bufferSubData' && c.args[2] instanceof Float32Array) pending = c.args[2];
+        if (c.name === 'drawElements' && bound === glProgramHandle(r._batchFill())) verts = pending;
       }
       let left = Infinity;
       for (let i = 0; i < 4 * FLOATS_PER_VERTEX; i += FLOATS_PER_VERTEX) left = Math.min(left, verts![i]);
@@ -71,7 +73,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       const { rec, r } = frame([wrap(path)], k * STEP_PX);
       const prog = r._pathFillVColor();
       const last = (name: string, uniform: string) => rec.calls
-        .filter((c) => c.name === name && c.args[0] === prog.uniform(uniform)).at(-1);
+        .filter((c) => c.name === name && c.args[0] === glUniformLocation(prog, uniform)).at(-1);
       const model = last('uniformMatrix3fv', 'u_model')!.args[2] as Float32Array;
       const origin = last('uniform2f', 'u_origin');
       const ox = origin ? origin.args[1] as number : 0;
@@ -133,7 +135,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
     }]);
     const prog = r._pathFillVColor();
     const last = (name: string, uniform: string) => rec.calls
-      .filter((c) => c.name === name && c.args[0] === prog.uniform(uniform)).at(-1)!;
+      .filter((c) => c.name === name && c.args[0] === glUniformLocation(prog, uniform)).at(-1)!;
     const model = last('uniformMatrix3fv', 'u_model').args[2] as Float32Array;
     const [ox, oy] = last('uniform2f', 'u_origin').args.slice(1) as number[];
     const f = Math.fround;
@@ -165,7 +167,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
     }]);
     const prog = r._pathFillVColor();
     const of = (name: string, uniform: string) => rec.calls
-      .filter((c) => c.name === name && c.args[0] === prog.uniform(uniform));
+      .filter((c) => c.name === name && c.args[0] === glUniformLocation(prog, uniform));
     expect(of('uniformMatrix3fv', 'u_model').map((c) => Array.from(c.args[2] as Float32Array)))
       .toEqual([Array.from(transform)]);
     expect(of('uniform2f', 'u_origin').map((c) => c.args.slice(1))).toEqual([[0, 0]]);

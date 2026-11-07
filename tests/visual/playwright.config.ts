@@ -8,6 +8,17 @@ const repoRoot = resolve(here, '../..');
 // A second checkout running the visual specs on the default port would otherwise
 // be reused outside CI, and every spec would capture that checkout's code.
 const port = Number(process.env.WEASEL_VISUAL_PORT ?? ports.visual);
+// `./fixture` carries it into every page.goto as `?backend=`.
+const webgpu = process.env.WEASEL_VISUAL_BACKEND === 'webgpu';
+// The headless shell runs with the GPU process off, which cannot present a
+// WebGPU canvas. On the GPU-less runner this set alone keeps a device alive
+// through presentation: --enable-gpu with SwiftShader for ANGLE, Vulkan and the
+// WebGPU adapter (probed on ubuntu-22.04, 2026-11-07). WebGL reports the same
+// SwiftShader Vulkan device with or without it.
+const WEBGPU_ARGS = [
+  '--enable-unsafe-webgpu', '--enable-features=Vulkan', '--enable-gpu', '--use-angle=swiftshader',
+  '--enable-unsafe-swiftshader', '--use-vulkan=swiftshader', '--use-webgpu-adapter=swiftshader',
+];
 
 export default defineConfig({
   testDir: here,
@@ -33,7 +44,9 @@ export default defineConfig({
     // patterns build their textures with canvas2d strokes, so without this the
     // same baseline cannot pass on both. Forcing the software path locally is a
     // no-op on CI, which already takes it.
-    launchOptions: { args: ['--disable-accelerated-2d-canvas'] },
+    launchOptions: {
+      args: ['--disable-accelerated-2d-canvas', ...(webgpu ? WEBGPU_ARGS : [])],
+    },
   },
   // Playwright's built-in snapshot dir is NOT used. diff.ts manages its own
   // baselines/ directory so we have full control over diff thresholds and

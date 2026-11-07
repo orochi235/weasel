@@ -16,7 +16,7 @@ import type { Paint } from '@weasel-js/paint';
 import { useCanvasSurface } from './useCanvasSurface';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
-import type { CanvasRendererLease } from './canvasRenderer';
+import type { CanvasBackend, CanvasRendererLease } from './canvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RedrawSource } from '../core/layers/render';
@@ -51,6 +51,10 @@ export interface DrawCanvasProps extends SurfaceSizeProps {
   className?: string;
   /** Receives the underlying `<canvas>`, for pointer listeners or `toBlob`. */
   canvasRef?: Ref<HTMLCanvasElement>;
+  /** The GPU API the canvas paints with; see `CanvasBackend`. Read once, when
+   *  its first renderer is built. Default the nearest `CanvasBackendProvider`'s,
+   *  else `'webgl2'`. */
+  backend?: CanvasBackend;
 }
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -61,7 +65,7 @@ const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
  * scene, tools and an input dispatcher that nothing uses.
  */
 export function DrawCanvas(props: DrawCanvasProps) {
-  const { draw, background, redrawOn, dpr, className, canvasRef } = props;
+  const { draw, background, redrawOn, dpr, className, canvasRef, backend } = props;
   const view = props.view ? normalizeView(props.view) : IDENTITY_VIEW;
 
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
@@ -79,7 +83,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
     return lease.paint(el, commands, view, { width, height, dpr });
   };
-  useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn, onCommit: 'paint', size: { width, height } });
+  useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn, onCommit: 'paint', size: { width, height }, backend });
 
   return <SurfaceCanvas ref={setRefs} width={props.width} height={props.height} className={className} />;
 }

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixture';
 import type { ThemeDefinition } from '../../packages/theme/src/definition';
 import { axisDependencies, bake, emitCss } from '../../packages/theme/src/engine';
 

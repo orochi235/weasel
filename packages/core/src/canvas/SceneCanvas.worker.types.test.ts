@@ -15,8 +15,8 @@ const refused: Props[] = [
   { scene, worker, animator },
   // @ts-expect-error a worker canvas is not a tile of a shared buffer
   { scene, worker, paintInto: { canvas: null, x: 0, y: 0 } },
-  // @ts-expect-error picking by pixels reads ids synchronously
-  { scene, worker, geometry: { picking: 'pixels' } },
+  // @ts-expect-error a worker canvas paints with WebGL 2
+  { scene, worker, backend: 'webgpu' },
   // @ts-expect-error the worker module's drawOne paints
   { scene, worker, layers: { scene: { drawOne: () => [] } } },
   // @ts-expect-error a clock is for the worker's animator
@@ -26,11 +26,14 @@ const refused: Props[] = [
 const accepted: Props[] = [
   { scene, worker, alphaFor: () => 1, geometry: { picking: 'shape' }, layers: { scene: { cull: true, ghostAlpha: 0.5 } } },
   { scene, animator, geometry: { picking: 'pixels' } },
+  // Picking by pixels walks the shapes where a worker's ids cannot be read at once.
+  { scene, worker, geometry: { picking: 'pixels' } },
+  { scene, backend: 'webgpu' },
 ];
 
 describe('<SceneCanvas worker> props', () => {
   it('compiles only the props worker mode honors', () => {
     expect(refused).toHaveLength(5);
-    expect(accepted).toHaveLength(2);
+    expect(accepted).toHaveLength(4);
   });
 });

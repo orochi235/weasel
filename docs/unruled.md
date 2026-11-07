@@ -254,6 +254,17 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
+  nothing there and is reported once, mirroring a WGSL-only program on WebGL; the canvas is never
+  swapped for one of the other context kind, which would lose its listeners and layout.
+- 2026-11-06 (WebGPU backend): `pickAt` and `readIds` return promises on both backends;
+  `readIdsSync` answers on WebGL and is `null` on WebGPU, where `geometry.picking: 'pixels'` walks the
+  shapes instead, because the pick answers inside the pointer event.
+- 2026-11-06 (WebGPU backend): A tile of a shared canvas stays on WebGL whatever its `backend`: a WebGPU
+  renderer presents its whole buffer, which would wipe the other tiles.
+- 2026-11-06 (WebGPU backend): A multisampled WebGPU canvas resolves into a texture of its own and copies
+  it to the canvas, one full-canvas copy per frame, so `WeaselRenderer.readPixels` can read the last frame
+  as WebGL's preserved drawing buffer allows.
 - 2026-10-20 (overnight pass): The lint rule against a bare `getContext('webgl2')` also refuses an
   attributes object with no `stencil: true` and no spread, so `{ ...CANVAS_CONTEXT_ATTRIBUTES, x }`
   passes. labkit's 3D example and its loupe test open shared buffers with those attributes; whoever

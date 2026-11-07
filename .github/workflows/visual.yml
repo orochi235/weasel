@@ -15,6 +15,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      webgpu_only:
+        description: Run only the WebGPU job
+        type: boolean
+        default: false
 
 # A superseded push's run tells us nothing; don't queue behind it.
 concurrency:
@@ -23,6 +28,7 @@ concurrency:
 
 jobs:
   visual-regression:
+    if: ${{ !inputs.webgpu_only }}
     # ⚠️  DO NOT change this runner without regenerating all baselines.
     runs-on: ubuntu-22.04
     # Hide `npm warn Unknown ... config` noise from `.npmrc`'s pnpm-only keys.
@@ -54,6 +60,38 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: visual-regression-results
+          path: |
+            test-results/
+          retention-days: 14
+
+  # The same suite and baselines with every canvas on WebGPU (`?backend=webgpu`).
+  # Its Chromium launch differs from the job above (tests/visual/playwright.config.ts).
+  visual-regression-webgpu:
+    runs-on: ubuntu-22.04
+    env:
+      NPM_CONFIG_LOGLEVEL: error
+      WEASEL_VISUAL_BACKEND: webgpu
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run visual regression tests on WebGPU
+        run: npm run test:visual
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-regression-results-webgpu
           path: |
             test-results/
           retention-days: 14

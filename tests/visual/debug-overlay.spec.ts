@@ -8,7 +8,7 @@
  *
  * Notes: Overlay rendered over static scene.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 

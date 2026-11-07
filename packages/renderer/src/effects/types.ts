@@ -2,6 +2,7 @@ import {
   registerProgram, type ProgramSource, type ShaderProgramHandle, type ShaderUniform,
 } from '../shaders/registerProgram';
 import { EFFECT_VERT_SRC } from './effectPrelude';
+import { assembleEffectWgsl } from '../gpu/webgpu/wgsl/effectPrelude';
 
 /**
  * One full-screen pass over what a group has already drawn. A group's effects
@@ -55,8 +56,9 @@ export type EffectProgramSource =
  *
  * The GLSL fragment shader reads `v_uv` and `u_source`, may declare
  * `u_resolution` / `u_texel`, and must write premultiplied alpha. See
- * `effectPrelude.ts`. A WGSL one is held for the WebGPU backend, which sets
- * its contract; WebGL draws an effect only from its GLSL.
+ * `effectPrelude.ts`. The WGSL one supplies `fn effect(in: EffectVaryings) -> vec4f`
+ * (`gpu/webgpu/wgsl/effectPrelude.ts`); each backend draws an effect from its
+ * own language alone.
  */
 export function registerEffect(id: string, source: EffectProgramSource): ShaderProgramHandle {
   if (source.glsl === undefined && source.wgsl === undefined) {
@@ -64,6 +66,6 @@ export function registerEffect(id: string, source: EffectProgramSource): ShaderP
   }
   return registerProgram(id, {
     ...(source.glsl !== undefined && { glsl: { vert: EFFECT_VERT_SRC, frag: source.glsl } }),
-    ...(source.wgsl !== undefined && { wgsl: { frag: source.wgsl } }),
+    ...(source.wgsl !== undefined && { wgsl: { frag: assembleEffectWgsl(source.wgsl) } }),
   } as ProgramSource);
 }

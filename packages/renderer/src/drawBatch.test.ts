@@ -31,6 +31,8 @@ import {
   SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
 } from './drawBatch';
 import { RAMP_SLOT, PAINT_MODE_IMAGE, paintModeOf } from './shaders/batchFill';
+import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
+import type { ShaderProgram } from './shaders/ShaderProgram';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -91,7 +93,7 @@ describe('renderer — consecutive solid-fill batching', () => {
   it('merges a run of solid rects into one draw', () => {
     r.render([rect(0), rect(20), rect(40)]);
     expect(draws()).toEqual([18]); // 3 rects × 6 indices
-    expect(drawPrograms()).toEqual([r._batchFill().handle]);
+    expect(drawPrograms()).toEqual([glProgramHandle(r._batchFill())]);
   });
 
   it('merges across the no-op wrapper groups the scene emits', () => {
@@ -132,7 +134,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(Array.from(verts.slice(2, 6))).toEqual([1, 0, 0, 1]);
     expect(Array.from(verts.slice(4 * FLOATS_PER_VERTEX + 2, 4 * FLOATS_PER_VERTEX + 6))).toEqual([0, 0, 1, 1]);
     // Anything but white here would tint the whole batch.
-    const uColor = r._batchFill().uniform('u_color');
+    const uColor = glUniformLocation(r._batchFill(), 'u_color');
     const sent = recorder.calls.filter((c) => c.name === 'uniform4f' && c.args[0] === uColor);
     expect(sent).toHaveLength(1);
     expect(sent[0].args.slice(1)).toEqual([1, 1, 1, 1]);
@@ -154,9 +156,9 @@ describe('renderer — consecutive solid-fill batching', () => {
     r.render([rect(0), breakerRect(20), rect(40)]);
     const progs = drawPrograms();
     expect(progs).toHaveLength(3);
-    expect(progs[0]).toBe(r._batchFill().handle);
-    expect(progs[1]).not.toBe(r._batchFill().handle);
-    expect(progs[2]).toBe(r._batchFill().handle);
+    expect(progs[0]).toBe(glProgramHandle(r._batchFill()));
+    expect(progs[1]).not.toBe(glProgramHandle(r._batchFill()));
+    expect(progs[2]).toBe(glProgramHandle(r._batchFill()));
     expect(draws()).toEqual([6, 6, 6]);
   });
 
@@ -285,7 +287,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     it('joins a run of solids rather than breaking it', () => {
       r.render([rect(0), linearRect(20), rect(40)]);
       expect(draws()).toEqual([18]);
-      expect(drawPrograms()).toEqual([r._batchFill().handle]);
+      expect(drawPrograms()).toEqual([glProgramHandle(r._batchFill())]);
     });
 
     it('carries the ramp position on the corners and the row on the v', () => {
@@ -329,7 +331,7 @@ describe('renderer — consecutive solid-fill batching', () => {
         linearRect(20),
       ]);
       expect(draws()).toEqual([18]);
-      expect(drawPrograms()).toEqual([r._batchFill().handle]);
+      expect(drawPrograms()).toEqual([glProgramHandle(r._batchFill())]);
     });
   });
 
@@ -496,7 +498,7 @@ describe('renderer — consecutive solid-fill batching', () => {
         rect(40, '#00ff00'),
       ]);
       expect(clipBitWrites()).toEqual([]);
-      expect(drawPrograms().filter((p2) => p2 === r._batchFill().handle)).toHaveLength(1);
+      expect(drawPrograms().filter((p2) => p2 === glProgramHandle(r._batchFill()))).toHaveLength(1);
       // The diamond's left half is cut off at x = 0.
       const xs = positions().filter((_, i) => i % 2 === 0);
       expect(Math.min(...xs)).toBe(0);
@@ -561,7 +563,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       // one after the group.
       expect(draws()).toEqual([6, 6, 6, 6, 12]);
       expect(clipBitWrites().length).toBeGreaterThan(0);
-      expect(drawPrograms()[2]).not.toBe(r._batchFill().handle);
+      expect(drawPrograms()[2]).not.toBe(glProgramHandle(r._batchFill()));
       let seen = 0;
       const vcolorAt = recorder.calls.findIndex((c) => c.name === 'drawElements' && seen++ === 2);
       let func: unknown[] | null = null;
@@ -608,7 +610,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(verts[4 * FLOATS_PER_VERTEX + 5]).toBeCloseTo(0.5, 6);
     expect(verts[8 * FLOATS_PER_VERTEX + 5]).toBe(1);
     // Folded means the uniform must not apply it a second time.
-    const uAlpha = r._batchFill().uniform('u_alpha');
+    const uAlpha = glUniformLocation(r._batchFill(), 'u_alpha');
     const sent = recorder.calls.filter((c) => c.name === 'uniform1fv' && c.args[0] === uAlpha);
     expect(sent).toHaveLength(1);
     expect(Array.from(sent[0].args[1] as Float32Array)).toEqual([1]);
@@ -667,15 +669,24 @@ describe('renderer — consecutive solid-fill batching', () => {
       return out;
     };
 
-    /** The vertex array bound at each solid-flush vertex upload. */
-    const flushVaos = (): unknown[] => {
-      const out: unknown[] = [];
-      let bound: unknown = null;
+    /** Each vertex array, by the vertex buffer it reads: recorded as a slot is
+     *  made, its buffer bound while its attributes are pointed at it. */
+    const vaoByVbo = (): Map<unknown, unknown> => {
+      const out = new Map<unknown, unknown>();
+      let vao: unknown = null;
+      let vbo: unknown = null;
       for (const c of recorder.calls) {
-        if (c.name === 'bindVertexArray') bound = c.args[0];
-        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) out.push(bound);
+        if (c.name === 'bindVertexArray') vao = c.args[0];
+        if (c.name === 'bindBuffer' && c.args[0] === ARRAY_BUFFER) vbo = c.args[1];
+        if (c.name === 'vertexAttribPointer' && vao !== null) out.set(vbo, vao);
       }
       return out;
+    };
+
+    /** The vertex array reading each solid-flush vertex upload. */
+    const flushVaos = (): unknown[] => {
+      const byVbo = vaoByVbo();
+      return flushVbos().map((vbo) => byVbo.get(vbo));
     };
 
     it('writes each flush to a buffer the one before it did not', () => {
@@ -714,7 +725,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       for (const c of recorder.calls) {
         if (c.name === 'bindVertexArray') vao = c.args[0];
         if (c.name === 'useProgram') prog = c.args[0];
-        if (c.name === 'drawElements' && prog === r._batchFill().handle) {
+        if (c.name === 'drawElements' && prog === glProgramHandle(r._batchFill())) {
           boundAtBatchDraw.push(vao);
         }
       }
@@ -726,11 +737,14 @@ describe('renderer — consecutive solid-fill batching', () => {
       // The element binding rides the VAO, so an index upload that lands in the
       // wrong set draws the previous flush's triangles.
       const perFlush: Array<[unknown, unknown]> = [];
+      const byVbo = vaoByVbo();
       let vao: unknown = null;
+      let vbo: unknown = null;
       let pendingVao: unknown = null;
       for (const c of recorder.calls) {
         if (c.name === 'bindVertexArray') vao = c.args[0];
-        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) pendingVao = vao;
+        if (c.name === 'bindBuffer' && c.args[0] === ARRAY_BUFFER) vbo = c.args[1];
+        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) pendingVao = byVbo.get(vbo);
         if (c.name === 'bufferSubData' && c.args[0] === ELEMENT_ARRAY_BUFFER) {
           perFlush.push([pendingVao, vao]);
         }
@@ -858,8 +872,8 @@ describe('renderer — consecutive solid-fill batching', () => {
    * shape in an earlier one's color, which nothing here throws over.
    */
   describe('which uniform writes reach GL', () => {
-    const colorWrites = (prog: { uniform(n: string): unknown }): number[][] => {
-      const loc = prog.uniform('u_color');
+    const colorWrites = (prog: ShaderProgram): number[][] => {
+      const loc = glUniformLocation(prog, 'u_color');
       return recorder.calls
         .filter((c) => c.name === 'uniform4f' && c.args[0] === loc)
         .map((c) => c.args.slice(1) as number[]);

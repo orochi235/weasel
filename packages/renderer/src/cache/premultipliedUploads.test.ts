@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { makeGLRecorder } from '../testing/glRecorder';
 import { GLImageCache } from './GLImageCache';
 import { GLTextureCache } from './GLTextureCache';
+import { webglDevice } from '../gpu/webgl/WebGLDevice';
 
 const source = { width: 4, height: 4, data: new Uint8ClampedArray(64) } as ImageData;
 
@@ -27,13 +28,13 @@ function flagAtUploads(recorder: ReturnType<typeof makeGLRecorder>): { atUpload:
 describe('which uploads premultiply', () => {
   it('an image upload does, and puts the flag back', () => {
     const recorder = makeGLRecorder();
-    new GLImageCache(recorder.gl).upload({}, source);
+    new GLImageCache(webglDevice(recorder.gl)).upload({}, source);
     expect(flagAtUploads(recorder)).toEqual({ atUpload: [true], after: false });
   });
 
   it('a registered texture does, on its first upload and on a replaced source', () => {
     const recorder = makeGLRecorder();
-    const cache = new GLTextureCache(recorder.gl);
+    const cache = new GLTextureCache(webglDevice(recorder.gl));
     cache.uploadRegistered('tex_1', source);
     cache.uploadRegistered('tex_1', { ...source });
     expect(flagAtUploads(recorder)).toEqual({ atUpload: [true, true], after: false });
@@ -41,7 +42,7 @@ describe('which uploads premultiply', () => {
 
   it('a font atlas does not: its channels are a distance field', () => {
     const recorder = makeGLRecorder();
-    new GLTextureCache(recorder.gl).upload('inter', source);
+    new GLTextureCache(webglDevice(recorder.gl)).upload('inter', source);
     expect(flagAtUploads(recorder)).toEqual({ atUpload: [false], after: false });
   });
 });

@@ -164,12 +164,12 @@ The page still holds the scene, so geometric hit-testing, the gesture dispatcher
 text editor are unchanged. A node an in-flight gesture is ghosting is sent to the worker at
 alpha 0, the way the page leaves its committed paint out, and the page paints its ghost.
 
-**Ids are a round trip away.** `readIdsAsync(rect)` and `pickAtAsync(x, y)` read every canvas of
-the stack, the worker's last frame through `WeaselRenderer.renderIds` there, and give each pixel
-the id of the highest canvas that painted one. `readIds` and `pickAt` throw in worker mode rather
-than answer from part of the stack. Caching a whole id frame per frame would cost an id render
-every frame to save a round trip a pick rarely needs, so the reads stay on demand. Both async
-reads exist on every canvas and answer at once where the page paints it all.
+**Ids are a round trip away.** `readIds(rect)` and `pickAt(x, y)` read every canvas of the stack,
+the worker's last frame through `WeaselRenderer.renderIds` there, and give each pixel the id of the
+highest canvas that painted one. `readIdsSync` answers `null` in worker mode rather than answer from
+part of the stack, as it does on a WebGPU canvas, so `geometry.picking: 'pixels'` walks the shapes
+instead. Caching a whole id frame per frame would cost an id render every frame to save a round trip
+a pick rarely needs, so the reads stay on demand.
 
 **Every prop either works or is a type error.** The props are a union (`SceneCanvas/workerProps.ts`),
 with `worker` required in its branch: ruled over an optional `worker` (2026-11-06), so `clock` without
@@ -179,7 +179,8 @@ with `worker` required in its branch: ruled over an optional `worker` (2026-11-0
 |---|---|
 | `animator` | a type error: play animations through `ref.worker.animator`, with `clock` for a page clock |
 | `paintInto`, `inputElement` | a type error: a transferred canvas cannot be a tile of a shared buffer |
-| `geometry.picking: 'pixels'` | a type error: it reads ids synchronously; `'pose'` and `'shape'` work |
+| `geometry.picking: 'pixels'` | works, by walking the shapes: `readIdsSync` answers `null` |
+| `backend` | a type error: the worker's canvas and the page's beside it paint with WebGL 2 |
 | `layers.scene` with `drawOne`, `toPose`, `objects`, `postProcess`, `paintBounds` and the other functions | a type error: the worker module's `drawOne` paints; `cull` and `ghostAlpha` cross |
 | `layers.scene` as a pre-built layer, or `null` | works: the page paints it, and no worker starts |
 | `alphaFor`, `layerVisibility`, `layerOrder` | work: alphas cross as they change, the run's layers as its `layerOrder` |

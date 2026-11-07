@@ -1,8 +1,13 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { POSITION_ATTRIBUTE_LOCATION } from '../shaders/ShaderProgram';
+import type { GpuBuffer, GpuDevice, GpuGeometry, GpuVertexBufferLayout } from '../gpu/types';
 
 export interface GLMeshHandle {
-  readonly vao: WebGLVertexArrayObject;
+  readonly geometry: GpuGeometry;
+  /** The positions, two floats a vertex at `POSITION_ATTRIBUTE_LOCATION`, and
+   *  the indices: what a draw adding an attribute of its own builds on. */
+  readonly vertices: GpuBuffer;
+  readonly indices: GpuBuffer;
   readonly indexCount: number;
   readonly requiresStencil: boolean;
   readonly anchorA?: Uint32Array;
@@ -10,35 +15,34 @@ export interface GLMeshHandle {
   readonly anchorT?: Float32Array;
 }
 
-/** A per-vertex attribute a mesh's VAO also records, for the one program
- *  that draws that mesh. */
+/** A per-vertex attribute a mesh's geometry also carries, for the one
+ *  program that draws that mesh. */
 export interface MeshAttribute {
   readonly location: number;
-  readonly size: number;
+  readonly size: 1 | 2 | 3 | 4;
   readonly data: Float32Array;
 }
 
 /** Resources to release when a Mesh is reclaimed by GC. */
 interface MeshResources {
-  vao: WebGLVertexArrayObject;
-  vbo: WebGLBuffer;
-  ibo: WebGLBuffer;
-  extra?: WebGLBuffer;
+  geometry: GpuGeometry;
+  vbo: GpuBuffer;
+  ibo: GpuBuffer;
+  extra?: GpuBuffer;
 }
 
 /**
- * Caches GL-side buffers + VAO per `Mesh` identity. Upload happens lazily
+ * Caches GPU buffers and geometry per `Mesh` identity. Upload happens lazily
  * on first `handleFor(mesh)` call.
  *
  * **GC-aware cleanup (deferred-delete queue):** we register each Mesh with a
  * `FinalizationRegistry`; when the Mesh is reclaimed, the finalizer pushes
- * its GL resources (VAO, VBO, IBO) onto an internal queue. The renderer
+ * its GPU resources onto an internal queue. The renderer
  * drains this queue at the start of each `render()` call (via
- * `drainPendingDeletes()`), when GL is in a known state — no VAO bound, no
- * draw mid-flight. Finalizer timing is non-deterministic; resources may live
+ * `drainPendingDeletes()`), when no draw is mid-flight. Finalizer timing is non-deterministic; resources may live
  * for a frame or two beyond their Mesh.
  *
- * The cache is GL-context-bound; if the context is lost and re-created, the
+ * The cache is context-bound; if the context is lost and re-created, the
  * renderer should construct a new GLMeshCache.
  */
 export class GLMeshCache {
@@ -54,11 +58,11 @@ export class GLMeshCache {
   private readonly transientThisFrame: MeshResources[] = [];
 
   constructor(
-    private readonly gl: WebGL2RenderingContext,
+    private readonly gpu: GpuDevice,
   ) {
     this.finalizer = new FinalizationRegistry<MeshResources>((resources) => {
-      // Defer the actual gl.delete* until the renderer's next render(): GC
-      // can fire between bindVertexArray and drawElements inside dispatch().
+      // Defer the actual delete until the renderer's next render(): GC can
+      // fire mid-draw inside dispatch().
       if (!this.persistent.delete(resources)) return;
       this.pendingDeletes.push(resources);
     });
@@ -105,12 +109,12 @@ export class GLMeshCache {
    */
   freeTransient(): void {
     if (this.transientThisFrame.length === 0) return;
-    const gl = this.gl;
-    if (gl.isContextLost()) {
+    const gpu = this.gpu;
+    if (gpu.isContextLost()) {
       this.transientThisFrame.length = 0;
       return;
     }
-    for (const r of this.transientThisFrame) release(gl, r);
+    for (const r of this.transientThisFrame) release(gpu, r);
     this.transientThisFrame.length = 0;
   }
 
@@ -125,12 +129,12 @@ export class GLMeshCache {
    */
   drainPendingDeletes(): void {
     if (this.pendingDeletes.length === 0) return;
-    const gl = this.gl;
-    if (gl.isContextLost()) {
+    const gpu = this.gpu;
+    if (gpu.isContextLost()) {
       this.pendingDeletes.length = 0;
       return;
     }
-    for (const r of this.pendingDeletes) release(gl, r);
+    for (const r of this.pendingDeletes) release(gpu, r);
     this.pendingDeletes.length = 0;
   }
 
@@ -160,53 +164,40 @@ export class GLMeshCache {
   }
 
   private upload(mesh: Mesh, attribute?: MeshAttribute): { handle: GLMeshHandle; resources: MeshResources } {
-    const gl = this.gl;
-    const vao = gl.createVertexArray();
-    if (!vao) throw new Error('createVertexArray returned null');
-    gl.bindVertexArray(vao);
-
-    const vbo = gl.createBuffer();
-    if (!vbo) throw new Error('createBuffer (VBO) returned null');
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STATIC_DRAW);
-
-    gl.enableVertexAttribArray(POSITION_ATTRIBUTE_LOCATION);
-    gl.vertexAttribPointer(POSITION_ATTRIBUTE_LOCATION, 2, gl.FLOAT, false, 0, 0);
-
-    let extra: WebGLBuffer | undefined;
-    if (attribute) {
-      extra = gl.createBuffer() ?? undefined;
-      if (!extra) throw new Error('createBuffer (attribute) returned null');
-      gl.bindBuffer(gl.ARRAY_BUFFER, extra);
-      gl.bufferData(gl.ARRAY_BUFFER, attribute.data, gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(attribute.location);
-      gl.vertexAttribPointer(attribute.location, attribute.size, gl.FLOAT, false, 0, 0);
+    const gpu = this.gpu;
+    const vbo = gpu.createBuffer('vertex', mesh.vertices, 'static');
+    const extra = attribute ? gpu.createBuffer('vertex', attribute.data, 'static') : undefined;
+    const ibo = gpu.createBuffer('index', mesh.indices, 'static');
+    const vertexBuffers: GpuVertexBufferLayout[] = [
+      { buffer: vbo, stride: 0, attributes: [{ location: POSITION_ATTRIBUTE_LOCATION, components: 2, offset: 0 }] },
+    ];
+    if (attribute && extra) {
+      vertexBuffers.push({ buffer: extra, stride: 0, attributes: [{ location: attribute.location, components: attribute.size, offset: 0 }] });
     }
-
-    const ibo = gl.createBuffer();
-    if (!ibo) throw new Error('createBuffer (IBO) returned null');
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
-
-    gl.bindVertexArray(null);
-
+    const geometry = gpu.createGeometry({
+      vertexBuffers,
+      indexBuffer: ibo,
+      indexFormat: 'uint32',
+    });
     return {
       handle: {
-        vao,
+        geometry,
+        vertices: vbo,
+        indices: ibo,
         indexCount: mesh.indices.length,
         requiresStencil: mesh.requiresStencil ?? false,
         anchorA: mesh.anchorA,
         anchorB: mesh.anchorB,
         anchorT: mesh.anchorT,
       },
-      resources: { vao, vbo, ibo, ...(extra ? { extra } : {}) },
+      resources: { geometry, vbo, ibo, ...(extra ? { extra } : {}) },
     };
   }
 }
 
-function release(gl: WebGL2RenderingContext, r: MeshResources): void {
-  gl.deleteVertexArray(r.vao);
-  gl.deleteBuffer(r.vbo);
-  gl.deleteBuffer(r.ibo);
-  if (r.extra) gl.deleteBuffer(r.extra);
+function release(gpu: GpuDevice, r: MeshResources): void {
+  gpu.deleteGeometry(r.geometry);
+  gpu.deleteBuffer(r.vbo);
+  gpu.deleteBuffer(r.ibo);
+  if (r.extra) gpu.deleteBuffer(r.extra);
 }

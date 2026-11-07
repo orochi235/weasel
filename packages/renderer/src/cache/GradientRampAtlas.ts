@@ -14,6 +14,7 @@
 
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { resolveGradientStops, sampleResolvedStops } from '@weasel-js/paint';
+import type { GpuDevice, GpuTexture } from '../gpu/types';
 
 /** Texels across one ramp — the resolution a gradient is sampled at. */
 export const RAMP_WIDTH = 256;
@@ -62,7 +63,7 @@ export class GradientRampAtlas {
   /** Row per stop list, in least-recently-used order: a hit re-inserts, so the
    *  first entry is the row a full atlas recycles. */
   private readonly rowByKey = new Map<string, number>();
-  private texture: WebGLTexture | null = null;
+  private texture: GpuTexture | null = null;
   private rows = 0;
   /** Mirror of the texture, so growth can respecify it without re-baking every
    *  ramp it already holds. */
@@ -70,7 +71,7 @@ export class GradientRampAtlas {
   private totalQueries = 0;
   private cacheHits = 0;
 
-  constructor(private readonly gl: WebGL2RenderingContext) {}
+  constructor(private readonly gpu: GpuDevice) {}
 
   /** Rows the atlas currently holds — its texture height. */
   get height(): number {
@@ -130,10 +131,9 @@ export class GradientRampAtlas {
     return (row + 0.5) / (this.rows || 1);
   }
 
-  bind(unit: number): void {
-    const gl = this.gl;
-    gl.activeTexture(gl.TEXTURE0 + unit);
-    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+  /** The atlas texture; `null` until a ramp is uploaded. */
+  atlas(): GpuTexture | null {
+    return this.texture;
   }
 
   hitRate(): number {
@@ -151,7 +151,7 @@ export class GradientRampAtlas {
    * with it, so the atlas is refillable afterward. Stats are left as-is.
    */
   free(): void {
-    if (this.texture) this.gl.deleteTexture(this.texture);
+    if (this.texture) this.gpu.deleteTexture(this.texture);
     this.texture = null;
     this.rows = 0;
     this.pixels = new Uint8ClampedArray(0);
@@ -174,41 +174,22 @@ export class GradientRampAtlas {
   /** Grow to `rows`, keeping every row at the index it already had — a row
    *  index is a stable name, and callers hold them. */
   private resize(rows: number): void {
-    const gl = this.gl;
     const next = new Uint8ClampedArray(RAMP_WIDTH * rows * 4);
     next.set(this.pixels);
     this.pixels = next;
     this.rows = rows;
 
+    const data = { width: RAMP_WIDTH, height: rows, data: this.pixels };
     if (!this.texture) {
-      const tex = gl.createTexture();
-      if (!tex) throw new Error('GradientRampAtlas: createTexture failed');
-      this.texture = tex;
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      this.texture = this.gpu.createTexture('rgba8',
+        { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' }, data);
     } else {
-      gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      this.gpu.writeTexture(this.texture, data);
     }
-    gl.texImage2D(
-      gl.TEXTURE_2D, 0, gl.RGBA,
-      RAMP_WIDTH, rows, 0,
-      gl.RGBA, gl.UNSIGNED_BYTE, this.pixels,
-    );
-    gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
   private writeRow(row: number, ramp: Uint8ClampedArray): void {
-    const gl = this.gl;
     this.pixels.set(ramp, row * RAMP_WIDTH * 4);
-    gl.bindTexture(gl.TEXTURE_2D, this.texture);
-    gl.texSubImage2D(
-      gl.TEXTURE_2D, 0, 0, row,
-      RAMP_WIDTH, 1,
-      gl.RGBA, gl.UNSIGNED_BYTE, ramp,
-    );
-    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.gpu.writeSubTexture(this.texture!, 0, row, RAMP_WIDTH, 1, ramp);
   }
 }

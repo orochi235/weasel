@@ -16,7 +16,7 @@ import {
 import type { Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import { useCanvasSurface } from './useCanvasSurface';
-import type { CanvasRendererLease } from './canvasRenderer';
+import type { CanvasBackend, CanvasRendererLease } from './canvasRenderer';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import { sceneViewFrame } from './sceneViewRender';
@@ -78,6 +78,10 @@ interface PagePaintedView<TData, TLayer extends string, TPose> {
    *  and paints its `colorOverrides` and `trimOverrides`. Pass the main canvas's
    *  animator so both show the same colors and trims. */
   animator?: Animator;
+  /** The GPU API the canvas paints with; see `CanvasBackend`. Read once, when
+   *  its first renderer is built. Default the nearest `CanvasBackendProvider`'s,
+   *  else `'webgl2'`. */
+  backend?: CanvasBackend;
   worker?: undefined;
   workerRef?: undefined;
   clock?: undefined;
@@ -102,6 +106,8 @@ interface WorkerPaintedView {
   drawOne?: undefined;
   paintBounds?: undefined;
   animator?: undefined;
+  /** A worker's canvas paints with WebGL 2. */
+  backend?: undefined;
 }
 
 /** Props for `<SceneViewCanvas>`. */
@@ -149,7 +155,9 @@ function PageSceneView<TData, TLayer extends string, TPose>(
     });
     return lease.paint(canvas, commands, view, { width, height, dpr });
   };
-  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, onCommit: 'paint', size: { width, height }, dpr });
+  const { requestRedraw } = useCanvasSurface(paint, {
+    target: localRef, onCommit: 'paint', size: { width, height }, dpr, backend: props.backend,
+  });
 
   // Override writes never bump the scene version, so the version subscription
   // above cannot see them.

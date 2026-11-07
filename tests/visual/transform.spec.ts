@@ -8,7 +8,7 @@
  *
  * Notes: Pre-placed items; no drag needed for a stable screenshot.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 

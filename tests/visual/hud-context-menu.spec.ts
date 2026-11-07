@@ -6,7 +6,7 @@
  * Baselines come from the "Visual Regression — Update Baselines" workflow on
  * CI's Linux runner, like every other spec's.
  */
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from './fixture';
 import { resolve } from 'node:path';
 import { PNG } from 'pngjs';
 import { assertMatchesBaseline, readCanvasPixels, reportLinuxPlatform, waitForRepaint } from './diff.js';

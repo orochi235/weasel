@@ -69,13 +69,7 @@ function washEntry(): PaintKindEntry {
     label: 'Wash',
     seed: (color) => asPaint<WashFill>({ kind: 'test-wash', origin: { x: 0.5, y: 0.5 }, color, units: 'bounds' }),
     colorOf: (paint) => (paint as unknown as WashFill).color,
-    bind: (ctx) => {
-      const prog = ctx.program(WASH_PROGRAM);
-      if (!prog) return null;
-      ctx.gl.useProgram(prog.handle);
-      ctx.setProjAndModel(prog);
-      return prog;
-    },
+    bind: () => ({ program: WASH_PROGRAM }),
     inPoseFrame: (fill, box) => {
       const f = fill as unknown as WashFill;
       if (f.units !== 'bounds') return fill;

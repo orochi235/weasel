@@ -77,7 +77,9 @@ function CanvasInner<TPose>(
   const paintRef = useRef<() => boolean>(() => false);
   const { lease, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useCanvasSurface(
     useCallback(() => paintRef.current(), []),
-    { syncPaint: props.syncPaint ?? false, target: canvasRef, dpr: props.dpr, redrawOn: props.redrawOn, shaders: props.shaders, onCommit: 'redraw', size: { width, height } },
+    { syncPaint: props.syncPaint ?? false, target: canvasRef, dpr: props.dpr, redrawOn: props.redrawOn, shaders: props.shaders, onCommit: 'redraw', size: { width, height },
+      // A worker's stack reads its page canvases' ids at once, which WebGPU cannot.
+      backend: props.worker ? 'webgl2' : props.backend },
   );
   const { getPaintedVersion, markPainted } = usePaintedVersion(props.contentVersion);
   const { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn } = useExtraLayers(gateRef);

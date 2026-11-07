@@ -5,7 +5,7 @@
  * orientation via known layout, background color, same-context determinism)
  * instead of golden images.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 
 test('render-to-pixels — dims, background, and same-context determinism', async ({ page }) => {
   await page.goto('/#render-to-pixels');

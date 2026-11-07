@@ -717,12 +717,27 @@ only story runner in the repo.
 
 ## Backends (WebGL future)
 
-- **(P3) [agent] WebGPU backend.** Separate future spec. Ruled that custom shaders take both languages
-  (2026-11-06), and `registerProgram`/`registerEffect` now take `{ glsl, wgsl }`, WebGL drawing from `glsl`. Left:
-  the WGSL contract for the kit's uniforms and varyings (an unset `wgsl.vert` means the kit's vertex stage for
-  wherever the program is drawn, a shader quad or an effect pass), WGSL ports of the kit's own programs, and the
-  WebGPU renderer, which falls back to WebGL for a scene using a program with no WGSL.
-  Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
+- **(P3) [agent] The browser project draws WebGL on SwiftShader, not the node's GPU.** Headless Chromium
+  gives WebGL SwiftShader unless launched with `--enable-gpu` (measured on msb-uai, 2026-11-06, with main's
+  launch flags as well as the `webgpu` branch's). So a test whose claim is about the GPU has not run on one on
+  the fleet: `retained.tiles.browser.test.ts` is named as what catches ANGLE Metal's multisampled blit
+  overreach (`docs/traps/rendering.md`), and its allowances were measured on SwiftShader. Only the parity
+  files run in the `browser (gpu)` instance. Closes when the browser project runs on the GPU and its files pass
+  there, or the trap and the tile test say which rasterizer they hold for.
+- **(P3) [agent] WebGL draws a straight-alpha ImageBitmap as if premultiplied.** WebGL ignores
+  `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for an `ImageBitmap` and uploads what it holds, so a bitmap made with
+  `premultiplyAlpha: 'none'` reaches the shader straight, where the image cache promises premultiplied texels:
+  a translucent one comes out too bright (the parity suite measured 48 levels in blue). WebGPU premultiplies it.
+  Default bitmaps hold premultiplied texels and draw right on both. Closes when the image cache premultiplies a
+  straight bitmap's texels on WebGL too, or refuses it.
+- **(P2) [agent] A worker canvas's `pickAt` answers with the worker's pick ids, which the page cannot name.**
+  `<SceneCanvas worker>`'s worker numbers nodes in its own copy of the scene (`scenePickIds` of the mirror,
+  as it first paints each), and the page's `scenePickIds(scene)` numbers them as the page first asks, so
+  `scenePickIds(scene).nodeOf(await ref.pickAt(x, y))` can name the wrong node or none (read, not run,
+  2026-11-06). `geometry.picking: 'pixels'` is unaffected: it reads `readIdsSync`, which is `null` there.
+  The fix is a protocol change: the worker answers an id read with node ids, or the page sends the numbers
+  it gave. Closes when a worker canvas's `pickAt` decodes through the page's `scenePickIds` to the node
+  painted there, with a browser test that picks two nodes painted in another order than the page named them.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or

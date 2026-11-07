@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { ShaderProgramHandle } from '@weasel-js/renderer';
 import type { RedrawSource } from '../core/layers/render';
-import type { CanvasRendererLease } from './canvasRenderer';
+import type { CanvasBackend, CanvasRendererLease } from './canvasRenderer';
 import {
   useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore, useRedrawOnShaderSource,
 } from './useCanvasRenderer';
@@ -26,6 +26,8 @@ export interface CanvasSurfaceOptions extends FrameLoopOptions {
    *  new size, which clears its buffer, and a resize committed from a `ResizeObserver` callback has no frame
    *  left before the browser paints. */
   size?: { width: number; height: number };
+  /** The GPU API the surface paints with; see `CanvasProps.backend`. */
+  backend?: CanvasBackend;
 }
 
 /** A surface's frame loop and the renderer lease its paint draws through. */
@@ -45,7 +47,7 @@ export function useCanvasSurface(
   paint: (lease: CanvasRendererLease) => boolean,
   options: CanvasSurfaceOptions = {},
 ): CanvasSurface {
-  const lease = useCanvasRenderer();
+  const lease = useCanvasRenderer(options.backend);
   const loop = useFrameLoop(() => paint(lease), options);
   const { requestRedraw } = loop;
   useRedrawOnRestore(lease, requestRedraw);

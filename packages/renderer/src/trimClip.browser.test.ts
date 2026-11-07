@@ -13,6 +13,7 @@ import { clipRibbon, clipWindow, strokeInsets, tessellateStroke } from '@weasel-
 import type { CommandStroke, Stroke, StrokeTrim } from '@weasel-js/paint';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
+import { glProgramHandle } from './gpu/webgl/GlProgram';
 
 const W = 200;
 const H = 160;
@@ -36,7 +37,7 @@ function paint(commands: DrawCommand[], antialias: boolean, clip: boolean): Fram
   if (!clip) Object.defineProperty(r._batchVariants(), 'trimClip', { value: false });
   let used = 0;
   const select = gl.useProgram.bind(gl);
-  const trimmed = r._batchVariants().trimmedRibbon().handle;
+  const trimmed = glProgramHandle(r._batchVariants().trimmedRibbon());
   gl.useProgram = (p) => { if (p === trimmed) used++; select(p); };
   r.render(commands);
   const px = new Uint8Array(W * H * 4);

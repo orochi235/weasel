@@ -5,6 +5,7 @@ import type { DrawCommand } from './DrawCommand';
 import { dispatch, flushBatch } from './draw';
 import { createRecorderCtx } from './testing/recorderCtx';
 import { FLOATS_PER_VERTEX } from './drawBatch';
+import { glProgramHandle } from './gpu/webgl/GlProgram';
 
 const ARRAY_BUFFER = 0x8892;
 /** Float offset of `a_post` within a vertex. */
@@ -57,7 +58,7 @@ describe('drawText — which batch build a run of atlas glyphs draws with', () =
       if (c.name === 'useProgram') live = c.args[0];
       else if (c.name === 'drawElements') out.push(live);
     }
-    return { out, plain: ctx.batchFill.handle, area: ctx.batchVariants!.get(false, false, true).handle };
+    return { out, plain: glProgramHandle(ctx.batchFill), area: glProgramHandle(ctx.batchVariants!.get(false, false, true)) };
   }
 
   it('draws large text, and the solids around it, without the taps', () => {
@@ -99,6 +100,6 @@ describe('drawText — which batch build a run of atlas glyphs draws with', () =
     dispatch(ctx, rect);
     flushBatch(ctx);
     const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
-    expect(used.at(-1)).toBe(ctx.batchFill.handle);
+    expect(used.at(-1)).toBe(glProgramHandle(ctx.batchFill));
   });
 });

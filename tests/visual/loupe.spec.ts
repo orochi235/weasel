@@ -11,7 +11,7 @@
  * Counting *distinct* colors does not: the ramp repeats with the pattern, so
  * LINEAR yields as few of them as NEAREST does.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixture';
 
 const DEMO_ID = 'loupe';
 
@@ -23,12 +23,9 @@ const SCAN = { x: 40, w: 188, y: 130 };
 /** Along the scanline: the share of neighboring pixels that are identical,
  *  and how many times the color steps. */
 async function scanLoupe(page: Page): Promise<{ flat: number; steps: number }> {
-  return page.evaluate((scan) => {
+  return page.evaluate(async (scan) => {
     const c = document.querySelector('canvas')!;
-    const o = document.createElement('canvas');
-    o.width = c.width; o.height = c.height;
-    const ctx = o.getContext('2d', { willReadFrequently: true })!;
-    ctx.drawImage(c, 0, 0);
+    const ctx = await window.weaselCanvasSnapshot(c);
     const dpr = c.width / c.getBoundingClientRect().width;
     const { data } = ctx.getImageData(
       Math.round(scan.x * dpr), Math.round(scan.y * dpr), Math.round(scan.w * dpr), 1,

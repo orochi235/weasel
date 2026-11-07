@@ -6,6 +6,10 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
 import { pushClip, popClip, drawGroup, dispatch } from './draw';
 import { createRecorderCtx, NOTCHED_CLIP } from './testing/recorderCtx';
+import { flushBatch } from './draw';
+
+const KEEP = 0x1E00;
+const ZERO = 0;
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 
 describe('pushClip / popClip', () => {
@@ -21,10 +25,13 @@ describe('pushClip / popClip', () => {
     // stencilOp KEEP KEEP REPLACE
     const so = calls.find((c) => c.name === 'stencilOp');
     expect(so!.args).toEqual([gl.KEEP, gl.KEEP, gl.REPLACE]);
-    // colorMask false then true (stencil-only pass)
+    // A stencil-only pass, and the next color draw writes color again.
     const cmCalls = calls.filter((c) => c.name === 'colorMask');
     expect(cmCalls[0].args).toEqual([false, false, false, false]);
-    expect(cmCalls[cmCalls.length - 1].args).toEqual([true, true, true, true]);
+    dispatch(ctx, { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 }, fill: { paint: { color: '#f00' } } });
+    flushBatch(ctx);
+    const after = calls.filter((c) => c.name === 'colorMask');
+    expect(after[after.length - 1].args).toEqual([true, true, true, true]);
   });
 
   it('pushClip(level=3): only writes bit 3 where bits 1+2 are already set', () => {
@@ -71,9 +78,9 @@ describe('pushClip / popClip', () => {
 
     const drainedBeforeStencil = (calls: ReturnType<typeof createRecorderCtx>['calls']): void => {
       const flushIdx = calls.findIndex((c) => c.name === 'drawElements');
-      // `stencilMask`, not the func or op: a run drawn under a clip sets
-      // those itself on the way to its draw.
-      const stencilIdx = calls.findIndex((c) => c.name === 'stencilMask');
+      // The clip op's own stencil write, not the test a run drawn under a
+      // clip sets on the way to its draw, which keeps.
+      const stencilIdx = calls.findIndex((c) => c.name === 'stencilOp' && c.args[2] !== KEEP);
       expect(flushIdx).toBeGreaterThanOrEqual(0);
       expect(stencilIdx).toBeGreaterThan(flushIdx);
     };
@@ -338,7 +345,7 @@ describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', 
     expect(foundEnable).toBe(true);
   });
 
-  it('pushClip and popClip restore stencilMask(0xFF) on exit', () => {
+  it('a draw after a clip push or pop does not write through the narrowed mask', () => {
     const { ctx, calls } = createRecorderCtx();
     const cmd: GroupDrawCommand = {
       kind: 'group',
@@ -346,12 +353,13 @@ describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', 
       children: [],
     };
     drawGroup(ctx, cmd);
+    ctx.clipDepth = 1;
+    dispatch(ctx, { kind: 'path', path: POLYGON_EVENODD, fill: { paint: { color: '#f00' } } });
 
-    // After the full group (push + pop), the last stencilMask call should be 0xFF.
-    const stencilMaskCalls = calls.filter((c) => c.name === 'stencilMask');
-    expect(stencilMaskCalls.length).toBeGreaterThan(0);
-    const last = stencilMaskCalls[stencilMaskCalls.length - 1];
-    expect(last.args[0]).toBe(0xFF);
+    // The even-odd fill's parity pass writes bit 0 alone, whatever the clip left.
+    const pop = calls.map((c) => c.name === 'stencilOp' && c.args[2] === ZERO).lastIndexOf(true);
+    const masks = calls.slice(pop).filter((c) => c.name === 'stencilMask').map((c) => c.args[0]);
+    expect(masks[0]).toBe(0x01);
   });
 });
 

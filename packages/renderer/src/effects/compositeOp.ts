@@ -72,20 +72,3 @@ export function readsBackdrop(commands: readonly DrawCommand[]): boolean {
   backdropReaders.set(commands, reads);
   return reads;
 }
-
-function glFactor(gl: WebGL2RenderingContext, factor: BlendFactor): number {
-  switch (factor) {
-    case 'zero': return gl.ZERO;
-    case 'one': return gl.ONE;
-    case 'source-alpha': return gl.SRC_ALPHA;
-    case 'one-minus-source-alpha': return gl.ONE_MINUS_SRC_ALPHA;
-    case 'destination-alpha': return gl.DST_ALPHA;
-    case 'one-minus-destination-alpha': return gl.ONE_MINUS_DST_ALPHA;
-  }
-}
-
-/** Set the blend function `composite` stands for. */
-export function applyComposite(gl: WebGL2RenderingContext, composite: CompositeOp | BlendFactors): void {
-  const { source, destination } = blendFactorsOf(composite);
-  gl.blendFunc(glFactor(gl, source), glFactor(gl, destination));
-}

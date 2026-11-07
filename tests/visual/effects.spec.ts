@@ -7,7 +7,7 @@
  * drawn above the blurred layer are identical in both — which is what
  * separates a real pass from a CSS `filter` on the canvas.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, readCanvasPixels, waitForRepaint, assertMatchesBaseline } from './diff.js';
 

@@ -84,13 +84,18 @@ describe('a scene canvas painted partly by a worker', () => {
     expect(await until(api, 80, 40, [0, 0, 255])).toEqual([0, 0, 255, 255]);
   });
 
-  it('picks the worker-painted node a round trip away, and refuses a synchronous read', async () => {
-    const { ref } = mount({});
+  it('picks the worker-painted node a round trip away, and answers a synchronous read with null', async () => {
+    const { ref } = mount({
+      over: { layer: rectLayer('over', '#00ff00', { x: 60, y: 30, width: 10, height: 10 }), after: 'scene' },
+    });
     const api = ref.current!;
     expect(await until(api, 20, 20, [255, 0, 0])).toEqual([255, 0, 0, 255]);
-    expect(await api.pickAtAsync(20, 20)).not.toBe(0);
-    expect(await api.pickAtAsync(90, 45)).toBe(0);
-    expect(() => api.pickAt(20, 20)).toThrow(/readIdsAsync|pickAtAsync/);
+    const node = await api.pickAt(20, 20);
+    expect(node).not.toBe(0);
+    expect(await api.pickAt(90, 45)).toBe(0);
+    const ids = await api.readIds({ x: 10, y: 10, width: 80, height: 1 });
+    expect(new Set(ids.data)).toEqual(new Set([node, 0]));
+    expect(api.readIdsSync({ x: 20, y: 20, width: 0, height: 0 })).toBeNull();
   });
 
   it('gives each part of a scene cut by a page layer a worker of its own', async () => {

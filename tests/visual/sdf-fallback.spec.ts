@@ -6,7 +6,7 @@
  * (b) headless determinism still holds with dynamic glyphs in play.
  * No committed baseline — installed-font rasterization varies by machine.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 
 test('canvas-sourced SDF text renders ink in headless output', async ({ page }) => {
   await page.goto('/#render-to-pixels');

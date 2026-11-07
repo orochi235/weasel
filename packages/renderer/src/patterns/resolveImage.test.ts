@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 import type { ImagePatternPaint } from '@weasel-js/paint';
 import { makeGLRecorder } from '../testing/glRecorder';
+import { glUniformLocation } from '../gpu/webgl/GlProgram';
 import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
 import { _resetTextureRegistryForTests, getTexture } from '../textures/registerTexture';
@@ -112,7 +113,7 @@ describe('drawing an image pattern', () => {
     await settle();
     const { rec, r } = draw(paint);
     const prog = r._patternFill();
-    const loc = prog.uniform('u_tileSize');
+    const loc = glUniformLocation(prog, 'u_tileSize');
     const sent = rec.calls.filter((c) => c.name === 'uniform2f' && c.args[0] === loc).at(-1);
     expect(sent?.args.slice(1)).toEqual([30, 15]);
   });
@@ -123,7 +124,7 @@ describe('drawing an image pattern', () => {
     await settle();
     const { rec, r } = draw(paint);
     const prog = r._patternFill();
-    const loc = prog.uniform('u_tileSize');
+    const loc = glUniformLocation(prog, 'u_tileSize');
     const sent = rec.calls.filter((c) => c.name === 'uniform2f' && c.args[0] === loc).at(-1);
     expect(sent?.args.slice(1)).toEqual([8, 4]);
   });
@@ -139,7 +140,7 @@ describe('drawing an image pattern', () => {
     await settle();
     expect(getImageBitmap(SVG)?.width).toBe(32);
     const { rec, r } = draw(paint);
-    const loc = r._patternFill().uniform('u_tileSize');
+    const loc = glUniformLocation(r._patternFill(), 'u_tileSize');
     const sent = rec.calls.filter((c) => c.name === 'uniform2f' && c.args[0] === loc).at(-1);
     expect(sent?.args.slice(1)).toEqual([8, 4]);
   });

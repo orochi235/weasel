@@ -3,6 +3,8 @@ import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 import { blur, vignette } from '../effects/builtins';
 import { effectsWindow } from './groupEffects';
+import { makeGLRecorder } from '../testing/glRecorder';
+import { WeaselRenderer } from '../WeaselRenderer';
 
 const BUFFER = { x: 0, y: 0, width: 400, height: 300 };
 const rect = (x: number, y: number, width: number, height: number): DrawCommand => ({
@@ -39,5 +41,23 @@ describe('effectsWindow', () => {
 
   it('runs a composite that clears outside its group over the whole window', () => {
     expect(at({ composite: 'destination-in', children: [rect(10, 10, 5, 5)] })).toEqual(BUFFER);
+  });
+});
+
+describe('an offscreen pass', () => {
+  // WebGPU refuses a viewport past its target's bounds, so an effects
+  // buffer's offset rides the projection instead.
+  const viewportsOf = (commands: DrawCommand[]): number[][] => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 400, height: 300, dpr: 1 });
+    r.render(commands);
+    r.dispose();
+    return rec.calls.filter((c) => c.name === 'viewport').map((c) => c.args as number[]);
+  };
+
+  it('for a group\'s effects sets no viewport left of or below its buffer\'s corner', () => {
+    const viewports = viewportsOf([{ kind: 'group', effects: blur({ radius: 4 }), children: [rect(200, 100, 20, 10)] }]);
+    expect(viewports.length).toBeGreaterThan(1);
+    for (const [x, y] of viewports) expect(Math.min(x, y)).toBeGreaterThanOrEqual(0);
   });
 });

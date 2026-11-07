@@ -41,26 +41,26 @@ describe('per-vertex color buffer lifetime', () => {
     stroke: { width: 4, paint: { color: '#ffffff' }, vertexColors: longColors },
   } as unknown as DrawCommand;
 
-  // A mesh VAO outlives the draw, and a deleted buffer still attached to one
-  // is neither freed nor valid to draw with.
+  // A mesh's own geometry outlives the draw, so the colors ride a geometry of
+  // their own, freed before its buffer: a deleted buffer still attached to a
+  // live vertex array is neither freed nor valid to draw with.
   it.each([['fill', fillCmd], ['stroke', strokeCmd]])(
-    'a %s leaves its mesh VAO with the color attribute off and its buffer detached',
+    'a %s draws its colors through a geometry of its own, freed with its buffer',
     (_name, cmd) => {
       const { ctx, calls } = createRecorderCtx();
       const colorLoc = ctx.pathFillVColor.attribute('a_vertexColor');
       dispatch(ctx, cmd);
 
       const enable = calls.findIndex((c) => c.name === 'enableVertexAttribArray' && c.args[0] === colorLoc);
+      const made = calls.slice(0, enable).filter((c) => c.name === 'createVertexArray').at(-1)?.result;
       const draw = calls.findIndex((c, i) => i > enable && c.name === 'drawElements');
-      const disable = calls.findIndex((c, i) => i > draw && c.name === 'disableVertexAttribArray' && c.args[0] === colorLoc);
-      const del = calls.findIndex((c, i) => i > disable && c.name === 'deleteBuffer');
-      const unbind = calls.findIndex((c, i) => i > draw && c.name === 'bindVertexArray' && c.args[0] === null);
+      const freed = calls.findIndex((c, i) => i > draw && c.name === 'deleteVertexArray' && c.args[0] === made);
+      const del = calls.findIndex((c, i) => i > freed && c.name === 'deleteBuffer');
       expect(enable).toBeGreaterThanOrEqual(0);
+      expect(made).toBeDefined();
       expect(draw).toBeGreaterThan(enable);
-      expect(disable).toBeGreaterThan(draw);
-      // Deleted while its VAO is still bound, which is what detaches it.
-      expect(del).toBeGreaterThan(disable);
-      expect(unbind).toBeGreaterThan(del);
+      expect(freed).toBeGreaterThan(draw);
+      expect(del).toBeGreaterThan(freed);
     },
   );
 });

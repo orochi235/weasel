@@ -2,8 +2,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
-import type { Locator, Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Locator, Page } from './fixture';
+import { expect } from './fixture';
 
 export interface DiffOptions {
   /** pixelmatch per-pixel color distance threshold 0–1. Default 0.1. */
@@ -32,9 +32,9 @@ const PNG_DATA_URL_PREFIX = 'data:image/png;base64,';
  * different font metrics. It also silently resamples any canvas whose CSS box
  * differs from its backing store.
  *
- * The read relies on the canvas's WebGL2 context having been created with
- * `preserveDrawingBuffer: true`. The CSS background painted behind a
- * transparent canvas is not included.
+ * The read relies on a WebGL2 context created with `preserveDrawingBuffer:
+ * true`; a WebGPU canvas's `toDataURL` holds the frame last shown. The CSS
+ * background painted behind a transparent canvas is not included.
  */
 export async function readCanvasPixels(canvas: Locator): Promise<Buffer> {
   const dataUrl = await canvas.evaluate((el) => {

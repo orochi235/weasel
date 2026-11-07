@@ -100,7 +100,7 @@
     "longestFunction": 134
   },
   "packages/hud/src/loupe/createLoupe.ts": {
-    "longestFunction": 229
+    "longestFunction": 216
   },
   "packages/hud/src/widgets/window/window.ts": {
     "longestFunction": 228
@@ -166,10 +166,10 @@
     "lines": 436
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 568
+    "lines": 520
   },
   "packages/renderer/src/drawBatch.ts": {
-    "lines": 468
+    "lines": 457
   },
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144

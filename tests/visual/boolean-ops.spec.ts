@@ -3,7 +3,7 @@
  * bumped to 5% to cover evenodd-stencil-edge differences on multi-contour
  * boolean results, matching `compound-paths.spec.ts`.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline, type DiffOptions } from './diff.js';
 

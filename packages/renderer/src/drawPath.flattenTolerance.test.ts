@@ -77,8 +77,11 @@ describe('flattenTolerance option', () => {
     r.render([cmd]);
     r.render([cmd]);
     // A transient upload is freed at the end of render(); a cached one is not.
-    expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
-    expect(rec.calls.filter((c) => c.name === 'createVertexArray')).toHaveLength(1);
+    // The per-vertex colors ride a geometry of their own each frame.
+    const made = rec.calls.filter((c) => c.name === 'createVertexArray').map((c) => c.result);
+    const freed = rec.calls.filter((c) => c.name === 'deleteVertexArray').map((c) => c.args[0]);
+    expect(made).toHaveLength(3);
+    expect(freed).toEqual([made[1], made[2]]);
   });
 
   it('setFlattenTolerance changes the tolerance after construction', () => {

@@ -7,6 +7,7 @@ import {
 } from './shaders/registerProgram';
 import { registerEffect } from './effects/types';
 import { EFFECT_VERT_SRC } from './effects/effectPrelude';
+import { assembleEffectWgsl } from './gpu/webgpu/wgsl/effectPrelude';
 import type { DrawCommand } from './DrawCommand';
 
 const GLSL = `#version 300 es
@@ -81,9 +82,9 @@ describe('a program registered in GLSL, WGSL or both', () => {
     expect(rec.calls.some((c) => c.name === 'drawElements')).toBe(true);
   });
 
-  it('puts the effect vertex stage under an effect’s GLSL and leaves a WGSL one’s to its backend', () => {
+  it('puts the effect vertex stage under an effect’s GLSL, and its WGSL inside the effect prelude', () => {
     registerEffect('fx', { glsl: GLSL, wgsl: WGSL });
-    expect(getProgramSource('fx')).toEqual({ glsl: { vert: EFFECT_VERT_SRC, frag: GLSL }, wgsl: { frag: WGSL } });
+    expect(getProgramSource('fx')).toEqual({ glsl: { vert: EFFECT_VERT_SRC, frag: GLSL }, wgsl: { frag: assembleEffectWgsl(WGSL) } });
   });
 
   it('compares sources language by language', () => {

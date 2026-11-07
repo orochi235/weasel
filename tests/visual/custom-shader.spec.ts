@@ -5,7 +5,7 @@
  * Mouse defaults to (0.5, 0.5); ripples default to empty; voronoi seeds
  * derive from a fixed sequence — no other live state.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 

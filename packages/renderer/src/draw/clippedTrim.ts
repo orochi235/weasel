@@ -21,7 +21,7 @@ import { flushForOwnDraw } from './clip';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { flattenToleranceOf } from './mesh';
-import { applyClipTest } from './stencil';
+import { clipTest } from './stencil';
 import { atMeshOrigin, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
 
 /**
@@ -48,22 +48,16 @@ export function drawClippedTrim(
   if (window === null) return true;
 
   flushForOwnDraw(ctx);
-  const gl = ctx.gl;
   const prog = variants.trimmedRibbon();
   const location = prog.attribute('a_trim');
   if (location === undefined) return true;
   const handle = ctx.meshCache.uploadRecurring(ribbon.mesh, { location, size: 4, data: ribbon.trim });
   atMeshOrigin(ctx, ribbon.mesh.origin, () => {
-    gl.useProgram(prog.handle);
-    gl.bindVertexArray(handle.vao);
     setProjAndModel(ctx, prog);
     setSolidPaintUniforms(ctx, prog, paint.color, paint.opacity);
     setColorMatrixUniforms(ctx, prog);
-    const at = prog.uniform('u_trim');
-    if (at !== undefined) gl.uniform2f(at, window.from, window.to);
-    applyClipTest(ctx);
-    drawTriangles(ctx, handle.indexCount, gl.UNSIGNED_INT);
-    gl.bindVertexArray(null);
+    prog.set2f('u_trim', window.from, window.to);
+    drawTriangles(ctx, prog, handle.geometry, handle.indexCount, { stencil: clipTest(ctx.clipDepth) });
   });
   if (window.ends) drawEnds(window.ends);
   return true;

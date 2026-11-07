@@ -79,7 +79,9 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
     const clear = names.lastIndexOf('clear');
     expect(clear).toBeGreaterThan(cover);
     expect(recorder.calls[clear].args).toEqual([recorder.gl.STENCIL_BUFFER_BIT]);
-    expect(recorder.calls[clear - 1]).toMatchObject({ name: 'stencilMask', args: [0x01] });
+    // Through bit 0 alone, whatever mask was last sent: the clips own bits 1-7.
+    const mask = recorder.calls.slice(0, clear).filter((c) => c.name === 'stencilMask').at(-1);
+    expect(mask?.args).toEqual([0x01]);
   });
 });
 

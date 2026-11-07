@@ -1,20 +1,22 @@
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 import type { EffectTargets } from '../effects/EffectTargets';
 import { compositeProgramId } from '../effects/composite';
-import { applyComposite, isOwnComposite, leavesUncovered } from '../effects/compositeOp';
+import { blendFactorsOf, isOwnComposite, leavesUncovered } from '../effects/compositeOp';
 import { effectsReach } from '../effects/types';
 import { boxWithin, contentBox, type DeviceRect } from '../retain/contentBounds';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
 import { warnOnceUniform } from './customShader';
 import { compositeOver, drawFullscreenQuad, insideBuffer, returnToRenderTarget, windowProjection } from './effects';
-import { applyClipTest } from './stencil';
+import { clipTest } from './stencil';
+import type { DrawOptions } from './drawTriangles';
 import { flushForOwnDraw } from './clip';
 import { flushBatch } from './flushBatch';
-import { drawBoth } from './idFrame';
 import { compositeIds } from './idComposite';
 
 type Dispatch = (ctx: DrawContext, cmd: DrawCommand) => void;
+
+const UNBLENDED: DrawOptions = { blend: null };
 
 /** Effects buffer sides are rounded up to this, so a group whose bounds
  *  creep a pixel a frame does not reallocate its buffer every frame. */
@@ -61,10 +63,9 @@ export function effectsWindow(
  * Draw a group's children into a buffer of their own, run its effects over
  * that buffer, and composite the result back where the group sits.
  *
- * The buffer covers `effectsWindow`. Inside the drawing buffer it is drawn
- * under the frame's own projection through a viewport slid to its corner, so
- * its pixels are the ones drawing in place leaves; reaching past it, under a
- * projection aimed at its own rect.
+ * The buffer covers `effectsWindow`, drawn under a projection aimed at its
+ * own rect: the frame's own moved to its corner, so its pixels are the ones
+ * drawing in place leaves.
  *
  * Three things are deliberately not inherited by the offscreen render:
  *
@@ -83,7 +84,7 @@ export function drawGroupWithEffects(
   ctx: DrawContext, cmd: GroupDrawCommand, targets: EffectTargets, width: number, height: number,
   dispatch: Dispatch,
 ): void {
-  const gl = ctx.gl;
+  const gpu = ctx.gpu;
   const parentTarget = ctx.renderTarget ?? null;
   const scale = width / ctx.widthCss;
   const rect = effectsWindow(
@@ -99,7 +100,6 @@ export function drawGroupWithEffects(
   const parentClipStack = ctx.clipStack;
   const parentBatchClip = ctx.drawBatch.clip;
   const parentProjection = ctx.projection;
-  const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
 
   const ids = ctx.ids;
   // In an id frame the children's ids are drawn here and stay here while the
@@ -116,29 +116,18 @@ export function drawGroupWithEffects(
   ctx.clipDepth = 0;
   ctx.clipStack = [];
   ctx.drawBatch.clip = null;
-  const inside = insideBuffer(rect, width, height);
-  ctx.projection = inside ? undefined : windowProjection(rect, scale);
-  const restore = (): void => {
-    if (inside) gl.viewport(-rect.x, rect.y + rect.height - height, width, height);
-    else gl.viewport(0, 0, rect.width, rect.height);
-    // A retained draw inside leaves its own scissor on.
-    gl.disable(gl.SCISSOR_TEST);
-  };
-  ctx.renderTarget = { fbo: front.fbo, restore, fragOrigin: [-rect.x, rect.y + rect.height - height], window: rect };
+  ctx.projection = windowProjection(rect, scale);
+  const pass = { target: own.target, viewport: { x: 0, y: 0, width: rect.width, height: rect.height } };
+  ctx.renderTarget = { pass, fragOrigin: [-rect.x, rect.y + rect.height - height], window: rect };
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, front.fbo);
-  restore();
-  gl.stencilMask(0xFF);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+  gpu.endPass();
+  gpu.beginPass({ ...pass, clear: { color: true, stencil: true } });
 
   for (const child of cmd.children) dispatch(ctx, child);
   flushBatch(ctx);
 
   // Passes replace rather than blend: each writes every texel of its target
-  // from the whole of its source. A child that ended by popping a stencil
-  // clip leaves the test on, and no pass target has that clip's bits.
-  gl.disable(gl.BLEND);
-  gl.disable(gl.STENCIL_TEST);
+  // from the whole of its source, and no pass target has a clip's bits.
   for (const effect of cmd.effects ?? []) {
     const program = ctx.ensureProgram?.(effect.program.id) ?? null;
     if (!program) {
@@ -146,15 +135,14 @@ export function drawGroupWithEffects(
       continue;
     }
     const back = targets.acquire(rect.width, rect.height);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, back.fbo);
-    gl.viewport(0, 0, rect.width, rect.height);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    drawFullscreenQuad(ctx, program, front.texture, rect.width, rect.height, effect.uniforms,
-      undefined, effect.program.id, [rect.x, rect.y]);
+    gpu.endPass();
+    gpu.beginPass({ target: back.target, viewport: pass.viewport, clear: { color: true } });
+    drawFullscreenQuad(ctx, program, front.target.color!, rect.width, rect.height, {
+      uniforms: effect.uniforms, programId: effect.program.id, windowOrigin: [rect.x, rect.y], draw: UNBLENDED,
+    });
     if (front !== own) targets.release(front);
     front = back;
   }
-  gl.enable(gl.BLEND);
 
   // Back to the parent's buffer, and back under its rules.
   ctx.state.pop();
@@ -163,18 +151,17 @@ export function drawGroupWithEffects(
   ctx.drawBatch.clip = parentBatchClip;
   ctx.projection = parentProjection;
   ctx.renderTarget = parentTarget;
-  returnToRenderTarget(ctx, width, height, scissorWasOn);
+  returnToRenderTarget(ctx);
 
   const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
   if (composite) {
-    applyClipTest(ctx);
-    const ownBlend = isOwnComposite(cmd.composite);
-    if (ownBlend) applyComposite(gl, cmd.composite!);
-    if (ids) gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.NONE]);
-    compositeOver(ctx, composite, front.texture, rect, composited);
-    if (ownBlend) applyComposite(gl, 'source-over');
-    if (ids && own.ids) compositeIds(ctx, ids, front.texture, own.ids, rect, composited.alpha, groupId);
-    else if (ids) drawBoth(gl);
+    const stencil = clipTest(ctx.clipDepth);
+    const blend = isOwnComposite(cmd.composite) ? blendFactorsOf(cmd.composite!) : undefined;
+    // The color alone: the ids composite next, from the group's own.
+    compositeOver(ctx, composite, front.target.color!, rect, composited, { stencil, blend, ids: false });
+    if (ids && own.target.ids) {
+      compositeIds(ctx, ids, front.target.color!, own.target.ids, rect, composited.alpha, groupId, stencil);
+    }
   }
   if (front !== own) targets.release(front);
   targets.release(own);

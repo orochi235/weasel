@@ -1,5 +1,7 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
-import type { PaintBindContext, PaintResources } from '../paintKinds';
+import { getPaintDrawKind, type PaintBindContext, type PaintResources } from '../paintKinds';
+import type { GpuDevice } from '../gpu/types';
+import { setUniforms } from './customShader';
 import { createPaintResources } from '../paintResources';
 import { getTexture, isOwnedTextureId } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
@@ -16,36 +18,56 @@ import { isDev } from '@weasel-js/registry';
 export function paintBindContext(ctx: DrawContext): PaintBindContext {
   const cached = BIND_CONTEXTS.get(ctx);
   if (cached) return cached;
+  const gpu = ctx.gpu;
   const made: PaintBindContext = {
-    gl: ctx.gl,
     get alpha() { return ctx.state.alpha; },
-    program: (id) => ctx.ensureProgram?.(id) ?? ctx.programRegistry.get(id) ?? null,
-    setProjAndModel: (prog) => setProjAndModel(ctx, prog),
     spaceInverse: (units, about) => spaceInverseAbout(ctx, units, about),
     spaceToDevice: (units) => spaceToDevice(ctx, units),
     get maxTextureSize() { return ctx.imageCache.maxTextureSide; },
-    resources: ctx.paintResources ?? unownedPaintResources(ctx.gl),
-    bindRamp: (stops, unit, space) => {
+    resources: ctx.paintResources ?? unownedPaintResources(gpu),
+    ramp: (stops, space) => {
       const row = ctx.gradRamps.upload(stops, space);
-      ctx.gradRamps.bind(unit);
-      return ctx.gradRamps.rowV(row);
+      return { texture: ctx.gradRamps.atlas()!, v: ctx.gradRamps.rowV(row) };
     },
+    createTexture: (width, height, pixels) => gpu.createTexture('rgba8', PAINT_TEXTURE_SAMPLING,
+      { width, height, data: pixels }),
+    deleteTexture: (texture) => gpu.deleteTexture(texture),
   };
   BIND_CONTEXTS.set(ctx, made);
   return made;
 }
 
+const PAINT_TEXTURE_SAMPLING = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;
+
 const BIND_CONTEXTS = new WeakMap<DrawContext, PaintBindContext>();
 
-const UNOWNED_RESOURCES = new WeakMap<WebGL2RenderingContext, PaintResources>();
+const UNOWNED_RESOURCES = new WeakMap<GpuDevice, PaintResources>();
 
-function unownedPaintResources(gl: WebGL2RenderingContext): PaintResources {
-  let made = UNOWNED_RESOURCES.get(gl);
+function unownedPaintResources(gpu: GpuDevice): PaintResources {
+  let made = UNOWNED_RESOURCES.get(gpu);
   if (!made) {
     made = createPaintResources();
-    UNOWNED_RESOURCES.set(gl, made);
+    UNOWNED_RESOURCES.set(gpu, made);
   }
   return made;
+}
+
+/**
+ * Bind a registered kind's paint: the program its `bind` names, `u_proj` and
+ * `u_model` (under `model` and `proj` where given), and the uniforms it hands
+ * back. `null` where the kind declines the paint or its program is missing.
+ */
+export function bindPaintKind(
+  ctx: DrawContext, fill: Paint, model?: GlMat3, proj?: GlMat3,
+): ShaderProgram | null {
+  const bind = getPaintDrawKind(fill.kind)?.bind;
+  const binding = bind ? bind(paintBindContext(ctx), fill) : null;
+  if (!binding) return null;
+  const prog = ctx.ensureProgram?.(binding.program) ?? ctx.programRegistry.get(binding.program) ?? null;
+  if (!prog) return null;
+  setProjAndModel(ctx, prog, model, proj);
+  if (binding.uniforms) setUniforms(ctx, prog, binding.program, binding.uniforms, false);
+  return prog;
 }
 
 /** Bind `prog` — the path program or the glyph one, which share every paint
@@ -72,8 +94,6 @@ export function bindPattern(
   // recovered per fragment from the screen position — the same route
   // gradients take through `u_worldInv`, and the reason this can't reuse
   // the image-fill shader, whose a_uv such a mesh leaves unbound.
-  const gl = ctx.gl;
-  gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
   setColorMatrixUniforms(ctx, prog);
   const [tw, th] = tileExtent(fill, entry);
@@ -81,11 +101,10 @@ export function bindPattern(
   // doubles: far from the origin a float32 has no bits left for the texel.
   tileSpace[6] -= Math.floor(tileSpace[6] / tw) * tw;
   tileSpace[7] -= Math.floor(tileSpace[7] / th) * th;
-  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(tileSpace));
-  gl.uniform2f(prog.uniform('u_tileSize')!, tw, th);
-  ctx.textureCache.bind(tex.id, 0);
-  gl.uniform1i(prog.uniform('u_sampler')!, 0);
-  gl.uniform1f(prog.uniform('u_opacity')!, fill.opacity ?? 1);
+  prog.set('u_worldInv', 'mat3', mat3.toUniform(tileSpace));
+  prog.set2f('u_tileSize', tw, th);
+  prog.setTexture('u_sampler', ctx.textureCache.texture(tex.id));
+  prog.set1f('u_opacity', fill.opacity ?? 1);
   setAlphaUniform(ctx, prog, ctx.state.alpha);
   return prog;
 }
@@ -100,43 +119,40 @@ export function bindGradient(
   // Measured from the gradient's own start or center.
   const aboutStart = spaceInverseAbout(ctx, fill.units, fill.kind === 'linear-gradient' ? fill.from : fill.center);
   if (!aboutStart) return null;
-  const gl = ctx.gl;
   const row = ctx.gradRamps.upload(fill.stops, fill.interpolate ?? 'rgb');
 
-  gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
 
-  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(aboutStart));
+  prog.set('u_worldInv', 'mat3', mat3.toUniform(aboutStart));
   setColorMatrixUniforms(ctx, prog);
 
-  ctx.gradRamps.bind(0);
-  gl.uniform1i(prog.uniform('u_ramp')!, 0);
-  gl.uniform1f(prog.uniform('u_rampV')!, ctx.gradRamps.rowV(row));
+  prog.setTexture('u_ramp', ctx.gradRamps.atlas());
+  prog.set1f('u_rampV', ctx.gradRamps.rowV(row));
   setAlphaUniform(ctx, prog, ctx.state.alpha);
-  gl.uniform1f(prog.uniform('u_opacity')!, fill.opacity ?? 1);
+  prog.set1f('u_opacity', fill.opacity ?? 1);
 
   if (fill.kind === 'linear-gradient') {
-    gl.uniform1i(prog.uniform('u_gradKind')!, 0);
+    prog.set1i('u_gradKind', 0);
     const dx = fill.to.x - fill.from.x;
     const dy = fill.to.y - fill.from.y;
     const len = Math.hypot(dx, dy) || 1;
-    gl.uniform2f(prog.uniform('u_gradDir')!, dx / len, dy / len);
-    gl.uniform1f(prog.uniform('u_gradLen')!, len);
-    gl.uniform1f(prog.uniform('u_gradRadius')!, 0);
-    gl.uniform1f(prog.uniform('u_gradAngle')!, 0);
+    prog.set2f('u_gradDir', dx / len, dy / len);
+    prog.set1f('u_gradLen', len);
+    prog.set1f('u_gradRadius', 0);
+    prog.set1f('u_gradAngle', 0);
   } else if (fill.kind === 'radial-gradient') {
-    gl.uniform1i(prog.uniform('u_gradKind')!, 1);
-    gl.uniform2f(prog.uniform('u_gradDir')!, 0, 0);
-    gl.uniform1f(prog.uniform('u_gradLen')!, 0);
-    gl.uniform1f(prog.uniform('u_gradRadius')!, fill.radius);
-    gl.uniform1f(prog.uniform('u_gradAngle')!, 0);
+    prog.set1i('u_gradKind', 1);
+    prog.set2f('u_gradDir', 0, 0);
+    prog.set1f('u_gradLen', 0);
+    prog.set1f('u_gradRadius', fill.radius);
+    prog.set1f('u_gradAngle', 0);
   } else {
     // conic
-    gl.uniform1i(prog.uniform('u_gradKind')!, 2);
-    gl.uniform2f(prog.uniform('u_gradDir')!, 0, 0);
-    gl.uniform1f(prog.uniform('u_gradLen')!, 0);
-    gl.uniform1f(prog.uniform('u_gradRadius')!, 0);
-    gl.uniform1f(prog.uniform('u_gradAngle')!, fill.angle);
+    prog.set1i('u_gradKind', 2);
+    prog.set2f('u_gradDir', 0, 0);
+    prog.set1f('u_gradLen', 0);
+    prog.set1f('u_gradRadius', 0);
+    prog.set1f('u_gradAngle', fill.angle);
   }
 
   return prog;

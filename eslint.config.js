@@ -339,6 +339,20 @@ export default [
     },
   },
   {
+    // The fixture's `test` carries WEASEL_VISUAL_BACKEND into every page.goto. The rule replaces the one above.
+    files: ['tests/visual/**/*.ts'],
+    ignores: ['tests/visual/fixture.ts', 'tests/visual/playwright.config.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: 'vitest/browser', message: 'Only *.browser.test files may import vitest/browser.' },
+          { name: '@playwright/test', importNames: ['test'], message: "Import test from './fixture', which carries WEASEL_VISUAL_BACKEND." },
+        ],
+        patterns: [{ group: ['@vitest/browser', '@vitest/browser/*'], message: 'Only *.browser.test files may import @vitest/browser.' }],
+      }],
+    },
+  },
+  {
     // The root vite and vitest configs load this from source, and vite's native config loader
     // resolves a relative specifier only with its extension. The rule replaces the one above.
     files: ['packages/icons-plugin/src/**/*.ts'],

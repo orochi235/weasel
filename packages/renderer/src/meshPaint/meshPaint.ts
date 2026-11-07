@@ -8,7 +8,7 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import type { PaintBindContext, PaintDrawKind, PaintProgram, PaintResources } from '../paintKinds';
+import type { PaintBindContext, PaintBinding, PaintDrawKind, PaintResources, PaintTexture } from '../paintKinds';
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
 import { DEG_TO_RAD, mat3 } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
@@ -18,6 +18,7 @@ import { bakeMesh, meshBounds, type MeshBox } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';
 import { MESH_FRAG_SRC, MESH_PROGRAM_ID, MESH_VERT_SRC } from './meshShader';
+import { MESH_WGSL } from '../gpu/webgpu/wgsl/meshPaint';
 
 export type { MeshPatch, MeshPoint } from './surface';
 
@@ -173,12 +174,12 @@ function mapPatches(mesh: MeshGradientPaint, move: (p: MeshPoint) => MeshPoint):
 
 // ─── The bake cache ─────────────────────────────────────────────────────────
 //
-// A kind owns its own GPU state; the registry hands it a `gl` and a resource
-// lifetime. One cache per lifetime, so two renderers — or one renderer past a
+// A kind owns its own GPU state; the registry hands it a way to make textures
+// and a resource lifetime. One cache per lifetime, so two renderers — or one renderer past a
 // context restore — never trade textures, and the lifetime's end frees them.
 
 interface CachedBake {
-  texture: WebGLTexture;
+  texture: PaintTexture;
   /** Where the mesh being bound sits in paint space. The texels are shared by
    *  every pose-frame copy of one paint; the box is each copy's own. */
   box: MeshBox;
@@ -188,13 +189,12 @@ interface CachedBake {
  *  node's pose changes, and bakes the same texels as its source. */
 const BAKE_SOURCE = new WeakMap<object, object>();
 
-const CACHES = new WeakMap<PaintResources, MeshBakeCache<WebGLTexture>>();
+const CACHES = new WeakMap<PaintResources, MeshBakeCache<PaintTexture>>();
 
-function cacheFor(ctx: PaintBindContext): MeshBakeCache<WebGLTexture> {
+function cacheFor(ctx: PaintBindContext): MeshBakeCache<PaintTexture> {
   let cache = CACHES.get(ctx.resources);
   if (!cache) {
-    const gl = ctx.gl;
-    const made = new MeshBakeCache<WebGLTexture>((texture) => gl.deleteTexture(texture));
+    const made = new MeshBakeCache<PaintTexture>((texture) => ctx.deleteTexture(texture));
     ctx.resources.onRelease(() => {
       made.clear();
       CACHES.delete(ctx.resources);
@@ -225,31 +225,15 @@ function bakeFor(ctx: PaintBindContext, mesh: MeshGradientPaint): CachedBake | n
   const baked = bakeMesh(mesh.patches, mesh.interpolate ?? 'rgb', size);
   if (!baked) return null;
 
-  const gl = ctx.gl;
-  const texture = gl.createTexture();
-  if (!texture) return null;
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(
-    gl.TEXTURE_2D, 0, gl.RGBA,
-    baked.size, baked.size, 0,
-    gl.RGBA, gl.UNSIGNED_BYTE, baked.pixels,
-  );
-  gl.bindTexture(gl.TEXTURE_2D, null);
+  const texture = ctx.createTexture(baked.size, baked.size, baked.pixels);
 
   cache.set(key, size, texture);
   return { texture, box };
 }
 
-function bindMesh(ctx: PaintBindContext, fill: Paint): PaintProgram | null {
+function bindMesh(ctx: PaintBindContext, fill: Paint): PaintBinding | null {
   const mesh = asMesh(fill);
   if (!mesh.patches.some(isValidPatch)) return null;
-
-  const program = ctx.program(MESH_PROGRAM_ID);
-  if (!program) return null;
 
   const entry = bakeFor(ctx, mesh);
   if (!entry) return null;
@@ -258,26 +242,23 @@ function bindMesh(ctx: PaintBindContext, fill: Paint): PaintProgram | null {
   const inverse = ctx.spaceInverse(mesh.units, box);
   if (!inverse) return null;
 
-  const gl = ctx.gl;
-  gl.useProgram(program.handle);
-  ctx.setProjAndModel(program);
-  gl.uniformMatrix3fv(program.uniform('u_worldInv')!, false, mat3.toUniform(inverse));
-
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, entry.texture);
-  gl.uniform1i(program.uniform('u_sampler')!, 0);
-
-  gl.uniform2f(program.uniform('u_meshSize')!, box.width, box.height);
-  gl.uniform1f(program.uniform('u_opacity')!, mesh.opacity ?? 1);
-  gl.uniform1f(program.uniform('u_alpha')!, ctx.alpha);
-  return program;
+  return {
+    program: MESH_PROGRAM_ID,
+    uniforms: {
+      u_worldInv: mat3.toUniform(inverse),
+      u_sampler: entry.texture,
+      u_meshSize: [box.width, box.height],
+      u_opacity: mesh.opacity ?? 1,
+      u_alpha: ctx.alpha,
+    },
+  };
 }
 
 /** The kind's draw half, shader program included. Core adds the editor's
  *  slots and registers the whole entry. */
 export const meshDrawKind: PaintDrawKind = {
   id: MESH_GRADIENT_KIND,
-  programs: { [MESH_PROGRAM_ID]: { glsl: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC } } },
+  programs: { [MESH_PROGRAM_ID]: { glsl: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC }, wgsl: { frag: MESH_WGSL } } },
   bind: bindMesh,
   inPoseFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);

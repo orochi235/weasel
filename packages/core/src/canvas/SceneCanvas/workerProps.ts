@@ -4,7 +4,6 @@
  */
 import type { FollowedClock } from '../renderWorker/startSceneRenderWorker';
 import type { CustomLayerEntry } from '../layerSlots';
-import type { SceneCanvasGeometry } from './geometryProps';
 
 /** The page paints the scene layers. */
 export interface PagePaintedScene {
@@ -37,8 +36,8 @@ export interface WorkerPaintedScene {
    * canvas in one stack. A page layer between two scene layers cuts the scene in two, and each
    * part gets a worker of its own. Called once per such part per mount.
    *
-   * Picking by pixels reads the worker's frame a round trip away, so it is the ref's
-   * `readIdsAsync` and `pickAtAsync`; `readIds` and `pickAt` throw. An animation is the worker
+   * The ref's `readIds` and `pickAt` read the worker's ids a round trip away, and `readIdsSync`
+   * answers `null`, so `geometry.picking: 'pixels'` walks the shapes. An animation is the worker
    * module's too: play it through the ref's `worker.animator`.
    */
   worker: () => Worker;
@@ -49,8 +48,8 @@ export interface WorkerPaintedScene {
   /** Not in worker mode: a worker canvas cannot be a tile of a shared buffer. */
   paintInto?: undefined;
   inputElement?: undefined;
-  /** Picking reads ids synchronously, which a worker frame cannot answer. */
-  geometry?: SceneCanvasGeometry & { picking?: 'pose' | 'shape' };
+  /** Not in worker mode: the worker's canvas and the page's beside it paint with WebGL 2. */
+  backend?: undefined;
   layers?: { scene?: WorkerSceneSlot | CustomLayerEntry | null };
 }
 

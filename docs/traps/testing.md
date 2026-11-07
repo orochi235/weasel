@@ -86,3 +86,30 @@ mounts: in `Lab.messages.test.tsx` that read as a play rate of 0 and one state r
 fails every retry at once; guard on a per-test fixture that ends with the attempt instead: labkit's
 `live` (`packages/labkit/src/testing/liveTest.ts`), which also logs the stack of each step a failed
 test was still waiting on.
+
+**Headless Chromium runs with the GPU off unless launched with `--enable-gpu`, and a WebGPU canvas
+there takes every tab down.** Playwright's `chromium` is the headless shell. On a fleet Mac it draws
+WebGL on SwiftShader (`ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device …))`) and hands WebGPU a
+`google/swiftshader` adapter, so a pixel read measures SwiftShader's rasterizer, which snaps vertices
+to 1/16 px and clips geometry to the viewport for real. Its software compositing also cannot present a
+WebGPU canvas, in the document or not, in any format: every frame logs `CopyTextureForBrowser` into
+`[Invalid Texture]`, and closing the context fails `kDissociateMailboxForPresent` on stderr. After that
+the page has no GPU: `requestAdapter()` and `getContext('webgl2')` return null, and an attached canvas
+dies on its first frame with "A valid external Instance reference no longer exists". Every tab shares
+one Chromium, so the files running beside it fail too (teitou, 2026-11-06).
+
+`--enable-gpu` puts both APIs on the node: WebGL on `ANGLE Metal Renderer: Apple M5 Max`, WebGPU on
+`apple/metal-3`, one rasterizer for both. An attached canvas then presents 60 frames clean, opaque or
+premultiplied, rgba8unorm or bgra8unorm, configured once or every frame. `--use-angle=metal` and full
+Chromium's headless (`channel: 'chromium'`) do the same, and `--use-webgpu-adapter=swiftshader` beside
+`--enable-gpu` presents clean too: the fault is the compositing, not the adapter (teitou, 2026-11-06).
+So every WebGPU browser file and the parity files run in the browser project's `browser (gpu)`
+instance; a new one goes in `GPU_TESTS` in `vitest.config.ts`. On GitHub's GPU-less ubuntu-22.04 runner
+neither `--enable-gpu` alone nor `channel: 'chromium'` keeps the device: of ten launches probed, only
+`--enable-gpu --use-angle=swiftshader --enable-unsafe-swiftshader --use-vulkan=swiftshader
+--use-webgpu-adapter=swiftshader` (beside `--enable-unsafe-webgpu --enable-features=Vulkan`) presented 40
+frames with the device alive, and it is what the visual suite's WebGPU job launches (2026-11-07). There a 2D
+`drawImage` of a WebGPU canvas already shown comes out transparent, while `toDataURL` holds the shown frame
+and a `drawImage` in the task that drew it holds that frame; the visual specs read through `toDataURL`. Print
+`WEBGL_debug_renderer_info`'s `UNMASKED_RENDERER_WEBGL` and `adapter.info` before trusting a claim
+about what a GPU does.

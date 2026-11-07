@@ -1,16 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeGLRecorder } from '../testing/glRecorder';
-import { ShaderProgram, ShaderCompileError } from './ShaderProgram';
-import { VERT_SRC, FRAG_SRC, PATH_FILL_UNIFORMS, PATH_FILL_ATTRIBUTES } from './pathFill';
+import { makeGLRecorder } from '../../testing/glRecorder';
+import { ShaderCompileError } from '../../shaders/ShaderProgram';
+import { WebGLDevice } from './WebGLDevice';
+import { GlProgram } from './GlProgram';
+import { VERT_SRC, FRAG_SRC, PATH_FILL_UNIFORMS, PATH_FILL_ATTRIBUTES } from '../../shaders/pathFill';
 
-describe('ShaderProgram', () => {
+describe('GlProgram', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
   beforeEach(() => {
     recorder = makeGLRecorder();
   });
 
   it('compiles vertex + fragment shaders and links a program', () => {
-    const prog = new ShaderProgram(recorder.gl, VERT_SRC, FRAG_SRC);
+    const prog = new GlProgram(new WebGLDevice(recorder.gl), VERT_SRC, FRAG_SRC);
     const callNames = recorder.calls.map((c) => c.name);
     expect(callNames).toContain('createShader');
     expect(callNames).toContain('shaderSource');
@@ -24,7 +26,7 @@ describe('ShaderProgram', () => {
   it('binds a_position to location 0 before it links', () => {
     // Mesh VAOs are built once and drawn with every fill program, so the
     // attribute cannot sit wherever each program's linker happened to put it.
-    const prog = new ShaderProgram(recorder.gl, VERT_SRC, FRAG_SRC);
+    const prog = new GlProgram(new WebGLDevice(recorder.gl), VERT_SRC, FRAG_SRC);
     const bind = recorder.calls.findIndex((c) => c.name === 'bindAttribLocation');
     const link = recorder.calls.findIndex((c) => c.name === 'linkProgram');
     expect(bind).toBeGreaterThanOrEqual(0);
@@ -33,15 +35,15 @@ describe('ShaderProgram', () => {
   });
 
   it('looks up uniform locations by name', () => {
-    const prog = new ShaderProgram(recorder.gl, VERT_SRC, FRAG_SRC);
+    const prog = new GlProgram(new WebGLDevice(recorder.gl), VERT_SRC, FRAG_SRC);
     prog.lookupUniforms(PATH_FILL_UNIFORMS);
     for (const name of PATH_FILL_UNIFORMS) {
-      expect(prog.uniform(name)).toBeDefined();
+      expect(prog.has(name)).toBe(true);
     }
   });
 
   it('looks up attribute locations by name', () => {
-    const prog = new ShaderProgram(recorder.gl, VERT_SRC, FRAG_SRC);
+    const prog = new GlProgram(new WebGLDevice(recorder.gl), VERT_SRC, FRAG_SRC);
     prog.lookupAttributes(PATH_FILL_ATTRIBUTES);
     for (const name of PATH_FILL_ATTRIBUTES) {
       expect(prog.attribute(name)).toBeDefined();
@@ -57,6 +59,6 @@ describe('ShaderProgram', () => {
         return Reflect.get(target, prop);
       },
     });
-    expect(() => new ShaderProgram(failingGl, VERT_SRC, FRAG_SRC)).toThrow(ShaderCompileError);
+    expect(() => new GlProgram(new WebGLDevice(failingGl), VERT_SRC, FRAG_SRC)).toThrow(ShaderCompileError);
   });
 });

@@ -10,7 +10,7 @@
  * hover there lands on the main canvas moves with the scene — sometimes off
  * the region read, or off the canvas. `seedRandom` pins the scene.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixture';
 
 const DEMO_ID = 'minimap';
 /** From `apps/site/demos/MinimapDemo.tsx`: the main canvas is 600×400 with
@@ -23,12 +23,9 @@ type Rect = { x: number; y: number; w: number; h: number };
 
 /** RGBA bytes of `rect` (CSS px) on the `index`th canvas. */
 async function read(page: Page, index: number, rect: Rect | null): Promise<number[]> {
-  return page.evaluate(({ index, rect }) => {
+  return page.evaluate(async ({ index, rect }) => {
     const c = document.querySelectorAll('canvas')[index] as HTMLCanvasElement;
-    const o = document.createElement('canvas');
-    o.width = c.width; o.height = c.height;
-    const ctx = o.getContext('2d', { willReadFrequently: true })!;
-    ctx.drawImage(c, 0, 0);
+    const ctx = await window.weaselCanvasSnapshot(c);
     const dpr = c.width / c.getBoundingClientRect().width;
     const r = rect ?? { x: 0, y: 0, w: c.width / dpr, h: c.height / dpr };
     return Array.from(ctx.getImageData(

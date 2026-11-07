@@ -8,13 +8,17 @@
  * @packageDocumentation
  */
 
+export { WeaselRenderer } from './WeaselRenderer';
+export type { PixelRect } from './readPixels';
 export {
-  WeaselRenderer, type WeaselRendererOptions, type RenderTarget,
+  type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
-  type IdBuffer, type RenderIdsOptions,
+  type IdBuffer, type RenderIdsOptions, type RendererBackend,
   DEFAULT_RETAIN_BUDGET,
-} from './WeaselRenderer';
+} from './rendererTypes';
 export { idMask } from './draw/idRender';
+export { requestRendererDevice } from './gpu/webgpu/requestRendererDevice';
+export type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
 export { MAX_PICK_ID } from './shaders/idOutput';
 export type { BatchStage } from './batchStage';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
@@ -93,10 +97,12 @@ export {
   isPaintKindKnown,
   warmPaintKinds,
   type PaintBindContext,
+  type PaintBinding,
   type PaintDrawKind,
   type PaintDrawKindLoader,
-  type PaintProgram,
   type PaintResources,
+  type PaintTexture,
+  type PaintUniform,
 } from './paintKinds';
 export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';

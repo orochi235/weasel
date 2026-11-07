@@ -17,17 +17,16 @@ describe('withIdOutput', () => {
     const out = withIdOutput(CUSTOM_VERT_SRC, FRAG)!;
     expect(out.frag).toContain('layout(location = 0) out vec4 fragColor;');
     expect(out.frag).toContain('layout(location = 1) out highp vec4 weasel_idOut;');
-    expect(out.frag).toContain('fragColor.a >= v_weaselId.a');
+    expect(out.frag).toContain('fragColor.a >= u_weaselId.a');
+    expect(out.frag).toContain('uniform highp vec4 u_weaselId;');
     expect(out.frag.startsWith('#version 300 es')).toBe(true);
   });
 
-  it('runs the shader\'s own main before writing the id, in both stages', () => {
+  it('runs the shader\'s own main before writing the id, and leaves the vertex stage alone', () => {
     const out = withIdOutput(CUSTOM_VERT_SRC, FRAG)!;
-    for (const src of [out.vert, out.frag]) {
-      expect(src.match(/void main\(\)/g)).toHaveLength(1);
-      expect(src).toMatch(/void weasel_main\(\)[\s\S]*void main\(\) \{\n {2}weasel_main\(\);/);
-    }
-    expect(out.vert).toContain('v_weaselId = a_weaselId;');
+    expect(out.frag.match(/void main\(\)/g)).toHaveLength(1);
+    expect(out.frag).toMatch(/void weasel_main\(\)[\s\S]*void main\(\) \{\n {2}weasel_main\(\);/);
+    expect(out.vert).toBe(CUSTOM_VERT_SRC);
   });
 
   it('keeps every line where it was, so a compile error names the line written', () => {

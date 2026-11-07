@@ -111,3 +111,4 @@ export {
   SYNTH_BOLD_AMOUNT,
   syntheticBoldGrowth,
 } from './textSdf';
+export { GLYPH_COVERAGE_WGSL, GLYPH_POINT_COVERAGE_WGSL } from './textSdfWgsl';
