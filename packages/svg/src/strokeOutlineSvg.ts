@@ -97,6 +97,7 @@ export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: reado
     ...(stroke.cap ? { cap: stroke.cap } : {}),
     ...(stroke.join ? { join: stroke.join } : {}),
     ...(stroke.dash ? { dash: stroke.dash } : {}),
+    ...(stroke.dashOffset ? { dashOffset: stroke.dashOffset } : {}),
     ...(stroke.miterLimit != null ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.align ? { align: stroke.align } : {}),
     ...(stroke.markerStart ? { markerStart: stroke.markerStart } : {}),

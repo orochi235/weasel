@@ -45,6 +45,14 @@ describe('stroke-dashoffset', () => {
     expect(svg).toContain('stroke-dashoffset="11"');
   });
 
+  it('moves the dashes of a stroke written as its outline', () => {
+    const outline = (dashOffset?: number) => {
+      const svg = serializeSvg([line({ dash: [10, 10], align: 'outer', ...(dashOffset ? { dashOffset } : {}) }, 'M0 0H100V100H0Z')]);
+      return /<path d="([^"]*)"[^>]*role="stroke-outline"/.exec(svg)![1];
+    };
+    expect(outline(5)).not.toBe(outline());
+  });
+
   it('is written on a text stroke', () => {
     const svg = serializeSvg([{
       kind: 'text', x: 0, y: 0, width: 10, height: 10, text: 'a',
