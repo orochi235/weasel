@@ -1,4 +1,5 @@
 import { useElementSize, useLatest } from '@weasel-js/core';
+import type { LoupeMode } from '@weasel-js/loupe';
 import {
   type ReactNode,
   type RefObject,
@@ -8,9 +9,14 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import { CameraContext, CameraScope } from '../canvas/CameraInput';
-import { CanvasStackContext } from '../canvas/CanvasStackContext';
+import { CameraContext, type CameraContextValue, CameraScope } from '../canvas/CameraInput';
+import {
+  CanvasStackContext,
+  type CanvasStackContextValue,
+  type CanvasStackSurface,
+} from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
+import type { ViewportSize } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
 import type { Box } from '../surface/rect';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
@@ -20,13 +26,108 @@ import { sampleStack } from './canvasLens';
 import { DomLoupe } from './DomLoupe';
 import { LoupeBubble } from './LoupeBubble';
 import { LoupeGestures } from './LoupeGestures';
+import { SceneLoupe } from './SceneLoupe';
 import { SourceLoupe } from './SourceLoupe';
 import { resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
-import { type LoupeLens, type LoupeOptions, resolveLoupe } from './types';
+import { type LoupeLens, type LoupeOptions, type ResolvedLoupe, resolveLoupe } from './types';
 import { useLoupe } from './useLoupe';
 
+/** Props for {@link LoupePainter}. */
+interface LoupePainterProps<TData, TLayer extends string, TPose> {
+  options: ResolvedLoupe<TData, TLayer, TPose>;
+  shows: { x: number; y: number };
+  shownFactor: number;
+  box: { width: number; height: number };
+  mode: LoupeMode;
+  size: ViewportSize;
+  view: ViewTransform | undefined;
+  stack: CanvasStackContextValue | null;
+  camera: CameraContextValue | null;
+  host: RefObject<HTMLElement | null>;
+  surface: CanvasStackSurface | undefined;
+}
+
+/** Picks and renders the one painter a resolved loupe calls for: `sceneView`'s re-rendered `@weasel-js/core`
+ *  scene, `render`'s re-drawn DOM, `source`'s captured pixels, or the ambient `<CanvasStack>`'s own layers. Split
+ *  out of `<TrialLoupe>` to keep its own body under `check:size`'s function-length budget. */
+function LoupePainter<TData, TLayer extends string, TPose>({
+  options,
+  shows,
+  shownFactor,
+  box,
+  mode,
+  size,
+  view,
+  stack,
+  camera,
+  host,
+  surface,
+}: LoupePainterProps<TData, TLayer, TPose>) {
+  if (options.hollow) return null;
+  if (options.sceneView) {
+    const { scene, view: sceneViewCamera, drawOne, extraCommands, paintBounds } = options.sceneView;
+    return (
+      <SceneLoupe
+        aim={shows}
+        factor={shownFactor}
+        diameter={box}
+        scene={scene}
+        view={sceneViewCamera}
+        drawOne={drawOne}
+        extraCommands={extraCommands}
+        paintBounds={paintBounds}
+      />
+    );
+  }
+  if (options.render) {
+    return (
+      <DomLoupe
+        aim={shows}
+        factor={shownFactor}
+        mode={mode}
+        diameter={box}
+        size={size}
+        view={
+          view ??
+          stack?.view ??
+          (camera ? fromCameraView(camera.view.get(), camera.frame) : IDENTITY)
+        }
+        frame={stack?.frame ?? camera?.frame}
+        render={options.render}
+      />
+    );
+  }
+  if (options.source) {
+    return (
+      <SourceLoupe
+        aim={shows}
+        factor={shownFactor}
+        diameter={box}
+        source={options.source}
+        hostRef={host}
+      />
+    );
+  }
+  if (surface && stack) {
+    return (
+      <CanvasLoupe
+        aim={shows}
+        factor={shownFactor}
+        mode={mode}
+        diameter={box}
+        surface={surface}
+        view={stack.view}
+        frame={stack.frame}
+        worldSpec={surface.worldSpec}
+      />
+    );
+  }
+  return null;
+}
+
 /** Props for `<TrialLoupe>`. */
-export interface TrialLoupeProps extends LoupeOptions {
+export interface TrialLoupeProps<TData = unknown, TLayer extends string = string, TPose = unknown>
+  extends LoupeOptions<TData, TLayer, TPose> {
   /** Whether the lens is turned on. Omitted, it follows the trial's toolbar
    *  toggle, which the trial offers while a lens like this is mounted — and is
    *  off outside a trial. Hold-to-peek shows it either way. */
@@ -50,14 +151,16 @@ const IDENTITY: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
  *
  * With no `render` inside a `<CanvasStack>`, it re-draws the stack's own
  * layers through a zoomed camera. With `render`, it asks for the content again
- * at a magnified camera. With `source`, it enlarges the pixels of any canvas.
+ * at a magnified camera. With `sceneView`, it re-renders a bare `@weasel-js/core`
+ * scene the same way. With `source`, it enlarges the pixels of any canvas.
  */
-export function TrialLoupe({
+export function TrialLoupe<TData = unknown, TLayer extends string = string, TPose = unknown>({
   enabled,
   view,
   hostRef,
   children,
   render,
+  sceneView,
   source,
   factor,
   minFactor,
@@ -70,11 +173,11 @@ export function TrialLoupe({
   onLens,
   peekKey,
   onColorChange,
-}: TrialLoupeProps) {
+}: TrialLoupeProps<TData, TLayer, TPose>) {
   const stack = useContext(CanvasStackContext);
   const camera = useContext(CameraContext);
   const loupeSwitch = useContext(LoupeSwitchContext);
-  const surface = render || source || hollow ? undefined : stack?.surface;
+  const surface = render || sceneView || source || hollow ? undefined : stack?.surface;
 
   const ownHost = useRef<HTMLDivElement | null>(null);
   const cameraHost = useMemo<RefObject<HTMLElement | null> | null>(
@@ -122,6 +225,7 @@ export function TrialLoupe({
     () =>
       resolveLoupe({
         render,
+        sceneView,
         source,
         factor,
         minFactor,
@@ -137,6 +241,7 @@ export function TrialLoupe({
       }),
     [
       render,
+      sceneView,
       source,
       factor,
       minFactor,
@@ -211,41 +316,19 @@ export function TrialLoupe({
   const box = { width, height };
   const lens = loupe.visible ? (
     <LoupeBubble aim={center} diameter={box} shape={lensShape} hollow={options.hollow}>
-      {options.hollow ? null : options.render ? (
-        <DomLoupe
-          aim={shows}
-          factor={shownFactor}
-          mode={loupe.mode}
-          diameter={box}
-          size={size}
-          view={
-            view ??
-            stack?.view ??
-            (camera ? fromCameraView(camera.view.get(), camera.frame) : IDENTITY)
-          }
-          frame={stack?.frame ?? camera?.frame}
-          render={options.render}
-        />
-      ) : options.source ? (
-        <SourceLoupe
-          aim={shows}
-          factor={shownFactor}
-          diameter={box}
-          source={options.source}
-          hostRef={host}
-        />
-      ) : surface && stack ? (
-        <CanvasLoupe
-          aim={shows}
-          factor={shownFactor}
-          mode={loupe.mode}
-          diameter={box}
-          surface={surface}
-          view={stack.view}
-          frame={stack.frame}
-          worldSpec={surface.worldSpec}
-        />
-      ) : null}
+      <LoupePainter
+        options={options}
+        shows={shows}
+        shownFactor={shownFactor}
+        box={box}
+        mode={loupe.mode}
+        size={size}
+        view={view}
+        stack={stack}
+        camera={camera}
+        host={host}
+        surface={surface}
+      />
     </LoupeBubble>
   ) : null;
 

@@ -12,8 +12,8 @@ import { WHEEL_RATE } from './loupeActions';
 import type { LoupeLens, ResolvedLoupe } from './types';
 
 /** Options for {@link useLoupe}. */
-export interface UseLoupeOptions {
-  options: ResolvedLoupe;
+export interface UseLoupeOptions<TData = unknown, TLayer extends string = string, TPose = unknown> {
+  options: ResolvedLoupe<TData, TLayer, TPose>;
   /** The element the lens tracks the pointer across: aims are taken in its box. */
   hostRef: RefObject<HTMLElement | null>;
   /** Whether the loupe is turned on. Hold-to-peek shows it regardless. */
@@ -70,13 +70,13 @@ function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
  * routed through the gesture dispatcher that `<LoupeGestures>` mounts on the
  * same host, driving `input`. Without `<LoupeGestures>` the lens never aims.
  */
-export function useLoupe({
+export function useLoupe<TData = unknown, TLayer extends string = string, TPose = unknown>({
   options,
   hostRef,
   enabled,
   sample,
   subscribeResample,
-}: UseLoupeOptions): LoupeState {
+}: UseLoupeOptions<TData, TLayer, TPose>): LoupeState {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   const overRef = useRef(false);

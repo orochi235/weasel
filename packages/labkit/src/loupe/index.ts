@@ -83,6 +83,8 @@ export type { LensProbe } from './lens/probeUnderLens';
 export { probeUnderLens } from './lens/probeUnderLens';
 export type { LoupeInputApi } from './loupeActions';
 export { createLoupeActions, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID } from './loupeActions';
+export type { SceneLoupeProps, SceneViewSource } from './SceneLoupe';
+export { SceneLoupe } from './SceneLoupe';
 export type { SourceLoupeProps } from './SourceLoupe';
 export { SourceLoupe } from './SourceLoupe';
 export type { LoupeSource, LoupeSourceTarget } from './sourceLens';

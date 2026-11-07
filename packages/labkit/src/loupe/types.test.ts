@@ -21,6 +21,11 @@ describe('resolveLoupe', () => {
     expect(resolveLoupe({ mode: 'pixel' }).mode).toBe('pixel');
   });
 
+  it('forces vector on a scene loupe too, for the same reason', () => {
+    const sceneView = { scene: {} as never, view: {} as never, drawOne: {} as never };
+    expect(resolveLoupe({ sceneView, mode: 'pixel' }).mode).toBe('vector');
+  });
+
   it('forces pixel on a source loupe, unless render draws it', () => {
     const source = () => null;
     expect(resolveLoupe({ source, mode: 'vector' }).mode).toBe('pixel');

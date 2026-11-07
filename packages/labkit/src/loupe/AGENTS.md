@@ -23,9 +23,9 @@ This directory binds that model to a labkit trial and draws it.
 | `CanvasLoupe.tsx` | Painter for a `<CanvasStack>` |
 | `canvasLens.ts` | That painter's geometry and drawing, with no React in it |
 | `DomLoupe.tsx` | Painter for DOM content |
+| `SceneLoupe.tsx` | Painter for a bare `@weasel-js/core` scene named by `sceneView` |
 | `SourceLoupe.tsx` | Painter for any canvas named by `source` |
 | `sourceLens.ts` | That painter's source resolution, box measurement and drawing |
-| `useHostSize.ts` | The host's measured box, for the DOM stage |
 | `lens/` | Lenses as scene objects, their sources, actions and rim zoom ("Lenses" below) |
 
 ## Lenses
@@ -122,17 +122,28 @@ not a typo.
 
 ## Which painter
 
-`render` decides. Absent, the lens re-runs the stack's canvas layers through
+`render`/`sceneView` decide. A bare `@weasel-js/core` scene — a host with no
+`<CanvasStack>` of its own — wants `sceneView`, not `<LensOverlay>`, unless it
+needs several lenses, pinning or comparing; collego's `BoardLoupe.tsx` is the
+worked example.
+
+Absent both, the lens re-runs the stack's canvas layers through
 `lensCamera` — sharp at any factor, and `mode: 'pixel'` enlarges the presented
-pixels with smoothing off instead. Present, it is handed a camera and draws the
-content again; a DOM loupe is always `vector`, since DOM has no framebuffer to
-enlarge. The canvas painter needs the stack's own pixels, which is why a
-drawing instrument mounts the lens in its `render`, inside `<CanvasStack>`.
+pixels with smoothing off instead. `render` is handed a camera and draws DOM
+content again; `sceneView` is handed the scene, the camera, `drawOne` and
+optional `extraCommands`/`paintBounds`, and re-renders through
+`SceneViewCanvas` (`@weasel-js/core`) into its own `<canvas>` element — which
+is *why* it clips to a true circle via `LoupeBubble`'s CSS, unlike a view
+painted onto a host's own main surface (rect-only clip; see `addView`'s
+`bounds`). Both are always `vector`: neither has a framebuffer of presented
+pixels to enlarge. The canvas painter needs the stack's own pixels, which is
+why a drawing instrument mounts the lens in its `render`, inside
+`<CanvasStack>`.
 
 `source` names a canvas labkit need not own, and wins over the stack: the lens
-enlarges that canvas's pixels (`SourceLoupe`), or, beside `render`, only
-samples its color. The capture rule for WebGL lives with `createCanvasSource`
-in `@weasel-js/loupe`.
+enlarges that canvas's pixels (`SourceLoupe`), or, beside `render`/`sceneView`,
+only samples its color. The capture rule for WebGL lives with
+`createCanvasSource` in `@weasel-js/loupe`.
 
 ## Where the lens goes
 

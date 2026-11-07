@@ -2,6 +2,7 @@ import type { LoupeMode, LoupePoint } from '@weasel-js/loupe';
 import type { ReactNode } from 'react';
 import type { ViewportSize } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
+import type { SceneViewSource } from './SceneLoupe';
 import type { LoupeSource } from './sourceLens';
 
 /** What a DOM loupe's `render` is handed: the camera to draw the content
@@ -58,13 +59,18 @@ export interface LoupePlaceArgs {
 /**
  * How a lens magnifies.
  *
- * With no `render`, the lens re-draws the canvas stack's layers through a
- * zoomed camera, so it stays sharp at any factor. Over DOM content, `render`
- * draws it instead: given a camera, draw me again. With a `source`, it
+ * With no `render` or `sceneView`, the lens re-draws the canvas stack's
+ * layers through a zoomed camera, so it stays sharp at any factor. Over DOM
+ * content, `render` draws it instead: given a camera, draw me again. Over a
+ * bare `@weasel-js/core` scene — a host with no `<CanvasStack>` of its own —
+ * `sceneView` does the same through `SceneViewCanvas`. With a `source`, it
  * enlarges the pixels of that canvas — any canvas, labkit's or not.
  */
-export interface LoupeOptions {
+export interface LoupeOptions<TData = unknown, TLayer extends string = string, TPose = unknown> {
   render?: (args: LoupeRenderArgs) => ReactNode;
+  /** A `@weasel-js/core` scene to magnify in vector mode, for a host that isn't labkit's own `<CanvasStack>` — the
+   *  common case for any weasel consumer app. See `SceneLoupe`'s doc comment for how it clips to a true circle. */
+  sceneView?: SceneViewSource<TData, TLayer, TPose>;
   /**
    * A canvas to read pixels from instead of the canvas stack: a
    * `CanvasSource` from `createCanvasSource`, a canvas, a context on one, or
@@ -129,8 +135,9 @@ export interface LoupeOptions {
 }
 
 /** {@link LoupeOptions} with every default filled in. */
-export interface ResolvedLoupe {
+export interface ResolvedLoupe<TData = unknown, TLayer extends string = string, TPose = unknown> {
   render?: (args: LoupeRenderArgs) => ReactNode;
+  sceneView?: SceneViewSource<TData, TLayer, TPose>;
   source?: LoupeSource;
   onColorChange?: (hex: string) => void;
   factor: number;
@@ -157,17 +164,20 @@ export const LOUPE_DEFAULTS = {
   peekKey: 'Alt',
 } as const satisfies Omit<
   ResolvedLoupe,
-  'render' | 'source' | 'onColorChange' | 'place' | 'onLens'
+  'render' | 'sceneView' | 'source' | 'onColorChange' | 'place' | 'onLens'
 >;
 
 /** `options` with every default filled in and `factor` clamped to
- *  `[minFactor, maxFactor]`. A loupe with its own `render` is always `'vector'`,
+ *  `[minFactor, maxFactor]`. A loupe with its own `render` or `sceneView` is always `'vector'`,
  *  and one with only a `source` always `'pixel'`. */
-export function resolveLoupe(options: LoupeOptions = {}): ResolvedLoupe {
+export function resolveLoupe<TData = unknown, TLayer extends string = string, TPose = unknown>(
+  options: LoupeOptions<TData, TLayer, TPose> = {},
+): ResolvedLoupe<TData, TLayer, TPose> {
   const minFactor = options.minFactor ?? LOUPE_DEFAULTS.minFactor;
   const maxFactor = options.maxFactor ?? LOUPE_DEFAULTS.maxFactor;
   return {
     render: options.render,
+    sceneView: options.sceneView,
     source: options.source,
     onColorChange: options.onColorChange,
     minFactor,
@@ -179,11 +189,12 @@ export function resolveLoupe(options: LoupeOptions = {}): ResolvedLoupe {
     hollow: options.hollow ?? LOUPE_DEFAULTS.hollow,
     onLens: options.onLens,
     peekKey: options.peekKey === undefined ? LOUPE_DEFAULTS.peekKey : options.peekKey,
-    // A DOM loupe has no framebuffer, so `pixel` would have nothing to enlarge.
-    mode: options.render
-      ? 'vector'
-      : options.source
-        ? 'pixel'
-        : (options.mode ?? LOUPE_DEFAULTS.mode),
+    // A DOM or scene loupe has no framebuffer, so `pixel` would have nothing to enlarge.
+    mode:
+      options.render || options.sceneView
+        ? 'vector'
+        : options.source
+          ? 'pixel'
+          : (options.mode ?? LOUPE_DEFAULTS.mode),
   };
 }
