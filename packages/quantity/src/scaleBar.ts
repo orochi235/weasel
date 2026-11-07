@@ -23,6 +23,9 @@ export interface ScaleBar {
   px: number;
   /** The length in the largest of the scope's units it is a whole number of. */
   label: string;
+  /** The unit `label` is written in: what a reading counted in steps of
+   *  `length` is written in too, as a ruler's tick labels are. */
+  unit: Unit;
   /** How large the frame is drawn in the world: every `drawnAt` of the scopes. */
   magnification: number;
 }
@@ -57,5 +60,5 @@ export function scaleBar(opts: ScaleBarOptions): ScaleBar {
   const fills = [...units].reverse().filter((u) => length / u.factor >= 1 - 1e-9);
   const whole = fills.find((u) => Math.abs(length / u.factor - Math.round(length / u.factor)) < 1e-9);
   const unit = (whole ?? fills[0])?.unit ?? system.base;
-  return { length, px: length * pxPerBase, label: formatUnit(length, unit, system, { precision: 3 }), magnification };
+  return { length, px: length * pxPerBase, label: formatUnit(length, unit, system, { precision: 3 }), unit, magnification };
 }
