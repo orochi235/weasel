@@ -264,6 +264,15 @@ describe('useSelection range', () => {
   const META = { ...NO_MODS, meta: true };
   const order = () => [a, b, c, d];
 
+  it('says what a click would do under its keys, as applyClick does it', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', order }));
+    expect(result.current.intentOf(META)).toBe('toggle');
+    expect(result.current.intentOf(SHIFT)).toBe('range');
+    expect(result.current.intentOf(NO_MODS)).toBe('replace');
+    const single = renderHook(() => useSelection({ mode: 'single' })).result.current;
+    expect(single.intentOf(SHIFT)).toBe('replace');
+  });
+
   it('ranges from the last pressed id over the order it is given', () => {
     const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', order }));
     act(() => result.current.applyClick(b, NO_MODS));

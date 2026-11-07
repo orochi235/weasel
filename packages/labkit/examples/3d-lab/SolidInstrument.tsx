@@ -250,6 +250,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
           if (!modifiers.shift) return [id];
           return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
         }),
+      intentOf: (modifiers: { shift: boolean; meta: boolean; ctrl: boolean }) =>
+        (modifiers.shift ? 'toggle' as const : 'replace' as const),
       adapterMethods: {
         getSelection: () => [...selectionRef.current],
         setSelection: (ids: NodeId[]) => setSelection(ids),

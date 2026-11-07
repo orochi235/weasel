@@ -203,7 +203,7 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
         // because it only applies to *extend* presses, and `enabled` is
         // evaluated without the event's modifiers.
         const extendLocked = () => opts.extendClickLocked?.() === true;
-        const press = pressDecision(top, sel, mods, extendLocked, adapterRef.current);
+        const press = pressDecision(top, sel, selection.intentOf(mods) !== 'replace', extendLocked, adapterRef.current);
         if (press.applyNow) selection.applyClick(top as NodeId, mods);
         pressRef.current = { deferredClickId: press.deferred };
       },

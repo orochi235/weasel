@@ -9,8 +9,8 @@
  */
 
 import type { FramedBox, View } from '@weasel-js/geom';
-import type { SelectionExtendKey, SelectionMode } from '@weasel-js/select';
-export type { SelectionExtendKey, SelectionMode };
+import type { SelectIntent, SelectionExtendKey, SelectionMode } from '@weasel-js/select';
+export type { SelectIntent, SelectionExtendKey, SelectionMode };
 
 /** An opaque scene-node identifier. Branded so a bare string cannot stand in. */
 export type NodeId = string & { readonly __brand: 'NodeId' };
@@ -48,6 +48,9 @@ export interface SelectionApi {
    *   otherwise replaces with `[id]`.
    */
   applyClick(id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): void;
+  /** What a click with `modifiers` would do under the configured mode and keys: the one
+   *  answer every press reads, so a tool never assumes which key extends. */
+  intentOf(modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): SelectIntent;
   /** Pre-built methods for spreading into an adapter that needs them. */
   adapterMethods: {
     getSelection: () => NodeId[];
