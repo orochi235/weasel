@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import polygonClipping from 'polygon-clipping';
 import { pathCropPieces, pathDividePieces, pathFacePieces, pathMerge, pathTrim, type MultiPolygon } from './index';
-import { curveDivide, curveMerge, curveTrim, type CurvePiece } from './curvePieces';
+import { curveMerge, curveTrim, type CurvePiece } from './curvePieces';
 import { PATH_L, PATH_M } from '../commands';
 import type { Path, PolygonPath } from '../path';
 import { area, circle, fine, hasCurves, mpArea, nearOutline, pointInPath, rect, rng, shape } from './curveShapes.fixtures';
@@ -24,7 +24,6 @@ describe('curve-preserving divide and face pieces', () => {
   it('divides two overlapping circles into three curved pieces with the clipper\'s areas', () => {
     const inputs = [circle(0, 0, 10), circle(12, 3, 8)];
     const pieces = pathDividePieces(...inputs);
-    expect(curveDivide(inputs, false)).not.toBeNull();
     expect(pieces.map((p) => p.sources)).toEqual([[0], [1], [0, 1]]);
     for (const p of pieces) {
       expect(hasCurves(p.path)).toBe(true);
@@ -132,10 +131,9 @@ describe('agreement with the flattened pieces on random shapes', () => {
       let curved = 0;
       for (let trial = 0; trial < TRIALS; trial++) {
         const inputs = [shape(r, grid), shape(r, grid), shape(r, grid)];
-        const faces = curveDivide(inputs, true);
-        const pieces = curveDivide(inputs, false);
-        if (!faces || !pieces) continue;
-        curved++;
+        const faces = pathFacePieces(...inputs);
+        const pieces = pathDividePieces(...inputs);
+        if (pieces.some((p) => hasCurves(p.path))) curved++;
         for (const p of pieces) {
           const want = flatFaceArea(inputs, p.sources);
           expect(Math.abs(area(p.path) - want), `trial ${trial} ${p.sources}`).toBeLessThan(0.5 + 0.002 * want);

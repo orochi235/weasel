@@ -7,8 +7,10 @@
  *     the cases `curveBoolean` declines (self-crossing cubics, some
  *     tangencies) are flattened and clipped by `polygon-clipping`
  *     instead, so their result has only M/L/Z commands.
- *   - Divide, crop, trim, merge and the face pieces keep curves the same
- *     way (`curvePieces`), and fall back to the clipper in the same cases.
+ *   - Crop, trim and merge keep curves the same way (`curvePieces`), and
+ *     fall back to the clipper in the same cases.
+ *   - Divide and the face pieces trace the arrangement of every outline
+ *     (`curveFaces`) and write each face back with the inputs' curves.
  *   - Open contours are treated as closed (a polyline has zero area and would
  *     otherwise be silently dropped).
  *   - Output `fillRule` is always `'nonzero'`.
@@ -17,10 +19,10 @@
  * the `@weasel-js/geom/booleans` subpath so the core stays `deps: {}`.
  */
 import polygonClipping from 'polygon-clipping';
-import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon, type Polygon } from './adapter';
-import { arrangementFaces } from './arrangementFaces';
-import { curveBoolean } from './curveBoolean';
-import { curveDivide, curveMerge, curveTrim, type CurvePiece } from './curvePieces';
+import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon } from './adapter';
+import { curveBoolean, writeLoops } from './curveBoolean';
+import { curveFaces, type FaceNeighbor } from './curveFaces';
+import { curveMerge, curveTrim, type CurvePiece } from './curvePieces';
 import type { Path, PolygonPath } from '../path';
 import { keepCorners } from '../paths/cornerRestore';
 
@@ -87,17 +89,48 @@ export function pathCrop(...paths: Path[]): PolygonPath[] {
 const cornered = (pieces: CurvePiece[], sources: readonly Path[]): BooleanPiece[] =>
   pieces.map(({ path, sources: s }) => ({ path: keepCorners(sources, path), sources: s }));
 
-/** The faces the paths' outlines cut the plane into, each naming the inputs covering it. */
-function faces(paths: Path[]): { polygon: Polygon; sources: number[] }[] {
-  const clean = paths.map((p) => {
-    const mp = pathToMultiPolygon(p);
-    return mp.length === 0 ? mp : polygonClipping.union(mp);
-  });
-  return arrangementFaces(clean).map(({ mask, polygon }) => {
-    const sources: number[] = [];
-    for (let i = 0; i < paths.length; i++) if (mask & (1n << BigInt(i))) sources.push(i);
-    return { polygon, sources };
-  });
+/** The faces of {@link pathFaceArrangement}, and which of them share edges. */
+export interface FaceArrangement {
+  /** The faces, ordered as {@link pathFacePieces} orders them. */
+  faces: BooleanPiece[];
+  /**
+   * Each pair of faces whose boundaries share edges, once, with the lower
+   * index first and the length they share, measured along the flattening the
+   * faces were cut from. `a` is -1 where the other side is covered by no
+   * input. Sorted by `a`, then `b`.
+   */
+  neighbors: FaceNeighbor[];
+}
+
+export interface FaceArrangementOptions {
+  /**
+   * How far the flattening the arrangement is cut from may stray from a
+   * curve, in path units. Default a hundred-thousandth of the inputs' extent.
+   */
+  tolerance?: number;
+}
+
+/**
+ * The faces the paths' outlines cut the plane into, wherever some path
+ * covers: each one connected region, holes kept, naming the inputs covering
+ * it, so two faces the same inputs cover stay apart unless they are one
+ * region. Each curve in a face's outline is a piece of an input curve, its
+ * ends where the outlines cross. Also says which faces share an edge, and
+ * how long a stretch.
+ *
+ * The arrangement is cut and traced on a fine flattening of the outlines, so
+ * curves that touch or run nearly along each other are resolved as their
+ * flattenings are: where two curves lie within `tolerance` of each other
+ * they may part into slivers. Its cost grows with the flattening's chords and
+ * their crossings, not with the number of inputs or their subsets.
+ */
+export function pathFaceArrangement(paths: readonly Path[], options: FaceArrangementOptions = {}): FaceArrangement {
+  if (paths.length === 0) return { faces: [], neighbors: [] };
+  const { faces, neighbors, clockwise } = curveFaces(paths, options.tolerance);
+  return {
+    faces: faces.map(({ loops, sources }) => ({ path: keepCorners(paths, writeLoops(loops, clockwise[sources[0]!]!)), sources })),
+    neighbors,
+  };
 }
 
 /**
@@ -107,30 +140,27 @@ function faces(paths: Path[]): { polygon: Polygon; sources: number[] }[] {
  * outputs (A−B, B−A, A∩B). Pieces with fewer sources come first.
  */
 export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
-  const curved = curveDivide(paths, false);
-  if (curved) return cornered(curved, paths);
-  const regions = new Map<string, { polygons: Polygon[]; sources: number[] }>();
-  for (const { polygon, sources } of faces(paths)) {
+  if (paths.length === 0) return [];
+  const { faces, clockwise } = curveFaces(paths);
+  const regions = new Map<string, { loops: (typeof faces)[number]['loops']; sources: number[] }>();
+  for (const { loops, sources } of faces) {
     const key = sources.join(',');
     const region = regions.get(key);
-    if (region) region.polygons.push(polygon);
-    else regions.set(key, { polygons: [polygon], sources });
+    if (region) region.loops.push(...loops);
+    else regions.set(key, { loops: [...loops], sources });
   }
-  return [...regions.values()].map(({ polygons, sources }) => ({ path: toPath(polygons, paths), sources }));
+  return [...regions.values()].map(({ loops, sources }) =>
+    ({ path: keepCorners(paths, writeLoops(loops, clockwise[sources[0]!]!)), sources }));
 }
 
 /**
  * The faces the paths cut each other into: {@link pathDividePieces}, with a
  * region that falls apart split into one piece per connected part. A face
- * keeps its holes. Same order, a region's parts left to right.
- *
- * Traces the arrangement of the outlines once, so the cost grows with the
- * edges and their crossings rather than with the subsets of the inputs.
+ * keeps its holes. Same order, a region's parts left to right: the faces of
+ * {@link pathFaceArrangement}.
  */
 export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
-  const curved = curveDivide(paths, true);
-  if (curved) return cornered(curved, paths);
-  return faces(paths).map(({ polygon, sources }) => ({ path: toPath([polygon], paths), sources }));
+  return pathFaceArrangement(paths).faces;
 }
 
 /**

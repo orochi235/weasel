@@ -8,7 +8,9 @@
 export {
   pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop,
   pathDividePieces, pathFacePieces, pathCropPieces, pathTrim, pathMerge, type BooleanPiece,
+  pathFaceArrangement, type FaceArrangement, type FaceArrangementOptions,
 } from './ops';
+export type { FaceNeighbor } from './curveFaces';
 export { trianglesToPath } from './trianglesToPath';
 export { pathToMultiPolygon, multiPolygonToPath } from './adapter';
 export type { Pair, Ring, Polygon, MultiPolygon, PathToMultiPolygonOptions } from './adapter';

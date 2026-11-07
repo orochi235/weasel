@@ -101,6 +101,18 @@ describe('where curve booleans hand over to the flattened clipper', () => {
     expect(curveBoolean([rect(0, 0, 10, 10), rect(5, 5, 10, 10)], KEEP.union)).toBeNull();
   });
 
+  it('keeps the curves of a cubic that crosses itself, cutting it where it does', () => {
+    // A cubic from (0, 0) to (10, 0) looping round through y = 6, closed back along the x axis.
+    const loop: PolygonPath = {
+      kind: 'polygon', commands: new Uint8Array([PATH_M, PATH_C, PATH_Z]),
+      coords: new Float32Array([0, 0, 20, 10, -10, 10, 10, 0]), fillRule: 'nonzero',
+    };
+    const out = curveBoolean([loop, rect(4, 2, 2, 20)], KEEP.union);
+    expect(out).not.toBeNull();
+    expect(hasCurves(out!)).toBe(true);
+    expect(pointInPath(out!, 5, 15)).toBe(true);
+  });
+
 });
 
 /** The same circle drawn from the opposite point: every arc coincides, no segment repeats. */

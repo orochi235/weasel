@@ -15,7 +15,7 @@ import { type Edge, cutEdges } from './curveEdges';
 import { type CoveredEdge, coverEdges, reversed, windingSet } from './curveClassify';
 import { traceLoops } from './curveTrace';
 
-/** Inputs with more segments than this go to the polygon clipper, whose sweep scales better. */
+/** Inputs with more segments than this go to the polygon clipper: classifying every edge by winding grows with edges times segments. */
 const MAX_SEGMENTS = 4096;
 
 function hasCurve(path: Path): boolean {
@@ -41,9 +41,9 @@ export interface CurveCut {
 /**
  * `paths` cut against each other, curves kept. Null where the polygon
  * clipper should answer instead: when no input has a curve, when the inputs
- * are very large, and in the cases this cannot represent — a cubic that
- * crosses itself, or two curves that run nearly along each other without
- * being pieces of one curve. Outlines that share a stretch of one line or
+ * are very large, and where the cut's edges and the curves' winding
+ * disagree, as where two curves run nearly along each other without being
+ * pieces of one curve. Outlines that share a stretch of one line or
  * curve are cut where it starts and ends, and the pieces along it become one
  * edge that both own.
  */
@@ -55,7 +55,6 @@ export function cutPaths(paths: readonly Path[]): CurveCut | null {
 
   const extent = extentOf(operands.flat()) || 1;
   const arrangement = cutEdges(operands, extent * 1e-6);
-  if (!arrangement) return null;
   const sets = operands.map((cs, i) => {
     const p = paths[i];
     return windingSet(cs, p.kind === 'polygon' ? p.fillRule : 'nonzero');

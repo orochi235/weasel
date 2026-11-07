@@ -1,29 +1,37 @@
 /**
- * The planar arrangement of several polygon sets' boundaries: every edge split
- * where it meets another, coincident points merged, and the result stored as
- * half-edges linked around the faces they bound.
+ * The planar arrangement of line segments: every segment split where it meets
+ * another, coincident points merged, and the result stored as half-edges
+ * linked around the faces they bound.
  */
-import type { MultiPolygon } from './adapter';
 
 /**
  * Half-edge `h` runs from `origin[h]` to `origin[h ^ 1]`, so `h ^ 1` is its
- * twin; `next[h]` continues around the face on `h`'s left. `owners[h >> 1]`
- * has bit `i` set when input `i`'s boundary runs along that edge an odd number
- * of times, so crossing the edge toggles exactly those inputs.
+ * twin; `next[h]` continues around the face on `h`'s left. `along[h >> 1]`
+ * lists the pieces of input segments lying along that edge.
  */
 export interface Arrangement {
   xs: number[];
   ys: number[];
   origin: number[];
   next: number[];
-  owners: bigint[];
+  along: Along[][];
+}
+
+/** A piece of input segment `seg` along an edge: its parameter on the segment at the edge's start and end. */
+export interface Along {
+  seg: number;
+  s0: number;
+  s1: number;
+}
+
+/** A line segment to arrange, from `(ax, ay)` to `(bx, by)`. */
+export interface LineSeg {
+  ax: number; ay: number; bx: number; by: number;
 }
 
 interface Cut { t: number; x: number; y: number }
 
-interface Seg {
-  ax: number; ay: number; bx: number; by: number;
-  input: number;
+interface Seg extends LineSeg {
   minX: number; maxX: number; minY: number; maxY: number;
   cuts: Cut[];
 }
@@ -54,30 +62,6 @@ class VertexPool {
     else this.cells.set(key, [v]);
     return v;
   }
-}
-
-function segmentsOf(inputs: readonly MultiPolygon[]): { segs: Seg[]; extent: number } {
-  const segs: Seg[] = [];
-  let extent = 0;
-  inputs.forEach((mp, input) => {
-    for (const polygon of mp) {
-      for (const ring of polygon) {
-        for (let k = 0; k + 1 < ring.length; k++) {
-          const [ax, ay] = ring[k]!;
-          const [bx, by] = ring[k + 1]!;
-          if (ax === bx && ay === by) continue;
-          extent = Math.max(extent, Math.abs(ax), Math.abs(ay), Math.abs(bx), Math.abs(by));
-          segs.push({
-            ax, ay, bx, by, input,
-            minX: Math.min(ax, bx), maxX: Math.max(ax, bx),
-            minY: Math.min(ay, by), maxY: Math.max(ay, by),
-            cuts: [],
-          });
-        }
-      }
-    }
-  });
-  return { segs, extent };
 }
 
 /** Cuts `seg` at `(px, py)` when that point lies on it, short of its ends. */
@@ -127,7 +111,7 @@ function cutAll(segs: Seg[], eps: number): void {
   }
 }
 
-function linkFaces(xs: number[], ys: number[], origin: number[]): number[] {
+export function linkFaces(xs: readonly number[], ys: readonly number[], origin: readonly number[]): number[] {
   const out: number[][] = xs.map(() => []);
   const angle: number[] = [];
   for (let h = 0; h < origin.length; h++) {
@@ -148,37 +132,54 @@ function linkFaces(xs: number[], ys: number[], origin: number[]): number[] {
   });
 }
 
-/** Builds the arrangement of the rings of `inputs`, input `i` owning bit `i`. */
-export function buildArrangement(inputs: readonly MultiPolygon[]): Arrangement {
-  const { segs, extent } = segmentsOf(inputs);
-  const eps = 1e-9 * Math.max(1, extent);
-  cutAll(segs, eps);
+/**
+ * The arrangement of `lines`. Points closer than `eps` per axis are one
+ * vertex; `eps` defaults to a billionth of the largest coordinate.
+ */
+export function arrangeLines(lines: readonly LineSeg[], eps?: number): Arrangement {
+  let extent = 0;
+  const segs: Seg[] = [];
+  for (const l of lines) {
+    if (l.ax === l.bx && l.ay === l.by) { segs.push({ ...l, minX: NaN, maxX: NaN, minY: NaN, maxY: NaN, cuts: [] }); continue; }
+    extent = Math.max(extent, Math.abs(l.ax), Math.abs(l.ay), Math.abs(l.bx), Math.abs(l.by));
+    segs.push({
+      ax: l.ax, ay: l.ay, bx: l.bx, by: l.by,
+      minX: Math.min(l.ax, l.bx), maxX: Math.max(l.ax, l.bx),
+      minY: Math.min(l.ay, l.by), maxY: Math.max(l.ay, l.by),
+      cuts: [],
+    });
+  }
+  const tol = eps ?? 1e-9 * Math.max(1, extent);
+  const live = segs.filter((s) => !Number.isNaN(s.minX));
+  cutAll(live, tol);
 
-  const pool = new VertexPool(eps);
-  const edges = new Map<string, { u: number; v: number; owners: bigint }>();
-  for (const seg of segs) {
+  const pool = new VertexPool(tol);
+  const edges = new Map<string, number>();
+  const origin: number[] = [];
+  const along: Along[][] = [];
+  segs.forEach((seg, i) => {
+    if (Number.isNaN(seg.minX)) return;
     const points = [{ t: 0, x: seg.ax, y: seg.ay }, ...seg.cuts, { t: 1, x: seg.bx, y: seg.by }]
       .sort((a, b) => a.t - b.t);
-    const bit = 1n << BigInt(seg.input);
     let prev = pool.id(points[0]!.x, points[0]!.y);
+    let prevT = 0;
     for (let k = 1; k < points.length; k++) {
       const id = pool.id(points[k]!.x, points[k]!.y);
       if (id === prev) continue;
-      const u = Math.min(prev, id), v = Math.max(prev, id);
-      const key = `${u},${v}`;
-      const edge = edges.get(key);
-      if (edge) edge.owners ^= bit;
-      else edges.set(key, { u, v, owners: bit });
+      const t = points[k]!.t;
+      const forward = prev < id;
+      const key = forward ? `${prev},${id}` : `${id},${prev}`;
+      let e = edges.get(key);
+      if (e === undefined) {
+        e = along.length;
+        edges.set(key, e);
+        origin.push(Math.min(prev, id), Math.max(prev, id));
+        along.push([]);
+      }
+      along[e]!.push(forward ? { seg: i, s0: prevT, s1: t } : { seg: i, s0: t, s1: prevT });
       prev = id;
+      prevT = t;
     }
-  }
-
-  const origin: number[] = [];
-  const owners: bigint[] = [];
-  for (const { u, v, owners: o } of edges.values()) {
-    if (o === 0n) continue;
-    origin.push(u, v);
-    owners.push(o);
-  }
-  return { xs: pool.xs, ys: pool.ys, origin, next: linkFaces(pool.xs, pool.ys, origin), owners };
+  });
+  return { xs: pool.xs, ys: pool.ys, origin, next: linkFaces(pool.xs, pool.ys, origin), along };
 }
