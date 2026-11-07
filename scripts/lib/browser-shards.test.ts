@@ -77,12 +77,17 @@ describe('recordedDurations', () => {
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'results.json'), body);
   };
-  const results = (files: Record<string, unknown>, project = 'browser') => JSON.stringify({ version: 1, projects: { [project]: { files } } });
+  const results = (files: Record<string, unknown>, project = 'browser (chromium)') => JSON.stringify({ version: 1, projects: { [project]: { files } } });
 
-  it('reads each file of the project, keeping the newest record across caches', () => {
+  it('reads each file of the project under its instance name, keeping the newest record across caches', () => {
     cache('one', results({ 'a.browser.test.ts': { duration: 100.4, lastRun: 1 }, 'b.browser.test.ts': { duration: 7, lastRun: 5 } }));
     cache('two', results({ 'a.browser.test.ts': { duration: 300, lastRun: 2 }, 'b.browser.test.ts': { duration: 9, lastRun: 4 } }));
-    expect(recordedDurations(root!)).toEqual({ 'a.browser.test.ts': 300, 'b.browser.test.ts': 7 });
+    cache('plain', results({ 'c.browser.test.ts': { duration: 3 } }, 'browser'));
+    expect(recordedDurations(root!)).toEqual({
+      'browser (chromium):a.browser.test.ts': 300,
+      'browser (chromium):b.browser.test.ts': 7,
+      'browser:c.browser.test.ts': 3,
+    });
   });
 
   it('skips what it cannot use: no cache, a torn file, another version, another project, a bad duration', () => {
@@ -90,13 +95,14 @@ describe('recordedDurations', () => {
     cache('torn', '{"version":1,"proj');
     cache('old', JSON.stringify({ version: '5.0.2', results: [['browser:a.ts', { duration: 1 }]] }));
     cache('other', results({ 'a.test.ts': { duration: 1 } }, 'core'));
+    cache('lookalike', results({ 'a.test.ts': { duration: 1 } }, 'browser-ish'));
     cache('bad', results({ 'x.ts': { duration: 'slow' }, 'y.ts': null, 'z.ts': { duration: 4 } }));
-    expect(recordedDurations(root!)).toEqual({ 'z.ts': 4 });
+    expect(recordedDurations(root!)).toEqual({ 'browser (chromium):z.ts': 4 });
   });
 
-  it('passes the snapshot keyed by project, and passes none when the split is by hash', () => {
+  it('passes the snapshot to every process, and passes none when the split is by hash', () => {
     cache('one', results({ 'a.ts': { duration: 2 } }));
-    expect(durationsEnv(root!, {})).toEqual({ [DURATIONS_ENV]: JSON.stringify({ 'browser:a.ts': 2 }) });
+    expect(durationsEnv(root!, {})).toEqual({ [DURATIONS_ENV]: JSON.stringify({ 'browser (chromium):a.ts': 2 }) });
     expect(durationsEnv(root!, { WEASEL_SHARD_SPLIT: 'hash' })).toEqual({});
   });
 });

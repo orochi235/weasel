@@ -50,10 +50,14 @@ export const balancedSlices = (ids, durations, count) => {
   return slices;
 };
 
+/** A file's id in a split: its project and root-relative path, since one file can belong to two projects. */
+export const sliceId = (project, file) => `${project}:${file}`;
+
 /**
- * Each file's last recorded duration in `project`, keyed by its root-relative path, from every
- * results cache vitest keeps under `node_modules/.vite/vitest/`. The newest record wins. An absent,
- * unreadable or foreign-version cache adds nothing.
+ * Each file's last recorded duration in `project`, keyed by `sliceId`, from every results cache
+ * vitest keeps under `node_modules/.vite/vitest/`. A browser project records under each instance's
+ * name, `browser (chromium)`, and those count too. The newest record wins. An absent, unreadable or
+ * foreign-version cache adds nothing.
  */
 export const recordedDurations = (root, project = 'browser') => {
   const dir = join(root, 'node_modules/.vite/vitest');
@@ -72,24 +76,22 @@ export const recordedDurations = (root, project = 'browser') => {
       continue;
     }
     if (cache?.version !== 1) continue;
-    for (const [file, r] of Object.entries(cache.projects?.[project]?.files ?? {})) {
-      if (!usable(r?.duration)) continue;
-      const at = Number(r.lastRun) || 0;
-      if (!best[file] || at > best[file].at) best[file] = { ms: r.duration, at };
+    for (const [name, results] of Object.entries(cache.projects ?? {})) {
+      if (name !== project && !name.startsWith(`${project} (`)) continue;
+      for (const [file, r] of Object.entries(results?.files ?? {})) {
+        if (!usable(r?.duration)) continue;
+        const id = sliceId(name, file);
+        const at = Number(r.lastRun) || 0;
+        if (!best[id] || at > best[id].at) best[id] = { ms: r.duration, at };
+      }
     }
   }
-  return Object.fromEntries(Object.entries(best).map(([file, { ms }]) => [file, Math.round(ms)]));
+  return Object.fromEntries(Object.entries(best).map(([id, { ms }]) => [id, Math.round(ms)]));
 };
-
-/** A file's id in a split: its project and root-relative path, since one file can belong to two projects. */
-export const sliceId = (project, file) => `${project}:${file}`;
 
 /**
- * The environment that has every `--shard` process split `projects` by recorded duration, or none
- * under WEASEL_SHARD_SPLIT=hash.
+ * The environment that has every `--shard` process split the browser project by recorded duration,
+ * or none under WEASEL_SHARD_SPLIT=hash.
  */
-export const durationsEnv = (root, env = process.env, projects = ['browser']) => {
-  if (env.WEASEL_SHARD_SPLIT === 'hash') return {};
-  const all = projects.flatMap((p) => Object.entries(recordedDurations(root, p)).map(([file, ms]) => [sliceId(p, file), ms]));
-  return { [DURATIONS_ENV]: JSON.stringify(Object.fromEntries(all)) };
-};
+export const durationsEnv = (root, env = process.env) =>
+  env.WEASEL_SHARD_SPLIT === 'hash' ? {} : { [DURATIONS_ENV]: JSON.stringify(recordedDurations(root)) };
