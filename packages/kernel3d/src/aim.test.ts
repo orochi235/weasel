@@ -114,6 +114,16 @@ describe('aimSpace3d', () => {
     expect(w.y).toBeCloseTo(0, 6);
     expect(w.z).toBeCloseTo(0, 6);
   });
+  it('measures height along `up` when `up` is -y', () => {
+    const down = { up: { x: 0, y: -1, z: 0 } };
+    const above = aimSpace3d(DOWN, 'p', down).project({ x: 1, y: 2, z: 3 })!;
+    const there = projectPoint({ x: 1, y: -3, z: 2 }, DOWN)!;
+    expect(above.x).toBeCloseTo(there.x, 6);
+    expect(above.y).toBeCloseTo(there.y, 6);
+    const hit = aimSpace3d(DOWN, 'p', down).unproject(MID)!;
+    expect(hit.z).toBe(0);
+  });
+
   it('unprojects to null where the ray runs parallel to the ground', () => {
     expect(aimSpace3d(VP, 'p').unproject(MID)).toBeNull();
   });
