@@ -22,6 +22,7 @@ import {
 } from './cascade';
 import { readProperty } from './properties';
 import { readStroke, isNonScalingStroke, coreStroke } from './readPaint';
+import { withOutlinedStroke } from './strokeOutlineSvg';
 
 /** Average glyph advance as a fraction of the em. Sans-serif Latin runs
  *  0.5–0.6; erring wide is the safer miss. */
@@ -110,7 +111,7 @@ export function parseTextElement(
   const textStyle = readTextStyle(leafStyle, onWarn);
   const lang = inheritedLang(el);
   if (lang) textStyle.lang = lang;
-  const textPaint = readTextPaint(leafStyle, gradients, onWarn, isNonScalingStroke(el));
+  const textPaint = readTextPaint(el, leafStyle, gradients, onWarn, isNonScalingStroke(el));
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
 
   const dominantBaseline = el.getAttribute('dominant-baseline');
@@ -237,6 +238,7 @@ function readTextStyle(
 /** Read a `<text>` element's glyph paint — the node's own fill and stroke,
  *  which are not typography and do not live in its `TextStyle`. */
 function readTextPaint(
+  el: Element,
   style: StyleContext,
   gradients: GradientTable,
   onWarn: (m: string) => void,
@@ -262,7 +264,7 @@ function readTextPaint(
   // sampled field, with no geometry to stroke. The outline tier gave large
   // text real contours, so a stroke is now a paint like any other — and one
   // that stays in the document even at sizes that render it unstroked.
-  const stroke = coreStroke(readStroke(style, gradients, onWarn, nonScalingStroke));
+  const stroke = coreStroke(withOutlinedStroke(el, readStroke(style, gradients, onWarn, nonScalingStroke)));
   if (stroke) out.stroke = stroke;
   return out;
 }

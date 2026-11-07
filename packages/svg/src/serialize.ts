@@ -28,6 +28,7 @@ import {
   writesOutline, strokeGroupXml, strokeOutlineXml, outlinedStrokeAttrs, writesOutlines,
 } from './strokeOutlineSvg';
 import { textXml } from './serializeText';
+import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
 import { RAD_TO_DEG } from '@weasel-js/geom';
@@ -138,10 +139,11 @@ function nodeXml(
     .replace(/<path (?=[^>]*:role="stroke-outline")/, '<path display="none" ');
 }
 
-/** What a leaf takes from its group. An outlined stroke never does: its path
+/** What a leaf takes from its group. An outlined stroke never does: its element
  *  states a zero width that the group's stroke would otherwise replace. */
 function leafInherits(node: SvgPathNode | SvgTextNode): SvgInherits | undefined {
-  if (!node.inherits?.stroke || node.kind !== 'path' || !writesOutline(node.stroke)) return node.inherits;
+  const outlined = node.kind === 'path' ? writesOutline(node.stroke) : hasAlignedTextStroke(node);
+  if (!node.inherits?.stroke || !outlined) return node.inherits;
   const { stroke: _, ...rest } = node.inherits;
   return rest;
 }
@@ -151,7 +153,10 @@ function kindXml(
   painted: ReadonlySet<string>,
 ): string {
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted);
-  if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
+  if (node.kind === 'text') {
+    const layout = layoutOf?.(node);
+    return alignedTextXml(node, registry, namespaces, warn, layout) ?? textXml(node, registry, namespaces, warn, layout);
+  }
   if (node.kind === 'image') return imageXml(node, namespaces);
   const asDrawn = pathAsSvgDraws(node);
   const drawn = asDrawn.kind === 'path' ? withSeatedHeads(asDrawn) : asDrawn;

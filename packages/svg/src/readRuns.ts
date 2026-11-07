@@ -12,6 +12,7 @@ import type { GradientTable } from './gradients';
 import { deriveStyle, ownProp, ownValue, resolveCurrentColor, type StyleContext } from './cascade';
 import { readProperty } from './properties';
 import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke } from './readPaint';
+import { withOutlinedStroke } from './strokeOutlineSvg';
 
 const glyphCount = (text: string): number => Array.from(text).length;
 
@@ -133,7 +134,7 @@ function readTspanRun(
     }
   }
   // Own attributes only — see `ownStrokeStyle`.
-  const stroke = coreStroke(readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el)));
+  const stroke = coreStroke(withOutlinedStroke(el, readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el))));
   if (stroke) run.stroke = stroke;
   return run;
 }

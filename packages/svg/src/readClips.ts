@@ -7,6 +7,7 @@ import { collectElementsByTag } from './elements';
 import { ownProp } from './cascade';
 import { readProperty } from './properties';
 import { SUPPORTED_LEAF_TAGS, lowerLeaf } from './lowerLeaf';
+import { isStrokeOutline } from './strokeOutlineSvg';
 
 /** Element-id → the outline of a `<clipPath>` def, in the document's own
  *  user space. */
@@ -22,6 +23,7 @@ export type ClipTable = ReadonlyMap<string, Path>;
 export function collectClipPaths(root: Element, onWarn: (m: string) => void): ClipTable {
   const out = new Map<string, Path>();
   for (const [id, el] of collectElementsByTag(root, new Set(['clippath']))) {
+    if (isStrokeOutline(el)) continue;
     const units = el.getAttribute('clipPathUnits');
     if (units && units !== 'userSpaceOnUse') {
       onWarn(`<clipPath id="${id}"> uses clipPathUnits="${units}", which is not modeled`);

@@ -4,7 +4,7 @@ import { escapeAttr } from './xmlEscape';
 import { isSolidPaint, type Stroke, type StrokeAlign } from '@weasel-js/core';
 import type { ScreenLength, SvgPaint, SvgStroke } from './types';
 import { trimNumber } from './transform';
-import type { PaintServerRegistry } from './gradients';
+import { WEASEL_NS_PREFIX, type PaintServerRegistry } from './gradients';
 
 export type Warn = (message: string) => void;
 
@@ -61,17 +61,25 @@ function strokeWidthAttrs(width: ScreenLength): string[] {
 /**
  * Attributes for a kit `Stroke` — the shape text carries, whose `paint` is a
  * `Paint` rather than an `SvgPaint`. Absent, unpainted, or zero-width
- * emits nothing at all.
+ * emits nothing at all, and `null` is `stroke="none"`. An inner or outer one
+ * draws nothing here: it is written at zero width with its own in the
+ * private namespace, for `alignedTextXml`'s copies to draw.
  */
-export function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry, warn: Warn): string[] {
+export function coreStrokeAttrs(stroke: Stroke | null | undefined, registry: PaintServerRegistry, warn: Warn): string[] {
+  if (stroke === null) return ['stroke="none"'];
   const paint = stroke?.paint;
   if (!stroke || !paint) return [];
   const width = stroke.width ?? 1;
-  if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
-  warnStrokeAlign(stroke.align, warn);
+  const w = typeof width === 'object' ? width.px : width;
+  if (!(w > 0)) return [];
   const attrs: string[] = [`stroke="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`];
   attrs.push(...opacityAttr('stroke-opacity', paint.opacity));
-  attrs.push(...strokeWidthAttrs(width));
+  if (stroke.align === 'inner' || stroke.align === 'outer') {
+    attrs.push(...strokeWidthAttrs(typeof width === 'object' ? { px: 0 } : 0));
+    attrs.push(`${WEASEL_NS_PREFIX}:stroke-width="${trimNumber(w)}"`, `${WEASEL_NS_PREFIX}:stroke-align="${stroke.align}"`);
+  } else {
+    attrs.push(...strokeWidthAttrs(width));
+  }
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
   if (stroke.join) attrs.push(`stroke-linejoin="${stroke.join}"`);
   attrs.push(...dashAttrs(stroke));

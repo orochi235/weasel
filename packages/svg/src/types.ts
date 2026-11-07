@@ -87,8 +87,9 @@ export interface SvgStroke {
    */
   miterLimit?: number;
   /** The kit stroke's `align`. SVG has no stroke alignment, so the serializer
-   *  writes the stroke centered and says so through `onWarn`; the parser
-   *  never sets it. */
+   *  writes an aligned path stroke as its outline, and reads the alignment
+   *  back from the private namespace. A group's is written centered, with a
+   *  warning. */
   align?: StrokeAlign;
   /** `marker-start` / `marker-mid` / `marker-end` as the kit's `MarkerRef`: the
    *  bare `url(#id)` key, or a key with the `size` the serializer writes into a

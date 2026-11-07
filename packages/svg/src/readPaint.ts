@@ -145,6 +145,7 @@ export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
   if (stroke.dash) out.dash = stroke.dash;
   if (stroke.dashOffset) out.dashOffset = stroke.dashOffset;
   if (stroke.miterLimit != null) out.miterLimit = stroke.miterLimit;
+  if (stroke.align) out.align = stroke.align;
   if (stroke.markerStart) out.markerStart = stroke.markerStart;
   if (stroke.markerMid) out.markerMid = stroke.markerMid;
   if (stroke.markerEnd) out.markerEnd = stroke.markerEnd;

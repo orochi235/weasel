@@ -122,7 +122,7 @@ export function strokeGroupXml(opacity: string, inner: string): string {
 export function unwrapStrokeGroup(el: Element, node: SvgNode | SvgNode[] | null): SvgNode | SvgNode[] | null {
   if (attrOf(el, ROLE) !== GROUP || !node || Array.isArray(node) || node.kind !== 'group') return node;
   const [only] = node.children;
-  if (node.children.length !== 1 || only.kind !== 'path') return node;
+  if (node.children.length !== 1 || (only.kind !== 'path' && only.kind !== 'text')) return node;
   return node.opacity != null ? { ...only, opacity: node.opacity * (only.opacity ?? 1) } : only;
 }
 
