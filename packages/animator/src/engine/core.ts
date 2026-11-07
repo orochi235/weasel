@@ -55,7 +55,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const subscribers = createEmitter();
   let nextId = 1;
   let atEnd = false;
-  const pacing = createPacing(clock, host.wall ?? defaultWall);
+  const pacing = createPacing(clock, host.wall ?? defaultWall, host.now, () => !frame.framing() && !table.awake && handoffs.any());
   const seedClock = (): void => { if (clock.frameT == null) { clock.frameT = host.now(); pacing.seeded(); } };
 
   /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
@@ -72,7 +72,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const table = createTable({
     codec,
     hub,
-    elapsed: () => clock.elapsed,
+    elapsed: () => pacing.host.elapsed(),
     direction: () => (clock.timeScale * clock.drive < 0 ? -1 : 1),
     seedClock,
     showNow: (target) => targets.showNow(target),
@@ -88,8 +88,8 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     columns: (table) => codec.columns(table),
   });
   const frame = createFrame({
-    clock, table, codec, targets, hub, afterTicks, subscribers, refold: refoldTouched, afterShow: () => handoffs.frame(),
-    requestFrame: host.requestFrame, tripwire: host.tripwire,
+    clock, table, codec, targets, hub, afterTicks, subscribers, refold: refoldTouched,
+    afterShow: () => handoffs.frame(), keepsTime: () => handoffs.any(), requestFrame: host.requestFrame, tripwire: host.tripwire,
   });
 
   const ctx: AnimationContext = {
@@ -164,15 +164,26 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
 
 /** Where the animator's clock stands against the document timeline, by which a run handed to the
  *  compositor is placed: the wall time its clock reads at, and how fast it runs against the wall. */
-function createPacing(clock: AnimatorClock, wallNow: () => number) {
+function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => number, asleep: () => boolean) {
   /** Whether an outside clock drives the frames, at what rate, and the wall time of its last. */
   const outside = { on: false, rate: 1, wall: 0 };
-  return {
+  const pacing = {
     outside,
+    /** The animator's clock now. Runs handed to the compositor ask for no frames, so while only
+     *  they run (`asleep`), the time since the last frame is counted as it is read. */
+    current(): number {
+      if (clock.frameT == null || outside.on || !asleep()) return clock.elapsed;
+      const t = now();
+      if (t > clock.frameT) {
+        clock.elapsed += (t - clock.frameT) * (clock.paused ? 0 : Math.abs(clock.timeScale));
+        clock.frameT = t;
+      }
+      return clock.elapsed;
+    },
     host: {
       pace: () => (clock.paused ? 0 : Math.abs(clock.timeScale) * (outside.on ? Math.abs(outside.rate) : 1)),
       wall: () => (outside.on ? outside.wall : clock.frameT ?? wallNow()),
-      elapsed: () => clock.elapsed,
+      elapsed: (): number => pacing.current(),
     },
     follow(rate: number, wall: number | undefined): void {
       outside.on = true;
@@ -182,6 +193,7 @@ function createPacing(clock: AnimatorClock, wallNow: () => number) {
     /** The clock was seeded from idle. */
     seeded(): void { if (outside.on) outside.wall = wallNow(); },
   };
+  return pacing;
 }
 
 function defaultWall(): number {

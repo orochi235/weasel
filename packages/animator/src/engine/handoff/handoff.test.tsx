@@ -30,6 +30,22 @@ describe('a tween on an element target', () => {
     expect(e.styled()).toBe(before);
   });
 
+  it('asks for no frames while it runs, and is woken to end by the browser finishing it', () => {
+    const { animator, step, timeline, pending } = setup();
+    const e = element(timeline);
+    let done = 0;
+    act(() => { tween(animator, e.target, 100, { onDone: () => { done += 1; } }); });
+    step(0);
+    expect(pending()).toBe(0);
+    step(600);
+    expect(e.target.read().x).toBeCloseTo(60, 6);
+    expect(pending()).toBe(0);
+    step(500);
+    expect(done).toBe(1);
+    expect(e.inlineX()).toBe(100);
+    expect(animator.isActive()).toBe(false);
+  });
+
   it('keeps the browser on its own clock, and reads where the browser shows it', () => {
     const { animator, step, timeline } = setup();
     const e = element(timeline);

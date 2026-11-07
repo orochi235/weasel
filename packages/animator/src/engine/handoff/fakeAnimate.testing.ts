@@ -10,6 +10,8 @@ type Frame = Record<string, string | number>;
  */
 export class FakeAnimation {
   canceled = false;
+  onfinish: (() => void) | null = null;
+  private done = false;
   private rate = 1;
   private start: number | null = null;
   private hold: number | null = 0;
@@ -37,6 +39,16 @@ export class FakeAnimation {
   pause(): void { this.hold = this.currentTime; }
   cancel(): void { this.canceled = true; }
 
+  /** Fires `finish` once its current time has passed its end, or its start played backward. */
+  advance(): void {
+    if (this.canceled || this.done || this.hold !== null) return;
+    const t = this.currentTime;
+    if ((this.rate > 0 && t >= this.duration) || (this.rate < 0 && t <= 0)) {
+      this.done = true;
+      this.onfinish?.();
+    }
+  }
+
   /** The `translateX` its keyframes show at its current time, as a browser blends them. */
   shownX(): number {
     const t = Math.min(this.duration, Math.max(0, this.currentTime)) / this.duration;
@@ -53,7 +65,7 @@ export class FakeAnimation {
 /** A frame clock the test advances, the timeline the fakes read, and an animator on them. */
 export function setup() {
   let now = 0;
-  const timeline = { now: 0 };
+  const timeline = { now: 0, animations: [] as FakeAnimation[] };
   const callbacks = new Map<number, (t: number) => void>();
   let next = 1;
   const clock = {
@@ -66,21 +78,23 @@ export function setup() {
   const step = (ms: number): void => act(() => {
     now += ms;
     timeline.now = now;
+    for (const a of timeline.animations) a.advance();
     const due = [...callbacks.values()];
     callbacks.clear();
     for (const cb of due) cb(now);
   });
-  return { animator: result.current, unmount, step, timeline };
+  return { animator: result.current, unmount, step, timeline, pending: () => callbacks.size };
 }
 
 /** An element target over `{ x }`, shown as a `translateX`, whose `animate` makes fakes. */
-export function element(timeline: { now: number }, x = 0, extra: Frame = {}) {
+export function element(timeline: { now: number; animations?: FakeAnimation[] }, x = 0, extra: Frame = {}) {
   const el = document.createElement('div');
   const made: FakeAnimation[] = [];
   let styled = 0;
   (el as unknown as { animate: unknown }).animate = (frames: Frame[], o: { duration: number }) => {
     const a = new FakeAnimation(frames, o.duration, timeline);
     made.push(a);
+    timeline.animations?.push(a);
     return a;
   };
   const target = createElementTarget({

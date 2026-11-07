@@ -139,11 +139,12 @@ export function createAnimatorApi(host: ApiHost): Animator {
       return false;
     },
     isTicking: host.ticking,
-    pause: () => { clock.paused = true; handoffs.retime(); },
-    resume: () => { clock.paused = false; handoffs.retime(); },
+    pause: () => { handoffs.settle(); clock.paused = true; handoffs.retime(); },
+    resume: () => { handoffs.settle(); clock.paused = false; handoffs.retime(); },
     isPaused: () => clock.paused,
     setTimeScale: (s) => {
       const scale = timeScaleOf(s);
+      handoffs.settle();
       if ((scale < 0) === (clock.timeScale < 0)) clock.timeScale = scale;
       else table.turn(() => { clock.timeScale = scale; });
       handoffs.retime();

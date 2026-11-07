@@ -23,6 +23,8 @@ export interface Placed {
 /** The runs one animator has handed to the compositor. */
 export interface Handoffs {
   readonly host: HandoffHost;
+  /** Whether any run is handed off. */
+  any(): boolean;
   add(run: Placed): void;
   remove(run: Placed): void;
   /** Sets `run`'s browser animation to where and how fast its own clock now stands. */
@@ -30,6 +32,9 @@ export interface Handoffs {
   /** After each frame: places every run again where the animator's clock left the pace the
    *  browser's would have kept, as a seek of an outside clock or a ramp of its rate does. */
   frame(): void;
+  /** The animator's own pause or time scale is about to change: the time until now is counted
+   *  at the pace that held through it. */
+  settle(): void;
   /** The animator's own pause or time scale changed. */
   retime(): void;
   /** The frame loop is back after time unseen, which the browser's timeline counted and the
@@ -69,6 +74,7 @@ export function createHandoffs(host: HandoffHost): Handoffs {
 
   return {
     host,
+    any: () => runs.size > 0,
     add(run) {
       if (runs.size === 0) mark();
       runs.add(run);
@@ -81,6 +87,7 @@ export function createHandoffs(host: HandoffHost): Handoffs {
       const predicted = last.elapsed + (host.wall() - last.wall) * last.pace;
       if (stale || pace !== last.pace || Math.abs(host.elapsed() - predicted) > DRIFT_MS) placeAll();
     },
+    settle: () => { host.elapsed(); },
     retime: placeAll,
     resumed: () => { stale = true; },
   };

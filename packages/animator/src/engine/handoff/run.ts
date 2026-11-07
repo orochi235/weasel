@@ -38,6 +38,14 @@ function animate(binding: ElementBinding, s: TargetState, motion: Motion): Anima
   return binding.element.animate(frames, { duration: ms, fill: 'both', easing: 'linear' });
 }
 
+/** Puts `next` in `old`'s place among the runs kept on the animator's clock, and cancels `old`. */
+function swap(hs: Handoffs, old: Placed, next: Placed): void {
+  old.animation.cancel();
+  hs.remove(old);
+  hs.add(next);
+  hs.place(next);
+}
+
 /**
  * Hands `motion` on `s` to the compositor as the animation `seed` registers, and fills in the
  * seed's tick, cancel, and rate hooks. The caller registers the seed, then calls `start` with
@@ -52,6 +60,19 @@ export function launch(
   let placed: Placed = { id, animation: animate(binding, s, motion), offset: 0 };
   let child: AnimationHandle | null = null;
   let gone = false;
+  /** The browser animation reached its end, or its start played backward. */
+  let finished = false;
+  /** Asks for the frame that ends the run once the browser animation has: the run asks for no
+   *  frames until then. */
+  const onFinish = (animation: Animation): void => {
+    animation.onfinish = () => {
+      if (gone || animation !== placed.animation) return;
+      finished = true;
+      ctx.defer(id, 0);
+      ctx.wake();
+    };
+  };
+  onFinish(placed.animation);
 
   const entry = () => table.animations.get(id);
   const local = (): number => {
@@ -100,14 +121,15 @@ export function launch(
   };
 
   seed.compositor = true;
+  seed.idle = true;
   seed.due = motion.ms;
   seed.velocity = () => (gone ? s.axes.to(s.get()).map(() => 0) : motion.velocity(local()));
   seed.tick = (nowMs, scale) => {
     if (child) return false;
     if (ctx.tripwire()) { letGo(motion.at(local())); return true; }
     const at = nowMs - placed.offset;
-    if (scale < 0 && at <= 0) return end(true);
-    if (at >= motion.ms) return end(false);
+    if (scale < 0 && (finished || at <= 0)) return end(true);
+    if (finished || at >= motion.ms) return end(false);
     return false;
   };
   seed.onCancel = () => {
@@ -129,10 +151,7 @@ export function launch(
     get motion() { return motion; },
     local,
     get child() { return child; },
-    start() {
-      hs.add(placed);
-      hs.place(placed);
-    },
+    start() { hs.add(placed); hs.place(placed); },
     replace(next) {
       if (gone) return;
       const a = entry();
@@ -140,10 +159,9 @@ export function launch(
       const old = placed;
       motion = next;
       placed = { id, animation: animate(binding, s, motion), offset };
-      old.animation.cancel();
-      hs.remove(old);
-      hs.add(placed);
-      hs.place(placed);
+      finished = false;
+      onFinish(placed.animation);
+      swap(hs, old, placed);
       ctx.defer(id, motion.ms);
     },
   };

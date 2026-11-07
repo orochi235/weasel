@@ -37,6 +37,8 @@ export interface FrameHost {
   refold(): void;
   /** Runs once a frame's targets are shown, ahead of its subscribers. */
   afterShow?(): void;
+  /** Whether time still counts while no frame runs: something needs no frames, but its clock. */
+  keepsTime?(): boolean;
   requestFrame(): void;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
@@ -126,7 +128,7 @@ export function createFrame(host: FrameHost): Frame {
         return;
       }
       // As when the page was hidden: the time asleep is charged to nothing.
-      clock.frameT = null;
+      if (!host.keepsTime?.()) clock.frameT = null;
     },
     framing: () => framing,
     ticking: () => tickDepth > 0,

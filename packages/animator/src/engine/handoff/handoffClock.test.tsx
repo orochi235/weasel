@@ -3,14 +3,14 @@ import { act, renderHook } from '@testing-library/react';
 import { createClock } from '@weasel-js/clock';
 import { linear } from '@weasel-js/geom';
 import { useAnimator } from '../../useAnimator';
-import { element } from './fakeAnimate.testing';
+import { element, type FakeAnimation } from './fakeAnimate.testing';
 
 /** An animator on an outside clock synced by hand, with the document timeline the browser
  *  animations run on standing at the same wall time. */
 function setup(rate = 1) {
   const handle = createClock({ rate });
   const queued: ((t: number) => void)[] = [];
-  const timeline = { now: 0 };
+  const timeline = { now: 0, animations: [] as FakeAnimation[] };
   Object.defineProperty(document, 'timeline', { configurable: true, value: { get currentTime() { return timeline.now; } } });
   const { result } = renderHook(() => useAnimator({
     clock: handle,
@@ -24,6 +24,7 @@ function setup(rate = 1) {
     timeline,
     step: (ms: number) => act(() => {
       timeline.now += ms;
+      for (const a of timeline.animations) a.advance();
       handle.clock.sync(timeline.now);
       for (const cb of queued.splice(0)) cb(timeline.now);
     }),
