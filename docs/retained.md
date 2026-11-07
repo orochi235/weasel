@@ -4,6 +4,35 @@ For anyone about to change an area named in a heading below. Each section is wha
 left that the code and `git log` do not say: a decision made in conversation, or a trap met on the
 way. None of it is open work; that lives in `docs/TODO.md`.
 
+# Retained from the WebGPU backend — merged into `main`
+
+Where it lives now: `packages/renderer/README.md` ("Writing WGSL"), the GPU layer in
+`packages/renderer/src/gpu/types.ts`, and the WebGPU and SwiftShader traps in `docs/traps/testing.md`.
+The design spec is deleted.
+
+## Decisions made in conversation that the code does not explain
+
+**Custom shaders bring their own WGSL; nothing compiles GLSL to WGSL** (2026-11-06). Mike chose "both":
+a program registers `{ glsl, wgsl }`. So the renderer is one draw path over a GPU layer with two
+implementations, not a GL shim on WebGPU and not a second renderer.
+
+**WGSL coordinates are top-left everywhere; GLSL keeps its bottom-left ones** (2026-11-06), so each
+language reads natively. The one place the two contracts differ.
+
+**The layer's rects count from the target's bottom-left, as GL's do** (2026-11-06): the draw code's tile
+and read arithmetic is bottom-up, and the WebGPU backend flips once. A retained group's tiles keep one
+projection and slide the viewport, because a projection per tile rounds differently at the seams.
+
+## Traps this work hit
+
+- On an exact tie (an edge exactly on a row of pixel centers), WebGL and WebGPU give the row to opposite
+  sides, on SwiftShader and Metal alike; the parity suite pins it. SwiftShader snaps vertices to 1/16 px, so
+  it manufactures such ties where a GPU does not.
+- WebGPU validates viewport bounds, so a viewport past its target is clamped and the remainder folded into
+  clip position (`weasel_clip`, bind group 2) in every WGSL vertex entry point.
+
+---
+
 # Retained from contributions as the feature unit, and the stage overview — merged into `main`
 
 Where it lives now: `docs/extending.md` (the extension-unit map and the minimap

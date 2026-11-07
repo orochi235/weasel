@@ -109,6 +109,7 @@ describe('pathImportsIn', () => {
       "import { i } from 'core/scene/i';",
       "import type { J } from 'interactions/j';",
       "import { k } from 'corer/k';",
+      "const l = await original<typeof import('./l')>();",
     ].join('\n');
     expect(pathImportsIn(code)).toEqual(['./a', './c', '../d', './f.css', './g', 'core/scene/i']);
   });
@@ -191,7 +192,7 @@ function environment(name: string) {
 /** A server whose restart swaps in new environments, as vite's does, while a dep optimizer run of the old one is still in flight. */
 function serverWithOptimizerRun() {
   const outgoing = { client: environment('client') };
-  const server = { environments: outgoing as Record<string, object> } as unknown as ViteDevServer;
+  const server = { environments: outgoing as Record<string, object>, config: { inlineConfig: {} } } as unknown as ViteDevServer;
   const client = outgoing.client as { logger: { info: (m: string) => void }; config: { cacheDir: string } };
   // vite's runOptimizeDeps: a 1 s timer that announces a slow run, and the run reading its environment as it goes.
   setTimeout(() => client.logger.info('[optimizer] bundling dependencies...'), 1000);
@@ -220,6 +221,16 @@ describe('restartLeavingNothing', () => {
     await restartLeavingNothing(server);
     expect(outgoing).toEqual({});
     expect(Object.keys(client).sort()).toEqual(['_options', '_topLevelConfig', 'config', 'logger', 'name']);
+  });
+
+  it('reloads the config through the module runner, unless the server chose a loader', async () => {
+    const { server } = serverWithOptimizerRun();
+    await restartLeavingNothing(server);
+    expect(server.config.inlineConfig.configLoader).toBe('runner');
+    const native = serverWithOptimizerRun().server;
+    native.config.inlineConfig.configLoader = 'native';
+    await restartLeavingNothing(native);
+    expect(native.config.inlineConfig.configLoader).toBe('native');
   });
 });
 

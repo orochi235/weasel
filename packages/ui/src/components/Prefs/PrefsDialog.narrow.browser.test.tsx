@@ -6,7 +6,7 @@ import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import { PrefsDialog } from '@weasel-js/ui/components/Prefs';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 

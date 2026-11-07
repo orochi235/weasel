@@ -206,13 +206,13 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
       let frameNo = 0;
       const dirtyDeps = () => [frameNo];
       const copy = [{
-        program: registerEffect('perf:copy', `#version 300 es
+        program: registerEffect('perf:copy', { glsl: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_source;
 out vec4 outColor;
 void main() { outColor = texture(u_source, v_uv); }
-`),
+` }),
       }];
 
       function stackFor(variant: string, n: number, m: number): Layer[] {

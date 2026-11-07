@@ -18,8 +18,8 @@ export const PATH_COMMANDS = {
   C: { code: 2, coords: 6 },
   /** Quadratic bezier: one control point then the endpoint. */
   Q: { code: 3, coords: 4 },
-  /** Close the current subpath back to its start. Consumes no coords and
-   *  leaves the pen where it is. */
+  /** Close the current subpath back to its start, where it leaves the pen.
+   *  Consumes no coords. */
   Z: { code: 4, coords: 0 },
 } as const;
 

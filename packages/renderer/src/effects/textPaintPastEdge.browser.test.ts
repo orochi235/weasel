@@ -45,14 +45,8 @@ beforeAll(async () => {
   await registerFont(FAMILY, { weight: 400, style: 'normal' }, metricsUrl, atlasUrl);
   unregister = registerPaintDrawKind({
     id: 'past-edge-green',
-    programs: { 'past-edge-green': { vert: SCREEN_VERT, frag: GREEN_ABOVE_FRAG } },
-    bind: (ctx) => {
-      const program = ctx.program('past-edge-green');
-      if (!program) return null;
-      ctx.gl.useProgram(program.handle);
-      ctx.setProjAndModel(program);
-      return program;
-    },
+    programs: { 'past-edge-green': { glsl: { vert: SCREEN_VERT, frag: GREEN_ABOVE_FRAG } } },
+    bind: () => ({ program: 'past-edge-green' }),
   });
 });
 

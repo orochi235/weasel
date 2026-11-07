@@ -1,6 +1,6 @@
 import './generated/tokens.css';
 import { afterEach, describe, expect, test } from 'vitest';
-import { contrastOver, parseComputedColor as parse } from './testing/computedColor';
+import { contrastOver, parseComputedColor as parse } from '@weasel-js/theme/testing/computedColor';
 
 afterEach(() => document.body.replaceChildren());
 

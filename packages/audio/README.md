@@ -1,7 +1,7 @@
 # @weasel-js/audio
 
-Web Audio engine for 2D scenes. No weasel dependencies — positional audio takes
-plain `{ x, y }`.
+Web Audio engine for 2D and 3D scenes. No weasel dependencies — positional audio
+takes plain `{ x, y }`, with an optional `z`.
 
 Playback is lookahead-scheduled on the engine's own timer rather than triggered
 from an animation frame: `AudioContext.currentTime` is driven by the audio
@@ -178,7 +178,8 @@ between them, one splice at a time, so `slots()` shows an edit at once while the
 audio follows over a few fades; `settled()` resolves when it has caught up. The
 fade is `insertFadeMs`, default 15. A move is a splice out and a splice back in,
 so the moved effect drops out for one fade. A removed effect's `dispose` runs
-once it has left the graph.
+once it has left the graph, and every effect still in a chain has its `dispose`
+run when the engine is disposed.
 
 ## Patchable graph
 

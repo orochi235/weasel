@@ -2,7 +2,7 @@
  * Visual regression spec: insert demo. Drags the rect tool across the empty
  * canvas and captures the rectangle the insert action committed.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, readCanvasPixels, dragOnCanvas, assertMatchesBaseline } from './diff.js';
 

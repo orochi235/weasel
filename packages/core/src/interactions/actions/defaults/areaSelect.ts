@@ -92,8 +92,9 @@ export const areaSelectAction: Action & { requires: string[] } = {
           const width = Math.abs(currentX - startX);
           const height = Math.abs(currentY - startY);
 
-          // Zero-size marquee (click without drag) → clear selection (or no-op with shift).
-          if (width === 0 || height === 0) {
+          // A marquee with no extent at all is a click: clear the selection (or no-op with
+          // shift). One flat on a single axis still crosses what lies along it.
+          if (width === 0 && height === 0) {
             if (!shiftHeld) d.setSelection([]);
             return;
           }

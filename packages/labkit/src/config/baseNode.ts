@@ -140,7 +140,14 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    * Let this leaf be auto: its row's label then toggles it. A leaf that never
    * says so is always pinned. With `resolve`, the leaf's value while it is
    * auto is what that computes, given the config with every other auto path
-   * already resolved; without, it reads `undefined`.
+   * already resolved; without, it reads `undefined` and the instrument
+   * substitutes its own value.
+   *
+   * Make a lever auto wherever the instrument can work out a good value for it
+   * (a count from the data, a spacing from the size, a scale that fits the
+   * view), and add {@link BaseNode.initial}`(auto)` when that value is the
+   * better start. Don't add a separate "Auto X" checkbox beside the lever.
+   * Leave it pinned-only when `undefined` must never reach the instrument.
    */
   auto(resolve?: (config: Record<string, unknown>) => T): this {
     const said = { auto: { ...this.options.auto } };

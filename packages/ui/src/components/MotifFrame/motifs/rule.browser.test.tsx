@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { lineContrast } from '../../../testing/paintedContrast';
+import { lineContrast } from '@weasel-js/ui/testing/paintedContrast';
 import { MotifFrame } from '@weasel-js/ui/components/MotifFrame';
 
 // The rules either side of the title are drawn in one token and the frame's fill in another, and only a

@@ -584,6 +584,28 @@ The default sweep is 486 measurements and took 78 minutes on msb-uai.
 stages; it traces more categories, so its busy figures are not comparable with a
 run without it. `HVD_ALLOC=1` adds the allocation profile above.
 
+## Element tweens on the compositor
+
+`compositor-handoff.spec.ts` animates `count` small elements with one weasel animator, either on the
+main thread (`compositor: 'off'`) or handed to `Element.animate` (`createElementTarget` with
+`compositor: 'require'`), and reads two rates a cell: the
+page's own rAF rate, and `DrawFrame`s a second from a trace taken while the page asks for no frames.
+`CH_COUNTS`, `CH_SHAPES` (`drift`, `slide`, `wave`), `CH_LOADS` (ms of other main-thread work in
+every 16) and `CH_FRAMES` narrow it. On msb-uai on 2026-11-06, drawn fps, median of 4:
+
+| load | shape | count | main thread | compositor |
+|---:|---|---:|---:|---:|
+| 0 | drift | 4,000 | 60.0 | 59.8 |
+| 0 | drift | 6,000 | 54.8 | 36.6 |
+| 0 | slide | 6,000 | 59.7 | 44.3 |
+| 8 | drift | 4,000 | 54.6 | 60.3 |
+| 8 | slide | 6,000 | 45.0 | 44.6 |
+
+The compositor's cost per layer outgrows the main thread's per element past about 4,000, so it wins
+on main-thread load, not on count, which is why `compositor` defaults to `'off'` (2026-11-06). A `wave` run of about 120 keyframes saturated the compositor
+thread at 2,000. Every run and the conditions behind it are in
+`tests/perf/recorded/compositor-handoff-2026-11-06/`.
+
 ## Retained layers through a pan
 
 `retain-pan.spec.ts` times a pan frame of retained world layers against submitting them, a
@@ -597,6 +619,23 @@ at 1024 against 5.0–5.9 untiled, in each of 4 contexts; at 512, 8.0–9.4. Bef
 commands inside a layer's group, every tile staged every command, and the tiled frame took 16.5–18.3 ms
 (`tests/perf/recorded/retain-2026-11-03/`). Its timer-query column exceeds the frame's own time on tiled
 frames there, so read GPU time from it for untiled frames only.
+
+## An image's upload through the 2D canvas
+
+WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the
+canvas, since only the canvas knows whether the bitmap holds straight or premultiplied pixels
+(`packages/renderer/src/gpu/webgl/premultipliedBitmap.ts`). `image-upload.spec.ts` times a first upload,
+through to a one-pixel read of the texture, both ways. On teitou (Apple M5 Max, ANGLE Metal, load 5.9
+on 18 cores) on 2026-11-07, medians of 7 runs of a default bitmap:
+
+| side | direct (ms) | canvas (ms) | canvas, straight bitmap (ms) |
+|---:|---:|---:|---:|
+|  256 |  0.51 |  0.94 |  0.84 |
+| 1024 |  1.38 |  1.58 |  1.39 |
+| 4096 | 16.10 | 10.17 | 10.02 |
+
+So the pass adds a few tenths of a millisecond, once per image, at small sizes and saves time at
+4096. Only Chromium has been measured. The runs are in `tests/perf/recorded/image-upload-2026-11-07/`.
 
 ## Timing a frame
 
@@ -743,6 +782,7 @@ the entry chunk's hash against the build you mean before believing a grep over i
 | `pose-overrides.bench.ts` | a frame of the paint walk (`buildSceneViewCommands`), and of `effectivePose` alone, at 1k and 10k nodes with 0%, 10% and 100% of them carrying a pose override |
 | `animator-on-blits.bench.ts` | a frame of N tweens and of N springs, as the animator runs them and as blits would (a voice per animation, and one voice for every node), at 1k and 10k nodes; starting them, at 100, 300 and 1k |
 | `derived-path.bench.ts` | a frame of `resolveDerivedPath` over diagram size, as it runs now (memo hit) and with the resolve-and-value-compare pass a pull-invalidation scheme would need |
+| `trim-tween.bench.ts` | a frame of a trim tween on a 1,000-anchor stroke through the renderer on a recording GL context, clipped from its cached ribbon with its heads moved, and rebuilt trimmed with its heads built fresh; and on a 40-anchor stroke the batch takes, which rebuilds |
 
 ### The committed baseline
 

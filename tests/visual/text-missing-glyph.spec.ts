@@ -12,7 +12,7 @@
  * between "editing" and "magenta" tells the two apart (measured: 12×2 for the
  * dash, and a `?` at this size is roughly 8×15).
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 
 // The gap between the two words on the `t4` line, in canvas pixels. The dash
 // measures x 186–197, y 260–261. "editing"'s final `g` ends at x 177 and
@@ -25,14 +25,12 @@ test('missing glyph — an em dash the atlas lacks draws as a dash, not a "?"', 
   await page.waitForSelector('canvas');
   await page.waitForTimeout(800);
 
-  const box = await page.evaluate((GAP) => {
+  const box = await page.evaluate(async (GAP) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
-    const gl = c.getContext('webgl2')!;
     const w = c.width;
     const h = c.height;
-    const buf = new Uint8Array(w * h * 4);
-    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-    // readPixels is bottom-up; this takes top-down canvas coords.
+    const buf = await window.weaselCanvasPixels(c);
+    // The read is bottom-up; this takes top-down canvas coords.
     const inkAt = (x: number, y: number) => {
       const i = ((h - 1 - y) * w + x) * 4;
       return 255 - (0.299 * buf[i] + 0.587 * buf[i + 1] + 0.114 * buf[i + 2]);

@@ -191,10 +191,8 @@ export interface TextDrawCommand {
  */
 export interface ImageDrawCommand {
   kind: 'image';
-  /** A bitmap holding premultiplied pixels, which is what `createImageBitmap`
-   *  makes unless told otherwise. One made with `premultiplyAlpha: 'none'`
-   *  draws too bright wherever it is translucent: a browser uploads a bitmap
-   *  as it stands, and nothing reports which kind it is. */
+  /** A bitmap, holding its pixels premultiplied (the `createImageBitmap`
+   *  default) or straight (`premultiplyAlpha: 'none'`): both draw the same. */
   image: ImageBitmap;
   x: number;
   y: number;

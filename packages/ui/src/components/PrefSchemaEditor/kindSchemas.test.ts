@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefEnum, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, convertLeaf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { nodeAt } from './schemaEdit';
 import { STUB } from './schemaExport';
@@ -16,9 +16,15 @@ describe('kindSchemas', () => {
   it('describes a number leaf with base, default and number attributes', () => {
     const { shared, own, readOnly } = attributeSchema(num);
     expect(Object.keys(shared)).toEqual(expect.arrayContaining(['name', 'description', 'tags', 'hidden']));
-    expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'stops', 'control', 'endless', 'measure']);
+    expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'stops', 'control', 'scale', 'endless', 'measure']);
     expect(own.default).toMatchObject({ kind: 'number', min: 0, max: 10 });
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
+  });
+
+  it('offers a number leaf linear, log and sqrt scales, and spaces its default\'s slider by the leaf\'s own', () => {
+    const { own } = attributeSchema({ ...num, scale: 'log' } as PrefLeaf);
+    expect((own.scale as PrefEnum).options.map((o) => o.value)).toEqual(['linear', 'log', 'sqrt']);
+    expect(own.default).toMatchObject({ scale: 'log' });
   });
 
   it('offers no default for a clearable enum, whose default is always nothing', () => {

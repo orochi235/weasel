@@ -19,7 +19,7 @@ void main() { outColor = vec4(u_windowOrigin / 255.0, 0.0, 1.0); }
 
 describe('u_windowOrigin', () => {
   it("is set to the top-left device pixel of the group's window", () => {
-    const program = registerEffect('jsdom-fx-window-origin', ORIGIN_FRAG);
+    const program = registerEffect('jsdom-fx-window-origin', { glsl: ORIGIN_FRAG });
     const rec = makeGLRecorder();
     const renderer = new WeaselRenderer({ gl: rec.gl, width: 128, height: 128, dpr: 1 });
     const square: DrawCommand = {

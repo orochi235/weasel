@@ -74,4 +74,20 @@ describe('markerSites', () => {
   it('returns nothing when no marker was asked for', () => {
     expect(markerSites(bent(), { start: false, mid: false, end: false })).toEqual([]);
   });
+
+  it('places start and end heads on a zero-length line, facing the x axis as SVG does', () => {
+    const dot: Polyline = {
+      points: [5, 5, 5, 5], closed: false,
+      anchorA: new Uint32Array([0, 1]), anchorB: new Uint32Array([0, 1]), anchorT: new Float32Array([0, 0]),
+    };
+    const sites = markerSites(dot, ALL);
+    expect(sites.map((s) => s.role)).toEqual(['start', 'end']);
+    expect(sites[0]).toMatchObject({ x: 5, y: 5 });
+    expect(Math.abs(sites[0].angle)).toBeCloseTo(Math.PI, 6);
+    expect(sites[1]).toMatchObject({ x: 5, y: 5, angle: 0 });
+  });
+
+  it('still places no head on a lone point', () => {
+    expect(markerSites({ points: [5, 5], closed: false }, ALL)).toEqual([]);
+  });
 });

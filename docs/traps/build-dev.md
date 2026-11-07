@@ -77,7 +77,10 @@ The `browser` vitest project bundles them the same way under `vitest run`, all b
 reach by path (`scripts/vitest-browser-prebundle.ts`); watch mode and `WEASEL_DEV_SOURCE=1` serve them
 from source. So a browser test imports its own package by specifier wherever the package exports what it
 needs: one relative import of a component serves it and everything it imports from source to every test
-file whose bundle reaches it, and passes.
+file whose bundle reaches it, and passes. What no entry exports, a test reaches through a re-export in its
+package's `src/testing/` (`@weasel-js/ui/testing/prefSchemaEditor`), which is never published. A `vi.mock` of
+a path never reaches the bundled copy a bundle imports, so a browser test mocks a specifier instead, as
+`apps/chart/src/pipeline/pages.browser.test.tsx` mocks `@weasel-js/diagram/effect`.
 
 **Each re-bundle leaves native memory behind in the process that ran it.** rolldown and oxc allocate
 with mimalloc, which keeps memory committed after it is freed. This is retention, not a leak: in-process
@@ -87,9 +90,13 @@ server then restarts without forcing. On teitou (2026-11-03), 30 forced restarts
 1.13 GB of footprint, against 2.66 GB re-bundling in the server, and each restart took about 1.2 s longer.
 The maintainer ruled a 2.5 GB plateau acceptable (2026-11-03), so if the child ever has to go, the
 in-process re-bundle is fine. vmmap reports mimalloc's regions as `IOAccelerator`, since its default
-`os_tag` is 100 (VM_MEMORY_IOACCELERATOR); `scripts/lib/vmmap-regions.mjs` retags them. The probes are
-`scripts/probe-dev-restarts.ts` (a dev server), `scripts/probe-optimize-deps.ts` (the optimizer alone)
-and `scripts/probe-rolldown-rebuilds.mjs` (rolldown alone), each beside its `.runs.jsonl` of records.
+`os_tag` is 100 (VM_MEMORY_IOACCELERATOR); `scripts/lib/vmmap-regions.mjs` retags them. A restart reloads the config
+file, and vite's default loader imports each load as a new ES module, which Node never frees: forge kept about
+2 MB of bundled config a restart and grew 12.4 MB of RSS, until `restartLeavingNothing` switched restarts to the
+module runner's loader, under which RSS fell 1.0 MB a restart from restart 1 to 30 (teitou, 2026-11-06). The
+probes are `scripts/probe-dev-restarts.ts` (a dev server; `scripts/heap-retainers.mjs` reads its snapshots),
+`scripts/probe-optimize-deps.ts` (the optimizer alone) and `scripts/probe-rolldown-rebuilds.mjs` (rolldown alone),
+each beside its `.runs.jsonl` of records.
 
 **`check:needs -- --write` redraws the README package table from every package's `dist/`.** Run in a
 tree with no fresh build, it strips real badges from core, routing and react; its own error suggests

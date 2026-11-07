@@ -8,7 +8,7 @@
  * clear escaped its scissor, one background would cover both panes and the
  * gutters around them would stop being transparent.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 
 /** Reads the shared surface back through a 2D canvas so pixels can be probed.
  *  The GL canvas is created with `preserveDrawingBuffer: true`, so drawing it

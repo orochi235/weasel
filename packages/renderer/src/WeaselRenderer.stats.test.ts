@@ -75,3 +75,19 @@ describe('WeaselRenderer frame stats', () => {
     expect(r.lastFrameStats().spans).toEqual([]);
   });
 });
+
+describe('WeaselRenderer retained surfaces', () => {
+  const group = (): DrawCommand => ({ kind: 'group', retain: 'g', children: [rect(0)] });
+
+  it('draws a retained group again after the image minification changes', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, imageMinification: 'auto' });
+    const cmds = [group()];
+    r.render(cmds);
+    r.render(cmds);
+    expect(r.lastFrameStats().retained.composited).toBe(1);
+    r.setImageMinification('linear');
+    r.render(cmds);
+    expect(r.lastFrameStats().retained.redrawn).toBe(1);
+  });
+});

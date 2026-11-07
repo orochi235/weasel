@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { AudioEngine } from '../createAudioEngine';
 import type { VoiceHandle } from '../types';
-import { renderEngineStereo } from '../testing/renderEngine';
-import { rmsEnvelope } from '../testing/spectrum';
+import { renderEngineStereo } from '@weasel-js/audio/testing/renderEngine';
+import { rmsEnvelope } from '@weasel-js/audio/testing/spectrum';
 
 // A worklet voice has to sound as a node voice does through the whole engine:
 // level, pan, position, a gain ramp, a fade, a steal. Each scenario renders

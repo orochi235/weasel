@@ -3,11 +3,8 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { WeaselRenderer, type DrawCommand } from '@weasel-js/renderer';
-import { ditherPixels } from '../ditherPixels';
-import { protectMask } from '../protectMask';
+import { dither, ditherPixels, protectMask, protectTexture, type GpuDitherOptions, type ProtectTexture } from '@weasel-js/dither';
 import type { DitherOptions } from '../types';
-import { dither, type GpuDitherOptions } from './dither';
-import { protectTexture, type ProtectTexture } from './protectTexture';
 
 // Large enough that the group's 64 px effects buffer is not pulled back to the
 // canvas corner, so the shader must place the grid from `u_windowOrigin`.

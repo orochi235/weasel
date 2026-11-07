@@ -84,13 +84,29 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
         const w = chunkSize * (0.5 + rand());
         const h = chunkSize * (0.5 + rand());
         const rotation = rand() * Math.PI;
-        shapes.push({ kind: 'ellipse', cx, cy, rx: w / 2, ry: h / 2, rotation, color });
+        // A chunk crossing an edge is drawn again past the opposite one, so
+        // the tile repeats without cutting it off at the seam.
+        const reach = Math.max(w, h) / 2;
+        for (const oy of wraps(cy, reach, s)) {
+          for (const ox of wraps(cx, reach, s)) {
+            shapes.push({ kind: 'ellipse', cx: cx + ox, cy: cy + oy, rx: w / 2, ry: h / 2, rotation, color });
+          }
+        }
       }
       return { size: s, shapes };
     }
     default:
       return { size: s, shapes: [] };
   }
+}
+
+/** The offsets that place a copy of something at `c`, reaching `r` either
+ *  side, wherever it crosses an edge of a tile `s` wide: 0 first. */
+function wraps(c: number, r: number, s: number): number[] {
+  const out = [0];
+  if (c - r < 0) out.push(s);
+  if (c + r > s) out.push(-s);
+  return out;
 }
 
 /** The forward (`/`) diagonal, plus the two corner stubs that make it tile

@@ -42,6 +42,8 @@ import { useViewRegistrySurface } from './useViewRegistrySurface';
 import { useCanvasPaint, usePaintedVersion } from './useCanvasPaint';
 import { layerHover } from './layerHover';
 import { useClientToWorld } from './useClientToWorld';
+import { useCanvasWorker, type WorkerStack } from './renderWorker/useWorkerStack';
+import { WorkerCanvasStack } from './renderWorker/WorkerCanvasStack';
 
 export type { CanvasProps, CanvasRetainOptions } from './canvasProps';
 
@@ -75,7 +77,9 @@ function CanvasInner<TPose>(
   const paintRef = useRef<() => boolean>(() => false);
   const { lease, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useCanvasSurface(
     useCallback(() => paintRef.current(), []),
-    { syncPaint: props.syncPaint ?? false, target: canvasRef, dpr: props.dpr, redrawOn: props.redrawOn, shaders: props.shaders, onCommit: 'redraw', size: { width, height } },
+    { syncPaint: props.syncPaint ?? false, target: canvasRef, dpr: props.dpr, redrawOn: props.redrawOn, shaders: props.shaders, onCommit: 'redraw', size: { width, height },
+      // A worker's stack reads its page canvases' ids at once, which WebGPU cannot.
+      backend: props.worker ? 'webgl2' : props.backend },
   );
   const { getPaintedVersion, markPainted } = usePaintedVersion(props.contentVersion);
   const { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn } = useExtraLayers(gateRef);
@@ -96,11 +100,6 @@ function CanvasInner<TPose>(
   const { paintedCursor, paintedCursorLayer, cursorSink } = usePaintedCursor(canvasRef, requestRedraw);
 
   const frame = { viewRef, dimsRef, helpersRef: helpersForLayersRef };
-  const readIdsRef = useCanvasHandle(ref, { ...elements, inputElement, paintCanvas: paintInto?.canvas }, frame, {
-    hitTestExtrasIn, clientToWorld: toWorld, requestRedraw, subscribeFrame, subscribeBeforePaint,
-    subscribeResume, registerLayer, getView, setView, subscribeView,
-    getPaintedVersion, paintedCursor, cursorSink, getDebug,
-  });
 
   const viewRegistry = useOptionalViewRegistry();
 
@@ -122,6 +121,15 @@ function CanvasInner<TPose>(
     viewRegistry, debugOverlay, extrasRef, extrasVersion, cursorLayer: paintedCursorLayer,
   }, requestRedraw);
 
+  const { stack, stackRef, handleWorker } = useCanvasWorker(props.worker, layersWithDebug, layerOrder, {
+    top: { canvas: ownCanvasRef, lease }, viewRef, dims: () => dimsRef.current, requestRedraw, subscribeResume,
+  });
+  const readIdsRef = useCanvasHandle(ref, { ...elements, inputElement, paintCanvas: paintInto?.canvas }, frame, {
+    hitTestExtrasIn, clientToWorld: toWorld, requestRedraw, subscribeFrame, subscribeBeforePaint,
+    subscribeResume, registerLayer, getView, setView, subscribeView,
+    getPaintedVersion, paintedCursor, cursorSink, getDebug,
+  }, handleWorker);
+
   // Everything the paint, hit-testing and the view registry read that a React
   // render owns. `useLatest` and the insertion effect below publish committed
   // renders only, ahead of every layout effect in the commit, any of which may
@@ -141,7 +149,7 @@ function CanvasInner<TPose>(
     announceControlled();
   });
 
-  useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted, requestRedraw, readIdsRef);
+  useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted, requestRedraw, readIdsRef, stackRef);
   useEffect(() => clearSubscribers, [clearSubscribers]);
 
   useToolCursor(cursorSink, tools, detached ? inputElement : null, style?.cursor);
@@ -156,16 +164,25 @@ function CanvasInner<TPose>(
   });
 
   if (detached) return null;
+  return <CanvasSurface {...props} stack={stack} setCanvas={elements.setOwnCanvas} />;
+}
 
-  return (
-    <SurfaceCanvas
-      ref={elements.setOwnCanvas}
-      width={props.width}
-      height={props.height}
-      tabIndex={props.tabIndex ?? 0} aria-label={props['aria-label']}
-      className={props.className} style={style}
-    />
-  );
+/** The element a canvas paints into: one `<canvas>`, or in worker mode the stack of them. */
+function CanvasSurface(
+  props: Pick<CanvasProps<unknown>, 'width' | 'height' | 'tabIndex' | 'aria-label' | 'className' | 'style'>
+    & { stack: WorkerStack | null; setCanvas: (el: HTMLCanvasElement | null) => void },
+) {
+  const { stack, setCanvas, width, height, className, style } = props;
+  const focus = { tabIndex: props.tabIndex ?? 0, 'aria-label': props['aria-label'] };
+  if (stack) {
+    return (
+      <WorkerCanvasStack
+        stack={stack} width={width} height={height} className={className} style={style}
+        top={<SurfaceCanvas ref={setCanvas} {...focus} />}
+      />
+    );
+  }
+  return <SurfaceCanvas ref={setCanvas} width={width} height={height} {...focus} className={className} style={style} />;
 }
 
 /** Forward-ref'd `<canvas>` wrapper. Generic over the pose type, inferred from the

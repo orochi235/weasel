@@ -18,6 +18,7 @@ describe('text', () => {
     expect(decodeEntities('&lt;a&gt; &amp; &#65;&#x42; &bogus;')).toBe('<a> & AB &bogus;');
     expect(decodeEntities('#quot;hi#quot; #35; #9829;', true)).toBe('"hi" # ♥');
     expect(decodeEntities('#quot;', false)).toBe('#quot;');
+    expect(decodeEntities('&#1114112; &#x110000; &#1114111;')).toBe('&#1114112; &#x110000; \u{10ffff}');
   });
 
   it('reads markup as lines, breaking at <br> and dropping tags', () => {

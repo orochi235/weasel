@@ -129,8 +129,10 @@ export function reachableTables(root: string): IconTable[] {
   }
 }
 
-/** The icons.gen source file an import specifier names, relative to its importer. */
+/** The icons.gen source file an import specifier names, relative to its importer: a `.js`
+ *  specifier names its `.ts` source too, as a TypeScript importer writes one. */
 export function genFile(specifier: string, importer: string): string | undefined {
   const base = resolve(dirname(importer), specifier);
-  return ['.ts', '.js', ''].map((e) => base + e).find((f) => existsSync(f) && /\.[cm]?[jt]sx?$/.test(f));
+  const source = base.replace(/\.([cm]?)js(x?)$/, '.$1ts$2');
+  return [base + '.ts', base + '.js', base, source].find((f) => existsSync(f) && /\.[cm]?[jt]sx?$/.test(f));
 }

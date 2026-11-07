@@ -32,6 +32,13 @@ export function withColors<T extends object>(style: T, colors: Partial<T> | unde
 export const rowTextColor = (row: Row | undefined, style: NodeStyle): string =>
   row?.kind === 'header' ? style.headerText ?? style.fill : style.text;
 
+/** How opaque a header's `aside` is drawn, in its title's color. */
+export const HEADER_ASIDE_OPACITY = 0.7;
+
+/** A header's `aside` text's fill under `style`. */
+export const asideFillOf = (style: NodeStyle): { paint: { color: string; opacity: number } } =>
+  ({ paint: { color: rowTextColor({ kind: 'header', text: '' }, style), opacity: HEADER_ASIDE_OPACITY } });
+
 /** The `headerFill` a body's data carries: none unless it has a header and `style` names its band. */
 export const headerFillOf = (trait: DiagramNode, style: NodeStyle): { headerFill?: { paint: { color: string } } } =>
   trait.header !== undefined && style.header !== undefined ? { headerFill: { paint: { color: style.header } } } : {};

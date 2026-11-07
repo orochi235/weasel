@@ -369,6 +369,7 @@ What is built on it:
 | The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
+| An element's inline style | `createElementTarget({ element, style, value })` | any of the above primitives; a run given `compositor: 'auto'` can go to `Element.animate` (below) |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
 | Many like values | a row of `createTargetTable({ axes })` | any of the above primitives, on `table.target(row)` |
 
@@ -411,6 +412,66 @@ A reader of many targets that wants numbers calls `target.readInto(out, at)`, wh
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that
 define `add` and `write` let a read skip the array of axes as well; the ones the
 kit supplies all do.
+
+### Element targets and the compositor
+
+`createElementTarget({ element, style, value })` is a target shown as an element's inline style:
+`style(value)` answers the CSS, by property as `Element.animate` takes a keyframe's. On the main
+thread it writes that CSS each frame, like any target's `show`. A `tween`, `spring`, `decay` or
+`physics` on it given `compositor: 'auto'` or `'require'` is handed to `Element.animate` instead, and
+played by the browser's compositor with no per-frame work on the main thread, when all of these hold:
+
+- nothing else moves the target: no other animation (one under the same `cancelKey` is interrupted
+  first), no hold, and it is no table's row;
+- it has no `onTick`, which would need its value on the main thread every frame;
+- `style` sets only `COMPOSITOR_PROPERTIES`: `transform`, `translate`, `rotate`, `scale`, `opacity`;
+- the environment has `Element.animate` (jsdom does not), and the run has length.
+
+Every target animation takes `compositor: 'off' | 'auto' | 'require'`: `'off'`, the default, never
+hands off, `'auto'` hands off where the rules allow, and `'require'` throws naming the rule that
+failed. `animator.live()` marks a handed-off row `compositor: true`. The default is `'off'` because the
+compositor is the slower path past a few thousand elements, and where that crossover falls depends
+on the machine and on how busy the main thread is, which the caller knows and the animator does not
+(ruled 2026-11-06).
+
+The run's whole motion is a function of its own clock — a tween's eased path, a spring's or coast's
+closed form, the same motion the main-thread path computes — so it is sampled up front, `sampleRate`
+a second (default 60, at most 600 a run), and handed over as the fewest of those samples whose
+straight lines stay within 0.2% of each axis's range of the rest: a straight tween is two keyframes.
+Every keyframe costs the browser to parse and to evaluate each frame, so a long, winding run costs
+the compositor what a short one does not.
+
+The animator's clock stays the authority, though a handed-off run asks it for no frames: while only
+such runs play, the animator counts the time since its last frame whenever its clock is read, and
+the browser animation's `finish` asks for the one frame that ends the run. Each run's `playbackRate`
+and `startTime` are set from its own clock, its rate, and the document-timeline time the animator's
+clock stands at. A pause, resume, time scale or reversal, by handle, key, or animator, places it
+again at once, and after any frame the animator compares its clock with the pace the browser kept
+and places every run again past half a millisecond of drift: a seek or ramp of an outside clock, or
+time spent hidden, which the browser counts and the animator does not. The animator writes the last
+value inline before it cancels the browser animation, and a cancel commits where the run stands, as
+any cancel does.
+
+When another animation or a hold starts on a handed-off target, or `target.commit` writes it, the run
+is taken back: the browser animation is canceled, and the rest of the run carries on on the main
+thread under the run's handle and `cancelKey` — a spring or coast as physics from its position and
+velocity, a tween along the rest of its path — so the two add with no jump. Played backward past the
+point it was taken back, it ends there. A physics handle's `setTarget` and `setVelocity` re-sample
+from where the run stands and stay on the compositor.
+
+Scene nodes cannot be handed off. The renderer draws every node, and the HUD, into one WebGL canvas
+on the main thread each frame; there is no layer per node for the compositor to move, and no browser
+API animates a value inside a WebGL draw. Their animations keep their main-thread cost.
+
+What the compositor buys is independence from the main thread, not headroom for any count. Every
+handed-off element is a layer of its own, and the compositor's cost per layer is higher than the
+main thread's per element: in headless Chromium on an M3 Max (`tests/perf/compositor-handoff.spec.ts`,
+runs in `tests/perf/recorded/compositor-handoff-2026-11-06/`, 2026-11-06), 4,000 elements moving and
+fading drew 60.0 fps on the main thread and 59.8 on the compositor with nothing else to do, and at 6,000 the compositor
+drew 36.6 against the main thread's 54.8. With the main thread busy 8 ms of every 16 on other work,
+the main-thread path drew 52.7–55.4 fps at 4,000 and the compositor 59.3–60.6. While runs are handed
+off, any main-thread frame — a `requestAnimationFrame` of the app's own — still restyles every
+animated element, which held the page's own rate to 32–47 fps at 4,000.
 
 ## Clip
 

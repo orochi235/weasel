@@ -570,6 +570,14 @@ describe('domPositionToCharOffset', () => {
     expect(domPositionToCharOffset(parent, parent, 99)).toBe(3);
   });
 
+  // Deleting a span's last character can leave its text node behind empty, with the caret in it.
+  it('reads a caret in an empty text node as the text before that node', () => {
+    runsToDom([{ text: 'abc' }, { text: 'def', bold: true }], parent);
+    const empty = document.createTextNode('');
+    parent.insertBefore(empty, parent.querySelectorAll('span[data-run]')[1]!);
+    expect(domPositionToCharOffset(parent, empty, 0)).toBe(3);
+  });
+
   it('resolves a position inside a run span, not just on the overlay', () => {
     runsToDom([{ text: 'abc' }, { text: 'def', bold: true }], parent);
     const second = parent.querySelectorAll('span[data-run]')[1];

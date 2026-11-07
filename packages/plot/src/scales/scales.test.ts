@@ -29,6 +29,32 @@ describe('linearScale', () => {
     expect(formatNumber(3, 0.5)).toBe('3');
   });
 
+  it('formats ticks to the step of the count they were asked for', () => {
+    const unit = linearScale({ domain: [0, 1], range: [0, 1] });
+    expect(unit.ticks(20).slice(0, 3).map(unit.tickFormat(20))).toEqual(['0', '0.05', '0.1']);
+  });
+
+  it('ticks and labels a domain finer than 1e-20', () => {
+    const tiny = linearScale({ domain: [0, 1e-25], range: [0, 1] });
+    expect(tiny.ticks()).toEqual([0, 2e-26, 4e-26, 6e-26, 8e-26, 1e-25]);
+    expect(tiny.format(2e-26)).toBe('0.00000000000000000000000002');
+    expect(logScale({ domain: [1e-25, 1e-22], range: [0, 1] }).format(1e-24)).toBe('0.000000000000000000000001');
+  });
+
+  it('ticks an infinite domain with none, and one spanning nearly every double with a few', () => {
+    expect(linearScale({ domain: [0, Infinity], range: [0, 1] }).ticks()).toEqual([]);
+    expect(linearScale({ domain: [Number.NaN, 1], range: [0, 1] }).ticks()).toEqual([]);
+    expect(linearScale({ domain: [-1e308, 1e308], range: [0, 1] }).ticks()).toEqual([-1e308, -5e307, 0, 5e307, 1e308]);
+  });
+
+  it('keeps a replaced format in the formatter for any tick count', () => {
+    const pct = (v: number) => `${v}%`;
+    expect({ ...linearScale({ domain: [0, 1], range: [0, 1] }), format: pct }.tickFormat(20)(0.05)).toBe('0.05%');
+    expect({ ...logScale({ domain: [1, 100], range: [0, 1] }), format: pct }.tickFormat()(10)).toBe('10%');
+    expect({ ...timeScale({ domain: [0, 864e5], range: [0, 1] }), format: () => 'T' }.tickFormat(30)(0)).toBe('T');
+    expect({ ...bandScale({ domain: ['a'], range: [0, 1] }), format: (k: string) => k.toUpperCase() }.tickFormat()('a')).toBe('A');
+  });
+
   it('widens a nice domain to whole steps', () => {
     expect(niceDomain([3, 97])).toEqual([0, 100]);
     expect(niceDomain([-13, 42])).toEqual([-20, 50]);
@@ -55,6 +81,10 @@ describe('logScale', () => {
   it('formats plainly', () => {
     expect(s.format(1000)).toBe('1000');
     expect(s.format(0.05)).toBe('0.05');
+  });
+
+  it('ticks an infinite domain with none', () => {
+    expect(logScale({ domain: [1, Infinity], range: [0, 1] }).ticks()).toEqual([]);
   });
 
   it('throws on a domain that does not lie above zero', () => {
@@ -114,6 +144,23 @@ describe('timeScale', () => {
     expect(months.ticks().map(months.format)).toEqual(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07']);
     const years = timeScale({ domain: [jan1, Date.UTC(2031, 0, 1)], range: [0, 1] });
     expect(years.ticks().map(years.format)).toEqual(['2026', '2027', '2028', '2029', '2030', '2031']);
+  });
+
+  it('labels a denser tick count to its own unit', () => {
+    const s = timeScale({ domain: [jan1, jan1 + 20 * day], range: [0, 1] });
+    expect(s.ticks(100).slice(0, 3).map(s.tickFormat(100))).toEqual(['2026-01-01', '06:00', '12:00']);
+  });
+
+  it('ticks centuries before the year 100 in order', () => {
+    const at = (year: number) => new Date(0).setUTCFullYear(year, 0, 1);
+    const s = timeScale({ domain: [at(0), at(2000)], range: [0, 1] });
+    const years = s.ticks().map((t) => new Date(t).getUTCFullYear());
+    expect(years[0]).toBe(0);
+    expect(years).toEqual([...years].sort((a, b) => a - b));
+  });
+
+  it('ticks an infinite domain with none', () => {
+    expect(timeScale({ domain: [jan1, Infinity], range: [0, 1] }).ticks()).toEqual([]);
   });
 
   it('ticks on hours within a day', () => {

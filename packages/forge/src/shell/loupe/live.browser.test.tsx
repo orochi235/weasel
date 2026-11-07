@@ -11,14 +11,10 @@ import { page, userEvent } from 'vitest/browser';
 import type { FrameSetup } from '../../frame/FrameController';
 import { meta, story } from '@weasel-js/forge';
 import { StoryGlobalsContext, StoryTrial, Workshop } from '@weasel-js/forge/shell';
-import { loadNativeModule } from '../../story/native';
+import { loadNativeModule } from '@weasel-js/forge/testing/frame';
 import type { IndexEntry } from '../../story/types';
-import { createAnswerBook } from '../answers';
-import { storyInstrument } from '../storyInstrument';
-import { resolveComparison } from './conditions';
-import { createLiveLenses, LiveLensesContext } from './liveLenses';
-import { createLiveSource } from './liveSource';
-import { topmostIn } from './tokenChain';
+import { createAnswerBook, storyInstrument } from '@weasel-js/forge/testing/shell';
+import { createLiveLenses, createLiveSource, LiveLensesContext, resolveComparison, topmostIn } from '@weasel-js/forge/testing/loupe';
 
 // Where a copy lands, what a hit test inside a lens finds, and where a popover is placed are layout, scrolling and
 // hit-testing: a real browser's.

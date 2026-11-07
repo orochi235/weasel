@@ -86,7 +86,15 @@ export interface DiagramNode {
   body?: BodyLayout;
   /** On a built body whose first row is a `header`: the band across its top, flush with its
    *  bounds, which the outline painter fills. */
-  header?: { height: number };
+  header?: HeaderBand;
+}
+
+/** A header row's band: its height, and where its text's line box sits, from the band's top. */
+export interface HeaderBand {
+  height: number;
+  text: { y: number; height: number };
+  /** Its `aside`'s measured width, which sits on the title's line. */
+  aside?: { width: number };
 }
 
 /** How a built body stacks its rows: the `BodySpec` fields its layout reads, and how many rows. */

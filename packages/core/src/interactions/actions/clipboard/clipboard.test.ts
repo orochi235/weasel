@@ -59,7 +59,10 @@ describe('clipboardCopyAction (descriptor)', () => {
 describe('clipboardCutAction (descriptor)', () => {
   it('is Cmd/Ctrl+X — distinct from the bare `x` a consumer may bind', () => {
     expect(clipboardCutAction.id).toBe('clipboard.cut');
-    expect(clipboardCutAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'x', mods: { mod: true } }, opts: { id: 'clipboard.cut.key' } }]);
+    expect(clipboardCutAction.defaultBinding).toEqual([{
+      spec: { kind: 'key', key: 'x', mods: { mod: true }, phase: [{ channel: '*', phase: 'initial' }] },
+      opts: { id: 'clipboard.cut.key' },
+    }]);
   });
 
   it('copies BEFORE deleting, commits one batch, and clears the selection', () => {

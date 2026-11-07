@@ -1,0 +1,2678 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "compositor-handoff",
+  "git": {
+    "sha": "6f870bd88528dc54abe35dab223af5d54a409350",
+    "dirty": true
+  },
+  "timestamp": "2026-11-07T01:24:49.246Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 156.0.8078.4",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.2.0 arm64",
+    "node": "v26.13.0",
+    "loadavg": [
+      4.16,
+      4.77,
+      6.86
+    ]
+  },
+  "params": {
+    "counts": [
+      4000,
+      6000,
+      8000
+    ],
+    "shapes": [
+      "drift",
+      "slide"
+    ],
+    "frames": 60,
+    "warmupMs": 2000,
+    "passes": 1,
+    "viewport": "1280x800",
+    "order": "ABBA per count, reversed on alternate passes"
+  },
+  "items": [
+    {
+      "id": "drift main 4000",
+      "params": {
+        "shape": "drift",
+        "approach": "main",
+        "count": 4000,
+        "intervals": [
+          [
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8
+          ],
+          [
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6
+          ]
+        ],
+        "mainTop": [
+          {
+            "FunctionCall": 290.55,
+            "UpdateLayoutTree": 98.59,
+            "Layerize": 68.18,
+            "PrePaint": 38.54,
+            "ThreadControllerImpl::RunTask": 25.51,
+            "Paint": 17.77
+          },
+          {
+            "FunctionCall": 328.31,
+            "UpdateLayoutTree": 128.81,
+            "Layerize": 82.94,
+            "PrePaint": 37.49,
+            "ThreadControllerImpl::RunTask": 21.94,
+            "Paint": 18.83
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 60.004999999999995,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            60,
+            60.01
+          ]
+        },
+        "drawnFps": {
+          "value": 60.695,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            60.46,
+            60.93
+          ]
+        },
+        "startMs": {
+          "value": 23.5,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            28.5,
+            18.5
+          ]
+        },
+        "mainBusy": {
+          "value": 602.3,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            563,
+            641.6
+          ]
+        },
+        "compositorBusy": {
+          "value": 30.6,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            28.3,
+            32.9
+          ]
+        },
+        "missed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "load1": {
+          "value": 4.37,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            4.16,
+            4.58
+          ]
+        },
+        "keyframes": {
+          "value": 0,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "drift compositor 4000",
+      "params": {
+        "shape": "drift",
+        "approach": "compositor",
+        "count": 4000,
+        "intervals": [
+          [
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            33.4,
+            16.6,
+            33.3,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7
+          ],
+          [
+            33.3,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            33.3,
+            16.7,
+            33.3,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6
+          ]
+        ],
+        "mainTop": [
+          {
+            "ThreadControllerImpl::RunTask": 0.24,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.1,
+            "FunctionCall": 0.01
+          },
+          {
+            "ThreadControllerImpl::RunTask": 0.26,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.08,
+            "FunctionCall": 0.01
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 57.61,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            58.07,
+            57.15
+          ]
+        },
+        "drawnFps": {
+          "value": 60.925,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            60.93,
+            60.92
+          ]
+        },
+        "startMs": {
+          "value": 208.14999999999998,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            202.2,
+            214.1
+          ]
+        },
+        "mainBusy": {
+          "value": 0.4,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            0.4,
+            0.4
+          ]
+        },
+        "compositorBusy": {
+          "value": 576.25,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            548.7,
+            603.8
+          ]
+        },
+        "missed": {
+          "value": 2.5,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            2,
+            3
+          ]
+        },
+        "load1": {
+          "value": 4.3100000000000005,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            3.99,
+            4.63
+          ]
+        },
+        "keyframes": {
+          "value": 4,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "drift main 6000",
+      "params": {
+        "shape": "drift",
+        "approach": "main",
+        "count": 6000,
+        "intervals": [
+          [
+            33.2,
+            16.8,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6
+          ],
+          [
+            16.6,
+            16.7,
+            16.7,
+            33.3,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            33.4,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.5,
+            16.8,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            33.3,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6
+          ]
+        ],
+        "mainTop": [
+          {
+            "FunctionCall": 440.66,
+            "UpdateLayoutTree": 168.28,
+            "Layerize": 111.63,
+            "PrePaint": 57.21,
+            "ThreadControllerImpl::RunTask": 34.17,
+            "Paint": 28.17
+          },
+          {
+            "FunctionCall": 519.78,
+            "UpdateLayoutTree": 162.97,
+            "Layerize": 157.86,
+            "PrePaint": 60.72,
+            "Paint": 30.28,
+            "ThreadControllerImpl::RunTask": 27.95
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 58.09,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            59.03,
+            57.15
+          ]
+        },
+        "drawnFps": {
+          "value": 59.045,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            59.93,
+            58.16
+          ]
+        },
+        "startMs": {
+          "value": 26.95,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            24.9,
+            29
+          ]
+        },
+        "mainBusy": {
+          "value": 931.75,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            874.2,
+            989.3
+          ]
+        },
+        "compositorBusy": {
+          "value": 36.55,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            31.3,
+            41.8
+          ]
+        },
+        "missed": {
+          "value": 2,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            1,
+            3
+          ]
+        },
+        "load1": {
+          "value": 5.365,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            4.85,
+            5.88
+          ]
+        },
+        "keyframes": {
+          "value": 0,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "drift compositor 6000",
+      "params": {
+        "shape": "drift",
+        "approach": "compositor",
+        "count": 6000,
+        "intervals": [
+          [
+            50,
+            33.4,
+            49.9,
+            50,
+            50.1,
+            33.3,
+            33.2,
+            66.8,
+            33.3,
+            33.3,
+            50,
+            33.4,
+            33.3,
+            33.4,
+            49.9,
+            50,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            50.1,
+            49.9,
+            33.4,
+            33.3,
+            33.3,
+            50,
+            33.3,
+            33.4,
+            50,
+            50,
+            50,
+            50,
+            33.3,
+            33.4,
+            49.9,
+            33.4,
+            50,
+            50,
+            49.9,
+            50.1,
+            49.9,
+            33.4,
+            50,
+            66.7,
+            49.9,
+            33.4,
+            50,
+            50,
+            50,
+            33.4,
+            33.2,
+            50,
+            33.4,
+            33.3,
+            50,
+            33.3,
+            50.1,
+            49.9,
+            50.1,
+            33.2
+          ],
+          [
+            33.4,
+            50,
+            33.3,
+            33.3,
+            33.3,
+            33.3,
+            33.4,
+            33.4,
+            50,
+            50,
+            66.7,
+            33.2,
+            33.3,
+            50,
+            33.4,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            50,
+            33.3,
+            50,
+            83.3,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            50,
+            50,
+            33.4,
+            33.4,
+            49.9,
+            33.4,
+            83.3,
+            33.3,
+            50,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            50.1,
+            33.2,
+            33.3,
+            33.4,
+            50,
+            50,
+            66.7,
+            50,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            50,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            66.6
+          ]
+        ],
+        "mainTop": [
+          {
+            "ThreadControllerImpl::RunTask": 0.21,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.07,
+            "FunctionCall": 0.01
+          },
+          {
+            "ThreadControllerImpl::RunTask": 0.17,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.06,
+            "FunctionCall": 0.01
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 23.935,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            23.38,
+            24.49
+          ]
+        },
+        "drawnFps": {
+          "value": 42.455,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            44.94,
+            39.97
+          ]
+        },
+        "startMs": {
+          "value": 316.5,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            311.4,
+            321.6
+          ]
+        },
+        "mainBusy": {
+          "value": 0.35,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            0.4,
+            0.3
+          ]
+        },
+        "compositorBusy": {
+          "value": 745.6500000000001,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            755.1,
+            736.2
+          ]
+        },
+        "missed": {
+          "value": 60,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            60,
+            60
+          ]
+        },
+        "load1": {
+          "value": 5.87,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            5.78,
+            5.96
+          ]
+        },
+        "keyframes": {
+          "value": 4,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "drift main 8000",
+      "params": {
+        "shape": "drift",
+        "approach": "main",
+        "count": 8000,
+        "intervals": [
+          [
+            33.3,
+            16.7,
+            16.7,
+            33.3,
+            16.6,
+            16.7,
+            16.7,
+            33.3,
+            16.7,
+            16.6,
+            33.4,
+            16.6,
+            16.7,
+            16.7,
+            33.2,
+            16.7,
+            16.8,
+            33.2,
+            16.7,
+            33.4,
+            16.7,
+            33.3,
+            16.6,
+            16.6,
+            16.7,
+            33.4,
+            16.6,
+            33.4,
+            33.3,
+            16.6,
+            16.7,
+            16.7,
+            33.4,
+            16.6,
+            16.7,
+            33.3,
+            16.7,
+            16.6,
+            33.4,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            33.4,
+            16.6,
+            16.7,
+            16.7,
+            33.2,
+            16.7,
+            16.7,
+            16.6,
+            33.4,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            33.4,
+            16.6,
+            16.6,
+            16.7
+          ],
+          [
+            33.3,
+            16.7,
+            33.3,
+            16.7,
+            33.2,
+            16.7,
+            33.3,
+            16.7,
+            33.3,
+            16.8,
+            16.6,
+            33.3,
+            16.7,
+            16.7,
+            33.3,
+            16.6,
+            16.7,
+            33.4,
+            16.7,
+            16.6,
+            33.3,
+            16.7,
+            16.7,
+            33.3,
+            16.6,
+            16.7,
+            16.7,
+            33.3,
+            16.7,
+            33.3,
+            16.7,
+            33.4,
+            16.6,
+            16.6,
+            33.4,
+            16.7,
+            33.3,
+            16.7,
+            16.7,
+            33.2,
+            16.7,
+            16.7,
+            33.4,
+            16.6,
+            33.3,
+            16.7,
+            33.3,
+            16.6,
+            16.8,
+            33.3,
+            16.6,
+            33.3,
+            16.7,
+            16.7,
+            33.4,
+            16.6,
+            33.3,
+            16.7,
+            33.3,
+            16.7
+          ]
+        ],
+        "mainTop": [
+          {
+            "FunctionCall": 505.02,
+            "UpdateLayoutTree": 170.14,
+            "Layerize": 137.08,
+            "PrePaint": 81,
+            "ThreadControllerImpl::RunTask": 41.45,
+            "Paint": 37.49
+          },
+          {
+            "FunctionCall": 510.37,
+            "Layerize": 191.47,
+            "UpdateLayoutTree": 132.49,
+            "PrePaint": 74.62,
+            "ThreadControllerImpl::RunTask": 32.08,
+            "Paint": 26.1
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 44.51,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            46.16,
+            42.86
+          ]
+        },
+        "drawnFps": {
+          "value": 42.915,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            45.39,
+            40.44
+          ]
+        },
+        "startMs": {
+          "value": 37.099999999999994,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            40.9,
+            33.3
+          ]
+        },
+        "mainBusy": {
+          "value": 999.45,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            999.4,
+            999.5
+          ]
+        },
+        "compositorBusy": {
+          "value": 34.15,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            30.5,
+            37.8
+          ]
+        },
+        "missed": {
+          "value": 21,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            18,
+            24
+          ]
+        },
+        "load1": {
+          "value": 5.985,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            5.57,
+            6.4
+          ]
+        },
+        "keyframes": {
+          "value": 0,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "drift compositor 8000",
+      "params": {
+        "shape": "drift",
+        "approach": "compositor",
+        "count": 8000,
+        "intervals": [
+          [
+            66.6,
+            33.4,
+            83.3,
+            83.3,
+            50,
+            66.7,
+            66.7,
+            83.2,
+            66.8,
+            83.2,
+            50,
+            183.4,
+            50,
+            33.3,
+            66.7,
+            66.6,
+            100.1,
+            50,
+            49.9,
+            50.1,
+            50,
+            66.6,
+            66.7,
+            33.3,
+            33.3,
+            50.1,
+            49.9,
+            66.6,
+            33.4,
+            66.7,
+            66.7,
+            33.3,
+            50,
+            50,
+            83.3,
+            83.3,
+            50,
+            50.1,
+            33.2,
+            33.4,
+            83.3,
+            66.7,
+            50,
+            33.3,
+            50,
+            50,
+            66.7,
+            33.3,
+            66.6,
+            66.7,
+            66.8,
+            49.9,
+            83.3,
+            16.7,
+            66.7,
+            49.9,
+            50,
+            50.1,
+            100,
+            50
+          ],
+          [
+            83.3,
+            66.6,
+            50.1,
+            83.3,
+            100,
+            50.1,
+            66.5,
+            66.7,
+            83.4,
+            66.7,
+            83.3,
+            66.6,
+            66.7,
+            50,
+            49.9,
+            50.1,
+            50,
+            50,
+            49.9,
+            83.4,
+            50,
+            66.7,
+            49.9,
+            50,
+            100.1,
+            49.9,
+            66.7,
+            50,
+            66.7,
+            50,
+            50,
+            50,
+            33.3,
+            66.7,
+            66.7,
+            66.5,
+            100,
+            83.4,
+            33.4,
+            66.6,
+            83.3,
+            16.7,
+            66.7,
+            66.6,
+            50.1,
+            49.9,
+            33.3,
+            50.1,
+            66.6,
+            50,
+            66.7,
+            50,
+            66.6,
+            100,
+            50,
+            33.4,
+            49.9,
+            66.7,
+            100,
+            50
+          ]
+        ],
+        "mainTop": [
+          {
+            "ThreadControllerImpl::RunTask": 17.08,
+            "UpdateLayoutTree": 12.73,
+            "PrePaint": 2.75,
+            "Layerize": 1.31,
+            "Paint": 1.28,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.08
+          },
+          {
+            "ThreadControllerImpl::RunTask": 0.22,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.05,
+            "FunctionCall": 0.02
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 16.479999999999997,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            16.74,
+            16.22
+          ]
+        },
+        "drawnFps": {
+          "value": 30.44,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            29.96,
+            30.92
+          ]
+        },
+        "startMs": {
+          "value": 407.25,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            393.3,
+            421.2
+          ]
+        },
+        "mainBusy": {
+          "value": 17.849999999999998,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            35.3,
+            0.4
+          ]
+        },
+        "compositorBusy": {
+          "value": 864.65,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            860.3,
+            869
+          ]
+        },
+        "missed": {
+          "value": 59,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            59,
+            59
+          ]
+        },
+        "load1": {
+          "value": 6.12,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            5.54,
+            6.7
+          ]
+        },
+        "keyframes": {
+          "value": 4,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "slide main 4000",
+      "params": {
+        "shape": "slide",
+        "approach": "main",
+        "count": 4000,
+        "intervals": [
+          [
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7
+          ],
+          [
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7
+          ]
+        ],
+        "mainTop": [
+          {
+            "FunctionCall": 335.27,
+            "UpdateLayoutTree": 101.09,
+            "Layerize": 50.63,
+            "PrePaint": 32.07,
+            "ThreadControllerImpl::RunTask": 22.91,
+            "Paint": 17.16
+          },
+          {
+            "FunctionCall": 308.15,
+            "UpdateLayoutTree": 107.91,
+            "Layerize": 69.75,
+            "PrePaint": 35,
+            "ThreadControllerImpl::RunTask": 26.62,
+            "Paint": 16.73
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 60,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            60,
+            60
+          ]
+        },
+        "drawnFps": {
+          "value": 60.555,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            60.69,
+            60.42
+          ]
+        },
+        "startMs": {
+          "value": 14.05,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            12.6,
+            15.5
+          ]
+        },
+        "mainBusy": {
+          "value": 581.4,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            577.4,
+            585.4
+          ]
+        },
+        "compositorBusy": {
+          "value": 27.65,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            24.6,
+            30.7
+          ]
+        },
+        "missed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "load1": {
+          "value": 6.41,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            6.13,
+            6.69
+          ]
+        },
+        "keyframes": {
+          "value": 0,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "slide compositor 4000",
+      "params": {
+        "shape": "slide",
+        "approach": "compositor",
+        "count": 4000,
+        "intervals": [
+          [
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6
+          ],
+          [
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            33.4,
+            16.6,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            33.3,
+            16.6,
+            33.4,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7
+          ]
+        ],
+        "mainTop": [
+          {
+            "ThreadControllerImpl::RunTask": 6.57,
+            "UpdateLayoutTree": 5.41,
+            "PrePaint": 0.77,
+            "Layerize": 0.65,
+            "Paint": 0.29,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.09
+          },
+          {
+            "ThreadControllerImpl::RunTask": 0.24,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.09,
+            "FunctionCall": 0.02
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 58.575,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            60.01,
+            57.14
+          ]
+        },
+        "drawnFps": {
+          "value": 59.84,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            59.85,
+            59.83
+          ]
+        },
+        "startMs": {
+          "value": 213.7,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            203.6,
+            223.8
+          ]
+        },
+        "mainBusy": {
+          "value": 7.15,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            13.9,
+            0.4
+          ]
+        },
+        "compositorBusy": {
+          "value": 491.8,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            504.1,
+            479.5
+          ]
+        },
+        "missed": {
+          "value": 1.5,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            0,
+            3
+          ]
+        },
+        "load1": {
+          "value": 5.96,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            6.04,
+            5.88
+          ]
+        },
+        "keyframes": {
+          "value": 4,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "slide main 6000",
+      "params": {
+        "shape": "slide",
+        "approach": "main",
+        "count": 6000,
+        "intervals": [
+          [
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6
+          ],
+          [
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7
+          ]
+        ],
+        "mainTop": [
+          {
+            "FunctionCall": 397.89,
+            "UpdateLayoutTree": 132.51,
+            "Layerize": 85.29,
+            "PrePaint": 53.2,
+            "ThreadControllerImpl::RunTask": 27.21,
+            "Paint": 26.28
+          },
+          {
+            "FunctionCall": 477.5,
+            "UpdateLayoutTree": 173.03,
+            "Layerize": 123.26,
+            "PrePaint": 54.09,
+            "ThreadControllerImpl::RunTask": 29.2,
+            "Paint": 25.44
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 60.004999999999995,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            60.01,
+            60
+          ]
+        },
+        "drawnFps": {
+          "value": 60.510000000000005,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            60.74,
+            60.28
+          ]
+        },
+        "startMs": {
+          "value": 21.55,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            19.3,
+            23.8
+          ]
+        },
+        "mainBusy": {
+          "value": 828.95,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            749,
+            908.9
+          ]
+        },
+        "compositorBusy": {
+          "value": 30.85,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            25.6,
+            36.1
+          ]
+        },
+        "missed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "load1": {
+          "value": 6.1899999999999995,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            6.31,
+            6.07
+          ]
+        },
+        "keyframes": {
+          "value": 0,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "slide compositor 6000",
+      "params": {
+        "shape": "slide",
+        "approach": "compositor",
+        "count": 6000,
+        "intervals": [
+          [
+            33.4,
+            33.3,
+            33.4,
+            33.3,
+            50,
+            33.3,
+            33.4,
+            16.6,
+            33.4,
+            33.3,
+            33.3,
+            50,
+            49.9,
+            33.4,
+            33.4,
+            33.3,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            50,
+            33.3,
+            16.6,
+            33.4,
+            33.3,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.3,
+            16.8,
+            33.2,
+            33.4,
+            33.4,
+            33.2,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            16.6,
+            33.4
+          ],
+          [
+            33.3,
+            49.9,
+            33.4,
+            33.3,
+            33.3,
+            66.7,
+            50,
+            33.3,
+            50.1,
+            33.3,
+            33.3,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            33.4,
+            49.9,
+            33.3,
+            33.4,
+            33.3,
+            50.1,
+            33.2,
+            33.5,
+            33.3,
+            33.3,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            66.7,
+            50,
+            33.3,
+            49.9,
+            33.4,
+            33.3,
+            33.4,
+            33.4,
+            49.9,
+            33.3,
+            33.3,
+            33.4,
+            50,
+            33.4,
+            33.3,
+            33.3,
+            50,
+            50,
+            50,
+            33.4,
+            33.3,
+            50,
+            33.3,
+            33.3,
+            33.3,
+            66.8,
+            33.2,
+            33.4
+          ]
+        ],
+        "mainTop": [
+          {
+            "ThreadControllerImpl::RunTask": 10.34,
+            "UpdateLayoutTree": 8.95,
+            "PrePaint": 1.9,
+            "Layerize": 1.08,
+            "Paint": 0.77,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.09
+          },
+          {
+            "ThreadControllerImpl::RunTask": 0.29,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.1,
+            "FunctionCall": 0.01
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 27.95,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            30,
+            25.9
+          ]
+        },
+        "drawnFps": {
+          "value": 54.445,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            53.93,
+            54.96
+          ]
+        },
+        "startMs": {
+          "value": 311.20000000000005,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            300.6,
+            321.8
+          ]
+        },
+        "mainBusy": {
+          "value": 11.85,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            23.2,
+            0.5
+          ]
+        },
+        "compositorBusy": {
+          "value": 780.45,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            751.1,
+            809.8
+          ]
+        },
+        "missed": {
+          "value": 58,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            56,
+            60
+          ]
+        },
+        "load1": {
+          "value": 6.18,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            6.29,
+            6.07
+          ]
+        },
+        "keyframes": {
+          "value": 4,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "slide main 8000",
+      "params": {
+        "shape": "slide",
+        "approach": "main",
+        "count": 8000,
+        "intervals": [
+          [
+            33.2,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.5,
+            16.7,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.6,
+            16.8,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7
+          ],
+          [
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            33.4,
+            16.6,
+            16.7,
+            16.7,
+            16.5,
+            16.8,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.6,
+            16.7,
+            33.3,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.7,
+            16.7,
+            16.6,
+            16.7,
+            16.7,
+            16.6,
+            16.6,
+            16.8,
+            16.6,
+            16.6,
+            16.7,
+            16.7,
+            16.6
+          ]
+        ],
+        "mainTop": [
+          {
+            "FunctionCall": 467.92,
+            "UpdateLayoutTree": 187.99,
+            "Layerize": 119.19,
+            "PrePaint": 73.01,
+            "ThreadControllerImpl::RunTask": 33.98,
+            "Paint": 32.09
+          },
+          {
+            "FunctionCall": 542.07,
+            "UpdateLayoutTree": 169.2,
+            "Layerize": 115.98,
+            "PrePaint": 72.01,
+            "ThreadControllerImpl::RunTask": 34.64,
+            "Paint": 31.48
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 58.545,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            59.02,
+            58.07
+          ]
+        },
+        "drawnFps": {
+          "value": 58.5,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            59.77,
+            57.23
+          ]
+        },
+        "startMs": {
+          "value": 29.8,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            26.1,
+            33.5
+          ]
+        },
+        "mainBusy": {
+          "value": 968.7,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            943.2,
+            994.2
+          ]
+        },
+        "compositorBusy": {
+          "value": 36.35,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            29.5,
+            43.2
+          ]
+        },
+        "missed": {
+          "value": 1.5,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            1,
+            2
+          ]
+        },
+        "load1": {
+          "value": 7.145,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            6.47,
+            7.82
+          ]
+        },
+        "keyframes": {
+          "value": 0,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    },
+    {
+      "id": "slide compositor 8000",
+      "params": {
+        "shape": "slide",
+        "approach": "compositor",
+        "count": 8000,
+        "intervals": [
+          [
+            66.7,
+            49.9,
+            33.3,
+            50.1,
+            33.3,
+            33.3,
+            50,
+            33.4,
+            50,
+            49.9,
+            33.4,
+            50,
+            50,
+            33.3,
+            33.4,
+            49.9,
+            33.4,
+            33.3,
+            83.4,
+            49.9,
+            33.4,
+            66.6,
+            66.7,
+            33.3,
+            33.3,
+            50,
+            33.4,
+            50,
+            33.3,
+            33.4,
+            66.7,
+            33.2,
+            33.4,
+            50,
+            49.9,
+            83.4,
+            33.3,
+            33.4,
+            33.3,
+            33.3,
+            50,
+            83.3,
+            50.1,
+            33.2,
+            50.1,
+            49.9,
+            50,
+            33.4,
+            50,
+            33.3,
+            33.4,
+            33.3,
+            50,
+            33.3,
+            50,
+            33.4,
+            50,
+            49.9,
+            33.4,
+            33.3
+          ],
+          [
+            33.3,
+            33.4,
+            66.6,
+            33.4,
+            33.3,
+            33.3,
+            50,
+            66.7,
+            50,
+            33.4,
+            49.9,
+            50.1,
+            83.3,
+            33.3,
+            50,
+            50,
+            66.6,
+            50.1,
+            83.3,
+            50,
+            50,
+            33.3,
+            50.1,
+            49.9,
+            50,
+            50.1,
+            49.9,
+            66.7,
+            33.3,
+            33.3,
+            66.7,
+            83.3,
+            50,
+            66.7,
+            33.3,
+            50,
+            33.3,
+            83.4,
+            50,
+            50,
+            50,
+            33.3,
+            50,
+            50,
+            50,
+            50.1,
+            66.6,
+            50,
+            50,
+            33.3,
+            50,
+            66.7,
+            33.3,
+            66.7,
+            49.9,
+            50,
+            33.4,
+            50,
+            16.6,
+            66.7
+          ]
+        ],
+        "mainTop": [
+          {
+            "ThreadControllerImpl::RunTask": 0.22,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.06,
+            "FunctionCall": 0.01
+          },
+          {
+            "ThreadControllerImpl::RunTask": 0.2,
+            "BlinkScheduler_PerformMicrotaskCheckpoint": 0.05,
+            "FunctionCall": 0.01
+          }
+        ]
+      },
+      "metrics": {
+        "pageFps": {
+          "value": 21.25,
+          "unit": "fps",
+          "stat": "median of 2 untraced windows of 60 frames, 1000 / mean rAF interval",
+          "samples": [
+            22.5,
+            20
+          ]
+        },
+        "drawnFps": {
+          "value": 34.905,
+          "unit": "fps",
+          "stat": "median of 2 traced windows, DrawFrame events a second in the page's renderer",
+          "samples": [
+            35.95,
+            33.86
+          ]
+        },
+        "startMs": {
+          "value": 394.85,
+          "unit": "ms",
+          "stat": "median, ms to start every run of the cell",
+          "samples": [
+            389.7,
+            400
+          ]
+        },
+        "mainBusy": {
+          "value": 0.4,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer main thread busy",
+          "samples": [
+            0.4,
+            0.4
+          ]
+        },
+        "compositorBusy": {
+          "value": 701.8499999999999,
+          "unit": "ms/s",
+          "stat": "median of traced windows, renderer compositor thread busy",
+          "samples": [
+            712.8,
+            690.9
+          ]
+        },
+        "missed": {
+          "value": 59.5,
+          "unit": "count",
+          "stat": "median of untraced windows, rAF intervals over 25 ms",
+          "samples": [
+            60,
+            59
+          ]
+        },
+        "load1": {
+          "value": 7.025,
+          "unit": "load",
+          "stat": "median 1-minute load as each sample finished",
+          "samples": [
+            6.86,
+            7.19
+          ]
+        },
+        "keyframes": {
+          "value": 4,
+          "unit": "count",
+          "stat": "keyframes in the first element's browser animation"
+        }
+      }
+    }
+  ]
+}

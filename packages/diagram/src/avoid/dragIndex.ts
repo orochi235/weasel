@@ -35,9 +35,15 @@ export class DragIndex {
   private readonly segments = new SegmentIndex();
   private readonly attached = new Map<string, string[]>();
 
-  constructor(input: AvoidInput, routes: ReadonlyMap<string, readonly Vec2[]>, private readonly clearance: number, private readonly limit: Box) {
+  constructor(
+    input: AvoidInput,
+    routes: ReadonlyMap<string, readonly Vec2[]>,
+    private readonly clearance: number,
+    private readonly limit: Box,
+    labelClearance = clearance,
+  ) {
     for (const o of input.obstacles) this.committed.set(o.id, o);
-    this.index = new ObstacleIndex(input.obstacles, clearance);
+    this.index = new ObstacleIndex(input.obstacles, clearance, labelClearance);
     for (const e of input.edges) {
       for (const node of new Set([e.from.node, e.to.node])) {
         const list = this.attached.get(node);

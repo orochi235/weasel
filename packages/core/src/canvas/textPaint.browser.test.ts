@@ -15,7 +15,7 @@ import { createScene, registerPaintKind, asPaint, type PaintKindEntry, renderSce
 import type { RectPose } from 'core/scene/composePose';
 import { resolveFillPattern } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';
-import 'core/paint/registerMesh';
+import '@weasel-js/core/mesh';
 import { registerEffect } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/renderer';
@@ -261,7 +261,7 @@ const SPLIT_KIND: PaintKindEntry = {
   seed: () => SPLIT,
   colorOf: () => undefined,
   programs: {
-    'test:split': {
+    'test:split': { glsl: {
       vert: `#version 300 es
 in vec2 a_position;
 uniform mat3 u_proj;
@@ -285,18 +285,12 @@ void main() {
   outColor = vec4(c * u_alpha, u_alpha);
 }
 `,
-    },
+    } },
   },
   bind(ctx) {
     const inverse = ctx.spaceInverse('world');
-    const program = ctx.program('test:split');
-    if (!inverse || !program) return null;
-    ctx.gl.useProgram(program.handle);
-    ctx.setProjAndModel(program);
-    ctx.gl.uniformMatrix3fv(program.uniform('u_worldInv')!, false, inverse);
-    ctx.gl.uniform1f(program.uniform('u_split')!, SPLIT_X);
-    ctx.gl.uniform1f(program.uniform('u_alpha')!, ctx.alpha);
-    return program;
+    if (!inverse) return null;
+    return { program: 'test:split', uniforms: { u_worldInv: inverse, u_split: SPLIT_X, u_alpha: ctx.alpha } };
   },
 };
 
@@ -420,13 +414,13 @@ describe('a registered paint kind on text', () => {
   it('lands in a group\'s effect buffer, not the frame under it', () => {
     // Red and blue trade places, so glyphs that escaped to the default
     // framebuffer would read unswapped.
-    const swap = registerEffect('test:swap-rb', `#version 300 es
+    const swap = registerEffect('test:swap-rb', { glsl: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_source;
 out vec4 outColor;
 void main() { outColor = texture(u_source, v_uv).bgra; }
-`);
+` });
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'mark', layer: 'main', pose: POSE,

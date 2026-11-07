@@ -48,7 +48,7 @@ function paint(commands: DrawCommand[]): (x: number, y: number) => number[] {
 }
 
 function copy(): { program: ReturnType<typeof registerEffect> } {
-  return { program: registerEffect('browser-fx-copy', COPY_FRAG) };
+  return { program: registerEffect('browser-fx-copy', { glsl: COPY_FRAG }) };
 }
 
 describe('a group with effects, in a real context', () => {
@@ -113,13 +113,13 @@ describe('a group with effects, in a real context', () => {
   });
 
   it('keeps its source bound on the frame an effect\'s own texture first uploads', async () => {
-    const program = registerEffect('browser-fx-tint', `#version 300 es
+    const program = registerEffect('browser-fx-tint', { glsl: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_source;
 uniform sampler2D u_tint;
 out vec4 outColor;
-void main() { outColor = texture(u_source, v_uv) * texture(u_tint, vec2(0.5)); }`);
+void main() { outColor = texture(u_source, v_uv) * texture(u_tint, vec2(0.5)); }` });
     const white = await createImageBitmap(new ImageData(new Uint8ClampedArray([255, 255, 255, 255]), 1, 1));
     const at = paint([{
       kind: 'group',

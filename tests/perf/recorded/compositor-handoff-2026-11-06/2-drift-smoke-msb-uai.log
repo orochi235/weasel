@@ -1,0 +1,99 @@
+  waiting for room
+  waiting: keiei unknown (refuses repo:orochi235/weasel), msb-uai unknown (it wants the node to itself, and the node is promised to webgpu-s2-typecheck6), orochi unknown (someone is using it), studio unknown (it wants the node to itself, and the node is promised to webgpu-s2-jsdom), teitou unknown (behind forge-restart-config-loader in line, which has no estimate)
+  waiting: studio ~4m (behind webgpu-s2-browser-all in line), keiei unknown (refuses repo:orochi235/weasel), msb-uai unknown (it wants the node to itself, and the node is promised to webgpu-s2-typecheck6), orochi unknown (someone is using it), teitou unknown (behind forge-restart-config-loader in line, which has no estimate)
+  waiting: keiei unknown (refuses repo:orochi235/weasel), msb-uai unknown (it wants the node to itself, and the node is promised to webgpu-s2-typecheck6), orochi unknown (someone is using it), studio unknown (it wants the node to itself, and the node is promised to webgpu-s2-browser-all), teitou unknown (behind forge-restart-config-loader in line, which has no estimate)
+msb-uai  chosen: 11.5 cores free, 20.5G available (npx: 5 past runs, worst 1.9 cores / 12.3G)
+  keiei    refuses repo:orochi235/weasel
+  orochi   refuses rotation
+  studio   it wants the node to itself, and the node is promised to webgpu-s2-browser-all
+  teitou   it wants the node to itself, and the node is promised to bench-browser-split-670_59d
+  base   2268d40f
+  delta  5 file(s), 0 deleted
+  commits sent directly, 35.7 KiB (not on origin)
+  updated weasel on msb-uai at 2268d40f + 5 uncommitted file(s)
+  job    1534526b on msb-uai
+
+onto: waapi-bridge is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+compositor handoff — 12 measurements, 60 frames each; load 4.3 3.5 3.2 on 14 cores
+    1/12  pass 1  drift main        4000  page   59.0 fps (missed   1)  drawn   61.0 fps  main busy   608 comp    27 ms/s  start      36 ms  keyframes    0  on compositor     0/ 4000  load   4.3
+         main thread, ms/s self: FunctionCall 286.91, UpdateLayoutTree 135.86, Layerize 72.13, PrePaint 36.41, ThreadControllerImpl::RunTask 28.51, Paint 21.49
+onto: progress 1/12
+    2/12  pass 1  drift compositor  4000  page   48.7 fps (missed  13)  drawn   59.7 fps  main busy   899 comp   699 ms/s  start     272 ms  keyframes    4  on compositor  4000/ 4000  load   4.2
+         main thread, ms/s self: ThreadControllerImpl::RunTask 396.03, UpdateLayoutTree 374.78, Layerize 50.95, PrePaint 43.72, Paint 24.4, FunctionCall 1.98
+onto: progress 2/12
+    3/12  pass 1  drift compositor  4000  page   38.3 fps (missed  33)  drawn   58.6 fps  main busy   671 comp   714 ms/s  start     275 ms  keyframes    4  on compositor  4000/ 4000  load   4.4
+         main thread, ms/s self: ThreadControllerImpl::RunTask 309.84, UpdateLayoutTree 255.91, Layerize 47.22, PrePaint 31.58, Paint 17.46, V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING 1.59
+onto: progress 3/12
+    4/12  pass 1  drift main        4000  page   60.0 fps (missed   0)  drawn   60.5 fps  main busy   654 comp    34 ms/s  start      23 ms  keyframes    0  on compositor     0/ 4000  load   4.1
+         main thread, ms/s self: FunctionCall 313.13, UpdateLayoutTree 139.4, Layerize 80.94, PrePaint 43.46, ThreadControllerImpl::RunTask 23.38, Paint 22.81
+onto: progress 4/12
+    5/12  pass 1  drift main        8000  page   44.4 fps (missed  21)  drawn   45.2 fps  main busy   982 comp    30 ms/s  start      42 ms  keyframes    0  on compositor     0/ 8000  load   4.1
+         main thread, ms/s self: FunctionCall 516.7, UpdateLayoutTree 188.72, Layerize 121.71, PrePaint 61.27, Paint 29.92, ThreadControllerImpl::RunTask 27.12
+onto: progress 5/12
+    6/12  pass 1  drift compositor  8000  page   14.6 fps (missed  60)  drawn   28.9 fps  main busy   685 comp   966 ms/s  start     537 ms  keyframes    4  on compositor  8000/ 8000  load   4.1
+         main thread, ms/s self: ThreadControllerImpl::RunTask 299.16, UpdateLayoutTree 236.58, Layerize 79.43, PrePaint 43.57, Paint 19.9, V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING 1.26
+onto: progress 6/12
+    7/12  pass 1  drift compositor  8000  page   14.9 fps (missed  60)  drawn   26.4 fps  main busy   680 comp   948 ms/s  start     567 ms  keyframes    4  on compositor  8000/ 8000  load   3.9
+         main thread, ms/s self: ThreadControllerImpl::RunTask 300.96, UpdateLayoutTree 225.87, Layerize 88.67, PrePaint 38.11, Paint 19.23, V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING 2.31
+onto: progress 7/12
+    8/12  pass 1  drift main        8000  page   37.9 fps (missed  34)  drawn   38.4 fps  main busy   999 comp    36 ms/s  start      43 ms  keyframes    0  on compositor     0/ 8000  load   3.9
+         main thread, ms/s self: FunctionCall 517.54, UpdateLayoutTree 195.69, Layerize 138.69, PrePaint 61.64, Paint 29.92, ThreadControllerImpl::RunTask 24.84
+onto: progress 8/12
+    9/12  pass 1  drift main       16000  page   18.8 fps (missed  60)  drawn   19.0 fps  main busy  1000 comp    21 ms/s  start      80 ms  keyframes    0  on compositor     0/16000  load   3.7
+         main thread, ms/s self: FunctionCall 492.67, UpdateLayoutTree 208.38, Layerize 125.05, PrePaint 84.86, Paint 33.11, ThreadControllerImpl::RunTask 24.87
+onto: progress 9/12
+   10/12  pass 1  drift compositor 16000  page    4.2 fps (missed  60)  drawn    5.1 fps  main busy   458 comp   999 ms/s  start    1037 ms  keyframes    4  on compositor 16000/16000  load   3.8
+         main thread, ms/s self: ThreadControllerImpl::RunTask 179.88, UpdateLayoutTree 123.97, Layerize 113.55, PrePaint 25.67, Paint 11.41, V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING 0.7
+onto: progress 10/12
+   11/12  pass 1  drift compositor 16000  page    8.6 fps (missed  60)  drawn    0.0 fps  main busy   886 comp   957 ms/s  start    1180 ms  keyframes    4  on compositor 16000/16000  load   3.2
+         main thread, ms/s self: ThreadControllerImpl::RunTask 439.28, UpdateLayoutTree 243.4, Layerize 130.04, PrePaint 46.33, Paint 21.28, V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING 1.57
+onto: progress 11/12
+   12/12  pass 1  drift main       16000  page   18.0 fps (missed  60)  drawn   18.3 fps  main busy  1000 comp    21 ms/s  start     129 ms  keyframes    0  on compositor     0/16000  load   3.2
+         main thread, ms/s self: FunctionCall 534.14, UpdateLayoutTree 175.41, Layerize 115.66, PrePaint 82.59, Paint 31.62, ThreadControllerImpl::RunTask 29.23
+onto: progress 12/12
+  ✘  1 tests/perf/compositor-handoff.spec.ts:136:1 › compositor handoff: frame rate against concurrent count (2.5m)
+
+
+  1) tests/perf/compositor-handoff.spec.ts:136:1 › compositor handoff: frame rate against concurrent count 
+
+    Error: drift compositor 16000: the trace recorded no DrawFrame
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      208 |   for (const s of samples) {
+      209 |     const id = `${s.shape} ${s.approach} ${s.count}`;
+    > 210 |     expect(s.drawFrames, `${id}: the trace recorded no DrawFrame`).toBeGreaterThan(0);
+          |                                                                    ^
+      211 |     expect(s.onCompositor, `${id}: runs on the compositor`).toBe(s.approach === 'compositor' ? s.count : 0);
+      212 |   }
+      213 |
+        at /Users/mike/.config/onto/work/weasel/tests/perf/compositor-handoff.spec.ts:210:68
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/compositor-handoff-composi-db9d4-te-against-concurrent-count/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/perf/compositor-handoff.spec.ts:136:1 › compositor handoff: frame rate against concurrent count 
+onto do: job finished but its output did not come back: 400 Bad Request: no such path in the "weasel" tree: tests/perf/results/handoff-smoke3

@@ -190,6 +190,17 @@ describe('usePenTool', () => {
       expect(p.adapter.added[0].path.commands).toHaveLength(4); // M L L Z
     });
 
+    it('a double-click on the first anchor closes and commits, starting no new path', () => {
+      // Its first click closes and commits the path; its second lands on
+      // the same spot as a fresh path's first anchor, which the double click takes back.
+      const p = setup({ closeHitRadius: 8 });
+      p.click(0, 0); p.click(100, 0); p.click(100, 100);
+      p.doubleClick(1, 1);
+      expect(p.adapter.added.map((a) => a.closed)).toEqual([true]);
+      expect(p.scratch.current).toBeNull();
+      expect(p.scratch.finishedSubpaths).toEqual([]);
+    });
+
     it('a double-click from idle commits nothing and leaves the pen idle', () => {
       const p = setup();
       p.doubleClick(10, 10);

@@ -4,18 +4,31 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-11-03)
+## State (2026-11-06)
 
-- 1.16.1 is on npm (`npm view @weasel-js/core version`). `main` is at 53008c834 (2026-11-03), unpushed past
-  58d39a8ed. Unreleased since 1.16.1 is whatever `.changeset/` holds: among it `@weasel-js/core/engine` with
-  kernel3d and the 3D lab built on it, `ENGINE_STANDARD_ACTIONS`, keys staying with the surface a press landed
-  in, a lab's menu bar in its header, the dither package, and the Node 24 floor. The batch run on bd0f69a2a
-  (`test:fleet`, `test:fleet:postbuild`) was green, and so was batch 2026-11-03-agents on 53008c834: id frames and
-  `pickAt`, `renderSceneToPixels`'s `layers`, the scene's `quantize` rule with the output grid as a document
-  value, per-page clips in saved SVG, envelope drops, and the vertical bar's number box.
-- Nothing in flight.
-- The windease fix for a never-shown node is on windease's `main` (24ec47d) and not yet released (npm has
-  2.2.0); the weasel TODO entry says what follows its release.
+- 1.16.2 is on npm (`npm view @weasel-js/core version`). `main` is at 0a2faa768, unpushed past 1d87afe1c; its
+  `test:fleet` and `test:fleet:postbuild` runs were green on that commit (batch/2026-11-06). Unreleased is
+  whatever `.changeset/` holds: among it the WebGPU backend (`backend: 'webgl2' | 'webgpu' | 'auto'`, with
+  `readIds`/`pickAt` now async and `readIdsSync` beside them, both breaking), `<SceneCanvas worker>` and
+  `<SceneViewCanvas worker>` (props now a union, also breaking for `Omit` wrappers), the animator's element
+  targets with an opt-in compositor handoff, retain-budget eviction of surfaces that cannot follow a pan,
+  custom shader programs taking their source by language, and core's `useClipboard`.
+- The CI visual suite has run on both backends only for `webgpu` alone (run 42333043838), not for the merged
+  batch; it runs on push.
+- 2026-11-07's overnight audit batch (74 bug fixes across eight areas) and a second batch closing five `[agent]`
+  entries (straight-alpha bitmaps on WebGL, trim tweens without rebuilds, the browser project on the node's GPU,
+  browser files dealt across Chromiums, browser tests on package specifiers) are on `main` at 6fe6c8a14,
+  fleet-green, and unpushed. The second batch changes how untrimmed strokes too large to batch are drawn, so the
+  CI visual suite may show edge pixels move; and the Linux browser job now launches every file with the
+  SwiftShader flag set, untried on CI.
+- A third 2026-11-07 batch (batch/2026-11-07c: a sweep of core, ui, labkit, forge, theme, routing, diagram, text, svg,
+  and the small packages and apps, plus rulers in guides and ui) is on `main` at 4a6f72ebe, unpushed. Its
+  `test:fleet` ran green on 9ae52cb44 and `test:fleet:postbuild` on bdf528f34, which differs from it by a test file;
+  the merge into `main` adds only another session's TODO rulings. A modifier-held tool now takes its own gestures
+  in routing's dispatcher, and the symmetry controller's `create` takes its center in world coordinates.
+- Release 1.17.0 (2026-11-07): `minor` approved on `@weasel-js/core` in `.changeset/webgpu-backend.md` (9dcd2bc8c).
+  `test:fleet` (35046 passed, 0 failed) and `test:fleet:postbuild` (13/13 steps) ran green on e0591848d, which
+  includes batch/2026-11-07d; 9dcd2bc8c adds only that changeset. Next: push, let CI's visual suite run, release.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
@@ -42,6 +55,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-07, rulers: draw's View > Show rulers and the site's Rulers demo (`#rulers`). Ticks following pan
+  and zoom, labels switching to millimeters over the demo's half-size part, the pointer marker, and dragging
+  a guide off a ruler, moving it, dropping it back on a ruler, and undoing each. The look is provisional.
 - 2026-11-03, dither demo: the Marks toggle (snapped to dots / as drawn), "By mask" now built from the id
   buffer, and an insert's drag preview fitted to where a size-snapping rule lands it.
 - 2026-11-03, draw: a shape hanging off its page, saved as SVG and opened in another viewer (clipped at the page)

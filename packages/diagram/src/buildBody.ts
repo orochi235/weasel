@@ -45,6 +45,9 @@ export interface BuildBodyOptions<TData, TLayer extends string, TPose extends Bo
   body: (trait: DiagramNode, pose: TPose) => TData;
   /** One row's data, or `null` to leave that row undrawn. */
   row: RowNodeData<TData>;
+  /** A header's `aside`, handed its header's box with `box.aside` set, or `null` to leave it
+   *  undrawn. Omit to draw none. */
+  aside?: RowNodeData<TData>;
   /** One port's label — a row port's or a perimeter port's — or `null` to
    *  leave it undrawn. Ports with no label are never offered. Omit to draw none. */
   portLabel?: (text: string, box: RowPortBox | PerimeterPortLabelBox) => TData | null;
@@ -89,7 +92,12 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
   const portLabel = opts.portLabel;
   for (const box of layoutBody(spec, pose, opts.measure)) {
     const data = opts.row(rowText(box.row), box);
-    if (data !== null) leaf(box, data, 'id' in box.row ? box.row.id : undefined);
+    const rowId = 'id' in box.row ? box.row.id : undefined;
+    if (data !== null) leaf(box, data, rowId);
+    if (box.row.kind === 'header' && box.row.aside !== undefined && box.aside !== undefined && opts.aside !== undefined) {
+      const asideData = opts.aside(box.row.aside, box);
+      if (asideData !== null) leaf(box.aside, asideData, rowId === undefined ? undefined : `${rowId}:aside`);
+    }
     if (portLabel === undefined || box.row.kind !== 'ports') continue;
     for (const pb of layoutRowPorts(box.row, box, opts.measure)) {
       if (pb.port.label === undefined) continue;

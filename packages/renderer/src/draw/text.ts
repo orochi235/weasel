@@ -26,7 +26,8 @@ import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { drawColorGlyphs } from './colorGlyphs';
 import { modelScale } from './modelScale';
-import { applyClipTest } from './stencil';
+import { clipTest } from './stencil';
+import type { GpuStencilState } from '../gpu/types';
 import { enterUncut, leaveUncut, flushForOwnDraw } from './clip';
 import { BATCH_MODEL, flushBatch } from './flushBatch';
 import { solidColor, stageSolid, stageGlyphs, tryStageFill } from './batch';
@@ -248,8 +249,9 @@ function glyphPaintKindOf(fill: Paint): GlyphPaintKind | null {
   return kind === 'solid' ? null : 'texture';
 }
 
-/** The atlas's unit while a glyph-paint run draws; the paint has unit 0. */
-const GLYPH_PAINT_ATLAS_UNIT = 1;
+/** The texture slot a glyph-paint run's vertices carry. Its program samples
+ *  `u_atlas` by name, so nothing reads it. */
+const GLYPH_PAINT_SLOT = 1;
 const OPAQUE_WHITE = [1, 1, 1, 1] as const;
 
 /**
@@ -284,12 +286,10 @@ function drawPaintedGlyphs(
     bound = painted && bindScratchPaint(ctx, prog, painted);
   }
   if (!bound) return;
-  const gl = ctx.gl;
-  ctx.textureCache.bind(atlasId, GLYPH_PAINT_ATLAS_UNIT);
-  gl.uniform1i(prog.uniform('u_atlas')!, GLYPH_PAINT_ATLAS_UNIT);
-  gl.uniform1f(prog.uniform('u_synthBold')!, bold);
-  gl.uniform2f(prog.uniform('u_fieldScale')!, fieldScale[0], fieldScale[1]);
-  applyClipTest(ctx);
+  bound.setTexture('u_atlas', ctx.textureCache.texture(atlasId));
+  bound.set1f('u_synthBold', bold);
+  bound.set2f('u_fieldScale', fieldScale[0], fieldScale[1]);
+  const stencil = clipTest(ctx.clipDepth);
 
   const batch = ctx.drawBatch;
   // `flushForOwnDraw` put every clip on the stencil, which this draw tests.
@@ -297,19 +297,18 @@ function drawPaintedGlyphs(
   batch.clip = null;
   const quads = group.quadData;
   for (let at = 0; at < quads.length; at += QUAD_STRIDE) {
-    if (batch.wouldOverflow(4)) drawStagedGlyphs(ctx);
-    batch.pushGlyph(quads, at, dx, dy, tanItalic, m, OPAQUE_WHITE, GLYPH_PAINT_ATLAS_UNIT, mode, 0, grow);
+    if (batch.wouldOverflow(4)) drawStagedGlyphs(ctx, bound, stencil);
+    batch.pushGlyph(quads, at, dx, dy, tanItalic, m, OPAQUE_WHITE, GLYPH_PAINT_SLOT, mode, 0, grow);
   }
-  drawStagedGlyphs(ctx);
+  drawStagedGlyphs(ctx, bound, stencil);
   batch.clip = cut;
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindVertexArray(null);
 }
 
-function drawStagedGlyphs(ctx: DrawContext): void {
+function drawStagedGlyphs(ctx: DrawContext, prog: ShaderProgram, stencil: GpuStencilState | null): void {
   const batch = ctx.drawBatch;
   if (batch.length === 0) return;
-  drawTriangles(ctx, batch.uploadAndBind(), ctx.gl.UNSIGNED_INT);
+  const { geometry, count } = batch.upload();
+  drawTriangles(ctx, prog, geometry, count, { stencil });
   batch.reset();
 }
 

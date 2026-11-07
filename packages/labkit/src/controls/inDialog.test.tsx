@@ -73,6 +73,13 @@ describe('.dialog', () => {
     expect(screen.getByRole('button', { name: 'Edit Pts' }).textContent).toContain('3 points');
   });
 
+  it('opens from a words leaf too, which otherwise draws no control', () => {
+    const schema = f.schema({ note: f.label('Read me').dialog(() => <p>the body</p>) });
+    renderWithIcons(<Panel schema={schema} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Read me' }));
+    expect(screen.getByText('the body')).toBeTruthy();
+  });
+
   it('gives way to a later .render, and takes over from an earlier one', () => {
     const schema = f.schema({
       a: f

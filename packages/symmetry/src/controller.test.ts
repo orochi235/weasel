@@ -3,9 +3,9 @@ import {
   asNodeId, composeWorldPose, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, scenePoseAdapter, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
   type SceneRegistry,
 } from '@weasel-js/core';
-import { boundsOfPath, rectPath } from '@weasel-js/geom';
+import { applyToPoint, boundsOfPath, rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
-import { isSymmetryGroup, symmetryCopies, symmetryRegistry } from './group';
+import { editSymmetries, isSymmetryGroup, symmetryCopies, symmetryGroupSpec, symmetryRegistry } from './group';
 import { VERTICAL_AXIS } from './kinds';
 
 function setup() {
@@ -252,6 +252,47 @@ describe('in a scene that composes frames', () => {
     expect(kept).toBe(leaf);
     expect(scene.get(kept)!.pose).toMatchObject({ x: 120, y: 10 });
     expect(scene.get(copy)!.pose).toMatchObject({ x: 70, y: 10 });
+  });
+});
+
+describe('a group inside a frame', () => {
+  function framed() {
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: symmetryRegistry as SceneRegistry<RectPose>,
+    });
+    const frame = scene.add({ kind: 'group', layer: 'main', id: asNodeId('frame'), pose: { x: 200, y: 50, width: 0, height: 0 }, data: {} });
+    const sym = createSymmetry(scene as never);
+    // Stored in the frame: (260, 50) in the world.
+    const group = scene.add(symmetryGroupSpec({
+      layer: 'main', parent: frame, center: { x: 60, y: 0 }, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS },
+    }) as never) as NodeId;
+    sym.setActive(group);
+    return { scene, sym, group, frame };
+  }
+
+  it('takes and reads its center in the world, and stores it in the frame', () => {
+    const { scene, sym, group, frame } = framed();
+    expect(sym.read(group)!.center).toEqual({ x: 260, y: 50 });
+    expect(scene.get(sym.create({ center: { x: 260, y: 50 }, parent: frame }))!.pose).toMatchObject({ x: 60, y: 0 });
+    sym.update(group, { center: { x: 300, y: 50 } });
+    expect(scene.get(group)!.pose).toMatchObject({ x: 100, y: 0 });
+    expect(sym.read(group)!.center).toEqual({ x: 300, y: 50 });
+  });
+
+  it('keeps an edited path symmetric about the center its copies turn about', () => {
+    const { scene, group } = framed();
+    const [m] = editSymmetries(scene as never, group);
+    expect(applyToPoint(m!, 270, 50)).toEqual([250, 50]);
+  });
+
+  it('draws its guide\'s center handle at the center', () => {
+    const { sym, group } = framed();
+    let layer: RenderLayer<unknown> | null = null;
+    sym.contribution.attach!({ registerLayer: (l: RenderLayer<unknown>) => { layer = l; return () => {}; }, requestRedraw: () => {} } as never, undefined as never);
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    expect((layer as RenderLayer<unknown> | null)!.hitTest!(260, 50, undefined, view, { width: 400, height: 400 })?.initialScratch)
+      .toEqual({ handle: 'center', group });
   });
 });
 

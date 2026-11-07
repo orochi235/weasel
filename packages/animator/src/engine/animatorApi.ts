@@ -15,6 +15,8 @@ import type {
 } from '../types';
 import type { ActiveAnimation, AnimationContext } from './context';
 import { decayAsPhysics } from './decay';
+import type { Handoffs } from './handoff/handoffs';
+import { handOffPhysics, handOffTween } from './handoff/start';
 import type { AnimatorClock } from './frame';
 import { startHold } from './holdAnimation';
 import { startHoldRows } from './holdRows';
@@ -29,6 +31,8 @@ import type { Emitter } from '@weasel-js/registry';
 /** What {@link createAnimatorApi} needs of the animator around it. */
 export interface ApiHost {
   ctx: AnimationContext;
+  /** The runs handed to the compositor. */
+  handoffs: Handoffs;
   table: Table;
   clock: AnimatorClock;
   hub: AnimatorEventHub;
@@ -58,6 +62,7 @@ function liveRows(table: Table): LiveAnimation[] {
       paused: a.paused,
       timeScale: a.timeScale,
       elapsed: table.clockOf(a),
+      ...(a.compositor ? { compositor: true as const } : {}),
       ...(a.progress ? { progress: a.progress(table.clockOf(a)) } : {}),
     });
   }
@@ -88,7 +93,7 @@ function startTimeline(host: ApiHost, o: TimelineOptions): ReturnType<Animator['
 
 /** The animator's public surface over its table, clock, and primitives. */
 export function createAnimatorApi(host: ApiHost): Animator {
-  const { ctx, table, clock, hub } = host;
+  const { ctx, table, clock, hub, handoffs } = host;
   const { animations } = table;
   const createSupervisor = supervisors({
     nextId: ctx.nextId,
@@ -106,11 +111,13 @@ export function createAnimatorApi(host: ApiHost): Animator {
   const physics = <T,>(
     o: PhysicsOptions<T> | TargetPhysicsOptions<T>,
     kind: AnimationKind = 'physics',
-  ): PhysicsHandle<T> => (o.target ? startOffsetPhysics(ctx, o, kind) : startPhysics(ctx, o, kind));
+  ): PhysicsHandle<T> => (o.target
+    ? handOffPhysics(handoffs, o, kind) ?? startOffsetPhysics(ctx, o, kind)
+    : startPhysics(ctx, o, kind));
 
   const api: Animator = {
     tween: <T,>(o: TweenOptions<T> | TargetTweenOptions<T>): AnimationHandle =>
-      (o.target ? startOffsetTween(ctx, o) : startTween(ctx, o)),
+      (o.target ? handOffTween(handoffs, o) ?? startOffsetTween(ctx, o) : startTween(ctx, o)),
     spring: <T,>(o: SpringOptions<T> | TargetSpringOptions<T>): AnimationHandle => physics<T>(o, 'spring'),
     decay: <T,>(o: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle =>
       physics<T>(decayAsPhysics(o), 'decay'),
@@ -132,13 +139,15 @@ export function createAnimatorApi(host: ApiHost): Animator {
       return false;
     },
     isTicking: host.ticking,
-    pause: () => { clock.paused = true; },
-    resume: () => { clock.paused = false; },
+    pause: () => { handoffs.settle(); clock.paused = true; handoffs.retime(); },
+    resume: () => { handoffs.settle(); clock.paused = false; handoffs.retime(); },
     isPaused: () => clock.paused,
     setTimeScale: (s) => {
       const scale = timeScaleOf(s);
+      handoffs.settle();
       if ((scale < 0) === (clock.timeScale < 0)) clock.timeScale = scale;
       else table.turn(() => { clock.timeScale = scale; });
+      handoffs.retime();
     },
     timeScale: () => clock.timeScale,
     pauseKey: (key) => eachUnder(table, key, (a) => [true, a.timeScale]),

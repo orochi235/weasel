@@ -48,6 +48,16 @@ function nested(): Graph {
 }
 
 describe('elkPlan', () => {
+  it('lays out a node or group naming a group the graph does not hold at the top level', async () => {
+    const graph = graphOf([node('a'), node('b', { group: 'X' }), node('c', { group: 'G' })], [
+      { id: 'ab', from: 'a', to: 'b' },
+      { id: 'bc', from: 'b', to: 'c' },
+    ], [{ id: 'G', members: ['c'], inset: INSET, parent: 'Y' }]);
+    const plan = await elkPlan(graph);
+    expect([...plan.routes.keys()].sort()).toEqual(['ab', 'bc']);
+    expect(plan.groups.has('G')).toBe(true);
+  });
+
   it('ranks a chain down the page, each node below the last', async () => {
     const graph = graphOf([node('a'), node('b'), node('c')], [
       { id: 'ab', from: 'a', to: 'b' },

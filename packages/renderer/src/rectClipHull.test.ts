@@ -10,6 +10,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { hullOf } from './shaders/batchFill';
+import { glProgramHandle } from './gpu/webgl/GlProgram';
 
 const ARRAY_BUFFER = 0x8892;
 const C = Math.SQRT1_2;
@@ -69,7 +70,7 @@ describe('a rect clip where the shader decides hulls', () => {
     // the CPU or under no clip, name none.
     expect(v.map((p) => p[3])).toEqual([0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0]);
     expect(v[4].slice(0, 2)).toEqual([0, 0]);
-    expect(recorder.calls.some((c) => c.name === 'useProgram' && c.args[0] === r._batchVariants().get(false, true).handle))
+    expect(recorder.calls.some((c) => c.name === 'useProgram' && c.args[0] === glProgramHandle(r._batchVariants().get(false, true))))
       .toBe(true);
   });
 

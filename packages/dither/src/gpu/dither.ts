@@ -1,10 +1,10 @@
 import { registerEffect, type Effect, type TextureHandle } from '@weasel-js/renderer';
 import { DEFAULT_THRESHOLD, WHITE } from '../shared';
 import type { Rgb, Rgba } from '../types';
-import { DITHER_FRAG } from './frag';
+import { DITHER_FRAG, DITHER_WGSL } from './frag';
 import type { DeviceGrid } from './gridOnScreen';
 
-const PROGRAM = registerEffect('weasel:dither', DITHER_FRAG);
+const PROGRAM = registerEffect('weasel:dither', { glsl: DITHER_FRAG, wgsl: DITHER_WGSL });
 
 const INK: Rgba = [0, 0, 0, 255];
 const BLANK: Rgba = [0, 0, 0, 0];

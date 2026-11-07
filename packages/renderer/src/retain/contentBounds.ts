@@ -59,6 +59,31 @@ export function boxWithin(box: DeviceBox, window: DeviceRect): DeviceRect {
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
+/** Whether a surface drawn with `reach`, moved `dx, dy` device pixels, holds
+ *  every pixel its group paints on a `width × height` buffer. */
+export function covers(reach: { box: DeviceBox; window: DeviceRect }, dx: number, dy: number, width: number, height: number): boolean {
+  const needed = boxWithin(reach.box, { x: -dx, y: -dy, width, height });
+  if (needed.width === 0 || needed.height === 0) return true;
+  const w = reach.window;
+  return needed.x >= w.x && needed.y >= w.y
+    && needed.x + needed.width <= w.x + w.width && needed.y + needed.height <= w.y + w.height;
+}
+
+/** `rect` cut into tiles at most `side` on a side, row by row from its top
+ *  left; the last in each row and column takes what is left. */
+export function tilesOf(rect: DeviceRect, side: number): DeviceRect[] {
+  const out: DeviceRect[] = [];
+  for (let y = 0; y < rect.height; y += side) {
+    for (let x = 0; x < rect.width; x += side) {
+      out.push({
+        x: rect.x + x, y: rect.y + y,
+        width: Math.min(side, rect.width - x), height: Math.min(side, rect.height - y),
+      });
+    }
+  }
+  return out;
+}
+
 /**
  * {@link contentBox} within a buffer `width × height` device pixels: what a
  * retained surface for `children` covers. Empty where nothing lands inside it.

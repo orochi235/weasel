@@ -8,7 +8,7 @@
  *
  * Notes: Pre-placed compound path. evenodd stencil rasterization may differ near winding boundaries — tolerance 5%.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline, type DiffOptions } from './diff.js';
 

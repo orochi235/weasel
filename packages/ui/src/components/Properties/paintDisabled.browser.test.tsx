@@ -4,7 +4,7 @@ import { gradientForBounds, type Paint } from '@weasel-js/core';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { PropertyControl } from '@weasel-js/ui/components/Properties';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // An inline paint is a stack of controls whose height depends on the paint. Whether the disabled form holds
 // that height, and whether anything in it still takes focus, are the browser's to say.

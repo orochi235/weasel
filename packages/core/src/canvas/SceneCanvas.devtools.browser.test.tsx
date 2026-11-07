@@ -8,7 +8,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas, createScene } from '@weasel-js/core';
 import { DEVTOOLS_PROTOCOL, type PanelMessage, createInPageTransports } from '@weasel-js/core/devtools';
-import { pixelAt } from '../testing/canvasPixels';
+import { pixelAt } from '@weasel-js/core/testing/canvasPixels';
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;

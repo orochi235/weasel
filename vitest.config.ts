@@ -1,4 +1,5 @@
 import { readdirSync } from 'node:fs';
+import { cpus } from 'node:os';
 import { join } from 'node:path';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
@@ -21,6 +22,9 @@ import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 import { devWatch } from './scripts/vite-watch.ts';
+import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
+import { spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
+import { browserShape } from './scripts/lib/browser-shape.mjs';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -42,6 +46,14 @@ const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true,
 
 const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'];
 const BROWSER_SETUP = './vitest.browser.setup.ts';
+// Every WebGPU file, in a Chromium of its own: a WebGPU device lost there takes every tab of its
+// process with it (docs/traps/testing.md).
+const WEBGPU_TESTS = ['packages/renderer/src/gpu/webgpu/**/*.browser.test.ts', 'packages/core/src/canvas/canvasBackend.browser.test.tsx'];
+// A fake audio sink: on a node whose output device does not run, a real one leaves an AudioContext
+// "running" with its clock stopped, and the tests sound on every node. The GPU's flags put WebGL and
+// WebGPU on the node's GPU; without them headless Chromium draws both on SwiftShader.
+const BROWSER_ARGS = [...new Set(['--disable-audio-output', ...HOST_GPU_ARGS])];
+const BROWSER_SHAPE = browserShape(cpus().length);
 const withPrebundle = browserPrebundle(import.meta.dirname, { name: 'browser', tests: BROWSER_TESTS, setupFiles: [BROWSER_SETUP] });
 // Both browser projects print every module load that fails: see the command it calls.
 const REQUEST_LOG_SETUP = './scripts/vitest-request-log.setup.ts';
@@ -97,7 +109,7 @@ export default defineConfig({
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
     // vitest's default (RAM / workers) never recycles a vm worker, and one that lives the whole run
-    // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/TODO.md).
+    // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/traps/testing.md).
     vmMemoryLimit: '1gb',
     ...(related && { related }),
     projects: [
@@ -315,20 +327,21 @@ export default defineConfig({
           // when the node's cores are taken, and time out. `npm test` and the fleet run it beside
           // them instead, with the rest held to fewer workers (scripts/vitest-overlap.mjs).
           sequence: { groupOrder: 1 },
-          // Every tab of one process shares one Chromium. Past six, the project took no less wall time,
-          // and a test making WebGL contexts ran three to five times as long; scripts/vitest-overlap.mjs
-          // runs it as several processes instead. WEASEL_BROWSER_TABS is for benchmarks.
-          maxWorkers: Number(process.env.WEASEL_BROWSER_TABS) || 6,
+          // The tabs are dealt across several Chromiums (`scripts/vitest-browser-spread.mjs`): files drawing
+          // WebGL in one Chromium slow each other, and past six tabs in one a test making WebGL contexts ran
+          // three to five times as long.
+          maxWorkers: BROWSER_SHAPE.chromiums * BROWSER_SHAPE.tabs,
           exclude: ['**/node_modules/**', '**/dist/**'],
           css: true,
           browser: {
             enabled: true,
-            // A fake audio sink: on a node whose output device does not run, a real one leaves an
-            // AudioContext "running" with its clock stopped, and the tests sound on every node.
-            provider: playwright({ launchOptions: { args: ['--disable-audio-output'] } }),
+            provider: spreadPlaywright({ launchOptions: { args: BROWSER_ARGS } }, BROWSER_SHAPE.chromiums),
             commands: browserCommands,
             headless: true,
-            instances: [{ browser: 'chromium' }],
+            instances: [
+              { browser: 'chromium', exclude: ['**/node_modules/**', '**/dist/**', ...WEBGPU_TESTS] },
+              { browser: 'chromium', name: 'browser (webgpu)', include: WEBGPU_TESTS },
+            ],
           },
         },
       },

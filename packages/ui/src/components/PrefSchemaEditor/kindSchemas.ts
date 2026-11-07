@@ -74,6 +74,7 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
     unit: { kind: 'unit', name: 'Unit', description: 'The unit it is shown and typed in, where that differs from the unit it is stored in: stored = shown × scale + offset, shown to the given decimal places. Each extra suffix lets it be typed in that unit instead, where shown = typed × that suffix\'s scale + its offset.', default: undefined },
     stops: { kind: 'list', name: 'Stops', description: 'Values its slider catches on, in the unit it is stored in.', default: [], item: { kind: 'number', name: 'Stop', description: '', default: 0 } } as PrefLeaf,
     control: control(['input', 'slider']),
+    scale: choice('Scale', 'How its slider spaces values along the track: log gives even ratios even distances, for a range above zero; sqrt spreads the low end less. Typed values, step and stops are unchanged.', ['linear', 'log', 'sqrt']),
     endless: choice('Endless', 'Which ends have no limit.', ['min', 'max', 'both']),
     measure: choice('Measure', 'What kind of quantity it is. A length is stored in world units and shown in the units of the node it belongs to.', ['length']),
   },
@@ -162,7 +163,7 @@ function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }):
   switch (leaf.kind) {
     case 'number': {
       const n = leaf as PrefNumber;
-      return { ...base, kind: 'number', default: 0, min: n.min, max: n.max, step: n.step, unit: n.unit, stops: n.stops } as PrefLeaf;
+      return { ...base, kind: 'number', default: 0, min: n.min, max: n.max, step: n.step, unit: n.unit, stops: n.stops, scale: n.scale } as PrefLeaf;
     }
     case 'boolean': return { ...base, kind: 'boolean', default: false };
     case 'string': return { ...base, kind: 'string', default: '' } as PrefLeaf;

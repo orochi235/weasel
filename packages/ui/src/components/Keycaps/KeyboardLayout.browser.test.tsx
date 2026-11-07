@@ -6,7 +6,7 @@ import { cleanup } from '@testing-library/react';
 import { KeyBank, KeyCap } from '@weasel-js/ui/components/Keycaps';
 import { KeyboardLayouts } from './KeyboardLayout.stories';
 import KeyBankStories, { Default as BankDefault, Wrapped as BankWrapped } from './KeyBank.stories';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 

@@ -8,7 +8,7 @@
  *
  * Notes: Tween animations may not be deterministic at capture time; capture initial mount as the stable baseline. (Plan optionally suggests clicking "Add card"; deferred — initial mount captures a deterministic pre-populated scene.)
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 

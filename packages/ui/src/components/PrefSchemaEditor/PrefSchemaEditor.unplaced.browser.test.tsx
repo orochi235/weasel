@@ -5,7 +5,7 @@ import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { grip, pointer, pointIn } from './pointerDrag.fixture';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Where the Unplaced list's drop outline falls against its heading is the browser's layout to say.
 

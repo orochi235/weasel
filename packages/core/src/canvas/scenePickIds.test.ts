@@ -4,7 +4,7 @@ import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 import { sceneToAdapter } from './sceneAdapter';
 import { buildSceneTree } from './buildSceneTree';
-import { scenePickIds } from './scenePickIds';
+import { adoptScenePickIds, scenePickIds } from './scenePickIds';
 
 interface Pose { x: number; y: number; width: number; height: number }
 
@@ -45,5 +45,16 @@ describe('buildSceneTree with a scene adapter', () => {
     const node = layer.children[0] as GroupDrawCommand;
     expect(node.pickId).toBe(scenePickIds(scene).idOf(id));
     expect(node.children).toEqual(rect());
+  });
+});
+
+describe('adoptScenePickIds', () => {
+  it('names nodes by the numbers given, and mints past them', () => {
+    const copy = {};
+    adoptScenePickIds(copy, [['b', 2], ['a', 5]]);
+    const ids = scenePickIds(copy);
+    expect([ids.idOf('a'), ids.idOf('b')]).toEqual([5, 2]);
+    expect([ids.nodeOf(5), ids.nodeOf(2), ids.nodeOf(1)]).toEqual(['a', 'b', null]);
+    expect(ids.idOf('c')).toBe(6);
   });
 });

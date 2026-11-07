@@ -267,11 +267,25 @@ function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild 
   return placeholderOp(so.name, so.args, label);
 }
 
+function sameSerialOps(a: readonly SerializedOp[], b: readonly SerializedOp[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
 /** Rebuild a runtime entry from its serialized form. Unknown op names become
  *  no-op placeholders so the entry still occupies its slot in the stack. */
 function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undefined, logger: HistoryLogger): Entry {
   const forwardOps = se.forwardOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
-  const baseOps = se.baseOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
+  // An entry nothing coalesced into holds one array as both halves, and a
+  // step that throws unwinds differently when they differ.
+  const baseOps = sameSerialOps(se.forwardOps, se.baseOps)
+    ? forwardOps
+    : se.baseOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
   return {
     id: se.id,
     label: se.label,

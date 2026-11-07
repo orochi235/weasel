@@ -3,7 +3,7 @@
  * jsdom resolves no var() or color-mix(), so the unit tests can only read the
  * fallback chains as text. Computed styles only, no pixel baseline.
  */
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixture';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

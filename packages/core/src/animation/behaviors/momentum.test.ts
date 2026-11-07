@@ -81,6 +81,24 @@ describe('momentum', () => {
     expect(decaySpy).toHaveBeenCalledTimes(1);
   });
 
+  it('does not coast a node the pointer came to rest on before the release', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const decaySpy = vi.spyOn(result.current, 'decay');
+    const beh = momentum<RectPose>({ animator: result.current, threshold: 0, now: clock.now });
+    const ctx = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, vi.fn());
+    beh.onStart?.(ctx);
+    for (const x of [0, 10, 20]) {
+      clock.advance(16);
+      ctx.pointer = { worldX: x, worldY: 0, clientX: x, clientY: 0 };
+      beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
+    }
+    // Held still for half a second, then let go.
+    clock.advance(500);
+    expect(beh.onEnd?.(ctx, moveEnd())).toBeUndefined();
+    expect(decaySpy).not.toHaveBeenCalled();
+  });
+
   it('returns undefined (defer to default) when release velocity is below threshold', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));

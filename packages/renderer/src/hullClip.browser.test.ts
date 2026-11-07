@@ -8,7 +8,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD, polygonFromPoints, type Path, type PolygonPath } from '@weasel-js/geom';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
-import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { stencilledEvenOdd } from '@weasel-js/renderer/testing/stencilledEvenOdd';
+import { HULL_UNITS } from '@weasel-js/renderer/testing/batch';
 
 const W = 96;
 const H = 80;
@@ -90,6 +91,11 @@ function ownDraw(path: Path, rgba: number[]): DrawCommand {
     fill: { paint: { color: `rgba(${r}, ${g}, ${b}, ${rgba[3]})` } },
   };
 }
+/** `clip` with its corners on the grid the hull snaps them to (`HULL_UNITS`), so the stencil drawn
+ *  from it as it came is the one the hull's corners give. Off the grid, a GPU rasterizing finer than
+ *  that grid keeps a pixel or two along the edge that the snapped corners leave out (ANGLE Metal on
+ *  an Apple M3 Max, 2026-11-07); SwiftShader's grid is the hull's. */
+const gridded = (clip: Path): Path => ({ ...clip, coords: (clip as PolygonPath).coords.map((v) => Math.round(v * HULL_UNITS) / HULL_UNITS) }) as Path;
 const half = (left: boolean) => ({ kind: 'rect' as const, x: left ? 0 : W / 2, y: 0, width: W / 2, height: H });
 const clipped = (clip: Path, children: DrawCommand[]): DrawCommand => ({ kind: 'group', clip, children });
 
@@ -120,10 +126,11 @@ describe('a convex clip decided in the batch shader, in a real context', () => {
     it(`shares its edge with an item that draws for itself: ${name}`, () => {
       // Left half batched, right half on the stencil, then batched over both:
       // the seam down the middle must not show where it meets the clip's edge.
-      const mixed = paint([solid('#202020'), clipped(clip, [
+      const edge = gridded(clip);
+      const mixed = paint([solid('#202020'), clipped(edge, [
         solid('#ff0000', half(true)), ownDraw(half(false), [0, 0, 1, 1]), solid('#00ff0080', turned(48, 40, 30, 90, 20)),
       ])]);
-      const allStencil = paint([solid('#202020'), clipped(clip, [
+      const allStencil = paint([solid('#202020'), clipped(edge, [
         ownDraw(half(true), [1, 0, 0, 1]), ownDraw(half(false), [0, 0, 1, 1]), solid('#00ff0080', turned(48, 40, 30, 90, 20)),
       ])], { hulls: false });
       expect(differing(mixed.px, allStencil.px)).toEqual([]);

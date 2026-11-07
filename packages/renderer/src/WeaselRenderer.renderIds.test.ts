@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import { ID_ATTRIBUTE_LOCATION } from './shaders/idOutput';
+import { ID_UNIFORM } from './shaders/idOutput';
+import { glUniformLocation } from './gpu/webgl/GlProgram';
 import { idMask } from './draw/idRender';
 
 const rect = (x: number): DrawCommand => ({
@@ -33,9 +34,11 @@ describe('WeaselRenderer.renderIds', () => {
   it('gives each draw the id of the group it is in, closing a batched run where the id changes', () => {
     const { r, named } = setup();
     r.renderIds([tagged(1, rect(0), rect(20)), tagged(2, rect(40))]);
-    const ids = named('vertexAttrib4f').filter((c) => c.args[0] === ID_ATTRIBUTE_LOCATION);
-    // One per id, then the attribute put back at the end.
-    expect(ids.map((c) => Math.round((c.args[1] as number) * 255))).toEqual([1, 2, 0]);
+    const at = glUniformLocation(r._batchFill(), ID_UNIFORM);
+    expect(at).toBeDefined();
+    const ids = named('uniform4f').filter((c) => c.args[0] === at);
+    // The id rides a uniform the draw sets, one per draw.
+    expect(ids.map((c) => Math.round((c.args[1] as number) * 255))).toEqual([1, 2]);
     expect(named('drawElements')).toHaveLength(2);
   });
 

@@ -20,13 +20,14 @@ export interface SceneCanvasGeometry {
    *   its outline widened by the stroke half-width and `pickTolerancePx`.
    *
    * - `'pixels'` — what the canvas last painted, read from its id frames
-   *   (`CanvasExtensionApi.readIds`): a custom shader, an effect, or a texture's
+   *   (`CanvasExtensionApi.readIdsSync`): a custom shader, an effect, or a texture's
    *   transparent parts pick as they look, not as their outline. Nodes covered by
    *   others are still found, so an action excluding the ones it drags sees what
    *   is beneath them. Each pick draws the frame again, culled to a few pixels,
    *   once per layer of the stack under the point, and hover picks on every
-   *   pointer move. It falls back to `'shape'` before the first paint, without
-   *   WebGL2, and for a pick asked for a view other than the surface's own.
+   *   pointer move. It falls back to `'shape'` before the first paint, on a
+   *   canvas painting with WebGPU or none, and for a pick asked for a view other
+   *   than the surface's own.
    *
    * Painters with no silhouette keep the pose-rect answer under `'shape'`. Ignored
    * when `pickEvery` is supplied: that override owns the test.

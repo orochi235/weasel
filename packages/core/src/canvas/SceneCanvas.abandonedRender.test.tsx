@@ -15,7 +15,8 @@ import { never } from 'domains/chrome-caps';
 type D = { kind: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
-type Props = SceneCanvasProps<D, L, P>;
+// The page-painted branch: a `Partial` of the worker one would leave `worker` optional.
+type Props = Extract<SceneCanvasProps<D, L, P>, { worker?: undefined }>;
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

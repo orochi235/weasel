@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { painted } from '../testing/paintedContrast';
+import { painted } from '@weasel-js/ui/testing/paintedContrast';
 import { Button } from '@weasel-js/ui/components/Button';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 

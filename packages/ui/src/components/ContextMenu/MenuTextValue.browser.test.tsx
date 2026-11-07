@@ -3,7 +3,7 @@ import type { MenuEntry } from '@weasel-js/menu';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { OpenPanels } from './ContextMenuHost';
+import { OpenPanels } from '@weasel-js/ui/testing/contextMenu';
 
 // Whether a typed key reaches the field or the menu's typeahead, and whether the field fits its row, need a real
 // browser's keyboard and layout.

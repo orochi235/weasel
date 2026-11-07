@@ -3,7 +3,7 @@ import { userEvent } from 'vitest/browser';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { fitDiagram } from '../DiagramView';
+import { fitDiagram } from '@weasel-js/diagram';
 import { isDiagramBody, diagramScene } from '@weasel-js/diagram';
 import { portsOf } from '@weasel-js/diagram/layout';
 import { EffectChart, nodeGraph, rack } from '@weasel-js/diagram/effect';

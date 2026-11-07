@@ -99,5 +99,7 @@ larger than it overwrote a band of the neighboring tile with whatever the scratc
 buffer held there. It goes unseen while the destination is no larger than the rect,
 because the destination's own edge clips the excess, so an untiled retained surface
 never showed it. A tile resolves first into a single-sampled copy of the whole scratch
-buffer (`resolveInto`, `packages/renderer/src/retain/surfaceGl.ts`), and only that
-copy's blit names a sub-rect. `retained.tiles.browser.test.ts` fails without it.
+buffer (`resolve`, `packages/renderer/src/gpu/webgl/glTargets.ts`), and only that
+copy's blit names a sub-rect. `retained.tiles.browser.test.ts` fails without it on ANGLE Metal, every
+case by thousands of pixels (Apple M3 Max, 2026-11-07); SwiftShader, which Linux CI draws with, never
+showed the overreach.

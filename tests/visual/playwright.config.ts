@@ -2,12 +2,17 @@ import { defineConfig } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
+import { SWIFTSHADER_ARGS } from '../../scripts/chromium-gpu-args.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
 // A second checkout running the visual specs on the default port would otherwise
 // be reused outside CI, and every spec would capture that checkout's code.
 const port = Number(process.env.WEASEL_VISUAL_PORT ?? ports.visual);
+// `./fixture` carries it into every page.goto as `?backend=`.
+const webgpu = process.env.WEASEL_VISUAL_BACKEND === 'webgpu';
+// The headless shell runs with the GPU process off, which cannot present a
+// WebGPU canvas; the visual jobs run on the GPU-less runner.
 
 export default defineConfig({
   testDir: here,
@@ -33,7 +38,9 @@ export default defineConfig({
     // patterns build their textures with canvas2d strokes, so without this the
     // same baseline cannot pass on both. Forcing the software path locally is a
     // no-op on CI, which already takes it.
-    launchOptions: { args: ['--disable-accelerated-2d-canvas'] },
+    launchOptions: {
+      args: ['--disable-accelerated-2d-canvas', ...(webgpu ? SWIFTSHADER_ARGS : [])],
+    },
   },
   // Playwright's built-in snapshot dir is NOT used. diff.ts manages its own
   // baselines/ directory so we have full control over diff thresholds and

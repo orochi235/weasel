@@ -8,7 +8,7 @@ import type { PolygonPath, Stroke, Paint } from '@weasel-js/core';
 import { parseSvg, svgNodesToKitDrafts } from '@weasel-js/svg';
 import type { Node } from 'core/scene/types';
 import { findNodeShape } from './NodeShape';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { glProgramHandle, makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { MAX_EVENODD_RESOLVE_WORK } from '@weasel-js/geom/tessellate';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -167,13 +167,13 @@ describe('renderer — non-solid even-odd fill', () => {
   it('keeps an even-odd gradient out of the batch, on its own program', () => {
     renderFill('nonzero', GRADIENT);
     expect(statesAtDraws(recorder).map((d) => d.program))
-      .toEqual([r._batchFill().handle]);
+      .toEqual([glProgramHandle(r._batchFill())]);
 
     renderFill('evenodd', GRADIENT);
     const draws = statesAtDraws(recorder);
     // Parity into stencil bit 0, then the paint pass over the odd-covered pixels.
     expect(draws).toHaveLength(2);
-    expect(draws[1].program).toBe(r._gradFill().handle);
+    expect(draws[1].program).toBe(glProgramHandle(r._gradFill()));
     expect(draws[1].stencilFunc).toEqual([EQUAL, 0x01, 0x01]);
   });
 

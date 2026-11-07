@@ -5,87 +5,17 @@ import { clampMove } from '@weasel-js/core/move';
 import { SceneCanvas, asNodeId, effectivePose, ellipsePath, useLatest, useScene } from '@weasel-js/core';
 import type { Action, Dims, Feature, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
-  registerProgram, registerTexture,
+  registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
 } from '@weasel-js/renderer';
 import { clamp01 } from '@weasel-js/geom';
 import weaselMarkUrl from '../assets/weasel-mark.png';
+import { PLASMA_PROGRAM, RIPPLE_PROGRAM, RIPPLE_SECONDS, SHADERS, VORONOI_PROGRAM } from './customShaderPrograms';
 import { DemoStage } from './DemoStage';
 
 const PANEL_W = 240;
 const PANEL_H = 240;
 
-// ---------------------------------------------------------------------------
-// Shaders
-// ---------------------------------------------------------------------------
-
-const PLASMA_FRAG = `#version 300 es
-precision highp float;
-in vec2 v_uv;
-uniform float u_time;
-uniform vec2  u_mouse;
-out vec4 outColor;
-void main() {
-  vec2 p = v_uv * 2.0 - 1.0;
-  float t = u_time;
-  float v = sin(p.x * 4.0 + t) + sin(p.y * 4.0 + t * 1.3)
-          + sin((p.x + u_mouse.x * 2.0 - 1.0) * 6.0 + t * 0.7)
-          + sin(length(p - (u_mouse * 2.0 - 1.0)) * 8.0 - t * 1.1);
-  v *= 0.25;
-  vec3 col = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.66) + v));
-  outColor = vec4(col, 1.0);
-}`;
-
-const RIPPLE_SECONDS = 1.5;
-const RIPPLE_FRAG = `#version 300 es
-precision highp float;
-in vec2 v_uv;
-uniform float u_time;
-uniform sampler2D u_image;
-uniform vec3 u_ripples[8];
-uniform float u_rippleCount;
-out vec4 outColor;
-void main() {
-  vec2 uv = v_uv;
-  for (int i = 0; i < 8; i++) {
-    if (float(i) >= u_rippleCount) break;
-    vec3 r = u_ripples[i];
-    float age = u_time - r.z;
-    if (age < 0.0 || age > ${RIPPLE_SECONDS.toFixed(1)}) continue;
-    float radius = age * 0.7;
-    float ring = exp(-30.0 * pow(distance(v_uv, r.xy) - radius, 2.0));
-    vec2 dir = normalize(v_uv - r.xy + 1e-6);
-    uv -= dir * ring * 0.04 * (1.0 - age / ${RIPPLE_SECONDS.toFixed(1)});
-  }
-  // A registered texture is premultiplied already, which is what outColor takes.
-  outColor = texture(u_image, uv);
-}`;
-
-const VORONOI_FRAG = `#version 300 es
-precision highp float;
-in vec2 v_uv;
-uniform float u_time;
-uniform vec2 u_seeds[8];
-uniform float u_seedCount;
-out vec4 outColor;
-void main() {
-  float bestD = 1e9;
-  int bestI = 0;
-  for (int i = 0; i < 8; i++) {
-    if (float(i) >= u_seedCount) break;
-    float d = distance(v_uv, u_seeds[i]);
-    if (d < bestD) { bestD = d; bestI = i; }
-  }
-  float h = float(bestI) / max(1.0, u_seedCount) + u_time * 0.05;
-  vec3 col = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.66) + h));
-  outColor = vec4(col, 1.0);
-}`;
-
-// Module-scope registration — runs once per page load.
-const PLASMA_PROGRAM:  ShaderProgramHandle = registerProgram('demo-plasma',  '', PLASMA_FRAG);
-const RIPPLE_PROGRAM:  ShaderProgramHandle = registerProgram('demo-ripple',  '', RIPPLE_FRAG);
-const VORONOI_PROGRAM: ShaderProgramHandle = registerProgram('demo-voronoi', '', VORONOI_FRAG);
-const SHADERS = [PLASMA_PROGRAM, RIPPLE_PROGRAM, VORONOI_PROGRAM];
 
 interface Ripple { x: number; y: number; t: number; }
 

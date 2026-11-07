@@ -131,6 +131,7 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
     }
   }
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
+  const assigned = assignedProps(program);
 
   const meta = objectOf(metaNode, bindings, wrappers);
   const title = stringOf(prop(meta, 'title'), bindings) ?? autoTitle;
@@ -147,7 +148,7 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
     .filter((e) => !native || (e.from ? (foreign?.reexport(e.name) ?? true) : mayBeStory(e.node, { bindings, wrappers, foreign })))
     .map(({ name, node, doc }) => {
-      const spec = objectOf(node, bindings, wrappers);
+      const spec = withAssigned(objectOf(node, bindings, wrappers), assigned.get(name));
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;
       const tags = combineTags(metaTags, tagsOf(spec));
       const viewport = native ? viewportOf(spec, bindings, wrappers) : undefined;
@@ -165,6 +166,27 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
         ...(tags === undefined ? {} : { tags }),
       };
     });
+}
+
+/** The CSF2 annotations set after a story is declared, `Primary.storyName = '…'`, by the binding they are set on. */
+function assignedProps(program: t.Program): Map<string, t.ObjectProperty[]> {
+  const out = new Map<string, t.ObjectProperty[]>();
+  for (const stmt of program.body) {
+    const e = stmt.type === 'ExpressionStatement' ? stmt.expression : undefined;
+    if (e?.type !== 'AssignmentExpression' || e.operator !== '=' || e.left.type !== 'MemberExpression') continue;
+    const { object, property, computed } = e.left;
+    if (object.type !== 'Identifier' || computed || property.type !== 'Identifier') continue;
+    const props = out.get(object.name) ?? [];
+    props.push({ type: 'ObjectProperty', key: property, value: e.right, computed: false, shorthand: false } as t.ObjectProperty);
+    out.set(object.name, props);
+  }
+  return out;
+}
+
+/** `spec` with `props` set over it, the last of them winning, as the assignments leave the story at runtime. */
+function withAssigned(spec: t.ObjectExpression | null, props: readonly t.ObjectProperty[] | undefined): t.ObjectExpression | null {
+  if (!props) return spec;
+  return { type: 'ObjectExpression', properties: [...[...props].reverse(), ...(spec?.properties ?? [])] } as unknown as t.ObjectExpression;
 }
 
 /**

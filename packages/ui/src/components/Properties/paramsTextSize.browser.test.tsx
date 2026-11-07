@@ -10,8 +10,8 @@ import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 import { PropertyField, PropertyList, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { PropertyFieldKind } from './fieldTypes';
 import type { PropertyRowLayout } from './PropertyRow';
-import { renderWithIcons } from '../../testing/withIcons';
-import { EVERY_KIND, LEAVES_BY_KIND, mismatches, notAt, rowTexts } from '../../testing/paramsText';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { EVERY_KIND, LEAVES_BY_KIND, mismatches, notAt, rowTexts } from '@weasel-js/ui/testing/paramsText';
 
 // A row's label and its value are set at one size, `--wzl-params-text-size`, on every params surface and for
 // every kind of field. Computed sizes are a browser's to answer: jsdom resolves no `var()`.

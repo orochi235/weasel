@@ -84,8 +84,9 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   /** `<SceneCanvas isPointerInteractive>`: a node it rejects is left out of every hit, so
    *  whatever is beneath it answers instead. */
   isPointerInteractive?: (id: string) => boolean;
-  /** The surface's id frames, which `geometry.picking: 'pixels'` reads. */
-  readIds?: () => CanvasExtensionApi['readIds'] | null;
+  /** The surface's id frames, which `geometry.picking: 'pixels'` reads. Where
+   *  they cannot be read at once (WebGPU), the pick walks the shapes instead. */
+  readIds?: () => CanvasExtensionApi['readIdsSync'] | null;
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;

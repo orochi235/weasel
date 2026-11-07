@@ -11,6 +11,17 @@ export function worldPoseOf(scene: AnyScene, id: NodeId): unknown {
   return composeWorldPose(scenePoseAdapter(scene), id, scene.composition.compose);
 }
 
+/** Where `id` is shown: its pose, or the one an override previews it at,
+ *  folded through every frame above it. */
+export function shownWorldPoseOf(scene: AnyScene, id: NodeId): unknown {
+  const node = scene.get(id)!;
+  const shown = scene.overrides.read(id)?.pose ?? node.pose;
+  if (node.parent === null || !composesFrames(scene.composition)) return shown;
+  const base = scenePoseAdapter(scene);
+  const adapter = { ...base, getPose: (n: string) => (n === id ? shown : base.getPose(n)) };
+  return composeWorldPose(adapter, id, scene.composition.compose);
+}
+
 /** `world` as a pose stored under `parent`, so the node draws there. */
 export function localPoseUnder(scene: AnyScene, world: unknown, parent: NodeId | null): unknown {
   const { compose, decompose } = scene.composition;

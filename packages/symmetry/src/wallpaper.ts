@@ -16,8 +16,9 @@ export interface LatticePoint {
 /** Index range a lattice is searched over, either way from the center, so a
  *  nearly collapsed lattice cannot make the search itself unbounded. */
 const SEARCH = 512;
-/** `Math.cos` and `Math.sin` leave 1e-16 where a quarter turn has an exact 0. */
-const exact = (v: number): number => (Math.abs(v) < 1e-12 ? 0 : v);
+/** `Math.cos` and `Math.sin` leave 1e-16 where a quarter turn has an exact
+ *  0, which a preset axis then carries into every coordinate it mirrors. */
+export const exact = (v: number): number => (Math.abs(v) < 1e-12 ? 0 : v);
 
 /**
  * The lattice points of `spec` inside its extent, as offsets from the center,

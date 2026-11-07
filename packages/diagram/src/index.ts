@@ -322,9 +322,9 @@ export {
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
 export { isBodyOrRegion, isDiagramBody } from './bodyNode';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
-export { DiagramView } from './DiagramView';
+export { DiagramView, fitDiagram } from './DiagramView';
 export type {
-  ContainerEdit, DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
+  ContainerEdit, DeleteReport, DiagramFit, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
   ReconnectChange, ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
@@ -359,8 +359,10 @@ export { ORG_GROUP, ORG_STENCILS } from './stencils/org';
 export { MIND_MAP_GROUP, MIND_MAP_STENCILS } from './stencils/mindMap';
 export { layoutDiagram } from './layoutAction';
 export type { LayoutDiagramOptions } from './layoutAction';
-export { DIVIDER_HEIGHT, HEADER_PAD } from './body';
-export type { BodyDivider, BodyLayout } from './types';
+export { DIVIDER_HEIGHT, HEADER_ASIDE_GAP, HEADER_PAD } from './body';
+export { HEADER_ASIDE_OPACITY } from './dataColors';
+export { roundRectOutline } from './outlines/figures';
+export type { BodyDivider, BodyLayout, HeaderBand } from './types';
 export { bodyFollower } from './bodyFollower';
 export { UML_GROUP, UML_STENCILS } from './stencils/uml';
 export { ERD_GROUP, ERD_STENCILS } from './stencils/erd';

@@ -5,7 +5,7 @@ import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { ListEditor } from '@weasel-js/ui/components/ListEditor';
 import { PropertyField, PropertyList, PropertyRow } from '@weasel-js/ui/components/Properties';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Where an inline row puts its label is a layout question, so only a real
 // browser can answer it.

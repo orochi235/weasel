@@ -13,7 +13,7 @@
  *   constant 0.05 band                partial/solid = 0.34
  * The 1.0 gate sits between them.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 
 // Node `t1` from apps/site/demos/textDemoScene.ts: x 30, y 30, 240×80, a
 // single solid fill (#1c1c1c) at fontSize 16. One node of one known color
@@ -39,14 +39,12 @@ test('text AA — glyph edges carry a partial-coverage ramp', async ({ page }) =
     .toBe(1);
   await page.waitForTimeout(500);
 
-  const stats = await page.evaluate(({ BOX, BG_MAX, SOLID_MIN }) => {
+  const stats = await page.evaluate(async ({ BOX, BG_MAX, SOLID_MIN }) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
-    const gl = c.getContext('webgl2')!;
     const w = c.width;
     const h = c.height;
-    const buf = new Uint8Array(w * h * 4);
-    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-    // readPixels is bottom-up; this takes top-down scene coords. The canvas is
+    const buf = await window.weaselCanvasPixels(c);
+    // The read is bottom-up; this takes top-down scene coords. The canvas is
     // 600×360 at deviceScaleFactor 1, so scene units map 1:1 to pixels.
     const inkAt = (x: number, y: number) => {
       const i = ((h - 1 - y) * w + x) * 4;

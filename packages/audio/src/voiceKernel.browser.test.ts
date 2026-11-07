@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { partialPresets, renderNoise, renderNote } from '@weasel-js/audio';
-import { CENTER_GAIN, renderEngine } from './testing/renderEngine';
-import { centroid, peaks, powerSpectrum, rmsEnvelope } from './testing/spectrum';
+import { CENTER_GAIN, renderEngine } from '@weasel-js/audio/testing/renderEngine';
+import { centroid, peaks, powerSpectrum, rmsEnvelope } from '@weasel-js/audio/testing/spectrum';
 import type { NoiseOptions, NoteOptions } from './types';
 
 // A kernel is a second implementation of what the node graph plays, so the

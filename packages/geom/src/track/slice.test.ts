@@ -47,6 +47,15 @@ describe('trackSlice', () => {
     expect(part.nearest(path.at(0.35).point).f).toBeCloseTo(0.5, 2);
   });
 
+  test('a stretch of a path finds its own nearest point when the whole path\'s lies outside it', () => {
+    // A U: the slice is the left arm, and the probe sits by the right one.
+    const u = pathShape(pathFromD('M 0 0 L 0 100 L 100 100 L 100 0'))!;
+    const arm = trackSlice(u, 0, 1 / 3);
+    const n = arm.nearest({ x: 90, y: 50 });
+    expect(n.dist).toBeCloseTo(90, 3);
+    expect(n.f).toBeCloseTo(0.5, 3);
+  });
+
   test('the whole shape is the shape itself, and the ends come in either order', () => {
     const a = arcShape({ center: { x: 0, y: 0 }, radius: 50, start: 0, end: 90 });
     expect(trackSlice(a, 0, 1)).toBe(a);

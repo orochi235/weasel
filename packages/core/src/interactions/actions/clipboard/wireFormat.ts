@@ -24,13 +24,15 @@ export function buildWeaselClipboardText(items: unknown[], replacer?: Replacer):
   return JSON.stringify(payload, replacer as Parameters<typeof JSON.stringify>[1]);
 }
 
-/** Cheap check: could this text be a weasel clipboard payload? Substring
- *  pre-check, then a guarded parse + marker/version test. */
+const isPayload = (parsed: Partial<WeaselClipboardPayload> | null): parsed is WeaselClipboardPayload =>
+  !!parsed && parsed.weaselClipboard === 1 && Array.isArray(parsed.nodes);
+
+/** Cheap check: is this text a payload {@link parseWeaselClipboardText}
+ *  accepts? Substring pre-check, then a guarded parse. */
 export function sniffWeaselClipboardText(text: string): boolean {
   if (!text.includes('"weaselClipboard"')) return false;
   try {
-    const parsed = JSON.parse(text) as Partial<WeaselClipboardPayload> | null;
-    return !!parsed && parsed.weaselClipboard === 1;
+    return isPayload(JSON.parse(text) as Partial<WeaselClipboardPayload> | null);
   } catch {
     return false;
   }
@@ -81,8 +83,7 @@ export function parseWeaselClipboardText(text: string, reviver?: Reviver): unkno
   try {
     const parsed = JSON.parse(text, reviver as Parameters<typeof JSON.parse>[1]) as
       Partial<WeaselClipboardPayload> | null;
-    if (!parsed || parsed.weaselClipboard !== 1 || !Array.isArray(parsed.nodes)) return null;
-    return parsed.nodes;
+    return isPayload(parsed) ? parsed.nodes : null;
   } catch (err) {
     dwarn('clipboard', `weasel payload failed to parse: ${String(err)}`);
     return null;

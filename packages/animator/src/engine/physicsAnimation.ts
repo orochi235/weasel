@@ -31,6 +31,10 @@ export function startPhysics<T>(
   const scale = o.scale ?? ((v: T, k: number) => ((v as unknown as number) * k) as unknown as T);
   const magnitude = o.magnitude ?? ((v: T) => Math.abs(v as unknown as number));
   const { stiffness: kBase, damping, mass } = resolveSpringConstants(o);
+  // Past these, no step of the motion is a number for long: it never rests, and ticks NaN.
+  if (!(mass > 0 && damping >= 0 && kBase >= 0) || !Number.isFinite(mass + damping + kBase)) {
+    throw new Error(`${kind}: mass is positive, and damping and stiffness 0 or more, each finite`);
+  }
   const restThreshold = o.restThreshold ?? 0.01;
 
   let target: T | null = o.to ?? null;

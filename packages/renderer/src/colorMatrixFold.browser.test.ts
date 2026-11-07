@@ -8,7 +8,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
-import { colorFolding } from './draw';
+import { colorFolding } from '@weasel-js/renderer/testing/batch';
 
 const SIZE = 8;
 const ORANGE = [200, 100, 50];

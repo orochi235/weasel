@@ -13,7 +13,7 @@ const POINTS_PER_INCH = 72;
 export function dotId(id: string): string {
   const bare = (/^[A-Za-z_\u0080-￿][\w\u0080-￿]*$/.test(id) && !KEYWORDS.has(id.toLowerCase()))
     || /^-?(?:\.\d+|\d+(?:\.\d*)?)$/.test(id);
-  return bare ? id : `"${id.replace(/"/g, '\\"')}"`;
+  return bare ? id : `"${id.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 const attrList = (attrs: readonly (string | null)[]) => {

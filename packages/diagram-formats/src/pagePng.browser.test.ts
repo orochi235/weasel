@@ -4,7 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { registerDiagramShape } from '@weasel-js/diagram';
 import { exportPagePng } from '@weasel-js/diagram-formats';
-import { pageScene } from './testing/pageScene';
+import { pageScene } from '@weasel-js/diagram-formats/testing/pageScene';
 
 async function pixels(blob: Blob): Promise<ImageData> {
   const bitmap = await createImageBitmap(blob);

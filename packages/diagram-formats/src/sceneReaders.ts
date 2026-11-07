@@ -7,9 +7,9 @@ import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { deepEqual } from '@weasel-js/registry';
 import {
-  DEFAULT_PORTS, EDGE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
+  DEFAULT_PORTS, EDGE_STROKE_WIDTH, HEADER_PAD, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
   layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
-  type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type Row,
+  type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type HeaderBand, type Row,
 } from '@weasel-js/diagram';
 
 /** A scene node as the readers see it. */
@@ -29,7 +29,7 @@ export interface ReadScene {
 
 type Paint = { paint?: { color?: unknown }; width?: unknown; dash?: unknown; trim?: unknown; markerStart?: unknown; markerEnd?: unknown };
 type Data = {
-  diagram?: Record<string, unknown>; fill?: Paint; stroke?: Paint; text?: unknown; bodyRow?: unknown; bodyField?: unknown; style?: { fontSize?: unknown };
+  diagram?: Record<string, unknown>; fill?: Paint; stroke?: Paint; text?: unknown; bodyRow?: unknown; bodyField?: unknown; bodyAside?: unknown; style?: { fontSize?: unknown };
 };
 
 const ROUTERS: readonly DiagramRouter[] = ['straight', 'bezier', 'orthogonal', 'avoid'];
@@ -84,18 +84,30 @@ function textRow(data: Data, ownSize: boolean): Row {
     : { kind: 'label', text, ...style };
 }
 
+/** A header row as built: its title, its `aside`, and the pad its band records either side of its text. */
+function headerRow(data: Data, band: HeaderBand, aside: string | undefined, ownSize: boolean): Row {
+  const pad = (band.height - band.text.height) / 2;
+  return {
+    kind: 'header', text: data.text as string, ...(pad !== HEADER_PAD ? { pad } : {}), ...(aside !== undefined ? { aside } : {}),
+    ...(ownSize ? { style: { fontSize: data.style?.fontSize as number } } : {}),
+  };
+}
+
 /** A shape: its outline, text rows, box, role, colors, and the body layout and ports it was built with. */
 export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: DiagramTheme): DataNode {
   const trait = traitOf(node)!;
   const data = dataOf(node);
   const pose = node.pose as RectPose;
-  const rows = scene.childrenOf(node.id as never).map((id) => scene.get(id as never)!)
-    .filter((c) => typeof dataOf(c).text === 'string' && typeof dataOf(c).bodyRow === 'number')
-    .sort((p, q) => (dataOf(p).bodyRow as number) - (dataOf(q).bodyRow as number));
+  const texts = scene.childrenOf(node.id as never).map((id) => scene.get(id as never)!)
+    .filter((c) => typeof dataOf(c).text === 'string' && typeof dataOf(c).bodyRow === 'number');
+  const aside = texts.find((c) => dataOf(c).bodyAside === true);
+  const rows = texts.filter((c) => c !== aside).sort((p, q) => (dataOf(p).bodyRow as number) - (dataOf(q).bodyRow as number));
+  const band = trait.header as HeaderBand | undefined;
+  const isHeader = (r: ReadNode | undefined) => band !== undefined && r !== undefined && dataOf(r).bodyRow === 0;
   const ownSize = Array.isArray(trait.ownFont) && trait.ownFont.includes('size');
   const themed = dataNodeStyle({ style: trait.style as string | undefined }, theme);
   const colors = ownColors<NodeStyle>({
-    fill: colorOf(data.fill), stroke: colorOf(data.stroke), text: colorOf(dataOf(rows[0]).fill),
+    fill: colorOf(data.fill), stroke: colorOf(data.stroke), text: colorOf(dataOf(rows.find((r) => !isHeader(r))).fill),
     strokeWidth: data.stroke?.width as number | undefined, dash: data.stroke?.dash as number[] | undefined,
   }, { ...themed, strokeWidth: themed.strokeWidth ?? NODE_STROKE_WIDTH }, trait.ownStyle);
   const body = trait.body as BodyLayout | undefined;
@@ -104,8 +116,11 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
   return {
     id: node.id,
     outline: trait.outline as DataNode['outline'],
-    ...(ownSize || fields || dividers.length > 0
-      ? { rows: withDividers(rows.map((r) => ({ index: dataOf(r).bodyRow as number, row: textRow(dataOf(r), ownSize) })), dividers) }
+    ...(ownSize || fields || dividers.length > 0 || band !== undefined
+      ? { rows: withDividers(rows.map((r) => ({
+          index: dataOf(r).bodyRow as number,
+          row: isHeader(r) ? headerRow(dataOf(r), band!, aside === undefined ? undefined : textOf(scene, aside.id), ownSize) : textRow(dataOf(r), ownSize),
+        })), dividers) }
       : { lines: rows.map((r) => dataOf(r).text as string) }),
     at: moved(pose, page),
     width: pose.width,

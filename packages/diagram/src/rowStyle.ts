@@ -3,7 +3,7 @@ import { weightOf } from './rowMeasure';
 
 /** The face a diagram node's text is set in. `letterSpacing` is in world units. */
 export type DiagramTextStyle = {
-  fontFamily: string; fontSize: number; fontWeight?: number; fontStyle?: 'italic'; letterSpacing?: number; align?: 'center' | 'left';
+  fontFamily: string; fontSize: number; fontWeight?: number; fontStyle?: 'italic'; letterSpacing?: number; align?: 'center' | 'left' | 'right';
 };
 
 type Font = { fontFamily: string; fontSize: number };
@@ -28,3 +28,6 @@ export function rowTextStyle(row: Row | undefined, font: Font): DiagramTextStyle
   if (row?.kind === 'label') return { ...face, align: 'center' };
   return row?.kind === 'header' ? { ...face, align: 'left' } : face;
 }
+
+/** The face a header's `aside` is set in, from its title's: the same, set right. */
+export const asideFace = (title: DiagramTextStyle): DiagramTextStyle => ({ ...title, align: 'right' });

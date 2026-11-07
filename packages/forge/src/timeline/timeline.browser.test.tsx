@@ -4,7 +4,7 @@ import { createMemoryAdapter } from '@weasel-js/labkit';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { readRouteParams } from '../shell/useRoute';
+import { readRouteParams } from '@weasel-js/forge/testing/shell';
 import { Workshop } from '@weasel-js/forge/shell';
 import { meta, story, usePlayhead } from '@weasel-js/forge';
 import type { IndexEntry } from '../story/types';

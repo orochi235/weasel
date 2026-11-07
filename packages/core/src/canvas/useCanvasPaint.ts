@@ -1,18 +1,21 @@
-import { useCallback, useEffect, useInsertionEffect, useRef } from 'react';
+import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { viewToMat3, type DrawCommand, type IdBuffer, type WeaselRenderer } from '@weasel-js/renderer';
-import type { CanvasExtensionApi } from './canvasExtension';
+import type { IdReaders } from './useCanvasHandle';
 import type { View } from 'core/viewport/view';
 import {
   DEFAULT_LAYER_RETAIN, drawLayers, type LayerCommandCache, type LayerRetainPolicy, type RenderLayer,
 } from 'core/layers/render';
 import type { CanvasDebugSink } from '../debug/types';
+import type { CanvasIdReadOptions } from './canvasExtension';
 import { beginDebugFrame } from '../debug/useDebugSink';
 import { resolveDpr, type CanvasRendererLease } from './canvasRenderer';
 import type { CanvasProps } from './canvasProps';
 import type { CanvasElements } from './useCanvasElements';
 import { NO_LAYER_VISIBILITY, type LayerGate } from './useExtraLayers';
 import { ViewSnap } from './viewSnap';
+import type { WorkerStack } from './renderWorker/useWorkerStack';
+import type { CanvasWorkerSurface } from './renderWorker/workerStack';
 
 /** What a frame's paint reads that a React render owns. */
 export interface PaintInputs extends Pick<CanvasProps<unknown>, 'dpr' | 'layerGroups' | 'shaders' | 'flattenTolerance' | 'imageMinification' | 'retain'> {
@@ -55,7 +58,17 @@ function retainPolicy(retain: PaintInputs['retain']): LayerRetainPolicy | false 
   return { minCommands: minCommands ?? DEFAULT_LAYER_RETAIN.minCommands, minCommandsWithEffects };
 }
 
+/** What a worker-mode paint hands its frame to: `useWorkerStack`'s, with the owner's half. */
+export interface PaintStack {
+  paint: WorkerStack['paint'];
+  paints: (id: string) => boolean;
+  inputs: CanvasWorkerSurface['inputs'];
+}
+const NO_STACK = { current: null };
+
 const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
+
+type IdRect = { x: number; y: number; width: number; height: number };
 
 /**
  * Publish the canvas's paint into `paintRef`, which the frame loop calls. The paint binds the
@@ -69,7 +82,9 @@ export function useCanvasPaint(
   frame: PaintFrame,
   markPainted: () => void,
   requestRedraw: () => void,
-  readIdsRef: { current: CanvasExtensionApi['readIds'] },
+  readIdsRef: { current: IdReaders },
+  /** In worker mode, the stack the frame is cut across. */
+  stackRef: { readonly current: PaintStack | null } = NO_STACK,
 ): void {
   const { paintTargetRef, ownCanvasRef, paintRectRef } = target;
   const { inputsRef, viewRef, gateRef, helpersRef } = frame;
@@ -105,6 +120,20 @@ export function useCanvasPaint(
     // The renderer's own device pixels to the CSS pixel, from its rounded buffer width.
     const view = snapRef.current.draw(viewRef.current, Math.round(w * dpr) / w, retain !== false && retain?.whole !== false);
     const { layerVisibility: vis, layerOrder: order } = gateRef.current;
+    const stack = stackRef.current;
+    if (stack) {
+      stack.paint({
+        layers: paintLayers, helpers: helpersRef.current, visibility: vis ?? NO_LAYER_VISIBILITY, order, view,
+        dims: { width: w, height: h, dpr }, cache: layerCacheRef.current, groups, retain: retainPolicy(retain),
+        options: { flattenTolerance: paintFlattenTolerance, imageMinification, shaders: paintShaders },
+        paints: stack.paints, inputs: stack.inputs(),
+      }, renderer);
+      const stats = renderer.lastFrameStats();
+      debugFrame?.end(stats);
+      markPainted();
+      if (snapRef.current.owesFrame(stats.retained.declined)) requestRedraw();
+      return true;
+    }
     const spans = debugFrame?.time();
     const commands = drawLayers(
       paintLayers,
@@ -126,7 +155,7 @@ export function useCanvasPaint(
     markPainted();
     if (snapRef.current.owesFrame(stats.retained.declined)) requestRedraw();
     return true;
-  }, [gateRef, helpersRef, inputsRef, lease, markPainted, ownCanvasRef, paintRectRef, paintTargetRef, requestRedraw, viewRef]);
+  }, [gateRef, helpersRef, inputsRef, lease, markPainted, ownCanvasRef, paintRectRef, paintTargetRef, requestRedraw, viewRef, stackRef]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });
@@ -139,14 +168,26 @@ export function useCanvasPaint(
     };
   }, []);
 
-  const readIds = useCallback<CanvasExtensionApi['readIds']>((rect, options) => {
-    const last = lastFrameRef.current;
-    if (!last || last.renderer.isContextLost()) return NO_IDS;
-    return last.renderer.renderIds(last.commands, viewToMat3(last.view), {
-      rect, minAlpha: options?.minAlpha, exclude: options?.exclude,
-    });
+  const readers = useMemo<IdReaders>(() => {
+    const live = () => {
+      const last = lastFrameRef.current;
+      return last && !last.renderer.isContextLost() ? last : null;
+    };
+    const args = (last: { commands: DrawCommand[]; view: View }, rect: IdRect, options?: CanvasIdReadOptions) =>
+      [last.commands, viewToMat3(last.view), { rect, minAlpha: options?.minAlpha, exclude: options?.exclude }] as const;
+    return {
+      readIds: (rect, options) => {
+        const last = live();
+        return last ? last.renderer.renderIdsAsync(...args(last, rect, options)) : Promise.resolve(NO_IDS);
+      },
+      readIdsSync: (rect, options) => {
+        const last = live();
+        if (!last) return NO_IDS;
+        return last.renderer.backend === 'webgpu' ? null : last.renderer.renderIds(...args(last, rect, options));
+      },
+    };
   }, []);
   useInsertionEffect(() => {
-    readIdsRef.current = readIds;
+    readIdsRef.current = readers;
   });
 }

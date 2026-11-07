@@ -1,16 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { PATH_L } from './commands';
-import { pathFromD } from './paths/pathFromD';
+import { PATH_L, PATH_M, PATH_Q, PATH_Z } from './commands';
 import { pointInPath } from './pathHitTest';
 import { extractPolylines } from './tessellate/polyline';
 import { tessellate } from './tessellate/tessellate';
 import { pathToMultiPolygon } from './booleans/adapter';
 import type { PolygonPath } from './path';
 
-// SVG: after `z` the pen is back at the subpath's start, and a drawing
+// After `Z` the pen is back at the subpath's start, and a drawing
 // command there opens a new subpath from it. So this is two triangles,
 // (0,0) (10,0) (10,10) and (0,0) (-10,0) (-10,-10), each of area 50.
-const TWO = pathFromD('M0 0 L10 0 L10 10 z l-10 0 l0 -10 z');
+// Written as raw arrays: the builders and `pathFromD` write the implied `M`.
+const stream = (commands: number[], coords: number[]): PolygonPath => ({
+  kind: 'polygon', commands: new Uint8Array(commands), coords: new Float32Array(coords), fillRule: 'nonzero',
+});
+const TWO = stream(
+  [PATH_M, PATH_L, PATH_L, PATH_Z, PATH_L, PATH_L, PATH_Z],
+  [0, 0, 10, 0, 10, 10, -10, 0, -10, -10],
+);
 
 function meshArea(vertices: Float32Array, indices: Uint32Array): number {
   let area = 0;
@@ -58,7 +64,10 @@ describe('a drawing command after Z with no M', () => {
 
   it('starts a curve after Z from the subpath start, in a ring', () => {
     // Pen returns to (10,10); the curve runs from there, never from (20,20).
-    const polys = pathToMultiPolygon(pathFromD('M10 10 L20 10 L20 20 Z Q0 0 0 10 Z'));
+    const polys = pathToMultiPolygon(stream(
+      [PATH_M, PATH_L, PATH_L, PATH_Z, PATH_Q, PATH_Z],
+      [10, 10, 20, 10, 20, 20, 0, 0, 0, 10],
+    ));
     expect(polys).toHaveLength(2);
     const second = polys.find((p) => p[0].some(([x]) => x < 10))!;
     expect(second[0][0]).toEqual([10, 10]);

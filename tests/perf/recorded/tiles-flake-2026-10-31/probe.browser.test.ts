@@ -139,10 +139,10 @@ function loop(mode: string, before: (() => void) | null): void {
   const count = { tw: 0, tt: 0, ww: 0 };
   const t0 = performance.now();
   for (let i = 0; i < ITER; i++) {
-    registerProgram('tiles-by-origin', '', BY_ORIGIN);
+    registerProgram('tiles-by-origin', { glsl: { frag: BY_ORIGIN } });
     const shader: DrawCommand = {
       kind: 'shader', bounds: { x: 2, y: 3, w: 40, h: 30 }, uniforms: {},
-      program: registerProgram('tiles-by-origin', '', BY_ORIGIN),
+      program: registerProgram('tiles-by-origin', { glsl: { frag: BY_ORIGIN } }),
     };
     const commands = [...GROUND, { kind: 'group', retain: 'L', children: [...world(), shader] } as DrawCommand];
     before?.();

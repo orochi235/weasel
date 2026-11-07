@@ -13,11 +13,11 @@ import {
 import { registerProgram, type DrawCommand } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
 import { renderHook } from '@testing-library/react';
-import { useSceneAdapter } from 'canvas/useSceneAdapter';
-import { useSceneSelectTool } from 'canvas/SceneCanvas/useSceneSelectTool';
+import { useSceneAdapter } from '@weasel-js/core';
+import { useSceneSelectTool } from '@weasel-js/core/testing/canvas';
 
 /** Opaque inside the circle its bounds hold, transparent outside it. */
-const DISC = registerProgram('pick-at-browser-disc', '', `#version 300 es
+const DISC = registerProgram('pick-at-browser-disc', { glsl: { frag: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 out vec4 outColor;
@@ -25,7 +25,7 @@ void main() {
   float a = length(v_uv - 0.5) < 0.5 ? 1.0 : 0.0;
   outColor = vec4(0.0, 0.0, a, a);
 }
-`);
+` } });
 
 interface Data { disc?: boolean }
 
@@ -67,13 +67,13 @@ describe('pickAt on a real canvas', () => {
       scene, width: 100, height: 100, dpr: 1, ref: api, layers: { scene: { drawOne } },
     } as never)));
     await settle();
-    const node = (x: number, y: number) => scenePickIds(scene).nodeOf(api.current!.pickAt(x, y));
-    expect(node(60, 40)).toBe(disc);
-    expect(node(10, 80)).toBe(under);
+    const node = async (x: number, y: number) => scenePickIds(scene).nodeOf(await api.current!.pickAt(x, y));
+    expect(await node(60, 40)).toBe(disc);
+    expect(await node(10, 80)).toBe(under);
     // Inside the disc's bounds, outside its circle: the node under it.
-    expect(node(42, 22)).toBe(under);
-    expect(node(78, 22)).toBeNull();
-    expect(node(95, 95)).toBeNull();
+    expect(await node(42, 22)).toBe(under);
+    expect(await node(78, 22)).toBeNull();
+    expect(await node(95, 95)).toBeNull();
   });
 });
 
@@ -92,7 +92,7 @@ describe("geometry.picking: 'pixels' on a real canvas", () => {
       scene: scene as never, adapter: useSceneAdapter(scene) as never,
       geometry: { picking: 'pixels', pickTolerancePx: 0 },
       getView: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
-      readIds: () => api.current!.readIds,
+      readIds: () => api.current!.readIdsSync,
     }));
     const pick = (x: number, y: number) => result.current.pickEvery({ x, y });
     // Inside the disc's bounds, outside its circle: only what is beneath.
@@ -102,7 +102,7 @@ describe("geometry.picking: 'pixels' on a real canvas", () => {
     expect(pick(45, 40)).toEqual([under, disc]);
     expect(pick(95, 95)).toEqual([]);
     expect(result.current.pickBest({ x: 45, y: 40 })).toBe(disc);
-    const without = api.current!.readIds({ x: 45, y: 40, width: 0, height: 0 }, {
+    const without = await api.current!.readIds({ x: 45, y: 40, width: 0, height: 0 }, {
       exclude: new Set([scenePickIds(scene).idOf(disc)]),
     });
     expect(scenePickIds(scene).nodeOf(without.data[0])).toBe(under);

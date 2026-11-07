@@ -1,3 +1,4 @@
+import { replacedFormat } from './replacedFormat';
 import type { Scale } from './types';
 
 /** Options for {@link bandScale}. */
@@ -23,6 +24,7 @@ export interface BandScale extends Scale<string> {
   start(key: string): number;
   /** The key whose band is nearest `at`; `undefined` for an empty domain. */
   invert(at: number): string | undefined;
+  tickFormat(): (key: string) => string;
 }
 
 /** A band scale over `domain`. */
@@ -40,6 +42,7 @@ export function bandScale(opts: BandScaleOptions): BandScale {
     const i = index.get(key);
     return i === undefined ? Number.NaN : startAt(i);
   };
+  const format = (key: string): string => key;
   return {
     kind: 'band',
     domain,
@@ -54,6 +57,9 @@ export function bandScale(opts: BandScaleOptions): BandScale {
       return domain[Math.min(n - 1, Math.max(0, i))];
     },
     ticks: () => [...domain],
-    format: (key) => key,
+    format,
+    tickFormat() {
+      return replacedFormat(this, format) ?? format;
+    },
   };
 }

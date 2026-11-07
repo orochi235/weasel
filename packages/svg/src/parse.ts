@@ -16,8 +16,7 @@ import {
   multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity,
 } from './transform';
 import { boundsOfPath, transformPath } from '@weasel-js/core';
-import { ABSOLUTE_PX } from './absoluteUnits';
-import { emsPer, fontSizeOf } from './fontSize';
+import { readLength, resolveLength } from './lengths';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import { collectGradients, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
@@ -85,9 +84,9 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   if (documentMeta) result.documentMeta = documentMeta;
   const viewBox = parseViewBoxAttr(root.getAttribute('viewBox'));
   if (viewBox) result.viewBox = viewBox;
-  const width = parseRootLength(root.getAttribute('width'), 'width', fontSizeOf(rootStyle), onWarn);
+  const width = rootLength(root, 'width', onWarn);
   if (width != null) result.width = width;
-  const height = parseRootLength(root.getAttribute('height'), 'height', fontSizeOf(rootStyle), onWarn);
+  const height = rootLength(root, 'height', onWarn);
   if (height != null) result.height = height;
   // First direct-child <title> wins. Per SVG spec only one is meaningful.
   for (let i = 0; i < root.children.length; i++) {
@@ -100,25 +99,11 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   return result;
 }
 
-/**
- * Root `width` / `height` in user units, an absolute CSS unit converted at 96
- * per inch and an `em` or `ex` by the root's `fontSize`. A percentage is not
- * converted — there is no viewport to resolve it against — so the number is
- * taken as-is and the discarded unit is reported.
- */
-function parseRootLength(
-  raw: string | null, name: string, fontSize: number, onWarn: (m: string) => void,
-): number | undefined {
-  if (raw == null) return undefined;
-  const n = parseFloat(raw);
-  if (!Number.isFinite(n)) return undefined;
-  const unit = /^\s*[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?\s*([a-z%]+)\s*$/i.exec(raw)?.[1];
-  const scale = unit && ABSOLUTE_PX[unit.toLowerCase()];
-  if (scale) return n * scale;
-  const ems = unit && emsPer(unit);
-  if (ems) return n * ems * fontSize;
-  if (unit) onWarn(`<svg ${name}="${raw}"> unit "${unit}" is not converted; read as ${n}`);
-  return n;
+/** Root `width` / `height` in user units, read as every other length is. A
+ *  percentage has no viewport to resolve against, so its number is taken. */
+function rootLength(root: Element, name: string, onWarn: (m: string) => void): number | undefined {
+  const n = resolveLength(root.getAttribute(name), root, name, name === 'width' ? 'x' : 'y', NaN, onWarn);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 function collectDocumentMeta(
@@ -277,9 +262,7 @@ function parseElement(
     // Nested <svg> — a transparent group that establishes a viewport at
     // (x, y). Inheritance flows through it; clipping does not exist here.
     const childStyle = deriveStyle(style, el);
-    const x = parseFloat(el.getAttribute('x') ?? '0');
-    const y = parseFloat(el.getAttribute('y') ?? '0');
-    const offset: Matrix = [1, 0, 0, 1, Number.isFinite(x) ? x : 0, Number.isFinite(y) ? y : 0];
+    const offset: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn), readLength(el, 'y', 'y', 0, onWarn)];
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
@@ -340,9 +323,9 @@ function parseElement(
     }
   }
   const leafStyle = deriveStyle(style, el);
-  const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked);
+  const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked, onWarn);
   const ownStroke = withOutlinedStroke(el, readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el)));
-  const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked);
+  const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked, onWarn);
   if (stroke && typeof stroke.width === 'number' && isNonUniform(baked)) {
     onWarn(`<${tag}> stroke sits under a skew or non-uniform scale; its width takes the uniform part only`);
   }

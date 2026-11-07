@@ -71,7 +71,7 @@ export function createShapeOutliner(): {
 function edgeOf(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<string, Edge>): Path | null {
   const { scene } = reads;
   const node = scene.get(id as NodeId);
-  if (!node || node.kind === 'group' || (scene.childrenOf?.(id as NodeId).length ?? 0) > 0) return null;
+  if (!node || node.kind === 'group' || holdsMembers(scene, id as NodeId)) return null;
   const pose = reads.poseOf(id);
   const derivedPath = scene.derivedPathOf?.(id as NodeId) ?? null;
   const silhouette = nodeOutline(node, pose, derivedPath ? { derivedPath } : undefined);
@@ -109,7 +109,13 @@ function inkBand(path: Path, stroke: Stroke | undefined, pose: unknown, distance
   return strokeRegion(path, unbroken, poseFrameOf(pose), { scale });
 }
 
-/** An open run encloses nothing, so its edge is the region its ink covers. */
+/** Whether `id` holds a child that can be picked on its own: a member, which its box has to take
+ *  in. An unpickable child — a shape's own label or text row — is part of it, as a pick treats it. */
+function holdsMembers(scene: DrawnBoundsScene, id: NodeId): boolean {
+  return (scene.childrenOf?.(id) ?? []).some((child) => scene.get(child)?.pickable !== false);
+}
+
+/** An open run encloses nothing, so its edge is the band its ink covers. */
 function isOpen(path: Path): boolean {
   return path.kind !== 'rect' && !pathToAnchors(path).closed.every(Boolean);
 }

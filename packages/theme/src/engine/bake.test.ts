@@ -34,6 +34,11 @@ describe('bake', () => {
     expect(baked.tokens['gray-800']).toEqual({ type: 'color', value: '#181a1e' });
   });
 
+  it("keeps a pin's scope, as defineTheme does", () => {
+    const scoped = bake({ ...P, pins: { 'gray-800': { value: '#181a1e', scope: ['density'] } } });
+    expect(scoped.tokens['gray-800']).toEqual({ type: 'color', value: '#181a1e', scope: ['density'] });
+  });
+
   it('nests a two-axis token in axis declaration order', () => {
     expect(baked.tokens.gap).toEqual({
       by: 'mode',

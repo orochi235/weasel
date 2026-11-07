@@ -22,6 +22,7 @@ describe('cellLines', () => {
 
   it('decodes entities', () => {
     expect(cellLines('a&nbsp;&amp;&nbsp;b &lt;c&gt; &#65;&#x42;', true)).toEqual(['a & b <c> AB']);
+    expect(cellLines('&#99999999;', true)).toEqual(['&#99999999;']);
   });
 
   it('keeps an empty line between two, and none at either end', () => {

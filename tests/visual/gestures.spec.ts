@@ -2,7 +2,7 @@
  * Visual regression spec: gestures demo. Drags in the default `drag` mode and
  * captures the trace the overlay leaves behind: start dot, polyline, end dot.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, readCanvasPixels, dragOnCanvas, assertMatchesBaseline } from './diff.js';
 

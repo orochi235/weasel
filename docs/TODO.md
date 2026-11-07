@@ -30,22 +30,23 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [maintainer] In the 3D lab, Shift+F10 and the ContextMenu key stop opening the lab's menu once the pane
+- **(P2) [agent] In the 3D lab, Shift+F10 and the ContextMenu key stop opening the lab's menu once the pane
   has been clicked.** Two dispatchers share the pane: the instrument's and its trial camera's. Since 66345dc66 the
   first to activate for a press keeps it (`dispatchCore.ts`), which is the instrument's, and keys then go only to
   its registry, which has no `menu.context`; the camera owns that and `menuHost`. Letting a right-click activate
   the camera again would send undo after a right-click to the camera, and would not help Shift+F10 after a
   left-click. The decision: whether the instrument and its camera share one input scope, or whether a key no
   binding in the active scope takes falls through to the other dispatcher on the same surface.
-  Closes when the maintainer picks one and it is built, with a case in `useGestureDispatcher.keyScope.test.tsx`.
+  Ruled (2026-11-07): the fall-through, as a general rule for dispatchers sharing a surface.
+  Closes when it is built, with a case in `useGestureDispatcher.keyScope.test.tsx`.
 
-- **(P3) [maintainer] Whether an alt-drag clone should snap to its own source.** Clone snaps as move
+- **(P3) [agent] An alt-drag clone should snap to its own source.** Clone snaps as move
   does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names
   the box being snapped and hides those nodes as targets. During a clone the source stays put, so the
   copy cannot line up with the original's edges. Allowing it needs a separate exclude list on
   `SnapBegin`; the copy starts on its source, so a short drag would snap back onto it.
-  Closes when the maintainer decides, and either the exclude list is built or this is recorded as
-  decided against.
+  Ruled (2026-11-07): it should; build the exclude list.
+  Closes when a clone snaps to its source's edges, with a test.
 
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
@@ -56,17 +57,8 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has watched a real OS drag in WeaselDraw and the ghost follows the
   pointer, clears on Esc, on leave and on drop, and looks right.
 
-- **(P3) [maintainer] The image and SVG drop handlers could leave core.** `kitImageHandler` /
-  `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in
-  `packages/core/src/domains/ingestion/` are about 300 lines no kernel path needs; the registry,
-  the `ingest` action, the `ingestion` dep, and the weasel-JSON handler stay, since Cmd+V of the
-  canvas's own content runs through them. Moving them makes a file drop do nothing on a bare
-  `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
-  2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
-  Closes when the maintainer revisits the 2026-10-11 ruling: the handlers move to an `images` package,
-  or he keeps them in core and this entry is deleted.
 
-- **(P3) [maintainer] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
+- **(P3) [agent] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
   the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
   PaletteLab's page *is* the shell body, and the `#/theme` workbench beside it is a second bare
@@ -74,8 +66,8 @@ Owner tags, after the priority (2026-10-26):
   with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
-  Closes when the maintainer has ruled whether labkit supports a lab with no trials, and
-  `apps/theme-editor` either runs as a `<Lab>` or the ruling keeps it a bare `LabShell`.
+  Ruled (2026-11-07): labkit supports a lab with no trials, rendering its children as the body.
+  Closes when `<Lab>` takes no instruments and `apps/theme-editor` runs as one.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -112,25 +104,23 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
-- **(P3) [maintainer] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
-  primitive's, and moving it would change the output of saved documents.
-  Closes when the maintainer rules on it: Repeat Along moves onto `placeAlongRun` and saved output
-  changes, or it keeps its own semantics and this entry is deleted.
+- **(P3) [agent] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
+  primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
+  output change. Closes when Repeat Along places through `placeAlongRun`.
 
-- **(P3) [maintainer] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
+- **(P3) [agent] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
   Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is the maintainer's call.
-  Closes when the maintainer has ruled whether `bendAlongPath` measures its spine with `keepCorners`,
-  and the code does what he ruled.
+  Ruled (2026-11-07): keep corners, and let saved output change. Closes when `bendAlongPath` measures its spine
+  with `keepCorners`.
 
-- **(P3) [maintainer] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
-  it pressable in that mode; a design call.
-  Closes when the maintainer has ruled whether path edit lights a text-along effect's text, and the
-  code does what he ruled.
+- **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
+  (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
 
 ### Path editing tricks
 
 - **(P1) [maintainer] Rename the path tools the maintainer deferred to the end of the adoption pass.**
-  Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. They live in
+  Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. Ruled (2026-11-07): the
+  adoption pass is over; Cloth warp goes in now, and the maintainer picks the rest from a field of candidates. They live in
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
   Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
   Envelope mesh as Cloth warp among them.
@@ -296,43 +286,10 @@ Owner tags, after the priority (2026-10-26):
   `packages/core/src/domains/paths/pathSnap/`).
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
-- **(P3) [maintainer] Are the snap readout's drawing helpers public API?** Decision for the maintainer
-  (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
-  `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
-  public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
-  which `audit:jsdoc` treats as a sibling-package surface.
-  Closes when the maintainer has ruled, and `tickedSegment`, `pillCommands` and
-  `measuredSegmentCommands` either stay on core's barrel as designed surface or have moved to an
-  `internal` entry.
-
-## Rendering & paint
-
-- **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
-  the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
-  (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code
-  (2026-10-29). It did not come back on teitou on 2026-10-31: 10 runs of the file at 39–44% GPU,
-  then 900 draws of that case in fresh contexts, 300 quiet and 600 with another context queuing heavy
-  fragment work before each, all exact, tiled against whole and each against the first draw
-  (`tests/perf/recorded/tiles-flake-2026-10-31`, whose `run.sh` repeats it). A difference of one
-  level in 24 pixels is not a flipped sample, which moves a pixel by up to 64. Seen a second time
-  on 2026-11-03 in "matches it with the content nested in groups each tile culls into", `{ max: 1,
-  off: 18 }`, on teitou with the browser project split into three Chromium processes beside the
-  `core` jsdom project, every slice re-optimizing its deps (1 of 3 such runs; 0 of 6 runs of the
-  split alone). A third, in a full fleet run of 30f39a982 on 2026-11-03 (a batch touching no renderer
-  code), printed its pixels through `exact()`: 24 off in the first case, each by one level in one
-  channel, tiled then whole: a flat blue fill `42 92 159` / `42 92 158` at (0,4), (22,4), (0,12),
-  (1,12), and along one diagonal edge (36,4), (32,5), (29,6), (27,7), (24,9), (23,10) a yellow
-  `204 179 38` / `205 178 38`, with a gray `98 107 124` / `98 108 124` at (33,4), (34,4). So the
-  tiled draw rounds differently from the whole one in flat interiors as well as on antialiased
-  edges, and only sometimes; that it is a precision or rounding path the GPU picks under load is
-  inferred, not shown.
-  Closes when the cause is found and fixed, or the bound set to what the GPU guarantees.
-
----
 
 ## Text
 
-- **(P3) [maintainer] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
+- **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
   and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
   in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
   16px stays put from `x` 20 to 20.25 and moves next at 20.375 and 20.75), where Chromium and
@@ -350,14 +307,14 @@ Owner tags, after the priority (2026-10-26):
   sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
   0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
   WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
-  Closes when the maintainer has ruled between a WebKit DPR 1 bound in
-  `overlayAlignment.browser.test.tsx` and a WebKit nudge in text-dom, and the chosen one is in the tree.
+  Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
+  its own bound.
 
 ---
 
 ## Scene, adapters & layout
 
-- **(P3) [maintainer] A direct scene call made while a journal is open lands on the scene's own stack.**
+- **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
   Ruled 2026-10-12 to leave it for now. Routing them means `recorder.record` and the history facade
@@ -368,19 +325,17 @@ Owner tags, after the priority (2026-10-26):
   unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
-  Closes when the maintainer reopens the 2026-10-12 ruling and the direct calls reach the open journal,
-  or rules today's split final.
-- **(P2) [recheck] Rulers along the workspace edges, reading the unit scope of the frame under the
-  pointer.** weasel has none; guides are dragged off a ruler only in name. `ScaleBar` (ui) and
-  `scaleBar` (quantity) already measure a frame's true lengths and could set the tick spacing. Filed
-  rather than built with `drawnAt` (2026-10-31): a new chrome component, with a look to settle.
-  Closes when a scene canvas can show rulers whose ticks read the frame's units.
-- **(P2) [agent] Copy and paste for an app whose own document owns the nodes.** `useClipboardOps` works for one,
-  but only through an `InsertAdapter` the app writes by hand: collego (2026-11-05, `packages/app/src/useCopyPaste.ts`)
-  stubs `insertNode`, routes `commitPaste` into its doc, and found by a crash that what `commitPaste` returns becomes
-  the next paste's clipboard, so it must be shaped like the snapshot's items. Neither the adapter docs nor
-  `useClipboardOps` say so. Closes when that contract is documented and an editor-level hook takes an app's
-  snapshot and commit functions, so a doc-owned app gets Copy, Paste, and their commands without writing an adapter.
+  Ruled (2026-11-07), reopening 2026-10-12's: route them to the open journal.
+  Closes when the direct calls reach the open journal and `scene.recordedForm.test.ts` pins that instead.
+- **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
+  draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
+  `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
+  ticks 35% of the strip, labeled steps at most 100 px apart (2026-11-07). Nobody has looked at it in
+  a browser yet; draw shows it under View > Show rulers and the site under the Rulers demo. Closes
+  when the maintainer settles the look and the component draws it.
+- **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
+  rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
+  SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
 
 ---
 
@@ -406,33 +361,33 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] A `Switch` or `Checkbox` in a baseline-aligned row sits off its neighbors' baseline.** The toggle
-  label (`_toggleLabel`) is an `inline-flex` row with `align-items: center`, so it reports the track's baseline, not
-  its text's: collego's top bar measured its "Drawers" 1 px above the words beside it (2026-11-05). collego fixes it
-  locally with `align-items: baseline` on the label and `align-self: center` on the track (`packages/app/src/Topbar.css`).
-  Closes when the label's own row takes its text's baseline.
-- **(P2) [maintainer] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
+- **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
+  (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
+  `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to
+  2.5 s. Either the second number becomes the end time, or the first becomes relative to `start`
+  (2026-11-07). Closes when the maintainer has picked one and the readout and its test follow it.
+- **(P2) [agent] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
   (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
   itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl
   off macOS) adds or removes the pressed node, and Shift selects from the last node clicked to the pressed one.
   Two calls are open: where `select.deep` moves (Alt is clone-drag, double-click enters groups), and what a range
   is in a free 2D scene. collego's answer, which it wires over weasel's picks in its own press handler: every
-  item of the same kind whose center lies in the box the two span (`drawersBetween`). Closes when the select
-  tool's bindings follow the convention and `select.deep` has a new home.
+  item of the same kind whose center lies in the box the two span (`drawersBetween`). Ruled (2026-11-07):
+  `select.deep` moves to Cmd+Alt-click (Ctrl+Alt off macOS), and a range is every node whose center lies in the
+  box the two span, with no same-kind filter. Closes when the select tool's bindings do both.
 
-- **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
+- **(P3) [agent] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
   the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
   override that `segmentedRow`, `ButtonBar` and `Bar` could pass from the run; `Tabs` and `RadioGroup` take their
   arrows from React Aria's locale. `SwatchGrid` rings already step by screen direction (`ringStep`).
-  Closes when Right moves to the item on the screen's right along a clockwise bottom arc in `ButtonBar`,
-  `Bar`, and `segmentedRow`, or the maintainer rules that arrows follow the run.
+  Ruled (2026-11-07): arrows follow the screen. Closes when Right moves to the item on the screen's right along
+  a clockwise bottom arc in `ButtonBar`, `Bar`, and `segmentedRow`.
 
-- **(P3) [maintainer] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
+- **(P3) [agent] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
   (2026-10-30); whether a slider's values should too, so a counterclockwise arc reads as a counterclockwise dial, is
   undecided (`useSliderGeometry`).
-  Closes when the maintainer has ruled whether an arc slider's values follow the arc's direction, and
-  `useSliderGeometry` does what he ruled.
+  Ruled (2026-11-07): they follow the arc, min at the run's start. Closes when `useSliderGeometry` does.
 
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -451,13 +406,13 @@ Owner tags, after the priority (2026-10-26):
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
-- **(P3) [maintainer] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
+- **(P3) [agent] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
-  Closes when the maintainer has chosen disabled's second cue and every control that fades when disabled
-  draws it.
+  Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
+  fades when disabled also desaturates.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -500,12 +455,12 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every variant at `md` and `sm` in a browser and called it
   done.
 
-- **(P3) [maintainer] An empty fragment takes no drop in the live preview.** It draws nothing
+- **(P3) [agent] An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
-  Closes when the maintainer has ruled on the slot's look, and an empty fragment takes a drop in the live
-  preview or is ruled to take none.
+  Ruled (2026-11-07): it draws a row-height drop slot only while a drag is on, and the rows around it move.
+  Closes when an empty fragment takes a drop in the live preview.
 
 - **(P3) [maintainer] Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -520,14 +475,21 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every beveled control under both themes and kept or retuned
   its hooks.
 
-- **(P3) [maintainer] Two control choices are labkit's alone, and two controls draw an enum their own way.**
+- **(P2) [agent] An auto lever whose value only the instrument knows can't show it.** `.auto()` with no
+  resolver reads `undefined` and the instrument substitutes its own value, so the row reads "auto" with no
+  number — segmento's Count, which a worker works out after each build (2026-11-07). `.auto(fn)` sees only
+  the config. The instrument needs a way to report the value it used for an auto path (a call beside
+  `setConfig`, say), which the ghosted control then draws, never stored and dropped once the path is pinned.
+  Closes when an instrument can report an auto path's value and its row draws that number.
+- **(P3) [agent] Two control choices are labkit's alone, and two controls draw an enum their own way.**
   Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
   segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
   `MatrixEditor` always lists an enum as radios.
-  Closes when the maintainer has ruled on both labkit rows, and `BarField` and `MatrixEditor` take their
-  enum control from `PARAMS_CONTROLS`.
+  Ruled (2026-11-07): both flip to true — an enum draws the control it asks for, and a slider with one bound
+  draws an open end. Closes when the table says so and `BarField` and `MatrixEditor` take their enum control
+  from `PARAMS_CONTROLS`.
 
 ### WeaselDraw app follow-ups (defer)
 
@@ -554,21 +516,16 @@ Owner tags, after the priority (2026-10-26):
 
 ### Domain bundles
 
-- **(P3) [maintainer] A presentation bundle and a whiteboard bundle.** Each would be a `Contribution` bundle,
-  the way `@weasel-js/diagram` is (`createDiagramContribution`).
-  - Presentation: to be rethought before anything is built. This bullet predates sherpa (the
-    presentation runtime) and blits (concurrent effects).
-    Ruled 2026-10-17: a presentation strategy now runs through those two, not an in-canvas
-    slide bundle. What weasel contributes, if anything, is undecided. The page primitives it would
-    have used are in `packages/core/src/core/pages/` (`layoutPages`, `fitViewToPage`,
-    `adjacentPage`).
-  - Whiteboard. The tools are all in core: `usePencilTool`, `useTextTool`, and `useStickyTool`
-    (built-in id `sticky`, a text node with a `background`; its look is `toolOptions.sticky`).
-    The bundle itself is not to be built yet (decided 2026-10-17). apps/draw leaves `sticky` out
-    of its tools: its `TextObj` and SVG round trip carry no text `background` or `padding`, and
-    SVG import reads a written note back as a rect and a text node.
-  Closes when the maintainer has ruled what weasel contributes to a presentation and whether the
-  whiteboard bundle is built, and each is built or its bullet deleted.
+- **(P3) [agent] A presentation bundle and a whiteboard bundle.** Each a `Contribution` bundle, the way
+  `@weasel-js/diagram` is (`createDiagramContribution`). Ruled (2026-11-07): build both.
+  - Presentation: a slide-navigation contribution that sherpa (the presentation runtime) can mount — keys and
+    view animation stepping between pages, over `layoutPages`, `fitViewToPage` and `adjacentPage`
+    (`packages/core/src/core/pages/`). Not an in-canvas slide format (ruled 2026-10-17).
+  - Whiteboard: bundles core's `usePencilTool`, `useTextTool`, and `useStickyTool` (built-in id `sticky`, a text
+    node with a `background`; its look is `toolOptions.sticky`). apps/draw leaves `sticky` out today: its
+    `TextObj` and SVG round trip carry no text `background` or `padding`, and SVG import reads a written note
+    back as a rect and a text node, so that round trip is part of the work.
+  Closes when both contributions ship and draw round-trips a sticky.
 ### d3 integration plugin
 
 - **(P3) [maintainer] `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
@@ -589,17 +546,16 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) [maintainer] Whether index pages' API panel should read typedoc's output instead of forge's own
-  compiler pass** (2026-11-02). The panel lists a component's props and its ref handle's members from forge's
+- **(P2) [agent] Index pages' API panel reads typedoc's output where a build has made one** (2026-11-02). The panel lists a component's props and its ref handle's members from forge's
   TypeScript reader (`apiTable` in `packages/forge/src/vite/apiTable.ts`): live in dev,
   following edits, and available to any project that installs forge. `npm run build:api` already runs typedoc
   over every package (`typedoc/`), which resolves `{@link}` and `@see`, overloads and inherited members, and
   could link each entry to the API reference; but its output exists only after a build, and a consumer of forge
   may not run typedoc at all. Not decided: keep the reader, switch to typedoc, or read typedoc's JSON as a
-  richer source where a build has made one. Closes when the maintainer has ruled: on keep, delete the entry; on
-  either other answer, when the panel reads typedoc's JSON.
+  richer source where a build has made one. Ruled (2026-11-07): the last, with forge's reader as the fallback.
+  Closes when the panel reads typedoc's JSON when present.
 
-- **(P3) [maintainer] Whether forge's vite plugin should wait for writes to settle, as the repo's own dev servers do.**
+- **(P3) [agent] forge's vite plugin should wait for writes to settle off macOS, as the repo's own dev servers do.**
   On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
   server serving the first text until the next save. Every dev server here (and vitest's watcher) off macOS now waits for
   the write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30); macOS skips the
@@ -608,18 +564,17 @@ only story runner in the repo.
   served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
   stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
   fsevents reports a path's next change about 100 ms after its last, and median 113 → 115 ms (p90 118 → 148).
-  Closes when the maintainer has ruled whether `forge()` waits for writes to settle off macOS, and either
-  it does, with `replacedFile.test.ts` no longer rewriting until served, or the entry is deleted.
+  Ruled (2026-11-07): it should. Closes when `forge()` waits off macOS and `replacedFile.test.ts` no longer
+  rewrites until served.
 
-- **(P3) [maintainer] Whether the workshop's marks come back, to draw on a reported issue's screenshot**
+- **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
   opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
   turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
   up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
-  Closes when the maintainer has ruled on it: on a no, delete the entry; on a yes, when the workshop
-  draws marks on the trial while Report is open.
+  Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
-- **(P3) [maintainer] The CSS Vars panel does not save a token the theme derives.** A token
+- **(P3) [agent] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
   component, or a literal semantic, in the branch the trial's globals read
   (`applyTokenEdits`, `packages/forge/src/shell/cssVars/saveTokens.ts`). One
@@ -628,8 +583,8 @@ only story runner in the repo.
   a value written over it would drop the derivation for every mode and density
   the branch covers. Not decided: whether such an edit should save at all, and
   if so as a pin over the one step or as a change to what it follows.
-  Closes when the maintainer has ruled, and a derived token edited in the panel either saves as he chose,
-  with a case in `saveTokens`' tests, or the panel says it will not be saved.
+  Ruled (2026-11-07): save it as a pin over that one token in the branch, leaving the derivation for the rest.
+  Closes when it does, with a case in `saveTokens`' tests.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
@@ -646,9 +601,8 @@ only story runner in the repo.
 
 - **(P3) [maintainer] Icons for the package pages.** Said to be specced (gray and blue React icons, an orange
   window, and three others), but no spec has been found in the repo or in either account's weasel transcripts.
-  Ask where it lives before drawing anything (2026-10-21).
-  Closes when the maintainer has said where the spec lives and the icons are on the package pages, or
-  said there is none and the entry is deleted.
+  It lives in the "Packages page icons prototype" Remote Control session (said 2026-11-07).
+  Closes when the icons are on the package pages.
 
 ## Demos & visual regression
 
@@ -693,7 +647,7 @@ only story runner in the repo.
   entry if the next full runs pass it.
   Closes when 10 full fleet runs after 2026-10-28 pass it, or at its next failure, which makes it a fix.
 
-- **(P3) [agent] `MenuTextValue.browser.test.tsx`'s "commits it on Enter without closing" closed the menu once under load.**
+- **(P3) [waiting] `MenuTextValue.browser.test.tsx`'s "commits it on Enter without closing" closed the menu once under load.**
   In the full fleet run of 7168695bf (2026-11-03) `close` was called once, with no arguments, by the time Enter
   had committed `Nested`; the file passed alone on the fleet minutes later, and in about 45 other full runs. The failure
   screenshot (still on studio, under `.vitest/attachments/failure-screenshots/`) shows the menu whole, Name highlighted,
@@ -706,11 +660,11 @@ only story runner in the repo.
   reset (it lands before `execute`), and a command left running by an earlier file (no test timed out in that run, and
   every `userEvent`/`commands` call is awaited). The test now records the event each `close` and `set` call ran
   in, and requires that Enter's keydown wrote the row, so the next failure names its trigger.
+  Also ruled out by reading (2026-11-05): the fading focus border is Enter handing focus to the panel, which every
+  pass does; the click's own events (its bubbled press opens a text row, its pointerup is disarmed, and vitest's
+  `focusIframe` calls `window.focus()` only with focus on `body`); and an earlier file's frame, which vitest
+  removes before it creates the next.
   Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
-- **(P3) [agent] `apps/chart` `pipeline.browser.test.tsx`'s "deletes the selected stage from Edit › Delete, and
-  Mod+Z on the canvas brings it back" failed once under load.** In the full fleet run of d266c0bc5 (2026-11-03,
-  node studio) `canvasSettled` (`apps/chart/src/testing/mountChartApp.tsx:47`) returned false; the file passed
-  alone on teitou minutes later. Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
   `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
@@ -753,8 +707,14 @@ only story runner in the repo.
 
 ## Backends (WebGL future)
 
-- **(P3) [agent] WebGPU backend.** Separate future spec.
-  Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
+- **(P2) [agent] GitHub CI's `browser (webgpu)` instance loses its WebGPU instance mid-test.** It was
+  `browser (gpu)` before 2026-11-07. On the push of e6af210ab (CI run 42340342009), `canvasBackend.browser.test.tsx` (`mapAsync`: "A valid external Instance
+  reference no longer exists") and `paintPrelude.browser.test.ts` ("Instance dropped in popErrorScope") failed
+  on the runner. The instance launched with `--enable-gpu` alone, which the traps entry already found loses
+  the device on the GPU-less runner; the whole browser project now takes `HOST_GPU_ARGS` (`scripts/chromium-gpu-args.ts`), the visual
+  job's SwiftShader set on Linux. `WeaselRenderer.dispose` retires only its own resources and never destroys
+  the shared device, so it is not the cause (read, 2026-11-07). Closes when `npm run test:browser` passes on
+  GitHub CI.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
@@ -766,12 +726,11 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P3) [maintainer] The devtools extension's 16 px icon is the whole site logo shrunk.**
+- **(P3) [agent] The devtools extension's 16 px icon is the whole site logo shrunk.**
   `apps/devtools-extension/scripts/gen-icons.ts` renders the full mark at every size, and at 16 px
   1x it reads as an orange and dark blob. A crop to the head for the 16 and 32 px sizes would read
   better; that is a call on the mark, not made (2026-10-19).
-  Closes when the maintainer has ruled on the crop and `gen-icons.ts` draws the 16 and 32 px sizes as he
-  chose.
+  Ruled (2026-11-07): crop to the head at 16 and 32 px. Closes when `gen-icons.ts` draws those two sizes so.
 
 ## Release-gate & build hygiene
 
@@ -780,35 +739,8 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
-- **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
-  `ubuntu-latest`, while every fleet node is a Mac, so a browser test that leans on the OS fails only in CI.
-  The 11 that failed every `main` run from 2026-10-15 were fixed on 2026-10-29, passing in the lane below:
-  they read Mac shortcut glyphs or the Apple word-delete key, measured text in the OS's fallback font
-  instead of the kit's Oswald, or held WebGL rounding to 1 where CI's SwiftShader reaches 2. Likewise
-  `forge-stories` dropped its browser connection only on Linux, failing CI from 2026-10-29 until it ran
-  with isolate off (2026-10-31). Open: whether
-  the fleet should run that lane routinely, so the next one is caught before CI.
-  Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
-  (Playwright's Linux image under Docker, arm64 rather than CI's x86; it reproduced CI's numbers exactly).
-  Studio's Docker Desktop has to be running (`open -g -a Docker` there).
-  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when the fleet runs the
-  Linux lane on its own.
 
-- **(P3) [maintainer] Whether to find what a long-lived vitest vm worker builds up that crashed V8.**
-  Fleet runs on teitou died from a worker SIGSEGV (a jump to address 0 under `PromiseConstructor`
-  while another worker ran a full GC) until `vmMemoryLimit: '1gb'` (2026-10-22) made vitest replace
-  each vm worker about once a run; the default limit never does, because it compares against
-  `heapUsed` read without a GC. Nothing leaks: one worker over 319 `weasel-ui` files held a flat
-  ~200 MB of live heap. teitou has written no SIGSEGV report since, over 183 suite runs, and with
-  `--no-sparkplug` dropped the jsdom projects ran 3 of 3 clean under `--stress-flush-code`, which
-  crashed 3 of 3 at the default limit (2026-10-29). So the crash is held off, not explained: what an
-  aged worker accumulates, and why only teitou crashed, are unknown. The cost of not knowing is that
-  raising or removing the limit would bring it back. Whether that is worth a heap-snapshot hunt is
-  the open call.
-  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when a heap snapshot names
-  what an aged worker accumulates.
-
-- **(P2) [maintainer] Browser test files fail to load when the node's network changes.** A file
+- **(P2) [agent] Browser test files fail to load when the node's network changes.** A file
   fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
   imported module`, along with any file loading in the same tenth of a second, and the next run
   passes. The cause is Chromium: on a macOS network change it drops every request in flight, those
@@ -836,14 +768,13 @@ only story runner in the repo.
     events and leaves the LAN-wide ones, or have `scripts/vitest-overlap.mjs` run again only the
     files that loaded no tests when the run logged `ERR_NETWORK_CHANGED`. The second is a rerun the
     suite does on its own, which nothing in it does today.
-    Closes when studio's Wi-Fi is off while it has Ethernet, or `scripts/vitest-overlap.mjs` reruns the
-    files that loaded no tests in a run that logged `ERR_NETWORK_CHANGED`.
+    Ruled (2026-11-07): the rerun. Closes when `scripts/vitest-overlap.mjs` reruns the files that loaded no
+    tests in a run that logged `ERR_NETWORK_CHANGED`.
 
-- **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
+- **(P3) [agent] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
   factories, shape kinds, and the `features` presets; the rest of the public exports are uncovered.
-  Closes when the maintainer has said whether he wants the inventory: on a no, delete the entry; on a
-  yes, when the barrel test covers every public export.
+  Ruled (2026-11-07): wanted. Closes when a checked-in inventory holds core's barrel to every public export.
 
 ---
 

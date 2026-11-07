@@ -100,3 +100,12 @@ export function anyCaused(ops: readonly Op[]): boolean {
   for (let i = 0; i < ops.length; i++) if (ops[i]!.caused !== undefined) return true;
   return false;
 }
+
+/** Both halves of `entries` run end to end, as one entry would hold them: one
+ *  list when nothing coalesced, since a step that throws unwinds a two-list
+ *  entry by replaying its other half. */
+export function appliedHalves(entries: readonly Entry[]): { forwardOps: Op[]; baseOps: Op[] } {
+  const forwardOps = entries.flatMap((e) => e.forwardOps);
+  if (entries.every((e) => e.forwardOps === e.baseOps)) return { forwardOps, baseOps: forwardOps };
+  return { forwardOps, baseOps: entries.flatMap((e) => e.baseOps) };
+}

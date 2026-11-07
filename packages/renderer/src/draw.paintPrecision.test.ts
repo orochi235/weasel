@@ -13,6 +13,7 @@ import {
 import { registerPaintDrawKind } from './paintKinds';
 import { meshDrawKind, seedMeshPatch } from './meshPaint/meshPaint';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { glUniformLocation } from './gpu/webgl/GlProgram';
 
 /**
  * A `units: 'world'` paint far from the origin and zoomed in. The paint
@@ -53,7 +54,7 @@ function frame(paint: unknown, px: number) {
 
 /** The last `name` call that sent `prog` its `uniform`. */
 function sent(rec: ReturnType<typeof makeGLRecorder>, prog: ShaderProgram, name: string, uniform: string) {
-  const loc = prog.uniform(uniform);
+  const loc = glUniformLocation(prog, uniform);
   expect(loc, `${uniform} has no location`).toBeDefined();
   return rec.calls.filter((c) => c.name === name && c.args[0] === loc).at(-1);
 }
@@ -65,7 +66,7 @@ function programDeclaring(rec: ReturnType<typeof makeGLRecorder>, name: string):
   const uniform = (u: string) =>
     rec.calls.find((c) => c.name === 'getUniformLocation' && c.args[0] === handle && c.args[1] === u)?.result as
       WebGLUniformLocation | undefined;
-  return { uniform } as unknown as ShaderProgram;
+  return { location: uniform } as unknown as ShaderProgram;
 }
 
 /** `(u_worldInv * vec3(screen, 1.0)).xy` as the vertex stage computes it. */
@@ -142,7 +143,8 @@ describe('paint space far from the origin (world x = 262,144 at 64x)', () => {
         const { rec } = frame(paint, k * STEP_PX);
         const prog = programDeclaring(rec, 'u_meshSize');
         const worldInv = sent(rec, prog, 'uniformMatrix3fv', 'u_worldInv')!.args[2] as Float32Array;
-        [width] = sent(rec, prog, 'uniform2f', 'u_meshSize')!.args.slice(1) as number[];
+        // A kind's uniforms arrive by name, a pair as a vec2.
+        [width] = sent(rec, prog, 'uniform2fv', 'u_meshSize')!.args[1] as number[];
         // The shader's `v_world / u_meshSize`.
         ts.push(f(paintPoint(worldInv, SX, SY)[0] / f(width)));
         // The model's translation is what is left past u_origin: a few pixels, not millions.

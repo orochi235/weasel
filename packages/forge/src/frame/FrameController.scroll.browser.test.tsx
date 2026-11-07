@@ -1,11 +1,10 @@
 import { act } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { openChannel } from '../protocol/channel';
+import { loadNativeModule, openChannel } from '@weasel-js/forge/testing/frame';
 import type { FromFrame, ToFrame } from '../protocol/messages';
 import { meta, story } from '@weasel-js/forge';
 import { startFrame } from '@weasel-js/forge/frame';
-import { loadNativeModule } from '../story/native';
 
 // The frame document's own scroll is layout: a real browser's.
 

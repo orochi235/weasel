@@ -5,6 +5,7 @@
  */
 
 import type { Point } from '../paths/cubicMath';
+import { quadraticRoots } from '../curve';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
 import { flatPoints, segmentLength, segmentTAtLength } from '../paths/segmentLength';
 
@@ -18,15 +19,7 @@ export function segmentMidT(s: Seg): number {
 /** Roots of a quadratic a t² + b t + c in [0, 1]. */
 function unitQuadraticRoots(a: number, b: number, c: number): number[] {
   const inside = (t: number) => t >= -1e-9 && t <= 1 + 1e-9;
-  if (Math.abs(a) < 1e-12) {
-    if (Math.abs(b) < 1e-12) return [];
-    const t = -c / b;
-    return inside(t) ? [Math.min(1, Math.max(0, t))] : [];
-  }
-  const disc = b * b - 4 * a * c;
-  if (disc < 0) return [];
-  const r = Math.sqrt(disc);
-  return [(-b - r) / (2 * a), (-b + r) / (2 * a)].filter(inside).map((t) => Math.min(1, Math.max(0, t)));
+  return quadraticRoots(a, b, c).filter(inside).map((t) => Math.min(1, Math.max(0, t)));
 }
 
 /** Parameters on a curved segment, its ends included, where its tangent is

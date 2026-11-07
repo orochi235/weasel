@@ -35,7 +35,7 @@ afterEach(() => _resetProgramRegistryForTests());
 function frame(px: number, worldX = WORLD_X) {
   rec = makeGLRecorder();
   const r = new WeaselRenderer({ gl: rec.gl, width: 800, height: 600, dpr: 1 });
-  const program = registerProgram('far-shader', '', FRAG);
+  const program = registerProgram('far-shader', { glsl: { frag: FRAG } });
   const view = viewToMat3({ x: worldX - px / ZOOM, y: 0, scale: { x: ZOOM, y: ZOOM } });
   rec.reset();
   r.render([{

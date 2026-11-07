@@ -7,6 +7,7 @@ import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import { paintModeOf } from './shaders/batchFill';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { glUniformLocation } from './gpu/webgl/GlProgram';
 
 describe('gradient units — which space a gradient measures its geometry in', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -212,7 +213,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
         colorMatrix: cm,
         children: [{ kind: 'path', path: EVEN_ODD, fill: { paint: RADIAL } }],
       }] as DrawCommand[]);
-      const loc = r._gradFill().uniform('u_colorMatrix');
+      const loc = glUniformLocation(r._gradFill(), 'u_colorMatrix');
       expect(loc, 'gradient program should expose u_colorMatrix').toBeDefined();
       const upload = recorder.calls.find(
         (c) => c.name === 'uniformMatrix4fv' && c.args[0] === loc,

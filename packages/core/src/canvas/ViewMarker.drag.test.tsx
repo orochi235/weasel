@@ -92,7 +92,7 @@ function Takeover({ s, markerDrag, children }: { s: SelectionApi; markerDrag?: b
 }
 
 function mount(
-  extra: Partial<SceneCanvasProps<D, 'main', P>> = {},
+  extra: Partial<Extract<SceneCanvasProps<D, 'main', P>, { worker?: undefined }>> = {},
   opts: { rootAim?: Partial<ViewMarkerProps>; markers?: ReactNode; takeover?: boolean; markerDrag?: boolean } = {},
 ) {
   const surface = (s: SelectionApi, tools?: ToolsApi) => (

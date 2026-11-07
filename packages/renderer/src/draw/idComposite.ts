@@ -1,11 +1,13 @@
 /** How a group drawn into a buffer of its own hands its ids to its parent. */
-import { ShaderProgram } from '../shaders/ShaderProgram';
 import { EFFECT_VERT_SRC } from '../effects/effectPrelude';
+import { ID_COMPOSITE_WGSL } from '../gpu/webgpu/wgsl/idComposite';
 import { NO_PICK_ID, checkPickId, idChannels } from '../shaders/idOutput';
+import type { ShaderProgram } from '../shaders/ShaderProgram';
+import type { GpuDevice, GpuStencilState, GpuTexture } from '../gpu/types';
 import type { DeviceRect } from '../retain/contentBounds';
 import type { DrawContext } from './drawContext';
 import { compositeOver } from './effects';
-import { drawBoth, type IdFrame } from './idFrame';
+import type { IdFrame } from './idFrame';
 
 /**
  * Hand a group's ids back to its parent after its color composited: every
@@ -14,29 +16,17 @@ import { drawBoth, type IdFrame } from './idFrame';
  * carries none. A pixel it does not claim keeps the parent's.
  */
 export function compositeIds(
-  ctx: DrawContext, ids: IdFrame, color: WebGLTexture, own: WebGLTexture, rect: DeviceRect,
-  alpha: number, groupId: number,
+  ctx: DrawContext, ids: IdFrame, color: GpuTexture, own: GpuTexture, rect: DeviceRect,
+  alpha: number, groupId: number, stencil: GpuStencilState | null,
 ): void {
-  const gl = ctx.gl;
   const program = ids.composite;
   const claims = groupId !== NO_PICK_ID;
   if (claims) checkPickId(groupId);
-  gl.useProgram(program.handle);
-  gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, own);
-  const unit = program.uniform('u_ids');
-  if (unit !== undefined) gl.uniform1i(unit, 1);
-  const group = program.uniform('u_groupId');
+  program.setTexture('u_ids', own);
   // A negative red channel says the group carries no id of its own.
   const [r, g, b]: [number, number, number] = claims ? idChannels(groupId) : [-1, 0, 0];
-  if (group !== undefined) gl.uniform4f(group, r, g, b, ids.minAlpha);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.drawBuffers([gl.NONE, gl.COLOR_ATTACHMENT1]);
-  compositeOver(ctx, program, color, rect, { alpha, colorMatrix: IDENTITY });
-  drawBoth(gl);
-  gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  gl.activeTexture(gl.TEXTURE0);
+  program.set4f('u_groupId', r, g, b, ids.minAlpha);
+  compositeOver(ctx, program, color, rect, { alpha, colorMatrix: IDENTITY }, { stencil, colorWrite: false, ids: true });
 }
 
 const IDENTITY = new Float32Array([1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
@@ -63,9 +53,11 @@ void main() {
 }
 `;
 
-/** The id composite's program, compiled against `gl`. */
-export function createIdComposite(gl: WebGL2RenderingContext): ShaderProgram {
-  const program = new ShaderProgram(gl, EFFECT_VERT_SRC, ID_COMPOSITE_FRAG, { ids: false });
+/** The id composite's program, compiled on `gpu`. */
+export function createIdComposite(gpu: GpuDevice): ShaderProgram {
+  const program = gpu.createProgram(
+    { glsl: { vert: EFFECT_VERT_SRC, frag: ID_COMPOSITE_FRAG }, wgsl: ID_COMPOSITE_WGSL }, { ids: false },
+  );
   program.lookupUniforms(['u_source', 'u_ids', 'u_resolution', 'u_alpha', 'u_groupId']);
   program.lookupAttributes(['a_position', 'a_uv']);
   return program;

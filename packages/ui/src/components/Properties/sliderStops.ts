@@ -23,11 +23,10 @@ function runPx(el: HTMLInputElement): number {
 
 /** Each stop as a 1px mark in the range box's background, centered where the
  *  thumb's center sits at it: `t/2 + f·(W − t)` of the content box. */
-function marksStyle(at: readonly number[], min: number, max: number): CSSProperties {
-  const span = max - min || 1;
+function marksStyle(at: readonly number[], fraction: (v: number) => number): CSSProperties {
   const mark = 'linear-gradient(var(--wzl-border-strong), var(--wzl-border-strong))';
   const place = (v: number) => {
-    const f = (v - min) / span;
+    const f = fraction(v);
     // A background position's percentage runs over (W − 1px), the mark's own width taken off.
     return `calc(${f * 100}% + ${0.5 - f} * (var(--wzl-slider-thumb-size) - 1px)) 50%`;
   };
@@ -48,19 +47,25 @@ export interface TrackStops {
 }
 
 /**
- * `stops` on a native range track running `min`..`max`. The pull is the one
+ * `stops` on a native range track running `min`..`max`, each at its
+ * `fraction` of the track, which a scaled track places by its scale. The pull is the one
  * `Slider` uses, `attract` over the `targets.sliderStopSnapPx` kit setting, and
  * only a pointer gets it: a key step pulled back onto the stop it left would
  * never leave it.
  */
-export function useTrackStops(stops: readonly number[] | undefined, min: number, max: number): TrackStops {
+export function useTrackStops(
+  stops: readonly number[] | undefined,
+  min: number,
+  max: number,
+  fraction: (v: number) => number,
+): TrackStops {
   const at = useMemo(() => usableStops(stops, min, max).map((s) => s.value), [stops, min, max]);
   const snapPx = useKitSetting('targets.sliderStopSnapPx') ?? STOP_SNAP_PX;
   // Held while a pointer is down on the track: whether alt frees it from the stops.
   const gesture = useRef<{ free: boolean } | null>(null);
   const release = useRef<(() => void) | null>(null);
   useEffect(() => () => release.current?.(), []);
-  const style = useMemo(() => (at.length > 0 ? marksStyle(at, min, max) : undefined), [at, min, max]);
+  const style = useMemo(() => (at.length > 0 ? marksStyle(at, fraction) : undefined), [at, fraction]);
   if (at.length === 0) return { settle: (_el, _from, to) => to, onPointerDown: () => {}, className: undefined, style };
   return {
     settle: (el, from, to) => {
@@ -68,7 +73,7 @@ export function useTrackStops(stops: readonly number[] | undefined, min: number,
       if (gesture.current.free) return to;
       const run = runPx(el);
       if (run <= 0 || max === min) return to;
-      return attract(to, at, snapPx / run, (v) => (v - min) / (max - min));
+      return attract(to, at, snapPx / run, fraction);
     },
     onPointerDown: (e) => {
       release.current?.();

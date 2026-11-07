@@ -34,7 +34,7 @@ function pixelAt(commands: DrawCommand[], x: number, y: number): number[] {
 
 describe('u_windowOrigin', () => {
   it("is the top-left device pixel of the group's buffer", () => {
-    const program = registerEffect('browser-fx-window-origin', ORIGIN_FRAG);
+    const program = registerEffect('browser-fx-window-origin', { glsl: ORIGIN_FRAG });
     const square: DrawCommand = {
       kind: 'path',
       path: { kind: 'rect', x: 10, y: 20, width: 10, height: 10 },

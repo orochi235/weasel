@@ -1,5 +1,4 @@
-import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type TexturePaint, type VertexWidth } from '@weasel-js/paint';
-import { getPaintDrawKind } from '../paintKinds';
+import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { Mesh } from '@weasel-js/geom/tessellate';
@@ -8,7 +7,7 @@ import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { metricKeepsRects, type StrokeSpaces } from '@weasel-js/stroke';
-import { cachedMarkerCommands } from '../cache/markerCommandCache';
+import { cachedMarkerHeads } from '../cache/markerCommandCache';
 import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
@@ -16,16 +15,18 @@ import { fillMesh, meshHandle, fillMeshHandle, flattenToleranceOf } from './mesh
 import { alignedRibbon } from './alignedRibbon';
 import { drawClippedTrim } from './clippedTrim';
 import {
-  atMeshOrigin, drawModel, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms,
+  atMeshOrigin, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms,
 } from './uniforms';
-import { applyClipTest, ancestorMask, beginParityMask, endParityMask } from './stencil';
+import {
+  ALIGNED_FILL, ALIGNED_FILL_PARITY, alignedRibbon as alignedRibbonStencil, clipTest, drawParityMask, endParityMask,
+} from './stencil';
 import { flushForOwnDraw } from './clip';
 import { pushRect, pushRampRect, tryStageFill } from './batch';
 import { batchPaint } from './gradient';
 import { pushPatternRect } from './patternBatch';
-import { paintBindContext, bindPattern, bindGradient } from './paintBind';
+import { bindPathFillByKind } from './paintBind';
 import {
-  attachVertexColors, detachVertexColors, tryStageVertexColors, vertexColorBase,
+  releaseVertexColors, tryStageVertexColors, vertexColorBase, withVertexColors,
 } from './vertexColors';
 
 export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
@@ -78,99 +79,37 @@ function drawPathFillVColor(
   fill: { color: string; opacity?: number },
   handle: GLMeshHandle,
 ): void {
-  const gl = ctx.gl;
   const prog = ctx.pathFillVColor;
-  gl.useProgram(prog.handle);
-  gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, prog);
   setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
   setColorMatrixUniforms(ctx, prog);
 
-  const colors = attachVertexColors(gl, prog, cmd.vertexColors!, handle);
-
+  const colored = withVertexColors(ctx, prog, cmd.vertexColors!, handle);
   if (handle.requiresStencil) {
-    beginParityMask(ctx, handle.indexCount);
-    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
+    const stencil = drawParityMask(ctx, prog, colored.geometry, handle.indexCount);
+    drawTriangles(ctx, prog, colored.geometry, handle.indexCount, { stencil });
     endParityMask(ctx);
   } else {
-    applyClipTest(ctx);
-    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
+    drawTriangles(ctx, prog, colored.geometry, handle.indexCount, { stencil: clipTest(ctx.clipDepth) });
   }
-  detachVertexColors(gl, colors);
-  gl.bindVertexArray(null);
-}
-
-/**
- * Bind the program, uniforms and textures for `fill`, and return the program.
- *
- * Split from the draw so a caller owning its own stencil state can paint
- * without `applyClipTest` clobbering it — `drawPathStrokeStenciled` clips a
- * doubled ribbon to one side of the silhouette, and `applyClipTest` at depth 0
- * disables the stencil test outright.
- */
-function bindPathFillByKind(ctx: DrawContext, fill: Paint): ShaderProgram | null {
-  const kind = fill.kind ?? 'solid';
-  if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
-  if (kind === 'texture') return bindPathFillPattern(ctx, fill as TexturePaint);
-  if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
-    return bindPathFillGradient(ctx, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
-  }
-  const bind = getPaintDrawKind(kind)?.bind;
-  return bind ? bind(paintBindContext(ctx), fill) : null;
+  releaseVertexColors(ctx, colored);
 }
 
 export function drawPathFillByKind(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
   const prog = bindPathFillByKind(ctx, fill);
   if (!prog) return;
-  const gl = ctx.gl;
-  gl.bindVertexArray(handle.vao);
-  applyClipTest(ctx);
-  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
-  gl.bindVertexArray(null);
-}
-
-function bindPathFillSolid(
-  ctx: DrawContext,
-  fill: { color: string; opacity?: number },
-): ShaderProgram {
-  const prog = ctx.pathFill;
-  ctx.gl.useProgram(prog.handle);
-  setProjAndModel(ctx, prog);
-  setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
-  setColorMatrixUniforms(ctx, prog);
-  return prog;
-}
-
-function bindPathFillPattern(
-  ctx: DrawContext,
-  fill: TexturePaint,
-): ShaderProgram | null {
-  return bindPattern(ctx, ctx.patternFill, fill, drawModel(ctx));
-}
-
-function bindPathFillGradient(
-  ctx: DrawContext,
-  fill: Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
-): ShaderProgram | null {
-  return bindGradient(ctx, ctx.gradFill, fill, drawModel(ctx));
+  drawTriangles(ctx, prog, handle.geometry, handle.indexCount, { stencil: clipTest(ctx.clipDepth) });
 }
 
 function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
-  const gl = ctx.gl;
-  gl.useProgram(ctx.pathFill.handle);
-  gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
-
-  beginParityMask(ctx, handle.indexCount);
-  // The paint binds here, not above: pass 1 runs under a false colorMask, so a
-  // uniform missed here renders black while the GL-recorder tests still pass.
-  // Not `drawPathFillByKind` — its `applyClipTest` would disable this stencil.
-  if (bindPathFillByKind(ctx, fill)) {
-    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
-  }
-
+  const stencil = drawParityMask(ctx, ctx.pathFill, handle.geometry, handle.indexCount);
+  // The paint binds here, not above: pass 1 writes no color, so a uniform
+  // missed here renders black while the GL-recorder tests still pass. Not
+  // `drawPathFillByKind` — it draws under the clip test, not this stencil.
+  const prog = bindPathFillByKind(ctx, fill);
+  if (prog) drawTriangles(ctx, prog, handle.geometry, handle.indexCount, { stencil });
   endParityMask(ctx);
-  gl.bindVertexArray(null);
 }
 
 function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
@@ -193,8 +132,17 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   }
   // After the ribbon, so a head sits on top of the line it caps.
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  const heads = cachedMarkerCommands(cmd.path, rawCmd.stroke, stroke, width, flattenToleranceOf(ctx), spaces);
-  for (const marker of heads) drawPath(ctx, marker);
+  const heads = cachedMarkerHeads(cmd.path, rawCmd.stroke, stroke, width, flattenToleranceOf(ctx), spaces);
+  for (const { draws, transform } of heads) {
+    for (const { cmd: head, inLineFrame } of draws) {
+      ctx.state.push({ transform, keepPaintFrame: inLineFrame });
+      try {
+        drawPath(ctx, head);
+      } finally {
+        ctx.state.pop();
+      }
+    }
+  }
 }
 
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces): void {
@@ -245,32 +193,24 @@ function drawOwnRibbon(ctx: DrawContext, stroke: StrokedPathCommand['stroke'], m
     return;
   }
 
-  const gl = ctx.gl;
+  const stencil = clipTest(ctx.clipDepth);
   if (hasVColors) {
     const prog = ctx.pathFillVColor;
-    gl.useProgram(prog.handle);
-    gl.bindVertexArray(handle.vao);
     setProjAndModel(ctx, prog);
     const base = vertexColorBase(paint);
     setSolidPaintUniforms(ctx, prog, base.color, base.opacity);
     setColorMatrixUniforms(ctx, prog);
 
-    const colors = attachVertexColors(gl, prog, stroke.vertexColors!, handle);
-    applyClipTest(ctx);
-    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
-    detachVertexColors(gl, colors);
-    gl.bindVertexArray(null);
+    const colored = withVertexColors(ctx, prog, stroke.vertexColors!, handle);
+    drawTriangles(ctx, prog, colored.geometry, handle.indexCount, { stencil });
+    releaseVertexColors(ctx, colored);
     return;
   }
 
-  gl.useProgram(ctx.pathFill.handle);
-  gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
-  applyClipTest(ctx);
-  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
-  gl.bindVertexArray(null);
+  drawTriangles(ctx, ctx.pathFill, handle.geometry, handle.indexCount, { stencil });
 }
 
 /** The ribbon cache compares `vertexWidths` by reference, so the doubled copy
@@ -317,31 +257,16 @@ function drawPathStrokeStenciled(
     ? ctx.meshCache.uploadTransient(ribbonMesh)
     : ctx.meshCache.uploadRecurring(ribbonMesh);
 
-  const gl = ctx.gl;
   const prog = useVColor ? ctx.pathFillVColor : ctx.pathFill;
-  gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog);
-
-  gl.enable(gl.STENCIL_TEST);
-  gl.colorMask(false, false, false, false);
-  gl.stencilMask(0x01);
-  gl.stencilFunc(gl.ALWAYS, 1, 0x01);
   // An even-odd fill is one fan per contour, and only parity cuts its holes.
-  gl.stencilOp(gl.KEEP, gl.KEEP, fillHandle.requiresStencil ? gl.INVERT : gl.REPLACE);
-  gl.bindVertexArray(fillHandle.vao);
-  drawTriangles(ctx, fillHandle.indexCount, ctx.gl.UNSIGNED_INT);
+  drawTriangles(ctx, prog, fillHandle.geometry, fillHandle.indexCount, {
+    stencil: fillHandle.requiresStencil ? ALIGNED_FILL_PARITY : ALIGNED_FILL, colorWrite: false,
+  });
 
-  const clipMask = ancestorMask(ctx.clipDepth);
-  gl.colorMask(true, true, true, true);
-  if (align === 'inner') {
-    gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
-  } else {
-    gl.stencilFunc(gl.EQUAL, clipMask, clipMask | 0x01);
-  }
-  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  // Bind the paint here rather than through `drawPathFillByKind`: that calls
-  // `applyClipTest`, which at clip depth 0 disables the stencil test this
-  // function just set up to clip the ribbon to one side.
+  const stencil = alignedRibbonStencil(ctx.clipDepth, align === 'inner');
+  // Bind the paint here rather than through `drawPathFillByKind`, which draws
+  // under the clip test and not this ribbon's side of the silhouette.
   let ribbonProg: ShaderProgram | null = prog;
   if (useVColor) {
     const base = vertexColorBase(paint);
@@ -350,26 +275,11 @@ function drawPathStrokeStenciled(
   } else {
     ribbonProg = bindPathFillByKind(ctx, paint);
   }
-  if (!ribbonProg) {
-    gl.stencilMask(0x01);
-    gl.clear(gl.STENCIL_BUFFER_BIT);
-    gl.disable(gl.STENCIL_TEST);
-    gl.bindVertexArray(null);
-    return;
+  if (ribbonProg) {
+    const colored = useVColor ? withVertexColors(ctx, ribbonProg, stroke.vertexColors!, ribbonHandle) : null;
+    drawTriangles(ctx, ribbonProg, colored ? colored.geometry : ribbonHandle.geometry, ribbonHandle.indexCount, { stencil });
+    if (colored) releaseVertexColors(ctx, colored);
   }
-  gl.bindVertexArray(ribbonHandle.vao);
-
-  const colors = useVColor
-    ? attachVertexColors(gl, ribbonProg, stroke.vertexColors!, ribbonHandle)
-    : null;
-
-  drawTriangles(ctx, ribbonHandle.indexCount, ctx.gl.UNSIGNED_INT);
-
-  // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
-  // pushClip owns bits 1-7.
-  gl.stencilMask(0x01);
-  gl.clear(gl.STENCIL_BUFFER_BIT);
-  gl.disable(gl.STENCIL_TEST);
-  if (colors) detachVertexColors(gl, colors);
-  gl.bindVertexArray(null);
+  // Bit 0 only: the clips own bits 1-7.
+  endParityMask(ctx);
 }

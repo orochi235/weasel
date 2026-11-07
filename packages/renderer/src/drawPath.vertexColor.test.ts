@@ -41,26 +41,26 @@ describe('per-vertex color buffer lifetime', () => {
     stroke: { width: 4, paint: { color: '#ffffff' }, vertexColors: longColors },
   } as unknown as DrawCommand;
 
-  // A mesh VAO outlives the draw, and a deleted buffer still attached to one
-  // is neither freed nor valid to draw with.
+  // A mesh's own geometry outlives the draw, so the colors ride a geometry of
+  // their own, freed before its buffer: a deleted buffer still attached to a
+  // live vertex array is neither freed nor valid to draw with.
   it.each([['fill', fillCmd], ['stroke', strokeCmd]])(
-    'a %s leaves its mesh VAO with the color attribute off and its buffer detached',
+    'a %s draws its colors through a geometry of its own, freed with its buffer',
     (_name, cmd) => {
       const { ctx, calls } = createRecorderCtx();
       const colorLoc = ctx.pathFillVColor.attribute('a_vertexColor');
       dispatch(ctx, cmd);
 
       const enable = calls.findIndex((c) => c.name === 'enableVertexAttribArray' && c.args[0] === colorLoc);
+      const made = calls.slice(0, enable).filter((c) => c.name === 'createVertexArray').at(-1)?.result;
       const draw = calls.findIndex((c, i) => i > enable && c.name === 'drawElements');
-      const disable = calls.findIndex((c, i) => i > draw && c.name === 'disableVertexAttribArray' && c.args[0] === colorLoc);
-      const del = calls.findIndex((c, i) => i > disable && c.name === 'deleteBuffer');
-      const unbind = calls.findIndex((c, i) => i > draw && c.name === 'bindVertexArray' && c.args[0] === null);
+      const freed = calls.findIndex((c, i) => i > draw && c.name === 'deleteVertexArray' && c.args[0] === made);
+      const del = calls.findIndex((c, i) => i > freed && c.name === 'deleteBuffer');
       expect(enable).toBeGreaterThanOrEqual(0);
+      expect(made).toBeDefined();
       expect(draw).toBeGreaterThan(enable);
-      expect(disable).toBeGreaterThan(draw);
-      // Deleted while its VAO is still bound, which is what detaches it.
-      expect(del).toBeGreaterThan(disable);
-      expect(unbind).toBeGreaterThan(del);
+      expect(freed).toBeGreaterThan(draw);
+      expect(del).toBeGreaterThan(freed);
     },
   );
 });
@@ -76,31 +76,38 @@ describe('vertex-colored stroke under a clip', () => {
     } as unknown as DrawCommand;
   }
 
-  it('applies the clip test before its draw', () => {
+  /** The stencil test each draw runs under: `null` with it off, else the clip bits it reads and wants set. */
+  function drawTests(calls: readonly { name: string; args: readonly unknown[] }[], gl: { STENCIL_TEST: number }) {
+    let on = false;
+    let func: { mask: number; ref: number } | null = null;
+    const out: ({ clipBits: number; wanted: number } | null)[] = [];
+    for (const c of calls) {
+      if (c.name === 'enable' && c.args[0] === gl.STENCIL_TEST) on = true;
+      if (c.name === 'disable' && c.args[0] === gl.STENCIL_TEST) on = false;
+      if (c.name === 'stencilFunc') func = { ref: c.args[1] as number, mask: c.args[2] as number };
+      if (c.name === 'drawElements') out.push(on && func ? { clipBits: func.mask & 0xfe, wanted: func.ref & func.mask & 0xfe } : null);
+    }
+    return out;
+  }
+
+  // Past what a run takes, the ribbon marks and covers through the stencil, both passes under the clip.
+  it('applies the clip test to each of its draws', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     ctx.clipDepth = 1;
     dispatch(ctx, vColorStroke());
-
-    const testIdx = calls.findIndex(
-      (c) => c.name === 'stencilFunc'
-        && c.args[0] === gl.EQUAL && c.args[1] === 0x02 && c.args[2] === 0x02,
-    );
-    const drawIdx = calls.findIndex((c) => c.name === 'drawElements');
-    expect(testIdx).toBeGreaterThanOrEqual(0);
-    expect(drawIdx).toBeGreaterThan(testIdx);
+    const tests = drawTests(calls, gl);
+    expect(tests.length).toBeGreaterThanOrEqual(2);
+    for (const t of tests) expect(t).toEqual({ clipBits: 0x02, wanted: 0x02 });
   });
 
-  it('turns the stencil test off when nothing clips it', () => {
+  it('reads no clip bit when nothing clips it', () => {
     // Without this the ribbon inherits whatever a previous clip left behind —
     // a popClip's EQUAL against a now-cleared bit discards the whole draw.
     const { ctx, calls, gl } = createRecorderCtx();
     dispatch(ctx, vColorStroke());
-    const disableIdx = calls.findIndex(
-      (c) => c.name === 'disable' && c.args[0] === gl.STENCIL_TEST,
-    );
-    const drawIdx = calls.findIndex((c) => c.name === 'drawElements');
-    expect(disableIdx).toBeGreaterThanOrEqual(0);
-    expect(drawIdx).toBeGreaterThan(disableIdx);
+    const tests = drawTests(calls, gl);
+    expect(tests.length).toBeGreaterThanOrEqual(2);
+    for (const t of tests) expect(t?.clipBits ?? 0).toBe(0);
   });
 });
 

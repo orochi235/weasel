@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { ActionsProvider, useCommand } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PreviewPane } from './PreviewPane';
+import { PreviewPane } from '@weasel-js/ui/testing/prefSchemaEditor';
 
 afterEach(cleanup);
 

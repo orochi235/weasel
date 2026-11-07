@@ -1,4 +1,5 @@
 import { isPrefLeaf, type PrefLeaf, prefFitsHeading } from '@weasel-js/prefs';
+import { drawsOwn } from './drawsOwn';
 import { schemaNodeAtPath } from './path';
 import { stutters, warnOfStutter, warnOnce } from './stutter';
 import type { ControlRenderer, ResolvedConfig } from './types';
@@ -24,14 +25,7 @@ export function headingLeaf(
   const path = marked ?? paths[0];
   const leaf = path === undefined ? undefined : leafAt(path);
   if (path === undefined || leaf === undefined) return undefined;
-  const compact =
-    prefFitsHeading(leaf) &&
-    !(
-      renderers?.[path] ??
-      resolved.renderers[path] ??
-      resolved.dialogs[path] ??
-      renderers?.[leaf.kind]
-    );
+  const compact = prefFitsHeading(leaf) && !drawsOwn(resolved, renderers, path, leaf);
   if (marked === undefined) {
     if (typeof heading !== 'string' || !stutters(heading, leaf.name)) return undefined;
     warnOfStutter(resolved, heading, path, leaf.name, compact);

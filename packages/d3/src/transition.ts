@@ -23,36 +23,32 @@ interface CustomTween<TData> {
   apply: (d: TData, id: NodeId, value: unknown) => void;
 }
 
-/** Live custom-tween cancelKeys, grouped by their pose-tween namespace.
- *  `animator.cancelKey` matches a key exactly, so a selection-level interrupt
- *  finds them here rather than by prefix. */
-const LIVE_CUSTOM_KEYS = new Map<string, Set<string>>();
+/** Per animator and pose-tween namespace, a stop for each node a transition is running or
+ *  waiting to run, with the first transition of its chain. A tween started under a cancelKey
+ *  cancels the one holding it without running its `onDone`, so a transition reaching a node
+ *  stops the other chains there itself, or theirs would never end. */
+const LIVE_ITEMS = new WeakMap<object, Map<string, Map<() => void, Stage>>>();
 
-function trackCustomKey(ns: string, key: string): void {
-  const set = LIVE_CUSTOM_KEYS.get(ns) ?? new Set<string>();
-  set.add(key);
-  LIVE_CUSTOM_KEYS.set(ns, set);
+function liveIn(animator: object, ns: string): Map<() => void, Stage> {
+  const byNs = LIVE_ITEMS.get(animator) ?? new Map<string, Map<() => void, Stage>>();
+  LIVE_ITEMS.set(animator, byNs);
+  if (!byNs.has(ns)) byNs.set(ns, new Map());
+  return byNs.get(ns)!;
 }
 
-function untrackCustomKey(ns: string, key: string): void {
-  const set = LIVE_CUSTOM_KEYS.get(ns);
-  if (!set) return;
-  set.delete(key);
-  if (set.size === 0) LIVE_CUSTOM_KEYS.delete(ns);
+function untrackItem(animator: object, ns: string, stop: () => void): void {
+  const byNs = LIVE_ITEMS.get(animator);
+  const live = byNs?.get(ns);
+  if (!byNs || !live) return;
+  live.delete(stop);
+  if (live.size === 0) byNs.delete(ns);
 }
 
-/**
- * @internal Take the live custom-tween cancelKeys under `ns`, clearing them.
- *
- * Draining is what keeps the table bounded: the caller's next move is
- * `animator.cancelKey`, and a canceled tween never runs its `onDone`, so
- * leaving the keys behind would strand one entry per interrupted tween.
- */
-export function takeCustomKeys(ns: string): string[] {
-  const set = LIVE_CUSTOM_KEYS.get(ns);
-  if (!set) return [];
-  LIVE_CUSTOM_KEYS.delete(ns);
-  return [...set];
+/** @internal Interrupt every transition on the node `ns` names, except those of `except`'s chain. */
+export function interruptNode(animator: object, ns: string, except?: object): void {
+  const live = LIVE_ITEMS.get(animator)?.get(ns);
+  if (!live) return;
+  for (const [stop, root] of [...live]) if (root !== except) stop();
 }
 
 /** Per scene, the nodes a `.remove()` transition will delete when it ends,
@@ -97,8 +93,8 @@ interface Stage {
   whenItemDone(i: number, fn: () => void, defer?: boolean): void;
   interrupt(): void;
   /** Stop item `i` in this transition and every one chained after it, as if
-   *  it had finished without running what waits on it. */
-  cancelItem(i: number): void;
+   *  it had finished without running what waits on it; `interrupted`, as an interrupt. */
+  cancelItem(i: number, interrupted?: boolean): void;
 }
 
 /**
@@ -140,15 +136,16 @@ function makeStage<TData, TPose>(
   let startFired = false;
   let canceled = false;
   let endResolved = false;
+  let interruptedItem = false;
   const itemDone = ids.map(() => false);
   const itemWaiters = new Map<number, Array<() => void>>();
   let itemsLeft = ids.length;
   /** Where the first transition in a chain heads by default: the post-join pose. */
   const joinedPoses = new Map<NodeId, TPose>();
-  /** (namespace, key) pairs this transition put in `LIVE_CUSTOM_KEYS`, per
-   *  item. `handle.cancel()` does not run a tween's `onDone`, so a cancel
-   *  drains these itself or the keys outlive their tweens. */
-  const spawnedCustom = new Map<number, Array<[string, string]>>();
+  const nsOf = (i: number): string => `d3-transition:${name}:${ids[i]}`;
+  const stops = ids.map((_, i) => (): void => stage.root.cancelItem(i, true));
+  const track = (i: number): void => void liveIn(ctx.animator, nsOf(i)).set(stops[i], stage.root);
+  const untrack = (i: number): void => untrackItem(ctx.animator, nsOf(i), stops[i]);
   let resolveEnd: (() => void) | null = null;
   const endPromise = new Promise<void>((resolve) => {
     resolveEnd = resolve;
@@ -162,8 +159,7 @@ function makeStage<TData, TPose>(
     pendingDelays.delete(i);
     for (const h of handles.get(i) ?? []) h.cancel();
     handles.delete(i);
-    for (const [ns, key] of spawnedCustom.get(i) ?? []) untrackCustomKey(ns, key);
-    spawnedCustom.delete(i);
+    untrack(i);
   };
 
   const pushTo = <V>(map: Map<number, V[]>, i: number, v: V): void => {
@@ -175,7 +171,7 @@ function makeStage<TData, TPose>(
   const settleIfDone = (): void => {
     if (itemsLeft === 0 && !endResolved) {
       endResolved = true;
-      if (!canceled) onEnd.forEach((fn) => fn());
+      if (!canceled) (interruptedItem ? onInterrupt : onEnd).forEach((fn) => fn());
       resolveEnd?.();
     }
   };
@@ -184,6 +180,7 @@ function makeStage<TData, TPose>(
     if (canceled || itemDone[i]) return;
     itemDone[i] = true;
     itemsLeft--;
+    untrack(i);
     const waiters = itemWaiters.get(i);
     itemWaiters.delete(i);
     waiters?.forEach((fn) => fn());
@@ -221,7 +218,7 @@ function makeStage<TData, TPose>(
     }
 
     const jobs: Array<(done: () => void) => void> = [];
-    const ns = `d3-transition:${name}:${id}`;
+    const ns = nsOf(i);
     const lerp = ctx.geometry.lerp!;
     if (to !== undefined) {
       const poseFrom = from;
@@ -250,8 +247,6 @@ function makeStage<TData, TPose>(
       const toVal = ct.to(d, i);
       const customKey = `${ns}:${ct.name}`;
       jobs.push((done) => {
-        trackCustomKey(ns, customKey);
-        pushTo(spawnedCustom, i, [ns, customKey] as [string, string]);
         pushTo(
           handles,
           i,
@@ -276,10 +271,7 @@ function makeStage<TData, TPose>(
             onTick: (value) => {
               if (!lost(i)) ct.apply(d, id, value);
             },
-            onDone: () => {
-              untrackCustomKey(ns, customKey);
-              done();
-            },
+            onDone: done,
           }),
         );
       });
@@ -296,6 +288,7 @@ function makeStage<TData, TPose>(
     };
     const spawn = (): void => {
       if (canceled) return;
+      interruptNode(ctx.animator, ns, stage.root);
       for (const job of jobs) job(jobDone);
     };
     const delayMs = delayFn ? Math.max(0, delayFn(d, i)) : 0;
@@ -337,6 +330,7 @@ function makeStage<TData, TPose>(
           'd3Bind.transition: provided geometry has no `lerp` — pass a PoseDescriptor with lerp in BindOptions',
         );
       }
+      ids.forEach((_, i) => track(i));
       if (parent) {
         parent.schedule();
         ids.forEach((_, i) => parent.whenItemDone(i, () => runItem(i), deferReady));
@@ -380,16 +374,17 @@ function makeStage<TData, TPose>(
       }
       for (const child of children) child.interrupt();
     },
-    cancelItem(i) {
+    cancelItem(i, interrupted = false) {
       if (!canceled && !itemDone[i]) {
         itemDone[i] = true;
         itemsLeft--;
         itemWaiters.delete(i);
         stopItem(i);
+        if (interrupted) interruptedItem = true;
       }
       const cancel = removalCancels.find(([id]) => id === ids[i])?.[1];
       if (cancel) unregisterRemoval(scene, ids[i], cancel);
-      for (const child of children) child.cancelItem(i);
+      for (const child of children) child.cancelItem(i, interrupted);
       settleIfDone();
     },
   };

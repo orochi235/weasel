@@ -4,7 +4,7 @@ import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import type { Point } from '@weasel-js/geom';
-import { renderWithIcons } from '../../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { LensRimView, type LensRimConfig } from './LensRimView';
 
 beforeEach(() => localStorage.clear());

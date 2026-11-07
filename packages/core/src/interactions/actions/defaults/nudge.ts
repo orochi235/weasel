@@ -9,7 +9,7 @@ import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from './requiresSelection';
 import type { GeometryProjection } from '../geometryProjection';
 import { moveNodesOps } from '../moveNodes';
-import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
+import { nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { recordTransform } from '../transform-again/memory';
 
 /**
@@ -47,8 +47,8 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
     label: `Nudge ${NUDGE_LABEL[dir]}`,
     group: 'nudge',
     defaultBinding: [
-      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                              opts: { id: `nudge.${dir}.small`, params: { magnitude: 'small' } } },
-      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { id: `nudge.${dir}.big`, params: { magnitude: 'big' } } },
+      { spec: nudgeSpec(dir, false), opts: { id: `nudge.${dir}.small`, params: { magnitude: 'small' } } },
+      { spec: nudgeSpec(dir, true), opts: { id: `nudge.${dir}.big`, params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
     requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],

@@ -6,10 +6,10 @@ import type { DrawContext } from './drawContext';
 /**
  * Uniform values a program already holds this frame, so an unchanged one is
  * not re-sent. Keyed on the `DrawContext`, which is built fresh per frame, so
- * the cache cannot outlive a frame and go stale against GL state.
+ * the cache cannot outlive a frame and go stale against what the program holds.
  *
  * **Only for uniforms this module is the sole writer of.** A
- * `gl.uniform4f(… 'u_color' …)` added anywhere else leaves the cache believing
+ * `set4f('u_color', …)` added anywhere else leaves the cache believing
  * a value the program no longer has, and the wrong color is drawn until
  * something else moves it.
  */
@@ -62,24 +62,22 @@ export function setColorUniform(
   ctx: DrawContext, prog: ShaderProgram,
   r: number, g: number, b: number, a: number,
 ): void {
-  const loc = prog.uniform('u_color');
-  if (loc === undefined) return;
+  if (!prog.has('u_color')) return;
   const uploaded = uploadedFor(ctx, prog);
   const prev = uploaded.color;
   if (prev !== undefined && prev[0] === r && prev[1] === g && prev[2] === b && prev[3] === a) {
     return;
   }
-  ctx.gl.uniform4f(loc, r, g, b, a);
+  prog.set4f('u_color', r, g, b, a);
   uploaded.color = [r, g, b, a];
 }
 
 /** `u_alpha`, on the same terms as `setColorUniform`. */
 export function setAlphaUniform(ctx: DrawContext, prog: ShaderProgram, alpha: number): void {
-  const loc = prog.uniform('u_alpha');
-  if (loc === undefined) return;
+  if (!prog.has('u_alpha')) return;
   const uploaded = uploadedFor(ctx, prog);
   if (uploaded.alpha === alpha) return;
-  ctx.gl.uniform1f(loc, alpha);
+  prog.set1f('u_alpha', alpha);
   uploaded.alpha = alpha;
 }
 
@@ -102,27 +100,24 @@ export function setColorMatrixUniforms(
   ctx: DrawContext, prog: ShaderProgram,
   cm: Float32Array = ctx.state.colorMatrix, // row-major 4×5
 ): void {
-  const gl = ctx.gl;
   const uploaded = uploadedFor(ctx, prog);
 
-  const mLoc = prog.uniform('u_colorMatrix');
-  if (mLoc !== undefined) {
+  if (prog.has('u_colorMatrix')) {
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 4; col++) {
         COLOR_MATRIX_SCRATCH[col * 4 + row] = cm[row * 5 + col];
       }
     }
     if (!sameValues(uploaded.colorMatrix, COLOR_MATRIX_SCRATCH)) {
-      gl.uniformMatrix4fv(mLoc, false, COLOR_MATRIX_SCRATCH);
+      prog.set('u_colorMatrix', 'mat4', COLOR_MATRIX_SCRATCH);
       uploaded.colorMatrix = Float32Array.from(COLOR_MATRIX_SCRATCH);
     }
   }
 
-  const bLoc = prog.uniform('u_colorBias');
-  if (bLoc !== undefined) {
+  if (prog.has('u_colorBias')) {
     const bias = [cm[4], cm[9], cm[14], cm[19]];
     if (!sameValues(uploaded.colorBias, bias)) {
-      gl.uniform4f(bLoc, bias[0], bias[1], bias[2], bias[3]);
+      prog.set4f('u_colorBias', bias[0], bias[1], bias[2], bias[3]);
       uploaded.colorBias = Float32Array.from(bias);
     }
   }
@@ -175,18 +170,16 @@ export function setProjAndModel(
   model: GlMat3 = drawModel(ctx),
   proj: GlMat3 = projFor(ctx),
 ): void {
-  const gl = ctx.gl;
   const uploaded = uploadedFor(ctx, prog);
 
   PROJ_SCRATCH.set(proj);
   if (!sameValues(uploaded.proj, PROJ_SCRATCH)) {
-    gl.uniformMatrix3fv(prog.uniform('u_proj')!, false, PROJ_SCRATCH);
+    prog.set('u_proj', 'mat3', PROJ_SCRATCH);
     uploaded.proj = Float32Array.from(PROJ_SCRATCH);
   }
 
   MODEL_SCRATCH.set(model);
-  const originLoc = prog.uniform('u_origin');
-  if (originLoc !== undefined) {
+  if (prog.has('u_origin')) {
     let ox = 0;
     let oy = 0;
     const tx = model[6], ty = model[7];
@@ -204,14 +197,14 @@ export function setProjAndModel(
       }
     }
     if (uploaded.originX !== ox || uploaded.originY !== oy) {
-      gl.uniform2f(originLoc, ox, oy);
+      prog.set2f('u_origin', ox, oy);
       uploaded.originX = ox;
       uploaded.originY = oy;
     }
   }
 
   if (!sameValues(uploaded.model, MODEL_SCRATCH)) {
-    gl.uniformMatrix3fv(prog.uniform('u_model')!, false, MODEL_SCRATCH);
+    prog.set('u_model', 'mat3', MODEL_SCRATCH);
     uploaded.model = Float32Array.from(MODEL_SCRATCH);
   }
 }

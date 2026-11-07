@@ -6,7 +6,7 @@ import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // The drags that end somewhere other than a preview row or a sibling: the Unplaced list, the tree from the
 // palette, and a page a drag opens by resting on its rail entry.

@@ -4,7 +4,7 @@ import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { prefDropTargetAt, PrefsForm } from '@weasel-js/ui/components/Prefs';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A fragment has no box (`display: contents`), so whether its rows take cells in the grid around them, and
 // whether a selected one shows any mark, are layout's to answer.

@@ -4,7 +4,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Bar } from '@weasel-js/ui/components/Bar';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 

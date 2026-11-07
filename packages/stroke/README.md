@@ -36,7 +36,10 @@ the ones registered from the start.
 
 `markerSites` finds where markers sit along a polyline and at what angle.
 `markerHeads` places each registered shape on its site and answers the
-geometry, unpainted. `markerInset` and `strokeInsets` say how far to pull the
+geometry, unpainted. `markerPlacements` says where each head goes without
+building it, `markerShape` builds a head unplaced, and `markerPlacementMap` is
+the transform that places it, so a renderer can keep one shape and move it as a
+trim animates. `markerInset` and `strokeInsets` say how far to pull the
 line back so it ends inside the head, and `markerReach` how far a stroke's
 heads can paint from the vertex they sit on.
 

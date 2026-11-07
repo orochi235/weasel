@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from '../testing/glRecorder';
+import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { GLTextureCache } from './GLTextureCache';
 
 const fakeImage = { width: 4, height: 4, data: new Uint8ClampedArray(64) } as ImageData;
@@ -7,7 +8,7 @@ const fakeImage = { width: 4, height: 4, data: new Uint8ClampedArray(64) } as Im
 describe('GLTextureCache', () => {
   it('upload() returns an opaque handle string', () => {
     const { gl } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     const handle = cache.upload('inter', fakeImage);
     expect(typeof handle).toBe('string');
     expect(handle).toBe('inter');
@@ -15,25 +16,24 @@ describe('GLTextureCache', () => {
 
   it('upload() calls createTexture, texImage2D', () => {
     const { gl, calls } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     cache.upload('inter', fakeImage);
     expect(calls.some((c) => c.name === 'createTexture')).toBe(true);
     expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });
 
-  it('bind() calls bindTexture + activeTexture', () => {
-    const { gl, calls, reset } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+  it('texture() hands back what upload() made, and throws for an id never uploaded', () => {
+    const { gl, calls } = makeGLRecorder();
+    const cache = new GLTextureCache(webglDevice(gl));
     cache.upload('inter', fakeImage);
-    reset();
-    cache.bind('inter', 0);
-    expect(calls.some((c) => c.name === 'activeTexture')).toBe(true);
-    expect(calls.some((c) => c.name === 'bindTexture')).toBe(true);
+    const made = calls.find((c) => c.name === 'createTexture')!.result;
+    expect((cache.texture('inter') as unknown as { handle: unknown }).handle).toBe(made);
+    expect(() => cache.texture('missing')).toThrow(/not uploaded/);
   });
 
   it('upload() for the same id is a no-op on second call (cached)', () => {
     const { gl, calls } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     cache.upload('inter', fakeImage);
     const countAfterFirst = calls.filter((c) => c.name === 'createTexture').length;
     cache.upload('inter', fakeImage);
@@ -43,7 +43,7 @@ describe('GLTextureCache', () => {
 
   it('re-applies the wrap mode when an already-uploaded id is claimed with a different one', () => {
     const { gl, calls, reset } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     // A registered image used first as a clamped shader texture, then as a
     // repeating pattern tile: the tile must not inherit CLAMP_TO_EDGE.
     cache.upload('tex_1', fakeImage);
@@ -59,7 +59,7 @@ describe('GLTextureCache', () => {
 
   it('does not touch texture parameters when the wrap mode is unchanged', () => {
     const { gl, calls, reset } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     cache.upload('tile', fakeImage, 'repeat');
     reset();
     cache.upload('tile', fakeImage, 'repeat');
@@ -68,7 +68,7 @@ describe('GLTextureCache', () => {
 
   it('has() returns true after upload, false otherwise', () => {
     const { gl } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     expect(cache.has('inter')).toBe(false);
     cache.upload('inter', fakeImage);
     expect(cache.has('inter')).toBe(true);
@@ -76,7 +76,7 @@ describe('GLTextureCache', () => {
 
   it('free() deletes every uploaded texture and clears the cache', () => {
     const { gl, calls, reset } = makeGLRecorder();
-    const cache = new GLTextureCache(gl);
+    const cache = new GLTextureCache(webglDevice(gl));
     cache.upload('a', fakeImage);
     cache.upload('b', fakeImage);
     reset();
@@ -95,7 +95,7 @@ describe('GLTextureCache', () => {
 
     it('uploads its pixels again, into the same texture, when its source changes', () => {
       const { gl, calls, reset } = makeGLRecorder();
-      const cache = new GLTextureCache(gl);
+      const cache = new GLTextureCache(webglDevice(gl));
       cache.uploadRegistered('tex_1', fakeImage, 'repeat');
       reset();
       cache.uploadRegistered('tex_1', fakeImage, 'repeat');
@@ -109,7 +109,7 @@ describe('GLTextureCache', () => {
 
     it('is deleted by a sweep once the registry no longer has its id', () => {
       const { gl, calls, reset } = makeGLRecorder();
-      const cache = new GLTextureCache(gl);
+      const cache = new GLTextureCache(webglDevice(gl));
       cache.uploadRegistered('tex_1', fakeImage);
       cache.uploadRegistered('tex_2', fakeImage);
       cache.upload('atlas', fakeImage);
@@ -126,7 +126,7 @@ describe('GLTextureCache', () => {
 
     it('is not walked again until the registry changes', () => {
       const { gl } = makeGLRecorder();
-      const cache = new GLTextureCache(gl);
+      const cache = new GLTextureCache(webglDevice(gl));
       cache.uploadRegistered('tex_1', fakeImage);
       cache.sweep(live(['tex_1'], 1));
       let asked = 0;

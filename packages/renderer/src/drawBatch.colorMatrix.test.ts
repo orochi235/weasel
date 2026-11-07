@@ -16,6 +16,7 @@ import type { DrawCommand } from './DrawCommand';
 import { colorFolding } from './draw';
 import { BATCH_MATRIX_SLOTS, matrixOf } from './shaders/batchFill';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
+import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
 
 /** Offset of the color within a vertex: after the vec2 position. */
 const COLOR = 2;
@@ -85,8 +86,11 @@ describe('renderer — a group color matrix and the run', () => {
    */
   const uniformsAtDraws = (): { bias: number[]; alpha: number[] }[] => {
     const programs = [r._batchFill(), r._batchVariants().get(true, false)];
-    const held = new Map(programs.map((p) => [p.handle as unknown, { bias: [] as number[], alpha: [] as number[] }]));
-    const owner = (loc: unknown, name: string) => programs.find((p) => p.uniform(name) === loc)?.handle;
+    const held = new Map(programs.map((p) => [glProgramHandle(p) as unknown, { bias: [] as number[], alpha: [] as number[] }]));
+    const owner = (loc: unknown, name: string) => {
+      const p = programs.find((q) => glUniformLocation(q, name) === loc);
+      return p && glProgramHandle(p);
+    };
     const out: { bias: number[]; alpha: number[] }[] = [];
     let bound: unknown = null;
     for (const c of recorder.calls) {
@@ -166,15 +170,15 @@ describe('renderer — a group color matrix and the run', () => {
     swap[2] = 1; swap[6] = 1; swap[12] = 1; swap[18] = 1; swap[9] = 0.5;
     r.render([group({ colorMatrix: swap }, [img(0)])]);
     // One matrix in the run, so the program that indexes entry 0 draws it.
-    expect(drawPrograms()).toEqual([r._batchFill().handle]);
-    const uMatrix = r._batchFill().uniform('u_colorMatrix');
+    expect(drawPrograms()).toEqual([glProgramHandle(r._batchFill())]);
+    const uMatrix = glUniformLocation(r._batchFill(), 'u_colorMatrix');
     const sent = recorder.calls.find((c) => c.name === 'uniformMatrix4fv' && c.args[0] === uMatrix)!;
     const m = Array.from(sent.args[2] as Float32Array);
     expect(m).toHaveLength(16);
     // Column 2 feeds rows 0 and 2; column 0 feeds none.
     expect(m.slice(8, 12)).toEqual([1, 0, 1, 0]);
     expect(m.slice(0, 4)).toEqual([0, 0, 0, 0]);
-    const uBias = r._batchFill().uniform('u_colorBias');
+    const uBias = glUniformLocation(r._batchFill(), 'u_colorBias');
     const bias = recorder.calls.find((c) => c.name === 'uniform4fv' && c.args[0] === uBias)!;
     expect(Array.from(bias.args[1] as Float32Array)).toEqual([0, 0.5, 0, 0]);
   });
@@ -240,7 +244,7 @@ describe('renderer — a group color matrix and the run', () => {
     expect(draws()).toEqual([30]);
     expect(biasAtDraws()).toEqual([[0, 0.25, 0.125]]);
     expect(quadMatrices()).toEqual([0, 0, 1, 2, 0]);
-    expect(drawPrograms()).toEqual([r._batchVariants().get(true, false).handle]);
+    expect(drawPrograms()).toEqual([glProgramHandle(r._batchVariants().get(true, false))]);
     // The last rect is mapped by the second matrix: red 0.5 + 0.125.
     expect(quadColors()[4]).toEqual([0.625, 0, 0, 1]);
   });
@@ -301,7 +305,7 @@ describe('renderer — a group color matrix and the run', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
     );
     expect(runs).toHaveLength(2);
-    const uBias = r._batchFill().uniform('u_colorBias');
+    const uBias = glUniformLocation(r._batchFill(), 'u_colorBias');
     expect(recorder.calls.filter((c) => c.name === 'uniform4fv' && c.args[0] === uBias)).toHaveLength(1);
   });
 

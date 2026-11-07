@@ -7,7 +7,7 @@ import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { createElement, createRef, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { Canvas } from './testing/BareCanvas';
+import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import { DrawCanvas, SceneViewCanvas, SceneCanvas, createScene, defaultDrawOne } from '@weasel-js/core';
 import type { CanvasExtensionApi } from './canvasExtension';
 

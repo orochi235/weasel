@@ -8,8 +8,9 @@ const KIT_ROOT = resolve(import.meta.dirname, '..', KIT_PATH_ROOT);
 
 // A path is relative, or one of core's bare kit paths (`core/scene/types`), which name one file as surely.
 const PATH = `(?:\\.{1,2}|${KIT_PATHS.join('|')})\\/[^']+`;
-// `import type` and `export type` are erased, so they load nothing; `import { type X }` is kept under verbatimModuleSyntax.
-const IMPORT = new RegExp(`\\b(?:import|export)\\s+(?!type\\s)(?:[^'";]*?\\bfrom\\s*)?'(${PATH})'|\\bimport\\(\\s*'(${PATH})'\\s*\\)`, 'g');
+// `import type`, `export type` and `typeof import()` are erased, so they load nothing; `import { type X }` is kept under
+// verbatimModuleSyntax.
+const IMPORT = new RegExp(`\\b(?:import|export)\\s+(?!type\\s)(?:[^'";]*?\\bfrom\\s*)?'(${PATH})'|(?<!\\btypeof\\s*)\\bimport\\(\\s*'(${PATH})'\\s*\\)`, 'g');
 const IS_PATH = new RegExp(`^${PATH}$`);
 
 /** Whether a specifier names a file by path rather than a package. */

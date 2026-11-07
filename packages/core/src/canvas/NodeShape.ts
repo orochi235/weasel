@@ -14,6 +14,7 @@ import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
 import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
+import { positiveBox } from 'core/geometry/unionBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PickSlop } from 'core/viewport/screenSlop';
 import { derivedPartsOf } from 'core/scene/derivedParts';
@@ -136,7 +137,7 @@ export function findShapeSilhouette<TData, TPose>(
 ): Path | null {
   const build = (): Path | null => {
     const sil = localSilhouette(node, pose, ctx);
-    return sil && pathThroughPoseFrame(sil, pose);
+    return sil && pathThroughPoseFrame(sil.kind === 'rect' ? positiveBox(sil) : sil, pose);
   };
   // `SILHOUETTE_SLOT`'s key is (node, pose, data) and cannot see
   // `ctx.derivedPath` — the same reason `kit:derived` skips `PAINT_SLOT`.

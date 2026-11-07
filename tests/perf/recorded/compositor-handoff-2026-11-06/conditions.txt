@@ -1,0 +1,13 @@
+compositor-handoff.spec.ts runs, 2026-11-06, each on a fleet node with the node to itself (onto --solo).
+Headless Chromium 156 (Playwright), ANGLE Metal; teitou is an Apple M5 Max (18 cores), msb-uai an Apple M3 Max (14 cores).
+
+0-first-smoke-teitou.log   commit 009e1f078. Runs sampled at 15 keyframes a second, sine path; the
+                           animator's frame loop stayed awake for handed-off runs. Failed its own check:
+                           at 4000 the 12 s runs had ended before the window closed. Log only.
+1-wave-smoke-msb-uai.log   commit 4576ace1a. Triangle-wave path, ~120 keyframes a run after reduction.
+                           Compositor thread saturated (999 ms/s) at 2000. Killed at cell 6 of 12 (12 GB).
+2-drift-smoke-msb-uai.log  commit 2268d40fd. Four-keyframe drift; loop still awake, so the page's main
+                           thread spent 250-375 ms/s restyling animated elements. Failed its own check:
+                           no DrawFrame at 16000 on the compositor path. Log only.
+3-idle-smoke-teitou.*      commit 6f870bd88, handed-off runs idle. One pass, no load.
+4-full-msb-uai.*           commit aef6eaf7a (tree "dirty" only with untracked logs). ABBA x2, loads 0 and 8.

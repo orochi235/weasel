@@ -189,6 +189,23 @@ describe('useVisibleRaf', () => {
     expect(order).toEqual(['frame', 'resume', 'frame']);
   });
 
+  it('fires onSuspend once as it goes into suspension, and again only after a resume', () => {
+    const clock = makeClock();
+    const onSuspend = vi.fn();
+    const onResume = vi.fn();
+    const { loop } = mount(vi.fn(), { ...clock, onSuspend, onResume });
+    act(() => { loop().request(); });
+    act(() => { setHidden(true); });
+    act(() => { loop().request(); });
+    act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+    expect(onSuspend).toHaveBeenCalledTimes(1);
+    expect(onResume).not.toHaveBeenCalled();
+    act(() => { setHidden(false); });
+    act(() => { setHidden(true); });
+    expect(onSuspend).toHaveBeenCalledTimes(2);
+    expect(onResume).toHaveBeenCalledTimes(1);
+  });
+
   it('does not fire onResume for a visibilitychange that changes nothing', () => {
     const clock = makeClock();
     const onResume = vi.fn();

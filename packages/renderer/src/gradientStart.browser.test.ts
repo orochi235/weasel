@@ -10,7 +10,7 @@ import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
-import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { stencilledEvenOdd } from '@weasel-js/renderer/testing/stencilledEvenOdd';
 
 const SIZE = 16;
 const STOPS = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }];

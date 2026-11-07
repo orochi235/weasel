@@ -3,7 +3,7 @@ import '@weasel-js/theme/fonts.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { renderWithIcons } from '../../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { InputTraceView, type InputTraceConfig } from './InputTraceView';
 
 afterEach(cleanup);

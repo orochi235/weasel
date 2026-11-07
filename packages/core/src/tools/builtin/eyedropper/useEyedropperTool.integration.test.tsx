@@ -170,4 +170,20 @@ describe('useEyedropperTool through the gesture dispatcher', () => {
     expect(onPick).toHaveBeenCalledExactlyOnceWith('#7fb069');
     expect(rivalSpy).toHaveBeenCalledTimes(1);
   });
+  it('samples while Alt, its hotkey, is held through the click', () => {
+    const onPick = vi.fn();
+    let ctx!: ActiveToolContextValue;
+    function CtxCapture() { ctx = useActiveToolContext(); return null; }
+    const { container } = render(
+      <Harness initialActive={RIVAL_ID}>
+        <Mount options={{ onPick, colorOf: () => '#7fb069' }} hitId="r1" rivalSpy={vi.fn()} />
+        <CtxCapture />
+      </Harness>,
+    );
+    const canvas = container.querySelector('canvas')!;
+    act(() => { ctx.pushHotkey('eyedropper'); });
+    act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, altKey: true }); });
+    act(() => { fire(canvas, 'pointerup', { clientX: 10, clientY: 10, altKey: true }); });
+    expect(onPick).toHaveBeenCalledExactlyOnceWith('#7fb069');
+  });
 });

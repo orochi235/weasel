@@ -232,8 +232,8 @@ export function UnitField({
             spin={latestSpin}
             spent={latestSpent}
             disabled={disabled}
-            atMax={known && maxValue !== undefined && value >= maxValue}
-            atMin={known && minValue !== undefined && value <= minValue}
+            atMax={spent('ArrowUp')}
+            atMin={spent('ArrowDown')}
           />
         )}
       </div>

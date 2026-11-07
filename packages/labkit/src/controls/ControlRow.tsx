@@ -30,6 +30,7 @@ import {
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
+import { drawsOwn } from '../config/drawsOwn';
 import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
@@ -78,14 +79,15 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
 export function ControlRow<TC extends Record<string, unknown>>(props: ControlRowProps<TC>) {
   const { leaf, resolved, renderers } = props;
   const drawn = (renderers?.[props.path] ?? resolved.renderers[props.path]) !== undefined;
-  if (prefDrawsNoControl(leaf) && !drawn && !renderers?.[leaf.kind]) {
+  const custom = drawsOwn(resolved, renderers, props.path, leaf);
+  if (prefDrawsNoControl(leaf) && !custom) {
     return (
       <div className="lk-control-words">
         <PrefWords pref={leaf} />
       </div>
     );
   }
-  if (prefDrawsActionRow(leaf) && !drawn && !renderers?.[leaf.kind]) {
+  if (prefDrawsActionRow(leaf) && !custom) {
     // An action's button reads its own label, so it takes the row's whole width with none beside it.
     const action = boundAction(leaf, props.config, props.setConfig);
     return (

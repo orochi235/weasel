@@ -19,6 +19,7 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
+import type { GpuBuffer, GpuDevice, GpuGeometry } from './gpu/types';
 import { PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, packSlot } from './shaders/batchFill';
 import { BatchStage, FLOATS_PER_VERTEX, doubledTo } from './batchStage';
 import { placeGlyph, type PlacedGlyph } from './glyphCorners';
@@ -86,11 +87,11 @@ export const SOLID_RING_SLOT_VERTICES = BATCH_TIERS[BATCH_TIERS.length - 1].vert
 /** Slots for flushes past the largest tier. These grow to fit, so they are few. */
 export const SOLID_LARGE_RING_SIZE = 4;
 
-/** One VAO and the two buffers its attribute and element bindings name. */
+/** One geometry and the two buffers it draws from. */
 interface BufferSet {
-  vao: WebGLVertexArrayObject;
-  vbo: WebGLBuffer;
-  ibo: WebGLBuffer;
+  geometry: GpuGeometry;
+  vbo: GpuBuffer;
+  ibo: GpuBuffer;
   /** What the GPU buffers are currently sized for. */
   vertexCapacity: number;
   indexCapacity: number;
@@ -119,7 +120,7 @@ function quadIndices(quads: number): Uint32Array {
 }
 
 export class DrawBatch extends BatchStage {
-  private readonly gl: WebGL2RenderingContext;
+  private readonly gpu: GpuDevice;
   private readonly aPos: number;
   private readonly aColor: number;
   private readonly aUv: number;
@@ -136,7 +137,7 @@ export class DrawBatch extends BatchStage {
     new Array(SOLID_LARGE_RING_SIZE).fill(undefined);
   private nextLarge = 0;
 
-  constructor(gl: WebGL2RenderingContext, prog: ShaderProgram) {
+  constructor(gpu: GpuDevice, prog: ShaderProgram) {
     super();
     const aPos = prog.attribute('a_position');
     const aColor = prog.attribute('a_vertexColor');
@@ -150,7 +151,7 @@ export class DrawBatch extends BatchStage {
         + 'a_post / a_texSlot',
       );
     }
-    this.gl = gl;
+    this.gpu = gpu;
     this.aPos = aPos;
     this.aColor = aColor;
     this.aUv = aUv;
@@ -354,28 +355,26 @@ export class DrawBatch extends BatchStage {
     return this.pushGradientMesh(mesh, m, SOLID_UV, 1, P, PAINT_MODE_PLAIN, r, g, b, a, colors);
   }
 
-  /** Upload the staged geometry into the next set of buffers and bind its VAO.
-   *  Returns the index count for the caller's `drawElements`. */
-  uploadAndBind(): number {
-    const gl = this.gl;
+  /** Upload the staged geometry into the next set of buffers, and return the
+   *  geometry a draw of it names and its index count. */
+  upload(): { geometry: GpuGeometry; count: number } {
+    const gpu = this.gpu;
     const tier = BATCH_TIERS.findIndex(
       (t) => this.nVerts <= t.vertices && this.nIdx <= t.indices,
     );
     const set = tier < 0 ? this.nextLargeSlot() : this.nextRingSlot(tier);
-    gl.bindVertexArray(set.vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, set.vbo);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.verts, 0, this.nVerts * FLOATS_PER_VERTEX);
+    gpu.writeBuffer(set.vbo, 0, this.verts, 0, this.nVerts * FLOATS_PER_VERTEX);
     if (!this.pureRects) {
-      gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, this.idx, 0, this.nIdx);
+      gpu.writeBuffer(set.ibo, 0, this.idx, 0, this.nIdx);
       set.canonicalQuads = 0;
     } else if (set.canonicalQuads < this.nVerts >> 2) {
       // Written to the slot's capacity, not this flush's length: the extra
       // costs one upload the slot never repeats.
       const quads = Math.min(set.vertexCapacity >> 2, Math.floor(set.indexCapacity / 6));
-      gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, quadIndices(quads));
+      gpu.writeBuffer(set.ibo, 0, quadIndices(quads));
       set.canonicalQuads = quads;
     }
-    return this.nIdx;
+    return { geometry: set.geometry, count: this.nIdx };
   }
 
   reset(): void {
@@ -404,7 +403,6 @@ export class DrawBatch extends BatchStage {
   }
 
   private nextLargeSlot(): BufferSet {
-    const gl = this.gl;
     const slot = this.nextLarge;
     this.nextLarge = (slot + 1) % SOLID_LARGE_RING_SIZE;
     let set = this.largeRing[slot];
@@ -418,15 +416,11 @@ export class DrawBatch extends BatchStage {
     }
     if (this.nVerts > set.vertexCapacity) {
       set.vertexCapacity = doubledTo(set.vertexCapacity, this.nVerts);
-      gl.bindBuffer(gl.ARRAY_BUFFER, set.vbo);
-      gl.bufferData(gl.ARRAY_BUFFER, set.vertexCapacity * FLOATS_PER_VERTEX * 4, gl.DYNAMIC_DRAW);
+      this.gpu.resizeBuffer(set.vbo, set.vertexCapacity * FLOATS_PER_VERTEX * 4, 'dynamic');
     }
     if (this.nIdx > set.indexCapacity) {
       set.indexCapacity = doubledTo(set.indexCapacity, this.nIdx);
-      gl.bindVertexArray(set.vao);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, set.ibo);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, set.indexCapacity * 4, gl.DYNAMIC_DRAW);
-      gl.bindVertexArray(null);
+      this.gpu.resizeBuffer(set.ibo, set.indexCapacity * 4, 'dynamic');
       // Respecified, so whatever pattern it held is gone.
       set.canonicalQuads = 0;
     }
@@ -434,35 +428,30 @@ export class DrawBatch extends BatchStage {
   }
 
   private createSet(vertices: number, indices: number): BufferSet {
-    const gl = this.gl;
-    const vao = gl.createVertexArray();
-    const vbo = gl.createBuffer();
-    const ibo = gl.createBuffer();
-    if (!vao || !vbo || !ibo) throw new Error('DrawBatch: failed to create GL objects');
+    const gpu = this.gpu;
     const stride = FLOATS_PER_VERTEX * 4;
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices * stride, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(this.aPos);
-    gl.vertexAttribPointer(this.aPos, 2, gl.FLOAT, false, stride, 0);
-    gl.enableVertexAttribArray(this.aColor);
-    gl.vertexAttribPointer(this.aColor, 4, gl.FLOAT, false, stride, 8);
-    gl.enableVertexAttribArray(this.aUv);
-    gl.vertexAttribPointer(this.aUv, 2, gl.FLOAT, false, stride, 24);
-    gl.enableVertexAttribArray(this.aPost);
-    gl.vertexAttribPointer(this.aPost, 1, gl.FLOAT, false, stride, 32);
-    gl.enableVertexAttribArray(this.aSlot);
-    gl.vertexAttribPointer(this.aSlot, 1, gl.FLOAT, false, stride, 36);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices * 4, gl.DYNAMIC_DRAW);
-    gl.bindVertexArray(null);
-    return { vao, vbo, ibo, vertexCapacity: vertices, indexCapacity: indices, canonicalQuads: 0 };
+    const vbo = gpu.createBuffer('vertex', vertices * stride, 'dynamic');
+    const ibo = gpu.createBuffer('index', indices * 4, 'dynamic');
+    const geometry = gpu.createGeometry({
+      vertexBuffers: [{
+        buffer: vbo, stride, attributes: [
+          { location: this.aPos, components: 2, offset: 0 },
+          { location: this.aColor, components: 4, offset: 8 },
+          { location: this.aUv, components: 2, offset: 24 },
+          { location: this.aPost, components: 1, offset: 32 },
+          { location: this.aSlot, components: 1, offset: 36 },
+        ],
+      }],
+      indexBuffer: ibo,
+      indexFormat: 'uint32',
+    });
+    return { geometry, vbo, ibo, vertexCapacity: vertices, indexCapacity: indices, canonicalQuads: 0 };
   }
 
   private deleteSet(set: BufferSet): void {
-    const gl = this.gl;
-    gl.deleteBuffer(set.vbo);
-    gl.deleteBuffer(set.ibo);
-    gl.deleteVertexArray(set.vao);
+    const gpu = this.gpu;
+    gpu.deleteGeometry(set.geometry);
+    gpu.deleteBuffer(set.vbo);
+    gpu.deleteBuffer(set.ibo);
   }
 }

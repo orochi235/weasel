@@ -60,7 +60,7 @@
  *   a_post         float  alpha factor applied after the color matrix; a glyph's bold shift
  *   a_texSlot      float  slot + 16 * mode + 128 * matrix + 1024 * hull; slot 0 is the white texel
  *
- * Output: PREMULTIPLIED alpha. Blend: `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
+ * Output: PREMULTIPLIED alpha. Blend: `ONE, ONE_MINUS_SRC_ALPHA`.
  */
 
 import { GLYPH_COVERAGE_GLSL, GLYPH_POINT_COVERAGE_GLSL } from '@weasel-js/font';

@@ -6,7 +6,7 @@
  * factor, mode, the lens raised and put away — but not that the picture inside
  * it is bigger than the one outside, which is the whole point.
  */
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixture';
 
 const DEMO_ID = 'lab-loupe';
 
@@ -26,15 +26,10 @@ const SCAN = { x: 24 + 85, w: 70, y: 24 + 125 };
  *  each holds flat for n before stepping. */
 async function flatness(page: Page, selector: string, scan = SCAN): Promise<number> {
   return page.evaluate(
-    ({ selector, scan }) => {
+    async ({ selector, scan }) => {
       const c = document.querySelector<HTMLCanvasElement>(selector);
       if (!c) throw new Error(`no canvas for ${selector}`);
-      const o = document.createElement('canvas');
-      o.width = c.width;
-      o.height = c.height;
-      const ctx = o.getContext('2d', { willReadFrequently: true });
-      if (!ctx) throw new Error('no 2d context');
-      ctx.drawImage(c, 0, 0);
+      const ctx = await window.weaselCanvasSnapshot(c);
       const dpr = c.width / c.getBoundingClientRect().width;
       const { data } = ctx.getImageData(
         Math.round(scan.x * dpr),

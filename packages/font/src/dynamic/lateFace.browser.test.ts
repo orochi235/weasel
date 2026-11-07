@@ -7,8 +7,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { registerCanvasFont, refreshCanvasFont, subscribeGlyphReady } from '@weasel-js/font';
 import { _resetDynamicFontsForTests } from '@weasel-js/font/test-seams';
-import { getDynamicFace } from './dynamicAtlas';
-import { BAKE_SIZE } from './glyphRasterizer';
+import { BAKE_SIZE, getDynamicFace } from '@weasel-js/font/testing/dynamic';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';
 
 const W = 'W'.codePointAt(0)!;

@@ -1,16 +1,17 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
 import type { WorldPoint } from '@weasel-js/routing';
-import { usePointerContext } from '@weasel-js/routing/react';
-import { dwarn } from 'debug/flag';
 import { materializePaste } from './materializePaste';
-import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';
+import type { ClipboardFlavors } from './osClipboard';
+import { useClipboard } from './useClipboard';
 
 type Replacer = (key: string, value: unknown) => unknown;
+
+export type { ClipboardFlavors } from './osClipboard';
 
 /** Options for `useClipboardOps`. */
 export interface UseClipboardOpsOptions {
@@ -45,9 +46,6 @@ export interface UseClipboardOpsOptions {
   jsonReplacer?: Replacer;
 }
 
-/** MIME type to payload, as `produceFlavors` returns it. */
-export type ClipboardFlavors = Record<string, string | Promise<string>>;
-
 /** Return shape of `useClipboardOps`: imperative `copy`, `paste`, and `isEmpty` functions. */
 export interface UseClipboardOpsReturn {
   copy(): void;
@@ -56,137 +54,37 @@ export interface UseClipboardOpsReturn {
   isEmpty(): boolean;
 }
 
-const EMPTY: ClipboardSnapshot = { items: [] };
-
-/** In-memory copy/paste of selections via `InsertAdapter.snapshotSelection` / `commitPaste`. */
+/** `useClipboard` over `InsertAdapter.snapshotSelection` / `commitPaste`, each paste one undoable op batch. */
 export function useClipboardOps<TNode extends { id: string }>(
   adapter: InsertAdapter<TNode>,
   options: UseClipboardOpsOptions,
 ): UseClipboardOpsReturn {
-  const {
-    getSelection, onPaste, onPasteOmitted, pasteLabel = 'Paste', getDropPoint, produceFlavors, jsonReplacer,
-  } = options;
-  // Fall back to the ambient pointer context (auto-published by SceneCanvas)
-  // when the caller didn't supply an explicit `getDropPoint`. Null context
-  // (no provider in scope) and no caller-supplied thunk together mean
-  // "no drop point" — paste uses the cascade offset instead.
-  const pointerCtx = usePointerContext();
-  const effectiveGetDropPoint = getDropPoint ?? (pointerCtx ? () => pointerCtx.get()?.world ?? null : undefined);
-  const clipboardRef = useRef<ClipboardSnapshot>(EMPTY);
-  // Keep callbacks stable across renders.
-  const adapterRef = useLatest(adapter);
-  const optsRef = useLatest({
-    getSelection, onPaste, onPasteOmitted, pasteLabel, getDropPoint: effectiveGetDropPoint, produceFlavors,
-    jsonReplacer,
-  });
-
-  const copy = useCallback(() => {
-    const ids = optsRef.current.getSelection();
-    if (ids.length === 0) return;
-    const snap = adapterRef.current.snapshotSelection;
-    if (!snap) return;
-    clipboardRef.current = snap(ids);
-    // Best-effort OS write. Never blocks or throws — the in-memory ref is
-    // already set, and OS clipboard support varies (custom formats are
-    // Chromium-only via the "web " prefix; jsdom/non-secure contexts have
-    // no API at all). The flavor producer itself is untrusted consumer code
-    // (`produceFlavors`), so guard its call too — a throwing producer must
-    // not break `copy()`, it just skips the OS write.
-    let flavors: ClipboardFlavors | null = null;
-    try {
-      flavors = optsRef.current.produceFlavors?.(clipboardRef.current)
-        ?? defaultFlavors(clipboardRef.current, optsRef.current.jsonReplacer);
-    } catch (err) {
-      dwarn('clipboard', `flavor producer threw — skipping OS write: ${String(err)}`);
-    }
-    if (flavors) void writeOsClipboard(flavors);
-  }, [adapterRef, optsRef]);
-
-  const paste = useCallback((at?: WorldPoint) => {
-    const cb = clipboardRef.current;
-    if (cb.items.length === 0) return;
-    const a = adapterRef.current;
-    const result = materializePaste(a, cb, {
-      currentSelection: optsRef.current.getSelection(),
-      dropPoint: at ?? optsRef.current.getDropPoint?.(),
-      onOmitted: optsRef.current.onPasteOmitted,
+  const { getSelection, onPaste, onPasteOmitted, pasteLabel = 'Paste', getDropPoint, produceFlavors, jsonReplacer } = options;
+  const live = useLatest({ adapter, getSelection, onPasteOmitted, pasteLabel });
+  const copy = useCallback((ids: readonly string[]) => {
+    const snap = live.current.adapter.snapshotSelection;
+    return snap ? snap.call(live.current.adapter, [...ids]).items : null;
+  }, [live]);
+  const paste = useCallback((items: readonly unknown[], at: { dropPoint?: WorldPoint }) => {
+    const { adapter: a, getSelection: selected, onPasteOmitted: omitted, pasteLabel: label } = live.current;
+    const result = materializePaste(a, { items: [...items] }, {
+      currentSelection: selected(),
+      dropPoint: at.dropPoint,
+      onOmitted: omitted,
     });
-    if (!result) return;
-    dispatchApplyBatch(a, result.ops, optsRef.current.pasteLabel);
-    // Use the just-created objects as the next cascade source. Re-snapshotting
-    // via `adapter.snapshotSelection(newIds)` would read adapter state, but
-    // React-state adapters haven't flushed yet — `itemsRef.current` still
-    // points at the pre-insert array, so the snapshot would come back empty
-    // and the next paste would no-op.
-    clipboardRef.current = { items: result.created };
-    optsRef.current.onPaste?.(result.newIds as NodeId[]);
-  }, [adapterRef, optsRef]);
-
-  const isEmpty = useCallback(() => clipboardRef.current.items.length === 0, []);
-
-  return { copy, paste, isEmpty };
+    if (!result) return null;
+    dispatchApplyBatch(a, result.ops, label);
+    // The created nodes, not a re-snapshot of their ids: a React-state adapter
+    // has not flushed the insert yet, so a snapshot would come back empty.
+    return { ids: result.newIds, items: result.created };
+  }, [live]);
+  return useClipboard<unknown>({
+    getSelection,
+    copy,
+    paste,
+    ...(onPaste ? { onPaste: (ids: string[]) => onPaste(ids as NodeId[]) } : {}),
+    ...(getDropPoint ? { getDropPoint } : {}),
+    ...(produceFlavors ? { produceFlavors: ({ items }) => produceFlavors({ items: [...items] }) } : {}),
+    ...(jsonReplacer ? { jsonReplacer } : {}),
+  });
 }
-
-function defaultFlavors(snapshot: ClipboardSnapshot, replacer?: Replacer): ClipboardFlavors {
-  const text = buildWeaselClipboardText(snapshot.items, replacer);
-  return { [WEASEL_CLIPBOARD_MIME]: text, 'text/plain': text };
-}
-
-/** MIME types the async Clipboard API accepts unprefixed. Every other type
- *  (including our own custom MIME, and app-supplied flavors like
- *  `image/svg+xml`) must carry Chromium's `web ` prefix or `ClipboardItem`'s
- *  constructor throws. */
-const WELL_KNOWN_CLIPBOARD_MIMES = new Set(['text/plain', 'text/html', 'image/png']);
-
-/** Degradation ladder: full map (every non-well-known MIME web-prefixed) →
- *  the same minus any promised flavor that rejected → well-known-only → give
- *  up with a dwarn. Chromium writes nothing when one flavor rejects, so a
- *  rejection costs only that flavor, never the clipboard's previous content
- *  half-overwritten.
- *  @internal test seam — exported so unit tests can await the fire-and-forget
- *  write directly; tests should still exercise this at least once through
- *  the public `copy()` (see clipboardOps.test.tsx). */
-export async function writeOsClipboard(flavors: ClipboardFlavors): Promise<void> {
-  const entries = Object.entries(flavors);
-  if (entries.length === 0) return;
-  const cb = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
-  if (!cb?.write || typeof ClipboardItem === 'undefined') return;
-  const rejected = new Set<string>();
-  for (const [mime, text] of entries) {
-    if (typeof text !== 'string') text.catch(() => { rejected.add(mime); });
-  }
-  const wireMime = (mime: string) => (WELL_KNOWN_CLIPBOARD_MIMES.has(mime) ? mime : `web ${mime}`);
-  const toItem = (fs: Flavor[]) => new ClipboardItem(Object.fromEntries(
-    fs.map(([mime, text]) => {
-      const wire = wireMime(mime);
-      const blob = (t: string) => new Blob([t], { type: wire });
-      if (typeof text === 'string') return [wire, blob(text)];
-      const promised = text.then(blob);
-      // Chromium leaves a ClipboardItem's rejected promise unhandled.
-      promised.catch(() => {});
-      return [wire, promised];
-    }),
-  ));
-  // Writes `fs`, dropping flavors whose promise rejected and retrying the
-  // rest. Returns the last error, or null once a write lands.
-  const writeLive = async (fs: Flavor[]): Promise<unknown> => {
-    let live = fs;
-    for (;;) {
-      try {
-        await cb.write([toItem(live)]);
-        return null;
-      } catch (err) {
-        const next = live.filter(([mime]) => !rejected.has(mime));
-        if (next.length === live.length || next.length === 0) return err;
-        live = next;
-      }
-    }
-  };
-  if (await writeLive(entries) === null) return;
-  const standard = entries.filter(([mime]) => WELL_KNOWN_CLIPBOARD_MIMES.has(mime) && !rejected.has(mime));
-  if (standard.length === 0) { dwarn('clipboard', 'OS write failed; no standard flavors to fall back to'); return; }
-  const err = await writeLive(standard);
-  if (err !== null) dwarn('clipboard', `OS clipboard write failed twice — copy stays in-memory only: ${String(err)}`);
-}
-
-type Flavor = [mime: string, text: string | Promise<string>];

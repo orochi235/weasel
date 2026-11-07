@@ -14,9 +14,10 @@ import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
-import { trackingWidth } from './rowMeasure';
+import { faceCapCenter } from './faceCapCenter';
+import { estimatedWidth } from './rowMeasure';
 import { edgeIdOf } from './edgeId';
-import { headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
+import { asideFillOf, headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
 import { dataNodeStyle } from './dataStyles';
 import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
@@ -25,11 +26,11 @@ import {
   type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
   type NodeStyle,
 } from './dataTypes';
-import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
+import { DEFAULT_FONT, labelSize, labelStyleOf } from './edgeLabel';
 import { grownBy } from './footprint';
 import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import { LABEL_PLACEMENT } from './labelTrait';
-import { rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
+import { asideFace, rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
 import { layered } from './layered';
 import { LAYOUTS } from './layoutAction';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPlan } from './layout';
@@ -92,6 +93,12 @@ function rowsOf(n: DataNode): readonly Row[] {
   return n.rows ?? (n.lines ?? []).map((text): Row => ({ kind: 'label', text }));
 }
 
+/** A slot's scene node: its image, else an empty frame for one with an id, else none. */
+function slotData(row: Extract<Row, { kind: 'slot' }>, style: NodeStyle): DiagramSceneData | null {
+  if (row.image !== undefined) return { image: { ...row.image } };
+  return row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } };
+}
+
 /** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
 function nodeSpecs(
   n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
@@ -115,8 +122,9 @@ function nodeSpecs(
     }),
     row: (text, at) =>
       at.row.kind === 'slot'
-        ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
+        ? slotData(at.row, style)
         : text === '' ? null : { ...textData(text, at.row), bodyRow: at.index, ...(at.row.kind === 'field' ? { bodyField: at.row.label } : {}) },
+    aside: (text, at) => ({ text, style: asideFace(look.text(at.row)), fill: asideFillOf(style), bodyRow: at.index, bodyAside: true }),
     portLabel: (text) => textData(text, undefined),
   });
   return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);
@@ -147,8 +155,12 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const measure: MeasureRowText = opts.measure
     ? (text, s) => opts.measure!(text, { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize })
     : (text, s) => {
-        const size = s.fontSize ?? font.fontSize;
-        return { width: text.length * GLYPH * size + trackingWidth(text, { ...s, fontSize: size }), height: Math.ceil(LINE * size) };
+        const face = { ...s, fontSize: s.fontSize ?? font.fontSize, fontFamily: s.fontFamily ?? font.fontFamily };
+        const capCenter = faceCapCenter(face);
+        return {
+          width: estimatedWidth(text, face), height: Math.ceil(LINE * face.fontSize),
+          ...(capCenter !== undefined ? { capCenter } : {}),
+        };
       };
 
   const ids = new Set<string>();
@@ -193,9 +205,12 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   // Seeded on the diagonal in source order, so whichever axis a layout reads
   // for in-rank order, it starts from the data's own order.
   const seeds: GraphNode[] = data.nodes.map((n, i) => {
+    // A collapsed node keeps the width its rows would give it open, so it does not jump on a toggle.
+    const floor = measureBody(bodies[i]!, measure);
+    const width = folded(n) ? Math.max(floor.minWidth, measureBody({ ...bodies[i]!, rows: n.rows! }, measure).minWidth) : floor.minWidth;
     const pose = sizeToBody(
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: folded(n) ? 0 : n.height ?? 0 },
-      measureBody(bodies[i]!, measure),
+      { minWidth: width, minHeight: floor.minHeight },
     );
     const { ports, outline, margin } = bodyTrait(bodies[i]!, pose, measure);
     return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}),

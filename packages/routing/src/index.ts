@@ -158,6 +158,7 @@ export {
   TOOL_OFFHAND_ID, buildToolOffhandBindings, heldKeySpec, makeToolOffhandAction, offhandKeyFor,
 } from './interactions/actions/toolOffhand';
 export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand';
+export { BETWEEN_GESTURES } from './interactions/actions/betweenGestures';
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export {

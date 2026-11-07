@@ -1,5 +1,5 @@
 import { multiply, rotate, translate, type Affine, type Point } from '@weasel-js/geom';
-import { MAX_WALLPAPER_COPIES, latticePoints } from './wallpaper';
+import { MAX_WALLPAPER_COPIES, exact, latticePoints } from './wallpaper';
 
 /** Which copies a symmetry group draws. */
 export type SymmetryKind = 'mirror' | 'both' | 'point' | 'radial' | 'kaleidoscope' | 'repeat' | 'wallpaper';
@@ -79,9 +79,6 @@ export const DEFAULT_SYMMETRY: SymmetrySpec = {
   extent: { x: -360, y: -240, width: 720, height: 480 },
 };
 
-/** `Math.cos` and `Math.sin` leave 1e-16 where a quarter turn has an exact
- *  0, which a preset axis then carries into every coordinate it mirrors. */
-const exact = (v: number): number => (Math.abs(v) < 1e-12 ? 0 : v);
 
 const about = (c: Point, m: Affine): Affine => multiply(translate(c.x, c.y), multiply(m, translate(-c.x, -c.y)));
 
@@ -177,7 +174,7 @@ function cellTransforms(s: SymmetrySpec, c: Point): Affine[] {
 }
 
 /** The wedge count a radial kind uses: at least one, a whole number. */
-function wedges(s: SymmetrySpec): number {
+export function wedges(s: SymmetrySpec): number {
   return Math.max(1, Math.round(s.count));
 }
 

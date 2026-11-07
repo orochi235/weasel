@@ -10,14 +10,16 @@ export function familyKey(family: string): string {
 }
 
 /**
- * Call `onLoaded` with the families of each batch of faces `document.fonts`
- * finishes loading. Returns a function that stops it. Does nothing where
+ * Call `onLoaded` with the families of each batch of faces `document.fonts`, or a
+ * worker's own `self.fonts`, finishes loading. Returns a function that stops it. Does nothing where
  * there is no font set to listen to.
  *
  * A face loaded before it is added to the set is never announced.
  */
 export function watchFontLoads(onLoaded: (families: string[]) => void): () => void {
-  const fonts = typeof document === 'undefined' ? undefined : document.fonts;
+  const fonts = typeof document === 'undefined'
+    ? (globalThis as { fonts?: FontFaceSet }).fonts
+    : document.fonts;
   if (!fonts?.addEventListener) return () => {};
   const listener = (event: Event): void => {
     const faces = (event as Partial<FontFaceSetLoadEvent>).fontfaces ?? [];

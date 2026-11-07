@@ -1,10 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { lineContrast } from '../testing/paintedContrast';
+import { lineContrast } from '@weasel-js/ui/testing/paintedContrast';
 import { MotifFrame } from '@weasel-js/ui/components/MotifFrame';
 import type { Motif } from './MotifFrame';
-import { FORM_FRAMES } from './Prefs/frames';
+import { FORM_FRAMES } from '@weasel-js/ui/testing/prefs';
 import prefs from './Prefs/Prefs.module.css';
 import selection from './SelectionPanel/SelectionPanel.module.css';
 

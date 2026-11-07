@@ -138,7 +138,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
           // left is the coast, and only for a drag that actually ended.
           const { tracker, inertia, view: v } = scratch;
           if (reason === 'cancel' || !tracker || !inertia || !v.decay) return;
-          const { vx, vy } = tracker.getVelocity();
+          const { vx, vy } = tracker.getVelocity(performance.now());
           const scale = scratch.base.scale;
           v.decay({
             // Screen px/ms → world units/ms, matching the onMove conversion.

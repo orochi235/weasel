@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { A11yReport } from '../protocol/messages';
-import { runAxe } from './a11y';
+import { runAxe } from '@weasel-js/forge/testing/frame';
 
 // axe's color-contrast rule reads layout and paint order, so only a real browser can show what it decides.
 

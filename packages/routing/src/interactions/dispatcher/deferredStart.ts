@@ -1,10 +1,12 @@
 import type { InvocationCtx, OngoingHandle } from '../actions/invoker';
+import { isEmptyOngoingHandle } from './inFlightGestures';
 
 /**
  * The handle for a drag whose action starts only once the pointer has traveled `thresholdPx` on
  * screen from the press. Until then it holds the gesture and answers nothing else; past it, `start`
- * runs and every read goes to the handle it returns, beginning with the move that crossed. A release
- * short of the threshold ends a gesture that never started.
+ * runs and every read goes to the handle it returns, beginning with the move that crossed. A `start`
+ * that declines, with an empty handle, passes the drag on, as it would have fallen through at the
+ * press. A release short of the threshold ends a gesture that never started.
  */
 export function deferredStart(start: () => OngoingHandle, thresholdPx: number): OngoingHandle {
   let inner: OngoingHandle | null = null;
@@ -13,6 +15,7 @@ export function deferredStart(start: () => OngoingHandle, thresholdPx: number): 
       const travel = ctx.drag?.screenDelta;
       if (!travel || Math.hypot(travel.x, travel.y) < thresholdPx) return;
       inner = start();
+      if (isEmptyOngoingHandle(inner)) return 'pass';
     }
     return inner.onMove?.(ctx);
   };

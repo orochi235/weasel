@@ -8,6 +8,7 @@
  */
 import { getProgramSource, registerProgram } from '../shaders/registerProgram';
 import { EFFECT_VERT_SRC, COMPOSITE_FRAG_SRC } from './effectPrelude';
+import { COMPOSITE_WGSL } from '../gpu/webgpu/wgsl/composite';
 
 /** Reserved id. The `weasel:` prefix is not enforced anywhere; it is here so a
  *  consumer reading a shader-compile error knows whose program it is. */
@@ -19,7 +20,9 @@ export const COMPOSITE_PROGRAM_ID = 'weasel:effect-composite';
  */
 export function compositeProgramId(): string {
   if (!getProgramSource(COMPOSITE_PROGRAM_ID)) {
-    registerProgram(COMPOSITE_PROGRAM_ID, EFFECT_VERT_SRC, COMPOSITE_FRAG_SRC);
+    registerProgram(COMPOSITE_PROGRAM_ID, {
+      glsl: { vert: EFFECT_VERT_SRC, frag: COMPOSITE_FRAG_SRC }, wgsl: { frag: COMPOSITE_WGSL },
+    });
   }
   return COMPOSITE_PROGRAM_ID;
 }

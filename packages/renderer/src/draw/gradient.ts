@@ -164,7 +164,7 @@ export function rampVertices(
  * inverse; a paint measured in it draws nothing.
  */
 export function gradientSpaceInverse(ctx: DrawContext, units: PaintUnits | undefined): GlMat3 | null {
-  if (units === 'local') return mat3.invert(ctx.state.transform);
+  if (units === 'local') return mat3.invert(ctx.state.paintFrame);
   if (units === 'world' && ctx.viewMatrix) return mat3.invert(ctx.viewMatrix);
   return ctx.screenMatrix ? mat3.invert(ctx.screenMatrix) : mat3.identity();
 }

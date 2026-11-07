@@ -9,6 +9,7 @@ export type { PrefSelectHow } from './selection';
 export type { PrefSplitProps, SplitCtx } from './splitRows';
 export type { MarkHiddenProps } from './hidden';
 export { prefFieldProps, type PrefFieldState } from './prefField';
+export { prefNumberScale } from './prefNumberScale';
 export { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, liveControl, withCommitPolicy, withDrafts, type ParamsSurface, type LiveControl } from './commitPolicy';
 export { useParamsPolicy, type ParamsPolicy } from './useParamsPolicy';
 export { useDebouncedText } from './useDebouncedText';

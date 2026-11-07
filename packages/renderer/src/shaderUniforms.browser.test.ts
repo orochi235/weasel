@@ -56,7 +56,7 @@ function solidBitmap(r: number, g: number, b: number): Promise<ImageBitmap> {
 describe('array uniforms in a real context', () => {
   it('fills every slot of a vec4 array from one flat Float32Array', () => {
     const { gl, renderer } = setup();
-    renderer.registerProgram(registerProgram('browser-array', '', frag('u_colors[i]')));
+    renderer.registerProgram(registerProgram('browser-array', { glsl: { frag: frag('u_colors[i]') } }));
     expect(draw(renderer, gl, 'browser-array', { u_colors: COLORS })).toEqual([
       [255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255], [255, 255, 255, 255],
     ]);
@@ -65,11 +65,11 @@ describe('array uniforms in a real context', () => {
 
   it('draws a re-registered source on the next frame and deletes the old program', () => {
     const { gl, renderer } = setup();
-    renderer.registerProgram(registerProgram('browser-hot', '', frag('u_colors[i]')));
+    renderer.registerProgram(registerProgram('browser-hot', { glsl: { frag: frag('u_colors[i]') } }));
     draw(renderer, gl, 'browser-hot', { u_colors: COLORS });
     const before = gl.getParameter(gl.CURRENT_PROGRAM) as WebGLProgram;
 
-    registerProgram('browser-hot', '', frag('u_colors[3 - i]'));
+    registerProgram('browser-hot', { glsl: { frag: frag('u_colors[3 - i]') } });
     expect(draw(renderer, gl, 'browser-hot', { u_colors: COLORS })).toEqual([
       [255, 255, 255, 255], [0, 0, 255, 255], [0, 255, 0, 255], [255, 0, 0, 255],
     ]);
@@ -92,7 +92,7 @@ void main() {
 
   it('keeps the first sampler bound while the second uploads', async () => {
     const { gl, renderer } = setup();
-    renderer.registerProgram(registerProgram('browser-two-tex', '', TWO_SAMPLERS));
+    renderer.registerProgram(registerProgram('browser-two-tex', { glsl: { frag: TWO_SAMPLERS } }));
     const u_left = registerTexture(await solidBitmap(255, 0, 0));
     const u_right = registerTexture(await solidBitmap(0, 0, 255));
     const px = draw(renderer, gl, 'browser-two-tex', { u_left, u_right });

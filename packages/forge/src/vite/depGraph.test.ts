@@ -130,6 +130,23 @@ describe('createDepGraph', () => {
     expect(graph['ui/Badge']?.uses).toEqual(['ui/Button']);
   });
 
+  it('reads a file again after a reset when it could not be read before: one deleted and created again', async () => {
+    const ws = workspace(FILES);
+    const deps = createDepGraph({ root: ROOT, read: ws.read });
+    await deps.build(ENTRIES, ws.resolve);
+    const badge = ws.abs('ui/Badge/Badge.tsx');
+    const code = ws.table.get(badge)!;
+    ws.table.delete(badge);
+    deps.invalidate(badge);
+    // The story file's resolution still names the deleted file, so this build reads it and fails.
+    await deps.build(ENTRIES, async (spec, importer) => (spec === '@ui' ? ws.abs('ui/index.ts') : ws.resolve(spec, importer)));
+    ws.table.set(badge, code);
+    deps.reset();
+    const graph = await deps.build(ENTRIES, ws.resolve);
+    expect(graph['ui/Badge']?.source).toBe('ui/Badge/Badge.tsx');
+    expect(graph['ui/Button']?.uses).toEqual(['ui/Badge']);
+  });
+
   it('skips a file that fails to parse rather than failing the graph', async () => {
     const ws = workspace({ ...FILES, 'ui/Badge/Badge.tsx': `export const Badge = (` });
     const graph = await createDepGraph({ root: ROOT, read: ws.read }).build(ENTRIES, ws.resolve);

@@ -43,6 +43,10 @@ describe('serialize', () => {
     expect(serialize('abcdef', { chars: 3 })).toBe('abc…');
   });
 
+  it('writes an invalid date rather than throwing on it', () => {
+    expect(serialize({ d: new Date(NaN) })).toEqual({ d: { $type: 'Date', value: 'Invalid Date' } });
+  });
+
   it('notes the class of an instance', () => {
     class Pose { x = 1; }
     expect(serialize(new Pose())).toEqual({ $class: 'Pose', x: 1 });

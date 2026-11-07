@@ -21,7 +21,7 @@ export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, poseDescriptorForNode, t
 export type { PoseDescriptor, RotatedPose, TranslateLead } from '../core/geometry/poseDescriptor';
 export type { RectPose } from '../core/geometry/rectPose';
 export type { TargetTransform } from '../core/geometry/targetFrame';
-export { axisAlignedBounds, unionAABB, unionBounds } from '../core/geometry/unionBounds';
+export { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from '../core/geometry/unionBounds';
 export type { Dims, LayerDims } from '../core/layers/dims';
 export { createArrangeOp } from '../core/ops/arrange';
 export type { ArrangeArgs, ArrangedPose } from '../core/ops/arrange';

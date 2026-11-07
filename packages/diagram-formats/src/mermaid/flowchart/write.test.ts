@@ -36,6 +36,16 @@ const FLOW: DiagramData = {
 };
 
 describe('writing Mermaid', () => {
+  it('reads back text that looks like an entity or a markdown string as written', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', lines: ['`tick`'] }, { id: 'b', lines: ['Tom &amp; Jerry', 'A & B'] }],
+      edges: [{ from: 'a', to: 'b', label: '&lt;3 &#65;' }],
+    };
+    const p = back(pageOf(data));
+    expect(shapes(p.data)).toEqual({ a: ['rect', ['`tick`']], b: ['rect', ['Tom &amp; Jerry', 'A & B']] });
+    expect(p.data.edges[0]!.label).toBe('&lt;3 &#65;');
+  });
+
   it('reads back the same topology, labels, shapes, and containers', () => {
     const p = back(pageOf(FLOW));
     expect(topology(p.data)).toEqual(topology(FLOW));

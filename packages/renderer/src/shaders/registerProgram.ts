@@ -50,10 +50,33 @@ export type ShaderUniform =
   | Uint32Array
   | TextureHandle;
 
-/** A registered program's GLSL source. An empty `vert` means the kit's default vertex shader. */
-export interface ProgramSource {
-  vert: string;
+/** A shading language a program's source can be written in: GLSL ES 3.0 for WebGL 2, WGSL for WebGPU. */
+export type ShaderLanguage = 'glsl' | 'wgsl';
+
+/** One language's stages of a program. No `vert` means the kit's default vertex shader. */
+export interface ShaderSource {
+  vert?: string;
   frag: string;
+}
+
+/**
+ * A registered program's source, in one shading language or both. A backend
+ * draws from its own language's and declines a program without one.
+ *
+ * A WGSL `frag` supplies `fn fragment(in: Varyings) -> vec4f`, and `vert`,
+ * where set, `fn vertex(v: KitVertex) -> Varyings`; the kit's prelude
+ * declares both types and the entry points (`gpu/webgpu/wgsl/customPrelude.ts`).
+ * A `frag` declaring entry points of its own is compiled as it is.
+ */
+export type ProgramSource =
+  | { glsl: ShaderSource; wgsl?: ShaderSource }
+  | { glsl?: ShaderSource; wgsl: ShaderSource };
+
+/** Whether `a` and `b` hold the same source in every language. */
+export function sameProgramSource(a: ProgramSource, b: ProgramSource): boolean {
+  const same = (x?: ShaderSource, y?: ShaderSource) => x === y
+    || (x !== undefined && y !== undefined && x.frag === y.frag && x.vert === y.vert);
+  return same(a.glsl, b.glsl) && same(a.wgsl, b.wgsl);
 }
 
 const registry = createReflectable<ProgramSource>();
@@ -75,8 +98,16 @@ export function getProgramSource(id: string): ProgramSource | null {
 /**
  * Register a custom shader program by id.
  *
- * Pass an empty string for `vert` to use the kit's default vertex shader
- * (recommended). The kit's vertex shader exposes `v_uv`, `v_screen`, `v_world`
+ * `source` holds a GLSL program, a WGSL one, or both: each renderer compiles
+ * its own backend's language and draws nothing for a program lacking it,
+ * logging that once. Leave out `vert` to use the kit's default vertex shader
+ * (recommended):
+ *
+ * ```ts
+ * registerProgram('stripes', { glsl: { frag: STRIPES_GLSL } });
+ * ```
+ *
+ * The kit's GLSL vertex shader exposes `v_uv`, `v_screen`, `v_world`
  * and `v_worldLocal` varyings plus `u_bounds`, `u_view` and `u_worldOrigin`
  * uniforms. Far from the origin `v_world` is as coarse as any float32 that
  * size; `v_worldLocal` is the same point measured from `u_worldOrigin`, a
@@ -97,7 +128,7 @@ export function getProgramSource(id: string): ProgramSource | null {
  *   `outColor = vec4(rgb * a, a);`  ← correct
  *   `outColor = vec4(rgb, a);`      ← WRONG — over-brightens translucent regions
  *
- * The renderer uses `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)` to match.
+ * The renderer blends premultiplied (`ONE, ONE_MINUS_SRC_ALPHA`) to match.
  * Opaque fragments (a=1) are unaffected; only fragments with a < 1 differ.
  *
  * **Re-registration behavior:**
@@ -106,6 +137,8 @@ export function getProgramSource(id: string): ProgramSource | null {
  *   recompiles on its next frame and deletes the program it replaces; a
  *   `<Canvas shaders>` naming the id repaints to show it. If the new source fails
  *   to compile, the renderer logs the error once and keeps drawing the old one.
+ *   WebGPU reports a WGSL failure only after the frame that compiled it, so
+ *   there the program logs the error once and draws nothing from then on.
  * - Prod mode: calling with an existing id throws.
  *
  * Nothing compiles here. A renderer compiles the source the first time it
@@ -113,15 +146,14 @@ export function getProgramSource(id: string): ProgramSource | null {
  * that command; `WeaselRenderer.registerProgram()` compiles ahead of that and
  * throws `ShaderCompileError`.
  */
-export function registerProgram(
-  id: string,
-  vert: string,
-  frag: string,
-): ShaderProgramHandle {
+export function registerProgram(id: string, source: ProgramSource): ShaderProgramHandle {
   if (registry.has(id) && !isDev()) {
     throw new Error(`weasel registerProgram: duplicate program id "${id}". ` +
       `In production, re-registration is not allowed. Pass a unique id or call in dev mode.`);
   }
-  registry.set(id, { vert, frag });
+  if (!source.glsl && !source.wgsl) {
+    throw new Error(`weasel registerProgram: program "${id}" has no source; pass \`glsl\`, \`wgsl\` or both.`);
+  }
+  registry.set(id, source);
   return { id };
 }

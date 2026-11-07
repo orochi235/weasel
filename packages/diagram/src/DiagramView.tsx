@@ -14,7 +14,7 @@ import {
   type SceneCanvasHit,
 } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactElement, type Ref, type RefObject } from 'react';
 import { createSpecRouter } from './avoid/specRoutes';
 import { diagramCanDropInto, type CanReparent } from './containers/canDropInto';
 import { createSpecHops } from './hops/specHops';
@@ -24,6 +24,7 @@ import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramV
 import { withDiagramRegistry } from './edge';
 import type { DiagramSceneData, DiagramSpec } from './dataTypes';
 import { useHeaderClick } from './headerClick';
+import { useHeldImages, useReleasedImages } from './imageRelease';
 import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
@@ -89,7 +90,8 @@ function Inner({
     return placer === null ? out : placer(out);
   }, [avoid, placer, given]);
   const hopped = useMemo(() => (hops === undefined ? routed : createSpecHops(hops)(routed)), [hops, routed]);
-  const specs = useMemo(() => (edgesPick ? withPickableEdges(hopped) : hopped), [edgesPick, hopped]);
+  const picked = useMemo(() => (edgesPick ? withPickableEdges(hopped) : hopped), [edgesPick, hopped]);
+  const specs = useHeldImages(picked);
   useEffect(() => {
     const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
     return () => disposers.forEach((dispose) => dispose());
@@ -104,6 +106,7 @@ function Inner({
   const mirror = useMirroredSelection(selection, selected, onSelect);
 
   useSceneSync(scene, specs, { onMove, onEditContainer });
+  useReleasedImages(specs);
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
@@ -115,7 +118,7 @@ function Inner({
   const { layers: pageLayers, box: pagesBox } = usePagesView(pages);
   const layers = useMemo(() => ({ ...pageLayers, selectionOverlay: SHAPE_OUTLINE }), [pageLayers]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  const { onPointerUpCapture, onClick: headerHit } = useHeaderClick(canvasRef, scene, onHeaderClick);
+  const { onPointerDownCapture, onClick: headerHit } = useHeaderClick(canvasRef, scene, onHeaderClick);
   const onClick = useCallback((hit: SceneCanvasHit | null) => {
     mirror();
     headerHit(hit);
@@ -163,10 +166,9 @@ function Inner({
   const textEditor = useSequenceTextEdit(scene, onEditSequence);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
-  const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
-    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerUpCapture={onPointerUpCapture}>
+    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerDownCapture={onPointerDownCapture}>
       <SceneCanvas
         ref={canvasRef}
         scene={scene}
@@ -186,11 +188,25 @@ function Inner({
       >
         <DropRules scene={scene} canReparent={canReparent} />
       </SceneCanvas>
+      <Overlays canvasRef={canvasRef} scene={scene} overlays={overlays} />
+    </div>
+  );
+}
+
+/** Each overlay's content, kept over the node it targets. */
+function Overlays({ canvasRef, scene, overlays }: {
+  canvasRef: RefObject<SceneCanvasApi | null>;
+  scene: Scene<DiagramSceneData, 'main', RectPose>;
+  overlays: Parameters<typeof useOverlayPlacement>[2];
+}): ReactElement {
+  const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
+  return (
+    <>
       {overlays.map((o) => {
         const key = o.key ?? o.target;
         return <div key={key} ref={overlayRef(key)} data-wzl-diagram-overlay="">{o.content}</div>;
       })}
-    </div>
+    </>
   );
 }
 

@@ -9,7 +9,7 @@
     "longestFunction": 165
   },
   "packages/audio/src/inserts.ts": {
-    "longestFunction": 232
+    "longestFunction": 231
   },
   "packages/audio/src/testing/fakeAudioContext.ts": {
     "lines": 419,
@@ -43,8 +43,8 @@
     "lines": 420
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
-    "lines": 644,
-    "longestFunction": 438
+    "lines": 613,
+    "longestFunction": 437
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
     "longestFunction": 122
@@ -59,8 +59,8 @@
     "longestFunction": 140
   },
   "packages/d3/src/transition.ts": {
-    "lines": 456,
-    "longestFunction": 337
+    "lines": 451,
+    "longestFunction": 336
   },
   "packages/font/src/registerFont.ts": {
     "lines": 797
@@ -78,10 +78,10 @@
     "longestFunction": 186
   },
   "packages/forge/src/vite/depGraph.ts": {
-    "longestFunction": 183
+    "longestFunction": 176
   },
   "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 239
+    "longestFunction": 231
   },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 125
@@ -90,8 +90,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 444,
-    "longestFunction": 405
+    "lines": 441,
+    "longestFunction": 402
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 148
@@ -100,7 +100,7 @@
     "longestFunction": 134
   },
   "packages/hud/src/loupe/createLoupe.ts": {
-    "longestFunction": 229
+    "longestFunction": 214
   },
   "packages/hud/src/widgets/window/window.ts": {
     "longestFunction": 228
@@ -115,7 +115,7 @@
     "longestFunction": 126
   },
   "packages/labkit/src/annotations/store.ts": {
-    "lines": 464,
+    "lines": 430,
     "longestFunction": 321
   },
   "packages/labkit/src/chrome/builtins.tsx": {
@@ -166,10 +166,10 @@
     "lines": 436
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 568
+    "lines": 520
   },
   "packages/renderer/src/drawBatch.ts": {
-    "lines": 468
+    "lines": 457
   },
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144
@@ -181,7 +181,7 @@
     "longestFunction": 185
   },
   "packages/svg/src/gradients.ts": {
-    "lines": 561
+    "lines": 525
   },
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 669,

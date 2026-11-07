@@ -1,6 +1,7 @@
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ImageMinification } from './cache/GLImageCache';
 import type { FlattenTolerance } from './draw/flattenTolerance';
+import type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
 
 /** A run of top-level commands, `[start, end)` by index, that
  *  {@link WeaselRenderer.lastFrameStats} accounts for separately — one render
@@ -82,14 +83,25 @@ export interface RetainedStats {
   bytes: number;
 }
 
-/** Construction options for {@link WeaselRenderer}. Pass `gl` or `canvas`;
- *  a context passed in must have a stencil buffer. */
+/** The GPU API a renderer draws with. */
+export type RendererBackend = 'webgl2' | 'webgpu';
+
+/** Construction options for {@link WeaselRenderer}. Pass `gpu` to draw with
+ *  WebGPU, else `gl` or `canvas`; a WebGL context passed in must have a
+ *  stencil buffer. */
 export interface WeaselRendererOptions {
+  /** A WebGPU device and the canvas to draw to, which builds the renderer on
+   *  WebGPU at once; `requestRendererDevice` gives the page's shared device.
+   *  Wins over `gl` and `canvas`. The renderer configures the canvas's
+   *  context and sets its drawing buffer, as it does a WebGL canvas's. Only
+   *  programs and effects with WGSL draw; one without is reported once. */
+  gpu?: WebGPUSurface;
   /** A WebGL2 context to draw with. Wins over `canvas`. */
   gl?: WebGL2RenderingContext;
   /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent.
-   *  The renderer sets its drawing buffer and never its CSS size. */
-  canvas?: HTMLCanvasElement;
+   *  The renderer sets its drawing buffer and never its CSS size. An `OffscreenCanvas` — one a
+   *  worker was handed by `transferControlToOffscreen` — is sized the same way. */
+  canvas?: HTMLCanvasElement | OffscreenCanvas;
   /** Drawing size in CSS pixels. */
   width: number;
   /** Drawing size in CSS pixels. */
@@ -110,7 +122,8 @@ export interface WeaselRendererOptions {
   flattenTolerance?: FlattenTolerance;
   /** GPU memory, in bytes, that retained groups may hold between frames — see
    *  `GroupDrawCommand.retain`. A group that would take the total past it is
-   *  drawn straight through instead. Counts each surface, 4 bytes a device
+   *  drawn straight through instead, unless freeing the surfaces of groups
+   *  already drawn straight through while they move makes room. Counts each surface, 4 bytes a device
    *  pixel. Not counted: the multisampled buffer surfaces are drawn in, a
    *  tile at a time, 8 bytes a sample at up to 1024x1024 plus a 4-byte copy,
    *  held across frames that redraw one and freed after the first that does

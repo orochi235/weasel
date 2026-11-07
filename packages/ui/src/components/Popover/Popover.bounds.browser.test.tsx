@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import type { CalloutProps } from '../Callout';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Inside a box drawn at f×, the viewport's room is 1/f as many of the box's px: a popover must flip and limit its
 // height against that, as it would against the viewport at 1×.

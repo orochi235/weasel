@@ -43,10 +43,11 @@ import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
-import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
+import { nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { icon } from '../../../icons.gen';
 import { pathOperationTags } from '../pathGestureTags';
 import type { ImmediateParams } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
 export const ANCHOR_CLICK_PX = 10;
@@ -189,8 +190,8 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
     group: 'nudgeAnchors',
     icon: NUDGE_ICON[dir],
     defaultBinding: [
-      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                        opts: { id: `nudgeAnchors.${dir}.small`, params: { magnitude: 'small' } } },
-      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { id: `nudgeAnchors.${dir}.big`, params: { magnitude: 'big' } } },
+      { spec: nudgeSpec(dir, false), opts: { id: `nudgeAnchors.${dir}.small`, params: { magnitude: 'small' } } },
+      { spec: nudgeSpec(dir, true), opts: { id: `nudgeAnchors.${dir}.big`, params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors', 'pathSymmetry'],
@@ -236,7 +237,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
     spec: {
       kind: 'key',
       key: ['Delete', 'Backspace'],
-      phase: [{ channel: '*', phase: 'initial' }],
+      phase: BETWEEN_GESTURES,
     },
     opts: { id: 'deleteAnchors.key' },
   }],

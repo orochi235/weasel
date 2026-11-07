@@ -3,7 +3,8 @@
   /* Holds the Switch's react-aria hidden input, which otherwise escapes any scrolling ancestor. */
   position: relative;
   display: inline-flex;
-  align-items: center;
+  /* The row reports its text's baseline; the control centers on the text instead of lending the row its own. */
+  align-items: baseline;
   gap: var(--wzl-space-4);
   cursor: pointer;
   font-family: var(--wzl-font-ui);
@@ -11,4 +12,13 @@
   color: var(--wzl-fg);
   user-select: none;
   -webkit-user-select: none;
+}
+
+.toggleLabel > * {
+  align-self: center;
+}
+
+/* The words beside the control. */
+.toggleLabel > .toggleText {
+  align-self: baseline;
 }

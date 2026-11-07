@@ -17,6 +17,9 @@ import type { Guide, SpacingGap } from './types';
 export interface GuidesLayerOpts {
   /** Stable getter for the live guide list — typically `useGuides().getGuides`. */
   getGuides: () => readonly Guide[];
+  /** Where the layer hears that `getGuides` changed, so the canvas repaints:
+   *  `useGuides().subscribe`. */
+  subscribe?: (listener: () => void) => () => void;
   /** Stable getter for the equal-spacing gaps to draw, such as
    *  `matchSpacing`'s. */
   getGaps?: () => readonly SpacingGap[];
@@ -64,6 +67,7 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
     id: opts.id ?? 'guides',
     label: opts.label ?? 'Guides',
     space: 'screen',
+    ...(opts.subscribe ? { subscribe: opts.subscribe } : {}),
     draw: (_data, view, dims) => {
       const guides = opts.getGuides();
       const gaps = opts.getGaps?.() ?? [];

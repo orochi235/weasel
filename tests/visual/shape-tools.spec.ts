@@ -2,7 +2,7 @@
  * Visual regression spec: shape-tools demo. Picks three tools from the palette
  * in turn and drags each across its own third of the canvas.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, readCanvasPixels, dragOnCanvas, assertMatchesBaseline } from './diff.js';
 

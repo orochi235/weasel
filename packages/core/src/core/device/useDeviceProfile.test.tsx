@@ -95,6 +95,18 @@ describe('useDeviceProfile', () => {
     );
   });
 
+  it('a reader under a provider keeps the target scale the provider set', () => {
+    const { mm } = makeMatchMedia({ '(pointer: coarse)': false, '(hover: hover)': true });
+    vi.stubGlobal('matchMedia', mm);
+    render(
+      <DeviceProfileProvider value={{ targetScale: 2 }}>
+        <Probe />
+        <DeviceProfileProvider value={{ dpr: 3 }}><Probe /></DeviceProfileProvider>
+      </DeviceProfileProvider>,
+    );
+    expect(screen.getAllByTestId('out').map((el) => el.textContent)).toEqual(['false|true|1|2', 'false|true|3|2']);
+  });
+
   // A listener count on the double stands in for the real cost: every reader
   // watching the device for itself.
   it('a reader under a provider watches nothing of its own, and still follows it', () => {

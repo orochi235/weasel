@@ -78,14 +78,8 @@ beforeAll(async () => {
   await registerFont(FAMILY, { weight: 400, style: 'normal' }, metricsUrl, atlasUrl);
   unregisterKind = registerPaintDrawKind({
     id: KIND,
-    programs: { [KIND]: { vert: TINT_VERT, frag: TINT_FRAG } },
-    bind: (ctx) => {
-      const program = ctx.program(KIND);
-      if (!program) return null;
-      ctx.gl.useProgram(program.handle);
-      ctx.setProjAndModel(program);
-      return program;
-    },
+    programs: { [KIND]: { glsl: { vert: TINT_VERT, frag: TINT_FRAG } } },
+    bind: () => ({ program: KIND }),
   });
 });
 
@@ -227,7 +221,7 @@ describe('a retained world layer through a pan, in a real context', () => {
     };
     const shader: DrawCommand = {
       kind: 'shader', bounds: { x: 4, y: 4, w: 10, h: 10 }, uniforms: {},
-      program: registerProgram('pan-test-solid', '', '#version 300 es\nprecision highp float;\nin vec2 v_uv;\nout vec4 o;\nvoid main() { o = vec4(0.0, 0.0, 1.0, 1.0); }'),
+      program: registerProgram('pan-test-solid', { glsl: { frag: '#version 300 es\nprecision highp float;\nin vec2 v_uv;\nout vec4 o;\nvoid main() { o = vec4(0.0, 0.0, 1.0, 1.0); }' } }),
     };
     for (const extra of [screenGradient, shader]) {
       const p = pairOf();
@@ -312,7 +306,7 @@ describe('a retained world layer through a pan, in a real context', () => {
 
   it('draws a layer holding a screen-anchored effect straight through a move', () => {
     // A checker over the drawing buffer's own pixels, as a Bayer dither picks its cell.
-    const checker = registerEffect('pan-test-checker', `#version 300 es
+    const checker = registerEffect('pan-test-checker', { glsl: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_source;
@@ -322,7 +316,7 @@ out vec4 o;
 void main() {
   vec2 px = u_windowOrigin + vec2(v_uv.x, 1.0 - v_uv.y) * u_resolution;
   o = texture(u_source, v_uv) * mod(floor(px.x) + floor(px.y), 2.0);
-}`);
+}` });
     const p = pairOf();
     const children = world([{ kind: 'group', effects: [{ program: checker, reach: 0, screenAnchored: true }], children: world() }]);
     frame(p, 0, 0, children);

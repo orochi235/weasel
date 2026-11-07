@@ -145,6 +145,24 @@ describe('useScrollSpy scrollTo', () => {
     vi.useRealTimers();
   });
 
+  it('holds a second section sent to, whether or not the first scroll had ended', () => {
+    vi.useFakeTimers();
+    const view = render(<Held />);
+    const root = screen.getByTestId('root');
+    const active = () => screen.getByRole('status').textContent;
+    act(() => screen.getByRole('button').click());
+    act(() => void root.dispatchEvent(new Event('scrollend')));
+    act(() => screen.getByRole('button').click());
+    expect(active()).toBe('b');
+    act(() => void root.dispatchEvent(new Event('scroll')));
+    expect(active()).toBe('b');
+    act(() => screen.getByRole('button').click());
+    act(() => void root.dispatchEvent(new Event('scroll')));
+    expect(active()).toBe('b');
+    view.unmount();
+    vi.useRealTimers();
+  });
+
   it('lets go of the held section when the scroll ends', () => {
     const view = render(<Held />);
     act(() => screen.getByRole('button').click());

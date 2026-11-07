@@ -3,6 +3,7 @@ import type { BoundGesture } from './binding';
 import { resolveParams, type InvocationCtx, type BindingOpts } from './invoker';
 import type { HotkeyTrigger } from '../../contributions/types';
 import type { KeyHeldSpec, ModSpec } from '@weasel-js/gestures';
+import { BETWEEN_GESTURES } from './betweenGestures';
 
 /** Canonical id of the consolidated tool-offhand action. One descriptor
  *  serves every tool; the matched binding supplies `params.toolId` to select
@@ -45,8 +46,6 @@ export function buildToolOffhandBindings(
     opts: { id: `${TOOL_OFFHAND_ID}.${toolId}`, params: { toolId } },
   }));
 }
-
-const BETWEEN_GESTURES = [{ channel: '*', phase: 'initial' }] as const;
 
 /** The `key-held` spec for holding `key` (a `KeyboardEvent.key`, or several).
  *  A modifier key gets every modifier optional, since its own keydown reports

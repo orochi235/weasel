@@ -6,7 +6,7 @@ import { gradientSpaceInverse } from './gradient';
 
 const toPixels = mat3.translated(mat3.scaled(mat3.identity(), 2, 2), -10, -20);
 const ctx = (screenMatrix?: GlMat3, viewMatrix?: GlMat3) =>
-  ({ state: { transform: mat3.identity() }, screenMatrix, viewMatrix }) as unknown as DrawContext;
+  ({ state: { transform: mat3.identity(), paintFrame: mat3.identity() }, screenMatrix, viewMatrix }) as unknown as DrawContext;
 
 describe('gradientSpaceInverse', () => {
   it('measures screen-unit paint in the render\'s screen space, when it names one', () => {

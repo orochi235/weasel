@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from '../testing/glRecorder';
+import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { GLMeshCache } from './GLMeshCache';
+
+type QueuedResources = Parameters<GLMeshCache['_enqueueDeleteForTest']>[0];
 
 const sampleMesh: Mesh = {
   vertices: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
@@ -14,7 +17,7 @@ describe('GLMeshCache', () => {
 
   beforeEach(() => {
     recorder = makeGLRecorder();
-    cache = new GLMeshCache(recorder.gl);
+    cache = new GLMeshCache(webglDevice(recorder.gl));
   });
 
   it('uploads VBO + IBO + VAO on first lookup', () => {
@@ -102,7 +105,7 @@ describe('GLMeshCache', () => {
       cache.uploadRecurring(mesh);
 
       const otherRecorder = makeGLRecorder();
-      const other = new GLMeshCache(otherRecorder.gl);
+      const other = new GLMeshCache(webglDevice(otherRecorder.gl));
       other.uploadRecurring(mesh);
       expect(other._transientCount()).toBe(1);
     });
@@ -129,15 +132,15 @@ describe('GLMeshCache', () => {
     it('drainPendingDeletes calls deleteVertexArray + deleteBuffer x2 per queued resource', () => {
       // Simulate the finalizer firing for two meshes worth of resources.
       cache._enqueueDeleteForTest({
-        vao: { __id: 'vao_x' } as unknown as WebGLVertexArrayObject,
-        vbo: { __id: 'vbo_x' } as unknown as WebGLBuffer,
-        ibo: { __id: 'ibo_x' } as unknown as WebGLBuffer,
-      });
+        geometry: { kind: 'geometry', indexFormat: 'uint32', vao: { __id: 'vao_x' }, indexBuffer: {} },
+        vbo: { kind: 'vertex', handle: { __id: 'vbo_x' } },
+        ibo: { kind: 'index', handle: { __id: 'ibo_x' } },
+      } as unknown as QueuedResources);
       cache._enqueueDeleteForTest({
-        vao: { __id: 'vao_y' } as unknown as WebGLVertexArrayObject,
-        vbo: { __id: 'vbo_y' } as unknown as WebGLBuffer,
-        ibo: { __id: 'ibo_y' } as unknown as WebGLBuffer,
-      });
+        geometry: { kind: 'geometry', indexFormat: 'uint32', vao: { __id: 'vao_y' }, indexBuffer: {} },
+        vbo: { kind: 'vertex', handle: { __id: 'vbo_y' } },
+        ibo: { kind: 'index', handle: { __id: 'ibo_y' } },
+      } as unknown as QueuedResources);
       expect(cache._pendingDeleteCount()).toBe(2);
 
       cache.drainPendingDeletes();
@@ -168,12 +171,12 @@ describe('GLMeshCache', () => {
           },
         },
       ) as unknown as WebGL2RenderingContext;
-      const lostCache = new GLMeshCache(lostGl);
+      const lostCache = new GLMeshCache(webglDevice(lostGl));
       lostCache._enqueueDeleteForTest({
-        vao: { __id: 'vao_x' } as unknown as WebGLVertexArrayObject,
-        vbo: { __id: 'vbo_x' } as unknown as WebGLBuffer,
-        ibo: { __id: 'ibo_x' } as unknown as WebGLBuffer,
-      });
+        geometry: { kind: 'geometry', indexFormat: 'uint32', vao: { __id: 'vao_x' }, indexBuffer: {} },
+        vbo: { kind: 'vertex', handle: { __id: 'vbo_x' } },
+        ibo: { kind: 'index', handle: { __id: 'ibo_x' } },
+      } as unknown as QueuedResources);
       lostCache.drainPendingDeletes();
       expect(deleteLog).toEqual([]);
       // The queue should still be drained so we don't keep retrying.
@@ -189,7 +192,8 @@ describe('GLMeshCache', () => {
     cache.dispose();
     const deletedVaos = recorder.calls.filter((c) => c.name === 'deleteVertexArray').map((c) => c.args[0]);
     expect(deletedVaos).toHaveLength(2);
-    expect(deletedVaos).toEqual(expect.arrayContaining([a.vao, t.vao]));
+    const vaoOf = (h: typeof a) => (h.geometry as unknown as { vao: unknown }).vao;
+    expect(deletedVaos).toEqual(expect.arrayContaining([vaoOf(a), vaoOf(t)]));
     expect(recorder.calls.filter((c) => c.name === 'deleteBuffer')).toHaveLength(4);
   });
 });

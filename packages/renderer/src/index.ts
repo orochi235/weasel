@@ -8,13 +8,18 @@
  * @packageDocumentation
  */
 
+export { WeaselRenderer } from './WeaselRenderer';
+export type { PixelRect } from './readPixels';
 export {
-  WeaselRenderer, type WeaselRendererOptions, type RenderTarget,
+  type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
-  type IdBuffer, type RenderIdsOptions,
+  type IdBuffer, type RenderIdsOptions, type RendererBackend,
   DEFAULT_RETAIN_BUDGET,
-} from './WeaselRenderer';
+} from './rendererTypes';
 export { idMask } from './draw/idRender';
+export { requestRendererDevice } from './gpu/webgpu/requestRendererDevice';
+export type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
+export type * from './gpu/types';
 export { MAX_PICK_ID } from './shaders/idOutput';
 export type { BatchStage } from './batchStage';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
@@ -65,13 +70,15 @@ export {
   registerProgram,
   programSourceRegistry,
   type ProgramSource,
+  type ShaderLanguage,
+  type ShaderSource,
   type ShaderProgramHandle,
   type ShaderUniform,
 } from './shaders/registerProgram';
 export {
   registerTexture, unregisterTexture, textureRegistry, type TextureEntry, type TextureHandle,
 } from './textures/registerTexture';
-export { registerEffect, effectsReach, type Effect } from './effects/types';
+export { registerEffect, effectsReach, type Effect, type EffectProgramSource } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export type { CompositeOp, BlendFactor, BlendFactors } from './effects/compositeOp';
 export { isOwnComposite, leavesUncovered, readsBackdrop } from './effects/compositeOp';
@@ -91,10 +98,12 @@ export {
   isPaintKindKnown,
   warmPaintKinds,
   type PaintBindContext,
+  type PaintBinding,
   type PaintDrawKind,
   type PaintDrawKindLoader,
-  type PaintProgram,
   type PaintResources,
+  type PaintTexture,
+  type PaintUniform,
 } from './paintKinds';
 export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';
@@ -102,11 +111,15 @@ export { createTilePattern, type TilePatternOpts } from './patterns';
 export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
 export {
+  adoptBitmapSrc,
   bitmapSrc,
   getImageBitmap,
+  isBitmapSrc,
+  imagePending,
   imageStatus,
   isVectorImageSrc,
   releaseImage,
+  setImageLoader,
   setImageCacheBudget,
   retryImage,
   subscribeImageReady,
@@ -114,3 +127,4 @@ export {
   type ImageRasterSize,
   type ImageStatus,
 } from './images/imageCache';
+export { loadImageBitmap, type ImageLoader } from './images/imageLoader';

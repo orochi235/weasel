@@ -3,7 +3,7 @@ import type { MenuEntry } from '@weasel-js/menu';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { OpenPanels } from './ContextMenuHost';
+import { OpenPanels } from '@weasel-js/ui/testing/contextMenu';
 
 // Where the popover lands, and whether a real press inside it reaches the menu's dismiss as inside, need a real
 // browser's layout and pointer events.

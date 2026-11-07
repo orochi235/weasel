@@ -2,16 +2,16 @@
  * A scene rendered from Node through `@weasel-js/headless` comes back with the pixels this
  * browser draws for it through `renderSceneToPixels`.
  *
- * Both sides are Playwright's Chromium launched with its default switches on the same machine, so
- * they run the same WebGL2 implementation; the same implementation given the same commands is
+ * Both sides are Playwright's Chromium launched with the same GPU switches on the same machine
+ * (`scripts/chromium-gpu-args.ts`), so they run the same WebGL2 implementation; the same implementation given the same commands is
  * deterministic, so the bytes must be equal. Across GPUs or drivers they need not be, which is why
  * nothing here is compared with committed pixels.
  */
 import { describe, expect, it } from 'vitest';
 import { commands } from 'vitest/browser';
 import { renderSceneToPixels, warmRender, type RasterImage } from '@weasel-js/core';
-import { FIXTURE_RENDER, fixtureScene } from './testing/fixtureScene';
-import { sceneToWire } from './protocol';
+import { FIXTURE_RENDER, fixtureScene } from '@weasel-js/headless/testing/fixtureScene';
+import { sceneToWire } from '@weasel-js/headless/testing/protocol';
 
 function bytesOf(base64: string): Uint8Array {
   return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));

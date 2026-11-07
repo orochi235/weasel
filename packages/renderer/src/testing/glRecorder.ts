@@ -209,3 +209,9 @@ export function makeGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
     },
   };
 }
+
+/** The GL program and uniform locations behind a renderer program, for a
+ *  test matching them against recorded calls, and the device over a
+ *  recorder, for a test driving the layer itself. */
+export { glProgramHandle, glUniformLocation } from '../gpu/webgl/GlProgram';
+export { webglDevice } from '../gpu/webgl/WebGLDevice';

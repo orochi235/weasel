@@ -10,7 +10,7 @@ import { interestingPoints } from './grid';
 import { MinHeap } from './heap';
 import type { EdgeObstacles } from './obstacles';
 import type { SegmentIndex } from './segments';
-import { minTurns, type Dir } from './turns';
+import { DX, DY, minTurns, type Dir } from './turns';
 import type { Box } from './types';
 import { StateTable } from './stateTable';
 import { visibilityGraph, type VisibilityGraph } from './visibility';
@@ -50,6 +50,15 @@ export interface LegResult {
  *  inside an obstacle, or obstacles wall it in. */
 export const ENCLOSED = 'enclosed';
 
+/** The points a leg's graph casts lines from besides the obstacles' own: each end, and a point just behind each
+ *  target that must be arrived at with a heading, so a line crosses the one the arrival runs along. Without it a
+ *  target whose port faces away from every obstacle corner cannot be arrived at at all. */
+export function legEnds(sources: readonly LegSource[], targets: readonly LegTarget[]): Vec2[] {
+  const out = [...sources.map((s) => s.point), ...targets.map((t) => t.point)];
+  for (const t of targets) if (t.arrive !== null) out.push({ x: t.point.x - DX[t.arrive], y: t.point.y - DY[t.arrive] });
+  return out;
+}
+
 /** Whether the part of `graph` reachable from `starts` stays clear of the
  *  window's edge, so no larger window would reach anything new from it. */
 function sealed(graph: VisibilityGraph, starts: readonly number[]): boolean {
@@ -86,9 +95,8 @@ export function searchLeg(
   ctx: LegContext,
 ): LegResult | typeof ENCLOSED | null {
   const { bendPenalty } = ctx;
-  const ends = [...sources.map((s) => s.point), ...targets.map((t) => t.point)];
   const boxes = ctx.obstacles.near(ctx.window);
-  const graph = visibilityGraph(interestingPoints(ctx.window, boxes, ends), boxes, ctx.window);
+  const graph = visibilityGraph(interestingPoints(ctx.window, boxes, legEnds(sources, targets)), boxes, ctx.window);
 
   const goals = new Map<number, number[]>();
   targets.forEach((t, k) => {

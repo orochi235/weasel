@@ -6,11 +6,11 @@ import { cleanup, waitFor } from '@testing-library/react';
 import { sceneToAdapter } from '@weasel-js/core';
 import { defineInstrument, Lab } from '@weasel-js/labkit';
 import { addLensOps, createLensScene, LensOverlay, setLensOps } from '@weasel-js/labkit/loupe';
+import { HANDLE_SLOP } from '@weasel-js/labkit/testing/lens';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { HANDLE_SLOP } from './lensHitBoxes';
 import type { LensSource } from './lensSource';
 import type { LensScene } from './lensTypes';
 

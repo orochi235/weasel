@@ -21,6 +21,10 @@ function sceneOf() {
   mark('wire', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: { paint: RED, width: 4 } });
   mark('arrowed', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: { paint: RED, width: 4, markerEnd: 'arrow', dash: [6, 4] } });
   mark('bare', { path: pathFromD('M 0 0 L 100 60') });
+  mark('labeled', { shape: 'ellipse' });
+  mark('label', { text: 'x' }, { parent: asNodeId('labeled'), pickable: false });
+  mark('holder', { shape: 'ellipse' });
+  mark('member', { shape: 'rect' }, { parent: asNodeId('holder') });
   return scene;
 }
 
@@ -85,6 +89,13 @@ describe("selection outline with follow: 'shape'", () => {
     const cmds = layerFor(scene, ['g']).draw(undefined, VIEW, DIMS);
     expect(traced(cmds)).toHaveLength(0);
     expect((cmds[0] as PathDrawCommand).kind).toBe('path');
+  });
+
+  it('traces a shape whose children are all unpickable parts of it, and boxes one holding a member', () => {
+    const scene = sceneOf();
+    const [cmd] = traced(layerFor(scene, ['labeled']).draw(undefined, VIEW, DIMS));
+    expect(cmd!.path.kind).not.toBe('rect');
+    expect(traced(layerFor(scene, ['holder']).draw(undefined, VIEW, DIMS))).toHaveLength(0);
   });
 
   it('traces an open path along the band its stroke covers', () => {

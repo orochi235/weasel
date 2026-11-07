@@ -35,7 +35,8 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
   // A replaced node is the same node to whoever selected it.
   const selected = scene.getSelection();
 
-  scene.untracked(() => {
+  // Syncing to outside data reaches a node a lock guards, as a replay does.
+  scene.untracked(() => scene.unlocked(() => {
     scene.removeMany(removing);
     for (const spec of next) {
       const id = spec.id!;
@@ -44,8 +45,6 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
         scene.add(spec);
         continue;
       }
-      // An unlock goes first and a lock last, so the writes between can land.
-      if (before.locked === true && spec.locked !== true) scene.setLocked(id, false);
       const parent = spec.parent ?? null;
       if (parent !== (before.parent ?? null)) scene.move(id, parent);
       if (spec.layer !== before.layer) scene.setLayer(id, spec.layer);
@@ -57,13 +56,13 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if (!same(spec.pageRun, before.pageRun)) scene.setPageRun(id, spec.pageRun ?? null);
       if (!same(spec.pose, before.pose)) scene.setPose(id, spec.pose);
       if ((spec.hidden === true) !== (before.hidden === true)) scene.setHidden(id, spec.hidden === true);
-      if (spec.locked === true && before.locked !== true) scene.setLocked(id, true);
+      if ((spec.locked === true) !== (before.locked === true)) scene.setLocked(id, spec.locked === true);
     }
     reorderToSpecs(scene, prev, next);
     if (selected.some((id) => removed.has(id))) {
       scene.setSelection(selected.filter((id) => scene.get(id) !== undefined));
     }
-  });
+  }));
 }
 
 /** Each parent whose spec children `next` lists differently from `prev` gets

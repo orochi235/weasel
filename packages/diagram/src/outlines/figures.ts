@@ -8,34 +8,39 @@ import { KAPPA } from './flowchart';
 import { insetByShorter } from './storage';
 import type { Bounds, OutlineDef } from './types';
 
-const MAX_RADIUS = 10;
-const radiusOf = (w: number, h: number): number => Math.min(MAX_RADIUS, w / 6, h / 6);
 /** How far a corner of radius r bites into the inscribed rect, per side. */
 const BITE = 1 - Math.SQRT1_2;
 
-const roundRect: OutlineDef = {
-  path: ({ x, y, width: w, height: h }) => {
-    const r = radiusOf(w, h);
-    const k = r * KAPPA;
-    return new PathBuilder()
-      .moveTo(x + r, y)
-      .lineTo(x + w - r, y)
-      .curveTo(x + w - r + k, y, x + w, y + r - k, x + w, y + r)
-      .lineTo(x + w, y + h - r)
-      .curveTo(x + w, y + h - r + k, x + w - r + k, y + h, x + w - r, y + h)
-      .lineTo(x + r, y + h)
-      .curveTo(x + r - k, y + h, x, y + h - r + k, x, y + h - r)
-      .lineTo(x, y + r)
-      .curveTo(x, y + r - k, x + r - k, y, x + r, y)
-      .close()
-      .build();
-  },
-  content: ({ x, y, width: w, height: h }) => {
-    const i = radiusOf(w, h) * BITE;
-    return { x: x + i, y: y + i, width: w - i * 2, height: h - i * 2 };
-  },
-  boxForContent: (c) => ({ width: c.width + MAX_RADIUS * BITE * 2, height: c.height + MAX_RADIUS * BITE * 2 }),
-};
+/** A rounded rect whose corner radius is `maxRadius`, or a sixth of the shorter side when that is
+ *  less. The built-in `roundRect` is `roundRectOutline(10)`; register another under a name of its own. */
+export function roundRectOutline(maxRadius: number): OutlineDef {
+  const radiusOf = (w: number, h: number): number => Math.max(0, Math.min(maxRadius, w / 6, h / 6));
+  return {
+    path: ({ x, y, width: w, height: h }) => {
+      const r = radiusOf(w, h);
+      const k = r * KAPPA;
+      return new PathBuilder()
+        .moveTo(x + r, y)
+        .lineTo(x + w - r, y)
+        .curveTo(x + w - r + k, y, x + w, y + r - k, x + w, y + r)
+        .lineTo(x + w, y + h - r)
+        .curveTo(x + w, y + h - r + k, x + w - r + k, y + h, x + w - r, y + h)
+        .lineTo(x + r, y + h)
+        .curveTo(x + r - k, y + h, x, y + h - r + k, x, y + h - r)
+        .lineTo(x, y + r)
+        .curveTo(x, y + r - k, x + r - k, y, x + r, y)
+        .close()
+        .build();
+    },
+    content: ({ x, y, width: w, height: h }) => {
+      const i = radiusOf(w, h) * BITE;
+      return { x: x + i, y: y + i, width: w - i * 2, height: h - i * 2 };
+    },
+    boxForContent: (c) => ({ width: c.width + maxRadius * BITE * 2, height: c.height + maxRadius * BITE * 2 }),
+  };
+}
+
+const roundRect = roundRectOutline(10);
 
 const triangle: OutlineDef = {
   path: ({ x, y, width: w, height: h }) => polygonFromPoints([

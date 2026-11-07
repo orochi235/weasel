@@ -8,9 +8,10 @@
  * worker thread and whether it exited.
  *
  *   node --expose-gc scripts/probe-dev-restarts.ts [--config apps/forge/vite.config.ts] [--restarts 8]
- *     [--bare] [--keep-deps] [--out <dir>, default node_modules/.probe-dev-restarts, cleared on each run] [--snapshots]
+ *     [--bare] [--keep-deps] [--config-loader bundle|runner|native] [--out <dir>, default node_modules/.probe-dev-restarts, cleared on each run] [--snapshots]
  *
- * `--keep-deps` restarts without forcing the dep optimizer to re-bundle, which a package edit does force.
+ * `--config-loader` is the loader the server starts with, which a restart keeps; unset, restarts load through vite's
+ * module runner (`restartLeavingNothing`). `--keep-deps` restarts without forcing the dep optimizer to re-bundle, which a package edit does force.
  * Writes one JSON line per restart to `<out>/restarts.jsonl` as it finishes, and with `--snapshots`
  * a heap snapshot after the first and the last restart, which `--diff a b` summarizes by constructor.
  * Measured runs are kept in `probe-dev-restarts.runs.jsonl`.
@@ -33,6 +34,7 @@ const { values } = parseArgs({
     diff: { type: 'string', multiple: true },
     bare: { type: 'boolean', default: false },
     'keep-deps': { type: 'boolean', default: false },
+    'config-loader': { type: 'string' },
   },
 });
 
@@ -92,7 +94,8 @@ const liveWorkers = new Set<number>();
 
 const { createServer } = await import('vite');
 const { restartLeavingNothing } = await import('./vite-prebundle.ts');
-const server = await createServer({ configFile: resolve(values.config), logLevel: 'warn', server: { port: 0, strictPort: false } });
+const configLoader = values['config-loader'] as 'bundle' | 'runner' | 'native' | undefined;
+const server = await createServer({ configFile: resolve(values.config), configLoader, logLevel: 'warn', server: { port: 0, strictPort: false } });
 await server.listen();
 const base = server.resolvedUrls?.local[0] ?? `http://localhost:${server.config.server.port}/`;
 
@@ -151,7 +154,7 @@ const record = (restart: number, ms: number) => {
     restart, ms: Math.round(ms), heapUsedMB: mb(m.heapUsed), heapTotalMB: mb(m.heapTotal), rssMB: mb(m.rss),
     externalMB: mb(m.external), arrayBuffersMB: mb(m.arrayBuffers), threads: threads(), workers: liveWorkers.size,
     fds: readdirSync('/dev/fd').length, handles: handles(), ...vmmap(restart), host: hostname(), cores: cpus().length, totalMemGB: +(totalmem() / 2 ** 30).toFixed(0),
-    load1: +loadavg()[0]!.toFixed(2), config: values.config, bare: values.bare, keepDeps: values['keep-deps'],
+    load1: +loadavg()[0]!.toFixed(2), config: values.config, bare: values.bare, keepDeps: values['keep-deps'], configLoader: values['config-loader'],
     env: Object.fromEntries(Object.entries(process.env).filter(([k]) => /^(WEASEL_|MIMALLOC_)/.test(k))),
     at: new Date().toISOString(),
   };

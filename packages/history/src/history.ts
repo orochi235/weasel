@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
-import { anyCaused, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
+import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 import {
   rebuilt, snapshot, touchedIdsFromOps,
@@ -434,10 +434,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
   };
   JOURNAL_ACCESS.set(history, {
-    appliedOps: () => ({
-      forwardOps: undoStack.flatMap((e) => e.forwardOps),
-      baseOps: undoStack.flatMap((e) => e.baseOps),
-    }),
+    appliedOps: () => appliedHalves(undoStack),
     record,
   });
   return history;

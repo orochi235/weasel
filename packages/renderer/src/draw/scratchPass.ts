@@ -1,14 +1,16 @@
 import type { Paint } from '@weasel-js/paint';
-import { getPaintDrawKind, type PaintBindContext } from '../paintKinds';
+import { getPaintDrawKind } from '../paintKinds';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import type { GlMat3 } from '@weasel-js/geom';
+import type { GpuTexture } from '../gpu/types';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { setProjAndModel } from './uniforms';
 import { returnToRenderTarget } from './effects';
 import { BATCH_MODEL } from './flushBatch';
-import { paintBindContext } from './paintBind';
+import { bindPaintKind } from './paintBind';
+
+const UNBLENDED = { blend: null } as const;
 
 export interface ScreenRect { x0: number; y0: number; x1: number; y1: number }
 
@@ -19,9 +21,9 @@ const UNIT_QUAD: Mesh = {
 };
 
 interface ScratchPaint {
-  texture: WebGLTexture;
+  texture: GpuTexture;
   /** Screen position → the texture coordinate the paint landed at there. */
-  uvFromScreen: GlMat3;
+  uvFromScreen: Float32Array;
 }
 
 /**
@@ -42,8 +44,7 @@ interface ScratchPaint {
  */
 export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: ScreenRect): ScratchPaint | null {
   const scratch = ctx.paintScratch;
-  const bind = getPaintDrawKind(fill.kind)?.bind;
-  if (!scratch || !bind) return null;
+  if (!scratch || !getPaintDrawKind(fill.kind)?.bind) return null;
   const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
   const deviceW = ctx.deviceWidth ?? Math.round(ctx.widthCss);
   const deviceH = ctx.deviceHeight ?? Math.round(ctx.heightCss);
@@ -62,40 +63,22 @@ export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: Screen
   const x0 = px0 / ratio, y0 = py0 / ratio, w = pw / ratio, h = ph / ratio;
   const model = new Float32Array([w, 0, 0, 0, h, 0, x0, y0, 1]);
   const proj = new Float32Array([2 / w, 0, 0, 0, 2 / h, 0, -1 - (2 * x0) / w, -1 - (2 * y0) / h, 1]);
-  const base = paintBindContext(ctx);
-  const bindCtx: PaintBindContext = {
-    ...base,
-    alpha: ctx.state.alpha,
-    maxTextureSize: base.maxTextureSize,
-    setProjAndModel: (prog) => setProjAndModel(ctx, prog, model, proj),
-  };
 
-  const gl = ctx.gl;
+  const gpu = ctx.gpu;
   const target = scratch.acquire(pw, ph);
-  const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
-  // The last glyph pass left this texture bound to unit 0; a kind sampling a
-  // unit it never binds would read the buffer it is drawing into.
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
-  gl.viewport(0, 0, pw, ph);
-  gl.disable(gl.SCISSOR_TEST);
-  gl.disable(gl.STENCIL_TEST);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.disable(gl.BLEND);
+  gpu.endPass();
+  gpu.beginPass({ target: target.target, viewport: { x: 0, y: 0, width: pw, height: ph }, clear: { color: true } });
 
-  const prog = bind(bindCtx, fill);
+  const prog = bindPaintKind(ctx, fill, model, proj);
   if (prog) {
-    gl.bindVertexArray(ctx.meshCache.uploadRecurring(UNIT_QUAD).vao);
-    drawTriangles(ctx, UNIT_QUAD.indices.length, gl.UNSIGNED_INT);
-    gl.bindVertexArray(null);
+    const quad = ctx.meshCache.uploadRecurring(UNIT_QUAD);
+    drawTriangles(ctx, prog, quad.geometry, UNIT_QUAD.indices.length, UNBLENDED);
   }
 
-  gl.enable(gl.BLEND);
-  returnToRenderTarget(ctx, deviceW, deviceH, scissorWasOn);
+  returnToRenderTarget(ctx);
   if (!prog) return null;
   return {
-    texture: target.texture,
+    texture: target.target.color!,
     uvFromScreen: new Float32Array([
       ratio / target.width, 0, 0,
       0, ratio / target.height, 0,
@@ -106,12 +89,8 @@ export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: Screen
 
 /** Bind the glyph program to sample `painted` as its paint. */
 export function bindScratchPaint(ctx: DrawContext, prog: ShaderProgram, painted: ScratchPaint): ShaderProgram {
-  const gl = ctx.gl;
-  gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, BATCH_MODEL);
-  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, painted.uvFromScreen);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, painted.texture);
-  gl.uniform1i(prog.uniform('u_sampler')!, 0);
+  prog.set('u_worldInv', 'mat3', painted.uvFromScreen);
+  prog.setTexture('u_sampler', painted.texture);
   return prog;
 }

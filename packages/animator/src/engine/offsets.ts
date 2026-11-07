@@ -180,7 +180,15 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   /** Each store holds are folded in, and how many. */
   const stores = new Map<HoldStore, number>();
   const shown = (s: TargetState, value: unknown): void => {
-    s.show!(value);
+    try {
+      s.show!(value);
+    } catch (error) {
+      // Thrown out of a frame, it would stop the frame loop, and every animation with it.
+      console.error("useAnimator: a target's show threw; stopping what moves it", error);
+      owner.stop(s);
+      rested.delete(s);
+      return;
+    }
     if (s.publish) publishes.add(s.publish);
   };
   const publish = (): void => {

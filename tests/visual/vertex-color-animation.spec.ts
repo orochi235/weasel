@@ -4,7 +4,7 @@
  * Captures the canvas after pausing the color cycle, so all three strokes show
  * their committed rainbow and the capture does not depend on the clock.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline, readCanvasPixels, waitForRepaint } from './diff.js';
 

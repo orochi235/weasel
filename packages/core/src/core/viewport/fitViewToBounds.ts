@@ -86,13 +86,17 @@ export function fitViewToBounds(
       break;
     }
   }
-  const scaleX = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawX)));
-  const scaleY = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawY)));
+  // A negative scale is a flipped (y-up) axis, which the fit keeps.
+  const signX = currentView.scale.x < 0 ? -1 : 1;
+  const signY = currentView.scale.y < 0 ? -1 : 1;
+  const scaleX = signX * normalizeZoom(Math.min(maxScale, Math.max(minScale, rawX)));
+  const scaleY = signY * normalizeZoom(Math.min(maxScale, Math.max(minScale, rawY)));
 
   // screenCenter = (worldCenter - view.x) * scale, solved for view.x.
+  // On a flipped axis the edge drawn first on screen is the far one.
   const place = (start: number, size: number, avail: number, viewport: number, scale: number) =>
-    opts.anchor === 'start' && size * scale > avail + 1e-9
-      ? start - padding / scale
+    opts.anchor === 'start' && size * Math.abs(scale) > avail + 1e-9
+      ? (scale < 0 ? start + size : start) - padding / scale
       : start + size / 2 - viewport / (2 * scale);
   return {
     x: place(bounds.x, bounds.width, availW, viewportDims.width, scaleX),

@@ -8,6 +8,7 @@ import {
   WeaselRenderer, registerProgram, blur, idMask, type IdBuffer,
 } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
+import type { WebGLDevice } from './gpu/webgl/WebGLDevice';
 
 const W = 40;
 const H = 20;
@@ -35,7 +36,7 @@ const tagged = (pickId: number, ...children: DrawCommand[]): DrawCommand => ({ k
 const at = (b: IdBuffer, x: number, y: number): number => b.data[(y - b.y) * b.width + (x - b.x)];
 
 /** Opaque inside a circle filling its bounds, transparent outside it. */
-const DISC = registerProgram('ids-browser-disc', '', `#version 300 es
+const DISC = registerProgram('ids-browser-disc', { glsl: { frag: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 out vec4 outColor;
@@ -43,10 +44,10 @@ void main() {
   float a = length(v_uv - 0.5) < 0.5 ? 1.0 : 0.0;
   outColor = vec4(0.0, 0.0, a, a);
 }
-`);
+` } });
 
 /** Discards everything left of the middle of its bounds. */
-const RIGHT_HALF = registerProgram('ids-browser-right-half', '', `#version 300 es
+const RIGHT_HALF = registerProgram('ids-browser-right-half', { glsl: { frag: `#version 300 es
 precision highp float;
 in vec2 v_uv;
 out vec4 outColor;
@@ -54,7 +55,7 @@ void main() {
   if (v_uv.x < 0.5) discard;
   outColor = vec4(0.0, 1.0, 0.0, 1.0);
 }
-`);
+` } });
 
 describe('renderIds, in a real context', () => {
   it('holds the topmost id at each pixel, and 0 where nothing drew', () => {
@@ -120,7 +121,7 @@ describe('renderIds, in a real context', () => {
 
   it('leaves the canvas drawing as it was', () => {
     const r = open();
-    const gl = r._gl();
+    const { gl } = r._gpu() as WebGLDevice;
     r.render([box(0, 0, 40, 20, '#00ff00')]);
     r.renderIds([tagged(1, box(0, 0, 40, 20, '#ff0000'))]);
     const px = new Uint8Array(4);

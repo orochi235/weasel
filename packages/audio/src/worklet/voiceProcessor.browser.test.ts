@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderNoise, renderNote } from '@weasel-js/audio';
-import { loadVoiceProcessor } from './loadVoiceProcessor';
-import { VOICE_PROCESSOR, type FromProcessor, type ToProcessor } from './protocol';
+import { loadVoiceProcessor, VOICE_PROCESSOR, type FromProcessor, type ToProcessor } from '@weasel-js/audio/testing/worklet';
 
 // The generated processor in a real worklet scope: it loads from source text,
 // and mixes what the kernel renders, sample for sample.

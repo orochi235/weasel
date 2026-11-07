@@ -26,6 +26,7 @@ const squareClip = (size: number): PolygonPath => ({
   fillRule: 'nonzero',
 });
 import { SPRITE_STRIDE } from './DrawCommand';
+import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
 
 /** `drawBatch.ts`'s vertex: vec2 position, vec4 color, vec2 uv, float post,
  *  float texSlot. */
@@ -67,6 +68,23 @@ describe('renderer — consecutive image batching', () => {
   /** A fill the run cannot express, for tests that need a break they choose. */
   const breakerRect = (x: number): DrawCommand => ownDrawRect(x, 0, 16);
 
+  /** The texture each unit holds at every `drawElements`, replayed from
+   *  `activeTexture` and `bindTexture`. */
+  function unitsAtDraws(): unknown[][] {
+    const units: unknown[] = [];
+    let active = 0;
+    const out: unknown[][] = [];
+    for (const c of recorder.calls) {
+      if (c.name === 'activeTexture') active = (c.args[0] as number) - recorder.gl.TEXTURE0;
+      if (c.name === 'bindTexture') units[active] = c.args[1];
+      if (c.name === 'drawElements') out.push(units.slice());
+    }
+    return out;
+  }
+
+  const handleOf = (image: object): unknown =>
+    (r._imageCache().texture(image) as unknown as { handle: unknown }).handle;
+
   /** Index count of every `drawElements`, in order. */
   const draws = () =>
     recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1] as number);
@@ -97,7 +115,7 @@ describe('renderer — consecutive image batching', () => {
 
   /** Every value written to `u_alpha` on the batch program, one per matrix a run draws under. */
   function alphaWrites(): number[] {
-    const loc = r._batchFill().uniform('u_alpha');
+    const loc = glUniformLocation(r._batchFill(), 'u_alpha');
     return recorder.calls
       .filter((c) => c.name === 'uniform1fv' && c.args[0] === loc)
       .flatMap((c) => Array.from(c.args[1] as Float32Array));
@@ -106,7 +124,7 @@ describe('renderer — consecutive image batching', () => {
   it('merges a run of quads over one bitmap into a single draw', () => {
     r.render([img(0), img(20), img(40)]);
     expect(draws()).toEqual([18]);
-    expect(drawPrograms()).toEqual([r._batchFill().handle]);
+    expect(drawPrograms()).toEqual([glProgramHandle(r._batchFill())]);
   });
 
   it('merges across bitmaps, each quad naming its own texture slot', () => {
@@ -132,12 +150,12 @@ describe('renderer — consecutive image batching', () => {
   it('binds the white texel at slot 0 and each bitmap above it', () => {
     const other = bitmap();
     r.render([img(0), { ...img(20), image: other }]);
-    const units = recorder.calls
-      .filter((c) => c.name === 'activeTexture')
-      .map((c) => (c.args[0] as number) - recorder.gl.TEXTURE0);
-    // Unit 0 for white, then one per bitmap, then back to 0 for whoever draws
-    // next — a bind left on a high unit is one the next program never samples.
-    expect(units).toEqual([0, 1, 2, 0]);
+    const [units] = unitsAtDraws();
+    // Unit 0 for white, then one per bitmap, and nothing on the rest: a slot
+    // no vertex names holds no texture an earlier flush bound.
+    expect(units[0]).toBeTruthy();
+    expect(units.slice(1, 3)).toEqual([handleOf(atlas), handleOf(other)]);
+    expect(units.slice(3)).toEqual(new Array(BATCH_TEXTURE_SLOTS - 3).fill(null));
   });
 
   it('keeps eight bitmaps in one run, which seven slots could not', () => {
@@ -197,10 +215,11 @@ describe('renderer — consecutive image batching', () => {
 
     it('binds the atlas at its slot, with the bitmaps below it', () => {
       r.render([linear(0), img(20)]);
-      const units = recorder.calls
-        .filter((c) => c.name === 'activeTexture')
-        .map((c) => (c.args[0] as number) - recorder.gl.TEXTURE0);
-      expect(units).toEqual([0, 1, RAMP_SLOT, 0]);
+      const [units] = unitsAtDraws();
+      const ramp = (r._gradRamps().atlas() as unknown as { handle: unknown }).handle;
+      expect(units[1]).toBe(handleOf(atlas));
+      expect(units[RAMP_SLOT]).toBe(ramp);
+      expect(units.slice(2, RAMP_SLOT)).toEqual(new Array(RAMP_SLOT - 2).fill(null));
       const v = quadUploads()[0];
       const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT] % BATCH_TEXTURE_SLOTS;
       expect([slot(0), slot(4)]).toEqual([RAMP_SLOT, 1]);
@@ -286,7 +305,7 @@ describe('renderer — consecutive image batching', () => {
     // Replayed: the clipped quad's draw must fall while STENCIL_TEST is on.
     // Keyed on the program, not the index count — rasterizing the clip path
     // into the stencil is itself a six-index draw.
-    const batchProg = r._batchFill().handle;
+    const batchProg = glProgramHandle(r._batchFill());
     let stencil = false;
     let prog: unknown = null;
     const stencilAtDraw: boolean[] = [];
@@ -339,7 +358,7 @@ describe('renderer — consecutive image batching', () => {
     it('draws the whole run in one call', () => {
       r.render([sprites(packed(500))]);
       expect(draws()).toEqual([3000]);
-      expect(drawPrograms()).toEqual([r._batchFill().handle]);
+      expect(drawPrograms()).toEqual([glProgramHandle(r._batchFill())]);
     });
 
     it('normalizes the source rect by the bitmap dimensions', () => {

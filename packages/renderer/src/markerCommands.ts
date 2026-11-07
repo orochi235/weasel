@@ -9,7 +9,7 @@
 
 import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
-import { markerHeads, type MarkerHead, type MarkerPaint } from '@weasel-js/stroke';
+import { markerHeads, type MarkerEntry, type MarkerHead, type MarkerPaint } from '@weasel-js/stroke';
 import type { PathDrawCommand } from './DrawCommand';
 import { commandPaint } from './patterns/commandPaint';
 
@@ -48,6 +48,44 @@ export function headCommands(heads: readonly MarkerHead[], stroke: CommandStroke
     });
   }
   return out;
+}
+
+/** One draw of a head's unplaced shape: its fill, its outline, or both where
+ *  they paint in the same frame. */
+export interface ShapeDraw {
+  readonly cmd: PathDrawCommand;
+  /** Painted in the line's frame, as a `'line'` paint is, rather than the head's own. */
+  readonly inLineFrame: boolean;
+}
+
+/**
+ * `shape`, a head at its anchor before placement, as the draws its fill and
+ * outline make in `stroke`'s paint; empty where both resolve to no paint. A
+ * `'line'` paint is the line's and is measured in the line's frame; a head's
+ * own paint is resolved against `shape`'s box and moves with the head. The
+ * outline is a width in the head's units, which a placement out of a screen
+ * space maps onto the screen with the head.
+ */
+export function shapeDraws(entry: MarkerEntry, shape: PolygonPath, size: number, stroke: CommandStroke): ShapeDraw[] {
+  const fillLine = (entry.fill ?? 'line') === 'line';
+  const fill = resolvePaint(entry.fill, stroke, 'line', shape);
+  const ring = entry.outline || undefined;
+  const outlineLine = (ring?.paint ?? 'line') === 'line';
+  const outline = ring ? resolvePaint(ring.paint, stroke, 'line', shape) : undefined;
+  const stroked = outline && ring
+    ? { paint: outline, width: ring.width * size, cap: 'round' as const, join: 'round' as const }
+    : undefined;
+  if (fill && stroked && fillLine !== outlineLine) {
+    return [
+      { cmd: { kind: 'path', path: shape, fill: { paint: fill } }, inLineFrame: fillLine },
+      { cmd: { kind: 'path', path: shape, stroke: stroked }, inLineFrame: outlineLine },
+    ];
+  }
+  if (!fill && !stroked) return [];
+  return [{
+    cmd: { kind: 'path', path: shape, ...(fill ? { fill: { paint: fill } } : {}), ...(stroked ? { stroke: stroked } : {}) },
+    inLineFrame: fill ? fillLine : outlineLine,
+  }];
 }
 
 /** Every marker command for `path` under `stroke`; see `markerHeads`. */

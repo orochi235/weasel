@@ -16,6 +16,7 @@ import { requiresContent, selectedContent } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { icon } from '../../../icons.gen';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /**
  * Creates a structural `GroupNode` and reparents the current selection
@@ -33,7 +34,7 @@ export const groupAction: Action & { requires: string[] } = {
   label: 'Group',
   icon: icon('group'),
   group: 'structure',
-  defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true } }, opts: { id: 'group.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'group.key' } }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
   invoker: {
@@ -133,7 +134,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   label: 'Ungroup',
   icon: icon('ungroup'),
   group: 'structure',
-  defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true } }, opts: { id: 'ungroup.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'ungroup.key' } }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection'],
   invoker: {

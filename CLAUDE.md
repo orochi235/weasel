@@ -254,7 +254,10 @@ afresh, and on 2026-10-20, with only teitou free, it took 11.4 min and 132 core-
 unsharded run took 4.5 and 35. A run starts the `browser` project beside the rest whenever the node's idle
 cores, less 3 kept for it, leave jsdom at least 4 workers (`scripts/vitest-overlap.mjs` prints its
 reading); that saved 16–23% on 10-, 14- and 18-core nodes on 2026-10-21. The reserve came from
-`scripts/bench-overlap-reserve.mjs`, whose runs are in `scripts/bench-overlap-reserve.runs.jsonl`.
+`scripts/bench-overlap-reserve.mjs`, whose runs are in `scripts/bench-overlap-reserve.runs.jsonl`. On
+10 cores or more each of the browser project's tabs gets a Chromium of its own, 12 beside the rest
+and 18 alone (`scripts/lib/browser-shape.mjs`, 2026-11-07): 18 beside the rest took CPU from the jsdom
+projects, which finish last, and slowed the suite.
 
 **Nothing outside the batch's runs gates a merge (2026-11-03).** A compatibility check (another Node
 version, another platform) runs on GitHub CI if it runs at all, never on the fleet and never before

@@ -5,10 +5,10 @@
  * back from the scene and handed to the same layout `buildBody` used.
  */
 import {
-  layoutBody, measureBody, rowHeights, sizeToBody, stackRows, type BodySpec, type MeasureRowText, type Row, type RowBox, type RowTextStyle,
+  headerOf, layoutBody, measureBody, rowHeights, sizeToBody, stackRows, type BodySpec, type MeasureRowText, type Row, type RowBox, type RowTextStyle,
 } from './body';
 import type { Bounds } from './outline';
-import type { BodyDivider, BodyLayout, DiagramNode } from './types';
+import type { BodyDivider, BodyLayout, DiagramNode, HeaderBand } from './types';
 
 /** The `body` record a body built from `spec` carries, or `undefined` for one that cannot be laid
  *  out again from its text: one with a `ports` or `slot` row, or with port labels drawn outside it. */
@@ -36,7 +36,7 @@ function recordedRows(trait: DiagramNode): Row[] | null {
   if (layout?.heights === undefined) return null;
   const dividers = new Map((layout.dividers ?? []).map((d) => [d.index, d]));
   return layout.heights.map((height, i): Row => {
-    if (i === 0 && trait.header !== undefined) return { kind: 'header', text: '' };
+    if (i === 0 && trait.header !== undefined) return { kind: 'header', text: '', ...(trait.header.aside ? { aside: '' } : {}) };
     const d = dividers.get(i);
     return d === undefined ? { kind: 'slot', height } : dividerRow(d);
   });
@@ -49,12 +49,12 @@ export function recordedLayout(trait: DiagramNode, box: Bounds): RowBox[] | null
   const rows = recordedRows(trait);
   if (layout === undefined || rows === null || trait.outline === undefined) return null;
   const spec = { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign };
-  return stackRows(spec, box, layout.heights!);
+  return stackRows(spec, box, layout.heights!, trait.header);
 }
 
 type Box = { x: number; y: number; width: number; height: number };
 type TextData = {
-  text?: unknown; bodyRow?: unknown;
+  text?: unknown; bodyRow?: unknown; bodyAside?: unknown;
   style?: { fontSize?: number; fontFamily?: string; fontWeight?: number; fontStyle?: string; letterSpacing?: number };
 };
 
@@ -76,6 +76,9 @@ const rowStyle = (s: TextData['style']): RowTextStyle => ({
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
+const sameBand = (a: HeaderBand | undefined, b: HeaderBand): boolean =>
+  a !== undefined && a.height === b.height && a.text.y === b.text.y && a.text.height === b.text.height && a.aside?.width === b.aside?.width;
+
 /**
  * Lays each body among `ids` out again from its text rows as they are now:
  * the body grows to what its rows need, never shrinks, and its rows are
@@ -90,35 +93,50 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
     if (node === undefined || trait?.body === undefined || trait.outline === undefined) continue;
     const layout = trait.body;
     const rowNodes = new Map<number, string>();
+    let asideNode: string | undefined;
     for (const child of scene.childrenOf(id as never)) {
-      const index = (scene.get(child as never)?.data as TextData | undefined)?.bodyRow;
-      if (typeof index === 'number') rowNodes.set(index, child);
+      const data = scene.get(child as never)?.data as TextData | undefined;
+      if (data?.bodyAside === true) asideNode = child;
+      else if (typeof data?.bodyRow === 'number') rowNodes.set(data.bodyRow, child);
     }
+    const textOf = (child: string | undefined): string => {
+      const t = (scene.get(child as never)?.data as TextData | undefined)?.text;
+      return typeof t === 'string' ? t : '';
+    };
     const dividers = new Map((layout.dividers ?? []).map((d) => [d.index, d]));
     const rows: Row[] = Array.from({ length: layout.rows }, (_, i): Row => {
       const divider = dividers.get(i);
       if (divider !== undefined) return dividerRow(divider);
       const data = scene.get(rowNodes.get(i) as never)?.data as TextData | undefined;
-      const text = typeof data?.text === 'string' ? data.text : '';
-      return { kind: i === 0 && trait.header !== undefined ? 'header' : 'label', text, style: rowStyle(data?.style) };
+      const text = textOf(rowNodes.get(i));
+      const style = rowStyle(data?.style);
+      // The band records its text's line box, so the room left either side of it is the header's pad.
+      const band = i === 0 ? trait.header : undefined;
+      if (band === undefined) return { kind: 'label', text, style };
+      const aside = asideNode === undefined ? {} : { aside: textOf(asideNode) };
+      return { kind: 'header', text, style, pad: (band.height - band.text.height) / 2, ...aside };
     });
     const spec: BodySpec = { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign };
     const heights = rowHeights(spec, measure);
-    if (layout.heights === undefined || heights.some((h, i) => h !== layout.heights![i])) {
+    const band = headerOf(spec, measure);
+    const moved = band !== undefined && !sameBand(trait.header, band);
+    if (layout.heights === undefined || moved || heights.some((h, i) => h !== layout.heights![i])) {
       const data = node.data as { diagram: DiagramNode };
-      const header = trait.header === undefined ? {} : { header: { height: heights[0]! } };
-      scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights }, ...header } } } as never);
+      scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights }, ...(band ? { header: band } : {}) } } } as never);
     }
     const pose = node.pose as Box;
     const grown = sizeToBody(pose, measureBody(spec, measure));
     if (grown !== pose) scene.setPose(id as never, grown as never);
     // Rows are stored in the body's own frame.
-    for (const box of layoutBody(spec, { x: 0, y: 0, width: grown.width, height: grown.height }, measure)) {
-      const child = rowNodes.get(box.index);
+    const place = (child: string | undefined, box: Box): void => {
       const at = child === undefined ? undefined : scene.get(child as never)?.pose as Box | undefined;
-      if (at === undefined) continue;
+      if (at === undefined) return;
       const next = { ...at, x: box.x, y: box.y, width: box.width, height: box.height };
       if (!same(at, next)) scene.setPose(child as never, next as never);
+    };
+    for (const box of layoutBody(spec, { x: 0, y: 0, width: grown.width, height: grown.height }, measure)) {
+      place(rowNodes.get(box.index), box);
+      if (box.aside !== undefined) place(asideNode, box.aside);
     }
   }
 }

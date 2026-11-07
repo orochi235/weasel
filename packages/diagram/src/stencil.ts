@@ -6,11 +6,11 @@ import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, type Op, ty
 import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
-import { headerFillOf, rowTextColor } from './dataColors';
+import { asideFillOf, headerFillOf, rowTextColor } from './dataColors';
 import { DEFAULT_FONT } from './edgeLabel';
 import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './dataTypes';
 import { NODE_STROKE_WIDTH } from './dataTypes';
-import { rowTextStyle } from './rowStyle';
+import { asideFace, rowTextStyle } from './rowStyle';
 import type { IconRef } from '@weasel-js/icons';
 import type { Outline } from './outline';
 
@@ -103,6 +103,9 @@ export function stencilBuild<TLayer extends string>(
             ...(box.row.kind === 'field' ? { bodyField: box.row.label } : {}),
           }
         : null,
+      aside: (text, box) => ({
+        text, style: asideFace(rowTextStyle(box.row, opts.font ?? DEFAULT_FONT)), fill: asideFillOf(style), bodyRow: box.index, bodyAside: true,
+      }),
     },
   );
   // Built in one frame; each row is stored in the body's.

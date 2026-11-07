@@ -7,6 +7,7 @@ import type {
   PrefGroup,
   PrefGroupAs,
   PrefLeaf,
+  PrefNumberScale,
   PrefNumberUnit,
   PrefObject,
   PrefPair,
@@ -62,6 +63,8 @@ export interface Annotations {
   unit?: PrefNumberUnit;
   /** The values a number's slider catches on, in the stored unit. */
   stops?: readonly number[];
+  /** How a number's slider spaces values along its track. Only the track moves. */
+  scale?: PrefNumberScale;
   /** Which end of a number's slider gets a stop for infinity, one step beyond the range. */
   endless?: 'min' | 'max' | 'both';
   /** The word a number's infinity shows as — `'never'`. Default `∞`. */

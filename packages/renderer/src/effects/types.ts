@@ -1,5 +1,8 @@
-import { registerProgram, type ShaderProgramHandle, type ShaderUniform } from '../shaders/registerProgram';
+import {
+  registerProgram, type ProgramSource, type ShaderProgramHandle, type ShaderUniform,
+} from '../shaders/registerProgram';
 import { EFFECT_VERT_SRC } from './effectPrelude';
+import { assembleEffectWgsl } from '../gpu/webgpu/wgsl/effectPrelude';
 
 /**
  * One full-screen pass over what a group has already drawn. A group's effects
@@ -41,14 +44,28 @@ export function effectsReach(effects: readonly Effect[]): number {
   return total;
 }
 
+/** An effect's fragment shader, in GLSL, WGSL or both; the kit supplies each vertex stage. */
+export type EffectProgramSource =
+  | { glsl: string; wgsl?: string }
+  | { glsl?: string; wgsl: string };
+
 /**
  * Register a fragment shader as an effect. An effect registered through
  * `registerProgram` with the *custom-shader* vertex shader compiles, runs, and
  * samples its source upside down.
  *
- * The fragment shader reads `v_uv` and `u_source`, may declare `u_resolution` /
- * `u_texel`, and must write premultiplied alpha. See `effectPrelude.ts`.
+ * The GLSL fragment shader reads `v_uv` and `u_source`, may declare
+ * `u_resolution` / `u_texel`, and must write premultiplied alpha. See
+ * `effectPrelude.ts`. The WGSL one supplies `fn effect(in: EffectVaryings) -> vec4f`
+ * (`gpu/webgpu/wgsl/effectPrelude.ts`); each backend draws an effect from its
+ * own language alone.
  */
-export function registerEffect(id: string, frag: string): ShaderProgramHandle {
-  return registerProgram(id, EFFECT_VERT_SRC, frag);
+export function registerEffect(id: string, source: EffectProgramSource): ShaderProgramHandle {
+  if (source.glsl === undefined && source.wgsl === undefined) {
+    throw new Error(`weasel registerEffect: effect "${id}" has no source; pass \`glsl\`, \`wgsl\` or both.`);
+  }
+  return registerProgram(id, {
+    ...(source.glsl !== undefined && { glsl: { vert: EFFECT_VERT_SRC, frag: source.glsl } }),
+    ...(source.wgsl !== undefined && { wgsl: { frag: assembleEffectWgsl(source.wgsl) } }),
+  } as ProgramSource);
 }

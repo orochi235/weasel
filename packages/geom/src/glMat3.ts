@@ -126,7 +126,9 @@ function meanScaleOf(m: GlMat3): number {
 function minScaleOf(m: GlMat3): number {
   const sum = m[0] * m[0] + m[1] * m[1] + m[3] * m[3] + m[4] * m[4];
   const det = m[0] * m[4] - m[1] * m[3];
-  return Math.sqrt(Math.max(0, (sum - Math.sqrt(Math.max(0, sum * sum - 4 * det * det))) / 2));
+  // The larger value has no cancellation; the smaller is the determinant over it.
+  const max = Math.sqrt((sum + Math.sqrt(Math.max(0, sum * sum - 4 * det * det))) / 2);
+  return max > 0 ? Math.abs(det) / max : 0;
 }
 
 /** The renderer's 3x3 matrix operations, as one namespace. These work on the

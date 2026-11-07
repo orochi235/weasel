@@ -4,6 +4,7 @@ import { enumerateSelections, isByAxis, selectionKey, type AxisDefs, type Select
 import { TOKEN_MANIFEST, type TokenManifestEntry } from '../generated/manifest.ts';
 import { resolveTheme, themeAxes, themeChain } from '../resolveTheme.ts';
 import type { Theme } from '../theme.ts';
+import { tokenGroupOf } from '../tokenGroup.ts';
 
 const PREFIX = '--wzl-';
 
@@ -27,7 +28,13 @@ export interface TokenTable {
 
 const MANIFEST = new Map<string, TokenManifestEntry>(TOKEN_MANIFEST.map((entry) => [entry.name.slice(PREFIX.length), entry]));
 
-const groupOf = (name: string): string => (name.includes('-') ? name.slice(0, name.indexOf('-')) : name);
+type DeclaredToken = { type?: string; description?: string; scope?: readonly string[] } | undefined;
+
+/** Every definition a `{ by, … }` value holds, in record order. */
+function branchesOf(varying: unknown): DeclaredToken[] {
+  if (!isByAxis(varying)) return [varying as DeclaredToken];
+  return Object.entries(varying).flatMap(([key, member]) => (key === 'by' ? [] : branchesOf(member)));
+}
 
 /** The type and description each token was first declared with, root theme first, and every axis any of its
  *  definitions asks its pref be scoped by. A pin's type is `unknown`. */
@@ -35,15 +42,14 @@ function declared(theme: Theme): Map<string, { type: string | undefined; descrip
   const out = new Map<string, { type: string | undefined; description: string; scope: readonly string[] }>();
   for (const link of themeChain(theme)) {
     for (const [name, varying] of Object.entries(link.tokens)) {
-      let raw: unknown = varying;
-      while (isByAxis(raw)) raw = Object.entries(raw).find(([key]) => key !== 'by')?.[1];
-      const token = raw as { type?: string; description?: string; scope?: readonly string[] } | undefined;
-      const had = out.get(name);
-      out.set(name, {
-        type: had?.type ?? (token?.type !== 'unknown' ? token?.type : undefined),
-        description: had?.description || token?.description || '',
-        scope: [...new Set([...(had?.scope ?? []), ...(token?.scope ?? [])])],
-      });
+      for (const token of branchesOf(varying)) {
+        const had = out.get(name);
+        out.set(name, {
+          type: had?.type ?? (token?.type !== 'unknown' ? token?.type : undefined),
+          description: had?.description || token?.description || '',
+          scope: [...new Set([...(had?.scope ?? []), ...(token?.scope ?? [])])],
+        });
+      }
     }
   }
   return out;
@@ -75,7 +81,7 @@ export function tokenTable(theme: Theme): TokenTable {
     rows.push({
       name,
       type: said?.type ?? listed?.type ?? 'string',
-      group: listed?.group ?? groupOf(name),
+      group: listed?.group ?? tokenGroupOf(name),
       description: said?.description || listed?.description || '',
       css,
       ...(said?.scope.length ? { scope: said.scope } : {}),

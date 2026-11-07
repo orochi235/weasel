@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { PathBuilder, viewToMat3, type PolygonPath } from '@weasel-js/geom';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
-import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { stencilledEvenOdd } from '@weasel-js/renderer/testing/stencilledEvenOdd';
 
 const WORLD_X = 262_144;
 const ZOOM = 64;

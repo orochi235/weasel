@@ -1,7 +1,7 @@
 import { easeOut, resolveEasing } from '@weasel-js/geom';
 import { stateOf } from '../target';
 import type { AnimationHandle, TargetTweenOptions } from '../types';
-import type { AnimationContext, AnimationSeed } from './context';
+import { commitOrLeave, type AnimationContext, type AnimationSeed } from './context';
 import { axesFor, bump, bumpOn, comeOut, commitOffset, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
 
 /** A tween on a target: its destination is committed as it starts, and its voice is what is
@@ -19,6 +19,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   } as AnimationSeed;
   // Ahead of reading the committed value: an interrupted animation commits where it stopped.
   if (o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
+  s.handoff?.release();
   const committed = ax.to(s.get());
   const base = takeUp(s);
   const from = o.from === undefined ? ax.from(base) : o.from;
@@ -29,7 +30,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const ms = Math.max(o.ms, 1);
 
   ctx.targets.attach(s as never);
-  s.set(o.to);
+  commitOrLeave(ctx, s as never, o.to);
   const atEnd = ctx.atEnd();
   ctx.seedClock();
   const offsetAt = (u: number): number[] => minus(ax.to(path!(easing(u))), to);

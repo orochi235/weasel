@@ -65,6 +65,7 @@ export interface MenuNumberEntry {
   label: string;
   icon?: unknown;
   disabled?: boolean;
+  /** Letter that highlights this row from the keyboard, compared ignoring case. */
   access?: string;
   /** What it held when the menu opened. `undefined` for none. */
   value: number | undefined;
@@ -93,6 +94,7 @@ export interface MenuColorEntry {
   key: string;
   label: string;
   disabled?: boolean;
+  /** Letter that highlights this row from the keyboard, compared ignoring case. */
   access?: string;
   /** What it held when the menu opened, a CSS color: `#rrggbb` or `#rrggbbaa`. `undefined` for none. */
   value: string | undefined;
@@ -110,6 +112,7 @@ export interface MenuTextEntry {
   label: string;
   icon?: unknown;
   disabled?: boolean;
+  /** Letter that highlights this row from the keyboard, compared ignoring case. */
   access?: string;
   /** What it held when the menu opened. `undefined` for none. */
   value: string | undefined;

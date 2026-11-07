@@ -36,45 +36,6 @@ When work merges, retire its entry here in the same change.
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
   Closes when the consumer reports that run, or on 2026-12-01 with none, delete it.
 
-- **(P3) [agent] A pan margin the retain budget refuses goes unevicted.** An unchanged layer of 250 commands or
-  more (10 when it runs effects passes) is drawn once into its own texture and composited
-  (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the policy is
-  `packages/core/src/core/layers/retain.ts`), and a world layer follows a pan by compositing its surface moved,
-  drawn again with a margin of an eighth of the buffer each side (`PAN_MARGIN`). The default budget is 384 MiB
-  (2026-10-27); above about 15 canvas-sized layers with margins at 2560x1600 it fills, and a margin goes to
-  whichever layer asks first rather than evicting a surface that cannot follow the pan, so the layers past it
-  are drawn straight through for the rest of the pan. Closes when `RetainedSurfaces.reserve` frees a surface
-  that cannot follow a pan before it refuses a margin to one that can.
-
----
-
-## Animation
-
-- **(P3) [agent] An animating stroke trim still rebuilds every stroke but an opaque solid one too large to batch,
-  and every head.** That one is built once with an arc length per vertex and clipped in the shader (stroke's
-  `clipRibbon`, renderer `draw/clippedTrim.ts`, 2026-11-03). Still keyed on the trim, so missing the mesh cache each
-  tween step: a translucent stroke (the clipped ribbon keeps whole quads at turns, so it would blend twice there), a
-  stroke the batch takes, one built in a stretched view's metric (which also insets its untrimmed copy a second time
-  each rebuild, to measure the dash decision's length), a vertex-colored one, and any paint but a solid; and the
-  marker cache, so heads rebuild every frame.
-  Closes when a trim tween on a 1,000-anchor translucent, gradient-painted, arrowheaded stroke makes no stroke-mesh
-  or marker cache miss after its first frame.
-- **(P3) [agent] GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts. Deferred from
-  `docs/specs/2026-05-04-animation-primitive-design.md`.
-  Closes when a running animation can be handed to `Element.animate` and a spec shows that path holding
-  60 fps at a concurrent count where the main-thread path drops frames.
-
----
-
-## Backends
-
-- **(P3) [agent] Worker-thread render offload.** Rendering the GL pipeline in a worker — major perf win,
-  significant API complexity. Defer until measured pain on the single-thread pipeline. The
-  main-thread `OffscreenCanvas` that rasterizes pattern tiles in
-  `packages/renderer/src/patterns/` is not worker offload.
-  Closes when a scene draws into a canvas handed to a worker with `transferControlToOffscreen`, the main
-  thread sending only scene changes, pinned by a browser test.
-
 ---
 
 ## Benchmarks in CI
@@ -93,48 +54,7 @@ When work merges, retire its entry here in the same change.
 
 ---
 
-## Test suite speed
-
-- **(P3) [agent] The browser project's slices finish up to 45% apart.** `scripts/vitest-overlap.mjs`
-  runs the project as three processes on nodes of 10 cores or more (`scripts/lib/browser-shards.mjs`),
-  each its own Chromium and a `--shard` slice of the files, which ran it 40–45% faster than one process
-  (2026-11-03, `scripts/bench-browser-project.mjs --processes`, rows in
-  `scripts/bench-browser-project.runs.jsonl`). vitest slices by file, not by time, so the slowest slice
-  sets the wall time: at three processes they finished at 59.7, 74.0 and 86.7 s on teitou, and 106.1,
-  128.8 and 151.8 s on studio. Splitting the files by their measured durations
-  (`scripts/test-costs-reporter.mjs` records each file's) would bring every slice near the mean.
-  Closes when the browser project alone at three processes is 10% faster than 86.7 s on teitou, or a
-  duration split measures no better than vitest's.
-
-- **(P3) [agent] The `browser` project still spends 0.6 s per file outside its tests.** The packages are
-  served pre-bundled under `vitest run` (`scripts/vitest-browser-prebundle.ts`), all but the modules some
-  browser test reaches by relative path, which every bundle then imports from source. Moving the tests and
-  their test-only helpers onto package specifiers (2026-11-03) took that set from 2,716 modules to 1,452,
-  and, alone on teitou with 351 files and run alternately, the project from 188.8, 191.8 and 188.3 s to
-  162.1, 160.4 and 159.5 s; the part of the six tabs' worker-seconds outside the tests fell from 1.04–1.09 s
-  a file to 0.61–0.62 (`scripts/bench-browser-project-ab.sh`, records in
-  `scripts/bench-browser-project.runs.jsonl`). What is left is what a test can only reach by path, since
-  no package exports it: `PreviewPane` (387 modules behind it), `EffectEditor` and `DiagramView`, which two
-  tests `vi.mock` by path (207 and 166), diagram's `fitDiagram`, `attrRenderers`, `Prefs/frames` and core's
-  `BareCanvas` (about 100 each). Serving those from the bundles too, under an alias only the optimizer
-  sees, is the next step (inferred, not tried). `--no-isolate`, which would reuse one page, failed every
-  file at about 5 s with its tests skipped (2026-10-20).
-  Closes when the project alone on teitou spends under 0.5 s a file outside its tests (three alternating
-  runs of `bench-browser-project-ab.sh`).
-
----
-
 ## forge and dev servers
-
-- **(P3) [agent] A forge dev server keeps every restarted server's resolver plugins, and grows about 7 MB a restart.**
-  A saved package file restarts the server (`scripts/vite-prebundle.ts`), and the outgoing server's id-resolver
-  plugin containers outlive it, held from a global handle on the `onWarn` callback rolldown's `viteResolvePlugin`
-  keeps (heap snapshot retainer paths, 2026-10-29). Emptying the outgoing config left 24 native plugin wrappers
-  after 6 restarts, against 44 after 4, and RSS where it was. Measured on teitou (2026-11-03,
-  `scripts/probe-dev-restarts.ts`, re-bundle in a child process), from restart 1 to 30: RSS 1,374 → 1,572 MB,
-  JS heap 99.8 → 124.4 MB, `external` 23.9 → 54.6 MB, each climbing steadily. Records:
-  `scripts/probe-dev-restarts.runs.jsonl`.
-  Closes when `probe-dev-restarts.ts` grows RSS under 1 MB a restart from restart 1 to 30 on teitou.
 
 - **(P3) [maintainer] forge serves ui and labkit file by file unless `WEASEL_DEV_BUNDLE_STORIES=1`.** Their
   stories import through package specifiers, so the flag bundles both (`scripts/vite-prebundle.ts`).

@@ -55,6 +55,8 @@ const EMPTY: IdBuffer = { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array
 function harness(opts: {
   paint?: [string, Rect][];
   noFrame?: boolean;
+  /** The canvas reads ids only asynchronously (WebGPU). */
+  asyncOnly?: boolean;
   view?: { x: number; y: number; scale: { x: number; y: number } };
   tolerance?: number;
   interactive?: (id: string) => boolean;
@@ -64,7 +66,7 @@ function harness(opts: {
   const { result } = renderHook(() => {
     const scene = useScene<object, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial: NODES });
     const adapter = useSceneAdapter(scene);
-    const read = opts.noFrame ? () => EMPTY : fakeFrame(scene, opts.paint ?? [], opts.log);
+    const read = opts.asyncOnly ? () => null : opts.noFrame ? () => EMPTY : fakeFrame(scene, opts.paint ?? [], opts.log);
     return useSceneSelectTool({
       scene, adapter,
       geometry: { picking: 'pixels', pickTolerancePx: opts.tolerance ?? 0 },
@@ -113,6 +115,11 @@ describe("useSceneSelectTool, geometry.picking: 'pixels'", () => {
 
   it('falls back to the shape walk with no painted frame', () => {
     const pick = harness({ noFrame: true });
+    expect(pick(50, 50)).toEqual(['back', 'front']);
+  });
+
+  it('falls back to the shape walk where ids cannot be read at once', () => {
+    const pick = harness({ asyncOnly: true });
     expect(pick(50, 50)).toEqual(['back', 'front']);
   });
 

@@ -7,6 +7,7 @@ import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import { type LiveControl, type ParamsSurface, withCommitPolicy } from './commitPolicy';
 import type { PrefFieldChoice } from './schema';
+import { prefNumberScale } from './prefNumberScale';
 import { withSurfaceControl } from './surfaceControls';
 
 /** What {@link prefFieldProps} is told about one leaf's value. */
@@ -85,7 +86,7 @@ function fieldRefProps(leaf: PrefField, state: PrefFieldState): PropertyControlP
 }
 
 /** A number leaf as its field, in the unit it shows: the value, its bounds, step and stops convert from the
- *  stored unit, and what is set converts back. */
+ *  stored unit, and what is set converts back. A `scale` spaces the shown values. */
 function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyControlProps {
   const { value, mixed = false, unset = false, setValue } = state;
   const unit = leaf.unit && resolvePrefUnit(leaf.unit);
@@ -110,6 +111,7 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
     display: leaf.infinity === undefined ? shown : withInfinity(shown ?? stepDisplay(bounds.step), leaf.infinity),
     endless: bounds.endless,
     stops: bounds.stops,
+    scale: prefNumberScale(leaf.scale),
     onChange: store,
   };
 }
