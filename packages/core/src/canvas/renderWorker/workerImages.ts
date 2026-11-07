@@ -59,7 +59,9 @@ export function answerImage(
       );
       return true;
     }
-    if (imageStatus(src) === 'error') {
+    // A name the page minted and has let go of never loads again.
+    const status = imageStatus(src);
+    if (status === 'error' || (!bitmap && isBitmapSrc(src) && status === 'idle')) {
       reply({ type: 'image', src, error: `weasel: could not load ${src}` });
       return true;
     }
