@@ -1,7 +1,7 @@
 import { enumerateSelections, fullSelection, pickAll, type AxisDefs, type Selection } from '../../axes.ts';
 import { tokenAt } from '../../chainTokens.ts';
 import { mixAlpha } from '../../dtcg/color.ts';
-import { resolveTokens } from '../../dtcg/resolve.ts';
+import { refTarget, resolveTokens } from '../../dtcg/resolve.ts';
 import type { RawToken } from '../../dtcg/types.ts';
 import type { BakedTheme } from '../bake.ts';
 import type { AxisDependency } from '../deps.ts';
@@ -14,20 +14,9 @@ export interface EmitInput {
   readonly isDefault: boolean;
 }
 
-const REF = /^\{([^}]+)\}$/;
-
-/** `{gray-100}` → `gray-100`. A group prefix (`{color.gray-100}`) is dropped, as `resolveTokens` does. */
-function refTarget(token: RawToken): string | null {
-  const m = typeof token.value === 'string' ? REF.exec(token.value.trim()) : null;
-  if (!m) return null;
-  const path = m[1];
-  const dot = path.indexOf('.');
-  return dot === -1 ? path : path.slice(dot + 1);
-}
-
 /** A reference becomes `var()` (or `color-mix()` with an alpha); a literal is resolved. */
 export function cssValue(name: string, token: RawToken): string {
-  const target = refTarget(token);
+  const target = refTarget(token.value);
   if (target === null) return resolveTokens({ [name]: token })[name];
   if (token.alpha === undefined) return `var(--wzl-${target})`;
   return mixAlpha(`var(--wzl-${target})`, token.alpha);
