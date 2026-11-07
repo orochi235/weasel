@@ -10,10 +10,10 @@
  */
 
 import { pathFromD } from '@weasel-js/geom';
-import { tessellateStroke } from '@weasel-js/stroke';
+import { strokeToPath, tessellateStroke } from '@weasel-js/stroke';
 import { metricKey, type StrokeMetric } from '@weasel-js/stroke';
 import { strokeTrimKey, type Stroke } from '@weasel-js/paint';
-import type { Mesh } from '@weasel-js/geom/tessellate';
+import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
 import { OUTLINE_FLATTEN_TOLERANCE } from './outlineMeshCache';
 
 /** Cached ribbons before the cache is dropped wholesale. */
@@ -61,11 +61,16 @@ export function outlineStrokeMesh(
   if (cached !== undefined) return cached.indices.length === 0 ? null : cached;
   if (cache.size >= OUTLINE_STROKE_MESH_CACHE_LIMIT) cache = new Map();
 
-  const mesh = tessellateStroke(
-    pathFromD(d),
-    { ...stroke, width: emWidth },
-    { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE, metric },
-  );
+  const glyph = pathFromD(d);
+  const sized = { ...stroke, width: emWidth };
+  const align = stroke.align ?? 'center';
+  // The ribbon has no side of its own, so an aligned one is the stroke's outline, cut to it. A glyph draws no heads.
+  const mesh = align === 'center'
+    ? tessellateStroke(glyph, sized, { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE, metric })
+    : tessellate(
+      strokeToPath(glyph, { ...sized, markerStart: undefined, markerMid: undefined, markerEnd: undefined }, { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE }),
+      { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE },
+    );
   cache.set(key, mesh);
   return mesh.indices.length === 0 ? null : mesh;
 }
