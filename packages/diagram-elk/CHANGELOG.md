@@ -1,5 +1,35 @@
 # @weasel-js/diagram-elk
 
+## 1.17.2
+
+### Patch Changes
+
+- b402ae4: An ELK option passed in `layoutOptions` under its full `org.eclipse.elk.` id now replaces the one `rootOptions` derives under its `elk.` id. Both used to reach ELK side by side, so `org.eclipse.elk.direction: 'DOWN'` with `direction: 'right'` ran downward while a group's minimum width was still given for a rightward run, across the wrong axis. `rootOptions` now writes such ids under their `elk.` alias.
+- a796075: `elkPlan` lays out a group whose parents lead back to itself at the top level, with everything it holds. Such groups were never reached from ELK's root, so ELK rejected any edge to a node inside one ("Referenced shape does not exist").
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [e13e539]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/diagram@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

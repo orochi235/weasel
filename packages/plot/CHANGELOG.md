@@ -1,5 +1,53 @@
 # @weasel-js/plot
 
+## 1.17.2
+
+### Patch Changes
+
+- 86783f4: `bandScale(...).invert` on a zero-width range answers the first key, where every band sits. It used to answer `undefined`, which its docs promise only for an empty domain.
+- d2800fb: A `logScale` with a base other than 10 labels its powers below 1 with the digits they need. A base-2 scale's 0.125 and 0.25 used to read `0.1` and `0.3`.
+- 2c9b792: `logScale` throws on a `base` that is 1, not above zero, or not finite, as `powScale` throws on an exponent of zero. It used to build a scale that mapped every value to `NaN` and ticked none.
+- 90600b4: `formatNumber`, `formatTick` and every scale label built on them write a value of 1e21 or more in full digits, as they write a smaller one. Such values used to switch to `1e+21`, so a log axis from 1e20 to 1e22 read `100000000000000000000`, `1e+21`, `1e+22`.
+- 436c47d: `powScale` throws on a negative exponent over a domain that reaches zero, as `logScale` throws on a domain not above zero. It used to build a scale that mapped and inverted every value to `NaN`.
+- e0a37af: A `timeScale` whose domain reaches past the instants a `Date` can hold (about ±275,000 years from 1970) ticks only the part it can hold. Its `ticks()` used to loop forever.
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [c089c61]
+- Updated dependencies [cc591ff]
+- Updated dependencies [e6e7a72]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [fce3d09]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [d3654a1]
+- Updated dependencies [3c8c5af]
+- Updated dependencies [cd0738d]
+- Updated dependencies [8c4bf4d]
+- Updated dependencies [c7dae1d]
+- Updated dependencies [c2a7267]
+- Updated dependencies [26187c9]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/text@1.17.2
+  - @weasel-js/theme@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

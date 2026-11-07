@@ -1,5 +1,103 @@
 # @weasel-js/ui
 
+## 1.17.2
+
+### Patch Changes
+
+- ffa4118: An instrument can now say what an auto lever came to when only it can work the value out. `RenderContext.reportAuto(path, value)` hands the settings panel that value, and the auto row quotes it in its help tooltip through the leaf's own display and pins at it, as it does a resolver's value. A report outranks the path's `.auto(fn)` resolver. It is never stored: a report for a pinned path is ignored, pinning drops it, and `undefined` withdraws it. The instrument's own `config` still reads the path as auto. A standalone `<ControlPanel>` takes the same values through its new `reported` prop.
+  
+  A leaf that adds `.quote()` reads its known auto value in the row itself, `auto · 12`, rather than only in the tooltip; other auto rows still read the bare word. `@weasel-js/ui` exports the readout it draws, `PropertyAutoReadout`, and a slider row now keeps any replacement readout in the box its editable readout would occupy, not only a plain string.
+- 7d0c465: A `ControlMatrix` number cell shows its value the way the row's own field does: through the leaf's `display`, and with its `endless` word for infinity, where it used to print `Infinity` and ignore `.display(compact())`. `stepDisplay`, the display a number field falls back to from its `step`, is exported from `@weasel-js/ui/components/Properties`.
+- 1dda7c2: Menus follow a right-to-left layout. `keyStep`, `planKey` and a controller's `key` take an optional direction: under `'rtl'` Left opens a submenu and Right closes one, and an edge still reports forward as 1 and back as -1. `placeMenu`, `placeSubmenu` and `placeMenuUnder` take one too, and under `'rtl'` open to the left first (a menu under a button right-aligns to it). `ContextMenuHost`'s panels read the direction from their own computed `direction`, and `MenuBar` steps between titles by its bar's, so Left moves to the next title.
+- dab1602: `MenuBar` moves focus to its first and last title on Home and End, as every other roving row in the kit does. Its titles now step through `rovingTarget`, the same rule `useRovingTabIndex` follows.
+- c98432d: A Properties slider on a scaled track (`scale`) now steps on Left and Right by one step in value units, as it does on Up and Down, mirrored on a right-to-left track. It used to leave those keys to the native input, which runs along 0..1 there and moved by no value step at all. An unscaled track already behaved this way.
+- 4825659: A number field given no `display` shows as many decimal places as its `step` is written with. A step of 0.25 used to show one place, so 0.25 read `0.3`, and a step of 2.5 showed none, so 7.5 read `8`.
+- 132af78: Every press in `@weasel-js/ui` that turns into a drag past some travel now reads that travel from the `gestures.dragPx` kit setting, as the list, tree, bar and dock drags already did. `Select`'s opening click, a `Timeline` key drag, a `Slider` region drag, a `ToolPalette` carry and a curved run's drag-to-scroll each used the 4 px default and ignored the setting.
+- Updated dependencies [d15e917]
+- Updated dependencies [32e0dd5]
+- Updated dependencies [72b9bde]
+- Updated dependencies [86783f4]
+- Updated dependencies [3dfa153]
+- Updated dependencies [4eaadcc]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [5cb2995]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [c08dc7d]
+- Updated dependencies [cda0a20]
+- Updated dependencies [963e595]
+- Updated dependencies [c089c61]
+- Updated dependencies [d2800fb]
+- Updated dependencies [2c9b792]
+- Updated dependencies [cc591ff]
+- Updated dependencies [e6e7a72]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [1dda7c2]
+- Updated dependencies [4c781a6]
+- Updated dependencies [8eed13c]
+- Updated dependencies [d08837f]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [90600b4]
+- Updated dependencies [436c47d]
+- Updated dependencies [fce3d09]
+- Updated dependencies [9298f90]
+- Updated dependencies [a08b740]
+- Updated dependencies [5f8b357]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [29f15a5]
+- Updated dependencies [060b0ee]
+- Updated dependencies [05acca8]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [c5325ff]
+- Updated dependencies [08a964d]
+- Updated dependencies [fb36b4f]
+- Updated dependencies [cb57c41]
+- Updated dependencies [2e36630]
+- Updated dependencies [10f448b]
+- Updated dependencies [d3654a1]
+- Updated dependencies [3c8c5af]
+- Updated dependencies [cd0738d]
+- Updated dependencies [8c4bf4d]
+- Updated dependencies [c7dae1d]
+- Updated dependencies [c2a7267]
+- Updated dependencies [26187c9]
+- Updated dependencies [e0a37af]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/guides@1.17.2
+  - @weasel-js/plot@1.17.2
+  - @weasel-js/animator@1.17.2
+  - @weasel-js/clock@1.17.2
+  - @weasel-js/quantity@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/history@1.17.2
+  - @weasel-js/text@1.17.2
+  - @weasel-js/menu@1.17.2
+  - @weasel-js/modes@1.17.2
+  - @weasel-js/ui-logic@1.17.2
+  - @weasel-js/svg@1.17.2
+  - @weasel-js/theme@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/gestures@1.17.2
+  - @weasel-js/font@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+  - @weasel-js/select@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

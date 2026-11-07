@@ -1,5 +1,46 @@
 # @weasel-js/p-touch
 
+## 1.17.2
+
+### Patch Changes
+
+- Updated dependencies [d15e917]
+- Updated dependencies [32e0dd5]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [561322a]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [c089c61]
+- Updated dependencies [cc591ff]
+- Updated dependencies [e6e7a72]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [fce3d09]
+- Updated dependencies [d12d868]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [d3654a1]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/dither@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/text@1.17.2
+  - @weasel-js/renderer@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

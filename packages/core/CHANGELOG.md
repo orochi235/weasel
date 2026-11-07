@@ -1,5 +1,104 @@
 # Changelog
 
+## 1.17.2
+
+### Patch Changes
+
+- d15e917: Align and distribute move their members the way a move does. A node whose pose derives from others now moves through what it derives from, where before its own pose was written and then overwritten on the next read, so it stayed put. Data-held geometry (the `geometryProjection` dep) now moves with the pose, where before only the pose moved. Both commit through the `applyOps` dep when one is wired, as flip and nudge do, rather than straight to the scene.
+- 3dfa153: Pin `@msb235/blits` at exactly `1.1.0` again, in place of 1.17.1's `^1.0.0`. An app taking blits as a `^1` range still shares this one copy with weasel.
+- 36a16c0: Copy, paste, duplicate and an Alt-drag clone keep the stacking of what they copied. They used to insert the copies in the order the selection was made, so selecting the front node first and duplicating put its copy behind the other's.
+- 2e4ad49: Devtools serialization no longer writes a value it cannot send as JSON as a string that could be mistaken for one of the app's own. NaN and ±Infinity, a bigint, a symbol, a function, a cycle, a getter that threw, a cut past the depth limit and a cut past the item limit each arrive as an object tagged with what it was (`{ $type: 'number', value: 'NaN' }`, `{ $type: 'cycle' }`, …). A plain object's own keys that start with `$` arrive with one more `$` in front, so an app's own `$type` stays data, and the count of keys cut from an object arrives as `$more`. The panel reads the tags, so a node whose data holds the string `'[cycle]'` or a `$type` field shows them as they are.
+  
+  This changes the shape `serialize` returns, so anything reading `SerializedValue` beside the panel has to read the tags. `@weasel-js/core/devtools-protocol` exports `SerializedTag`, `unescapeKey` and `serializedNumber` for it.
+- 883dfcd: The devtools hook writes a getter that throws, on a node's `data` or anything else it serializes, as `[threw: <error>]` and serializes the rest of the object. One such getter used to make the whole request fail, so the panel showed nothing for that node.
+- 54dc458: Flip leaves pages and the page run out of a selection that names them, as align, distribute and group do. A page forced into the selection used to count toward the `'union'` pivot, so the content flipped about a box that included the paper.
+- cda0a20: Undoing an insert restores the selection from before it. The insert and place actions clear the selection at the press, and the pen and spiro tools select the path they finish or continue; each of those changes now commits in the same undo entry as the node, so under an `applyOps` history that knows nothing about the selection, undo no longer leaves it empty or still on the node it removed. A pen join commits its selection the same way.
+  
+  This changes two dep contracts, which breaks a consumer's own `insert` or `editAnchors` dep. Both take a `CommitSelection` (`from`, the selection before the change, and `selectNode`): `InsertDep.commit` as a fourth argument and `EditAnchorsDep.applyEdit` as a fifth, both named `select`. A dep that applies ops appends `commitSelectionOps(select, id, label)` to its batch. An insert that applies none must set the selection itself, to the new node with `selectNode` and to nothing otherwise; an edit that commits nothing changes no selection. A dep that ignores `select` leaves the selection empty after an insert, and the pen and spiro tools no longer select what they draw or continue through it. These batches now carry a `setSelection` op, so a consumer history's adapter needs `setSelection`. kernel3d's `createInsert` passes `select` to `mint` as a third argument.
+- d162fbb: `layoutMarkdown` and `createMarkdownRenderer` set each run in its own `fontFamily`, `fontWeight` and italic, falling back to the node's the way `resolveRuns` does on the GL tier, and track it by its `letterSpacing` after every grapheme cluster, the last included. Before, every run was measured and painted untracked in the node's family and weight. The renderer paints tracking through the context's `letterSpacing` where it has one, and a cluster at a time where it does not. `MarkdownFontOptions` gains a node-level `letterSpacing`.
+  
+  Breaking for a caller of `layoutMarkdown` or a writer of its callbacks:
+  
+  - `MeasureFn` is now `(text, font: MarkdownFont) => number`, where `MarkdownFont` is `{ fontFamily, fontWeight, fontStyle, fontSize }`. It measures glyphs only, and the layout adds tracking itself. It used to be `(text, fontSize, bold, italic)`.
+  - `FaceMetricsFn` takes the run's `{ fontFamily, fontWeight, fontStyle }` in place of `(bold, italic)`.
+  - `layoutMarkdown`'s last three positional arguments (`lineHeightFactor`, `faceOf`, `tabSize`) are replaced by one `LayoutMarkdownOptions` object: `{ lineHeight, faceOf, tabSize, family, weight, letterSpacing }`.
+  - `PositionedRun.size` is gone. Read `PositionedRun.font.fontSize` instead, and `PositionedRun.tracking` for the run's letter spacing in px. `width` now includes the tracking.
+  - The `font` the renderer sets is `fontString`'s form, with a numeric weight (`normal 700 13px sans-serif`, not `bold 13px sans-serif`).
+  - `createMarkdownRenderer` and `TextRenderer` live in `markdownRenderer.ts`. The package's exports are unchanged; only a deep import of `markdownText` moves.
+- f15f881: A click picks the measurement under it, and the measurements layer claims a press on one, in a view flipped on x. The hit radius used to be divided by the x scale alone, which came out negative there and matched nothing; it now goes through `pxReach` like every other screen-pixel reach.
+- 35c291a: SVG export and PDF read a stroke's `dash` through `dashPattern`, the rule the canvas uses, so the three draw the same thing:
+  
+  - `serializeSvg` strokes solid a dash too fine for its path's whole, untrimmed length, and an all-zero or negative one, where it used to write the `stroke-dasharray` as given. A leaf whose group's dash it would otherwise inherit states `stroke-dasharray="none"`.
+  - A dash with a non-finite entry draws no line in either writer, and its marker heads still draw. The PDF writer used to drop the whole path, its fill included, and report a skip. `serializeSvg` used to write NaN as `0`, a solid line. A text run's stroke with such a dash draws nothing.
+  
+  `dashPattern` is now exported from `@weasel-js/core` as well as `@weasel-js/paint`.
+- e13e539: A parallax plane under a flipped camera axis (a y-up view) stays flipped. `deriveParallaxView` used to interpolate a plane's scale from 1 toward the camera's signed scale, so with `zoom: 0` a y-up camera's planes drew y-down, and with `zoom: 0.5` a camera at scale -1 gave its planes a scale of 0. The plane now tracks the magnitude of the camera's zoom and keeps its sign, and a `zoom` above 1 on a zoomed-out camera floors at `ZOOM_FLOOR` rather than crossing zero.
+- 2121adb: Cut at Crossings, Join, Duplicate, Delete (and the delete half of Cut), Group and an Alt-drag clone put their selection change in their own undo entry, as the Boolean operations and Create Outlines do. Undo now restores the selection the action started from under a consumer's `applyOps` history too, where it used to leave the action's result selected, or nothing. `commitOps` takes `{ select }` for this; with it the batch ends in a `setSelection` op, so an `applyOps` adapter sees one more op than before. A selection op in a batch committed to the scene now lands on the `selection` dep through its `get` and `set`.
+- b81f560: The select tool now reads the selection's own keys. `SelectionApi` gains `intentOf(modifiers)`, which says whether a click would replace, toggle or range under the configured `mode`, `extend` and `range`. `select.pick` and `select.deep` ask it instead of assuming Shift extends. Under `useSelection({ mode: 'multi', extend: 'meta', range: 'shift' })`, a Cmd-press on a member of a multi-selection now toggles it on the press, and `extendClickLocked` now holds back the Cmd toggle and the Shift range rather than a Shift press that would only replace.
+  
+  Breaking for anything that implements `SelectionApi` itself: it must now provide `intentOf`. `intentOf` from `@weasel-js/select` answers it for any policy.
+- 060b0ee: `stableStringify` writes a bigint as `{"$type":"bigint","value":"10"}` and a reference to an object that contains it as `{"$type":"cycle"}`, the tags devtools serialization uses, instead of throwing. Forge compares story args with it, so a story whose args hold a cyclic object used to throw once its config came back through the frame's port; it now compares that config with its default as it should.
+- caf38d2: New `strokeAtScale(stroke, scale)` in stroke resolves every `{ px }` length of a stroke at a view scale the way the renderer does: the width, each marker size, and the dashes of a `{ px }` width. `strokeToPath` now reads a `{ px }` stroke's dashes at its `scale` option, where it used to take them as world units. A node's stroked bounds, measured at a view scale without a screen map, now size a `{ px }` marker head at that scale instead of at 1.
+- 33c0cbd: `Stroke.dashOffset` sets how far into `dash` each subpath starts, as SVG's `stroke-dashoffset` and Canvas2D's `lineDashOffset` do. A negative offset starts before the pattern's beginning, and a non-finite one reads as 0. The canvas, `writePdf` and `serializeSvg` all draw it. `parseSvg` reads `stroke-dashoffset`, which it used to drop with no warning, and `svgNodesToKitDrafts` and `svgStrokeFromKit` carry it. A `{ px }` stroke resolves the offset with its dash, `lerpStroke` interpolates it, and a stroke-mesh cache entry is keyed on it.
+  
+  New in `@weasel-js/paint`, and re-exported from `@weasel-js/core`: `dashPhase(pattern, phase)` wraps a phase into one cycle of a pattern, and `scaledDash(stroke, k)` scales a dash and its offset together. A trimmed stroke's PDF dash phase is now written wrapped into one cycle (`[4 2] 4 d` where it used to write `[4 2] 10 d`), which draws the same.
+- 03f87f4: Ungroup and Make Boolean Group build ops and commit through the `applyOps` dep, as Group does, instead of mutating the scene inside `scene.batch`. A consumer's own history used to miss them entirely, so a Cmd+G / Cmd+Shift+G pair split across two undo stacks. Each now lands as one entry that also restores the selection, and Offset Path's selection of its new paths joins its entry the same way. `booleanGroupOps(scene, ids, op)` returns the ops and the new group's id; `makeBooleanGroup` commits them straight to the scene, as before.
+- 2af51ff: `useDistribute` takes `scene` and `viewScale`, as `useAlign` does, and with them spaces a stroked node by the box it is drawn with. It used to space pose boxes only, so a hook-driven distribute and align disagreed on where a stroked node's edge was.
+- Updated dependencies [32e0dd5]
+- Updated dependencies [3dfa153]
+- Updated dependencies [5cb2995]
+- Updated dependencies [dd926dc]
+- Updated dependencies [c08dc7d]
+- Updated dependencies [963e595]
+- Updated dependencies [c089c61]
+- Updated dependencies [25bbbd5]
+- Updated dependencies [cc591ff]
+- Updated dependencies [e6e7a72]
+- Updated dependencies [d162fbb]
+- Updated dependencies [4c781a6]
+- Updated dependencies [8eed13c]
+- Updated dependencies [d08837f]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [fce3d09]
+- Updated dependencies [9298f90]
+- Updated dependencies [d12d868]
+- Updated dependencies [a08b740]
+- Updated dependencies [5f8b357]
+- Updated dependencies [b81f560]
+- Updated dependencies [62e6961]
+- Updated dependencies [466c30b]
+- Updated dependencies [29f15a5]
+- Updated dependencies [05acca8]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [f6e234a]
+- Updated dependencies [d3654a1]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/stroke@1.17.2
+  - @weasel-js/animator@1.17.2
+  - @weasel-js/quantity@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/history@1.17.2
+  - @weasel-js/text@1.17.2
+  - @weasel-js/routing@1.17.2
+  - @weasel-js/modes@1.17.2
+  - @weasel-js/ui-logic@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/renderer@1.17.2
+  - @weasel-js/simulation@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/text-dom@1.17.2
+  - @weasel-js/gestures@1.17.2
+  - @weasel-js/cursor@1.17.2
+  - @weasel-js/font@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+  - @weasel-js/select@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @weasel-js/geom
 
+## 1.17.2
+
+### Patch Changes
+
+- dd926dc: `@weasel-js/geom/booleans` exports `pathFaceArrangement(paths, { tolerance })`: the faces paths' outlines cut the plane into, each one connected region with its holes, naming the inputs that cover it, with curved edges kept as pieces of the input curves. It also lists which faces share edges and how long a stretch, with `-1` for the side no input covers. It cuts and traces the arrangement on a fine flattening, so curves that touch or run nearly along each other (glyph tops and bottoms tangent to one line, say) no longer drop it to polylines, and there is no segment ceiling: Inter's 94 printable ASCII glyphs overlaid in one cell give 41,517 curved faces in 0.77 s on an M5 Max.
+  
+  `pathFacePieces` is now `pathFaceArrangement`'s faces, and `pathDividePieces` groups those faces by cover. Both keep curves for any input rather than falling back to the flattened clipper, and a path whose own contours overlap is one face rather than several. Crossing points come from the flattening, within `tolerance` (by default a hundred-thousandth of the inputs' extent) of the exact crossing.
+  
+  Curve booleans now cut a cubic that crosses itself where it does, instead of handing the whole operation to the flattened clipper, and their outline cut finds candidate pairs by a sweep rather than testing every pair. `intersectSegments` takes an optional `maxHits`.
+- 90024bc: Trim segment and Extend to next path now reach a stroke as far on screen as every other picker does under non-uniform zoom; they used to take the smaller of the two axes' world extents and could miss a stroke a few pixels from the click. geom adds `pxReach(px, scale)`, the one conversion of a screen-pixel radius to a world distance that core's anchor clicks, rig, Girth and Smudge now share.
+
 ## 1.17.1
 
 No changes in this release.

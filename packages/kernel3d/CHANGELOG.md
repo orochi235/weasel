@@ -1,5 +1,57 @@
 # @weasel-js/kernel3d
 
+## 1.17.2
+
+### Patch Changes
+
+- cda0a20: Undoing an insert restores the selection from before it. The insert and place actions clear the selection at the press, and the pen and spiro tools select the path they finish or continue; each of those changes now commits in the same undo entry as the node, so under an `applyOps` history that knows nothing about the selection, undo no longer leaves it empty or still on the node it removed. A pen join commits its selection the same way.
+  
+  This changes two dep contracts, which breaks a consumer's own `insert` or `editAnchors` dep. Both take a `CommitSelection` (`from`, the selection before the change, and `selectNode`): `InsertDep.commit` as a fourth argument and `EditAnchorsDep.applyEdit` as a fifth, both named `select`. A dep that applies ops appends `commitSelectionOps(select, id, label)` to its batch. An insert that applies none must set the selection itself, to the new node with `selectNode` and to nothing otherwise; an edit that commits nothing changes no selection. A dep that ignores `select` leaves the selection empty after an insert, and the pen and spiro tools no longer select what they draw or continue through it. These batches now carry a `setSelection` op, so a consumer history's adapter needs `setSelection`. kernel3d's `createInsert` passes `select` to `mint` as a third argument.
+- 102cbeb: `aimSpace3d` and `aimOf3d` measure an aim point's height along `up` when `up` points down its axis, such as `{ x: 0, y: -1, z: 0 }`. They used to read it along the axis's positive direction, so a point above the ground projected below it.
+- 07462d2: `Camera3dDep` takes an optional `origin()`: where the pane's top-left sits on the canvas, in CSS pixels. `camera.dolly` and `camera.pinchDolly` subtract it from the canvas-local point a wheel or pinch carries, so a host that runs one dispatcher across several panes dollies about the point under the pointer in each of them. Omitted, it is the canvas origin, which is what both actions assumed before.
+- 5144f6f: `dollyToward` on a camera at distance 0 dollies it out about its target. It used to set the target to `NaN`, which no later gesture could recover from.
+- 89ecae4: `groundGridSource` offers no targets when its `step` is zero, negative or not finite. A step of 0 used to offer grid lines at `NaN`.
+- 46c1ed5: An `up` that leans off an axis only by rounding, such as `{ x: 0, y: 6e-17, z: 1 }` from rotating +y a quarter turn, is read as that axis. `createInsert`, the pose descriptor's `translate` and the 3D aim used to take the first nonzero component, so that `up` laid footprints along the wrong axes and held a dragged solid's y fixed in a z-up world.
+- 7e39537: `createNodeAtPoint` picks only what the camera draws. A node clipped away in front of the near plane, or past the far plane, used to be picked anyway, and one close to the eye blocked every pick behind it while nothing was drawn there.
+  
+  `rayThroughScreenPoint` now runs from the near plane to the far plane: its `origin` is the near-plane point and its `direction` reaches the far one, so `t` from 0 to 1 spans what the camera draws. It no longer takes an `eye` argument, and its direction is no longer unit length. This is a breaking change for a caller that passed the eye or read the direction as a unit vector; normalize it where that matters.
+- Updated dependencies [d15e917]
+- Updated dependencies [32e0dd5]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [25bbbd5]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [9298f90]
+- Updated dependencies [5f8b357]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [f6e234a]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/stroke@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/routing@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/react@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

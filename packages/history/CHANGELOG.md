@@ -1,5 +1,13 @@
 # @weasel-js/history
 
+## 1.17.2
+
+### Patch Changes
+
+- c08dc7d: `goto` ignores a depth that is not a whole number, and `timestampAt` answers `undefined` for one. `goto(1.5)` used to undo past the depth and redo one entry back, and `goto(NaN)` reported an empty step; `timestampAt(0.5)` threw.
+- 963e595: A journal with another journal still active inside it now cancels that one along with its own entries, and refuses to commit (throwing, as opening a second journal does) until it is committed, canceled or suspended. Before, cancel left the inner journal's edits applied and the inner journal open, and commit recorded an entry that did not include them, so undoing it did not return to where the outer journal began.
+- @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

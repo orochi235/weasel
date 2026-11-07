@@ -1,5 +1,16 @@
 # @weasel-js/storage
 
+## 1.17.2
+
+### Patch Changes
+
+- 548a4a0: The IndexedDB adapter's `list` finds every key under its prefix. It used to miss a key whose text after the prefix began with `￿` and went on past it.
+- 959ac9b: The localStorage, sessionStorage and URL-hash adapters warn about a value holding `-0` or an array with holes, which JSON reads back as `0` and `null`.
+- 9298f90: `RecordCache.close()` resolves whether every queued write landed, as `flush()` does, since a write still queued once it closes is never sent. `PrefsStore.close()` and the lab store's `close()` pass that answer on. All three used to resolve `void`, so a failed final write went unreported. This breaks code that implements one of these interfaces with a `close` resolving `void`: it now has to resolve a boolean.
+- ab39d07: Every adapter deletes a key set to `undefined`, as a record cache already did. localStorage and sessionStorage used to store the text `undefined` and read it back as that string, and the memory and IndexedDB adapters kept the key, listing it with no value.
+- eb24621: `urlHashAdapter` warns once per key about a value JSON cannot keep exactly, as the localStorage and sessionStorage adapters do. A `Date`, `Set` or `Map` stored in the fragment used to change shape with no warning.
+- @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

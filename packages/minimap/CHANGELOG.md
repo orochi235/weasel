@@ -1,5 +1,37 @@
 # @weasel-js/minimap
 
+## 1.17.2
+
+### Patch Changes
+
+- 3fc1b5e: The linked crosshair keeps its screen size on both axes of a view whose scale differs between them. `crosshairRects` now takes its units per pixel per axis, `{ x, y }`, where it took one number; a caller drawing in screen pixels passes `{ x: 1, y: 1 }`. This breaks callers passing a number. The crosshair `createLinkedCursorLayer` paints used to size both axes from the view's x scale, so a stretched view drew its vertical arms too long or too short.
+- 7fc93eb: `computeIndicatorCommand` frames a flipped main view (y-up, or a mirrored x axis) as the world rect it shows, with a positive width and height, through core's `viewportWorldRect`. It used to emit the rect with a negative size, which a renderer reading the rect's corners as min/max took to be inverted.
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [cda0a20]
+- Updated dependencies [25bbbd5]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [e13e539]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/animator@1.17.2
+  - @weasel-js/routing@1.17.2
+  - @weasel-js/react@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

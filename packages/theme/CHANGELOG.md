@@ -1,5 +1,30 @@
 # @weasel-js/theme
 
+## 1.17.2
+
+### Patch Changes
+
+- 019b877: `colorLiteralToCss` writes `hsl`, `hwb`, `lab`, `lch`, `oklab` and `oklch` literals as their own CSS functions (`hsl(210 50% 40%)`), and keeps `color()` for the predefined spaces. Before, it wrote `color(hsl …)` and `color(lab …)`, which CSS rejects. A space CSS has no notation for now gives `null` instead of an invalid `color()`. The writer is exported as `cssColorNotation`, and `loadDTCG` writes DTCG color objects through it.
+- 47679f8: `blendTheme` and the prefs color blend mix alpha premultiplied, as CSS `color-mix()` does, so a blend toward `transparent` keeps the other color's hue rather than drifting toward black. Both now go through paint's new `mixRgba` (two colors, in any `ColorInterpolationSpace`) and `mixRgbaWeighted` (any number, by weight). `mixOklab` is `mixRgba` in OKLab and now computes in float precision rather than through 8-bit channels.
+- 3c8c5af: `applyTheme` writes `color-scheme` for the selected axis value, as the built stylesheet already did. Before, a runtime theme whose own mode value carried a `scheme` (say a `sepia` mode marked `light`) left native controls in whatever scheme the page around it had.
+- cd0738d: `loadDTCG` reads the object forms the DTCG format gives a dimension or duration (`{ "value": 8, "unit": "px" }`) and a color (`{ "colorSpace": "oklch", "components": [0.7, 0.1, 250] }`). A color is written in CSS's own notation for its space, hex for an in-gamut sRGB color, with nothing converted or clamped. Before, each of these resolved to the text `[object Object]`. A value no custom property can hold, such as a composite shadow or typography token, now throws naming the token.
+- 8c4bf4d: `toDTCG` writes a theme's own ramps and tint list, under `$extensions["com.weasel.ramps"]` and `$extensions["com.weasel.tints"]`, and `loadDTCG` reads them back. Before, both were dropped on the way out: a theme loaded from its own export lost its ramps, so `colorAt` over a ramp only it declared threw, and its tints fell back to the parent's.
+- c7dae1d: A definition's reference written with its type group, such as `{color.surface}`, is now followed when baking, as `resolveTheme` already followed it. Before, the baker took it for a literal: the token was emitted once in `:root` instead of per mode, so in the stylesheet it kept the default mode's value everywhere, and a contrast rule could not see the color behind it.
+- c2a7267: `applyTheme` and the stylesheet emitter quote a theme name or axis value inside their attribute selectors, so a name holding a `'` or a `\` styles its elements. Before, the rule came out malformed and the browser dropped it, leaving the subtree on the default theme.
+- 26187c9: `defineTheme` and `loadDTCG` refuse a token name holding anything but letters, digits, `-` and `_`, as `derive` already reported it. Before, such a name reached the stylesheet as an invalid custom property (`--wzl-font size: …`), which the browser dropped without a word. This can break a theme that relied on one: rename the token.
+- Updated dependencies [32e0dd5]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [9298f90]
+- Updated dependencies [5f8b357]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

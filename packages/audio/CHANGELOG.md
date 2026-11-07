@@ -1,5 +1,17 @@
 # @weasel-js/audio
 
+## 1.17.2
+
+### Patch Changes
+
+- 46ab1ff: `play`, `playNote`, `playNoise` and `schedule` throw a `RangeError` on a `when` that is not finite, and
+  so does `stream` given one by an untyped caller, before it stops the element's earlier stream. A `NaN` or `Infinity` time never came due, so the booking sat in the scheduler's queue for
+  the engine's life, and a voice held its output chain and reported `isPlaying()` without ever sounding.
+- 6242fbb: `createPatternPlayer`, its `setEvents`, and `patternVoicePeaks` throw a `RangeError` on a `length` or
+  `stepsPerBeat` that is not a whole number of 1 or more, and `patternVoicePeaks` on a tempo the player
+  refuses. A length of 0 or `NaN` used to play nothing while `onStep` reported `NaN`, and
+  `patternVoicePeaks` with a length of 0 never returned.
+
 ## 1.17.1
 
 No changes in this release.

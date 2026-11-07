@@ -1,5 +1,67 @@
 # @weasel-js/diagram-formats
 
+## 1.17.2
+
+### Patch Changes
+
+- 3082310: Writing DOT, an unlabeled container nested in a labeled one now sets an empty label, and a lane (or any region without a fill) inside a filled one sets an empty style. Graphviz carries a cluster's attributes into the clusters inside it, so such a container used to draw, and read back with, its parent's label, and a lane its pool's fill.
+- 474ffd5: Writing DOT, a node or edge whose dash is the one a `dotted` style reads as is written `dotted` rather than `dashed`, so a dotted DOT graph read and written again stays dotted.
+- 1e99c04: Reading a DOT graph whose every node has a `pos` but which gives no `bb`, the page now spans the nodes' own extent. It used to start at DOT's origin, so a node left of or below it was placed off the page. A `pos` or `bb` holding a value that is not a finite number is now treated as missing rather than read as an infinite place.
+- ebe7018: Reading DOT, a color from a palette scheme such as Brewer's (`/blues9/3`) is dropped with a warning. The reader used to strip the scheme and keep the bare index, so such a node read back with a color of `3`, which nothing can draw. X11 and SVG scheme colors (`/x11/red`, `/svg/navy`) are read as their names, as before. `dotColor` now returns `undefined` for a color it cannot read.
+- 24f7a13: Draw-style XML keeps a graph page's `direction`, the way layout runs when the page is laid out again. It is written as a `weaselDirection` attribute on the page's graph model, which a draw app ignores, and read back from it. A value that is not a direction is dropped with a warning. DOT and Mermaid already carried the direction; draw-style XML used to lose it.
+- 66f7dfc: Mermaid flowcharts read and write edge ids (`A e1@--> B`), the syntax Mermaid 11 added. Reading one used to throw. The id becomes the edge's id. A link joining several nodes (`A & B e1@--> C`) gives it to its first edge only. An `e1@{ … }` line naming an edge is dropped with a warning rather than read as a node. Writing, an edge's id is written only where reading the file back would not give the edge that id anyway and where Mermaid can hold the id as it is, so `a --> b` with id `a-b` stays as it was. A graph page's reader now keeps an edge id it was given, if no other item holds it, instead of always minting `from-to`.
+- 2521475: Writing a Mermaid flowchart, a dashed edge whose dash is not the one a dotted link draws gets a `stroke-dasharray` in its `linkStyle`, as a node's dash already did, so it reads back with its own dash rather than the dotted link's.
+- d698e12: Reading a Mermaid flowchart, a link's quoted inline text may hold an arrow, as in `A -- "a --> b" --> B`. The arrow inside the quotes used to end the text there, and the reader then threw on the closing quote.
+- cbe9510: Writing a Mermaid flowchart, block, kanban, or architecture diagram keeps an id in letters of any script, such as `café` or `日本`, as it is: those kinds read such ids, but the writer used to rename them to an ASCII spelling (`caf`, `_`). `mermaidIds` takes a `unicode` option saying the kind reads them; the kinds whose readers take only ASCII ids still rename them.
+- d9930cf: Every graph format's reader now makes one check of each color a file names: a color paint's `parseColor` cannot read is dropped, and the reader lists it in one warning, "<format> colors a diagram cannot draw were dropped: …". The DOT, Mermaid (flowchart styles and link styles, every kind's `classDef`s and `style`s, C4 element and relationship styles, sequence boxes and rects) and draw-style XML readers used to keep such a string as the color, which nothing could draw. Effects:
+  
+  - DOT X11 names CSS has no spelling for, such as `grey50`, are now dropped with that warning. No X11 table exists to map them.
+  - DOT `none` reads as `transparent`, as draw-style XML's does.
+  - The DOT warning for palette-scheme colors becomes the shared one.
+  
+  The Mermaid sequence reader's own list of CSS color names is gone. It asks the same check whether a box's first word is a color.
+- Updated dependencies [d15e917]
+- Updated dependencies [32e0dd5]
+- Updated dependencies [86783f4]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [cda0a20]
+- Updated dependencies [d2800fb]
+- Updated dependencies [2c9b792]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [1a6ad20]
+- Updated dependencies [90600b4]
+- Updated dependencies [436c47d]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [c5325ff]
+- Updated dependencies [08a964d]
+- Updated dependencies [fb36b4f]
+- Updated dependencies [cb57c41]
+- Updated dependencies [2e36630]
+- Updated dependencies [10f448b]
+- Updated dependencies [e0a37af]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/plot@1.17.2
+  - @weasel-js/diagram@1.17.2
+  - @weasel-js/pdf@1.17.2
+  - @weasel-js/svg@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

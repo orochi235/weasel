@@ -1,5 +1,16 @@
 # @weasel-js/paint
 
+## 1.17.2
+
+### Patch Changes
+
+- 32e0dd5: An inner or outer stroke on a rect with a negative width or height (a pose flipped by a drag past its opposite edge) stays on its own side of the rect. `alignedStrokeRect` used to shift such an axis the wrong way, so an outer stroke drew inside the rect along it and an inner one outside.
+- 019b877: `colorLiteralToCss` writes `hsl`, `hwb`, `lab`, `lch`, `oklab` and `oklch` literals as their own CSS functions (`hsl(210 50% 40%)`), and keeps `color()` for the predefined spaces. Before, it wrote `color(hsl …)` and `color(lab …)`, which CSS rejects. A space CSS has no notation for now gives `null` instead of an invalid `color()`. The writer is exported as `cssColorNotation`, and `loadDTCG` writes DTCG color objects through it.
+- 47679f8: `blendTheme` and the prefs color blend mix alpha premultiplied, as CSS `color-mix()` does, so a blend toward `transparent` keeps the other color's hue rather than drifting toward black. Both now go through paint's new `mixRgba` (two colors, in any `ColorInterpolationSpace`) and `mixRgbaWeighted` (any number, by weight). `mixOklab` is `mixRgba` in OKLab and now computes in float precision rather than through 8-bit channels.
+- 33c0cbd: `Stroke.dashOffset` sets how far into `dash` each subpath starts, as SVG's `stroke-dashoffset` and Canvas2D's `lineDashOffset` do. A negative offset starts before the pattern's beginning, and a non-finite one reads as 0. The canvas, `writePdf` and `serializeSvg` all draw it. `parseSvg` reads `stroke-dashoffset`, which it used to drop with no warning, and `svgNodesToKitDrafts` and `svgStrokeFromKit` carry it. A `{ px }` stroke resolves the offset with its dash, `lerpStroke` interpolates it, and a stroke-mesh cache entry is keyed on it.
+  
+  New in `@weasel-js/paint`, and re-exported from `@weasel-js/core`: `dashPhase(pattern, phase)` wraps a phase into one cycle of a pattern, and `scaledDash(stroke, k)` scales a dash and its offset together. A trimmed stroke's PDF dash phase is now written wrapped into one cycle (`[4 2] 4 d` where it used to write `[4 2] 10 d`), which draws the same.
+
 ## 1.17.1
 
 No changes in this release.

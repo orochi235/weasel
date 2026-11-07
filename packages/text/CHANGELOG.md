@@ -1,5 +1,35 @@
 # @weasel-js/text
 
+## 1.17.2
+
+### Patch Changes
+
+- c089c61: A justified line that ends in a space and a tab no longer gives part of its slack to that space, which hangs past the edge: the slack goes to the gaps between its words, so the line reaches the edge. Likewise a space after a tab that opens a line is not a word gap.
+- cc591ff: `layoutMarkdown` hangs trailing spaces and tabs on every line, as `layoutRuns` and `measureText` do, rather than only on a wrapped one: `ab ` now measures as wide as `ab`, so a label ending in a space or before a newline no longer reports, or aligns by, the extra width.
+- e6e7a72: `createMarkdownRenderer` aligns each line of a wrapped block by the context's `textAlign`, as it already placed the block. Under `left`, `start`, `right` or `end`, a shorter line used to be centered within the block; only `center` keeps that.
+- d162fbb: `layoutMarkdown` and `createMarkdownRenderer` set each run in its own `fontFamily`, `fontWeight` and italic, falling back to the node's the way `resolveRuns` does on the GL tier, and track it by its `letterSpacing` after every grapheme cluster, the last included. Before, every run was measured and painted untracked in the node's family and weight. The renderer paints tracking through the context's `letterSpacing` where it has one, and a cluster at a time where it does not. `MarkdownFontOptions` gains a node-level `letterSpacing`.
+  
+  Breaking for a caller of `layoutMarkdown` or a writer of its callbacks:
+  
+  - `MeasureFn` is now `(text, font: MarkdownFont) => number`, where `MarkdownFont` is `{ fontFamily, fontWeight, fontStyle, fontSize }`. It measures glyphs only, and the layout adds tracking itself. It used to be `(text, fontSize, bold, italic)`.
+  - `FaceMetricsFn` takes the run's `{ fontFamily, fontWeight, fontStyle }` in place of `(bold, italic)`.
+  - `layoutMarkdown`'s last three positional arguments (`lineHeightFactor`, `faceOf`, `tabSize`) are replaced by one `LayoutMarkdownOptions` object: `{ lineHeight, faceOf, tabSize, family, weight, letterSpacing }`.
+  - `PositionedRun.size` is gone. Read `PositionedRun.font.fontSize` instead, and `PositionedRun.tracking` for the run's letter spacing in px. `width` now includes the tracking.
+  - The `font` the renderer sets is `fontString`'s form, with a numeric weight (`normal 700 13px sans-serif`, not `bold 13px sans-serif`).
+  - `createMarkdownRenderer` and `TextRenderer` live in `markdownRenderer.ts`. The package's exports are unchanged; only a deep import of `markdownText` moves.
+- fce3d09: `styleAtRange` reads two runs whose `fontSize` or `letterSpacing` is the same `{ px }` length as sharing it rather than as `MIXED`, and `applyStyleToRange` merges such neighbors. Equal `{ px }` objects were compared by identity, so runs parsed from a saved document never matched.
+- d3654a1: A grapheme cluster split across two runs — a letter in one and its combining mark in the next — is now one cluster to layout: the caret no longer stops between the two, and `letterSpacing` tracks it once rather than once per side.
+- Updated dependencies [32e0dd5]
+- Updated dependencies [dd926dc]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/font@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

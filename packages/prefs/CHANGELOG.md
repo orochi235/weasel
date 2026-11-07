@@ -1,5 +1,34 @@
 # @weasel-js/prefs
 
+## 1.17.2
+
+### Patch Changes
+
+- 47679f8: `blendTheme` and the prefs color blend mix alpha premultiplied, as CSS `color-mix()` does, so a blend toward `transparent` keeps the other color's hue rather than drifting toward black. Both now go through paint's new `mixRgba` (two colors, in any `ColorInterpolationSpace`) and `mixRgbaWeighted` (any number, by weight). `mixOklab` is `mixRgba` in OKLab and now computes in float precision rather than through 8-bit channels.
+- 9298f90: `RecordCache.close()` resolves whether every queued write landed, as `flush()` does, since a write still queued once it closes is never sent. `PrefsStore.close()` and the lab store's `close()` pass that answer on. All three used to resolve `void`, so a failed final write went unreported. This breaks code that implements one of these interfaces with a `close` resolving `void`: it now has to resolve a boolean.
+- 5f8b357: `prefLeafInScopes` gives a length the unit of its scopes inside a list's, a map's and a union's entries too, where it used to reach only an object leaf's children.
+- Updated dependencies [32e0dd5]
+- Updated dependencies [5cb2995]
+- Updated dependencies [548a4a0]
+- Updated dependencies [959ac9b]
+- Updated dependencies [4c781a6]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [9298f90]
+- Updated dependencies [a08b740]
+- Updated dependencies [29f15a5]
+- Updated dependencies [ab39d07]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [eb24621]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/quantity@1.17.2
+  - @weasel-js/storage@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

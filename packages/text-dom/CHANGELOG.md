@@ -1,5 +1,29 @@
 # @weasel-js/text-dom
 
+## 1.17.2
+
+### Patch Changes
+
+- Updated dependencies [32e0dd5]
+- Updated dependencies [c089c61]
+- Updated dependencies [cc591ff]
+- Updated dependencies [e6e7a72]
+- Updated dependencies [d162fbb]
+- Updated dependencies [d08837f]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [fce3d09]
+- Updated dependencies [05acca8]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [d3654a1]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/paint@1.17.2
+  - @weasel-js/text@1.17.2
+  - @weasel-js/ui-logic@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/font@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

@@ -1,5 +1,50 @@
 # @weasel-js/svg
 
+## 1.17.2
+
+### Patch Changes
+
+- 35c291a: SVG export and PDF read a stroke's `dash` through `dashPattern`, the rule the canvas uses, so the three draw the same thing:
+  
+  - `serializeSvg` strokes solid a dash too fine for its path's whole, untrimmed length, and an all-zero or negative one, where it used to write the `stroke-dasharray` as given. A leaf whose group's dash it would otherwise inherit states `stroke-dasharray="none"`.
+  - A dash with a non-finite entry draws no line in either writer, and its marker heads still draw. The PDF writer used to drop the whole path, its fill included, and report a skip. `serializeSvg` used to write NaN as `0`, a solid line. A text run's stroke with such a dash draws nothing.
+  
+  `dashPattern` is now exported from `@weasel-js/core` as well as `@weasel-js/paint`.
+- 33c0cbd: `Stroke.dashOffset` sets how far into `dash` each subpath starts, as SVG's `stroke-dashoffset` and Canvas2D's `lineDashOffset` do. A negative offset starts before the pattern's beginning, and a non-finite one reads as 0. The canvas, `writePdf` and `serializeSvg` all draw it. `parseSvg` reads `stroke-dashoffset`, which it used to drop with no warning, and `svgNodesToKitDrafts` and `svgStrokeFromKit` carry it. A `{ px }` stroke resolves the offset with its dash, `lerpStroke` interpolates it, and a stroke-mesh cache entry is keyed on it.
+  
+  New in `@weasel-js/paint`, and re-exported from `@weasel-js/core`: `dashPhase(pattern, phase)` wraps a phase into one cycle of a pattern, and `scaledDash(stroke, k)` scales a dash and its offset together. A trimmed stroke's PDF dash phase is now written wrapped into one cycle (`[4 2] 4 d` where it used to write `[4 2] 10 d`), which draws the same.
+- c5325ff: `serializeSvg` draws an inner- or outer-aligned stroke on text, or on a text run, on its own side of the glyph edges, as the canvas and `writePdf` do. It used to write the stroke centered and warn. The text is written with that stroke at `stroke-width="0"`, followed by a copy stroking it at twice the width: clipped to the glyphs for an inner stroke, masked to outside them for an outer one. The text, its copies, and their clip or mask sit in one `<g>` that holds the node's rotation and opacity. `parseSvg` drops the copies and reads the stroke's width and alignment back.
+- 08a964d: `svgNodesToKitDrafts` honors an `SvgGroupNode`'s `transform`, as `svgNodesFromKit` writes one for a node's copies. It bakes the transform into the group's paths, paints, stroke widths and clip, and places its text and image boxes, the way `parseSvg` bakes one at parse time. Before, it ignored the transform and drafted every copy on top of the original.
+- fb36b4f: `parseSvg` clips a `<path>`, shape, `<text>` or `<image>` that carries `clip-path`, by wrapping it in a `<g>` node holding the clip, read in the leaf's own user space (its `transform` included). It used to draw such a leaf unclipped and warn. A `clip-path` on a nested `<svg>` still warns.
+- cb57c41: `serializeSvg` writes a marker whose registry key an attribute or `url(#…)` cannot hold as written (a key with a space, a quote, `&`, `<`, a bracket or `#`) under a safe id of its own, with the key kept in `wzl:key` for `parseSvg` to read back. It used to write the key as the `<marker id>` and in `url(#…)` unescaped, so such a key produced a document no XML parser accepts, or a reference nothing resolves.
+- 2e36630: A path whose inner- or outer-aligned (or variable-width) stroke it takes from its group, as `svgNodesFromKit` writes a `'inherit'` stroke, no longer draws a centered stroke under its outline in exported SVG. The path left out its `stroke-width="0"` to inherit the group's stroke, and so picked up the group's real width.
+- 10f448b: `serializeSvg` reports through `onWarn` when a stroke names a marker the marker registry does not know, which it writes without that `marker-*` attribute. It used to leave the head out silently, so `serializeSvg(parseSvg(svg).nodes)` lost a document's own markers with no word unless `parsed.markers` had been registered first.
+- Updated dependencies [d15e917]
+- Updated dependencies [32e0dd5]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [cda0a20]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [e13e539]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [f6e234a]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/stroke@1.17.2
+  - @weasel-js/geom@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

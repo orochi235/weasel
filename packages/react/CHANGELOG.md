@@ -1,5 +1,18 @@
 # @weasel-js/react
 
+## 1.17.2
+
+### Patch Changes
+
+- df46c46: A `useVisibleRaf` loop whose `dangerouslyRunWhenHidden` is turned off while the document is hidden
+  now suspends on its next frame and resumes when the document shows again. It used to drop that frame
+  without recording a suspension, so the return re-armed nothing and a continuous loop stopped for good.
+- ffacbd8: `useVisibleRaf` now runs `onResume` when a loop suspended because its element left the viewport is
+  requested again after its `target` names a different element. It used to start the new element's
+  frames with the loop still marked suspended, so `onResume` never ran, a loop that measures elapsed
+  time took the whole suspension as one frame, and the next hide did not run `onSuspend`.
+- @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

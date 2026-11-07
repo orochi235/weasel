@@ -1,5 +1,31 @@
 # @weasel-js/parallax
 
+## 1.17.2
+
+### Patch Changes
+
+- e13e539: A parallax plane under a flipped camera axis (a y-up view) stays flipped. `deriveParallaxView` used to interpolate a plane's scale from 1 toward the camera's signed scale, so with `zoom: 0` a y-up camera's planes drew y-down, and with `zoom: 0.5` a camera at scale -1 gave its planes a scale of 0. The plane now tracks the magnitude of the camera's zoom and keeps its sign, and a `zoom` above 1 on a zoomed-out camera floors at `ZOOM_FLOOR` rather than crossing zero.
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [cda0a20]
+- Updated dependencies [d162fbb]
+- Updated dependencies [f15f881]
+- Updated dependencies [35c291a]
+- Updated dependencies [e13e539]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

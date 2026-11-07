@@ -1,5 +1,18 @@
 # @weasel-js/simulation
 
+## 1.17.2
+
+### Patch Changes
+
+- 62e6961: A simulation on a clock whose `step` is 0, negative or not a number steps once per frame the clock moves. A `step` of 0 used to owe infinitely many steps on the first frame, which hung the page whenever `alphaTarget` kept the simulation warm, and a negative one owed a negative count.
+- 466c30b: `isSettled()` answers true for a simulation whose `alphaTarget` is above 0 but below `alphaMin`, once alpha has fallen below `alphaMin`. The frame loop had already stopped and `onEnd` had fired there, while `isSettled()` kept answering false because it required `alphaTarget` to be exactly 0.
+- Updated dependencies [3dfa153]
+- Updated dependencies [4eaadcc]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/clock@1.17.2
+  - @weasel-js/react@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

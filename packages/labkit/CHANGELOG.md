@@ -1,5 +1,99 @@
 # @weasel-js/labkit
 
+## 1.17.2
+
+### Patch Changes
+
+- 3dfa153: Pin `@msb235/blits` at exactly `1.1.0` again, in place of 1.17.1's `^1.0.0`. An app taking blits as a `^1` range still shares this one copy with weasel.
+- ffa4118: An instrument can now say what an auto lever came to when only it can work the value out. `RenderContext.reportAuto(path, value)` hands the settings panel that value, and the auto row quotes it in its help tooltip through the leaf's own display and pins at it, as it does a resolver's value. A report outranks the path's `.auto(fn)` resolver. It is never stored: a report for a pinned path is ignored, pinning drops it, and `undefined` withdraws it. The instrument's own `config` still reads the path as auto. A standalone `<ControlPanel>` takes the same values through its new `reported` prop.
+  
+  A leaf that adds `.quote()` reads its known auto value in the row itself, `auto · 12`, rather than only in the tooltip; other auto rows still read the bare word. `@weasel-js/ui` exports the readout it draws, `PropertyAutoReadout`, and a slider row now keeps any replacement readout in the box its editable readout would occupy, not only a plain string.
+- 7d0c465: A `ControlMatrix` number cell shows its value the way the row's own field does: through the leaf's `display`, and with its `endless` word for infinity, where it used to print `Infinity` and ignore `.display(compact())`. `stepDisplay`, the display a number field falls back to from its `step`, is exported from `@weasel-js/ui/components/Properties`.
+- 3fc1b5e: The linked crosshair keeps its screen size on both axes of a view whose scale differs between them. `crosshairRects` now takes its units per pixel per axis, `{ x, y }`, where it took one number; a caller drawing in screen pixels passes `{ x: 1, y: 1 }`. This breaks callers passing a number. The crosshair `createLinkedCursorLayer` paints used to size both axes from the view's x scale, so a stretched view drew its vertical arms too long or too short.
+- 9298f90: `RecordCache.close()` resolves whether every queued write landed, as `flush()` does, since a write still queued once it closes is never sent. `PrefsStore.close()` and the lab store's `close()` pass that answer on. All three used to resolve `void`, so a failed final write went unreported. This breaks code that implements one of these interfaces with a `close` resolving `void`: it now has to resolve a boolean.
+- 2dceec4: `summarizeLeaf`, a dialog row's summary, and an auto row's tooltip write a number through its leaf's `display`, and infinity as the word its `endless` end gives it. They used to honor only a `unit`, so `.display(compact())` read `2000000` and an endless timeout read `Infinity`.
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [4eaadcc]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [5cb2995]
+- Updated dependencies [54dc458]
+- Updated dependencies [dd926dc]
+- Updated dependencies [548a4a0]
+- Updated dependencies [cda0a20]
+- Updated dependencies [959ac9b]
+- Updated dependencies [102cbeb]
+- Updated dependencies [07462d2]
+- Updated dependencies [5144f6f]
+- Updated dependencies [89ecae4]
+- Updated dependencies [46c1ed5]
+- Updated dependencies [7e39537]
+- Updated dependencies [ffa4118]
+- Updated dependencies [25bbbd5]
+- Updated dependencies [fd664e3]
+- Updated dependencies [d162fbb]
+- Updated dependencies [7d0c465]
+- Updated dependencies [f15f881]
+- Updated dependencies [1dda7c2]
+- Updated dependencies [dab1602]
+- Updated dependencies [3fc1b5e]
+- Updated dependencies [7fc93eb]
+- Updated dependencies [4c781a6]
+- Updated dependencies [35c291a]
+- Updated dependencies [019b877]
+- Updated dependencies [47679f8]
+- Updated dependencies [e13e539]
+- Updated dependencies [9298f90]
+- Updated dependencies [c98432d]
+- Updated dependencies [a08b740]
+- Updated dependencies [5f8b357]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [29f15a5]
+- Updated dependencies [060b0ee]
+- Updated dependencies [4825659]
+- Updated dependencies [ab39d07]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [90024bc]
+- Updated dependencies [c5325ff]
+- Updated dependencies [08a964d]
+- Updated dependencies [fb36b4f]
+- Updated dependencies [cb57c41]
+- Updated dependencies [2e36630]
+- Updated dependencies [10f448b]
+- Updated dependencies [3c8c5af]
+- Updated dependencies [cd0738d]
+- Updated dependencies [8c4bf4d]
+- Updated dependencies [c7dae1d]
+- Updated dependencies [c2a7267]
+- Updated dependencies [26187c9]
+- Updated dependencies [132af78]
+- Updated dependencies [03f87f4]
+- Updated dependencies [eb24621]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/animator@1.17.2
+  - @weasel-js/clock@1.17.2
+  - @weasel-js/quantity@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/storage@1.17.2
+  - @weasel-js/kernel3d@1.17.2
+  - @weasel-js/ui@1.17.2
+  - @weasel-js/routing@1.17.2
+  - @weasel-js/loupe@1.17.2
+  - @weasel-js/minimap@1.17.2
+  - @weasel-js/svg@1.17.2
+  - @weasel-js/theme@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

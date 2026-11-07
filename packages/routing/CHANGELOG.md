@@ -1,5 +1,41 @@
 # @weasel-js/routing
 
+## 1.17.2
+
+### Patch Changes
+
+- 25bbbd5: The last operation lets go once an adjustment leaves more than one history entry. It used to stay adjustable with no entry to undo, so the next change in the panel ran the action again on top of the previous result instead of in its place.
+- b81f560: The select tool now reads the selection's own keys. `SelectionApi` gains `intentOf(modifiers)`, which says whether a click would replace, toggle or range under the configured `mode`, `extend` and `range`. `select.pick` and `select.deep` ask it instead of assuming Shift extends. Under `useSelection({ mode: 'multi', extend: 'meta', range: 'shift' })`, a Cmd-press on a member of a multi-selection now toggles it on the press, and `extendClickLocked` now holds back the Cmd toggle and the Shift range rather than a Shift press that would only replace.
+  
+  Breaking for anything that implements `SelectionApi` itself: it must now provide `intentOf`. `intentOf` from `@weasel-js/select` answers it for any policy.
+- Updated dependencies [5cb2995]
+- Updated dependencies [dd926dc]
+- Updated dependencies [c08dc7d]
+- Updated dependencies [963e595]
+- Updated dependencies [1dda7c2]
+- Updated dependencies [4c781a6]
+- Updated dependencies [8eed13c]
+- Updated dependencies [47679f8]
+- Updated dependencies [9298f90]
+- Updated dependencies [a08b740]
+- Updated dependencies [5f8b357]
+- Updated dependencies [29f15a5]
+- Updated dependencies [90024bc]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/quantity@1.17.2
+  - @weasel-js/geom@1.17.2
+  - @weasel-js/history@1.17.2
+  - @weasel-js/menu@1.17.2
+  - @weasel-js/modes@1.17.2
+  - @weasel-js/prefs@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/gestures@1.17.2
+  - @weasel-js/cursor@1.17.2
+  - @weasel-js/icons@1.17.2
+  - @weasel-js/registry@1.17.2
+  - @weasel-js/select@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

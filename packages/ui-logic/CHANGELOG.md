@@ -1,5 +1,20 @@
 # @weasel-js/ui-logic
 
+## 1.17.2
+
+### Patch Changes
+
+- d08837f: `moveItems` ignores an index outside the list entirely. Such an index used to be skipped when picking the items to move but still counted toward where they landed, so `moveItems(list, [-1, 1], 3)` put the item one place short. A gap past either end of the list is now that end.
+- 05acca8: A held stepper whose repeated step ends or replaces the hold (`createStepRepeat`'s `step` calling `stop` or `start`) no longer keeps repeating the old key: only the first step was checked for this before.
+- Updated dependencies [5cb2995]
+- Updated dependencies [dd926dc]
+- Updated dependencies [4c781a6]
+- Updated dependencies [a08b740]
+- Updated dependencies [29f15a5]
+- Updated dependencies [90024bc]
+  - @weasel-js/quantity@1.17.2
+  - @weasel-js/geom@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes

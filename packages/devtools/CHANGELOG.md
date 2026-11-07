@@ -1,5 +1,47 @@
 # @weasel-js/devtools
 
+## 1.17.2
+
+### Patch Changes
+
+- 71e8ac3: The Dispatch tab's coord records show a pointer or world point that is not finite as `NaN` or `Infinity`. Such a record used to throw while the table drew it, which emptied the panel.
+- c970d66: A devtools client request about a root rejects when the page removes that root, or says `sup` without it. Such a request used to stay pending for good, since the page never answers it, so a view reading that root waited forever.
+- 2e4ad49: Devtools serialization no longer writes a value it cannot send as JSON as a string that could be mistaken for one of the app's own. NaN and ±Infinity, a bigint, a symbol, a function, a cycle, a getter that threw, a cut past the depth limit and a cut past the item limit each arrive as an object tagged with what it was (`{ $type: 'number', value: 'NaN' }`, `{ $type: 'cycle' }`, …). A plain object's own keys that start with `$` arrive with one more `$` in front, so an app's own `$type` stays data, and the count of keys cut from an object arrives as `$more`. The panel reads the tags, so a node whose data holds the string `'[cycle]'` or a `$type` field shows them as they are.
+  
+  This changes the shape `serialize` returns, so anything reading `SerializedValue` beside the panel has to read the tags. `@weasel-js/core/devtools-protocol` exports `SerializedTag`, `unescapeKey` and `serializedNumber` for it.
+- 883dfcd: The devtools hook writes a getter that throws, on a node's `data` or anything else it serializes, as `[threw: <error>]` and serializes the rest of the object. One such getter used to make the whole request fail, so the panel showed nothing for that node.
+- Updated dependencies [d15e917]
+- Updated dependencies [3dfa153]
+- Updated dependencies [36a16c0]
+- Updated dependencies [2e4ad49]
+- Updated dependencies [883dfcd]
+- Updated dependencies [54dc458]
+- Updated dependencies [cda0a20]
+- Updated dependencies [ffa4118]
+- Updated dependencies [d162fbb]
+- Updated dependencies [7d0c465]
+- Updated dependencies [f15f881]
+- Updated dependencies [1dda7c2]
+- Updated dependencies [dab1602]
+- Updated dependencies [35c291a]
+- Updated dependencies [e13e539]
+- Updated dependencies [c98432d]
+- Updated dependencies [2121adb]
+- Updated dependencies [b81f560]
+- Updated dependencies [060b0ee]
+- Updated dependencies [4825659]
+- Updated dependencies [caf38d2]
+- Updated dependencies [33c0cbd]
+- Updated dependencies [132af78]
+- Updated dependencies [03f87f4]
+- Updated dependencies [2af51ff]
+- Updated dependencies [df46c46]
+- Updated dependencies [ffacbd8]
+  - @weasel-js/core@1.17.2
+  - @weasel-js/ui@1.17.2
+  - @weasel-js/react@1.17.2
+  - @weasel-js/registry@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes
