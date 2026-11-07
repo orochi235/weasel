@@ -96,3 +96,13 @@ export interface AnimationContext {
   /** The summed velocity of the animations holding `key` on `target`; null where none does. */
   velocityUnder(key: string, target: TargetState): number[] | null;
 }
+
+/** Commits `value` on `s`, just attached; a setter that throws leaves `s` as it was found. */
+export function commitOrLeave(ctx: AnimationContext, s: TargetState, value: unknown): void {
+  try {
+    s.set(value);
+  } catch (error) {
+    ctx.targets.detach(s);
+    throw error;
+  }
+}

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { createTarget } from '../../target';
@@ -161,6 +161,82 @@ describe('the browser animation follows the animator clock', () => {
   });
 });
 
+describe('a handed-off run in a page that was hidden', () => {
+  const hide = (hidden: boolean) => act(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  afterEach(() => { Reflect.deleteProperty(document, 'hidden'); });
+
+  it('carries on from where the animator stood, its clock running again', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    act(() => { tween(animator, e.target, 100, { ms: 10_000 }); });
+    step(0);
+    step(300);
+    hide(true);
+    step(5000);
+    hide(false);
+    step(16);
+    step(100);
+    expect(e.target.read().x).toBeCloseTo(4, 6);
+    expect(e.last().currentTime).toBeCloseTo(400, 6);
+  });
+
+  it('counts none of the time hidden, though its value is read meanwhile', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    act(() => { tween(animator, e.target, 100, { ms: 10_000 }); });
+    step(0);
+    step(300);
+    hide(true);
+    step(5000);
+    expect(e.target.read().x).toBeCloseTo(3, 6);
+    hide(false);
+    step(16);
+    expect(e.target.read().x).toBeCloseTo(3, 6);
+    expect(e.last().currentTime).toBeCloseTo(300, 6);
+  });
+
+  it('carries on though the browser finished it while hidden, its own clock short of the end', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    let done = 0;
+    act(() => { tween(animator, e.target, 100, { onDone: () => { done += 1; } }); });
+    step(0);
+    step(300);
+    hide(true);
+    step(5000);
+    hide(false);
+    step(16);
+    expect(done).toBe(0);
+    expect(e.target.read().x).toBeCloseTo(30, 6);
+    expect(e.last().currentTime).toBeCloseTo(300, 6);
+    for (let i = 0; i < 7; i++) step(100);
+    expect(done).toBe(1);
+    expect(e.inlineX()).toBe(100);
+  });
+});
+
+describe('a handed-off run the browser finishes', () => {
+  it('turned backward before the frame that would end it, plays back from where it stands', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    let h: ReturnType<typeof tween>;
+    act(() => { h = tween(animator, e.target, 100); });
+    step(0);
+    step(990);
+    act(() => {
+      timeline.now += 10;
+      e.last().advance();
+      h.setTimeScale(-1);
+    });
+    step(100);
+    expect(e.target.read().x).toBeCloseTo(89, 6);
+    expect(animator.isActive()).toBe(true);
+  });
+});
+
 describe('another animation on a handed-off target', () => {
   it('takes it back to the main thread, where the two add without a jump', () => {
     const { animator, step, timeline } = setup();
@@ -189,6 +265,24 @@ describe('another animation on a handed-off target', () => {
     expect(e.last().canceled).toBe(true);
     step(16);
     expect(e.target.read().x).toBeCloseTo(7, 6);
+  });
+
+  it('taken back while it plays backward, keeps its destination committed as the main thread does', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    let h: ReturnType<typeof tween>;
+    act(() => { h = tween(animator, e.target, 100); });
+    step(0);
+    step(300);
+    act(() => h.setTimeScale(-1));
+    step(100);
+    act(() => { e.target.commit(e.target.committed()); });
+    expect(e.target.read().x).toBeCloseTo(20, 6);
+    expect(e.target.committed()).toEqual({ x: 100 });
+    const xs: number[] = [];
+    for (let i = 0; i < 5; i++) { step(50); xs.push(e.target.read().x); }
+    expect(xs.map((x) => Math.round(x))).toEqual([15, 10, 5, 0, 0]);
+    expect(e.target.committed().x).toBe(0);
   });
 
   it('under the same cancelKey interrupts it, and the new one is handed off in its place', () => {

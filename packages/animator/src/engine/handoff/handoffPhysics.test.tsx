@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
-import { createTarget } from '../../target';
+import { wrapAngle } from '@weasel-js/geom';
+import { createElementTarget } from '../../elementTarget';
+import { createTarget, type TargetAxes } from '../../target';
 import type { PhysicsHandle } from '../../types';
-import { element, setup } from './testing/fakeAnimate';
+import { element, FakeAnimation, setup } from './testing/fakeAnimate';
 
 /** A plain `{ x }` target: the same animation run on the main thread, to compare against. */
 function plain(x = 0) {
@@ -45,6 +47,30 @@ describe('physics handed to the compositor', () => {
     expect(done).toBe(1);
     expect(e.target.committed().x).toBeCloseTo(p.committed().x, 1);
     expect(e.inlineX()).toBeCloseTo(e.target.committed().x, 6);
+  });
+
+  it('a spring on an angle turns the short way round, as on the main thread', () => {
+    const { animator, step, timeline } = setup();
+    const angle: TargetAxes<number> = { count: 1, to: (r) => [r], from: (a) => a[0]!, angles: [0] };
+    const el = document.createElement('div');
+    const made: FakeAnimation[] = [];
+    (el as unknown as { animate: unknown }).animate = (frames: Record<string, string>[], o: { duration: number }) => {
+      made.push(new FakeAnimation(frames, o.duration, timeline));
+      return made[made.length - 1];
+    };
+    const e = createElementTarget({ element: el, value: 6, axes: angle, style: (r) => ({ rotate: `${r}rad` }) });
+    let r = 6;
+    const p = createTarget({ get: () => r, set: (n) => { r = n; }, axes: angle });
+    act(() => {
+      animator.spring({ target: e, to: 0.1, compositor: 'auto' });
+      animator.spring({ target: p, to: 0.1, compositor: 'off' });
+    });
+    expect(made).toHaveLength(1);
+    step(0);
+    for (let i = 0; i < 30; i++) {
+      step(16);
+      expect(wrapAngle(e.read() - p.read())).toBeCloseTo(0, 3);
+    }
   });
 
   it('setTarget stays on the compositor and carries the velocity over', () => {

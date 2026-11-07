@@ -282,6 +282,22 @@ describe('useAnimator.spring', () => {
   });
 });
 
+describe('physics constants no motion can follow', () => {
+  it('throw rather than tick NaN or run away for good', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const onTick = () => {};
+    const coast = { from: 0, velocity: 100, add: (a: number, b: number) => a + b, scale: (v: number, k: number) => v * k, magnitude: Math.abs, onTick };
+    expect(() => result.current.spring({ from: 0, to: 10, mass: 0, onTick })).toThrow(/mass is positive/);
+    expect(() => result.current.spring({ from: 0, to: 10, mass: -1, onTick })).toThrow(/mass is positive/);
+    expect(() => result.current.physics({ from: 0, to: 10, damping: -5, onTick })).toThrow(/mass is positive/);
+    expect(() => result.current.spring({ from: 0, to: 10, stiffness: Number.NaN, onTick })).toThrow(/mass is positive/);
+    expect(() => result.current.decay({ ...coast, friction: 0 })).toThrow(/friction/);
+    expect(() => result.current.decay({ ...coast, friction: 1.5 })).toThrow(/friction/);
+    expect(result.current.isActive()).toBe(false);
+  });
+});
+
 describe('useAnimator.decay', () => {
   it('integrates velocity with friction until magnitude < threshold', () => {
     const clock = makeClock();

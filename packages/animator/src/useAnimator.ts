@@ -35,6 +35,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       requestFrame: opts.requestFrame,
       cancelFrame: opts.cancelFrame,
       onResume: () => { if (!optsRef.current.clock) coreRef.current?.resumed(); },
+      onSuspend: () => { if (!optsRef.current.clock) coreRef.current?.suspended(); },
     },
   );
   const frameLoopRef = useLatest(frameLoop);
@@ -97,9 +98,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   // visible to the user as every animation playing twice.
   const handle = opts.clock;
   useEffect(() => {
-    if (!handle) return;
-    // The last frame's time may stand on another clock's.
+    // The last frame's time may stand on another clock's, or on the clock just dropped.
     core.resumed();
+    if (!handle) return;
     return handle.onFrame(() => { if (core.api.isActive()) follow(handle.clock); });
   }, [core, handle, follow]);
 

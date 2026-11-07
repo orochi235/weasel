@@ -63,7 +63,8 @@ export function launch(
   /** The browser animation reached its end, or its start played backward. */
   let finished = false;
   /** Asks for the frame that ends the run once the browser animation has: the run asks for no
-   *  frames until then. */
+   *  frames until then. Its own clock decides whether it has ended, since the browser's counts
+   *  time the animator's does not, such as time hidden. */
   const onFinish = (animation: ElementAnimation): void => {
     animation.onfinish = () => {
       if (gone || animation !== placed.animation) return;
@@ -128,8 +129,10 @@ export function launch(
     if (child) return false;
     if (ctx.tripwire()) { letGo(motion.at(local())); return true; }
     const at = nowMs - placed.offset;
-    if (scale < 0 && (finished || at <= 0)) return end(true);
-    if (finished || at >= motion.ms) return end(false);
+    if (scale < 0 && at <= 0) return end(true);
+    if (at >= motion.ms) return end(false);
+    // The browser ended ahead of the animator's clock: placed back, it finishes again.
+    if (finished) { finished = false; hs.place(placed); ctx.defer(id, motion.ms - at); }
     return false;
   };
   seed.onCancel = () => {

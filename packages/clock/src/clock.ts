@@ -3,7 +3,7 @@ import { followMix } from './mixFollow';
 import { passesOf, placeOf } from './place';
 import { type Ramp, stepRamp } from './ramp';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
-import { checkDuration, checkOrigin, checkRate, checkSpeed, ratesOf } from './validate';
+import { checkDuration, checkLoop, checkOrigin, checkRate, checkSpeed, ratesOf } from './validate';
 
 /** Where `clock` stands, for a record to reopen it at; `declared` is the
  *  duration its spec gave, and `declaredOrigin` the origin. */
@@ -127,6 +127,7 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   checkDuration(duration);
   checkOrigin(origin);
   checkSpeed(declared.speed);
+  checkLoop(declared.loop);
   const finite = Number.isFinite(run.duration) && Number.isFinite(duration);
   const { pass, into } = finite ? passOf(run) : { pass: 0, into: run.elapsed };
   const shown = run.origin + into;
@@ -157,13 +158,15 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   const wasChanged = run.changed;
   const before = run.elapsed;
   if (!Number.isNaN(run.last) && !run.slept) {
-    run.elapsed += advance(run, hub, Math.max(0, timestamp - run.last));
-    if (run.elapsed >= run.span && run.rate > 0) {
+    const moved = advance(run, hub, Math.max(0, timestamp - run.last));
+    run.elapsed += moved;
+    // A ramp that turns back within the frame still reached the end on its way there.
+    if (run.elapsed >= run.span && (run.rate > 0 || moved > 0)) {
       run.elapsed = run.span;
       run.rate = 0;
       run.ramp = null;
       hub.subs.emit();
-    } else if (run.elapsed <= 0 && run.rate < 0) {
+    } else if (run.elapsed <= 0 && (run.rate < 0 || moved < 0)) {
       run.elapsed = 0;
       run.rate = 0;
       run.ramp = null;
@@ -223,6 +226,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
       return run.loop;
     },
     set loop(next: boolean | number) {
+      checkLoop(next);
       const { pass, into } = passOf(run);
       run.loop = next;
       run.span = run.duration * passesOf(run.loop);
@@ -242,7 +246,9 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
     },
     seek(target, line = 'start') {
       if (!seekable) throw new Error('this clock is not seekable');
-      run.elapsed = clamp(run, target);
+      const to = clamp(run, target);
+      if (!Number.isFinite(to)) throw new RangeError(`a clock seeks to a time in its run, not ${target}`);
+      run.elapsed = to;
       run.edge = line === 'end';
       change(run, hub);
       hub.subs.emit();
@@ -274,6 +280,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   checkOrigin(origin);
   if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
+  checkLoop(loop);
   const run: Run = {
     duration,
     loop,

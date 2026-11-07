@@ -200,6 +200,24 @@ describe('createClock', () => {
       expect(clock.elapsed).toBe(200);
     });
 
+    it('refuses a time that is no number, or past the end of a run that never ends', () => {
+      const { clock } = createClock({});
+      clock.seek(40);
+      expect(() => clock.seek(Number.NaN)).toThrow(RangeError);
+      expect(() => clock.seek(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+      expect(clock.elapsed).toBe(40);
+      clock.seek(Number.NEGATIVE_INFINITY);
+      expect(clock.elapsed).toBe(0);
+    });
+
+    it('refuses a loop that is NaN, declared or set', () => {
+      expect(() => createClock({ duration: 100, loop: Number.NaN })).toThrow(RangeError);
+      const handle = createClock({ duration: 100, loop: 2 });
+      expect(() => { handle.clock.loop = Number.NaN; }).toThrow(RangeError);
+      expect(() => handle.declare({ duration: 100, loop: Number.NaN })).toThrow(RangeError);
+      expect(handle.clock.loop).toBe(2);
+    });
+
     it('wakes a paused clock for one frame', () => {
       const wake = vi.fn();
       const { clock } = started({});
@@ -255,6 +273,27 @@ describe('createClock', () => {
       clock.sync(200);
       expect(clock.rate).toBe(3);
       expect(clock.elapsed).toBeCloseTo(200 + 300);
+    });
+
+    it('ends the run where a ramp reaches its end and turns back within one frame', () => {
+      const { clock } = started({ rate: 1, duration: 1000 });
+      clock.seek(999);
+      clock.sync(0);
+      clock.ramp(-1, 100);
+      clock.sync(60);
+      expect(clock.elapsed).toBe(1000);
+      expect(clock.ended).toBe(true);
+      expect(clock.rate).toBe(0);
+    });
+
+    it('stops at the start where a ramp reaches it and turns forward within one frame', () => {
+      const { clock } = started({ rate: -1, duration: 1000 });
+      clock.seek(1);
+      clock.sync(0);
+      clock.ramp(1, 100);
+      clock.sync(60);
+      expect(clock.elapsed).toBe(0);
+      expect(clock.rate).toBe(0);
     });
 
     it('is replaced by a rate write', () => {
