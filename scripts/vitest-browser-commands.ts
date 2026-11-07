@@ -3,6 +3,7 @@ import type {} from '@vitest/browser-playwright';
 import type { Download, Page } from '@playwright/test';
 import { createServer, type Server } from 'node:net';
 import { waitForOwnFrame } from './vitest-own-frame.ts';
+import { HOST_GPU_ARGS } from './chromium-gpu-args.ts';
 
 // Server-side commands for the `browser` vitest project, reached from a test
 // through `commands` in 'vitest/browser'. They run against the Playwright
@@ -189,11 +190,12 @@ export interface NodeRenders {
 }
 
 /** Render each of `renders` through one `@weasel-js/headless` host, built from source, in a
- *  Chromium of its own launched from this Node process; then dispose it. */
+ *  Chromium of its own launched from this Node process, on the rasterizer the browser project's is;
+ *  then dispose it. */
 const renderInNode: BrowserCommand<[renders: object[]]> = async (_ctx, renders): Promise<NodeRenders> => {
   const { headlessHost, headlessPageScript } = await import('./headless-source.ts');
   const [{ createNodeRasterHost }, pageScript] = await Promise.all([headlessHost(), headlessPageScript()]);
-  const host = createNodeRasterHost({ pageScript });
+  const host = createNodeRasterHost({ pageScript, launch: { args: HOST_GPU_ARGS } });
   const images: NodeRenders['images'] = [];
   try {
     for (const args of renders) {

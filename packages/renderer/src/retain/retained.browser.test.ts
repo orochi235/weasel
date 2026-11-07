@@ -96,6 +96,19 @@ function channelsOver(a: Uint8Array, b: Uint8Array, limit: number): number {
   return n;
 }
 
+/** The pixels, `x,y` from the top left, holding a channel more than `limit` apart, with both
+ *  values: these canvases are not in the failure screenshot. */
+function past(a: Uint8Array, b: Uint8Array, limit: number): string {
+  const out: string[] = [];
+  for (let i = 0; i < a.length && out.length < 12; i += 4) {
+    let d = 0;
+    for (let c = 0; c < 4; c++) d = Math.max(d, Math.abs(a[i + c] - b[i + c]));
+    const p = i / 4;
+    if (d > limit) out.push(`${p % DW},${DH - 1 - Math.floor(p / DW)}: ${a.subarray(i, i + 4).join(' ')} / ${b.subarray(i, i + 4).join(' ')}`);
+  }
+  return `${channelsOver(a, b, limit)} channel(s) past ${limit}; ${out.join('; ')}`;
+}
+
 function stack(layer: GroupDrawCommand): DrawCommand[] {
   return [...BELOW, layer, ABOVE];
 }
@@ -115,8 +128,13 @@ describe('a retained group, in a real context', () => {
 
     expect(maxDiff(drawn, kept)).toBe(0);
     // Translucent pixels round once more, through the surface's 8 bits, than
-    // they do blended straight onto the canvas: by 1 on a GPU, 2 on SwiftShader.
-    expect(maxDiff(direct, drawn)).toBeLessThanOrEqual(2);
+    // they do blended straight onto the canvas: by up to 2. Past that, only
+    // where the layer's red circle crosses the yellow one beneath it inside a
+    // pixel, whose samples the resolved surface no longer pairs with: none on
+    // SwiftShader, two pixels and 16 levels on ANGLE Metal (Apple M3 Max,
+    // 2026-11-07).
+    expect(channelsOver(direct, drawn, 2), past(direct, drawn, 2)).toBeLessThanOrEqual(6);
+    expect(maxDiff(direct, drawn), past(direct, drawn, 2)).toBeLessThanOrEqual(16);
   });
 
   it('matches drawing it under an enclosing alpha, color matrix and clip', () => {
@@ -153,7 +171,10 @@ describe('a retained group, in a real context', () => {
 
     const moved = frame(r, stack({ kind: 'group', retain: 'layer', transform: TRANSFORM, children }));
     expect(r.lastFrameStats().retained.redrawn).toBe(1);
-    expect(maxDiff(moved, frame(r, stack({ kind: 'group', transform: TRANSFORM, children })))).toBeLessThanOrEqual(2);
+    // The same two pixels as the first test's.
+    const straight = frame(r, stack({ kind: 'group', transform: TRANSFORM, children }));
+    expect(channelsOver(moved, straight, 2), past(moved, straight, 2)).toBeLessThanOrEqual(6);
+    expect(maxDiff(moved, straight), past(moved, straight, 2)).toBeLessThanOrEqual(16);
 
     // The frame drawn straight through freed the surface.
     frame(r, stack({ kind: 'group', retain: 'layer', transform: TRANSFORM, children }));
