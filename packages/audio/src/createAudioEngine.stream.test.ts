@@ -91,6 +91,17 @@ describe('engine.stream', () => {
     expect(sources[0].connectedTo).toHaveLength(1);
   });
 
+  it('keeps the earlier stream playing when an untyped restream throws on its time', async () => {
+    const { engine, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    expect(() => engine.stream(el as never, { when: Number.NaN } as never)).toThrow(RangeError);
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+  });
+
   it('pauses and unwires on stop', async () => {
     const { engine, sources, tick } = await harness();
     const el = createFakeMediaElement();
