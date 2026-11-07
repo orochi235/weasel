@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { createTarget } from '../../target';
-import { element, setup } from './fakeAnimate.testing';
+import { element, setup } from './testing/fakeAnimate';
 
 const tween = (a: ReturnType<typeof setup>['animator'], target: ReturnType<typeof element>['target'], to: number, extra = {}) =>
   a.tween({ target, to: { x: to }, ms: 1000, easing: linear, compositor: 'auto', ...extra });

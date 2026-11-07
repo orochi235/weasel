@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
-import { useAnimator } from '../../useAnimator';
-import { createElementTarget } from '../../elementTarget';
+import { useAnimator } from '../../../useAnimator';
+import { createElementTarget } from '../../../elementTarget';
 
 type Frame = Record<string, string | number>;
 

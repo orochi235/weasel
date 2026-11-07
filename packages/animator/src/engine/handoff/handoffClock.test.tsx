@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createClock } from '@weasel-js/clock';
 import { linear } from '@weasel-js/geom';
 import { useAnimator } from '../../useAnimator';
-import { element, type FakeAnimation } from './fakeAnimate.testing';
+import { element, type FakeAnimation } from './testing/fakeAnimate';
 
 /** An animator on an outside clock synced by hand, with the document timeline the browser
  *  animations run on standing at the same wall time. */

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import { createTarget } from '../../target';
 import type { PhysicsHandle } from '../../types';
-import { element, setup } from './fakeAnimate.testing';
+import { element, setup } from './testing/fakeAnimate';
 
 /** A plain `{ x }` target: the same animation run on the main thread, to compare against. */
 function plain(x = 0) {
