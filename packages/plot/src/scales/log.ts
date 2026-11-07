@@ -8,7 +8,7 @@ export interface LogScaleOptions {
   /** Both ends above zero. */
   domain: readonly [number, number];
   range: readonly [number, number];
-  /** Default 10. */
+  /** Above zero and not 1. Default 10. */
   base?: number;
 }
 
@@ -22,6 +22,7 @@ export interface LogScale extends ContinuousScale {
 /** A logarithmic scale from `domain`, whose ends must both be above zero, onto `range`. */
 export function logScale(opts: LogScaleOptions): LogScale {
   const base = opts.base ?? 10;
+  if (!(base > 0 && base !== 1 && Number.isFinite(base))) throw new Error(`logScale: a base of ${base} takes no logarithm`);
   const [d0, d1] = opts.domain;
   if (!(d0 > 0 && d1 > 0)) throw new Error(`logScale: a domain of ${d0}..${d1} does not lie above zero`);
   const [r0, r1] = opts.range;

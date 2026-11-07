@@ -95,6 +95,12 @@ describe('logScale', () => {
     expect(logScale({ domain: [1, Infinity], range: [0, 1] }).ticks()).toEqual([]);
   });
 
+  it('refuses a base no logarithm is taken in', () => {
+    for (const base of [1, 0, -2, Infinity, Number.NaN]) {
+      expect(() => logScale({ domain: [1, 10], range: [0, 1], base })).toThrow(/base/);
+    }
+  });
+
   it('throws on a domain that does not lie above zero', () => {
     expect(() => logScale({ domain: [0, 10], range: [0, 1] })).toThrow(/above zero/);
   });
