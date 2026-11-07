@@ -99,7 +99,7 @@ function shapeXml(shape: TileShape): string {
     case 'line':
       return `<line x1="${trimNumber(shape.x1)}" y1="${trimNumber(shape.y1)}" `
         + `x2="${trimNumber(shape.x2)}" y2="${trimNumber(shape.y2)}" `
-        + `stroke="${shape.color}" stroke-width="${trimNumber(shape.width)}"/>`;
+        + `stroke="${escapeAttr(shape.color)}" stroke-width="${trimNumber(shape.width)}"/>`;
     case 'circle':
       return `<circle cx="${trimNumber(shape.cx)}" cy="${trimNumber(shape.cy)}" `
         + `r="${trimNumber(shape.r)}" fill="${escapeAttr(shape.color)}"/>`;
