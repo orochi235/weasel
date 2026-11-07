@@ -111,6 +111,11 @@ describe('formatTick', () => {
     expect(formatTick(100, { decimals: 0, step: 50 })).toBe('100');
   });
 
+  it('writes a value of 1e21 or more without an exponent, as a smaller one is', () => {
+    expect(formatTick(1e21, { decimals: 1, step: 1e20 })).toBe('1000000000000000000000.0');
+    expect(formatTick(-2e21, { decimals: 0, step: 1e21 })).toBe('-2000000000000000000000');
+  });
+
   it('never prints a negative zero', () => {
     expect(formatTick(-0, { decimals: 1, step: 0.5 })).toBe('0.0');
     expect(formatTick(-1e-12, { decimals: 2, step: 0.05 })).toBe('0.00');

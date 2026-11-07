@@ -23,8 +23,14 @@ export function tickDecimals(values: readonly number[]): number {
   return most;
 }
 
+/** `value.toFixed(decimals)`, without the exponent `toFixed` switches to at 1e21. */
+export function toFixedPlain(value: number, decimals: number): string {
+  if (!(Math.abs(value) >= 1e21) || !Number.isFinite(value)) return value.toFixed(decimals);
+  return BigInt(value).toString() + (decimals > 0 ? `.${'0'.repeat(decimals)}` : '');
+}
+
 /** `value` fixed to its column's shared decimals, with no negative zero, so a column of labels lines up. */
 export function formatTick(value: number, ctx: TickFormatCtx): string {
-  const text = value.toFixed(ctx.decimals);
+  const text = toFixedPlain(value, ctx.decimals);
   return /^-0(\.0*)?$/.test(text) ? text.slice(1) : text;
 }

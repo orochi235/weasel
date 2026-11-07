@@ -27,6 +27,9 @@ describe('linearScale', () => {
     expect(s.format(60)).toBe('60');
     expect(formatNumber(2.5, 0.5)).toBe('2.5');
     expect(formatNumber(3, 0.5)).toBe('3');
+    expect(formatNumber(1e21, 1e20)).toBe('1000000000000000000000');
+    const big = logScale({ domain: [1e20, 1e22], range: [0, 1] });
+    expect(big.ticks(2).map((v) => big.format(v).length)).toEqual([21, 22, 23]);
   });
 
   it('formats ticks to the step of the count they were asked for', () => {
