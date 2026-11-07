@@ -149,6 +149,13 @@ describe('dollyToward', () => {
     const held = dollyToward(cam, 0.5, { x: 700, y: 100 }, PANE, { minDistance: 10 });
     expect(held).toEqual(cam);
   });
+
+  it('keeps the target of a camera sitting on it, and dollies it out to its limit', () => {
+    const cam = createCamera({ distance: 0, target: { x: 1, y: 2, z: 3 } });
+    const out = dollyToward(cam, 2, { x: 700, y: 100 }, PANE);
+    expect(out.target).toEqual(cam.target);
+    expect(out.distance).toBe(0.5);
+  });
 });
 
 describe('cameraViewProjection', () => {
