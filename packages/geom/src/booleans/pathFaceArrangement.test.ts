@@ -7,7 +7,7 @@ import { area, circle, fine, hasCurves, mpArea, rect, rng, shape } from './curve
 import { curveFaces, type CurveFaceSet } from './curveFaces';
 import { parseContours } from './contours';
 import { intersectSegments } from '../intersect/segmentIntersections';
-import { DIGITS, glyphCell } from './glyphCell.fixtures';
+import { DIGITS, glyphCell } from './glyphCell.fixture';
 
 /** One path drawing both of `a`'s and `b`'s contours. */
 const both = (a: PolygonPath, b: PolygonPath): PolygonPath => ({

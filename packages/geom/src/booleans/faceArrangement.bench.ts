@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { checkTree, treeReport, treeStamp } from '../../../../scripts/lib/fleet-tree.mjs';
 import type { Path } from '../path';
 import { multiPolygonToPath, pathToMultiPolygon } from './adapter';
-import { ASCII, DIGITS, UPPER, glyphCell } from './glyphCell.fixtures';
+import { ASCII, DIGITS, UPPER, glyphCell } from './glyphCell.fixture';
 import { pathFaceArrangement } from './ops';
 import { curveFaces } from './curveFaces';
 
