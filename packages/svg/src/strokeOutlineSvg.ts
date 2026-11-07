@@ -13,7 +13,7 @@
  * opacity wraps the two in one group holding it, so they composite as one
  * layer.
  */
-import { strokeToPath, vertexHalfWidths, type Stroke, type VertexWidth } from '@weasel-js/core';
+import { dashPattern, strokeToPath, vertexHalfWidths, type Stroke, type VertexWidth } from '@weasel-js/core';
 import type { Path } from '@weasel-js/geom';
 import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { serializePathD } from './path-serializer';
@@ -40,7 +40,9 @@ function attrOf(el: Element, name: string): string | null {
 /** Whether `stroke` is written as an outline. */
 export function writesOutline(stroke: SvgStroke | undefined): boolean {
   return (stroke?.vertexWidths?.length ?? 0) > 0 || stroke?.nib !== undefined
-    || stroke?.align === 'inner' || stroke?.align === 'outer';
+    || stroke?.align === 'inner' || stroke?.align === 'outer'
+    // No line, and heads still to draw: only the outline holds them alone.
+    || (stroke?.dash !== undefined && dashPattern(stroke.dash) === 'non-finite');
 }
 
 /** Whether any path under `nodes` writes an outline, and so needs the

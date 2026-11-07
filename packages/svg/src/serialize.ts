@@ -22,6 +22,7 @@ import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
 import { withTrimsDrawn } from './trimmedStroke';
+import { withDashesResolved } from './resolvedDashes';
 import { type SeatedPathNode, withSeatedHeads } from './seatedHeads';
 import {
   writesOutline, strokeGroupXml, strokeOutlineXml, outlinedStrokeAttrs, writesOutlines,
@@ -37,7 +38,7 @@ import { RAD_TO_DEG } from '@weasel-js/geom';
  */
 export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): string {
   const registry = new PaintServerRegistry();
-  const nodes = withTrimsDrawn(given);
+  const nodes = withTrimsDrawn(withDashesResolved(given));
   registerPaintServers(nodes, registry);
 
   const bounds = opts.viewBox ?? computeBounds(given);
