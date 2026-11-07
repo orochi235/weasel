@@ -59,8 +59,8 @@
     "longestFunction": 140
   },
   "packages/d3/src/transition.ts": {
-    "lines": 456,
-    "longestFunction": 337
+    "lines": 451,
+    "longestFunction": 336
   },
   "packages/font/src/registerFont.ts": {
     "lines": 797
