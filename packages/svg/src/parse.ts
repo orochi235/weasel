@@ -340,9 +340,9 @@ function parseElement(
     }
   }
   const leafStyle = deriveStyle(style, el);
-  const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked);
+  const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked, onWarn);
   const ownStroke = withOutlinedStroke(el, readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el)));
-  const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked);
+  const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked, onWarn);
   if (stroke && typeof stroke.width === 'number' && isNonUniform(baked)) {
     onWarn(`<${tag}> stroke sits under a skew or non-uniform scale; its width takes the uniform part only`);
   }
