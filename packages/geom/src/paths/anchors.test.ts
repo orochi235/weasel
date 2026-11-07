@@ -16,6 +16,19 @@ describe('pathToAnchors', () => {
     expect(closed).toEqual([false]);
   });
 
+  it('starts a subpath at the closed one\'s start when a line follows Z with no M', () => {
+    // SVG's `M0 0 L10 0 L10 10 Z L20 20`: the line after Z draws from (0, 0).
+    const path = new PathBuilder()
+      .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).close().lineTo(20, 20)
+      .build();
+    const { anchors, closed } = pathToAnchors(path);
+    expect(anchors).toEqual([
+      [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      [{ x: 0, y: 0 }, { x: 20, y: 20 }],
+    ]);
+    expect(closed).toEqual([true, false]);
+  });
+
   it('marks the subpath closed when it ends with Z', () => {
     const path = new PathBuilder()
       .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).close()
