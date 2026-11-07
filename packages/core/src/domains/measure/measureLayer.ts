@@ -4,7 +4,7 @@ import type { LayerHit } from 'affordances/types';
 import type { Scene } from 'core/scene/types';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
-import { rectPath } from '@weasel-js/geom';
+import { pxReach, rectPath } from '@weasel-js/geom';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { measureCommands } from 'canvas/nodeShapes/measurePainter';
 import { measureEndsOf, type MeasurePoint } from './measurement';
@@ -62,7 +62,7 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       return out;
     },
     hitTest: (wx, wy, _data, view): LayerHit<MeasureHit> | null => {
-      const hit = measureAt(scene, ms, { x: wx, y: wy }, MEASURE_HIT_PX / (view.scale.x || 1));
+      const hit = measureAt(scene, ms, { x: wx, y: wy }, pxReach(MEASURE_HIT_PX, view.scale));
       if (!hit) return null;
       const onPickedEnd = hit.part !== 'line' && hit.id === ms.picked.get();
       if (ms.measuring.get() && !onPickedEnd) return null;

@@ -1,4 +1,4 @@
-import type { Action, ActionDeps, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { Action, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
@@ -14,6 +14,7 @@ import { measureAt, type MeasureHit } from './measureHit';
 import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import type { ImmediateParams } from '@weasel-js/routing';
+import { pxReach } from '@weasel-js/geom';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -25,12 +26,6 @@ const pointOf = (at: InvocationCtx): MeasurePoint => at.drag?.current ?? at.worl
 /** Where an end lands among `scene`'s unit-scope frames; the top of the tree
  *  without a scene. Built once per gesture: the scene holds still under it. */
 const framesOf = (scene: AnyScene | undefined): MeasureFrameAt => (scene ? unitFrameAt(scene) : () => null);
-
-/** World units `px` screen pixels span at the deps' view. */
-export function pxToWorld(deps: ActionDeps | undefined, px: number): number {
-  const scale = deps?.view?.get().scale.x ?? 1;
-  return px / (scale || 1);
-}
 
 /**
  * The measure tool's drag: from press to pointer, each end through a `point`
@@ -100,7 +95,7 @@ export function measurePickAtAction(ms: Measurements): Action {
         const press = (params as ImmediateParams | undefined)?.press;
         const scene = deps.scene as AnyScene | undefined;
         if (!scene || !press) return;
-        const hit = measureAt(scene, ms, press, pxToWorld(deps, MEASURE_HIT_PX));
+        const hit = measureAt(scene, ms, press, pxReach(MEASURE_HIT_PX, deps.view?.get().scale ?? { x: 1, y: 1 }));
         ms.picked.set(hit?.id ?? null);
       },
     },

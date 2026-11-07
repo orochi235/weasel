@@ -176,6 +176,14 @@ describe('picking and the current measurement', () => {
     expect(rig.ms.picked.get()).toBeNull();
   });
 
+  it('picks the measurement under a click in a view flipped on x', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 100, y: 0 });
+    rig.deps.view = { get: () => ({ scale: { x: -1, y: 1 } }) };
+    rig.run(MEASURE_ACTION_IDS.pickAt, { press: { x: 50, y: 2 } });
+    expect(rig.ms.picked.get()).toBe(rig.ids()[0]);
+  });
+
   it('passes over a hidden or locked measurement to the one under it', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 100, y: 0 });
