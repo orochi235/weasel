@@ -51,7 +51,11 @@ export function spinKey(key: string, from: number, bounds: SpinBounds): number |
     ...(min === undefined && !endlessAt(endless, -1) ? {} : { min: track.min }),
     ...(max === undefined && !endlessAt(endless, 1) ? {} : { max: track.max }),
   });
-  return at === null ? null : track.fromTrack(at);
+  if (at === null) return null;
+  // A step that would carry a value past an endless bound lands on the bound first.
+  if (key !== 'End' && max !== undefined && from < max && at > max) return max;
+  if (key !== 'Home' && min !== undefined && from > min && at < min) return min;
+  return track.fromTrack(at);
 }
 
 /** Whether `key` spins `from` anywhere: false for a key that does not spin, and at the bound it heads for. */
