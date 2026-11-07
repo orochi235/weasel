@@ -12,7 +12,15 @@ import { resolveDpr } from '../canvasRenderer';
 import type { SceneViewLayers } from '../sceneViewRender';
 import type { FromWorker, ToWorker } from './protocol';
 import { createFrameWriter } from './frameWriter';
+import type { AnimationOp } from './protocol';
+import { workerAnimator, type WorkerAnimator } from './workerAnimator';
 import { answerImage } from './workerImages';
+
+/** What the worker's animator follows of a page clock: a `ClockHandle` from `@weasel-js/clock`. */
+export interface FollowedClock {
+  clock: { readonly elapsed: number; readonly rate: number; subscribe(fn: () => void): () => void };
+  onFrame(fn: () => void): () => void;
+}
 
 /** What a worker frame paints, beside the scene. */
 export interface SceneRenderInputs<TData, TLayer extends string, TPose> extends SceneViewLayers {
@@ -28,6 +36,9 @@ export interface SceneRenderInputs<TData, TLayer extends string, TPose> extends 
   /** A per-node alpha multiplier, as `<SceneViewCanvas alphaFor>`. Called on the page for every
    *  node each frame; only the alphas that changed cross. */
   alphaFor?: (id: string) => number;
+  /** A page clock the worker's animator follows, as `useAnimator({ clock })` does: its pause,
+   *  rate and seeks reach the animations. Without one the animator runs on the page's frame times. */
+  clock?: FollowedClock;
   /** World-space commands drawn over the scene. These cross whole, each time the array changes. */
   extraCommands?: readonly DrawCommand[];
 }
@@ -43,6 +54,10 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   /** Hear when a frame is due: the scene or its overrides changed, or the worker's own pixels
    *  did. Returns an unsubscribe. */
   subscribe(fn: () => void): () => void;
+  /** The worker's animator, which plays the programs its module registered. */
+  readonly animator: WorkerAnimator;
+  /** The host's frame loop is back after time nobody saw: the worker's animator does not count it. */
+  resumed(): void;
   /** What the canvas shows now. `null` when it shows nothing yet. */
   snapshot(): Promise<ImageBitmap | null>;
   /** Stop the worker, and with it the canvas's context. */
@@ -69,14 +84,19 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   const imageWaits = new Set<() => void>();
   const post = (msg: ToWorker, transfer: Transferable[] = []) => worker.postMessage(msg, transfer);
 
+  const ops: AnimationOp[] = [];
+  let resumed = false;
+  const animator = workerAnimator((op) => { ops.push(op); due.emit(); });
+
   let unwatch = () => {};
   const watch = () => {
     unwatch();
-    const { scene } = inputs;
+    const { scene, clock } = inputs;
+    const offClock = clock ? [clock.clock.subscribe(due.emit), clock.onFrame(due.emit)] : [];
     const offScene = scene.subscribe(due.emit);
     const offOverrides = scene.overrides.subscribe(() => { frames.overridesChanged(); due.emit(); });
     const offScroll = scene.scroll.subscribe(due.emit);
-    unwatch = () => { offScene(); offOverrides(); offScroll(); };
+    unwatch = () => { offScene(); offOverrides(); offScroll(); for (const off of offClock) off(); };
   };
   watch();
 
@@ -90,7 +110,10 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       snapshots.get(msg.id)?.(msg.bitmap);
       snapshots.delete(msg.id);
     } else if (msg.type === 'image') {
-      const stop = answerImage(msg, (answer) => { imageWaits.delete(stop); post(answer); });
+      const stop = answerImage(msg, (answer) => {
+        imageWaits.delete(stop);
+        post(answer, answer.bitmap ? [answer.bitmap] : []);
+      });
       imageWaits.add(stop);
     } else if (msg.type === 'error' && !warned) {
       warned = true;
@@ -111,21 +134,27 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   return {
     update(next) {
       const sceneMoved = next.scene !== undefined && next.scene !== inputs.scene;
+      const clockMoved = 'clock' in next && next.clock !== inputs.clock;
       inputs = { ...inputs, ...next };
-      if (sceneMoved) {
-        frames.forgetScene();
-        watch();
-      }
+      if (sceneMoved) frames.forgetScene();
+      if (sceneMoved || clockMoved) watch();
     },
     sync() {
       if (disposed) return false;
       if (inFlight) { owed = true; return true; }
       const msg = frames.write(inputs as unknown as SceneRenderInputs<unknown, string, unknown>);
+      const { clock } = inputs;
+      msg.at = clock ? { elapsed: clock.clock.elapsed, rate: clock.clock.rate } : { time: performance.now() };
+      if (resumed) msg.resumed = true;
+      resumed = false;
+      if (ops.length > 0) msg.animations = ops.splice(0);
       inFlight = true;
       post(msg);
       return true;
     },
     subscribe: due.subscribe,
+    animator,
+    resumed() { resumed = true; },
     snapshot() {
       if (disposed) return Promise.resolve(null);
       const id = ++nextSnapshot;

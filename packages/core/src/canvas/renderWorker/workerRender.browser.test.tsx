@@ -6,10 +6,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement, createRef, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneViewCanvas, asNodeId, createScene, type WorkerCanvasHandle } from '@weasel-js/core';
+import { SceneViewCanvas, asNodeId, createScene, type FollowedClock, type WorkerCanvasHandle } from '@weasel-js/core';
+import { createClock } from '@weasel-js/clock';
+import { bitmapSrc } from '@weasel-js/renderer';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const solid = (color: string) => ({ fill: { paint: { kind: 'solid' as const, color } } });
+type Data = Record<string, unknown>;
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
@@ -41,12 +44,20 @@ async function until(handle: WorkerCanvasHandle, x: number, y: number, rgb: numb
   return last;
 }
 
-function mount(alphaFor?: (id: string) => number) {
-  const scene = createScene<ReturnType<typeof solid>, 'main', Pose>({
+interface MountOptions {
+  alphaFor?: (id: string) => number;
+  clock?: FollowedClock;
+  /** Data for the two nodes, `a` at the left and `b` at the right. */
+  a?: Data;
+  b?: Data;
+}
+
+function mount({ alphaFor, clock, a = solid('#ff0000'), b = solid('#00ff00') }: MountOptions = {}) {
+  const scene = createScene<Data, 'main', Pose>({
     systemLayers: [{ id: 'main' }],
     initial: [
-      { id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 10, y: 10, width: 30, height: 30 }, data: solid('#ff0000') },
-      { id: asNodeId('b'), kind: 'mark', layer: 'main', pose: { x: 60, y: 10, width: 30, height: 30 }, data: solid('#00ff00') },
+      { id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 10, y: 10, width: 30, height: 30 }, data: a },
+      { id: asNodeId('b'), kind: 'mark', layer: 'main', pose: { x: 60, y: 10, width: 30, height: 30 }, data: b },
     ],
   });
   const sent: unknown[] = [];
@@ -60,8 +71,8 @@ function mount(alphaFor?: (id: string) => number) {
   host = document.createElement('div');
   document.body.appendChild(host);
   root = createRoot(host);
-  flushSync(() => root!.render(createElement(StrictMode, null, createElement(SceneViewCanvas<ReturnType<typeof solid>, 'main', Pose>, {
-    scene, view: VIEW, width: 100, height: 50, dpr: 1, worker: start, workerRef: handle, alphaFor,
+  flushSync(() => root!.render(createElement(StrictMode, null, createElement(SceneViewCanvas<Data, 'main', Pose>, {
+    scene, view: VIEW, width: 100, height: 50, dpr: 1, worker: start, workerRef: handle, alphaFor, clock,
   }))));
   return { scene, sent, handle, canvas: host.querySelector('canvas')! };
 }
@@ -112,8 +123,53 @@ describe('a scene view painted by a worker', () => {
   });
 
   it('dims a node by the alpha the page computes', async () => {
-    const { handle } = mount((id) => (id === 'b' ? 0 : 1));
+    const { handle } = mount({ alphaFor: (id) => (id === 'b' ? 0 : 1) });
     expect(await until(handle.current!, 25, 25, [255, 0, 0])).toEqual([255, 0, 0, 255]);
     expect((await pixel(handle.current!, 75, 25))![3]).toBeLessThan(16);
+  });
+
+  it('plays a worker animation on the page clock, through seeks forward and back', async () => {
+    const clock = createClock({ duration: 1000 });
+    const { handle } = mount({ clock, a: { shape: 'rect', ...solid('#ffffff') } });
+    expect(await until(handle.current!, 25, 25, [255, 255, 255])).toEqual([255, 255, 255, 255]);
+    handle.current!.animator.play('red-to-blue', { id: 'a' });
+    clock.clock.sync(0);
+    expect(await until(handle.current!, 25, 25, [255, 0, 0])).toEqual([255, 0, 0, 255]);
+    clock.clock.seek(500);
+    const mid = await (async () => {
+      for (let i = 0; i < 300; i++) {
+        const p = await pixel(handle.current!, 25, 25);
+        if (p && p[0]! < 235 && p[2]! > 20) return p;
+        await frame();
+      }
+      return null;
+    })();
+    expect(mid![0]).toBeGreaterThan(20);
+    expect(mid![2]).toBeLessThan(235);
+    // Back short of the start, where the tween would end: it plays backward and keeps running.
+    clock.clock.seek(50);
+    const back = await (async () => {
+      for (let i = 0; i < 300; i++) {
+        const p = await pixel(handle.current!, 25, 25);
+        if (p && p[0]! > 215 && p[2]! < 40) return p;
+        await frame();
+      }
+      return null;
+    })();
+    expect(back).not.toBeNull();
+    clock.clock.seek(1000);
+    expect(await until(handle.current!, 25, 25, [0, 0, 255])).toEqual([0, 0, 255, 255]);
+  });
+
+  it('draws a bitmap the page made, under the name the page gave it', async () => {
+    const paper = new OffscreenCanvas(8, 8);
+    const c = paper.getContext('2d')!;
+    c.fillStyle = '#ffff00';
+    c.fillRect(0, 0, 8, 8);
+    const made = paper.transferToImageBitmap();
+    const { handle } = mount({ b: { image: { src: bitmapSrc(made) } } });
+    expect(await until(handle.current!, 75, 25, [255, 255, 0])).toEqual([255, 255, 0, 255]);
+    // The page's own bitmap stays whole: the worker was sent a copy.
+    expect(made.width).toBe(8);
   });
 });

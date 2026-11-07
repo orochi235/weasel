@@ -39,6 +39,20 @@ export interface WireScroll {
   z?: number;
 }
 
+/** A call on the worker's animator, made on the page. `play` runs the program the worker module
+ *  registered under `key`; `id` names what it started, for the calls on that one. */
+export type AnimationOp =
+  | { op: 'play'; id: number; key: string; params?: unknown }
+  | { op: 'cancel' | 'pause' | 'resume'; id: number }
+  | { op: 'scale'; id: number; scale: number }
+  | { op: 'cancelKey' | 'pauseKey' | 'resumeKey'; key: string }
+  | { op: 'cancelAll' | 'pauseAll' | 'resumeAll' }
+  | { op: 'scaleAll'; scale: number };
+
+/** Where the worker's animator stands this frame: the page's frame time, or a page clock's
+ *  position and rate, which it follows backward as well as forward. */
+export type FrameTime = { time: number } | { elapsed: number; rate: number };
+
 /** Everything a frame reads beside the scene, each field present only when it changed. */
 export interface FrameInputs {
   view?: View;
@@ -51,6 +65,11 @@ export interface FrameInputs {
   scroll?: WireScroll[];
   /** Each node whose `alphaFor` changed, with its new alpha; an alpha of 1 drops the entry. */
   alpha?: [string, number][];
+  /** Sent every frame. */
+  at?: FrameTime;
+  /** The page's frames are back after time nobody saw. */
+  resumed?: true;
+  animations?: AnimationOp[];
 }
 
 export type ToWorker =

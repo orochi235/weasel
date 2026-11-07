@@ -227,7 +227,7 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
  *  power-of-two steps — the current raster is returned until the sharper one
  *  is ready. Raster sources ignore it. */
 export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBitmap | undefined {
-  if (src.startsWith(BITMAP_SCHEME)) return held.get(src)?.deref();
+  if (mintedHere(src)) return held.get(src)?.deref();
   const entry = cache.get(src);
   if (!entry) {
     startLoad(src);
@@ -239,6 +239,28 @@ export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBit
 }
 
 const BITMAP_SCHEME = 'weasel-bitmap:';
+/** Names this realm mints carry its own token, so a page's and a worker's never collide. */
+const REALM = Math.random().toString(36).slice(2, 10);
+const mintedHere = (src: string): boolean => src.startsWith(`${BITMAP_SCHEME}${REALM}.`);
+
+/** True when `src` is a {@link bitmapSrc} name, minted here or in another realm. */
+export function isBitmapSrc(src: string): boolean {
+  return src.startsWith(BITMAP_SCHEME);
+}
+
+/**
+ * Hold `bitmap` under `src`, a {@link bitmapSrc} name another realm minted — the page that made
+ * a bitmap, read from a render worker — as though it had loaded: drawn from the next frame on,
+ * dropped to fit the budget like any load, and freed by {@link releaseImage}. The cache owns it
+ * from here, so hand over a bitmap nothing else will close. A name another realm minted that
+ * the cache does not hold goes to the loader (`setImageLoader`), which can answer the same way.
+ */
+export function adoptBitmapSrc(src: string, bitmap: ImageBitmap): void {
+  if (mintedHere(src)) throw new Error(`weasel imageCache: ${src} was minted here; there is nothing to adopt`);
+  cache.set(src, { status: 'ready', bitmap, readAt: ++reads });
+  enforceBudget(src);
+  notify();
+}
 let held = new Map<string, WeakRef<ImageBitmap>>();
 let srcOfBitmap = new WeakMap<ImageBitmap, string>();
 let minted = 0;
@@ -260,7 +282,7 @@ const forget = new FinalizationRegistry<string>((src) => {
 export function bitmapSrc(bitmap: ImageBitmap): string {
   let src = srcOfBitmap.get(bitmap);
   if (src === undefined) {
-    src = `${BITMAP_SCHEME}${++minted}`;
+    src = `${BITMAP_SCHEME}${REALM}.${++minted}`;
     srcOfBitmap.set(bitmap, src);
     held.set(src, new WeakRef(bitmap));
     forget.register(bitmap, src, bitmap);
@@ -281,7 +303,7 @@ export function imageNaturalSize(src: string): ImageRasterSize | undefined {
 
 /** Current load status for `src` (`'idle'` if never requested). */
 export function imageStatus(src: string): ImageStatus {
-  if (src.startsWith(BITMAP_SCHEME)) return getImageBitmap(src) === undefined ? 'idle' : 'ready';
+  if (mintedHere(src)) return getImageBitmap(src) === undefined ? 'idle' : 'ready';
   return cache.get(src)?.status ?? 'idle';
 }
 

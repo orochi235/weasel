@@ -17,7 +17,8 @@ import type { PaintBoundsFn } from '../paintCull';
 import { buildSceneViewCommands } from '../sceneViewRender';
 import type { FrameInputs, FromWorker, ToWorker } from './protocol';
 import { createSceneMirror, type SceneMirrorOptions } from './sceneMirror';
-import { loadVectorsFromPage } from './workerImages';
+import { createWorkerAnimations, type WorkerAnimation } from './workerAnimations';
+import { loadFromPage } from './workerImages';
 
 type AnyNode = Node<unknown, string, unknown>;
 
@@ -37,6 +38,10 @@ export interface SceneRenderServeOptions {
   /** Custom programs the paint draws with — a handle from `registerProgram`, its source in
    *  GLSL, WGSL or both. */
   shaders?: readonly ShaderProgramHandle[];
+  /** Programs the page can play on the worker's animator by key, through `workerRef`'s
+   *  `animator.play(key, params)`. Their color and trim overrides paint as an `animator` does on
+   *  the page. */
+  animations?: Readonly<Record<string, WorkerAnimation>>;
   flattenTolerance?: FlattenTolerance;
   imageMinification?: ImageMinification;
   retainBudget?: number;
@@ -78,7 +83,8 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   const paintBounds = (options.paintBounds ?? paintBoundsFor(drawOne)) as PaintBoundsFn<AnyNode, unknown> | undefined;
   const mirror = createSceneMirror(options.scene);
   const dirty = () => port.postMessage({ type: 'dirty' });
-  const answerImage = loadVectorsFromPage((src, size) => port.postMessage({ type: 'image', src, size }));
+  const animations = createWorkerAnimations(options.animations ?? {}, dirty);
+  const answerImage = loadFromPage((src, size) => port.postMessage({ type: 'image', src, size }));
   subscribeImageReady(dirty);
   subscribeGlyphReady(dirty);
   let painting: Painting | null = null;
@@ -106,12 +112,15 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       painting.renderer.resize(msg.size);
     }
     const { scene } = mirror;
+    animations.at(msg.at, msg.resumed === true);
+    if (scene && msg.animations) animations.run(msg.animations, scene);
+    animations.advance();
     const { renderer, view, size, inputs } = painting;
     if (!scene || !view || renderer.isContextLost()) return;
     // `defaultDrawOne` reads the density it paints at here, as it reads `window`'s on the page.
     (globalThis as { devicePixelRatio?: number }).devicePixelRatio = size.dpr;
     const commands = buildSceneViewCommands(
-      scene, view, drawOne, inputs.extraCommands ?? undefined, alphas.size > 0 ? alphaFor : undefined, inputs.layers, undefined,
+      scene, view, drawOne, inputs.extraCommands ?? undefined, alphas.size > 0 ? alphaFor : undefined, inputs.layers, animations.animator,
       inputs.cull ? { ...size, paintBounds } : undefined,
     );
     renderer.render(commands, viewToMat3(view));

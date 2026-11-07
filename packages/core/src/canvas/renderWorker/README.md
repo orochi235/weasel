@@ -10,20 +10,34 @@ between the page and the worker. The decisions here date from 2026-11-06.
 // render.worker.ts — the consumer's own worker module
 import { serveSceneRender } from '@weasel-js/core/render-worker';
 import './myShapes'; // registerNodeShape, registerFont, registerProgram({ glsl, wgsl }), …
-serveSceneRender({ scene: { registry }, shaders: [myProgram] });
+serveSceneRender({
+  scene: { registry },
+  shaders: [myProgram],
+  animations: { glow: ({ animator, params }) => tweenVertexColors(animator, { ...params, ms: 400 }) },
+});
 
 // the page
 <SceneViewCanvas
   scene={scene}
   view={view}
   worker={() => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' })}
-  workerRef={handle} // handle.current.snapshot(): Promise<ImageBitmap | null>
+  workerRef={handle} // snapshot(), and animator.play('glow', { id, channel, from, to })
+  clock={clockHandle} // optional: the worker's animator follows it
 />
 ```
 
 `worker` replaces `drawOne`: the props are a union, and a worker view takes no `drawOne`,
 `paintBounds` or `animator`, because each is a function the paint calls and a function cannot cross.
 What paints a node is the worker module's to set up, as a page registers node shapes today.
+
+An animation is code too, so it crosses the way a node function does: the worker module registers
+each program under a key, and the page plays it by that key through `workerRef.current.animator`,
+with `params` that cross as data. A program returns the handle of what it started, so the page can
+cancel, pause or rescale it, and the animator's own `pauseKey`, `cancelAll` and the rest reach the
+worker the same way. `animator` is not a prop of a worker view. Animations change paint: vertex
+colors and stroke trims, through the animator's override registries. A program that writes to the
+worker's copy of the scene is overwritten by the page's next change to it, since the page's scene
+is the document.
 
 `alphaFor` is the one function a worker view takes: the page calls it for every node each frame
 and sends the alphas that changed.
@@ -43,13 +57,16 @@ A host that is not React calls `startSceneRenderWorker(worker, canvas, inputs)` 
 | Alphas from `alphaFor`, the changed ones | a frame where one changed |
 | View, size and density, layer visibility and order, `cull` | a frame where one changed |
 | `extraCommands` | a frame where the array changed |
-| SVG rasters the worker asked for | on request |
+| Animator calls (`play`, `cancel`, `pause`, `setTimeScale`, by id or by key) | the next frame, after its scene changes |
+| The frame's time: the page's frame time, or the `clock`'s position and rate | every frame |
+| That the page's frames are back after time nobody saw | the first frame after |
+| A copy of an SVG raster, or of a `bitmapSrc` bitmap, the worker asked for, transferred | on request |
 
 | Crosses worker → page | |
 |---|---|
 | `drawn` | after each frame; the page sends no frame while one is in flight |
-| `dirty` | an image or glyph landed in the worker, or its context came back |
-| an image request | for an SVG source |
+| `dirty` | an image or glyph landed in the worker, its context came back, or its animator has something running |
+| an image request | for an SVG source or a `bitmapSrc` name |
 | a snapshot | on request |
 
 **Scene changes, not draw commands.** Sending draw commands would keep the scene walk, every
@@ -84,12 +101,27 @@ the end of that task. So the worker paints nothing while the canvas is off scree
 hidden, with no visibility signal of its own. One frame is in flight at a time: a `sync()` while
 one is out marks a frame owed, and the worker's `drawn` asks for it.
 
+The worker's animator (`hostAnimator` from `@weasel-js/animator`) moves only on these frames, at
+the time each one carries, so it too stops while nothing can see the canvas. Without a `clock` it
+runs on the page's frame times, and a frame loop that resumes says so, so the time it was hidden is
+charged to no animation. With a `clock` it follows the clock's position as `useAnimator({ clock })`
+does: the clock's pause holds it, its rate scales it, and a seek back plays the running animations
+backward. The page asks for a frame whenever the clock moves or is sought; whoever owns the clock
+syncs it, as on the page.
+
 ## Assets
 
 **Images.** The worker's image cache decodes rasters itself, with `fetch` and
 `createImageBitmap`. An SVG needs an `<img>` to rasterize from, so the worker's loader
 (`setImageLoader`) asks the page, which answers from its own image cache with a clone of the
 raster. An SVG raster is then held in both caches.
+
+**Bitmaps the page made.** A `bitmapSrc` name carries a token of the realm that minted it, so the
+page's names and the worker's never collide. A name the worker's cache does not hold and did not
+mint goes to its loader, which asks the page; the page answers with a copy of its bitmap,
+transferred, and the worker's cache holds it under the page's name as it would a load, dropping it
+to fit its budget and asking again if it is drawn after. `adoptBitmapSrc(src, bitmap)` puts one
+there directly.
 
 **Fonts.** A canvas font has to be in the worker's own `self.fonts`; outline fonts load in the
 worker from their URL. `watchFontLoads` listens to `self.fonts` where there is no document.
@@ -113,14 +145,9 @@ cleanup releases it a task later and the setup in between takes it back.
 
 ## What it does not do yet
 
-`docs/PERF.md` ("Worker-thread render offload") tracks these, with what each needs:
+`docs/PERF.md` ("Worker-thread render offload") tracks it:
 
 - **`<SceneCanvas worker>`.** Its layer stack interleaves scene layers with layers whose painters
   are page functions (chrome, previews, consumer layers), so a worker scene needs the stack split
   into surfaces below and above the scene layers, each its own canvas. `readIds`, the GPU pick,
   needs a round trip to the worker's last frame.
-- **`animator`.** An animator resolves colors against the painter's base paint at paint time, so
-  its overrides cannot cross as values; the animator itself has to run in the worker, its
-  registries fed from the page.
-- **Runtime bitmaps** (`bitmapSrc`): a `weasel-bitmap:` name means nothing in the worker's cache,
-  which has no way to adopt a bitmap under a name the page minted.

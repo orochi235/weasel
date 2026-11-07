@@ -1,24 +1,25 @@
 /**
- * Images across the worker boundary. A worker decodes a raster itself, off the page's thread;
- * an SVG needs an `<img>` to rasterize from, which only the page has, so the worker asks the page
- * and the page answers from its own image cache.
+ * Images across the worker boundary. A worker decodes a raster itself, off the page's thread.
+ * Two kinds of source only the page can serve: an SVG, which needs an `<img>` to rasterize from,
+ * and a `bitmapSrc` name, whose bitmap the page made. For those the worker asks the page, which
+ * answers from its own image cache with a copy it transfers.
  */
 import {
-  getImageBitmap, imageStatus, isVectorImageSrc, loadImageBitmap, setImageLoader, subscribeImageReady,
+  getImageBitmap, imageStatus, isBitmapSrc, isVectorImageSrc, loadImageBitmap, setImageLoader, subscribeImageReady,
   type ImageRasterSize,
 } from '@weasel-js/renderer';
 import type { FromWorker, ToWorker } from './protocol';
 
 type Waiter = { resolve: (b: ImageBitmap) => void; reject: (e: Error) => void };
 
-/** Route the worker's vector loads to the page through `ask`. Returns the handler for the
- *  page's answers. */
-export function loadVectorsFromPage(ask: (src: string, size?: ImageRasterSize) => void): (
+/** Route the worker's loads of what only the page can serve through `ask`. Returns the handler
+ *  for the page's answers. */
+export function loadFromPage(ask: (src: string, size?: ImageRasterSize) => void): (
   answer: Extract<ToWorker, { type: 'image' }>,
 ) => void {
   const waiting = new Map<string, Waiter[]>();
   setImageLoader((src, size) => {
-    if (!isVectorImageSrc(src)) return loadImageBitmap(src, size);
+    if (!isVectorImageSrc(src) && !isBitmapSrc(src)) return loadImageBitmap(src, size);
     return new Promise<ImageBitmap>((resolve, reject) => {
       const list = waiting.get(src) ?? [];
       list.push({ resolve, reject });
@@ -51,7 +52,11 @@ export function answerImage(
     const bigEnough = !size || (bitmap && bitmap.width >= size.width && bitmap.height >= size.height);
     // A raster smaller than asked for is a re-raster in flight: wait for one landing, no longer.
     if (bitmap && (bigEnough || tries > 0)) {
-      reply({ type: 'image', src, bitmap });
+      // A copy, so the page's own stays whole and the worker's cache can own the one it gets.
+      createImageBitmap(bitmap).then(
+        (copy) => reply({ type: 'image', src, bitmap: copy }),
+        (e: unknown) => reply({ type: 'image', src, error: String(e) }),
+      );
       return true;
     }
     if (imageStatus(src) === 'error') {

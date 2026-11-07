@@ -19,6 +19,8 @@ function fakeWorker() {
 
 const canvas = () => ({ transferControlToOffscreen: () => ({}) }) as unknown as HTMLCanvasElement;
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+/** Every frame carries the page's time. */
+const AT = { time: expect.any(Number) };
 
 function start() {
   const scene = createScene<object, 'main', RectPose>({
@@ -53,16 +55,16 @@ describe('startSceneRenderWorker', () => {
     expect(due).toHaveBeenCalledTimes(1);
     client.sync();
     const second = frames(posted)[1]!;
-    expect(second).toEqual({ type: 'frame', scene: { nodes: [expect.objectContaining({ id: 'a' })] } });
+    expect(second).toEqual({ type: 'frame', at: AT, scene: { nodes: [expect.objectContaining({ id: 'a' })] } });
   });
 
-  it('sends an empty frame when only the worker asked for one', () => {
+  it('sends only the time when only the worker asked for a frame', () => {
     const { client, posted, answer } = start();
     client.sync();
     answer({ type: 'drawn' });
     answer({ type: 'dirty' });
     client.sync();
-    expect(frames(posted)[1]).toEqual({ type: 'frame' });
+    expect(frames(posted)[1]).toEqual({ type: 'frame', at: AT });
   });
 
   it('stops the worker on dispose and syncs nothing after', () => {
@@ -88,6 +90,38 @@ describe('startSceneRenderWorker, beside the scene', () => {
     expect(frames(posted)[1]).toMatchObject({ alpha: [['a', 0.25]], scroll: [{ id: 'a', x: 4, y: 0 }] });
     answer({ type: 'drawn' });
     client.sync();
-    expect(frames(posted)[2]).toEqual({ type: 'frame' });
+    expect(frames(posted)[2]).toEqual({ type: 'frame', at: AT });
+  });
+});
+
+describe('startSceneRenderWorker, the worker animator', () => {
+  it('sends animator calls and the frame time with the next frame, and a followed clock in its place', () => {
+    const { scene, client, posted, answer } = start();
+    const due = vi.fn();
+    client.subscribe(due);
+    const fade = client.animator.play('fade', { to: 1 });
+    fade.setTimeScale(2);
+    expect(due).toHaveBeenCalled();
+    client.resumed();
+    client.sync();
+    const first = frames(posted)[0]!;
+    expect(first).toMatchObject({
+      at: { time: expect.any(Number) },
+      resumed: true,
+      animations: [{ op: 'play', id: fade.id, key: 'fade', params: { to: 1 } }, { op: 'scale', id: fade.id, scale: 2 }],
+    });
+    answer({ type: 'drawn' });
+    const listeners: (() => void)[] = [];
+    const clock = {
+      clock: { elapsed: 250, rate: 0, subscribe: (fn: () => void) => { listeners.push(fn); return () => {}; } },
+      onFrame: () => () => {},
+    };
+    client.update({ clock });
+    due.mockClear();
+    for (const fn of listeners) fn();
+    expect(due).toHaveBeenCalled();
+    client.sync();
+    expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 } });
+    void scene;
   });
 });

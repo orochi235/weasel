@@ -28,6 +28,7 @@ import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { Animator } from '@weasel-js/animator';
 import { WorkerSceneView, type WorkerCanvasHandle } from './renderWorker/WorkerSceneView';
+import type { FollowedClock } from './renderWorker/startSceneRenderWorker';
 
 /** What `<SceneViewCanvas>` takes whether the page or a worker paints it. */
 interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
@@ -77,6 +78,7 @@ interface PagePaintedView<TData, TLayer extends string, TPose> {
   animator?: Animator;
   worker?: undefined;
   workerRef?: undefined;
+  clock?: undefined;
 }
 
 /** A worker paints the view into this canvas, handed to it with `transferControlToOffscreen`:
@@ -86,10 +88,15 @@ interface WorkerPaintedView {
    *  — `() => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' })`.
    *  Called once per mount; the worker is stopped on unmount. A function cannot cross to a
    *  worker, so what paints a node (`drawOne`, the node shapes, fonts and shaders it needs)
-   *  is the worker module's to set up, and `animator` does not apply. */
+   *  is the worker module's to set up. So is an animation: the worker runs its own animator,
+   *  and the page plays its programs through `workerRef`, so `animator` does not apply. */
   worker: () => Worker;
-  /** Reads what the worker's canvas shows, in place of `toBlob` on the canvas. */
+  /** Reads what the worker's canvas shows, in place of `toBlob` on the canvas, and reaches the
+   *  worker's animator, which plays the programs the worker module registered by key. */
   workerRef?: Ref<WorkerCanvasHandle>;
+  /** A page clock the worker's animator follows: its pause, rate and seeks reach the
+   *  animations. Without one they run on the page's frame times. */
+  clock?: FollowedClock;
   drawOne?: undefined;
   paintBounds?: undefined;
   animator?: undefined;
