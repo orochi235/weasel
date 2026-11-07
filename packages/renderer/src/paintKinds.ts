@@ -15,6 +15,7 @@ import type { GpuTexture } from './gpu/types';
 import {
   getProgramSource, registerProgram, sameProgramSource, type ProgramSource, type ShaderUniform,
 } from './shaders/registerProgram';
+import { assemblePaintWgsl } from './gpu/webgpu/wgsl/paintPrelude';
 
 /** A texture a paint kind made through {@link PaintBindContext.createTexture},
  *  or the ramp atlas {@link PaintBindContext.ramp} hands back. Opaque: only
@@ -130,6 +131,14 @@ export interface PaintDrawKind {
    * registers them. Declaring them here rather than
    * calling `registerProgram` at import keeps a kind loaded by
    * {@link registerPaintDrawKindLoader} free of the shader registry.
+   *
+   * GLSL supplies both stages; its vertex stage reads `a_position` and the
+   * `u_proj`, `u_model`, `u_origin` and `u_worldInv` the renderer and `bind`
+   * set. WGSL supplies `fn fragment(in: PaintVaryings) -> vec4f` and, where
+   * set, `vert`'s `fn vertex(v: PaintVertex) -> PaintVaryings`; the kit's
+   * paint prelude declares both types, the `kit` uniforms and the entry
+   * points (`gpu/webgpu/wgsl/paintPrelude.ts`). WGSL declaring entry points of
+   * its own is compiled as it is.
    */
   programs?: Readonly<Record<string, ProgramSource>>;
 }
@@ -151,11 +160,17 @@ export function registerPaintDrawKind(entry: PaintDrawKind): () => void {
       'resize; supply both or neither.',
     );
   }
-  for (const [id, src] of Object.entries(entry.programs ?? {})) {
+  for (const [id, declared] of Object.entries(entry.programs ?? {})) {
+    const src = paintProgramSource(declared);
     const have = getProgramSource(id);
     if (!have || !sameProgramSource(have, src)) registerProgram(id, src);
   }
   return KINDS.push(entry.id, entry);
+}
+
+/** A kind's program as the registry holds it: its WGSL inside the paint prelude. */
+function paintProgramSource(src: ProgramSource): ProgramSource {
+  return src.wgsl ? { ...src, wgsl: { frag: assemblePaintWgsl(src.wgsl) } } : src;
 }
 
 /** The draw half for `kind`, or `undefined`. A lookup that misses on a kind

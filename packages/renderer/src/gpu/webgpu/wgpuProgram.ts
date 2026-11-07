@@ -12,10 +12,13 @@ import { createUniformBlock, type UniformBlock } from './wgslUniforms';
 import { reflectEntries, type WgslEntries } from './wgslEntries';
 import { CUSTOM_KIT_WGSL_NAMES } from './wgsl/customPrelude';
 import { EFFECT_KIT_WGSL_NAMES } from './wgsl/effectPrelude';
+import { PAINT_KIT_WGSL_NAMES } from './wgsl/paintPrelude';
 import type { WgpuTexture } from './wgpuResources';
 
-/** The kit names a draw sets, and what the custom and effect preludes call them. */
-const ALIASES: Readonly<Record<string, string>> = { ...CUSTOM_KIT_WGSL_NAMES, ...EFFECT_KIT_WGSL_NAMES };
+/** The kit names a draw sets, and what the custom, effect and paint preludes call them. */
+const ALIASES: Readonly<Record<string, string>> = {
+  ...CUSTOM_KIT_WGSL_NAMES, ...EFFECT_KIT_WGSL_NAMES, ...PAINT_KIT_WGSL_NAMES,
+};
 
 /** The group the viewport fold binds, which the device fills. */
 export const NDC_GROUP = 2;
