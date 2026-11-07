@@ -322,6 +322,19 @@ export const FromStory = { parameters: { forge: { isolate: 'story reason' } } };
       expect(isolates(code)).toEqual(['meta reason', 'story reason']);
     });
 
+    it('reads a CSF2 story’s name and parameters assigned after it, the last assignment winning', () => {
+      const code = `
+export default { title: 'ui/Button' };
+export const Primary = () => null;
+Primary.storyName = 'First';
+Primary.storyName = 'Main';
+Primary.parameters = { forge: { isolate: 'assigned reason' } };
+export const Plain = { storyName: 'Kept' };
+`;
+      expect(ids(code)).toEqual([['ui-button--primary', 'Main'], ['ui-button--plain', 'Kept']]);
+      expect(isolates(code)).toEqual(['assigned reason', undefined]);
+    });
+
     it('refuses a value that is not a string literal, naming the file and export', () => {
       const code = `
 export default { title: 'ui/Button' };
