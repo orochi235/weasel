@@ -7,6 +7,7 @@ import {
   prefConditionPaths,
 } from '@weasel-js/prefs';
 import { withValueAtPath } from './path';
+import { isEncodedLeaf, storedDefault } from './storedDefault';
 import type {
   Annotations,
   BranchAnnotations,
@@ -21,9 +22,6 @@ import type {
 } from './types';
 
 type OpenShape = Record<string, ConfigEntry>;
-
-const encoded = (leaf: PrefLeaf): boolean =>
-  (leaf as { encoding?: unknown }).encoding !== undefined;
 
 /** The options `prefsFromConfig` put on a node beside its prefs fields, and those fields without them. */
 function optionsOn(node: Record<string, unknown>): [Record<string, unknown>, NodeOptions] {
@@ -204,11 +202,10 @@ export function configFromPrefs(schema: PrefSection): ConfigSchema<Record<string
   const nodes = shapeOf(schema.members, '', leaves);
   return {
     nodes: nodes as ConfigShape,
-    // An encoded leaf's default is the option it reads as, not what is stored, and holding nothing reads as it.
     defaults: () =>
       leaves.reduce<Record<string, unknown>>(
         (config, [path, leaf]) =>
-          encoded(leaf) ? config : withValueAtPath(config, path, leaf.default),
+          isEncodedLeaf(leaf) ? config : withValueAtPath(config, path, storedDefault(leaf)),
         {},
       ),
   };
