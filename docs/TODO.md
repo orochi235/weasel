@@ -723,7 +723,8 @@ only story runner in the repo.
   WGSL for the apps' shaders, the visual suite's WebGPU run, and two parity cases a row of pixels apart: in
   `parity.browser.test.ts` "a filled curve with a stroke" (14 pixels along the top of the stroke, WebGPU inking
   what WebGL leaves; moving the path 0.01 CSS px keeps them, 0.1 removes them) and in
-  `parity.passes.browser.test.ts` the retained group panned to (-21, 5) (1 pixel on the curved stroke).
+  `parity.passes.browser.test.ts` the retained group panned to (-21, 5) (1 pixel on the curved stroke). The
+  WebGL side is not stage 1's: main's renderer draws the stroke case the same pixel for pixel.
   Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
 - **(P3) [agent] WebGL draws a straight-alpha ImageBitmap as if premultiplied.** WebGL ignores
   `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for an `ImageBitmap` and uploads what it holds, so a bitmap made with
