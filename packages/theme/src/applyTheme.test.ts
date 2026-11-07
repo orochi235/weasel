@@ -56,6 +56,12 @@ describe('applyTheme', () => {
     el.remove();
   });
 
+  it("writes the selected axis value's color scheme, as the stylesheet does", () => {
+    const sepia = defineTheme({ name: 'sepia', axes: { mode: { default: 'dark', values: { sepia: { scheme: 'light' } } } } });
+    applyTheme(document.createElement('div'), sepia, { mode: 'sepia' });
+    expect(readSheetText()).toContain('color-scheme: light');
+  });
+
   it('re-emits when a theme is redefined under the same name', () => {
     // `defineTheme` takes a caller-supplied name and enforces no uniqueness,
     // so an edit-and-reload (HMR, a theme editor) produces a new Theme with
