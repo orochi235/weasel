@@ -132,16 +132,21 @@ test('a mark is cut where its target is, and takes no press past it', async () =
   await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
   const input = document.querySelector('.lk-annotate__input') as HTMLElement;
   const el = pane.current as HTMLElement;
-  const whole = el.getBoundingClientRect();
-  const shown = (el.parentElement as HTMLElement).getBoundingClientRect();
-  expect(shown.left - whole.left).toBeCloseTo(100, 0);
+  const rects = () => ({
+    whole: el.getBoundingClientRect(),
+    shown: (el.parentElement as HTMLElement).getBoundingClientRect(),
+  });
 
-  // The box that takes input covers the part of the target that shows.
+  // The box that takes input covers the part of the target that shows. Both sides are read on each
+  // attempt: under load the lab's layout can still move a pixel after the input first appears.
   await waitFor(() => {
+    const { whole, shown } = rects();
     const r = input.getBoundingClientRect();
+    expect(shown.left - whole.left).toBeCloseTo(100, 0);
     expect(r.left).toBeCloseTo(shown.left, 0);
     expect(r.width).toBeCloseTo(shown.width, 0);
   });
+  const { whole, shown } = rects();
   const mid = whole.top + whole.height / 2;
   expect(document.elementFromPoint(shown.left + 50, mid)).toBe(input);
   expect(document.elementFromPoint(whole.left + 50, mid)).not.toBe(input);
