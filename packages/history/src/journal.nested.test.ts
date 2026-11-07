@@ -46,6 +46,34 @@ describe('a journal inside a journal', () => {
     expect(outer.entries().undo).toHaveLength(1);
   });
 
+  it('cancels a journal still open inside it along with its own entries', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const outer = h.beginJournal({ label: 'outer' });
+    outer.applyBatch([pushOp(1)], 'one');
+    const inner = outer.beginJournal({ label: 'inner' });
+    inner.applyBatch([pushOp(2)], 'two');
+    outer.cancel();
+    expect(adapter.values).toEqual([]);
+    expect(inner.isActive()).toBe(false);
+    expect(h.activeJournal?.()).toBeNull();
+  });
+
+  it('refuses to commit while a journal inside it is open', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const outer = h.beginJournal({ label: 'outer' });
+    outer.applyBatch([pushOp(1)], 'one');
+    const inner = outer.beginJournal({ label: 'inner' });
+    inner.applyBatch([pushOp(2)], 'two');
+    expect(() => outer.commit('Outer')).toThrow(/still active/);
+    expect(outer.isActive()).toBe(true);
+    inner.commit('Inner');
+    outer.commit('Outer');
+    h.undo();
+    expect(adapter.values).toEqual([]);
+  });
+
   it('refuses to open in a closed journal', () => {
     const h = createHistory({ values: [] as number[] });
     const outer = h.beginJournal({ label: 'outer' });

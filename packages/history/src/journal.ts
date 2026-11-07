@@ -66,7 +66,9 @@ export interface Journal {
   subscribe(listener: () => void): () => void;
 
   // Lifecycle
+  /** Throws while a journal opened inside this one is still active. */
   commit(label: string): void;
+  /** Cancels a journal still active inside this one first. */
   cancel(): void;
   suspend(): void;
   isActive(): boolean;
@@ -140,6 +142,8 @@ export function createJournalInternal(
     subscribe: changed.subscribe,
     commit(label: string): void {
       if (state !== 'active') throw new Error('Journal is not active');
+      // Its ops are applied but recorded nowhere this commit reads.
+      if (inner.activeJournal?.()) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
       // Coalescing splits an entry in two: the forward half is the latest
       // push, the base half the first, and undo inverts the base.
       const { forwardOps, baseOps } = _journalAccessInternal(inner).appliedOps();
@@ -153,6 +157,7 @@ export function createJournalInternal(
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
+      inner.activeJournal?.()?.cancel();
       inner.goto(0);
       state = 'closed';
       RESUMERS.delete(journal);
