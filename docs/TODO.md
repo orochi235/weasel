@@ -379,6 +379,18 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] `Popover` draws in the dark theme inside a light-mode app.** In collego (light mode, @weasel-js
+  1.17.1, 2026-11-07) the finder's results list and its Tags picker, both `Popover`s, drew dark, and so did a
+  toast; `<body>` computed rgb(14, 15, 18). `Dialog` portals through `useOverlayPortal`
+  (`ui/src/components/Dialog/Dialog.tsx:82`) and takes the app's theme; `Popover`
+  (`ui/src/components/Popover/Popover.tsx:31`) and `Tooltip` go through `useReactAriaPortalTarget` and land outside
+  the themed root (reported by collego's session, not reproduced here). The toast may be a separate path. Closes
+  when a `Popover`, a `Tooltip`, and a toast opened inside a light-themed root draw light, with a browser test.
+- **(P3) [agent] Minimap's default view indicator is white whatever the theme.** `DEFAULT_INDICATOR_STROKE` is
+  `'#ffffff'`, 1 px, dashed `[2, 3]` (`minimap/src/minimapMath.ts:43`), so on a light minimap the view's box all but
+  disappears (collego, 2026-11-07). Closes when the default stroke follows the theme, light and dark, and a
+  consumer's own `stroke` still wins.
+
 - **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
   (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
   `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to
