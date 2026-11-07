@@ -1,5 +1,26 @@
 # @weasel-js/geom
 
+## 1.17.0
+
+### Patch Changes
+
+- 6539d70: Double-clicking a balance grip to equalize a segment's handles now moves every image of both handles under a `pathSymmetry` dep, as dragging the grip already did; it used to change only the clicked segment and leave a symmetric path lopsided. `equalizeSegmentHandles` takes the symmetries as an optional fourth argument.
+- b497b07: `pathToAnchors`, and every reshape built on it (`resamplePath`, `simplifyPath`, `openPathEnds`, and the rest), no longer throws "L without prior M" on a path that draws on after a `Z` with no `M`, such as a command stream written by hand. The segment after the `Z` starts a subpath at the closed one's start, as `forEachSegment` and SVG read it.
+- 75ef6d9: `PathBuilder` writes the moveto a drawing command implies after `close()`, at the closed subpath's start, as `pathFromD` does for SVG data, and so does a builder seeded by `PathBuilder.fromPath` from a closed path. Left implicit, the anchors after it were numbered one apart by the walkers that count that start and those that do not, so the Girth tool read each per-vertex width there from the anchor before it.
+- 12e9c39: `mat3.minScaleOf` keeps the smaller scale of a matrix that stretches far more one way than the other. It took the difference of two nearly equal squares, so a stretch of 1e4 by 1e-4 came back 22% off and one of 1e5 by 1e-5 came back 0. It now divides the determinant by the larger scale.
+- 9d25103: `pathFromD` writes the moveto SVG implies when a drawing command follows `Z` (`M0 0 h10 v10 z l5 5`), so the subpath after it opens with an `M` at the closed one's start. Left implicit, the path's anchors were numbered differently by the walkers that count the start and those that do not, and its corner shapes were never drawn.
+- 3b08834: `cubicBounds`, `cubicAxisExtremaTs`, and `boundsOfPath` find the turn of a cubic whose cubic coefficient is only rounding, such as a quadratic elevated to a cubic far from 0. They solved the derivative with the textbook quadratic formula, which loses the root to cancellation there, and could miss the curve's furthest point by most of its width. Path snapping's extreme points used the same formula and now share the stable one.
+- ceff0c3: `trackSlice` of a path or any other read-through shape finds the stretch's own nearest point. It clamped the whole shape's nearest point to the stretch, so on a path that bends back, a point beside another part of it answered at the stretch's end and at that end's distance rather than at the nearest point of the stretch.
+- 454e8e1: The selection outline can follow a node's shape instead of its box. Set `outline: { follow: 'shape' }` on the `selectionOverlay` slot, or on `createSelectionOverlayLayer` / `createSelectionOutlineLayer` with `scene`, and each node's silhouette is stroked outward from its drawn edge (past its own stroke, when it has one) at the outline's width in screen pixels. An open path, such as a wire, is outlined around the band its stroke covers. A group, an unstroked open path, or a node with no outline to trace keeps its box, and `pad` applies to boxes only. Additive; the default stays `'box'`. An `outline` given without a `paint` now keeps the default color rather than painting nothing.
+  
+  `nodeOutline` takes an optional pose and silhouette context, for reading a node's outline somewhere other than its stored pose.
+  
+  `DiagramView` outlines selected shapes along their outlines, and an item carried over a shape highlights the shape rather than its box; a container keeps its box in both.
+  
+  `@weasel-js/geom` exports `flatSubpaths`, a path flattened into point runs split by whether each encloses area.
+  
+  `@weasel-js/renderer` no longer throws `RangeError: offset is out of bounds` cutting an inner or outer stroke against a fill made of sliver triangles.
+
 ## 1.16.2
 
 ### Patch Changes

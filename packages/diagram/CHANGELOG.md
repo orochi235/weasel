@@ -1,5 +1,99 @@
 # @weasel-js/diagram
 
+## 1.17.0
+
+### Patch Changes
+
+- 08ebffc: The `avoid` router found no route, and the connector fell back to `orthogonal`, whenever the target port faced away from the source with no obstacle corner beyond it: bottom to bottom with the target below, east to west with the target to the west, or a self-loop from one side to the next. The search graph had no line crossing the one the route must arrive along. It now casts one just behind each target.
+- 8e0ac8a: During a drag, the `avoid` router's previews kept connectors `clearance` away from other connectors' labels rather than `labelClearance`, so a connector that passed close by a label detoured while the drag ran and jumped back when it ended.
+- fd16536: `fitDiagram` and its `DiagramFit` options are exported from `@weasel-js/diagram`: the view `DiagramView` opens on, for a host that holds the view itself through `view` and `onViewChange`. A ref on `EffectEditor` now reads `visible()`, the world rect it shows, and `rectOf(id)`, where a stage, group or wire is drawn in client coordinates, as a ref on `DiagramView` already does.
+- 20aef2e: A body takes a `header` row, `{ kind: 'header', text, style?, id?, pad?, aside? }`, only as its first row. It is a band across the top of the node, flush with its bounds rather than inset by the outline or the padding, as tall as its text's line plus `pad` (default `HEADER_PAD`) above and below, with its text set left at the body's padding; the other rows lay out below it as before. Its text is centered on the face's caps, midway between baseline and cap height, where the measure reports the face's metrics, and on its line box where it does not. The band is filled in the node's stroke and clipped to its outline, so a `roundRect` keeps its rounded corners, and its text is drawn in the node's fill. `NodeStyle` takes `header` and `headerText` to color the two otherwise. A node's minimum width covers the header's text and its padding.
+  
+  A header's `aside` is a second text in the band, set right at the body's padding from the right edge in the title's face, on the title's line, in the title's color at `HEADER_ASIDE_OPACITY` (0.7). The band's minimum width then covers title, `HEADER_ASIDE_GAP` (8), aside and the padding on both sides, and the title's box stops that gap short of the aside's. Its text node carries `bodyAside: true` beside its title's `bodyRow`. A theme recolors it with the title, and laying the body out again (`relayoutBodies`, a resize) moves it with the band. `diagram-formats` reads a header row back from a scene as a header, with its `aside` and `pad`.
+  
+  `MeasureRowText` may return `capCenter`, how far below the top of a line box the caps' middle falls. `rendererMeasure` and `diagramScene`'s own estimate read it from the registered face's metrics, and `canvasMeasure` from the context's font and glyph bounds.
+  
+  `DataNode` takes `collapsed`: a node whose first row is a header is built as that row alone, sized to its band and as wide as it would be open. One with no header is drawn whole.
+  
+  `DiagramView` takes `onHeaderClick(nodeId)`, called on a click (not a drag) anywhere on a node's header band, its text included, after `onSelect`.
+  
+  `RowTextStyle` takes `tracking` (extra space after each character, in em) and `weight` (a numeric font weight, over `bold`). Both reach the row's scene text as `letterSpacing` and `fontWeight`, and `canvasMeasure`, `rendererMeasure` and `diagramScene`'s own estimate measure with them.
+  
+  `roundRectOutline(maxRadius)` makes a rounded-rect outline with its own corner radius, to register under a name of its own: `registerOutline('card', roundRectOutline(5))`. The built-in `roundRect` is `roundRectOutline(10)`.
+- 1d87afe: A `slot` row takes `image: { src, opacity? }`, and `diagramScene` fills the slot's box with it through the kit's image painter instead of drawing an empty frame; a slot with an image needs no `id`. When a node's image `src` changes, `DiagramView` gives it the last picture that node decoded as `image.previous`, so it keeps drawing that until the new one is ready. `DiagramView` frees an image from the kit's image cache once nothing needs it (a held-over picture as soon as its replacement has decoded), and every image it draws when it unmounts, so a view whose pictures change often, a new data URL per edit, does not hold every one it has shown until the cache's byte budget runs out.
+- 1b720a8: Where nothing measures text, an edge label's and a sequence diagram's estimated width now count the style's `tracking`, as a shape's rows already did; every estimate in the package comes from one function.
+- 454e8e1: The selection outline can follow a node's shape instead of its box. Set `outline: { follow: 'shape' }` on the `selectionOverlay` slot, or on `createSelectionOverlayLayer` / `createSelectionOutlineLayer` with `scene`, and each node's silhouette is stroked outward from its drawn edge (past its own stroke, when it has one) at the outline's width in screen pixels. An open path, such as a wire, is outlined around the band its stroke covers. A group, an unstroked open path, or a node with no outline to trace keeps its box, and `pad` applies to boxes only. Additive; the default stays `'box'`. An `outline` given without a `paint` now keeps the default color rather than painting nothing.
+  
+  `nodeOutline` takes an optional pose and silhouette context, for reading a node's outline somewhere other than its stored pose.
+  
+  `DiagramView` outlines selected shapes along their outlines, and an item carried over a shape highlights the shape rather than its box; a container keeps its box in both.
+  
+  `@weasel-js/geom` exports `flatSubpaths`, a path flattened into point runs split by whether each encloses area.
+  
+  `@weasel-js/renderer` no longer throws `RangeError: offset is out of bounds` cutting an inner or outer stroke against a fill made of sliver triangles.
+- Updated dependencies [38e8c77]
+- Updated dependencies [986134b]
+- Updated dependencies [a7f57b8]
+- Updated dependencies [b0c009e]
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [46a7b46]
+- Updated dependencies [b5cd64f]
+- Updated dependencies [ceb8c55]
+- Updated dependencies [efcc47a]
+- Updated dependencies [2772d2a]
+- Updated dependencies [d28ff77]
+- Updated dependencies [217246e]
+- Updated dependencies [9e2e425]
+- Updated dependencies [5067c7a]
+- Updated dependencies [561550a]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [9778eee]
+- Updated dependencies [34203da]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/animator@1.17.0
+  - @weasel-js/react@1.17.0
+  - @weasel-js/audio@1.17.0
+  - @weasel-js/core@1.17.0
+  - @weasel-js/clock@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/simulation@1.17.0
+  - @weasel-js/font@1.17.0
+  - @weasel-js/ui-logic@1.17.0
+  - @weasel-js/icons@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

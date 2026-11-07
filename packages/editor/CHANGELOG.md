@@ -1,5 +1,62 @@
 # @weasel-js/editor
 
+## 1.17.0
+
+### Patch Changes
+
+- 436da9e: Copy and paste for an app whose own document owns its nodes, with no `InsertAdapter` to write. Core's new `useClipboard` takes the app's `copy(ids)` and `paste(items, at)` functions and returns the `clipboard` dep's shape; `paste` reports the new ids and the copies the next paste steps on from. `useClipboardOps` is now `useClipboard` over an adapter, and behaves as before, except that a copy which finds nothing to take keeps the last copy instead of emptying the clipboard. `@weasel-js/editor`'s `useDocClipboard` adds `clipboard.copy` and `clipboard.paste` commands, bound to Cmd/Ctrl+C and V, and the document undoes the paste. `InsertAdapter.commitPaste`'s docs now say that what it returns becomes the next paste's clipboard, so it must be shaped like `snapshotSelection`'s items.
+- Updated dependencies [d28ff77]
+- Updated dependencies [a551c73]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [6d8b8af]
+- Updated dependencies [2eaa495]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [d53bb96]
+- Updated dependencies [8b67fa6]
+- Updated dependencies [2d57bf9]
+- Updated dependencies [5c0ea38]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [00fa523]
+- Updated dependencies [1f1c990]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/core@1.17.0
+  - @weasel-js/ui@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/prefs@1.17.0
+  - @weasel-js/guides@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

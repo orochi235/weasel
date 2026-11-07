@@ -1,5 +1,30 @@
 # @weasel-js/stroke
 
+## 1.17.0
+
+### Patch Changes
+
+- c29b1f7: A round join where a path turns exactly 180° draws its half disc around the tip. The tessellator read a turn of exactly 180° as no turn at all, so a line that doubled straight back ended flat there, as if butt-capped.
+- 8fd23c2: A stroke whose width is infinite or NaN tessellates to an empty mesh, as one of width zero does. It used to give a ribbon of non-finite vertices.
+- 9f29268: An animating stroke trim no longer rebuilds a translucent, vertex-colored, gradient- or pattern-painted stroke too large to batch, one built in a stretched view's metric, nor any stroke's marker heads. Such a stroke is clipped from its one cached ribbon in the shader, as an opaque solid one already was, and paints each pixel once through the stencil, so it does not darken where its ribbon turns. An untrimmed stroke too large to batch draws from the same ribbon, so a tween that ends at the full stroke looks as the stroke does with its trim removed; a translucent one no longer darkens at a sharp turn, and a vertex-colored one gives a sharp turn's overlap to the segment before it rather than splitting it at the bisector. Heads are built once and drawn under the transform that places them, so a trim only moves them. A head's own paint (`MarkerEntry.fill` or `outline.paint` other than `'line'`) is now resolved against the head's unplaced box and turns with the head, as a node's box paint turns with the node, where it was resolved against the placed head's axis-aligned box.
+  
+  `@weasel-js/stroke` adds `markerPlacements`, `markerShape`, `markerPlacementMap` and `markerPolylines`, which say where each head goes without building it.
+- 305c461: A zero-length dash that falls exactly on an open line's last point draws its round or square cap, as one mid-line does. It was dropped, so a round-capped `dash: [0, gap]` line whose length was a whole number of gaps had no dot at its end.
+- a3ff22a: A round or square cap draws on a zero-length run, as SVG strokes one: a subpath such as `M5 5 L5 5`, and each zero-length dash, so a round-capped `dash: [0, gap]` draws a row of dots. Both drew nothing. A zero-length dash's square cap faces along its line; a zero-length subpath's faces the x axis.
+- 15a5e1d: A zero-length subpath such as `M5 5 L5 5` places its start and end markers, facing along the x axis as SVG orients a head with no direction. Both were dropped. A lone moveto still places none.
+- Updated dependencies [6539d70]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [52fd33e]
+- Updated dependencies [454e8e1]
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes
