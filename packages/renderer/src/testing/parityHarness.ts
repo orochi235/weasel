@@ -95,11 +95,21 @@ export async function openBackends({ width, height, dpr, antialias = false }: Pa
   return b;
 }
 
+/** Dispose every renderer `openBackends` built, and let go of both
+ *  contexts now rather than at collection: a page holds only so many. */
 export function closeBackends(): void {
   for (const b of opened.splice(0)) {
     b.gl.dispose();
     b.gpu.dispose();
+    b.glContext.getExtension('WEBGL_lose_context')?.loseContext();
+    (b.canvas.getContext('webgpu') as GPUCanvasContext).unconfigure();
   }
+}
+
+/** Destroy the shared device, once a file is done with it. */
+export function releaseDevice(): void {
+  device?.destroy();
+  device = null;
 }
 
 function readGl(b: Backends): Uint8Array {

@@ -5,12 +5,12 @@
  * evidence the WebGPU backend matches. Every case logs its line of the parity
  * table (`report`) whether or not it passes.
  */
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { registerFont } from '@weasel-js/font';
 import { registerTexture, unregisterTexture, type TextureHandle } from '../../textures/registerTexture';
 import type { DrawCommand } from '../../DrawCommand';
-import { closeBackends, openBackends, parityDevice, renderBoth, report } from '../../testing/parityHarness';
+import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report } from '../../testing/parityHarness';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 
@@ -23,6 +23,8 @@ const GROUND: DrawCommand = {
 };
 
 const registered: TextureHandle[] = [];
+
+afterAll(() => releaseDevice());
 
 beforeAll(async () => {
   await parityDevice();

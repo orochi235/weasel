@@ -3,14 +3,14 @@
  * group's effects, a custom shader, an id frame, and a retained group drawn
  * in tiles and panned. Each case logs its line of the parity table.
  */
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
 import { blur } from '../../effects/builtins';
 import { registerProgram } from '../../shaders/registerProgram';
 import type { DrawCommand } from '../../DrawCommand';
 import type { RetainedSurfaces } from '../../retain/RetainedSurfaces';
 import type { WeaselRenderer } from '../../WeaselRenderer';
-import { closeBackends, openBackends, parityDevice, renderBoth, report } from '../../testing/parityHarness';
+import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report } from '../../testing/parityHarness';
 
 const W = 64;
 const H = 48;
@@ -22,6 +22,8 @@ const GROUND: DrawCommand = {
 const rect = (x: number, y: number, w: number, h: number, color: string): DrawCommand => ({
   kind: 'path', path: { kind: 'rect', x, y, width: w, height: h }, fill: { paint: { color } },
 });
+
+afterAll(() => releaseDevice());
 
 beforeAll(async () => {
   await parityDevice();

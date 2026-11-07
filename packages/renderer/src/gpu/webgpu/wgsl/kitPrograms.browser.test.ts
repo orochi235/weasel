@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { reflectWgsl } from '../wgslReflect';
 import { createUniformBlock, type UniformValue } from '../wgslUniforms';
 import { BufferUsage, MapMode, TextureUsage } from '../flags';
@@ -137,6 +137,8 @@ function near(got: number[], want: number[], tolerance = 1): boolean {
 
 let device: GPUDevice;
 let linear: GPUSampler;
+
+afterAll(() => device.destroy());
 
 beforeAll(async () => {
   device = await requestTestDevice();

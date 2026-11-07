@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { reflectWgsl } from '../wgslReflect';
 import { createUniformBlock } from '../wgslUniforms';
 import { BufferUsage, MapMode, TextureUsage } from '../flags';
@@ -8,6 +8,8 @@ import { assembleEffectWgsl } from './effectPrelude';
 import { PATH_FILL_VCOLOR_WGSL, PATH_FILL_WGSL } from './pathFill';
 
 let device: GPUDevice;
+
+afterAll(() => device.destroy());
 
 beforeAll(async () => {
   const adapter = await navigator.gpu.requestAdapter();
