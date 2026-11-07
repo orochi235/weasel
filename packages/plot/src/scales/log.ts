@@ -14,6 +14,7 @@ export interface LogScaleOptions {
 export interface LogScale extends ContinuousScale {
   readonly kind: 'log';
   readonly base: number;
+  tickFormat(count?: number): (value: number) => string;
 }
 
 /** A logarithmic scale from `domain`, whose ends must both be above zero, onto `range`. */
@@ -42,6 +43,8 @@ export function logScale(opts: LogScaleOptions): LogScale {
     }
     return l0 <= l1 ? out : out.reverse();
   };
+  // Each label is as precise as its own decade, whatever the count.
+  const format = (v: number): string => (v >= 1 ? formatNumber(v, 1) : formatNumber(v, 10 ** Math.floor(Math.log10(v))));
   return {
     kind: 'log',
     base,
@@ -51,6 +54,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
     position: map,
     invert: (at) => base ** (r1 === r0 ? l0 : l0 + ((at - r0) / (r1 - r0)) * (l1 - l0)),
     ticks,
-    format: (v) => (v >= 1 ? formatNumber(v, 1) : formatNumber(v, 10 ** Math.floor(Math.log10(v)))),
+    format,
+    tickFormat: () => format,
   };
 }

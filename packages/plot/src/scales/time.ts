@@ -10,6 +10,7 @@ export interface TimeScaleOptions {
 /** A scale over instants, whose ticks fall on whole seconds, minutes, hours, days, months or years, in UTC. */
 export interface TimeScale extends ContinuousScale {
   readonly kind: 'time';
+  tickFormat(count?: number): (value: number) => string;
 }
 
 const SECOND = 1000;
@@ -107,6 +108,10 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
       const out = gridTicks(Math.min(d0, d1), Math.max(d0, d1), interval(count));
       return d0 <= d1 ? out : out.reverse();
     },
-    format: (v, options) => formatInstant(v, interval(options?.count).unit),
+    format: (v) => formatInstant(v, interval().unit),
+    tickFormat: (count) => {
+      const { unit } = interval(count);
+      return (v) => formatInstant(v, unit);
+    },
   };
 }

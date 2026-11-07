@@ -34,6 +34,7 @@ export interface LinearScale extends ContinuousScale {
   /** Ticks on the finest 1/2/5 step that keeps neighbors `minSpacing` apart along the range, so a longer axis
    *  gets more of them. Empty for an empty domain or range. */
   spacedTicks(options: SpacedTickOptions): TickSet;
+  tickFormat(count?: number): (value: number) => string;
 }
 
 const DEFAULT_TICKS = 5;
@@ -135,6 +136,10 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
     tickStep: step,
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
     ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),
-    format: (v, options) => formatNumber(v, step(options?.count)),
+    format: (v) => formatNumber(v, step()),
+    tickFormat: (count) => {
+      const s = step(count);
+      return (v) => formatNumber(v, s);
+    },
   };
 }

@@ -23,6 +23,7 @@ export interface BandScale extends Scale<string> {
   start(key: string): number;
   /** The key whose band is nearest `at`; `undefined` for an empty domain. */
   invert(at: number): string | undefined;
+  tickFormat(): (key: string) => string;
 }
 
 /** A band scale over `domain`. */
@@ -55,5 +56,6 @@ export function bandScale(opts: BandScaleOptions): BandScale {
     },
     ticks: () => [...domain],
     format: (key) => key,
+    tickFormat: () => (key) => key,
   };
 }

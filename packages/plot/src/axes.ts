@@ -33,10 +33,16 @@ const isHorizontal = (side: AxisSide) => side === 'top' || side === 'bottom';
 /** Which way leads away from the plot across the axis. */
 const outward = (side: AxisSide) => (side === 'bottom' || side === 'right' ? 1 : -1);
 
+/** How an axis writes each of the ticks it asks its scale for. */
+function labelOf<T>({ scale, ticks }: AxisOptions<T>): (value: T) => string {
+  return scale.tickFormat?.(ticks) ?? ((value) => scale.format(value));
+}
+
 /** How far an axis reaches out from its line: ticks, labels and title. */
 export function axisRoom<T>(opts: AxisOptions<T>): number {
   const { scale, side, theme, measure } = opts;
-  const sizes = scale.ticks(opts.ticks).map((t) => measure(scale.format(t, { count: opts.ticks }), theme.font));
+  const write = labelOf(opts);
+  const sizes = scale.ticks(opts.ticks).map((t) => measure(write(t), theme.font));
   const labels = sizes.length === 0 ? 0 : Math.max(...sizes.map((s) => (isHorizontal(side) ? s.height : s.width)));
   const title = opts.title ? measure(opts.title, theme.font).height + GAP : 0;
   return TICK + GAP + labels + title;
@@ -52,6 +58,7 @@ export function axisMarks<T>(opts: AxisOptions<T>): PlotMark[] {
   const [r0, r1] = scale.range;
   const marks: PlotMark[] = [];
   const ticks = scale.ticks(opts.ticks);
+  const write = labelOf(opts);
   ticks.forEach((t, i) => {
     const p = scale.position(t);
     if (opts.gridTo !== undefined) {
@@ -65,7 +72,7 @@ export function axisMarks<T>(opts: AxisOptions<T>): PlotMark[] {
     marks.push(ruleMark({ key: `${key}:tick:${i}`, from: pt(p, at), to: pt(p, at + out * TICK), color: theme.axis }));
     const anchorAt = pt(p, at + out * (TICK + GAP));
     const label = textMark({
-      key: `${key}:label:${i}`, text: scale.format(t, { count: opts.ticks }), ...anchorAt, font: theme.font, color: theme.text, measure,
+      key: `${key}:label:${i}`, text: write(t), ...anchorAt, font: theme.font, color: theme.text, measure,
       anchor: h ? 'middle' : out > 0 ? 'start' : 'end',
       baseline: h ? (out > 0 ? 'top' : 'bottom') : 'middle',
     });
