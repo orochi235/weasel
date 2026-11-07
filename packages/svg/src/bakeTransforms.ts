@@ -38,15 +38,14 @@ function bake(n: SvgNode, m: Matrix): SvgNode {
       ...(n.stroke ? { stroke: strokeThroughMatrix(n.stroke, whole) } : {}),
     };
   }
-  const { rotation: _r, transform: _t, ...box } = n;
   const frame = poseFrameOf(n);
   const whole = frame ? multiply(m, frame) : m;
   if (n.kind === 'text') {
-    const placed = { ...box };
+    const { rotation: _r, transform: _t, ...placed } = n;
     placeTextNode(placed, whole, quiet);
     return placed;
   }
-  const placed = { ...box };
+  const { rotation: _r, transform: _t, ...placed } = n;
   placeNode(placed, 'image', whole, true, quiet);
   return placed;
 }
