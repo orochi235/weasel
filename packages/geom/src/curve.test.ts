@@ -35,6 +35,16 @@ describe('cubicBounds', () => {
     expect(approxEq(b[2], 10)).toBe(true);  // maxX
     expect(approxEq(b[3], 7.5)).toBe(true); // maxY (curve apex < control hull)
   });
+
+  it('finds the turn of a nearly quadratic cubic, whose cubic coefficient is rounding', () => {
+    // A quadratic elevated to a cubic far from 0: the t³ term comes out as -7e-12, not 0.
+    const q = [48748.69603605415, 19334.277962024447, -48790.292255017106, -18441.930072587882, 46481.27001546383, 10705.149900496546];
+    const [c1x, c1y, c2x, c2y] = elevateQuadraticToCubic(q[0], q[1], q[2], q[3], q[4], q[5]);
+    const b = cubicBounds(q[0], q[1], c1x, c1y, c2x, c2y, q[4], q[5]);
+    const t = (q[0] - q[2]) / (q[0] - 2 * q[2] + q[4]);
+    const [minX] = quadraticEvalAt(q[0], q[1], q[2], q[3], q[4], q[5], t);
+    expect(b[0]).toBeCloseTo(minX, 3);
+  });
 });
 
 describe('quadraticEvalAt', () => {

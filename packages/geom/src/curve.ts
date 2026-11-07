@@ -29,6 +29,20 @@ export function elevateQuadraticToCubic(
   ];
 }
 
+/**
+ * Real roots of `a t² + b t + c`, in no particular order. Solved in the form
+ * that never subtracts nearly equal numbers, so a coefficient `a` that is only
+ * rounding (a quadratic elevated to a cubic) still gives the root it has.
+ */
+export function quadraticRoots(a: number, b: number, c: number): number[] {
+  if (a === 0) return b === 0 ? [] : [-c / b];
+  const disc = b * b - 4 * a * c;
+  if (disc < 0) return [];
+  const q = -0.5 * (b + (b < 0 ? -1 : 1) * Math.sqrt(disc));
+  if (q === 0) return [0];
+  return [q / a, c / q];
+}
+
 /** The parameters in (0, 1) where one coordinate of a cubic, with control
  *  values `p0..p3`, turns: the roots of its derivative. */
 export function cubicAxisExtremaTs(p0: number, p1: number, p2: number, p3: number): number[] {
@@ -36,19 +50,7 @@ export function cubicAxisExtremaTs(p0: number, p1: number, p2: number, p3: numbe
   const a = -p0 + 3 * p1 - 3 * p2 + p3;
   const b = 2 * (p0 - 2 * p1 + p2);
   const c = -p0 + p1;
-  const ts: number[] = [];
-  const push = (t: number) => { if (t > 0 && t < 1) ts.push(t); };
-  if (Math.abs(a) < 1e-12) {
-    if (Math.abs(b) > 1e-12) push(-c / b);
-  } else {
-    const disc = b * b - 4 * a * c;
-    if (disc >= 0) {
-      const sq = Math.sqrt(disc);
-      push((-b + sq) / (2 * a));
-      push((-b - sq) / (2 * a));
-    }
-  }
-  return ts;
+  return quadraticRoots(a, b, c).filter((t) => t > 0 && t < 1);
 }
 
 /** Tight AABB of a cubic, evaluating only extrema that lie on the curve. */
