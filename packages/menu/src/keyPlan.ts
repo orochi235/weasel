@@ -2,6 +2,7 @@ import { accessMatch } from './access';
 import { entriesAt } from './entries';
 import type { MenuEntry } from './entries';
 import { firstRow, keyStep, type KeyEffect, type MenuStack } from './keys';
+import type { MenuDirection } from './placement';
 import { EMPTY_TYPEAHEAD, type TypeaheadBuffer } from '@weasel-js/ui-logic';
 import { typeaheadStep } from './typeahead';
 
@@ -19,8 +20,9 @@ export function planKey(
   typed: TypeaheadBuffer,
   key: string,
   now: number,
+  dir: MenuDirection = 'ltr',
 ): KeyPlan | null {
-  const r = keyStep(root, stack, key);
+  const r = keyStep(root, stack, key, dir);
   if (r.handled) {
     return { stack: r.stack, typed: r.stack !== stack ? EMPTY_TYPEAHEAD : typed, effect: r.effect };
   }

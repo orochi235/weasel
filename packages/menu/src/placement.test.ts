@@ -11,6 +11,10 @@ describe('placeMenu', () => {
   it('flips left at the right edge', () => {
     expect(placeMenu(size, { x: 700, y: 100 }, bounds)).toEqual({ x: 500, y: 100 });
   });
+  it('under rtl opens down and left of the anchor, and right when the left does not fit', () => {
+    expect(placeMenu(size, { x: 300, y: 100 }, bounds, 'rtl')).toEqual({ x: 100, y: 100 });
+    expect(placeMenu(size, { x: 100, y: 100 }, bounds, 'rtl')).toEqual({ x: 100, y: 100 });
+  });
   it('flips up at the bottom edge', () => {
     expect(placeMenu(size, { x: 100, y: 500 }, bounds)).toEqual({ x: 100, y: 200 });
   });
@@ -40,11 +44,20 @@ describe('placeSubmenu', () => {
   it('shifts up so its bottom stays inside', () => {
     expect(placeSubmenu(size, { ...row, y: 500 }, bounds)).toEqual({ x: 300, y: 300 });
   });
+  it('under rtl opens to the left of its row, and to the right when the left does not fit', () => {
+    expect(placeSubmenu(size, { ...row, x: 500 }, bounds, 'rtl')).toEqual({ x: 300, y: 120 });
+    expect(placeSubmenu(size, row, bounds, 'rtl')).toEqual({ x: 300, y: 120 });
+    expect(placeSubmenu(size, { ...row, x: 300 }, bounds, 'rtl')).toEqual({ x: 100, y: 120 });
+  });
 });
 
 describe('placeMenuUnder', () => {
   it('opens below the rect, left-aligned', () => {
     expect(placeMenuUnder(size, { x: 100, y: 20, w: 60, h: 24 }, bounds)).toEqual({ x: 100, y: 44 });
+  });
+  it('under rtl opens below the rect, right-aligned', () => {
+    expect(placeMenuUnder(size, { x: 300, y: 20, w: 60, h: 24 }, bounds, 'bottom', 'rtl')).toEqual({ x: 160, y: 44 });
+    expect(placeMenuUnder(size, { x: 20, y: 20, w: 60, h: 24 }, bounds, 'bottom', 'rtl')).toEqual({ x: 20, y: 44 });
   });
   it('flips above the rect when below does not fit', () => {
     expect(placeMenuUnder(size, { x: 100, y: 560, w: 60, h: 24 }, bounds)).toEqual({ x: 100, y: 260 });

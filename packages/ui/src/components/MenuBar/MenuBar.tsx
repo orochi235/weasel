@@ -13,7 +13,7 @@ import { MenuBarTitle } from './MenuBarTitle';
 import { useMenuBarFocus } from './useMenuBarFocus';
 import { MenuBarHandleContext, type MenuAccessChord, type MenuBarHandle } from './menuBarHandle';
 import { MenuBarKeys } from './useMenuBarKeys';
-import { rovingTarget } from '../../useRovingTabIndex';
+import { inlineDirection, rovingTarget } from '../../useRovingTabIndex';
 import s from './MenuBar.module.css';
 
 export type { MenuAccessChord } from './menuBarHandle';
@@ -107,7 +107,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
   }), [showNow]);
 
   const onTitleKey = (e: KeyboardEvent<HTMLButtonElement>, key: string) => {
-    const to = rovingTarget(menus.findIndex((m) => m.key === key), e.key, menus.map(() => true), 'horizontal');
+    const to = rovingTarget(menus.findIndex((m) => m.key === key), e.key, menus.map(() => true), 'horizontal', inlineDirection(e.currentTarget));
     if (to !== null) {
       const next = menus[to]!.key;
       setActive(next);

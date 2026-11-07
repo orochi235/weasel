@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
+import { inlineDirection } from '../../useRovingTabIndex';
 import { imeKey } from '@weasel-js/ui-logic';
 import { blockFrame, clientToBlock, containingBlock } from '../../overlays/blockFrame';
 import { MenuRow } from './MenuRow';
@@ -36,9 +37,10 @@ export function MenuPanel(props: {
     const size = { w: el.offsetWidth * frame.scaleX, h: el.offsetHeight * frame.scaleY };
     const bounds = { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
     const row = parentRow();
-    const at = row ? placeSubmenu(size, row, bounds)
-      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side)
-        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds);
+    const dir = inlineDirection(el);
+    const at = row ? placeSubmenu(size, row, bounds, dir)
+      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side, dir)
+        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds, dir);
     const own = clientToBlock(at, frame);
     el.style.left = `${own.x}px`;
     el.style.top = `${own.y}px`;
@@ -70,7 +72,7 @@ export function MenuPanel(props: {
       pick(highlight);
       return;
     }
-    if (c.key(e.key)) e.preventDefault();
+    if (c.key(e.key, inlineDirection(e.currentTarget))) e.preventDefault();
   };
 
   return (
