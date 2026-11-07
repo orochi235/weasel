@@ -119,7 +119,8 @@ Owner tags, after the priority (2026-10-26):
 ### Path editing tricks
 
 - **(P1) [maintainer] Rename the path tools the maintainer deferred to the end of the adoption pass.**
-  Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. They live in
+  Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. Ruled (2026-11-07): the
+  adoption pass is over; Cloth warp goes in now, and the maintainer picks the rest from a field of candidates. They live in
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
   Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
   Envelope mesh as Cloth warp among them.
@@ -594,9 +595,8 @@ only story runner in the repo.
 
 - **(P3) [maintainer] Icons for the package pages.** Said to be specced (gray and blue React icons, an orange
   window, and three others), but no spec has been found in the repo or in either account's weasel transcripts.
-  Ask where it lives before drawing anything (2026-10-21).
-  Closes when the maintainer has said where the spec lives and the icons are on the package pages, or
-  said there is none and the entry is deleted.
+  It lives in the "Packages page icons prototype" Remote Control session (said 2026-11-07).
+  Closes when the icons are on the package pages.
 
 ## Demos & visual regression
 
@@ -720,12 +720,11 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P3) [maintainer] The devtools extension's 16 px icon is the whole site logo shrunk.**
+- **(P3) [agent] The devtools extension's 16 px icon is the whole site logo shrunk.**
   `apps/devtools-extension/scripts/gen-icons.ts` renders the full mark at every size, and at 16 px
   1x it reads as an orange and dark blob. A crop to the head for the 16 and 32 px sizes would read
   better; that is a call on the mark, not made (2026-10-19).
-  Closes when the maintainer has ruled on the crop and `gen-icons.ts` draws the 16 and 32 px sizes as he
-  chose.
+  Ruled (2026-11-07): crop to the head at 16 and 32 px. Closes when `gen-icons.ts` draws those two sizes so.
 
 ## Release-gate & build hygiene
 
