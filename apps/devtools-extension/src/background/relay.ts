@@ -14,6 +14,8 @@ interface Frame {
   port: PortLike;
   /** The frame's roots as the panel knows them, by scoped id. */
   roots: Map<string, DevtoolsRootInfo>;
+  /** The requests passed to the frame that it has not answered. */
+  asked: Set<number>;
 }
 
 interface Tab {
@@ -68,6 +70,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
       }
       return;
     }
+    if ((message.type === 'result' || message.type === 'error') && message.requestId !== null) frame.asked.delete(message.requestId);
     if (message.type === 'root-added') frame.roots.set(message.root.id, message.root);
     if (message.type === 'root-removed') frame.roots.delete(message.rootId);
     t.panel?.postMessage(message);
@@ -88,14 +91,24 @@ export function createRelay({ wake }: RelayOptions): Relay {
     }
     const { frameId, rootId } = unscopeRootId(message.rootId);
     const frame = t.frames.get(frameId);
-    if (frame) frame.port.postMessage({ ...message, rootId });
-    else t.panel?.postMessage({
+    if (frame) {
+      frame.asked.add(message.requestId);
+      frame.port.postMessage({ ...message, rootId });
+    } else t.panel?.postMessage({
       type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId: message.requestId,
       message: `weasel devtools: no frame ${frameId} in this tab`,
     } satisfies PageMessage);
   }
 
-  function dropRoots(t: Tab, frame: Frame): void {
+  /** Tell the panel what went with a frame: an error for each request it never answered, then its roots. */
+  function drop(t: Tab, frameId: number, frame: Frame): void {
+    for (const requestId of frame.asked) {
+      t.panel?.postMessage({
+        type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId,
+        message: `weasel devtools: frame ${frameId} went before it answered`,
+      } satisfies PageMessage);
+    }
+    frame.asked.clear();
     for (const rootId of frame.roots.keys()) {
       t.panel?.postMessage({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId } satisfies PageMessage);
     }
@@ -108,18 +121,18 @@ export function createRelay({ wake }: RelayOptions): Relay {
     const frameId = port.sender?.frameId ?? 0;
     const t = tab(tabId);
     const replaced = t.frames.get(frameId);
-    // A port's own disconnect fires no onDisconnect on it, so the roots it held are dropped here.
+    // A port's own disconnect fires no onDisconnect on it, so what it held is dropped here.
     if (replaced) {
       replaced.port.disconnect();
-      dropRoots(t, replaced);
+      drop(t, frameId, replaced);
     }
-    const frame: Frame = { port, roots: new Map() };
+    const frame: Frame = { port, roots: new Map(), asked: new Set() };
     t.frames.set(frameId, frame);
     port.onMessage.addListener((m) => fromPage(t, frameId, frame, m as PageMessage));
     port.onDisconnect.addListener(() => {
       if (t.frames.get(frameId) !== frame) return;
       t.frames.delete(frameId);
-      dropRoots(t, frame);
+      drop(t, frameId, frame);
       prune(tabId);
     });
     if (t.yo) port.postMessage(t.yo);
