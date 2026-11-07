@@ -232,7 +232,7 @@ export function curveFaces(paths: readonly Path[], tolerance?: number, polish = 
   const host = hosts(kept, c, minArea);
   const outsides = new Set(c.outside.values());
   const moved = polish ? polishCrossings(kept, flat, tol, extent)
-    : { at: new Map(), t: new Map(), stats: { crossings: 0, polished: 0, largestMove: 0 } };
+    : { at: new Map(), t: new Map(), stats: { crossings: 0, polished: 0, largestMove: 0, largestShare: 0 } };
 
   const faceOf = new Int32Array(c.cycles.length).fill(-1);
   const found: { face: CurveFace; mask: bigint; at: [number, number]; cycle: number }[] = [];

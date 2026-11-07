@@ -33,6 +33,8 @@ export interface PolishStats {
   polished: number;
   /** The farthest a polish moved a vertex. */
   largestMove: number;
+  /** The largest move as a share of the limit on it, which a polish never passes. */
+  largestShare: number;
 }
 
 export interface Polish {
@@ -46,24 +48,34 @@ export interface Polish {
 const STEPS = 8;
 /** Tangents meeting at less than this sine of their angle are a near-tangency, where Newton is not trusted. */
 const MIN_SINE = 0.05;
+/** Room past the flattening's own error, for Newton's. */
+const MARGIN = 1.05;
 
-/** Where segment `seg` passes through a vertex: its parameter there, and at the vertices either side along it. */
-interface Pass { seg: number; t: number; beside: number[] }
+/**
+ * Where segment `seg` passes through a vertex: its parameter there, at the
+ * vertices either side along it, and the chords of its flattening there.
+ */
+interface Pass { seg: number; t: number; beside: number[]; chords: number[] }
 
 function passes(a: ChordEdges, c: Chords): Map<number, Pass[]> {
   const out = new Map<number, Pass[]>();
-  const add = (v: number, seg: number, t: number, other: number) => {
+  const add = (v: number, chord: number, t: number, other: number) => {
     let list = out.get(v);
     if (!list) out.set(v, (list = []));
+    const seg = c.seg[chord];
     const p = list.find((q) => q.seg === seg && Math.abs(q.t - t) <= 1e-12);
-    if (p) p.beside.push(other); else list.push({ seg, t, beside: [other] });
+    if (!p) list.push({ seg, t, beside: [other], chords: [chord] });
+    else {
+      p.beside.push(other);
+      if (!p.chords.includes(chord)) p.chords.push(chord);
+    }
   };
   a.along.forEach((list, e) => {
     for (const al of list) {
       const t0 = c.t0[al.seg], dt = c.t1[al.seg] - t0;
       const ts = t0 + al.s0 * dt, te = t0 + al.s1 * dt;
-      add(a.origin[2 * e], c.seg[al.seg], ts, te);
-      add(a.origin[2 * e + 1], c.seg[al.seg], te, ts);
+      add(a.origin[2 * e], al.seg, ts, te);
+      add(a.origin[2 * e + 1], al.seg, te, ts);
     }
   });
   return out;
@@ -92,20 +104,41 @@ function sine(A: Seg, B: Seg, ta: number, tb: number): number {
   return la === 0 || lb === 0 ? 0 : Math.abs(da.x * db.y - da.y * db.x) / (la * lb);
 }
 
+/** The sine of the angle between two chords. */
+function chordSine(c: Chords, i: number, j: number): number {
+  const a0 = evalSeg(c.segs[c.seg[i]], c.t0[i]), a1 = evalSeg(c.segs[c.seg[i]], c.t1[i]);
+  const b0 = evalSeg(c.segs[c.seg[j]], c.t0[j]), b1 = evalSeg(c.segs[c.seg[j]], c.t1[j]);
+  const ax = a1.x - a0.x, ay = a1.y - a0.y, bx = b1.x - b0.x, by = b1.y - b0.y;
+  const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+  return la === 0 || lb === 0 ? 0 : Math.abs(ax * by - ay * bx) / (la * lb);
+}
+
+/**
+ * How far the flattening can have put a crossing from the curves' own: each
+ * chord lies within `tolerance` of its curve, so two meeting at angle θ cross
+ * within 2·tolerance/sin θ of where the curves do. Of the chord pairs meeting
+ * there, the steepest, so the bound is the tighter one.
+ */
+function moveLimit(c: Chords, p: Pass, q: Pass, tolerance: number): number {
+  let best = 0;
+  for (const i of p.chords) for (const j of q.chords) best = Math.max(best, chordSine(c, i, j));
+  return best === 0 ? 0 : (MARGIN * 2 * tolerance) / best;
+}
+
 /** Moving `p`'s parameter to `t` keeps it nearer its own place than halfway to either neighbor's along the segment. */
 const staysInOrder = (p: Pass, t: number): boolean => p.beside.every((b) => Math.abs(t - p.t) < Math.abs(b - p.t) / 2);
 
 /**
- * The crossings of `a` moved onto the curves they flatten, within `tolerance`
- * of where the flattening put them. A crossing stays put where Newton does
- * not settle, where it would move farther than `tolerance` or past a
+ * The crossings of `a` moved onto the curves they flatten. A crossing stays
+ * put where Newton does not settle, where it would move farther than the
+ * flattening could have misplaced it (`moveLimit`) or past halfway to a
  * neighboring vertex along either segment, or where the two curves meet
  * nearly tangent.
  */
 export function polishCrossings(a: ChordEdges, c: Chords, tolerance: number, extent: number): Polish {
   const at = new Map<number, Point>();
   const t = new Map<number, number>();
-  const stats: PolishStats = { crossings: 0, polished: 0, largestMove: 0 };
+  const stats: PolishStats = { crossings: 0, polished: 0, largestMove: 0, largestShare: 0 };
   const eps = extent * 1e-12;
   for (const [v, list] of passes(a, c)) {
     if (list.length !== 2) continue;
@@ -119,9 +152,11 @@ export function polishCrossings(a: ChordEdges, c: Chords, tolerance: number, ext
     if (sine(A, B, hit[0], hit[1]) < MIN_SINE || sine(A, B, p.t, q.t) < MIN_SINE) continue;
     const pt = evalSeg(A, hit[0]);
     const move = Math.hypot(pt.x - a.xs[v], pt.y - a.ys[v]);
-    if (move > tolerance) continue;
+    const limit = moveLimit(c, p, q, tolerance);
+    if (move > limit) continue;
     stats.polished++;
     stats.largestMove = Math.max(stats.largestMove, move);
+    stats.largestShare = Math.max(stats.largestShare, move / limit);
     at.set(v, pt);
     t.set(v * c.segs.length + p.seg, hit[0]);
     t.set(v * c.segs.length + q.seg, hit[1]);

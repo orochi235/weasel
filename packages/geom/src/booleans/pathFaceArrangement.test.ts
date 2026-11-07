@@ -113,12 +113,15 @@ describe('polishing crossings onto the curves', () => {
     expect(polished).toBeGreaterThan(0);
   });
 
-  it('leaves glyphs overlaid in one cell cut as before, and moves no crossing past the tolerance', () => {
+  it('leaves glyphs overlaid in one cell cut as before, and moves no crossing past what the flattening can misplace', () => {
     const glyphs = glyphCell(DIGITS);
     const on = curveFaces(glyphs), off = curveFaces(glyphs, undefined, false);
     expect(topology(on)).toEqual(topology(off));
-    expect(on.polish.polished).toBeGreaterThan(on.polish.crossings / 2);
+    expect(on.polish.polished).toBeGreaterThan(on.polish.crossings * 0.8);
+    // Each move stays within 1.05 · 2 · tolerance / sin θ of its chords, and the sine floor of 0.05 caps that.
+    expect(on.polish.largestShare).toBeGreaterThan(0);
+    expect(on.polish.largestShare).toBeLessThanOrEqual(1);
     const tolerance = 1e-5 * Math.hypot(100, 100);
-    expect(on.polish.largestMove).toBeLessThanOrEqual(tolerance * 1.5);
+    expect(on.polish.largestMove).toBeLessThanOrEqual((1.05 * 2 * tolerance) / 0.05);
   });
 });

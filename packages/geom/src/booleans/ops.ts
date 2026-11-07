@@ -124,8 +124,8 @@ export interface FaceArrangementOptions {
  * flattenings are: where two curves lie within `tolerance` of each other
  * they may part into slivers. Where two curves cross cleanly, the crossing is
  * then moved onto the curves' own intersection; it stays where the flattening
- * put it, within `tolerance` of the true one, where the curves meet nearly
- * tangent or the move would disturb any face. Its cost grows with the
+ * put it where the curves meet nearly tangent or the move would disturb any
+ * face. Its cost grows with the
  * flattening's chords and their crossings, not with the number of inputs or
  * their subsets.
  */
