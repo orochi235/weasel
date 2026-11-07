@@ -65,12 +65,19 @@ export function lerpPaint(a: Paint | undefined, b: Paint | undefined, t: number)
 function lerpStops(a: readonly GradStop[], b: readonly GradStop[], t: number): GradStop[] {
   return a.map((stop, i) => {
     const other = b[i]!;
-    return {
-      offset: lerp(stop.offset, other.offset, t),
-      color: (solidOf(mixColor(rgbaOf(stop.color, 1), rgbaOf(other.color, 1), t)) as { color: string; opacity?: number })
-        .color,
-    };
+    return { offset: lerp(stop.offset, other.offset, t), color: mixStopColor(stop.color, other.color, t) };
   });
+}
+
+/** A stop's color `t` of the way from `a` to `b`, alpha included. Where both
+ *  are clear the color still travels, since a ramp blends toward it. */
+function mixStopColor(a: string, b: string, t: number): string {
+  if (a === b) return a;
+  const ca = rgbaOf(a, 1), cb = rgbaOf(b, 1);
+  const mixed = mixColor(ca, cb, t);
+  if (mixed[3] > 0) return rgbaToHex(mixed);
+  const [r, g, bl] = mixColor([ca[0], ca[1], ca[2], 1], [cb[0], cb[1], cb[2], 1], t);
+  return rgbaToHex([r, g, bl, 0]);
 }
 
 function lerpGradient(a: GradientPaint, b: GradientPaint, t: number): Paint | null {

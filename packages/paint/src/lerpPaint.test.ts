@@ -20,6 +20,17 @@ describe('lerpPaint', () => {
     expect(lerpPaint(undefined, { color: '#0000ff' }, 0.5)).toEqual({ color: '#0000ff', opacity: 0.5 });
   });
 
+  it('keeps a gradient stop\'s alpha as it interpolates', () => {
+    const a = { kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#ff000000' }, { offset: 1, color: '#ff0000' }] };
+    const b = { ...a, stops: [{ offset: 0, color: '#ff000000' }, { offset: 1, color: '#0000ff80' }] };
+    const at0 = lerpPaint(a, b, 0) as typeof a;
+    expect(at0.stops.map((s) => s.color)).toEqual(['#ff000000', '#ff0000']);
+    const at1 = lerpPaint(a, b, 1) as typeof a;
+    expect(at1.stops.map((s) => s.color)).toEqual(['#ff000000', '#0000ff80']);
+    const mid = lerpPaint(a, b, 0.5) as typeof a;
+    expect(parseInt(mid.stops[1]!.color.slice(7, 9), 16)).toBeCloseTo(0xc0, -1);
+  });
+
   it('interpolates two like gradients stop by stop', () => {
     const a = { kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#000000' }] };
     const b = { ...a, to: { x: 3, y: 0 }, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#ffffff' }] };
