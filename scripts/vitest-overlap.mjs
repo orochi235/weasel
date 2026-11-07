@@ -5,14 +5,17 @@
 //
 // The other process gets the node's idle cores less the browser project's reserve
 // (`scripts/lib/node-load.mjs`); WEASEL_JSDOM_WORKERS overrides the count, and WEASEL_OVERLAP=1 or 0
-// skips the check.
+// skips the check. Beside the rest, the browser project takes fewer Chromiums than alone
+// (`scripts/lib/browser-shape.mjs`).
 import { spawn } from 'node:child_process';
 import { writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { mergeProgress } from './lib/merge-progress.mjs';
 import { roomToOverlap, sampleLoad } from './lib/node-load.mjs';
+import { browserShape } from './lib/browser-shape.mjs';
 
 const require = createRequire(import.meta.url);
 const pkg = require.resolve('vitest/package.json');
@@ -39,13 +42,16 @@ const overlap = async () => {
 };
 
 const runs = [];
+let browserEnv = {};
 const room = await overlap();
 if (!room.ok) runs.push(args);
 else {
   const count = process.env.WEASEL_JSDOM_WORKERS || room.jsdomWorkers || '50%';
   const workers = common.some((a) => a.startsWith('--maxWorkers')) ? [] : [`--maxWorkers=${count}`];
+  const shape = browserShape(cpus().length, process.env, { beside: true });
   // --passWithNoTests: a branch run can select no browser file at all.
   runs.push([...common, ...rest, ...workers], [...common, ...browser, '--passWithNoTests']);
+  browserEnv = { WEASEL_BROWSER_CHROMIUMS: String(shape.chromiums), WEASEL_BROWSER_TABS: String(shape.tabs) };
 }
 
 // The protocol channel onto reads; run without onto, it is closed and stdout stands in, as the
@@ -65,7 +71,8 @@ const env = { ...process.env, ONTO_EXPECT_TESTS: expected ? '1' : '' };
 const merge = mergeProgress(runs.length, expected);
 
 const children = runs.map((argv, i) => {
-  const child = spawn(process.execPath, [VITEST, ...argv], { env, stdio: ['inherit', 'inherit', 'inherit', 'pipe'] });
+  const own = i === 1 ? { ...env, ...browserEnv } : env;
+  const child = spawn(process.execPath, [VITEST, ...argv], { env: own, stdio: ['inherit', 'inherit', 'inherit', 'pipe'] });
   createInterface({ input: child.stdio[3] }).on('line', (text) => merge.line(i, text).forEach(emit));
   return child;
 });

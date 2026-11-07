@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaywrightBrowserProvider } from '@vitest/browser-playwright';
-import { browserShape, spreadPlaywright } from './vitest-browser-spread.mjs';
+import { spreadPlaywright } from './vitest-browser-spread.mjs';
 
 const launched: { close: ReturnType<typeof vi.fn> }[] = [];
 vi.mock('playwright', () => ({
@@ -19,22 +19,6 @@ const project = () =>
 afterEach(() => {
   launched.length = 0;
   vi.restoreAllMocks();
-});
-
-describe('browserShape', () => {
-  it('gives each tab its own Chromium on the node sizes it was measured on, and keeps one below them', () => {
-    expect([8, 10, 18].map((cores) => browserShape(cores, {}))).toEqual([
-      { chromiums: 1, tabs: 6 },
-      { chromiums: 18, tabs: 1 },
-      { chromiums: 18, tabs: 1 },
-    ]);
-  });
-
-  it('takes either count from the environment', () => {
-    expect(browserShape(18, { WEASEL_BROWSER_CHROMIUMS: '1', WEASEL_BROWSER_TABS: '6' })).toEqual({ chromiums: 1, tabs: 6 });
-    expect(browserShape(4, { WEASEL_BROWSER_CHROMIUMS: '3' })).toEqual({ chromiums: 3, tabs: 6 });
-    expect(browserShape(18, { WEASEL_BROWSER_TABS: '2' })).toEqual({ chromiums: 18, tabs: 2 });
-  });
 });
 
 describe('spreadPlaywright', () => {

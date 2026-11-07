@@ -23,7 +23,8 @@ import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 import { devWatch } from './scripts/vite-watch.ts';
 import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
-import { browserShape, spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
+import { spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
+import { browserShape } from './scripts/lib/browser-shape.mjs';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
