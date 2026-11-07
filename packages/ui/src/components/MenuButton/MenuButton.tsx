@@ -36,7 +36,8 @@ export type MenuButtonProps<T extends string = string> = {
    *  no field frame: for a heading that opens a list. */
   bare?: boolean;
   isDisabled?: boolean;
-  /** Why it cannot be pressed now, read after its name in the tooltip and as its description. */
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
+   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
   disabledReason?: string;
   className?: string;
   'aria-label'?: string;

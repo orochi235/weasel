@@ -61,13 +61,13 @@ describe('useTrialHistory', () => {
       wrapper: withIcons,
     });
     const undo = screen.getByRole('button', { name: 'Undo' });
-    expect(undo).toHaveAttribute('aria-disabled', 'true');
+    expect(undo).toBeDisabled();
     act(() => history.set(true));
-    expect(undo).not.toHaveAttribute('aria-disabled');
+    expect(undo).not.toBeDisabled();
     await userEvent.click(undo);
     expect(history.undo).toHaveBeenCalledOnce();
 
     act(() => unmount());
-    expect(undo).toHaveAttribute('aria-disabled', 'true');
+    expect(undo).toBeDisabled();
   });
 });

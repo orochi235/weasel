@@ -22,7 +22,7 @@ export const Disabled: Story = {
   args: { disabled: true },
 };
 
-/** A disabled close button keeps its tooltip, which reads the reason. */
+/** A disabled close button given a reason keeps its tooltip, which reads it. */
 export const DisabledWithReason: Story = {
   args: { disabled: true, disabledReason: 'A document needs one layer at least' },
 };

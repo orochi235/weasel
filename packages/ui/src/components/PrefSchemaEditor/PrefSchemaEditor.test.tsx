@@ -113,7 +113,7 @@ describe('PrefSchemaEditor', () => {
     expect(within(dialog).getByText(/"snap" is taken here/)).toBeInTheDocument();
     expect(add).toBeDisabled();
     settle(within(dialog).getByRole('textbox', { name: 'Key' }), 'snapAngle');
-    expect(add).not.toHaveAttribute('aria-disabled');
+    expect(add).toBeEnabled();
   });
 
   it('adds a group with no name, keyed by the id given', () => {
@@ -226,9 +226,9 @@ describe('PrefSchemaEditor', () => {
   it('offers no group inside one that already sits at the depth allowed', () => {
     renderWithIcons(<PrefSchemaEditor schema={START} onChange={() => {}} maxDepth={1} />);
     const add = screen.getByRole('button', { name: 'Add group' });
-    expect(add).not.toHaveAttribute('aria-disabled');
+    expect(add).toBeEnabled();
     fireEvent.click(row('view'));
-    expect(add).toHaveAttribute('aria-disabled', 'true');
+    expect(add).toBeDisabled();
   });
 
   it('draws the host\'s mark on a row by where its node sits in the original, wherever it has been moved', () => {
@@ -260,7 +260,7 @@ describe('PrefSchemaEditor', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const undo = screen.getByRole('button', { name: 'Undo' });
-    expect(undo).toHaveAttribute('aria-disabled', 'true');
+    expect(undo).toBeDisabled();
     const name = () => within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     settle(name(), 'Grid on');
     fireEvent.click(undo);
@@ -280,7 +280,7 @@ describe('PrefSchemaEditor', () => {
     for (const typed of ['G', 'Gr', 'Gri', 'Grid']) settle(name(), typed);
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
   it('undoes a removal, and selects the node again', () => {
@@ -305,9 +305,9 @@ describe('PrefSchemaEditor', () => {
     renderWithIcons(<Swap />);
     fireEvent.click(row('snap'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    expect(screen.getByRole('button', { name: 'Undo' })).not.toHaveAttribute('aria-disabled');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'swap' }));
-    expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
   it('labels the preview and can hide hidden prefs', () => {
@@ -425,7 +425,7 @@ describe('PrefSchemaEditor', () => {
       // Back on the baseline itself, not a copy of it: nothing is left to keep.
       expect(screen.getByText('No changes.')).toBeInTheDocument();
       expect(localStorage.getItem('test-draft')).toBeNull();
-      expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
+      expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
     });
 
     it('opens a draft whose steps do not read, without them', () => {
@@ -437,7 +437,7 @@ describe('PrefSchemaEditor', () => {
       localStorage.setItem('test-draft', JSON.stringify({ ...draft, steps: { schemas: [], current: 4, stacks: {} } }));
       renderWithIcons(<Kept />);
       expect(within(structure()).queryByText('snap')).toBeNull();
-      expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
+      expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
     });
 
     it('carries a draft onto a source that changed since, listing only the reader’s own edits', () => {
@@ -698,9 +698,9 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
   it('adds an alias of the selected pref after it from the bar, and offers none for a group', () => {
     renderWithIcons(<Live />);
     const add = () => screen.getByRole('button', { name: 'Add alias' });
-    expect(add()).toHaveAttribute('aria-disabled', 'true');
+    expect(add()).toBeDisabled();
     fireEvent.click(row('panels'));
-    expect(add()).toHaveAttribute('aria-disabled', 'true');
+    expect(add()).toBeDisabled();
     fireEvent.click(row('grid'));
     fireEvent.click(add());
     const keys = within(structure()).getAllByRole('treeitem').map(rowKey);
@@ -717,8 +717,8 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
     renderWithIcons(<Live start={start} />);
     const add = () => screen.getByRole('button', { name: 'Add alias' });
     fireEvent.click(row('width'));
-    expect(add()).toHaveAttribute('aria-disabled', 'true');
+    expect(add()).toBeDisabled();
     fireEvent.click(row('stroke'));
-    expect(add()).not.toHaveAttribute('aria-disabled');
+    expect(add()).toBeEnabled();
   });
 });

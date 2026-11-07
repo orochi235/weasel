@@ -23,7 +23,8 @@ export interface BarActionButtonProps {
   menu?: boolean;
   /** It cannot be pressed now. */
   disabled?: boolean;
-  /** Why it cannot be pressed, read after the label in its tooltip and as its description. */
+  /** Why it cannot be pressed. Given, a disabled button keeps its tooltip, which reads the reason after the label,
+   *  and stays focusable, so the reason can be read. */
   disabledReason?: string;
   /** Held down. Leave unset for an action with no pressed state. */
   active?: boolean;
@@ -53,13 +54,14 @@ export function BarActionButton(props: BarActionButtonProps) {
     : segmentTooltipContent({ description: description || label, shortcut, disabled, disabledReason });
   const words = labeled || icon == null;
   return (
-    // A dead button keeps its tooltip, which is the only thing that says why.
+    // A dead or explained button keeps its tooltip, which is the only thing that says why.
     <SegmentTooltip content={tip} disabled={disabled && !dead} disabledReason={disabledReason}>
       <button
         type="button"
         data-testid={props['data-testid']}
         aria-label={label}
-        aria-disabled={dead || undefined}
+        aria-disabled={disabled || dead || undefined}
+        disabled={disabled && !dead && disabledReason === undefined}
         aria-pressed={active}
         {...(expanded !== undefined ? { 'aria-haspopup': 'dialog' as const, 'aria-expanded': expanded } : {})}
         className={[s.action, words && s.actionLabeled, row && s.actionRow, menu && s.actionMenu].filter(Boolean).join(' ')}

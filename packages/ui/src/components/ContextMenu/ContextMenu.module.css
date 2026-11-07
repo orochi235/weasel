@@ -53,12 +53,6 @@ a.row {
   color: var(--wzl-fg-muted);
 }
 
-.reason {
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-muted);
-  white-space: nowrap;
-}
-
 .caret {
   justify-self: end;
   width: 10px;

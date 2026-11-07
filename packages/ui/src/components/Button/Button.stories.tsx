@@ -179,7 +179,8 @@ export const Disabled: Story = {
   ),
 };
 
-/** A disabled button keeps its tooltip, and `disabledReason` makes it say why: hover or focus one. */
+/** A disabled button with a `disabledReason` keeps its tooltip, which says why: hover or focus one. Undo, with no
+ *  reason, is natively disabled and shows nothing. */
 export const DisabledWithReason: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

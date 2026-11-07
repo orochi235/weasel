@@ -225,18 +225,11 @@ describe('Button tooltip', () => {
 });
 
 describe('a disabled Button', () => {
-  it('keeps its tooltip, and stays focusable to show it', () => {
-    render(<Button disabled shortcut="⌘S">Save</Button>);
+  it('stays focusable with a reason, read in the tooltip and as its description', () => {
+    render(<Button disabled disabledReason="Nothing has changed">Save</Button>);
     const btn = screen.getByRole('button', { name: 'Save' });
     expect(btn).not.toBeDisabled();
     expect(btn).toHaveAttribute('aria-disabled', 'true');
-    keyboardFocus(btn);
-    expect(screen.getByRole('tooltip').textContent).toContain('Save (⌘S)');
-  });
-
-  it('reads its disabled reason in the tooltip and as its description', () => {
-    render(<Button disabled disabledReason="Nothing has changed">Save</Button>);
-    const btn = screen.getByRole('button', { name: 'Save' });
     expect(btn).toHaveAttribute('aria-description', 'Nothing has changed');
     keyboardFocus(btn);
     const tip = screen.getByRole('tooltip');
@@ -244,7 +237,7 @@ describe('a disabled Button', () => {
     expect(btn.getAttribute('aria-describedby')).toBe(tip.id);
   });
 
-  it('ignores presses and submits nothing while it keeps its tooltip', () => {
+  it('ignores presses and submits nothing while it explains itself', () => {
     const onClick = vi.fn();
     const onSubmit = vi.fn((e: { preventDefault(): void }) => e.preventDefault());
     render(
@@ -257,8 +250,12 @@ describe('a disabled Button', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('is natively disabled when it has no tooltip to keep', () => {
-    render(<Button disabled>Save</Button>);
-    expect(screen.getByRole('button')).toBeDisabled();
+  it('stays natively disabled with no reason, its tooltip off', () => {
+    render(<Button disabled shortcut="⌘S">Save</Button>);
+    const btn = screen.getByRole('button', { name: 'Save' });
+    expect(btn).toBeDisabled();
+    expect(btn).not.toHaveAttribute('aria-disabled');
+    keyboardFocus(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });

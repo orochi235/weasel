@@ -12,9 +12,10 @@ export interface ToolButtonProps {
   shortcut?: string;
   /** Selected/active state — toggles the active visual treatment. */
   active?: boolean;
-  /** Disabled state. The button keeps its tooltip, and ignores presses. */
+  /** Disabled state — passes through to the underlying button. */
   disabled?: boolean;
-  /** Why it is disabled, read after the label in its tooltip and as its description. */
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
+   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
   disabledReason?: string;
   /**
    * When true, sets `aria-disabled="true"` on the button without using the

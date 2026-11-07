@@ -4,7 +4,8 @@ import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { imeKey } from '@weasel-js/ui-logic';
 import { blockFrame, clientToBlock, containingBlock } from '../../overlays/blockFrame';
-import { MenuRow } from './MenuRow';
+import { MenuRow, disabledReasonText } from './MenuRow';
+import { MenuRowTip } from './MenuRowTip';
 import { menuFieldId } from './MenuValue';
 import { editsColor } from './MenuColorValue';
 import s from './ContextMenu.module.css';
@@ -112,6 +113,10 @@ export function MenuPanel(props: {
           }}
         />
       ))}
+      <MenuRowTip
+        rowId={highlight == null ? '' : `${idBase}-${level}-${highlight}`}
+        why={highlight == null ? undefined : disabledReasonText(entries[highlight])}
+      />
     </div>
   );
 }

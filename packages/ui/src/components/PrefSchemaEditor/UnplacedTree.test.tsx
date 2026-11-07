@@ -84,7 +84,7 @@ describe('Add alias with several prefs selected', () => {
     renderWithIcons(<Editor />);
     fireEvent.click(within(structure()).getByText('snap'));
     fireEvent.click(within(structure()).getByText('grid'), { metaKey: true });
-    expect(add()).not.toHaveAttribute('aria-disabled');
+    expect(add()).toBeEnabled();
     fireEvent.click(add());
     expect(keys()).toEqual(['view', 'grid', 'snap2', 'grid2', 'snap', 'zoom']);
     expect(selectedIn(structure())).toEqual(['snap2', 'grid2']);
@@ -94,6 +94,6 @@ describe('Add alias with several prefs selected', () => {
     renderWithIcons(<Editor />);
     fireEvent.click(within(structure()).getByText('snap'));
     fireEvent.click(within(structure()).getByText('view'), { metaKey: true });
-    expect(add()).toHaveAttribute('aria-disabled', 'true');
+    expect(add()).toBeDisabled();
   });
 });

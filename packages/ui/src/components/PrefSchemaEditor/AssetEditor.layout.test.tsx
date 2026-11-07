@@ -35,7 +35,7 @@ describe('AssetEditor on a layout', () => {
     fireEvent.click(asset('Code'));
     fireEvent.click(within(preview()).getByRole('checkbox', { name: 'Show grid' }));
     expect(onChange).not.toHaveBeenCalled();
-    expect(tool('Undo')).toHaveAttribute('aria-disabled', 'true');
+    expect(tool('Undo')).toBeDisabled();
     fireEvent.click(asset('Settings'));
     fireEvent.click(within(preview()).getByRole('checkbox', { name: 'Show grid' }));
     expect(onChange).toHaveBeenCalledTimes(1);

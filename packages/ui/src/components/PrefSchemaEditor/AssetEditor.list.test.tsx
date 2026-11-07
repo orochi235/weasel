@@ -40,8 +40,8 @@ describe('AssetEditor asset list', () => {
     expect(hasRow('grid')).toBe(true);
     expect(hasRow('view')).toBe(false);
     expect(onChange).not.toHaveBeenCalled();
-    expect(tool('Undo')).not.toHaveAttribute('aria-disabled');
-    expect(tool('Redo')).toHaveAttribute('aria-disabled', 'true');
+    expect(tool('Undo')).toBeEnabled();
+    expect(tool('Redo')).toBeDisabled();
   });
 
   it('selects nothing in the asset picked, whatever was selected in the one left', () => {
@@ -73,7 +73,7 @@ describe('AssetEditor asset list', () => {
     expect(asset('Settings')).toHaveAttribute('aria-selected', 'true');
     expect(hasRow('grid')).toBe(true);
     expect(last(onChange).assets.map((a) => a.root)).toEqual([SETTINGS, CODE]);
-    expect(tool('Undo')).toHaveAttribute('aria-disabled', 'true');
+    expect(tool('Undo')).toBeDisabled();
   });
 
   it('selects the panel a step changed, and none of the rows the dialog had selected', () => {
@@ -118,7 +118,7 @@ describe('AssetEditor asset list', () => {
     fireEvent.click(asset('Layout'));
     pickRow('rows');
     expect(row('rows')).toHaveAttribute('aria-selected', 'true');
-    for (const name of ['Remove', 'Add pref', 'Add group', 'Add alias', 'Page', 'Separator']) expect(tool(name)).toHaveAttribute('aria-disabled', 'true');
+    for (const name of ['Remove', 'Add pref', 'Add group', 'Add alias', 'Page', 'Separator']) expect(tool(name)).toBeDisabled();
     expect(within(attributes()).getByRole('textbox', { name: 'Name' })).toBeDisabled();
     expect(within(attributes()).getByRole('textbox', { name: 'Key' })).toBeDisabled();
     fireEvent.keyDown(structure(), { key: 'Delete' });
@@ -126,7 +126,7 @@ describe('AssetEditor asset list', () => {
     // An asset that takes edits has its tools back.
     fireEvent.click(asset('Code'));
     pickRow('grid');
-    expect(tool('Remove')).not.toHaveAttribute('aria-disabled');
+    expect(tool('Remove')).toBeEnabled();
   });
 
   it('draws no list, and no pane for one, unless asked', () => {
@@ -152,7 +152,7 @@ describe('AssetEditor over several assets', () => {
     renderWithIcons(<Host />);
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
-    expect(tool('Undo')).not.toHaveAttribute('aria-disabled');
+    expect(tool('Undo')).toBeEnabled();
     fireEvent.click(tool('Undo'));
     expect(hasRow('snap')).toBe(true);
   });

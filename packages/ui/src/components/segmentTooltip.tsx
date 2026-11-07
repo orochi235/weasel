@@ -37,12 +37,12 @@ const refuse = (e: SyntheticEvent) => e.preventDefault();
 
 /** `button` disabled by `aria-disabled`, since native `disabled` takes it out of hover and focus and so out of its
  *  tooltip's reach. Stylesheets dim `data-disabled`: `ToolButton`'s `ariaDisabled` sets `aria-disabled` undimmed. */
-function stillReachable(button: ButtonElement, reason: string | undefined): ButtonElement {
+function stillReachable(button: ButtonElement, reason: string): ButtonElement {
   return cloneElement(button as ReactElement<Record<string, unknown>>, {
     disabled: false,
     'aria-disabled': true,
     'data-disabled': '',
-    ...(reason ? { 'aria-description': reason } : {}),
+    'aria-description': reason,
     onClick: refuse,
     onPointerDown: undefined,
     onMouseDown: undefined,
@@ -50,19 +50,22 @@ function stillReachable(button: ButtonElement, reason: string | undefined): Butt
 }
 
 /** Wraps a segment's `<button>` in a kit tooltip when there is content for
- *  one. A disabled button with a tooltip keeps it: it stays hoverable and
- *  focusable, marked `aria-disabled`, and ignores presses. */
+ *  one. A disabled button turns its tooltip off, unless it has a
+ *  `disabledReason`: then it stays hoverable and focusable, marked
+ *  `aria-disabled`, ignores presses, and its tooltip says why. */
 export function SegmentTooltip({ content, disabled, disabledReason, children }: {
   content: ReactNode | undefined;
   disabled?: boolean;
-  /** Read as the button's description while it is disabled. */
+  /** Why it is disabled, read as the button's description while it is. */
   disabledReason?: string;
   children: ButtonElement;
 }): ReactElement {
   if (content === undefined || content === null || content === false) return children;
+  const explained = disabled && disabledReason ? disabledReason : undefined;
+  const off = disabled && explained === undefined;
   return (
-    <TooltipTrigger>
-      <Focusable>{disabled ? stillReachable(children, disabledReason) : children}</Focusable>
+    <TooltipTrigger isDisabled={off}>
+      <Focusable isDisabled={off}>{explained !== undefined ? stillReachable(children, explained) : children}</Focusable>
       <Tooltip>{content}</Tooltip>
     </TooltipTrigger>
   );

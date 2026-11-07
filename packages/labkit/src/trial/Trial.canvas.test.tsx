@@ -259,9 +259,9 @@ describe('LabProps.instruments', () => {
       wrapper: withIcons,
     });
     const undo = screen.getByRole('button', { name: 'Undo' });
-    expect(undo).toHaveAttribute('aria-disabled', 'true');
+    expect(undo).toBeDisabled();
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));
-    expect(undo).not.toHaveAttribute('aria-disabled');
+    expect(undo).not.toBeDisabled();
   });
 });

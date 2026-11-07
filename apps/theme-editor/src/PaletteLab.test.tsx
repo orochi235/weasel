@@ -43,17 +43,17 @@ describe('<PaletteLab> action rail', () => {
   it('disables undo and redo until there is history to move through', async () => {
     const user = userEvent.setup();
     renderWithIcons(<PaletteLab />);
-    expect(within(rail()).getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
-    expect(within(rail()).getByRole('button', { name: 'Redo' })).toHaveAttribute('aria-disabled', 'true');
+    expect(within(rail()).getByRole('button', { name: 'Undo' })).toBeDisabled();
+    expect(within(rail()).getByRole('button', { name: 'Redo' })).toBeDisabled();
 
     // Any edit is enough; the surface toggle is the cheapest one to reach.
     await user.click(screen.getByRole('radio', { name: 'Light' }));
-    expect(within(rail()).getByRole('button', { name: 'Undo' })).not.toHaveAttribute('aria-disabled');
-    expect(within(rail()).getByRole('button', { name: 'Redo' })).toHaveAttribute('aria-disabled', 'true');
+    expect(within(rail()).getByRole('button', { name: 'Undo' })).toBeEnabled();
+    expect(within(rail()).getByRole('button', { name: 'Redo' })).toBeDisabled();
 
     await user.click(within(rail()).getByRole('button', { name: 'Undo' }));
-    expect(within(rail()).getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
-    expect(within(rail()).getByRole('button', { name: 'Redo' })).not.toHaveAttribute('aria-disabled');
+    expect(within(rail()).getByRole('button', { name: 'Undo' })).toBeDisabled();
+    expect(within(rail()).getByRole('button', { name: 'Redo' })).toBeEnabled();
   });
 
   it('resets to the default state', async () => {

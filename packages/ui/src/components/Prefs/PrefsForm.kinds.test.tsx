@@ -163,11 +163,11 @@ describe('PrefsForm action leaf', () => {
     renderWithIcons(<PrefsForm schema={schemaWith(run)} values={{}} onChange={() => {}} />);
     const button = screen.getByRole('button', { name: 'Wipe cache' });
     fireEvent.click(button);
-    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toBeDisabled();
     await act(async () => {
       finish();
     });
-    expect(button).not.toHaveAttribute('aria-disabled');
+    expect(button).not.toBeDisabled();
   });
 });
 

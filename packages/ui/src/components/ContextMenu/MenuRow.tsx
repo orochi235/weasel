@@ -11,6 +11,12 @@ import s from './ContextMenu.module.css';
 
 const leftToBrowser = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey;
 
+/** Why a disabled item row cannot be chosen, in words, or `undefined` for a row with nothing to say. */
+export function disabledReasonText(e: MenuEntry | undefined): string | undefined {
+  return e?.kind === 'item' && e.disabled && e.disabledReason
+    ? DEFAULT_REASON_LABELS[e.disabledReason] ?? e.disabledReason : undefined;
+}
+
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at
  *  the highlighted row with `aria-activedescendant`. An item with an `href` is an `a`. A number or text row
  *  holds a field, which takes focus only when pressed or on Enter. */
@@ -35,8 +41,7 @@ export function MenuRow(props: {
   const link = e.kind === 'item' && e.href !== undefined;
   const current = e.kind === 'item' && e.current;
   const picks = e.kind === 'color' && editsColor(e);
-  const why = e.kind === 'item' && e.disabled && e.disabledReason
-    ? DEFAULT_REASON_LABELS[e.disabledReason] ?? e.disabledReason : undefined;
+  const why = disabledReasonText(e);
 
   const onClick = (ev: MouseEvent) => {
     const browser = link && !e.disabled && leftToBrowser(ev);
@@ -64,8 +69,7 @@ export function MenuRow(props: {
     <>
       <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(e.kind !== 'color' && typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
       <AccessLabel label={e.label} access={e.access} />
-      {why !== undefined ? <span className={s.reason}>{why}</span>
-        : e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
+      {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
       {e.kind === 'number' && <MenuNumberValue entry={e} rowId={id} controller={props.controller} />}
       {e.kind === 'color' && (
         <MenuColorValue entry={e} controller={props.controller} row={row} picking={props.picking} onPicked={props.onPicked} />

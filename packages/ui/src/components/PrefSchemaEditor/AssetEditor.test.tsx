@@ -24,11 +24,11 @@ describe('AssetEditor', () => {
     renderWithIcons(<Live start={{ assets: [{ id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS, readOnly: true }] }} onChange={onChange} />);
     fireEvent.click(within(structure()).getByText('snap'));
     // What a reader sees of it: the tool that removes is off, with a row selected to remove.
-    expect(screen.getByRole('button', { name: 'Remove' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeDisabled();
     fireEvent.keyDown(structure(), { key: 'Delete' });
     expect(onChange).not.toHaveBeenCalled();
     expect(row('snap')).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
   it('removes the selected setting from an asset that takes edits', () => {

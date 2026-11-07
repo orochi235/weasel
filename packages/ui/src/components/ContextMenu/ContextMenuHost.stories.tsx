@@ -76,8 +76,9 @@ function Target({ openOnMount }: { openOnMount?: boolean }) {
 }
 
 /** Right-click the box. Rows name registered actions, so each shows its own
- *  label, its key binding as a shortcut, whether it is enabled and why not, and — for an
- *  action with `active` — a check mark. */
+ *  label, its key binding as a shortcut, whether it is enabled, and — for an
+ *  action with `active` — a check mark. Rest on a disabled row ("Paste",
+ *  "Duplicate") for a tooltip saying why. */
 export const RightClick: Story = {
   render: () => <ActionsProvider><Target /></ActionsProvider>,
 };

@@ -48,7 +48,7 @@ describe('<ControlPanel> enableIf', () => {
       .getAllByRole('button', { name: /Mode/ })
       .find((el) => el.getAttribute('aria-haspopup') === 'listbox');
     expect(select).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Go' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: 'On' })).toBeEnabled();
     expect(
       screen.getByRole('checkbox', { name: 'On' }).closest('[data-property-row][data-disabled]'),

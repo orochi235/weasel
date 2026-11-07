@@ -27,8 +27,8 @@ export type ButtonBase = {
    *  announces no pressed state at all, which is what an action button wants. */
   pressed?: boolean;
   disabled?: boolean;
-  /** Why it cannot be pressed now. A disabled button keeps its tooltip, which reads `Name: reason`, and assistive
-   *  tech reads the reason as its description. */
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
+   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
   disabledReason?: string;
   loading?: boolean;
   leadingIcon?: ReactNode;
@@ -94,8 +94,8 @@ function Spinner(): ReactNode {
  *
  * `shortcut` adds a kit tooltip reading `Name (⌘S)`, named by `ariaLabel` or
  * string children, the way `ToolButton` and `ButtonBar` items show theirs;
- * `tooltip` replaces that text with any content. A disabled button keeps its
- * tooltip, and `disabledReason` makes it read `Name: reason`.
+ * `tooltip` replaces that text with any content. A disabled button with a
+ * `disabledReason` keeps its tooltip, which reads `Name: reason`.
  *
  * `ref` forwards to the underlying `<button>`.
  */

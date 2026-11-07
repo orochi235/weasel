@@ -192,14 +192,14 @@ describe('<ControlMatrix>', () => {
     const { setConfig, unmount } = setup();
     fireEvent.click(cell('Window Glow'));
     const inherit = screen.getByRole('button', { name: 'Inherit' });
-    expect(inherit).not.toHaveAttribute('aria-disabled');
+    expect(inherit).not.toBeDisabled();
     fireEvent.click(inherit);
     expect(setConfig).toHaveBeenCalledWith('looks.window.glow', auto);
     unmount();
 
     setup();
     fireEvent.click(cell('Arrow Glow'));
-    expect(screen.getByRole('button', { name: 'Inherit' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Inherit' })).toBeDisabled();
   });
 
   it('has no Inherit for the fallback column', () => {

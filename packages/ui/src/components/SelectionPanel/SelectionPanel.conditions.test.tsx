@@ -101,9 +101,9 @@ describe('SelectionPanel enableIf', () => {
     expect(radius).toBeDisabled();
     expect(disabledRow(radius, 'Radius')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Smooth' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Go' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
     const lock = screen.getByRole('checkbox', { name: 'Locked' });
-    expect(lock).not.toHaveAttribute('aria-disabled');
+    expect(lock).toBeEnabled();
     expect(disabledRow(lock, 'Locked')).toBeNull();
   });
 

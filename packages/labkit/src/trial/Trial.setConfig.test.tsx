@@ -53,10 +53,10 @@ describe('a trial config write', () => {
 
   it('takes an undo snapshot for a change made in the settings panel', async () => {
     await mount();
-    expect(undo()).toHaveAttribute('aria-disabled', 'true');
+    expect(undo()).toBeDisabled();
     fireEvent.click(screen.getByLabelText('Show grid'));
     expect(changes()).toBe('1');
-    expect(undo()).not.toHaveAttribute('aria-disabled');
+    expect(undo()).not.toBeDisabled();
     fireEvent.click(undo());
     expect(changes()).toBe('0');
   });
@@ -64,9 +64,9 @@ describe('a trial config write', () => {
   it('snapshots on the event that names the path, from either side', async () => {
     await mount(['config.change:showGrid']);
     click('wider');
-    expect(undo()).toHaveAttribute('aria-disabled', 'true');
+    expect(undo()).toBeDisabled();
     fireEvent.click(screen.getByLabelText('Show grid'));
-    expect(undo()).not.toHaveAttribute('aria-disabled');
+    expect(undo()).not.toBeDisabled();
   });
 
   it('keeps a run of writes to one path in one undo entry, and ends it after a pause', async () => {
@@ -78,7 +78,7 @@ describe('a trial config write', () => {
     expect(changes()).toBe('3');
     fireEvent.click(undo());
     expect(changes()).toBe('0');
-    expect(undo()).toHaveAttribute('aria-disabled', 'true');
+    expect(undo()).toBeDisabled();
 
     click('wider');
     vi.advanceTimersByTime(600);
