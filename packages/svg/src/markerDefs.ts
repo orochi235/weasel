@@ -64,7 +64,8 @@ export function shortHash(s: string): string {
   return (h >>> 0).toString(36);
 }
 
-const SAFE_ID = /^[A-Za-z_][\w.-]*$/;
+/** What an attribute and an unquoted `url(#…)` both hold as written: no space, quote, markup, or bracket. */
+const SAFE_ID = /^[^\s"'&<>()#\\]+$/;
 
 /** `key` as an id an attribute and a `url(#…)` can both hold: itself when it
  *  is one, else its safe characters and a hash of the whole, so two keys that

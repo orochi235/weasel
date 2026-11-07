@@ -89,6 +89,21 @@ describe('a marker key that is not an XML id', () => {
   });
 });
 
+describe('a marker key that is not an XML id, unregistered by the time it is read', () => {
+  it('reads both references of a seated head back under the key, with its inset', () => {
+    const arrow = getMarker('arrow')!;
+    const key = 'my tick';
+    const unregister = registerMarker({ ...arrow, id: key, inset: 2 });
+    const svg = serializeSvg(line({ markerStart: key, markerEnd: { key, size: 3 } }));
+    unregister();
+    const parsed = parseSvg(svg);
+    expect(parsed.warnings).toEqual([]);
+    expect(parsed.markers?.map((m) => [m.id, m.inset])).toEqual([[key, 2]]);
+    const stroke = (parsed.nodes[0] as { stroke?: Record<string, unknown> }).stroke!;
+    expect([stroke.markerStart, stroke.markerEnd]).toEqual([key, { key, size: 3 }]);
+  });
+});
+
 describe('an unregistered marker key', () => {
   it('emits no attribute rather than a reference to a def that never exists', () => {
     // markerId mints the id, toDefsXml skips entries with no registry match —
