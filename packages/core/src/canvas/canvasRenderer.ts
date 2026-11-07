@@ -25,7 +25,7 @@ const TENANTS: WeakMap<HTMLCanvasElement, Set<WeaselRenderer>> = new WeakMap();
  *  and fail again, and the reason is reported once. */
 const REFUSED: WeakSet<HTMLCanvasElement> = new WeakSet();
 
-/** A renderer painting into the canvas, if any lease holds one. Test seam. */
+/** A renderer painting into the canvas, if any lease holds one. */
 export function cachedCanvasRenderer(canvas: HTMLCanvasElement): WeaselRenderer | undefined {
   const set = TENANTS.get(canvas);
   return set ? set.values().next().value : undefined;

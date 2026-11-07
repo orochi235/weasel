@@ -8,12 +8,14 @@
  * @packageDocumentation
  */
 
+export { WeaselRenderer } from './WeaselRenderer';
+export type { PixelRect } from './readPixels';
 export {
-  WeaselRenderer, type WeaselRendererOptions, type RenderTarget,
+  type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
   type IdBuffer, type RenderIdsOptions, type RendererBackend,
   DEFAULT_RETAIN_BUDGET,
-} from './WeaselRenderer';
+} from './rendererTypes';
 export { idMask } from './draw/idRender';
 export { requestRendererDevice } from './gpu/webgpu/requestRendererDevice';
 export type { WebGPUSurface } from './gpu/webgpu/openWebGPU';

@@ -12,7 +12,7 @@ import type { WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
 import { createContentWatch } from './contentWatch';
 import { followPointer } from './pointerAim';
-import { readbackRegion } from './readback';
+import { createCanvasReader, regionOnCanvas } from './readback';
 
 export type { LoupeMode };
 
@@ -233,47 +233,33 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     refreshWanted = true;
   };
 
-  /** Read device px of the loupe's region around `at`, sized for the
-   *  canvas's pixel ratio, or `null` when the framebuffer cannot answer. */
-  const read = (
-    at: { x: number; y: number },
-    rw: (dpr: number) => number,
-    rh: (dpr: number) => number,
-  ): ImageData | null => {
-    if (!landed) return null;
-    const gl = element.getContext('webgl2');
-    if (!gl) return null;
-    const cssRect = element.getBoundingClientRect();
-    if (cssRect.width === 0) return null;
-    const dpr = element.width / cssRect.width;
-    // A view-backed lens knows its canvas, so over a detached pane it reads
-    // that pane's pixels without being told where the pane is.
-    const r = (opts.region ?? host?.getSurfaceRect)?.();
-    const target = r
-      ? {
-          x: Math.round(r.x * dpr), y: Math.round(r.y * dpr),
-          width: Math.round(r.width * dpr), height: Math.round(r.height * dpr),
-        }
-      : { x: 0, y: 0, width: element.width, height: element.height };
-    return readbackRegion(gl, element.height, target, at, dpr, rw(dpr), rh(dpr));
-  };
+  const reader = createCanvasReader(element);
+  /** The device-px rect of the loupe's region around `at`, or `null` when the framebuffer cannot answer. A
+   *  view-backed lens knows its canvas, so over a detached pane it reads that pane's pixels without being told
+   *  where the pane is. */
+  const regionAt = (at: { x: number; y: number }, rw: (dpr: number) => number, rh: (dpr: number) => number) =>
+    (landed ? regionOnCanvas(element, (opts.region ?? host?.getSurfaceRect)?.(), at, rw, rh) : null);
 
   const refreshPixels = () => {
     if (disposed || model.mode !== 'pixel') return;
     const rect = win.contentRect;
-    const data = read(
+    const region = regionAt(
       model.aim,
       (dpr) => Math.max(1, Math.round((rect.w * dpr) / model.factor)),
       (dpr) => Math.max(1, Math.round((rect.h * dpr) / model.factor)),
     );
+    const data = region && reader.region(region);
     if (!data) return;
     pixelsPending = true;
-    createImageBitmap(data)
+    // A region read back later also holds the color under the aim.
+    const later = data instanceof Promise;
+    (later ? data.then((d) => createImageBitmap(d)) : createImageBitmap(data))
       .then((bmp) => {
         if (disposed) { bmp.close(); return; }
         dropPixels();
         pixels = bmp;
         pixelsPending = false;
+        if (later) model.resample();
         requestRedraw();
       })
       .catch(() => {
@@ -283,9 +269,10 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   };
 
   const readHex = (at: { x: number; y: number }): string | null => {
-    const px = read(at, () => 1, () => 1);
-    if (!px || px.data[3] === 0) return null;
-    return '#' + [px.data[0], px.data[1], px.data[2]]
+    const region = regionAt(at, () => 1, () => 1);
+    const px = region && reader.pixel(region);
+    if (!px || px[3] === 0) return null;
+    return '#' + [px[0], px[1], px[2]]
       .map((c) => c.toString(16).padStart(2, '0')).join('');
   };
 

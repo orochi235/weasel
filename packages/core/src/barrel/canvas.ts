@@ -12,6 +12,7 @@
 // public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
 export { CANVAS_CONTEXT_ATTRIBUTES } from '../canvas/contextAttributes';
+export { readCanvasPixels } from '../canvas/readCanvasPixels';
 export { OVERLAY_ROLE_STROKES } from '../canvas/overlayRoleStrokes';
 export { AmbientContributionsProvider, type AmbientContributionsProviderProps } from '../canvas/ambientContributions';
 export { LeanSceneCanvas, type LeanSceneCanvasProps } from '../canvas/LeanSceneCanvas';
@@ -91,7 +92,7 @@ export {
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
 export type { CanvasProps, CanvasRetainOptions } from '../canvas/Canvas';
-export type { CanvasBackend } from '../canvas/canvasBackend';
+export { canvasPaintsWith, type CanvasBackend } from '../canvas/canvasBackend';
 export { CanvasBackendProvider } from '../canvas/canvasBackendContext';
 export type { ViewPoseAdapter } from '../canvas/useViewHelpers';
 export type { CameraProps, CanvasViewState } from '../canvas/useCanvasView';

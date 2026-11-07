@@ -52,6 +52,11 @@ export function rememberBackend(canvas: HTMLCanvasElement, backend: RendererBack
   CHOSEN.set(canvas, backend);
 }
 
+/** What `canvas` paints with, or undefined before its first renderer is built. */
+export function canvasPaintsWith(canvas: HTMLCanvasElement): RendererBackend | undefined {
+  return CHOSEN.get(canvas);
+}
+
 /** Whether every program registered so far carries WGSL. */
 export function everyProgramHasWgsl(): boolean {
   return programSourceRegistry.entries().every((e) => e.value.wgsl !== undefined);

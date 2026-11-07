@@ -13,7 +13,9 @@ import { Frame, UniformRing } from './wgpuFrame';
 import { DEFAULT_ATTRIBUTE, needsDefaultAttribute, pipelineFor } from './wgpuPipelines';
 import { NDC_GROUP, WgpuProgram, type WgpuProgramHost } from './wgpuProgram';
 import * as res from './wgpuResources';
-import { CanvasTarget, createTarget, deleteTarget, encodeReadIds, encodeResolve, type WgpuTarget } from './wgpuTargets';
+import {
+  CanvasTarget, createTarget, deleteTarget, encodeReadIds, encodeReadTexture, encodeResolve, type WgpuTarget,
+} from './wgpuTargets';
 import { UtilityDraws } from './wgpuUtility';
 
 const RING_BYTES = 4 << 20;
@@ -239,6 +241,16 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     let read: () => Promise<Uint8Array> = () => Promise.resolve(new Uint8Array(0));
     this.frame.outsidePass((encoder) => {
       read = encodeReadIds(this.device, encoder, target as WgpuTarget, rect);
+    });
+    this.frame.flush();
+    return read();
+  }
+
+  readCanvas(rect: GpuRect): Promise<Uint8Array> {
+    let read: () => Promise<Uint8Array> = () => Promise.resolve(new Uint8Array(rect.width * rect.height * 4));
+    const texture = this.canvas.frameTexture();
+    this.frame.outsidePass((encoder) => {
+      read = encodeReadTexture(this.device, encoder, texture, this.surface.height, rect);
     });
     this.frame.flush();
     return read();

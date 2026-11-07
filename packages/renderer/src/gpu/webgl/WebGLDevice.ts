@@ -203,6 +203,18 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
 
   readonly readIdsSync = (target: GpuTarget, rect: GpuRect): Uint8Array =>
     readIds(this.gl, this.cache, target as GlTarget, rect);
+
+  readCanvas(rect: GpuRect): Promise<Uint8Array> {
+    return Promise.resolve(this.readCanvasSync(rect));
+  }
+
+  readonly readCanvasSync = (rect: GpuRect): Uint8Array => {
+    const gl = this.gl;
+    const bytes = new Uint8Array(rect.width * rect.height * 4);
+    this.cache.bindFramebuffer(null);
+    gl.readPixels(rect.x, rect.y, rect.width, rect.height, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+    return bytes;
+  };
 }
 
 const DEVICES = new WeakMap<WebGL2RenderingContext, WebGLDevice>();

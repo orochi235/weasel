@@ -7,12 +7,7 @@ import {
   LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC, GLYPH_PAINT_SPECS,
   BatchVariantPrograms, createBatchFill,
 } from './shaders/builtinPrograms';
-import {
-  glyphGeneration,
-  markAllFontsNotUploaded,
-  resetBakeBudget,
-  DEFAULT_BAKE_BUDGET,
-} from '@weasel-js/font';
+import { glyphGeneration, markAllFontsNotUploaded, resetBakeBudget, DEFAULT_BAKE_BUDGET } from '@weasel-js/font';
 import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
@@ -26,6 +21,7 @@ import type { GlMat3 } from '@weasel-js/geom';
 import { OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind } from './draw';
 import { drawStream, now } from './drawStream';
 import { drawIdFrame } from './draw/idRender';
+import { readPixels, readPixelsSync, type PixelRect } from './readPixels';
 import { createIdComposite } from './draw/idComposite';
 import { DrawBatch } from './drawBatch';
 import { QUAD_VERTICES, QUAD_INDICES } from './shaders/customPrelude';
@@ -40,17 +36,11 @@ import {
   type RenderStats, type RenderTarget, type RendererBackend, type WeaselRendererOptions,
 } from './rendererTypes';
 
-export {
-  DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpan,
-  type RenderSpanStats, type RenderStats, type RenderTarget, type RendererBackend, type RetainedStats,
-  type WeaselRendererOptions,
-} from './rendererTypes';
-
 const NO_RETAINED = { composited: 0, redrawn: 0, declined: 0, bytes: 0 } as const;
 
 /**
  * The renderer: takes a list of draw commands and paints them, through the
- * GPU layer (`gpu/`) over WebGL2.
+ * GPU layer (`gpu/`) over WebGL 2 or WebGPU.
  *
  * It knows nothing about the scene — commands are the whole interface, which
  * is what lets layers, HUD widgets and overlays all draw through the same
@@ -387,6 +377,13 @@ export class WeaselRenderer {
   renderIdsAsync(commands: DrawCommand[], viewMatrix?: GlMat3, opts: RenderIdsOptions = {}): Promise<IdBuffer> {
     return Promise.resolve(this.idFrame(commands, viewMatrix, opts, false));
   }
+
+  /** The canvas's pixels in `rect`, device px from its top-left, as the last
+   *  frame left them: RGBA, premultiplied, rows top-down. */
+  readPixels(rect: PixelRect): Promise<Uint8Array> { return readPixels(this.gpu, rect); }
+
+  /** `readPixels` answered at once. Throws on WebGPU, which reads back only through `readPixels`. */
+  readPixelsSync(rect: PixelRect): Uint8Array { return readPixelsSync(this.gpu, rect); }
 
   private idFrame(commands: DrawCommand[], viewMatrix: GlMat3 | undefined, opts: RenderIdsOptions, sync: boolean): IdBuffer | Promise<IdBuffer> {
     if (this.contextLost || this.disposed) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };

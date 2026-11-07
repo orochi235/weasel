@@ -271,4 +271,9 @@ export interface GpuDevice {
   readIds(target: GpuTarget, rect: GpuRect): Promise<Uint8Array>;
   /** `readIds` answered at once, where the backend can. */
   readonly readIdsSync?: (target: GpuTarget, rect: GpuRect) => Uint8Array;
+  /** The canvas's RGBA8 pixels inside `rect` as the last frame left them,
+   *  premultiplied, rows bottom-up. */
+  readCanvas(rect: GpuRect): Promise<Uint8Array>;
+  /** `readCanvas` answered at once, where the backend can. */
+  readonly readCanvasSync?: (rect: GpuRect) => Uint8Array;
 }
