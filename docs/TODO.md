@@ -38,7 +38,10 @@ Owner tags, after the priority (2026-10-26):
   left-click. The decision: whether the instrument and its camera share one input scope, or whether a key no
   binding in the active scope takes falls through to the other dispatcher on the same surface.
   Ruled (2026-11-07): the fall-through, as a general rule for dispatchers sharing a surface.
-  Closes when it is built, with a case in `useGestureDispatcher.keyScope.test.tsx`.
+  The same seam, read from the code and not run (2026-11-07): two dispatchers on one registry both answer
+  `holdsKeys()` true, since the hold is per registry, so one key may fire on both; per-dispatcher holds would
+  settle that and the fall-through together. Closes when it is built, with a case in
+  `useGestureDispatcher.keyScope.test.tsx`, and a key held by one of two dispatchers on a registry fires once.
 
 - **(P3) [agent] An alt-drag clone should snap to its own source.** Clone snaps as move
   does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names

@@ -6,16 +6,19 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## State (2026-11-07)
 
-- 1.17.2 is on npm (all 54 packages), after 1.17.0 and 1.17.1 the same day. It carries labkit's `reportAuto` and
-  `.quote()` (an auto row can name the value it came to), geom's `pathFaceArrangement` (curve-keeping faces with
-  adjacency, no segment ceiling), `@msb235/blits` pinned exactly at 1.1.0, and the tranches pulled from other hosts.
-  Its batch (`batch/2026-11-07f`, 17ce930a6) ran `test:fleet` green (35319 passed) and `test:fleet:postbuild` green.
-- Ready for the next batch: branch `geom-crossing-polish` (worktree `.claude/worktrees/geom-crossing-polish`,
-  fe1f6130d) polishes face crossings onto the exact intersections, 92.5% of them on printable ASCII, topology
-  unchanged. When merging, drop its edit to `.changeset/geom-face-arrangement.md`, which 1.17.2 already consumed;
-  keep `.changeset/geom-crossing-polish.md`. When it ships, tell the segmento session.
-- `AnnotationOverlay.clip.browser.test.tsx` fails in some full fleet runs and not others (filed as a P2); it
-  passed in 1.17.2's run.
+- 1.17.3 is on npm (all 54 packages; the release's registry install resolved), after 1.17.0, 1.17.1 and 1.17.2 the
+  same day. It carries the face-crossing polish, labkit's live auto rows (an auto row shows its control ghosted and
+  any edit pins it) and the `reportAuto` toggle fix, collego's nine fixes (overlay theme, minimap indicator, key
+  holding and fallback, text-only `isEditableTarget`, keys stopping at modals, one entered-group store per scene,
+  disabled reasons on commands, menus, and buttons), and `@msb235/blits` as a `^1.1.0` peer of core and animator.
+  Its batch (`batch/2026-11-07g`) ran `test:fleet --full` at 21180df69 (35395 passed, 1 failed:
+  `AnnotationOverlay.clip`, the filed P2 that fails in some full runs) and `test:fleet:postbuild` green at 47cce78f9,
+  which fixed the consumer smoke to treat third-party peers as external.
+- The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
+- Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
+  new files excluded, while both ran `onto do` jobs. onto-ad ruled onto out; the cause is unknown. Agents committed
+  by path, and the stray copies matched what merged. Until it is understood, give parallel agents in sibling
+  worktrees a brief that forbids `git stash`, and diff any leftover files against the merge before removing a tree.
 - Release no longer repeats `check:manifests`, `check:treeshake` and `check:react-free`: postbuild runs them.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
