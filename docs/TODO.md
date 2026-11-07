@@ -58,7 +58,7 @@ Owner tags, after the priority (2026-10-26):
   pointer, clears on Esc, on leave and on drop, and looks right.
 
 
-- **(P3) [maintainer] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
+- **(P3) [agent] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
   the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
   PaletteLab's page *is* the shell body, and the `#/theme` workbench beside it is a second bare
@@ -66,8 +66,8 @@ Owner tags, after the priority (2026-10-26):
   with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
-  Closes when the maintainer has ruled whether labkit supports a lab with no trials, and
-  `apps/theme-editor` either runs as a `<Lab>` or the ruling keeps it a bare `LabShell`.
+  Ruled (2026-11-07): labkit supports a lab with no trials, rendering its children as the body.
+  Closes when `<Lab>` takes no instruments and `apps/theme-editor` runs as one.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -288,7 +288,7 @@ Owner tags, after the priority (2026-10-26):
 
 ## Text
 
-- **(P3) [maintainer] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
+- **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
   and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
   in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
   16px stays put from `x` 20 to 20.25 and moves next at 20.375 and 20.75), where Chromium and
@@ -306,8 +306,8 @@ Owner tags, after the priority (2026-10-26):
   sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
   0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
   WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
-  Closes when the maintainer has ruled between a WebKit DPR 1 bound in
-  `overlayAlignment.browser.test.tsx` and a WebKit nudge in text-dom, and the chosen one is in the tree.
+  Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
+  its own bound.
 
 ---
 
@@ -754,7 +754,7 @@ only story runner in the repo.
   Linux lane on its own.
 
 
-- **(P2) [maintainer] Browser test files fail to load when the node's network changes.** A file
+- **(P2) [agent] Browser test files fail to load when the node's network changes.** A file
   fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
   imported module`, along with any file loading in the same tenth of a second, and the next run
   passes. The cause is Chromium: on a macOS network change it drops every request in flight, those
@@ -782,8 +782,8 @@ only story runner in the repo.
     events and leaves the LAN-wide ones, or have `scripts/vitest-overlap.mjs` run again only the
     files that loaded no tests when the run logged `ERR_NETWORK_CHANGED`. The second is a rerun the
     suite does on its own, which nothing in it does today.
-    Closes when studio's Wi-Fi is off while it has Ethernet, or `scripts/vitest-overlap.mjs` reruns the
-    files that loaded no tests in a run that logged `ERR_NETWORK_CHANGED`.
+    Ruled (2026-11-07): the rerun. Closes when `scripts/vitest-overlap.mjs` reruns the files that loaded no
+    tests in a run that logged `ERR_NETWORK_CHANGED`.
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
