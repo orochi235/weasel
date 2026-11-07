@@ -155,7 +155,7 @@ function planesOf(boxes: readonly Aabb[]): Map<Axis, Map<number, Vec3[]>> {
 
 /** Options for `groundGridSource`. */
 export interface GroundGridSourceOptions {
-  /** The grid's pitch, in world units. */
+  /** The grid's pitch, in world units. One that is not positive and finite offers no lines. */
   step: number;
   /** The ground's normal; the grid lies on `up · p = 0`. Default `+y`. */
   up?: Vec3;
@@ -180,6 +180,7 @@ export function groundGridSource(opts: GroundGridSourceOptions): SnapSource<Vec3
     reachPx: Infinity,
     roles: ['pointer', 'geometry'],
     *collect(q) {
+      if (!(opts.step > 0 && opts.step < Infinity)) return;
       for (const p of q.probes) {
         if (Math.abs(dot(p.at, up)) > 1e-6 * Math.max(1, len(p.at))) continue;
         const a = dot(p.at, u);

@@ -15,8 +15,9 @@ import { projectAabbToScreen, screenToNdc, type ScreenBox } from './screen';
 import { boxAt, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
 
 export interface WorldPickIndex {
-  /** The nearest node the ray enters; a tie on distance goes to the first in render order. */
-  nearestOnRay(ray: Ray, excluded: ReadonlySet<NodeId> | null): NodeId | null;
+  /** The nearest node the ray enters no further along it than `maxT`; a tie on
+   *  distance goes to the first in render order. */
+  nearestOnRay(ray: Ray, excluded: ReadonlySet<NodeId> | null, maxT?: number): NodeId | null;
   /** The nodes whose projected box overlaps `rect`, in render order. */
   inScreenRect(vp: Viewport3d, rect: ScreenBox): NodeId[];
 }
@@ -81,7 +82,7 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     private readonly always: readonly number[],
   ) {}
 
-  nearestOnRay(ray: Ray, excluded: ReadonlySet<NodeId> | null): NodeId | null {
+  nearestOnRay(ray: Ray, excluded: ReadonlySet<NodeId> | null, maxT = Infinity): NodeId | null {
     const { order, boxes } = this;
     let best = -1;
     let bestT = Infinity;
@@ -89,7 +90,7 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
       const box = boxes[i]!;
       if (excluded?.has(order[i]!.id)) return;
       const t = intersectRayAabb(ray, box.min, box.max);
-      if (t !== null && (t < bestT || (t === bestT && i < best))) {
+      if (t !== null && t <= maxT && (t < bestT || (t === bestT && i < best))) {
         bestT = t;
         best = i;
       }

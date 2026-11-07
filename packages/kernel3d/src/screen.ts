@@ -61,6 +61,10 @@ export function ndcToScreen(
  * the whole of what 3D picking needs from a pointer — which is why the world
  * point the dispatcher carries stays two numbers.
  *
+ * It runs from the near plane to the far plane, so `t` from 0 to 1 spans what
+ * the camera draws: nothing clipped away in front of the near plane or past
+ * the far one is on it.
+ *
  * `null` when the point names no ray: the view-projection has no inverse (a
  * camera on its own target, a degenerate projection) or the pane has no area.
  */
@@ -68,17 +72,17 @@ export function rayThroughScreenPoint(
   point: { x: number; y: number },
   rect: ScreenBox,
   viewProjection: Mat4,
-  eye: Vec3,
 ): Ray | null {
   const inv = invert(viewProjection);
   if (!inv) return null;
   const ndc = screenToNdc(point, rect);
   const near = transformPoint(inv, { x: ndc.x, y: ndc.y, z: -1 });
   const far = transformPoint(inv, { x: ndc.x, y: ndc.y, z: 1 });
-  const direction = normalize(sub(far, near));
+  const direction = sub(far, near);
   // normalize answers zero for a non-finite difference, which is no direction.
-  if (direction.x === 0 && direction.y === 0 && direction.z === 0) return null;
-  return { origin: eye, direction };
+  const unit = normalize(direction);
+  if (unit.x === 0 && unit.y === 0 && unit.z === 0) return null;
+  return { origin: near, direction };
 }
 
 type Clip = readonly [number, number, number, number];

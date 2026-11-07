@@ -3,7 +3,7 @@ import { IDENTITY_POSE_COMPOSITION, createScene, type SnapCollect, type SnapMark
 import type { Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from '../camera';
 import { pose3, type Pose3 } from '../pose3';
-import { alignPlaneSource } from './sources';
+import { alignPlaneSource, groundGridSource } from './sources';
 
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
 
@@ -27,5 +27,22 @@ describe('alignPlaneSource', () => {
     const lines = mark({ x: -0.02, y: 0, z: 0 });
     expect(lines.map((l) => (l.kind === 'line' ? l.to.z : NaN)).sort((a, b) => a - b)).toEqual([-8, -4]);
     for (const l of lines) expect(l).toMatchObject({ kind: 'line', from: { x: -0.5, y: 3, z: 6 } });
+  });
+});
+
+describe('groundGridSource', () => {
+  const probe = { id: 'pointer', at: { x: 0.3, y: 0, z: -1.7 }, role: 'pointer' as const };
+  const q: SnapCollect<Vec3> = {
+    gesture: 'point', probes: [probe], delta0: ZERO, exclude: [], reachWorld: () => 0.1, reachPx: 8,
+  };
+
+  it('offers the grid lines either side of a probe on the ground', () => {
+    expect([...groundGridSource({ step: 1 }).collect(q)]).toHaveLength(4);
+  });
+
+  it('offers nothing for a step that is zero, negative or not finite', () => {
+    for (const step of [0, -1, NaN, Infinity]) {
+      expect([...groundGridSource({ step }).collect(q)]).toEqual([]);
+    }
   });
 });

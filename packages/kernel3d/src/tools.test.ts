@@ -51,6 +51,14 @@ describe('camera.dolly', () => {
     expect(right.camera().target.x).toBeGreaterThan(0);
   });
 
+  it('reads the pointer from the pane origin, for a pane offset on its canvas', () => {
+    const plain = depsFor({ distance: 10 });
+    run(dollyAction, plain.deps, { deltaY: -100, clientX: 700, clientY: 100 });
+    const offset = depsFor({ distance: 10 }, { origin: () => ({ x: 300, y: 50 }) });
+    run(dollyAction, offset.deps, { deltaY: -100, clientX: 1000, clientY: 150 });
+    expect(offset.camera()).toEqual(plain.camera());
+  });
+
   it('dollies in on a Safari pinch that spreads', () => {
     const { deps, camera } = depsFor({ distance: 10 });
     run(dollyAction, deps, { scale: 2 });
@@ -91,6 +99,21 @@ describe('camera.pinchDolly', () => {
     );
     handle.onMove?.(ctxOf(deps, { multiTouch: { pinch: { currentSpread: 200 } } } as Partial<InvocationCtx>));
     expect(camera().distance).toBeCloseTo(5);
+  });
+
+  it('reads the centroid from the pane origin, for a pane offset on its canvas', () => {
+    const pinch = (extra: Partial<Camera3dDep>, centroid: { x: number; y: number }) => {
+      const { deps, camera } = depsFor({ distance: 10 }, extra);
+      const handle = (pinchDollyAction.invoker as OngoingInvoker).start(
+        ctxOf(deps, { multiTouch: { spread: 100, centroid } } as Partial<InvocationCtx>),
+        undefined,
+      );
+      handle.onMove?.(ctxOf(deps, { multiTouch: { pinch: { currentSpread: 200 } } } as Partial<InvocationCtx>));
+      return camera();
+    };
+    const plain = pinch({}, { x: 700, y: 100 });
+    expect(plain.target.x).toBeGreaterThan(0);
+    expect(pinch({ origin: () => ({ x: 300, y: 50 }) }, { x: 1000, y: 150 })).toEqual(plain);
   });
 });
 

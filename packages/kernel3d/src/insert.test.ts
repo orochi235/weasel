@@ -27,6 +27,14 @@ describe('createInsert', () => {
     expect(f.depth).toBeCloseTo(4.1421, 3);
   });
 
+  it('reads an `up` off an axis by rounding as that axis', () => {
+    // Rotating +y a quarter turn about +x leaves cos(π/2) in y.
+    const noisy = footprintOf(VP, { x: 0, y: Math.cos(Math.PI / 2), z: 1 })!;
+    expect(noisy.center.z).toBe(0);
+    expect(noisy.width).toBeCloseTo(8.2843, 3);
+    expect(noisy.depth).toBeCloseTo(4.1421, 3);
+  });
+
   it('lands on the ground aimSpace3d unprojects onto, x and z carrying the 2D x and y', () => {
     const down: Viewport3d = { ...VP, camera: createCamera({ pitch: MAX_PITCH, target: { x: 1, y: 0, z: 2 } }) };
     const f = footprintOf(down, undefined)!;

@@ -152,7 +152,8 @@ export function dollyToward(
   limits?: Partial<OrbitLimits>,
 ): Camera3d {
   const dollied = dollyBy(camera, factor, limits);
-  const kept = 1 - dollied.distance / camera.distance;
+  // A camera on its target has no point under the pointer to keep.
+  const kept = camera.distance > 0 ? 1 - dollied.distance / camera.distance : 0;
   const moved = panBy(
     camera,
     -kept * (at.x - pane.width / 2),
