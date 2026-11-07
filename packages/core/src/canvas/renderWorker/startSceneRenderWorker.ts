@@ -155,6 +155,8 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       inputs = { ...inputs, ...next };
       if (sceneMoved) frames.forgetScene();
       if (sceneMoved || clockMoved) watch();
+      // The last frame's time stands on the old clock's timeline, or the page's.
+      if (clockMoved) resumed = true;
     },
     sync() {
       if (disposed) return false;

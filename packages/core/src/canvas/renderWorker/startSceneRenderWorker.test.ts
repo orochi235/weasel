@@ -124,7 +124,12 @@ describe('startSceneRenderWorker, the worker animator', () => {
     for (const fn of listeners) fn();
     expect(due).toHaveBeenCalled();
     client.sync();
-    expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 } });
+    // The time the last frame stood at was on the page's timeline, not the clock's.
+    expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 }, resumed: true });
+    answer({ type: 'drawn' });
+    client.update({ clock: undefined });
+    client.sync();
+    expect(frames(posted)[2]).toEqual({ type: 'frame', at: AT, resumed: true });
     void scene;
   });
 
