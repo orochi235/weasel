@@ -165,20 +165,28 @@ export interface CanvasExtensionApi {
    * The `pickId` (`GroupDrawCommand.pickId`) of what the canvas last painted
    * at a point, CSS pixels from its surface's top-left; 0 where nothing that
    * carries one painted, or before the first paint. It draws that frame again
-   * as an id frame (`WeaselRenderer.renderIds`) culled to the one device pixel,
-   * so it sees what custom shaders and effects paint, not their bounds.
+   * as an id frame (`WeaselRenderer.renderIdsAsync`) culled to the one device
+   * pixel, so it sees what custom shaders and effects paint, not their bounds.
    * `<SceneCanvas>` gives each node's paint `scenePickIds(scene).idOf(id)`.
    *
    * A 3D host (`@weasel-js/kernel3d`) draws with its consumer's renderer rather
    * than this one, so this sees none of what it draws; it picks by ray.
    */
-  pickAt(x: number, y: number, options?: CanvasIdReadOptions): number;
+  pickAt(x: number, y: number, options?: CanvasIdReadOptions): Promise<number>;
   /**
    * The ids the canvas last painted over `rect`, CSS pixels from its surface's
    * top-left, one per device pixel it touches: {@link pickAt} for an area. An
    * empty buffer before the first paint or while the context is lost.
    */
-  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): IdBuffer;
+  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer>;
+  /**
+   * {@link readIds} answered at once, for a pick that must answer inside the
+   * event that asked. `null` where the canvas paints with WebGPU, which reads
+   * an id frame back only asynchronously.
+   */
+  readIdsSync(
+    rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions,
+  ): IdBuffer | null;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;

@@ -39,7 +39,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   canvasApiRef: RefObject<CanvasExtensionApi | null>;
 }) {
   const { scene, selection, descriptor, viewRef, canvasApiRef } = args;
-  const readIds = useCallback(() => canvasApiRef.current?.readIds ?? null, [canvasApiRef]);
+  const readIds = useCallback(() => canvasApiRef.current?.readIdsSync ?? null, [canvasApiRef]);
   const { geometry, alphaFor, layerVisibility, layerOrder, isPointerInteractive } = args.props;
   const { kindOf, kindOfNode } = args.kinds;
 

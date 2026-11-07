@@ -10,10 +10,15 @@ import type { SurfaceFrame } from './useViewRegistrySurface';
 
 const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
 
+/** How the handle reads the ids of the canvas's last frame; the paint publishes them. */
+export type IdReaders = Pick<CanvasExtensionApi, 'readIds' | 'readIdsSync'>;
+
+const NO_READERS: IdReaders = { readIds: () => Promise.resolve(NO_IDS), readIdsSync: () => NO_IDS };
+
 /** The handle's members the canvas builds elsewhere. */
 export type CanvasHandleApi = Omit<
   CanvasExtensionApi,
-  'element' | 'surface' | 'getSurfaceRect' | 'hitTestExtras' | 'ingest' | 'addView' | 'pickAt' | 'readIds'
+  'element' | 'surface' | 'getSurfaceRect' | 'hitTestExtras' | 'ingest' | 'addView' | 'pickAt' | 'readIds' | 'readIdsSync'
 > & { hitTestExtrasIn: HitTestExtrasIn };
 
 /** The elements the handle names, as of this render. */
@@ -30,7 +35,7 @@ export function useCanvasHandle(
   target: CanvasHandleTarget,
   frame: SurfaceFrame,
   api: CanvasHandleApi,
-): { current: CanvasExtensionApi['readIds'] } {
+): { current: IdReaders } {
   const { canvasRef, ownCanvasRef, detached, paintRectRef, inputElement, paintCanvas } = target;
   const { viewRef, dimsRef, helpersRef } = frame;
   const {
@@ -38,10 +43,12 @@ export function useCanvasHandle(
     subscribeResume, registerLayer, getView, setView, subscribeView,
     getPaintedVersion, paintedCursor, cursorSink, getDebug,
   } = api;
-  const readIdsRef = useRef<CanvasExtensionApi['readIds']>(() => NO_IDS);
-  const readIds = useCallback<CanvasExtensionApi['readIds']>((rect, options) => readIdsRef.current(rect, options), []);
+  const readIdsRef = useRef<IdReaders>(NO_READERS);
+  const readIds = useCallback<CanvasExtensionApi['readIds']>((rect, options) => readIdsRef.current.readIds(rect, options), []);
+  const readIdsSync = useCallback<CanvasExtensionApi['readIdsSync']>(
+    (rect, options) => readIdsRef.current.readIdsSync(rect, options), []);
   const pickAt = useCallback<CanvasExtensionApi['pickAt']>(
-    (x, y, options) => readIdsRef.current({ x, y, width: 0, height: 0 }, options).data[0] ?? 0, []);
+    async (x, y, options) => (await readIdsRef.current.readIds({ x, y, width: 0, height: 0 }, options)).data[0] ?? 0, []);
 
   const hitTestExtras = useCallback((worldX: number, worldY: number, at?: { view: View; dims: Dims }) => (
     hitTestExtrasIn(worldX, worldY, at?.view ?? viewRef.current, at?.dims ?? dimsRef.current, helpersRef.current)
@@ -75,10 +82,11 @@ export function useCanvasHandle(
     getDebug,
     pickAt,
     readIds,
+    readIdsSync,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintCanvas,
        getSurfaceRect, clientToWorld, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume,
        registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
-       paintedCursor, cursorSink, getDebug, pickAt, readIds]);
+       paintedCursor, cursorSink, getDebug, pickAt, readIds, readIdsSync]);
   return readIdsRef;
 }

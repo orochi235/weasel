@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useInsertionEffect, useRef } from 'react';
+import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { viewToMat3, type DrawCommand, type IdBuffer, type WeaselRenderer } from '@weasel-js/renderer';
-import type { CanvasExtensionApi } from './canvasExtension';
+import type { IdReaders } from './useCanvasHandle';
 import type { View } from 'core/viewport/view';
 import {
   DEFAULT_LAYER_RETAIN, drawLayers, type LayerCommandCache, type LayerRetainPolicy, type RenderLayer,
 } from 'core/layers/render';
 import type { CanvasDebugSink } from '../debug/types';
+import type { CanvasIdReadOptions } from './canvasExtension';
 import { beginDebugFrame } from '../debug/useDebugSink';
 import { resolveDpr, type CanvasRendererLease } from './canvasRenderer';
 import type { CanvasProps } from './canvasProps';
@@ -57,6 +58,8 @@ function retainPolicy(retain: PaintInputs['retain']): LayerRetainPolicy | false 
 
 const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
 
+type IdRect = { x: number; y: number; width: number; height: number };
+
 /**
  * Publish the canvas's paint into `paintRef`, which the frame loop calls. The paint binds the
  * leased renderer to whichever canvas pixels go to and draws the layer stack through the
@@ -69,7 +72,7 @@ export function useCanvasPaint(
   frame: PaintFrame,
   markPainted: () => void,
   requestRedraw: () => void,
-  readIdsRef: { current: CanvasExtensionApi['readIds'] },
+  readIdsRef: { current: IdReaders },
 ): void {
   const { paintTargetRef, ownCanvasRef, paintRectRef } = target;
   const { inputsRef, viewRef, gateRef, helpersRef } = frame;
@@ -139,14 +142,26 @@ export function useCanvasPaint(
     };
   }, []);
 
-  const readIds = useCallback<CanvasExtensionApi['readIds']>((rect, options) => {
-    const last = lastFrameRef.current;
-    if (!last || last.renderer.isContextLost()) return NO_IDS;
-    return last.renderer.renderIds(last.commands, viewToMat3(last.view), {
-      rect, minAlpha: options?.minAlpha, exclude: options?.exclude,
-    });
+  const readers = useMemo<IdReaders>(() => {
+    const live = () => {
+      const last = lastFrameRef.current;
+      return last && !last.renderer.isContextLost() ? last : null;
+    };
+    const args = (last: { commands: DrawCommand[]; view: View }, rect: IdRect, options?: CanvasIdReadOptions) =>
+      [last.commands, viewToMat3(last.view), { rect, minAlpha: options?.minAlpha, exclude: options?.exclude }] as const;
+    return {
+      readIds: (rect, options) => {
+        const last = live();
+        return last ? last.renderer.renderIdsAsync(...args(last, rect, options)) : Promise.resolve(NO_IDS);
+      },
+      readIdsSync: (rect, options) => {
+        const last = live();
+        if (!last) return NO_IDS;
+        return last.renderer.backend === 'webgpu' ? null : last.renderer.renderIds(...args(last, rect, options));
+      },
+    };
   }, []);
   useInsertionEffect(() => {
-    readIdsRef.current = readIds;
+    readIdsRef.current = readers;
   });
 }

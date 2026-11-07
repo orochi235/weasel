@@ -38,7 +38,8 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
     paintedCursor: createPaintedCursorState(),
     cursorSink: { setBase() {}, setOverride() {} },
     getDebug: () => null,
-    pickAt: () => 0, readIds: () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }),
+    pickAt: async () => 0,
+    readIds: async () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }), readIdsSync: () => null,
   };
   return api;
 }
@@ -193,7 +194,8 @@ describe('attachHud', () => {
         paintedCursor: createPaintedCursorState(),
         cursorSink: { setBase() {}, setOverride() {} },
         getDebug: () => null,
-        pickAt: () => 0, readIds: () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }),
+        pickAt: async () => 0,
+        readIds: async () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }), readIdsSync: () => null,
       };
       const theme = { ...resolveTheme(weaselTheme, { mode: 'dark' }), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });
