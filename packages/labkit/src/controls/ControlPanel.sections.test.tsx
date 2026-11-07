@@ -293,6 +293,12 @@ describe('<ControlPanel> resettable group', () => {
       ['modes', { one: 0, two: 0, inner: { three: 1 }, kept: 'x' }],
     ]);
   });
+
+  it('is disabled for values its rows read as the defaults: a missing one, and a copy of a list', () => {
+    const listed = resolveConfigSchema(f.schema({ tags: f.group({ names: f.list(['a', 'b']), n: f.number(0) }).resettable() }));
+    renderWithIcons(<ControlPanel schema={listed} config={{ tags: { names: ['a', 'b'] } }} setConfig={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Reset Tags' })).toBeDisabled();
+  });
 });
 
 describe('<ControlPanel> groups drawn `as`', () => {
