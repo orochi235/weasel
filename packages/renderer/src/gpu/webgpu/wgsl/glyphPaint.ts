@@ -33,7 +33,7 @@ ${GLYPH_CELL_WGSL}
   var o: VOut;
   let screen = u.u_model * vec3f(a_position, 1.0);
   let clip = u.u_proj * vec3f(screen.xy, 1.0);
-  o.position = vec4f(clip.xy, 0.0, 1.0);
+  o.position = weasel_clip(vec4f(clip.xy, 0.0, 1.0));
   o.v_world = (u.u_worldInv * vec3f(screen.xy, 1.0)).xy;
   o.v_uv = a_uv;
   o.v_glyphMode = f32(i32(a_texSlot + 0.5) / ${BATCH_TEXTURE_SLOTS});

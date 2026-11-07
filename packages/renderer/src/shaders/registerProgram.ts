@@ -63,9 +63,10 @@ export interface ShaderSource {
  * A registered program's source, in one shading language or both. A backend
  * draws from its own language's and declines a program without one.
  *
- * WGSL sources are held but not yet drawn: no backend reads them until the
- * WebGPU one lands, and their contract (bindings for the kit's uniforms and
- * varyings) is set with it.
+ * A WGSL `frag` supplies `fn fragment(in: Varyings) -> vec4f`, and `vert`,
+ * where set, `fn vertex(v: KitVertex) -> Varyings`; the kit's prelude
+ * declares both types and the entry points (`gpu/webgpu/wgsl/customPrelude.ts`).
+ * A `frag` declaring entry points of its own is compiled as it is.
  */
 export type ProgramSource =
   | { glsl: ShaderSource; wgsl?: ShaderSource }

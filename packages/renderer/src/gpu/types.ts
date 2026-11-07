@@ -186,10 +186,11 @@ export interface GpuProgram {
   setTexture(name: string, texture: GpuTexture | null, index?: number): void;
 }
 
-/** A program's source in each language a backend can compile. */
+/** A program's source in each language a backend can compile. WGSL is one
+ *  whole module, entry points and all. */
 export interface GpuProgramSource {
   readonly glsl?: { readonly vert: string; readonly frag: string };
-  readonly wgsl?: { readonly vert?: string; readonly frag: string };
+  readonly wgsl?: string;
 }
 
 export interface GpuProgramOptions {
@@ -218,6 +219,8 @@ export type GpuTextureData =
 /** The backend. Everything it hands out is valid until the device's context
  *  is lost; the renderer rebuilds its resources on restore. */
 export interface GpuDevice {
+  /** The language the backend compiles programs from. */
+  readonly language: 'glsl' | 'wgsl';
   readonly limits: GpuLimits;
   isContextLost(): boolean;
   /** The canvas target's size in pixels. */

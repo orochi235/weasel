@@ -9,6 +9,7 @@
  */
 import type { Effect } from './types';
 import { registerEffect } from './types';
+import { BLUR_EFFECT_WGSL, VIGNETTE_EFFECT_WGSL } from '../gpu/webgpu/wgsl/effects';
 
 const BLUR_FRAG = /* glsl */ `#version 300 es
 precision highp float;
@@ -53,8 +54,8 @@ void main() {
 }
 `;
 
-const BLUR = registerEffect('weasel:blur', { glsl: BLUR_FRAG });
-const VIGNETTE = registerEffect('weasel:vignette', { glsl: VIGNETTE_FRAG });
+const BLUR = registerEffect('weasel:blur', { glsl: BLUR_FRAG, wgsl: BLUR_EFFECT_WGSL });
+const VIGNETTE = registerEffect('weasel:vignette', { glsl: VIGNETTE_FRAG, wgsl: VIGNETTE_EFFECT_WGSL });
 
 /**
  * Gaussian blur, as a horizontal pass followed by a vertical one.

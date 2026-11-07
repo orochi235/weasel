@@ -11,7 +11,7 @@ struct VOut {
 
 @vertex fn vs(@location(0) a_position: vec2f, @location(1) a_uv: vec2f) -> VOut {
   var o: VOut;
-  o.position = vec4f(a_position, 0.0, 1.0);
+  o.position = weasel_clip(vec4f(a_position, 0.0, 1.0));
   o.uv = vec2f(a_uv.x, 1.0 - a_uv.y);
   return o;
 }

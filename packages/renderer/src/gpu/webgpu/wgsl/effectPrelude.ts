@@ -1,3 +1,5 @@
+import { NDC_WGSL } from './common';
+
 /**
  * What a WGSL effect is written against: `fn effect(in: EffectVaryings) -> vec4f`,
  * reading what has been drawn so far from `source`. `uv` runs top-down across
@@ -20,7 +22,7 @@ struct EffectVaryings {
   @builtin(position) position: vec4f,
   @location(0) uv: vec2f,
 }
-`;
+${NDC_WGSL}`;
 
 /** The effect kit uniforms by their GLSL names, and the `EffectKit` member each lands in. */
 export const EFFECT_KIT_WGSL_NAMES: Readonly<Record<string, string>> = {
@@ -37,7 +39,7 @@ export function assembleEffectWgsl(frag: string): string {
 ${frag}
 @vertex fn weasel_vs(@location(0) position: vec2f, @location(1) uv: vec2f) -> EffectVaryings {
   var o: EffectVaryings;
-  o.position = vec4f(position, 0.0, 1.0);
+  o.position = weasel_clip(vec4f(position, 0.0, 1.0));
   o.uv = vec2f(uv.x, 1.0 - uv.y);
   return o;
 }

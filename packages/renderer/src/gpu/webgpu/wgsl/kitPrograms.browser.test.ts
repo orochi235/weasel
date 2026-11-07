@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { reflectWgsl } from '../wgslReflect';
 import { createUniformBlock, type UniformValue } from '../wgslUniforms';
+import { BufferUsage, MapMode, TextureUsage } from '../flags';
+import { identityNdcGroups } from './testNdc';
 import { KIT_WGSL_PROGRAMS, type KitWgslProgram } from './kitPrograms';
 import { HULL_ORIGIN_BIAS, HULL_ORIGIN_SPAN } from '../../../batchHull';
 import { withHull } from '../../../shaders/batchFill';
@@ -39,7 +41,7 @@ function vertexLayout(locations: Readonly<Record<string, number>>): GPUVertexBuf
 
 function vertexBuffer(device: GPUDevice, data: number[]): GPUBuffer {
   const verts = new Float32Array(data);
-  const vbo = device.createBuffer({ size: verts.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+  const vbo = device.createBuffer({ size: verts.byteLength, usage: BufferUsage.VERTEX | BufferUsage.COPY_DST });
   device.queue.writeBuffer(vbo, 0, verts);
   return vbo;
 }
@@ -51,7 +53,7 @@ function uniformBuffer(device: GPUDevice, code: string, struct: string,
   for (const [name, value] of Object.entries(values)) {
     if (!block.set(name, value)) throw new Error(`${struct} has no member ${name}`);
   }
-  const ubo = device.createBuffer({ size: block.size, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  const ubo = device.createBuffer({ size: block.size, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
   device.queue.writeBuffer(ubo, 0, block.bytes);
   return ubo;
 }
@@ -61,7 +63,7 @@ function texture(device: GPUDevice, width: number, height: number, texels: numbe
   usage = 0): GPUTexture {
   const t = device.createTexture({
     size: [width, height], format: 'rgba8unorm',
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | usage,
+    usage: TextureUsage.TEXTURE_BINDING | TextureUsage.COPY_DST | usage,
   });
   device.queue.writeTexture({ texture: t }, new Uint8Array(texels), { bytesPerRow: 4 * width }, [width, height]);
   return t;
@@ -70,7 +72,7 @@ function texture(device: GPUDevice, width: number, height: number, texels: numbe
 function target(device: GPUDevice, width: number, height: number): GPUTexture {
   return device.createTexture({
     size: [width, height], format: 'rgba8unorm',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
+    usage: TextureUsage.RENDER_ATTACHMENT | TextureUsage.COPY_SRC | TextureUsage.TEXTURE_BINDING,
   });
 }
 
@@ -103,20 +105,20 @@ async function drawAndRead(device: GPUDevice, targets: Array<GPUTexture | null>,
     }),
   });
   rp.setPipeline(pass.pipeline);
-  pass.groups.forEach((g, i) => rp.setBindGroup(i, g));
+  identityNdcGroups(device, pass.pipeline, pass.groups).forEach((g, i) => rp.setBindGroup(i, g));
   rp.setVertexBuffer(0, pass.vbo);
   rp.draw(pass.count);
   rp.end();
   const reads = targets.map((t) => {
     if (!t) return null;
-    const buf = device.createBuffer({ size: 256 * t.height, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    const buf = device.createBuffer({ size: 256 * t.height, usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ });
     enc.copyTextureToBuffer({ texture: t }, { buffer: buf, bytesPerRow: 256 }, [t.width, t.height]);
     return buf;
   });
   device.queue.submit([enc.finish()]);
   return Promise.all(reads.map(async (b) => {
     if (!b) return null;
-    await b.mapAsync(GPUMapMode.READ);
+    await b.mapAsync(MapMode.READ);
     return new Uint8Array(b.getMappedRange().slice(0));
   }));
 }

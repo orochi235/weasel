@@ -10,6 +10,7 @@ import { reflectWgsl } from '../wgslReflect';
 import { createUniformBlock } from '../wgslUniforms';
 import { batchFillWgsl } from './batchFill';
 import { KIT_WGSL_PROGRAMS } from './kitPrograms';
+import { reflectEntries } from '../wgslEntries';
 
 const COMPOSITE = ['u_source', 'u_alpha', 'u_colorMatrix', 'u_colorBias'];
 const ID_COMPOSITE = ['u_source', 'u_ids', 'u_resolution', 'u_alpha', 'u_groupId'];
@@ -39,6 +40,13 @@ describe('the kit WGSL programs', () => {
       : [n]).filter((n) => !declared.has(n));
     expect(missing).toEqual([]);
     if (p.outputs !== 'id' && !p.effect) expect(declared.has('u_weaselId')).toBe(true);
+  });
+
+  it.each(KIT_WGSL_PROGRAMS.map((p) => [p.name, p] as const))('%s reads its attributes at the locations it lists', (_, p) => {
+    const entries = reflectEntries(p.code);
+    expect(entries.vertex).toBe(p.effect ? 'weasel_vs' : 'vs');
+    for (const [name, location] of Object.entries(p.locations)) expect(entries.attributes.get(name)).toBe(location);
+    expect([...entries.outputs].sort()).toEqual(p.outputs === 'color' ? [0] : p.outputs === 'id' ? [1] : [0, 1]);
   });
 
   it('pairs each batch texture with a sampler but the white texel', () => {

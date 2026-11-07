@@ -1,4 +1,4 @@
-import { BATCH_BUILDS, BATCH_FILL_LOCATIONS, batchFillWgsl } from './batchFill';
+import { BATCH_BUILDS, BATCH_FILL_LOCATIONS, batchFillWgsl, type BatchBuild } from './batchFill';
 import { COMPOSITE_LOCATIONS, COMPOSITE_WGSL } from './composite';
 import { assembleEffectWgsl } from './effectPrelude';
 import { BLUR_EFFECT_WGSL, VIGNETTE_EFFECT_WGSL } from './effects';
@@ -25,24 +25,32 @@ export interface KitWgslProgram {
 
 const EFFECT_LOCATIONS = { a_position: 0, a_uv: 1 } as const;
 
-/** Every program the kit compiles, by the name its GLSL goes by. */
-export const KIT_WGSL_PROGRAMS: readonly KitWgslProgram[] = [
-  { name: 'pathFill', code: PATH_FILL_WGSL, locations: PATH_FILL_LOCATIONS, outputs: 'color+id' },
-  { name: 'pathFillVColor', code: PATH_FILL_VCOLOR_WGSL, locations: PATH_FILL_VCOLOR_LOCATIONS, outputs: 'color+id' },
-  { name: 'gradFill', code: GRAD_FILL_WGSL, locations: GRAD_FILL_LOCATIONS, outputs: 'color+id' },
-  { name: 'patternFill', code: PATTERN_FILL_WGSL, locations: PATTERN_FILL_LOCATIONS, outputs: 'color+id' },
-  { name: 'trimmedRibbon', code: TRIMMED_RIBBON_WGSL, locations: TRIMMED_RIBBON_LOCATIONS, outputs: 'color+id' },
-  ...BATCH_BUILDS.map((b) => ({
-    name: `batchFill(matrices=${b.matrices}, hulls=${b.hulls}, area=${b.area})`,
-    code: batchFillWgsl(b), locations: BATCH_FILL_LOCATIONS, outputs: 'color+id' as const,
-  })),
-  { name: 'glyphPattern', code: GLYPH_PATTERN_WGSL, locations: GLYPH_PAINT_LOCATIONS, outputs: 'color+id' },
-  { name: 'glyphGrad', code: GLYPH_GRAD_WGSL, locations: GLYPH_PAINT_LOCATIONS, outputs: 'color+id' },
-  { name: 'glyphTexture', code: GLYPH_TEXTURE_WGSL, locations: GLYPH_PAINT_LOCATIONS, outputs: 'color+id' },
-  { name: 'composite', code: COMPOSITE_WGSL, locations: COMPOSITE_LOCATIONS, outputs: 'color+id' },
-  { name: 'idComposite', code: ID_COMPOSITE_WGSL, locations: ID_COMPOSITE_LOCATIONS, outputs: 'id' },
-  { name: 'blur', code: assembleEffectWgsl(BLUR_EFFECT_WGSL), locations: EFFECT_LOCATIONS, outputs: 'color', effect: true },
-  { name: 'vignette', code: assembleEffectWgsl(VIGNETTE_EFFECT_WGSL), locations: EFFECT_LOCATIONS, outputs: 'color', effect: true },
-  { name: 'kit:mesh-gradient', code: MESH_WGSL, locations: MESH_LOCATIONS, outputs: 'color+id' },
-  { name: 'test/own-draw', code: OWN_DRAW_WGSL, locations: OWN_DRAW_LOCATIONS, outputs: 'color+id' },
-];
+const kit = (name: string, code: string, locations: Readonly<Record<string, number>>,
+  outputs: KitWgslProgram['outputs'] = 'color+id'): KitWgslProgram => ({ name, code, locations, outputs });
+
+/** Every kit program's WGSL, under the name its GLSL goes by. */
+export const KIT_WGSL = {
+  pathFill: kit('pathFill', PATH_FILL_WGSL, PATH_FILL_LOCATIONS),
+  pathFillVColor: kit('pathFillVColor', PATH_FILL_VCOLOR_WGSL, PATH_FILL_VCOLOR_LOCATIONS),
+  gradFill: kit('gradFill', GRAD_FILL_WGSL, GRAD_FILL_LOCATIONS),
+  patternFill: kit('patternFill', PATTERN_FILL_WGSL, PATTERN_FILL_LOCATIONS),
+  trimmedRibbon: kit('trimmedRibbon', TRIMMED_RIBBON_WGSL, TRIMMED_RIBBON_LOCATIONS),
+  glyphPattern: kit('glyphPattern', GLYPH_PATTERN_WGSL, GLYPH_PAINT_LOCATIONS),
+  glyphGrad: kit('glyphGrad', GLYPH_GRAD_WGSL, GLYPH_PAINT_LOCATIONS),
+  glyphTexture: kit('glyphTexture', GLYPH_TEXTURE_WGSL, GLYPH_PAINT_LOCATIONS),
+  composite: kit('composite', COMPOSITE_WGSL, COMPOSITE_LOCATIONS),
+  idComposite: kit('idComposite', ID_COMPOSITE_WGSL, ID_COMPOSITE_LOCATIONS, 'id'),
+  blur: { ...kit('blur', assembleEffectWgsl(BLUR_EFFECT_WGSL), EFFECT_LOCATIONS, 'color'), effect: true },
+  vignette: { ...kit('vignette', assembleEffectWgsl(VIGNETTE_EFFECT_WGSL), EFFECT_LOCATIONS, 'color'), effect: true },
+  mesh: kit('kit:mesh-gradient', MESH_WGSL, MESH_LOCATIONS),
+  ownDraw: kit('test/own-draw', OWN_DRAW_WGSL, OWN_DRAW_LOCATIONS),
+} as const satisfies Record<string, KitWgslProgram>;
+
+/** The batch program's build for `build`. */
+export function batchFillProgram(build: BatchBuild): KitWgslProgram {
+  return kit(`batchFill(matrices=${build.matrices}, hulls=${build.hulls}, area=${build.area})`, batchFillWgsl(build),
+    BATCH_FILL_LOCATIONS);
+}
+
+/** Every module above and every batch build, for a test over them all. */
+export const KIT_WGSL_PROGRAMS: readonly KitWgslProgram[] = [...Object.values(KIT_WGSL), ...BATCH_BUILDS.map(batchFillProgram)];

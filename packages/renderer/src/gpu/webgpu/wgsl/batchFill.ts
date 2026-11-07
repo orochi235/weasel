@@ -109,7 +109,7 @@ function vertexWgsl({ hulls, area }: BatchBuild): string {
   var o: VOut;
   let screen = u.u_model * vec3f(v.a_position, 1.0);
   let clip = u.u_proj * vec3f(screen.xy, 1.0);
-  o.position = vec4f(clip.xy, 0.0, 1.0);
+  o.position = weasel_clip(vec4f(clip.xy, 0.0, 1.0));
   o.v_vertexColor = v.a_vertexColor;
   o.v_uv = v.a_uv;
   o.v_post = v.a_post;

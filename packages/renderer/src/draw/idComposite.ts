@@ -1,5 +1,6 @@
 /** How a group drawn into a buffer of its own hands its ids to its parent. */
 import { EFFECT_VERT_SRC } from '../effects/effectPrelude';
+import { ID_COMPOSITE_WGSL } from '../gpu/webgpu/wgsl/idComposite';
 import { NO_PICK_ID, checkPickId, idChannels } from '../shaders/idOutput';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GpuDevice, GpuStencilState, GpuTexture } from '../gpu/types';
@@ -54,7 +55,9 @@ void main() {
 
 /** The id composite's program, compiled on `gpu`. */
 export function createIdComposite(gpu: GpuDevice): ShaderProgram {
-  const program = gpu.createProgram({ glsl: { vert: EFFECT_VERT_SRC, frag: ID_COMPOSITE_FRAG } }, { ids: false });
+  const program = gpu.createProgram(
+    { glsl: { vert: EFFECT_VERT_SRC, frag: ID_COMPOSITE_FRAG }, wgsl: ID_COMPOSITE_WGSL }, { ids: false },
+  );
   program.lookupUniforms(['u_source', 'u_ids', 'u_resolution', 'u_alpha', 'u_groupId']);
   program.lookupAttributes(['a_position', 'a_uv']);
   return program;

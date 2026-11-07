@@ -12,9 +12,22 @@ const SLOT_STRUCTS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * The viewport fold: a backend whose viewports must lie inside their target
+ * clamps one that reaches past it, and maps clip space from the viewport asked
+ * for onto the one it set by this scale (`xy`) and offset (`zw`), per draw.
+ * Every vertex entry point passes its position through `weasel_clip`.
+ */
+export const NDC_WGSL = /* wgsl */ `
+@group(2) @binding(0) var<uniform> weasel_ndc: vec4f;
+fn weasel_clip(p: vec4f) -> vec4f {
+  return vec4f(p.xy * weasel_ndc.xy + weasel_ndc.zw, p.zw);
+}
+`;
+
+/**
  * `struct Uniforms` at `@group(0) @binding(0)` as `u`, holding `members`
  * (`name: type` each, the GLSL uniform names) and, where `ids` is on,
- * `u_weaselId`. A member named twice is declared once.
+ * `u_weaselId`, beside `NDC_WGSL`. A member named twice is declared once.
  */
 export function uniformsWgsl(members: readonly string[], ids = true): string {
   const seen = new Map<string, string>();
@@ -29,7 +42,7 @@ export function uniformsWgsl(members: readonly string[], ids = true): string {
     .join('');
   return `${slots}struct Uniforms {\n${body.map((m) => `  ${m},`).join('\n')}\n}
 @group(0) @binding(0) var<uniform> u: Uniforms;
-`;
+${NDC_WGSL}`;
 }
 
 /** A group-1 texture `name` at `binding`, beside its sampler at `binding + 1`. */
@@ -50,7 +63,7 @@ fn screenOf(a_position: vec2f) -> vec2f {
 
 fn clipOf(screen: vec2f) -> vec4f {
   let clip = u.u_proj * vec3f(screen, 1.0);
-  return vec4f(clip.xy, 0.0, 1.0);
+  return weasel_clip(vec4f(clip.xy, 0.0, 1.0));
 }
 `;
 

@@ -1,4 +1,5 @@
 import type { ShaderSource } from '../../../shaders/registerProgram';
+import { NDC_WGSL } from './common';
 import { ID_OUT_WGSL } from './idOut';
 
 /**
@@ -49,18 +50,33 @@ fn kitVertex(v: KitVertex) -> Varyings {
   o.position = vec4f(clip.xy, 0.0, 1.0);
   return o;
 }
-${ID_OUT_WGSL}`;
+${ID_OUT_WGSL}${NDC_WGSL}`;
 
-/** The kit uniforms a custom program's draw sets, by their GLSL names, and
- *  the `Kit` member each lands in under WGSL. */
+/** The kit uniforms a custom program's draw sets, by the names the draw sets
+ *  them under, and the `Kit` member each lands in under WGSL. `fragOrigin` is
+ *  top-left, so it takes `u_fragOriginTop` rather than GLSL's bottom-left
+ *  `u_fragOrigin`. */
 export const CUSTOM_KIT_WGSL_NAMES: Readonly<Record<string, string>> = {
   u_proj: 'proj',
   u_view: 'view',
   u_screenToLocal: 'screenToLocal',
   u_bounds: 'bounds',
   u_worldOrigin: 'worldOrigin',
-  u_fragOrigin: 'fragOrigin',
+  u_fragOriginTop: 'fragOrigin',
+  u_weaselId: 'weaselId',
 };
+
+/** Whether `code` is a whole module, declaring its own entry points, rather
+ *  than the functions a prelude calls. */
+export function declaresEntryPoints(code: string): boolean {
+  return /@vertex\s+fn\b/.test(code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, ''));
+}
+
+/** The module a registered program's WGSL compiles to: a whole module as it
+ *  is, a custom program's functions inside the prelude. */
+export function wgslModuleOf(src: ShaderSource): string {
+  return declaresEntryPoints(src.frag) ? src.frag : assembleCustomWgsl(src);
+}
 
 /** The module a custom WGSL program compiles to, with entry points `weasel_vs` and `weasel_fs`. */
 export function assembleCustomWgsl(src: ShaderSource): string {
@@ -69,7 +85,9 @@ export function assembleCustomWgsl(src: ShaderSource): string {
 ${src.frag}
 ${src.vert ?? ''}
 @vertex fn weasel_vs(v: KitVertex) -> Varyings {
-  return ${vertex};
+  var o = ${vertex};
+  o.position = weasel_clip(o.position);
+  return o;
 }
 
 @fragment fn weasel_fs(in: Varyings) -> WeaselOut {

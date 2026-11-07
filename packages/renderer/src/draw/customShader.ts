@@ -169,6 +169,9 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   program.set4f('u_bounds', cmd.bounds.x, cmd.bounds.y, cmd.bounds.w, cmd.bounds.h);
   const [ox, oy] = (ctx.renderTarget ? ctx.renderTarget.fragOrigin : ctx.fragOrigin) ?? [0, 0];
   program.set2f('u_fragOrigin', ox, oy);
+  // WGSL's is the same corner counted from the top of the buffer drawn in.
+  const bufferHeight = ctx.renderTarget?.pass.target?.height ?? ctx.gpu.canvasSize().height;
+  program.set2f('u_fragOriginTop', ox, bufferHeight - oy - (ctx.deviceHeight ?? 0));
   if (program.has('u_view')) program.set('u_view', 'mat3', mat3.toUniform(ctx.state.transform));
   setWorldFrame(program, ctx.state.transform, cmd.bounds);
 

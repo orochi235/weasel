@@ -18,6 +18,7 @@ import { bakeMesh, meshBounds, type MeshBox } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';
 import { MESH_FRAG_SRC, MESH_PROGRAM_ID, MESH_VERT_SRC } from './meshShader';
+import { MESH_WGSL } from '../gpu/webgpu/wgsl/meshPaint';
 
 export type { MeshPatch, MeshPoint } from './surface';
 
@@ -257,7 +258,7 @@ function bindMesh(ctx: PaintBindContext, fill: Paint): PaintBinding | null {
  *  slots and registers the whole entry. */
 export const meshDrawKind: PaintDrawKind = {
   id: MESH_GRADIENT_KIND,
-  programs: { [MESH_PROGRAM_ID]: { glsl: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC } } },
+  programs: { [MESH_PROGRAM_ID]: { glsl: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC }, wgsl: { frag: MESH_WGSL } } },
   bind: bindMesh,
   inPoseFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);

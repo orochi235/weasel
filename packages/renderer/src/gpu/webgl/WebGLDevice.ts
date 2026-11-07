@@ -11,6 +11,7 @@ import * as res from './glResources';
 import { createTarget, deleteTarget, readIds, resolve, type GlTarget } from './glTargets';
 
 export class WebGLDevice implements GpuDevice, GlProgramHost {
+  readonly language = 'glsl' as const;
   readonly cache: GlCache;
   /** The target the open pass draws into; `null` the canvas. */
   private target: GlTarget | null = null;

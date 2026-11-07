@@ -31,7 +31,8 @@ export interface WgslBinding {
   binding: number;
   name: string;
   kind: WgslBindingKind;
-  /** The struct a uniform binding holds; unset for a texture or sampler. */
+  /** The struct a uniform binding holds; unset for a texture, a sampler, or
+   *  a uniform of a plain type. */
   struct?: string;
 }
 
@@ -173,7 +174,7 @@ export function reflectWgsl(source: string): WgslReflection {
         : 'texture';
       bindings.push({
         group: Number(group[1]), binding: Number(binding[1]), name: m[7], kind,
-        ...(kind === 'uniform' ? { struct: type } : {}),
+        ...(kind === 'uniform' && structs.has(type) ? { struct: type } : {}),
       });
     }
   }

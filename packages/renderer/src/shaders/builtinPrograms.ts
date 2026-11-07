@@ -38,10 +38,20 @@ import {
   PATTERN_FILL_ATTRIBUTES,
 } from './patternFill';
 
-/** What a built-in program is built from. */
+import { KIT_WGSL, batchFillProgram } from '../gpu/webgpu/wgsl/kitPrograms';
+import type { BatchBuild } from '../gpu/webgpu/wgsl/batchFill';
+import {
+  GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC, GLYPH_GRAD_FRAG_SRC, GLYPH_TEXTURE_FRAG_SRC,
+  GLYPH_PATTERN_UNIFORMS, GLYPH_GRAD_UNIFORMS, GLYPH_TEXTURE_UNIFORMS, GLYPH_PAINT_ATTRIBUTES,
+} from './glyphPaint';
+import type { GlyphPaintKind } from '../draw/drawContext';
+
+/** What a built-in program is built from: its GLSL stages, its WGSL module,
+ *  and the names its GLSL is written through. */
 export interface ProgramSpec {
   readonly vert: string;
   readonly frag: string;
+  readonly wgsl: string;
   readonly uniforms: readonly string[];
   readonly attributes: readonly string[];
   readonly arrays?: ReadonlyMap<string, { type: string; size: number }>;
@@ -54,8 +64,8 @@ const BATCH_ARRAYS: ReadonlyMap<string, { type: string; size: number }> = new Ma
 
 /** `spec` compiled on `gpu`, every name it is written through looked up. */
 function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
-  const { vert, frag, uniforms, attributes, arrays } = spec;
-  const program = gpu.createProgram({ glsl: { vert, frag } });
+  const { vert, frag, wgsl, uniforms, attributes, arrays } = spec;
+  const program = gpu.createProgram({ glsl: { vert, frag }, wgsl });
   program.lookupUniforms(uniforms);
   if (arrays) program.lookupUniformArrays(arrays);
   program.lookupAttributes(attributes);
@@ -90,41 +100,56 @@ export class LazyProgram {
 }
 
 export const PATH_FILL_SPEC: ProgramSpec = {
-  vert: VERT_SRC, frag: FRAG_SRC, uniforms: PATH_FILL_UNIFORMS, attributes: PATH_FILL_ATTRIBUTES,
+  vert: VERT_SRC, frag: FRAG_SRC, wgsl: KIT_WGSL.pathFill.code, uniforms: PATH_FILL_UNIFORMS,
+  attributes: PATH_FILL_ATTRIBUTES,
 };
 export const PATH_FILL_VCOLOR_SPEC: ProgramSpec = {
-  vert: VCOLOR_VERT_SRC, frag: VCOLOR_FRAG_SRC, uniforms: PATH_FILL_UNIFORMS, attributes: PATH_FILL_VCOLOR_ATTRIBUTES,
+  vert: VCOLOR_VERT_SRC, frag: VCOLOR_FRAG_SRC, wgsl: KIT_WGSL.pathFillVColor.code, uniforms: PATH_FILL_UNIFORMS,
+  attributes: PATH_FILL_VCOLOR_ATTRIBUTES,
 };
 export const GRAD_FILL_SPEC: ProgramSpec = {
-  vert: GRAD_VERT_SRC, frag: GRAD_FRAG_SRC, uniforms: GRAD_FILL_UNIFORMS, attributes: GRAD_FILL_ATTRIBUTES,
+  vert: GRAD_VERT_SRC, frag: GRAD_FRAG_SRC, wgsl: KIT_WGSL.gradFill.code, uniforms: GRAD_FILL_UNIFORMS,
+  attributes: GRAD_FILL_ATTRIBUTES,
 };
-export const BATCH_FILL_MATRICES_SPEC: ProgramSpec = {
-  vert: BATCH_VERT_SRC, frag: BATCH_MATRICES_FRAG_SRC, uniforms: BATCH_FILL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
-  arrays: BATCH_ARRAYS,
-};
-const BATCH_FILL_HULL_SPEC: ProgramSpec = {
-  vert: BATCH_VERT_SRC, frag: BATCH_HULL_FRAG_SRC, uniforms: BATCH_HULL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
-  arrays: BATCH_ARRAYS,
-};
-const BATCH_FILL_MATRICES_HULL_SPEC: ProgramSpec = {
-  vert: BATCH_VERT_SRC, frag: BATCH_MATRICES_HULL_FRAG_SRC, uniforms: BATCH_HULL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
-  arrays: BATCH_ARRAYS,
-};
+/** The batch program's build under `frag`, named as `batchFillProgram` names it. */
+function batchSpec(vert: string, frag: string, build: BatchBuild): ProgramSpec {
+  return {
+    vert, frag, wgsl: batchFillProgram(build).code, uniforms: build.hulls ? BATCH_HULL_UNIFORMS : BATCH_FILL_UNIFORMS,
+    attributes: BATCH_FILL_ATTRIBUTES, arrays: BATCH_ARRAYS,
+  };
+}
+export const BATCH_FILL_MATRICES_SPEC = batchSpec(BATCH_VERT_SRC, BATCH_MATRICES_FRAG_SRC, { matrices: true, hulls: false, area: false });
+const BATCH_FILL_HULL_SPEC = batchSpec(BATCH_VERT_SRC, BATCH_HULL_FRAG_SRC, { matrices: false, hulls: true, area: false });
+const BATCH_FILL_MATRICES_HULL_SPEC = batchSpec(BATCH_VERT_SRC, BATCH_MATRICES_HULL_FRAG_SRC, { matrices: true, hulls: true, area: false });
 const TRIMMED_RIBBON_SPEC: ProgramSpec = {
-  vert: TRIMMED_RIBBON_VERT_SRC, frag: TRIMMED_RIBBON_FRAG_SRC,
+  vert: TRIMMED_RIBBON_VERT_SRC, frag: TRIMMED_RIBBON_FRAG_SRC, wgsl: KIT_WGSL.trimmedRibbon.code,
   uniforms: TRIMMED_RIBBON_UNIFORMS, attributes: TRIMMED_RIBBON_ATTRIBUTES,
 };
 export const PATTERN_FILL_SPEC: ProgramSpec = {
-  vert: PATTERN_VERT_SRC, frag: PATTERN_FRAG_SRC, uniforms: PATTERN_FILL_UNIFORMS, attributes: PATTERN_FILL_ATTRIBUTES,
+  vert: PATTERN_VERT_SRC, frag: PATTERN_FRAG_SRC, wgsl: KIT_WGSL.patternFill.code, uniforms: PATTERN_FILL_UNIFORMS,
+  attributes: PATTERN_FILL_ATTRIBUTES,
+};
+
+/** Each glyph-paint program: atlas text masking a paint the batch cannot carry. */
+export const GLYPH_PAINT_SPECS: Readonly<Record<GlyphPaintKind, ProgramSpec>> = {
+  pattern: {
+    vert: GLYPH_PAINT_VERT_SRC, frag: GLYPH_PATTERN_FRAG_SRC, wgsl: KIT_WGSL.glyphPattern.code,
+    uniforms: GLYPH_PATTERN_UNIFORMS, attributes: GLYPH_PAINT_ATTRIBUTES,
+  },
+  gradient: {
+    vert: GLYPH_PAINT_VERT_SRC, frag: GLYPH_GRAD_FRAG_SRC, wgsl: KIT_WGSL.glyphGrad.code,
+    uniforms: GLYPH_GRAD_UNIFORMS, attributes: GLYPH_PAINT_ATTRIBUTES,
+  },
+  texture: {
+    vert: GLYPH_PAINT_VERT_SRC, frag: GLYPH_TEXTURE_FRAG_SRC, wgsl: KIT_WGSL.glyphTexture.code,
+    uniforms: GLYPH_TEXTURE_UNIFORMS, attributes: GLYPH_PAINT_ATTRIBUTES,
+  },
 };
 
 /** Built eagerly: nearly every frame draws with it, and `DrawBatch` binds its
  *  attributes at construction. */
 export function createBatchFill(gpu: GpuDevice): ShaderProgram {
-  return buildProgram(gpu, {
-    vert: BATCH_VERT_SRC, frag: BATCH_FRAG_SRC, uniforms: BATCH_FILL_UNIFORMS,
-    attributes: BATCH_FILL_ATTRIBUTES, arrays: BATCH_ARRAYS,
-  });
+  return buildProgram(gpu, batchSpec(BATCH_VERT_SRC, BATCH_FRAG_SRC, { matrices: false, hulls: false, area: false }));
 }
 
 /** The batch program's other builds, which a run picks by what it holds, and
@@ -176,13 +201,8 @@ export class BatchVariantPrograms implements BatchVariants {
     this.hull = new LazyProgram(gpu, BATCH_FILL_HULL_SPEC);
     this.matricesHull = new LazyProgram(gpu, BATCH_FILL_MATRICES_HULL_SPEC);
     this.trimmed = new LazyProgram(gpu, TRIMMED_RIBBON_SPEC);
-    this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gpu, {
-      vert: BATCH_AREA_VERT_SRC,
-      frag: batchAreaFragSrc(matrices, hulls),
-      uniforms: hulls ? BATCH_HULL_UNIFORMS : BATCH_FILL_UNIFORMS,
-      attributes: BATCH_FILL_ATTRIBUTES,
-      arrays: BATCH_ARRAYS,
-    })));
+    this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gpu,
+      batchSpec(BATCH_AREA_VERT_SRC, batchAreaFragSrc(matrices, hulls), { matrices, hulls, area: true }))));
   }
 
   get(matrices: boolean, hulls: boolean, area = false): ShaderProgram {

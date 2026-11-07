@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { reflectWgsl } from '../wgslReflect';
 import { createUniformBlock } from '../wgslUniforms';
+import { BufferUsage, MapMode, TextureUsage } from '../flags';
+import { identityNdcGroups } from './testNdc';
 import { assembleCustomWgsl } from './customPrelude';
 import { assembleEffectWgsl } from './effectPrelude';
 import { PATH_FILL_VCOLOR_WGSL, PATH_FILL_WGSL } from './pathFill';
@@ -47,7 +49,7 @@ fn fragment(in: Varyings) -> vec4f {
 describe('pathFill drawn with reflected uniforms', () => {
   it('paints its premultiplied color and claims the id target', async () => {
     const size = 4;
-    const usage = GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC;
+    const usage = TextureUsage.RENDER_ATTACHMENT | TextureUsage.COPY_SRC;
     const color = device.createTexture({ size: [size, size], format: 'rgba8unorm', usage });
     const ids = device.createTexture({ size: [size, size], format: 'rgba8unorm', usage });
     const module = device.createShaderModule({ code: PATH_FILL_WGSL });
@@ -67,13 +69,13 @@ describe('pathFill drawn with reflected uniforms', () => {
     block.set('u_colorMatrix', [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
     block.set('u_colorBias', [0, 0, 0, 0]);
     block.set('u_weaselId', [0x12 / 255, 0x34 / 255, 0x56 / 255, 1 / 255]);
-    const ubo = device.createBuffer({ size: block.size, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    const ubo = device.createBuffer({ size: block.size, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
     device.queue.writeBuffer(ubo, 0, block.bytes);
     const bind = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: ubo } }] });
 
     // The left half of the target, in screen pixels.
     const verts = new Float32Array([0, 0, 2, 0, 2, 4, 0, 0, 2, 4, 0, 4]);
-    const vbo = device.createBuffer({ size: verts.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+    const vbo = device.createBuffer({ size: verts.byteLength, usage: BufferUsage.VERTEX | BufferUsage.COPY_DST });
     device.queue.writeBuffer(vbo, 0, verts);
 
     const enc = device.createCommandEncoder();
@@ -83,18 +85,18 @@ describe('pathFill drawn with reflected uniforms', () => {
       })),
     });
     pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bind);
+    identityNdcGroups(device, pipeline, [bind]).forEach((g, i) => pass.setBindGroup(i, g));
     pass.setVertexBuffer(0, vbo);
     pass.draw(6);
     pass.end();
     const read = [color, ids].map((t) => {
-      const buf = device.createBuffer({ size: 256 * size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+      const buf = device.createBuffer({ size: 256 * size, usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ });
       enc.copyTextureToBuffer({ texture: t }, { buffer: buf, bytesPerRow: 256 }, [size, size]);
       return buf;
     });
     device.queue.submit([enc.finish()]);
     const [c, id] = await Promise.all(read.map(async (b) => {
-      await b.mapAsync(GPUMapMode.READ);
+      await b.mapAsync(MapMode.READ);
       return new Uint8Array(b.getMappedRange().slice(0));
     }));
 

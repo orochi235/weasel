@@ -3,6 +3,7 @@ import type { ShaderProgram } from './ShaderProgram';
 import { CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS, CUSTOM_VERT_SRC } from './customPrelude';
 import { extractUniformArrays, extractUniformNames } from './extractUniformNames';
 import { getProgramSource, sameProgramSource, type ProgramSource } from './registerProgram';
+import { wgslModuleOf } from '../gpu/webgpu/wgsl/customPrelude';
 
 /** Every uniform a custom program may be written through. Both stages, not
  *  just the fragment one: a name never looked up is written through `null`,
@@ -14,7 +15,11 @@ function customUniformNames(vertSrc: string, fragSrc: string): string[] {
 /** Compile a registered program's source on `gpu`, with every uniform
  *  location and array base it may be written through. */
 function compileCustomProgram(gpu: GpuDevice, id: string, src: ProgramSource): ShaderProgram {
-  if (!src.glsl) throw new NoGlslError(id);
+  if (gpu.language === 'wgsl') {
+    if (!src.wgsl) throw new MissingSourceError(id, 'wgsl');
+    return gpu.createProgram({ wgsl: wgslModuleOf(src.wgsl) });
+  }
+  if (!src.glsl) throw new MissingSourceError(id, 'glsl');
   const { frag } = src.glsl;
   const vertSrc = src.glsl.vert ?? CUSTOM_VERT_SRC;
   const program = gpu.createProgram({ glsl: { vert: vertSrc, frag } });
@@ -24,11 +29,15 @@ function compileCustomProgram(gpu: GpuDevice, id: string, src: ProgramSource): S
   return program;
 }
 
-/** Thrown for a program registered with no GLSL source, which WebGL cannot draw. */
-class NoGlslError extends Error {
-  constructor(id: string) {
-    super(`weasel: program "${id}" has no GLSL source, so the WebGL renderer cannot draw it; `
-      + 'register it with `glsl` as well as `wgsl`.');
+/** Thrown for a program registered without the language its renderer's
+ *  backend compiles, which that renderer cannot draw. */
+class MissingSourceError extends Error {
+  constructor(id: string, language: 'glsl' | 'wgsl') {
+    super(language === 'glsl'
+      ? `weasel: program "${id}" has no GLSL source, so the WebGL renderer cannot draw it; `
+        + 'register it with `glsl` as well as `wgsl`.'
+      : `weasel: program "${id}" has no WGSL source, so the WebGPU renderer cannot draw it; `
+        + 'register it with `wgsl` as well as `glsl`.');
   }
 }
 
@@ -102,7 +111,7 @@ export class CustomPrograms {
       this.register(id);
     } catch (e) {
       this.declined.set(id, src);
-      if (e instanceof NoGlslError) console.error(e.message);
+      if (e instanceof MissingSourceError) console.error(e.message);
       else console.error(`weasel: failed to compile program "${id}":`, e);
       return null;
     }
