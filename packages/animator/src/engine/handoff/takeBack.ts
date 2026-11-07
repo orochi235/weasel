@@ -59,8 +59,9 @@ export function continueOnMainThread<T>(
     });
   }
   const back = Math.max(local, 1);
+  // The destination stays committed, as under a run played back on the main thread.
   return ctx.starting(true, () => startOffsetTween(ctx, {
-    ...shared, to: at(local), ms: back, easing: linear,
+    ...shared, to: dest, ms: back, easing: linear,
     interpolator: () => (u) => at(u * back),
   }));
 }

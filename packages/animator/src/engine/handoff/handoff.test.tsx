@@ -191,6 +191,24 @@ describe('another animation on a handed-off target', () => {
     expect(e.target.read().x).toBeCloseTo(7, 6);
   });
 
+  it('taken back while it plays backward, keeps its destination committed as the main thread does', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    let h: ReturnType<typeof tween>;
+    act(() => { h = tween(animator, e.target, 100); });
+    step(0);
+    step(300);
+    act(() => h.setTimeScale(-1));
+    step(100);
+    act(() => { e.target.commit(e.target.committed()); });
+    expect(e.target.read().x).toBeCloseTo(20, 6);
+    expect(e.target.committed()).toEqual({ x: 100 });
+    const xs: number[] = [];
+    for (let i = 0; i < 5; i++) { step(50); xs.push(e.target.read().x); }
+    expect(xs.map((x) => Math.round(x))).toEqual([15, 10, 5, 0, 0]);
+    expect(e.target.committed().x).toBe(0);
+  });
+
   it('under the same cancelKey interrupts it, and the new one is handed off in its place', () => {
     const { animator, step, timeline } = setup();
     const e = element(timeline);
