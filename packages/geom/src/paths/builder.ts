@@ -11,7 +11,7 @@
  */
 
 import { rectToContour } from '../box';
-import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
+import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path, PathFillRule, PolygonPath, RectPath } from '../path';
 import { originFor } from './pathOrigin';
 
@@ -22,6 +22,11 @@ export class PathBuilder {
   private fillRule: PathFillRule = 'nonzero';
   private origin: { x: number; y: number } | undefined;
   private auto = false;
+  /** The open subpath's start, in the path's own space. */
+  private startX = 0;
+  private startY = 0;
+  /** The last command was `Z`, so the next drawing one opens a subpath. */
+  private closed = false;
 
   /** Seed a builder with an existing `PolygonPath`. Useful for extending
    *  an in-flight path with another segment (e.g. appending a cubic to
@@ -38,6 +43,12 @@ export class PathBuilder {
     b.xs = Array.from(path.coords);
     b.fillRule = path.fillRule;
     if (path.origin) b.origin = { x: path.origin.x, y: path.origin.y };
+    const ox = b.origin?.x ?? 0, oy = b.origin?.y ?? 0;
+    forEachSegment(path.commands, path.coords, (cmd, ci, penX, penY, _i, opens) => {
+      if (opens) { b.startX = penX + ox; b.startY = penY + oy; }
+      if (cmd === PATH_M) { b.startX = path.coords[ci] + ox; b.startY = path.coords[ci + 1] + oy; }
+      b.closed = cmd === PATH_Z;
+    });
     return b;
   }
 
@@ -84,10 +95,21 @@ export class PathBuilder {
   moveTo(x: number, y: number): this {
     this.cmds.push(PATH_M);
     this.push(x, y);
+    this.startX = x;
+    this.startY = y;
+    this.closed = false;
     return this;
   }
 
+  /** After `close()`, a drawing command opens a subpath at the closed one's
+   *  start, as SVG reads it; writing its `M` keeps every anchor walker
+   *  counting that start as one anchor. */
+  private reopen(): void {
+    if (this.closed) this.moveTo(this.startX, this.startY);
+  }
+
   lineTo(x: number, y: number): this {
+    this.reopen();
     this.cmds.push(PATH_L);
     this.push(x, y);
     return this;
@@ -95,6 +117,7 @@ export class PathBuilder {
 
   /** Cubic bezier to (x, y) with control points (x1, y1) and (x2, y2). */
   curveTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): this {
+    this.reopen();
     this.cmds.push(PATH_C);
     this.push(x1, y1, x2, y2, x, y);
     return this;
@@ -102,6 +125,7 @@ export class PathBuilder {
 
   /** Quadratic bezier to (x, y) with control point (x1, y1). */
   quadTo(x1: number, y1: number, x: number, y: number): this {
+    this.reopen();
     this.cmds.push(PATH_Q);
     this.push(x1, y1, x, y);
     return this;
@@ -109,6 +133,7 @@ export class PathBuilder {
 
   close(): this {
     this.cmds.push(PATH_Z);
+    this.closed = true;
     return this;
   }
 

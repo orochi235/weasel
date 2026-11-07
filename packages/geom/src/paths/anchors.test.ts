@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { anchorsToPath, countPathAnchors, pathToAnchors, type PenAnchor } from './anchors';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
+import { PATH_L, PATH_M, PATH_Z } from '../commands';
+import type { PolygonPath } from '../path';
 
 describe('pathToAnchors', () => {
   it('extracts a single open subpath of corner anchors from M+L+L', () => {
@@ -14,6 +16,22 @@ describe('pathToAnchors', () => {
       { x: 10, y: 10 },
     ]]);
     expect(closed).toEqual([false]);
+  });
+
+  it('starts a subpath at the closed one\'s start when a line follows Z with no M', () => {
+    // `M0 0 L10 0 L10 10 Z L20 20` as raw arrays, which the builder would give an `M`.
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 20, 20]),
+      fillRule: 'nonzero',
+    };
+    const { anchors, closed } = pathToAnchors(path);
+    expect(anchors).toEqual([
+      [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      [{ x: 0, y: 0 }, { x: 20, y: 20 }],
+    ]);
+    expect(closed).toEqual([true, false]);
   });
 
   it('marks the subpath closed when it ends with Z', () => {

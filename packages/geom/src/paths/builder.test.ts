@@ -23,6 +23,21 @@ describe('PathBuilder', () => {
   });
 });
 
+describe('PathBuilder after close()', () => {
+  it('opens the next subpath with an M at the closed one\'s start', () => {
+    const p = new PathBuilder().moveTo(5, 5).lineTo(10, 5).close().curveTo(0, 0, 0, 0, 1, 1).build();
+    expect(Array.from(p.commands)).toEqual([PATH_M, PATH_L, PATH_Z, PATH_M, PATH_C]);
+    expect(Array.from(p.coords).slice(4, 6)).toEqual([5, 5]);
+  });
+
+  it('does the same when extending a closed path through fromPath, origin kept', () => {
+    const closed = new PathBuilder().setOrigin(100, 100).moveTo(105, 105).lineTo(110, 105).close().build();
+    const p = PathBuilder.fromPath(closed).lineTo(120, 120).build();
+    expect(Array.from(p.commands)).toEqual([PATH_M, PATH_L, PATH_Z, PATH_M, PATH_L]);
+    expect(Array.from(p.coords).slice(4)).toEqual([5, 5, 20, 20]);
+  });
+});
+
 describe('polygonFromPoints', () => {
   it('builds a closed polygon from a list of points', () => {
     const p = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);

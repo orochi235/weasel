@@ -30,7 +30,8 @@ export interface PenAnchor {
 
 /**
  * Derive a per-subpath anchor model from a PolygonPath. Subpaths split on
- * every `M` command; a subpath is closed iff it ends with `Z`.
+ * every `M` command, and a drawing command after a `Z` starts one at the
+ * closed subpath's start; a subpath is closed iff it ends with `Z`.
  *
  * Cubic-segment control points become the outHandle of the previous anchor
  * and the inHandle of the next anchor. A closed subpath whose last curve ends
@@ -47,8 +48,16 @@ export function pathToAnchors(
   const anchors: PenAnchor[][] = [];
   const closed: boolean[] = [];
   let current: PenAnchor[] | null = null;
+  // A subpath a drawing command opens without an `M` starts at an anchor the
+  // command stream does not count, so no corner spec is indexed to it.
+  const implicit = new Set<PenAnchor>();
 
-  forEachSegment(commands, coords, (cmd, ci) => {
+  forEachSegment(commands, coords, (cmd, ci, penX, penY, _i, opensSubpath) => {
+    if (opensSubpath) {
+      const start = { x: penX, y: penY };
+      implicit.add(start);
+      current = [start];
+    }
     switch (cmd) {
       case PATH_M: {
         if (current) { anchors.push(current); closed.push(false); }
@@ -97,6 +106,7 @@ export function pathToAnchors(
     let flat = 0;
     for (const sub of anchors) {
       for (const a of sub) {
+        if (implicit.has(a)) continue;
         const corner = cornerSpecAt(path, flat++);
         if (corner) a.corner = { ...corner };
       }
