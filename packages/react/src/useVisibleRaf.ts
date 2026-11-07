@@ -80,6 +80,7 @@ export function useVisibleRaf(
   const observerRef = useRef<IntersectionObserver | null>(null);
   const observedRef = useRef<Element | null>(null);
   const handleRef = useRef<VisibleRaf | null>(null);
+  const syncGateRef = useRef<() => void>(() => {});
 
   const isVisible = useCallback(
     (): boolean =>
@@ -100,7 +101,9 @@ export function useVisibleRaf(
       // Released before the frame runs, so a `request()` issued from inside it
       // schedules the next one instead of being swallowed.
       rafRef.current = null;
-      if (!aliveRef.current || !pendingRef.current || !isVisible()) return;
+      if (!aliveRef.current || !pendingRef.current) return;
+      // Hidden with no event to say so (the escape hatch lifted while hidden): suspend, so a return re-arms it.
+      if (!isVisible()) { syncGateRef.current(); return; }
       pendingRef.current = false;
       frameRef.current(time, handleRef.current!);
     });
@@ -157,6 +160,7 @@ export function useVisibleRaf(
   // driven from one of those would otherwise be declined on the second mount.
   useLayoutEffect(() => {
     aliveRef.current = true;
+    syncGateRef.current = syncGate;
     document.addEventListener('visibilitychange', syncGate);
     if (typeof IntersectionObserver !== 'undefined') {
       observerRef.current = new IntersectionObserver((entries) => {

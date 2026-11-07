@@ -225,6 +225,28 @@ describe('useVisibleRaf', () => {
     expect(frame).toHaveBeenCalledTimes(1);
   });
 
+  it('resumes on return when the escape hatch is lifted while hidden', () => {
+    const clock = makeClock();
+    const frame = vi.fn((_t: number, l: VisibleRaf) => l.request());
+    const onResume = vi.fn();
+    const loopRef = { current: null as VisibleRaf | null };
+    const opts = { ...clock, onResume };
+    const view = render(<Host loopRef={loopRef} frame={frame} options={{ ...opts, dangerouslyRunWhenHidden: true }} />);
+    act(() => { setHidden(true); });
+    act(() => { loopRef.current!.request(); });
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+
+    view.rerender(<Host loopRef={loopRef} frame={frame} options={opts} />);
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+
+    act(() => { setHidden(false); });
+    act(() => { clock.flush(); });
+    expect(onResume).toHaveBeenCalledTimes(1);
+    expect(frame).toHaveBeenCalledTimes(2);
+  });
+
   it('suspends while the named element is out of the viewport', () => {
     const clock = makeClock();
     const frame = vi.fn();
