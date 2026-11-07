@@ -15,8 +15,12 @@ For the session picking this up: what is in flight and what has no other home. O
   custom shader programs taking their source by language, and core's `useClipboard`.
 - The CI visual suite has run on both backends only for `webgpu` alone (run 42333043838), not for the merged
   batch; it runs on push.
-- 2026-11-07's overnight audit batch (74 bug fixes across eight areas) is on `main` at c75c57443, fleet-green,
-  and unpushed.
+- 2026-11-07's overnight audit batch (74 bug fixes across eight areas) and a second batch closing five `[agent]`
+  entries (straight-alpha bitmaps on WebGL, trim tweens without rebuilds, the browser project on the node's GPU,
+  browser files dealt across Chromiums, browser tests on package specifiers) are on `main` at 6fe6c8a14,
+  fleet-green, and unpushed. The second batch changes how untrimmed strokes too large to batch are drawn, so the
+  CI visual suite may show edge pixels move; and the Linux browser job now launches every file with the
+  SwiftShader flag set, untried on CI.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
