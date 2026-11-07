@@ -1,5 +1,6 @@
 import { hitPredicate, type CanvasExtensionApi, type GestureBinding, type SurfaceContribution, type UnitScope, type View } from '@weasel-js/core';
 import type { UnitValue } from '@weasel-js/quantity';
+import { createEmitter } from '@weasel-js/registry';
 import { createGuidesLayer } from '../guides/layer';
 import type { GuideStore } from '../guides/ops';
 import { rulersGuideAction, rulersPointerAction } from './actions';
@@ -64,22 +65,18 @@ const sameView = (a: View | null, b: View): boolean =>
 export function createRulers(opts: RulersOptions): Rulers {
   const id = opts.id ?? 'rulers';
   const size = opts.size ?? 20;
-  const listeners = new Set<() => void>();
-  // The canvas repaints on these: only the draft guide it draws, not every pointer move.
-  const draftListeners = new Set<() => void>();
+  const changed = createEmitter();
+  // The canvas repaints on this one: only for the draft guide it draws, not every pointer move.
+  const draftChanged = createEmitter();
   let state: RulersState = { view: null, width: 0, height: 0, pointer: null, frame: documentRulerFrame(opts.root, opts.origin), draft: null };
   const set = (patch: Partial<RulersState>): void => {
     if (Object.entries(patch).every(([k, v]) => state[k as keyof RulersState] === v)) return;
     const draftMoved = 'draft' in patch && patch.draft !== state.draft;
     state = { ...state, ...patch };
-    for (const l of listeners) l();
-    if (draftMoved) for (const l of draftListeners) l();
+    changed.emit();
+    if (draftMoved) draftChanged.emit();
   };
-  const listen = (to: Set<() => void>) => (listener: () => void) => {
-    to.add(listener);
-    return () => { to.delete(listener); };
-  };
-  const subscribe = listen(listeners);
+  const subscribe = (listener: () => void) => changed.subscribe(listener);
   const spacing = {
     ...(opts.majorPx === undefined ? {} : { majorPx: opts.majorPx }),
     ...(opts.minorPx === undefined ? {} : { minorPx: opts.minorPx }),
@@ -104,7 +101,7 @@ export function createRulers(opts: RulersOptions): Rulers {
       getGuides: () => (state.draft ? [state.draft] : []), extent: 'full', id: `${id}-draft`, label: 'Guide being placed',
       ...(opts.guideColor ? { color: opts.guideColor } : {}),
     }),
-    subscribe: listen(draftListeners),
+    subscribe: (listener: () => void) => draftChanged.subscribe(listener),
   };
   let api: CanvasExtensionApi | null = null;
 

@@ -23,6 +23,10 @@
     "@weasel-js/core": "1.16.2",
     "@weasel-js/geom": "1.16.2"
   },
+  "dependencies": {
+    "@weasel-js/quantity": "1.16.2",
+    "@weasel-js/registry": "1.16.2"
+  },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {
