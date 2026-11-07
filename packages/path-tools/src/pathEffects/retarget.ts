@@ -5,7 +5,7 @@
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  commitOps, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, isTextData, type NodeId, type Op, pathEffectOf,
+  commitOps, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, hiddenSourcesTakenWith, isTextData, type NodeId, type Op, pathEffectOf,
   type Scene, type SceneNode as Node, sourcesOf,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
@@ -67,8 +67,7 @@ export const setEffectPathAction: Action & { requires: string[] } = {
         createSetDependsOnOp({ id: effect.id, from: effect.dependsOn, to: [shape, path.id], label: SET_LABEL }),
         ...releasedOps(scene, old, [effect], SET_LABEL),
         ...takenOps(scene, effect, 1, path.id, SET_LABEL),
-      ], SET_LABEL);
-      deps.selection?.set([effect.id] as never);
+      ], SET_LABEL, { select: [effect.id] });
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
@@ -115,8 +114,9 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
         ops.push(deleteNode(scene, effect, RELEASE_LABEL));
       }
       ops.push(...hiddenSourceDeleteOps(scene, [...leaving], RELEASE_LABEL, shown));
-      commitOps(deps, ops, RELEASE_LABEL);
-      deps.selection?.set([...new Set(sources)].filter((id) => scene.get(id) !== undefined) as never);
+      // What the batch removes, worked out before it runs: the effects and the hidden sources they take.
+      const gone = new Set(scene.removalClosure([...leaving, ...hiddenSourcesTakenWith(scene, [...leaving], shown)]));
+      commitOps(deps, ops, RELEASE_LABEL, { select: [...new Set(sources)].filter((id) => !gone.has(id)) });
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => (selectedEffects(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),

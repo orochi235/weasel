@@ -32,14 +32,14 @@ const line = (x0: number, y0: number, x1: number, y1: number) => new PathBuilder
 
 describe('bridgePathsAction', () => {
   it('makes two paths one, through a curve meeting each end along its line, as one undo step', () => {
-    const { deps, batches, selection } = setup({
+    const { deps, batches } = setup({
       a: { pose: line(0, 0, 10, 0), data: {} },
       b: { pose: line(30, 10, 40, 10), data: {} },
     }, ['a', 'b']);
     run(bridgePathsAction, deps, { tension: 0.5 });
     expect(batches).toHaveLength(1);
     expect(batches[0].label).toBe('Bridge');
-    expect(batches[0].ops.map((o) => o.name)).toEqual(['transform', 'delete']);
+    expect(batches[0].ops.map((o) => o.name)).toEqual(['transform', 'delete', 'setSelection']);
     const [run0] = pathToAnchors(to(batches[0].ops[0]) as PolygonPath).anchors;
     const half = Math.hypot(20, 10) / 2;
     expect(run0.map((p) => p.x)).toEqual([0, 10, 30, 40]);
@@ -47,7 +47,7 @@ describe('bridgePathsAction', () => {
     expect(run0[1].outHandle!.y).toBeCloseTo(0, 4);
     expect(run0[2].inHandle!.x).toBeCloseTo(30 - half, 4);
     expect(run0[2].inHandle!.y).toBeCloseTo(10, 4);
-    expect(selection.set).toHaveBeenLastCalledWith(['a']);
+    expect((batches[0].ops[2].args as { to: readonly string[] }).to).toEqual(['a']);
   });
 
   it('takes the default tension when its params name none, and yields to path edit', () => {

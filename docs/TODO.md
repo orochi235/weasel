@@ -110,15 +110,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
-- **(P2) [agent] path-tools' commands select their result after committing, outside the undo entry.** Core's
-  Cut at Crossings, Join, Duplicate, Delete, Group and clone pass `commitOps(deps, ops, label, { select })`, so undo
-  restores the selection they started from under any `applyOps` history (`selectionUndo.test.ts`). path-tools still
-  calls `deps.selection?.set` after `commitOps` in `pathEffects/actions.ts` (apply and expand), `pathEffects/spine.ts`
-  (set and release), `pathEffects/retarget.ts` (set and release) and `trim/trimSegment.ts`. Release in
-  `retarget.ts` filters its sources by what survived the commit, so it needs the deleted ids worked out before
-  committing. Left out of the core pass because each needs its own path-effect fixture. Closes when none of those
-  files calls `selection.set` after a commit and each has an undo-restores-selection test.
-
 - **(P2) [agent] Path commands read a node's path in its stored frame, not world.** `pathNodesOf` resolves
   each node through `resolveEditablePathOf`, which bakes only the node's own pose, so a `data.path` node inside a
   frame-defining group (any group without `derivePose` under the default rigid composition) reports its path
