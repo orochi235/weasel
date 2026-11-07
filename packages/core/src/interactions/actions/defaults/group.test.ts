@@ -160,7 +160,7 @@ describe('groupAction.run — applyOps routing', () => {
 
     // Then each selected id, in order, reparents under the new container and
     // takes its pose in that container's frame.
-    expect(ops.map((op) => op.name)).toEqual(['insert', 'reparent', 'transform', 'reparent', 'transform']);
+    expect(ops.map((op) => op.name)).toEqual(['insert', 'reparent', 'transform', 'reparent', 'transform', 'setSelection']);
     const r1 = ops[1]!.args as { id: string; fromParentId: NodeId | null; toParentId: NodeId | null };
     const r2 = ops[3]!.args as { id: string; fromParentId: NodeId | null; toParentId: NodeId | null };
     expect(r1.id).toBe(a);
@@ -170,8 +170,8 @@ describe('groupAction.run — applyOps routing', () => {
     expect(r2.fromParentId).toBe(null);
     expect(r2.toParentId).toBe(containerNode.id);
 
-    // Selection still updates to the new container (selection is not an op).
-    expect(selection.get()).toEqual([containerNode.id]);
+    // The same batch selects the new container, so undo restores the members.
+    expect((ops.at(-1)!.args as { to: readonly string[] }).to).toEqual([containerNode.id]);
 
     // The scene's own fallback path is untouched — applyOps owns the commit.
     expect(scene.get(a as NodeId)!.parent).toBe(null);

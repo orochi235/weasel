@@ -14,7 +14,7 @@ import { createTransformOp } from 'core/ops/transform';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresContent, selectedContent } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { commitOps } from '../defaultCommitAdapter';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
@@ -42,7 +42,6 @@ export const groupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const selection = deps.selection;
       const scene = deps.scene;
-      const applyOps = deps.applyOps;
       if (!selection || !scene) return;
 
       const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
@@ -109,10 +108,7 @@ export const groupAction: Action & { requires: string[] } = {
       const page = parent === null ? null : pageOfNode(scene, parent);
       ops.push(...followerMoveOps(followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page]))), 'Group'));
 
-      if (applyOps) applyOps(ops, 'Group');
-      else scene.applyBatch(ops, 'Group', defaultCommitAdapter(scene, selection.adapterMethods));
-
-      selection.set([containerId]);
+      commitOps(deps, ops, 'Group', { select: [containerId] });
     },
   },
   enabled: requiresContent(1),

@@ -150,14 +150,13 @@ describe('deleteAction commit routing', () => {
     expect(applyOps).toHaveBeenCalledOnce();
     const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Delete');
-    expect(ops).toHaveLength(2);
-    for (const op of ops) expect(op.name).toBe('delete');
+    expect(ops.map((op) => op.name)).toEqual(['delete', 'delete', 'setSelection']);
     expect((ops[0].args as { node: { id: string } }).node.id).toBe('a');
     expect((ops[1].args as { node: { id: string } }).node.id).toBe('b');
     // applyOps owns the commit — no direct scene mutation here.
     expect(scene.remove).not.toHaveBeenCalled();
-    // Selection cleared after delete.
-    expect(selection.set).toHaveBeenCalledWith([]);
+    // The same batch clears the selection.
+    expect((ops[2].args as { to: readonly string[] }).to).toEqual([]);
   });
 
   it('captures each node\'s host-array slot in its delete op', () => {
@@ -173,7 +172,7 @@ describe('deleteAction commit routing', () => {
 
     const [ops] = applyOps.mock.calls[0];
     // c is index 0 among b's children; a is index 0 among roots.
-    const byId = new Map(ops.map((o) => [
+    const byId = new Map(ops.filter((o) => o.name === 'delete').map((o) => [
       (o.args as { node: { id: string } }).node.id,
       o.args as { slot: { index: number } },
     ]));

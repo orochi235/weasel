@@ -10,7 +10,8 @@ import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { defaultCommitAdapter, selectionMethods } from '../defaultCommitAdapter';
+import { createSetSelectionOp } from 'core/ops/select';
 import { runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { startCloneBehaviors, type CloneBehaviors } from './behaviors';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -65,7 +66,7 @@ function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection
   const { dx, dy } = scratch.currentDelta;
   const apply = (ops: Op[]): void => {
     if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
-    else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
+    else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selectionMethods(selection)));
   };
   const answer = behaviors.end(scratch.currentDelta);
   if (answer === null) return false;
@@ -80,8 +81,7 @@ function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection
     'Clone',
   );
   if (ops.length === 0) return false;
-  apply(ops);
-  selection.set(copies);
+  apply([...ops, createSetSelectionOp({ from: selection.get(), to: copies, label: 'Clone' })]);
   return true;
 }
 

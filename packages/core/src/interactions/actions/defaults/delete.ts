@@ -1,7 +1,7 @@
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { commitOps } from '../defaultCommitAdapter';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
@@ -89,14 +89,9 @@ export interface DeleteActionOptions {
 /** The default commit: removes `ids`, their dependents, and the sources a
  *  path effect among them hid, as one undo entry, then empties the selection. */
 export function commitDeleteToScene(ids: readonly NodeId[], deps: ActionDeps, label = 'Delete'): void {
-  const { selection, scene, applyOps } = deps;
+  const { selection, scene } = deps;
   if (!selection || !scene) return;
-  const ops = buildDeleteOps(scene, ids, label, { takeHiddenSources: true });
-  if (ops.length > 0) {
-    if (applyOps) applyOps(ops, label);
-    else scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
-  }
-  selection.set([]);
+  commitOps(deps, buildDeleteOps(scene, ids, label, { takeHiddenSources: true }), label, { select: [] });
 }
 
 /** Delete on Delete and Backspace: hands the selected ids to `commit`. */

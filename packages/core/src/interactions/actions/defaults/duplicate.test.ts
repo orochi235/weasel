@@ -39,7 +39,7 @@ function makeSelection(ids: string[]) {
 
 /** The node each insert op carries. */
 function inserted(ops: Op[]): StubNode[] {
-  return ops.map((o) => (o.args as { node: StubNode }).node);
+  return ops.filter((o) => o.name === 'insert').map((o) => (o.args as { node: StubNode }).node);
 }
 
 describe('duplicateAction', () => {
@@ -63,7 +63,7 @@ describe('duplicateAction', () => {
     expect(copies[0].data).toEqual({ tag: 'a' });
     expect(copies[0].parent).toBeNull();
     expect(copies[0].id).not.toBe('a');
-    expect(selection.set).toHaveBeenCalledWith([copies[0].id]);
+    expect((committed.at(-1)!.args as { to: readonly string[] }).to).toEqual([copies[0].id]);
   });
 
   it('duplicates a container WITH its subtree, parented to the new copy', () => {

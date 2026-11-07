@@ -130,11 +130,11 @@ describe('offsetPathAction', () => {
 
 describe('snipAtCrossingsAction', () => {
   it('replaces each crossed path with its pieces and selects them', () => {
-    const { deps, batches, selection } = setup({ a: line(0, 0, 10, 10), b: line(0, 10, 10, 0) }, ['a', 'b']);
+    const { deps, batches } = setup({ a: line(0, 0, 10, 10), b: line(0, 10, 10, 0) }, ['a', 'b']);
     (snipAtCrossingsAction.invoker as ImmediateInvoker).run(deps);
     const ops = batches[0].ops;
-    expect(ops.map((o) => o.name)).toEqual(['delete', 'insert', 'insert', 'delete', 'insert', 'insert']);
-    expect(selection.set).toHaveBeenLastCalledWith(['new-3', 'new-4', 'new-1', 'new-2']);
+    expect(ops.map((o) => o.name)).toEqual(['delete', 'insert', 'insert', 'delete', 'insert', 'insert', 'setSelection']);
+    expect((ops.at(-1)!.args as { to: readonly string[] }).to).toEqual(['new-3', 'new-4', 'new-1', 'new-2']);
   });
 
   it('needs two paths', () => {
@@ -146,13 +146,13 @@ describe('joinPathsAction', () => {
   const run = (deps: InvocationCtx['deps']) => (joinPathsAction.invoker as ImmediateInvoker).run(deps);
 
   it('joins two paths at their nearest ends into the first and deletes the second', () => {
-    const { deps, batches, selection } = setup({ a: line(0, 0, 10, 0), b: line(30, 0, 12, 0) }, ['a', 'b']);
+    const { deps, batches } = setup({ a: line(0, 0, 10, 0), b: line(30, 0, 12, 0) }, ['a', 'b']);
     run(deps);
     const ops = batches[0].ops;
-    expect(ops.map((o) => o.name)).toEqual(['transform', 'setData', 'delete']);
+    expect(ops.map((o) => o.name)).toEqual(['transform', 'setData', 'delete', 'setSelection']);
     const joined = pathToAnchors(args(ops[0]).to as PolygonPath);
     expect(joined.anchors[0].map((a) => a.x)).toEqual([0, 10, 12, 30]);
-    expect(selection.set).toHaveBeenLastCalledWith(['a']);
+    expect((ops.at(-1)!.args as { to: readonly string[] }).to).toEqual(['a']);
   });
 
   it('closes a lone open path', () => {

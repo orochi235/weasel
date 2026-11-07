@@ -1,5 +1,5 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { commitOps } from '../defaultCommitAdapter';
 import { copySelection } from './copySubtree';
 import { requiresSelection } from './requiresSelection';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -28,7 +28,6 @@ export function duplicateSelection(
 ): string[] | null {
   const selection = deps.selection;
   const scene = deps.scene;
-  const applyOps = deps.applyOps;
   if (!selection || !scene) return null;
   const ids = selection.get();
   if (ids.length === 0) return null;
@@ -48,9 +47,7 @@ export function duplicateSelection(
   );
 
   if (ops.length === 0) return null;
-  if (applyOps) applyOps(ops, label);
-  else scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
-  selection.set(copies);
+  commitOps(deps, ops, label, { select: copies });
   return copies as string[];
 }
 
