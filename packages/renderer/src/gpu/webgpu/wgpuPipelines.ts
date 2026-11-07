@@ -57,12 +57,14 @@ export function needsDefaultAttribute(program: WgpuProgram, geometry: WgpuGeomet
   return missingInputs(program, geometry).length > 0;
 }
 
+/** The pipeline a draw of `program` is drawn with, or `null` where the GPU
+ *  refused it: an invalid pipeline set on a pass voids the whole submit. */
 export function pipelineFor(
   device: GPUDevice, program: WgpuProgram, geometry: WgpuGeometry, target: PassAttachments, state: GpuDrawState,
-): GPURenderPipeline {
+): GPURenderPipeline | null {
   const key = `${geometry.layoutKey}|${target.key}|${stateKey(state)}`;
   let pipeline = program.pipelines.get(key);
-  if (pipeline) return pipeline;
+  if (pipeline !== undefined) return pipeline;
   const missing = missingInputs(program, geometry);
   const buffers: GPUVertexBufferLayout[] = [...geometry.layouts];
   if (missing.length > 0) {
@@ -77,6 +79,7 @@ export function pipelineFor(
     format: target.format, blend, writeMask: state.colorWrite && outputs.has(0) ? ColorWrite.ALL : 0,
   }];
   if (target.hasIds) targets.push({ format: 'rgba8unorm', blend, writeMask: state.ids && outputs.has(1) ? ColorWrite.ALL : 0 });
+  device.pushErrorScope('validation');
   pipeline = device.createRenderPipeline({
     layout: program.layout,
     vertex: { module: program.module, entryPoint: program.entries.vertex, buffers },
@@ -87,6 +90,12 @@ export function pipelineFor(
       depthStencil: { format: DEPTH_STENCIL, depthWriteEnabled: false, depthCompare: 'always', ...stencilState(state.stencil) },
     }),
   });
+  void device.popErrorScope().then((error) => {
+    if (!error) return;
+    program.refusePipeline(key, error.message);
+    // Handed on as the scope found it, so a listener for uncaptured errors still hears it.
+    if (typeof GPUUncapturedErrorEvent !== 'undefined') device.dispatchEvent(new GPUUncapturedErrorEvent('uncapturederror', { error }));
+  }, () => {});
   program.pipelines.set(key, pipeline);
   return pipeline;
 }

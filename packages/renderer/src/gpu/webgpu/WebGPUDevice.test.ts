@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { GpuGeometry, GpuProgram } from '../types';
+import { WebGPUDevice } from './WebGPUDevice';
+import { KIT_WGSL } from './wgsl/kitPrograms';
 import { WeaselRenderer } from '../../WeaselRenderer';
 import { fakeGpuDevice } from '../../testing/fakeGpuDevice';
 
@@ -17,5 +20,33 @@ describe('a WebGPU renderer', () => {
     r.dispose();
     const kept = [...fake.buffers, ...fake.textures].filter((o) => !o.destroyed && o.label !== 'context');
     expect(kept.map((o) => o.label)).toEqual([]);
+  });
+});
+
+describe('a WebGPU device drawing with a program the GPU refuses', () => {
+  function drawOnce(gpu: WebGPUDevice, program: GpuProgram, geometry: GpuGeometry) {
+    gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 64, height: 64 } });
+    gpu.draw({ program, blend: null, colorWrite: true, stencil: null, ids: false }, geometry, 3);
+    gpu.endPass();
+  }
+
+  it('stops drawing with it once the refusal arrives, which would void every command beside it', async () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const program = gpu.createProgram({ wgsl: KIT_WGSL.pathFill.code });
+    const vertices = gpu.createBuffer('vertex', new Float32Array(6), 'static');
+    const geometry = gpu.createGeometry({
+      vertexBuffers: [{ buffer: vertices, stride: 8, attributes: [{ location: 0, components: 2, offset: 0 }] }],
+      indexBuffer: gpu.createBuffer('index', new Uint32Array([0, 1, 2]), 'static'), indexFormat: 'uint32',
+    });
+    fake.failPipelines = true;
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    drawOnce(gpu, program, geometry);
+    await new Promise((r) => setTimeout(r, 0));
+    fake.passCalls.length = 0;
+    drawOnce(gpu, program, geometry);
+    expect(fake.passCalls.filter(([m]) => m === 'drawIndexed' || m === 'setPipeline')).toEqual([]);
+    expect(error).toHaveBeenCalledTimes(1);
+    error.mockRestore();
   });
 });

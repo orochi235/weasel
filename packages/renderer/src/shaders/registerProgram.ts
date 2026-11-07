@@ -137,6 +137,8 @@ export function getProgramSource(id: string): ProgramSource | null {
  *   recompiles on its next frame and deletes the program it replaces; a
  *   `<Canvas shaders>` naming the id repaints to show it. If the new source fails
  *   to compile, the renderer logs the error once and keeps drawing the old one.
+ *   WebGPU reports a WGSL failure only after the frame that compiled it, so
+ *   there the program logs the error once and draws nothing from then on.
  * - Prod mode: calling with an existing id throws.
  *
  * Nothing compiles here. A renderer compiles the source the first time it
