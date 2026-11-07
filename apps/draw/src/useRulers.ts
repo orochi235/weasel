@@ -12,7 +12,7 @@ import { usePref } from './prefs';
 export function useRulers() {
   const [visible, setVisible] = usePref('view.rulersVisible');
   const { addGuide, removeGuide, getGuides, subscribe } = useGuides();
-  const rulers = useMemo(() => createRulers({ guides: { addGuide, removeGuide }, root: DOCUMENT_SCOPE }), [addGuide, removeGuide]);
+  const rulers = useMemo(() => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: DOCUMENT_SCOPE }), [addGuide, removeGuide, getGuides]);
   const layer = useMemo(() => createGuidesLayer({ getGuides, subscribe, extent: 'full' }), [getGuides, subscribe]);
   const snapSource = useMemo(() => guideSnapSource(getGuides), [getGuides]);
 

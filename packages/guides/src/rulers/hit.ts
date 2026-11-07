@@ -1,12 +1,15 @@
-import { viewWorldToScreen, type LayerHit, type RenderLayer } from '@weasel-js/core';
+import { viewWorldToScreen, type LayerHit, type RenderLayer, type View } from '@weasel-js/core';
+import type { Guide } from '../guides/types';
 
 /** Which part of the rulers a press landed on. */
 export type RulerPart = 'top' | 'left' | 'corner';
 
-/** What a press on the rulers carries to the drag it starts. */
-export interface RulerHit {
-  part: RulerPart;
-}
+/** What a press on the rulers, or on a guide placed off them, carries to the
+ *  drag it starts. */
+export type RulerHit = { part: RulerPart } | { part: 'guide'; guide: Guide };
+
+/** Screen px either side of a guide that a press picks it within. */
+export const GUIDE_HIT_PX = 4;
 
 /** The part of the rulers at canvas point (`x`, `y`) in CSS px, for rulers
  *  `size` px thick along the top and left edges; `null` off them. */
@@ -24,13 +27,26 @@ export const guideAxisOf = (part: 'top' | 'left'): 'x' | 'y' => (part === 'top' 
 
 const CURSOR: Record<RulerPart, string> = { top: 'row-resize', left: 'col-resize', corner: 'default' };
 
+/** The guide whose line passes within `GUIDE_HIT_PX` of screen point `s`, nearest first. */
+function guideAt(guides: readonly Guide[], view: View, s: { x: number; y: number }): Guide | null {
+  let best: Guide | null = null;
+  let bestPx = GUIDE_HIT_PX;
+  for (const g of guides) {
+    const on = viewWorldToScreen(view, { x: g.offset, y: g.offset });
+    const px = Math.abs(g.axis === 'x' ? s.x - on.x : s.y - on.y);
+    if (px <= bestPx) { best = g; bestPx = px; }
+  }
+  return best;
+}
+
 /**
  * The rulers' input layer: it draws nothing — a ruler is drawn as chrome over
  * the canvas — and claims every press on the strips the rulers cover, so a
  * drag there places a guide rather than reaching the tool, and the corner box
- * swallows its presses.
+ * swallows its presses. Off the rulers it claims a press on one of
+ * `getGuides`, so a drag moves that guide.
  */
-export function rulersHitLayer(id: string, size: number): RenderLayer<unknown> {
+export function rulersHitLayer(id: string, size: number, getGuides: () => readonly Guide[]): RenderLayer<unknown> {
   return {
     id,
     label: 'Rulers',
@@ -39,8 +55,13 @@ export function rulersHitLayer(id: string, size: number): RenderLayer<unknown> {
     hitTest: (wx, wy, _data, view): LayerHit<RulerHit> | null => {
       const s = viewWorldToScreen(view, { x: wx, y: wy });
       const part = rulerPartAt(s.x, s.y, size);
-      if (part === null) return null;
-      return { initialScratch: { part }, strength: 'exclusive', claimedKinds: ['pointer'], cursor: CURSOR[part] };
+      if (part !== null) return { initialScratch: { part }, strength: 'exclusive', claimedKinds: ['pointer'], cursor: CURSOR[part] };
+      const guide = guideAt(getGuides(), view, s);
+      if (guide === null) return null;
+      return {
+        initialScratch: { part: 'guide', guide }, strength: 'exclusive', claimedKinds: ['pointer'],
+        cursor: guide.axis === 'y' ? 'row-resize' : 'col-resize',
+      };
     },
   };
 }

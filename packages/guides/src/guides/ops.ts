@@ -21,6 +21,16 @@ export function addGuideOp(store: GuideStore, guide: Guide): Op {
   };
 }
 
+/** Put `to` in place of `from`, the guide with the same id, as an op: a
+ *  guide moved. Its inverse puts `from` back. */
+export function replaceGuideOp(store: GuideStore, from: Guide, to: Guide): Op {
+  return {
+    label: 'Move Guide',
+    apply: () => { store.addGuide(to); },
+    invert: () => replaceGuideOp(store, to, from),
+  };
+}
+
 /** Remove `guide` from `store` as an op; its inverse adds it back. */
 export function removeGuideOp(store: GuideStore, guide: Guide): Op {
   return {

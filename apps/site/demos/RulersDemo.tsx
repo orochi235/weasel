@@ -29,7 +29,7 @@ export function RulersDemo() {
   });
   const guides = useGuides();
   const { addGuide, removeGuide, getGuides, subscribe } = guides;
-  const rulers = useMemo(() => createRulers({ guides: { addGuide, removeGuide }, root: ROOT }), [addGuide, removeGuide]);
+  const rulers = useMemo(() => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: ROOT }), [addGuide, removeGuide, getGuides]);
   const ambient = useMemo(() => [rulers.contribution], [rulers]);
   const guidesLayer = useMemo(() => createGuidesLayer({ getGuides, subscribe, extent: 'full' }), [getGuides, subscribe]);
   const snap = useMemo(() => ({ sources: [guideSnapSource(getGuides)] }), [getGuides]);

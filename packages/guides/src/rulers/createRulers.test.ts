@@ -17,7 +17,9 @@ function store() {
   const list: Guide[] = [];
   return {
     list,
-    addGuide: (g: Guide) => { list.push(g); },
+    getGuides: () => list,
+    // As `useGuides` does: an id already held is replaced in place.
+    addGuide: (g: Guide) => { const i = list.findIndex((h) => h.id === g.id); if (i >= 0) list[i] = g; else list.push(g); },
     removeGuide: (id: string) => { const i = list.findIndex((g) => g.id === id); if (i >= 0) list.splice(i, 1); },
   };
 }
@@ -103,6 +105,48 @@ describe('createRulers', () => {
     const canceled = drag(action('guide'), deps, 'top', screenToWorld(100, 10));
     canceled.end(screenToWorld(100, 80), 'cancel');
     expect(guides.list).toEqual([]);
+  });
+
+  it('claims a press near a placed guide, off the rulers', () => {
+    const { guides, layers } = fixture();
+    guides.addGuide({ id: 'h', axis: 'y', offset: 100 });
+    const hit = layers.find((l) => l.id === 'rulers-hit')!;
+    const at = (x: number, y: number) => {
+      const w = screenToWorld(x, y);
+      return (hit.hitTest!(w.x, w.y, undefined, VIEW, { width: 400, height: 300 }) as { initialScratch?: unknown } | null)?.initialScratch ?? null;
+    };
+    // World y 100 is screen y 120.
+    expect(at(200, 123)).toEqual({ part: 'guide', guide: { id: 'h', axis: 'y', offset: 100 } });
+    expect(at(200, 130)).toBeNull();
+  });
+
+  it('moves a placed guide, and removes one dropped on a ruler, each one undo step', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const { guides, rulers, action } = fixture();
+    const placed: Guide = { id: 'v', axis: 'x', offset: 100 };
+    guides.addGuide(placed);
+    const deps = { scene, view: { get: () => VIEW } } as unknown as ActionDeps;
+    const grab = (from: { x: number; y: number }) => {
+      const at = (p: { x: number; y: number }): InvocationCtx => ({
+        world: p, modifiers: MODS, deps,
+        drag: { start: from, current: p, delta: { x: 0, y: 0 }, affordance: { payload: { part: 'guide', guide: guides.list[0] } } as never },
+      });
+      const handle = (action('guide').invoker as OngoingInvoker).start(at(from));
+      return { move: (p: { x: number; y: number }) => handle.onMove?.(at(p)), end: (p: { x: number; y: number }) => handle.onEnd?.(at(p), 'commit') };
+    };
+    const move = grab({ x: 100, y: 50 });
+    move.move({ x: 140, y: 50 });
+    expect(rulers.get().draft).toEqual({ id: 'v', axis: 'x', offset: 140 });
+    move.end({ x: 150, y: 50 });
+    expect(guides.list).toEqual([{ id: 'v', axis: 'x', offset: 150 }]);
+    scene.undo();
+    expect(guides.list).toEqual([placed]);
+    scene.redo();
+    // Back onto the top ruler: screen y 5.
+    grab({ x: 150, y: 50 }).end(screenToWorld(170, 5));
+    expect(guides.list).toEqual([]);
+    scene.undo();
+    expect(guides.list).toEqual([{ id: 'v', axis: 'x', offset: 150 }]);
   });
 
   it('lands the guide where the snap dep puts it', () => {

@@ -8,7 +8,7 @@ import { Rulers } from './Rulers';
 const VIEW: View = { x: 0, y: 0, scale: { x: 10, y: 10 } };
 
 function painted() {
-  const rulers = createRulers({ guides: { addGuide: () => {}, removeGuide: () => {} }, root: { system: IMPERIAL_INCHES }, majorPx: 140 });
+  const rulers = createRulers({ guides: { addGuide: () => {}, removeGuide: () => {}, getGuides: () => [] }, root: { system: IMPERIAL_INCHES }, majorPx: 140 });
   const api = {
     registerLayer: () => () => {}, requestRedraw: () => {}, getSurfaceRect: () => ({ x: 0, y: 0, width: 400, height: 300 }),
   } as unknown as CanvasExtensionApi;

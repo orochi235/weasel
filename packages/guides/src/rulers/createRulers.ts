@@ -3,6 +3,7 @@ import type { UnitValue } from '@weasel-js/quantity';
 import { createEmitter } from '@weasel-js/registry';
 import { createGuidesLayer } from '../guides/layer';
 import type { GuideStore } from '../guides/ops';
+import type { Guide } from '../guides/types';
 import { rulersGuideAction, rulersPointerAction } from './actions';
 import { rulersHitLayer } from './hit';
 import { rulersLayout, type RulersLayout, type RulersState } from './layout';
@@ -12,8 +13,9 @@ type Point = { x: number; y: number };
 
 /** Options for {@link createRulers}. */
 export interface RulersOptions {
-  /** Where a guide dragged off a ruler goes: `useGuides()` is one. */
-  guides: GuideStore;
+  /** The guides a drag off a ruler adds to, and a drag on one moves or
+   *  removes: `useGuides()` is one. */
+  guides: GuideStore & { getGuides(): readonly Guide[] };
   /** The document's unit scope: what the labels read in outside every frame
    *  that declares its own. */
   root: UnitScope;
@@ -110,7 +112,7 @@ export function createRulers(opts: RulersOptions): Rulers {
     bindings,
     attach: (canvas) => {
       api = canvas;
-      const offs = [canvas.registerLayer(draftLayer), canvas.registerLayer(rulersHitLayer(hitLayerId, size))];
+      const offs = [canvas.registerLayer(draftLayer), canvas.registerLayer(rulersHitLayer(hitLayerId, size, opts.guides.getGuides))];
       canvas.requestRedraw();
       return () => {
         for (const off of offs) off();

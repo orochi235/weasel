@@ -20,7 +20,7 @@ interface PreviewProps {
 /** Rulers as a canvas 480 × 320 at `zoom` would show them, the pointer held at its middle. */
 function RulersPreview({ zoom, root, pan }: PreviewProps): ReactElement {
   const rulers = useMemo(() => {
-    const r = createRulers({ guides: { addGuide: () => {}, removeGuide: () => {} }, root });
+    const r = createRulers({ guides: { addGuide: () => {}, removeGuide: () => {}, getGuides: () => [] }, root });
     const api = { registerLayer: () => () => {}, requestRedraw: () => {}, getSurfaceRect: () => ({ x: 0, y: 0, width: 480, height: 320 }) };
     r.contribution.attach!(api as unknown as CanvasExtensionApi, { get: () => undefined });
     r.contribution.beforePaint!({ view: { x: pan, y: pan, scale: { x: zoom, y: zoom } } } as ContributionFrameCtx);

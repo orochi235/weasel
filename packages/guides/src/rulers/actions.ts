@@ -1,10 +1,10 @@
 import {
   commitOps, snapMods, SNAP_ROLES, viewWorldToScreen,
-  type Action, type ActionDeps, type ImmediateParams, type InvocationCtx, type OngoingHandle, type Scene, type UnitScope,
+  type Action, type ActionDeps, type ImmediateParams, type InvocationCtx, type Op, type OngoingHandle, type Scene, type UnitScope,
 } from '@weasel-js/core';
-import { addGuideOp, type GuideStore } from '../guides/ops';
+import { addGuideOp, removeGuideOp, replaceGuideOp, type GuideStore } from '../guides/ops';
 import type { Guide } from '../guides/types';
-import { guideAxisOf, rulerPartAt, type RulerHit } from './hit';
+import { guideAxisOf, rulerPartAt, type RulerHit, type RulerPart } from './hit';
 import { documentRulerFrame, rulerFrameAt, type RulerFrame } from './reading';
 import type { RulersState } from './layout';
 
@@ -58,20 +58,29 @@ export function rulersPointerAction(ctx: RulersActionCtx): Action {
 const hitOf = (affordance: unknown): RulerHit | null =>
   (affordance as { payload?: RulerHit } | null | undefined)?.payload ?? null;
 
-/** Commit `guide` as one undo step; straight to the store on a canvas with
+/** Commit `op` as one undo step; straight to the store on a canvas with
  *  neither a commit hook nor a scene to hold the history. */
-function commitGuide(deps: ActionDeps, guides: GuideStore, guide: Guide): void {
-  const op = addGuideOp(guides, guide);
-  if (deps.applyOps || deps.scene) commitOps(deps, [op], 'Add Guide');
+function commit(deps: ActionDeps, op: Op): void {
+  if (deps.applyOps || deps.scene) commitOps(deps, [op], op.label ?? 'Guide');
   else op.apply(undefined);
 }
 
+/** What a drag ending with the guide at `to` (`null` over a ruler) commits:
+ *  a guide placed, moved, or dropped back on a ruler and removed. */
+function guideEdit(store: GuideStore, moving: Guide | null, to: Guide | null): Op | null {
+  if (moving === null) return to === null ? null : addGuideOp(store, to);
+  if (to === null) return removeGuideOp(store, moving);
+  return to.offset === moving.offset ? null : replaceGuideOp(store, moving, to);
+}
+
 /**
- * A drag off a ruler: places a guide along it — across the canvas from the
- * top ruler, down it from the left — through a `point` session of the `snap`
- * dep, so it lands on whatever the canvas snaps to. The guide shows in the
- * rulers' `draft` while the drag runs, and is added on release as one undo
- * step. Released back over its ruler, it places nothing.
+ * A drag off a ruler places a guide along it — across the canvas from the top
+ * ruler, down it from the left; a drag on a placed guide moves it, and
+ * dropping it on either ruler removes it. Either way the guide goes through a
+ * `point` session of the `snap` dep, so it lands on whatever the canvas snaps
+ * to, shows in the rulers' `draft` while the drag runs, and changes on release
+ * as one undo step. A new guide released back over its own ruler places
+ * nothing.
  */
 export function rulersGuideAction(ctx: RulersActionCtx): Action {
   return {
@@ -85,32 +94,35 @@ export function rulersGuideAction(ctx: RulersActionCtx): Action {
       start(start: InvocationCtx): OngoingHandle {
         const hit = hitOf(start.drag?.affordance);
         if (!hit || hit.part === 'corner') return {};
-        const part = hit.part;
-        const axis = guideAxisOf(part);
+        const moving = hit.part === 'guide' ? hit.guide : null;
+        const axis = hit.part === 'guide' ? hit.guide.axis : guideAxisOf(hit.part);
+        const id = moving ? moving.id : ctx.newGuideId();
+        // A new guide comes off its own ruler; a placed one goes back onto either.
+        const onRuler = (part: RulerPart | null): boolean => (moving ? part !== null : part === hit.part);
         const deps = start.deps;
         const press = start.drag?.start ?? start.world;
         const snap = deps.snap?.begin({ gesture: 'point', press }) ?? null;
-        const id = ctx.newGuideId();
-        let guide: Guide | null = null;
+        let guide: Guide | null = moving;
         const follow = (at: InvocationCtx): void => {
           const p = at.drag?.current ?? at.world;
           const view = deps.view?.get();
           const s = view ? viewWorldToScreen(view, p) : null;
-          const back = s !== null && rulerPartAt(s.x, s.y, ctx.size) === part;
+          const back = s !== null && onRuler(rulerPartAt(s.x, s.y, ctx.size));
           const landed = back ? null : snap ? snap.at(p, snapMods(at)).point : p;
-          guide = landed === null ? null : { id, axis, offset: landed[axis] };
+          guide = landed === null ? null : { ...moving, id, axis, offset: landed[axis] };
           ctx.set({ draft: guide, pointer: p });
         };
         follow(start);
         return {
           kind: 'guide',
-          cursor: () => (part === 'top' ? 'row-resize' : 'col-resize'),
+          cursor: () => (axis === 'y' ? 'row-resize' : 'col-resize'),
           onMove: follow,
           onEnd: (end, reason) => {
             try {
               if (reason === 'commit') follow(end);
               ctx.set({ draft: null });
-              if (reason === 'commit' && guide !== null) commitGuide(deps, ctx.guides, guide);
+              const op = reason === 'commit' ? guideEdit(ctx.guides, moving, guide) : null;
+              if (op) commit(deps, op);
             } finally {
               snap?.end();
             }
