@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { keysHeld, modifierStateOf, openPointerSession, type PointerSession } from '@weasel-js/core';
+import { DRAG_THRESHOLD_PX, keysHeld, modifierStateOf, openPointerSession, type PointerSession } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
-import { useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
+import { useKitSetting, useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
 import { boxPoint } from './boxPoint';
 import type { RunItemsOf, RunKeyOf } from './useItemLengths';
-
-/** Px a press must travel along the run before it is a scroll rather than a press on an item. */
-export const SCROLL_SLOP = 4;
 
 /** Px one line of a line-mode wheel moves the run. */
 const LINE = 16;
@@ -47,7 +44,7 @@ export interface RunScroll {
 
 /**
  * The offset a curved run's items are laid back by along its run when they run past its end: moved by the wheel,
- * by a drag along the run once it travels {@link SCROLL_SLOP} px (unless `modReorders` leaves a press with Cmd, or Ctrl off
+ * by a drag along the run once it travels the `gestures.dragPx` kit setting (unless `modReorders` leaves a press with Cmd, or Ctrl off
  * Apple platforms, to a reorder), and by focus reaching an item past either end.
  * A run whose items fit keeps offset 0 and ignores all three. The wheel and focus glide to where they send the run
  * over about {@link GLIDE_MS} ms, so items slide rather than jump; a drag follows the pointer, and a reader who
@@ -57,7 +54,8 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
   const max = Math.max(0, total - run.length);
   const [shown, setShown] = useState(0);
   const offset = clamp(shown, 0, max);
-  const latest = useLatest({ max, run, spots, lengths, keyOf, itemsOf, modReorders });
+  const dragPx = useKitSetting('gestures.dragPx');
+  const latest = useLatest({ max, run, spots, lengths, keyOf, itemsOf, modReorders, dragPx });
   const still = usePrefersReducedMotion();
   // Where the handlers last sent the run, ahead of the render it asks for, so two wheel events in one frame both count.
   const moved = useRef(0);
@@ -122,7 +120,7 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     let scrolling = false;
     const onMove = (ev: PointerEvent): void => {
       const travel = positionAt(across, latest.current.run, ev) - s0;
-      if (!scrolling && Math.abs(travel) > SCROLL_SLOP) {
+      if (!scrolling && Math.abs(travel) >= (latest.current.dragPx ?? DRAG_THRESHOLD_PX)) {
         scrolling = true;
         // Once it is a drag the root takes the pointer, so the release lands off the item and its press cancels.
         try {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import type { Tool, ToolsApi } from '@weasel-js/core';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
 
@@ -72,6 +73,17 @@ describe('ToolPalette carryTool', () => {
     const a = screen.getByRole('button', { name: 'a' });
     fireEvent.pointerDown(a, { button: 0, pointerId: 1, clientX: 10, clientY: 10 });
     fireEvent.pointerUp(document, { button: 0, pointerId: 1, clientX: 11, clientY: 10 });
+    fireEvent.click(a);
+    expect(tools.setActive).toHaveBeenCalledWith('a');
+  });
+
+  it('takes a press as a carry only past the gestures.dragPx kit setting', () => {
+    const tools = fakeTools([tool('a')]);
+    renderWithIcons(<KitSettingsProvider value={{ gestures: { dragPx: 30 } }}><ToolPalette tools={tools} carryTool={carryTool} /></KitSettingsProvider>);
+    const a = screen.getByRole('button', { name: 'a' });
+    fireEvent.pointerDown(a, { button: 0, pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(document, { button: 0, buttons: 1, pointerId: 1, clientX: 30, clientY: 10 });
+    fireEvent.pointerUp(document, { button: 0, pointerId: 1, clientX: 30, clientY: 10 });
     fireEvent.click(a);
     expect(tools.setActive).toHaveBeenCalledWith('a');
   });

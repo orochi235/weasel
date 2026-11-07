@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { useKitSetting } from '@weasel-js/react';
 import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
@@ -60,6 +61,7 @@ export function Lane(props: LaneProps): ReactElement {
   const [drag, setDrag] = useState<{ keyIndex: number; t: number } | null>(null);
 
   const snapRadiusPx = useSnapRadiusPx();
+  const dragPx = useKitSetting('gestures.dragPx');
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
   const msAt = (clientX: number): number => {
@@ -94,10 +96,7 @@ export function Lane(props: LaneProps): ReactElement {
     // A press that never travels is a click: it selects and moves nothing.
     const start = { clientX: e.clientX, clientY: e.clientY };
     let dragging = false;
-    const travelled = (ev: PointerEvent): boolean => {
-      dragging ||= pastDragThreshold(start, ev);
-      return dragging;
-    };
+    const travelled = (ev: PointerEvent): boolean => (dragging ||= pastDragThreshold(start, ev, dragPx));
 
     const end = (): void => {
       setDrag(null);

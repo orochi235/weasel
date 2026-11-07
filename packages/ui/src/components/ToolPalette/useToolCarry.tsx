@@ -1,9 +1,7 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { startCarry, type CarryPayload, type Tool } from '@weasel-js/core';
+import { pastDragThreshold, startCarry, type CarryPayload, type Tool } from '@weasel-js/core';
+import { useKitSetting } from '@weasel-js/react';
 import { DragGhost } from '../DragGhost';
-
-/** How far a press moves before it is a carry rather than a click, in CSS pixels. */
-const CARRY_SLOP_PX = 4;
 
 interface GhostState {
   node: ReactNode;
@@ -29,15 +27,16 @@ export function useToolCarry(
   // Set while the click that ends a carry is still to come, so the carry does not also pick its tool.
   const carried = useRef(false);
   const [ghost, setGhost] = useState<GhostState | null>(null);
+  const dragPx = useKitSetting('gestures.dragPx');
   const press = (tool: Tool, e: PointerEvent<HTMLButtonElement>) => {
     const payload = e.button === 0 ? carryTool?.(tool) ?? null : null;
     if (payload === null) return;
-    const origin = { x: e.clientX, y: e.clientY };
+    const origin = { clientX: e.clientX, clientY: e.clientY };
     const from = e.currentTarget;
     let moved = false;
     startCarry(from, e, payload, {
       onMove: (m) => {
-        moved ||= Math.hypot(m.clientX - origin.x, m.clientY - origin.y) > CARRY_SLOP_PX;
+        moved ||= pastDragThreshold(origin, m, dragPx);
         if (!moved || !carryGhost) return;
         const at = { left: m.clientX, top: m.clientY };
         setGhost((g) => (g ? { ...g, at } : { node: carryGhost(tool), from, at }));

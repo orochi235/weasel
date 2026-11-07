@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { Slider } from './Slider';
 import { logScale } from '@weasel-js/plot/scales';
 import { stubRect } from './testing/stubRect';
@@ -7,7 +8,7 @@ import type { BoundsCtx, Thumb } from './types';
 
 const between = ({ thumbs, index }: BoundsCtx): [number, number] => [thumbs[index - 1]?.value ?? 0, thumbs[index + 1]?.value ?? 100];
 
-function setup(extra: Partial<Parameters<typeof Slider>[0]> = {}) {
+function setup(extra: Partial<Parameters<typeof Slider>[0]> = {}, dragPx?: number) {
   const onInput = vi.fn();
   const onChange = vi.fn();
   const onCancel = vi.fn();
@@ -25,6 +26,7 @@ function setup(extra: Partial<Parameters<typeof Slider>[0]> = {}) {
       onCancel={onCancel}
       {...extra}
     />,
+    dragPx === undefined ? undefined : { wrapper: ({ children }) => <KitSettingsProvider value={{ gestures: { dragPx } }}>{children}</KitSettingsProvider> },
   );
   const rail = view.container.querySelector<HTMLElement>('[data-slider-rail]')!;
   stubRect(rail, { left: 0, width: 400 });
@@ -77,6 +79,16 @@ describe('Slider regions', () => {
     fireEvent.pointerUp(document, { clientX: 200, clientY: 12 });
     expect(onInput).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('drags a region only past the gestures.dragPx kit setting', () => {
+    const { region, onInput } = setup({}, 30);
+    fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 180, clientY: 12 });
+    expect(onInput).not.toHaveBeenCalled();
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 12 });
+    expect(values(onInput)).toEqual([30, 70]);
+    fireEvent.pointerUp(document, { clientX: 200, clientY: 12 });
   });
 
   it('does not take a region press as a track press', () => {
