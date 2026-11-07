@@ -2,7 +2,7 @@
   "name": "weasel",
   "private": true,
   "version": "0.4.0",
-  "description": "Monorepo root for the weasel canvas kit. Not published \u2014 the workspaces under packages/ are. See packages/core for @weasel-js/core.",
+  "description": "Monorepo root for the weasel canvas kit. Not published — the workspaces under packages/ are. See packages/core for @weasel-js/core.",
   "license": "MIT",
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -179,9 +179,6 @@
       "minimatch": "^11.0.5"
     },
     "@ts-morph/common": {
-      "minimatch": "^11.0.5"
-    },
-    "typedoc": {
       "minimatch": "^11.0.5"
     }
   }
