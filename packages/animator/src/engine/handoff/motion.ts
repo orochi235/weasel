@@ -134,10 +134,55 @@ export function physicsMotion(o: {
   };
 }
 
-/** The keyframes `motion` is sampled into: `rate` a second, at least two, at most `cap`. */
+/** The times `motion` is sampled at: `rate` a second, at least two, at most `cap`. */
 export function sampleTimes(ms: number, rate: number, cap: number): number[] {
   const n = Math.max(1, Math.min(cap - 1, Math.ceil((ms / 1000) * rate)));
   const out: number[] = [];
   for (let i = 0; i <= n; i++) out.push((ms * i) / n);
+  return out;
+}
+
+/** How far a dropped sample may sit from the straight line between the kept ones on each side, as
+ *  a share of its axis's range over the run. */
+const TOLERANCE = 0.002;
+
+/**
+ * The indexes of `rows` (one row of axes a sample, at `times`) to keep: the fewest for which a
+ * straight line in time between neighbors stays within {@link TOLERANCE} of every sample dropped.
+ * A browser blends keyframes that way, and every one it is given costs it to parse and hold.
+ */
+export function keptSamples(times: readonly number[], rows: readonly (readonly number[])[]): number[] {
+  const n = rows.length;
+  if (n <= 2) return rows.map((_, i) => i);
+  const axes = rows[0]!.length;
+  const tol: number[] = [];
+  for (let a = 0; a < axes; a++) {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const r of rows) { lo = Math.min(lo, r[a]!); hi = Math.max(hi, r[a]!); }
+    tol.push(Math.max((hi - lo) * TOLERANCE, 1e-9));
+  }
+  const keep = new Uint8Array(n);
+  keep[0] = 1;
+  keep[n - 1] = 1;
+  const spans: [number, number][] = [[0, n - 1]];
+  while (spans.length) {
+    const [i, j] = spans.pop()!;
+    let worst = -1;
+    let at = -1;
+    for (let k = i + 1; k < j; k++) {
+      const u = (times[k]! - times[i]!) / (times[j]! - times[i]!);
+      for (let a = 0; a < axes; a++) {
+        const off = Math.abs(rows[k]![a]! - (rows[i]![a]! + (rows[j]![a]! - rows[i]![a]!) * u)) / tol[a]!;
+        if (off > worst) { worst = off; at = k; }
+      }
+    }
+    if (worst > 1) {
+      keep[at] = 1;
+      spans.push([i, at], [at, j]);
+    }
+  }
+  const out: number[] = [];
+  for (let k = 0; k < n; k++) if (keep[k]) out.push(k);
   return out;
 }

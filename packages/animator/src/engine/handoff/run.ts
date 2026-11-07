@@ -3,7 +3,7 @@ import type { TargetState } from '../../target';
 import type { AnimationHandle } from '../../types';
 import type { AnimationSeed } from '../context';
 import type { Handoffs, Placed } from './handoffs';
-import { sampleTimes, type Motion } from './motion';
+import { keptSamples, sampleTimes, type Motion } from './motion';
 
 /** At most this many keyframes a run: a long one is sampled more coarsely. */
 const MOST_KEYFRAMES = 600;
@@ -32,8 +32,9 @@ export interface Run {
 
 function animate(binding: ElementBinding, s: TargetState, motion: Motion): Animation {
   const ms = Math.max(motion.ms, 1);
-  const frames = sampleTimes(ms, binding.sampleRate, MOST_KEYFRAMES)
-    .map((t) => ({ ...binding.style(s.axes.from(motion.at(t))), offset: t / ms }));
+  const times = sampleTimes(ms, binding.sampleRate, MOST_KEYFRAMES);
+  const rows = times.map((t) => motion.at(t));
+  const frames = keptSamples(times, rows).map((k) => ({ ...binding.style(s.axes.from(rows[k]!)), offset: times[k]! / ms }));
   return binding.element.animate(frames, { duration: ms, fill: 'both', easing: 'linear' });
 }
 
