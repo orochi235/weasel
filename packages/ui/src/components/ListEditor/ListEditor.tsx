@@ -1,5 +1,5 @@
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
-import { imeKey } from '@weasel-js/ui-logic';
+import { dropSide, imeKey } from '@weasel-js/ui-logic';
 import type { ReorderDragState } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
@@ -58,9 +58,10 @@ function kindsOf<T>(newEntry: ListEditorProps<T>['newEntry'], label: string): re
 
 /** Marks the entry being dragged, and the edge of the one a drop would land against. */
 function dropAttrs(i: number, count: number, { targetIndex, draggedIds }: ReorderDragState) {
+  const side = dropSide(targetIndex, i, count);
   return {
-    'data-drop-before': targetIndex === i ? '' : undefined,
-    'data-drop-after': targetIndex === count && i === count - 1 ? '' : undefined,
+    'data-drop-before': side === 'before' ? '' : undefined,
+    'data-drop-after': side === 'after' ? '' : undefined,
     'data-dragging': draggedIds?.includes(String(i)) ? '' : undefined,
   };
 }

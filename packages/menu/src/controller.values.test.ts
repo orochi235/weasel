@@ -196,3 +196,33 @@ describe('a color row', () => {
     expect(set).not.toHaveBeenCalled();
   });
 });
+
+describe("a value row's access letter", () => {
+  it('highlights the row, where a number, text or color row has nothing to run', () => {
+    const entries: MenuEntry[] = [
+      { kind: 'item', key: 'cut', label: 'Cut', run: () => {} },
+      { kind: 'number', key: 'zoom', label: 'Zoom', access: 'z', value: 8, set: () => {} },
+      { kind: 'text', key: 'name', label: 'Name', access: 'n', value: 'a', set: () => {} },
+      { kind: 'color', key: 'fill', label: 'Fill', access: 'f', value: '#336699' },
+    ];
+    const onClose = vi.fn();
+    const c = createMenuController({ entries, onClose });
+    expect(c.key('z')).toBe(true);
+    expect(c.stack()).toEqual([1]);
+    c.key('n');
+    expect(c.stack()).toEqual([2]);
+    c.key('F');
+    expect(c.stack()).toEqual([3]);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('leaves a disabled one alone, as a disabled item', () => {
+    const entries: MenuEntry[] = [
+      { kind: 'item', key: 'cut', label: 'Cut', run: () => {} },
+      { kind: 'number', key: 'zoom', label: 'Zoom', access: 'z', value: 8, disabled: true, set: () => {} },
+    ];
+    const c = createMenuController({ entries, onClose: () => {}, highlightFirst: true });
+    c.key('z');
+    expect(c.stack()).toEqual([0]);
+  });
+});

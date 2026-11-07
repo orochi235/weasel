@@ -39,4 +39,20 @@ describe('Checkbox', () => {
     render(<Checkbox isIndeterminate>x</Checkbox>);
     expect((screen.getByRole('checkbox') as HTMLInputElement).indeterminate).toBe(true);
   });
+
+  it('keeps the mixed mark through a click that changes nothing', () => {
+    render(<Checkbox isIndeterminate isReadOnly>x</Checkbox>);
+    const cb = screen.getByRole('checkbox') as HTMLInputElement;
+    fireEvent.click(cb);
+    expect(cb.indeterminate).toBe(true);
+    expect(cb.checked).toBe(false);
+  });
+
+  it('keeps the mixed mark while a controlled owner has not answered the click', () => {
+    render(<Checkbox isSelected={false} isIndeterminate onChange={() => {}}>x</Checkbox>);
+    const cb = screen.getByRole('checkbox') as HTMLInputElement;
+    fireEvent.click(cb);
+    expect(cb.indeterminate).toBe(true);
+  });
 });
+

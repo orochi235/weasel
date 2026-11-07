@@ -20,6 +20,11 @@ describe('domFocusScope', () => {
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['d', 'b', 'a', 'c', 'e']);
   });
 
+  it('skips a control a disabled fieldset disables', () => {
+    const { scope } = mount('<button id="a">a</button><fieldset disabled><button id="x">x</button><input id="y"></fieldset>');
+    expect(scope.tabOrder().map((e) => e.id)).toEqual(['a']);
+  });
+
   it('focuses and blurs elements inside it, and refuses ones outside', () => {
     const { el, scope } = mount('<button id="a">a</button>');
     const outside = document.createElement('button');

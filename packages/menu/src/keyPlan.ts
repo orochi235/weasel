@@ -33,9 +33,10 @@ export function planKey(
     if (e?.kind === 'item' && !e.disabled) {
       return { stack, typed: EMPTY_TYPEAHEAD, effect: { kind: 'choose', level, index: letter } };
     }
-    const opened = e?.kind === 'submenu' && !e.disabled
-      ? [...stack.slice(0, level), letter, firstRow(e.entries)]
-      : stack;
+    // A value row has nothing to run: its letter highlights it, where Enter edits it.
+    const opened = e === undefined || e.kind === 'separator' || e.disabled ? stack
+      : e.kind === 'submenu' ? [...stack.slice(0, level), letter, firstRow(e.entries)]
+        : [...stack.slice(0, level), letter];
     return { stack: opened, typed: EMPTY_TYPEAHEAD, effect: { kind: 'none' } };
   }
   const t = typeaheadStep(rows, stack[level] ?? null, typed, key, now);

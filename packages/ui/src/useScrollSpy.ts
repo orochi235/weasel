@@ -108,6 +108,9 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     if (!root) return;
     const el = root.querySelector<HTMLElement>(`[data-spy-section="${CSS.escape(id)}"]`);
     if (!el) return;
+    // A scroll interrupted by the next one would otherwise leave its
+    // listeners behind to fire against a later scroll.
+    releaseRef.current?.();
     heldRef.current = id;
     setActive(id);
     const settle = (): void => {
@@ -115,6 +118,7 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
       timerRef.current = setTimeout(release, SETTLE_MS);
     };
     const release = (): void => {
+      if (releaseRef.current === release) releaseRef.current = null;
       heldRef.current = null;
       if (timerRef.current !== null) clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -122,9 +126,6 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
       root.removeEventListener('scroll', settle);
       measure();
     };
-    // A scroll interrupted by the next one would otherwise leave its
-    // listeners behind to fire against a later scroll.
-    releaseRef.current?.();
     releaseRef.current = release;
     settle();
     root.addEventListener('scrollend', release);
