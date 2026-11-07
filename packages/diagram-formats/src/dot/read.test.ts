@@ -119,6 +119,14 @@ describe('reading DOT', () => {
     expect(p.data.nodes.map((n) => n.colors)).toEqual([{ stroke: 'red' }, { stroke: '#ff0000' }, { text: '#ff000080' }]);
   });
 
+  it('drops a color from a palette scheme CSS has no spelling for, with a warning', () => {
+    const { document, warnings } = readDot('digraph { a [color="/blues9/3", fontcolor="/svg/navy"]; a -> b [color="/accent3/1"] }');
+    const p = asGraph(document.pages[0]!);
+    expect(p.data.nodes[0]!.colors).toEqual({ text: 'navy' });
+    expect(p.data.edges[0]!.colors).toBeUndefined();
+    expect(warnings).toContain('DOT colors in a scheme a diagram does not have were dropped: /blues9/3, /accent3/1.');
+  });
+
   it('lists the attributes it dropped in one warning', () => {
     const { warnings } = readDot(fixture('clusters.dot'));
     expect(warnings).toContain('DOT shapes read as rectangles: Msquare.');
