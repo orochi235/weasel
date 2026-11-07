@@ -92,10 +92,18 @@ export class Membership {
   }
 }
 
-/** `edges` each given an id unique among themselves and `taken`: `from-to`, then `from-to-2` and on. */
+/** `edges` each given an id unique among themselves and `taken`: its own where that is free, else `from-to`, then
+ *  `from-to-2` and on. */
 export function withEdgeIds(edges: readonly DataEdge[], taken: Iterable<string>): DataEdge[] {
   const used = new Set(taken);
+  const own = new Set<DataEdge>();
+  for (const e of edges) {
+    if (e.id === undefined || used.has(e.id)) continue;
+    used.add(e.id);
+    own.add(e);
+  }
   return edges.map((e) => {
+    if (own.has(e)) return e;
     const base = `${e.from}-${e.to}`;
     let id = base;
     for (let n = 2; used.has(id); n++) id = `${base}-${n}`;

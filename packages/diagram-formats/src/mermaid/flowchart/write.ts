@@ -5,6 +5,7 @@ import type { DiagramDocument, ExportResult, WriteOptions } from '../../document
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../../graphWrite';
 import { styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
+import { withEdgeIds } from '../../graphRead';
 import { DOTTED_DASH } from './read';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TD', up: 'BT', right: 'LR', left: 'RL' };
@@ -25,8 +26,28 @@ class MermaidWriter {
   readonly lines: string[] = [];
   readonly ids: Map<string, string>;
 
+  /** The edges whose id is written out, as `a e1@--> b`. */
+  readonly named: ReadonlySet<DataEdge>;
+
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
+    const items = [...out.page.data.nodes.map((n) => n.id), ...out.clusterIds];
+    const edgeIds = out.edges.flatMap((e) => (e.id !== undefined ? [e.id] : []));
+    this.ids = mermaidIds([...items, ...edgeIds], { unicode: true });
+    this.named = this.namedEdges(items.map((id) => this.id(id)));
+  }
+
+  /** The edges a reader would give another id unless it is written, grown until every one left is minted its own. An id
+   *  Mermaid cannot hold as it is is never written, since it would read back renamed. */
+  namedEdges(taken: readonly string[]): Set<DataEdge> {
+    const named = new Set<DataEdge>();
+    for (;;) {
+      const read = withEdgeIds(this.out.edges.map((e) => ({
+        from: this.id(e.from), to: this.id(e.to), ...(named.has(e) ? { id: e.id! } : {}),
+      })), taken);
+      const more = this.out.edges.filter((e, i) => e.id !== undefined && this.id(e.id) === e.id && !named.has(e) && read[i]!.id !== e.id);
+      if (more.length === 0) return named;
+      for (const e of more) named.add(e);
+    }
   }
 
   id(id: string): string {
@@ -77,7 +98,8 @@ class MermaidWriter {
       if (e.fromPort !== undefined || e.toPort !== undefined) this.out.warnings.add('Mermaid has no ports; connectors\' ports were dropped.');
       if (e.endLabels !== undefined) this.out.warnings.add('Mermaid flowcharts have no labels at a connector\'s ends; they were dropped.');
       const label = e.label !== undefined && e.label !== '' ? `|${mermaidText([e.label])}|` : '';
-      this.lines.push(`  ${this.id(e.from)} ${this.link(e)}${label} ${this.id(e.to)}`);
+      const id = this.named.has(e) ? `${e.id!}@` : '';
+      this.lines.push(`  ${this.id(e.from)} ${id}${this.link(e)}${label} ${this.id(e.to)}`);
     }
   }
 

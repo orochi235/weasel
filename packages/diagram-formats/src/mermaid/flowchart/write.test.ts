@@ -111,6 +111,19 @@ describe('writing Mermaid', () => {
     expect(back(pageOf(data)).data.edges.map(strokes)).toEqual(data.edges.map(strokes));
   });
 
+  it('writes an edge\'s id where reading it back would not give the edge that id', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a' }, { id: 'b' }],
+      edges: [
+        { id: 'a-b', from: 'a', to: 'b' }, { id: 'go', from: 'a', to: 'b' }, { id: 'back', from: 'b', to: 'a' },
+        { id: 'b-a', from: 'b', to: 'a' }, { from: 'b', to: 'a' },
+      ],
+    };
+    const { text } = writeFlowchart(pageOf(data));
+    expect(text).toContain('  a --> b\n  a go@--> b\n  b back@--> a\n  b --> a\n  b --> a\n');
+    expect(back(pageOf(data)).data.edges.map((e) => e.id)).toEqual(['a-b', 'go', 'back', 'b-a', 'b-a-2']);
+  });
+
   it('writes a dash other than a dotted link\'s own in its link style, so it reads back', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a' }, { id: 'b' }],

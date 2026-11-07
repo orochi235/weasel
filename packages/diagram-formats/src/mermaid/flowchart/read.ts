@@ -52,9 +52,13 @@ class MermaidReader {
   readonly linkStyles = new Map<number | 'default', StyleProps>();
   links = 0;
 
-  constructor(readonly subgraphIds: ReadonlySet<string>) {}
+  constructor(readonly subgraphIds: ReadonlySet<string>, readonly edgeIds: ReadonlySet<string>) {}
 
   mention(ref: MermaidNodeRef, cluster: string | null): void {
+    if (this.edgeIds.has(ref.id) && ref.shape === undefined) {
+      this.warnings.add('Mermaid edge metadata was dropped.');
+      return;
+    }
     if (this.subgraphIds.has(ref.id) && ref.shape === undefined && ref.meta === undefined) {
       for (const c of ref.classes) this.addClass(ref.id, c);
       return;
@@ -91,7 +95,8 @@ class MermaidReader {
     return 'arrow';
   }
 
-  link(link: MermaidLink, from: string, to: string): void {
+  /** `id` is the link's own, for the first edge it makes. */
+  link(link: MermaidLink, from: string, to: string, id?: string): void {
     const index = this.links++;
     if (link.stroke === 'invisible') {
       this.warnings.add('Mermaid invisible links were dropped.');
@@ -107,7 +112,10 @@ class MermaidReader {
     };
     const label = link.text === undefined ? [] : textLines(link.text).filter((l) => l !== '');
     this.edges.push({
-      edge: { from, to, ...(label.length > 0 ? { label: label.join(' ') } : {}), ...(Object.keys(colors).length > 0 ? { colors } : {}) },
+      edge: {
+        ...(id !== undefined ? { id } : {}), from, to,
+        ...(label.length > 0 ? { label: label.join(' ') } : {}), ...(Object.keys(colors).length > 0 ? { colors } : {}),
+      },
       index,
     });
   }
@@ -117,7 +125,13 @@ class MermaidReader {
       if (s.kind === 'chain') {
         for (const g of s.groups) for (const ref of g) this.mention(ref, cluster);
         s.links.forEach((link, k) => {
-          for (const from of s.groups[k]!) for (const to of s.groups[k + 1]!) this.link(link, from.id, to.id);
+          let id = link.id;
+          for (const from of s.groups[k]!) {
+            for (const to of s.groups[k + 1]!) {
+              this.link(link, from.id, to.id, id);
+              id = undefined;
+            }
+          }
         });
       } else if (s.kind === 'subgraph') {
         this.membership.openCluster(s.id, cluster);
@@ -168,6 +182,14 @@ function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps): Pa
   return Object.keys(colors).length > 0 ? colors : undefined;
 }
 
+function edgeIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): Set<string> {
+  for (const s of stmts) {
+    if (s.kind === 'subgraph') edgeIdsOf(s.stmts, out);
+    if (s.kind === 'chain') for (const l of s.links) if (l.id !== undefined) out.add(l.id);
+  }
+  return out;
+}
+
 function subgraphIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): Set<string> {
   for (const s of stmts) if (s.kind === 'subgraph') subgraphIdsOf(s.stmts, out.add(s.id));
   return out;
@@ -176,7 +198,7 @@ function subgraphIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): 
 /** Reads a Mermaid flowchart into a one-page document, its `notation` unset. Throws, naming the line, on text that is not one. */
 export function readFlowchart(text: string): ImportResult {
   const chart = parseFlowchart(text);
-  const r = new MermaidReader(subgraphIdsOf(chart.stmts));
+  const r = new MermaidReader(subgraphIdsOf(chart.stmts), edgeIdsOf(chart.stmts));
   if (chart.directives > 0) r.warnings.add('Mermaid configuration directives were dropped.');
   r.walk(chart.stmts, null);
   const nodes: DataNode[] = [...r.nodes].map(([id, d]) => {

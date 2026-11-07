@@ -44,6 +44,12 @@ describe('lexFlowchart', () => {
     ]);
   });
 
+  it('reads an edge id before a link', () => {
+    expect(lex('A e1@--> B e2@-- go --> C')).toEqual([
+      'word:A', 'edge-id:e1', 'link:normal>', 'word:B', 'edge-id:e2', 'link:normal>:go', 'word:C',
+    ]);
+  });
+
   it('keeps hyphens and dots inside ids, but not an arrow after one', () => {
     expect(lex('my-node.x-->x-y')).toEqual(['word:my-node.x', 'link:normal>', 'word:x-y']);
   });

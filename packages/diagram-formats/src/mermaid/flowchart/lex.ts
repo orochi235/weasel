@@ -11,7 +11,7 @@ export type MermaidShape =
 export type LinkHead = '<' | '>' | 'o' | 'x';
 
 export type MermaidToken = { line: number } & (
-  | { kind: 'word' | 'rest' | 'pipe' | 'class' | 'meta' | 'amp'; value: string }
+  | { kind: 'word' | 'rest' | 'pipe' | 'class' | 'meta' | 'amp' | 'edge-id'; value: string }
   | { kind: 'shape'; shape: MermaidShape; text: string }
   | { kind: 'link'; stroke: 'normal' | 'thick' | 'dotted' | 'invisible'; start?: LinkHead; end?: LinkHead; text?: string }
   | { kind: 'sep' }
@@ -149,6 +149,11 @@ class MermaidLexer {
     if (word === null) throw fail(this.line, `cannot read "${c}"`);
     const start = this.atStart();
     this.i += word[0].length;
+    if (this.text[this.i] === '@' && this.linkAt(this.i + 1)) {
+      this.i++;
+      this.push({ kind: 'edge-id', value: word[0], line: this.line });
+      return;
+    }
     this.push({ kind: 'word', value: word[0], line: this.line });
     if (start && REST_KEYWORDS.has(word[0]) && /^(?:[ \t:]|$|\n)/.test(this.text.slice(this.i, this.i + 1))) {
       const semi = this.text.indexOf(';', this.i);
@@ -210,6 +215,12 @@ class MermaidLexer {
     const at = text.indexOf(close, k);
     const eol = text.indexOf('\n', from);
     return at < 0 || (eol >= 0 && at > eol) ? -1 : at;
+  }
+
+  /** Whether a link starts at `at`. */
+  linkAt(at: number): boolean {
+    LINK.lastIndex = at;
+    return LINK.test(this.text);
   }
 
   link(): boolean {
