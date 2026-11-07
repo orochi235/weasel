@@ -13,7 +13,8 @@ import { dashOf, dotColor, labelLines, markerOf, OUTLINE_ATTR, outlineOf, styles
 
 type Attrs = Map<string, DotValue>;
 interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs; edge: Attrs; cluster: string | null }
-interface RawEdge { tail: DotNodeRef; head: DotNodeRef; attrs: Attrs }
+/** An edge as a statement made it: `own` the attributes the statement names, `attrs` those over its scope's defaults. */
+interface RawEdge { tail: DotNodeRef; head: DotNodeRef; attrs: Attrs; own: Attrs }
 
 const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', ReadonlySet<string>>> = {
   root: new Set(['rankdir', 'label', 'bb']),
@@ -29,6 +30,16 @@ const POINTS_PER_INCH = 72;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
+
+/** An attribute as a number, or `undefined`, with a warning, when it is not one. */
+function numberAttr(r: DotReader, attrs: Attrs, key: string): number | undefined {
+  const raw = str(attrs, key);
+  if (raw === undefined) return undefined;
+  const n = raw.trim() === '' ? NaN : Number(raw);
+  if (Number.isFinite(n)) return n;
+  r.warnings.list('DOT attributes that are not numbers were dropped', `${key}=${raw}`);
+  return undefined;
+}
 
 class DotReader {
   readonly warnings = new Warnings();
@@ -69,10 +80,10 @@ class DotReader {
         this.dropUnread('edge', s.attrs.map((a) => a.key));
         const ends = s.ends.map((end) => this.end(end, scope));
         for (const id of ends.flat()) named.add(id.id);
-        const attrs = new Map(scope.edge);
-        for (const a of s.attrs) attrs.set(a.key, a.value);
+        const own: Attrs = new Map(s.attrs.map((a) => [a.key, a.value]));
+        const attrs = new Map([...scope.edge, ...own]);
         for (let k = 1; k < ends.length; k++) {
-          for (const tail of ends[k - 1]!) for (const head of ends[k]!) this.edges.push({ tail, head, attrs });
+          for (const tail of ends[k - 1]!) for (const head of ends[k]!) this.edges.push({ tail, head, attrs, own });
         }
       }
     }
@@ -99,17 +110,17 @@ class DotReader {
   }
 }
 
-function nodeColors(attrs: Attrs, styles: readonly string[]): Partial<NodeStyle> | undefined {
+function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[]): Partial<NodeStyle> | undefined {
   const fill = styles.includes('filled') ? str(attrs, 'fillcolor') ?? str(attrs, 'color') ?? 'lightgrey' : undefined;
   const stroke = str(attrs, 'color');
   const text = str(attrs, 'fontcolor');
-  const width = str(attrs, 'penwidth');
+  const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<NodeStyle> = {
     ...(fill !== undefined ? { fill: dotColor(fill) } : {}),
     ...(stroke !== undefined ? { stroke: dotColor(stroke) } : {}),
     ...(text !== undefined ? { text: dotColor(text) } : {}),
-    ...(width !== undefined ? { strokeWidth: Number(width) } : {}),
+    ...(width !== undefined ? { strokeWidth: width } : {}),
     ...(dash !== undefined ? { dash } : {}),
   };
   return Object.keys(colors).length > 0 ? colors : undefined;
@@ -123,15 +134,15 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
     r.warnings.list('DOT shapes read as rectangles', shape);
     outline = 'rect';
   }
-  const colors = nodeColors(attrs, styles);
-  const width = str(attrs, 'width');
-  const height = str(attrs, 'height');
+  const colors = nodeColors(r, attrs, styles);
+  const width = numberAttr(r, attrs, 'width');
+  const height = numberAttr(r, attrs, 'height');
   return {
     id,
     lines: labelLines(attrs.get('label') ?? { value: '\\N' }, id, r.graph.id ?? ''),
     outline,
-    ...(width !== undefined ? { width: round(Number(width) * POINTS_PER_INCH) } : {}),
-    ...(height !== undefined ? { height: round(Number(height) * POINTS_PER_INCH) } : {}),
+    ...(width !== undefined ? { width: round(width * POINTS_PER_INCH) } : {}),
+    ...(height !== undefined ? { height: round(height * POINTS_PER_INCH) } : {}),
     ...(colors !== undefined ? { colors } : {}),
   };
 }
@@ -175,21 +186,22 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
   const start = dir === 'back' || dir === 'both' ? marker(r, str(e.attrs, 'arrowtail')) : null;
   const stroke = str(e.attrs, 'color');
   const label = str(e.attrs, 'fontcolor');
-  const width = str(e.attrs, 'penwidth');
+  const width = numberAttr(r, e.attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<EdgeStyle> = {
     ...(stroke !== undefined ? { stroke: dotColor(stroke) } : {}),
     ...(label !== undefined ? { label: dotColor(label) } : {}),
-    ...(width !== undefined ? { width: Number(width) } : {}),
+    ...(width !== undefined ? { width } : {}),
     ...(dash !== undefined ? { dash } : {}),
     ...(start !== null ? { markerStart: start } : {}),
     ...(end !== 'arrow' ? { markerEnd: end } : {}),
   };
   const fromPort = portOf(r, e.tail, str(e.attrs, 'tailport'));
   const toPort = portOf(r, e.head, str(e.attrs, 'headport'));
+  const names = { edge: `${e.tail.id}${r.graph.directed ? '->' : '--'}${e.head.id}`, tail: e.tail.id, head: e.head.id };
   const textOf = (key: string) => {
     const value = e.attrs.get(key);
-    const joined = value === undefined ? '' : labelLines(value, '', r.graph.id ?? '').join(' ');
+    const joined = value === undefined ? '' : labelLines(value, '', r.graph.id ?? '', names).join(' ');
     return joined === '' ? undefined : joined;
   };
   const lines = [textOf('label')].filter((l) => l !== undefined);
@@ -239,6 +251,18 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
   return out;
 }
 
+/** A strict graph's edges: one per pair of ends, the first, with the attributes every later statement naming the
+ *  pair sets. */
+function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
+  const kept = new Map<string, RawEdge>();
+  for (const e of edges) {
+    const key = directed ? `${e.tail.id}\u0000${e.head.id}` : [e.tail.id, e.head.id].sort().join('\u0000');
+    const first = kept.get(key);
+    kept.set(key, first === undefined ? e : { ...first, attrs: new Map([...first.attrs, ...e.own]) });
+  }
+  return [...kept.values()];
+}
+
 /** Reads DOT source into a one-page document. Throws, naming the line, on text that is not a DOT graph. */
 export function readDot(text: string): ImportResult {
   const graph = parseDot(text);
@@ -249,14 +273,7 @@ export function readDot(text: string): ImportResult {
   const placed = positions(nodes, r.nodes, str(root.graph, 'bb'));
   if (placed !== null) nodes = placed.nodes;
   else if ([...r.nodes.values()].some((a) => a.has('pos'))) r.warnings.list('DOT attributes a diagram does not hold were dropped', 'pos');
-  const seen = new Set<string>();
-  const edges = r.edges.filter((e) => {
-    if (!graph.strict) return true;
-    const key = graph.directed ? `${e.tail.id}\u0000${e.head.id}` : [e.tail.id, e.head.id].sort().join('\u0000');
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).map((e) => readEdge(r, e));
+  const edges = (graph.strict ? strictEdges(r.edges, graph.directed) : r.edges).map((e) => readEdge(r, e));
   const ids = clusterIds(r.clusters.keys(), r.nodes);
   const containers = [...r.clusters].map(([id, attrs]) => readCluster(r, id, attrs, ids));
   const rankdir = str(root.graph, 'rankdir')?.toUpperCase();
