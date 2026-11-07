@@ -14,8 +14,9 @@ export interface WebGPUSurface {
 }
 
 /** Configure `context` as a renderer draws to it, and return its format.
- *  Every canvas takes rgba8unorm: the preferred format can be bgra8unorm,
- *  which headless Chromium's SwiftShader adapter hands back invalid textures for. */
+ *  Every canvas takes rgba8unorm. The invalid bgra8unorm textures that chose it
+ *  were headless Chromium presenting without the GPU, which fails rgba8unorm
+ *  too; on a GPU both present (docs/traps/testing.md, 2026-11-06). */
 export function configureCanvas(context: GPUCanvasContext, device: GPUDevice): GPUTextureFormat {
   const format: GPUTextureFormat = 'rgba8unorm';
   context.configure({

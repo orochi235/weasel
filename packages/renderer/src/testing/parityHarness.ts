@@ -67,8 +67,8 @@ export async function parityDevice(): Promise<GPUDevice> {
 }
 
 /** The WebGPU errors raised since the last call. Not the browser's own
- *  copies out of a canvas that is not in the page, which headless Chromium
- *  attempts into a texture it cannot make. */
+ *  copies into the canvas, which headless Chromium without the GPU attempts
+ *  into a texture it cannot make. */
 export function takeErrors(): string[] {
   return errors.splice(0).filter((e) => !e.includes('CopyTextureForBrowser'));
 }
