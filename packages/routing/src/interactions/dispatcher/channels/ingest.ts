@@ -8,6 +8,7 @@ import { isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { dropPreview } from './dropPreview';
+import { inModalOver } from './modal';
 
 /** Toggled on the canvas while an OS drag hovers it; consumers style it. */
 export const DROPOVER_CLASS = 'weasel-dropover';
@@ -93,7 +94,7 @@ export function ingestInput(core: DispatchCore): {
   const onPaste = (e: ClipboardEvent) => {
     // Text-editing surfaces (inputs, the text-edit overlay) own their own
     // paste — never steal it for scene ingestion.
-    if (e.defaultPrevented || isEditableTarget(e.target)) return;
+    if (e.defaultPrevented || isEditableTarget(e.target) || inModalOver(e.target, core.canvas)) return;
     // Every dispatcher hears paste on window; only the one holding the keys acts.
     if (!core.holdsKeys()) return;
     const cd = e.clipboardData;

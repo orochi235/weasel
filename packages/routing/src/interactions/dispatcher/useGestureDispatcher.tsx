@@ -13,6 +13,7 @@ import { useDepRegistry } from '../actions/depRegistry';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
 import { createDispatcher, createDispatchTrace, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { attachInput } from './attachInput';
+import { useKeyLease } from './useKeyLease';
 import { createKeymapStack } from '../../keymaps/keymapStack';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 
@@ -110,6 +111,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     onSwitch: () => { for (const d of allDispatchers()) d.cancelAll('cancel'); },
   });
 
+  useKeyLease(actions, enabled);
   useEffect(() => {
     if (enabled && claimKeys) registryRef.current.activate();
   }, [enabled, claimKeys, registryRef]);

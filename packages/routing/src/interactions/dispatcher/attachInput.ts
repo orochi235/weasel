@@ -151,8 +151,6 @@ export function attachInput(
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
     ingest.endPreview();
-    // The registry in use at teardown is the one holding the keys.
-    src.actions().dropKeys();
     hover.clear();
     // `disposed` first: the sessions' cancels must not re-enter dispatch on
     // the way out, and `cancelAll` below is what ends the gestures.

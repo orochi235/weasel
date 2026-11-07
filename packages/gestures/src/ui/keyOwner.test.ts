@@ -19,10 +19,21 @@ function keyOn(target: Element, key: string, init: KeyboardEventInit = {}): Keyb
 describe('isEditableTarget', () => {
   it('is true for the elements a person types text into', () => {
     expect(isEditableTarget(el('<input>'))).toBe(true);
+    expect(isEditableTarget(el('<input type="bogus">'))).toBe(true);
     expect(isEditableTarget(el('<textarea></textarea>'))).toBe(true);
     expect(isEditableTarget(el('<div contenteditable="true"></div>'))).toBe(true);
     expect(isEditableTarget(el('<div contenteditable></div>'))).toBe(true);
   });
+
+  it.each(['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'week', 'time'])(
+    'is true for an input of type %s',
+    (type) => { expect(isEditableTarget(el(`<input type="${type}">`))).toBe(true); },
+  );
+
+  it.each(['checkbox', 'radio', 'button', 'submit', 'reset', 'image', 'range', 'color', 'file', 'hidden'])(
+    'is false for an input of type %s, which takes no typed text',
+    (type) => { expect(isEditableTarget(el(`<input type="${type}">`))).toBe(false); },
+  );
 
   it('is false for a select, which takes no text', () => {
     expect(isEditableTarget(el('<select><option>a</option></select>'))).toBe(false);
@@ -48,6 +59,18 @@ describe('focusedControlOwnsKey', () => {
     expect(focusedControlOwnsKey(keyOn(select(), 'X', { shiftKey: true }))).toBe(true);
     expect(focusedControlOwnsKey(keyOn(select(), 'ArrowDown'))).toBe(true);
     expect(focusedControlOwnsKey(keyOn(select(), 'Home'))).toBe(true);
+  });
+
+  it('gives a range its navigation keys and a radio its arrows, but no modifier chord or Delete', () => {
+    const range = () => el('<input type="range">');
+    const radio = () => el('<input type="radio">');
+    expect(focusedControlOwnsKey(keyOn(range(), 'ArrowLeft'))).toBe(true);
+    expect(focusedControlOwnsKey(keyOn(range(), 'PageUp'))).toBe(true);
+    expect(focusedControlOwnsKey(keyOn(radio(), 'ArrowDown'))).toBe(true);
+    expect(focusedControlOwnsKey(keyOn(radio(), 'Home'))).toBe(false);
+    expect(focusedControlOwnsKey(keyOn(range(), 'Backspace'))).toBe(false);
+    expect(focusedControlOwnsKey(keyOn(range(), 'z', { metaKey: true }))).toBe(false);
+    expect(focusedControlOwnsKey(keyOn(el('<input type="checkbox">'), 'z', { metaKey: true }))).toBe(false);
   });
 
   it('leaves a select no claim on Delete, Escape, or a modifier chord', () => {

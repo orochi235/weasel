@@ -30,24 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [agent] A canvas runs its bound keys only once it has been pressed.** `holdsKeys`
-  (`routing/src/interactions/actions/ActionsProvider.tsx:331`) is true only for the registry a press activated, so
-  a page that selects a node from app UI outside the canvas (collego's list, 2026-11-07) gets nothing from Cmd+Z
-  until it calls `claimKeys` itself. Closes when a canvas holds keys until something else takes them, without a
-  press, or the reason it must not is written in `docs/taxonomy.md` and `claimKeys` is the documented way in.
-- **(P2) [agent] A canvas unmounting drops the keys of the provider it shares.** `attachInput`'s teardown calls
-  `src.actions().dropKeys()` (`routing/src/interactions/dispatcher/attachInput.ts:155`), which releases the
-  registry's hold for every canvas under that `ActionsProvider`. collego (2026-11-07): open a drawer lightbox
-  canvas beside the board, close it, and bound keys stop until the board is pressed again. Closes when a canvas
-  leaving releases only a hold it took itself.
-- **(P2) [agent] `isEditableTarget` counts every `<input>` as taking text.** `gestures/src/ui/keyOwner.ts:5`
-  includes checkboxes, radios, buttons and ranges, so focus on a React Aria `Switch`'s hidden checkbox swallows
-  Cmd+Z and every other bound key (collego, 2026-11-07). Closes when only text-entry input types (and textarea and
-  contenteditable) count, with a case per type.
-- **(P2) [agent] Bound keys run behind a modal dialog.** The keyboard channel skips a key whose target is in an
-  open menu (`inMenu`, `routing/src/interactions/dispatcher/channels/keyboard.ts:59`) but not one inside a modal,
-  so with the canvas holding keys, Backspace on a focused button in a dialog deletes the selection behind it
-  (collego, 2026-11-07). Closes when a key whose target sits inside an open modal dialog never reaches the canvas.
 - **(P2) [agent] In the 3D lab, Shift+F10 and the ContextMenu key stop opening the lab's menu once the pane
   has been clicked.** Two dispatchers share the pane: the instrument's and its trial camera's. Since 66345dc66 the
   first to activate for a press keeps it (`dispatchCore.ts`), which is the instrument's, and keys then go only to
