@@ -640,13 +640,6 @@ only story runner in the repo.
   Closes when the next failure's stdout names the problem it saw, which makes it a fix, or on 2026-11-30
   with no second sighting, delete it.
 
-- **(P3) [waiting] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" failed once
-  in a full fleet run.** At 98d525569 on 2026-10-28 (teitou) the browser project read 534.3125 against
-  533.078125 (tolerance 0.5); the same file passed 3 of 3 alone on the fleet at that commit and 3 of 3 at
-  its parent. A 1.23 px miss suggests layout read before a reflow settled under load (inferred). Delete the
-  entry if the next full runs pass it.
-  Closes when 10 full fleet runs after 2026-10-28 pass it, or at its next failure, which makes it a fix.
-
 - **(P3) [waiting] `MenuTextValue.browser.test.tsx`'s "commits it on Enter without closing" closed the menu once under load.**
   In the full fleet run of 7168695bf (2026-11-03) `close` was called once, with no arguments, by the time Enter
   had committed `Nested`; the file passed alone on the fleet minutes later, and in about 45 other full runs. The failure
