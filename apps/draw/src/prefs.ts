@@ -126,6 +126,12 @@ export const PREFS = {
           step: 4,
           control: 'slider',
         },
+        rulersVisible: {
+          kind: 'boolean',
+          name: 'Show rulers',
+          description: 'Rulers along the top and left of the canvas, in the units of the frame under the pointer. Drag from one to place a guide.',
+          default: false,
+        },
         snapToGrid: {
           kind: 'boolean',
           name: 'Snap to grid',

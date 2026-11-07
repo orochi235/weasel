@@ -1,6 +1,6 @@
 # guides
 
-User-placed guide lines (the ones you drag off a ruler), plus the alignment
+User-placed guide lines (the ones you drag off a ruler — see [`../rulers`](../rulers)), plus the alignment
 machinery under [`alignment/`](./alignment).
 
 ## Guides proper
@@ -8,7 +8,8 @@ machinery under [`alignment/`](./alignment).
 | File | Role |
 | --- | --- |
 | `types.ts` | The `Guide` shape. |
-| `useGuides.ts` | State: `addGuide` / `removeGuide` / `clearGuides`. |
+| `useGuides.ts` | State: `addGuide` / `removeGuide` / `clearGuides`, and `subscribe` to hear each change. |
+| `ops.ts` | `addGuideOp` / `removeGuideOp` / `replaceGuideOp`: a change to a guide store as an undoable op. |
 | `layer.ts` | `createGuidesLayer` — draws them: a guide with a `span` as a ticked segment (`extent: 'full'` for a canvas-long line), one without across the canvas, plus any `SpacingGap`s from `getGaps` with size labels. |
 
 `useGuides` returns **both** a live `guides` array and a stable `getGuides()`
