@@ -43,15 +43,24 @@ function slotPixel(canvas: HTMLCanvasElement): number[] {
   return [...px];
 }
 
-/** Counts each texture upload of `source`. */
+/**
+ * Counts each texture upload of `source`: straight to `texImage2D`, or, for an `ImageBitmap` on WebGL,
+ * drawn first into the renderer's 2D scratch canvas to premultiply it.
+ */
 function uploadsOf(source: object): { count: number; restore: () => void } {
-  const proto = WebGL2RenderingContext.prototype;
-  const original = proto.texImage2D;
-  const seen = { count: 0, restore: () => { proto.texImage2D = original; } };
-  proto.texImage2D = function (this: WebGL2RenderingContext, ...args: unknown[]) {
-    if (args[args.length - 1] === source) seen.count++;
-    return (original as (...a: unknown[]) => void).apply(this, args);
-  } as unknown as typeof original;
+  const restores: (() => void)[] = [];
+  const seen = { count: 0, restore: () => { for (const r of restores) r(); } };
+  const hook = <P extends object>(proto: P, name: keyof P, at: (args: unknown[]) => unknown) => {
+    const original = proto[name] as (...a: unknown[]) => unknown;
+    proto[name] = function (this: unknown, ...args: unknown[]) {
+      if (at(args) === source) seen.count++;
+      return original.apply(this, args);
+    } as P[keyof P];
+    restores.push(() => { proto[name] = original as P[keyof P]; });
+  };
+  hook(WebGL2RenderingContext.prototype, 'texImage2D', (args) => args[args.length - 1]);
+  hook(OffscreenCanvasRenderingContext2D.prototype, 'drawImage', (args) => args[0]);
+  hook(CanvasRenderingContext2D.prototype, 'drawImage', (args) => args[0]);
   return seen;
 }
 
