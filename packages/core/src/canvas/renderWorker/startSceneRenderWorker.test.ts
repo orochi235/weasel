@@ -171,4 +171,23 @@ describe('startSceneRenderWorker, the worker animator', () => {
     other.add({ id: asNodeId('b'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
     expect(due).not.toHaveBeenCalled();
   });
+
+  it('sends the whole frame again after one the worker could not be sent', () => {
+    const { scene, client, posted, worker } = start();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const postMessage = worker.postMessage.bind(worker);
+    worker.postMessage = (m: ToWorker) => {
+      structuredClone(m);
+      postMessage(m);
+    };
+    scene.update(asNodeId('a'), { data: { onTap: () => {} } });
+    client.update({ extraCommands: [] });
+    expect(client.sync()).toBe(true);
+    expect(frames(posted)).toHaveLength(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    scene.update(asNodeId('a'), { data: {} });
+    client.sync();
+    expect(frames(posted)[0]).toMatchObject({ scene: { reset: expect.anything() }, view: VIEW, extraCommands: [] });
+    warn.mockRestore();
+  });
 });

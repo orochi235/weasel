@@ -19,6 +19,8 @@ export interface FrameWriter {
   forgetScene(): void;
   /** Send the pose overrides next frame. */
   overridesChanged(): void;
+  /** The last frame written never reached the worker: send everything next frame. */
+  lost(): void;
 }
 
 /** Each node whose alpha differs from what `sent` holds, updating `sent` to match. */
@@ -59,13 +61,18 @@ export function createFrameWriter(): FrameWriter {
     sent[key] = value;
     return true;
   };
+  const forgetScene = () => {
+    diff.forget();
+    sceneVersion = -1;
+    overridesDirty = true;
+    scrollAt = -1;
+    alphas.clear();
+  };
   return {
-    forgetScene() {
-      diff.forget();
-      sceneVersion = -1;
-      overridesDirty = true;
-      scrollAt = -1;
-      alphas.clear();
+    forgetScene,
+    lost() {
+      forgetScene();
+      for (const key of Object.keys(sent) as (keyof typeof sent)[]) delete sent[key];
     },
     overridesChanged() { overridesDirty = true; },
     write(inputs) {

@@ -87,6 +87,11 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   let owed = false;
   let disposed = false;
   let warned = false;
+  const warnOnce = (what: string, detail: unknown) => {
+    if (warned) return;
+    warned = true;
+    console.warn(`weasel: ${what}`, detail);
+  };
   const snapshots = createRequests<ImageBitmap | null>();
   const idReads = createRequests<IdBuffer>();
   /** Each image request still waiting on the page's cache hears this to stop. */
@@ -131,17 +136,10 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
         post(answer, answer.bitmap ? [answer.bitmap] : []);
       });
       if (!answered) unhook = disposing.subscribe(stop);
-    } else if (msg.type === 'error' && !warned) {
-      warned = true;
-      console.warn('weasel: the render worker failed:', msg.message);
-    }
+    } else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
   });
 
-  worker.addEventListener('error', (event) => {
-    if (warned) return;
-    warned = true;
-    console.warn('weasel: the render worker did not start:', event.message);
-  });
+  worker.addEventListener('error', (event) => warnOnce('the render worker did not start:', event.message));
 
   const dpr = resolveDpr(initial.dpr);
   const offscreen = canvas.transferControlToOffscreen();
@@ -167,8 +165,18 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       if (resumed) msg.resumed = true;
       resumed = false;
       if (ops.length > 0) msg.animations = ops.splice(0);
+      try {
+        post(msg);
+      } catch (e) {
+        // Something in the frame cannot be cloned. Nothing of it arrived, so the next frame
+        // carries everything, and the animator calls go with it.
+        frames.lost();
+        if (msg.animations) ops.unshift(...msg.animations);
+        if (msg.resumed) resumed = true;
+        warnOnce('a frame could not be sent:', e);
+        return true;
+      }
       inFlight = true;
-      post(msg);
       return true;
     },
     subscribe: due.subscribe,
