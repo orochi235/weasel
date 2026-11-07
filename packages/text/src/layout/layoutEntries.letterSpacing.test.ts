@@ -157,6 +157,13 @@ describe('layoutRuns — letterSpacing', () => {
     expect(cells.map((c) => c.x)).toEqual([0, 23, 26]);
   });
 
+  it('tracks a base and its mark once when a run boundary falls between them', async () => {
+    await registerMarksFont();
+    const out = layoutAndPaint([MARKS('A', 4), { ...MARKS('́B', 4), underline: true }], OPTS);
+    expect(out.bounds.width).toBeCloseTo(44 + 2 * 4);
+    expect(out.lines[0].cells.map((c) => c.clusterEnd)).toEqual([false, true, true]);
+  });
+
   it('kerns a base against the next base, through the mark between them', async () => {
     await registerMarksFont();
     const width = (text: string) => layoutAndPaint([MARKS(text, 0)], OPTS).bounds.width;

@@ -131,6 +131,20 @@ describe('styleAtRange', () => {
     expect(styleAtRange(differing, 0, 4).fill).toBe(MIXED);
   });
 
+  it('reads two equal screen-pixel lengths as one value, not as mixed', () => {
+    // As a document parsed from JSON holds them: equal, never the same object.
+    const px: StyledRun[] = [
+      { text: 'ab', fontSize: { px: 12 }, letterSpacing: { px: 1 } },
+      { text: 'cd', fontSize: { px: 12 }, letterSpacing: { px: 1 } },
+    ];
+    const style = styleAtRange(px, 0, 4);
+    expect(style.fontSize).toEqual({ px: 12 });
+    expect(style.letterSpacing).toEqual({ px: 1 });
+    expect(applyStyleToRange(px, 0, 0, {})).toEqual([
+      { text: 'abcd', fontSize: { px: 12 }, letterSpacing: { px: 1 } },
+    ]);
+  });
+
   it('reports the newer flags alongside bold/italic', () => {
     const decorated: StyledRun[] = [
       { text: 'ab', underline: true, letterSpacing: 2 },

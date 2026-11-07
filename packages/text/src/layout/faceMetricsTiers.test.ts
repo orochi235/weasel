@@ -12,7 +12,7 @@ import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import { resolveRuns } from '../runs/resolveRuns';
 import { DEFAULT_TEXT_FILL, resolveTextStyle } from '../textStyle';
-import { createMarkdownRenderer } from '../markdownText';
+import { createMarkdownRenderer } from '../markdownRenderer';
 import type { StyledRun } from '../runs';
 
 const ROOT = resolve(import.meta.dirname, '../../../..');

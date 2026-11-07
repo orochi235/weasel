@@ -54,6 +54,13 @@ describe('layoutRuns — justify', () => {
     expect(lineXs(out)[0]).toEqual([1, 1 + 23 + 15.5, 1 + 2 * (23 + 15.5)]);
   });
 
+  it('gives no slack to a space that hangs behind a trailing tab', () => {
+    // ' \t' closes the first line and hangs; only the space between the words is a gap.
+    const out = layoutAndPaint([RUN('AB AB \tAB')], OPTS);
+    expect(lineXs(out)[0]).toEqual([1, 24, 57, 80]);
+    expect(out.lines[0].cells[5].advance).toBeCloseTo(8);
+  });
+
   it('leaves the last line of a paragraph at the start edge', () => {
     const out = layoutAndPaint([RUN('AB AB AB\nAB AB')], OPTS);
     const xs = lineXs(out);

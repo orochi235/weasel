@@ -93,6 +93,10 @@ export function measureRuns(
    *  run with no metrics. */
   let prev: Entry | undefined;
   let srcIndex = 0;
+  /** Where each run's drawn text opens in the runs' texts joined, and which
+   *  offsets there close a cluster: a run boundary can fall inside one. */
+  let drawnBase = 0;
+  const joinedEnds = clusterEndsAcross(runs);
 
   for (let runIndex = 0; runIndex < runs.length; runIndex++) {
     const run = runs[runIndex];
@@ -103,6 +107,7 @@ export function measureRuns(
       // so this is the only signal a consumer ever gets.
       warnNoMetrics(run.fontFamily, run.fontWeight, run.fontStyle);
       srcIndex += run.srcMap?.length ?? run.text.length;
+      drawnBase += run.text.length;
       prev = undefined;
       continue;
     }
@@ -127,8 +132,9 @@ export function measureRuns(
           resolved, run.fontFamily, run.fontWeight, run.fontStyle, run.text.slice(at, clusterEnds[cluster]),
         );
       }
-      const clusterEnd = at + len === clusterEnds[cluster];
-      if (clusterEnd) clusterStart = clusterEnds[cluster++];
+      const runClusterEnd = at + len === clusterEnds[cluster];
+      if (runClusterEnd) clusterStart = clusterEnds[cluster++];
+      const clusterEnd = joinedEnds === null ? runClusterEnd : joinedEnds[drawnBase + at + len] === 1;
       // World units, deliberately not scaled by fontSize: the same tracking
       // opens the same gap whatever size the run is set at.
       const tracking = clusterEnd ? run.letterSpacing : 0;
@@ -148,7 +154,7 @@ export function measureRuns(
       const blank = blankEntry(pool, n, runIndex, run, cp, fontSize, srcStart, srcEnd, clusterEnd, resolved, metrics);
 
       if (color) {
-        if (clusterEnd) {
+        if (runClusterEnd) {
           blank.tracking = tracking;
           ink(blank, color);
         }
@@ -191,9 +197,36 @@ export function measureRuns(
         if (!mark) prev = blank;
       }
     }
+    drawnBase += text.length;
   }
   entries.length = n;
   return entries;
+}
+
+/** Per UTF-16 offset into the texts of `runs` joined, 1 where a grapheme
+ *  cluster closes. Refilled for each measure that needs it. */
+let JOINED_ENDS = new Uint8Array(64);
+
+/** {@link JOINED_ENDS} for `runs`, or null when no run boundary can fall
+ *  inside a cluster: one between two units below U+0300, other than a CR,
+ *  never does, so each run's own clusters are the answer. */
+function clusterEndsAcross(runs: readonly ResolvedRun[]): Uint8Array | null {
+  let spans = false;
+  let last = -1;
+  for (let i = 0; i < runs.length && !spans; i++) {
+    const t = runs[i].text;
+    if (t.length === 0) continue;
+    spans = last >= 0 && (last >= 0x300 || last === 13 || t.charCodeAt(0) >= 0x300);
+    last = t.charCodeAt(t.length - 1);
+  }
+  if (!spans) return null;
+  let joined = '';
+  for (let i = 0; i < runs.length; i++) joined += runs[i].text;
+  if (JOINED_ENDS.length < joined.length + 1) JOINED_ENDS = new Uint8Array(Math.max(joined.length + 1, JOINED_ENDS.length * 2));
+  JOINED_ENDS.fill(0, 0, joined.length + 1);
+  const ends = graphemeEnds(joined, CLUSTER_ENDS);
+  for (let k = 0; k < ends.length; k++) JOINED_ENDS[ends[k]] = 1;
+  return JOINED_ENDS;
 }
 
 /** No nonspacing mark sits below U+0300, so Latin text builds no string to ask. */

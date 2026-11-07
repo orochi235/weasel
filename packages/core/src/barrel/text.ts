@@ -118,6 +118,8 @@ export type {
   MeasureTextBoundsOpts,
   TextLineBoxesOpts,
   MarkdownFontOptions,
+  LayoutMarkdownOptions,
+  MarkdownFont,
   MeasureFn,
   PositionedRun,
   LayoutLine,

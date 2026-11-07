@@ -1,8 +1,8 @@
 import { resolveScreenLength } from '@weasel-js/paint';
-import { markdownToRuns, type StyledRun } from './runs';
-import { cssFamilyName, faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
-import { numericWeight, scriptMetrics } from './runs/resolveRuns';
-import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
+import type { StyledRun } from './runs';
+import type { FaceMetrics, FontStyle } from '@weasel-js/font';
+import { resolveRunFace, scriptMetrics } from './runs/resolveRuns';
+import { graphemeCount } from './measure/graphemes';
 import { transformRunTexts } from './runs/textTransform';
 import { smallCapsScale, smallCapsText } from './runs/smallCaps';
 import { hangs, wrapLines } from './layout/lineBreak/wrapLines';
@@ -10,26 +10,41 @@ import { DEFAULT_TAB_SIZE, tabAdvance, widthWithTabs, type TabStop } from './lay
 
 export type { StyledRun };
 
-/** Width-measurement strategy for `layoutMarkdown`; canvas-backed default supplied by `createMarkdownRenderer`. */
-export type MeasureFn = (text: string, fontSize: number, bold: boolean, italic: boolean) => number;
+/** The font a run is set in: its own family, weight and style where it
+ *  names them, else the node's, as `resolveRuns` resolves them for the GL
+ *  path, at the run's resolved size in px. */
+export interface MarkdownFont {
+  fontFamily: string;
+  fontWeight: number;
+  fontStyle: FontStyle;
+  fontSize: number;
+}
+
+/** Width of `text` set in `font`, glyphs only: `layoutMarkdown` adds a run's
+ *  letter spacing itself. `createMarkdownRenderer` measures with its canvas. */
+export type MeasureFn = (text: string, font: MarkdownFont) => number;
 
 /** The face a run's rules and script presets come from, for `layoutMarkdown`.
  *  `createMarkdownRenderer` supplies one that looks the family up in the font
  *  registry, so a registered face places them as it does on the GL tier. */
-export type FaceMetricsFn = (bold: boolean, italic: boolean) => FaceMetrics | undefined;
+export type FaceMetricsFn = (font: Omit<MarkdownFont, 'fontSize'>) => FaceMetrics | undefined;
 
 /** A `StyledRun` with its resolved size and its position relative to the
  *  start of its line: `x` along the line, `y` off its baseline. */
 export interface PositionedRun extends StyledRun {
   x: number;
-  /** Advance width, as the layout's `MeasureFn` measured it. */
+  /** Advance width: what the layout's `MeasureFn` measured, plus `tracking`
+   *  after every grapheme cluster, the last included. */
   width: number;
   /** Baseline offset, positive down — a superscript's is negative. Add it to
    *  the line's baseline when painting. */
   y: number;
-  /** The run's font size in px, with `fontScale` and `script` already folded
-   *  in. Resolved once here so layout and paint cannot disagree about it. */
-  size: number;
+  /** The font it is measured and painted in. Its size has `fontScale` and
+   *  `script` already folded in, resolved once here so layout and paint
+   *  cannot disagree about it. */
+  font: MarkdownFont;
+  /** Its letter spacing in px: added after each grapheme cluster. */
+  tracking: number;
   /** The face that placed the run's script and places its rules. */
   face?: FaceMetrics;
 }
@@ -72,27 +87,13 @@ export interface LayoutResult {
   height: number;
 }
 
-/**
- * Word-wrap parsed runs into lines bounded by `maxWidth`, breaking at the
- * UAX #14 opportunities `layoutRuns` breaks at; pass `Infinity` for
- * single-line layout. A tab is a run of its own, as wide as it takes to reach
- * its next stop, `tabSize` spaces apart.
- */
-export function layoutMarkdown(
-  runs: StyledRun[],
-  maxWidth: number,
-  fontSize: number,
-  measure: MeasureFn,
-  lineHeightFactor: number = 1.3,
-  faceOf?: FaceMetricsFn,
-  tabSize: number = DEFAULT_TAB_SIZE,
-): LayoutResult {
-  if (runs.length === 0) return { lines: [], width: 0, height: 0 };
+/** `runs` as drawn: transformed, and split by small caps where the size
+ *  changes, with the small pieces marked. */
+function segmentsOf(runs: readonly StyledRun[]): Segment[] {
   // No caret reads this layout, so the transformed text simply replaces the source.
   const shown = transformRunTexts(
     runs.map((r) => r.text), runs.map((r) => r.textTransform ?? 'none'), runs.map((r) => r.lang),
   );
-  // Small caps splits a run where its size changes, marking the small pieces.
   const segs: Segment[] = [];
   runs.forEach((r, i) => {
     const text = shown[i].text;
@@ -108,6 +109,29 @@ export function layoutMarkdown(
       else segs.push({ ...r, text: piece, source: r, ...(small ? { smallCaps: true as const } : {}) });
     }
   });
+  return segs;
+}
+
+/**
+ * Word-wrap parsed runs into lines bounded by `maxWidth`, breaking at the
+ * UAX #14 opportunities `layoutRuns` breaks at; pass `Infinity` for
+ * single-line layout. A tab is a run of its own, as wide as it takes to reach
+ * its next stop, `tabSize` spaces apart.
+ */
+export function layoutMarkdown(
+  runs: StyledRun[],
+  maxWidth: number,
+  fontSize: number,
+  measure: MeasureFn,
+  opts: LayoutMarkdownOptions = {},
+): LayoutResult {
+  const lineHeightFactor = opts.lineHeight ?? 1.3;
+  const tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE;
+  const node = {
+    fontFamily: opts.family ?? 'sans-serif', fontWeight: opts.weight ?? 400, fontStyle: 'normal' as const,
+  };
+  if (runs.length === 0) return { lines: [], width: 0, height: 0 };
+  const segs = segmentsOf(runs);
 
   // One sequence across every run, so a break opportunity that depends on a
   // neighbor in the next run is found the way `layoutRuns` finds it.
@@ -128,14 +152,20 @@ export function layoutMarkdown(
   });
   // Already a screen-pixel layout, so a run's `{ px }` size is its size.
   const placed = segs.map(({ smallCaps, source: _source, ...run }) => {
-    const face = faceOf?.(run.bold ?? false, run.italic ?? false);
+    const runFace = resolveRunFace(run, node);
+    const face = opts.faceOf?.(runFace);
     const { size: runSize, y } = runMetrics(run, fontSize, face);
+    const font: MarkdownFont = { ...runFace, fontSize: smallCaps ? runSize * smallCapsScale(face) : runSize };
+    const tracking = run.letterSpacing !== undefined
+      ? resolveScreenLength(run.letterSpacing, 1)
+      : opts.letterSpacing ?? 0;
     // The run's size holds the line, as on the GL tier, however small its capitals.
-    return { run, face, y, runSize, size: smallCaps ? runSize * smallCapsScale(face) : runSize };
+    return { run, face, y, runSize, font, tracking };
   });
   const pieceWidth = (p: Piece): number => {
-    const { run, size } = placed[p.run];
-    return measure(run.text.slice(p.start, p.end), size, run.bold ?? false, run.italic ?? false);
+    const { run, font, tracking } = placed[p.run];
+    const text = run.text.slice(p.start, p.end);
+    return measure(text, font) + (tracking === 0 ? 0 : graphemeCount(text) * tracking);
   };
 
   /** A UTF-16 span of one run's text, set on the current line. */
@@ -162,20 +192,23 @@ export function layoutMarkdown(
     let maxSize = 0;
     const positioned: PositionedRun[] = [];
     for (const p of line) {
-      const { run, face, size, y, runSize } = placed[p.run];
+      const { run, face, font, tracking, y, runSize } = placed[p.run];
       const tab = run.text[p.start] === '\t' ? stopOf(p.run) : null;
       const width = tab ? tabAdvance(x, tab.stop, tab.min) : pieceWidth(p);
-      positioned.push({ ...run, text: run.text.slice(p.start, p.end), x, width, y, size, ...(face ? { face } : {}) });
+      positioned.push({
+        ...run, text: run.text.slice(p.start, p.end), x, width, y, font, tracking, ...(face ? { face } : {}),
+      });
       x += width;
       maxSize = Math.max(maxSize, runSize);
     }
     lines.push({ runs: positioned, width: x, height: (maxSize > 0 ? maxSize : fontSize) * lineHeightFactor });
   }
 
+  // A tab is not tracked, but its stops are spaces with their tracking, as on the GL tier.
   const stopOf = (run: number): TabStop => {
-    const { run: r, size } = placed[run];
-    const space = measure(' ', size, r.bold ?? false, r.italic ?? false);
-    return { stop: tabSize * space, min: space / 2 };
+    const { font, tracking } = placed[run];
+    const space = measure(' ', font);
+    return { stop: tabSize * (space + tracking), min: space / 2 };
   };
   const tabs: number[] = [];
   cps.forEach((cp, k) => { if (cp === 9) tabs.push(k); });
@@ -185,8 +218,8 @@ export function layoutMarkdown(
     widthWithTabs(start, end, tabs, (k) => stopOf(runOf[k]), flatWidth);
   for (const line of wrapLines(cps, maxWidth, widthOf)) {
     let end = line.end;
-    // A wrapped line's trailing spaces hang past the edge, as they do in `layoutRuns`.
-    if (line.wrapped) while (end > line.start && hangs(cps[end - 1])) end--;
+    // A line's trailing spaces and tabs hang past the edge, as they do in `layoutRuns`.
+    while (end > line.start && hangs(cps[end - 1])) end--;
     commitLine(piecesOf(line.start, end));
   }
 
@@ -196,20 +229,14 @@ export function layoutMarkdown(
   return { lines, width, height };
 }
 
-/** Pluggable text-painting strategy. The default fills white at `(x, y)`; markdown renderers replace this. */
-export type TextRenderer = (
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-) => void;
-
 /** Font styling options threaded through `createMarkdownRenderer`. */
 export interface MarkdownFontOptions {
   /** Font-family spec (e.g. `'"Iowan Old Style", Georgia, serif'`). Defaults to `sans-serif`. */
   family?: string;
-  /** Numeric weight applied to non-bold runs. Bold runs always use `bold`. Default `normal`. */
+  /** Weight of a run that names none and is not bold; a bold one is 700. Default 400. */
   weight?: string | number;
+  /** Letter spacing in px of a run that sets none, added after each grapheme cluster. Default 0. */
+  letterSpacing?: number;
   /** Override fill color. When set, used for all runs (italic and bold). */
   color?: string;
   /** Multiplier applied to font size for line height. Default 1.3. */
@@ -218,163 +245,7 @@ export interface MarkdownFontOptions {
   tabSize?: number;
 }
 
-function buildFont(
-  fontSize: number,
-  bold: boolean,
-  italic: boolean,
-  opts: MarkdownFontOptions = {},
-): string {
-  const family = opts.family ?? 'sans-serif';
-  const weight = bold ? 'bold' : (opts.weight !== undefined ? String(opts.weight) : 'normal');
-  const parts: string[] = [];
-  if (italic) parts.push('italic');
-  parts.push(weight);
-  parts.push(`${fontSize}px ${cssFamilyName(family)}`);
-  return parts.join(' ');
-}
-
-function canvasMeasure(ctx: CanvasRenderingContext2D, opts: MarkdownFontOptions = {}): MeasureFn {
-  return (text, fontSize, bold, italic) => {
-    ctx.font = buildFont(fontSize, bold, italic, opts);
-    return ctx.measureText(text).width;
-  };
-}
-
-/** Distance from the context's current `textBaseline` down to the alphabetic
- *  baseline, for the font already set on it; 0 where the metric is missing. */
-function alphabeticBaselineBelow(ctx: CanvasRenderingContext2D): number {
-  const current = ctx.textBaseline;
-  if (current === 'alphabetic') return 0;
-  const here = ctx.measureText('').fontBoundingBoxAscent;
-  ctx.textBaseline = 'alphabetic';
-  const alphabetic = ctx.measureText('').fontBoundingBoxAscent;
-  ctx.textBaseline = current;
-  const d = alphabetic - here;
-  return Number.isFinite(d) ? d : 0;
-}
-
-/** Where a block `width` wide starts, given the x the context aligns it to. */
-function blockLeft(ctx: CanvasRenderingContext2D, x: number, width: number): number {
-  const rtl = ctx.direction === 'rtl';
-  switch (ctx.textAlign) {
-    case 'center': return x - width / 2;
-    case 'right': return x - width;
-    case 'end': return rtl ? x : x - width;
-    case 'start': return rtl ? x - width : x;
-    default: return x;
-  }
-}
-
-/**
- * Build a fill+stroke `TextRenderer` pair, laying the text out once.
- *
- * `text` is markdown, read by `markdownToRuns`, or runs already styled. The
- * block is placed by the context's `textAlign` and each run by its
- * `textBaseline`. The fill pass also paints underline, strikethrough and
- * overline in their run's fill, placed by the same metrics as the GL tier;
- * the stroke pass paints no rules, as on the GL tier.
- */
-export function createMarkdownRenderer(
-  ctx: CanvasRenderingContext2D,
-  text: string | StyledRun[],
-  fontSize: number,
-  maxWidth: number = Infinity,
-  fontOpts: MarkdownFontOptions = {},
-): { renderer: TextRenderer; strokeRenderer: TextRenderer; width: number; height: number } {
-  const measure = canvasMeasure(ctx, fontOpts);
-  const parsed = typeof text === 'string' ? markdownToRuns(text) : text;
-  const family = fontOpts.family ?? 'sans-serif';
-  const weight = numericWeight(fontOpts.weight ?? 400);
-  const faceOf: FaceMetricsFn = (bold, italic) =>
-    faceMetricsFor(family, bold ? 700 : weight, italic ? 'italic' : 'normal');
-  const layout = layoutMarkdown(parsed, maxWidth, fontSize, measure, fontOpts.lineHeight, faceOf, fontOpts.tabSize);
-
-  /** Walk the layout, setting each run's font and handing over its
-   *  left-aligned paint position and the index of its line. */
-  function walk(
-    c: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    drawRun: (run: PositionedRun, rx: number, ry: number, lineIndex: number) => void,
-  ): void {
-    const align = c.textAlign;
-    const left = blockLeft(c, x, layout.width);
-    c.textAlign = 'left';
-    let lineY = y;
-    layout.lines.forEach((line, li) => {
-      const lineLeft = left + (layout.width - line.width) / 2;
-      for (const run of line.runs) {
-        c.font = buildFont(run.size, run.bold ?? false, run.italic ?? false, fontOpts);
-        drawRun(run, lineLeft + run.x, lineY + run.y, li);
-      }
-      lineY += line.height;
-    });
-    c.textAlign = align;
-  }
-
-  const renderer: TextRenderer = (_ctx, _text, x, y) => {
-    interface Span {
-      flags: Record<DecorationKind, boolean>;
-      fill: string;
-      size: number;
-      face: FaceMetrics | undefined;
-      baselineY: number;
-      line: number;
-      x0: number;
-      x1: number;
-    }
-    let span: Span | null = null;
-    const flush = (): void => {
-      const s = span;
-      span = null;
-      if (!s || s.x1 <= s.x0) return;
-      _ctx.fillStyle = s.fill;
-      for (const kind of DECORATION_KINDS) {
-        if (!s.flags[kind]) continue;
-        const { y0, y1 } = decorationRule(kind, s.baselineY, s.size, s.face);
-        _ctx.fillRect(s.x0, y0, s.x1 - s.x0, y1 - y0);
-      }
-    };
-
-    walk(_ctx, x, y, (run, rx, ry, line) => {
-      const fill = fontOpts.color
-        ?? (run.italic && !run.bold ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF');
-      _ctx.fillStyle = fill;
-      _ctx.fillText(run.text, rx, ry);
-
-      if (!(run.underline || run.strikethrough || run.overline)) {
-        flush();
-        return;
-      }
-      const flags: Record<DecorationKind, boolean> = {
-        underline: run.underline ?? false,
-        strikethrough: run.strikethrough ?? false,
-        overline: run.overline ?? false,
-      };
-      const baselineY = ry + alphabeticBaselineBelow(_ctx);
-      const open = span;
-      if (
-        open !== null
-        && open.line === line
-        && open.x1 === rx
-        && open.fill === fill
-        && open.size === run.size
-        && open.face === run.face
-        && open.baselineY === baselineY
-        && DECORATION_KINDS.every((k) => open.flags[k] === flags[k])
-      ) {
-        open.x1 = rx + run.width;
-      } else {
-        flush();
-        span = { flags, fill, size: run.size, face: run.face, baselineY, line, x0: rx, x1: rx + run.width };
-      }
-    });
-    flush();
-  };
-
-  const strokeRenderer: TextRenderer = (_ctx, _text, x, y) => {
-    walk(_ctx, x, y, (run, rx, ry) => _ctx.strokeText(run.text, rx, ry));
-  };
-
-  return { renderer, strokeRenderer, width: layout.width, height: layout.height };
+/** What `layoutMarkdown` takes beyond its runs, width, size and measure. */
+export interface LayoutMarkdownOptions extends Omit<MarkdownFontOptions, 'color'> {
+  faceOf?: FaceMetricsFn;
 }

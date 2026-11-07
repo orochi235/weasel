@@ -161,14 +161,15 @@ function hungWidth(entries: readonly Entry[]): number {
   return hung;
 }
 
-/** Positions of the spaces between a line's words. Leading spaces are
- *  zero-width slots and trailing ones hang, so neither is a gap. */
+/** Positions of the spaces between a line's words. The white space a line
+ *  opens with is not between words, and what it ends in hangs, so neither
+ *  holds a gap. */
 function wordGaps(entries: readonly Entry[]): Set<number> {
   const gaps = new Set<number>();
   let first = 0;
-  while (first < entries.length && entries[first].cp === 32) first++;
+  while (first < entries.length && hangs(entries[first].cp)) first++;
   let last = entries.length - 1;
-  while (last > first && entries[last].cp === 32) last--;
+  while (last > first && hangs(entries[last].cp)) last--;
   for (let k = first + 1; k < last; k++) if (entries[k].cp === 32) gaps.add(k);
   return gaps;
 }

@@ -95,16 +95,19 @@ export { renderLabel, defaultLabelTextRenderer } from './renderLabel';
 export type { LabelOptions } from './renderLabel';
 export { isTextData } from './isTextData';
 
-export { createMarkdownRenderer, layoutMarkdown } from './markdownText';
+export { layoutMarkdown } from './markdownText';
+export { createMarkdownRenderer } from './markdownRenderer';
 export type {
   MarkdownFontOptions,
+  LayoutMarkdownOptions,
+  MarkdownFont,
   MeasureFn,
   FaceMetricsFn,
   PositionedRun,
   LayoutLine,
   LayoutResult,
-  TextRenderer,
 } from './markdownText';
+export type { TextRenderer } from './markdownRenderer';
 
 export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, runsCarryStyling, supersededKey } from './runs/rangeStyle';
 export type { Mixed, RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
