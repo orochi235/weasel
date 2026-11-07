@@ -187,11 +187,15 @@ function parseRatio(raw: string): number {
 
 function readStops(el: Element, onWarn?: (m: string) => void): GradStop[] {
   const stops: GradStop[] = [];
+  let floor = 0;
   for (let i = 0; i < el.children.length; i++) {
     const c = el.children[i];
     if (c.tagName.toLowerCase() !== 'stop') continue;
     const offsetRaw = parseRatio(c.getAttribute('offset') ?? '0');
-    const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
+    // SVG clamps an offset to 0..1 and raises one below an earlier stop's to
+    // it; the kit sorts its stops, which would put that one first instead.
+    const offset = Math.max(floor, Math.min(1, Number.isFinite(offsetRaw) ? offsetRaw : 0));
+    floor = offset;
     const colorAttr = ownProp(c, 'stop-color') ?? '#000000';
     const parsed = readProperty('stop-color', colorAttr, onWarn);
     if (parsed) {
