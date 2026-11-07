@@ -35,7 +35,9 @@ export interface ModeDecorations {
  *  switches which painter runs. */
 export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeDecorations {
   const { registry } = opts;
-  const painters = new Map<string, ModeDecorationPainter>();
+  // Each registration is its own entry, so a release can tell its painter from a later
+  // registration of the same function.
+  const painters = new Map<string, { painter: ModeDecorationPainter }>();
   const listeners = createEmitter();
   let registrations = 0;
   const changed = (): void => {
@@ -45,18 +47,18 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
 
   return {
     register(modeId: string, painter: ModeDecorationPainter): () => void {
-      painters.set(modeId, painter);
+      const entry = { painter };
+      painters.set(modeId, entry);
       changed();
       return () => {
-        if (painters.get(modeId) !== painter) return;
+        if (painters.get(modeId) !== entry) return;
         painters.delete(modeId);
         changed();
       };
     },
     paint(): ModeDrawCommand[] {
-      const painter = painters.get(registry.current().id);
-      if (!painter) return [];
-      return painter();
+      const entry = painters.get(registry.current().id);
+      return entry ? entry.painter() : [];
     },
     getVersion: () => registry.getVersion() + registrations,
     subscribe(listener: () => void): () => void {
