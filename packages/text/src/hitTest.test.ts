@@ -209,6 +209,14 @@ describe('caretIndexAt', () => {
     warn.mockRestore();
   });
 
+  it('never stops between a letter and its mark when a run boundary falls between them', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const p = textPose({ text: 'ÁB', runs: [{ text: 'A' }, { text: '́B', underline: true }] });
+    expect(caretIndexAt(5, 5, p)).toBe(0);
+    expect(caretIndexAt(20, 5, p)).toBe(2);
+    warn.mockRestore();
+  });
+
   it('spans a letter and its zero-width mark to the kerned glyph after them, not past it', async () => {
     // A face whose acute has no advance: `A` takes the -1 kern into `B`, so
     // its cell is 0..22, while the mark sits at 23, where `A`'s glyph ends.
