@@ -56,7 +56,10 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
     if (open.has(obj)) return '[cycle]';
     if (level >= depth) return '…';
     if (isTyped(obj)) return { $type: tagOf(obj), length: (obj as unknown as { length: number }).length };
-    if (obj instanceof Date || tagOf(obj) === 'Date') return { $type: 'Date', value: (obj as Date).toISOString() };
+    if (obj instanceof Date || tagOf(obj) === 'Date') {
+      const time = (obj as Date).getTime();
+      return { $type: 'Date', value: Number.isNaN(time) ? 'Invalid Date' : (obj as Date).toISOString() };
+    }
     open.add(obj);
     try {
       if (Array.isArray(obj)) {
