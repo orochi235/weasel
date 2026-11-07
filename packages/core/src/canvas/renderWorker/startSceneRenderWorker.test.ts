@@ -3,6 +3,9 @@ import { createScene } from '../../core/scene/scene';
 import { asNodeId, type RectPose } from '../../core/scene/types';
 import { startSceneRenderWorker } from './startSceneRenderWorker';
 import type { FromWorker, ToWorker } from './protocol';
+import { answerImage } from './workerImages';
+
+vi.mock('./workerImages', () => ({ answerImage: vi.fn() }));
 
 /** A worker that records what the page posts and answers when told. */
 function fakeWorker() {
@@ -123,5 +126,20 @@ describe('startSceneRenderWorker, the worker animator', () => {
     client.sync();
     expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 } });
     void scene;
+  });
+
+  it('posts an image answer the page has at once, and stops a pending one on dispose', () => {
+    const { client, posted, answer } = start();
+    vi.mocked(answerImage).mockImplementationOnce((req, reply) => {
+      reply({ type: 'image', src: req.src, error: 'gone' });
+      return () => {};
+    });
+    answer({ type: 'image', src: 'a.svg' });
+    expect(posted.at(-1)).toEqual({ type: 'image', src: 'a.svg', error: 'gone' });
+    const stop = vi.fn();
+    vi.mocked(answerImage).mockImplementationOnce(() => stop);
+    answer({ type: 'image', src: 'b.svg' });
+    client.dispose();
+    expect(stop).toHaveBeenCalledTimes(1);
   });
 });

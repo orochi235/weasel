@@ -88,7 +88,8 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   let warned = false;
   const snapshots = createRequests<ImageBitmap | null>();
   const idReads = createRequests<IdBuffer>();
-  const imageWaits = new Set<() => void>();
+  /** Each image request still waiting on the page's cache hears this to stop. */
+  const disposing = createEmitter();
   const post = (msg: ToWorker, transfer: Transferable[] = []) => worker.postMessage(msg, transfer);
 
   const ops: AnimationOp[] = [];
@@ -116,11 +117,14 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     else if (msg.type === 'snapshot') snapshots.settle(msg.id, msg.bitmap);
     else if (msg.type === 'ids') idReads.settle(msg.id, msg.ids);
     else if (msg.type === 'image') {
+      let answered = false;
+      let unhook = () => {};
       const stop = answerImage(msg, (answer) => {
-        imageWaits.delete(stop);
+        answered = true;
+        unhook();
         post(answer, answer.bitmap ? [answer.bitmap] : []);
       });
-      imageWaits.add(stop);
+      if (!answered) unhook = disposing.subscribe(stop);
     } else if (msg.type === 'error' && !warned) {
       warned = true;
       console.warn('weasel: the render worker failed:', msg.message);
@@ -177,7 +181,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       if (disposed) return;
       disposed = true;
       unwatch();
-      for (const stop of imageWaits) stop();
+      disposing.emit();
       snapshots.drain(null);
       idReads.drain(EMPTY_IDS());
       worker.terminate();
