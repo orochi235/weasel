@@ -128,3 +128,64 @@ describe('a retained surface through a pan', () => {
     expect(store.lookup('a', W, H, keyAt(2, 0), true, SCALE)).toEqual({ kind: 'redraw', window: GROWN });
   });
 });
+
+describe('a margin against a full budget', () => {
+  const GROWN_BYTES = GROWN.width * GROWN.height * 4;
+  const BUFFER_BYTES = W * H * 4;
+
+  /** `a`, which pans, and `b`, which may not move, both drawn at rest over the
+   *  whole buffer, in a budget with room for `a`'s margin only once `b` goes. */
+  function both(): RetainedSurfaces {
+    const store = new RetainedSurfaces(makeGLRecorder().gl, GROWN_BYTES + BUFFER_BYTES / 2);
+    store.beginFrame([]);
+    store.reserve('a', W, H, BUFFER, true, { box: WIDE, window: BUFFER })!.commit(keyAt(0, 0));
+    store.reserve('b', W, H, BUFFER, true)!.commit(keyAt(0, 0));
+    store.endFrame();
+    return store;
+  }
+
+  it('frees a surface that cannot follow the pan to make room', () => {
+    const store = both();
+    store.beginFrame([]);
+    expect(store.lookup('b', W, H, keyAt(1, 0))).toEqual({ kind: 'through' });
+    expect(store.lookup('a', W, H, keyAt(1, 0), true, SCALE)).toEqual({ kind: 'redraw', window: GROWN });
+    const draw = store.reserve('a', W, H, GROWN, true, { box: WIDE, window: GROWN })!;
+    expect(draw.rect).toEqual(GROWN);
+    expect(store.declined).toBe(1);
+  });
+
+  it('gives a margin it refused once a surface that cannot follow the pan has shown itself', () => {
+    const store = both();
+    store.beginFrame([]);
+    expect(store.lookup('a', W, H, keyAt(1, 0), true, SCALE)).toEqual({ kind: 'redraw', window: GROWN });
+    store.reserve('a', W, H, GROWN, true, { box: WIDE, window: GROWN })!.commit(keyAt(1, 0));
+    expect(store.lookup('b', W, H, keyAt(1, 0))).toEqual({ kind: 'through' });
+    store.endFrame();
+    store.beginFrame([]);
+    expect(store.lookup('a', W, H, keyAt(1000, 0), true, SCALE)).toEqual({ kind: 'redraw', window: GROWN });
+    expect(store.reserve('a', W, H, GROWN, true, { box: WIDE, window: GROWN })!.rect).toEqual(GROWN);
+  });
+
+  it('draws the freed group straight through while it moves, and again once it holds', () => {
+    const store = both();
+    store.beginFrame([]);
+    store.lookup('b', W, H, keyAt(1, 0));
+    store.lookup('a', W, H, keyAt(1, 0), true, SCALE);
+    store.reserve('a', W, H, GROWN, true, { box: WIDE, window: GROWN })!.commit(keyAt(1, 0));
+    store.endFrame();
+    store.beginFrame([]);
+    expect(store.lookup('b', W, H, keyAt(2, 0))).toEqual({ kind: 'through' });
+    store.endFrame();
+    store.beginFrame([]);
+    expect(store.lookup('b', W, H, keyAt(2, 0))).toEqual({ kind: 'redraw', window: BUFFER });
+  });
+
+  it('keeps a surface that holds still through the pan', () => {
+    const store = both();
+    store.beginFrame([]);
+    expect(store.lookup('b', W, H, keyAt(0, 0))).toMatchObject({ kind: 'kept' });
+    store.lookup('a', W, H, keyAt(1, 0), true, SCALE);
+    expect(store.reserve('a', W, H, GROWN, true, { box: WIDE, window: GROWN })!.rect).toEqual(BUFFER);
+    expect(store.lookup('b', W, H, keyAt(0, 0))).toMatchObject({ kind: 'kept' });
+  });
+});

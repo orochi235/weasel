@@ -110,7 +110,8 @@ export interface WeaselRendererOptions {
   flattenTolerance?: FlattenTolerance;
   /** GPU memory, in bytes, that retained groups may hold between frames — see
    *  `GroupDrawCommand.retain`. A group that would take the total past it is
-   *  drawn straight through instead. Counts each surface, 4 bytes a device
+   *  drawn straight through instead, unless freeing the surfaces of groups
+   *  already drawn straight through while they move makes room. Counts each surface, 4 bytes a device
    *  pixel. Not counted: the multisampled buffer surfaces are drawn in, a
    *  tile at a time, 8 bytes a sample at up to 1024x1024 plus a 4-byte copy,
    *  held across frames that redraw one and freed after the first that does

@@ -1,4 +1,4 @@
-import { boxWithin, type DeviceBox, type DeviceRect } from './contentBounds';
+import { boxWithin, covers, tilesOf, type DeviceBox, type DeviceRect } from './contentBounds';
 import { keepKey, keyShift, sameKey, sameStamp, type RetainedKey } from './retainedKey';
 import {
   createScratch, createSurfaceTexture, deleteScratch, deleteSurfaceTexture, resolveInto,
@@ -26,6 +26,12 @@ interface Surface {
   panned: boolean;
   /** The translation its group was last asked for under, CSS pixels. */
   seen: readonly [number, number] | null;
+  /** Its group last moved, and its pixels cannot move with it: drawn straight
+   *  through until the move holds, which draws it again, so they are the first
+   *  to go to make room. */
+  adrift: boolean;
+  /** Its texture was freed to make room while it was adrift. */
+  evicted: boolean;
 }
 
 /** What `lookup` found: pixels to composite; a surface to draw, covering
@@ -146,8 +152,9 @@ export class RetainedSurfaces {
    * until the move holds for a frame; moved out past what was drawn, it is
    * drawn again with a margin past the buffer, `PAN_MARGIN` of a side, or
    * straight through like a fractional move once the budget has refused that
-   * margin. Without `scale`, a group moved only by a translation is drawn straight
-   * through until the move holds a frame, and then drawn again.
+   * margin, until freeing what is adrift would make room for it. Without
+   * `scale`, a group moved only by a translation is drawn straight through
+   * until the move holds a frame, and then drawn again.
    */
   lookup(
     id: string, width: number, height: number, key: RetainedKey, multisample = true, scale?: number,
@@ -160,9 +167,17 @@ export class RetainedSurfaces {
     }
     const at = [key.transform[6], key.transform[7]] as const;
     const held = surface.seen !== null && surface.seen[0] === at[0] && surface.seen[1] === at[1];
+    if (surface.evicted) {
+      surface.frame = this.frame;
+      if (held || !keyShift(surface.key, key)) return { kind: 'redraw', window: buffer };
+      surface.seen = at;
+      this.declined++;
+      return { kind: 'through' };
+    }
     if (sameKey(surface.key, key)) {
       surface.frame = this.frame;
       surface.seen = at;
+      surface.adrift = false;
       this.composited++;
       return { kind: 'kept', pixels: pixelsOf(surface, 0, 0) };
     }
@@ -177,17 +192,21 @@ export class RetainedSurfaces {
       // Moved, and its pixels do not move with it: drawn straight through
       // while the move goes on, as a redraw every frame costs more.
       if (held) return { kind: 'redraw', window: buffer };
+      surface.adrift = true;
       this.declined++;
       return { kind: 'through' };
     }
-    // Panned before and still drawn without a margin: the budget refused one,
-    // and drawing it again each frame would refuse it again.
-    const refused = surface.panned && surface.reach!.window.width === width && surface.reach!.window.height === height;
-    surface.panned = true;
+    const reach = surface.reach!;
     const dx = shift[0] * scale!, dy = shift[1] * scale!;
     const rx = Math.round(dx), ry = Math.round(dy);
+    // Panned before and still drawn without a margin: the budget refused one,
+    // and until freeing what is adrift makes room, it would refuse it again.
+    const moved = { x0: reach.box.x0 + rx, y0: reach.box.y0 + ry, x1: reach.box.x1 + rx, y1: reach.box.y1 + ry };
+    const refused = surface.panned && reach.window.width === width && reach.window.height === height
+      && !this.room(id, boxWithin(moved, grown), false);
+    surface.panned = true;
     const whole = Math.abs(dx - rx) <= WHOLE_PIXEL_SLACK && Math.abs(dy - ry) <= WHOLE_PIXEL_SLACK;
-    if (whole && covers(surface.reach!, rx, ry, width, height)) {
+    if (whole && covers(reach, rx, ry, width, height)) {
       this.composited++;
       return { kind: 'kept', pixels: pixelsOf(surface, rx, ry) };
     }
@@ -203,14 +222,16 @@ export class RetainedSurfaces {
    *  past the budget. Drawn multisampled as the default framebuffer is, or
    *  single-sampled when `multisample` is false. With `reach`, the surface
    *  may stand in for its group moved (see `lookup`); one whose window
-   *  reaches past the buffer and does not fit is cut back to the buffer. */
+   *  reaches past the buffer and does not fit is cut back to the buffer.
+   *  Short of room, it first frees the surfaces of groups drawn straight
+   *  through while they move, largest first, if that makes enough. */
   reserve(
     id: string, width: number, height: number, rect: DeviceRect, multisample = true,
     reach?: { box: DeviceBox; window: DeviceRect },
   ): RetainedDraw | null {
     this.fitTo(width, height);
     const buffer = { x: 0, y: 0, width, height };
-    if (reach && (reach.window.width > width || reach.window.height > height) && !this.fits(id, rect)) {
+    if (reach && (reach.window.width > width || reach.window.height > height) && !this.room(id, rect, true)) {
       return this.reserve(id, width, height, boxWithin(reach.box, buffer), multisample, { box: reach.box, window: buffer });
     }
     const existing = this.surfaces.get(id);
@@ -219,13 +240,16 @@ export class RetainedSurfaces {
     const held = this.scratches.get(samples);
     const scratchW = Math.max(held?.width ?? 0, empty ? 0 : Math.min(rect.width, this.tile));
     const scratchH = Math.max(held?.height ?? 0, empty ? 0 : Math.min(rect.height, this.tile));
-    if (!this.fits(id, rect)) {
+    if (!this.room(id, rect, true)) {
       this.declined++;
       return null;
     }
     const surface: Surface = existing ?? {
       gl: null, rect, key: null, stamp: [], frame: this.frame, samples, reach: null, panned: false, seen: null,
+      adrift: false, evicted: false,
     };
+    surface.adrift = false;
+    surface.evicted = false;
     this.surfaces.set(id, surface);
     this.fitSurface(surface, rect);
     surface.frame = this.frame;
@@ -292,10 +316,25 @@ export class RetainedSurfaces {
     this.height = height;
   }
 
-  /** Whether `id` can hold a surface covering `rect` within the budget. */
-  private fits(id: string, rect: DeviceRect): boolean {
+  /** Whether `id` can hold a surface covering `rect` within the budget,
+   *  counting what freeing other groups' surfaces that are adrift would make;
+   *  with `free`, freeing them, largest first, until it can. */
+  private room(id: string, rect: DeviceRect, free: boolean): boolean {
     const existing = this.surfaces.get(id);
-    return this.keptBytes() + rectBytes(rect) - (existing ? rectBytes(existing.rect) : 0) <= this.budget;
+    let over = this.keptBytes() + rectBytes(rect) - (existing ? rectBytes(existing.rect) : 0) - this.budget;
+    if (over <= 0) return true;
+    const adrift = [...this.surfaces].filter(([at, s]) => at !== id && s.adrift && !s.evicted).map(([, s]) => s);
+    if (adrift.reduce((n, s) => n + rectBytes(s.rect), 0) < over) return false;
+    if (!free) return true;
+    adrift.sort((a, b) => rectBytes(b.rect) - rectBytes(a.rect));
+    for (const surface of adrift) {
+      if (over <= 0) break;
+      over -= rectBytes(surface.rect);
+      this.deleteSurface(surface);
+      surface.rect = { x: 0, y: 0, width: 0, height: 0 };
+      surface.evicted = true;
+    }
+    return true;
   }
 
   private keptBytes(): number {
@@ -344,31 +383,6 @@ function pixelsOf(surface: Surface, dx: number, dy: number): RetainedPixels {
     texture: surface.gl?.texture ?? null,
     rect: dx === 0 && dy === 0 ? rect : { ...rect, x: rect.x + dx, y: rect.y + dy },
   };
-}
-
-/** Whether a surface drawn with `reach`, moved `dx, dy` device pixels, holds
- *  every pixel its group paints on a `width × height` buffer. */
-function covers(reach: { box: DeviceBox; window: DeviceRect }, dx: number, dy: number, width: number, height: number): boolean {
-  const needed = boxWithin(reach.box, { x: -dx, y: -dy, width, height });
-  if (needed.width === 0 || needed.height === 0) return true;
-  const w = reach.window;
-  return needed.x >= w.x && needed.y >= w.y
-    && needed.x + needed.width <= w.x + w.width && needed.y + needed.height <= w.y + w.height;
-}
-
-/** `rect` cut into tiles at most `side` on a side, row by row from its top
- *  left; the last in each row and column takes what is left. */
-export function tilesOf(rect: DeviceRect, side: number): DeviceRect[] {
-  const out: DeviceRect[] = [];
-  for (let y = 0; y < rect.height; y += side) {
-    for (let x = 0; x < rect.width; x += side) {
-      out.push({
-        x: rect.x + x, y: rect.y + y,
-        width: Math.min(side, rect.width - x), height: Math.min(side, rect.height - y),
-      });
-    }
-  }
-  return out;
 }
 
 function rectBytes(rect: DeviceRect): number {

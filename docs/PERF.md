@@ -36,16 +36,6 @@ When work merges, retire its entry here in the same change.
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
   Closes when the consumer reports that run, or on 2026-12-01 with none, delete it.
 
-- **(P3) [agent] A pan margin the retain budget refuses goes unevicted.** An unchanged layer of 250 commands or
-  more (10 when it runs effects passes) is drawn once into its own texture and composited
-  (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the policy is
-  `packages/core/src/core/layers/retain.ts`), and a world layer follows a pan by compositing its surface moved,
-  drawn again with a margin of an eighth of the buffer each side (`PAN_MARGIN`). The default budget is 384 MiB
-  (2026-10-27); above about 15 canvas-sized layers with margins at 2560x1600 it fills, and a margin goes to
-  whichever layer asks first rather than evicting a surface that cannot follow the pan, so the layers past it
-  are drawn straight through for the rest of the pan. Closes when `RetainedSurfaces.reserve` frees a surface
-  that cannot follow a pan before it refuses a margin to one that can.
-
 ---
 
 ## Animation
