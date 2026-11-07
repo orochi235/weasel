@@ -1,4 +1,5 @@
 import { isByAxis } from '../axes.ts';
+import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { declaredSteps } from './steps.ts';
@@ -18,7 +19,6 @@ interface Node {
 }
 
 const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
-const TOKEN_REF = /^\{([^}.]+)\}$/;
 const VAR_REF = /var\(\s*--wzl-([\w-]+)/g;
 
 const node = (): Node => ({ axes: new Set(), seeds: new Set(), edges: new Set() });
@@ -30,8 +30,8 @@ function scan(v: unknown, into: Node): void {
     const seed = SEED_REF.exec(s);
     if (seed) into.seeds.add(seed[1]);
     else {
-      const ref = TOKEN_REF.exec(s);
-      if (ref) into.edges.add(ref[1]);
+      const ref = refTarget(s);
+      if (ref !== null) into.edges.add(ref);
       for (const m of s.matchAll(VAR_REF)) into.edges.add(m[1]);
     }
     return;

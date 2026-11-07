@@ -1,5 +1,6 @@
 import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes.ts';
 import { AXES_EXT, overrideKey, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
+import { refTarget } from '../../dtcg/resolve.ts';
 import { ALPHA_EXT, SCOPE_EXT, type RawToken, type TokenValue } from '../../dtcg/types.ts';
 import { themeAxes } from '../../resolveTheme.ts';
 import type { Theme } from '../../theme.ts';
@@ -11,8 +12,6 @@ interface Layer {
   primitives: Record<string, DtcgGroup>;
   modes: Record<string, Record<string, DtcgGroup>>;
 }
-
-const REF = /^\{([^}.]+)\}$/;
 
 /** A DTCG document as {@link toDTCG} writes it. */
 export interface DtcgExport {
@@ -51,8 +50,8 @@ export function toDTCG(theme: Theme): DtcgExport {
   };
   /** `{name}` → `{type.name}`, the path a DTCG tool resolves. */
   const alias = (value: TokenValue): TokenValue => {
-    const target = typeof value === 'string' ? REF.exec(value.trim())?.[1] : undefined;
-    const type = target === undefined ? undefined : typeOf(target);
+    const target = refTarget(value);
+    const type = target === null ? undefined : typeOf(target);
     return type === undefined ? value : `{${type}.${target}}`;
   };
 
