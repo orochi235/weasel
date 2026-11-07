@@ -8,8 +8,9 @@
  * differ too. Nothing else may.
  */
 import { afterEach, expect, it } from 'vitest';
-import { pathFromD, pointAlongPath, polylineFromPoints, type Path } from '@weasel-js/geom';
-import { clipRibbon, clipWindow, tessellateStroke } from '@weasel-js/stroke';
+import { mat3, pathFromD, pointAlongPath, polylineFromPoints, type Affine, type Path } from '@weasel-js/geom';
+import { clipRibbon, clipWindow, strokeSpaceOf, tessellateStroke, type StrokeMetric } from '@weasel-js/stroke';
+import { quantizeStrokeScale } from '../cache/strokeMeshCache';
 import type { CommandPaint, CommandStroke, Stroke, StrokeTrim } from '@weasel-js/paint';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from '../DrawCommand';
@@ -69,20 +70,27 @@ export function cutsOf(path: Path, trim: StrokeTrim): { x: number; y: number }[]
     .map((t) => pointAlongPath(path, t)!.point);
 }
 
-/** Every triangle edge of either build of `stroke` along `path`, as x0, y0, x1, y1. */
-export function edgesOf(path: Path, stroke: CommandStroke, insets: { start?: number; end?: number } = {}): number[] {
+/** Every triangle edge of either build of `stroke` along `path`, as x0, y0, x1, y1, on
+ *  screen under `view`, built in `metric` where one is given. */
+export function edgesOf(
+  path: Path, stroke: CommandStroke, insets: { start?: number; end?: number } = {},
+  metric?: StrokeMetric, view: Affine = [1, 0, 0, 1, 0, 0], seam = 1,
+): number[] {
   const { trim, ...untrimmed } = stroke as Stroke;
-  const opts = { flattenTolerance: TOLERANCE, startInset: insets.start, endInset: insets.end };
+  const opts = { flattenTolerance: TOLERANCE, startInset: insets.start, endInset: insets.end, metric };
   const ribbon = clipRibbon(path, untrimmed, opts);
-  const meshes = [tessellateStroke(path, stroke as Stroke, opts), ribbon.mesh, clipWindow(ribbon, path, trim!, 1)?.ends];
+  const meshes = [tessellateStroke(path, stroke as Stroke, opts), ribbon.mesh, clipWindow(ribbon, path, trim!, seam)?.ends];
   const out: number[] = [];
+  const [a, b, c, d, e, f] = view;
+  const push = (x: number, y: number) => out.push(a * x + c * y + e, b * x + d * y + f);
   for (const mesh of meshes) {
     if (!mesh) continue;
     const v = mesh.vertices, idx = mesh.indices;
     for (let t = 0; t < idx.length; t += 3) {
       for (let k = 0; k < 3; k++) {
         const p = idx[t + k] * 2, q = idx[t + (k + 1) % 3] * 2;
-        out.push(v[p], v[p + 1], v[q], v[q + 1]);
+        push(v[p], v[p + 1]);
+        push(v[q], v[q + 1]);
       }
     }
   }
@@ -158,7 +166,10 @@ const GRADIENT: CommandPaint = {
  * ground twice at a sharp turn, which a stroke's paint must not show. Each
  * may differ by `tolerance` in a channel: the rebuilt ribbon is small enough
  * to batch, which reads a gradient off a ramp, and vertex colors interpolate
- * across triangles the two builds cut differently.
+ * across triangles the two builds cut differently. Vertex colors are drawn on
+ * the curve alone: where a sharp turn's quads overlap, the clipped ribbon's
+ * earlier segment paints the overlap, and the rebuilt one splits it at the
+ * bisector, so each shows a different anchor's color there.
  */
 const PAINTS: [string, Pick<CommandStroke, 'paint' | 'vertexColors'>, CommandPaint, number, number][] = [
   ['translucent', { paint: { color: '#ffb000', opacity: 0.5 } }, { color: '#ffb000' }, 0.5, 1],
@@ -174,6 +185,7 @@ const PAINTS: [string, Pick<CommandStroke, 'paint' | 'vertexColors'>, CommandPai
 export function paintCases(antialias: boolean): void {
   for (const [name, path, curved] of SHAPES) {
     for (const [painted, fields, opaquePaint, alpha, tolerance] of PAINTS) {
+      if (fields.vertexColors && !curved) continue;
       it(`paints what the rebuilt one does: ${name}, ${painted}${antialias ? ', multisampled' : ''}`, () => {
         for (const trim of TRIMS) {
           const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', ...fields, trim };
@@ -196,4 +208,36 @@ function pixelAt(px: Uint8Array, at: string): string {
   const [x, y] = at.split(',').map(Number);
   const i = ((H - 1 - Math.floor(y)) * W + Math.floor(x)) * 4;
   return Array.from(px.subarray(i, i + 4)).join('/');
+}
+
+/** A view that stretches and shears, so a `{ px }` stroke is built in its metric. */
+const STRETCH: Affine = [0.8, 0, 0.25, 0.95, 0, 0];
+
+/** One test per open shape, translucent and opaque, each against every trim, in a stretched view. */
+export function metricCases(antialias: boolean): void {
+  const [a, b, c, d] = STRETCH;
+  const { scale, metric } = strokeSpaceOf(a, b, c, d);
+  const px = 9;
+  const seam = 1 / Math.sqrt(Math.abs(a * d - b * c));
+  for (const [name, path, curved] of SHAPES) {
+    for (const opacity of [1, 0.5]) {
+      it(`clips in the view's metric what the rebuilt one draws: ${name}, opacity ${opacity}${antialias ? ', multisampled' : ''}`, () => {
+        for (const trim of TRIMS) {
+          const stroke: CommandStroke = { width: { px }, cap: 'round', join: 'round', paint: { color: '#30a0ff', opacity }, trim };
+          const view = (children: DrawCommand[]): DrawCommand[] => [{ kind: 'group', transform: mat3.fromAffine(STRETCH), children }];
+          const clipped = paint(view(frame(path, stroke)), antialias, true);
+          const once = view(frame(path, { ...stroke, paint: { color: '#30a0ff' } }));
+          const rebuilt = paint(opacity < 1 ? [{ kind: 'group', isolate: true, alpha: opacity, children: once }] : once, antialias, false);
+          expect(clipped.programs, JSON.stringify(trim)).toBe(1);
+          expect(inked(clipped.px)).toBeGreaterThan(0);
+          const width = px / quantizeStrokeScale(px, scale);
+          const edges = edgesOf(path, { ...stroke, width }, {}, metric ?? undefined, STRETCH, seam);
+          const cuts = cutsOf(path, trim).map(({ x, y }) => ({ x: a * x + c * y, y: b * x + d * y }));
+          const near = antialias ? 0.75 : 1 / 16;
+          const off = offCuts(clipped.px, rebuilt.px, cuts, edges, near, curved ? 14 : 0, 1);
+          expect(off.slice(0, 8).map((at) => `${at} ${pixelAt(clipped.px, at)} vs ${pixelAt(rebuilt.px, at)}`), JSON.stringify(trim)).toEqual([]);
+        }
+      });
+    }
+  }
 }

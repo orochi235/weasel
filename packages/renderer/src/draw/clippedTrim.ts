@@ -8,9 +8,12 @@
  * twice what the rebuilt ribbon covers once. An opaque solid stroke cannot
  * show that and draws straight. Any other — translucent, vertex-colored, or in
  * a paint but a solid — marks what it covers in the stencil and then paints
- * its untrimmed ribbon there once. A stroke the batch would take anyway,
- * which is small enough to rebuild, is rebuilt trimmed instead, as is one
- * built in a stretched view's metric.
+ * its untrimmed ribbon there once; where a turn's quads overlap, the earlier
+ * segment paints, so vertex colors there are that segment's rather than
+ * split at the bisector. A stroke built in a stretched view's
+ * metric is clipped in that metric's measure. A stroke the batch would take
+ * anyway, which is small and joins the run it sits in, is rebuilt trimmed
+ * instead, as is one whose heads are built in a space its ribbon is not.
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor, type CommandPaint, type StrokeTrim } from '@weasel-js/paint';
@@ -42,12 +45,13 @@ export function drawClippedTrim(
   const trim: StrokeTrim | undefined = stroke.trim;
   const variants = ctx.batchVariants;
   if (trim === undefined || variants?.trimClip !== true) return false;
-  if (spaces.ribbon?.metric || spaces.start?.metric || spaces.end?.metric) return false;
+  const metric = spaces.ribbon?.metric;
+  if (spaces.start?.metric !== metric || spaces.end?.metric !== metric) return false;
 
-  const ribbon = strokeClipRibbon(cmd.path, stroke, flattenToleranceOf(ctx));
+  const ribbon = strokeClipRibbon(cmd.path, stroke, flattenToleranceOf(ctx), spaces);
   if (ribbon.mesh.indices.length === 0) return true;
   if (canBatchMesh(ctx, ribbon.mesh)) return false;
-  const window = clipWindow(ribbon, cmd.path, trim, oneScreenPixel(ctx));
+  const window = clipWindow(ribbon, cmd.path, trim, metric ? onePixelInMetric(ctx) : oneScreenPixel(ctx));
   if (window === null) return true;
 
   flushForOwnDraw(ctx);
@@ -134,6 +138,13 @@ function opaque(ctx: DrawContext, paint: { color: string; opacity?: number }): b
   // Row-major 4x5: the alpha row must pass alpha through untouched.
   const m = ctx.state.colorMatrix;
   return m[15] === 0 && m[16] === 0 && m[17] === 0 && m[18] === 1 && m[19] === 0;
+}
+
+/** One screen pixel in a stroke metric's units, which the screen measures alike in every direction. */
+function onePixelInMetric(ctx: DrawContext): number {
+  const m = ctx.state.transform;
+  const det = Math.abs(m[0] * m[4] - m[1] * m[3]);
+  return det > 0 ? 1 / Math.sqrt(det) : 0;
 }
 
 /** The shortest world length that spans a pixel on screen whichever way it runs. */

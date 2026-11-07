@@ -3,11 +3,12 @@
  * multisampled canvas (`./testing/trimClip.ts` says what may differ).
  */
 import { describe } from 'vitest';
-import { capCases, disposeAfterEach, paintCases } from './testing/trimClip';
+import { capCases, disposeAfterEach, metricCases, paintCases } from './testing/trimClip';
 
 disposeAfterEach();
 
 describe('a trimmed stroke clipped in the shader, multisampled', () => {
   capCases(true);
   paintCases(true);
+  metricCases(true);
 });

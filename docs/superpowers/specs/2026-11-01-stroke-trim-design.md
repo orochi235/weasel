@@ -133,13 +133,15 @@ every reader cuts its own flattening at those; a dash phase stays in the reader'
   turn corners are cut at, so corners are resolved before a non-uniform pose frame
   (`pathThroughPoseFrame`, 2026-11-02); the framed outline then has the local path's segments and a
   trim's curve positions name the same points on both.
-- **Caches**: the marker command cache keys on the trim, so heads rebuild as a trim animates. The
-  ribbon does not, for an opaque solid stroke too large to batch: it is built once untrimmed with an
-  arc length on every vertex (stroke's `clipRibbon`) and clipped in the shader, each cut end drawn as
-  a little geometry of its own (`clipWindow`; renderer `draw/clippedTrim.ts`, 2026-11-03). Every
-  other trimmed stroke is rebuilt trimmed, its mesh keyed on the trim: a translucent one, since the
-  clipped ribbon covers some ground twice; one the batch takes, which is small; and one built in a
-  stretched view's metric, a vertex-colored one, or any paint but a solid.
+- **Caches**: a stroke too large to batch is built once untrimmed with an arc length on every vertex
+  (stroke's `clipRibbon`) and clipped in the shader, each cut end drawn as a little geometry of its
+  own (`clipWindow`; renderer `draw/clippedTrim.ts`, 2026-11-03). The clipped ribbon keeps each
+  segment's whole quad at a turn, so it covers some ground twice: an opaque solid stroke draws
+  straight, and any other marks what it covers on stencil bit 0 and paints its untrimmed ribbon there
+  once (2026-11-07). Heads are built once, unplaced, and drawn under the transform their placement
+  makes (stroke's `markerPlacements`, renderer `cache/markerCommandCache.ts`), so a trim only moves
+  them (2026-11-07). Still rebuilt trimmed, the mesh keyed on the trim: a stroke the batch takes,
+  which is small and joins the run it sits in, and one built in a stretched view's metric.
 - **Export**: SVG (`svg/src/trimmedStroke.ts`) and PDF (`pdf/src/strokeOps.ts`) bake the trim through
   stroke's `trimmedPath`: they write the visible span's geometry, curves split rather than flattened, so markers land at the window's ends and dashes
   still work. The `pathLength` + `stroke-dasharray` trick is rejected because it leaves markers at

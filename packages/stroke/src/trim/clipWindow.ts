@@ -5,6 +5,7 @@ import type { MeasuredPolyline } from '../tessellate/dash';
 import { expandPolyline, type RibbonOut } from '../tessellate/expandPolyline';
 import { emitCap, makeSeg } from '../tessellate/ribbon';
 import { ribbonMesh } from '../tessellate/stroke';
+import { coordsOutOfMetric } from '../tessellate/metric';
 import type { ClipRibbon, ClipSubpath } from './clipRibbon';
 import { trimSpan } from './trimSpan';
 
@@ -30,7 +31,8 @@ export interface ClipWindow {
  * drawn as geometry instead, in `ends`: the run's last `2 * seam` up to the
  * cut, with its cap, and the window stops `seam` short of it. A `seam` of a
  * pixel or more puts the shader's edge under that geometry, which overlaps
- * the ribbon there: so the ribbon is to be opaque.
+ * the ribbon there: so the ribbon is to be opaque. Every length, `seam`
+ * included, is in the ribbon's measure: its metric's, where it has one.
  */
 export function clipWindow(ribbon: ClipRibbon, path: Path, trim: StrokeTrim, seam = 0): ClipWindow | null {
   const span = trimSpan(path, trim);
@@ -41,7 +43,7 @@ export function clipWindow(ribbon: ClipRibbon, path: Path, trim: StrokeTrim, sea
   if (first > last) return null;
   const { runs } = pathLengthTable(path);
   const at = (r: number, pos: CurvePosition | null) => (pos === null ? null
-    : polylineAtCurve(subs[r].polyline, pos.segment, pos.t, runs[r]).length);
+    : inRibbonMeasure(subs[r], polylineAtCurve(subs[r].polyline, pos.segment, pos.t, runs[r]).length));
   const lo = at(first, span.from.run === first ? span.from : null) ?? 0;
   const hi = at(last, span.to.run === last ? span.to : null) ?? subs[last].length;
   if (first === last && hi - lo <= EPS) return null;
@@ -62,7 +64,7 @@ export function clipWindow(ribbon: ClipRibbon, path: Path, trim: StrokeTrim, sea
   const tailFrom = cutsTail ? Math.max(to - reach, tail.offset, from) : to;
   if (first === last && cutsHead && cutsTail && headTo >= tailFrom) {
     drawSpan(ribbon, from, to, true, true, out);
-    return { from: to + margin, to: from - margin, ends: meshOf(out, path) };
+    return { from: to + margin, to: from - margin, ends: meshOf(out, path, ribbon) };
   }
   if (cutsHead) {
     drawSpan(ribbon, from, headTo, true, false, out);
@@ -72,10 +74,31 @@ export function clipWindow(ribbon: ClipRibbon, path: Path, trim: StrokeTrim, sea
     drawSpan(ribbon, tailFrom, to, false, true, out);
     to = Math.max(to - seam, tail.offset - margin / 2);
   }
-  return { from, to, ends: meshOf(out, path) };
+  return { from, to, ends: meshOf(out, path, ribbon) };
 }
 
-const meshOf = (out: RibbonOut, path: Path): Mesh | null => (out.idx.length > 0 ? ribbonMesh(out, path) : null);
+function meshOf(out: RibbonOut, path: Path, ribbon: ClipRibbon): Mesh | null {
+  if (out.idx.length === 0) return null;
+  const mesh = ribbonMesh(out, path);
+  if (ribbon.metric) coordsOutOfMetric(mesh.vertices, ribbon.metric);
+  return mesh;
+}
+
+/** `length`, along `sub`'s world flattening, in the ribbon's measure. */
+function inRibbonMeasure(sub: ClipSubpath, length: number): number {
+  const m = sub.measure;
+  if (m === undefined) return length;
+  const { world, ribbon } = m;
+  let lo = 0, hi = world.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (world[mid] <= length) lo = mid;
+    else hi = mid;
+  }
+  const span = world[hi] - world[lo];
+  const f = span > EPS ? Math.min(Math.max((length - world[lo]) / span, 0), 1) : 0;
+  return ribbon[lo] + (ribbon[hi] - ribbon[lo]) * f;
+}
 
 /**
  * Everything the ribbon strokes between lengths `a` and `b`, with a cap at

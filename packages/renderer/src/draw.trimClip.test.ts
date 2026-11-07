@@ -97,4 +97,15 @@ describe('a trim tween on a 1,000-anchor path', () => {
     }
     expect(shapes).toBe(2);
   });
+
+  it('builds nothing after its first frame in a stretched view, whose metric it is built in', () => {
+    const path = wave();
+    const stroke: CommandStroke = { ...STROKE, width: { px: 5 }, paint: { color: '#204080', opacity: 0.5 } };
+    const transform = new Float64Array([1.6, 0, 0, 0, 0.7, 0, 0, 0, 1]);
+    for (let f = 0; f < 10; f++) {
+      const end = (f + 1) / 10;
+      r.render([{ kind: 'group', transform, children: [{ kind: 'path', path, stroke: { ...stroke, trim: { start: end / 4, end } } }] }]);
+      expect(built.filter((p) => p === path), `frame ${f}`).toHaveLength(1);
+    }
+  });
 });
