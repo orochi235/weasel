@@ -267,7 +267,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
  * readout the box moves the rows that never had an input.
  */
 function boxedReadout(readout: ReactNode): ReactNode {
-  if (readout == null || typeof readout === 'boolean') return readout;
+  if (typeof readout !== 'string' && typeof readout !== 'number') return readout;
   return (
     <span className={s.readoutGroup}>
       <span className={s.readoutText}>{readout}</span>

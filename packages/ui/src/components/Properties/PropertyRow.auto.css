@@ -48,11 +48,15 @@
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size-xs);
   color: var(--wzl-secondary-fg);
+}
+
+/* A readout naming its value cases only the word, so the value reads as written. */
+.rowAuto .readout:not(:has(.autoReadout)),
+.autoWord {
   text-transform: var(--wzl-params-label-case, uppercase);
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
 
-/* `<PropertyAutoReadout>`: the value after the word reads as written, not in the label's case. */
 .autoReadout {
   white-space: nowrap;
 }
@@ -61,7 +65,3 @@
   color: var(--wzl-fg-muted);
 }
 
-.autoReadoutValue {
-  text-transform: none;
-  letter-spacing: normal;
-}

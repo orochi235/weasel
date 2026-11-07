@@ -5,9 +5,12 @@ import s from './Properties.module.css';
  *  value as a value. Pass it as the row's `readout`. */
 export function PropertyAutoReadout({ value }: { value: ReactNode }) {
   return (
-    <span className={s.autoReadout}>
-      auto<span className={s.autoReadoutSep}> · </span>
-      <span className={s.autoReadoutValue}>{value}</span>
+    <span className={s.readoutGroup}>
+      <span className={`${s.readoutText} ${s.autoReadout}`}>
+        <span className={s.autoWord}>auto</span>
+        <span className={s.autoReadoutSep}> · </span>
+        {value}
+      </span>
     </span>
   );
 }
