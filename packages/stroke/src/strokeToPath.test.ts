@@ -82,6 +82,14 @@ describe('strokeToPath', () => {
     expect(boundsOfPath(out)).toMatchObject({ y: -2.5, height: 5 });
   });
 
+  it('keeps an inner or outer stroke on its side of a rect drawn with a negative width or height', () => {
+    const flipped = { kind: 'rect' as const, x: 10, y: 10, width: -10, height: -10 };
+    const outer = strokeToPath(flipped, { paint: PAINT, width: 2, align: 'outer' });
+    expect(boundsOfPath(outer)).toMatchObject({ x: -2, y: -2, width: 14, height: 14 });
+    const inner = strokeToPath(flipped, { paint: PAINT, width: 2, align: 'inner' });
+    expect(boundsOfPath(inner)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+  });
+
   it('reads the dashes of a screen-width stroke as screen pixels at the scale it is given', () => {
     const out = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: { px: 2 }, dash: [10, 10] }, { scale: 2 });
     expect(pathContainsPoint(out, 2, 0)).toBe(true);
