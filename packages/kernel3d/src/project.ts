@@ -5,7 +5,7 @@
  */
 
 import { transformPoint4, type Ray, type Vec3 } from '@weasel-js/geom/3d';
-import { cameraEye, cameraViewProjection, type Camera3d } from './camera';
+import { cameraViewProjection, type Camera3d } from './camera';
 import { ndcToScreen, rayThroughScreenPoint, type ScreenBox } from './screen';
 
 /** The camera and the pane it draws into; `width`/`height` are the pane's
@@ -44,12 +44,7 @@ export function viewProjectionOf(viewport: Viewport3d) {
 }
 
 export function rayAt(viewport: Viewport3d, point: Point): Ray | null {
-  return rayThroughScreenPoint(
-    point,
-    rectOf(viewport),
-    viewProjectionOf(viewport),
-    cameraEye(viewport.camera),
-  );
+  return rayThroughScreenPoint(point, rectOf(viewport), viewProjectionOf(viewport));
 }
 
 /** Where `p` draws in the viewport, or null when it is behind the near plane

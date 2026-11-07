@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  lookAt, multiply, perspective, transformPoint4, type Aabb, type Mat4, type Vec3,
+  lookAt, multiply, normalize, perspective, transformPoint4, type Aabb, type Mat4, type Vec3,
 } from '@weasel-js/geom/3d';
 import {
   ndcToScreen, projectAabbToScreen, rayThroughScreenPoint, screenToNdc, type ScreenBox,
@@ -55,21 +55,24 @@ describe('rayThroughScreenPoint', () => {
   const vp = cameraAt(eye);
 
   it('shoots straight ahead from the middle of the viewport', () => {
-    const ray = rayThroughScreenPoint({ x: 200, y: 150 }, RECT, vp, eye)!;
-    expect(ray.origin).toEqual(eye);
+    const ray = rayThroughScreenPoint({ x: 200, y: 150 }, RECT, vp)!;
+    // From the near plane to the far one: what the camera draws, at t 0..1.
+    expect(ray.origin.x).toBeCloseTo(0, 9);
+    expect(ray.origin.y).toBeCloseTo(0, 9);
+    expect(ray.origin.z).toBeCloseTo(eye.z - NEAR, 9);
     expect(ray.direction.x).toBeCloseTo(0, 6);
     expect(ray.direction.y).toBeCloseTo(0, 6);
-    expect(ray.direction.z).toBeCloseTo(-1, 6);
+    expect(ray.direction.z).toBeCloseTo(-(100 - NEAR), 6);
   });
 
   it('leans right for a point right of centre', () => {
-    const ray = rayThroughScreenPoint({ x: 350, y: 150 }, RECT, vp, eye)!;
+    const ray = rayThroughScreenPoint({ x: 350, y: 150 }, RECT, vp)!;
     expect(ray.direction.x).toBeGreaterThan(0);
     expect(ray.direction.z).toBeLessThan(0);
   });
 
   it('leans up for a point above centre, despite y running down the screen', () => {
-    const ray = rayThroughScreenPoint({ x: 200, y: 50 }, RECT, vp, eye)!;
+    const ray = rayThroughScreenPoint({ x: 200, y: 50 }, RECT, vp)!;
     expect(ray.direction.y).toBeGreaterThan(0);
   });
 
@@ -77,14 +80,14 @@ describe('rayThroughScreenPoint', () => {
     // An eye on its own target has no orientation.
     const flat = cameraAt({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 });
     expect(
-      rayThroughScreenPoint({ x: 350, y: 150 }, RECT, flat, { x: 0, y: 0, z: 0 }),
+      rayThroughScreenPoint({ x: 350, y: 150 }, RECT, flat),
     ).toBeNull();
     const zero = new Array(16).fill(0) as Mat4;
-    expect(rayThroughScreenPoint({ x: 350, y: 150 }, RECT, zero, eye)).toBeNull();
+    expect(rayThroughScreenPoint({ x: 350, y: 150 }, RECT, zero)).toBeNull();
   });
 
   it('casts no ray through a pane with no area', () => {
-    expect(rayThroughScreenPoint({ x: 0, y: 150 }, { x: 0, y: 0, width: 0, height: 300 }, vp, eye)).toBeNull();
+    expect(rayThroughScreenPoint({ x: 0, y: 150 }, { x: 0, y: 0, width: 0, height: 300 }, vp)).toBeNull();
   });
 
   it('casts the same ray through a world scaled down by 1e-10', () => {
@@ -94,12 +97,11 @@ describe('rayThroughScreenPoint', () => {
       perspective(Math.PI / 4, RECT.width / RECT.height, NEAR * k, 100 * k),
       lookAt(tinyEye, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }),
     );
-    const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp, eye)!;
-    const tiny = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, tinyVp, tinyEye)!;
+    const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp)!;
+    const tiny = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, tinyVp)!;
     expect(tiny).not.toBeNull();
-    for (const axis of ['x', 'y', 'z'] as const) {
-      expect(tiny.direction[axis]).toBeCloseTo(unit.direction[axis], 6);
-    }
+    const [a, b] = [normalize(tiny.direction), normalize(unit.direction)];
+    for (const axis of ['x', 'y', 'z'] as const) expect(a[axis]).toBeCloseTo(b[axis], 6);
   });
 
   it('casts the same ray whatever the far plane', () => {
@@ -107,12 +109,11 @@ describe('rayThroughScreenPoint', () => {
       perspective(Math.PI / 4, RECT.width / RECT.height, NEAR, 1e10),
       lookAt(eye, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }),
     );
-    const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp, eye)!;
-    const far = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, farVp, eye)!;
+    const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp)!;
+    const far = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, farVp)!;
     expect(far).not.toBeNull();
-    for (const axis of ['x', 'y', 'z'] as const) {
-      expect(far.direction[axis]).toBeCloseTo(unit.direction[axis], 6);
-    }
+    const [a, b] = [normalize(far.direction), normalize(unit.direction)];
+    for (const axis of ['x', 'y', 'z'] as const) expect(a[axis]).toBeCloseTo(b[axis], 6);
   });
 });
 

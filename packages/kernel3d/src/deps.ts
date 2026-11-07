@@ -72,7 +72,7 @@ function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
 export { screenBoxOf } from './pickIndex';
 
 /**
- * Nearest node along the ray the screen point names.
+ * Nearest node the camera draws along the ray the screen point names.
  *
  * The kit calls this with what it believes is a world point; a 3D host feeds
  * the dispatcher an identity `clientToWorld`, so it is the pane-relative screen
@@ -84,7 +84,8 @@ export function createNodeAtPoint<TData, TLayer extends string>(
   return (point, exclude) => {
     const ray = rayAt(world.viewport(), point);
     if (!ray) return null;
-    return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null);
+    // The ray spans near to far plane at t 0..1.
+    return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1);
   };
 }
 

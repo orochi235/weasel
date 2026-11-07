@@ -109,10 +109,33 @@ describe('createNodeAtPoint', () => {
     expect(pick(CENTER)).toBe(idsOf(scene)[0]);
   });
 
+  it('picks only what the camera draws, between its near and far planes', () => {
+    const scene = createTestScene();
+    const vp = viewport();
+    const pick = createNodeAtPoint(world(scene, () => vp));
+    const eye = cameraEye(vp.camera);
+    const forward = scale(sub(vp.camera.target, eye), 1 / vp.camera.distance);
+    const sphere = idsOf(scene)[1];
+    const clipped = scene.add({
+      kind: 'mark', layer: 'solids', data: {},
+      pose: pose3(add(eye, scale(forward, vp.camera.near / 2)), { x: 0.02, y: 0.02, z: 0.02 }),
+    });
+    const m = cameraViewProjection(vp.camera, WIDTH / HEIGHT);
+    const rect = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
+    expect(projectAabbToScreen(boundsOfTestNode(scene.get(clipped)!)!, m, rect)).toBeNull();
+    expect(pick(CENTER)).toBe(sphere);
+    expect(pick(CENTER, [sphere])).toBeNull();
+    scene.add({
+      kind: 'mark', layer: 'solids', data: {},
+      pose: pose3(add(eye, scale(forward, vp.camera.far * 2)), { x: 50, y: 50, z: 50 }),
+    });
+    expect(pick(CENTER, [sphere])).toBeNull();
+  });
+
   it('picks nothing when the camera casts no ray', () => {
     const scene = createTestScene();
-    // Sitting on its target, inside the middle solid: a fabricated ray from the
-    // eye would start inside it and report a hit.
+    // Sitting on its target, inside the middle solid: a fabricated ray would
+    // start inside it and report a hit.
     const flat = viewport({ camera: createCamera({ distance: 0, target: { x: 0, y: 0.5, z: 0 } }) });
     const pick = createNodeAtPoint(world(scene, () => flat));
     expect(pick(CENTER)).toBeNull();
