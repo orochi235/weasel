@@ -1,6 +1,7 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { shapeSources } from '../selectionSubtree';
+import { withoutPageStructure } from 'core/scene/nodeGates';
 import type { Op } from 'core/ops/types';
 import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
@@ -79,7 +80,7 @@ function flipSelection(
   pointer: PointerContextValue | undefined,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
 ): void {
-  const selected = selection.get();
+  const selected = withoutPageStructure(scene, selection.get());
   if (selected.length === 0) return;
   const frame = scenePoseFrame(scene);
   const boxes = boxesOver(frame);

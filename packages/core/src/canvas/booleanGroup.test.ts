@@ -16,8 +16,8 @@ import { buildSceneViewCommands } from './sceneViewRender';
 import { pickWalk, scenePickSource } from './pickWalk';
 import { scenePointQuery } from './SceneCanvas/scenePointQuery';
 import type { View } from 'core/viewport/view';
-import { scenePoseFrame } from 'interactions/actions/poseFrame';
-import { translateEach } from 'interactions/actions/selectionSubtree';
+import { moveNodesOps } from 'interactions/actions/moveNodes';
+import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { createEnterGroupAction } from 'interactions/actions/defaults/enterGroup';
 
 type Data = { shape?: string; fill?: unknown; boolean?: string };
@@ -140,9 +140,8 @@ describe('a boolean group', () => {
 
   it('moves with its children when it is moved', () => {
     const { scene, group } = makeScene('subtract');
-    scene.batch('move', () => translateEach(
-      scene as never, scenePoseFrame(scene as never), AUTO_POSE_DESCRIPTOR, [{ id: group, dx: 300, dy: 0 }],
-    ));
+    const ops = moveNodesOps(scene as never, [group], { dx: 300, dy: 0 }, { poseDescriptor: AUTO_POSE_DESCRIPTOR } as never);
+    scene.applyBatch(ops, 'move', defaultCommitAdapter(scene as never));
     expect(covers(pathOf(scene, group), 325, 25)).toBe(true);
     expect(covers(pathOf(scene, group), 25, 25)).toBe(false);
   });

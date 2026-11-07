@@ -1,7 +1,7 @@
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
-import { selectedRoots } from '../selectionSubtree';
+import { copiedRoots } from '../selectionSubtree';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -50,7 +50,7 @@ export function copySelection(
   const ops: Op[] = [];
   const copies: NodeId[] = [];
   const copyOf = new Map<NodeId, NodeId>();
-  for (const id of selectedRoots(scene, ids)) {
+  for (const id of copiedRoots(scene, ids)) {
     const newId = copySubtree(scene, id, scene.get(id)?.parent ?? null, true, poseOf, label, ops, copyOf);
     if (newId) copies.push(newId);
   }

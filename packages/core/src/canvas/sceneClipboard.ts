@@ -10,14 +10,14 @@
  * in the same session, and as the scene's registry keys, for a snapshot that
  * crossed JSON on the way back.
  */
-import { holderOf, outermost } from '@weasel-js/select';
+import { holderOf } from '@weasel-js/select';
 import type { ClipboardSnapshot, PasteCtx, PasteOmission } from 'core/adapters/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { hasChildren } from 'core/scene/treeShape';
 import { sourcesOf } from 'core/scene/dependents';
 import { definesFrame } from 'core/scene/effectivePose';
-import { withoutPageStructure } from 'core/scene/nodeGates';
+import { copiedRoots } from 'interactions/actions/selectionSubtree';
 import {
   NODE_FN_FIELDS, createNodeFnFields, fnFieldsOfNode, fnKeysOf, type FnBearingNode,
 } from 'core/scene/nodeFnFields';
@@ -116,7 +116,7 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
   };
   // An id an ancestor holds comes with that ancestor's subtree walk. A page
   // or the run is never copied, whatever selection named it.
-  for (const id of withoutPageStructure(scene, outermost(ids, parentOf))) {
+  for (const id of copiedRoots(scene as never, ids)) {
     carrySources(id);
     capture(id, true);
   }

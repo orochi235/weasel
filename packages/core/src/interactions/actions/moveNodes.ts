@@ -68,29 +68,48 @@ export function moveNodesOps(
   deps?: Pick<ActionDeps, 'poseDescriptor' | 'geometryProjection'>,
   label = 'Move',
 ): Op[] {
-  const { dx, dy } = delta;
-  if (dx === 0 && dy === 0) return [];
+  return moveEachOps(scene, [{ ids, ...delta }], deps, label);
+}
+
+/**
+ * The ops that move each entry of `moves` by its own delta, each as
+ * {@link moveNodesOps} moves it. A node two entries reach takes the first
+ * one's delta, and every pose is read before any op is applied.
+ */
+export function moveEachOps(
+  scene: AnyScene,
+  moves: readonly { ids: readonly string[]; dx: number; dy: number }[],
+  deps?: Pick<ActionDeps, 'poseDescriptor' | 'geometryProjection'>,
+  label = 'Move',
+): Op[] {
   const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps?.poseDescriptor));
   const frame = scenePoseFrame(scene);
-  const sources = moveSources(scene, ids);
-  const targets = translateTargets(scene, frame, sources);
-  // The first one leads the rest, as in a drag: each is moved by its world change.
-  const first = targets.find((id) => id === sources[0]) ?? targets[0];
-  const from = first === undefined ? undefined : frame.world(first);
-  const lead: TranslateLead<unknown> | undefined = first === undefined
-    ? undefined
-    : { from, to: translatePoseViaDescriptor(from, dx, dy, descriptorOf(first)) };
-  return translateNodeOps(
-    scene,
-    targets,
-    (id) => {
-      const own = storedDelta(frame, descriptorOf(id), id, dx, dy);
-      return lead ? { ...own, lead: leadUnder(frame.pc, frame.parentWorld(id), lead) } : own;
-    },
-    descriptorOf,
-    deps?.geometryProjection,
-    label,
-  );
+  const claimed = new Set<NodeId>();
+  const ops: Op[] = [];
+  for (const { ids, dx, dy } of moves) {
+    if (dx === 0 && dy === 0) continue;
+    const sources = moveSources(scene, ids);
+    const targets = translateTargets(scene, frame, sources).filter((id) => !claimed.has(id));
+    for (const id of targets) claimed.add(id);
+    // The first one leads the rest, as in a drag: each is moved by its world change.
+    const first = targets.find((id) => id === sources[0]) ?? targets[0];
+    const from = first === undefined ? undefined : frame.world(first);
+    const lead: TranslateLead<unknown> | undefined = first === undefined
+      ? undefined
+      : { from, to: translatePoseViaDescriptor(from, dx, dy, descriptorOf(first)) };
+    ops.push(...translateNodeOps(
+      scene,
+      targets,
+      (id) => {
+        const own = storedDelta(frame, descriptorOf(id), id, dx, dy);
+        return lead ? { ...own, lead: leadUnder(frame.pc, frame.parentWorld(id), lead) } : own;
+      },
+      descriptorOf,
+      deps?.geometryProjection,
+      label,
+    ));
+  }
+  return ops;
 }
 
 /**

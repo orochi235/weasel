@@ -26,6 +26,9 @@ function makeScene(poses: Record<string, Pose>) {
     composition: IDENTITY_POSE_COMPOSITION,
     setPose,
     batch: vi.fn((_label: string, fn: () => void) => fn()),
+    applyBatch: vi.fn((ops: { apply(a: unknown): void }[], _label: string, adapter: unknown) => {
+      for (const op of ops) op.apply(adapter);
+    }),
     nodes: new Map(), roots: [], layers: [],
     childrenOf: vi.fn().mockReturnValue([]), ancestorsOf: vi.fn().mockReturnValue([]),
     renderOrder: vi.fn().mockReturnValue([]),
@@ -87,7 +90,7 @@ describe('alignLeftAction descriptor', () => {
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
     runDescriptor(alignLeftAction, { selection, scene });
-    expect(scene.batch).toHaveBeenCalledOnce();
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
     // only b moves (a is already at union.left=5)
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][1]).toMatchObject({ x: 5, y: 50 });

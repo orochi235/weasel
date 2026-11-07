@@ -118,7 +118,8 @@ made in a module structurally unable to keep it. An opt-out belongs on
 
 ## Found and deliberately not fixed
 
-**Align, distribute and ungroup mutate the scene directly.** They use
+**Align, distribute and ungroup mutate the scene directly.** (Fixed 2026-11-07: all three, and Make
+Boolean Group, now build ops and commit through `commitOps`.) They use
 `scene.batch(label, () => scene.setPose(...))` where every other mutating
 default builds ops and routes them through `deps.applyOps` when present. It is
 undoable — `scene.batch` records — but it lands in the scene's own history

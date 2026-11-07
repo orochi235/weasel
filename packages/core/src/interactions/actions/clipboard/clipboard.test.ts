@@ -75,9 +75,10 @@ describe('clipboardCutAction (descriptor)', () => {
 
     (clipboardCutAction.invoker as ImmediateInvoker).run({ clipboard, scene, selection, applyOps } as never);
 
-    expect(order).toEqual(['copy', 'apply:Cut:2']);
+    expect(order).toEqual(['copy', 'apply:Cut:3']);
     expect(applyBatchLog).toHaveLength(0);
-    expect(selection.set).toHaveBeenCalledWith([]);
+    // The batch's last op clears the selection.
+    expect((applyOps.mock.calls[0]![0].at(-1)!.args as { to: readonly string[] }).to).toEqual([]);
   });
 
   it('falls back to scene.applyBatch without an applyOps hook', () => {

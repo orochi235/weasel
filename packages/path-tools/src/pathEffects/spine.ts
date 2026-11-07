@@ -58,8 +58,7 @@ export const setBlendSpineAction: Action & { requires: string[] } = {
         createSetDependsOnOp({ id: blend.id, from: blend.dependsOn, to: [a!, b!, spine.id], label: SET_LABEL }),
         ...(old !== undefined ? releasedOps(scene, old, [blend], SET_LABEL) : []),
         ...takenOps(scene, blend, 2, spine.id, SET_LABEL),
-      ], SET_LABEL);
-      deps.selection?.set([blend.id] as never);
+      ], SET_LABEL, { select: [blend.id] });
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
@@ -102,8 +101,7 @@ export const releaseBlendSpineAction: Action & { requires: string[] } = {
       }
       if (ops.length === 0) return;
       for (const [spine, blends] of bySpine) ops.push(...releasedOps(deps.scene as AnyScene, spine, blends, RELEASE_LABEL));
-      commitOps(deps, ops, RELEASE_LABEL);
-      deps.selection?.set([...bySpine.keys()] as never);
+      commitOps(deps, ops, RELEASE_LABEL, { select: [...bySpine.keys()] });
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {

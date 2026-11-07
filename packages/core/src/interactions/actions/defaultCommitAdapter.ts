@@ -10,6 +10,7 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
+import { createSetSelectionOp } from 'core/ops/select';
 import { documentReads, sceneMutators } from 'core/scene/sceneMutators';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -38,9 +39,28 @@ export function defaultCommitAdapter<TPose>(
   };
 }
 
+/** `selection`'s reads and writes as {@link defaultCommitAdapter} takes them: a
+ *  batch's selection op lands on the selection the action read. */
+export function selectionMethods(selection: Pick<SelectionApi, 'get' | 'set'> | undefined): SelectionApi['adapterMethods'] | undefined {
+  return selection && {
+    getSelection: () => [...selection.get()],
+    setSelection: (ids) => selection.set(ids),
+  };
+}
+
 /** Commit `ops` as one undo entry, through the consumer's `applyOps` when
- *  there is one, else straight to the `scene` dep. */
-export function commitOps(deps: ActionDeps, ops: Op[], label: string): void {
+ *  there is one, else straight to the `scene` dep. With `select`, the entry
+ *  also replaces the selection with it, so undo restores the selection the
+ *  action started from; with nothing to commit, the selection is still set. */
+export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { select?: readonly string[] } = {}): void {
+  const { select } = opts;
+  if (select !== undefined && deps.selection) {
+    if (ops.length === 0) {
+      deps.selection.set(select.map(asNodeId));
+      return;
+    }
+    ops = [...ops, createSetSelectionOp({ from: deps.selection.get(), to: select.map(asNodeId), label })];
+  }
   if (ops.length === 0) return;
   if (deps.applyOps) {
     deps.applyOps(ops, label);
@@ -48,5 +68,5 @@ export function commitOps(deps: ActionDeps, ops: Op[], label: string): void {
   }
   const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
   if (!scene) return;
-  scene.applyBatch(ops, label, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
+  scene.applyBatch(ops, label, defaultCommitAdapter(scene, selectionMethods(deps.selection)));
 }

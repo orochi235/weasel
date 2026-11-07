@@ -110,6 +110,18 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
+- **(P2) [agent] Path commands read a node's path in its stored frame, not world.** `pathNodesOf` resolves
+  each node through `resolveEditablePathOf`, which bakes only the node's own pose, so a `data.path` node inside a
+  frame-defining group (any group without `derivePose` under the default rigid composition) reports its path
+  without the group's offset. Cut at Crossings between such a node and a root path finds no crossing: a root line
+  from x=50 to x=150 and a vertical line in a group at x=100 come back as the same two paths (probed 2026-11-07).
+  Join, Extend to Meet and the other `PathNode` commands mix frames the same way, and the `editAnchors` dep's
+  "world" path carries the same assumption. Booleans get it right (`canvas/deps/booleans.ts` composes through
+  `scenePoseFrame`). Fixing it changes the `PathNode` contract that path-tools' smudge, warp, resample, trim and
+  extend share, and the path-edit chrome, which is why it was not done in the actions audit. Closes when
+  `pathNodesOf` answers world paths through the scene's frames, `reshapeOps`/`pathCopy` store back into each
+  node's frame, and cutting across a framed group finds the crossing.
+
 - **(P3) [agent] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
   output change. Closes when Repeat Along places through `placeAlongRun`.

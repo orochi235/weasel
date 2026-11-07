@@ -89,9 +89,8 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
             current = new Map();
             if (reason === 'cancel' || done.size === 0) return;
             const ops = spec.commit(endCtx.deps, done, value);
-            commitOps(endCtx.deps, ops, spec.label);
             const after = spec.selectAfter?.(ops);
-            if (after) endCtx.deps.selection?.set(after as never);
+            commitOps(endCtx.deps, ops, spec.label, after ? { select: after } : {});
           },
           previewIds: () => (current.size > 0 ? [...current.keys()] : null),
           previewPose: (id: string) => shapeOf(id)?.pose ?? null,

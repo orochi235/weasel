@@ -120,8 +120,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
           ops.push(insertAt(node, index, spec.label), ...hide);
           made.push(node.id);
         }
-        commitOps(deps, ops, spec.label);
-        deps.selection?.set(made as never);
+        commitOps(deps, ops, spec.label, { select: made });
       },
     } satisfies ImmediateInvoker,
     enabled: (deps) => {
@@ -298,8 +297,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       if (ops.length === 0) return;
       // Last, so each delete finds its source's slot after the expansion.
       ops.push(...hiddenSourceDeleteOps(scene, effects.map((e) => e.node.id), EXPAND_LABEL));
-      commitOps(deps, ops, EXPAND_LABEL);
-      deps.selection?.set(made as never);
+      commitOps(deps, ops, EXPAND_LABEL, { select: made });
     },
   } satisfies ImmediateInvoker,
   enabled: holdsEffect,

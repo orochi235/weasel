@@ -290,8 +290,7 @@ describe('cloneAction descriptor', () => {
     expect(applyOps).toHaveBeenCalledOnce();
     const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Clone');
-    expect(ops).toHaveLength(2);
-    for (const op of ops) expect(op.name).toBe('insert');
+    expect(ops.map((op) => op.name)).toEqual(['insert', 'insert', 'setSelection']);
 
     // Each insert op carries a full node: fresh id, preserved kind/layer/data/
     // parent, and pose translated by the drag delta.

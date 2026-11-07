@@ -54,9 +54,8 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
         copies.forEach((copy, k) => ops.push(insertAt(copy, at < 0 ? at : at + k, CUT_LABEL)));
         made.set(node.id, copies.map((c) => c.id));
       }
-      commitOps(deps, ops, CUT_LABEL);
       const selected = deps.selection?.get() ?? [];
-      deps.selection?.set(selected.flatMap((id) => made.get(id) ?? [id]) as never);
+      commitOps(deps, ops, CUT_LABEL, { select: selected.flatMap((id) => made.get(id) ?? [id]) });
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => (selectedPathNodes(deps).length >= 2 ? true : ActionDisabledReason.SelectionRequired),
@@ -122,8 +121,7 @@ export function joinPathsCommand(
         if (!scene || !made) return;
         const ops = reshapeOps(made.keep.node, made.path, base.label);
         if (made.drop) ops.push(deleteNode(scene, made.drop.node, base.label));
-        commitOps(deps, ops, base.label);
-        deps.selection?.set([made.keep.id] as never);
+        commitOps(deps, ops, base.label, { select: [made.keep.id] });
       },
     } satisfies ImmediateInvoker,
     enabled: (deps?: ActionDeps) => {

@@ -3,10 +3,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import type { PoseFrame } from './poseFrame';
-import type { TransformFinisher } from './transformFinish';
-import { createTransformOp } from 'core/ops/transform';
-import { sceneMutators } from 'core/scene/sceneMutators';
-import { poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -16,6 +13,17 @@ export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[]
   const parentOf = (id: string) => scene.get(asNodeId(id))?.parent ?? null;
   return withoutPageStructure(scene, outermost(ids, parentOf).map((id) => asNodeId(id)))
     .filter((id) => scene.get(id) !== undefined);
+}
+
+/** {@link selectedRoots} back to front: what a copy inserts, in this order, so the copies stack as
+ *  the originals do whatever order the selection was made in. */
+export function copiedRoots(scene: AnyScene, ids: readonly string[]): NodeId[] {
+  const roots = selectedRoots(scene, ids);
+  if (roots.length < 2) return roots;
+  const order = new Map<string, number>();
+  let i = 0;
+  for (const id of scene.renderOrder()) order.set(id, i++);
+  return roots.sort((a, b) => (order.get(a) ?? i) - (order.get(b) ?? i));
 }
 
 /** Whether `id` draws a path derived from other nodes. Its pose is a
@@ -105,40 +113,6 @@ export function translateTargets(
     const storedIn = frame.frame(id);
     return storedIn === null || !moving.has(storedIn);
   });
-}
-
-/**
- * Move each of `moves` by its own delta, taking along whatever has to be
- * written for that node to move as a unit ({@link translateTargets}). Every
- * world pose is read before the first write, so one move cannot shift what a
- * later one reads. Call inside a `scene.batch`.
- */
-export function translateEach(
-  scene: AnyScene,
-  frame: PoseFrame<unknown>,
-  descriptor: PoseDescriptor<unknown>,
-  moves: readonly { id: string; dx: number; dy: number }[],
-  finish?: TransformFinisher,
-  label = 'Translate',
-): void {
-  const writes: { id: NodeId; to: unknown }[] = [];
-  const seen = new Set<NodeId>();
-  for (const { id, dx, dy } of moves) {
-    if (dx === 0 && dy === 0) continue;
-    for (const target of translateTargets(scene, frame, [id])) {
-      if (seen.has(target)) continue;
-      seen.add(target);
-      const node = scene.get(target);
-      if (!node) continue;
-      const d = poseDescriptorForNode(descriptor, node);
-      writes.push({ id: target, to: frame.local(target, translatePoseViaDescriptor(frame.world(target), dx, dy, d)) });
-    }
-  }
-  const ops = writes.map(({ id, to }) => createTransformOp({ id, from: scene.get(id)!.pose, to, label }));
-  const all = finish && ops.length > 0 ? finish(ops, label) : ops;
-  if (!all) return;
-  const adapter = sceneMutators(scene);
-  for (const op of all) op.apply(adapter);
 }
 
 /** The world translation `(dx, dy)` as a translation of `id`'s stored pose,

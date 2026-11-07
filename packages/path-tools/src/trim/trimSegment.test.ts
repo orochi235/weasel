@@ -48,10 +48,10 @@ describe('trimPathAction', () => {
   });
 
   it('deletes a stroke with nothing left of it', () => {
-    const { deps, batches, selection } = setup({ stub: 'M10 0 H20', ...walls }, ['stub']);
+    const { deps, batches } = setup({ stub: 'M10 0 H20', ...walls }, ['stub']);
     run(trimPathAction, deps, { press: { x: 15, y: 0 }, radiusPx: 3 });
-    expect(batches[0].ops[0].name).toBe('delete');
-    expect(selection.set).toHaveBeenCalledWith([]);
+    expect(batches[0].ops.map((op) => op.name)).toEqual(['delete', 'setSelection']);
+    expect((batches[0].ops[1].args as { to: readonly string[] }).to).toEqual([]);
   });
 
   it("plans from a hover's pointer what the click would cut, and cuts nothing", () => {
