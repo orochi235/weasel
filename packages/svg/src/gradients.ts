@@ -10,8 +10,7 @@ import { getPaintKind, getMarker, isPatternPaint, isTileKind } from '@weasel-js/
 import type {
   Paint, GradStop, PaintUnits, MarkerRef, Path,
 } from '@weasel-js/core';
-import { ownProp, ownValue } from './cascade';
-import { readProperty } from './properties';
+import { parseRatio, readStops } from './gradientStops';
 import { trimNumber } from './transform';
 import { escapeAttr } from './xmlEscape';
 import { resolveLength, type LengthAxis } from './lengths';
@@ -176,41 +175,6 @@ function inheritedStops(
   const ref = hrefTarget(el, elements);
   if (!ref || seen.has(ref)) return own;
   return inheritedStops(ref, elements, onWarn, seen);
-}
-
-/** Parse a `stop-opacity` / offset value that may carry a `%` suffix. */
-function parseRatio(raw: string): number {
-  const n = parseFloat(raw);
-  if (!Number.isFinite(n)) return NaN;
-  return raw.trimEnd().endsWith('%') ? n / 100 : n;
-}
-
-function readStops(el: Element, onWarn?: (m: string) => void): GradStop[] {
-  const stops: GradStop[] = [];
-  for (let i = 0; i < el.children.length; i++) {
-    const c = el.children[i];
-    if (c.tagName.toLowerCase() !== 'stop') continue;
-    const offsetRaw = parseRatio(c.getAttribute('offset') ?? '0');
-    const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
-    const colorAttr = ownProp(c, 'stop-color') ?? '#000000';
-    const parsed = readProperty('stop-color', colorAttr, onWarn);
-    if (parsed) {
-      const alpha = (ownValue(c, 'stop-opacity') ?? 1) * parsed.alpha;
-      stops.push({ offset, color: alpha < 1 ? applyAlpha(parsed.color, alpha) : parsed.color });
-    } else {
-      onWarn?.(`gradient stop has unrecognized stop-color: ${colorAttr}`);
-      stops.push({ offset, color: '#000000' });
-    }
-  }
-  return stops;
-}
-
-function applyAlpha(hex: string, alpha: number): string {
-  // Pack alpha into an 8-digit hex so it round-trips through weasel's
-  // string-color storage. This is non-standard CSS hex but parses cleanly
-  // back via our color.ts parser.
-  const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
-  return `${hex}${a.toString(16).padStart(2, '0')}`;
 }
 
 /** SVG `gradientUnits` → the kit's `PaintUnits`. SVG's default is

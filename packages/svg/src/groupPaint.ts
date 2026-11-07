@@ -55,8 +55,8 @@ export function groupPaint(
 ): { paint: Pick<SvgGroupNode, 'fill' | 'stroke' | 'inherits'>; children: GroupPaintFrom } {
   const children = { fill: from.fill || setsFill(el), stroke: from.stroke || setsStroke(el) };
   const paint: Pick<SvgGroupNode, 'fill' | 'stroke' | 'inherits'> = {};
-  if (children.fill) paint.fill = paintThroughMatrix(readPaint(style, 'fill', '#000000', gradients, onWarn), ctm);
+  if (children.fill) paint.fill = paintThroughMatrix(readPaint(style, 'fill', '#000000', gradients, onWarn), ctm, onWarn);
   const stroke = children.stroke ? readStroke(style, gradients, onWarn) : undefined;
-  if (stroke) paint.stroke = strokeThroughMatrix(stroke, ctm);
+  if (stroke) paint.stroke = strokeThroughMatrix(stroke, ctm, onWarn);
   return { paint: { ...paint, ...inheritsFrom(el, from) }, children };
 }

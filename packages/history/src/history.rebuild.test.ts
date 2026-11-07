@@ -30,10 +30,8 @@ describe('CreateHistoryOptions.rebuildOp', () => {
       },
     });
     b.restore(snap);
-    expect(seen).toEqual([
-      ['rebuildtest:setX', { id: 'a', from: 0, to: 5 }],
-      ['rebuildtest:setX', { id: 'a', from: 0, to: 5 }],
-    ]); // forwardOps + baseOps of the single entry
+    // Once: an entry nothing coalesced into shares one list as both halves.
+    expect(seen).toEqual([['rebuildtest:setX', { id: 'a', from: 0, to: 5 }]]);
     b.undo();
     expect(dst.x).toBe(0);
     b.redo();
