@@ -73,12 +73,12 @@ export function resolveStanceSlots<S extends string>(
 ): Record<S, string> {
   const out: Record<S, string> = { ...base };
   if (stance === undefined) return out;
-  for (const slot of Object.keys(base) as S[]) {
-    const own = tokens[`--wzl-stance-${stance}-${slot}`];
-    const inner = nested ? tokens[`--wzl-stance-${stance}-nested-${slot}`] : undefined;
-    // A stance's own tint falls back to the surface, never to the surface's base tint.
-    const fallback = slot === 'tint' ? (base as Record<string, string>).surface ?? base[slot] : stanced?.[slot] ?? base[slot];
-    out[slot] = inner ?? own ?? fallback;
-  }
+  const read = (slot: S, fallback: string): string =>
+    (nested ? tokens[`--wzl-stance-${stance}-nested-${slot}`] : undefined) ?? tokens[`--wzl-stance-${stance}-${slot}`] ?? fallback;
+  const slots = Object.keys(base) as S[];
+  for (const slot of slots) if (slot !== 'tint') out[slot] = read(slot, stanced?.[slot] ?? base[slot]);
+  // A stance's own tint falls back to the stance's surface, never to the surface's base tint.
+  const tint = slots.find((slot) => slot === 'tint');
+  if (tint) out[tint] = read(tint, (out as Record<string, string>).surface ?? base[tint]);
   return out;
 }
