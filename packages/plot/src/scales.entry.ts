@@ -5,7 +5,7 @@
  *
  * @packageDocumentation
  */
-export type { Scale, ContinuousScale, ContinuousScaleFactory } from './scales/types';
+export type { Scale, ContinuousScale, ContinuousScaleFactory, TickFormatOptions } from './scales/types';
 export {
   linearScale, niceDomain, niceStep, tickStep, stepTicks, decimalsOf, formatNumber,
   type LinearScale, type LinearScaleOptions, type SpacedTickOptions, type TickSet,

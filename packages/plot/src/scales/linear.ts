@@ -128,6 +128,6 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
     tickStep: step,
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
     ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),
-    format: (v) => formatNumber(v, step()),
+    format: (v, options) => formatNumber(v, step(options?.count)),
   };
 }

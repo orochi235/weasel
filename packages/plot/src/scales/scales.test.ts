@@ -29,6 +29,11 @@ describe('linearScale', () => {
     expect(formatNumber(3, 0.5)).toBe('3');
   });
 
+  it('formats to the step of the tick count it is given', () => {
+    const unit = linearScale({ domain: [0, 1], range: [0, 1] });
+    expect(unit.ticks(20).slice(0, 3).map((v) => unit.format(v, { count: 20 }))).toEqual(['0', '0.05', '0.1']);
+  });
+
   it('widens a nice domain to whole steps', () => {
     expect(niceDomain([3, 97])).toEqual([0, 100]);
     expect(niceDomain([-13, 42])).toEqual([-20, 50]);
@@ -114,6 +119,11 @@ describe('timeScale', () => {
     expect(months.ticks().map(months.format)).toEqual(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07']);
     const years = timeScale({ domain: [jan1, Date.UTC(2031, 0, 1)], range: [0, 1] });
     expect(years.ticks().map(years.format)).toEqual(['2026', '2027', '2028', '2029', '2030', '2031']);
+  });
+
+  it('labels a denser tick count to its own unit', () => {
+    const s = timeScale({ domain: [jan1, jan1 + 20 * day], range: [0, 1] });
+    expect(s.ticks(100).slice(0, 3).map((v) => s.format(v, { count: 100 }))).toEqual(['2026-01-01', '06:00', '12:00']);
   });
 
   it('ticks on hours within a day', () => {

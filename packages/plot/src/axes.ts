@@ -36,7 +36,7 @@ const outward = (side: AxisSide) => (side === 'bottom' || side === 'right' ? 1 :
 /** How far an axis reaches out from its line: ticks, labels and title. */
 export function axisRoom<T>(opts: AxisOptions<T>): number {
   const { scale, side, theme, measure } = opts;
-  const sizes = scale.ticks(opts.ticks).map((t) => measure(scale.format(t), theme.font));
+  const sizes = scale.ticks(opts.ticks).map((t) => measure(scale.format(t, { count: opts.ticks }), theme.font));
   const labels = sizes.length === 0 ? 0 : Math.max(...sizes.map((s) => (isHorizontal(side) ? s.height : s.width)));
   const title = opts.title ? measure(opts.title, theme.font).height + GAP : 0;
   return TICK + GAP + labels + title;
@@ -65,7 +65,7 @@ export function axisMarks<T>(opts: AxisOptions<T>): PlotMark[] {
     marks.push(ruleMark({ key: `${key}:tick:${i}`, from: pt(p, at), to: pt(p, at + out * TICK), color: theme.axis }));
     const anchorAt = pt(p, at + out * (TICK + GAP));
     const label = textMark({
-      key: `${key}:label:${i}`, text: scale.format(t), ...anchorAt, font: theme.font, color: theme.text, measure,
+      key: `${key}:label:${i}`, text: scale.format(t, { count: opts.ticks }), ...anchorAt, font: theme.font, color: theme.text, measure,
       anchor: h ? 'middle' : out > 0 ? 'start' : 'end',
       baseline: h ? (out > 0 ? 'top' : 'bottom') : 'middle',
     });

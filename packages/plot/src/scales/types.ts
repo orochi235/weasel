@@ -1,3 +1,9 @@
+/** What {@link Scale.format} knows about the ticks it labels. */
+export interface TickFormatOptions {
+  /** The `count` the ticks were asked for with. */
+  count?: number;
+}
+
 /** What every positional scale answers, and what an axis is drawn from: where a value sits along its range, the
  *  values an axis marks, and how one reads. */
 export interface Scale<T> {
@@ -8,8 +14,8 @@ export interface Scale<T> {
   position(value: T): number;
   /** The values an axis marks, about `count` of them where the scale chooses. */
   ticks(count?: number): T[];
-  /** `value` as an axis label reads it. */
-  format(value: T): string;
+  /** `value` as an axis label reads it, among the ticks `ticks(count)` gave; pass that `count` along. */
+  format(value: T, options?: TickFormatOptions): string;
 }
 
 /** A scale over numbers that maps both ways. */

@@ -98,6 +98,6 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
       const out = gridTicks(Math.min(d0, d1), Math.max(d0, d1), interval(count));
       return d0 <= d1 ? out : out.reverse();
     },
-    format: (v) => formatInstant(v, interval().unit),
+    format: (v, options) => formatInstant(v, interval(options?.count).unit),
   };
 }
