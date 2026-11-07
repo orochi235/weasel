@@ -21,7 +21,7 @@
  * +y along a horizontal edge, in GL's window space.
  */
 
-import type { GlMat3, Path } from '@weasel-js/geom';
+import type { GlMat3, Path, PolygonPath } from '@weasel-js/geom';
 import { PATH_L, PATH_M, PATH_Z, polygonFromPoints, ringSignedArea } from '@weasel-js/geom';
 import type { ClipRect } from './batchClip';
 
@@ -61,7 +61,7 @@ export interface HullSet {
  *  in screen space at identity. */
 export interface Hull {
   readonly set: HullSet;
-  readonly path: Path;
+  readonly path: PolygonPath;
 }
 
 /** Screen space to device pixels from the window's bottom left:
@@ -134,10 +134,7 @@ export function snappedRectOf(path: Path, m: GlMat3, map: WindowMap): SnappedRec
   return snapped;
 }
 
-function boundsOf(path: Path): ClipRect {
-  if (path.kind === 'rect') {
-    return { x0: path.x, y0: path.y, x1: path.x + path.width, y1: path.y + path.height };
-  }
+function boundsOf(path: PolygonPath): ClipRect {
   const ox = path.origin?.x ?? 0;
   const oy = path.origin?.y ?? 0;
   const c = path.coords;
@@ -336,7 +333,7 @@ function planesOf(p: number[], map: WindowMap): HullSet {
 
 /** The snapped corners back in screen space, for a stencil drawn at identity
  *  to land on the same grid points. */
-function screenPolygon(p: number[], map: WindowMap): Path {
+function screenPolygon(p: number[], map: WindowMap): PolygonPath {
   const det = map.ax * map.by - map.bx * map.ay;
   const points: { x: number; y: number }[] = [];
   for (let i = 0; i < p.length; i += 2) {
