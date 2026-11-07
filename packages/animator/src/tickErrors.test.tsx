@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { useAnimator } from './useAnimator';
 import type { AnimatorEvent, Animator } from './types';
+import { createTarget } from './target';
 
 function setup() {
   const cbs: ((t: number) => void)[] = [];
@@ -93,5 +94,28 @@ describe('useAnimator — a tick that throws', () => {
     frame(10);
     expect(events.map((e) => e.type)).toEqual(['start', 'end', 'error']);
     expect(animator().isActive()).toBe(false);
+  });
+});
+
+describe('useAnimator — a target whose show throws', () => {
+  it('stops what moves that target, and keeps every other animation running', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { animator, frame } = setup();
+    let a = 0;
+    let shows = 0;
+    const bad = createTarget<number>({
+      get: () => a, set: (v) => { a = v; }, show: () => { shows += 1; if (shows === 3) throw boom; },
+    });
+    let b = 0;
+    const good = createTarget<number>({ get: () => b, set: (v) => { b = v; }, show: () => {} });
+    act(() => {
+      animator().tween({ target: bad, to: 100, ms: 100, easing: linear });
+      animator().tween({ target: good, to: 100, ms: 100, easing: linear });
+    });
+    for (let t = 0; t <= 200; t += 16) frame(t);
+    expect(good.read()).toBe(100);
+    expect(bad.active).toBe(false);
+    expect(animator().isActive()).toBe(false);
+    expect(errors).toHaveBeenCalledWith(expect.stringMatching(/show threw/), boom);
   });
 });
