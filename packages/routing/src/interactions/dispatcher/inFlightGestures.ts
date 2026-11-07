@@ -2,12 +2,14 @@
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
 import { actionCursor, type Action } from '../actions/action';
 import type { OngoingHandle } from '../actions/invoker';
+import { isKeyHeldGestureId } from './gestureIds';
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
-/** The channel a gesture no entry owns is engaged on: an ambient action's or a
+/** The channel a gesture no entry owns is engaged on: an ambient action's drag or a
  *  UI-driven one. No entry has this id, so only the any-channel (`'*'`) phase
- *  atoms see it. */
+ *  atoms see it. A held key no entry owns, such as an offhand tool's, engages
+ *  nothing: holding Shift for one must leave Alt free to hold another. */
 export const UNOWNED_CHANNEL = '*unowned';
 
 export interface InFlightGestures {
@@ -74,7 +76,10 @@ export function createInFlightGestures(): InFlightGestures {
     engagedOwners() {
       if (owners.size === 0) return EMPTY_ENGAGED;
       const out = new Set<string>();
-      for (const owner of owners.values()) out.add(owner ?? UNOWNED_CHANNEL);
+      for (const [id, owner] of owners) {
+        if (owner != null) out.add(owner);
+        else if (!isKeyHeldGestureId(id)) out.add(UNOWNED_CHANNEL);
+      }
       return out;
     },
     cursor() {
