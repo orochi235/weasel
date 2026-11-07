@@ -69,7 +69,7 @@ export function tessellateStroke(
   opts: StrokeOptions = {},
 ): Mesh {
   const style = ribbonStyle(stroke);
-  if (style.width <= 0) return EMPTY_MESH;
+  if (!inkWidth(style.width)) return EMPTY_MESH;
   const metric = opts.metric;
   const { polylines, rectInMetric } = strokePolylines(path, stroke, style.width, opts.flattenTolerance, metric);
   const out: RibbonOut = { verts: [], idx: [], anchorA: [], anchorB: [], anchorT: [] };
@@ -172,3 +172,9 @@ export function ribbonMesh(out: RibbonOut, path: Path): Mesh {
 const DEFAULT_MITER_LIMIT = 4;
 /** Default `Stroke.varyingWidthJoinThreshold`. */
 const DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD = 1.5;
+
+/** Whether a ribbon `width` wide has vertices to give: positive and finite.
+ *  An infinite one would put NaN in every vertex its normals scale. */
+export function inkWidth(width: number): boolean {
+  return width > 0 && Number.isFinite(width);
+}
