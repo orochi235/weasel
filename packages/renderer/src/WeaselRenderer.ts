@@ -319,7 +319,7 @@ export class WeaselRenderer {
     this.beginFrame();
     this.retained.beginFrame([
       glyphGeneration(), textureRegistry.getVersion(), paintDrawKindRegistry.getVersion(),
-      this.programs.epoch, this.flattenTolerance, this.widthCss, this.heightCss, this.dpr,
+      this.programs.epoch, this.flattenTolerance, this.widthCss, this.heightCss, this.dpr, this.imageMinification,
     ]);
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
