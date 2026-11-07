@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { reflectWgsl } from './wgslReflect';
 import { createUniformBlock } from './wgslUniforms';
 
+const STANDARD = { standardLayout: true };
+const STRICT = { standardLayout: false };
+
 const SRC = `
 const N: u32 = 8u;
 // struct Commented { x: f32 }
@@ -22,7 +25,7 @@ struct Uniforms {
 
 describe('reflectWgsl', () => {
   it('lays a uniform struct out under WGSL rules', () => {
-    const r = reflectWgsl(SRC);
+    const r = reflectWgsl(SRC, STANDARD);
     expect([...r.structs.keys()]).toEqual(['Uniforms']);
     const s = r.structs.get('Uniforms')!;
     expect(s.members.map((m) => [m.name, m.offset])).toEqual([
@@ -33,30 +36,53 @@ describe('reflectWgsl', () => {
   });
 
   it('finds bindings by group and kind', () => {
-    expect(reflectWgsl(SRC).bindings).toEqual([
+    expect(reflectWgsl(SRC, STANDARD).bindings).toEqual([
       { group: 0, binding: 0, name: 'u', kind: 'uniform', struct: 'Uniforms' },
       { group: 1, binding: 1, name: 'u_tex', kind: 'texture' },
       { group: 1, binding: 2, name: 'u_tex_sampler', kind: 'sampler' },
     ]);
   });
 
-  // No uniform-only padding: a shader that needs it fails validation, and
-  // under uniform_buffer_standard_layout it is laid out exactly so.
-  it('places a nested struct and an array of vec2 at their own alignment', () => {
-    const r = reflectWgsl('struct In { a: f32 } struct Out { x: f32, inner: In, y: f32, seeds: array<vec2f, 8>, t: f32 }');
-    const out = r.structs.get('Out')!;
+  it('keeps a 16-byte slot struct at a 16-byte stride', () => {
+    const src = 'struct F32Slot { @size(16) v: f32 } struct U { a: array<F32Slot, 4>, b: f32 } @group(1) @binding(0) var<uniform> u: U;';
+    expect(reflectWgsl(src, STRICT).structs.get('U')!.members.map((m) => m.offset)).toEqual([0, 64]);
+  });
+});
+
+// The demo's voronoi seeds, and a nested struct, which only uniform_buffer_standard_layout accepts in a uniform.
+const RELAXED = `
+struct In { a: f32 }
+struct Params { x: f32, inner: In, y: f32, seeds: array<vec2f, 8>, t: f32 }
+@group(1) @binding(0) var<uniform> params: Params;
+`;
+
+describe('uniform layout with and without uniform_buffer_standard_layout', () => {
+  it('lays a uniform struct out as a storage one is where the browser has the feature', () => {
+    const out = reflectWgsl(RELAXED, STANDARD).structs.get('Params')!;
     expect(out.members.map((m) => m.offset)).toEqual([0, 4, 8, 16, 80]);
     expect(out.members[3].type).toMatchObject({ kind: 'array', stride: 8 });
+    expect([out.align, out.size]).toEqual([8, 88]);
   });
 
-  it('keeps a 16-byte slot struct at a 16-byte stride', () => {
-    const r = reflectWgsl('struct F32Slot { @size(16) v: f32 } struct U { a: array<F32Slot, 4>, b: f32 }');
-    expect(r.structs.get('U')!.members.map((m) => m.offset)).toEqual([0, 64]);
+  it('refuses it, naming the member, where the browser lacks the feature', () => {
+    expect(() => reflectWgsl(RELAXED, STRICT)).toThrow(/params\.inner is at offset 4/);
+    expect(() => reflectWgsl(RELAXED.replace('inner: In,', '@align(16) inner: In,'), STRICT)).toThrow(/after struct params\.inner/);
+    const arrayOnly = 'struct P { s: array<vec2f, 8>, t: f32 } @group(1) @binding(0) var<uniform> p: P;';
+    expect(() => reflectWgsl(arrayOnly, STRICT)).toThrow(/p\.s has an array stride of 8/);
+  });
+
+  it('lays a struct valid under both out the same either way', () => {
+    const src = SRC.replace('array<f32, N>', 'array<vec4f, N>');
+    expect(reflectWgsl(src, STRICT).structs.get('Uniforms')).toEqual(reflectWgsl(src, STANDARD).structs.get('Uniforms'));
+  });
+
+  it('holds no struct to the uniform rules that no uniform binds', () => {
+    expect(() => reflectWgsl('struct In { a: f32 } struct S { x: f32, inner: In }', STRICT)).not.toThrow();
   });
 });
 
 describe('createUniformBlock', () => {
-  const r = reflectWgsl(SRC);
+  const r = reflectWgsl(SRC, STANDARD);
 
   it('pads a column-major mat3 into three 16-byte columns', () => {
     const b = createUniformBlock(r, 'Uniforms');

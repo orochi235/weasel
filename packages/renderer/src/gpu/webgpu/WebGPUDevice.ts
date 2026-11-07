@@ -26,6 +26,7 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
   readonly ringBuffer: GPUBuffer;
   readonly ndcLayout: GPUBindGroupLayout;
   readonly dummyTexture: res.WgpuTexture;
+  readonly standardLayout = navigator.gpu?.wgslLanguageFeatures?.has('uniform_buffer_standard_layout') ?? false;
   private readonly frame: Frame;
   private readonly ring: UniformRing;
   private readonly utility: UtilityDraws;

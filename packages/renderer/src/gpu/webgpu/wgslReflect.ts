@@ -148,8 +148,43 @@ function parseStruct(name: string, body: string, structs: Map<string, WgslStruct
   return { name, members, align, size: roundUp(align, offset) };
 }
 
-/** Reflect the structs and `@group`/`@binding` variables a WGSL module declares. */
-export function reflectWgsl(source: string): WgslReflection {
+/** What the browser compiling a module allows. */
+export interface WgslTarget {
+  /** `navigator.gpu.wgslLanguageFeatures.has('uniform_buffer_standard_layout')`: a uniform buffer is laid out
+   *  as a storage one is. Without it the layout is the same, but a uniform struct must already sit on 16-byte
+   *  boundaries where WGSL asks, or the module does not compile. */
+  standardLayout: boolean;
+}
+
+/** Throw, naming the member, where a struct bound as a uniform breaks the constraints a uniform buffer keeps
+ *  without `uniform_buffer_standard_layout`: a struct or array member on a 16-byte boundary, the member after
+ *  a struct 16-byte rounded past it, and an array's stride a multiple of 16. */
+function checkUniformLayout(struct: WgslStruct, structs: Map<string, WgslStruct>, path: string): void {
+  const needs = (what: string) => new Error(
+    `WGSL: uniform member ${what}; this browser lacks uniform_buffer_standard_layout, so pad it with @align/@size or a slot struct`,
+  );
+  struct.members.forEach((m, i) => {
+    const name = `${path}.${m.name}`;
+    let t = m.type;
+    if (t.kind === 'struct' || t.kind === 'array') {
+      if (m.offset % 16 !== 0) throw needs(`${name} is at offset ${m.offset}, not a multiple of 16`);
+    }
+    if (t.kind === 'struct') {
+      const next = struct.members[i + 1];
+      const inner = structs.get(t.name)!;
+      if (next && next.offset < m.offset + roundUp(16, inner.size)) throw needs(`after struct ${name} starts inside its 16-byte rounding`);
+    }
+    while (t.kind === 'array') {
+      if (t.stride % 16 !== 0) throw needs(`${name} has an array stride of ${t.stride}, not a multiple of 16`);
+      t = t.element;
+    }
+    if (t.kind === 'struct') checkUniformLayout(structs.get(t.name)!, structs, name);
+  });
+}
+
+/** Reflect the structs and `@group`/`@binding` variables a WGSL module declares. Every struct is laid out by
+ *  WGSL's one set of rules; `target` says whether a uniform struct must also keep the stricter uniform ones. */
+export function reflectWgsl(source: string, target: WgslTarget): WgslReflection {
   const src = stripComments(source);
   const structs = new Map<string, WgslStruct>();
   const consts = new Map<string, number>();
@@ -176,6 +211,9 @@ export function reflectWgsl(source: string): WgslReflection {
         ...(kind === 'uniform' && structs.has(type) ? { struct: type } : {}),
       });
     }
+  }
+  if (!target.standardLayout) {
+    for (const b of bindings) if (b.struct) checkUniformLayout(structs.get(b.struct)!, structs, b.name);
   }
   return { structs, bindings };
 }

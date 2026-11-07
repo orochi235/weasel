@@ -13,6 +13,9 @@ import { BLUR_EFFECT_WGSL } from './effects';
 import { GRAD_FILL_LOCATIONS, GRAD_FILL_WGSL } from './gradFill';
 import { PATH_FILL_LOCATIONS, PATH_FILL_WGSL } from './pathFill';
 
+/** Kit WGSL compiles without `uniform_buffer_standard_layout`. */
+const STRICT = { standardLayout: false };
+
 async function requestTestDevice(): Promise<GPUDevice> {
   const adapter = await navigator.gpu.requestAdapter();
   if (!adapter) throw new Error('no WebGPU adapter: the browser project launches Chromium with --enable-unsafe-webgpu');
@@ -49,7 +52,7 @@ function vertexBuffer(device: GPUDevice, data: number[]): GPUBuffer {
 /** A uniform buffer for struct `struct` of `code`, its members set by name. */
 function uniformBuffer(device: GPUDevice, code: string, struct: string,
   values: Record<string, UniformValue>): GPUBuffer {
-  const block = createUniformBlock(reflectWgsl(code), struct);
+  const block = createUniformBlock(reflectWgsl(code, STRICT), struct);
   for (const [name, value] of Object.entries(values)) {
     if (!block.set(name, value)) throw new Error(`${struct} has no member ${name}`);
   }

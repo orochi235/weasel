@@ -8,4 +8,4 @@
 
 The loupe's pixel mode works on WebGPU canvases: it reads its region through `readCanvasPixels`, and answers the color under the aim from that region.
 
-A WGSL program's uniform struct is laid out by WGSL's own rules, so an `array<vec2f, N>` or `array<f32, N>` member, which a browser accepts under `uniform_buffer_standard_layout`, gets its real 8- or 4-byte stride rather than 16. A struct written without that extension is laid out as before.
+A WGSL program's uniform struct is laid out by WGSL's own rules, so where the browser has `uniform_buffer_standard_layout` an `array<vec2f, N>` or `array<f32, N>` member gets its real 8- or 4-byte stride rather than 16. Where it lacks the feature, a uniform struct that breaks the stricter uniform rules is refused when the program is built, naming the member, rather than drawing from misplaced values.

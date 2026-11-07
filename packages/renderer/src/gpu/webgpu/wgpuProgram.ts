@@ -31,6 +31,8 @@ export interface WgpuProgramHost {
   readonly ringBuffer: GPUBuffer;
   readonly ndcLayout: GPUBindGroupLayout;
   readonly dummyTexture: WgpuTexture;
+  /** Whether the browser lays uniform buffers out under `uniform_buffer_standard_layout`. */
+  readonly standardLayout: boolean;
   sampler(sampling: GpuSampling): GPUSampler;
 }
 
@@ -97,7 +99,7 @@ export class WgpuProgram implements GpuProgram {
       }
     }, () => {});
     this.entries = reflectEntries(code);
-    const reflection = reflectWgsl(code);
+    const reflection = reflectWgsl(code, host);
     const groups: Binding[][] = [[], []];
     let usesNdc = false;
     for (const b of reflection.bindings) {

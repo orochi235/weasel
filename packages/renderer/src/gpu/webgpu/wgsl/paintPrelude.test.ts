@@ -4,6 +4,9 @@ import { reflectEntries } from '../wgslEntries';
 import { assemblePaintWgsl, PAINT_KIT_WGSL_NAMES } from './paintPrelude';
 import { PATH_FILL_WGSL } from './pathFill';
 
+/** Kit WGSL compiles without `uniform_buffer_standard_layout`. */
+const STRICT = { standardLayout: false };
+
 const FRAG = `
 struct Params { u_tint: vec4f }
 @group(1) @binding(0) var<uniform> params: Params;
@@ -18,7 +21,7 @@ describe('the paint prelude', () => {
   });
 
   it('declares a member for every kit uniform a paint draw sets', () => {
-    const r = reflectWgsl(assemblePaintWgsl({ frag: FRAG }));
+    const r = reflectWgsl(assemblePaintWgsl({ frag: FRAG }), STRICT);
     const kit = r.structs.get('PaintKit')!.members.map((m) => m.name);
     expect(kit.sort()).toEqual(Object.values(PAINT_KIT_WGSL_NAMES).sort());
   });

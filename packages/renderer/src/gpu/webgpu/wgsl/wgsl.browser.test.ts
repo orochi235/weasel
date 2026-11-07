@@ -7,6 +7,9 @@ import { assembleCustomWgsl } from './customPrelude';
 import { assembleEffectWgsl } from './effectPrelude';
 import { PATH_FILL_VCOLOR_WGSL, PATH_FILL_WGSL } from './pathFill';
 
+/** Kit WGSL compiles without `uniform_buffer_standard_layout`. */
+const STRICT = { standardLayout: false };
+
 let device: GPUDevice;
 
 afterAll(() => device.destroy());
@@ -61,7 +64,7 @@ describe('pathFill drawn with reflected uniforms', () => {
       fragment: { module, entryPoint: 'fs', targets: [{ format: 'rgba8unorm' }, { format: 'rgba8unorm' }] },
     });
 
-    const block = createUniformBlock(reflectWgsl(PATH_FILL_WGSL), 'Uniforms');
+    const block = createUniformBlock(reflectWgsl(PATH_FILL_WGSL, STRICT), 'Uniforms');
     // Screen pixels 0..4 to clip space, y down.
     block.set('u_proj', [2 / size, 0, 0, 0, -2 / size, 0, -1, 1, 1]);
     block.set('u_model', [1, 0, 0, 0, 1, 0, 0, 0, 1]);
