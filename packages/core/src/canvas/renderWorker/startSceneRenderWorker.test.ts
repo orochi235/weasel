@@ -142,4 +142,17 @@ describe('startSceneRenderWorker, the worker animator', () => {
     client.dispose();
     expect(stop).toHaveBeenCalledTimes(1);
   });
+
+  it('ignores what the worker says after dispose', () => {
+    const { client, answer } = start();
+    const due = vi.fn();
+    client.subscribe(due);
+    client.dispose();
+    vi.mocked(answerImage).mockClear();
+    answer({ type: 'image', src: 'late.svg' });
+    answer({ type: 'dirty' });
+    client.animator.play('fade').cancel();
+    expect(answerImage).not.toHaveBeenCalled();
+    expect(due).not.toHaveBeenCalled();
+  });
 });

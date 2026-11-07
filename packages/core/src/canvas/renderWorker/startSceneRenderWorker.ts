@@ -95,7 +95,11 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
 
   const ops: AnimationOp[] = [];
   let resumed = false;
-  const animator = workerAnimator((op) => { ops.push(op); due.emit(); });
+  const animator = workerAnimator((op) => {
+    if (disposed) return;
+    ops.push(op);
+    due.emit();
+  });
 
   let unwatch = () => {};
   const watch = () => {
@@ -110,6 +114,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   watch();
 
   worker.addEventListener('message', (event: MessageEvent<FromWorker>) => {
+    if (disposed) return;
     const msg = event.data;
     if (msg.type === 'drawn') {
       inFlight = false;
