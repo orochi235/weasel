@@ -97,12 +97,12 @@
   outline-color: var(--wzl-focus-ring);
 }
 
-.segment:disabled {
+.segment:is(:disabled, [data-disabled]) {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.segment:hover:not(:disabled):not(.segmentSelected) {
+.segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
   color: var(--wzl-fg);
 }
 
@@ -173,7 +173,7 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wzl-accent) 45%, transparent);
 }
 
-.segmentMixed:hover:not(:disabled) {
+.segmentMixed:hover:not(:disabled, [data-disabled]) {
   background: color-mix(in srgb, var(--wzl-accent) 32%, transparent);
 }
 
@@ -229,7 +229,7 @@
   border-radius: var(--wzl-radius-sm);
 }
 
-.variant_minimal .segment:hover:not(:disabled):not(.segmentSelected) {
+.variant_minimal .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
   color: var(--wzl-fg);
   background: var(--wzl-surface-hover);
 }
@@ -285,7 +285,7 @@
   border-end-end-radius: var(--wzl-radius-sm);
 }
 
-.variant_flat .segment:hover:not(:disabled):not(.segmentSelected) {
+.variant_flat .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
   background: var(--wzl-surface-hover);
   color: var(--wzl-fg);
 }

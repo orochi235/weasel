@@ -49,16 +49,16 @@ describe('Bar conditions', () => {
   it('disables a cell, an action, and the fused flags of a disabled run', () => {
     renderWithIcons(<Bar schema={schema} values={{ on: false }} />);
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Go' })).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Italic' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'On' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'On' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('opens a disabled group, with its rows disabled', () => {
     renderWithIcons(<Bar schema={schema} values={{ on: false }} />);
     const opener = screen.getByRole('button', { name: 'Spacing' });
-    expect(opener).toBeEnabled();
+    expect(opener).not.toHaveAttribute('aria-disabled');
     fireEvent.click(opener);
     const leading = screen.getByRole('spinbutton', { name: 'Leading' });
     expect(leading).toBeDisabled();

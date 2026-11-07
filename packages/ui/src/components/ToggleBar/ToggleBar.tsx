@@ -13,6 +13,8 @@ export type ToggleBarItem<V extends string | number = string> = {
   label?: ReactNode;
   ariaLabel?: string;
   disabled?: boolean;
+  /** Why it cannot be pressed now, read after its name in the tooltip and as its description. */
+  disabledReason?: string;
 } & SegmentTooltipFields;
 
 /** Segment height and type scale for a {@link ToggleBar}. */
@@ -146,7 +148,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
           key: String(item.value),
           state,
           draw: (place) => (
-            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled}>
+            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
               <button
                 type="button"
                 role={mode === 'multiple' ? undefined : 'radio'}

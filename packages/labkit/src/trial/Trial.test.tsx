@@ -143,8 +143,8 @@ describe('<TrialChrome>', () => {
       />,
       { wrapper: withIcons },
     );
-    expect(screen.getByRole('button', { name: 'Undo' })).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Undo' })).not.toHaveAttribute('aria-disabled');
+    expect(screen.getByRole('button', { name: 'Redo' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('offers the snapshot loader once a snapshot exists', async () => {
@@ -483,18 +483,18 @@ describe('state undo in a mounted lab', () => {
     });
     const undo = screen.getByRole('button', { name: 'Undo' });
     const redo = screen.getByRole('button', { name: 'Redo' });
-    expect(undo).toBeDisabled();
+    expect(undo).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'n=0' }));
     fireEvent.click(screen.getByRole('button', { name: 'n=1' }));
-    expect(undo).not.toBeDisabled();
+    expect(undo).not.toHaveAttribute('aria-disabled');
     fireEvent.click(undo);
     expect(screen.getByRole('button', { name: 'n=1' })).toBeInTheDocument();
     fireEvent.click(undo);
     expect(screen.getByRole('button', { name: 'n=0' })).toBeInTheDocument();
-    expect(undo).toBeDisabled();
+    expect(undo).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(redo);
     fireEvent.click(redo);
     expect(screen.getByRole('button', { name: 'n=2' })).toBeInTheDocument();
-    expect(redo).toBeDisabled();
+    expect(redo).toHaveAttribute('aria-disabled', 'true');
   });
 });

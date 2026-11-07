@@ -22,6 +22,11 @@ export const Disabled: Story = {
   args: { disabled: true },
 };
 
+/** A disabled close button keeps its tooltip, which reads the reason. */
+export const DisabledWithReason: Story = {
+  args: { disabled: true, disabledReason: 'A document needs one layer at least' },
+};
+
 /** Removing rows from a list, the way `ListEditor` and `LayerList` use it. */
 export const RemoveRows: Story = {
   render: (args) => {

@@ -12,8 +12,10 @@ export interface ToolButtonProps {
   shortcut?: string;
   /** Selected/active state — toggles the active visual treatment. */
   active?: boolean;
-  /** Disabled state — passes through to the underlying button. */
+  /** Disabled state. The button keeps its tooltip, and ignores presses. */
   disabled?: boolean;
+  /** Why it is disabled, read after the label in its tooltip and as its description. */
+  disabledReason?: string;
   /**
    * When true, sets `aria-disabled="true"` on the button without using the
    * native `disabled` attribute. This keeps the button focusable and reachable
@@ -50,13 +52,13 @@ export interface ToolButtonProps {
  */
 export function ToolButton(props: ToolButtonProps) {
   const {
-    icon, label, shortcut, active, disabled, ariaDisabled,
+    icon, label, shortcut, active, disabled, disabledReason, ariaDisabled,
     onClick, onPointerDown, onDragStart, title, className, menu,
   } = props;
-  const content = segmentTooltipContent({ tooltip: title, shortcut, label }) ?? label;
+  const content = segmentTooltipContent({ tooltip: title, shortcut, label, disabled, disabledReason }) ?? label;
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
-    <SegmentTooltip content={content} disabled={disabled}>
+    <SegmentTooltip content={content} disabled={disabled} disabledReason={disabledReason}>
       <button
         ref={menu?.ref}
         id={menu?.id}

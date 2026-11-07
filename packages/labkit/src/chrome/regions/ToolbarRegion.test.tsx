@@ -79,6 +79,6 @@ describe('ToolbarRegion', () => {
         ctx={ctx}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
   });
 });

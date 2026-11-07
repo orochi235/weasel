@@ -195,9 +195,9 @@ describe('BarAction', () => {
     const button = screen.getByRole('button', { name: 'Export' });
     fireEvent.click(button);
     expect(run).toHaveBeenCalledWith({ path: 'file.export' });
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
     await act(async () => { settle(); });
-    expect(button).not.toBeDisabled();
+    expect(button).not.toHaveAttribute('aria-disabled');
   });
 });
 

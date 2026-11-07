@@ -165,7 +165,7 @@ describe('GradientEditor stops', () => {
     it('keeps the last two stops', () => {
       const onChange = vi.fn();
       renderWithIcons(<GradientEditor value={TWO} onChange={onChange} />);
-      expect(screen.getByRole('button', { name: 'Remove stop 1' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Remove stop 1' })).toHaveAttribute('aria-disabled', 'true');
       fireEvent.keyDown(handle(1), { key: 'Delete' });
       expect(onChange).not.toHaveBeenCalled();
     });

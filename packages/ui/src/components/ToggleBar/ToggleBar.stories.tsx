@@ -105,7 +105,7 @@ export const Disabled: Story = {
         items={[
           { value: 'a', label: 'A' },
           { value: 'b', label: 'B', disabled: true },
-          { value: 'c', label: 'C' },
+          { value: 'c', label: 'C', disabled: true, disabledReason: 'Needs a selection' },
         ]}
         value={v}
         onChange={setV}

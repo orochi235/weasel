@@ -125,7 +125,7 @@ describe('PrefsForm enableIf', () => {
     expect(size).toBeDisabled();
     expect(disabledRow(size)).not.toBeNull();
     const snap = screen.getByRole('checkbox', { name: 'Snap on' });
-    expect(snap).toBeEnabled();
+    expect(snap).not.toHaveAttribute('aria-disabled');
     expect(disabledRow(snap)).toBeNull();
     rerender(<PrefsForm schema={schema} values={{ snap: { on: true } }} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Grid size' })).toBeEnabled();
@@ -199,7 +199,7 @@ describe('PrefsForm enableIf', () => {
     expect(screen.getByRole('spinbutton', { name: 'Value a' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Fill/ })).toBeDisabled();
     expect(screen.getByRole('spinbutton', { name: 'Angle' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Go' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('disables the cells of a bar', () => {
@@ -212,7 +212,7 @@ describe('PrefsForm enableIf', () => {
     };
     renderWithIcons(<PrefsForm layout="list" schema={bar} values={{}} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Go' })).toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByRole('spinbutton', { name: 'Gone' })).toBeNull();
   });
 });

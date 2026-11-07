@@ -99,10 +99,10 @@ describe('<TrialSceneCanvas>', () => {
   it("steps the scene's history from the trial's Undo and Redo", async () => {
     await mount();
     const undo = screen.getByRole('button', { name: 'Undo' });
-    expect(undo).toBeDisabled();
+    expect(undo).toHaveAttribute('aria-disabled', 'true');
     addOne();
     expect(live.scene.nodes.size).toBe(2);
-    expect(undo).not.toBeDisabled();
+    expect(undo).not.toHaveAttribute('aria-disabled');
     await userEvent.click(undo);
     expect(live.scene.nodes.size).toBe(1);
     await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
@@ -131,11 +131,11 @@ describe('<TrialSceneCanvas>', () => {
   it("is the trial's camera, so the lab's zoom reads and drives the scene's view", async () => {
     await mount();
     const zoomBar = within(screen.getByRole('toolbar', { name: 'Zoom' }));
-    expect(zoomBar.getByRole('button', { name: /^Zoom 100%/ })).toBeEnabled();
+    expect(zoomBar.getByRole('button', { name: /^Zoom 100%/ })).not.toHaveAttribute('aria-disabled');
     await userEvent.click(zoomBar.getByRole('button', { name: 'Zoom in' }));
     expect(zoomBar.queryByRole('button', { name: /^Zoom 100%/ })).toBeNull();
     await userEvent.click(zoomBar.getByRole('button', { name: /^Zoom \d+%/ }));
-    expect(zoomBar.getByRole('button', { name: /^Zoom 100%/ })).toBeEnabled();
+    expect(zoomBar.getByRole('button', { name: /^Zoom 100%/ })).not.toHaveAttribute('aria-disabled');
   });
 
   it("keeps the trial's tool slot and the canvas's active tool one value", async () => {

@@ -150,8 +150,8 @@ describe("the lab header's zoom controls", () => {
     await press('Zoom in');
     await press('Zoom in');
     expect(stageZoom(container)).toBe(1.5);
-    expect(zoomBar().getByRole('button', { name: 'Zoom in' })).toBeDisabled();
-    expect(zoomBar().getByRole('button', { name: 'Zoom out' })).toBeEnabled();
+    expect(zoomBar().getByRole('button', { name: 'Zoom in' })).toHaveAttribute('aria-disabled', 'true');
+    expect(zoomBar().getByRole('button', { name: 'Zoom out' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('answer Mod+=, Mod+- and Mod+0, claiming the key from the browser', async () => {
@@ -184,9 +184,9 @@ describe("the lab header's zoom controls", () => {
       wrapper: withIcons,
     });
     for (const name of ['Zoom out', 'Zoom in']) {
-      expect(zoomBar().getByRole('button', { name })).toBeDisabled();
+      expect(zoomBar().getByRole('button', { name })).toHaveAttribute('aria-disabled', 'true');
     }
-    expect(readout()).toBeDisabled();
+    expect(readout()).toHaveAttribute('aria-disabled', 'true');
     expect(readout()).toHaveTextContent('–');
     expect(await key('=')).toBe(false);
   });
@@ -231,7 +231,7 @@ describe("the lab header's zoom controls", () => {
     await act(async () => lab?.addTrial('Staged'));
     await act(async () => lab?.addTrial('Plain'));
     const [first, second, third] = lab?.trials.map((t) => t.id) ?? [];
-    expect(zoomBar().getByRole('button', { name: 'Zoom in' })).toBeDisabled();
+    expect(zoomBar().getByRole('button', { name: 'Zoom in' })).toHaveAttribute('aria-disabled', 'true');
 
     await act(async () => lab?.focusTrial(second ?? ''));
     await press('Zoom out');
@@ -246,7 +246,7 @@ describe("the lab header's zoom controls", () => {
     expect(stageZoom(container, 1)).toBeCloseTo(0.8);
 
     await act(async () => lab?.focusTrial(third ?? ''));
-    expect(readout()).toBeDisabled();
+    expect(readout()).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('are left out when the lab says so', async () => {

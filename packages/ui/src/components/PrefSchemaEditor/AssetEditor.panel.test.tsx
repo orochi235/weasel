@@ -13,16 +13,16 @@ const dragTool = (name: string) => within(screen.getByRole('group', { name: 'Dra
 describe('AssetEditor on a panel', () => {
   it('offers a panel nothing that holds a value or a page, and a dialog all of it', () => {
     renderWithIcons(<Live />);
-    expect(tool('Add pref')).toBeEnabled();
-    expect(dragTool('Page')).toBeEnabled();
+    expect(tool('Add pref')).not.toHaveAttribute('aria-disabled');
+    expect(dragTool('Page')).not.toHaveAttribute('aria-disabled');
     fireEvent.click(asset('Code'));
-    expect(tool('Add pref')).toBeDisabled();
-    expect(dragTool('Page')).toBeDisabled();
-    for (const name of ['Tab', 'Panel', 'Section', 'Group', 'Bar', 'Label', 'Separator']) expect(dragTool(name)).toBeEnabled();
-    expect(tool('Add group')).toBeEnabled();
+    expect(tool('Add pref')).toHaveAttribute('aria-disabled', 'true');
+    expect(dragTool('Page')).toHaveAttribute('aria-disabled', 'true');
+    for (const name of ['Tab', 'Panel', 'Section', 'Group', 'Bar', 'Label', 'Separator']) expect(dragTool(name)).not.toHaveAttribute('aria-disabled');
+    expect(tool('Add group')).not.toHaveAttribute('aria-disabled');
     fireEvent.click(asset('Settings'));
-    expect(tool('Add pref')).toBeEnabled();
-    expect(dragTool('Page')).toBeEnabled();
+    expect(tool('Add pref')).not.toHaveAttribute('aria-disabled');
+    expect(dragTool('Page')).not.toHaveAttribute('aria-disabled');
   });
 
   it('adds a panel a heading over its rows, not a page', () => {

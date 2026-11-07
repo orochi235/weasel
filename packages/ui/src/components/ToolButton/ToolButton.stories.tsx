@@ -58,6 +58,8 @@ export const Default: Story = {};
 export const Active: Story = { args: { active: true } };
 export const Disabled: Story = { args: { disabled: true } };
 export const NoShortcut: Story = { args: { shortcut: undefined } };
+/** A disabled tool keeps its tooltip, which reads the reason. */
+export const DisabledWithReason: Story = { args: { disabled: true, disabledReason: 'Select a path first' } };
 
 // Renders the button as toolbar consumers would: inside a ToolGroup, in a
 // toolbar that owns the roving tabindex.

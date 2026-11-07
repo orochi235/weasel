@@ -26,7 +26,7 @@ describe('ResetGroup over an encoded leaf', () => {
         setConfig={setConfig}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Reset Type' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reset Type' })).toHaveAttribute('aria-disabled', 'true');
     rerender(
       <ResetGroup
         group={group}

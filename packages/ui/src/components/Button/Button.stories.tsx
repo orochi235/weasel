@@ -179,6 +179,19 @@ export const Disabled: Story = {
   ),
 };
 
+/** A disabled button keeps its tooltip, and `disabledReason` makes it say why: hover or focus one. */
+export const DisabledWithReason: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <Button {...args} disabled disabledReason="Nothing has changed since the last save">Save</Button>
+      <Button {...args} iconOnly ariaLabel="Add layer" shortcut="⇧⌘N" disabled disabledReason="The document is locked">
+        <PlusIcon />
+      </Button>
+      <Button {...args} disabled shortcut="⌘Z">Undo</Button>
+    </div>
+  ),
+};
+
 export const FullWidth: Story = {
   args: { stance: 'confirm', fullWidth: true, children: 'Submit' },
   render: (args) => (

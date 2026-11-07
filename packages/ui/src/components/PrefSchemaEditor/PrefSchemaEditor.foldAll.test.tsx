@@ -30,7 +30,7 @@ describe('PrefSchemaEditor structure folds', () => {
   it('offers neither while a filter is set', () => {
     renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'snap' } });
-    expect(screen.getByRole('button', { name: 'Expand all' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Collapse all' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Expand all' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Collapse all' })).toHaveAttribute('aria-disabled', 'true');
   });
 });
