@@ -138,8 +138,11 @@ export function emitJoin(
   const adx = a.bx - a.ax, ady = a.by - a.ay;
   const bdx = b.bx - b.ax, bdy = b.by - b.ay;
   const cross = adx * bdy - ady * bdx;
-  if (cross === 0) return;                                       // straight (collinear), no wedge
-  const onPositive = cross > 0;
+  // Doubling straight back, either side is the outside: only a round join
+  // covers anything there, a half disc around the tip.
+  const reverses = cross === 0 && adx * bdx + ady * bdy < 0;
+  if (cross === 0 && !reverses) return;                          // straight on, no wedge
+  const onPositive = cross > 0 || reverses;
 
   const aOuterEnd = onPositive ? aBase + 3 : aBase + 2;
   const bOuterStart = onPositive ? bBase + 1 : bBase + 0;
