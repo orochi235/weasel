@@ -1,3 +1,4 @@
+import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link timeScale}. */
@@ -97,6 +98,7 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
   const span = d1 - d0;
   const map = (v: number) => (span === 0 ? (r0 + r1) / 2 : r0 + ((v - d0) / span) * (r1 - r0));
   const interval = (count = 5) => intervalFor(Math.abs(span), count);
+  const format = (v: number): string => formatInstant(v, interval().unit);
   return {
     kind: 'time',
     domain: [d0, d1],
@@ -108,10 +110,10 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
       const out = gridTicks(Math.min(d0, d1), Math.max(d0, d1), interval(count));
       return d0 <= d1 ? out : out.reverse();
     },
-    format: (v) => formatInstant(v, interval().unit),
-    tickFormat: (count) => {
+    format,
+    tickFormat(count) {
       const { unit } = interval(count);
-      return (v) => formatInstant(v, unit);
+      return replacedFormat(this, format) ?? ((v) => formatInstant(v, unit));
     },
   };
 }

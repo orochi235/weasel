@@ -1,3 +1,4 @@
+import { replacedFormat } from './replacedFormat';
 import type { Scale } from './types';
 
 /** Options for {@link bandScale}. */
@@ -41,6 +42,7 @@ export function bandScale(opts: BandScaleOptions): BandScale {
     const i = index.get(key);
     return i === undefined ? Number.NaN : startAt(i);
   };
+  const format = (key: string): string => key;
   return {
     kind: 'band',
     domain,
@@ -55,7 +57,9 @@ export function bandScale(opts: BandScaleOptions): BandScale {
       return domain[Math.min(n - 1, Math.max(0, i))];
     },
     ticks: () => [...domain],
-    format: (key) => key,
-    tickFormat: () => (key) => key,
+    format,
+    tickFormat() {
+      return replacedFormat(this, format) ?? format;
+    },
   };
 }

@@ -11,7 +11,7 @@ export interface Scale<T> {
   /** `value` as an axis label reads it, among the ticks `ticks()` gives. */
   format(value: T): string;
   /** A formatter for the ticks `ticks(count)` gives, at the precision they need. A scale without one labels every
-   *  count with {@link format}. */
+   *  count with {@link format}, and so does a built-in scale whose `format` was replaced (`{ ...scale, format }`). */
   tickFormat?(count?: number): (value: T) => string;
 }
 
