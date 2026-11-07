@@ -1,5 +1,6 @@
-import { formatNumber } from './linear';
+import { decimalsOf, formatNumber } from './linear';
 import { replacedFormat } from './replacedFormat';
+import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link logScale}. */
@@ -44,8 +45,11 @@ export function logScale(opts: LogScaleOptions): LogScale {
     }
     return l0 <= l1 ? out : out.reverse();
   };
-  // Each label is as precise as its own decade, whatever the count.
-  const format = (v: number): string => (v >= 1 ? formatNumber(v, 1) : formatNumber(v, 10 ** Math.floor(Math.log10(v))));
+  // Each label is as precise as its own decade, whatever the count, and another base's powers as their digits need.
+  const format = (v: number): string => {
+    const decade = v >= 1 ? 0 : decimalsOf(10 ** Math.floor(Math.log10(v)));
+    return formatNumber(v, 10 ** -(base === 10 ? decade : Math.max(decade, tickDecimals([v]))));
+  };
   return {
     kind: 'log',
     base,

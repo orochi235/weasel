@@ -83,6 +83,11 @@ describe('logScale', () => {
     expect(s.format(0.05)).toBe('0.05');
   });
 
+  it('labels the fractional powers of a base other than 10 exactly', () => {
+    const two = logScale({ domain: [0.125, 8], range: [0, 1], base: 2 });
+    expect(two.ticks().map(two.tickFormat())).toEqual(['0.125', '0.25', '0.5', '1', '2', '4', '8']);
+  });
+
   it('ticks an infinite domain with none', () => {
     expect(logScale({ domain: [1, Infinity], range: [0, 1] }).ticks()).toEqual([]);
   });
