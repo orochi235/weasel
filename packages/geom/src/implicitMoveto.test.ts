@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { PATH_L } from './commands';
-import { pathFromD } from './paths/pathFromD';
+import { PathBuilder } from './paths/builder';
 import { pointInPath } from './pathHitTest';
 import { extractPolylines } from './tessellate/polyline';
 import { tessellate } from './tessellate/tessellate';
 import { pathToMultiPolygon } from './booleans/adapter';
 import type { PolygonPath } from './path';
 
-// SVG: after `z` the pen is back at the subpath's start, and a drawing
+// As in SVG, after `Z` the pen is back at the subpath's start, and a drawing
 // command there opens a new subpath from it. So this is two triangles,
 // (0,0) (10,0) (10,10) and (0,0) (-10,0) (-10,-10), each of area 50.
-const TWO = pathFromD('M0 0 L10 0 L10 10 z l-10 0 l0 -10 z');
+const TWO = new PathBuilder()
+  .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).close()
+  .lineTo(-10, 0).lineTo(-10, -10).close()
+  .build();
 
 function meshArea(vertices: Float32Array, indices: Uint32Array): number {
   let area = 0;
@@ -58,7 +61,10 @@ describe('a drawing command after Z with no M', () => {
 
   it('starts a curve after Z from the subpath start, in a ring', () => {
     // Pen returns to (10,10); the curve runs from there, never from (20,20).
-    const polys = pathToMultiPolygon(pathFromD('M10 10 L20 10 L20 20 Z Q0 0 0 10 Z'));
+    const polys = pathToMultiPolygon(new PathBuilder()
+      .moveTo(10, 10).lineTo(20, 10).lineTo(20, 20).close()
+      .quadTo(0, 0, 0, 10).close()
+      .build());
     expect(polys).toHaveLength(2);
     const second = polys.find((p) => p[0].some(([x]) => x < 10))!;
     expect(second[0][0]).toEqual([10, 10]);

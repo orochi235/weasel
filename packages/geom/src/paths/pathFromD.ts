@@ -131,6 +131,9 @@ export function pathFromD(
   };
 
   let started = false;
+  // SVG starts a new subpath at the closed one's start when a drawing command
+  // follows Z; writing its moveto keeps every anchor walker counting alike.
+  let closed = false;
   for (const { cmd, args } of tokens) {
     const upper = cmd.toUpperCase();
     const relative = cmd !== upper;
@@ -145,6 +148,7 @@ export function pathFromD(
     }
     if (upper === 'Z') {
       b.close();
+      closed = true;
       st.x = st.startX;
       st.y = st.startY;
       st.lastCubicCtrl = null;
@@ -153,6 +157,8 @@ export function pathFromD(
     }
     // M with multiple coord pairs implies subsequent pairs are L (per SVG spec).
     const groups = Math.floor(args.length / argCount);
+    if (closed && upper !== 'M' && groups > 0) b.moveTo(st.startX, st.startY);
+    closed = false;
     for (let g = 0; g < groups; g++) {
       const a = args.slice(g * argCount, (g + 1) * argCount);
       // For repeated 'M'/'m' coord pairs after the first, downgrade to L/l.

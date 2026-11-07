@@ -57,6 +57,12 @@ describe('pathFromD', () => {
     expect(dump('M0 0 L10 0 L10 10 z').commands).toEqual([PATH_M, PATH_L, PATH_L, PATH_Z]);
   });
 
+  it('writes the moveto SVG implies when a drawing command follows Z', () => {
+    const r = dump('M0 0 L10 0 L10 10 z l-10 0');
+    expect(r.commands).toEqual([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L]);
+    expect(r.coords).toEqual([0, 0, 10, 0, 10, 10, 0, 0, -10, 0]);
+  });
+
   it('treats trailing M coord pairs as implicit lineTo', () => {
     const r = dump('M0 0 10 10 20 0');
     expect(r.commands).toEqual([PATH_M, PATH_L, PATH_L]);
