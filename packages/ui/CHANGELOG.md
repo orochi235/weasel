@@ -1,5 +1,34 @@
 # @weasel-js/ui
 
+## 1.17.1
+
+### Patch Changes
+
+- Updated dependencies [f45b9b5]
+- Updated dependencies [629d02b]
+  - @weasel-js/core@1.17.1
+  - @weasel-js/animator@1.17.1
+  - @weasel-js/clock@1.17.1
+  - @weasel-js/guides@1.17.1
+  - @weasel-js/plot@1.17.1
+  - @weasel-js/svg@1.17.1
+  - @weasel-js/font@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/gestures@1.17.1
+  - @weasel-js/history@1.17.1
+  - @weasel-js/icons@1.17.1
+  - @weasel-js/menu@1.17.1
+  - @weasel-js/modes@1.17.1
+  - @weasel-js/paint@1.17.1
+  - @weasel-js/prefs@1.17.1
+  - @weasel-js/quantity@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/select@1.17.1
+  - @weasel-js/text@1.17.1
+  - @weasel-js/theme@1.17.1
+  - @weasel-js/ui-logic@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @weasel-js/simulation
 
+## 1.17.1
+
+### Patch Changes
+
+- Updated dependencies [f45b9b5]
+  - @weasel-js/clock@1.17.1
+  - @weasel-js/react@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

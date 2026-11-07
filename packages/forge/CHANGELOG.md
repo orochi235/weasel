@@ -1,5 +1,23 @@
 # @weasel-js/forge
 
+## 1.17.1
+
+### Patch Changes
+
+- 93d0438: forge depends on `typescript` `~6.0.2` itself instead of taking it as an optional peer, so its prop controls and API tables work in a project on TypeScript 7, which dropped the compiler API forge reads (`ts.sys` among it). npm installs forge's own copy beside the project's.
+- Updated dependencies [f45b9b5]
+- Updated dependencies [629d02b]
+  - @weasel-js/core@1.17.1
+  - @weasel-js/clock@1.17.1
+  - @weasel-js/labkit@1.17.1
+  - @weasel-js/svg@1.17.1
+  - @weasel-js/ui@1.17.1
+  - @weasel-js/icons@1.17.1
+  - @weasel-js/prefs@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/theme@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

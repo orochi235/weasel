@@ -1,5 +1,16 @@
 # @weasel-js/renderer
 
+## 1.17.1
+
+### Patch Changes
+
+- @weasel-js/font@1.17.1
+  - @weasel-js/geom@1.17.1
+  - @weasel-js/paint@1.17.1
+  - @weasel-js/registry@1.17.1
+  - @weasel-js/stroke@1.17.1
+  - @weasel-js/text@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes

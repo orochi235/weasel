@@ -1,5 +1,15 @@
 # @weasel-js/text-dom
 
+## 1.17.1
+
+### Patch Changes
+
+- @weasel-js/font@1.17.1
+  - @weasel-js/paint@1.17.1
+  - @weasel-js/react@1.17.1
+  - @weasel-js/text@1.17.1
+  - @weasel-js/ui-logic@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes
