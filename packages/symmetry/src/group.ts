@@ -1,5 +1,6 @@
 import type { Affine, Point } from '@weasel-js/geom';
 import { clipNothing, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry } from '@weasel-js/core';
+import { localPoseUnder, shownWorldPoseOf } from './frames';
 import { DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetrySpec } from './kinds';
 
 /** What a symmetry group keeps in its `data`. Its center is its pose. */
@@ -24,6 +25,11 @@ export function centerOfPose(pose: unknown): Point {
 /** The pose that puts a group's center at `c`. */
 export function poseAtCenter(c: Point): SymmetryPose {
   return { x: c.x, y: c.y, width: 0, height: 0 };
+}
+
+/** World point `center` as the center of a group stored under `parent`. */
+export function centerUnder(scene: Scene<unknown, string, unknown>, center: Point, parent: NodeId | null): Point {
+  return parent === null ? center : centerOfPose(localPoseUnder(scene, poseAtCenter(center), parent));
 }
 
 /** The spec a group's `data` holds, with any field it lacks at its default. */
@@ -98,11 +104,13 @@ export function symmetryGroupOf(scene: Scene<unknown, string, unknown>, id: Node
   return null;
 }
 
-/** The spec and center of group `id`, or `null` when it is not one. */
+/** The spec and world center of group `id`, or `null` when it is not one.
+ *  The center is where its copies turn and reflect about, in a group inside
+ *  a frame as well as at the top of the scene. */
 export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
   if (!isSymmetryGroup(scene, id)) return null;
   const node = scene.get(id as NodeId)!;
-  return { spec: specOfData(node.data), center: centerOfPose(scene.overrides.read(node.id)?.pose ?? node.pose) };
+  return { spec: specOfData(node.data), center: centerOfPose(shownWorldPoseOf(scene, node.id)) };
 }
 
 /**

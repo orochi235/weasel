@@ -118,6 +118,26 @@ describe('reading DOT', () => {
     expect(readDot(fixture('positioned.dot')).warnings).toEqual(['DOT attributes a diagram does not hold were dropped: pos.']);
   });
 
+  it('drops a size or pen width that is not a number, with a warning', () => {
+    const { document, warnings } = readDot('digraph { a [width=wide, penwidth=thick]; a -> b [penwidth=""] }');
+    const p = asGraph(document.pages[0]!);
+    expect(node(p.data, 'a')).not.toHaveProperty('width');
+    expect(node(p.data, 'a')).not.toHaveProperty('colors');
+    expect(p.data.edges[0]).not.toHaveProperty('colors');
+    expect(warnings).toContain('DOT attributes that are not numbers were dropped: penwidth=thick, width=wide, penwidth=.');
+  });
+
+  it('reads an edge label\'s names for the edge, its tail, and its head', () => {
+    expect(page('digraph { a -> b [label="\\E: \\T to \\H"] }').data.edges[0]!.label).toBe('a->b: a to b');
+    expect(page('graph { a -- b [label="\\E"] }').data.edges[0]!.label).toBe('a--b');
+  });
+
+  it('keeps one edge per pair in a strict graph, with what each later statement sets', () => {
+    const edges = page('strict graph { edge [color=blue]; a -- b; b -- a [color=red]; a -- b [penwidth=2] }').data.edges;
+    expect(edges).toHaveLength(1);
+    expect(edges[0]!.colors).toMatchObject({ stroke: 'red', width: 2 });
+  });
+
   it('names the line of a syntax error', () => {
     expect(() => readDot('digraph {\n a -> ;\n}')).toThrow(/DOT, line 2/);
   });

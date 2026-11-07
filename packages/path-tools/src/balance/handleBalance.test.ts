@@ -123,4 +123,26 @@ describe('equalizeHandlesAction', () => {
     expect(h.in.x).toBeCloseTo(70, 4);
     expect(h.in.y).toBeCloseTo(30, 4);
   });
+
+  it('equalizes the images of both handles on a path symmetric under the pathSymmetry dep', () => {
+    // As above: the first segment's handles reach 2/3 and 2/7 of the way to their corner at (15, 30), so both
+    // reach 10/21 after, and the second segment, its mirror across x = 50, follows.
+    let current = pathFromD('M0 0 C10 20 40 30 50 30 C60 30 90 20 100 0') as PolygonPath;
+    const dep = makeEditAnchorsDep({
+      editingId: 'p1',
+      getEditablePath: () => current,
+      applyEdit: (_id, worldPath) => { current = worldPath as PolygonPath; },
+    });
+    const across50: Affine = [-1, 0, 0, 1, 100, 0];
+    const deps = { editAnchors: dep, pathSymmetry: { transforms: () => [across50] } } as unknown as InvocationCtx['deps'];
+    (equalizeHandlesAction.invoker as ImmediateInvoker).run(deps, { affordance: { kind: 'balance:0' } });
+    const [a, mid, b] = pathToAnchors(current).anchors[0];
+    const k = 10 / 21;
+    expect(a.outHandle!.x).toBeCloseTo(15 * k, 4);
+    expect(a.outHandle!.y).toBeCloseTo(30 * k, 4);
+    expect(mid.inHandle!.x).toBeCloseTo(50 - 35 * k, 4);
+    expect(mid.outHandle!.x).toBeCloseTo(50 + 35 * k, 4);
+    expect(b.inHandle!.x).toBeCloseTo(100 - 15 * k, 4);
+    expect(b.inHandle!.y).toBeCloseTo(30 * k, 4);
+  });
 });

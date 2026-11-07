@@ -63,7 +63,7 @@ describe('useSymmetry', () => {
     expect(groups(scene)).toHaveLength(1);
   });
 
-  it('makes the group on the shown page, at its center in the page\'s frame, and finds it there again', () => {
+  it('makes the group on the shown page, at its center, and finds it there again', () => {
     act(() => drawPrefs().set('view.symmetry', true));
     const scene = newScene();
     createPageRun(scene, [{ id: 'p1', ...PAGE }, { id: 'p2', ...PAGE }]);
@@ -71,7 +71,10 @@ describe('useSymmetry', () => {
     const first = renderHook(() => useSymmetry(scene, p2));
     const [group] = groups(scene);
     expect(group!.parent).toBe('p2');
-    expect(readGroup(scene as never, group!.id)?.center).toEqual({ x: 300, y: 400 });
+    expect(p2.x).not.toBe(0);
+    expect(readGroup(scene as never, group!.id)?.center).toEqual({ x: p2.x + 300, y: p2.y + 400 });
+    // Stored in the page's frame.
+    expect(scene.get(group!.id)!.pose).toMatchObject({ x: 300, y: 400 });
     first.unmount();
     const { result } = renderHook(() => useSymmetry(scene, p2));
     expect(groups(scene)).toHaveLength(1);

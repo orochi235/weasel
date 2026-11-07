@@ -5,8 +5,16 @@ import { rgbaToHex } from '@weasel-js/paint';
 import { markupLines } from '../graphRead';
 import type { DotValue } from './parse';
 
-/** A label's lines: an HTML label's text, else the string with its escapes read. `\N` names `self`, `\G` the graph. */
-export function labelLines(label: DotValue, self: string, graph: string): string[] {
+/** What an edge label's `\E`, `\T` and `\H` name: the edge, its tail, and its head. */
+export interface EdgeNames {
+  edge: string;
+  tail: string;
+  head: string;
+}
+
+/** A label's lines: an HTML label's text, else the string with its escapes read. `\N` names `self`, `\G` the graph,
+ *  and on an edge `\E`, `\T` and `\H` the edge, its tail, and its head. */
+export function labelLines(label: DotValue, self: string, graph: string, edge?: EdgeNames): string[] {
   if (label.html) return markupLines(label.value).filter((l, i, all) => l !== '' || (i > 0 && i < all.length - 1));
   const lines = [''];
   const text = label.value;
@@ -17,6 +25,9 @@ export function labelLines(label: DotValue, self: string, graph: string): string
     if (next === 'n' || next === 'l' || next === 'r') lines.push('');
     else if (next === 'N') lines[lines.length - 1] += self;
     else if (next === 'G') lines[lines.length - 1] += graph;
+    else if (edge !== undefined && (next === 'E' || next === 'T' || next === 'H')) {
+      lines[lines.length - 1] += next === 'E' ? edge.edge : next === 'T' ? edge.tail : edge.head;
+    }
     else lines[lines.length - 1] += next;
   }
   if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();

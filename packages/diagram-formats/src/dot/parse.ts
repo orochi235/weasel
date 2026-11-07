@@ -50,6 +50,9 @@ export const COMPASS_POINTS: ReadonlySet<string> = new Set(['n', 'ne', 'e', 'se'
 const keyword = (t: DotToken | undefined, word: string) =>
   t !== undefined && t.kind === 'id' && !t.quoted && !t.html && t.value.toLowerCase() === word;
 
+/** A token as a name: a quoted one's doubled backslashes read as one, which is how {@link dotId} writes a backslash. */
+const nameOf = (t: DotToken): string => (t.quoted ? t.value.replace(/\\\\/g, '\\') : t.value);
+
 const valueOf = (t: DotToken): DotValue => ({ value: t.value, ...(t.quoted ? { quoted: true } : {}), ...(t.html ? { html: true } : {}) });
 
 /** Parses DOT source. Throws, naming the line, on text that is not a DOT graph. */
@@ -77,7 +80,7 @@ export function parseDot(text: string): DotGraph {
   if (!keyword(kind, 'graph') && !keyword(kind, 'digraph')) throw fail('"graph" or "digraph"');
   i++;
   const directed = kind!.value.toLowerCase() === 'digraph';
-  const graphId = peek()?.kind === 'id' ? tokens[i++]!.value : undefined;
+  const graphId = peek()?.kind === 'id' ? nameOf(tokens[i++]!) : undefined;
   take('{');
   const stmts = stmtList();
   take('}');
@@ -113,7 +116,7 @@ export function parseDot(text: string): DotGraph {
     let name: string | undefined;
     if (keyword(peek(), 'subgraph')) {
       i++;
-      if (peek()?.kind === 'id') name = tokens[i++]!.value;
+      if (peek()?.kind === 'id') name = nameOf(tokens[i++]!);
     }
     take('{');
     const body = stmtList();
@@ -123,13 +126,13 @@ export function parseDot(text: string): DotGraph {
 
   function nodeRef(): DotNodeRef {
     const t = id();
-    const ref: DotNodeRef = { id: t.value, line: t.line };
+    const ref: DotNodeRef = { id: nameOf(t), line: t.line };
     if (!is(':')) return ref;
     i++;
-    const first = id('a port').value;
+    const first = nameOf(id('a port'));
     if (is(':')) {
       i++;
-      return { ...ref, port: first, compass: id('a compass point').value };
+      return { ...ref, port: first, compass: nameOf(id('a compass point')) };
     }
     return COMPASS_POINTS.has(first) ? { ...ref, compass: first } : { ...ref, port: first };
   }

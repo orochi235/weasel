@@ -117,7 +117,8 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
   enabled: gripEnabled,
 }, editingLayer);
 
-/** Double-click a segment's balance grip to even out its handles' proportions. */
+/** Double-click a segment's balance grip to even out its handles' proportions, every image of them with them under a
+ *  `pathSymmetry` dep. */
 export const equalizeHandlesAction: Action & { requires: string[] } = {
   id: 'equalizeHandles',
   label: 'Equalize handles',
@@ -125,7 +126,7 @@ export const equalizeHandlesAction: Action & { requires: string[] } = {
   tags: pathOperationTags('click'),
   defaultBinding: [{ spec: { kind: 'doubleClick', target: { kindOf: isBalanceGrip } }, opts: { id: 'equalizeHandles.doubleClick' } }],
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors'],
+  requires: ['editAnchors', 'pathSymmetry'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -133,7 +134,8 @@ export const equalizeHandlesAction: Action & { requires: string[] } = {
       const target = gripTarget(deps.editAnchors, kind);
       if (!target) return;
       const { dep, sub, segIdx } = target;
-      commitAnchorEdit(dep, 'Equalize handles', (set) => equalizeSegmentHandles(set, sub, segIdx));
+      commitAnchorEdit(dep, 'Equalize handles', (set) =>
+        equalizeSegmentHandles(set, sub, segIdx, editedPathSymmetries(deps.pathSymmetry, dep.editingId, set)));
     },
   } as ImmediateInvoker,
   enabled: gripEnabled,
