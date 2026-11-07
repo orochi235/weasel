@@ -350,10 +350,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] `useEnteredGroup` makes its own store per call.** `core/src/canvas/deps/enteredGroup.ts:100`
-  memos a fresh `createEnteredGroup(scene)` per component, so two components calling it for one scene disagree on
-  which group is entered (collego, 2026-11-07). Closes when entry state is one per scene, shared by every caller
-  (a dep or a context), or the hook is renamed and documented as creating one.
 - **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.

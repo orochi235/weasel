@@ -18,8 +18,8 @@ export interface SceneCanvasPointerProps<TData = unknown> {
 
   /**
    * The entered group: the group a press resolves inside of, and which a double-click drills down
-   * from. Nodes outside it take no hits. Pass one from `useEnteredGroup(scene)` to read or drive it
-   * from outside the canvas, as `selection` is passed; without it the canvas keeps its own.
+   * from. Nodes outside it take no hits. Without it the canvas uses the scene's own, which
+   * `useEnteredGroup(scene)` reads and drives from anywhere; pass `createEnteredGroup(scene)` for a separate one.
    */
   enteredGroup?: EnteredGroupApi;
 

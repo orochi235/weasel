@@ -6,7 +6,7 @@
  * innermost of those still in the scene, so deleting the group lands on its
  * parent, and an undo that brings it back lands on it again.
  */
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { createEmitter } from '@weasel-js/registry';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -44,7 +44,7 @@ export function reachableInGroup(
 
 type SceneReads = Pick<Scene<unknown, string, unknown>, 'get' | 'ancestorsOf' | 'subscribe'>;
 
-/** An entered-group store over `scene`, with nothing entered. */
+/** A new entered-group store over `scene`, with nothing entered, apart from the one `useEnteredGroup` shares. */
 export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
   let chain: NodeId[] = [];
   let announced: NodeId | null = null;
@@ -96,9 +96,14 @@ export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
   };
 }
 
-/** One entered-group store for the life of the scene. */
+const BY_SCENE = new WeakMap<object, EnteredGroupApi>();
+
+/** `scene`'s entered group: one store per scene, shared by every caller and by a `<SceneCanvas>`
+ *  over it that is given no `enteredGroup`. `createEnteredGroup` makes a separate one. */
 export function useEnteredGroup(scene: SceneReads): EnteredGroupApi {
-  return useMemo(() => createEnteredGroup(scene), [scene]);
+  let entered = BY_SCENE.get(scene);
+  if (!entered) BY_SCENE.set(scene, (entered = createEnteredGroup(scene)));
+  return entered;
 }
 
 export function useEnteredGroupApiSource(dep: EnteredGroupApi): void {
