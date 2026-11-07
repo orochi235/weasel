@@ -197,6 +197,7 @@ describe('useSelectTool smoke', () => {
       },
       clear: () => { selectionState = []; },
       contains: (nid: NodeId) => selectionState.includes(nid),
+      intentOf: () => 'replace' as const,
       applyClick: (_id: NodeId, _mods: unknown) => {},
       adapterMethods: {
         getSelection: () => [...selectionState],
@@ -244,6 +245,7 @@ describe('useSelectTool smoke', () => {
       },
       clear: () => { selectionState = []; },
       contains: (nid: NodeId) => selectionState.includes(nid),
+      intentOf: () => 'replace' as const,
       applyClick: (_id: NodeId, _mods: unknown) => {},
       adapterMethods: {
         getSelection: () => [...selectionState],
@@ -641,6 +643,7 @@ describe('useLassoTool smoke', () => {
       },
       clear: () => { selectionState = []; },
       contains: (nid: NodeId) => selectionState.includes(nid),
+      intentOf: () => 'replace' as const,
       applyClick: (_nid: NodeId, _mods: unknown) => {},
       adapterMethods: {
         getSelection: () => [...selectionState],
@@ -704,6 +707,7 @@ describe('useLassoTool smoke', () => {
       set: (next: NodeId[]) => { selected = next; },
       clear: () => { selected = []; },
       contains: (nid: NodeId) => selected.includes(nid),
+      intentOf: () => 'replace' as const,
       applyClick: () => {},
       adapterMethods: {
         getSelection: () => [...selected],

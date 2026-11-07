@@ -93,6 +93,10 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
       store.setSelection(ids);
     };
     const without = (id: NodeId) => get().filter((x) => x !== id);
+    const intentOfMods: SelectionApi['intentOf'] = (modifiers) => {
+      const { mode: m, extend: key, range: rangeKey } = optsRef.current;
+      return intentOf(modifiers, { mode: m, toggle: key, range: rangeKey });
+    };
     return {
       get current() { return get(); },
       get,
@@ -111,18 +115,19 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
       clear() { set([]); },
       contains: (id) => get().includes(id),
       applyClick(id, modifiers) {
-        const { mode: m, extend: key, range: rangeKey, order: walk = paintOrderOf(store), lock: locked } = optsRef.current;
+        const { order: walk = paintOrderOf(store), lock: locked } = optsRef.current;
         if (locked) return;
         const ids = get();
         // A selection something else set — a marquee, an undo — ranges from its last id.
         const anchor = anchorRef.current !== null && ids.includes(anchorRef.current)
           ? anchorRef.current
           : (ids.at(-1) ?? null);
-        const intent = intentOf(modifiers, { mode: m, toggle: key, range: rangeKey });
+        const intent = intentOfMods(modifiers);
         const next = select({ ids, anchor }, id, intent, intent === 'range' && walk ? { order: [...walk()] } : {});
         anchorRef.current = next.anchor;
         set([...next.ids]);
       },
+      intentOf: intentOfMods,
       adapterMethods: {
         getSelection: () => get(),
         setSelection: (ids: NodeId[]) => set(ids),

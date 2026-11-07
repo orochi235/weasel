@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { logScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { stubRect } from '../Slider/testing/stubRect';
 import { PropertyField } from './PropertyField';
+import { trackPlace } from './sliderScale';
 
 /** A segment count over 1..1000 on a log track, holding its own value. */
 function Count({ start = 16, stops, endless, scale = logScale, onInput = () => {}, onChange = () => {} }: {
@@ -73,6 +74,24 @@ describe('a slider on a scaled track', () => {
     expect(onInput).toHaveBeenLastCalledWith(11);
     fireEvent.keyDown(el, { key: 'End' });
     expect(onInput).toHaveBeenLastCalledWith(1000);
+  });
+
+  it('steps the horizontal arrows as the vertical ones, as an unscaled track does', () => {
+    const onInput = vi.fn();
+    render(<Count start={9} onInput={onInput} />);
+    const el = track();
+    fireEvent.keyDown(el, { key: 'ArrowRight' });
+    expect(onInput).toHaveBeenLastCalledWith(10);
+    fireEvent.keyDown(el, { key: 'ArrowLeft' });
+    fireEvent.keyDown(el, { key: 'ArrowLeft' });
+    expect(onInput).toHaveBeenLastCalledWith(8);
+  });
+
+  it('mirrors the horizontal arrows on a right-to-left track', () => {
+    const place = trackPlace(logScale, 1, 1000, 1, undefined);
+    expect(place.keyStep('ArrowRight', 9, 'rtl')).toBe(8);
+    expect(place.keyStep('ArrowLeft', 9, 'rtl')).toBe(10);
+    expect(place.keyStep('ArrowUp', 9, 'rtl')).toBe(10);
   });
 
   it('draws a stop where the scale puts it, and a drag near one lands on it', () => {

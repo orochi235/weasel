@@ -57,6 +57,7 @@ function mount() {
       get: () => [...selectionRef.current],
       set: (ids: NodeId[]) => setSelection(ids),
       clear: () => setSelection([]),
+      intentOf: () => 'replace' as const,
       applyClick: (id: NodeId) => setSelection([id]),
       contains: (id: NodeId) => selectionRef.current.includes(id),
     }) as never);

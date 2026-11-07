@@ -102,6 +102,7 @@ function makeSelection(initial: string[]): SelectionApi {
     toggle(id) { if (ids.includes(id)) { this.remove(id); } else { this.add(id); } },
     clear() { ids = []; },
     contains(id) { return ids.includes(id); },
+    intentOf: (mods) => (mods.shift || mods.meta || mods.ctrl ? 'toggle' : 'replace'),
     applyClick(id, mods) {
       if (mods.shift || mods.meta || mods.ctrl) {
         this.toggle(id);

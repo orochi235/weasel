@@ -10,6 +10,7 @@ import {
 import { imeKey } from '@weasel-js/ui-logic';
 import { decimal, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
+import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
 import { QuantityText } from '../QuantityText';
 import shared from '../range.module.css';
@@ -216,7 +217,7 @@ function SliderTrack(p: PropertyNumberFieldProps) {
       disabled={p.mixed || p.disabled}
       onPointerDown={stops.onPointerDown}
       onKeyDown={(e) => {
-        const next = place.keyStep(e.key, value);
+        const next = place.keyStep(e.key, value, inlineDirection(e.currentTarget));
         if (next === null) return;
         e.preventDefault();
         keyed(next);

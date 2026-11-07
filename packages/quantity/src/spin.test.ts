@@ -35,6 +35,14 @@ describe('an endless end', () => {
     expect(spinKey('Home', 3, bounds)).toBe(0);
     expect(spinKey('ArrowUp', 10, { ...bounds, endless: undefined })).toBe(10);
   });
+
+  it('lands a coarse step on the bound before it reaches infinity, as a slider thumb does', () => {
+    expect(spinKey('PageUp', 5, bounds)).toBe(10);
+    expect(spinKey('PageUp', 10, bounds)).toBe(Infinity);
+    const both = { ...bounds, endless: 'both' as const };
+    expect(spinKey('PageDown', 5, both)).toBe(0);
+    expect(spinKey('PageDown', 0, both)).toBe(-Infinity);
+  });
 });
 
 describe('canSpin', () => {

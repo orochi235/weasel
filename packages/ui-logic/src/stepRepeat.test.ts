@@ -107,4 +107,18 @@ describe('createStepRepeat', () => {
     r.start(1);
     expect(pending()).toBe(0);
   });
+
+  it('schedules nothing more when a repeated step ends the hold', () => {
+    const { scheduler, advance, pending } = fakeScheduler();
+    let steps = 0;
+    const r: ReturnType<typeof createStepRepeat<number>> = createStepRepeat<number>(
+      () => { steps++; if (steps === 2) r.stop(); }, () => false, { scheduler },
+    );
+    r.start(1);
+    advance(REPEAT_DELAY_MS);
+    expect(steps).toBe(2);
+    expect(pending()).toBe(0);
+    advance(REPEAT_EVERY_MS * 5);
+    expect(steps).toBe(2);
+  });
 });

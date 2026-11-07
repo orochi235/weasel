@@ -14,7 +14,7 @@ export interface SelectDeepOptions {
 
 /**
  * `select.deep` — selects the node under the point itself, not the outermost
- * group above it; with Shift it adds that node. Bound to Cmd-press by
+ * group above it; with Shift it applies the click the way the selection's keys read Shift. Bound to Cmd-press by
  * `useSelectTool`, ahead of `select.pick`.
  */
 export function createSelectDeepAction(opts: SelectDeepOptions): Action {
@@ -29,11 +29,12 @@ export function createSelectDeepAction(opts: SelectDeepOptions): Action {
         const p = params as ImmediateParams | undefined;
         const selection = deps.selection;
         if (!selection || !p?.world) return;
-        const shift = p.mods?.shift === true;
+        // The deep chord is Mod, so only Shift is left to say how the click applies.
+        const mods = { ctrl: false, meta: false, shift: p.mods?.shift === true };
         const hit = opts.pickHit(p.world, p.mods?.alt === true, selection.get());
         opts.settled();
-        if (hit === null || (shift && opts.extendLocked())) return;
-        selection.applyClick(hit as NodeId, { ctrl: false, meta: false, shift });
+        if (hit === null || (selection.intentOf(mods) !== 'replace' && opts.extendLocked())) return;
+        selection.applyClick(hit as NodeId, mods);
       },
     },
   };

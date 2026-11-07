@@ -53,6 +53,7 @@ function selectionOf(ids: readonly NodeId[]): SelectionApi {
     toggle: noop,
     clear: noop,
     contains: (id) => ids.includes(id),
+    intentOf: () => 'replace' as const,
     applyClick: noop,
     adapterMethods: { getSelection: () => [...ids], setSelection: noop },
   };

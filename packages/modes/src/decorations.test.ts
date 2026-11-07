@@ -24,6 +24,18 @@ describe('createModeDecorations', () => {
     expect(cmds.length).toBe(1);
   });
 
+  it('releasing an older registration of the same painter leaves the live one painting', () => {
+    const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const d = createModeDecorations({ registry });
+    const painter = () => [{ kind: 'path' } as never];
+    const first = d.register('path-edit', painter);
+    const second = d.register('path-edit', painter);
+    first();
+    expect(d.paint()).toHaveLength(1);
+    second();
+    expect(d.paint()).toEqual([]);
+  });
+
   it('a released painter stops painting, and subscribers hear of it', () => {
     const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const d = createModeDecorations({ registry });
