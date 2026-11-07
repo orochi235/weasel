@@ -50,4 +50,15 @@ describe('hostSceneRender', () => {
     expect(out).toContainEqual({ type: 'drawn' });
     expect(out).toContainEqual({ type: 'error', message: expect.stringMatching(/nope/) });
   });
+
+  it('answers a snapshot it could not take with nothing', async () => {
+    vi.stubGlobal('createImageBitmap', () => Promise.reject(new Error('lost')));
+    const { send, out, canvas } = host();
+    Object.assign(canvas, { width: 20, height: 20 });
+    send({ type: 'snapshot', id: 3 });
+    await new Promise((r) => setTimeout(r, 0));
+    vi.unstubAllGlobals();
+    expect(out).toContainEqual({ type: 'snapshot', id: 3, bitmap: null });
+  });
+
 });

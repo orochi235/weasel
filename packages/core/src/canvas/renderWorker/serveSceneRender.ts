@@ -194,9 +194,10 @@ function readIds(painting: Painting | null, msg: Extract<ToWorker, { type: 'read
   });
 }
 
+/** What `canvas` shows, or `null` when it shows nothing or cannot be read: the page waits on it. */
 async function snapshot(canvas: OffscreenCanvas | null): Promise<ImageBitmap | null> {
   if (!canvas || canvas.width === 0 || canvas.height === 0) return null;
-  return createImageBitmap(canvas);
+  return createImageBitmap(canvas).catch(() => null);
 }
 
 /**
