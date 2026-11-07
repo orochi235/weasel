@@ -75,16 +75,16 @@ test('each placement anchors to its corner of the container', async () => {
   expect(toast.top - host.top).toBeCloseTo(16, 0);
 });
 
-test('with no container, the region is fixed to the viewport corner as before', async () => {
+test('with no container, the region joins its themed ancestor but stays fixed to the viewport corner', async () => {
   const queue = createToastQueue();
   renderWithIcons(
-    <div className="toast-host" data-wzl-theme="default">
+    <div className="toast-host" data-testid="themed" data-wzl-theme="default">
       <ToastRegion queue={queue} />
     </div>,
   );
   act(() => queue.add('info', 'Page level', { ttlMs: null }));
   const region = await screen.findByRole('region', { name: /notification/i });
-  expect(region.parentElement).toBe(document.body);
+  expect(region.parentElement).toBe(screen.getByTestId('themed'));
   expect(getComputedStyle(region).position).toBe('fixed');
   const toast = (await screen.findByRole('alertdialog')).getBoundingClientRect();
   expect(window.innerWidth - toast.right).toBeCloseTo(16, 0);

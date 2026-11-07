@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider } from '@weasel-js/routing/react';
 import { assignRef } from '@weasel-js/react';
@@ -18,7 +18,7 @@ import type { Scene } from '@weasel-js/core';
 import type { PoseDescriptor } from '@weasel-js/core';
 import type { Animator } from '@weasel-js/animator';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core';
-import { accentColorOf } from '@weasel-js/core';
+import { accentColorOf, FALLBACK_ACCENT, watchThemeOf } from '@weasel-js/core';
 
 /** Props for `<MinimapCanvas>`. */
 export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
@@ -115,11 +115,18 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const fitView = useFitView(scene, width, height, fit, descriptor);
 
-  const indicatorCmd = useMemo<DrawCommand>(() => {
-    return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle, fitView);
-  }, [mainView, mainViewDims, indicatorStyle, fitView]);
-
   const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [accent, setAccent] = useState(FALLBACK_ACCENT);
+  useLayoutEffect(() => {
+    const read = () => setAccent(accentColorOf(localCanvasRef.current));
+    read();
+    return watchThemeOf(() => localCanvasRef.current, read);
+  }, []);
+
+  const indicatorCmd = useMemo<DrawCommand>(() => {
+    return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle, fitView, accent);
+  }, [mainView, mainViewDims, indicatorStyle, fitView, accent]);
+
   const clientToWorld = useMinimapInput({
     canvasRef: localCanvasRef, mainView, mainViewDims, onMainViewChange, fitView, wheelZoom,
   });
@@ -131,8 +138,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   const cursorLayer = useMemo(() => createLinkedCursorLayer({
     id: `${id}.cursor`,
     pointer: () => pointer,
-    color: () => accentColorOf(localCanvasRef.current),
-  }), [id, pointer]);
+    color: () => accent,
+  }), [id, pointer, accent]);
 
   const extraCommands = useMemo<DrawCommand[]>(() => [
     indicatorCmd,

@@ -16,14 +16,16 @@ function viewIdOf(data: unknown): string | null {
 
 /**
  * The main camera's visible world rect, painted only in view `viewId`. Its
- * stroke and dash are screen pixels whatever the minimap's scale.
+ * stroke and dash are screen pixels whatever the minimap's scale. `color`,
+ * read each draw, is its stroke where `style` names none.
  */
 export function createIndicatorLayer(opts: {
   viewId: string;
   root: () => ViewApi | undefined;
   style?: IndicatorStyle;
+  color?: () => string;
 }): RenderLayer<unknown> {
-  const { viewId, root, style = {} } = opts;
+  const { viewId, root, style = {}, color } = opts;
   return {
     id: `${viewId}.indicator`,
     label: 'Minimap indicator',
@@ -32,7 +34,7 @@ export function createIndicatorLayer(opts: {
       const r = root();
       const size = r?.hostSize?.();
       if (!r || !size) return [];
-      return [computeIndicatorCommand(r.get(), size, style, view)];
+      return [computeIndicatorCommand(r.get(), size, style, view, color?.())];
     },
   };
 }

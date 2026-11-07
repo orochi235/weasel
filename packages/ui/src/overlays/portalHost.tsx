@@ -78,10 +78,29 @@ export function useReactAriaPortalTarget(props?: PortalTargeted): Element | null
   return props?.UNSTABLE_portalContainer ?? getContainer?.() ?? null;
 }
 
+/**
+ * Where an overlay primitive — a `Popover`, a toast region — portals: its own `UNSTABLE_portalContainer`, else the
+ * container an enclosing {@link useOverlayPortal}'s `provide` gave it, else what {@link useOverlayPortal} chooses
+ * from the primitive's own position, so one used bare still lands in the theme it was opened from. Render `anchor`
+ * at that position and the overlay once `ready`, as for {@link useOverlayPortal}.
+ */
+export function useOverlayTarget(props?: PortalTargeted): {
+  anchor: ReactElement | null;
+  container: Element | null;
+  ready: boolean;
+} {
+  const inherited = useReactAriaPortalTarget(props);
+  const own = useOverlayPortal();
+  if (inherited) return { anchor: null, container: inherited, ready: true };
+  return { anchor: own.anchor, container: own.container ?? null, ready: own.ready };
+}
+
 /** A React Aria overlay's props with their portal target replaced by `target`, or as given when it is null. */
 export function withPortalTarget<T extends PortalTargeted>(props: T, target: Element | null): T {
   return target ? { ...props, UNSTABLE_portalContainer: target } : props;
 }
+
+const theBody = () => document.body;
 
 /**
  * Resolves where an overlay should portal, and the anchor that answers it.
@@ -109,8 +128,9 @@ export function useOverlayPortal(explicit?: Element | null): {
   const nearest = useMemo(() => (choosing ? nearestPortalHost(anchorEl) : null), [choosing, anchorEl]);
   const container = (choosing ? nearest : assigned) ?? undefined;
   const getContainer = useCallback(() => (container as HTMLElement | undefined) ?? null, [container]);
-  // `null` clears an enclosing provider, so an explicit body beats an outer overlay's container.
-  const providerTarget = container ? getContainer : assigned === null ? null : undefined;
+  // The body said outright, rather than `null`, which reads below as no provider: it must beat an outer overlay's
+  // container, and a primitive under it must not choose for itself.
+  const providerTarget = container ? getContainer : assigned === null ? theBody : undefined;
   const provide = useCallback(
     (overlay: ReactNode) =>
       providerTarget === undefined ? overlay : (
