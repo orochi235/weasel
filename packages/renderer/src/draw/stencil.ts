@@ -57,6 +57,17 @@ export function parityPaint(depth: number): GpuStencilState {
   return PARITY_PAINTS[depth];
 }
 
+const TRIM_MARKS: GpuStencilState[] = Array.from({ length: 8 }, (_, depth) => {
+  const mask = ancestorMask(depth);
+  return stencilState('equal', mask | 0x01, mask, 0x01, 'replace');
+});
+
+/** Set bit 0 where every enclosing clip at `depth` holds: what a clipped
+ *  trim covers, for `parityPaint` to paint once and clear. */
+export function trimMark(depth: number): GpuStencilState {
+  return TRIM_MARKS[depth];
+}
+
 /** Set a clip's bit where the path covers and its ancestors hold. */
 export function clipPush(depth: number, parity: boolean): GpuStencilState {
   const ancestors = ancestorMask(depth - 1);

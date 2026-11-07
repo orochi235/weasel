@@ -39,6 +39,44 @@ export interface MarkerHead {
 }
 
 /**
+ * Where one head goes: its shape (`markerShape`) turned by `angle` and moved
+ * to `x`, `y` in `space`, then mapped out of that space's metric into the
+ * stroked path's coordinates, which are measured from its origin.
+ */
+export interface MarkerPlacement {
+  readonly role: 'start' | 'mid' | 'end';
+  readonly entry: MarkerEntry;
+  readonly size: number;
+  readonly x: number;
+  readonly y: number;
+  readonly angle: number;
+  readonly space?: ScreenSpace;
+}
+
+/** A head's geometry at its anchor, pointing along +x, before placement. */
+export function markerShape(entry: MarkerEntry, size: number, stroke: Stroke): PolygonPath {
+  const { origin: _own, ...shape } = entry.path({ size, stroke }) as PolygonPath;
+  return shape;
+}
+
+/**
+ * `placement` as the affine map `[a, b, c, d, tx, ty]` (x' = a·x + c·y + tx)
+ * taking its shape into the stroked path's coordinates — what `markerHeads`
+ * applies to the shape's points.
+ */
+export function markerPlacementMap(placement: MarkerPlacement): [number, number, number, number, number, number] {
+  const cos = Math.cos(placement.angle), sin = Math.sin(placement.angle);
+  const m = placement.space?.metric;
+  if (m === undefined) return [cos, sin, -sin, cos, placement.x, placement.y];
+  // P⁻¹ = [[r, −q], [−q, p]] after the rotation and the move.
+  const out = (x: number, y: number) => [m.r * x - m.q * y, m.p * y - m.q * x];
+  const [a, b] = out(cos, sin);
+  const [c, d] = out(-sin, cos);
+  const [tx, ty] = out(placement.x, placement.y);
+  return [a, b, c, d, tx, ty];
+}
+
+/**
  * Every marker head for `path` under `stroke`, placed but unpainted.
  * `strokeWidth` is the already width-resolved stroke width; `flattenTolerance`
  * matches what the ribbon used, so heads land on the same flattened vertices
@@ -53,6 +91,28 @@ export function markerHeads(
   flattenTolerance: number | undefined,
   spaces: StrokeSpaces = {},
 ): MarkerHead[] {
+  const origin = path.kind === 'polygon' ? path.origin : undefined;
+  return markerPlacements(path, stroke, strokeWidth, flattenTolerance, spaces).map((at) => {
+    const head = placed(markerShape(at.entry, at.size, stroke), at, origin);
+    if (at.space) coordsOutOfMetric(head.coords, at.space.metric);
+    const { entry, size, space } = at;
+    return space ? { entry, size, path: head, space } : { entry, size, path: head };
+  });
+}
+
+/**
+ * Where every marker head for `path` under `stroke` goes, as `markerHeads`
+ * places them, without building any. `polylines` is the path's flattening
+ * (`markerPolylines`), passed by a caller that keeps it across trims.
+ */
+export function markerPlacements(
+  path: Path,
+  stroke: Stroke,
+  strokeWidth: number,
+  flattenTolerance: number | undefined,
+  spaces: StrokeSpaces = {},
+  polylines: readonly Polyline[] = markerPolylines(path, stroke, strokeWidth, flattenTolerance),
+): MarkerPlacement[] {
   const refs = { start: stroke.markerStart, mid: stroke.markerMid, end: stroke.markerEnd };
   if (refs.start === undefined && refs.mid === undefined && refs.end === undefined) return [];
 
@@ -67,9 +127,8 @@ export function markerHeads(
   }
 
   const insets = headInsets(refs, strokeWidth);
-  const out: MarkerHead[] = [];
-  const origin = path.kind === 'polygon' ? path.origin : undefined;
-  for (const { polyline: pl, fromClosed } of headRuns(path, stroke, strokeWidth, flattenTolerance)) {
+  const out: MarkerPlacement[] = [];
+  for (const { polyline: pl, fromClosed } of headRuns(path, stroke, polylines)) {
     for (const [space, want] of groups) {
       const inSpace = space ? { ...pl, points: pl.points.slice() } : pl;
       if (space) polylineIntoMetric(inSpace, space.metric);
@@ -80,13 +139,19 @@ export function markerHeads(
         if (entry === undefined) continue;
         const size = resolveMarkerSize(ref, strokeWidth);
         const angle = entry.orient === undefined || entry.orient === 'auto' ? site.angle : entry.orient;
-        const head = placed(entry.path({ size, stroke }), { ...site, angle }, origin);
-        if (space) coordsOutOfMetric(head.coords, space.metric);
-        out.push(space ? { entry, size, path: head, space } : { entry, size, path: head });
+        const at = { role: site.role, entry, size, x: site.x, y: site.y, angle };
+        out.push(space ? { ...at, space } : at);
       }
     }
   }
   return out;
+}
+
+/** The flattening of `path` heads sit on: the corner-resolved path, as the ribbon flattens it. */
+export function markerPolylines(
+  path: Path, stroke: Stroke, strokeWidth: number, flattenTolerance: number | undefined,
+): Polyline[] {
+  return extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths));
 }
 
 /** How far the line stops short of the start and end heads, in the units each head is sized in. */
@@ -101,12 +166,11 @@ function headInsets(
   return { start: of(refs.start), end: of(refs.end) };
 }
 
-/** The runs heads sit on: the corner-resolved path the ribbon flattens, windowed
- *  as the ribbon is under a trim, so a head meets the line's end. */
+/** The runs heads sit on: `polylines`, windowed as the ribbon is under a trim,
+ *  so a head meets the line's end. */
 function headRuns(
-  path: Path, stroke: Stroke, strokeWidth: number, flattenTolerance: number | undefined,
+  path: Path, stroke: Stroke, polylines: readonly Polyline[],
 ): { polyline: Polyline; fromClosed: boolean }[] {
-  const polylines = extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths));
   if (stroke.trim === undefined) return polylines.map((polyline) => ({ polyline, fromClosed: polyline.closed }));
   return windowTrim(polylines, path, stroke.trim)?.windowed ?? [];
 }

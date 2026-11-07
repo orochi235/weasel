@@ -169,9 +169,10 @@ export interface BatchVariants {
    */
   readonly cuts: boolean;
   /**
-   * Whether an opaque trimmed stroke too large to batch clips its cached
-   * ribbon in the shader (`draw/clippedTrim.ts`) rather than rebuilding it
-   * trimmed. Always on but in a test that wants the rebuild as its reference.
+   * Whether a stroke too large to batch, trimmed or not, is drawn from its
+   * cached clip ribbon (`draw/clippedTrim.ts`) rather than built by the
+   * tessellator. Always on but in a test that wants the tessellator's build
+   * as its reference.
    */
   readonly trimClip: boolean;
   /** The program that clip draws with (`shaders/trimmedRibbon.ts`). */

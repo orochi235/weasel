@@ -17,6 +17,9 @@ export interface GroupFrame {
   colorMatrix?: Float32Array | number[];
   /** The id the frame's pixels carry into an id frame. Absent inherits. */
   pickId?: number;
+  /** Move what draws but not the frame a `'local'` paint is measured in: a
+   *  marker head placed on its line, painted in the line's frame. */
+  keepPaintFrame?: boolean;
 }
 
 export class GroupState {
@@ -24,6 +27,7 @@ export class GroupState {
   private alphaStack: number[] = [1];
   private colorMatrixStack: Float32Array[] = [IDENTITY_COLOR_MATRIX];
   private pickIdStack: number[] = [NO_PICK_ID];
+  private paintFrameStack: GlMat3[] = [this.transformStack[0]];
 
   get transform(): GlMat3 {
     return this.transformStack[this.transformStack.length - 1];
@@ -35,6 +39,12 @@ export class GroupState {
 
   get colorMatrix(): Float32Array {
     return this.colorMatrixStack[this.colorMatrixStack.length - 1];
+  }
+
+  /** The transform a `'local'` paint is measured in: `transform`, but under a
+   *  frame pushed with `keepPaintFrame`. */
+  get paintFrame(): GlMat3 {
+    return this.paintFrameStack[this.paintFrameStack.length - 1];
   }
 
   /** The id what draws now carries into an id frame; 0 for none. */
@@ -56,6 +66,7 @@ export class GroupState {
         )
       : this.colorMatrix;
     this.transformStack.push(nextTransform);
+    this.paintFrameStack.push(frame.keepPaintFrame ? this.paintFrame : nextTransform);
     this.alphaStack.push(nextAlpha);
     this.colorMatrixStack.push(nextCM);
     this.pickIdStack.push(frame.pickId ?? this.pickId);
@@ -75,7 +86,9 @@ export class GroupState {
     const composited = { alpha: this.alpha, colorMatrix: this.colorMatrix };
     this.pop();
     const current = this.transform;
-    this.transformStack.push(frame.transform ? mat3.multiply(current, frame.transform) : current);
+    const next = frame.transform ? mat3.multiply(current, frame.transform) : current;
+    this.transformStack.push(next);
+    this.paintFrameStack.push(frame.keepPaintFrame ? this.paintFrame : next);
     this.alphaStack.push(1);
     this.colorMatrixStack.push(IDENTITY_COLOR_MATRIX);
     this.pickIdStack.push(frame.pickId ?? this.pickId);
@@ -86,6 +99,7 @@ export class GroupState {
    *  down the tree never pops, and the next frame would draw under leftovers. */
   reset(): void {
     this.transformStack.length = 1;
+    this.paintFrameStack.length = 1;
     this.alphaStack.length = 1;
     this.colorMatrixStack.length = 1;
     this.pickIdStack.length = 1;
@@ -96,6 +110,7 @@ export class GroupState {
       throw new Error('GroupState.pop: cannot pop root frame');
     }
     this.transformStack.pop();
+    this.paintFrameStack.pop();
     this.alphaStack.pop();
     this.colorMatrixStack.pop();
     this.pickIdStack.pop();

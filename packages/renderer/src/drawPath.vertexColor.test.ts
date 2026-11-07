@@ -76,31 +76,38 @@ describe('vertex-colored stroke under a clip', () => {
     } as unknown as DrawCommand;
   }
 
-  it('applies the clip test before its draw', () => {
+  /** The stencil test each draw runs under: `null` with it off, else the clip bits it reads and wants set. */
+  function drawTests(calls: readonly { name: string; args: readonly unknown[] }[], gl: { STENCIL_TEST: number }) {
+    let on = false;
+    let func: { mask: number; ref: number } | null = null;
+    const out: ({ clipBits: number; wanted: number } | null)[] = [];
+    for (const c of calls) {
+      if (c.name === 'enable' && c.args[0] === gl.STENCIL_TEST) on = true;
+      if (c.name === 'disable' && c.args[0] === gl.STENCIL_TEST) on = false;
+      if (c.name === 'stencilFunc') func = { ref: c.args[1] as number, mask: c.args[2] as number };
+      if (c.name === 'drawElements') out.push(on && func ? { clipBits: func.mask & 0xfe, wanted: func.ref & func.mask & 0xfe } : null);
+    }
+    return out;
+  }
+
+  // Past what a run takes, the ribbon marks and covers through the stencil, both passes under the clip.
+  it('applies the clip test to each of its draws', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     ctx.clipDepth = 1;
     dispatch(ctx, vColorStroke());
-
-    const testIdx = calls.findIndex(
-      (c) => c.name === 'stencilFunc'
-        && c.args[0] === gl.EQUAL && c.args[1] === 0x02 && c.args[2] === 0x02,
-    );
-    const drawIdx = calls.findIndex((c) => c.name === 'drawElements');
-    expect(testIdx).toBeGreaterThanOrEqual(0);
-    expect(drawIdx).toBeGreaterThan(testIdx);
+    const tests = drawTests(calls, gl);
+    expect(tests.length).toBeGreaterThanOrEqual(2);
+    for (const t of tests) expect(t).toEqual({ clipBits: 0x02, wanted: 0x02 });
   });
 
-  it('turns the stencil test off when nothing clips it', () => {
+  it('reads no clip bit when nothing clips it', () => {
     // Without this the ribbon inherits whatever a previous clip left behind —
     // a popClip's EQUAL against a now-cleared bit discards the whole draw.
     const { ctx, calls, gl } = createRecorderCtx();
     dispatch(ctx, vColorStroke());
-    const disableIdx = calls.findIndex(
-      (c) => c.name === 'disable' && c.args[0] === gl.STENCIL_TEST,
-    );
-    const drawIdx = calls.findIndex((c) => c.name === 'drawElements');
-    expect(disableIdx).toBeGreaterThanOrEqual(0);
-    expect(drawIdx).toBeGreaterThan(disableIdx);
+    const tests = drawTests(calls, gl);
+    expect(tests.length).toBeGreaterThanOrEqual(2);
+    for (const t of tests) expect(t?.clipBits ?? 0).toBe(0);
   });
 });
 

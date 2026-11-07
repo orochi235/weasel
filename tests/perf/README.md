@@ -782,6 +782,7 @@ the entry chunk's hash against the build you mean before believing a grep over i
 | `pose-overrides.bench.ts` | a frame of the paint walk (`buildSceneViewCommands`), and of `effectivePose` alone, at 1k and 10k nodes with 0%, 10% and 100% of them carrying a pose override |
 | `animator-on-blits.bench.ts` | a frame of N tweens and of N springs, as the animator runs them and as blits would (a voice per animation, and one voice for every node), at 1k and 10k nodes; starting them, at 100, 300 and 1k |
 | `derived-path.bench.ts` | a frame of `resolveDerivedPath` over diagram size, as it runs now (memo hit) and with the resolve-and-value-compare pass a pull-invalidation scheme would need |
+| `trim-tween.bench.ts` | a frame of a trim tween on a 1,000-anchor stroke through the renderer on a recording GL context, clipped from its cached ribbon with its heads moved, and rebuilt trimmed with its heads built fresh; and on a 40-anchor stroke the batch takes, which rebuilds |
 
 ### The committed baseline
 

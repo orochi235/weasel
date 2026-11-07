@@ -8,7 +8,7 @@ import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
 import type { DrawContext } from './drawContext';
-import { setAlphaUniform, setColorMatrixUniforms, setProjAndModel } from './uniforms';
+import { drawModel, setAlphaUniform, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
 import { gradientSpaceInverse, spaceInverseAbout, spaceToDevice } from './gradient';
 import { tileExtent } from './patternBatch';
 import { isDev } from '@weasel-js/registry';
@@ -156,4 +156,47 @@ export function bindGradient(
   }
 
   return prog;
+}
+
+/**
+ * Bind the program, uniforms and textures for `fill`, and return the program.
+ *
+ * Split from the draw so a caller owning its own stencil state draws under
+ * that and not the clip test — `drawPathStrokeStenciled` clips a doubled
+ * ribbon to one side of the silhouette, which the clip test at depth 0 would
+ * not.
+ */
+export function bindPathFillByKind(ctx: DrawContext, fill: Paint): ShaderProgram | null {
+  const kind = fill.kind ?? 'solid';
+  if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
+  if (kind === 'texture') return bindPathFillPattern(ctx, fill as TexturePaint);
+  if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
+    return bindPathFillGradient(ctx, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
+  }
+  return bindPaintKind(ctx, fill);
+}
+
+function bindPathFillSolid(
+  ctx: DrawContext,
+  fill: { color: string; opacity?: number },
+): ShaderProgram {
+  const prog = ctx.pathFill;
+  setProjAndModel(ctx, prog);
+  setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
+  setColorMatrixUniforms(ctx, prog);
+  return prog;
+}
+
+function bindPathFillPattern(
+  ctx: DrawContext,
+  fill: TexturePaint,
+): ShaderProgram | null {
+  return bindPattern(ctx, ctx.patternFill, fill, drawModel(ctx));
+}
+
+function bindPathFillGradient(
+  ctx: DrawContext,
+  fill: Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
+): ShaderProgram | null {
+  return bindGradient(ctx, ctx.gradFill, fill, drawModel(ctx));
 }

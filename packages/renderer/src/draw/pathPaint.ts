@@ -1,4 +1,4 @@
-import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type TexturePaint, type VertexWidth } from '@weasel-js/paint';
+import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { Mesh } from '@weasel-js/geom/tessellate';
@@ -7,7 +7,7 @@ import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { metricKeepsRects, type StrokeSpaces } from '@weasel-js/stroke';
-import { cachedMarkerCommands } from '../cache/markerCommandCache';
+import { cachedMarkerHeads } from '../cache/markerCommandCache';
 import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
@@ -15,7 +15,7 @@ import { fillMesh, meshHandle, fillMeshHandle, flattenToleranceOf } from './mesh
 import { alignedRibbon } from './alignedRibbon';
 import { drawClippedTrim } from './clippedTrim';
 import {
-  atMeshOrigin, drawModel, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms,
+  atMeshOrigin, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms,
 } from './uniforms';
 import {
   ALIGNED_FILL, ALIGNED_FILL_PARITY, alignedRibbon as alignedRibbonStencil, clipTest, drawParityMask, endParityMask,
@@ -24,7 +24,7 @@ import { flushForOwnDraw } from './clip';
 import { pushRect, pushRampRect, tryStageFill } from './batch';
 import { batchPaint } from './gradient';
 import { pushPatternRect } from './patternBatch';
-import { bindPaintKind, bindPattern, bindGradient } from './paintBind';
+import { bindPathFillByKind } from './paintBind';
 import {
   releaseVertexColors, tryStageVertexColors, vertexColorBase, withVertexColors,
 } from './vertexColors';
@@ -95,53 +95,10 @@ function drawPathFillVColor(
   releaseVertexColors(ctx, colored);
 }
 
-/**
- * Bind the program, uniforms and textures for `fill`, and return the program.
- *
- * Split from the draw so a caller owning its own stencil state draws under
- * that and not the clip test — `drawPathStrokeStenciled` clips a doubled
- * ribbon to one side of the silhouette, which the clip test at depth 0 would
- * not.
- */
-function bindPathFillByKind(ctx: DrawContext, fill: Paint): ShaderProgram | null {
-  const kind = fill.kind ?? 'solid';
-  if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
-  if (kind === 'texture') return bindPathFillPattern(ctx, fill as TexturePaint);
-  if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
-    return bindPathFillGradient(ctx, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
-  }
-  return bindPaintKind(ctx, fill);
-}
-
 export function drawPathFillByKind(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
   const prog = bindPathFillByKind(ctx, fill);
   if (!prog) return;
   drawTriangles(ctx, prog, handle.geometry, handle.indexCount, { stencil: clipTest(ctx.clipDepth) });
-}
-
-function bindPathFillSolid(
-  ctx: DrawContext,
-  fill: { color: string; opacity?: number },
-): ShaderProgram {
-  const prog = ctx.pathFill;
-  setProjAndModel(ctx, prog);
-  setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
-  setColorMatrixUniforms(ctx, prog);
-  return prog;
-}
-
-function bindPathFillPattern(
-  ctx: DrawContext,
-  fill: TexturePaint,
-): ShaderProgram | null {
-  return bindPattern(ctx, ctx.patternFill, fill, drawModel(ctx));
-}
-
-function bindPathFillGradient(
-  ctx: DrawContext,
-  fill: Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
-): ShaderProgram | null {
-  return bindGradient(ctx, ctx.gradFill, fill, drawModel(ctx));
 }
 
 function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
@@ -175,8 +132,17 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   }
   // After the ribbon, so a head sits on top of the line it caps.
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  const heads = cachedMarkerCommands(cmd.path, rawCmd.stroke, stroke, width, flattenToleranceOf(ctx), spaces);
-  for (const marker of heads) drawPath(ctx, marker);
+  const heads = cachedMarkerHeads(cmd.path, rawCmd.stroke, stroke, width, flattenToleranceOf(ctx), spaces);
+  for (const { draws, transform } of heads) {
+    for (const { cmd: head, inLineFrame } of draws) {
+      ctx.state.push({ transform, keepPaintFrame: inLineFrame });
+      try {
+        drawPath(ctx, head);
+      } finally {
+        ctx.state.pop();
+      }
+    }
+  }
 }
 
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces): void {

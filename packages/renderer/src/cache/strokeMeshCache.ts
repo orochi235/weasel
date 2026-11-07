@@ -99,14 +99,19 @@ export function strokeMesh(
 
 /**
  * The ribbon every trim of `stroke` along `path` is clipped from, for a stroke
- * whose ribbon and heads are all built in world. One entry serves every trim,
- * which is what lets a trim animate without a rebuild.
+ * whose heads are built in its ribbon's space: world, or the metric `spaces`
+ * names for the ribbon. One entry serves every trim, which is what lets a
+ * trim animate without a rebuild.
  */
-export function strokeClipRibbon(path: Path, stroke: Stroke, flattenTolerance: number | undefined): ClipRibbon {
+export function strokeClipRibbon(
+  path: Path, stroke: Stroke, flattenTolerance: number | undefined, spaces: StrokeSpaces = {},
+): ClipRibbon {
   const untrimmed: Stroke = { ...stroke, trim: undefined };
-  return cached(clips, path, stroke, configKey(untrimmed, flattenTolerance, {}), () => {
+  return cached(clips, path, stroke, configKey(untrimmed, flattenTolerance, spaces), () => {
     const insets = strokeInsets(stroke, resolveStrokeWidth(stroke.width ?? 1, 1));
-    return clipRibbon(path, untrimmed, { flattenTolerance, startInset: insets.start, endInset: insets.end });
+    return clipRibbon(path, untrimmed, {
+      flattenTolerance, startInset: insets.start, endInset: insets.end, metric: spaces.ribbon?.metric,
+    });
   });
 }
 
