@@ -18,17 +18,18 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { browserFingerprint } from './lib/fingerprint';
 import { metric, rounds, startRun } from './lib/result';
-import { markWindow, parseTrace } from './lib/trace';
+import { busy, markWindow, parseTrace, selfTimes } from './lib/trace';
 import type { Approach, Cell, FrameStats } from './lib/compositorHandoff.page';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-const ALL_COUNTS = [500, 1000, 2000, 4000, 6000];
+const ALL_COUNTS = [1000, 2000, 4000, 8000, 16000];
 /** `CH_COUNTS=2000,6000` narrows the sweep. */
 const only = process.env.CH_COUNTS?.split(',').map(Number).filter(Number.isFinite);
 const COUNTS = only?.length ? only : ALL_COUNTS;
 const FRAMES = Number(process.env.CH_FRAMES ?? 120);
-const WARMUP = 30;
+/** ms run after a cell starts and before it is measured. */
+const WARMUP_MS = 2000;
 const PASSES = rounds(2);
 const CATEGORIES = ['toplevel', 'blink.user_timing', 'devtools.timeline', 'disabled-by-default-devtools.timeline.frame'];
 
@@ -58,6 +59,11 @@ interface Sample extends Cell {
   drawFps: number;
   drawFrames: number;
   traceMs: number;
+  /** ms to start every run of the cell. */
+  startMs: number;
+  mainBusy: number;
+  compositorBusy: number;
+  mainTop: Record<string, number>;
   onCompositor: number;
   live: number;
   load1: number;
@@ -65,7 +71,8 @@ interface Sample extends Cell {
 }
 
 type PageApi = {
-  setup(c: Cell): Promise<{ painted: boolean }>;
+  setup(c: Cell): Promise<{ painted: boolean; startMs: number }>;
+  wait(ms: number): Promise<void>;
   measure(n: number, mark: string | null): Promise<FrameStats>;
   teardown(): void;
 };
@@ -74,19 +81,43 @@ const call = <K extends keyof PageApi>(page: Page, k: K, ...args: Parameters<Pag
   [k, args] as const,
 ) as Promise<Awaited<ReturnType<PageApi[K]>>>;
 
-/** DrawFrame events in the marked window, in the renderer that made the marks. */
-function drawFrames(buf: Buffer): { frames: number; ms: number } {
+interface Traced {
+  frames: number;
+  ms: number;
+  /** Busy ms a second of the renderer's main and compositor threads. */
+  mainBusy: number;
+  compositorBusy: number;
+  /** The main thread's self time a second, ms, by event name: the heaviest. */
+  mainTop: Record<string, number>;
+}
+
+/** DrawFrame events in the marked window, in the renderer that made the marks, and what kept
+ *  its main and compositor threads busy. */
+function analyze(buf: Buffer): Traced {
   const trace = parseTrace(buf);
   const { t0, t1, pid } = markWindow(trace, 'ch-start', 'ch-end');
   const frames = trace.events.filter((e) => e.name === 'DrawFrame' && e.pid === pid && e.ts >= t0 && e.ts <= t1).length;
-  return { frames, ms: (t1 - t0) / 1000 };
+  const sec = (t1 - t0) / 1e6;
+  let mainBusy = 0;
+  let compositorBusy = 0;
+  let mainTop: Record<string, number> = {};
+  for (const [k, list] of trace.byThread) {
+    if (Number(k.split(':')[0]) !== pid) continue;
+    const name = trace.threadName.get(k);
+    if (name === 'CrRendererMain') {
+      mainBusy = busy(list, t0, t1) / 1000 / sec;
+      mainTop = Object.fromEntries([...selfTimes(list, t0, t1)].sort((a, b) => b[1] - a[1]).slice(0, 6)
+        .map(([n, us]) => [n, +(us / 1000 / sec).toFixed(2)]));
+    } else if (name === 'Compositor') compositorBusy = busy(list, t0, t1) / 1000 / sec;
+  }
+  return { frames, ms: (t1 - t0) / 1000, mainBusy, compositorBusy, mainTop };
 }
 
 async function traced(page: Page, browser: Browser) {
   await browser.startTracing(page, { categories: CATEGORIES });
   const stats = await call(page, 'measure', FRAMES, 'ch');
   const buf = await browser.stopTracing();
-  return { stats, ...drawFrames(buf) };
+  return { stats, ...analyze(buf) };
 }
 
 const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
@@ -107,7 +138,7 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
   }
   test.setTimeout(120_000 + plan.length * 30_000);
   const run = startRun('compositor-handoff', {
-    counts: COUNTS, frames: FRAMES, warmup: WARMUP, passes: PASSES, viewport: '1280x800', order: 'ABBA per count, reversed on alternate passes',
+    counts: COUNTS, frames: FRAMES, warmupMs: WARMUP_MS, passes: PASSES, viewport: '1280x800', order: 'ABBA per count, reversed on alternate passes',
   });
   const errors: string[] = [];
   const hmrNoise = /websocket|\[vite\]/i;
@@ -133,9 +164,9 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
   const samples: Sample[] = [];
   const unpainted: string[] = [];
   for (const [i, cell] of plan.entries()) {
-    const { painted } = await call(page, 'setup', { approach: cell.approach, count: cell.count });
+    const { painted, startMs } = await call(page, 'setup', { approach: cell.approach, count: cell.count });
     if (!painted) unpainted.push(`${cell.approach} ${cell.count}`);
-    await call(page, 'measure', WARMUP, null);
+    await call(page, 'wait', WARMUP_MS);
     const free = await call(page, 'measure', FRAMES, null);
     const t = await traced(page, browser);
     const s: Sample = {
@@ -145,6 +176,10 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
       drawFps: t.frames / (t.ms / 1000),
       drawFrames: t.frames,
       traceMs: t.ms,
+      startMs,
+      mainBusy: t.mainBusy,
+      compositorBusy: t.compositorBusy,
+      mainTop: t.mainTop,
       onCompositor: t.stats.onCompositor,
       live: t.stats.live,
       load1: os.loadavg()[0]!,
@@ -154,8 +189,10 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
     console.log(
       `  ${String(i + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  ${cell.approach.padEnd(10)} ${String(cell.count).padStart(5)}`
       + `  page ${fmt(1000 / s.rafInterval)} fps (missed ${String(s.rafMissed).padStart(3)})  drawn ${fmt(s.drawFps)} fps`
+      + `  main busy ${fmt(s.mainBusy, 5, 0)} comp ${fmt(s.compositorBusy, 5, 0)} ms/s  start ${fmt(s.startMs, 7, 0)} ms`
       + `  on compositor ${String(s.onCompositor).padStart(5)}/${String(s.live).padStart(5)}  load ${fmt(s.load1, 5)}`,
     );
+    console.log(`         main thread, ms/s self: ${Object.entries(s.mainTop).map(([n, v]) => `${n} ${v}`).join(', ')}`);
     console.log(`onto: progress ${i + 1}/${plan.length}`);
   }
   await call(page, 'teardown');
@@ -177,9 +214,12 @@ test('compositor handoff: frame rate against concurrent count', async ({ page, b
       run.item(`${approach} ${count}`, {
         pageFps: metric(med(page), 'fps', `median of ${ss.length} untraced windows of ${FRAMES} frames, 1000 / mean rAF interval`, page),
         drawnFps: metric(med(drawn), 'fps', `median of ${ss.length} traced windows, DrawFrame events a second in the page's renderer`, drawn),
+        startMs: metric(med(ss.map((s) => +s.startMs.toFixed(1))), 'ms', 'median, ms to start every run of the cell', ss.map((s) => +s.startMs.toFixed(1))),
+        mainBusy: metric(med(ss.map((s) => +s.mainBusy.toFixed(1))), 'ms/s', 'median of traced windows, renderer main thread busy', ss.map((s) => +s.mainBusy.toFixed(1))),
+        compositorBusy: metric(med(ss.map((s) => +s.compositorBusy.toFixed(1))), 'ms/s', 'median of traced windows, renderer compositor thread busy', ss.map((s) => +s.compositorBusy.toFixed(1))),
         missed: metric(med(ss.map((s) => s.rafMissed)), 'count', 'median of untraced windows, rAF intervals over 25 ms', ss.map((s) => s.rafMissed)),
         load1: metric(med(ss.map((s) => +s.load1.toFixed(2))), 'load', 'median 1-minute load as each sample finished', ss.map((s) => +s.load1.toFixed(2))),
-      }, { approach, count, intervals: ss.map((s) => s.intervals) });
+      }, { approach, count, intervals: ss.map((s) => s.intervals), mainTop: ss.map((s) => s.mainTop) });
       return `${fmt(med(page))} / ${fmt(med(drawn))}`;
     });
     lines.push(`| ${String(count).padStart(5)} | ${cells[0]} | ${cells[1]} |`);

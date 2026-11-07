@@ -26,10 +26,14 @@ export interface FrameStats {
 
 const W = 1280;
 const H = 800;
-/** Each element's run: long enough to outlast warmup and every window of a cell. */
-const RUN_MS = 12_000;
+/** Each element's run: long enough to outlast warmup and every window of a cell, even at a few
+ *  frames a second. */
+const RUN_MS = 120_000;
 /** Sweeps over the run: one every two seconds. */
 const SWEEPS = RUN_MS / 2000;
+
+/** A triangle wave, -1 to 1 and back once per unit of `x`. */
+const wave = (x: number): number => 1 - 4 * Math.abs(x - Math.floor(x + 0.5));
 
 let root: Root | null = null;
 let animator: Animator | null = null;
@@ -42,7 +46,7 @@ function Host({ ready }: { ready: (a: Animator) => void }) {
 }
 
 /** Tears the last cell down and starts `cell`: `count` dots, each sweeping its own way. */
-export async function setup(cell: Cell): Promise<{ painted: boolean }> {
+export async function setup(cell: Cell): Promise<{ painted: boolean; startMs: number }> {
   animator?.cancelAll();
   root?.unmount();
   stage().replaceChildren();
@@ -52,6 +56,7 @@ export async function setup(cell: Cell): Promise<{ painted: boolean }> {
     root = createRoot(holder);
     root.render(createElement(Host, { ready: resolve }));
   });
+  const started = performance.now();
   const cols = Math.ceil(Math.sqrt((cell.count * W) / H));
   for (let i = 0; i < cell.count; i++) {
     const el = document.createElement('div');
@@ -63,26 +68,26 @@ export async function setup(cell: Cell): Promise<{ painted: boolean }> {
       element: el,
       value: { x: 0, y: 0, o: 1 },
       style: (v) => ({ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.o }),
-      // 30 keyframes a sweep; the compositor blends between them.
-      sampleRate: 15,
     });
     const angle = (i * 2.399) % (2 * Math.PI);
-    // Many sweeps across one long run, so the motion changes every frame of every window.
+    // Sweeps back and forth across one long run, so the motion changes every frame of every
+    // window. A triangle wave is straight between its turns, so its keyframes are the turns.
     animator.tween({
       target,
       to: { x: 0, y: 0, o: 1 },
       ms: RUN_MS,
       easing: 'linear',
       interpolator: () => (u) => {
-        const s = Math.sin(u * SWEEPS * 2 * Math.PI + i);
+        const s = wave(u * SWEEPS + i / 7);
         return { x: 60 * s * Math.cos(angle), y: 60 * s * Math.sin(angle), o: 0.6 + 0.4 * Math.abs(s) };
       },
       compositor: cell.approach === 'compositor' ? 'require' : 'off',
     });
   }
+  const startMs = performance.now() - started;
   await frames(2);
   const first = stage().firstElementChild;
-  return { painted: !!first && first.getBoundingClientRect().width > 0 };
+  return { painted: !!first && first.getBoundingClientRect().width > 0, startMs };
 }
 
 const frames = (n: number): Promise<number[]> => new Promise((done) => {
@@ -108,6 +113,8 @@ export async function measure(n: number, mark: string | null): Promise<FrameStat
     live: live.length,
   };
 }
+
+export const wait = (ms: number): Promise<void> => new Promise((done) => { setTimeout(done, ms); });
 
 export function teardown(): void {
   animator?.cancelAll();
