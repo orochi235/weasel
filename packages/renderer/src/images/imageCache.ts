@@ -301,6 +301,13 @@ export function imageNaturalSize(src: string): ImageRasterSize | undefined {
   return bitmap ? { width: bitmap.width, height: bitmap.height } : undefined;
 }
 
+/** Whether a load of `src`, or a re-raster of a vector source at another size, is in flight:
+ *  whether {@link subscribeImageReady} will hear of a new bitmap for it. */
+export function imagePending(src: string): boolean {
+  const entry = cache.get(src);
+  return entry?.status === 'loading' || entry?.vector?.pending !== undefined;
+}
+
 /** Current load status for `src` (`'idle'` if never requested). */
 export function imageStatus(src: string): ImageStatus {
   if (mintedHere(src)) return getImageBitmap(src) === undefined ? 'idle' : 'ready';

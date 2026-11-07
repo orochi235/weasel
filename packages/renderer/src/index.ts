@@ -115,6 +115,7 @@ export {
   bitmapSrc,
   getImageBitmap,
   isBitmapSrc,
+  imagePending,
   imageStatus,
   isVectorImageSrc,
   releaseImage,
