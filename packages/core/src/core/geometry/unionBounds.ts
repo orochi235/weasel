@@ -37,19 +37,34 @@ export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): Rec
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
+/** `b` with its extents made positive and its origin moved to match. A resize
+ *  past the opposite edge leaves a bare box's width or height negative, the
+ *  flip it carries, which every reader of a box assumes away. */
+export function positiveBox<T extends RectPose>(b: T): T {
+  if (b.width >= 0 && b.height >= 0) return b;
+  return {
+    ...b,
+    x: b.width < 0 ? b.x + b.width : b.x,
+    y: b.height < 0 ? b.y + b.height : b.y,
+    width: Math.abs(b.width),
+    height: Math.abs(b.height),
+  };
+}
+
 /**
  * Axis-align a pose that carries a `rotation` or a `transform`: returns the
  * AABB of the box as drawn, its four corners through `poseFrameOf`, with both
  * fields dropped.
  *
- * A pose with neither is returned as-is.
+ * A pose with neither comes back as its own box, made positive ({@link positiveBox}).
  */
 export function axisAlignedBounds<TPose extends RectPose>(b: TPose): RectPose {
   const frame = poseFrameOf(b);
   if (!frame) {
     // Strip an explicit `rotation: 0` so callers can rely on the absence of
     // the field meaning "axis-aligned".
-    return { x: b.x, y: b.y, width: b.width, height: b.height };
+    const { x, y, width, height } = positiveBox(b);
+    return { x, y, width, height };
   }
   let minX = Infinity;
   let minY = Infinity;

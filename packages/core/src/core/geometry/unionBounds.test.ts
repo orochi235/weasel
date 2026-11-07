@@ -39,6 +39,12 @@ describe('axisAlignedBounds', () => {
     expect('rotation' in b).toBe(false);
   });
 
+  it('normalizes a box a resize turned inside out, as it does a rotated one', () => {
+    expect(axisAlignedBounds({ x: 100, y: 60, width: -50, height: -40 })).toEqual({ x: 50, y: 20, width: 50, height: 40 });
+    expect(unionAABB([{ x: 100, y: 0, width: -50, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }]))
+      .toEqual({ x: 0, y: 0, width: 100, height: 10 });
+  });
+
   it('drops an explicit rotation of 0', () => {
     const b = axisAlignedBounds({ x: 0, y: 0, width: 4, height: 4, rotation: 0 });
     expect(b).toEqual({ x: 0, y: 0, width: 4, height: 4 });

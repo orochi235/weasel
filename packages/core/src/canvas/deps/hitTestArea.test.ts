@@ -481,3 +481,13 @@ describe('intersect reads a closed outline by whether it is filled', () => {
     }
   });
 });
+
+describe('hitTestArea — a box flipped through its anchor', () => {
+  it('takes a bare box with a negative width or height, as a resize past the opposite edge leaves it', async () => {
+    const { createScene } = await import('core/scene/scene');
+    const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'a', visible: true, locked: false }] } as never);
+    const id = scene.add({ kind: 'mark', layer: 'a', pose: { x: 100, y: 50, width: -50, height: -50 }, data: { kind: 'rect' } } as never);
+    expect(hitTestArea(scene, { x: 60, y: 10, width: 5, height: 5 })).toEqual([id]);
+    expect(hitTestArea(scene, { x: 110, y: 10, width: 5, height: 5 })).toEqual([]);
+  });
+});

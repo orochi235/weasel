@@ -127,3 +127,14 @@ describe('poseContainsRotated', () => {
     expect(poseContainsRotated(tri, 100, 100)).toBe(false);
   });
 });
+
+describe('a box a resize flipped through its anchor', () => {
+  it('contains the points it covers, however its extents are signed', () => {
+    const flipped = { x: 100, y: 50, width: -50, height: -50 };
+    expect(aabbOfPose(flipped)).toEqual({ x: 50, y: 0, width: 50, height: 50 });
+    expect(poseContains(flipped, 60, 10)).toBe(true);
+    expect(poseContainsRotated(flipped, 60, 10)).toBe(true);
+    expect(poseContainsRotated(flipped, 110, 10)).toBe(false);
+    expect(poseContainsRotated({ ...flipped, rotation: Math.PI / 2 }, 75, 25)).toBe(true);
+  });
+});
