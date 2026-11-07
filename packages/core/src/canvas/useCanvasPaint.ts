@@ -128,8 +128,10 @@ export function useCanvasPaint(
         options: { flattenTolerance: paintFlattenTolerance, imageMinification, shaders: paintShaders },
         paints: stack.paints, inputs: stack.inputs(),
       }, renderer);
-      debugFrame?.end(renderer.lastFrameStats());
+      const stats = renderer.lastFrameStats();
+      debugFrame?.end(stats);
       markPainted();
+      if (snapRef.current.owesFrame(stats.retained.declined)) requestRedraw();
       return true;
     }
     const spans = debugFrame?.time();

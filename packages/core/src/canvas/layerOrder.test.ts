@@ -160,6 +160,21 @@ describe('composeOrderedLayers', () => {
     expect(out.map(l => l.id)).toEqual(['scene', 'tail']);
   });
 
+  it('anchors a custom on a tail custom', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const out = composeOrderedLayers(
+      {
+        tail: { layer: L('tail') },
+        over: { layer: L('over'), after: 'tail' },
+        under: { layer: L('under'), before: 'tail' },
+      },
+      { scene: L('scene') },
+    );
+    expect(out.map(l => l.id)).toEqual(['scene', 'under', 'tail', 'over']);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('orphan refs go to tail with a warning', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const out = composeOrderedLayers(
