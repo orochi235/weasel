@@ -37,8 +37,10 @@ export { BUILTIN_MARKERS } from './strokeMarkerShapes';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './markerInset';
 export { markerSites } from './markerSites';
 export type { MarkerSite, MarkerSiteInsets, MarkerSiteRequest } from './markerSites';
-export { markerHeads, markerReadsKey, markerReach } from './markerHeads';
-export type { MarkerHead } from './markerHeads';
+export {
+  markerHeads, markerPlacementMap, markerPlacements, markerPolylines, markerReadsKey, markerReach, markerShape,
+} from './markerHeads';
+export type { MarkerHead, MarkerPlacement } from './markerHeads';
 
 export { strokeEdgeNear } from './strokeEdge';
 export type { StrokeEdgeHit, StrokeEdgeOptions, StrokeSide } from './strokeEdge';

@@ -1,5 +1,5 @@
 import { pathLengthTable, type CurvePosition, type Path } from '@weasel-js/geom';
-import { type Mesh, polylineAtCurve } from '@weasel-js/geom/tessellate';
+import { anchorParamsBetween, type Mesh, polylineAtCurve } from '@weasel-js/geom/tessellate';
 import type { StrokeTrim } from '@weasel-js/paint';
 import type { MeasuredPolyline } from '../tessellate/dash';
 import { expandPolyline, type RibbonOut } from '../tessellate/expandPolyline';
@@ -111,7 +111,7 @@ function firstPieceAfter(pieces: readonly MeasuredPolyline[], s: number): number
   return lo;
 }
 
-interface Station { x: number; y: number; w: number; o: number; ux: number; uy: number }
+interface Station { x: number; y: number; w: number; o: number; ux: number; uy: number; a: number; b: number; t: number }
 
 /** Where `piece` is at length `s`, and the chord it is on: the one arriving there, or with `leaving` the one leaving. */
 function stationAt(piece: MeasuredPolyline, s: number, leaving: boolean, width: number): Station | null {
@@ -125,7 +125,10 @@ function stationAt(piece: MeasuredPolyline, s: number, leaving: boolean, width: 
   const f = Math.min(Math.max((s - L[i]) / span, 0), 1);
   const lerp = (a: ArrayLike<number>) => a[i] + (a[i + 1] - a[i]) * f;
   const W = piece.widths, O = piece.offsets;
+  const A = piece.anchorA, B = piece.anchorB, T = piece.anchorT;
+  const [a, b, t] = A && B && T ? anchorParamsBetween(A[i], B[i], T[i], A[i + 1], B[i + 1], T[i + 1], f) : [0, 0, 0];
   return {
+    a, b, t,
     x: p[i * 2] + (p[i * 2 + 2] - p[i * 2]) * f,
     y: p[i * 2 + 1] + (p[i * 2 + 3] - p[i * 2 + 1]) * f,
     w: W ? lerp(W) : width,
@@ -140,21 +143,24 @@ function sliced(piece: MeasuredPolyline, s0: number, s1: number): MeasuredPolyli
   const L = piece.lengths!;
   const p = piece.points;
   const W = piece.widths, O = piece.offsets;
+  const A = piece.anchorA, B = piece.anchorB, T = piece.anchorT;
   const points: number[] = [], lengths: number[] = [], widths: number[] = [], offsets: number[] = [];
-  const push = (x: number, y: number, s: number, w: number, o: number) => {
-    points.push(x, y); lengths.push(s); widths.push(w); offsets.push(o);
+  const as: number[] = [], bs: number[] = [], ts: number[] = [];
+  const push = (x: number, y: number, s: number, w: number, o: number, a: number, b: number, t: number) => {
+    points.push(x, y); lengths.push(s); widths.push(w); offsets.push(o); as.push(a); bs.push(b); ts.push(t);
   };
-  const a = stationAt(piece, s0, true, 0)!;
-  push(a.x, a.y, s0, a.w, a.o);
+  const first = stationAt(piece, s0, true, 0)!;
+  push(first.x, first.y, s0, first.w, first.o, first.a, first.b, first.t);
   for (let i = 0; i < L.length; i++) {
-    if (L[i] > s0 + EPS && L[i] < s1 - EPS) push(p[i * 2], p[i * 2 + 1], L[i], W ? W[i] : 0, O ? O[i] : 0);
+    if (L[i] > s0 + EPS && L[i] < s1 - EPS) {
+      push(p[i * 2], p[i * 2 + 1], L[i], W ? W[i] : 0, O ? O[i] : 0, A ? A[i] : 0, B ? B[i] : 0, T ? T[i] : 0);
+    }
   }
-  const b = stationAt(piece, s1, false, 0)!;
-  push(b.x, b.y, s1, b.w, b.o);
-  const n = lengths.length;
+  const last = stationAt(piece, s1, false, 0)!;
+  push(last.x, last.y, s1, last.w, last.o, last.a, last.b, last.t);
   return {
     points, closed: false,
-    anchorA: new Uint32Array(n), anchorB: new Uint32Array(n), anchorT: new Float32Array(n),
+    anchorA: Uint32Array.from(as), anchorB: Uint32Array.from(bs), anchorT: Float32Array.from(ts),
     lengths: Float64Array.from(lengths),
     ...(W ? { widths: Float32Array.from(widths) } : {}),
     ...(O ? { offsets: Float32Array.from(offsets) } : {}),
@@ -171,6 +177,6 @@ function capAt(piece: MeasuredPolyline, s: number, atEnd: boolean, ribbon: ClipR
   if (!seg) return;
   const left = out.verts.length / 2;
   out.verts.push(x + seg.nxUnit * pos, y + seg.nyUnit * pos, x - seg.nxUnit * neg, y - seg.nyUnit * neg);
-  out.anchorA.push(0, 0); out.anchorB.push(0, 0); out.anchorT.push(0, 0);
-  emitCap(seg, left, left + 1, atEnd, pos, neg, ribbon.style.cap, out.verts, out.idx, out.anchorA, out.anchorB, out.anchorT, 0, 0, 0);
+  out.anchorA.push(st.a, st.a); out.anchorB.push(st.b, st.b); out.anchorT.push(st.t, st.t);
+  emitCap(seg, left, left + 1, atEnd, pos, neg, ribbon.style.cap, out.verts, out.idx, out.anchorA, out.anchorB, out.anchorT, st.a, st.b, st.t);
 }

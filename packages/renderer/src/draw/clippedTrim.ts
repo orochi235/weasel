@@ -5,29 +5,35 @@
  *
  * The clipped ribbon keeps each segment's whole quad at a turn, and its cut
  * ends are drawn over it as geometry (`clipWindow`), so in places it covers
- * twice what the rebuilt ribbon covers once: the same pixels for an opaque
- * stroke, darker ones for a translucent one. A translucent
- * stroke, and one the batch would take anyway, which is small enough to
- * rebuild, are rebuilt trimmed instead. So are a stroke built in a stretched
- * view's metric, a vertex-colored one, and any paint but a solid.
+ * twice what the rebuilt ribbon covers once. An opaque solid stroke cannot
+ * show that and draws straight. Any other — translucent, vertex-colored, or in
+ * a paint but a solid — marks what it covers in the stencil and then paints
+ * its untrimmed ribbon there once. A stroke the batch would take anyway,
+ * which is small enough to rebuild, is rebuilt trimmed instead, as is one
+ * built in a stretched view's metric.
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { resolveColor, type StrokeTrim } from '@weasel-js/paint';
-import { clipWindow, type StrokeSpaces } from '@weasel-js/stroke';
+import { resolveColor, type CommandPaint, type StrokeTrim } from '@weasel-js/paint';
+import { clipWindow, type ClipRibbon, type ClipWindow, type StrokeSpaces } from '@weasel-js/stroke';
+import type { GLMeshHandle } from '../cache/GLMeshCache';
 import { strokeClipRibbon } from '../cache/strokeMeshCache';
+import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { StrokedPathCommand } from '../strokeLengths';
 import { canBatchMesh } from './batch';
 import { flushForOwnDraw } from './clip';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { flattenToleranceOf } from './mesh';
-import { clipTest } from './stencil';
+import { bindPathFillByKind } from './paintBind';
+import { clipTest, endParityMask, parityPaint, trimMark } from './stencil';
 import { atMeshOrigin, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
+import { releaseVertexColors, vertexColorBase, withVertexColors } from './vertexColors';
 
 /**
  * Draw `cmd`'s trimmed stroke clipped from its cached ribbon, handing the
- * geometry its cut ends are drawn with to `drawEnds`. Returns `false`, having
- * drawn nothing, where the stroke is to be rebuilt trimmed instead.
+ * geometry its cut ends are drawn with to `drawEnds` where it draws straight.
+ * Returns `false`, having drawn nothing, where the stroke is to be rebuilt
+ * trimmed instead.
  */
 export function drawClippedTrim(
   ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces, drawEnds: (ends: Mesh) => void,
@@ -37,9 +43,6 @@ export function drawClippedTrim(
   const variants = ctx.batchVariants;
   if (trim === undefined || variants?.trimClip !== true) return false;
   if (spaces.ribbon?.metric || spaces.start?.metric || spaces.end?.metric) return false;
-  if (stroke.vertexColors && stroke.vertexColors.length > 0) return false;
-  const paint = stroke.paint;
-  if ((paint.kind !== undefined && paint.kind !== 'solid') || !opaque(ctx, paint)) return false;
 
   const ribbon = strokeClipRibbon(cmd.path, stroke, flattenToleranceOf(ctx));
   if (ribbon.mesh.indices.length === 0) return true;
@@ -52,15 +55,77 @@ export function drawClippedTrim(
   const location = prog.attribute('a_trim');
   if (location === undefined) return true;
   const handle = ctx.meshCache.uploadRecurring(ribbon.mesh, { location, size: 4, data: ribbon.trim });
-  atMeshOrigin(ctx, ribbon.mesh.origin, () => {
-    setProjAndModel(ctx, prog);
-    setSolidPaintUniforms(ctx, prog, paint.color, paint.opacity);
-    setColorMatrixUniforms(ctx, prog);
-    prog.set2f('u_trim', window.from, window.to);
-    drawTriangles(ctx, prog, handle.geometry, handle.indexCount, { stencil: clipTest(ctx.clipDepth) });
-  });
-  if (window.ends) drawEnds(window.ends);
+  const colors = stroke.vertexColors && stroke.vertexColors.length > 0 ? stroke.vertexColors : undefined;
+  const paint = stroke.paint;
+  if (colors === undefined && (paint.kind === undefined || paint.kind === 'solid') && opaque(ctx, paint)) {
+    atMeshOrigin(ctx, ribbon.mesh.origin, () => {
+      clipBy(ctx, prog, window);
+      setSolidPaintUniforms(ctx, prog, paint.color, paint.opacity);
+      setColorMatrixUniforms(ctx, prog);
+      drawTriangles(ctx, prog, handle.geometry, handle.indexCount, { stencil: clipTest(ctx.clipDepth) });
+    });
+    if (window.ends) drawEnds(window.ends);
+    return true;
+  }
+  atMeshOrigin(ctx, ribbon.mesh.origin, () => markAndCover(ctx, prog, ribbon, handle, window, paint, colors));
   return true;
+}
+
+function clipBy(ctx: DrawContext, prog: ShaderProgram, window: ClipWindow): void {
+  setProjAndModel(ctx, prog);
+  prog.set2f('u_trim', window.from, window.to);
+}
+
+/**
+ * Mark on stencil bit 0 what the clipped ribbon and its ends cover, then
+ * paint the untrimmed ribbon and the ends where it is marked, clearing it as
+ * they go, so a pixel covered twice paints once.
+ */
+function markAndCover(
+  ctx: DrawContext, prog: ShaderProgram, ribbon: ClipRibbon, handle: GLMeshHandle, window: ClipWindow,
+  paint: CommandPaint, colors: number[] | undefined,
+): void {
+  const mark = trimMark(ctx.clipDepth);
+  clipBy(ctx, prog, window);
+  drawTriangles(ctx, prog, handle.geometry, handle.indexCount, { stencil: mark, colorWrite: false });
+  const ends = window.ends ? ctx.meshCache.uploadTransient(window.ends) : null;
+  if (ends) {
+    setProjAndModel(ctx, ctx.pathFill);
+    drawTriangles(ctx, ctx.pathFill, ends.geometry, ends.indexCount, { stencil: mark, colorWrite: false });
+  }
+  const cover = parityPaint(ctx.clipDepth);
+  if (colors !== undefined) {
+    const vc = ctx.pathFillVColor;
+    setProjAndModel(ctx, vc);
+    const base = vertexColorBase(paint);
+    setSolidPaintUniforms(ctx, vc, base.color, base.opacity);
+    setColorMatrixUniforms(ctx, vc);
+    for (const h of ends ? [handle, ends] : [handle]) {
+      const colored = withVertexColors(ctx, vc, colors, h);
+      drawTriangles(ctx, vc, colored.geometry, h.indexCount, { stencil: cover });
+      releaseVertexColors(ctx, colored);
+    }
+    return;
+  }
+  const painted = bindPathFillByKind(ctx, paint);
+  if (painted === null) {
+    endParityMask(ctx);
+    return;
+  }
+  // A registered paint kind's program may read attributes the trim's slot would answer.
+  const own = paint.kind === undefined || paint.kind === 'solid' || paint.kind === 'texture' || paint.kind.endsWith('-gradient');
+  const body = own ? handle : ctx.meshCache.uploadRecurring(coverMesh(ribbon));
+  drawTriangles(ctx, painted, body.geometry, body.indexCount, { stencil: cover });
+  if (ends) drawTriangles(ctx, painted, ends.geometry, ends.indexCount, { stencil: cover });
+}
+
+const COVERS = new WeakMap<ClipRibbon, Mesh>();
+
+/** The ribbon's mesh as an object of its own, uploaded without the trim's attribute. */
+function coverMesh(ribbon: ClipRibbon): Mesh {
+  let mesh = COVERS.get(ribbon);
+  if (mesh === undefined) COVERS.set(ribbon, (mesh = { ...ribbon.mesh }));
+  return mesh;
 }
 
 /** Whether `paint` reaches the target with alpha 1 under the group drawing now. */

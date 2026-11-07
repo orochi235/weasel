@@ -1,13 +1,15 @@
 /**
  * An animating trim on a stroke too large to batch: the ribbon is built once
- * and clipped in the shader, so a tween step builds no mesh and uploads none.
+ * and clipped in the shader, and its heads are built once and moved, so a
+ * tween step builds no mesh.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PATH_L, PATH_M, type Path, type PolygonPath } from '@weasel-js/geom';
-import type { CommandStroke } from '@weasel-js/paint';
+import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
+import { _markerShapesBuiltForTests, _resetMarkerCommandCacheForTests } from './cache/markerCommandCache';
 
 const built: Path[] = [];
 
@@ -50,6 +52,7 @@ describe('a trim tween on a 1,000-anchor path', () => {
 
   beforeEach(() => {
     _resetStrokeMeshCacheForTests();
+    _resetMarkerCommandCacheForTests();
     built.length = 0;
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
@@ -73,11 +76,25 @@ describe('a trim tween on a 1,000-anchor path', () => {
     expect(new Set(windows.map((w) => JSON.stringify(w))).size).toBe(frames);
   });
 
-  it('rebuilds a translucent one trimmed each frame, which the clip would darken inside its turns', () => {
+  it('builds nothing after its first frame when translucent, gradient-painted and arrowheaded', () => {
     const path = wave();
-    for (let f = 0; f < 3; f++) {
-      r.render([{ kind: 'path', path, stroke: { ...STROKE, paint: { color: '#204080', opacity: 0.5 }, trim: { end: 0.2 + f * 0.1 } } }]);
+    const paint: CommandPaint = {
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 800, y: 0 }, units: 'local', opacity: 0.6,
+      stops: [{ offset: 0, color: '#2040ff80' }, { offset: 1, color: '#ff4020' }],
+    };
+    const stroke: CommandStroke = { ...STROKE, paint, markerStart: 'dot' };
+    let shapes = 0;
+    for (let f = 0; f < 30; f++) {
+      recorder.reset();
+      const end = (f + 1) / 30;
+      r.render([{ kind: 'path', path, stroke: { ...stroke, trim: { start: end / 4, end } } }]);
+      expect(built.filter((p) => p === path), `frame ${f}`).toHaveLength(1);
+      if (f === 0) shapes = _markerShapesBuiltForTests();
+      expect(_markerShapesBuiltForTests(), `frame ${f}`).toBe(shapes);
+      // What a frame still uploads is its two cut ends, a few dozen vertices each.
+      const uploads = named(recorder, 'bufferData').filter((c) => typeof c.args[1] !== 'number');
+      if (f >= 2) for (const u of uploads) expect((u.args[1] as ArrayBufferView).byteLength, `frame ${f}`).toBeLessThan(4096);
     }
-    expect(built.filter((p) => p === path)).toHaveLength(3);
+    expect(shapes).toBe(2);
   });
 });
