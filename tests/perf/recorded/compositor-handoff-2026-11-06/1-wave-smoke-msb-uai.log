@@ -1,0 +1,41 @@
+  waiting for room
+msb-uai  chosen: 12.5 cores free, 16.6G available (npx: 5 past runs, worst 1.9 cores / 5.8G)
+  studio   scored 2.26 against msb-uai's 2.44
+  keiei    refuses repo:orochi235/weasel
+  orochi   has 0.7 of its 12 cores free, too few to start on
+  teitou   it wants the node to itself, and the node is promised to bench-browser-split-670_59d
+  base   4576ace1
+  delta  5 file(s), 0 deleted
+  commits sent directly, 34.5 KiB (not on origin)
+  updated weasel on msb-uai at 4576ace1 + 5 uncommitted file(s)
+  job    0cec0b19 on msb-uai
+
+onto: waapi-bridge is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+compositor handoff — 12 measurements, 60 frames each; load 2.0 2.8 2.9 on 14 cores
+    1/12  pass 1  main        2000  page   60.0 fps (missed   0)  drawn   60.6 fps  main busy   382 comp    24 ms/s  start      19 ms  on compositor     0/ 2000  load   1.9
+         main thread, ms/s self: FunctionCall 180.34, UpdateLayoutTree 84.03, Layerize 48.16, PrePaint 20.41, ThreadControllerImpl::RunTask 18.17, Paint 13.38
+onto: progress 1/12
+    2/12  pass 1  compositor  2000  page    8.0 fps (missed  60)  drawn    7.9 fps  main busy   377 comp   999 ms/s  start    1884 ms  on compositor  2000/ 2000  load   2.1
+         main thread, ms/s self: ThreadControllerImpl::RunTask 298.62, UpdateLayoutTree 52.38, Layerize 19.3, PrePaint 3.32, Paint 1.89, FunctionCall 0.3
+onto: progress 2/12
+    3/12  pass 1  compositor  2000  page    6.6 fps (missed  60)  drawn    6.0 fps  main busy   294 comp   999 ms/s  start    2366 ms  on compositor  2000/ 2000  load   1.8
+         main thread, ms/s self: ThreadControllerImpl::RunTask 233.87, UpdateLayoutTree 40.12, Layerize 14.91, PrePaint 2.55, Paint 1.46, FunctionCall 0.21
+onto: progress 3/12
+    4/12  pass 1  main        2000  page   60.0 fps (missed   0)  drawn   60.4 fps  main busy   374 comp    26 ms/s  start      11 ms  on compositor     0/ 2000  load   1.7
+         main thread, ms/s self: FunctionCall 179.98, UpdateLayoutTree 79.79, Layerize 45.34, PrePaint 20.69, ThreadControllerImpl::RunTask 16.21, Paint 12.57
+onto: progress 4/12
+    5/12  pass 1  main        8000  page   42.4 fps (missed  25)  drawn   43.2 fps  main busy   997 comp    29 ms/s  start      42 ms  on compositor     0/ 8000  load   1.6
+         main thread, ms/s self: FunctionCall 511.92, UpdateLayoutTree 208.49, Layerize 133.69, PrePaint 64.08, Paint 31.68, ThreadControllerImpl::RunTask 19.12
+onto: progress 5/12
+    6/12  pass 1  compositor  8000  page    1.3 fps (missed  60)  drawn    1.2 fps  main busy   322 comp   985 ms/s  start    8612 ms  on compositor     0/    0  load   3.1
+         main thread, ms/s self: ThreadControllerImpl::RunTask 231.29, UpdateLayoutTree 41.07, Layerize 36.77, V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING 4.23, PrePaint 4.01, Paint 1.81
+onto: progress 6/12
+onto do: job finished but its output did not come back: 400 Bad Request: no such path in the "weasel" tree: tests/perf/results/handoff-smoke2

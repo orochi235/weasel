@@ -584,6 +584,27 @@ The default sweep is 486 measurements and took 78 minutes on msb-uai.
 stages; it traces more categories, so its busy figures are not comparable with a
 run without it. `HVD_ALLOC=1` adds the allocation profile above.
 
+## Element tweens on the compositor
+
+`compositor-handoff.spec.ts` animates `count` small elements with one weasel animator, either on the
+main thread or handed to `Element.animate` (`createElementTarget`), and reads two rates a cell: the
+page's own rAF rate, and `DrawFrame`s a second from a trace taken while the page asks for no frames.
+`CH_COUNTS`, `CH_SHAPES` (`drift`, `slide`, `wave`), `CH_LOADS` (ms of other main-thread work in
+every 16) and `CH_FRAMES` narrow it. On msb-uai on 2026-11-06, drawn fps, median of 4:
+
+| load | shape | count | main thread | compositor |
+|---:|---|---:|---:|---:|
+| 0 | drift | 4,000 | 60.0 | 59.8 |
+| 0 | drift | 6,000 | 54.8 | 36.6 |
+| 0 | slide | 6,000 | 59.7 | 44.3 |
+| 8 | drift | 4,000 | 54.6 | 60.3 |
+| 8 | slide | 6,000 | 45.0 | 44.6 |
+
+The compositor's cost per layer outgrows the main thread's per element past about 4,000, so it wins
+on main-thread load, not on count. A `wave` run of about 120 keyframes saturated the compositor
+thread at 2,000. Every run and the conditions behind it are in
+`tests/perf/recorded/compositor-handoff-2026-11-06/`.
+
 ## Retained layers through a pan
 
 `retain-pan.spec.ts` times a pan frame of retained world layers against submitting them, a
