@@ -54,9 +54,9 @@ function writeStyle(el: StyledElement, css: ElementStyle): void {
 
 /**
  * A {@link Target} shown as an element's inline style. Every animation on it works as on any
- * target; one that runs alone on it, with no `onTick`, and whose CSS is all compositor
- * properties, is handed to `Element.animate` and runs off the main thread, unless its
- * `compositor` option says otherwise.
+ * target. One given `compositor: 'auto'` or `'require'` that runs alone on it, with no `onTick`,
+ * and whose CSS is all compositor properties, is handed to `Element.animate` and runs off the
+ * main thread.
  */
 export function createElementTarget<T>(opts: ElementTargetOptions<T>): Target<T> {
   const { element, style } = opts;

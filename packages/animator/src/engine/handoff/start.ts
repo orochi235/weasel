@@ -43,7 +43,7 @@ function begin(
 
 /** A tween on an element target, handed to the compositor; null where it cannot be. */
 export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): AnimationHandle | null {
-  if (!(o.ms > 0)) return o.compositor === 'off' ? null : refuse(o, 'it has no duration');
+  if (!(o.ms > 0)) return (o.compositor ?? 'off') === 'off' ? null : refuse(o, 'it has no duration');
   const begun = begin(hs, o as TargetTweenOptions<unknown>, 'tween');
   if (!begun) return null;
   const { ctx } = hs.host;

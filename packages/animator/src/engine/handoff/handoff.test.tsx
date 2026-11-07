@@ -5,9 +5,19 @@ import { createTarget } from '../../target';
 import { element, setup } from './fakeAnimate.testing';
 
 const tween = (a: ReturnType<typeof setup>['animator'], target: ReturnType<typeof element>['target'], to: number, extra = {}) =>
-  a.tween({ target, to: { x: to }, ms: 1000, easing: linear, ...extra });
+  a.tween({ target, to: { x: to }, ms: 1000, easing: linear, compositor: 'auto', ...extra });
 
 describe('a tween on an element target', () => {
+  it('stays on the main thread unless the call asks for the compositor', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    act(() => { animator.tween({ target: e.target, to: { x: 100 }, ms: 1000, easing: linear }); });
+    expect(e.made).toHaveLength(0);
+    step(0);
+    step(500);
+    expect(e.inlineX()).toBeCloseTo(50, 6);
+  });
+
   it('goes to Element.animate, and its keyframes are its path', () => {
     const { animator, timeline } = setup();
     const e = element(timeline);

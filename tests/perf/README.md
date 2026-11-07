@@ -587,7 +587,8 @@ run without it. `HVD_ALLOC=1` adds the allocation profile above.
 ## Element tweens on the compositor
 
 `compositor-handoff.spec.ts` animates `count` small elements with one weasel animator, either on the
-main thread or handed to `Element.animate` (`createElementTarget`), and reads two rates a cell: the
+main thread (`compositor: 'off'`) or handed to `Element.animate` (`createElementTarget` with
+`compositor: 'require'`), and reads two rates a cell: the
 page's own rAF rate, and `DrawFrame`s a second from a trace taken while the page asks for no frames.
 `CH_COUNTS`, `CH_SHAPES` (`drift`, `slide`, `wave`), `CH_LOADS` (ms of other main-thread work in
 every 16) and `CH_FRAMES` narrow it. On msb-uai on 2026-11-06, drawn fps, median of 4:
@@ -601,7 +602,7 @@ every 16) and `CH_FRAMES` narrow it. On msb-uai on 2026-11-06, drawn fps, median
 | 8 | slide | 6,000 | 45.0 | 44.6 |
 
 The compositor's cost per layer outgrows the main thread's per element past about 4,000, so it wins
-on main-thread load, not on count. A `wave` run of about 120 keyframes saturated the compositor
+on main-thread load, not on count, which is why `compositor` defaults to `'off'` (2026-11-06). A `wave` run of about 120 keyframes saturated the compositor
 thread at 2,000. Every run and the conditions behind it are in
 `tests/perf/recorded/compositor-handoff-2026-11-06/`.
 

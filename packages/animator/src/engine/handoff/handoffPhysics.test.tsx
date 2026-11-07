@@ -16,7 +16,7 @@ describe('physics handed to the compositor', () => {
     const e = element(timeline);
     const p = plain();
     act(() => {
-      animator.spring({ target: e.target, to: { x: 100 }, preset: 'wobbly', velocity: { x: 300 } });
+      animator.spring({ target: e.target, to: { x: 100 }, preset: 'wobbly', velocity: { x: 300 }, compositor: 'auto' });
       animator.spring({ target: p, to: { x: 100 }, preset: 'wobbly', velocity: { x: 300 }, compositor: 'off' });
     });
     expect(e.made).toHaveLength(1);
@@ -33,7 +33,7 @@ describe('physics handed to the compositor', () => {
     const p = plain();
     let done = 0;
     act(() => {
-      animator.decay({ target: e.target, velocity: { x: 800 }, friction: 0.2, onDone: () => { done += 1; } });
+      animator.decay({ target: e.target, velocity: { x: 800 }, friction: 0.2, onDone: () => { done += 1; }, compositor: 'auto' });
       animator.decay({ target: p, velocity: { x: 800 }, friction: 0.2, compositor: 'off' });
     });
     step(0);
@@ -54,7 +54,7 @@ describe('physics handed to the compositor', () => {
     let a: PhysicsHandle<{ x: number }>;
     let b: PhysicsHandle<{ x: number }>;
     act(() => {
-      a = animator.physics({ target: e.target, to: { x: 100 }, preset: 'gentle' });
+      a = animator.physics({ target: e.target, to: { x: 100 }, preset: 'gentle', compositor: 'auto' });
       b = animator.physics({ target: p, to: { x: 100 }, preset: 'gentle', compositor: 'off' });
     });
     step(0);
@@ -74,7 +74,7 @@ describe('physics handed to the compositor', () => {
     const e = element(timeline);
     const p = plain();
     act(() => {
-      animator.spring({ target: e.target, to: { x: 100 }, preset: 'wobbly' });
+      animator.spring({ target: e.target, to: { x: 100 }, preset: 'wobbly', compositor: 'auto' });
       animator.spring({ target: p, to: { x: 100 }, preset: 'wobbly', compositor: 'off' });
     });
     step(0);
@@ -82,7 +82,7 @@ describe('physics handed to the compositor', () => {
     // A second animation that adds nothing still takes the run back.
     act(() => {
       animator.tween({ target: e.target, to: e.target.committed(), ms: 1000 });
-      animator.tween({ target: p, to: p.committed(), ms: 1000 });
+      animator.tween({ target: p, to: p.committed(), ms: 1000, compositor: 'off' });
     });
     expect(e.last().canceled).toBe(true);
     for (let i = 0; i < 30; i++) {
@@ -94,7 +94,7 @@ describe('physics handed to the compositor', () => {
   it('a spring already at rest runs on the main thread, which ends it at once', () => {
     const { animator, timeline } = setup();
     const e = element(timeline, 100);
-    act(() => { animator.spring({ target: e.target, to: { x: 100 } }); });
+    act(() => { animator.spring({ target: e.target, to: { x: 100 }, compositor: 'auto' }); });
     expect(e.made).toHaveLength(0);
   });
 });

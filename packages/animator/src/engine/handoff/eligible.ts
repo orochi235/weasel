@@ -35,7 +35,8 @@ export function refusal(host: HandoffHost, s: TargetState, o: Asking): string | 
 /** `s`'s element, where `o` can be handed to the compositor; otherwise null, or with
  *  `compositor: 'require'` a throw saying why. */
 export function eligible(host: HandoffHost, s: TargetState, o: Asking): ElementBinding | null {
-  if (o.compositor === 'off') return null;
+  // Off unless asked for: the compositor is the slower path past a crossover the caller knows.
+  if ((o.compositor ?? 'off') === 'off') return null;
   const why = refusal(host, s, o);
   if (why) return refuse(o, why);
   return bindingOf(s)!;

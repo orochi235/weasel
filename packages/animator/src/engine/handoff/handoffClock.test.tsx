@@ -37,7 +37,7 @@ describe('a handed-off run on an outside clock', () => {
   it('plays at the clock rate', () => {
     const { animator, step, timeline } = setup(2);
     const e = element(timeline);
-    act(() => { animator.tween({ target: e.target, to: { x: 100 }, ms: 1000, easing: linear }); });
+    act(() => { animator.tween({ target: e.target, to: { x: 100 }, ms: 1000, easing: linear, compositor: 'auto' }); });
     step(0);
     step(100);
     expect(e.last().playbackRate).toBe(2);
@@ -49,7 +49,7 @@ describe('a handed-off run on an outside clock', () => {
   it('follows a seek, forward and back', () => {
     const { animator, handle, step, timeline } = setup(1);
     const e = element(timeline);
-    act(() => { animator.tween({ target: e.target, to: { x: 100 }, ms: 1000, easing: linear }); });
+    act(() => { animator.tween({ target: e.target, to: { x: 100 }, ms: 1000, easing: linear, compositor: 'auto' }); });
     step(0);
     step(100);
     act(() => { handle.clock.seek(600); });
@@ -64,7 +64,7 @@ describe('a handed-off run on an outside clock', () => {
   it('holds still while the clock is paused', () => {
     const { animator, handle, step, timeline } = setup(1);
     const e = element(timeline);
-    act(() => { animator.tween({ target: e.target, to: { x: 100 }, ms: 1000, easing: linear }); });
+    act(() => { animator.tween({ target: e.target, to: { x: 100 }, ms: 1000, easing: linear, compositor: 'auto' }); });
     step(0);
     step(200);
     act(() => { handle.clock.rate = 0; });

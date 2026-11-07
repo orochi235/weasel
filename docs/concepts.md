@@ -369,7 +369,7 @@ What is built on it:
 | The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
-| An element's inline style | `createElementTarget({ element, style, value })` | any of the above primitives; a run alone on it goes to `Element.animate` (below) |
+| An element's inline style | `createElementTarget({ element, style, value })` | any of the above primitives; a run given `compositor: 'auto'` can go to `Element.animate` (below) |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
 | Many like values | a row of `createTargetTable({ axes })` | any of the above primitives, on `table.target(row)` |
 
@@ -418,8 +418,8 @@ kit supplies all do.
 `createElementTarget({ element, style, value })` is a target shown as an element's inline style:
 `style(value)` answers the CSS, by property as `Element.animate` takes a keyframe's. On the main
 thread it writes that CSS each frame, like any target's `show`. A `tween`, `spring`, `decay` or
-`physics` on it is handed to `Element.animate` instead, and played by the browser's compositor with
-no per-frame work on the main thread, when all of these hold:
+`physics` on it given `compositor: 'auto'` or `'require'` is handed to `Element.animate` instead, and
+played by the browser's compositor with no per-frame work on the main thread, when all of these hold:
 
 - nothing else moves the target: no other animation (one under the same `cancelKey` is interrupted
   first), no hold, and it is no table's row;
@@ -427,9 +427,12 @@ no per-frame work on the main thread, when all of these hold:
 - `style` sets only `COMPOSITOR_PROPERTIES`: `transform`, `translate`, `rotate`, `scale`, `opacity`;
 - the environment has `Element.animate` (jsdom does not), and the run has length.
 
-Every target animation takes `compositor: 'auto' | 'off' | 'require'`: `'auto'` hands off where the
-rules allow, `'off'` never does, and `'require'` throws naming the rule that failed. `animator.live()`
-marks a handed-off row `compositor: true`.
+Every target animation takes `compositor: 'off' | 'auto' | 'require'`: `'off'`, the default, never
+hands off, `'auto'` hands off where the rules allow, and `'require'` throws naming the rule that
+failed. `animator.live()` marks a handed-off row `compositor: true`. The default is `'off'` because the
+compositor is the slower path past a few thousand elements, and where that crossover falls depends
+on the machine and on how busy the main thread is, which the caller knows and the animator does not
+(ruled 2026-11-06).
 
 The run's whole motion is a function of its own clock — a tween's eased path, a spring's or coast's
 closed form, the same motion the main-thread path computes — so it is sampled up front, `sampleRate`
