@@ -202,6 +202,22 @@ describe('window widget', () => {
     expect(win.bounds).toMatchObject({ x: 100, y: 100, w: 200, h: 150 });
   });
 
+  it('reports the bounds a cancel restores through the same callback the drag used', () => {
+    const onMove = vi.fn();
+    const onResize = vi.fn();
+    const win = createWindow({ ...opts, onMove, onResize });
+    win.onPointer({ type: 'down', x: 299, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 329, y: 175, native: null });
+    win.onPointer({ type: 'cancel', native: null });
+    expect(onResize).toHaveBeenLastCalledWith(expect.objectContaining({ x: 100, y: 100, w: 200, h: 150 }));
+
+    win.onPointer({ type: 'down', x: 150, y: 100 + M.titleH / 2, native: null });
+    win.onPointer({ type: 'move', x: 170, y: 100 + M.titleH / 2 + 10, native: null });
+    win.onPointer({ type: 'cancel', native: null });
+    expect(onMove).toHaveBeenLastCalledWith(expect.objectContaining({ x: 100, y: 100 }));
+    expect(onResize).toHaveBeenCalledTimes(2);
+  });
+
   it('a press-and-release on the close box fires onClose; a drag off it does not', () => {
     const onClose = vi.fn();
     const win = createWindow({ ...opts, onClose });
