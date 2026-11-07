@@ -71,4 +71,10 @@ describe('mat3', () => {
   it('invert: a matrix too flat for its own scale has no inverse', () => {
     expect(mat3.invert(mat3.scaled(mat3.identity(), 1e6, 1e-7))).toBeNull();
   });
+
+  it('minScaleOf: keeps the smaller scale of a stretch far from 1:1', () => {
+    expect(mat3.minScaleOf(mat3.scaled(mat3.identity(), 1e5, 1e-5)) / 1e-5).toBeCloseTo(1, 9);
+    const turned = mat3.fromAffine([1e4 * 0.6, 1e4 * 0.8, -1e-4 * 0.8, 1e-4 * 0.6, 0, 0]);
+    expect(mat3.minScaleOf(turned) / 1e-4).toBeCloseTo(1, 9);
+  });
 });
