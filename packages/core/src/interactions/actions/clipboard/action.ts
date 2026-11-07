@@ -1,6 +1,6 @@
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { buildDeleteOps } from '../defaults/delete';
+import { commitDeleteToScene } from '../defaults/delete';
+import type { NodeId } from 'core/scene/types';
 import { requiresSelection } from '../defaults/requiresSelection';
 import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
 import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
@@ -42,29 +42,22 @@ export const clipboardCutAction: Action & { requires: string[] } = {
   label: 'Cut',
   icon: icon('cut'),
   group: 'clipboard',
-  defaultBinding: [{ spec: { kind: 'key', key: 'x', mods: { mod: true } }, opts: { id: 'clipboard.cut.key' } }],
+  // Held off mid-gesture, as Delete is: a cut would remove what a drag is moving.
+  defaultBinding: [{
+    spec: { kind: 'key', key: 'x', mods: { mod: true }, phase: [{ channel: '*', phase: 'initial' }] },
+    opts: { id: 'clipboard.cut.key' },
+  }],
   eligible: { capability: 'edits-page' },
   requires: ['clipboard', 'scene', 'selection', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const clipboard = deps.clipboard;
-      const selection = deps.selection;
-      const scene = deps.scene;
-      const applyOps = deps.applyOps;
-      if (!clipboard || !selection || !scene) return;
-      const ids = selection.get();
+      if (!deps.clipboard || !deps.selection || !deps.scene) return;
+      const ids = deps.selection.get() as readonly NodeId[];
       if (ids.length === 0) return;
-
       // Snapshot before removal — `snapshotSelection` reads live nodes.
-      clipboard.copy();
-
-      const ops = buildDeleteOps(scene, ids, 'Cut', { takeHiddenSources: true });
-      if (ops.length > 0) {
-        if (applyOps) applyOps(ops, 'Cut');
-        else scene.applyBatch(ops, 'Cut', defaultCommitAdapter(scene, selection.adapterMethods));
-      }
-      selection.set([]);
+      deps.clipboard.copy();
+      commitDeleteToScene(ids, deps, 'Cut');
     },
   },
   enabled: requiresSelection,
