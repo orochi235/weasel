@@ -20,10 +20,6 @@ on:
         description: Run only the WebGPU job
         type: boolean
         default: false
-      probe_only:
-        description: Only probe WebGPU launch flags (temporary)
-        type: boolean
-        default: false
 
 # A superseded push's run tells us nothing; don't queue behind it.
 concurrency:
@@ -69,11 +65,9 @@ jobs:
           retention-days: 14
 
   # The same suite and baselines with every canvas on WebGPU (`?backend=webgpu`).
-  # It reports without gating until the suite passes on WebGPU, which is when
-  # core's default backend can move off WebGL 2.
+  # Its Chromium launch differs from the job above (tests/visual/playwright.config.ts).
   visual-regression-webgpu:
     runs-on: ubuntu-22.04
-    continue-on-error: true
     env:
       NPM_CONFIG_LOGLEVEL: error
       WEASEL_VISUAL_BACKEND: webgpu
@@ -90,11 +84,7 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      - name: Probe WebGPU launch flags (temporary)
-        run: node tests/visual/webgpu-probe.mjs
-
       - name: Run visual regression tests on WebGPU
-        if: ${{ !inputs.probe_only }}
         run: npm run test:visual
 
       - name: Upload test results on failure

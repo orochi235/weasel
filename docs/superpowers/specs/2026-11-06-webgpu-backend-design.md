@@ -1,7 +1,7 @@
 # WebGPU backend for WeaselRenderer — design
 
-**Status: partly built (2026-11-06).** Work in flight on branch `webgpu` (`/Users/mike/src/weasel-webgpu`); the
-stage list at the end says which parts have landed. Delete this file when the last stage merges; the WGSL
+**Status: built on branch `webgpu` (2026-11-07), not yet merged to `main`.** The stage list at the end says
+what landed. Delete this file when the last stage merges; the WGSL
 contract already lives in `packages/renderer/README.md` ("Writing WGSL").
 
 For whoever builds or reviews a stage: how one draw-code path drives both WebGL2 and WebGPU, what a WGSL
@@ -119,8 +119,8 @@ kinds got a prelude of the same shape (`gpu/webgpu/wgsl/paintPrelude.ts`).
   (`testing/parityHarness.ts`; measured 2026-11-06).
 - One divergence is the APIs' own: a horizontal edge exactly on a row of pixel centers inks the row below it
   on WebGPU and the row above it on WebGL, whose window coordinates run bottom-up. A parity case pins it.
-- The visual suite takes `WEASEL_VISUAL_BACKEND=webgpu`, which the site reads as `?backend=webgpu`. The TODO
-  entry closes when that run passes on CI.
+- The visual suite takes `WEASEL_VISUAL_BACKEND=webgpu`, which the site reads as `?backend=webgpu`, and passes
+  on CI against the WebGL baselines (2026-11-07).
 
 ## Stages
 
@@ -136,21 +136,21 @@ from the plan; this list says what is on the branch (2026-11-06).
    mipmaps, targets, MSAA resolve, ids and `renderIdsAsync`, the viewport fold (`weasel_clip`, bind group 2).
    Kit programs carry their WGSL; `WeaselRendererOptions.gpu` and `requestRendererDevice()` build a renderer
    on it. The parity suite (`gpu/webgpu/parity*.browser.test.ts`) draws one corpus through both backends in
-   one page and diffs the pixels; two stroke cases are still a row of pixels apart (TODO entry).
+   one page and diffs the pixels.
 4. **Landed.** Core's `backend` option and `CanvasBackendProvider`; async `pickAt` / `readIds`; the paint
    prelude for registered paint kinds. Every shader the repo registers with a `WeaselRenderer` has WGSL;
    kernel3d's line pass and labkit's 3D lab draw through WebGL contexts of their own and are not in scope.
-5. **Plumbing landed, unrun.** The site reads `?backend=` into a `CanvasBackendProvider` at its root;
+5. **Landed.** The site reads `?backend=` into a `CanvasBackendProvider` at its root;
    `tests/visual/fixture.ts` appends it to every `page.goto` when `WEASEL_VISUAL_BACKEND` is set; the visual
-   workflow's `visual-regression-webgpu` job runs the suite that way against the same baselines, without
-   gating. Nothing has run it: it needs a push. Specs that read pixels through a WebGL context of their own
-   (`batch-pixels.spec.ts`) cannot read a WebGPU canvas and are expected to fail there.
+   workflow's `visual-regression-webgpu` job runs the suite that way against the same baselines, and gates.
+   It passed 87 of 87 on CI on 2026-11-07 (run 42332212104). Specs read a canvas through the fixture's
+   `weaselCanvasSnapshot` / `weaselCanvasPixels`; `WeaselRenderer.readPixels` and core's `readCanvasPixels`
+   read one back on either backend, which the loupe's pixel mode uses on WebGPU.
 
 What the fleet's browsers impose on a WebGPU canvas, found building stage 3: headless Chromium's
 SwiftShader adapter hands back invalid textures for a `bgra8unorm` canvas, so every canvas is configured
 `rgba8unorm`; and an off-screen canvas's texture is invalid on every frame after its first until the
-context is configured again, which the parity harness does before each frame. A WebGPU canvas in the
-document loses the device for the whole page once it has been presented for a few frames
-(`docs/traps/testing.md`), so the fleet's WebGPU tests draw only to canvases outside it, and the visual
-suite's WebGPU run, whose canvases are on the page, may meet the same on CI's headless Chromium. Multisampled edge pixels part
+context is configured again, which the parity harness does before each frame. A WebGPU canvas loses the device
+for the whole page once presented while the GPU process is off, which is headless Chromium's default; the
+launch flags that keep it on, on the fleet and on CI's Linux runner, are in `docs/traps/testing.md`. Multisampled edge pixels part
 even on one GPU, so multisampled parity is compared away from edges.

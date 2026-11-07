@@ -32,9 +32,9 @@ const PNG_DATA_URL_PREFIX = 'data:image/png;base64,';
  * different font metrics. It also silently resamples any canvas whose CSS box
  * differs from its backing store.
  *
- * The read relies on the canvas's WebGL2 context having been created with
- * `preserveDrawingBuffer: true`. The CSS background painted behind a
- * transparent canvas is not included.
+ * The read relies on a WebGL2 context created with `preserveDrawingBuffer:
+ * true`; a WebGPU canvas's `toDataURL` holds the frame last shown. The CSS
+ * background painted behind a transparent canvas is not included.
  */
 export async function readCanvasPixels(canvas: Locator): Promise<Buffer> {
   const dataUrl = await canvas.evaluate((el) => {

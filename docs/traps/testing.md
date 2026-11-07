@@ -104,7 +104,12 @@ premultiplied, rgba8unorm or bgra8unorm, configured once or every frame. `--use-
 Chromium's headless (`channel: 'chromium'`) do the same, and `--use-webgpu-adapter=swiftshader` beside
 `--enable-gpu` presents clean too: the fault is the compositing, not the adapter (teitou, 2026-11-06).
 So every WebGPU browser file and the parity files run in the browser project's `browser (gpu)`
-instance; a new one goes in `GPU_TESTS` in `vitest.config.ts`. None of this is measured on Linux CI,
-which has no GPU, nor in the visual suite, whose WebGPU canvases are on the page. Print
+instance; a new one goes in `GPU_TESTS` in `vitest.config.ts`. On GitHub's GPU-less ubuntu-22.04 runner
+neither `--enable-gpu` alone nor `channel: 'chromium'` keeps the device: of ten launches probed, only
+`--enable-gpu --use-angle=swiftshader --enable-unsafe-swiftshader --use-vulkan=swiftshader
+--use-webgpu-adapter=swiftshader` (beside `--enable-unsafe-webgpu --enable-features=Vulkan`) presented 40
+frames with the device alive, and it is what the visual suite's WebGPU job launches (2026-11-07). There a 2D
+`drawImage` of a WebGPU canvas already shown comes out transparent, while `toDataURL` holds the shown frame
+and a `drawImage` in the task that drew it holds that frame; the visual specs read through `toDataURL`. Print
 `WEBGL_debug_renderer_info`'s `UNMASKED_RENDERER_WEBGL` and `adapter.info` before trusting a claim
 about what a GPU does.

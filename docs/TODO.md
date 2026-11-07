@@ -717,14 +717,6 @@ only story runner in the repo.
 
 ## Backends (WebGL future)
 
-- **(P3) [agent] WebGPU backend.** Design and stage list: `docs/superpowers/specs/2026-11-06-webgpu-backend-design.md`.
-  On branch `webgpu` (2026-11-06): the WebGPU device, every kit program in WGSL, `WeaselRendererOptions.gpu`,
-  `requestRendererDevice`, `renderIdsAsync`, a parity suite against WebGL, core's `backend` option, async
-  `pickAt` / `readIds`, a paint-kind WGSL prelude, and the visual suite's `WEASEL_VISUAL_BACKEND=webgpu` run
-  with its CI job (`visual-regression-webgpu`, not gating). Left: that job has never run (it needs a push),
-  `geometry.picking: 'pixels'` walks the shapes on WebGPU because the pick must answer inside the pointer
-  event, a tile of a shared canvas stays on WebGL.
-  Closes when a WebGPU backend for `WeaselRenderer` passes the visual-regression suite.
 - **(P3) [agent] The browser project draws WebGL on SwiftShader, not the node's GPU.** Headless Chromium
   gives WebGL SwiftShader unless launched with `--enable-gpu` (measured on msb-uai, 2026-11-06, with main's
   launch flags as well as the `webgpu` branch's). So a test whose claim is about the GPU has not run on one on
