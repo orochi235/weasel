@@ -19,6 +19,7 @@ export {
 export { idMask } from './draw/idRender';
 export { requestRendererDevice } from './gpu/webgpu/requestRendererDevice';
 export type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
+export type * from './gpu/types';
 export { MAX_PICK_ID } from './shaders/idOutput';
 export type { BatchStage } from './batchStage';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
