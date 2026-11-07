@@ -4,7 +4,7 @@
  * drivers, so this probes pixels and reads coordinates back out of the
  * exported document instead.
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixture';
 
 /** The demo's pane and its content box, which are deliberately the same size,
  *  so the pane sits at zoom 1 and a client delta is a world delta. */

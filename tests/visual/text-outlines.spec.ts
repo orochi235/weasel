@@ -12,7 +12,7 @@
  *      That invariant is what lets the threshold depend on zoom: cross it
  *      while reading and text must not reflow.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixture';
 
 /** Ink bounding box and coverage of the demo canvas backing store. */
 async function inkStats(page: Page) {

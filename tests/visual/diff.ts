@@ -2,8 +2,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
-import type { Locator, Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Locator, Page } from './fixture';
+import { expect } from './fixture';
 
 export interface DiffOptions {
   /** pixelmatch per-pixel color distance threshold 0–1. Default 0.1. */

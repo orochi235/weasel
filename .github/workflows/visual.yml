@@ -57,3 +57,37 @@ jobs:
           path: |
             test-results/
           retention-days: 14
+
+  # The same suite and baselines with every canvas on WebGPU (`?backend=webgpu`).
+  # It reports without gating until the suite passes on WebGPU, which is when
+  # core's default backend can move off WebGL 2.
+  visual-regression-webgpu:
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+    env:
+      NPM_CONFIG_LOGLEVEL: error
+      WEASEL_VISUAL_BACKEND: webgpu
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run visual regression tests on WebGPU
+        run: npm run test:visual
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-regression-results-webgpu
+          path: |
+            test-results/
+          retention-days: 14

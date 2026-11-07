@@ -12,7 +12,7 @@
  * between "editing" and "magenta" tells the two apart (measured: 12×2 for the
  * dash, and a `?` at this size is roughly 8×15).
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 
 // The gap between the two words on the `t4` line, in canvas pixels. The dash
 // measures x 186–197, y 260–261. "editing"'s final `g` ends at x 177 and

@@ -3,7 +3,7 @@
  * after mount. The gradient handles and the paint panel are DOM, so neither is
  * part of the capture.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 

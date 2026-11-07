@@ -11,7 +11,7 @@
  * shares its draw, and a quad samples its own bitmap and no other. Both hold
  * however `draw.ts` decides to break runs.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 

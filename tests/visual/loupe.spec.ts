@@ -11,7 +11,7 @@
  * Counting *distinct* colors does not: the ramp repeats with the pattern, so
  * LINEAR yields as few of them as NEAREST does.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixture';
 
 const DEMO_ID = 'loupe';
 

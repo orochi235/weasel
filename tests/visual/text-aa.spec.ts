@@ -13,7 +13,7 @@
  *   constant 0.05 band                partial/solid = 0.34
  * The 1.0 gate sits between them.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 
 // Node `t1` from apps/site/demos/textDemoScene.ts: x 30, y 30, 240×80, a
 // single solid fill (#1c1c1c) at fontSize 16. One node of one known color

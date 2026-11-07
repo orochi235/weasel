@@ -9,7 +9,7 @@
  * Node `t6` from apps/site/demos/textDemoScene.ts: world box (30, 130) 540 wide,
  * fontSize 16.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixture';
 
 const NODE = { x: 30, y: 130, width: 540, fontSize: 16 };
 

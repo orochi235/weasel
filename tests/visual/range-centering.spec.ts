@@ -9,7 +9,7 @@
  * that part's center. Opaque paint keeps a translucent thumb from weighting the
  * rows it shares with the track.
  */
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixture';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

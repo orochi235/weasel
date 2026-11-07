@@ -9,7 +9,7 @@
  * probes below assert what the painter owns in terms no driver difference can
  * move.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline, type DiffOptions } from './diff.js';
 

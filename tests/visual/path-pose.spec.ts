@@ -8,7 +8,7 @@
  *
  * Notes: Pre-placed paths.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 

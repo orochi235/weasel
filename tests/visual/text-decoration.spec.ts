@@ -17,7 +17,7 @@
  *   offsets keeps this independent of where the baseline lands.
  * - each rule spans only its own run, not the whole line.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixture';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 

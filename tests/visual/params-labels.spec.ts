@@ -4,7 +4,7 @@
  * reading a rule, and nothing there resolves `var()`. Geometry only — no pixel
  * baseline, so no GPU/CI drift to manage.
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixture';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline, type DiffOptions } from './diff.js';
 

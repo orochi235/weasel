@@ -6,7 +6,7 @@
  * factor, mode, the lens raised and put away — but not that the picture inside
  * it is bigger than the one outside, which is the whole point.
  */
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixture';
 
 const DEMO_ID = 'lab-loupe';
 

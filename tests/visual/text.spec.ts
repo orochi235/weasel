@@ -8,7 +8,7 @@
  *
  * Notes: Static text nodes. MSDF AA may differ from Canvas 2D AA — tolerance bumped to 5%.
  */
-import { test } from '@playwright/test';
+import { test } from './fixture';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline, type DiffOptions } from './diff.js';
 

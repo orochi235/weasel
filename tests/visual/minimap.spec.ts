@@ -10,7 +10,7 @@
  * hover there lands on the main canvas moves with the scene — sometimes off
  * the region read, or off the canvas. `seedRandom` pins the scene.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixture';
 
 const DEMO_ID = 'minimap';
 /** From `apps/site/demos/MinimapDemo.tsx`: the main canvas is 600×400 with
