@@ -47,6 +47,7 @@ export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {
   return 'children' in entry;
 }
 
+/** A boolean leaf, built by `f.boolean`. It draws as a checkbox, or a switch after {@link BooleanNode.toggle}. */
 export class BooleanNode extends BaseNode<boolean> {
   readonly kind = 'boolean';
 
