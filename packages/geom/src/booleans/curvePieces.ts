@@ -1,75 +1,16 @@
 /**
- * Divide, face pieces, trim and merge that keep curves: one cut of every
- * outline against the others, its edges labeled by which inputs cover each
- * side, and each label's boundary traced into loops.
+ * Trim and merge that keep curves: one cut of every outline against the
+ * others, its edges labeled by which inputs cover each side, and each label's
+ * boundary traced into loops.
  */
 
 import type { Path, PolygonPath } from '../path';
-import { type Contour, sampleContour, signedArea } from './contourSegments';
-import { assembleRegions } from './cutRegions';
+import type { Contour } from './contourSegments';
 import { type CurveCut, cutPaths, curveRegions, writeLoops } from './curveBoolean';
 
 export interface CurvePiece {
   path: PolygonPath;
   sources: number[];
-}
-
-const covering = (inside: boolean[]): number[] => {
-  const s: number[] = [];
-  inside.forEach((v, i) => { if (v) s.push(i); });
-  return s;
-};
-
-const maskOf = (sources: readonly number[]): bigint => sources.reduce((m, i) => m | (1n << BigInt(i)), 0n);
-
-/** Left edge, then bottom, of a region's outer loop. */
-function corner(loops: readonly Contour[]): [number, number] {
-  const pts = sampleContour(loops[0]);
-  let x = Infinity, y = Infinity;
-  for (let i = 0; i < pts.length; i += 2) { x = Math.min(x, pts[i]); y = Math.min(y, pts[i + 1]); }
-  return [x, y];
-}
-
-/** Loops with their region on the left, as connected regions: each outer loop with the holes it holds. */
-function connected(loops: readonly Contour[]): Contour[][] {
-  const outers: Contour[] = [], holes: Contour[] = [];
-  for (const l of loops) (signedArea(l) > 0 ? outers : holes).push(l);
-  return assembleRegions(outers, holes);
-}
-
-/**
- * The faces the paths' outlines cut the plane into, grouped by the inputs
- * covering them: one piece per cover set, or with `split` one per connected
- * face. Ordered as `pathDividePieces` orders them. Null where `cutPaths` or
- * `curveRegions` is.
- */
-export function curveDivide(paths: readonly Path[], split: boolean): CurvePiece[] | null {
-  const cut = cutPaths(paths);
-  if (!cut) return null;
-  const ids = new Map<string, number>();
-  const sets: number[][] = [];
-  const regions = curveRegions(cut, (inside) => {
-    const s = covering(inside);
-    if (s.length === 0) return -1;
-    const key = s.join(',');
-    let id = ids.get(key);
-    if (id === undefined) { id = sets.length; ids.set(key, id); sets.push(s); }
-    return id;
-  });
-  if (!regions) return null;
-
-  const out: { piece: CurvePiece; mask: bigint; at: [number, number] }[] = [];
-  for (const [id, loops] of regions) {
-    const sources = sets[id];
-    const mask = maskOf(sources);
-    for (const face of split ? connected(loops) : [loops]) {
-      out.push({ piece: { path: writeLoops(face, cut.clockwise[sources[0]]), sources }, mask, at: corner(face) });
-    }
-  }
-  return out.sort((a, b) =>
-    a.piece.sources.length - b.piece.sources.length
-    || (a.mask < b.mask ? -1 : a.mask > b.mask ? 1 : 0)
-    || a.at[0] - b.at[0] || a.at[1] - b.at[1]).map((o) => o.piece);
 }
 
 const topmost = (inside: boolean[]): number => inside.lastIndexOf(true);
