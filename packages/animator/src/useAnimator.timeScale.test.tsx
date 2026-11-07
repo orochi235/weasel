@@ -72,6 +72,24 @@ describe('a time scale below 0', () => {
     expect(pending()).toBe(0);
   });
 
+  it('ends an interpolated tween at its start while something else still moves the target', () => {
+    const { animator, step, target } = setup();
+    let tw!: ReturnType<typeof animator.tween>;
+    act(() => {
+      tw = animator.tween({ target, to: 50, ms: 1000, easing: linear, interpolate: (a, b, u) => a + (b - a) * u });
+      animator.hold({ target, value: 0, weight: 0 });
+    });
+    step(0);
+    step(300);
+    expect(target.read()).toBeCloseTo(22, 6);
+    act(() => { tw.setTimeScale(-1); });
+    step(200);
+    step(200);
+    expect(target.read()).toBe(10);
+    step(16);
+    expect(target.read()).toBe(10);
+  });
+
   it('plays forward again from where it is when the scale comes back above 0', () => {
     const { animator, step, target } = setup();
     let tw!: ReturnType<typeof animator.tween>;
