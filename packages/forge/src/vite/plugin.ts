@@ -106,6 +106,8 @@ export function forge(options: ForgeOptions): Plugin[] {
   /** The graph last served or pushed; null until a page first asks for it, so no edit rebuilds it before then. */
   let depsSent: string | null = null;
   let depsPending: Promise<void> | null = null;
+  /** An edit landed while `depsPending` ran, so the graph it builds may predate it. */
+  let depsAgain = false;
   /** Per story file, which of its foreign callees are forge's `meta`/`story`, and what was read to decide it. */
   const wrappersOf = new Map<string, WrapperResolution>();
   /** The first pass over every story file, run before the index is first served. */
@@ -202,7 +204,11 @@ export function forge(options: ForgeOptions): Plugin[] {
 
   /** Rebuilds the graph after an edit and pushes it when it changed. Edits landing while one runs share the next. */
   function redeps(server: ViteDevServer): void {
-    if (depsSent === null || depsPending) return;
+    if (depsSent === null) return;
+    if (depsPending) {
+      depsAgain = true;
+      return;
+    }
     const resolve: ResolveImport = async (spec, importer) =>
       (await server.environments.client.pluginContainer.resolveId(spec, importer))?.id ?? null;
     depsPending = Promise.resolve()
@@ -217,6 +223,9 @@ export function forge(options: ForgeOptions): Plugin[] {
       .catch(logError)
       .finally(() => {
         depsPending = null;
+        if (!depsAgain) return;
+        depsAgain = false;
+        redeps(server);
       });
   }
 
