@@ -11,4 +11,12 @@ describe('effectsReach', () => {
   it('is unbounded when any pass does not say how far it reaches', () => {
     expect(effectsReach([...blur({ radius: 2 }), ...vignette({ amount: 0.5 })])).toBe(Infinity);
   });
+
+  it('reads a non-finite blur radius as no blur, rather than handing the shader NaN offsets', () => {
+    for (const radius of [Infinity, -Infinity, NaN]) {
+      const passes = blur({ radius });
+      expect(effectsReach(passes)).toBe(0);
+      for (const pass of passes) expect(pass.uniforms?.u_radius).toBe(0);
+    }
+  });
 });

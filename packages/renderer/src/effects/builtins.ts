@@ -63,9 +63,12 @@ const VIGNETTE = registerEffect('weasel:vignette', { glsl: VIGNETTE_FRAG, wgsl: 
  * `radius` is in device pixels and is the distance of the outermost tap, not a
  * standard deviation — 0 is a copy, and the falloff is the same nine-tap
  * kernel at every radius, so a large one is a wide blur rather than a better
- * one. Two passes at O(9) beat one at O(81) and look the same.
+ * one. Two passes at O(9) beat one at O(81) and look the same. A radius that
+ * is not finite draws as 0.
  */
-export function blur({ radius }: { radius: number }): Effect[] {
+export function blur({ radius: asked }: { radius: number }): Effect[] {
+  // A radius with no finite taps would sample at NaN and erase the group.
+  const radius = Number.isFinite(asked) ? asked : 0;
   // The outermost tap samples linearly, so it reads the texel past its offset too.
   const reach = Math.ceil(Math.abs(radius));
   return [
