@@ -1,3 +1,4 @@
+import { useLatest } from '@weasel-js/core';
 import { useEffect } from 'react';
 import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
 import { usePref } from './prefs';
@@ -9,12 +10,16 @@ import { usePref } from './prefs';
  */
 export function useMachineFontOutlines(): void {
   const [machineOutlines, setMachineOutlines] = usePref('text.machineFontOutlines');
+  const on = useLatest(machineOutlines);
   useEffect(() => {
     if (!machineOutlines) {
       disableMachineFontOutlines();
       return;
     }
-    void enableMachineFontOutlines().catch((err: unknown) => {
+    void enableMachineFontOutlines().then(() => {
+      // Reading the font files takes a while; the switch may have gone off meanwhile.
+      if (!on.current) disableMachineFontOutlines();
+    }, (err: unknown) => {
       // A refusal is the user's answer, so put the switch back to match it. Anything else — no
       // API in this browser, a transient failure — leaves the preference alone.
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
@@ -23,5 +28,5 @@ export function useMachineFontOutlines(): void {
       }
       console.warn('WeaselDraw: machine-font outlines unavailable —', err);
     });
-  }, [machineOutlines, setMachineOutlines]);
+  }, [machineOutlines, setMachineOutlines, on]);
 }
