@@ -6,16 +6,14 @@
 //
 // `--files` passes vitest file filters, to time one package's tests; `--label` names what the tree held, for a
 // comparison between two trees rather than two variants (the caller swaps the tree between runs). `--processes 1,2,3`
-// also splits the project across that many concurrent vitest processes, each its own Chromium running `--shard=i/N`
-// with the project's six tabs (`--tabs` for another count), and times the run to the last one finishing.
-// `--split hash,duration` alternates how those processes divide the files: vitest's count-based `--shard`, or
-// the durations its results cache last recorded (`scripts/vitest-duration-sequencer.ts`).
+// runs the project at each of those counts, `--tabs` tabs to each (six unless given), and `--split hash,spread`
+// alternates how: that many concurrent vitest processes, each one Chromium running vitest's `--shard=i/N`, timed to
+// the last one finishing; or one process, its tabs dealt across that many Chromiums (`scripts/vitest-browser-spread.mjs`).
 import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus, hostname } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { DURATIONS_ENV, durationsEnv } from './lib/browser-shards.mjs';
 import { sampleLoad } from './lib/node-load.mjs';
 
 const { values } = parseArgs({
@@ -75,14 +73,13 @@ function files(reports) {
   };
 }
 
-/** One vitest process: shard `i` of `of`, or the whole project when `of` is 1. */
-const shard = (variant, id, i, of, started, splitEnv) =>
+/** One vitest process, its tabs in `chromiums` Chromiums: shard `i` of `of`, or the whole project when `of` is 1. */
+const shard = (variant, id, i, of, started, chromiums) =>
   new Promise((resolve) => {
     const name = of === 1 ? id : `${id}-shard${i}`;
     const log = join(values.out, `${name}.log`);
     const report = join(values.out, `${name}.json`);
-    const env = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1', WEASEL_DEV_SOURCE: variant === 'source' ? '1' : '0', WEASEL_BROWSER_TABS: String(TABS), ...splitEnv };
-    if (!splitEnv[DURATIONS_ENV]) delete env[DURATIONS_ENV];
+    const env = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1', WEASEL_DEV_SOURCE: variant === 'source' ? '1' : '0', WEASEL_BROWSER_TABS: String(TABS), WEASEL_BROWSER_CHROMIUMS: chromiums };
     const args = ['node_modules/vitest/vitest.mjs', 'run', '--project=browser', '--reporter=default', '--reporter=json', `--outputFile.json=${report}`, ...(of > 1 ? [`--shard=${i}/${of}`] : []), ...filters];
     const child = spawn(process.execPath, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
     let text = '';
@@ -96,11 +93,12 @@ const shard = (variant, id, i, of, started, splitEnv) =>
   });
 
 const trial = async (variant, id, of, by) => {
-  // One snapshot for every process, taken before any of them updates the cache.
-  const splitEnv = of > 1 && by === 'duration' ? durationsEnv(process.cwd(), {}) : {};
-  const recorded = splitEnv[DURATIONS_ENV] ? Object.keys(JSON.parse(splitEnv[DURATIONS_ENV])).length : undefined;
   const started = Date.now();
-  const runs = await Promise.all(Array.from({ length: of }, (_, k) => shard(variant, id, k + 1, of, started, splitEnv)));
+  // `spread`: one process, its pages dealt across `of` Chromiums (`scripts/vitest-browser-spread.mjs`).
+  const runs =
+    by === 'spread'
+      ? [await shard(variant, id, 1, 1, started, String(of))]
+      : await Promise.all(Array.from({ length: of }, (_, k) => shard(variant, id, k + 1, of, started, '1')));
   const text = runs.map((r) => r.text).join('\n');
   return {
     code: runs.find((r) => r.code !== 0)?.code ?? 0,
@@ -109,11 +107,9 @@ const trial = async (variant, id, of, by) => {
       processWallSeconds: runs.map((r) => r.wallSeconds),
       processPhases: runs.map((r) => phases(r.text)),
       split: by,
-      ...(recorded !== undefined && { recordedFiles: recorded }),
-      sliceLines: runs.map((r) => /duration-sequencer: .*/.exec(r.text)?.[0]).filter(Boolean),
     }),
     reoptimized: (text.match(/Re-optimizing dependencies/g) ?? []).length,
-    ...(of === 1 && phases(text)),
+    ...((of === 1 || by === 'spread') && phases(text)),
     ...files(runs.map((r) => r.report)),
   };
 };
@@ -129,7 +125,7 @@ for (let rep = 1; rep <= reps; rep++) {
       const r = await trial(variant, id, of, by);
       // maxWorkers is the project's, per process, so workerSeconds is what the run held: tabs × wall.
       const tabs = TABS * of;
-      const row = { node, cores, maxWorkers: TABS, processes: of, workerSeconds: tabs * r.wallSeconds, variant, ...(label && { label }), ...(filters.length && { filters }), rep, at: new Date().toISOString(), loadBefore: before, ...r };
+      const row = { node, cores, maxWorkers: TABS, processes: by === 'spread' ? 1 : of, ...(by === 'spread' && { chromiums: of }), workerSeconds: tabs * r.wallSeconds, variant, ...(label && { label }), ...(filters.length && { filters }), rep, at: new Date().toISOString(), loadBefore: before, ...r };
       appendFileSync(join(values.out, 'runs.jsonl'), JSON.stringify(row) + '\n');
       console.log(
         `${String(n).padStart(2)}/${total}  ${node}  ${variant.padEnd(7)}  ${of} proc × ${String(TABS).padStart(2)} tabs  rep ${rep}  ` +

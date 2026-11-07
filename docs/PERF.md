@@ -54,23 +54,6 @@ When work merges, retire its entry here in the same change.
 
 ---
 
-## Test suite speed
-
-- **(P3) [agent] The browser project's slices still finish up to 28% apart.** `scripts/vitest-overlap.mjs`
-  runs the project as three processes on nodes of 10 cores or more, each its own Chromium and slice of
-  the files (`scripts/lib/browser-shards.mjs`). Since 2026-11-06 the slices are cut by the durations in
-  vitest's results cache (`scripts/vitest-duration-sequencer.ts`; `WEASEL_SHARD_SPLIT=hash` restores
-  vitest's count split). On teitou that took the project alone from a mean of 94.9 s to 89.5 s, four
-  alternating runs each, every duration run faster than every hash run. That is 6%, short of the 10%
-  asked. Splitting the two slowest files (chart's 72 s, trimClip's 70 s) did not move it: 91.6 s
-  (rows labeled `split` and `split-filesplit` in `scripts/bench-browser-project.runs.jsonl`). The
-  recorded durations do not predict a slice's load: slices recorded at 354 s each ran 292, 343 and 485 s
-  of test time, as files drawing WebGL in one Chromium slow each other. Closes when the project alone
-  at three processes averages 85.4 s or less on teitou (10% under 94.9 s), or when a split weighted by
-  something else, such as each file's span in the bench's JSON reports, measures no better than this one.
-
----
-
 ## forge and dev servers
 
 - **(P3) [maintainer] forge serves ui and labkit file by file unless `WEASEL_DEV_BUNDLE_STORIES=1`.** Their
