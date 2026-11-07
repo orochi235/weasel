@@ -44,6 +44,16 @@ async function until(handle: WorkerCanvasHandle, x: number, y: number, rgb: numb
   return last;
 }
 
+/** Wait, a frame at a time, until the pixel at (x, y) passes `ok`; `null` if it never does. */
+async function near(handle: WorkerCanvasHandle, x: number, y: number, ok: (p: number[]) => boolean): Promise<number[] | null> {
+  for (let i = 0; i < 300; i++) {
+    const p = await pixel(handle, x, y);
+    if (p && ok(p)) return p;
+    await frame();
+  }
+  return null;
+}
+
 interface MountOptions {
   alphaFor?: (id: string) => number;
   clock?: FollowedClock;
@@ -78,7 +88,7 @@ function mount({ alphaFor, clock, a = solid('#ff0000'), b = solid('#00ff00') }: 
 }
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const FRAME_KEYS = new Set(['type', 'scene', 'overrides', 'view', 'size', 'layers', 'cull', 'extraCommands', 'scroll', 'alpha']);
+const FRAME_KEYS = new Set(['type', 'scene', 'overrides', 'view', 'size', 'layers', 'cull', 'extraCommands', 'scroll', 'alpha', 'at', 'resumed', 'animations']);
 
 describe('a scene view painted by a worker', () => {
   it('draws into the transferred canvas, and the page sends only what changed', async () => {
@@ -136,29 +146,18 @@ describe('a scene view painted by a worker', () => {
     clock.clock.sync(0);
     expect(await until(handle.current!, 25, 25, [255, 0, 0])).toEqual([255, 0, 0, 255]);
     clock.clock.seek(500);
-    const mid = await (async () => {
-      for (let i = 0; i < 300; i++) {
-        const p = await pixel(handle.current!, 25, 25);
-        if (p && p[0]! < 235 && p[2]! > 20) return p;
-        await frame();
-      }
-      return null;
-    })();
+    const mid = await near(handle.current!, 25, 25, (p) => p[0]! < 235 && p[2]! > 20);
     expect(mid![0]).toBeGreaterThan(20);
     expect(mid![2]).toBeLessThan(235);
     // Back short of the start, where the tween would end: it plays backward and keeps running.
     clock.clock.seek(50);
-    const back = await (async () => {
-      for (let i = 0; i < 300; i++) {
-        const p = await pixel(handle.current!, 25, 25);
-        if (p && p[0]! > 215 && p[2]! < 40) return p;
-        await frame();
-      }
-      return null;
-    })();
+    const back = await near(handle.current!, 25, 25, (p) => p[0]! > 215 && p[2]! < 40);
     expect(back).not.toBeNull();
+    clock.clock.seek(950);
+    expect(await near(handle.current!, 25, 25, (p) => p[2]! > 215 && p[0]! < 40)).not.toBeNull();
+    // At its end the tween releases its colors, as on the page, and the node shows its own fill.
     clock.clock.seek(1000);
-    expect(await until(handle.current!, 25, 25, [0, 0, 255])).toEqual([0, 0, 255, 255]);
+    expect(await until(handle.current!, 25, 25, [255, 255, 255])).toEqual([255, 255, 255, 255]);
   });
 
   it('draws a bitmap the page made, under the name the page gave it', async () => {
