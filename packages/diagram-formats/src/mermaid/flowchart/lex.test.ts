@@ -38,6 +38,12 @@ describe('lexFlowchart', () => {
     ]);
   });
 
+  it('reads an arrow inside a link\'s quoted inline text as text', () => {
+    expect(lex('A -- "a --> b" --> B == "x ==> y" ==> C')).toEqual([
+      'word:A', 'link:normal>:a --> b', 'word:B', 'link:thick>:x ==> y', 'word:C',
+    ]);
+  });
+
   it('keeps hyphens and dots inside ids, but not an arrow after one', () => {
     expect(lex('my-node.x-->x-y')).toEqual(['word:my-node.x', 'link:normal>', 'word:x-y']);
   });

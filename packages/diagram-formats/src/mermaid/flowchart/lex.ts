@@ -235,6 +235,11 @@ class MermaidLexer {
     const { text } = this;
     const closer = CLOSERS[body.includes('.') ? '.' : body[0]!]!;
     let k = this.i;
+    while (text[k] === ' ' || text[k] === '\t') k++;
+    if (text[k] === '"') {
+      const quote = text.indexOf('"', k + 1);
+      if (quote >= 0 && !text.slice(k, quote).includes('\n')) k = quote + 1;
+    }
     for (; k < text.length && text[k] !== '\n'; k++) {
       closer.lastIndex = k;
       if (closer.test(text) && /\s/.test(text[k] ?? '')) break;
