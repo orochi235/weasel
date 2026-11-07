@@ -15,6 +15,17 @@ export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[]
     .filter((id) => scene.get(id) !== undefined);
 }
 
+/** {@link selectedRoots} back to front: what a copy inserts, in this order, so the copies stack as
+ *  the originals do whatever order the selection was made in. */
+export function copiedRoots(scene: AnyScene, ids: readonly string[]): NodeId[] {
+  const roots = selectedRoots(scene, ids);
+  if (roots.length < 2) return roots;
+  const order = new Map<string, number>();
+  let i = 0;
+  for (const id of scene.renderOrder()) order.set(id, i++);
+  return roots.sort((a, b) => (order.get(a) ?? i) - (order.get(b) ?? i));
+}
+
 /** Whether `id` draws a path derived from other nodes. Its pose is a
  *  placeholder: the path follows the nodes it derives from. */
 function derivesPathOnly(scene: AnyScene, id: string): boolean {
