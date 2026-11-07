@@ -35,6 +35,7 @@ export { markerRegistry, markerGeneration, registerMarker, getMarker, listMarker
 export type { MarkerCtx, MarkerEntry, MarkerPaint } from './strokeMarkers';
 export { BUILTIN_MARKERS } from './strokeMarkerShapes';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './markerInset';
+export { strokeAtScale } from './strokeAtScale';
 export { markerSites } from './markerSites';
 export type { MarkerSite, MarkerSiteInsets, MarkerSiteRequest } from './markerSites';
 export {

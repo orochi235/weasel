@@ -1,7 +1,7 @@
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import {
-  markerHeads, resolveStrokeWidth, strokeInsets, tessellateStroke,
+  markerHeads, resolveStrokeWidth, strokeAtScale, strokeInsets, tessellateStroke,
   type InsetLength, type ScreenSpace, type StrokeSpaces,
 } from '@weasel-js/stroke';
 import { resolveStrokeLengths, type GlMat3, type StrokedPathCommand } from '@weasel-js/renderer';
@@ -55,7 +55,7 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
 export type ScreenMap = readonly [number, number, number, number];
 
 function atScale(stroke: Stroke, scale: number): { sized: Stroke; spaces: StrokeSpaces } {
-  return { sized: { ...stroke, width: resolveStrokeWidth(stroke.width ?? 1, scale) }, spaces: {} };
+  return { sized: strokeAtScale(stroke, scale), spaces: {} };
 }
 
 function onScreen(path: Path, stroke: Stroke, [a, b, c, d]: ScreenMap): { sized: Stroke; spaces: StrokeSpaces } {

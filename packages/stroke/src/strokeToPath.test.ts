@@ -82,6 +82,13 @@ describe('strokeToPath', () => {
     expect(boundsOfPath(out)).toMatchObject({ y: -2.5, height: 5 });
   });
 
+  it('reads the dashes of a screen-width stroke as screen pixels at the scale it is given', () => {
+    const out = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: { px: 2 }, dash: [10, 10] }, { scale: 2 });
+    expect(pathContainsPoint(out, 2, 0)).toBe(true);
+    expect(pathContainsPoint(out, 7, 0)).toBe(false);
+    expect(pathContainsPoint(out, 12, 0)).toBe(true);
+  });
+
   it('reads a screen marker size at the scale it is given, for the head and the line it stops', () => {
     const stroke = { paint: PAINT, width: 1, markerEnd: { key: 'arrow', size: { px: 4 } } };
     const out = strokeToPath(line(0, 0, 100, 0), stroke, { scale: 2 });
