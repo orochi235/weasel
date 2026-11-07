@@ -78,10 +78,10 @@
     "longestFunction": 186
   },
   "packages/forge/src/vite/depGraph.ts": {
-    "longestFunction": 183
+    "longestFunction": 176
   },
   "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 239
+    "longestFunction": 231
   },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 125
@@ -115,7 +115,7 @@
     "longestFunction": 126
   },
   "packages/labkit/src/annotations/store.ts": {
-    "lines": 464,
+    "lines": 435,
     "longestFunction": 321
   },
   "packages/labkit/src/chrome/builtins.tsx": {
