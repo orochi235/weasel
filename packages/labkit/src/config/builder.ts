@@ -2,10 +2,8 @@ import type {
   PrefCondition,
   PrefGroup,
   PrefLeaf,
-  PrefNumberUnit,
   PrefSection,
 } from '@weasel-js/prefs';
-import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { BaseNode, conditioned } from './baseNode';
 import {
@@ -20,6 +18,7 @@ import {
   UnionNode,
 } from './compound';
 import { configFromPrefs } from './fromPrefs';
+import { NumberNode } from './numberNode';
 import type {
   Annotations,
   BranchAnnotations,
@@ -42,6 +41,7 @@ export {
   LabelNode,
   ListNode,
   MapNode,
+  NumberNode,
   ObjectNode,
   SeparatorNode,
   UnionNode,
@@ -52,94 +52,6 @@ export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {
   return 'children' in entry;
 }
 
-/** A numeric leaf, built by `f.number`. `T` takes `undefined` once the leaf is {@link NumberNode.clearable}. */
-export class NumberNode<T extends number | undefined = number> extends BaseNode<T> {
-  readonly kind = 'number';
-
-  /** Bound the value. A number with both bounds renders as a slider. */
-  range(min: number, max: number): this {
-    return this.ann({ min, max });
-  }
-
-  /** Bound the value from below only. The row stays a typed field. */
-  min(min: number): this {
-    return this.ann({ min });
-  }
-
-  /** Bound the value from above only. The row stays a typed field. */
-  max(max: number): this {
-    return this.ann({ max });
-  }
-
-  /** Let the value be unset: emptying the field writes `undefined`, and an unset value draws as an empty field
-   *  showing the {@link NumberNode.placeholder}. Without it an emptied field puts its value back. */
-  clearable(): NumberNode<T | undefined> {
-    return this.ann({ clearable: true }) as NumberNode<T | undefined>;
-  }
-
-  /** What an empty field shows: what an unset value stands for. */
-  placeholder(placeholder: string): this {
-    return this.ann({ placeholder });
-  }
-
-  step(step: number): this {
-    return this.ann({ step });
-  }
-
-  /** A display suffix for the value — `'px'`, `'ms'`, `'°'`. Presentation only:
-   *  it is never parsed, and the stored value stays a plain number. */
-  suffix(suffix: string): this {
-    return this.ann({ suffix });
-  }
-
-  /** Show, speak and read the value through a display — `compact()` reads
-   *  `2.00M`. Presentation only: the stored value stays a plain number. */
-  display(display: Display): this {
-    return this.ann({ display });
-  }
-
-  /**
-   * Store the value in one unit and edit it in another — radians stored,
-   * degrees typed. `min`, `max` and `step` are declared in the stored unit
-   * alongside the value, and convert with it. A unit is data where the
-   * conversion is linear, `{ suffix: '°', scale: Math.PI / 180 }`, which
-   * `prefUnit` builds from a `UnitSystem`, and a pair of functions where it
-   * is not.
-   */
-  unit(unit: PrefNumberUnit): this {
-    return this.ann({ unit });
-  }
-
-  /**
-   * Add a stop for infinity one step past the top of the range: it stores
-   * `Infinity` and reads `word` — `.range(0, 5000).endless('never')` — and
-   * every value up to `max` stays reachable. `at: 'min'` adds it below the
-   * bottom instead, as `-Infinity`; `'both'` does both.
-   */
-  endless(word?: InfinityText, at: 'min' | 'max' | 'both' = 'max'): this {
-    return this.ann(word === undefined ? { endless: at } : { endless: at, infinity: word });
-  }
-
-  /** Values the slider's drag catches on, declared in the stored unit like
-   *  `range` — `.range(-1, 1).stops([0])`. Each is drawn on the track; a drag
-   *  passing near one lands on it unless alt is held, and a key step crossing
-   *  one stops there. */
-  stops(stops: readonly number[]): this {
-    return this.ann({ stops });
-  }
-
-  /** Force a slider even without both bounds. */
-  slider(): this {
-    return this.ann({ control: 'slider' });
-  }
-
-  /** Force a typed input even when both bounds are set. */
-  input(): this {
-    return this.ann({ control: 'input' });
-  }
-}
-
-/** A true/false leaf, built by `f.boolean`; a checkbox unless `.toggle()`. */
 export class BooleanNode extends BaseNode<boolean> {
   readonly kind = 'boolean';
 
