@@ -185,8 +185,8 @@ export function layoutMarkdown(
     widthWithTabs(start, end, tabs, (k) => stopOf(runOf[k]), flatWidth);
   for (const line of wrapLines(cps, maxWidth, widthOf)) {
     let end = line.end;
-    // A wrapped line's trailing spaces hang past the edge, as they do in `layoutRuns`.
-    if (line.wrapped) while (end > line.start && hangs(cps[end - 1])) end--;
+    // A line's trailing spaces and tabs hang past the edge, as they do in `layoutRuns`.
+    while (end > line.start && hangs(cps[end - 1])) end--;
     commitLine(piecesOf(line.start, end));
   }
 

@@ -75,6 +75,12 @@ describe('layoutMarkdown', () => {
     expect(wrapped.lines.map((l) => l.runs.map((r) => r.text).join(''))).toEqual(['abcdef', 'gh']);
   });
 
+  it('hangs trailing white space on every line, as layoutRuns does, not only on wrapped ones', () => {
+    const result = layoutMarkdown([{ text: 'ab  \ncd \t' }], Infinity, 13, mockMeasure);
+    expect(result.lines.map((l) => l.width)).toEqual([20, 20]);
+    expect(result.width).toBe(20);
+  });
+
   it('breaks on newline', () => {
     const runs = markdownToRuns('a\nb');
     const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);
