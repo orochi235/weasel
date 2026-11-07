@@ -50,6 +50,21 @@ describe('isStale', () => {
     expect(isStale(undefined, CONFIG, KEYS)).toBe(false);
   });
 
+  it('reads a key nested under a group by its dotted path', () => {
+    const config = { grid: { size: 8, snap: true } };
+    const seen = seenFrom(config, ['grid.size']);
+    expect(seen).toEqual({ 'grid.size': 8 });
+    expect(isStale(seen, { grid: { size: 8, snap: false } }, ['grid.size'])).toBe(false);
+    expect(isStale(seen, { grid: { size: 16, snap: true } }, ['grid.size'])).toBe(true);
+  });
+
+  it('compares a key holding an object or a list by its contents, as it reads after a reload', () => {
+    const config = { origin: { x: 1, y: 2 }, stops: [0, 0.5, 1] };
+    const seen = structuredClone(seenFrom(config, ['origin', 'stops']));
+    expect(isStale(seen, config, ['origin', 'stops'])).toBe(false);
+    expect(isStale(seen, { ...config, stops: [0, 1] }, ['origin', 'stops'])).toBe(true);
+  });
+
   it('is never stale when the target declares no dependencies', () => {
     expect(isStale(seenFrom(CONFIG, KEYS), { angle: 'top' }, [])).toBe(false);
   });

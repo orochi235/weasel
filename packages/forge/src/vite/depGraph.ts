@@ -17,7 +17,7 @@ export interface DepGraphBuilder {
   build(entries: readonly IndexEntry[], resolve: ResolveImport): Promise<DepGraph>;
   /** Drops what was read from `file`. True when the graph had read it, so the graph may have changed. */
   invalidate(file: string): boolean;
-  /** Drops every cached import resolution, keeping the parsed files. */
+  /** Drops every cached import resolution and every file that could not be read, keeping the parsed files. */
   reset(): void;
 }
 
@@ -47,6 +47,15 @@ const DEFAULT_LOCAL = '*default*';
 /** Keys holding types, which name no value a component could render. */
 const TYPE_KEYS = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeParameters', 'implements']);
 
+/** `file` read and parsed; null for one that cannot be read or parsed. */
+function readModule(read: DepGraphOptions['read'], file: string): ModuleInfo | null {
+  try {
+    return moduleInfo(read(file), file);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The component graph of `entries`, derived from source: each component is the binding its story file's meta names
  * (or, when that is declared in the story file itself, the import the title's last segment names), found by
@@ -59,15 +68,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
   const resolutions = new Map<string, Map<string, Promise<string | null>>>();
 
   const info = (file: string): ModuleInfo | null => {
-    if (!modules.has(file)) {
-      let parsed: ModuleInfo | null = null;
-      try {
-        parsed = moduleInfo(read(file), file);
-      } catch {
-        parsed = null;
-      }
-      modules.set(file, parsed);
-    }
+    if (!modules.has(file)) modules.set(file, readModule(read, file));
     return modules.get(file) ?? null;
   };
 
@@ -81,6 +82,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
 
     reset() {
       resolutions.clear();
+      for (const [file, parsed] of modules) if (parsed === null) modules.delete(file);
     },
 
     async build(entries, resolve) {

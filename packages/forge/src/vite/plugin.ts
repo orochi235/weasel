@@ -76,6 +76,27 @@ function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps,
   }
 }
 
+/** `run` for each call, one at a time: calls made while one runs share a single run after it. */
+function coalesced<A>(run: (arg: A) => Promise<void>, onError: (err: unknown) => void): (arg: A) => void {
+  let running = false;
+  let next: { arg: A } | null = null;
+  const start = (arg: A): void => {
+    running = true;
+    run(arg)
+      .catch(onError)
+      .finally(() => {
+        running = false;
+        const queued = next;
+        next = null;
+        if (queued) start(queued.arg);
+      });
+  };
+  return (arg) => {
+    if (running) next = { arg };
+    else start(arg);
+  };
+}
+
 /** The plugins forge serves beside its own, as its options ask. */
 function companions(options: ForgeOptions, files: () => Map<string, IndexEntry[]>): Plugin[] {
   const { storybookShims: shims, propControls: controls, api } = options;
@@ -105,7 +126,6 @@ export function forge(options: ForgeOptions): Plugin[] {
   let deps: DepGraphBuilder | null = null;
   /** The graph last served or pushed; null until a page first asks for it, so no edit rebuilds it before then. */
   let depsSent: string | null = null;
-  let depsPending: Promise<void> | null = null;
   /** Per story file, which of its foreign callees are forge's `meta`/`story`, and what was read to decide it. */
   const wrappersOf = new Map<string, WrapperResolution>();
   /** The first pass over every story file, run before the index is first served. */
@@ -201,24 +221,17 @@ export function forge(options: ForgeOptions): Plugin[] {
   };
 
   /** Rebuilds the graph after an edit and pushes it when it changed. Edits landing while one runs share the next. */
-  function redeps(server: ViteDevServer): void {
-    if (depsSent === null || depsPending) return;
-    const resolve: ResolveImport = async (spec, importer) =>
-      (await server.environments.client.pluginContainer.resolveId(spec, importer))?.id ?? null;
-    depsPending = Promise.resolve()
-      .then(async () => {
-        const graph = await graphOf(resolve);
-        const json = JSON.stringify(graph);
-        if (json === depsSent) return;
-        depsSent = json;
-        invalidate(server, ['deps.js']);
-        server.ws.send({ type: 'custom', event: 'forge:deps', data: graph });
-      })
-      .catch(logError)
-      .finally(() => {
-        depsPending = null;
-      });
-  }
+  const rebuild = coalesced(async (server: ViteDevServer) => {
+    const graph = await graphOf(async (spec, importer) => (await server.environments.client.pluginContainer.resolveId(spec, importer))?.id ?? null);
+    const json = JSON.stringify(graph);
+    if (json === depsSent) return;
+    depsSent = json;
+    invalidate(server, ['deps.js']);
+    server.ws.send({ type: 'custom', event: 'forge:deps', data: graph });
+  }, logError);
+  const redeps = (server: ViteDevServer): void => {
+    if (depsSent !== null) rebuild(server);
+  };
 
   /** The story files an edit to `changed` reaches, climbing the way vite's own update does: through every importer. */
   const storiesReaching = (changed: readonly EnvironmentModuleNode[]): string[] => {

@@ -5,7 +5,7 @@ import { serializeTokenValue } from './value.ts';
 /** `{color.gray-100}` → `gray-100`. The type group is dropped, per the naming rule. */
 const REF = /^\{([^}]+)\}$/;
 
-function refTarget(value: TokenValue): string | null {
+export function refTarget(value: TokenValue): string | null {
   if (typeof value !== 'string') return null;
   const m = REF.exec(value.trim());
   if (!m) return null;

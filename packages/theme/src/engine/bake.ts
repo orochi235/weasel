@@ -32,6 +32,7 @@ function normalize(t: RawToken): RawToken {
     value: t.value,
     ...(t.alpha !== undefined ? { alpha: t.alpha } : {}),
     ...(t.description !== undefined ? { description: t.description } : {}),
+    ...(t.scope !== undefined ? { scope: t.scope } : {}),
   };
 }
 

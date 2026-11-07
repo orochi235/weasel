@@ -33,4 +33,11 @@ describe('resolveStanceSlots', () => {
     const got = resolveStanceSlots({}, { ...base, tint: '#abcdef' }, { stance: 'debug' });
     expect(got.tint).toBe('#111111');
   });
+
+  it("gives a stance with no tint of its own the stance's surface, as the generated CSS does", () => {
+    const tokens = { '--wzl-stance-aside-surface': 'transparent', '--wzl-stance-aside-nested-surface': '#444444' };
+    expect(resolveStanceSlots(tokens, base, { stance: 'aside' }).tint).toBe('transparent');
+    expect(resolveStanceSlots(tokens, base, { stance: 'aside', nested: true }).tint).toBe('#444444');
+    expect(resolveStanceSlots({}, base, { stance: 'aside', stanced: { surface: '#555555' } }).tint).toBe('#555555');
+  });
 });

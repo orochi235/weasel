@@ -128,6 +128,8 @@ describe('values a store kept when every token was split by every axis', () => {
     store.set('surface.surface', '#fffdf8', { at: { 'axis.mode': 'light' } });
     expect(store.get('surface.surface')).toBe('#222222');
     expect(store.get('surface.surface', { at: { 'axis.mode': 'light' } })).toBe('#fffdf8');
+    expect(themePrefsPins(store)).toEqual({ surface: { by: 'mode', dark: '#222222', light: '#fffdf8' } });
+    expect(resolveTheme(themeFromPrefs(store, weaselTheme), { mode: 'dark' })['--wzl-surface' as never]).toBe('#222222');
   });
 
   it('reads a value split along an axis the token no longer scopes as before, and the first write flattens it to what reads now', () => {
@@ -149,6 +151,22 @@ describe('a token that asks to be scoped by an axis', () => {
   it('is scoped by it even where its value does not differ along it', () => {
     const theme = defineTheme({ name: 'scoped', pins: { 'gray-50': { value: '#f5f5f6', scope: ['mode'] } } });
     expect(prefLeaves(themePrefsSchema(theme)).get('gray.gray-50')!.scopes).toEqual([{ selector: 'axis.mode' }]);
+  });
+
+  it('is scoped by it when the ask sits on any branch of a split definition', () => {
+    const theme = defineTheme({
+      name: 'scoped-branch',
+      extends: weaselTheme,
+      pins: { 'gray-50': { by: 'density', compact: '#000000', comfortable: '#000000', roomy: { value: '#000000', scope: ['mode'] } } },
+    });
+    expect(prefLeaves(themePrefsSchema(theme)).get('gray.gray-50')!.scopes).toEqual([{ selector: 'axis.mode' }]);
+  });
+});
+
+describe('a token the manifest does not list', () => {
+  it('is grouped the way the manifest groups its siblings', () => {
+    const theme = defineTheme({ name: 'extra', extends: weaselTheme, pins: { 'danger-extra': '#ff0000' } });
+    expect(prefLeaves(themePrefsSchema(theme)).has('status.danger-extra')).toBe(true);
   });
 });
 

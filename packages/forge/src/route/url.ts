@@ -157,7 +157,7 @@ export interface KnobPath {
   leaf: KnobLeaf;
 }
 
-/** Every leaf of `schema` a param can carry, in schema order, with branches flattened into dotted paths. */
+/** Every leaf of `schema` a param can carry, in schema order, reserved names left out, with branches flattened into dotted paths. */
 export function knobPaths(schema: Pick<ConfigSchema<unknown>, 'nodes'>): KnobPath[] {
   const out: KnobPath[] = [];
   const walk = (shape: ConfigShape, at: string): void => {
@@ -165,7 +165,7 @@ export function knobPaths(schema: Pick<ConfigSchema<unknown>, 'nodes'>): KnobPat
       if (key.startsWith(INTERNAL_PREFIX) || key.includes('.')) continue;
       const path = at === '' ? key : `${at}.${key}`;
       if (isConfigBranch(entry)) walk(entry.children, path);
-      else if (codecOf(entry) !== null) out.push({ path, leaf: entry });
+      else if (codecOf(entry) !== null && isKnobParam(path)) out.push({ path, leaf: entry });
     }
   };
   walk(schema.nodes, '');
@@ -203,7 +203,7 @@ export function paramsToKnobs(
   const knobs: Record<string, unknown> = {};
   for (const { path, leaf } of knobPaths(schema)) {
     const raw = params[path];
-    if (raw === undefined || !isKnobParam(path)) continue;
+    if (raw === undefined) continue;
     const decoded = decodeKnob(raw, leaf);
     if (decoded) knobs[path] = decoded.value;
   }
