@@ -127,7 +127,11 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         aria-label={p.name}
         checked={on}
         disabled={p.disabled}
-        onChange={(e) => p.onChange(e.target.checked)}
+        onChange={(e) => {
+          // A click clears `indeterminate`, and the effect only puts it back if something renders.
+          e.target.indeterminate = p.mixed === true;
+          p.onChange(e.target.checked);
+        }}
       />
     </Dimmed>
   );
