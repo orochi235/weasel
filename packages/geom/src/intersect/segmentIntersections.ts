@@ -16,7 +16,7 @@ const FLAT = 1e-4;
 const MAX_DEPTH = 48;
 /** Crossings closer than this along both parameters are one crossing. */
 const SAME_T = 1e-7;
-/** Two overlapping curves cross everywhere; stop collecting past this. */
+/** Two overlapping curves cross everywhere; by default, stop collecting past this. */
 const MAX_HITS = 16;
 
 interface Piece {
@@ -106,10 +106,10 @@ function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
  * quadratic or cubic given by its control points — with the parameter on
  * each. Two lines are solved exactly; a curve is subdivided until its pieces
  * are flat, their chords crossed, and the answer refined against the curves.
- * Segments that overlap along a stretch report at most a few points of it.
- * Sorted by `ta`.
+ * Segments that overlap or run nearly along each other report at most
+ * `maxHits` points of the stretch. Sorted by `ta`.
  */
-export function intersectSegments(a: Point[], b: Point[]): SegmentCrossing[] {
+export function intersectSegments(a: Point[], b: Point[], maxHits = MAX_HITS): SegmentCrossing[] {
   if (a.length === 2 && b.length === 2) {
     const uv = chordCross(a[0], a[1], b[0], b[1], 1e-12);
     if (!uv) return [];
@@ -127,7 +127,7 @@ export function intersectSegments(a: Point[], b: Point[]): SegmentCrossing[] {
     out.push({ ta, tb, x: pa.x, y: pa.y });
   };
   const stack: Array<[Piece, Piece, number]> = [[{ pts: a, t0: 0, t1: 1 }, { pts: b, t0: 0, t1: 1 }, 0]];
-  while (stack.length > 0 && out.length < MAX_HITS) {
+  while (stack.length > 0 && out.length < maxHits) {
     const [p, q, depth] = stack.pop()!;
     const bp = boxOf(p.pts), bq = boxOf(q.pts);
     if (bp[0] > bq[2] + FLAT || bq[0] > bp[2] + FLAT || bp[1] > bq[3] + FLAT || bq[1] > bp[3] + FLAT) continue;
