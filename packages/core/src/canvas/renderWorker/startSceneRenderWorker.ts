@@ -73,6 +73,34 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   dispose(): void;
 }
 
+/** Ask for a frame whenever the scene, its overrides or scroll offsets, or the clock move. */
+function watchInputs(
+  inputs: SceneRenderInputs<unknown, string, unknown>, due: () => void, overridesChanged: () => void,
+): () => void {
+  const { scene, clock } = inputs;
+  const offClock = clock ? [clock.clock.subscribe(due), clock.onFrame(due)] : [];
+  const offScene = scene.subscribe(due);
+  const offOverrides = scene.overrides.subscribe(() => { overridesChanged(); due(); });
+  const offScroll = scene.scroll.subscribe(due);
+  return () => { offScene(); offOverrides(); offScroll(); for (const off of offClock) off(); };
+}
+
+/** Answer the worker's request for an image from the page's cache, unless `onDispose` fires first. */
+function answerFromPage(
+  request: Extract<FromWorker, { type: 'image' }>,
+  post: (msg: ToWorker, transfer: Transferable[]) => void,
+  onDispose: (fn: () => void) => () => void,
+): void {
+  let answered = false;
+  let unhook = () => {};
+  const stop = answerImage(request, (answer) => {
+    answered = true;
+    unhook();
+    post(answer, answer.bitmap ? [answer.bitmap] : []);
+  });
+  if (!answered) unhook = onDispose(stop);
+}
+
 /** Start painting `inputs.scene` into `canvas` from `worker`, a worker whose module calls
  *  `serveSceneRender`. The canvas is the worker's from here on: the page can no longer open a
  *  context on it or set its size attributes. */
@@ -110,12 +138,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   let unwatch = () => {};
   const watch = () => {
     unwatch();
-    const { scene, clock } = inputs;
-    const offClock = clock ? [clock.clock.subscribe(due.emit), clock.onFrame(due.emit)] : [];
-    const offScene = scene.subscribe(due.emit);
-    const offOverrides = scene.overrides.subscribe(() => { frames.overridesChanged(); due.emit(); });
-    const offScroll = scene.scroll.subscribe(due.emit);
-    unwatch = () => { offScene(); offOverrides(); offScroll(); for (const off of offClock) off(); };
+    unwatch = watchInputs(inputs, due.emit, frames.overridesChanged);
   };
   watch();
 
@@ -128,16 +151,8 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     } else if (msg.type === 'dirty') due.emit();
     else if (msg.type === 'snapshot') snapshots.settle(msg.id, msg.bitmap);
     else if (msg.type === 'ids') idReads.settle(msg.id, msg.ids);
-    else if (msg.type === 'image') {
-      let answered = false;
-      let unhook = () => {};
-      const stop = answerImage(msg, (answer) => {
-        answered = true;
-        unhook();
-        post(answer, answer.bitmap ? [answer.bitmap] : []);
-      });
-      if (!answered) unhook = disposing.subscribe(stop);
-    } else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
+    else if (msg.type === 'image') answerFromPage(msg, post, disposing.subscribe);
+    else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
   });
 
   worker.addEventListener('error', (event) => warnOnce('the render worker did not start:', event.message));
