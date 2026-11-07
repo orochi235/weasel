@@ -10,6 +10,7 @@ import { duplicateSelection } from './defaults/duplicate';
 import { clipboardCutAction } from './clipboard/action';
 import { pickContainer } from './move/layout/container';
 import { groupAction, ungroupAction } from './defaults/group';
+import { flipAction } from './flip/action';
 import { makeBooleanGroupAction } from './booleans/booleanGroupAction';
 import { scenePoseFrame } from './poseFrame';
 import type { RectPose } from 'core/scene/types';
@@ -67,6 +68,15 @@ describe('scene actions in a paged scene', () => {
       run(action, { scene, selection: heldSelection([A, B, runId]) });
       expect(JSON.stringify(scene.toJSON().nodes)).toBe(before);
     }
+  });
+
+  it('flip with a page or the run forced into the selection mirrors the content about its own box', () => {
+    const { scene, run: runId } = pagedScene();
+    const pages = JSON.stringify([runId, A, B].map((id) => scene.get(id)!.pose));
+    (flipAction.invoker as { run(deps: never, params: never): void })
+      .run({ scene, selection: heldSelection([B, runId, R]) } as never, { axis: 'x', pivot: 'union' } as never);
+    expect(JSON.stringify([runId, A, B].map((id) => scene.get(id)!.pose))).toBe(pages);
+    expect(scene.get(R)!.pose).toMatchObject({ x: 90, y: 10, width: 20, height: 10 });
   });
 
   it('group, ungroup and the boolean group count no page or run toward being enabled', () => {
