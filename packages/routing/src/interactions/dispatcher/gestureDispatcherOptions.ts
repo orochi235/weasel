@@ -108,7 +108,9 @@ export interface UseGestureDispatcherOptions {
    * Take the keyboard on mount, as a press in the canvas would. Keys that
    * reach the page go to the canvas last pressed or scrolled in and to none
    * before that; an app whose canvas is the page sets this so its shortcuts
-   * work before the first click. Default `false`.
+   * work before the first click, or after a selection made in the app's
+   * own UI. The keys come back to it when a canvas pressed after it
+   * unmounts. Default `false`.
    */
   claimKeys?: boolean;
   /** Ref to the canvas element. Pointer/wheel/multitouch listeners attach here. */

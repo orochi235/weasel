@@ -4,6 +4,7 @@ import type { DispatchCore } from '../dispatchCore';
 import type { KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
 import { keymapKeys } from './keymapKeys';
+import { inModalOver } from './modal';
 import { followPointer, type HeldKey } from './overKeys';
 
 /**
@@ -57,6 +58,7 @@ export function keyboardInput(core: DispatchCore): {
     // Before the filters: a key another surface took is still down.
     downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e) });
     if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
+    if (inModalOver(e.target, core.canvas)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
     // does the one under the pointer, for its `over` bindings alone.
     const reach: KeyReach = { held: core.holdsKeys(), over: core.pointerOver() };

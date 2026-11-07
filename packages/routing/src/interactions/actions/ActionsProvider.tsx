@@ -27,6 +27,7 @@ import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } 
 import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
+import { dropKeysOf, holdsKeysNow, takeKeys } from './keyOrder';
 import { tuneAction, tunedParams, type ActionTuning } from './tuning';
 import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { isDev } from '@weasel-js/react';
@@ -198,8 +199,10 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return null;
   }
 
+  override mount(): () => void { const leave = super.mount(); return () => { dropKeysOf(this); leave(); }; }
+
   override activate(): void {
-    keyHolder = this;
+    takeKeys(this);
     super.activate();
     for (const f of this.onActivate) f();
   }
@@ -328,8 +331,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     },
     activate: () => this.activate(),
     isActive: () => this.isActive(),
-    holdsKeys: () => keyHolder === this,
-    dropKeys: () => { if (keyHolder === this) keyHolder = null; },
+    holdsKeys: () => holdsKeysNow(this),
+    dropKeys: () => dropKeysOf(this),
   };
 }
 
@@ -339,10 +342,6 @@ const NO_PREVIEW = (): void => {};
 function pointOf(params: Record<string, unknown> | undefined): WorldPoint | undefined {
   return (params as ImmediateParams | undefined)?.world;
 }
-
-/** The node last activated on the page, across every tree: where a key that
- *  reaches the page goes. Null until something is pressed or scrolled in. */
-let keyHolder: ActionsNode | null = null;
 
 const NODES = new WeakMap<ActionsRegistry, ActionsNode>();
 

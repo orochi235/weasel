@@ -319,11 +319,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Take the keyboard on mount, as a press in the canvas would. A key that
-     * reaches the page goes to the canvas the user last pressed or scrolled
-     * in, and to no canvas before the first such interaction, so a canvas in a
-     * side panel does not take Space from a page that wants it. An app whose
-     * canvas is the page sets this so its shortcuts work before the first
-     * click. Default `false`.
+     * reaches the page goes to the canvas last pressed or scrolled in, and to
+     * none before that, so a canvas in a side panel does not take Space from a
+     * page. An app whose canvas is the page sets this so its shortcuts work
+     * before the first click, as after a selection made in its own UI. The keys
+     * come back here when a canvas pressed later unmounts. Default `false`.
      */
     claimKeys?: boolean;
 

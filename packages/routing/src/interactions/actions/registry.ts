@@ -111,12 +111,13 @@ export interface ActionsRegistry {
   isActive(): boolean;
 
   /** Whether this registry's scope is the one last activated on the page, in
-   *  any tree: the question a canvas's dispatcher asks before handling a key
-   *  or a paste that reached the page. No scope holds the keys before the
-   *  first activation. */
+   *  any tree, of those still mounted: the question a canvas's dispatcher asks
+   *  before handling a key or a paste that reached the page. No scope holds the
+   *  keys before the first activation. */
   holdsKeys(): boolean;
 
-  /** Let go of the keys if this scope holds them, as its canvas unmounts. */
+  /** Leave the key order, as the last canvas on this registry unmounts. If this
+   *  scope held the keys, they go back to the one activated before it. */
   dropKeys(): void;
 }
 

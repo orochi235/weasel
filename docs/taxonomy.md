@@ -479,9 +479,20 @@ root or a yoke — chrome's `trigger`, `begin`, `list`, `useActiveToolContext` �
 answers from the **active scope**: the one that last took a pointerdown, wheel or
 contextmenu, or the newest where none has. Keys are stricter. A key that reaches the page
 goes to the canvas last pressed or scrolled in, across every root on the page,
-and to no canvas before the first such interaction, so a canvas in a side panel
-takes no keys from a page that wants them. `<SceneCanvas claimKeys>` takes them
-on mount, for an app whose canvas is the page. A dispatcher with no canvas
+and to no canvas before the first such interaction. A press is what tells the
+canvas the page is the user's: a lone canvas holding keys from mount would take
+Space, arrows and Backspace from a page that has a canvas in a side panel, and
+whether a canvas is alone changes as panels and drawers open. So an app whose
+canvas is the page says so with `<SceneCanvas claimKeys>` (`claimKeys` on
+`useGestureDispatcher`), which takes the keys on mount; that is the way in for a
+page that selects from its own UI and expects Cmd+Z to reach the canvas before
+anything has been pressed in it. When the canvas holding the keys unmounts, they
+go back to the canvas used before it that is still mounted, a `claimKeys` one
+included; of two canvases on one registry, the first to leave keeps them for the
+other. A key typed in an open modal dialog never reaches a canvas behind it: one
+with `aria-modal="true"`, a `<dialog>` opened with `showModal()`, or a dialog that
+has made the canvas inert or `aria-hidden`, as React Aria's do. A canvas inside
+the dialog keeps its keys. A dispatcher with no canvas
 element, an app's own shortcuts, still follows the active scope. A key binding
 with `opts: { over: true }` goes the other way: it is live while the pointer is
 over its canvas, whichever canvas holds the keys, and only then — for a key
