@@ -5,7 +5,7 @@ import type {
   AnimationHandle, AnimationKind, PhysicsHandle, TargetPhysicsOptions, TargetTweenOptions,
 } from '../../types';
 import type { AnimationSeed } from '../context';
-import { axesFor, travel } from '../offsets';
+import { axesFor, plus, travel } from '../offsets';
 import { constantsFor } from '../offsetPhysics';
 import { eligible, free, refuse } from './eligible';
 import type { Handoffs } from './handoffs';
@@ -93,8 +93,10 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
   const constants = constantsFor(o, kind, dest != null);
   const restThreshold = o.restThreshold ?? 0.01;
   const start = o.from === undefined ? ax.to(s.get() as T) : axesFor(ax, o.from, 'from');
-  const motionFrom = (at: readonly number[], v: readonly number[]): Motion =>
-    physicsMotion({ start: at, velocity: v, to: dest, ...constants, threshold: restThreshold });
+  // From the destination's side of each angle axis, so the spring turns the short way round.
+  const motionFrom = (at: readonly number[], v: readonly number[]): Motion => physicsMotion({
+    start: dest ? plus(dest, travel(ax, at, dest)) : at, velocity: v, to: dest, ...constants, threshold: restThreshold,
+  });
   const motion = motionFrom(start, velocity ?? start.map(() => 0));
   if (motion.ms <= 0) {
     if (o.compositor === 'require') refuse(o, 'it starts at rest');
