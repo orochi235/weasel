@@ -258,6 +258,9 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
   }
 
   dispose(): void {
+    this.frame.end();
     this.canvas.dispose();
+    for (const object of [this.ringBuffer, this.defaultAttribute, this.dummyTexture.gpu]) this.frame.retire(object);
+    this.frame.flush();
   }
 }

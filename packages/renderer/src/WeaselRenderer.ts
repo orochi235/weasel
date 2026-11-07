@@ -298,6 +298,7 @@ export class WeaselRenderer {
     this.effectTargets.releaseAll();
     this.retained.releaseAll();
     this.paintScratch.release();
+    gpu.dispose?.();
   }
 
   /**
