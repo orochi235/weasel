@@ -72,6 +72,13 @@ describe('writing Mermaid', () => {
     expect(topology(p.data)).toEqual([['end_', 'two_words_2', undefined], ['two_words_2', 'x_y', undefined]]);
   });
 
+  it('keeps ids in other scripts, which a flowchart reads', () => {
+    const data: DiagramData = { nodes: [{ id: 'café' }, { id: '日本' }, { id: 'Ωmega_2' }], edges: [{ from: 'café', to: '日本' }] };
+    const p = back(pageOf(data));
+    expect(p.data.nodes.map((n) => n.id)).toEqual(['café', '日本', 'Ωmega_2']);
+    expect(topology(p.data)).toEqual([['café', '日本', undefined]]);
+  });
+
   it('writes the theme\'s colors as the default class and each item\'s own over them', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a', lines: ['A'], colors: { fill: 'rgba(255, 0, 0, 0.5)' } }, { id: 'b', lines: ['B'], colors: { fill: 'rgba(255, 0, 0, 0.5)' } }, { id: 'c' }],
@@ -102,6 +109,29 @@ describe('writing Mermaid', () => {
     const strokes = (e: DiagramData['edges'][number]) =>
       [e.colors?.markerStart, e.colors?.markerEnd, e.colors?.dash !== undefined, (e.colors?.width ?? 0) >= 3];
     expect(back(pageOf(data)).data.edges.map(strokes)).toEqual(data.edges.map(strokes));
+  });
+
+  it('writes an edge\'s id where reading it back would not give the edge that id', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a' }, { id: 'b' }],
+      edges: [
+        { id: 'a-b', from: 'a', to: 'b' }, { id: 'go', from: 'a', to: 'b' }, { id: 'back', from: 'b', to: 'a' },
+        { id: 'b-a', from: 'b', to: 'a' }, { from: 'b', to: 'a' },
+      ],
+    };
+    const { text } = writeFlowchart(pageOf(data));
+    expect(text).toContain('  a --> b\n  a go@--> b\n  b back@--> a\n  b --> a\n  b --> a\n');
+    expect(back(pageOf(data)).data.edges.map((e) => e.id)).toEqual(['a-b', 'go', 'back', 'b-a', 'b-a-2']);
+  });
+
+  it('writes a dash other than a dotted link\'s own in its link style, so it reads back', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a' }, { id: 'b' }],
+      edges: [{ from: 'a', to: 'b', colors: { dash: [4, 4] } }, { from: 'a', to: 'b', colors: { dash: [2, 3] } }],
+    };
+    const { text } = writeFlowchart(pageOf(data));
+    expect(text).not.toMatch(/linkStyle 0 /);
+    expect(back(pageOf(data)).data.edges.map((e) => e.colors?.dash)).toEqual([[4, 4], [2, 3]]);
   });
 
   it('writes the page in view, and warns for what Mermaid cannot hold', () => {

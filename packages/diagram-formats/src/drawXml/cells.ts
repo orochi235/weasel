@@ -82,3 +82,6 @@ export function pointsOf(cell: RawCell): Vec2[] {
   if (array === undefined) return [];
   return childElements(array).filter((p) => p.tagName === 'mxPoint').map((p) => ({ x: numberAttr(p, 'x'), y: numberAttr(p, 'y') }));
 }
+
+/** The graph model attribute holding the way the page runs. A draw app does not know it, so it ignores it. */
+export const DIRECTION_ATTR = 'weaselDirection';

@@ -6,6 +6,7 @@
  */
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, NodeStyle } from '@weasel-js/diagram';
+import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
 import { Membership, Warnings, graphPage } from '../graphRead';
 import { parseDot, type DotGraph, type DotNodeRef, type DotStmt, type DotSubgraph, type DotValue } from './parse';
@@ -30,6 +31,12 @@ const POINTS_PER_INCH = 72;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
+
+/** A color attribute as CSS reads it, or `undefined`, with a warning, when it names a color a diagram cannot draw. */
+function colorAttr(r: DotReader, attrs: Attrs, key: string): string | undefined {
+  const raw = str(attrs, key);
+  return raw === undefined ? undefined : checkedColor(dotColor(raw) ?? raw, 'DOT', (lead, item) => r.warnings.list(lead, item));
+}
 
 /** An attribute as a number, or `undefined`, with a warning, when it is not one. */
 function numberAttr(r: DotReader, attrs: Attrs, key: string): number | undefined {
@@ -111,15 +118,15 @@ class DotReader {
 }
 
 function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[]): Partial<NodeStyle> | undefined {
-  const fill = styles.includes('filled') ? str(attrs, 'fillcolor') ?? str(attrs, 'color') ?? 'lightgrey' : undefined;
-  const stroke = str(attrs, 'color');
-  const text = str(attrs, 'fontcolor');
+  const stroke = colorAttr(r, attrs, 'color');
+  const fill = styles.includes('filled') ? colorAttr(r, attrs, 'fillcolor') ?? stroke ?? 'lightgrey' : undefined;
+  const text = colorAttr(r, attrs, 'fontcolor');
   const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<NodeStyle> = {
-    ...(fill !== undefined ? { fill: dotColor(fill) } : {}),
-    ...(stroke !== undefined ? { stroke: dotColor(stroke) } : {}),
-    ...(text !== undefined ? { text: dotColor(text) } : {}),
+    ...(fill !== undefined ? { fill } : {}),
+    ...(stroke !== undefined ? { stroke } : {}),
+    ...(text !== undefined ? { text } : {}),
     ...(width !== undefined ? { strokeWidth: width } : {}),
     ...(dash !== undefined ? { dash } : {}),
   };
@@ -150,12 +157,13 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
 /** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. */
 function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
   const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map(Number));
-  if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || c.some(Number.isNaN))) return null;
+  if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || !c.every(Number.isFinite))) return null;
   const size = (n: DataNode) => ({ w: n.width ?? 0.75 * POINTS_PER_INCH, h: n.height ?? 0.5 * POINTS_PER_INCH });
   const box = bb?.split(',').map(Number);
-  const [llx, lly, urx, ury] = box?.length === 4 && !box.some(Number.isNaN) ? box : [0, 0, undefined, undefined];
-  const top = ury ?? Math.max(...nodes.map((n, i) => centers[i]![1]! + size(n).h / 2));
-  const right = urx ?? Math.max(...nodes.map((n, i) => centers[i]![0]! + size(n).w / 2));
+  const xs = nodes.flatMap((n, i) => [centers[i]![0]! - size(n).w / 2, centers[i]![0]! + size(n).w / 2]);
+  const ys = nodes.flatMap((n, i) => [centers[i]![1]! - size(n).h / 2, centers[i]![1]! + size(n).h / 2]);
+  const [llx, lly, right, top] = box?.length === 4 && box.every(Number.isFinite)
+    ? box : [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
   const placed = nodes.map((n, i) => ({
     ...n, at: { x: round(centers[i]![0]! - llx! - size(n).w / 2), y: round(top - centers[i]![1]! - size(n).h / 2) },
   }));
@@ -184,13 +192,13 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
   const dir = str(e.attrs, 'dir') ?? (r.graph.directed ? 'forward' : 'none');
   const end = dir === 'forward' || dir === 'both' ? marker(r, str(e.attrs, 'arrowhead')) : null;
   const start = dir === 'back' || dir === 'both' ? marker(r, str(e.attrs, 'arrowtail')) : null;
-  const stroke = str(e.attrs, 'color');
-  const label = str(e.attrs, 'fontcolor');
+  const stroke = colorAttr(r, e.attrs, 'color');
+  const label = colorAttr(r, e.attrs, 'fontcolor');
   const width = numberAttr(r, e.attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<EdgeStyle> = {
-    ...(stroke !== undefined ? { stroke: dotColor(stroke) } : {}),
-    ...(label !== undefined ? { label: dotColor(label) } : {}),
+    ...(stroke !== undefined ? { stroke } : {}),
+    ...(label !== undefined ? { label } : {}),
     ...(width !== undefined ? { width } : {}),
     ...(dash !== undefined ? { dash } : {}),
     ...(start !== null ? { markerStart: start } : {}),
@@ -218,14 +226,15 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
 
 function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<string, string>): DataContainer {
   const styles = stylesOf(str(attrs, 'style'));
-  const fill = str(attrs, 'fillcolor') ?? str(attrs, 'color') ?? str(attrs, 'bgcolor');
-  const bg = str(attrs, 'bgcolor');
-  const stroke = str(attrs, 'pencolor') ?? str(attrs, 'color');
-  const text = str(attrs, 'fontcolor');
+  const color = colorAttr(r, attrs, 'color');
+  const bg = colorAttr(r, attrs, 'bgcolor');
+  const fill = colorAttr(r, attrs, 'fillcolor') ?? color ?? bg;
+  const stroke = colorAttr(r, attrs, 'pencolor') ?? color;
+  const text = colorAttr(r, attrs, 'fontcolor');
   const colors: Partial<NodeStyle> = {
-    ...(styles.includes('filled') && fill !== undefined ? { fill: dotColor(fill) } : bg !== undefined ? { fill: dotColor(bg) } : {}),
-    ...(stroke !== undefined ? { stroke: dotColor(stroke) } : {}),
-    ...(text !== undefined ? { text: dotColor(text) } : {}),
+    ...(styles.includes('filled') && fill !== undefined ? { fill } : bg !== undefined ? { fill: bg } : {}),
+    ...(stroke !== undefined ? { stroke } : {}),
+    ...(text !== undefined ? { text } : {}),
   };
   const label = attrs.get('label');
   const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');

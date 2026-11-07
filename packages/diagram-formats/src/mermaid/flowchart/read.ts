@@ -7,7 +7,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Membership, Warnings, graphPage } from '../../graphRead';
-import { checkProps, dashOf, nodeColors, px } from '../common/styles';
+import { checkProps, dashOf, mermaidColor, nodeColors, px } from '../common/styles';
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
 import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
@@ -33,6 +33,9 @@ const META_OUTLINES: Readonly<Record<string, Outline>> = {
   trapezoid: 'trapezoid', priority: 'trapezoid', 'trap-t': 'trapezoid', 'inv-trapezoid': 'trapezoid', manual: 'trapezoid',
 };
 
+/** The dash a dotted link draws. */
+export const DOTTED_DASH: readonly number[] = [4, 4];
+
 interface NodeDraft { lines: string[]; outline: Outline; classes: string[] }
 interface EdgeDraft { edge: DataEdge; index: number }
 
@@ -49,9 +52,13 @@ class MermaidReader {
   readonly linkStyles = new Map<number | 'default', StyleProps>();
   links = 0;
 
-  constructor(readonly subgraphIds: ReadonlySet<string>) {}
+  constructor(readonly subgraphIds: ReadonlySet<string>, readonly edgeIds: ReadonlySet<string>) {}
 
   mention(ref: MermaidNodeRef, cluster: string | null): void {
+    if (this.edgeIds.has(ref.id) && ref.shape === undefined) {
+      this.warnings.add('Mermaid edge metadata was dropped.');
+      return;
+    }
     if (this.subgraphIds.has(ref.id) && ref.shape === undefined && ref.meta === undefined) {
       for (const c of ref.classes) this.addClass(ref.id, c);
       return;
@@ -88,7 +95,8 @@ class MermaidReader {
     return 'arrow';
   }
 
-  link(link: MermaidLink, from: string, to: string): void {
+  /** `id` is the link's own, for the first edge it makes. */
+  link(link: MermaidLink, from: string, to: string, id?: string): void {
     const index = this.links++;
     if (link.stroke === 'invisible') {
       this.warnings.add('Mermaid invisible links were dropped.');
@@ -97,14 +105,17 @@ class MermaidReader {
     const start = this.marker(link.start);
     const end = this.marker(link.end);
     const colors: Partial<EdgeStyle> = {
-      ...(link.stroke === 'dotted' ? { dash: [4, 4] } : {}),
+      ...(link.stroke === 'dotted' ? { dash: [...DOTTED_DASH] } : {}),
       ...(link.stroke === 'thick' ? { width: 3 } : {}),
       ...(start !== null ? { markerStart: start } : {}),
       ...(end !== 'arrow' ? { markerEnd: end } : {}),
     };
     const label = link.text === undefined ? [] : textLines(link.text).filter((l) => l !== '');
     this.edges.push({
-      edge: { from, to, ...(label.length > 0 ? { label: label.join(' ') } : {}), ...(Object.keys(colors).length > 0 ? { colors } : {}) },
+      edge: {
+        ...(id !== undefined ? { id } : {}), from, to,
+        ...(label.length > 0 ? { label: label.join(' ') } : {}), ...(Object.keys(colors).length > 0 ? { colors } : {}),
+      },
       index,
     });
   }
@@ -114,7 +125,13 @@ class MermaidReader {
       if (s.kind === 'chain') {
         for (const g of s.groups) for (const ref of g) this.mention(ref, cluster);
         s.links.forEach((link, k) => {
-          for (const from of s.groups[k]!) for (const to of s.groups[k + 1]!) this.link(link, from.id, to.id);
+          let id = link.id;
+          for (const from of s.groups[k]!) {
+            for (const to of s.groups[k + 1]!) {
+              this.link(link, from.id, to.id, id);
+              id = undefined;
+            }
+          }
         });
       } else if (s.kind === 'subgraph') {
         this.membership.openCluster(s.id, cluster);
@@ -154,15 +171,25 @@ class MermaidReader {
 }
 
 
-function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps): Partial<EdgeStyle> | undefined {
+function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps, warnings: Warnings): Partial<EdgeStyle> | undefined {
   const colors: Partial<EdgeStyle> = { ...base };
   for (const [k, v] of props) {
-    if (k === 'stroke') colors.stroke = v;
-    else if (k === 'color') colors.label = v;
+    if (k === 'stroke' || k === 'color') {
+      const color = mermaidColor(v, warnings);
+      if (color !== undefined) colors[k === 'stroke' ? 'stroke' : 'label'] = color;
+    }
     else if (k === 'stroke-width') colors.width = px(v);
     else if (k === 'stroke-dasharray') colors.dash = dashOf(v);
   }
   return Object.keys(colors).length > 0 ? colors : undefined;
+}
+
+function edgeIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): Set<string> {
+  for (const s of stmts) {
+    if (s.kind === 'subgraph') edgeIdsOf(s.stmts, out);
+    if (s.kind === 'chain') for (const l of s.links) if (l.id !== undefined) out.add(l.id);
+  }
+  return out;
 }
 
 function subgraphIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): Set<string> {
@@ -173,22 +200,22 @@ function subgraphIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): 
 /** Reads a Mermaid flowchart into a one-page document, its `notation` unset. Throws, naming the line, on text that is not one. */
 export function readFlowchart(text: string): ImportResult {
   const chart = parseFlowchart(text);
-  const r = new MermaidReader(subgraphIdsOf(chart.stmts));
+  const r = new MermaidReader(subgraphIdsOf(chart.stmts), edgeIdsOf(chart.stmts));
   if (chart.directives > 0) r.warnings.add('Mermaid configuration directives were dropped.');
   r.walk(chart.stmts, null);
   const nodes: DataNode[] = [...r.nodes].map(([id, d]) => {
-    const colors = nodeColors(r.propsOf(id, true));
+    const colors = nodeColors(r.propsOf(id, true), r.warnings);
     return { id, lines: d.lines, outline: d.outline, ...(colors !== undefined ? { colors } : {}) };
   });
   const edges = r.edges.map(({ edge, index }) => {
     const props = [...(r.linkStyles.get('default') ?? []), ...(r.linkStyles.get(index) ?? [])];
-    const colors = edgeColors(edge.colors, props);
+    const colors = edgeColors(edge.colors, props, r.warnings);
     const { colors: _c, ...rest } = edge;
     return colors !== undefined ? { ...rest, colors } : rest;
   });
   const containers: DataContainer[] = [...r.subgraphs].map(([id, title]) => {
     const members = r.membership.members(id);
-    const colors = nodeColors(r.propsOf(id, false));
+    const colors = nodeColors(r.propsOf(id, false), r.warnings);
     return {
       id, role: 'container', label: title !== undefined ? textLines(title).join(' ') : id,
       ...(members.length > 0 ? { members } : {}),

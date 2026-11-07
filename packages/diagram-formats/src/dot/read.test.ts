@@ -106,9 +106,25 @@ describe('reading DOT', () => {
     expect(page('digraph { a [pos="1,1"]; b }').data.nodes.every((n) => n.at === undefined)).toBe(true);
   });
 
+  it('sizes the page around every node when there is no bb, a node left of or below the origin included', () => {
+    const p = page('digraph { a [pos="10,20!", width=1, height=1]; b [pos="100,-30"]; }');
+    expect(node(p.data, 'a').at).toEqual({ x: 0, y: 0 });
+    expect(node(p.data, 'b').at).toEqual({ x: 99, y: 68 });
+    expect(p).toMatchObject({ width: 153, height: 104 });
+    expect(page('digraph { a [pos="Infinity,1"]; }').data.nodes[0]!.at).toBeUndefined();
+  });
+
   it('reads colors in each of DOT\'s spellings', () => {
     const p = page('digraph { a [color="/x11/red:blue"]; b [color="0.000 1.000 1.000"]; c [fontcolor="#ff000080"] }');
     expect(p.data.nodes.map((n) => n.colors)).toEqual([{ stroke: 'red' }, { stroke: '#ff0000' }, { text: '#ff000080' }]);
+  });
+
+  it('drops a color from a palette scheme CSS has no spelling for, with a warning', () => {
+    const { document, warnings } = readDot('digraph { a [color="/blues9/3", fontcolor="/svg/navy"]; a -> b [color="/accent3/1"] }');
+    const p = asGraph(document.pages[0]!);
+    expect(p.data.nodes[0]!.colors).toEqual({ text: 'navy' });
+    expect(p.data.edges[0]!.colors).toBeUndefined();
+    expect(warnings).toContain('DOT colors a diagram cannot draw were dropped: /blues9/3, /accent3/1.');
   });
 
   it('lists the attributes it dropped in one warning', () => {

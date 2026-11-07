@@ -58,6 +58,17 @@ describe('elkPlan', () => {
     expect(plan.groups.has('G')).toBe(true);
   });
 
+  it('lays out groups whose parents form a cycle, and what they hold, at the top level', async () => {
+    const graph = graphOf([node('a', { group: 'G' }), node('b')], [{ id: 'ab', from: 'a', to: 'b' }], [
+      { id: 'G', members: ['a'], inset: INSET, parent: 'H' },
+      { id: 'H', members: ['a'], inset: INSET, parent: 'G' },
+      { id: 'S', members: [], inset: INSET, parent: 'S' },
+    ]);
+    const plan = await elkPlan(graph);
+    expect([...plan.routes.keys()]).toEqual(['ab']);
+    expect([...plan.groups.keys()].sort()).toEqual(['G', 'H', 'S']);
+  });
+
   it('ranks a chain down the page, each node below the last', async () => {
     const graph = graphOf([node('a'), node('b'), node('c')], [
       { id: 'ab', from: 'a', to: 'b' },
@@ -225,6 +236,21 @@ describe('elkPlan', () => {
     const graph = graphOf([node('a')], []);
     await elkPlan(graph, { elk: elk as never, layoutOptions: { 'elk.algorithm': 'mrtree' } });
     expect(seen[0]!['elk.algorithm']).toBe('mrtree');
+  });
+
+  it('lets an option under its full id replace the one derived under its short id, and reads it as ELK will', async () => {
+    const seen: { layoutOptions?: Record<string, string>; children?: { layoutOptions?: Record<string, string> }[] }[] = [];
+    const elk = {
+      layout: async (root: (typeof seen)[number]) => {
+        seen.push(root);
+        return { ...root, children: (root.children ?? []).map((c) => ({ ...c, x: 0, y: 0 })) };
+      },
+    };
+    const graph = graphOf([node('a', { group: 'G' })], [], [{ id: 'G', members: ['a'], inset: INSET, minWidth: 200 }]);
+    await elkPlan(graph, { elk: elk as never, direction: 'right', layoutOptions: { 'org.eclipse.elk.direction': 'DOWN' } });
+    const options = seen[0]!.layoutOptions!;
+    expect(Object.entries(options).filter(([k]) => k.endsWith('.direction'))).toEqual([['elk.direction', 'DOWN']]);
+    expect(seen[0]!.children![0]!.layoutOptions!['elk.nodeSize.minimum']).toBe('(0, 200)');
   });
 });
 

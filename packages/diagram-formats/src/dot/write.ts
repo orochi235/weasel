@@ -2,7 +2,7 @@
 import type { DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../graphWrite';
-import { arrowName, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
+import { arrowName, dashStyle, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
 
 const RANKDIR: Readonly<Record<LayoutDirection, string | null>> = { down: null, up: 'BT', right: 'LR', left: 'RL' };
 const KEYWORDS = new Set(['node', 'edge', 'graph', 'digraph', 'subgraph', 'strict']);
@@ -27,7 +27,7 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   const { shape, rounded, missing, marked } = shapeOf(node.outline);
   if (missing) out.warnings.add('DOT has no shape for some outlines; they were written as boxes.');
   const own = changed(nodeStyleIn(out, node), nodeStyleIn(out));
-  const styles = [rounded ? 'rounded' : null, 'filled', own.dash !== undefined ? 'dashed' : null].filter((s) => s !== null);
+  const styles = [rounded ? 'rounded' : null, 'filled', own.dash !== undefined ? dashStyle(own.dash) : null].filter((s) => s !== null);
   const page = out.page.height;
   return attrList([
     `label=${quoteLabel(nodeLines(node, out.warnings, 'DOT'))}`,
@@ -41,18 +41,27 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   ]);
 }
 
-function writeCluster(out: GraphOut, c: Cluster, placed: boolean, indent: string, lines: string[]): void {
+/** What a cluster around this one set, which Graphviz carries into this one unless it sets its own. */
+interface Inherited { label: boolean; filled: boolean }
+
+function writeCluster(
+  out: GraphOut, c: Cluster, placed: boolean, indent: string, lines: string[], inherited: Inherited = { label: false, filled: false },
+): void {
   lines.push(`${indent}subgraph ${dotId(`cluster_${c.id}`)} {`);
   const inner = `${indent}  `;
-  if (c.label !== undefined) lines.push(`${inner}label=${quoteLabel([c.label])};`);
+  const filled = c.style?.fill !== undefined;
+  if (c.label !== undefined || inherited.label) lines.push(`${inner}label=${quoteLabel(c.label !== undefined ? [c.label] : [])};`);
+  if (!filled && inherited.filled) lines.push(`${inner}style="";`);
   if (c.style !== undefined) {
-    if (c.style.fill !== undefined) lines.push(`${inner}style=filled;`, `${inner}${color('fillcolor', c.style.fill)};`);
+    if (filled) lines.push(`${inner}style=filled;`, `${inner}${color('fillcolor', c.style.fill)};`);
     for (const [key, value] of [['color', c.style.stroke], ['fontcolor', c.style.text]] as const) {
       if (value !== undefined) lines.push(`${inner}${color(key, value)};`);
     }
   }
   for (const id of c.nodes) lines.push(`${inner}${dotId(id)}${nodeAttrs(out, out.byId.get(id)!, placed)};`);
-  for (const child of c.clusters) writeCluster(out, child, placed, inner, lines);
+  for (const child of c.clusters) writeCluster(out, child, placed, inner, lines, {
+    label: inherited.label || c.label !== undefined, filled: inherited.filled || filled,
+  });
   lines.push(`${indent}}`);
 }
 
@@ -95,7 +104,7 @@ function edgeLine(out: GraphOut, edge: DataEdge): string | null {
     edge.endLabels?.to ? `headlabel=${quoteLabel([edge.endLabels.to])}` : null,
     color('color', own.stroke), color('fontcolor', own.label),
     own.width !== undefined ? `penwidth=${own.width}` : null,
-    own.dash !== undefined ? 'style=dashed' : null,
+    own.dash !== undefined ? `style=${dashStyle(own.dash)}` : null,
     ...markerAttrs(out, edge),
   ])};`;
 }

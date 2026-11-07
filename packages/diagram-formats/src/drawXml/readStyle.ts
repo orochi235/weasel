@@ -7,10 +7,12 @@ import {
 import type { CellGeometry, RawCell } from './cells';
 import { cellLines } from './cellText';
 import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry } from './mapping';
+import { checkedColor } from '../colorCheck';
 import { hasStyleName, shapeOf, styleFlag, styleNumber, type CellStyle } from './style';
 
-/** Records one sentence about what a file had that a diagram cannot hold. */
-export type Warn = (message: string) => void;
+/** Records one sentence about what a file had that a diagram cannot hold; with `item`, adds it to the one sentence that
+ *  starts `message` and names every item. */
+export type Warn = (message: string, item?: string) => void;
 
 /** The outline a vertex draws as. A shape it does not know is a rect, with a warning. */
 export function outlineOf(style: CellStyle, warn: Warn): Outline {
@@ -22,11 +24,11 @@ export function outlineOf(style: CellStyle, warn: Warn): Outline {
   return 'rect';
 }
 
-/** A color value: `none` is transparent, and `default` or nothing is unset. */
-function colorOf(style: CellStyle, key: string, otherwise?: string): string | undefined {
+/** A color value: `none` is transparent, `default` or nothing is unset, and one a diagram cannot draw is dropped. */
+function colorOf(style: CellStyle, key: string, warn: Warn, otherwise?: string): string | undefined {
   const raw = style.values.get(key);
   if (raw === undefined || raw === '' || raw === 'default') return otherwise;
-  return raw === 'none' ? 'transparent' : raw;
+  return raw === 'none' ? 'transparent' : checkedColor(raw, 'Draw-style XML', warn);
 }
 
 function dashOf(style: CellStyle): number[] | undefined {
@@ -41,10 +43,10 @@ const defined = <T extends object>(o: { [K in keyof T]?: T[K] | undefined }): Pa
 };
 
 /** The colors a vertex's style names. A text cell draws no fill or stroke unless it says otherwise. */
-export function nodeColorsOf(style: CellStyle): Partial<NodeStyle> | undefined {
+export function nodeColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> | undefined {
   const bare = hasStyleName(style, 'text') ? 'transparent' : undefined;
   return defined<NodeStyle>({
-    fill: colorOf(style, 'fillColor', bare), stroke: colorOf(style, 'strokeColor', bare), text: colorOf(style, 'fontColor'),
+    fill: colorOf(style, 'fillColor', warn, bare), stroke: colorOf(style, 'strokeColor', warn, bare), text: colorOf(style, 'fontColor', warn),
     strokeWidth: styleNumber(style, 'strokeWidth'), dash: dashOf(style),
   });
 }
@@ -95,7 +97,7 @@ export function edgeColorsOf(style: CellStyle, warn: Warn): Partial<EdgeStyle> |
   const start = markerAt(style, 'start', warn);
   const end = markerAt(style, 'end', warn);
   return defined<EdgeStyle>({
-    stroke: colorOf(style, 'strokeColor'), label: colorOf(style, 'fontColor'),
+    stroke: colorOf(style, 'strokeColor', warn), label: colorOf(style, 'fontColor', warn),
     width: styleNumber(style, 'strokeWidth'), dash: dashOf(style),
     markerStart: start === null ? undefined : start,
     markerEnd: end === 'arrow' ? undefined : end,

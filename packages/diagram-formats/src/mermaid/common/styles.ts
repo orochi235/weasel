@@ -5,6 +5,7 @@
  */
 import type { NodeStyle } from '@weasel-js/diagram';
 import type { Warnings } from '../../graphRead';
+import { checkedColor } from '../../colorCheck';
 import { hexColor } from '../../graphWrite';
 
 /** A style's `key:value` pairs, in order. */
@@ -41,12 +42,19 @@ export const px = (v: string): number => Number(v.replace(/px$/, ''));
 /** A `stroke-dasharray` as numbers. */
 export const dashOf = (v: string): number[] => v.split(/[\s,]+/).filter((s) => s !== '').map(px);
 
+/** A color a Mermaid file names, or `undefined`, with a warning, when a diagram cannot draw it. */
+export const mermaidColor = (css: string | undefined, warnings: Warnings): string | undefined =>
+  checkedColor(css, 'Mermaid', (lead, item) => warnings.list(lead, item));
+
 /** A node's colors from the properties that apply to it, `undefined` for none. */
-export function nodeColors(props: ReadonlyMap<string, string>): Partial<NodeStyle> | undefined {
+export function nodeColors(props: ReadonlyMap<string, string>, warnings: Warnings): Partial<NodeStyle> | undefined {
+  const fill = mermaidColor(props.get('fill'), warnings);
+  const stroke = mermaidColor(props.get('stroke'), warnings);
+  const text = mermaidColor(props.get('color'), warnings);
   const colors: Partial<NodeStyle> = {
-    ...(props.has('fill') ? { fill: props.get('fill')! } : {}),
-    ...(props.has('stroke') ? { stroke: props.get('stroke')! } : {}),
-    ...(props.has('color') ? { text: props.get('color')! } : {}),
+    ...(fill !== undefined ? { fill } : {}),
+    ...(stroke !== undefined ? { stroke } : {}),
+    ...(text !== undefined ? { text } : {}),
     ...(props.has('stroke-width') ? { strokeWidth: px(props.get('stroke-width')!) } : {}),
     ...(props.has('stroke-dasharray') ? { dash: dashOf(props.get('stroke-dasharray')!) } : {}),
   };
@@ -91,7 +99,7 @@ export class StyleSheet {
     const props = new Map<string, string>();
     const lists = [this.defs.get('default'), ...(this.classes.get(id) ?? []).map((c) => this.defs.get(c)), this.styles.get(id)];
     for (const list of lists) for (const [k, v] of list ?? []) props.set(k, v);
-    return nodeColors(props);
+    return nodeColors(props, this.warnings);
   }
 
   /** Reads `classDef`, `style id …`, and, unless `withClass` is false, `class a,b name` statements; whether `text` was one. */

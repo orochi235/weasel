@@ -2,8 +2,12 @@
  * Reading draw-style XML: a file of `<diagram>` pages, each a graph model
  * written out or compressed, or one bare graph model.
  */
+import type { LayoutDirection } from '@weasel-js/diagram';
 import type { DocumentPage, ImportResult } from '../document';
+import { DIRECTION_ATTR } from './cells';
+import { Warnings } from '../graphRead';
 import { readPage, type IdSpace } from './readPage';
+import type { Warn } from './readStyle';
 
 const childElements = (el: Element): Element[] => Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1);
 
@@ -68,12 +72,24 @@ const sizeOf = (model: Element, name: 'pageWidth' | 'pageHeight'): number | unde
   return Number.isFinite(n) && n > 0 ? n : undefined;
 };
 
-function pageOf(model: Element, id: string, name: string | undefined, ids: IdSpace, warn: (m: string) => void): DocumentPage {
+const DIRECTIONS: ReadonlySet<string> = new Set<LayoutDirection>(['down', 'up', 'right', 'left']);
+
+function directionOf(model: Element, warn: Warn): LayoutDirection | undefined {
+  const value = model.getAttribute(DIRECTION_ATTR);
+  if (value === null) return undefined;
+  if (DIRECTIONS.has(value)) return value as LayoutDirection;
+  warn(`A page direction a diagram does not have was dropped: ${value}.`);
+  return undefined;
+}
+
+function pageOf(model: Element, id: string, name: string | undefined, ids: IdSpace, warn: Warn): DocumentPage {
   const width = sizeOf(model, 'pageWidth');
   const height = sizeOf(model, 'pageHeight');
-  return readPage(model, {
+  const direction = directionOf(model, warn);
+  const page = readPage(model, {
     id, ...(name !== undefined ? { name } : {}), ...(width !== undefined ? { width } : {}), ...(height !== undefined ? { height } : {}),
   }, ids, warn);
+  return direction !== undefined && page.kind === 'graph' ? { ...page, direction } : page;
 }
 
 /**
@@ -85,8 +101,8 @@ function pageOf(model: Element, id: string, name: string | undefined, ids: IdSpa
  */
 export async function readDrawXml(text: string): Promise<ImportResult> {
   const root = parseXml(text, 'The file');
-  const warnings = new Set<string>();
-  const warn = (message: string): void => { warnings.add(message); };
+  const warnings = new Warnings();
+  const warn: Warn = (message, item) => (item === undefined ? warnings.add(message) : warnings.list(message, item));
   const ids: IdSpace = new Set();
   const pageIds: IdSpace = new Set();
   const pageId = (want: string | null, index: number): string => {
@@ -110,5 +126,5 @@ export async function readDrawXml(text: string): Promise<ImportResult> {
   } else {
     throw new Error(`A draw-style XML file has an mxfile or mxGraphModel root element, not <${root.tagName}>`);
   }
-  return { document: { pages }, warnings: [...warnings] };
+  return { document: { pages }, warnings: warnings.all() };
 }
