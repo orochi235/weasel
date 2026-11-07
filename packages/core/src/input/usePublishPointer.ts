@@ -14,9 +14,9 @@ export type LocatePointer = (
 /**
  * Publishes the pointer over `elementRef` into the pointer store in scope, as
  * `locate` places it. A pointer pressed on the element keeps publishing once
- * it leaves, so a drag that runs off the edge still reports where it is; a
- * pointer that leaves with nothing held clears the store, unless another view
- * has published since. No-op with no provider in scope.
+ * it leaves, so a drag that runs off the edge still reports where it is until
+ * it is released. A pointer that leaves with nothing held, or is released
+ * outside, clears the store, unless another view has published since. No-op with no provider in scope.
  *
  * `locate` is read on each event, so it need not be stable.
  */
@@ -37,13 +37,17 @@ export function usePublishPointer(
       store.set(at);
     };
     const held = heldPointers(el);
-    const onLeave = (e: PointerEvent): void => {
-      if (held.count() > 0) {
-        publish(e);
-        return;
-      }
+    const clear = (): void => {
       const now = store.get();
       if (now && now.viewId === viewId) store.set(null);
+    };
+    const onLeave = (e: PointerEvent): void => {
+      if (held.count() > 0) publish(e);
+      else clear();
+    };
+    // A press that left the element is released with no leave to follow.
+    const onDocUp = (e: PointerEvent): void => {
+      if (held.count() === 0 && !el.contains(e.target as Node | null)) clear();
     };
     // The element's own listener has the moves that still target it.
     const onDocMove = (e: PointerEvent): void => {
@@ -53,10 +57,12 @@ export function usePublishPointer(
     el.addEventListener('pointermove', publish);
     el.addEventListener('pointerleave', onLeave);
     document.addEventListener('pointermove', onDocMove);
+    document.addEventListener('pointerup', onDocUp);
     return () => {
       el.removeEventListener('pointermove', publish);
       el.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('pointermove', onDocMove);
+      document.removeEventListener('pointerup', onDocUp);
       held.release();
     };
   }, [elementRef, store, locateRef]);
