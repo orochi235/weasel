@@ -27,7 +27,7 @@ function host(animations: Record<string, WorkerAnimation> = {}) {
   send({ type: 'init', canvas, width: 20, height: 20, dpr: 1 });
   const scene = createScene<object, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
-    initial: [{ id: asNodeId('a'), kind: 'rect', layer: 'main', pose: { x: 0, y: 0, width: 5, height: 5 }, data: {} }],
+    initial: [{ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 5, height: 5 }, data: {} }],
   });
   const writer = createFrameWriter();
   const frame = (extra: Partial<Extract<ToWorker, { type: 'frame' }>> = {}) => send({
