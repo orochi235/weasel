@@ -71,7 +71,8 @@ export interface D3Selection<TData, TPose> {
   /** Spawn a transition. Throws if `BindOptions.animator` wasn't supplied. */
   transition(name?: string): D3Transition<TData, TPose>;
 
-  /** Cancel any in-flight transitions matching `name` (or all if omitted) on these nodes. */
+  /** Interrupt the transitions named `name` (the unnamed ones if omitted) running or waiting
+   *  to run on these nodes, as each transition's own `interrupt()` does for them. */
   interrupt(name?: string): this;
 }
 
@@ -98,6 +99,9 @@ export interface D3Transition<TData, TPose = unknown> {
     interpolate?: (from: TValue, to: TValue) => (t: number) => TValue;
     apply: (d: TData, id: NodeId, value: TValue) => void;
   }): this;
+  /** `'end'` once every item has finished; `'interrupt'` instead once any was interrupted,
+   *  by `interrupt()`, a selection's `interrupt`, or a transition of the same name starting
+   *  on its node. */
   on(event: 'start' | 'end' | 'interrupt', fn: () => void): this;
   /** A transition that starts on each item once this one finishes that item,
    *  with the same name and this one's duration and ease (d3's
