@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { linearScale, logScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
-import { resolveScale, unitScale, withinAxis } from './scale';
+import { prefNumberScale } from '../Prefs/prefNumberScale';
+import { unitScale, withinAxis } from './scale';
 
 const MIN = 1 / 64;
 const MAX = 1 / 2;
@@ -13,42 +14,35 @@ describe('a log axis', () => {
   });
 });
 
-describe('resolveScale', () => {
+describe('BandEditor\'s scale, through prefNumberScale', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('defaults to log', () => {
-    expect(resolveScale(undefined, MIN)).toBe(logScale);
-    expect(resolveScale('log', MIN)).toBe(logScale);
-    expect(resolveScale('linear', MIN)).toBe(linearScale);
+  it('spaces a log axis by ratio and a linear one by difference', () => {
+    const log = unitScale(prefNumberScale('log', 'BandEditor')!, 1, 100);
+    expect(log.map(10)).toBeCloseTo(0.5, 12);
+    expect(prefNumberScale('linear', 'BandEditor')).toBeUndefined();
   });
 
   it('passes a custom scale straight through', () => {
     const custom: ContinuousScaleFactory = (opts) => linearScale(opts);
-    expect(resolveScale(custom, 0)).toBe(custom);
+    expect(prefNumberScale(custom, 'BandEditor')).toBe(custom);
   });
 
-  it('falls back to linear on a non-positive min, warning once', async () => {
-    // Fresh module: the warn-once flag is module state, and another test in
-    // this file may already have spent it.
+  it('draws a log axis not above zero linearly, warning once under its caller\'s name', async () => {
+    // Fresh module: the warn-once flag is module state, and another test may already have spent it.
     vi.resetModules();
-    const fresh = await import('./scale');
-    const { linearScale: freshLinear } = await import('@weasel-js/plot/scales');
+    const fresh = await import('../Prefs/prefNumberScale');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const log = fresh.prefNumberScale('log', 'BandEditor')!;
 
-    expect(fresh.resolveScale('log', 0)).toBe(freshLinear);
-    expect(fresh.resolveScale(undefined, -4)).toBe(freshLinear);
-    expect(fresh.resolveScale('log', 0)).toBe(freshLinear);
+    const unit = unitScale(log, 0, 100);
+    expect(unit.map(50)).toBeCloseTo(0.5, 12);
+    expect(unitScale(log, -4, 4).map(0)).toBeCloseTo(0.5, 12);
 
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0][0]).toMatch(/min > 0/);
-  });
-
-  it('positions seams at real numbers under the fallback', () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const unit = unitScale(resolveScale('log', 0), 0, 100);
-    expect(unit.map(50)).toBeCloseTo(0.5, 12);
+    expect(warn.mock.calls[0][0]).toMatch(/^BandEditor: a log track needs a range above zero/);
   });
 });
 

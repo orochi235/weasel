@@ -1,6 +1,5 @@
 import { clamp01 } from '@weasel-js/geom';
-import { isDev } from '@weasel-js/registry';
-import { linearScale, logScale, type ContinuousScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScale, ContinuousScaleFactory } from '@weasel-js/plot/scales';
 
 /** `scale` from `[min, max]` onto the track, `[0, 1]`. */
 export function unitScale(scale: ContinuousScaleFactory, min: number, max: number): ContinuousScale {
@@ -14,35 +13,6 @@ export function trackOf(scale: ContinuousScaleFactory, min: number, max: number)
     toUnit: (v: number): number => clamp01(unit.map(v)),
     fromUnit: (u: number): number => unit.invert(clamp01(u)),
   };
-}
-
-let warnedNonPositiveMin = false;
-
-/**
- * Resolves the `scale` prop, substituting `linearScale` for a `logScale`
- * that `min` would make throw.
- */
-export function resolveScale(
-  scale: 'linear' | 'log' | ContinuousScaleFactory | undefined,
-  min: number,
-): ContinuousScaleFactory {
-  const requested =
-    scale === undefined || scale === 'log'
-      ? logScale
-      : scale === 'linear'
-        ? linearScale
-        : scale;
-
-  if (requested !== logScale || min > 0) return requested;
-
-  if (isDev() && !warnedNonPositiveMin) {
-    warnedNonPositiveMin = true;
-    console.warn(
-      `BandEditor: a log scale needs min > 0, but min is ${min}. Falling back to a linear scale. ` +
-        `Pass scale="linear" to silence this.`,
-    );
-  }
-  return linearScale;
 }
 
 /**
