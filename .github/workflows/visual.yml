@@ -20,6 +20,10 @@ on:
         description: Run only the WebGPU job
         type: boolean
         default: false
+      probe_only:
+        description: Only probe WebGPU launch flags (temporary)
+        type: boolean
+        default: false
 
 # A superseded push's run tells us nothing; don't queue behind it.
 concurrency:
@@ -90,6 +94,7 @@ jobs:
         run: node tests/visual/webgpu-probe.mjs
 
       - name: Run visual regression tests on WebGPU
+        if: ${{ !inputs.probe_only }}
         run: npm run test:visual
 
       - name: Upload test results on failure

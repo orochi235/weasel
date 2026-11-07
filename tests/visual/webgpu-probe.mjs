@@ -3,6 +3,7 @@ import { chromium } from '@playwright/test';
 
 const BASE = ['--disable-accelerated-2d-canvas', '--enable-unsafe-webgpu', '--enable-features=Vulkan'];
 const SS = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+const IG = ['--ignore-gpu-blocklist'];
 const COMBOS = [
   ['current', {}, BASE],
   ['gpu', {}, [...BASE, '--enable-gpu']],
@@ -11,7 +12,12 @@ const COMBOS = [
   ['gpu+angle-ss+adapter-ss', {}, [...BASE, '--enable-gpu', ...SS, '--use-webgpu-adapter=swiftshader']],
   ['gpu+angle-ss+vulkan-ss', {}, [...BASE, '--enable-gpu', ...SS, '--use-vulkan=swiftshader', '--use-webgpu-adapter=swiftshader']],
   ['gpu+angle-vulkan', {}, [...BASE, '--enable-gpu', '--use-angle=vulkan', '--use-vulkan=swiftshader', '--disable-vulkan-surface']],
+  ['gpu+ig', {}, [...BASE, '--enable-gpu', ...IG]],
+  ['gpu+ig+angle-ss+adapter-ss', {}, [...BASE, '--enable-gpu', ...IG, ...SS, '--use-webgpu-adapter=swiftshader']],
+  ['gpu+ig+angle-vulkan+vulkan-ss', {}, [...BASE, '--enable-gpu', ...IG, '--use-angle=vulkan', '--use-vulkan=swiftshader', '--enable-unsafe-swiftshader', '--use-webgpu-adapter=swiftshader']],
+  ['gpu+ig+nosandbox', {}, [...BASE, '--enable-gpu', ...IG, '--disable-gpu-sandbox', '--enable-unsafe-swiftshader', '--use-webgpu-adapter=swiftshader']],
   ['chromium', { channel: 'chromium' }, BASE],
+  ['chromium+ig', { channel: 'chromium' }, [...BASE, ...IG, '--enable-unsafe-swiftshader', '--use-webgpu-adapter=swiftshader']],
   ['chromium+ss', { channel: 'chromium' }, [...BASE, ...SS, '--use-webgpu-adapter=swiftshader']],
   ['chromium+gpu+ss', { channel: 'chromium' }, [...BASE, '--enable-gpu', ...SS, '--use-webgpu-adapter=swiftshader']],
 ];
@@ -48,7 +54,7 @@ async function probe(page) {
     document.body.append(c);
     const ctx = c.getContext('webgpu');
     ctx.configure({ device, format: 'rgba8unorm', alphaMode: 'premultiplied', usage: 0x10 | 0x01 | 0x02 });
-    for (let i = 0; i < 10; i++) { clear(ctx, { r: i / 9, g: 0, b: 1 - i / 9, a: 1 }); await rafs(1); }
+    for (let i = 0; i < 40; i++) { clear(ctx, { r: i / 39, g: 0, b: 1 - i / 39, a: 1 }); await rafs(1); }
     await rafs(2);
     out.presentedDrawImage = pixel2d(c, 64, 64);
     const url = c.toDataURL('image/png');
@@ -76,14 +82,29 @@ async function probe(page) {
 
 for (const [name, opts, args] of COMBOS) {
   let browser;
+  const out = {};
   try {
     browser = await chromium.launch({ headless: true, ...opts, args });
     const page = await browser.newPage();
     const consoleErrors = [];
     page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 160)); });
-    await page.setContent('<!doctype html><body style="margin:0"></body>');
+    // navigator.gpu exists only in a secure context, which about:blank is not.
+    await page.route('https://probe.test/', (r) => r.fulfill({ contentType: 'text/html', body: '<!doctype html><body style="margin:0"></body>' }));
+    await page.goto('https://probe.test/');
+    out.secure = await page.evaluate(() => isSecureContext && !!navigator.gpu);
     const r = await Promise.race([probe(page), new Promise((_, j) => setTimeout(() => j(new Error('timeout')), 30_000))]);
-    console.log(`PROBE ${name}: ${JSON.stringify({ ...r, console: consoleErrors.slice(0, 3) })}`);
+    console.log(`PROBE ${name}: ${JSON.stringify({ ...out, ...r, console: consoleErrors.slice(0, 3) })}`);
+    if (name === 'gpu+ig' || name === 'current' || name === 'chromium') {
+      const g = await browser.newPage();
+      await g.goto('chrome://gpu');
+      await g.waitForTimeout(1500);
+      const text = await g.evaluate(() => {
+        const walk = (root) => [...root.querySelectorAll('*')].map((e) => (e.shadowRoot ? walk(e.shadowRoot) : '')).join(' ') + ' ' + (root.textContent ?? '');
+        return walk(document);
+      });
+      const at = text.indexOf('Graphics Feature Status');
+      console.log(`PROBE-GPU ${name}: ${text.slice(Math.max(0, at), at + 1500).replace(/\s+/g, ' ')}`);
+    }
   } catch (e) {
     console.log(`PROBE ${name}: FAILED ${String(e).slice(0, 300)}`);
   } finally {
