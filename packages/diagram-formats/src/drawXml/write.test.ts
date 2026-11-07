@@ -66,6 +66,18 @@ describe('writing draw-style XML', () => {
     expect([model.getAttribute('pageWidth'), model.getAttribute('pageHeight')]).toEqual(['600', '400']);
   });
 
+  it('keeps the way a page runs, which an app that does not know it ignores', async () => {
+    const doc: DiagramDocument = { pages: [{ ...DOC.pages[0]!, direction: 'right' } as DiagramDocument['pages'][number], DOC.pages[1]!] };
+    const written = DRAW_XML.write!(doc).text;
+    expect(written).toContain('weaselDirection="right"');
+    const back = (await DRAW_XML.read!(written)).document.pages.map(asGraph);
+    expect(back.map((p) => p.direction)).toEqual(['right', undefined]);
+    const odd = written.replace('weaselDirection="right"', 'weaselDirection="sideways"');
+    const read = await DRAW_XML.read!(odd);
+    expect(asGraph(read.document.pages[0]!).direction).toBeUndefined();
+    expect(read.warnings).toContain('A page direction a diagram does not have was dropped: sideways.');
+  });
+
   it('writes each outline as its shape', () => {
     expect(styleOf(out, 'a').values.get('arcSize')).toBe('50');
     expect(shapeOf(styleOf(out, 'd'))).toBe('rhombus');

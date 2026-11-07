@@ -2,7 +2,9 @@
  * Reading draw-style XML: a file of `<diagram>` pages, each a graph model
  * written out or compressed, or one bare graph model.
  */
+import type { LayoutDirection } from '@weasel-js/diagram';
 import type { DocumentPage, ImportResult } from '../document';
+import { DIRECTION_ATTR } from './cells';
 import { readPage, type IdSpace } from './readPage';
 
 const childElements = (el: Element): Element[] => Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1);
@@ -68,12 +70,24 @@ const sizeOf = (model: Element, name: 'pageWidth' | 'pageHeight'): number | unde
   return Number.isFinite(n) && n > 0 ? n : undefined;
 };
 
+const DIRECTIONS: ReadonlySet<string> = new Set<LayoutDirection>(['down', 'up', 'right', 'left']);
+
+function directionOf(model: Element, warn: (m: string) => void): LayoutDirection | undefined {
+  const value = model.getAttribute(DIRECTION_ATTR);
+  if (value === null) return undefined;
+  if (DIRECTIONS.has(value)) return value as LayoutDirection;
+  warn(`A page direction a diagram does not have was dropped: ${value}.`);
+  return undefined;
+}
+
 function pageOf(model: Element, id: string, name: string | undefined, ids: IdSpace, warn: (m: string) => void): DocumentPage {
   const width = sizeOf(model, 'pageWidth');
   const height = sizeOf(model, 'pageHeight');
-  return readPage(model, {
+  const direction = directionOf(model, warn);
+  const page = readPage(model, {
     id, ...(name !== undefined ? { name } : {}), ...(width !== undefined ? { width } : {}), ...(height !== undefined ? { height } : {}),
   }, ids, warn);
+  return direction !== undefined && page.kind === 'graph' ? { ...page, direction } : page;
 }
 
 /**
