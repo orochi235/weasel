@@ -366,19 +366,18 @@ Owner tags, after the priority (2026-10-26):
   `select.deep` moves to Cmd+Alt-click (Ctrl+Alt off macOS), and a range is every node whose center lies in the
   box the two span, with no same-kind filter. Closes when the select tool's bindings do both.
 
-- **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
+- **(P3) [agent] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
   the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
   override that `segmentedRow`, `ButtonBar` and `Bar` could pass from the run; `Tabs` and `RadioGroup` take their
   arrows from React Aria's locale. `SwatchGrid` rings already step by screen direction (`ringStep`).
-  Closes when Right moves to the item on the screen's right along a clockwise bottom arc in `ButtonBar`,
-  `Bar`, and `segmentedRow`, or the maintainer rules that arrows follow the run.
+  Ruled (2026-11-07): arrows follow the screen. Closes when Right moves to the item on the screen's right along
+  a clockwise bottom arc in `ButtonBar`, `Bar`, and `segmentedRow`.
 
-- **(P3) [maintainer] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
+- **(P3) [agent] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
   (2026-10-30); whether a slider's values should too, so a counterclockwise arc reads as a counterclockwise dial, is
   undecided (`useSliderGeometry`).
-  Closes when the maintainer has ruled whether an arc slider's values follow the arc's direction, and
-  `useSliderGeometry` does what he ruled.
+  Ruled (2026-11-07): they follow the arc, min at the run's start. Closes when `useSliderGeometry` does.
 
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -397,13 +396,13 @@ Owner tags, after the priority (2026-10-26):
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
-- **(P3) [maintainer] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
+- **(P3) [agent] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
-  Closes when the maintainer has chosen disabled's second cue and every control that fades when disabled
-  draws it.
+  Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
+  fades when disabled also desaturates.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -556,13 +555,12 @@ only story runner in the repo.
   Ruled (2026-11-07): it should. Closes when `forge()` waits off macOS and `replacedFile.test.ts` no longer
   rewrites until served.
 
-- **(P3) [maintainer] Whether the workshop's marks come back, to draw on a reported issue's screenshot**
+- **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
   opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
   turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
   up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
-  Closes when the maintainer has ruled on it: on a no, delete the entry; on a yes, when the workshop
-  draws marks on the trial while Report is open.
+  Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
 - **(P3) [maintainer] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
