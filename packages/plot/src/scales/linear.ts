@@ -49,7 +49,8 @@ export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number 
   return factor * power;
 }
 
-const MAX_DECIMALS = 20;
+/** The most `toFixed` accepts. */
+const MAX_DECIMALS = 100;
 
 /** How many decimals a value on a grid of `step` needs; 0 for a step that is not a positive number. */
 export function decimalsOf(step: number): number {
@@ -95,7 +96,7 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
 
 /** `value` written as plainly as a grid of `step` allows: no trailing zeros, no exponent. */
 export function formatNumber(value: number, step: number): string {
-  const fixed = value.toFixed(Math.min(20, decimalsOf(step)));
+  const fixed = value.toFixed(decimalsOf(step));
   return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
 }
 

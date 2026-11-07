@@ -34,6 +34,13 @@ describe('linearScale', () => {
     expect(unit.ticks(20).slice(0, 3).map((v) => unit.format(v, { count: 20 }))).toEqual(['0', '0.05', '0.1']);
   });
 
+  it('ticks and labels a domain finer than 1e-20', () => {
+    const tiny = linearScale({ domain: [0, 1e-25], range: [0, 1] });
+    expect(tiny.ticks()).toEqual([0, 2e-26, 4e-26, 6e-26, 8e-26, 1e-25]);
+    expect(tiny.format(2e-26)).toBe('0.00000000000000000000000002');
+    expect(logScale({ domain: [1e-25, 1e-22], range: [0, 1] }).format(1e-24)).toBe('0.000000000000000000000001');
+  });
+
   it('widens a nice domain to whole steps', () => {
     expect(niceDomain([3, 97])).toEqual([0, 100]);
     expect(niceDomain([-13, 42])).toEqual([-20, 50]);
