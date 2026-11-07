@@ -5,6 +5,8 @@ import { GLYPH_AREA_FROM, GLYPH_AREA_FULL, GLYPH_AREA_MARGIN } from './textSdf';
  * calls `fn glyphTap(uv: vec2f) -> vec4f`, which the program defines with
  * `textureSampleLevel`, since the taps run inside a branch on a derivative.
  * A caller must reach `glyphCoverage` in uniform control flow: it takes `dpdx`.
+ * `dpdy` is negated: WGSL's runs down the target and GLSL's `dFdy` up the
+ * window, and the area taps sit on a rotated grid, which a mirror moves.
  */
 
 const AREA_TAPS_WGSL = /* wgsl */ `
@@ -31,7 +33,7 @@ fn glyphInCell(c: vec2f, margin: vec2f) -> f32 {
 
 const CELL_MARGIN_WGSL = /* wgsl */ `
   let dcx = dpdx(cell);
-  let dcy = dpdy(cell);
+  let dcy = -dpdy(cell);
   let margin = ${GLYPH_AREA_MARGIN.toFixed(1)} * vec2f(length(vec2f(dcx.x, dcy.x)), length(vec2f(dcx.y, dcy.y)));`;
 
 function glyphCoverageWgsl(area: boolean): string {
@@ -46,7 +48,7 @@ fn glyphField(texel: vec4f, mode: f32) -> f32 {
 ${area ? IN_CELL_WGSL : ''}
 fn glyphCoverage(texel: vec4f, mode: f32, synthBold: f32, uv: vec2f, fieldPerUv: vec2f${area ? ', cell: vec2f' : ''}) -> f32 {
   let du = dpdx(uv);
-  let dv = dpdy(uv);${area ? CELL_MARGIN_WGSL : ''}
+  let dv = -dpdy(uv);${area ? CELL_MARGIN_WGSL : ''}
   let fieldPerPx = 0.5 * (length(du * fieldPerUv) + length(dv * fieldPerUv));
   let aaW = max(0.5 * fieldPerPx, 0.0005);
   let threshold = 0.5 - synthBold;
