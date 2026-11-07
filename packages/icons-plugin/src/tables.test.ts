@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, expect, it } from 'vitest';
-import { declaredTable, packageDirFinder, reachableTables, sourceTablesUnder } from './tables';
+import { declaredTable, genFile, packageDirFinder, reachableTables, sourceTablesUnder } from './tables';
 
 const temps: string[] = [];
 afterAll(() => temps.forEach((d) => rmSync(d, { recursive: true, force: true })));
@@ -77,4 +77,12 @@ it("serves a worktree's own workspace tables, not the enclosing checkout's", () 
   workspace(inner, { kept: { body: 'new' }, added: { body: '' } });
   const fx = reachableTables(join(inner, 'apps', 'app')).filter((t) => t.namespace === 'fx');
   expect(fx.map((t) => t.icons)).toEqual([{ kept: { body: 'new' }, added: { body: '' } }]);
+});
+
+it('finds the icons.gen source a .js specifier names, as a TypeScript importer writes it', () => {
+  const root = temp();
+  writeFileSync(join(root, 'icons.gen.ts'), `export const icon = scopedIcon<'a'>('fx');\n`);
+  const importer = join(root, 'main.ts');
+  expect(genFile('./icons.gen.js', importer)).toBe(join(root, 'icons.gen.ts'));
+  expect(genFile('./icons.gen', importer)).toBe(join(root, 'icons.gen.ts'));
 });

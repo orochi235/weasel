@@ -7,7 +7,7 @@ export type {
 } from './model';
 export { loupeExtent, loupeInnerView, loupeSourcePoint, placeBand } from './geometry';
 export type { BandPlacement, LoupePoint, LoupeRect, LoupeSize, PlaceBandArgs } from './geometry';
-export { createCanvasSource, sourcePixel, sourceRegion } from './canvasSource';
+export { createCanvasSource, pixelHex, sourcePixel, sourceRegion } from './canvasSource';
 export type {
   CanvasSource,
   CanvasSourceOptions,

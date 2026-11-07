@@ -52,7 +52,8 @@ function transformOf(v: string | undefined): Affine {
   return m;
 }
 
-function arcRectD(x: number, y: number, w: number, h: number, rx: number, ry: number): string {
+/** A rect with corners of radii `rx` and `ry` as path data; square when either is not positive. */
+export function arcRectD(x: number, y: number, w: number, h: number, rx: number, ry: number): string {
   if (rx <= 0 || ry <= 0) return `M ${x} ${y} H ${x + w} V ${y + h} H ${x} Z`;
   return `M ${x + rx} ${y} H ${x + w - rx} A ${rx} ${ry} 0 0 1 ${x + w} ${y + ry} V ${y + h - ry} `
     + `A ${rx} ${ry} 0 0 1 ${x + w - rx} ${y + h} H ${x + rx} A ${rx} ${ry} 0 0 1 ${x} ${y + h - ry} `

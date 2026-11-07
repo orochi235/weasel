@@ -56,7 +56,7 @@ export interface InsertChainOptions extends Partial<Timers> {
   fadeMs?: number;
 }
 
-/** A chain and the switch that cancels its transition in flight. */
+/** A chain and the switch that takes every effect out at once, as `BusGraph.dispose` does. */
 export interface OwnedInsertChain {
   chain: InsertChain;
   dispose(): void;
@@ -78,6 +78,20 @@ interface Link { from: AudioNode; to: AudioNode; gain: GainNode }
 type Step =
   | { kind: 'out'; slot: Slot }
   | { kind: 'in'; slot: Slot; at: number };
+
+/** Unwire a slot's own nodes, leaving the effect's. */
+function destroy(s: Slot): void {
+  const n = s.nodes;
+  if (!n) return;
+  // Targeted, not bare: the effect's nodes are the consumer's, and may be
+  // wired to things besides this slot.
+  n.in.disconnect();
+  try { s.effect.output.disconnect(n.wet); } catch { /* already cut */ }
+  n.wet.disconnect();
+  n.dry.disconnect();
+  n.out.disconnect();
+  s.nodes = null;
+}
 
 /**
  * Build an insert chain from `head` to `tail`, which start wired straight
@@ -159,19 +173,6 @@ export function createInsertChain(
     n.wet.gain.value = s.bypassed ? 0 : 1;
     n.dry.gain.value = s.bypassed ? 1 : 0;
     setBypass(s, 0);
-  };
-
-  const destroy = (s: Slot): void => {
-    const n = s.nodes;
-    if (!n) return;
-    // Targeted, not bare: the effect's nodes are the consumer's, and may be
-    // wired to things besides this slot.
-    n.in.disconnect();
-    try { s.effect.output.disconnect(n.wet); } catch { /* already cut */ }
-    n.wet.disconnect();
-    n.dry.disconnect();
-    n.out.disconnect();
-    s.nodes = null;
   };
 
   const plan = (): Step | null => {
@@ -313,9 +314,21 @@ export function createInsertChain(
   return {
     chain,
     dispose() {
+      if (disposed) return;
       disposed = true;
       cancel?.();
       cancel = null;
+      // No fade: every slot, a leaving one included, goes at once.
+      const gone = new Set([...live, ...order, ...(leaving ? [leaving] : [])]);
+      order.length = 0;
+      live.length = 0;
+      leaving = null;
+      for (const l of [...links]) unlink(l);
+      link(head, tail, 1);
+      for (const s of gone) {
+        destroy(s);
+        s.effect.dispose?.();
+      }
       const done = waiters;
       waiters = [];
       for (const w of done) w();

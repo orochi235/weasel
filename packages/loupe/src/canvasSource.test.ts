@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCanvasSource, sourcePixel, sourceRegion } from './canvasSource';
+import { createCanvasSource, pixelHex, sourcePixel, sourceRegion } from './canvasSource';
 
 // jsdom has no canvas to draw into, so the snapshot and probe canvases are a
 // stand-in that records what was copied. What the copied pixels look like is
@@ -178,5 +178,12 @@ describe('source geometry', () => {
       sw: 20,
       sh: 30,
     });
+  });
+});
+
+describe('pixelHex', () => {
+  it('formats the bytes as #rrggbb, and a fully transparent pixel as null', () => {
+    expect(pixelHex([0, 10, 255, 1])).toBe('#000aff');
+    expect(pixelHex([12, 34, 56, 0])).toBeNull();
   });
 });

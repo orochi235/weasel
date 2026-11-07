@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/core';
 import { releaseImageSource, type DrawCommand } from '@weasel-js/core/renderer';
 import {
-  createLoupeModel, loupeInnerView,
+  createLoupeModel, loupeInnerView, pixelHex,
   type LoupeMode, type LoupeModel, type LoupeSurface,
 } from '@weasel-js/loupe';
 import type { Hud } from '../hud';
@@ -271,9 +271,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const readHex = (at: { x: number; y: number }): string | null => {
     const region = regionAt(at, () => 1, () => 1);
     const px = region && reader.pixel(region);
-    if (!px || px[3] === 0) return null;
-    return '#' + [px[0], px[1], px[2]]
-      .map((c) => c.toString(16).padStart(2, '0')).join('');
+    return px ? pixelHex(px) : null;
   };
 
   const win = hud.window({

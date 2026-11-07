@@ -9,7 +9,7 @@
     "longestFunction": 165
   },
   "packages/audio/src/inserts.ts": {
-    "longestFunction": 232
+    "longestFunction": 231
   },
   "packages/audio/src/testing/fakeAudioContext.ts": {
     "lines": 419,
@@ -59,8 +59,8 @@
     "longestFunction": 140
   },
   "packages/d3/src/transition.ts": {
-    "lines": 456,
-    "longestFunction": 337
+    "lines": 451,
+    "longestFunction": 336
   },
   "packages/font/src/registerFont.ts": {
     "lines": 797
@@ -100,7 +100,7 @@
     "longestFunction": 134
   },
   "packages/hud/src/loupe/createLoupe.ts": {
-    "longestFunction": 216
+    "longestFunction": 214
   },
   "packages/hud/src/widgets/window/window.ts": {
     "longestFunction": 228

@@ -112,6 +112,19 @@ describe('draw scene loading', () => {
     expect(scene.get('d' as never)!.pose).toMatchObject({ x: 220, y: 420 });
   });
 
+  it('drops the undo stack saved beside a drawing it cannot open, which loads as the starter scene', () => {
+    const history = JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] });
+    localStorage.setItem(LS_KEY, JSON.stringify({ version: 4, nodes: [] }));
+    localStorage.setItem(SCENE_HISTORY_KEY, history);
+    loadInitial();
+    expect(loadSceneHistory()).toBeNull();
+
+    localStorage.removeItem(LS_KEY);
+    localStorage.setItem(SCENE_HISTORY_KEY, history);
+    loadInitial();
+    expect(loadSceneHistory()).toBeNull();
+  });
+
   it('removes an undo snapshot it cannot use', () => {
     localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify({ version: 1, form: 'older' }));
     expect(loadSceneHistory()).toBeNull();

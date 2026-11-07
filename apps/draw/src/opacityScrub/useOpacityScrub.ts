@@ -120,8 +120,9 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
           const session = sessionRef.current;
           if (!session) return;
           const step = params?.step as number;
-          const deltaY = (params?.deltaY as number | undefined) ?? 0;
-          session.targetAlpha = Math.max(0, Math.min(1, session.targetAlpha - Math.sign(deltaY) * step));
+          // Held Shift turns a mouse wheel's scroll horizontal in some browsers, macOS's among them.
+          const delta = (params?.deltaY as number | undefined) || ((params?.deltaX as number | undefined) ?? 0);
+          session.targetAlpha = Math.max(0, Math.min(1, session.targetAlpha - Math.sign(delta) * step));
           setPercent(Math.round(session.targetAlpha * 100));
           applyLive(session);
         },
