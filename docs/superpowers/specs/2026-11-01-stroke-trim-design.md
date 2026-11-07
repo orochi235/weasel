@@ -140,8 +140,9 @@ every reader cuts its own flattening at those; a dash phase stays in the reader'
   straight, and any other marks what it covers on stencil bit 0 and paints its untrimmed ribbon there
   once (2026-11-07). Heads are built once, unplaced, and drawn under the transform their placement
   makes (stroke's `markerPlacements`, renderer `cache/markerCommandCache.ts`), so a trim only moves
-  them (2026-11-07). Still rebuilt trimmed, the mesh keyed on the trim: a stroke the batch takes,
-  which is small and joins the run it sits in, and one built in a stretched view's metric.
+  them (2026-11-07). A ribbon built in a stretched view's metric is clipped in the metric's measure
+  (2026-11-07). Still rebuilt trimmed, the mesh keyed on the trim: a stroke the batch takes, which is
+  small and joins the run it sits in, and one whose heads are built in another space than its ribbon.
 - **Export**: SVG (`svg/src/trimmedStroke.ts`) and PDF (`pdf/src/strokeOps.ts`) bake the trim through
   stroke's `trimmedPath`: they write the visible span's geometry, curves split rather than flattened, so markers land at the window's ends and dashes
   still work. The `pathLength` + `stroke-dasharray` trick is rejected because it leaves markers at
