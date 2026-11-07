@@ -2,8 +2,9 @@ import { createPaintResources, type OwnedPaintResources } from './paintResources
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import type { GpuBuffer, GpuDevice, GpuPassDesc, GpuTexture } from './gpu/types';
 import { openWebGL } from './gpu/webgl/openWebGL';
+import { openWebGPU } from './gpu/webgpu/openWebGPU';
 import {
-  LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC,
+  LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC, GLYPH_PAINT_SPECS,
   BatchVariantPrograms, createBatchFill,
 } from './shaders/builtinPrograms';
 import {
@@ -12,10 +13,6 @@ import {
   resetBakeBudget,
   DEFAULT_BAKE_BUDGET,
 } from '@weasel-js/font';
-import {
-  GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC, GLYPH_GRAD_FRAG_SRC, GLYPH_TEXTURE_FRAG_SRC,
-  GLYPH_PATTERN_UNIFORMS, GLYPH_GRAD_UNIFORMS, GLYPH_TEXTURE_UNIFORMS, GLYPH_PAINT_ATTRIBUTES,
-} from './shaders/glyphPaint';
 import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
@@ -50,13 +47,6 @@ export {
 
 const NO_RETAINED = { composited: 0, redrawn: 0, declined: 0, bytes: 0 } as const;
 
-/** Each glyph-paint program's fragment stage and the uniforms it looks up. */
-const GLYPH_PAINT_SOURCES: Record<GlyphPaintKind, readonly [string, readonly string[]]> = {
-  pattern: [GLYPH_PATTERN_FRAG_SRC, GLYPH_PATTERN_UNIFORMS],
-  gradient: [GLYPH_GRAD_FRAG_SRC, GLYPH_GRAD_UNIFORMS],
-  texture: [GLYPH_TEXTURE_FRAG_SRC, GLYPH_TEXTURE_UNIFORMS],
-};
-
 /**
  * The renderer: takes a list of draw commands and paints them, through the
  * GPU layer (`gpu/`) over WebGL2.
@@ -78,7 +68,7 @@ export class WeaselRenderer {
   private readonly gradFill: LazyProgram;
   private readonly patternFill: LazyProgram;
   /** Compiled on first use: only atlas text under a texture paint needs one. */
-  private glyphPaintPrograms = new Map<GlyphPaintKind, ShaderProgram>();
+  private readonly glyphPaintPrograms: Record<GlyphPaintKind, LazyProgram>;
   private meshCache: GLMeshCache;
   private textureCache: GLTextureCache;
   private imageCache: GLImageCache;
@@ -93,7 +83,7 @@ export class WeaselRenderer {
   private widthCss: number;
   private heightCss: number;
   private dpr: number;
-  private canvas: HTMLCanvasElement | null = null;
+  private canvas: HTMLCanvasElement | OffscreenCanvas | null = null;
   /** Where context loss is announced: the context's own canvas, which the
    *  renderer need not own the size of. */
   private lossTarget: EventTarget | null = null;
@@ -120,8 +110,9 @@ export class WeaselRenderer {
   private idComposite: ShaderProgram | null = null;
 
   constructor(opts: WeaselRendererOptions) {
-    const { device, lossTarget } = openWebGL(opts);
+    const { device, lossTarget, lost } = opts.gpu ? { ...openWebGPU(opts.gpu), lossTarget: null } : openWebGL(opts);
     this.gpu = device;
+    void lost?.then(() => { this.contextLost = true; });
     this.effectTargets = new EffectTargets(this.gpu);
     this.programs = new CustomPrograms(this.gpu);
     this.retained = new RetainedSurfaces(this.gpu, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
@@ -147,12 +138,12 @@ export class WeaselRenderer {
     this.bakeBudget = opts.bakeBudget ?? DEFAULT_BAKE_BUDGET;
     this.textOutlineMinScreenSize = opts.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
 
-    this.canvas = opts.canvas ?? null;
+    this.canvas = opts.gpu?.canvas ?? opts.canvas ?? null;
     if (this.canvas) {
       this.canvas.width = Math.round(opts.width * opts.dpr);
       this.canvas.height = Math.round(opts.height * opts.dpr);
     }
-    const events: Partial<EventTarget> | null = this.canvas ?? lossTarget;
+    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
     if (events && typeof events.addEventListener === 'function') {
       this.lossTarget = events as EventTarget;
       this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
@@ -167,6 +158,8 @@ export class WeaselRenderer {
     this.patternFill = new LazyProgram(this.gpu, PATTERN_FILL_SPEC);
     this.batchVariants = new BatchVariantPrograms(this.gpu);
     this.batchFill = createBatchFill(this.gpu);
+    const glyph = (kind: GlyphPaintKind) => new LazyProgram(this.gpu, GLYPH_PAINT_SPECS[kind]);
+    this.glyphPaintPrograms = { pattern: glyph('pattern'), gradient: glyph('gradient'), texture: glyph('texture') };
 
     this.meshCache = new GLMeshCache(this.gpu);
     this.textureCache = new GLTextureCache(this.gpu);
@@ -178,7 +171,10 @@ export class WeaselRenderer {
   }
 
   private lazyPrograms(): LazyProgram[] {
-    return [this.pathFill, this.pathFillVColor, this.gradFill, this.patternFill, ...this.batchVariants.lazy()];
+    return [
+      this.pathFill, this.pathFillVColor, this.gradFill, this.patternFill, ...Object.values(this.glyphPaintPrograms),
+      ...this.batchVariants.lazy(),
+    ];
   }
 
   private uploadQuadGeometry(): void {
@@ -202,17 +198,6 @@ export class WeaselRenderer {
     // A disposed renderer must not compile programs into the cleared registry.
     if (this.disposed) return;
     this.programs.register(handle.id);
-  }
-
-  private glyphPaintProgram(kind: GlyphPaintKind): ShaderProgram {
-    const existing = this.glyphPaintPrograms.get(kind);
-    if (existing) return existing;
-    const [frag, uniforms] = GLYPH_PAINT_SOURCES[kind];
-    const program = this.gpu.createProgram({ glsl: { vert: GLYPH_PAINT_VERT_SRC, frag } });
-    program.lookupUniforms(uniforms);
-    program.lookupAttributes(GLYPH_PAINT_ATTRIBUTES);
-    this.glyphPaintPrograms.set(kind, program);
-    return program;
   }
 
   /** This renderer's rect in device pixels, top-left origin. A tile rounds its
@@ -273,7 +258,6 @@ export class WeaselRenderer {
     this.paintResources = createPaintResources();
     for (const lazy of this.lazyPrograms()) lazy.abandon();
     this.batchFill = createBatchFill(this.gpu);
-    this.glyphPaintPrograms.clear();
     this.idComposite = null;
     this.meshCache = new GLMeshCache(this.gpu);
     this.textureCache = new GLTextureCache(this.gpu);
@@ -306,10 +290,9 @@ export class WeaselRenderer {
     this.meshCache.dispose();
     this.paintResources.release();
     for (const lazy of this.lazyPrograms()) lazy.release();
-    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) gpu.deleteProgram(prog);
+    gpu.deleteProgram(this.batchFill);
     if (this.idComposite) gpu.deleteProgram(this.idComposite);
     this.idComposite = null;
-    this.glyphPaintPrograms.clear();
     this.programs.dispose();
     this.textureCache.free();
     this.imageCache.dispose();
@@ -393,8 +376,19 @@ export class WeaselRenderer {
    * `rect`, and asking about one pixel draws only what can reach it.
    *
    * An empty buffer where the context is lost or the renderer disposed.
+   * Throws on WebGPU, which reads ids back only through `renderIdsAsync`.
    */
   renderIds(commands: DrawCommand[], viewMatrix?: GlMat3, opts: RenderIdsOptions = {}): IdBuffer {
+    return this.idFrame(commands, viewMatrix, opts, true) as IdBuffer;
+  }
+
+  /** `renderIds`, its buffer read back asynchronously: on WebGL as well as
+   *  WebGPU, where it is the only form. */
+  renderIdsAsync(commands: DrawCommand[], viewMatrix?: GlMat3, opts: RenderIdsOptions = {}): Promise<IdBuffer> {
+    return Promise.resolve(this.idFrame(commands, viewMatrix, opts, false));
+  }
+
+  private idFrame(commands: DrawCommand[], viewMatrix: GlMat3 | undefined, opts: RenderIdsOptions, sync: boolean): IdBuffer | Promise<IdBuffer> {
     if (this.contextLost || this.disposed) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
     const device = this.deviceRect();
     this.beginFrame();
@@ -404,7 +398,7 @@ export class WeaselRenderer {
     const spec = { ...opts, width: device.width, height: device.height, dpr: this.dpr };
     try {
       return drawIdFrame(gpu, this.effectTargets, this.idComposite, spec, commands, (renderTarget, ids, culled) => drawStream(
-        this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids }), culled, [], [], { drawCalls: 0 }));
+        this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids }), culled, [], [], { drawCalls: 0 }), sync);
     } finally {
       // A throw must not leave a shared context bound to a target back in the pool.
       this.meshCache.freeTransient();
@@ -451,7 +445,7 @@ export class WeaselRenderer {
       gradRamps: this.gradRamps,
       programRegistry: this.programs.registry,
       ensureProgram: (id) => (this.disposed ? null : this.programs.ensure(id)),
-      glyphPaintProgram: (kind) => this.glyphPaintProgram(kind),
+      glyphPaintProgram: (kind) => this.glyphPaintPrograms[kind].get(),
       quad: this.quad,
       drawBatch: this.drawBatch,
       whiteTexture: this.whiteTexture,

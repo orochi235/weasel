@@ -40,21 +40,24 @@ export function idReadRect(spec: IdFrameSpec): { x: number; y: number; width: nu
 /**
  * Draw an id frame: `draw` dispatches the commands that can reach the rect
  * read into a target holding color and ids, scissored to that rect, and the
- * ids there are read back top-down. Needs a device that reads back at once.
+ * ids there are read back top-down. `sync` needs a device that reads back at
+ * once, and returns the buffer itself; otherwise a promise of it.
  */
 export function drawIdFrame(
   gpu: GpuDevice, targets: EffectTargets, composite: ShaderProgram, spec: IdFrameSpec,
-  commands: DrawCommand[], draw: (root: RootTarget, ids: IdFrame, commands: DrawCommand[]) => void,
-): IdBuffer {
+  commands: DrawCommand[], draw: (root: RootTarget, ids: IdFrame, commands: DrawCommand[]) => void, sync: boolean,
+): IdBuffer | Promise<IdBuffer> {
   const minAlpha = spec.minAlpha ?? DEFAULT_MIN_ALPHA;
   if (!(minAlpha >= 0 && minAlpha <= 1)) {
     throw new RangeError(`renderIds: minAlpha must be from 0 to 1, got ${minAlpha}`);
   }
   const readSync = gpu.readIdsSync;
-  if (!readSync) throw new Error('renderIds: this backend reads ids back only asynchronously');
+  if (sync && !readSync) {
+    throw new Error('renderIds: this backend reads ids back only asynchronously; call renderIdsAsync instead');
+  }
   const read = idReadRect(spec);
   const data = new Uint32Array(read.width * read.height);
-  if (data.length === 0) return { ...read, data };
+  if (data.length === 0) return sync ? { ...read, data } : Promise.resolve({ ...read, data });
   const { width, height } = spec;
   const kept = spec.exclude && spec.exclude.size > 0 ? withoutPickIds(commands, spec.exclude) : commands;
   const culled = spec.rect ? cullDrawCommands(kept, mat3.identity(), spec.rect, spec.dpr) : kept;
@@ -63,23 +66,28 @@ export function drawIdFrame(
   const glRead = { x: read.x, y: height - read.y - read.height, width: read.width, height: read.height };
   const pass = { target, viewport: { x: 0, y: 0, width, height }, scissor: glRead };
   const ids: IdFrame = { minAlpha, composite };
-  let bytes: Uint8Array;
+  let bytes: Uint8Array | Promise<Uint8Array>;
   try {
     gpu.beginPass({ ...pass, clear: { color: true, stencil: true } });
     draw({ pass, fragOrigin: [0, 0], window: { x: 0, y: 0, width, height } }, ids, culled);
     gpu.endPass();
-    bytes = readSync(target, glRead);
+    // The read is ordered before anything later drawn into the target, so it
+    // can go back to the pool before the bytes arrive.
+    bytes = sync ? readSync!(target, glRead) : gpu.readIds(target, glRead);
   } finally {
     gpu.endPass();
     targets.release(borrowed);
   }
-  // Rows run bottom-up.
-  for (let row = 0; row < read.height; row++) {
-    const src = (read.height - 1 - row) * read.width * 4;
-    const dst = row * read.width;
-    for (let col = 0; col < read.width; col++) data[dst + col] = idOfTexel(bytes, src + col * 4);
-  }
-  return { ...read, data };
+  const decode = (texels: Uint8Array): IdBuffer => {
+    // Rows run bottom-up.
+    for (let row = 0; row < read.height; row++) {
+      const src = (read.height - 1 - row) * read.width * 4;
+      const dst = row * read.width;
+      for (let col = 0; col < read.width; col++) data[dst + col] = idOfTexel(texels, src + col * 4);
+    }
+    return { ...read, data };
+  };
+  return bytes instanceof Uint8Array ? decode(bytes) : bytes.then(decode);
 }
 
 /** `cmds` without the groups whose `pickId` is in `exclude`; `cmds` itself when none is. */

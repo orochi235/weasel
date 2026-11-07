@@ -1,6 +1,7 @@
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ImageMinification } from './cache/GLImageCache';
 import type { FlattenTolerance } from './draw/flattenTolerance';
+import type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
 
 /** A run of top-level commands, `[start, end)` by index, that
  *  {@link WeaselRenderer.lastFrameStats} accounts for separately — one render
@@ -82,9 +83,16 @@ export interface RetainedStats {
   bytes: number;
 }
 
-/** Construction options for {@link WeaselRenderer}. Pass `gl` or `canvas`;
- *  a context passed in must have a stencil buffer. */
+/** Construction options for {@link WeaselRenderer}. Pass `gpu` to draw with
+ *  WebGPU, else `gl` or `canvas`; a WebGL context passed in must have a
+ *  stencil buffer. */
 export interface WeaselRendererOptions {
+  /** A WebGPU device and the canvas to draw to, which builds the renderer on
+   *  WebGPU at once; `requestRendererDevice` gives the page's shared device.
+   *  Wins over `gl` and `canvas`. The renderer configures the canvas's
+   *  context and sets its drawing buffer, as it does a WebGL canvas's. Only
+   *  programs and effects with WGSL draw; one without is reported once. */
+  gpu?: WebGPUSurface;
   /** A WebGL2 context to draw with. Wins over `canvas`. */
   gl?: WebGL2RenderingContext;
   /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent.
