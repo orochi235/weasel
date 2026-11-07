@@ -2,14 +2,15 @@ import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest, useStableByContent } from '@weasel-js/react';
 import { deepEqual } from '@weasel-js/registry';
-import type { Action, ActionDisabledReason, ActionVariant } from './action';
+import type { Action, ActionUnavailable, ActionVariant } from './action';
 import type { BoundGesture } from './binding';
 import { useAction } from './ActionsProvider';
 
 /** What a command offers besides its id, label and callback. */
 export interface CommandOptions {
-  /** True when the command can run, else why not. Read each time it is asked. */
-  enabled?: () => true | ActionDisabledReason;
+  /** True when the command can run, else why not: an `ActionDisabledReason`, or a sentence shown as it is.
+   *  Read each time it is asked. */
+  enabled?: () => true | ActionUnavailable;
   /** Whether it reads as held down. Read each time it is asked. */
   active?: () => boolean;
   /** The gestures that run it. The `{ spec, opts: { params } }` form gives one variant its own key. */

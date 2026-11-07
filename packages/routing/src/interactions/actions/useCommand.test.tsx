@@ -6,7 +6,7 @@ import { actionItems } from './actionItems';
 import { actionShortcuts } from './actionShortcuts';
 import { actionBindings } from './binding';
 import { evaluateActive, evaluateEnabled } from './actionEnabled';
-import type { ActionVariant } from './action';
+import type { ActionUnavailable, ActionVariant } from './action';
 import { useCommand, type CommandOptions } from './useCommand';
 
 function wrap({ children }: { children: ReactNode }) {
@@ -103,6 +103,12 @@ describe('useCommand', () => {
     expect(found()).toBe(action);
     expect(evaluateEnabled(action).enabled).toBe(false);
     expect(evaluateActive(action)).toBe(true);
+  });
+
+  it('lets enabled answer with a sentence, which reaches every surface as the reason', () => {
+    expectTypeOf<ReturnType<NonNullable<CommandOptions['enabled']>>>().toEqualTypeOf<true | ActionUnavailable>();
+    const { found } = mount({ label: 'A', run: vi.fn(), options: { enabled: () => 'Open a document first' } });
+    expect(evaluateEnabled(found()!)).toEqual({ enabled: false, reason: 'Open a document first' });
   });
 
   const variants = () => [

@@ -3,6 +3,7 @@ import type { MenuController, MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
 import { resolveIcon } from '../../icons/resolveIcon';
+import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { AccessLabel } from './AccessLabel';
 import { MenuNumberValue, MenuTextValue } from './MenuValue';
 import { MenuColorValue, editsColor } from './MenuColorValue';
@@ -34,6 +35,8 @@ export function MenuRow(props: {
   const link = e.kind === 'item' && e.href !== undefined;
   const current = e.kind === 'item' && e.current;
   const picks = e.kind === 'color' && editsColor(e);
+  const why = e.kind === 'item' && e.disabled && e.disabledReason
+    ? DEFAULT_REASON_LABELS[e.disabledReason] ?? e.disabledReason : undefined;
 
   const onClick = (ev: MouseEvent) => {
     const browser = link && !e.disabled && leftToBrowser(ev);
@@ -47,6 +50,7 @@ export function MenuRow(props: {
     className: current ? `${s.row} ${s.current}` : s.row,
     'data-highlighted': highlighted || undefined,
     'aria-disabled': e.disabled || (e.kind === 'color' && !e.set) || undefined,
+    'aria-description': why,
     'aria-checked': checkable ? e.checked : undefined,
     'aria-current': current ? ('page' as const) : undefined,
     'aria-haspopup': e.kind === 'submenu' ? ('menu' as const) : picks ? ('dialog' as const) : undefined,
@@ -60,7 +64,8 @@ export function MenuRow(props: {
     <>
       <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(e.kind !== 'color' && typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
       <AccessLabel label={e.label} access={e.access} />
-      {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
+      {why !== undefined ? <span className={s.reason}>{why}</span>
+        : e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
       {e.kind === 'number' && <MenuNumberValue entry={e} rowId={id} controller={props.controller} />}
       {e.kind === 'color' && (
         <MenuColorValue entry={e} controller={props.controller} row={row} picking={props.picking} onPicked={props.onPicked} />

@@ -26,7 +26,7 @@ function useEditActions(log: (id: string) => void): readonly Action[] {
       a('cut', 'Cut', { defaultBinding: key('x', { mod: true }) }),
       a('copy', 'Copy', { defaultBinding: key('c', { mod: true }) }),
       a('paste', 'Paste', { defaultBinding: key('v', { mod: true }), enabled: () => ActionDisabledReason.NotApplicable }),
-      a('duplicate', 'Duplicate', { defaultBinding: key('d', { mod: true }) }),
+      a('duplicate', 'Duplicate', { defaultBinding: key('d', { mod: true }), enabled: () => 'Select something to duplicate' }),
       a('forward', 'Bring forward', { defaultBinding: key(']', { mod: true }) }),
       a('front', 'Bring to front', { defaultBinding: key(']', { mod: true, shift: true }) }),
       a('backward', 'Send backward', { defaultBinding: key('[', { mod: true }) }),
@@ -76,7 +76,7 @@ function Target({ openOnMount }: { openOnMount?: boolean }) {
 }
 
 /** Right-click the box. Rows name registered actions, so each shows its own
- *  label, its key binding as a shortcut, whether it is enabled, and — for an
+ *  label, its key binding as a shortcut, whether it is enabled and why not, and — for an
  *  action with `active` — a check mark. */
 export const RightClick: Story = {
   render: () => <ActionsProvider><Target /></ActionsProvider>,
