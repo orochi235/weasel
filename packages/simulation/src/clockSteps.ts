@@ -16,6 +16,12 @@ export function createClockSteps(): ClockSteps {
         paid = elapsed;
         return 0;
       }
+      // A step of 0 would owe Infinity steps; one that is not a positive span steps once a moving frame.
+      if (!(stepMs > 0 && stepMs < Infinity)) {
+        const moved = elapsed > paid;
+        paid = elapsed;
+        return moved ? 1 : 0;
+      }
       const n = Math.floor((elapsed - paid) / stepMs);
       paid += n * stepMs;
       return n;
