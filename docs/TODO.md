@@ -731,11 +731,13 @@ only story runner in the repo.
   Default bitmaps hold premultiplied texels and draw right on both. Closes when the image cache premultiplies a
   straight bitmap's texels on WebGL too, or refuses it.
 - **(P2) [agent] GitHub CI's `browser (gpu)` instance loses its WebGPU instance mid-test.** On the push of
-  e6af210ab (CI run 42340342009), `canvasBackend.browser.test.tsx` ("reads the ids of a WebGPU frame back
-  asynchronously": `mapAsync` "A valid external Instance reference no longer exists") and
-  `paintPrelude.browser.test.ts` ("Instance dropped in popErrorScope") failed on the runner; both pass on the
-  fleet. Since c75c57443 `WeaselRenderer.dispose` also disposes its device, which could drop a shared one
-  between files (inferred, not reproduced). Closes when `npm run test:browser` passes on GitHub CI.
+  e6af210ab (CI run 42340342009), `canvasBackend.browser.test.tsx` (`mapAsync`: "A valid external Instance
+  reference no longer exists") and `paintPrelude.browser.test.ts` ("Instance dropped in popErrorScope") failed
+  on the runner. The instance launched with `--enable-gpu` alone, which the traps entry already found loses
+  the device on the GPU-less runner; it now takes `HOST_GPU_ARGS` (`scripts/chromium-gpu-args.ts`), the visual
+  job's SwiftShader set on Linux. `WeaselRenderer.dispose` retires only its own resources and never destroys
+  the shared device, so it is not the cause (read, 2026-11-07). Closes when `npm run test:browser` passes on
+  GitHub CI.
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or

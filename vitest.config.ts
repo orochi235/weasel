@@ -21,6 +21,7 @@ import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 import { devWatch } from './scripts/vite-watch.ts';
+import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
 import { DurationSequencer } from './scripts/vitest-duration-sequencer.ts';
 
 // One vitest config; named projects per surface. Each project owns its
@@ -341,7 +342,7 @@ export default defineConfig({
               { browser: 'chromium', exclude: ['**/node_modules/**', '**/dist/**', ...GPU_TESTS] },
               {
                 browser: 'chromium', name: 'browser (gpu)', include: GPU_TESTS,
-                provider: playwright({ launchOptions: { args: [...BROWSER_ARGS, '--enable-gpu'] } }),
+                provider: playwright({ launchOptions: { args: [...new Set([...BROWSER_ARGS, ...HOST_GPU_ARGS])] } }),
               },
             ],
           },

@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
+import { SWIFTSHADER_ARGS } from '../../scripts/chromium-gpu-args.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
@@ -11,14 +12,7 @@ const port = Number(process.env.WEASEL_VISUAL_PORT ?? ports.visual);
 // `./fixture` carries it into every page.goto as `?backend=`.
 const webgpu = process.env.WEASEL_VISUAL_BACKEND === 'webgpu';
 // The headless shell runs with the GPU process off, which cannot present a
-// WebGPU canvas. On the GPU-less runner this set alone keeps a device alive
-// through presentation: --enable-gpu with SwiftShader for ANGLE, Vulkan and the
-// WebGPU adapter (probed on ubuntu-22.04, 2026-11-07). WebGL reports the same
-// SwiftShader Vulkan device with or without it.
-const WEBGPU_ARGS = [
-  '--enable-unsafe-webgpu', '--enable-features=Vulkan', '--enable-gpu', '--use-angle=swiftshader',
-  '--enable-unsafe-swiftshader', '--use-vulkan=swiftshader', '--use-webgpu-adapter=swiftshader',
-];
+// WebGPU canvas; the visual jobs run on the GPU-less runner.
 
 export default defineConfig({
   testDir: here,
@@ -45,7 +39,7 @@ export default defineConfig({
     // same baseline cannot pass on both. Forcing the software path locally is a
     // no-op on CI, which already takes it.
     launchOptions: {
-      args: ['--disable-accelerated-2d-canvas', ...(webgpu ? WEBGPU_ARGS : [])],
+      args: ['--disable-accelerated-2d-canvas', ...(webgpu ? SWIFTSHADER_ARGS : [])],
     },
   },
   // Playwright's built-in snapshot dir is NOT used. diff.ts manages its own

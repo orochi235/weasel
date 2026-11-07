@@ -104,7 +104,8 @@ premultiplied, rgba8unorm or bgra8unorm, configured once or every frame. `--use-
 Chromium's headless (`channel: 'chromium'`) do the same, and `--use-webgpu-adapter=swiftshader` beside
 `--enable-gpu` presents clean too: the fault is the compositing, not the adapter (teitou, 2026-11-06).
 So every WebGPU browser file and the parity files run in the browser project's `browser (gpu)`
-instance; a new one goes in `GPU_TESTS` in `vitest.config.ts`. On GitHub's GPU-less ubuntu-22.04 runner
+instance; a new one goes in `GPU_TESTS` in `vitest.config.ts`. Both that instance and the visual suite take their flags
+from `scripts/chromium-gpu-args.ts`. On GitHub's GPU-less ubuntu-22.04 runner
 neither `--enable-gpu` alone nor `channel: 'chromium'` keeps the device: of ten launches probed, only
 `--enable-gpu --use-angle=swiftshader --enable-unsafe-swiftshader --use-vulkan=swiftshader
 --use-webgpu-adapter=swiftshader` (beside `--enable-unsafe-webgpu --enable-features=Vulkan`) presented 40
