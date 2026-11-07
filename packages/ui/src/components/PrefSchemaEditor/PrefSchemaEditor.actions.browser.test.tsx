@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { drag, grip, pointer } from './pointerDrag.fixture';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A drag out of one tree and into another is hit-tested against real boxes.
 

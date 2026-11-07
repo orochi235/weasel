@@ -4,9 +4,9 @@
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mat3 } from '@weasel-js/geom';
-import { registerPaintDrawKind } from '../../../paintKinds';
+import { registerPaintDrawKind } from '@weasel-js/renderer';
 import type { DrawCommand } from '../../../DrawCommand';
-import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report } from '../../../testing/parityHarness';
+import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report } from '@weasel-js/renderer/testing/parityHarness';
 
 const W = 48;
 const H = 32;

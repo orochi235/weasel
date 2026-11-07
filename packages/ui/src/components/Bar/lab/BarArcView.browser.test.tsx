@@ -5,10 +5,9 @@ import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { arcShape, runPlaces, type Point } from '@weasel-js/geom';
 import { arcInBox } from '@weasel-js/ui/components/Along';
-import { rowRun } from '../../Along/rowRun';
-import { renderWithIcons } from '../../../testing/withIcons';
-import { arcOf, BAR_ARC_DEFAULTS, BAR_ARC_PRESETS, type BarArcConfig } from './barArcConfig';
-import { BarArcView } from './BarArcView';
+import { rowRun } from '@weasel-js/ui/testing/geometry';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { BAR_ARC_DEFAULTS, BAR_ARC_PRESETS, barArcOf as arcOf, BarArcView, type BarArcConfig } from '@weasel-js/ui/testing/labViews';
 
 afterEach(cleanup);
 

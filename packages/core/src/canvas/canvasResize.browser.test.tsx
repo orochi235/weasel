@@ -9,7 +9,7 @@ import { createElement, useRef, useState, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas, createScene, useCanvasSize } from '@weasel-js/core';
-import { pixelAt } from '../testing/canvasPixels';
+import { pixelAt } from '@weasel-js/core/testing/canvasPixels';
 
 const GREEN = { color: '#00ff00' };
 

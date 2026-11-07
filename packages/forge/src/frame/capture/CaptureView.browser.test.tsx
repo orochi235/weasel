@@ -6,7 +6,7 @@ import { afterEach, expect, it } from 'vitest';
 import type { IndexBundle } from '../../story/indexBundle';
 import type { LoadedStory } from '../../story/types';
 import type { CapturePayload } from '../../vite/capture/payload';
-import { CaptureView } from './CaptureView';
+import { CaptureView } from '@weasel-js/forge/testing/frame';
 
 // Where a scroller stands is layout: a real browser's.
 

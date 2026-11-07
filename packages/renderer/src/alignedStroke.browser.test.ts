@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD, polygonFromPoints, type Path, type PolygonPath } from '@weasel-js/geom';
 import { tessellate } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from '@weasel-js/stroke';
-import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { stencilledEvenOdd } from '@weasel-js/renderer/testing/stencilledEvenOdd';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 

@@ -3,7 +3,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
-import { TestCanvas } from './testing/mountCanvas';
+import { TestCanvas } from '@weasel-js/devtools/testing/mountCanvas';
 import s from './DevtoolsPanel.browser.module.css';
 
 afterEach(cleanup);

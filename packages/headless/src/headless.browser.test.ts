@@ -10,8 +10,8 @@
 import { describe, expect, it } from 'vitest';
 import { commands } from 'vitest/browser';
 import { renderSceneToPixels, warmRender, type RasterImage } from '@weasel-js/core';
-import { FIXTURE_RENDER, fixtureScene } from './testing/fixtureScene';
-import { sceneToWire } from './protocol';
+import { FIXTURE_RENDER, fixtureScene } from '@weasel-js/headless/testing/fixtureScene';
+import { sceneToWire } from '@weasel-js/headless/testing/protocol';
 
 function bytesOf(base64: string): Uint8Array {
   return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));

@@ -4,7 +4,7 @@
  */
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { DrawCommand } from '../../DrawCommand';
-import { closeBackends, openBackends, releaseDevice, requireGpu } from '../../testing/parityHarness';
+import { closeBackends, openBackends, releaseDevice, requireGpu } from '@weasel-js/renderer/testing/parityHarness';
 
 const W = 40;
 const H = 30;

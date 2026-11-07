@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { partialPresets } from '@weasel-js/audio';
-import { CENTER_GAIN, renderEngine } from './testing/renderEngine';
+import { CENTER_GAIN, renderEngine } from '@weasel-js/audio/testing/renderEngine';
 import {
   bandPower, centroid, octaveDensityDb, peaks, powerSpectrum, rms,
-} from './testing/spectrum';
+} from '@weasel-js/audio/testing/spectrum';
 
 // The fake proves the wiring; these render it, which is the only place a filter
 // that does nothing or a partial at the wrong frequency shows up.

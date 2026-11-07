@@ -10,7 +10,7 @@ import {
   WeaselRenderer, getImageBitmap, releaseImage, subscribeImageReady, type DrawCommand,
 } from '@weasel-js/renderer';
 import type { Node, RectPose } from 'core/scene/types';
-import { IMAGE_PAINTER } from './imagePainter';
+import { IMAGE_PAINTER } from '@weasel-js/core/testing/canvas';
 
 const NATURAL = 8;
 const ZOOM = 32;

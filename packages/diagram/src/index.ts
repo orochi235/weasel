@@ -322,9 +322,9 @@ export {
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
 export { isBodyOrRegion, isDiagramBody } from './bodyNode';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
-export { DiagramView } from './DiagramView';
+export { DiagramView, fitDiagram } from './DiagramView';
 export type {
-  ContainerEdit, DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
+  ContainerEdit, DeleteReport, DiagramFit, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
   ReconnectChange, ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';

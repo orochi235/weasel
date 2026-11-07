@@ -4,7 +4,7 @@ import { cleanup, render, renderHook } from '@testing-library/react';
 import { fitStage, Stage } from '@weasel-js/labkit/canvas';
 import { afterEach, expect, test, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { useViewPlacement } from './useViewPlacement';
+import { useViewPlacement } from '@weasel-js/labkit/testing/lab';
 
 // A stage under a scaled ancestor draws and takes input in its layout px, so
 // the box its opening view is fitted to has to be in them too. Only a browser

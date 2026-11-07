@@ -109,6 +109,7 @@ describe('pathImportsIn', () => {
       "import { i } from 'core/scene/i';",
       "import type { J } from 'interactions/j';",
       "import { k } from 'corer/k';",
+      "const l = await original<typeof import('./l')>();",
     ].join('\n');
     expect(pathImportsIn(code)).toEqual(['./a', './c', '../d', './f.css', './g', 'core/scene/i']);
   });

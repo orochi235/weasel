@@ -10,7 +10,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { viewToMat3, WeaselRenderer, type DrawCommand, type GroupDrawCommand } from '@weasel-js/renderer';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { Canvas } from './testing/BareCanvas';
+import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { CanvasRetainOptions } from './canvasProps';
 import type { RenderLayer } from '../core/layers/render';

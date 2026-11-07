@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
-import { Canvas } from './testing/BareCanvas';
+import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import { ViewRegistryProvider, useOptionalViewRegistry, type SurfaceHandle, type ViewRegistry } from './viewRegistry';
 
 beforeAll(() => {

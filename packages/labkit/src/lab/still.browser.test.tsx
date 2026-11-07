@@ -8,7 +8,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
-import { it as liveTest } from '../testing/liveTest';
+import { it as liveTest } from '@weasel-js/labkit/testing/liveTest';
 import type { LabProps } from './labProps';
 
 // That a still says it is ready only after its frame is drawn is the frame

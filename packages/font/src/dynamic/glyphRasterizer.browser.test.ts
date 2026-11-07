@@ -4,7 +4,7 @@
  * which jsdom cannot show, so this measures in a real engine.
  */
 import { describe, it, expect } from 'vitest';
-import { BAKE_SIZE, createCanvasRasterizer, PAD } from './glyphRasterizer';
+import { BAKE_SIZE, createCanvasRasterizer, PAD } from '@weasel-js/font/testing/dynamic';
 
 function advanceIn(font: string, ch: string): number {
   const ctx = new OffscreenCanvas(1, 1).getContext('2d')!;

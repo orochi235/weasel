@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { fitDiagram } from '../DiagramView';
+import { fitDiagram } from '@weasel-js/diagram';
 import { diagramScene, sequenceSlots } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, EffectEditor, editorScene, type EditorLookOptions, mainChain } from '@weasel-js/diagram/effect';
 import type { EffectDoc, EffectStage } from './types';

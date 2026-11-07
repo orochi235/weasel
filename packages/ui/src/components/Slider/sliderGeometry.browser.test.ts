@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from 'vitest';
 import { lineShape, trackRun } from '@weasel-js/geom';
-import { curvedGeometry } from './sliderGeometry';
+import { curvedGeometry } from '@weasel-js/ui/testing/geometry';
 import s from './Slider.module.css';
 
 const SVG = 'http://www.w3.org/2000/svg';

@@ -5,9 +5,9 @@ import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { actionCatalog, type Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { Live, WORKSPACE } from './AssetEditor.fixture';
-import { catalogOf } from './workspace';
+import { catalogOf } from '@weasel-js/ui/testing/prefSchemaEditor';
 import { drag } from './pointerDrag.fixture';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A drag within the tree is hit-tested against real boxes.
 

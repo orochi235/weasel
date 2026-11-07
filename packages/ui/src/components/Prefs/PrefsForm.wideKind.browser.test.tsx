@@ -5,7 +5,7 @@ import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { PrefConditionEditor } from '@weasel-js/ui/components/PrefConditionEditor';
 import { PrefsForm, type PrefRenderer } from '@weasel-js/ui/components/Prefs';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Where a row's label sits and how wide its control runs is layout, which jsdom does not do.
 

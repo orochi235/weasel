@@ -7,7 +7,7 @@ import { BarLayout, type BarOrientation } from '@weasel-js/ui/components/Bar';
 import { ToolbarDock } from '@weasel-js/ui/components/ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 import s from './ToolbarDock.browser.test.module.css';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 let presses: string[] = [];
 let layouts: ToolbarLayout[] = [];

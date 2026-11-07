@@ -5,11 +5,10 @@ import { relativeLuminance } from '@weasel-js/paint';
 import { contrastOver, parseComputedColor, type Rgba } from '@weasel-js/theme/testing/computedColor';
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { painted } from '../../testing/paintedContrast';
+import { painted } from '@weasel-js/ui/testing/paintedContrast';
 import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
 import { Badge, type BadgeBase } from '@weasel-js/ui/components/Badge';
-import { BASES } from './bases';
-import { BADGE_LOOKS, lookProps } from './looks';
+import { BADGE_LOOKS, BASES, lookProps } from '@weasel-js/ui/testing/badge';
 import type { BadgeShape, BadgeSize } from './types';
 
 // Badge colors come from tokens that follow currentColor and from color-mix,

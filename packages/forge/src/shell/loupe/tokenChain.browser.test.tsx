@@ -2,12 +2,10 @@ import './tokenChain.browser.test.css';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LENS_DEFAULTS, type LensIds, type LensSettings, type LensSource } from '@weasel-js/labkit/loupe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createOverrides } from '../../frame/cssVars';
-import { subscribeReveal } from '../cssVars/reveal';
-import { scopeOf } from '../hostConditions';
+import { createOverrides } from '@weasel-js/forge/testing/frame';
+import { scopeOf, subscribeReveal } from '@weasel-js/forge/testing/shell';
 import type { ForgeComparison } from './conditions';
-import { NEEDS_LIVE, TokenReadout } from './readouts';
-import { type ColorAt, colorAt, INLINE, tokenChain } from './tokenChain';
+import { colorAt, INLINE, NEEDS_LIVE, tokenChain, TokenReadout, type ColorAt } from '@weasel-js/forge/testing/loupe';
 
 // jsdom resolves no var() and lays nothing out, so where a color comes from is a real browser's question.
 

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { drag, grip, pointer } from './pointerDrag.fixture';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Wide enough that the live preview, the editor's last column, is on screen to be pressed.
 beforeAll(() => page.viewport(1600, 900));

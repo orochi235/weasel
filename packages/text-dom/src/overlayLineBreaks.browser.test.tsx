@@ -16,7 +16,7 @@ import { registerFont, registerFontOutlines, registerCanvasFont } from '@weasel-
 import { layoutTextPose, type TextStyle } from '@weasel-js/text';
 import { useTextEdit } from '@weasel-js/text-dom';
 import type { TextEditScreenPose } from './textEditTypes';
-import { overlayReady } from './testing/overlayReady';
+import { overlayReady } from '@weasel-js/text-dom/testing/overlayReady';
 import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../assets/fonts/inter/inter.ttf?url';

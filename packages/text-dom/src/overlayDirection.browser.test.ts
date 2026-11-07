@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { resolveTextStyle, type TextStyle } from '@weasel-js/text';
-import { applyOverlayDirection } from './overlayDirection';
+import { applyOverlayDirection } from '@weasel-js/text-dom/testing/overlayDirection';
 
 const HEBREW = 'שלום';
 const WIDTH = 400;

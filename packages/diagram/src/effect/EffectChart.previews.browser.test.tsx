@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { fitDiagram } from '../DiagramView';
+import { fitDiagram } from '@weasel-js/diagram';
 import { diagramScene } from '@weasel-js/diagram';
 import { previewRowId, EffectChart, nodeGraph } from '@weasel-js/diagram/effect';
 import type { EffectPipeline, EffectRun } from './types';

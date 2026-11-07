@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { fitDiagram } from '../DiagramView';
+import { fitDiagram } from '@weasel-js/diagram';
 import { diagramScene } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, EffectEditor, editorScene } from '@weasel-js/diagram/effect';
 import type { EffectDoc, EffectStage } from './types';

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IconRegistryProvider } from '@weasel-js/core';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { icon } from '../icons.gen';
+import { icon } from '@weasel-js/ui/testing/icon';
 
 afterEach(cleanup);
 

@@ -1,17 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { reflectWgsl } from '../wgslReflect';
-import { createUniformBlock, type UniformValue } from '../wgslUniforms';
-import { BufferUsage, MapMode, TextureUsage } from '../flags';
-import { identityNdcGroups } from './testNdc';
-import { KIT_WGSL_PROGRAMS, type KitWgslProgram } from './kitPrograms';
-import { HULL_ORIGIN_BIAS, HULL_ORIGIN_SPAN } from '../../../batchHull';
-import { withHull } from '../../../shaders/batchFill';
-import { batchFillWgsl, BATCH_FILL_LOCATIONS } from './batchFill';
-import { COMPOSITE_LOCATIONS, COMPOSITE_WGSL } from './composite';
-import { assembleEffectWgsl } from './effectPrelude';
-import { BLUR_EFFECT_WGSL } from './effects';
-import { GRAD_FILL_LOCATIONS, GRAD_FILL_WGSL } from './gradFill';
-import { PATH_FILL_LOCATIONS, PATH_FILL_WGSL } from './pathFill';
+import {
+  assembleEffectWgsl, BATCH_FILL_LOCATIONS, batchFillWgsl, BLUR_EFFECT_WGSL, BufferUsage, COMPOSITE_LOCATIONS, COMPOSITE_WGSL,
+  createUniformBlock, GRAD_FILL_LOCATIONS, GRAD_FILL_WGSL, identityNdcGroups, KIT_WGSL_PROGRAMS, MapMode, PATH_FILL_LOCATIONS,
+  PATH_FILL_WGSL, reflectWgsl, TextureUsage, type KitWgslProgram, type UniformValue,
+} from '@weasel-js/renderer/testing/wgsl';
+import { HULL_ORIGIN_BIAS, HULL_ORIGIN_SPAN, withHull } from '@weasel-js/renderer/testing/batch';
 
 /** Kit WGSL compiles without `uniform_buffer_standard_layout`. */
 const STRICT = { standardLayout: false };

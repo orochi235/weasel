@@ -4,7 +4,7 @@ import type { LensSourceRequest } from '@weasel-js/labkit/loupe';
 import { afterEach, expect, it } from 'vitest';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { ForgeComparison } from './conditions';
-import { createPixelsSource } from './pixelsSource';
+import { createPixelsSource } from '@weasel-js/forge/testing/loupe';
 
 // Drawing a capture into the lens is canvas pixels: a real browser's. The capture itself is not taken here: the
 // browser project has no dev server with Playwright behind it, so `fetch` answers with a PNG this test paints, and the

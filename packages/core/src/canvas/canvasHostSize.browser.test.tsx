@@ -7,7 +7,7 @@ import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { createElement, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { Canvas } from './testing/BareCanvas';
+import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import { DrawCanvas, SceneViewCanvas, createScene, defaultDrawOne } from '@weasel-js/core';
 
 const W = 120;

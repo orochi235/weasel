@@ -2,13 +2,13 @@
  * Pipeline mode's Page menu in a real browser: Add Page and Delete Page edit `doc.pages`, the editor
  * paints the pages and splits a wire between them, and each command is one undo step.
  */
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { layoutPages } from '@weasel-js/core';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
-import type { DiagramViewApi, DiagramViewProps } from '@weasel-js/diagram';
-import { LOOK_THEME, type EffectDoc } from '@weasel-js/diagram/effect';
+import { LOOK_THEME, type EffectDoc, type EffectEditorApi, type EffectEditorProps } from '@weasel-js/diagram/effect';
+import { assignRef } from '@weasel-js/react';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_PAGE } from '../chartDocument';
@@ -20,17 +20,15 @@ const choose = makeChoose((el) => userEvent.click(el));
 
 registerCanvasFont('sans-serif');
 
-const live: { api: DiagramViewApi | null } = { api: null };
+const live: { api: EffectEditorApi | null } = { api: null };
 
-// EffectEditor keeps its DiagramViewApi private, so the test reads it through a spy wrapper.
-vi.mock('../../../../packages/diagram/src/DiagramView', async (original) => {
-  const real = await original<typeof import('../../../../packages/diagram/src/DiagramView')>();
-  const Spy = forwardRef<DiagramViewApi, DiagramViewProps>(function Spy(props, ref) {
-    const inner = useRef<DiagramViewApi | null>(null);
-    useImperativeHandle(ref, () => inner.current!);
-    return <real.DiagramView {...props} ref={(api) => { inner.current = api; live.api = api; }} />;
+// The app keeps its editor's ref, so the test reads the editor's API through a wrapper that shares it.
+vi.mock('@weasel-js/diagram/effect', async (original) => {
+  const real = await original<typeof import('@weasel-js/diagram/effect')>();
+  const Spy = forwardRef<EffectEditorApi, EffectEditorProps>(function Spy(props, ref) {
+    return <real.EffectEditor {...props} ref={(api) => { assignRef(ref, api); live.api = api; }} />;
   });
-  return { ...real, DiagramView: Spy };
+  return { ...real, EffectEditor: Spy };
 });
 
 beforeEach(async () => {
