@@ -89,11 +89,7 @@ export function composeOrderedLayers(
     emitAfter(slot);
   }
 
-  for (const t of tail) {
-    if (emitted.has(t.key)) continue;
-    emitted.add(t.key);
-    out.push(t.layer);
-  }
+  for (const t of tail) emitChild(t);
 
   const anchorOf = (key: string): string | undefined => {
     const value = layersMap[key];
