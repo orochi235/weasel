@@ -28,6 +28,22 @@ describe('answerImage', () => {
     await settle();
     expect(reply).toHaveBeenCalledWith({ type: 'image', src, bitmap: expect.objectContaining({ width: 4096 }) });
   });
+
+  it('answers with the raster the page holds when the page fails to raster one larger', async () => {
+    __setImageLoaderForTests(async (_src, size) => {
+      if (size) throw new Error('too big');
+      return { width: 200, height: 200, close() {} } as ImageBitmap;
+    });
+    vi.stubGlobal('createImageBitmap', async (b: ImageBitmap) => b);
+    const settle = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+    const src = 'square.svg';
+    getImageBitmap(src);
+    await settle();
+    const reply = vi.fn();
+    answerImage({ type: 'image', src, size: { width: 800, height: 800 } }, reply);
+    await settle();
+    expect(reply).toHaveBeenCalledWith({ type: 'image', src, bitmap: expect.objectContaining({ width: 200 }) });
+  });
 });
 
 afterEach(() => {

@@ -215,6 +215,8 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
       if (cache.get(src) !== entry) return;
       v.pending = undefined;
       v.failed.add(target);
+      // A reader waiting on a larger raster hears that none is coming.
+      notify();
     },
   );
 }
