@@ -2,13 +2,13 @@
  * Chart mode in a real browser: edge labels and body text, typed in on the canvas and painted.
  */
 import { describe, expect, it } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { page, userEvent, type Locator } from 'vitest/browser';
 import { at } from './testing/canvasPixels';
 import { bodies, chartSession, darkPixels, edges, editor, paper, saved } from './testing/chartSession';
 import { mountChartApp as mountApp } from './testing/mountChartApp';
 import { doubleClick, drag } from './testing/pointer';
 
-const { twoBodies, useTool } = chartSession({ page, userEvent });
+const { twoBodies, useTool } = chartSession<Locator>({ page, userEvent });
 
 describe('WeaselChart labels', () => {
   it('adds and edits an edge label on a double-click of the edge', async () => {

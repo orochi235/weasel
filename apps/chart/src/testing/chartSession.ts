@@ -14,19 +14,20 @@ import { drag } from './pointer';
 
 export const paper = DIAGRAM_THEMES.paper!;
 
-interface Locator {
-  getByRole(role: string, options: { name: string | RegExp }): Locator;
+interface Roles<L> {
+  getByRole(role: 'toolbar' | 'button', options: { name: string | RegExp }): L;
 }
-interface BrowserApi {
-  page: Locator & { viewport(width: number, height: number): Promise<unknown> };
-  userEvent: { click(target: Locator): Promise<unknown> };
+/** vitest/browser's `page` and `userEvent`, with `L` its `Locator`. */
+interface BrowserApi<L extends Roles<L>> {
+  page: Roles<L> & { viewport(width: number, height: number): Promise<unknown> };
+  userEvent: { click(target: L): Promise<unknown> };
 }
 
 /**
  * A 1280 by 800 page and a cleared store around every test of the file that calls it, and the
  * helpers that click through the caller's `page` and `userEvent`.
  */
-export function chartSession({ page, userEvent }: BrowserApi) {
+export function chartSession<L extends Roles<L>>({ page, userEvent }: BrowserApi<L>) {
   registerCanvasFont('sans-serif');
   beforeEach(async () => {
     await page.viewport(1280, 800);

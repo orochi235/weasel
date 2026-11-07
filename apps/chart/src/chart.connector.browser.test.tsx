@@ -3,14 +3,14 @@
  * segment slides, delete and undo, driven through the canvas the way a user would.
  */
 import { describe, expect, it } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { page, userEvent, type Locator } from 'vitest/browser';
 import { themeEdgeStroke } from '@weasel-js/diagram';
 import { at } from './testing/canvasPixels';
 import { bodies, chartSession, edges, key, paper } from './testing/chartSession';
 import { mountChartApp as mountApp } from './testing/mountChartApp';
 import { click, drag } from './testing/pointer';
 
-const { twoBodies, useTool } = chartSession({ page, userEvent });
+const { twoBodies, useTool } = chartSession<Locator>({ page, userEvent });
 
 describe('WeaselChart connectors', () => {
   it('draws bodies, joins them with the connector, deletes one with its edge, and undoes it', async () => {

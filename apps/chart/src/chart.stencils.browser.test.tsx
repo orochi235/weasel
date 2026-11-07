@@ -3,14 +3,14 @@
  * to neighbors, and the grid itself.
  */
 import { describe, expect, it } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { page, userEvent, type Locator } from 'vitest/browser';
 import { chartPrefs } from './prefs';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { bodies, chartSession, offWhitePixels, poseOf, saved, type SavedNode } from './testing/chartSession';
 import { mountChartApp as mountApp } from './testing/mountChartApp';
 import { carryStencil, drag } from './testing/pointer';
 
-const { useTool } = chartSession({ page, userEvent });
+const { useTool } = chartSession<Locator>({ page, userEvent });
 
 describe('WeaselChart stencils and the grid', () => {
   it('drops a stencil dragged from the Shapes panel centered on the drop point', async () => {
