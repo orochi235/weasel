@@ -22,7 +22,7 @@ import type { Stroke } from '@weasel-js/paint';
 import { dashPolylines, type MeasuredPolyline, polylinesLength } from '../tessellate/dash';
 import { expandPolyline, type RibbonOut, type RibbonStyle } from '../tessellate/expandPolyline';
 import { untrimmedWorldLength } from '../tessellate/ribbonWindow';
-import { ribbonMesh, ribbonStyle, strokePolylines } from '../tessellate/stroke';
+import { inkWidth, ribbonMesh, ribbonStyle, strokePolylines } from '../tessellate/stroke';
 import { opened } from './windowPolylines';
 
 /** A vertex of an open subpath: drawn where its length is in the window. */
@@ -77,7 +77,7 @@ export function clipRibbon(
     mesh: ribbonMesh({ verts: [], idx: [], anchorA: [], anchorB: [], anchorT: [] }, path),
     trim: new Float32Array(0), subpaths: [], pieces: [], style, startInset: si, endInset: ei, margin: gap / 4,
   };
-  if (style.width <= 0) return ribbon;
+  if (!inkWidth(style.width)) return ribbon;
   const { polylines } = strokePolylines(path, stroke, style.width, opts.flattenTolerance);
   const dashLength = stroke.dash === undefined ? undefined : untrimmedWorldLength(polylines, si, ei);
   const dash = (pls: MeasuredPolyline[]) => dashPolylines(pls, stroke.dash, undefined, dashLength);

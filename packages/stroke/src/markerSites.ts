@@ -33,6 +33,8 @@ export interface MarkerSiteRequest {
 }
 
 const EPS = 1e-9;
+/** A line that never leaves its first point has no direction; SVG orients its heads along x. */
+const X_AXIS = { x: 1, y: 0 };
 
 /** Unit direction from point `i` to point `j`, or null if they coincide. */
 function dir(pl: Polyline, i: number, j: number): { x: number; y: number } | null {
@@ -82,8 +84,8 @@ export function markerSites(
       out.push({ x: seat.x, y: seat.y, angle: Math.atan2(seat.dy, seat.dx), role: 'start' });
     } else {
       const j = nextDistinct(pl, 0, n);
-      const d = j >= 0 ? dir(pl, 0, j) : null;
-      if (d) out.push({ x: pl.points[0], y: pl.points[1], angle: Math.atan2(-d.y, -d.x), role: 'start' });
+      const d = j >= 0 ? dir(pl, 0, j)! : X_AXIS;
+      out.push({ x: pl.points[0], y: pl.points[1], angle: Math.atan2(-d.y, -d.x), role: 'start' });
     }
   }
 
@@ -114,8 +116,8 @@ export function markerSites(
     } else {
       const last = n - 1;
       const p = prevDistinct(pl, last);
-      const d = p >= 0 ? dir(pl, p, last) : null;
-      if (d) out.push({ x: pl.points[last * 2], y: pl.points[last * 2 + 1], angle: Math.atan2(d.y, d.x), role: 'end' });
+      const d = p >= 0 ? dir(pl, p, last)! : X_AXIS;
+      out.push({ x: pl.points[last * 2], y: pl.points[last * 2 + 1], angle: Math.atan2(d.y, d.x), role: 'end' });
     }
   }
 

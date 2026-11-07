@@ -43,6 +43,25 @@ describe('built-in patterns', () => {
     expect(chunks({ color: '#fff', bg: '#000', size: 16, density: 0.1, chunkSize: 2, seed: 1 }))
       .toEqual({ id: expect.any(String) });
     expect(fake.calls[0]).toEqual({ fn: 'fillRect', args: [0, 0, 16, 16] });
-    expect(callsTo('ellipse')).toHaveLength(6);
+    const placed = new Set(callsTo('ellipse').map(({ args: [cx, cy] }) => `${(cx as number + 16) % 16},${(cy as number + 16) % 16}`));
+    expect(placed.size).toBe(6);
+  });
+
+  it('chunks draws a chunk crossing an edge again past the opposite one, so the tile repeats seamlessly', () => {
+    chunks({ color: '#fff', size: 16, density: 0.6, chunkSize: 4, seed: 3 });
+    const ellipses = callsTo('ellipse').map((c) => c.args as number[]);
+    const inside = (v: number) => v >= 0 && v < 16;
+    const crossing = ellipses.filter(([cx, cy, rx, ry]) =>
+      inside(cx) && inside(cy) && [cx, cy].some((c) => c < Math.max(rx, ry) || c > 16 - Math.max(rx, ry)));
+    expect(crossing.length).toBeGreaterThan(0);
+    for (const [cx, cy, rx, ry] of crossing) {
+      const r = Math.max(rx, ry);
+      for (const [c, axis] of [[cx, 0], [cy, 1]] as const) {
+        const shift = c < r ? 16 : c > 16 - r ? -16 : 0;
+        if (shift === 0) continue;
+        const want = axis === 0 ? [cx + shift, cy] : [cx, cy + shift];
+        expect(ellipses.some(([x, y]) => x === want[0] && y === want[1])).toBe(true);
+      }
+    }
   });
 });
