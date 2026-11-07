@@ -41,7 +41,7 @@ async function until(handle: WorkerCanvasHandle, x: number, y: number, rgb: numb
   return last;
 }
 
-function mount() {
+function mount(alphaFor?: (id: string) => number) {
   const scene = createScene<ReturnType<typeof solid>, 'main', Pose>({
     systemLayers: [{ id: 'main' }],
     initial: [
@@ -61,13 +61,13 @@ function mount() {
   document.body.appendChild(host);
   root = createRoot(host);
   flushSync(() => root!.render(createElement(StrictMode, null, createElement(SceneViewCanvas<ReturnType<typeof solid>, 'main', Pose>, {
-    scene, view: VIEW, width: 100, height: 50, dpr: 1, worker: start, workerRef: handle,
+    scene, view: VIEW, width: 100, height: 50, dpr: 1, worker: start, workerRef: handle, alphaFor,
   }))));
   return { scene, sent, handle, canvas: host.querySelector('canvas')! };
 }
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const FRAME_KEYS = new Set(['type', 'scene', 'overrides', 'view', 'size', 'layers', 'cull', 'extraCommands']);
+const FRAME_KEYS = new Set(['type', 'scene', 'overrides', 'view', 'size', 'layers', 'cull', 'extraCommands', 'scroll', 'alpha']);
 
 describe('a scene view painted by a worker', () => {
   it('draws into the transferred canvas, and the page sends only what changed', async () => {
@@ -109,5 +109,11 @@ describe('a scene view painted by a worker', () => {
     })();
     expect(cleared).not.toBeNull();
     expect(await until(handle.current!, 15, 15, [255, 0, 0])).toEqual([255, 0, 0, 255]);
+  });
+
+  it('dims a node by the alpha the page computes', async () => {
+    const { handle } = mount((id) => (id === 'b' ? 0 : 1));
+    expect(await until(handle.current!, 25, 25, [255, 0, 0])).toEqual([255, 0, 0, 255]);
+    expect((await pixel(handle.current!, 75, 25))![3]).toBeLessThan(16);
   });
 });

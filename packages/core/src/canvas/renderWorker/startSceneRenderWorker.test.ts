@@ -73,3 +73,21 @@ describe('startSceneRenderWorker', () => {
     expect(frames(posted)).toHaveLength(0);
   });
 });
+
+describe('startSceneRenderWorker, beside the scene', () => {
+  it('sends scroll offsets when they change, and only the alphas that changed', () => {
+    const { scene, client, posted, answer } = start();
+    let dim = 1;
+    client.update({ alphaFor: (id) => (id === 'a' ? dim : 1) });
+    client.sync();
+    expect(frames(posted)[0]).not.toHaveProperty('alpha');
+    answer({ type: 'drawn' });
+    dim = 0.25;
+    scene.scroll.set(asNodeId('a'), { x: 4, y: 0 });
+    client.sync();
+    expect(frames(posted)[1]).toMatchObject({ alpha: [['a', 0.25]], scroll: [{ id: 'a', x: 4, y: 0 }] });
+    answer({ type: 'drawn' });
+    client.sync();
+    expect(frames(posted)[2]).toEqual({ type: 'frame' });
+  });
+});

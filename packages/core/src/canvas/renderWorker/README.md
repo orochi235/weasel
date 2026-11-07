@@ -1,14 +1,8 @@
-# Worker rendering: a scene view painted off the main thread
+# renderWorker
 
-For whoever extends worker rendering in weasel, or reviews the boundary it draws. It says what
-crosses between the page and the render worker, what stays on the page, and why.
-
-**Built (2026-11-06):** `<SceneViewCanvas worker>`, the client under it (`startSceneRenderWorker`),
-and the worker host (`serveSceneRender`, from `@weasel-js/core/render-worker`), pinned by
-`packages/core/src/canvas/renderWorker/workerRender.browser.test.tsx`.
-**Unbuilt:** `<SceneCanvas>` rendering in a worker; `alphaFor` and `animator` on a worker view;
-scroll offsets; runtime bitmaps (`bitmapSrc`). Each is listed under "What is not built" with what
-it needs.
+`<SceneViewCanvas worker>`: a scene view painted by a worker into a canvas handed to it with
+`transferControlToOffscreen`. For whoever extends worker rendering or reviews what crosses
+between the page and the worker. The decisions here date from 2026-11-06.
 
 ## API
 
@@ -28,8 +22,11 @@ serveSceneRender({ scene: { registry }, shaders: [myProgram] });
 ```
 
 `worker` replaces `drawOne`: the props are a union, and a worker view takes no `drawOne`,
-`alphaFor`, `paintBounds` or `animator`, because each is a function and a function cannot cross.
+`paintBounds` or `animator`, because each is a function the paint calls and a function cannot cross.
 What paints a node is the worker module's to set up, as a page registers node shapes today.
+
+`alphaFor` is the one function a worker view takes: the page calls it for every node each frame
+and sends the alphas that changed.
 
 A host that is not React calls `startSceneRenderWorker(worker, canvas, inputs)` and drives its
 `sync()` from a frame loop of its own; `subscribe` says when a frame is due.
@@ -42,6 +39,8 @@ A host that is not React calls `startSceneRenderWorker(worker, canvas, inputs)` 
 | The scene's saved form (`scene.toJSON()`) | the first frame, and whenever the layer stack or document values change |
 | Changed nodes, in that saved form; removed ids; the whole preorder when it moved | a frame after the scene's content version moved |
 | Pose overrides, each override's `data` function already applied to the node's stored data | a frame after the overrides notified |
+| Scroll offsets, all of them | a frame after any changed |
+| Alphas from `alphaFor`, the changed ones | a frame where one changed |
 | View, size and density, layer visibility and order, `cull` | a frame where one changed |
 | `extraCommands` | a frame where the array changed |
 | SVG rasters the worker asked for | on request |
@@ -112,15 +111,16 @@ Unmount terminates the worker, and the context with it. A canvas can be transfer
 StrictMode remount, which runs cleanup and setup back to back on one element, keeps the client:
 cleanup releases it a task later and the setup in between takes it back.
 
-## What is not built
+## What it does not do yet
+
+`docs/PERF.md` ("Worker-thread render offload") tracks these, with what each needs:
 
 - **`<SceneCanvas worker>`.** Its layer stack interleaves scene layers with layers whose painters
   are page functions (chrome, previews, consumer layers), so a worker scene needs the stack split
   into surfaces below and above the scene layers, each its own canvas. `readIds`, the GPU pick,
   needs a round trip to the worker's last frame.
-- **`alphaFor` and `animator`.** Both are functions; they need their per-frame output (an alpha
-  per id, an animator's color and trim overrides) carried as frame data, the way pose overrides
-  are.
-- **Scroll offsets** (`scene.scroll`) do not cross.
+- **`animator`.** An animator resolves colors against the painter's base paint at paint time, so
+  its overrides cannot cross as values; the animator itself has to run in the worker, its
+  registries fed from the page.
 - **Runtime bitmaps** (`bitmapSrc`): a `weasel-bitmap:` name means nothing in the worker's cache,
   which has no way to adopt a bitmap under a name the page minted.

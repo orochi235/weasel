@@ -37,6 +37,11 @@ interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends Sur
   /** Camera. Applied to scene + `extraCommands` via the renderer's group
    *  transform. */
   view: View;
+  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
+   *  `alphaFor`. Pass the same function the main canvas uses to keep a
+   *  scoping-dim treatment consistent across both. Defaults to `() => 1`. A
+   *  worker view calls it on the page and sends the alphas that changed. */
+  alphaFor?: (id: string) => number;
   /** Optional extra commands appended after scene commands, inside the same
    *  view transform — a world-space annotation over the scene. */
   extraCommands?: ReadonlyArray<DrawCommand>;
@@ -62,10 +67,6 @@ interface PagePaintedView<TData, TLayer extends string, TPose> {
   /** Per-node draw callback. See `SceneViewDrawOne`. The consumer is
    *  responsible for what gets painted — there is no AABB-fill default. */
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
-  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
-   *  `alphaFor`. Pass the same function the main canvas uses to keep a
-   *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
-  alphaFor?: (id: string) => number;
   /** Where `drawOne`'s output for a node can reach — the scene slot's
    *  `paintBounds`. Defaults to `defaultPaintBounds` when `drawOne` is
    *  `defaultDrawOne`. */
@@ -85,12 +86,11 @@ interface WorkerPaintedView {
    *  — `() => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' })`.
    *  Called once per mount; the worker is stopped on unmount. A function cannot cross to a
    *  worker, so what paints a node (`drawOne`, the node shapes, fonts and shaders it needs)
-   *  is the worker module's to set up, and `alphaFor` and `animator` do not apply. */
+   *  is the worker module's to set up, and `animator` does not apply. */
   worker: () => Worker;
   /** Reads what the worker's canvas shows, in place of `toBlob` on the canvas. */
   workerRef?: Ref<WorkerCanvasHandle>;
   drawOne?: undefined;
-  alphaFor?: undefined;
   paintBounds?: undefined;
   animator?: undefined;
 }

@@ -6,7 +6,7 @@ import { sceneFromJSON } from '../../core/scene/scene';
 import { reconcileSpecs } from '../../core/scene/reconcileSpecs';
 import { specsFromSerialized } from '../../core/scene/serialization';
 import type { AddNodeSpec, NodeId, Scene, SerializedLayer, SerializedScene } from '../../core/scene/types';
-import type { SceneDelta, WireNode, WireOverride } from './protocol';
+import type { SceneDelta, WireNode, WireOverride, WireScroll } from './protocol';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnySpec = AddNodeSpec<unknown, string, unknown>;
@@ -20,6 +20,7 @@ export interface SceneMirror {
   readonly scene: AnyScene | null;
   apply(delta: SceneDelta): void;
   setOverrides(entries: readonly WireOverride[]): void;
+  setScroll(entries: readonly WireScroll[]): void;
 }
 
 export function createSceneMirror(options: SceneMirrorOptions = {}): SceneMirror {
@@ -66,6 +67,11 @@ export function createSceneMirror(options: SceneMirrorOptions = {}): SceneMirror
       specList = order.map((id) => specs.get(id)!);
       reconcileSpecs(scene, prev, specList);
     },
+    setScroll(entries) {
+      if (!scene) return;
+      scene.scroll.clearAll();
+      for (const { id, ...offset } of entries) scene.scroll.set(id as NodeId, offset);
+    },
     setOverrides(entries) {
       if (!scene) return;
       const { overrides } = scene;
@@ -82,6 +88,16 @@ export function createSceneMirror(options: SceneMirrorOptions = {}): SceneMirror
       }
     },
   };
+}
+
+/** The scroll offsets a scene shows now, in the form they cross in. */
+export function wireScroll(scene: AnyScene): WireScroll[] {
+  const out: WireScroll[] = [];
+  for (const id of scene.scroll.ids()) {
+    const offset = scene.scroll.get(id);
+    if (offset) out.push({ id, ...offset });
+  }
+  return out;
 }
 
 /** The pose overrides a scene shows now, in the form they cross in. */

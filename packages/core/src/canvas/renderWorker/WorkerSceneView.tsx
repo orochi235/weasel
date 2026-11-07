@@ -24,6 +24,7 @@ export interface WorkerSceneViewProps<TData, TLayer extends string, TPose> exten
   view: View;
   worker: () => Worker;
   extraCommands?: ReadonlyArray<DrawCommand>;
+  alphaFor?: (id: string) => number;
   cull?: boolean;
   className?: string;
   canvasRef?: Ref<HTMLCanvasElement>;
@@ -75,7 +76,7 @@ function useSceneRenderWorker(
 export function WorkerSceneView<TData, TLayer extends string, TPose>(
   props: WorkerSceneViewProps<TData, TLayer, TPose>,
 ) {
-  const { scene, extraCommands, layerVisibility, layerOrder, cull, className, canvasRef, workerRef, dpr } = props;
+  const { scene, extraCommands, alphaFor, layerVisibility, layerOrder, cull, className, canvasRef, workerRef, dpr } = props;
   const view = normalizeView(props.view);
   const localRef = useRef<HTMLCanvasElement | null>(null);
   const setCanvasRef = useCallback((el: HTMLCanvasElement | null) => {
@@ -88,7 +89,7 @@ export function WorkerSceneView<TData, TLayer extends string, TPose>(
   const loop = useFrameLoop(() => (width > 0 && height > 0 && clientRef.current?.sync()) || false, { target: localRef });
   const inputs: SceneRenderInputs<unknown, string, unknown> = {
     scene: scene as unknown as Scene<unknown, string, unknown>,
-    view, width, height, dpr, layerVisibility, layerOrder, cull, extraCommands,
+    view, width, height, dpr, layerVisibility, layerOrder, cull, extraCommands, alphaFor,
   };
   useSceneRenderWorker(localRef, props.worker, inputs, loop.requestRedraw, clientRef);
 

@@ -82,11 +82,21 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   subscribeImageReady(dirty);
   subscribeGlyphReady(dirty);
   let painting: Painting | null = null;
+  const alphas = new Map<string, number>();
+  const alphaFor = (id: string): number => alphas.get(id) ?? 1;
 
   const frame = (msg: Extract<ToWorker, { type: 'frame' }>): void => {
     if (!painting) return;
-    if (msg.scene) mirror.apply(msg.scene);
+    if (msg.scene) {
+      if (msg.scene.reset) alphas.clear();
+      mirror.apply(msg.scene);
+    }
     if (msg.overrides) mirror.setOverrides(msg.overrides);
+    if (msg.scroll) mirror.setScroll(msg.scroll);
+    for (const [id, a] of msg.alpha ?? []) {
+      if (a === 1) alphas.delete(id);
+      else alphas.set(id, a);
+    }
     if (msg.view) painting.view = msg.view;
     if (msg.layers) painting.inputs.layers = msg.layers;
     if (msg.cull !== undefined) painting.inputs.cull = msg.cull;
@@ -101,7 +111,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     // `defaultDrawOne` reads the density it paints at here, as it reads `window`'s on the page.
     (globalThis as { devicePixelRatio?: number }).devicePixelRatio = size.dpr;
     const commands = buildSceneViewCommands(
-      scene, view, drawOne, inputs.extraCommands ?? undefined, undefined, inputs.layers, undefined,
+      scene, view, drawOne, inputs.extraCommands ?? undefined, alphas.size > 0 ? alphaFor : undefined, inputs.layers, undefined,
       inputs.cull ? { ...size, paintBounds } : undefined,
     );
     renderer.render(commands, viewToMat3(view));

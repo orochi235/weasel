@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from '../../core/scene/scene';
 import { asNodeId, type AddNodeSpec, type RectPose, type Scene } from '../../core/scene/types';
 import { createSceneDiff } from './sceneDiff';
-import { createSceneMirror, wireOverrides } from './sceneMirror';
+import { createSceneMirror, wireOverrides, wireScroll } from './sceneMirror';
 
 type D = { fill?: string };
 type S = Scene<D, 'main' | 'top', RectPose>;
@@ -77,5 +77,15 @@ describe('the render worker scene copy', () => {
     expect(shown.alpha).toBe(0.5);
     expect(shown.data!({})).toEqual({ fill: 'blue' });
     expect(copy().overrides.ids()).toEqual([]);
+  });
+
+  it('carries scroll offsets', () => {
+    const { page, copy } = pair();
+    page.scroll.set(id('g'), { x: 5, y: -2 });
+    const mirror = createSceneMirror();
+    mirror.apply({ reset: structuredClone(page.toJSON()) as never });
+    mirror.setScroll(structuredClone(wireScroll(page as unknown as Scene<unknown, string, unknown>)));
+    expect(mirror.scene!.scroll.get(id('g'))).toEqual({ x: 5, y: -2 });
+    expect([...copy().scroll.ids()]).toEqual([]);
   });
 });

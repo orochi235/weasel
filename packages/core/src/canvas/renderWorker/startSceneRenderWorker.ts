@@ -25,6 +25,9 @@ export interface SceneRenderInputs<TData, TLayer extends string, TPose> extends 
   dpr?: number;
   /** Skip what cannot reach the view, as `<SceneViewCanvas cull>`. */
   cull?: boolean;
+  /** A per-node alpha multiplier, as `<SceneViewCanvas alphaFor>`. Called on the page for every
+   *  node each frame; only the alphas that changed cross. */
+  alphaFor?: (id: string) => number;
   /** World-space commands drawn over the scene. These cross whole, each time the array changes. */
   extraCommands?: readonly DrawCommand[];
 }
@@ -72,7 +75,8 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     const { scene } = inputs;
     const offScene = scene.subscribe(due.emit);
     const offOverrides = scene.overrides.subscribe(() => { frames.overridesChanged(); due.emit(); });
-    unwatch = () => { offScene(); offOverrides(); };
+    const offScroll = scene.scroll.subscribe(due.emit);
+    unwatch = () => { offScene(); offOverrides(); offScroll(); };
   };
   watch();
 

@@ -31,6 +31,14 @@ export interface WireOverride {
   data?: unknown;
 }
 
+/** A container's scroll offset as it crosses. */
+export interface WireScroll {
+  id: string;
+  x: number;
+  y: number;
+  z?: number;
+}
+
 /** Everything a frame reads beside the scene, each field present only when it changed. */
 export interface FrameInputs {
   view?: View;
@@ -39,6 +47,10 @@ export interface FrameInputs {
   cull?: boolean;
   /** `null` clears them. */
   extraCommands?: DrawCommand[] | null;
+  /** Every scrolled container, whenever any scroll changed. */
+  scroll?: WireScroll[];
+  /** Each node whose `alphaFor` changed, with its new alpha; an alpha of 1 drops the entry. */
+  alpha?: [string, number][];
 }
 
 export type ToWorker =
