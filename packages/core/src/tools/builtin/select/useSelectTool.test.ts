@@ -288,10 +288,13 @@ describe('useSelectTool', () => {
       const ranging = selectionStub(['a'], keys);
       run(tool, 'select.deep', ranging.api, { meta: true, shift: true });
       expect(ranging.applyClick).not.toHaveBeenCalled();
-      // Shift neither toggles nor ranges here, so the lock does not apply.
+      // Shift is the anchor edit's own key, so the lock holds it even where the selection reads it as a replace.
       const replacing = selectionStub(['a'], { mode: 'multi', toggle: 'meta' });
       run(tool, 'select.deep', replacing.api, { meta: true, shift: true });
-      expect(replacing.applyClick).toHaveBeenCalledWith('a', { ctrl: false, meta: false, shift: true });
+      expect(replacing.applyClick).not.toHaveBeenCalled();
+      const plain = selectionStub(['a'], { mode: 'multi', toggle: 'meta' });
+      run(tool, 'select.deep', plain.api, { meta: true });
+      expect(plain.applyClick).toHaveBeenCalledWith('a', { ctrl: false, meta: false, shift: false });
     });
   });
 

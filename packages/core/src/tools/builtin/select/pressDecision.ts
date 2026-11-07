@@ -18,7 +18,8 @@ export interface PressDecision {
 
 /**
  * Decide a press on `top`; `extend` is whether the selection reads its
- * modifiers as a toggle or a range (`SelectionApi.intentOf`).
+ * modifiers as a toggle or a range (`SelectionApi.intentOf`), and `locked`
+ * whether the press must not change it (`extendPressLocked`).
  *
  * Pressing a member of a multi-selection, or a node inside a selected group,
  * leaves the selection alone: the press may be the start of a drag of the
@@ -30,12 +31,12 @@ export function pressDecision(
   top: string,
   sel: readonly string[],
   extend: boolean,
-  extendLocked: () => boolean,
+  locked: boolean,
   tree: PressTree,
 ): PressDecision {
   const inMultiSelection = sel.includes(top) && sel.length > 1;
   const defer = !extend && (inMultiSelection || insideSelectedGroup(top, sel, tree));
-  return { applyNow: !defer && !(extend && extendLocked()), deferred: defer ? top : null };
+  return { applyNow: !defer && !locked, deferred: defer ? top : null };
 }
 
 function insideSelectedGroup(top: string, sel: readonly string[], tree: PressTree): boolean {

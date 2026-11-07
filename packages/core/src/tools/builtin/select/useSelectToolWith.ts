@@ -11,6 +11,7 @@ import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { pressTarget } from '../pressTarget';
 import { pressDecision } from './pressDecision';
+import { extendPressLocked } from 'core/selection/extendPressLocked';
 import { createCollapseDeferredAction } from './collapseDeferred';
 import { GROUP_LEAVE_PRESS_BINDING } from './groupEntry';
 import { createSelectDeepAction } from '../../../interactions/actions/defaults/selectDeep';
@@ -199,11 +200,11 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
         }
         const top = pressTarget(adapterRef.current, hit, deps.enteredGroup?.get() ?? null);
 
-        // See `extendClickLocked`. An option rather than `Action.enabled`
-        // because it only applies to *extend* presses, and `enabled` is
-        // evaluated without the event's modifiers.
-        const extendLocked = () => opts.extendClickLocked?.() === true;
-        const press = pressDecision(top, sel, selection.intentOf(mods) !== 'replace', extendLocked, adapterRef.current);
+        // `extendClickLocked` is an option rather than `Action.enabled` because it reads the press's
+        // modifiers, and `enabled` is evaluated without them.
+        const intent = selection.intentOf(mods);
+        const locked = extendPressLocked(intent, mods.shift === true, () => opts.extendClickLocked?.() === true);
+        const press = pressDecision(top, sel, intent !== 'replace', locked, adapterRef.current);
         if (press.applyNow) selection.applyClick(top as NodeId, mods);
         pressRef.current = { deferredClickId: press.deferred };
       },

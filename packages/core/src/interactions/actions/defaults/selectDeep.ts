@@ -1,5 +1,6 @@
 import type { Action, WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
+import { extendPressLocked } from 'core/selection/extendPressLocked';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 export interface SelectDeepOptions {
@@ -33,7 +34,7 @@ export function createSelectDeepAction(opts: SelectDeepOptions): Action {
         const mods = { ctrl: false, meta: false, shift: p.mods?.shift === true };
         const hit = opts.pickHit(p.world, p.mods?.alt === true, selection.get());
         opts.settled();
-        if (hit === null || (selection.intentOf(mods) !== 'replace' && opts.extendLocked())) return;
+        if (hit === null || extendPressLocked(selection.intentOf(mods), mods.shift, opts.extendLocked)) return;
         selection.applyClick(hit as NodeId, mods);
       },
     },
