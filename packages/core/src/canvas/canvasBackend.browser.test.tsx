@@ -2,8 +2,8 @@
  * A canvas's `backend` on a real browser: which renderer its first paint
  * builds, and that a WebGPU canvas paints and reads its ids back.
  *
- * Runs in the `browser (gpu)` instance: without the GPU, headless Chromium
- * cannot present a WebGPU canvas and loses every tab's (docs/traps/testing.md).
+ * Runs in the `browser (webgpu)` instance, a Chromium of its own: a WebGPU
+ * device lost there takes every tab of its process (docs/traps/testing.md).
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { createElement, useEffect } from 'react';

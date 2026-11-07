@@ -2,8 +2,8 @@
  * A scene rendered from Node through `@weasel-js/headless` comes back with the pixels this
  * browser draws for it through `renderSceneToPixels`.
  *
- * Both sides are Playwright's Chromium launched with its default switches on the same machine, so
- * they run the same WebGL2 implementation; the same implementation given the same commands is
+ * Both sides are Playwright's Chromium launched with the same GPU switches on the same machine
+ * (`scripts/chromium-gpu-args.ts`), so they run the same WebGL2 implementation; the same implementation given the same commands is
  * deterministic, so the bytes must be equal. Across GPUs or drivers they need not be, which is why
  * nothing here is compared with committed pixels.
  */

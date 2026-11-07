@@ -103,9 +103,11 @@ one Chromium, so the files running beside it fail too (teitou, 2026-11-06).
 premultiplied, rgba8unorm or bgra8unorm, configured once or every frame. `--use-angle=metal` and full
 Chromium's headless (`channel: 'chromium'`) do the same, and `--use-webgpu-adapter=swiftshader` beside
 `--enable-gpu` presents clean too: the fault is the compositing, not the adapter (teitou, 2026-11-06).
-So every WebGPU browser file and the parity files run in the browser project's `browser (gpu)`
-instance; a new one goes in `GPU_TESTS` in `vitest.config.ts`. Both that instance and the visual suite take their flags
-from `scripts/chromium-gpu-args.ts`. On GitHub's GPU-less ubuntu-22.04 runner
+So the whole browser project launches with `--enable-gpu`, as the visual suite does, both taking their
+flags from `scripts/chromium-gpu-args.ts` (2026-11-07); `rasterizer.browser.test.ts` fails a launch that
+fell back to SwiftShader on a Mac. Every WebGPU browser file runs in the `browser (webgpu)` instance, a
+Chromium of its own, so a device lost there takes no other file's tabs; a new one goes in `WEBGPU_TESTS`
+in `vitest.config.ts`. On GitHub's GPU-less ubuntu-22.04 runner
 neither `--enable-gpu` alone nor `channel: 'chromium'` keeps the device: of ten launches probed, only
 `--enable-gpu --use-angle=swiftshader --enable-unsafe-swiftshader --use-vulkan=swiftshader
 --use-webgpu-adapter=swiftshader` (beside `--enable-unsafe-webgpu --enable-features=Vulkan`) presented 40
