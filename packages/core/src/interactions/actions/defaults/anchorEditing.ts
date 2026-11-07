@@ -47,6 +47,7 @@ import { nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudge
 import { icon } from '../../../icons.gen';
 import { pathOperationTags } from '../pathGestureTags';
 import type { ImmediateParams } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
 export const ANCHOR_CLICK_PX = 10;
@@ -236,7 +237,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
     spec: {
       kind: 'key',
       key: ['Delete', 'Backspace'],
-      phase: [{ channel: '*', phase: 'initial' }],
+      phase: BETWEEN_GESTURES,
     },
     opts: { id: 'deleteAnchors.key' },
   }],

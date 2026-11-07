@@ -17,6 +17,7 @@ import {
 import { commitOps } from '../defaultCommitAdapter';
 import { pathOperationTags } from '../pathGestureTags';
 import { icon } from '../../../icons.gen';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 const CUT_LABEL = 'Cut at Crossings';
 
@@ -142,7 +143,7 @@ export function joinPathsCommand(
  * instead.
  */
 export const joinPathsAction = joinPathsCommand(
-  { id: 'joinPaths', label: 'Join', icon: icon('join'), defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true } }, opts: { id: 'joinPaths.key' } }] },
+  { id: 'joinPaths', label: 'Join', icon: icon('join'), defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'joinPaths.key' } }] },
   () => ({}),
 );
 

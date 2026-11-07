@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { undoAction, redoAction } from './undoRedo';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 describe('undoAction (descriptor)', () => {
   it('id="undo", label="Undo"', () => {
@@ -9,7 +10,7 @@ describe('undoAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "z", mods: { mod: true } }', () => {
-    expect(undoAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'z', mods: { mod: true } }, opts: { id: 'undo.key' } }]);
+    expect(undoAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'z', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'undo.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -24,7 +25,7 @@ describe('redoAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "z", mods: { mod: true, shift: true } }', () => {
-    expect(redoAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'z', mods: { mod: true, shift: true } }, opts: { id: 'redo.key' } }]);
+    expect(redoAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'z', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'redo.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {

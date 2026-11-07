@@ -10,6 +10,7 @@ import { resizeSelectionOps } from '../resize/replay';
 import { rotateSelectionOps } from '../rotate/replay';
 import { lastTransform, recordTransform, type RepeatableTransform } from './memory';
 import { icon } from '../../../icons.gen';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 const LABEL = 'Transform Again';
 
@@ -54,7 +55,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
   label: LABEL,
   icon: icon('transformAgain'),
   group: 'edit',
-  defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true } }, opts: { id: 'transformAgain.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'transformAgain.key' } }],
   eligible: { capability: 'transforms-selection' },
   requires: [
     'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',

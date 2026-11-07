@@ -5,11 +5,11 @@ import {
 } from '../../../interactions/actions/defaults/enterGroup';
 import type { Contribution } from '../../overlayBinding';
 import { onBody, onEmptyCanvas } from './selectionContributions';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** Id of the entry {@link createGroupEntryContribution} builds. */
 export const GROUP_ENTRY_ID = 'group.entry';
 
-const INITIAL = [{ channel: '*', phase: 'initial' as const }];
 const ANY_MODS = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
 
 /**
@@ -27,12 +27,12 @@ export function createGroupEntryContribution(opts: EnterGroupOptions & LeaveGrou
     actions: [createEnterGroupAction(opts), createLeaveGroupAction(opts)],
     bindings: [
       {
-        spec: { kind: 'doubleClick', target: { kindOf: onBody }, phase: INITIAL },
+        spec: { kind: 'doubleClick', target: { kindOf: onBody }, phase: BETWEEN_GESTURES },
         actionId: 'group.enter',
         opts: { id: 'group.enter' },
       },
       {
-        spec: { kind: 'key', key: 'Escape', phase: INITIAL },
+        spec: { kind: 'key', key: 'Escape', phase: BETWEEN_GESTURES },
         actionId: 'group.leave',
         opts: { id: 'group.leave.key', yields: true },
       },

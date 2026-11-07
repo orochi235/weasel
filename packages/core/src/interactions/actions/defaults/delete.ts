@@ -7,6 +7,7 @@ import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
 import { hiddenSourcesTakenWith } from 'domains/pathEffects/hiddenSources';
 import { withoutPageStructure } from 'core/scene/nodeGates';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -113,7 +114,7 @@ export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { r
       spec: {
         kind: 'key',
         key: ['Delete', 'Backspace'],
-        phase: [{ channel: '*', phase: 'initial' }],
+        phase: BETWEEN_GESTURES,
       },
       opts: { id: 'delete.key' },
     }],

@@ -9,6 +9,7 @@ import { asNodeId } from 'core/scene/types';
 import type { Point } from '@weasel-js/geom';
 import { pressTarget } from 'tools/builtin/pressTarget';
 import type { ImmediateParams } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** World center of the selection's bounds, else of the visible canvas. */
 export function keyboardAnchor(deps: ActionDeps): Point | null {
@@ -87,7 +88,6 @@ export function openContextMenu(
   return host.open({ hit: menuHitFor(deps).hit, client, world, source: 'keyboard' });
 }
 
-const INITIAL = [{ channel: '*', phase: 'initial' }] as const;
 
 /**
  * Opens the context menu: for the pointer on a right-click or an unclaimed
@@ -99,8 +99,8 @@ export const contextMenuAction: Action & { requires: string[] } = {
   label: 'Show Context Menu',
   defaultBinding: [
     { spec: { kind: 'contextMenu' }, opts: { id: 'menu.context.contextMenu' } },
-    { spec: { kind: 'key', key: 'F10', mods: { shift: true }, phase: [...INITIAL] }, opts: { id: 'menu.context.key' } },
-    { spec: { kind: 'key', key: 'ContextMenu', phase: [...INITIAL] }, opts: { id: 'menu.context.menuKey' } },
+    { spec: { kind: 'key', key: 'F10', mods: { shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'menu.context.key' } },
+    { spec: { kind: 'key', key: 'ContextMenu', phase: BETWEEN_GESTURES }, opts: { id: 'menu.context.menuKey' } },
   ],
   requires: ['menuHost', 'selection', 'scene', 'poseDescriptor', 'view', 'worldToClient', 'hitAt', 'kindOfNode', 'enteredGroup'],
   // Disabled when no menu would open, so the dispatcher leaves the press, click and drag to whatever else is bound.

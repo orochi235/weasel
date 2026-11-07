@@ -6,6 +6,7 @@ import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
 import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
 import { icon } from '../../../icons.gen';
 import type { ImmediateParams } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /**
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).
@@ -42,9 +43,8 @@ export const clipboardCutAction: Action & { requires: string[] } = {
   label: 'Cut',
   icon: icon('cut'),
   group: 'clipboard',
-  // Held off mid-gesture, as Delete is: a cut would remove what a drag is moving.
   defaultBinding: [{
-    spec: { kind: 'key', key: 'x', mods: { mod: true }, phase: [{ channel: '*', phase: 'initial' }] },
+    spec: { kind: 'key', key: 'x', mods: { mod: true }, phase: BETWEEN_GESTURES },
     opts: { id: 'clipboard.cut.key' },
   }],
   eligible: { capability: 'edits-page' },

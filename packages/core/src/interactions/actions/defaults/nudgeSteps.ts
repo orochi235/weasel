@@ -1,5 +1,6 @@
 import { arrowMove } from '@weasel-js/ui-logic';
 import type { GestureBinding } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** The arrow-key nudge shared by nodes and path anchors: one direction per
  *  key, a small step bare and a big one with Shift. */
@@ -27,6 +28,6 @@ export function nudgeSpec(dir: NudgeDirection, big: boolean): GestureBinding['sp
     kind: 'key',
     key: NUDGE_KEY[dir],
     ...(big ? { mods: { shift: true } } : {}),
-    phase: [{ channel: '*', phase: 'initial' }],
+    phase: BETWEEN_GESTURES,
   };
 }
