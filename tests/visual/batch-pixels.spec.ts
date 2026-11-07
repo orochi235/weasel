@@ -11,7 +11,7 @@
  * shares its draw, and a quad samples its own bitmap and no other. Both hold
  * however `draw.ts` decides to break runs.
  */
-import { test, expect } from './fixture';
+import { backend, test, expect, type Page } from './fixture';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -19,6 +19,47 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const W = 240;
 const H = 80;
+
+declare global {
+  interface Window {
+    /** A renderer on `canvas`, on `backend`. */
+    openBatchRenderer(canvas: HTMLCanvasElement, w: number, h: number, backend: string): Promise<{
+      renderer: any;
+      gl: WebGL2RenderingContext | null;
+      glRenderer: string;
+    }>;
+  }
+}
+
+/** Give the page `window.openBatchRenderer`. A WebGPU canvas goes in the
+ *  document, where a canvas presents. */
+async function installRendererOpener(page: Page): Promise<void> {
+  await page.evaluate((root) => {
+    window.openBatchRenderer = async (canvas, w, h, backend) => {
+      const { WeaselRenderer, requestRendererDevice } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
+      );
+      if (backend === 'webgpu') {
+        const device: GPUDevice | null = await requestRendererDevice();
+        if (!device) throw new Error('no WebGPU device');
+        document.body.append(canvas);
+        const info = device.adapterInfo;
+        return {
+          renderer: new WeaselRenderer({ gpu: { device, canvas }, width: w, height: h, dpr: 1 }),
+          gl: null,
+          glRenderer: `WebGPU ${info.vendor}/${info.architecture}/${info.description}`,
+        };
+      }
+      const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
+      if (!gl) throw new Error('no WebGL2 context');
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      const glRenderer = String(dbg
+        ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+        : gl.getParameter(gl.RENDERER));
+      return { renderer: new WeaselRenderer({ gl, canvas, width: w, height: h, dpr: 1 }), gl, glRenderer };
+    };
+  }, repoRoot);
+}
 
 /** One probe: a pixel to read and the straight-alpha RGB it must be. */
 interface Probe {
@@ -44,11 +85,12 @@ test('batched runs paint their own colors', async ({ page }) => {
 
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
+  await installRendererOpener(page);
 
   const { cases, glRenderer } = await page.evaluate(
-    async ({ root, w, h }) => {
+    async ({ root, w, h, backend }) => {
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer, registerFont } = await import(
+      const { registerFont } = await import(
         /* @vite-ignore */ `${base}/packages/renderer/src/index.ts`
       );
       // Awaited, unlike the site's own registration: a probe that renders
@@ -63,12 +105,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
-      const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
-      if (!gl) throw new Error('no WebGL2 context');
-      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-      const glRenderer = String(dbg
-        ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
-        : gl.getParameter(gl.RENDERER));
+      const { renderer, gl, glRenderer } = await window.openBatchRenderer(canvas, w, h, backend);
 
       /** A flat opaque bitmap, so a quad drawn from the wrong texture reads as
        *  the wrong color rather than as a plausible neighboring texel. */
@@ -85,8 +122,6 @@ test('batched runs paint their own colors', async ({ page }) => {
       const red = await flat(16, 255, 0, 0);
       const blue = await flat(16, 0, 0, 255);
 
-      const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr: 1 });
-
       const rect = (x: number, y: number, size: number, color: string) => ({
         kind: 'path',
         path: { kind: 'rect', x, y, width: size, height: size },
@@ -96,10 +131,12 @@ test('batched runs paint their own colors', async ({ page }) => {
         kind: 'image', image, x, y, w: size, h: size,
       });
 
-      /** One pixel, un-premultiplied. Y is flipped: GL reads from the bottom. */
+      /** The last frame's pixels, rows bottom-up. */
+      let px = new Uint8Array(0);
+
+      /** One pixel, un-premultiplied. Y is flipped: the read runs from the bottom. */
       function read(x: number, y: number): [number, number, number] {
-        const out = new Uint8Array(4);
-        gl!.readPixels(x, h - 1 - y, 1, 1, gl!.RGBA, gl!.UNSIGNED_BYTE, out);
+        const out = px.subarray(((h - 1 - y) * w + x) * 4);
         const a = out[3] / 255;
         if (a === 0) return [0, 0, 0];
         return [
@@ -164,17 +201,17 @@ test('batched runs paint their own colors', async ({ page }) => {
        * point is a coin flip.
        */
       function inkIn(x0: number, y0: number, x1: number, y1: number): [number, number, number] {
-        const box = new Uint8Array((x1 - x0) * (y1 - y0) * 4);
-        gl!.readPixels(x0, h - y1, x1 - x0, y1 - y0, gl!.RGBA, gl!.UNSIGNED_BYTE, box);
         let best = -1;
         let at = 0;
-        for (let p = 0; p < box.length; p += 4) {
-          if (box[p + 3] > best) { best = box[p + 3]; at = p; }
+        for (let row = h - y1; row < h - y0; row++) {
+          for (let p = (row * w + x0) * 4; p < (row * w + x1) * 4; p += 4) {
+            if (px[p + 3] > best) { best = px[p + 3]; at = p; }
+          }
         }
         if (best <= 0) return [0, 0, 0];
         const a = best / 255;
         return [
-          Math.round(box[at] / a), Math.round(box[at + 1] / a), Math.round(box[at + 2] / a),
+          Math.round(px[at] / a), Math.round(px[at + 1] / a), Math.round(px[at + 2] / a),
         ];
       }
 
@@ -187,9 +224,10 @@ test('batched runs paint their own colors', async ({ page }) => {
         commands: unknown[],
         probes: { name: string; x: number; y: number; want: [number, number, number] }[],
       ): void {
-        gl!.clearColor(0, 0, 0, 0);
-        gl!.clear(gl!.COLOR_BUFFER_BIT | gl!.STENCIL_BUFFER_BIT);
+        gl?.clearColor(0, 0, 0, 0);
+        gl?.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
         renderer.render(commands, identity);
+        px = window.weaselCanvasPixels(canvas);
         cases.push({
           name,
           probes: probes.map((p) => ({ ...p, got: read(p.x, p.y) })),
@@ -347,7 +385,7 @@ test('batched runs paint their own colors', async ({ page }) => {
 
       return { cases, glRenderer };
     },
-    { root: repoRoot, w: W, h: H },
+    { root: repoRoot, w: W, h: H, backend },
   );
 
   console.log(`\nBatch pixels — ${W}x${H} on ${glRenderer}\n`);
@@ -395,10 +433,11 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
 
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
+  await installRendererOpener(page);
 
-  const result = await page.evaluate(async ({ root, w, h, tolerance: TOLERANCE_IN_PAGE }) => {
+  const result = await page.evaluate(async ({ root, w, h, backend, tolerance: TOLERANCE_IN_PAGE }) => {
     const base = `/weasel/@fs${root}`;
-    const { WeaselRenderer, registerFont } = await import(
+    const { registerFont } = await import(
       /* @vite-ignore */ `${base}/packages/renderer/src/index.ts`
     );
     const { PATH_M, PATH_L, PATH_Z } = await import(/* @vite-ignore */ `${base}/packages/geom/src/commands.ts`);
@@ -410,8 +449,7 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
-    const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
-    const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr: 1 });
+    const { renderer, gl } = await window.openBatchRenderer(canvas, w, h, backend);
 
     const px = new ImageData(16, 16);
     for (let p = 0; p < px.data.length; p += 4) {
@@ -511,11 +549,10 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
     // and the triangle is refused the cut, which is what this compares.
     Object.defineProperty(renderer._batchVariants(), 'cuts', { value: false });
     function draw(asPolygon: boolean): { pixels: Uint8Array; draws: number } {
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+      gl?.clearColor(0, 0, 0, 0);
+      gl?.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
       renderer.render(scene(asPolygon), identity);
-      const pixels = new Uint8Array(W2 * h * 4);
-      gl.readPixels(0, 0, W2, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      const pixels = window.weaselCanvasPixels(canvas);
       return { pixels, draws: renderer.lastFrameStats().drawCalls };
     }
     const cut = draw(false);
@@ -545,7 +582,7 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
       differ, worst, painted, cutDraws: cut.draws, stencilDraws: stencil.draws, samples,
       firstAt: firstAt < 0 ? null : { x: (firstAt >> 2) % W2, y: h - 1 - Math.floor((firstAt >> 2) / W2) },
     };
-  }, { root: repoRoot, w: 340, h: 90, tolerance: TOLERANCE });
+  }, { root: repoRoot, w: 340, h: 90, backend, tolerance: TOLERANCE });
 
   console.log(`\nRect clip, cut against stencil: ${result.differ} channels differ (worst ${result.worst}), `
     + `first at ${JSON.stringify(result.firstAt)}; draws ${result.cutDraws} cut, ${result.stencilDraws} stencil\n`);

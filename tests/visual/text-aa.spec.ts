@@ -41,12 +41,10 @@ test('text AA — glyph edges carry a partial-coverage ramp', async ({ page }) =
 
   const stats = await page.evaluate(({ BOX, BG_MAX, SOLID_MIN }) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
-    const gl = c.getContext('webgl2')!;
     const w = c.width;
     const h = c.height;
-    const buf = new Uint8Array(w * h * 4);
-    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-    // readPixels is bottom-up; this takes top-down scene coords. The canvas is
+    const buf = window.weaselCanvasPixels(c);
+    // The read is bottom-up; this takes top-down scene coords. The canvas is
     // 600×360 at deviceScaleFactor 1, so scene units map 1:1 to pixels.
     const inkAt = (x: number, y: number) => {
       const i = ((h - 1 - y) * w + x) * 4;

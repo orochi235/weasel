@@ -27,12 +27,10 @@ test('missing glyph — an em dash the atlas lacks draws as a dash, not a "?"', 
 
   const box = await page.evaluate((GAP) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
-    const gl = c.getContext('webgl2')!;
     const w = c.width;
     const h = c.height;
-    const buf = new Uint8Array(w * h * 4);
-    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-    // readPixels is bottom-up; this takes top-down canvas coords.
+    const buf = window.weaselCanvasPixels(c);
+    // The read is bottom-up; this takes top-down canvas coords.
     const inkAt = (x: number, y: number) => {
       const i = ((h - 1 - y) * w + x) * 4;
       return 255 - (0.299 * buf[i] + 0.587 * buf[i + 1] + 0.114 * buf[i + 2]);
