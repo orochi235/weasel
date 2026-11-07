@@ -44,9 +44,22 @@ function holdsLanes(cell: RawCell, children: readonly RawCell[]): boolean {
   return lanes.every((lane) => (rows ? geometryOf(lane).width : geometryOf(lane).height) >= across * SPAN);
 }
 
+/** `cells` with the parent of any cell whose chain of parents comes back round to it cleared, so every walk up ends. */
+function acyclic(cells: readonly RawCell[]): RawCell[] {
+  const byId = new Map(cells.map((c) => [c.id, c]));
+  return cells.map((cell) => {
+    const seen = new Set<string>();
+    for (let up = cell.parent; up !== null && !seen.has(up); up = byId.get(up)?.parent ?? null) {
+      if (up === cell.id) return { ...cell, parent: null };
+      seen.add(up);
+    }
+    return cell;
+  });
+}
+
 /** Sorts a graph model's cells. */
 export function pageCells(model: Element): PageCells {
-  const cells = cellsOf(model);
+  const cells = acyclic(cellsOf(model));
   const byId = new Map(cells.map((c) => [c.id, c]));
   const children = new Map<string, RawCell[]>();
   for (const cell of cells) {

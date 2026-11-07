@@ -3,10 +3,13 @@ import { capabilitiesAllowed, type CapabilityTag } from '@weasel-js/modes';
 import { NO_OVERRIDES, overriddenBindings, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
 import { liveScope, type EligibilityState } from './eligibility';
 import type { Contribution } from './types';
+import { heldModifierOf, withHeldModifier } from './heldModifier';
 
 /**
  * Every binding the entry set contributes right now, each tiered by the
- * entry's own declared eligibility. Entries with no live tier are omitted.
+ * entry's own declared eligibility. Entries with no live tier are omitted. An
+ * entry held on a modifier key has its bindings read through
+ * {@link withHeldModifier}.
  *
  * Order is preserved: `matchSorted` sorts by specificity within a scope and
  * breaks ties by declaration order, so the caller's entry order decides which
@@ -21,8 +24,9 @@ export function scopeBindings(
   for (const entry of entries) {
     const scope = liveScope(entry.id, entry.eligibility ?? {}, state);
     if (scope === null) continue;
+    const held = scope === 'hotkey' ? heldModifierOf(entry.eligibility?.offhand) : null;
     for (const binding of overriddenBindings(entry.bindings ?? [], entry.id, overrides)) {
-      out.push({ binding, scope, ownerId: entry.id });
+      out.push({ binding: held ? withHeldModifier(binding, held) : binding, scope, ownerId: entry.id });
     }
   }
   return out;

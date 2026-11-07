@@ -30,8 +30,9 @@ export function unsignedZero(value: number, format: (n: number) => string): stri
 
 /**
  * Parses a string that may carry {@link MINUS_SIGN} in place of the ASCII
- * hyphen. The inverse of {@link formatNumber} for any editing surface that
- * renders its value through it and reads the edited text back.
+ * hyphen, as `Number` does otherwise: empty text is 0, and a group separator
+ * is NaN. That makes it the inverse of {@link formatNumber} only for values it
+ * writes without grouping; {@link parseNumber} reads the grouped form back.
  */
 export function parseSignedNumber(text: string): number {
   return Number(text.replace(MINUS_SIGN, '-'));

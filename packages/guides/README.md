@@ -1,6 +1,6 @@
 # @weasel-js/guides
 
-Placement aids for weasel: a visible grid, ruler guides, the snap sources that
+Placement aids for weasel: a visible grid, rulers and the guides dragged off them, the snap sources that
 snap to them and to sibling edges and gaps, and the layout strategies a
 container arranges its children with.
 
@@ -61,10 +61,38 @@ points sits on its crossings.
 | Area | Exports |
 |---|---|
 | Grid | `createGridPreset`, `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `pointToGridCell`, `roundToCell`, `sceneGridRegions`, `gridLines`, `gridFit` |
-| Guides | `useGuides`, `createGuidesLayer`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
+| Rulers | `createRulers` (below), `rulerTicks`, `rulerFrameAt`, `rulersLayout`; `<Rulers>` in `@weasel-js/ui` draws them |
+| Guides | `useGuides`, `createGuidesLayer`, `addGuideOp`, `removeGuideOp`, `replaceGuideOp`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
 | Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
 | Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |
 | Layout | `freeform`, `tileGrid`, `snapPoint`, `slots` (with the `rowSlots`, `gridSlots`, and `ringSlots` arrangements), `pack`, `quadtree`, `perContainer` for a strategy that keeps state, and the drop-target pickers `none`, `nearest`, `nearestWithin`, `containedThenNearest`, `cellAt` |
+
+Rulers run along the top and left of a 2D view. `createRulers` returns a
+contribution for `<SceneCanvas ambient>`, which follows the view and the
+pointer and takes the drags: off a ruler to place a guide, on a placed guide to
+move it, and back onto a ruler to remove it, each one undo step. `<Rulers>` from
+`@weasel-js/ui` draws them over the canvas from the same object. The labeled
+step is the one `scaleBar` picks, and the labels read in the unit scopes of the
+frame under the pointer, so inside a frame that declares `drawnAt` they show its
+true lengths.
+
+```tsx
+const { addGuide, removeGuide, getGuides } = useGuides();
+const rulers = useMemo(
+  () => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: { system: IMPERIAL_INCHES } }),
+  [addGuide, removeGuide, getGuides],
+);
+// The guide being moved is drawn by the rulers where it is going.
+const guidesLayer = useMemo(
+  () => createGuidesLayer({ getGuides: () => rulers.settled(getGuides()), extent: 'full' }),
+  [rulers, getGuides],
+);
+
+<div className="host">
+  <SceneCanvas /* … */ ambient={[rulers.contribution]} layers={{ guides: { layer: guidesLayer, after: 'scene' } }} />
+  <Rulers rulers={rulers} />
+</div>;
+```
 
 Spacing hints are one `<SceneCanvas features>` preset: its snap sources move
 the selection to the spacing between its siblings (and, with `align`, to their

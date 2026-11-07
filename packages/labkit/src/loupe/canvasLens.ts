@@ -1,4 +1,4 @@
-import { type LoupePoint, type LoupeSize, loupeExtent } from '@weasel-js/loupe';
+import { type LoupePoint, type LoupeSize, loupeExtent, pixelHex } from '@weasel-js/loupe';
 import { centerOn } from '../canvas/camera';
 import { screenToWorld } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
@@ -83,9 +83,8 @@ export function sampleStack(
     const x = Math.floor(p.x * dpr);
     const y = Math.floor(p.y * dpr);
     if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
-    const [r, g, b, a] = ctx.getImageData(x, y, 1, 1).data;
-    if (a === 0) continue;
-    return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+    const hex = pixelHex(ctx.getImageData(x, y, 1, 1).data);
+    if (hex) return hex;
   }
   return null;
 }

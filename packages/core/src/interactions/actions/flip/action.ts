@@ -26,6 +26,7 @@ import { requiresSelection } from '../defaults/requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { icon } from '../../../icons.gen';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in
@@ -162,8 +163,8 @@ export const flipAction: Action & { requires: string[] } = {
     { key: 'y', label: 'Flip Vertical', icon: icon('flipY'), params: { axis: 'y' } },
   ],
   defaultBinding: [
-    { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true } }, opts: { id: 'flip.x', params: { axis: 'x' } } },
-    { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { id: 'flip.y', params: { axis: 'y' } } },
+    { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'flip.x', params: { axis: 'x' } } },
+    { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'flip.y', params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
   requires: [

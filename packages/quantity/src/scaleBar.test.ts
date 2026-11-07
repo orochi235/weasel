@@ -8,7 +8,7 @@ const MM: UnitScope = { system: METRIC_MM, scale: 1 / 25.4 };
 
 describe('scaleBar', () => {
   it('picks the longest 1-2-5 length that fits, labeled in the largest unit it fills', () => {
-    expect(scaleBar({ pxPerUnit: 10, scopes: [INCHES] })).toEqual({ length: 12, px: 120, label: '1ft', magnification: 1 });
+    expect(scaleBar({ pxPerUnit: 10, scopes: [INCHES] })).toEqual({ length: 12, px: 120, label: '1ft', unit: 'ft', magnification: 1 });
     expect(scaleBar({ pxPerUnit: 100, scopes: [INCHES] })).toMatchObject({ length: 1, px: 100, label: '1in' });
   });
 
@@ -17,13 +17,14 @@ describe('scaleBar', () => {
     const bar = scaleBar({ pxPerUnit: 4, scopes: [INCHES, MM] });
     expect(bar.length).toBe(500);
     expect(bar.label).toBe('50cm');
+    expect(bar.unit).toBe('cm');
     expect(bar.px).toBeCloseTo(500 * 4 / 25.4);
   });
 
   it('reads a frame drawn at a declared magnification by its true lengths', () => {
     const bar = scaleBar({ pxPerUnit: 10, scopes: [INCHES, { ...INCHES, drawnAt: 0.4 }] });
     // An inch of the frame is 4 px on screen: 2 ft is 96 px, 5 ft would be 240.
-    expect(bar).toEqual({ length: 24, px: 96, label: '2ft', magnification: 0.4 });
+    expect(bar).toEqual({ length: 24, px: 96, label: '2ft', unit: 'ft', magnification: 0.4 });
   });
 
   it('chooses among the lengths it is given', () => {

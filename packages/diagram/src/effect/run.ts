@@ -5,6 +5,7 @@
  */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, bitmapSrc } from '@weasel-js/core';
 import type { DiagramSpec } from '../dataTypes';
+import { estimatedWidth } from '../rowMeasure';
 import {
   NO_VALUE, PROBLEM_COLOR, previewRowId, shownPorts, stageStyle, uniqueStages, valueRowId, type EffectLookResult,
 } from './draw';
@@ -156,7 +157,7 @@ function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectSta
   const fontSize = Math.round((titleData.style?.fontSize ?? 12) * COST_SCALE);
   const style = { fontFamily: titleData.style?.fontFamily ?? 'sans-serif', fontSize };
   const fill = problem ? { paint: { color: PROBLEM_COLOR } } : titleData.fill ?? { paint: { color: stageStyle(of).text } };
-  const width = text.length * fontSize * 0.6;
+  const width = estimatedWidth(text, style);
   const height = Math.ceil(fontSize * 1.2);
   // In world: the cost sits at the top level, and the stage's own text is stored in its frame.
   const world = worldPosesOf([stage, ...own], RIGID_POSE_COMPOSITION);

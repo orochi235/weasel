@@ -1,5 +1,7 @@
-/** The one `$extensions` key this kit defines. */
+/** A token's alpha, as a token's `$extensions` key. */
 export const ALPHA_EXT = 'com.weasel.alpha';
+/** The axes a token's pref is scoped by, as a token's `$extensions` key. */
+export const SCOPE_EXT = 'com.weasel.scope';
 
 /** A token's value as authored: a string (which may be a `{ref}`), a number, or a list of those, such as a font stack. */
 export type TokenValue = string | number | readonly (string | number)[];

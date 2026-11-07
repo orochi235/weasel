@@ -21,7 +21,7 @@ import { createVoicePool } from './voicePool';
 import { createVoices } from './voices';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
- *  scheduling and 2D spatialization over one `AudioContext`. Times are engine
+ *  scheduling and 2D or 3D spatialization over one `AudioContext`. Times are engine
  *  ms (`now()`). */
 export interface AudioEngine {
   /** The engine's `AudioContext` — the one passed as `options.context`, or the

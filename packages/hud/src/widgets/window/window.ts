@@ -314,12 +314,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           break;
         }
         case 'cancel': {
-          if (dragZone) {
+          if (dragZone && bounds !== dragStart) {
             bounds = dragStart;
-            dragZone = null;
+            (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
             rev.changed();
           }
-          pressZone = null;
+          dragZone = null; pressZone = null;
           break;
         }
         // The cursor is resolved per point via `cursorAt`, so hover carries no

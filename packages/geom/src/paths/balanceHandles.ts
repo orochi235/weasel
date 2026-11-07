@@ -119,12 +119,18 @@ export function balanceFactorToward(set: AnchorSet, sub: number, segIdx: number,
  * reaches the same fraction of the way from its anchor to the corner where
  * the two handle lines cross, that fraction being the mean of the two they
  * had. Where the lines don't cross ahead of both handles, both take the mean
- * length instead. Directions are kept either way.
+ * length instead. Directions are kept either way, and under `syms` every
+ * image of either handle follows it, as in {@link scaleSegmentHandles}.
  *
  * Returns false when the segment has no balance line or the handles already
  * match.
  */
-export function equalizeSegmentHandles(set: AnchorSet, sub: number, segIdx: number): boolean {
+export function equalizeSegmentHandles(
+  set: AnchorSet,
+  sub: number,
+  segIdx: number,
+  syms: readonly AnchorSymmetry[] = [],
+): boolean {
   const handles = segmentHandles(set, sub, segIdx);
   if (!handles) return false;
   const { a, b, from, to } = handles;
@@ -143,8 +149,9 @@ export function equalizeSegmentHandles(set: AnchorSet, sub: number, segIdx: numb
     nextA = nextB = (lenA + lenB) / 2;
   }
   if (Math.abs(nextA - lenA) < 1e-9 && Math.abs(nextB - lenB) < 1e-9) return false;
-  a.outHandle = { x: a.x + ua.x * nextA, y: a.y + ua.y * nextA };
-  b.inHandle = { x: b.x + ub.x * nextB, y: b.y + ub.y * nextB };
+  const next = segIdx + 1 === set.anchors[sub].length ? 0 : segIdx + 1;
+  moveHandleSymmetric(set, flatAnchorIndex(set, sub, segIdx), 'out', a.x + ua.x * nextA, a.y + ua.y * nextA, true, syms);
+  moveHandleSymmetric(set, flatAnchorIndex(set, sub, next), 'in', b.x + ub.x * nextB, b.y + ub.y * nextB, true, syms);
   return true;
 }
 

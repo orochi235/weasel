@@ -8,6 +8,7 @@ import { scenePoseFrame } from '../poseFrame';
 import { storedDelta } from '../selectionSubtree';
 import { recordTransform } from '../transform-again/memory';
 import { icon } from '../../../icons.gen';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** Same nudge `sceneToAdapter.getPasteOffset` gives a paste, so duplicate and
  *  paste land in the same place rather than disagreeing by a few units. */
@@ -65,7 +66,7 @@ export const duplicateAction: Action & { requires: string[] } = {
   group: 'edit',
   // Cmd/Ctrl+D is `transformAgain`, which duplicates when nothing else is
   // there to repeat.
-  defaultBinding: [{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } }, opts: { id: 'duplicate.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'duplicate.key' } }],
   eligible: { capability: ['edits-page', 'creates-selection'] },
   // `selection` is read by the `enabled` gate as well as the invoker. An
   // undeclared read throws inside the dev-build deps Proxy before the gate can

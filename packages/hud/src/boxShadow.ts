@@ -2,6 +2,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, roundRectPath, type Path } from '@weasel-js/geom';
 import { resolveCurrentColor, type BoxShadow } from '@weasel-js/theme';
 import type { WidgetBounds } from './widget';
+import { arcRectD } from './glyph';
 
 // A blurred layer is drawn as nested rounded rects reaching blur / 2 either side of its edge,
 // whose overlap builds the falloff.
@@ -12,10 +13,7 @@ const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
 
 function roundRectD(x: number, y: number, w: number, h: number, r: number): string {
   const k = Math.max(0, Math.min(r, w / 2, h / 2));
-  if (k === 0) return `M ${x} ${y} H ${x + w} V ${y + h} H ${x} Z`;
-  return `M ${x + k} ${y} H ${x + w - k} A ${k} ${k} 0 0 1 ${x + w} ${y + k} V ${y + h - k} `
-    + `A ${k} ${k} 0 0 1 ${x + w - k} ${y + h} H ${x + k} A ${k} ${k} 0 0 1 ${x} ${y + h - k} `
-    + `V ${y + k} A ${k} ${k} 0 0 1 ${x + k} ${y} Z`;
+  return arcRectD(x, y, w, h, k, k);
 }
 
 function outer(b: WidgetBounds, radius: number, s: BoxShadow, color: string): DrawCommand {

@@ -1,5 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /**
  * Static descriptor for the `escape` Action. Clears selection.
@@ -16,7 +17,7 @@ export const escapeAction: Action & { requires: string[] } = {
     spec: {
       kind: 'key',
       key: 'Escape',
-      phase: [{ channel: '*', phase: 'initial' }],
+      phase: BETWEEN_GESTURES,
     },
     opts: { id: 'escape.key' },
   }],

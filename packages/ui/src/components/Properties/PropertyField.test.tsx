@@ -23,6 +23,15 @@ describe('PropertyField mixed and unset', () => {
     expect(box.checked).toBe(false);
   });
 
+  it('keeps a mixed checkbox indeterminate until its owner answers the click', () => {
+    const onChange = vi.fn();
+    render(<PropertyField kind="boolean" label="Visible" value={undefined} mixed onChange={onChange} />);
+    const box = screen.getByRole('checkbox', { name: 'Visible' }) as HTMLInputElement;
+    fireEvent.click(box);
+    expect(onChange).toHaveBeenCalledWith(true);
+    expect(box.indeterminate).toBe(true);
+  });
+
   it('dims an unset switch, which has no form for it', () => {
     render(
       <PropertyField kind="boolean" control="switch" label="Snap" value={undefined} unset onChange={() => {}} />,

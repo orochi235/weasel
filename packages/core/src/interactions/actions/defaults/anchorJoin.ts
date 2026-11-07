@@ -8,6 +8,7 @@ import { averageAnchorsAt, joinAnchorsAt, type AnchorSet, type AverageAxis, type
 import { anchorEditWouldChange, commitAnchorEdit, depOf } from './anchorEditing';
 import { pathOperationTags } from '../pathGestureTags';
 import { icon } from '../../../icons.gen';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** An edit of an anchor set at its selected anchors, answering whether it changed anything. */
 export type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
@@ -36,7 +37,7 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
   // Illustrator's Mod+Alt+J is Chrome's console. `code` too: with Alt held on
   // a Mac the key reads as another glyph.
   defaultBinding: [{
-    spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, alt: true, shift: true } },
+    spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, alt: true, shift: true }, phase: BETWEEN_GESTURES },
     opts: { id: 'averageAnchors.key', params: { axis: 'both' } },
   }],
   eligible: { capability: 'edits-anchors' },
@@ -75,7 +76,7 @@ export const joinAnchorsAction: Action & { requires: string[] } = {
   icon: icon('join'),
   tags: pathOperationTags('command'),
   group: 'anchors',
-  defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true } }, opts: { id: 'joinAnchors.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'joinAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

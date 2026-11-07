@@ -31,7 +31,9 @@ export interface BusGraph {
   node(name: string): GainNode;
   bus(name: string): BusHandle;
   names(): string[];
-  /** Cancel every insert transition in flight. The nodes stay wired. */
+  /** Cancel every insert transition in flight and take every insert out at
+   *  once, calling its `dispose`. Each bus's input is left wired straight to
+   *  its fader. */
   dispose(): void;
 }
 

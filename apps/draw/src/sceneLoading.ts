@@ -40,7 +40,7 @@ export function loadInitial(): DrawSpec[] {
     rebuilt = snapshotRebuildsTree(json, { pages: fallbackPages() });
     return specsOf(json);
   }, () => {
-    rebuilt = false;
+    rebuilt = true;
     return starterScene();
   });
 }
@@ -50,8 +50,9 @@ export function loadInitialDoc(): SerializedDoc | undefined {
   return readStored(LS_KEY, (raw) => docFromSnapshot(savedScene(raw)), () => undefined);
 }
 
-/** Whether the last {@link loadInitial} rebuilt a drawing saved without its pages as nodes, so an undo stack
- *  saved beside it would replay against a tree that is gone. `null` before one has run. */
+/** Whether the last {@link loadInitial} rebuilt a drawing saved without its pages as nodes, or found none it
+ *  could open and started the starter scene, so an undo stack saved beside it would replay against a tree that
+ *  is gone. `null` before one has run. */
 let rebuilt: boolean | null = null;
 
 /** The pages a drawing saved before draw had pages gets: one of the paper size its document settings kept. */
@@ -94,10 +95,10 @@ export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
 
 /** Read the persisted undo/redo snapshot. Best-effort; on
  *  absent/corrupt/mismatched data, a snapshot in an older recorded form, or
- *  one saved beside a drawing whose pages were not yet nodes, returns null
+ *  one saved beside a drawing whose pages were not yet nodes or that cannot be opened, returns null
  *  AND removes the key so a broken snapshot can't wedge every boot. */
 export function loadSceneHistory(): SerializedSceneHistory | null {
-  const stale = rebuilt ?? readStored(LS_KEY, (raw) => snapshotRebuildsTree(savedScene(raw), { pages: fallbackPages() }), () => false);
+  const stale = rebuilt ?? readStored(LS_KEY, (raw) => snapshotRebuildsTree(savedScene(raw), { pages: fallbackPages() }), () => true);
   const snap = stale ? null : readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null);
   if (snap === null) {
     try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }

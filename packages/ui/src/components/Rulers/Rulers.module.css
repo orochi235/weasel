@@ -1,0 +1,49 @@
+/* Provisional look: theme tokens only, until the maintainer settles it. */
+.rulers {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--wzl-fg-muted);
+  background: var(--wzl-surface);
+}
+
+.ticks {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--wzl-border);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.label {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  fill: currentcolor;
+  font-size: var(--wzl-font-size-2xs);
+  dominant-baseline: central;
+}
+
+.pointer {
+  stroke: var(--wzl-accent);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.unit {
+  fill: currentcolor;
+  font-size: var(--wzl-font-size-2xs);
+  text-anchor: middle;
+  dominant-baseline: central;
+}

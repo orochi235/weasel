@@ -8,6 +8,15 @@ export const FALLBACK_LINE = 16;
 /** The line height a row's scene text is set at: the text style's default, which a row leaves. */
 const TEXT_LINE_HEIGHT = 1.2;
 
+/** Advance width per character, in font sizes, where nothing measures text. */
+export const GLYPH = 0.6;
+
+/** `text`'s width where nothing measures it: {@link GLYPH} font sizes a character, and its tracking. `style.fontSize`
+ *  unset counts as {@link FALLBACK_LINE}. */
+export function estimatedWidth(text: string, style: RowTextStyle | undefined): number {
+  return text.length * (style?.fontSize ?? FALLBACK_LINE) * GLYPH + trackingWidth(text, style);
+}
+
 /** The advance `style.tracking` adds to `text`: one em-fraction after every
  *  character, the last included, as the text renderer spaces it. */
 export function trackingWidth(text: string, style: RowTextStyle | undefined): number {

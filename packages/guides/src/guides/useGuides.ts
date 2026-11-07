@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
+import { createEmitter } from '@weasel-js/registry';
 import type { Guide } from './types';
 
 /** Return shape for `useGuides`. */
@@ -15,6 +16,9 @@ export interface UseGuidesReturn {
   removeGuide: (id: string) => void;
   /** Drop all guides. */
   clearGuides: () => void;
+  /** Hear each change to the list, once `getGuides` returns it: pass to
+   *  `createGuidesLayer` so the canvas repaints when a guide comes or goes. */
+  subscribe: (listener: () => void) => () => void;
 }
 
 /**
@@ -22,15 +26,20 @@ export interface UseGuidesReturn {
  * lines that callers can pass to `guideSnapSource` (snap source) and
  * `createGuidesLayer` (render layer).
  *
- * v1 is intentionally minimal: no undo integration, no persistence, no
- * batched mutation. Wrap calls in your own history-aware action if you
- * want guide CRUD to be undoable.
+ * It keeps no history of its own and persists nothing: `addGuideOp` and
+ * `removeGuideOp` make a change an undo step on a canvas's history.
  */
 export function useGuides(initial: Guide[] = []): UseGuidesReturn {
   const [guides, setGuides] = useState<Guide[]>(initial);
   const ref = useLatest(guides);
 
   const getGuides = useCallback(() => ref.current, [ref]);
+  const changed = useMemo(() => createEmitter(), []);
+  const subscribe = useCallback((listener: () => void) => changed.subscribe(listener), [changed]);
+  const [first] = useState(guides);
+  useLayoutEffect(() => {
+    if (guides !== first) changed.emit();
+  }, [changed, guides, first]);
 
   const addGuide = useCallback((guide: Guide) => {
     setGuides((prev) => {
@@ -56,5 +65,5 @@ export function useGuides(initial: Guide[] = []): UseGuidesReturn {
     setGuides((prev) => (prev.length === 0 ? prev : []));
   }, []);
 
-  return { guides, getGuides, addGuide, removeGuide, clearGuides };
+  return { guides, getGuides, addGuide, removeGuide, clearGuides, subscribe };
 }

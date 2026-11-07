@@ -31,14 +31,16 @@ export class Warnings {
 
 const NAMED:Readonly<Record<string, string>> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
-/** `text` with its `&name;` and `&#n;` references read; Mermaid's `#name;` and `#n;` too when `hash` is set. */
+/** `text` with its `&name;` and `&#n;` references read; Mermaid's `#name;` and `#n;` too when `hash` is set. A number
+ *  past the last code point is left as written. */
 export function decodeEntities(text: string, hash = false): string {
   const re = hash ? /[&#](#x[\da-f]+|#\d+|x[\da-f]+(?=;)|\d+|[a-z]+);/gi : /&(#x[\da-f]+|#\d+|[a-z]+);/gi;
+  const char = (code: number, whole: string) => (code <= 0x10ffff ? String.fromCodePoint(code) : whole);
   return text.replace(re, (whole, ref: string) => {
     const code = /^#?x([\da-f]+)$/i.exec(ref)?.[1];
-    if (code !== undefined) return String.fromCodePoint(parseInt(code, 16));
+    if (code !== undefined) return char(parseInt(code, 16), whole);
     const num = /^#?(\d+)$/.exec(ref)?.[1];
-    if (num !== undefined) return String.fromCodePoint(parseInt(num, 10));
+    if (num !== undefined) return char(parseInt(num, 10), whole);
     return NAMED[ref.toLowerCase()] ?? whole;
   });
 }

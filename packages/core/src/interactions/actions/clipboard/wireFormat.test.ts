@@ -34,6 +34,8 @@ describe('weasel clipboard wire format', () => {
     expect(sniffWeaselClipboardText('{"nodes":[]}')).toBe(false);              // no marker
     expect(sniffWeaselClipboardText('the word weaselClipboard in prose')).toBe(false); // not JSON
     expect(sniffWeaselClipboardText('{"weaselClipboard":2,"nodes":[]}')).toBe(false);  // wrong version
+    expect(sniffWeaselClipboardText('{"weaselClipboard":1}')).toBe(false);            // no nodes: parse refuses it
+    expect(sniffWeaselClipboardText('{"weaselClipboard":1,"nodes":{}}')).toBe(false);
     expect(parseWeaselClipboardText('{"weaselClipboard":1}')).toBeNull();      // nodes missing
   });
 

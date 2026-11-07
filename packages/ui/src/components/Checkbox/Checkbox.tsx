@@ -82,6 +82,8 @@ export const Checkbox = forwardRef(function Checkbox(
         aria-invalid={isInvalid || undefined}
         aria-readonly={isReadOnly || undefined}
         onChange={(e) => {
+          // A click clears `indeterminate`, and the effect only puts it back if something renders.
+          e.target.indeterminate = isIndeterminate;
           if (isReadOnly) return;
           if (isSelected === undefined) setUncontrolled(e.target.checked);
           onChange?.(e.target.checked);

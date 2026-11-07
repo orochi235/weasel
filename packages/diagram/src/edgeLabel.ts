@@ -18,6 +18,7 @@ import { diagramEdgeOf } from './edgeTrait';
 import { LABEL_DERIVE_POSE } from './label';
 import { labelScratchOf, labelUnder } from './labelDragLayer';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
+import { estimatedWidth } from './rowMeasure';
 import type { ImmediateParams } from '@weasel-js/core';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
@@ -25,8 +26,7 @@ export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => 
 
 /** The diagram's face when the scene names none. */
 export const DEFAULT_FONT = { fontFamily: 'sans-serif', fontSize: 12 };
-/** Advance width per character, in font sizes, where nothing measures text. */
-export const GLYPH = 0.6;
+export { GLYPH } from './rowMeasure';
 
 const LABEL_STYLE: RowTextStyle = labelStyleOf(DEFAULT_FONT);
 const LABEL_FILL = '#dbe7f2';
@@ -35,7 +35,7 @@ const LABEL_FILL = '#dbe7f2';
  *  whatever the measure reports. */
 export function labelSize(text: string, style: RowTextStyle, measure?: MeasureRowText): { width: number; height: number } {
   const size = style.fontSize ?? LABEL_STYLE.fontSize!;
-  return { width: measure !== undefined ? measure(text, style).width : text.length * size * GLYPH, height: size };
+  return { width: measure !== undefined ? measure(text, style).width : estimatedWidth(text, { ...style, fontSize: size }), height: size };
 }
 
 /** The id of the label at edge `edgeId`'s `from` or `to` end (`DataEdge.endLabels`). */

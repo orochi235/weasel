@@ -103,4 +103,14 @@ describe('useGuides — abandoned renders', () => {
     });
     expect(committed.getGuides()).toEqual([]);
   });
+
+  it('tells subscribers of each change once getGuides returns it, and not of the initial list', () => {
+    const { result } = renderHook(() => useGuides([{ id: 'a', axis: 'x', offset: 1 }]));
+    const seen: number[] = [];
+    result.current.subscribe(() => seen.push(result.current.getGuides().length));
+    act(() => result.current.addGuide({ id: 'b', axis: 'y', offset: 2 }));
+    act(() => result.current.removeGuide('a'));
+    act(() => result.current.removeGuide('missing'));
+    expect(seen).toEqual([2, 1]);
+  });
 });

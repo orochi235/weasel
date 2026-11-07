@@ -47,6 +47,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-07, rulers: draw's View > Show rulers and the site's Rulers demo (`#rulers`). Ticks following pan
+  and zoom, labels switching to millimeters over the demo's half-size part, the pointer marker, and dragging
+  a guide off a ruler, moving it, dropping it back on a ruler, and undoing each. The look is provisional.
 - 2026-11-03, dither demo: the Marks toggle (snapped to dots / as drawn), "By mask" now built from the id
   buffer, and an insert's drag preview fitted to where a size-snapping rule lands it.
 - 2026-11-03, draw: a shape hanging off its page, saved as SVG and opened in another viewer (clipped at the page)

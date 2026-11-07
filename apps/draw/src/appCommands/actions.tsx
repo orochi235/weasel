@@ -1,5 +1,5 @@
 /**
- * WeaselDraw's own commands (the grid, snap, and symmetry toggles, showing and hiding each
+ * WeaselDraw's own commands (the grid, snap, rulers, and symmetry toggles, showing and hiding each
  * toolbar, palette, and panel, Release compound
  * path, the command palette) as actions the gesture dispatcher routes and the command
  * bar draws from the registry. Each reads the live `appCommands` dep.
@@ -19,6 +19,8 @@ export interface AppCommands {
   toggleGrid(): void;
   snapToGrid: boolean;
   toggleSnap(): void;
+  rulersVisible: boolean;
+  toggleRulers(): void;
   /** Whether the view pans only as far as the content and its margin. */
   boundToContent: boolean;
   toggleBoundToContent(): void;
@@ -58,6 +60,15 @@ export const toggleSnapAction: AppAction = {
   requires: ['appCommands'],
   active: (deps) => read(deps)?.snapToGrid === true,
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSnap() },
+};
+
+export const toggleRulersAction: AppAction = {
+  id: 'view.rulers',
+  label: 'Show rulers',
+  group: 'view',
+  requires: ['appCommands'],
+  active: (deps) => read(deps)?.rulersVisible === true,
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleRulers() },
 };
 
 export const toggleBoundToContentAction: AppAction = {
@@ -130,6 +141,7 @@ export const commandsAction: AppAction = {
 export const appActions: Action[] = [
   toggleGridAction,
   toggleSnapAction,
+  toggleRulersAction,
   toggleBoundToContentAction,
   toggleSymmetryAction,
   ...chromeActions,

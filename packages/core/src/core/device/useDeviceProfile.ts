@@ -100,7 +100,9 @@ export function useDeviceProfile(overrides?: Partial<DeviceProfile>): DeviceProf
   const provided = useContext(DeviceProfileContext);
   const detected = useDetectedFacts(provided === null);
   const base: DetectedDeviceFacts = provided ?? detected;
-  const { coarsePointer, canHover, dpr, targetScale } = overrides ?? {};
+  const { coarsePointer, canHover, dpr } = overrides ?? {};
+  // A provider's scale may be its own override, which re-deriving it from the pointer would drop.
+  const targetScale = overrides?.targetScale ?? (coarsePointer === undefined ? provided?.targetScale : undefined);
   return useMemo(
     () =>
       resolveDeviceProfile(base, {

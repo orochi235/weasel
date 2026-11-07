@@ -18,6 +18,7 @@ import {
   Subpanel,
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
+import { drawsOwn } from '../config/drawsOwn';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
@@ -27,7 +28,7 @@ import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
 import { extra, leafValueAt } from './fields';
 import { headingActions, liftedControl, sectionFrame, sectionKey } from './panelHeadings';
-import { drawsAnyAt, drawsOwn, loosePathsIn, pairableAt } from './panelPaths';
+import { drawsAnyAt, loosePathsIn, pairableAt } from './panelPaths';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
 

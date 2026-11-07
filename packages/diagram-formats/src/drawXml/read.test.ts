@@ -187,4 +187,14 @@ describe('reading malformed files', () => {
   it('rejects a page with neither a graph model nor content', async () => {
     await expect(read('<mxfile><diagram name="Empty"></diagram></mxfile>')).rejects.toThrow(/"Empty"/);
   });
+
+  it('reads cells whose parents run in a circle as sitting on the page', async () => {
+    const { document } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+      <mxCell id="a" value="A" vertex="1" parent="b"><mxGeometry x="10" y="10" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="b" value="B" style="swimlane;" vertex="1" parent="a"><mxGeometry x="5" y="5" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="c" value="C" vertex="1" parent="c"><mxGeometry x="80" y="10" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="d" value="D" vertex="1" parent="a"><mxGeometry x="1" y="1" width="10" height="10" as="geometry"/></mxCell>
+    </root></mxGraphModel>`);
+    expect([...nodes(document).keys()].sort()).toEqual(['a', 'c', 'd']);
+  });
 });

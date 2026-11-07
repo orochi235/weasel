@@ -326,11 +326,15 @@ Owner tags, after the priority (2026-10-26):
   a mode lands.
   Ruled (2026-11-07), reopening 2026-10-12's: route them to the open journal.
   Closes when the direct calls reach the open journal and `scene.recordedForm.test.ts` pins that instead.
-- **(P2) [recheck] Rulers along the workspace edges, reading the unit scope of the frame under the
-  pointer.** weasel has none; guides are dragged off a ruler only in name. `ScaleBar` (ui) and
-  `scaleBar` (quantity) already measure a frame's true lengths and could set the tick spacing. Filed
-  rather than built with `drawnAt` (2026-10-31): a new chrome component, with a look to settle.
-  Closes when a scene canvas can show rulers whose ticks read the frame's units.
+- **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
+  draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
+  `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
+  ticks 35% of the strip, labeled steps at most 100 px apart (2026-11-07). Nobody has looked at it in
+  a browser yet; draw shows it under View > Show rulers and the site under the Rulers demo. Closes
+  when the maintainer settles the look and the component draws it.
+- **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
+  rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
+  SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
 
 ---
 
@@ -356,6 +360,11 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
+  (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
+  `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to
+  2.5 s. Either the second number becomes the end time, or the first becomes relative to `start`
+  (2026-11-07). Closes when the maintainer has picked one and the readout and its test follow it.
 - **(P2) [agent] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
   (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
   itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl

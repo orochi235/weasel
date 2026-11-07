@@ -5,6 +5,7 @@
  */
 import { Fragment, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import { dropSide } from '@weasel-js/ui-logic';
 import { useReorderDragList } from '../../useReorderDragList';
 import { Disclosure } from '../Disclosure';
 import { ReorderHandle, type ReorderHandleProps } from '../ReorderHandle/ReorderHandle';
@@ -185,7 +186,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
           )}
           {sortedRows.map((row, i) => {
             const isDragging = drag.state.draggedIds?.includes(row.id) ?? false;
-            const target = drag.state.targetIndex;
+            const side = dropSide(drag.state.targetIndex, i, sortedRows.length);
             const expandable = detailEnabled && (rowExpandable?.(row) ?? true);
             const isExpanded = expandable && expanded.has(row.id);
             const detail = isExpanded ? renderDetail!(row) : null;
@@ -193,8 +194,8 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
             const rowCls = [
               onRowClick && s.clickable,
               isDragging && s.dragging,
-              target === i && s.dropBefore,
-              target === sortedRows.length && i === sortedRows.length - 1 && s.dropAfter,
+              side === 'before' && s.dropBefore,
+              side === 'after' && s.dropAfter,
               rowClassName?.(row),
             ].filter(Boolean).join(' ');
             return (

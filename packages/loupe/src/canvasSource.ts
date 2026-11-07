@@ -77,6 +77,13 @@ export interface CanvasSource {
   subscribeFrame(fn: () => void): () => void;
 }
 
+/** An RGBA pixel's bytes as `#rrggbb`, or `null` where it is fully
+ *  transparent: what a loupe reports for the color under a point. */
+export function pixelHex(rgba: ArrayLike<number>): string | null {
+  if (rgba[3] === 0) return null;
+  return `#${[rgba[0], rgba[1], rgba[2]].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
 /** A frame read this many times with no capture behind it means the drawing
  *  code is not calling `capture()`. About two seconds of lens frames. */
 const MISSED_FRAMES_BEFORE_WARNING = 120;
@@ -183,9 +190,7 @@ export function createCanvasSource(
       }
       probe.globalCompositeOperation = 'copy';
       probe.drawImage(frame, x, y, 1, 1, 0, 0, 1, 1);
-      const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
-      if (a === 0) return null;
-      return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+      return pixelHex(probe.getImageData(0, 0, 1, 1).data);
     },
 
     retain() {

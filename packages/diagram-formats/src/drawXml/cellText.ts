@@ -1,16 +1,5 @@
 /** A cell's `value` as lines of text: plain, or HTML with its tags stripped and its breaks kept. */
-
-const NAMED: Readonly<Record<string, string>> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-
-function decodeEntities(s: string): string {
-  return s.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, (whole, name: string) => {
-    if (name[0] === '#') {
-      const code = name[1] === 'x' || name[1] === 'X' ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
-      return Number.isFinite(code) && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
-    }
-    return NAMED[name.toLowerCase()] ?? whole;
-  });
-}
+import { decodeEntities } from '../graphRead';
 
 const OPEN = '\u0001';
 const CLOSE = '\u0002';

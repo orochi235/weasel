@@ -2,7 +2,7 @@ import { applyToPoint, ellipsePath, linePath, rectPath, type Path, type Point } 
 import {
   viewToTransform, worldToScreen, type DrawCommand, type LayerHit, type RenderLayer, type View,
 } from '@weasel-js/core';
-import { SYMMETRY_KINDS, type SymmetrySpec } from './kinds';
+import { SYMMETRY_KINDS, wedges, type SymmetrySpec } from './kinds';
 import { latticePoints } from './wallpaper';
 
 /** The guide layer's id. */
@@ -98,7 +98,7 @@ function mirrorAngles(spec: SymmetrySpec): number[] {
   if (spec.kind === 'mirror') return [spec.angle];
   if (spec.kind === 'both') return [spec.angle, spec.angle + Math.PI / 2];
   if (spec.kind === 'kaleidoscope') {
-    const n = Math.max(1, Math.round(spec.count));
+    const n = wedges(spec);
     return Array.from({ length: n }, (_, k) => spec.angle + (Math.PI * k) / n);
   }
   return [];
@@ -138,7 +138,7 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
         out.push(line({ x: cx - d.x * reach, y: cy - d.y * reach }, { x: cx + d.x * reach, y: cy + d.y * reach }, color));
       }
       if (spec.kind === 'radial') {
-        const n = Math.max(1, Math.round(spec.count));
+        const n = wedges(spec);
         for (let k = 0; k < n; k++) {
           const d = screenDir(spec.angle + (2 * Math.PI * k) / n, view);
           out.push(line({ x: cx, y: cy }, { x: cx + d.x * reach, y: cy + d.y * reach }, faint));

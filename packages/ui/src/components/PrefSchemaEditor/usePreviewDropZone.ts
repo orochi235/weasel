@@ -1,4 +1,4 @@
-import { useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { prefDropTargetAt, type PrefDrop } from '../Prefs';
 import { heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { pathOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
@@ -41,6 +41,7 @@ export function usePreviewDropZone({ schema, selected, maxDepth, pageless = fals
     if (opening.current) clearTimeout(opening.current.timer);
     opening.current = null;
   };
+  useEffect(() => () => stopOpening(), []);
   const markAt = (nodes: readonly SchemaNode[], point: { x: number; y: number }) =>
     previewMark((stage.current && prefDropTargetAt(stage.current, point.x, point.y)) || null, nodes);
   const outside: DropOutside = {

@@ -1,5 +1,5 @@
 /**
- * @weasel-js/guides — placement aids for weasel: a visible grid, ruler guides,
+ * @weasel-js/guides — placement aids for weasel: a visible grid, rulers and the guides dragged off them,
  * the snap sources that snap to them and to sibling edges and gaps, and the
  * layout strategies a container arranges its children with.
  */
@@ -9,6 +9,9 @@ export * from './grid';
 
 // ─── Guides: guide lines, and the alignment and spacing math ────────────────
 export * from './guides';
+
+// ─── Rulers: tick layout, the frame they read, and the drag that places a guide
+export * from './rulers';
 
 // ─── Snap sources: grid, ruler guides, alignment, equal spacing ─────────────
 export * from './sources';

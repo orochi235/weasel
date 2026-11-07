@@ -1,3 +1,4 @@
+import { readCssNumber } from './cssNumber';
 import { TOKEN_MANIFEST } from './generated/manifest';
 import type { ResolvedTheme } from './resolveTheme';
 import type { TokenName } from './generated/themes';
@@ -16,7 +17,7 @@ const DEFAULTS = new Map<string, string>(TOKEN_MANIFEST.map((t) => [t.name, t.de
  */
 export function tokenPx(name: TokenName, resolved?: ResolvedTheme): number {
   const raw = resolved?.[name] ?? DEFAULTS.get(name);
-  const m = /^(-?\d*\.?\d+)px$/.exec((raw ?? '').trim());
-  if (!m) throw new Error(`tokenPx: ${name} is not a px length (${raw ?? 'unknown token'})`);
-  return Number(m[1]);
+  const length = raw === undefined ? undefined : readCssNumber(raw);
+  if (length?.unit.toLowerCase() !== 'px') throw new Error(`tokenPx: ${name} is not a px length (${raw ?? 'unknown token'})`);
+  return length.value;
 }

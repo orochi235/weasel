@@ -109,8 +109,8 @@ function markerPaintAttrs(
   if (paint === undefined || paint === 'line') return `${attr}="context-stroke"`;
   if ('color' in paint && (paint.kind === undefined || paint.kind === 'solid')) {
     return paint.opacity != null && paint.opacity !== 1
-      ? `${attr}="${paint.color}" ${attr}-opacity="${trimNumber(paint.opacity)}"`
-      : `${attr}="${paint.color}"`;
+      ? `${attr}="${escapeAttr(paint.color)}" ${attr}-opacity="${trimNumber(paint.opacity)}"`
+      : `${attr}="${escapeAttr(paint.color)}"`;
   }
   onWarn?.(`marker "${id}" ${attr} is a paint server, which a <marker> def cannot reference here; written as the line's paint`);
   return `${attr}="context-stroke"`;

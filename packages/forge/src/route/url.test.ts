@@ -5,6 +5,7 @@ import {
   decodeKnob,
   formatRoute,
   knobParams,
+  knobPaths,
   knobsToParams,
   paramsToKnobs,
   paramsToPins,
@@ -63,6 +64,12 @@ describe('reserved params', () => {
 
   it('never reads t as a knob, even when the story has an arg named t', () => {
     expect(paramsToKnobs(f.schema({ t: f.number(0) }), { t: '5' })).toEqual({});
+  });
+
+  it('never writes an arg named t, which would read back as the playhead', () => {
+    const schema = f.schema({ t: f.number(0), label: f.string('') });
+    expect(knobsToParams(schema, { t: 5, label: 'Go' })).toEqual({ label: 'Go' });
+    expect(knobPaths(schema).map(({ path }) => path)).toEqual(['label']);
   });
 });
 

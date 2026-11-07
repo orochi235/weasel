@@ -48,6 +48,21 @@ describe('a percentage length on a shape, image, or text', () => {
     expect(nodes[1] as SvgTextNode).toMatchObject({ x: 100, y: 90 });
   });
 
+  it('places a nested svg at x and y read as lengths', () => {
+    const { nodes } = parseSvg(
+      `<svg ${NS} viewBox="0 0 200 100"><svg x="1in" y="50%"><rect width="10" height="10"/></svg></svg>`,
+    );
+    expect((nodes[0] as SvgPathNode).path).toMatchObject({ x: 96, y: 50 });
+  });
+
+  it('sizes the viewport from an em root the way the root size reads it', () => {
+    const { nodes, width } = parseSvg(
+      `<svg ${NS} width="10em" height="5em" font-size="20"><rect width="50%" height="100%"/></svg>`,
+    );
+    expect(width).toBe(200);
+    expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 100, height: 100 });
+  });
+
   it('warns and reads the number when there is no viewport', () => {
     const { nodes, warnings } = parseSvg(`<svg ${NS}><rect width="100%" height="20"/></svg>`);
     expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 100, height: 20 });

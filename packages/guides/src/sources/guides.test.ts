@@ -83,4 +83,11 @@ describe('guideSnapSource', () => {
     expectNear(at(32), { x: 20, y: 5 });
     expectNear(at(37), { x: 37, y: 5 });
   });
+
+  it('offers nothing for a guide the gesture excludes: the one being moved', () => {
+    const source = guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 100 }, { id: 'h', axis: 'x', offset: 102 }]);
+    const q = { probes: [{ id: 'p', at: { x: 101, y: 0 } }], reachWorld: (px: number) => px, reachPx: 8, exclude: ['g'] };
+    const offered = [...source.collect(q as never)].map((c) => (c as { locus: unknown }).locus);
+    expect(offered).toHaveLength(1);
+  });
 });

@@ -52,6 +52,15 @@ describe('saved presets', () => {
     expect(parseSaved(raw).map((p) => p.name)).toEqual(['mine']);
   });
 
+  it('fills a constraint that did not exist when the preset was saved', () => {
+    const raw = JSON.stringify([{ name: 'old', state: { c: { count: 12 }, surfaceKey: 'light' } }]);
+    const [restored] = parseSaved(raw);
+    expect(restored?.state.c.count).toBe(12);
+    expect(restored?.state.c.minDistance).toBe(INITIAL.c.minDistance);
+    expect(restored?.state.surfaceKey).toBe('light');
+    expect(restored?.state.anchors).toEqual([]);
+  });
+
   it('drops entries that are not presets', () => {
     expect(parseSaved(JSON.stringify([{ nope: 1 }, 'x', null]))).toEqual([]);
   });

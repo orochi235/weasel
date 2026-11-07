@@ -161,6 +161,14 @@ describe('writing DOT', () => {
     expect(back(pageOf(data)).data.edges[0]!.endLabels).toEqual({ from: '1', to: '0..*' });
   });
 
+  it('writes ids and a page name holding backslashes and quotes so they read back as they were', () => {
+    const data: DiagramData = { nodes: [{ id: 'ends\\' }, { id: 'say "\\"' }], edges: [{ from: 'ends\\', to: 'say "\\"' }] };
+    const p = back(pageOf(data, { name: 'C:\\' }));
+    expect(p.name).toBe('C:\\');
+    expect(p.data.nodes.map((n) => n.id)).toEqual(['ends\\', 'say "\\"']);
+    expect(topology(p.data)).toEqual([['ends\\', 'say "\\"', undefined]]);
+  });
+
   it('warns that a trimmed connector was written whole', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
     expect(writeDot(pageOf(data)).warnings).toEqual(['DOT draws a connector whole; trims were dropped.']);

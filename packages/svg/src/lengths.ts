@@ -9,6 +9,7 @@
 import { ABSOLUTE_PX } from './absoluteUnits';
 import { emsPer, fontSizeOf } from './fontSize';
 import { styleAt } from './styleAt';
+import { parseViewBoxAttr } from './viewBox';
 
 const LENGTH = /^\s*([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*([a-z%]*)\s*$/i;
 
@@ -19,18 +20,17 @@ export type LengthAxis = 'x' | 'y' | 'other';
 function viewportOf(el: Element): { width: number; height: number } | undefined {
   for (let e = el.parentElement; e; e = e.parentElement) {
     if (e.tagName.toLowerCase() !== 'svg') continue;
-    const box = (e.getAttribute('viewBox') ?? '').trim().split(/[\s,]+/).map(Number);
-    if (box.length === 4 && box.every(Number.isFinite)) return { width: box[2], height: box[3] };
-    const w = LENGTH.exec(e.getAttribute('width') ?? '');
-    const h = LENGTH.exec(e.getAttribute('height') ?? '');
-    if (w && h && w[2] !== '%' && h[2] !== '%') return { width: userUnits(w), height: userUnits(h) };
-    return undefined;
+    const box = parseViewBoxAttr(e.getAttribute('viewBox'));
+    if (box) return { width: box.width, height: box.height };
+    const w = e.getAttribute('width');
+    const h = e.getAttribute('height');
+    if (w == null || h == null || LENGTH.exec(w)?.[2] === '%' || LENGTH.exec(h)?.[2] === '%') return undefined;
+    const quiet = (): void => {};
+    const width = resolveLength(w, e, 'width', 'x', NaN, quiet);
+    const height = resolveLength(h, e, 'height', 'y', NaN, quiet);
+    return Number.isFinite(width) && Number.isFinite(height) ? { width, height } : undefined;
   }
   return undefined;
-}
-
-function userUnits(m: RegExpExecArray): number {
-  return Number(m[1]) * (ABSOLUTE_PX[m[2].toLowerCase()] ?? 1);
 }
 
 export function readLength(

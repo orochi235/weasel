@@ -284,6 +284,25 @@ describe('insert chain transitions', () => {
     expect(settled).toBe(true);
   });
 
+  it('takes every effect out and disposes it once on dispose, whatever it was doing', () => {
+    const h = harness();
+    const routed = vi.fn();
+    const arriving = vi.fn();
+    const leaving = vi.fn();
+    h.chain.add({ ...h.fx('A'), dispose: routed });
+    const b = h.chain.add({ ...h.fx('B'), dispose: leaving });
+    h.settle();
+    b.remove();
+    h.chain.add({ ...h.fx('C'), dispose: arriving });
+    h.graph.dispose();
+    expect(routed).toHaveBeenCalledTimes(1);
+    expect(leaving).toHaveBeenCalledTimes(1);
+    expect(arriving).toHaveBeenCalledTimes(1);
+    expect(h.chain.slots()).toEqual([]);
+    expect(allPaths(h.input, h.fader)).toHaveLength(1);
+    expect(h.order()).toEqual([]);
+  });
+
   it('cancels a pending transition on dispose', () => {
     const h = harness();
     h.chain.add(h.fx('A'));
