@@ -11,6 +11,7 @@ import { afterEach, expect, it } from 'vitest';
 import { mat3, pathFromD, pointAlongPath, polylineFromPoints, type Affine, type Path } from '@weasel-js/geom';
 import { clipRibbon, clipWindow, strokeSpaceOf, tessellateStroke, type StrokeMetric } from '@weasel-js/stroke';
 import { quantizeStrokeScale } from '../cache/strokeMeshCache';
+import { stencilledEvenOdd } from './stencilledEvenOdd';
 import type { CommandPaint, CommandStroke, Stroke, StrokeTrim } from '@weasel-js/paint';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from '../DrawCommand';
@@ -239,5 +240,74 @@ export function metricCases(antialias: boolean): void {
         }
       });
     }
+  }
+}
+
+/** Every paint a stroke takes, opaque or not, for comparing a stroke with itself. */
+const ALL_PAINTS: [string, Pick<CommandStroke, 'paint' | 'vertexColors'>][] = [
+  ['opaque', { paint: { color: '#ffb000' } }],
+  ...PAINTS.map(([name, fields]): [string, Pick<CommandStroke, 'paint' | 'vertexColors'>] => [name, fields]),
+];
+
+/**
+ * A stroke trimmed to the whole of itself against the same stroke with no
+ * trim, which must draw alike pixel for pixel: a tween that ends at the full
+ * stroke and then drops its trim does not change a pixel. Sharp turns
+ * included, which is where a translucent ribbon could blend twice and a
+ * vertex-colored one split its colors another way.
+ */
+export function wholeCases(antialias: boolean): void {
+  for (const [name, path] of SHAPES) {
+    for (const [painted, fields] of ALL_PAINTS) {
+      it(`draws a whole trim as no trim: ${name}, ${painted}${antialias ? ', multisampled' : ''}`, () => {
+        const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', ...fields };
+        for (const view of [undefined, STRETCH]) {
+          const at = (s: CommandStroke): DrawCommand[] => (view
+            ? [{ kind: 'group', transform: mat3.fromAffine(view), children: frame(path, { ...s, width: { px: 9 } }) }]
+            : frame(path, s));
+          const untrimmed = paint(at(stroke), antialias, true).px;
+          for (const trim of [{}, { start: 0, end: 1 }]) {
+            const whole = paint(at({ ...stroke, trim }), antialias, true).px;
+            expect(offCuts(whole, untrimmed, [], [], 0, 0), `${JSON.stringify(trim)}${view ? ' stretched' : ''}`).toEqual([]);
+          }
+        }
+      });
+    }
+  }
+}
+
+/** A curved clip, which only the stencil cuts. */
+const ROUND_CLIP = pathFromD('M 100 10 C 160 10 190 50 190 80 C 190 120 150 150 100 150 C 40 150 10 120 10 80 C 10 40 50 10 100 10 Z');
+const SECOND_CLIP = pathFromD('M 0 0 L 150 0 C 170 60 170 100 150 160 L 0 160 Z');
+
+/** Wrappers around a drawing, each one something else in the renderer that holds the stencil. */
+const STENCIL_USERS: [string, (children: DrawCommand[]) => DrawCommand[]][] = [
+  ['a curved clip', (children) => [{ kind: 'group', clip: ROUND_CLIP, children }]],
+  ['two nested curved clips', (children) => [{ kind: 'group', clip: ROUND_CLIP, children: [{ kind: 'group', clip: SECOND_CLIP, children }] }]],
+  ['an isolated group under a clip', (children) => [{ kind: 'group', clip: ROUND_CLIP, children: [{ kind: 'group', isolate: true, children }] }]],
+  ['a retained group', (children) => [{ kind: 'group', retain: 'trim-stencil', children }]],
+  ['even-odd fills drawn through the stencil either side', (children) => [
+    { kind: 'path', path: stencilledEvenOdd(pathFromD('M 20 20 L 180 20 L 180 70 L 20 70 Z')), fill: { paint: { color: '#20c060', opacity: 0.5 } } },
+    ...children,
+    { kind: 'path', path: stencilledEvenOdd(pathFromD('M 20 90 L 180 90 L 180 140 L 20 140 Z')), fill: { paint: { color: '#c02060', opacity: 0.5 } } },
+  ]],
+];
+
+/** A translucent trimmed stroke inside each stencil user, against the stroke painted once inside the same. */
+export function stencilCases(antialias: boolean): void {
+  for (const [name, wrap] of STENCIL_USERS) {
+    it(`marks and covers inside ${name}${antialias ? ', multisampled' : ''}`, () => {
+      for (const trim of TRIMS) {
+        const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', paint: { color: '#ffb000', opacity: 0.5 }, trim };
+        const clipped = paint(wrap(frame(zigzag, stroke)), antialias, true);
+        const once: DrawCommand = { kind: 'group', isolate: true, alpha: 0.5, children: frame(zigzag, { ...stroke, paint: { color: '#ffb000' } }) };
+        const rebuilt = paint(wrap([once]), antialias, false);
+        expect(clipped.programs, JSON.stringify(trim)).toBe(1);
+        expect(inked(clipped.px)).toBeGreaterThan(0);
+        const near = antialias ? 0.75 : 1 / 16;
+        const off = offCuts(clipped.px, rebuilt.px, cutsOf(zigzag, trim), edgesOf(zigzag, stroke), near, 0, 1);
+        expect(off.slice(0, 8).map((at) => `${at} ${pixelAt(clipped.px, at)} vs ${pixelAt(rebuilt.px, at)}`), JSON.stringify(trim)).toEqual([]);
+      }
+    });
   }
 }

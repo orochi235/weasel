@@ -1,19 +1,21 @@
 /**
- * A trimmed stroke drawn from one cached ribbon whatever its trim, the trim
- * clipping it in the shader (`@weasel-js/stroke`'s `clipRibbon`), so a trim
- * that animates rebuilds nothing.
+ * A stroke too large to batch, drawn from one cached ribbon whatever its trim,
+ * the trim clipping it in the shader (`@weasel-js/stroke`'s `clipRibbon`), so a
+ * trim that animates rebuilds nothing. An untrimmed stroke draws the same
+ * ribbon through a window that covers it whole, so a tween that ends at the
+ * full stroke looks as the stroke does with no trim at all.
  *
- * The clipped ribbon keeps each segment's whole quad at a turn, and its cut
- * ends are drawn over it as geometry (`clipWindow`), so in places it covers
- * twice what the rebuilt ribbon covers once. An opaque solid stroke cannot
- * show that and draws straight. Any other — translucent, vertex-colored, or in
- * a paint but a solid — marks what it covers in the stencil and then paints
- * its untrimmed ribbon there once; where a turn's quads overlap, the earlier
- * segment paints, so vertex colors there are that segment's rather than
- * split at the bisector. A stroke built in a stretched view's
- * metric is clipped in that metric's measure. A stroke the batch would take
- * anyway, which is small and joins the run it sits in, is rebuilt trimmed
- * instead, as is one whose heads are built in a space its ribbon is not.
+ * The ribbon keeps each segment's whole quad at a turn, and its cut ends are
+ * drawn over it as geometry (`clipWindow`), so in places it covers ground
+ * twice. An opaque solid stroke cannot show that and draws straight. Any
+ * other — translucent, vertex-colored, or in a paint but a solid — marks what
+ * it covers in the stencil and then paints its untrimmed ribbon there once;
+ * where a turn's quads overlap, the earlier segment paints, so vertex colors
+ * there are that segment's rather than split at the bisector. A stroke built
+ * in a stretched view's metric is clipped in that metric's measure. A stroke
+ * the batch takes, which is small and joins the run it sits in, is built by
+ * the tessellator instead, trimmed or not, as is one whose heads are built in
+ * a space its ribbon is not.
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor, type CommandPaint, type StrokeTrim } from '@weasel-js/paint';
@@ -33,18 +35,18 @@ import { atMeshOrigin, setColorMatrixUniforms, setProjAndModel, setSolidPaintUni
 import { releaseVertexColors, vertexColorBase, withVertexColors } from './vertexColors';
 
 /**
- * Draw `cmd`'s trimmed stroke clipped from its cached ribbon, handing the
- * geometry its cut ends are drawn with to `drawEnds` where it draws straight.
- * Returns `false`, having drawn nothing, where the stroke is to be rebuilt
- * trimmed instead.
+ * Draw `cmd`'s stroke clipped from its cached ribbon to its trim, or whole
+ * with none, handing the geometry its cut ends are drawn with to `drawEnds`
+ * where it draws straight. Returns `false`, having drawn nothing, where the
+ * tessellator is to build the stroke instead.
  */
 export function drawClippedTrim(
   ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces, drawEnds: (ends: Mesh) => void,
 ): boolean {
   const { stroke } = cmd;
-  const trim: StrokeTrim | undefined = stroke.trim;
+  const trim: StrokeTrim = stroke.trim ?? WHOLE;
   const variants = ctx.batchVariants;
-  if (trim === undefined || variants?.trimClip !== true) return false;
+  if (variants?.trimClip !== true) return false;
   const metric = spaces.ribbon?.metric;
   if (spaces.start?.metric !== metric || spaces.end?.metric !== metric) return false;
 
@@ -122,6 +124,8 @@ function markAndCover(
   drawTriangles(ctx, painted, body.geometry, body.indexCount, { stencil: cover });
   if (ends) drawTriangles(ctx, painted, ends.geometry, ends.indexCount, { stencil: cover });
 }
+
+const WHOLE: StrokeTrim = {};
 
 const COVERS = new WeakMap<ClipRibbon, Mesh>();
 
