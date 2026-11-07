@@ -1,7 +1,7 @@
 ---
 '@weasel-js/renderer': patch
 '@weasel-js/font': patch
-'@weasel-js/core': patch
+'@weasel-js/core': minor
 ---
 
 The renderer can draw with WebGPU. `new WeaselRenderer({ gpu: { device, canvas }, width, height, dpr })` builds one synchronously from a `GPUDevice` the caller holds, and `requestRendererDevice()` returns the page's one shared device, or `null` where WebGPU is unavailable. `gpu.antialias: false` draws the canvas single-sampled, as WebGL's `antialias` context attribute does; the default is 4× multisampled. A lost device is reported once and the renderer draws nothing after it.
@@ -15,3 +15,5 @@ A registered paint kind's WGSL supplies `fn fragment(in: PaintVaryings) -> vec4f
 Core's canvases take `backend: 'webgl2' | 'webgpu' | 'auto'` (`<Canvas>`, `<SceneCanvas>`, `<DrawCanvas>`, `<SceneViewCanvas>`), default `'webgl2'`, and `CanvasBackendProvider` sets it for every canvas beneath it. `'auto'` takes WebGPU where a device is available and every program registered so far has WGSL. The choice is made at a canvas's first paint, which waits for the device; a tile of a shared canvas always paints with WebGL 2.
 
 Breaking: `CanvasExtensionApi.pickAt` and `readIds` now return promises, so they read ids on WebGPU too. `readIdsSync` answers at once on WebGL and returns `null` on WebGPU; `geometry.picking: 'pixels'` reads it and walks the shapes where it is `null`.
+
+<!-- bump-approved: minor: maintainer — 1.17.0 release requested 2026-11-07 -->
