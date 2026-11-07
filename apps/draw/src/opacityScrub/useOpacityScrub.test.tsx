@@ -115,6 +115,13 @@ describe('opacity scrub', () => {
     expect(t.onViewChange).not.toHaveBeenCalled();
   });
 
+  it('steps finer on a Shift turn the browser sends as a horizontal scroll', () => {
+    const t = setup();
+    t.key('keydown');
+    t.wheel({ shiftKey: true, deltaX: 10, deltaY: 0 });
+    expect(t.alpha()).toBe(99);
+  });
+
   it("moves the Properties panel's fill opacity with every tick", () => {
     const t = setup();
     expect(t.fillSlider()).toBe('100');
