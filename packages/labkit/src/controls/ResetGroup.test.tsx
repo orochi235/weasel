@@ -18,9 +18,23 @@ const group = { kind: 'group', name: 'Type', children: { italic } } as unknown a
 describe('ResetGroup over an encoded leaf', () => {
   it('reads the stored value through its encoding, and resets it to holding nothing', () => {
     const setConfig = vi.fn();
-    const { rerender } = renderWithIcons(<ResetGroup group={group} path="type" config={{ type: { italic: 'normal' } }} setConfig={setConfig} />);
+    const { rerender } = renderWithIcons(
+      <ResetGroup
+        group={group}
+        path="type"
+        config={{ type: { italic: 'normal' } }}
+        setConfig={setConfig}
+      />,
+    );
     expect(screen.getByRole('button', { name: 'Reset Type' })).toBeDisabled();
-    rerender(<ResetGroup group={group} path="type" config={{ type: { italic: 'italic' } }} setConfig={setConfig} />);
+    rerender(
+      <ResetGroup
+        group={group}
+        path="type"
+        config={{ type: { italic: 'italic' } }}
+        setConfig={setConfig}
+      />,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Reset Type' }));
     expect(setConfig.mock.calls).toEqual([['type', { italic: undefined }]]);
   });

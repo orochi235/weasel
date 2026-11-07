@@ -30,8 +30,8 @@ import {
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
-import { valueAtPath, withValueAtPath } from '../config/path';
 import { drawsOwn } from '../config/drawsOwn';
+import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import { boundAction } from './boundAction';

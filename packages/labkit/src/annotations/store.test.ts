@@ -511,13 +511,21 @@ describe('a moved mark', () => {
         naive: {
           version: 1,
           systemLayers: [{ id: 'marks' }],
-          nodes: [{ id: 'n1', kind: 'mark', layer: 'marks', pose: { x: 25.6, y: 34, width: 128, height: 68 }, data: { target: 'naive', kind: 'line', points: LINE.points } }],
+          nodes: [
+            {
+              id: 'n1',
+              kind: 'mark',
+              layer: 'marks',
+              pose: { x: 25.6, y: 34, width: 128, height: 68 },
+              data: { target: 'naive', kind: 'line', points: LINE.points },
+            },
+          ],
         },
       },
     };
     const store = annotationsFromJSON(legacy, () => []);
     store.sceneFor('naive');
-    const [node] = store.toJSON().scenes.naive?.nodes ?? [];
+    const [node] = (store.toJSON().scenes.naive as { nodes: { data: unknown }[] }).nodes;
     expect(node?.data).toEqual({ target: 'naive', kind: 'line', points: LINE.points });
   });
 });

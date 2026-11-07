@@ -1,4 +1,4 @@
-import { isPrefLeaf, prefShownValue, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefGroup, type PrefLeaf, prefShownValue } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
@@ -14,7 +14,8 @@ function leavesUnder(group: PrefGroup, at: string): [string, PrefLeaf][] {
   });
 }
 
-const isEncoded = (leaf: PrefLeaf): boolean => (leaf as { encoding?: unknown }).encoding !== undefined;
+const isEncoded = (leaf: PrefLeaf): boolean =>
+  (leaf as { encoding?: unknown }).encoding !== undefined;
 
 /** What the row at `path` shows: an encoded leaf's stored value read through its encoding. */
 function shownAt(config: Record<string, unknown>, path: string, leaf: PrefLeaf): unknown {
@@ -40,7 +41,9 @@ export function ResetGroup({
   config: Record<string, unknown>;
   setConfig: (path: string, value: unknown) => void;
 }) {
-  const changed = leavesUnder(group, path).filter(([p, leaf]) => !deepEqual(shownAt(config, p, leaf), leaf.default));
+  const changed = leavesUnder(group, path).filter(
+    ([p, leaf]) => !deepEqual(shownAt(config, p, leaf), leaf.default),
+  );
   return (
     <Button
       iconOnly
@@ -50,7 +53,10 @@ export function ResetGroup({
       tooltip={`Reset ${group.name} to defaults`}
       disabled={changed.length === 0}
       onClick={() => {
-        const reset = changed.reduce((at, [p, leaf]) => withValueAtPath(at, p, resetValue(leaf)), config);
+        const reset = changed.reduce(
+          (at, [p, leaf]) => withValueAtPath(at, p, resetValue(leaf)),
+          config,
+        );
         setConfig(path, valueAtPath(reset, path));
       }}
     >

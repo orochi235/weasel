@@ -8,5 +8,10 @@ export function drawsOwn(
   path: string,
   leaf: PrefLeaf,
 ): boolean {
-  return (renderers?.[path] ?? resolved.renderers[path] ?? resolved.dialogs[path] ?? renderers?.[leaf.kind]) !== undefined;
+  return (
+    (renderers?.[path] ??
+      resolved.renderers[path] ??
+      resolved.dialogs[path] ??
+      renderers?.[leaf.kind]) !== undefined
+  );
 }

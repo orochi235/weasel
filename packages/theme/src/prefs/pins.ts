@@ -1,4 +1,4 @@
-import { isPrefScope, PREF_ELSE, prefLeaves, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
+import { isPrefScope, PREF_ELSE, prefLeaves, type PrefEnum, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
 import { selectionKey, type Selection, type Varying } from '../axes.ts';
 import type { PinValue } from '../definition.ts';
 import { defineTheme, type Theme } from '../theme.ts';
@@ -21,7 +21,7 @@ function optionsIn(schema: PrefGroup): OptionsOf {
   const leaves = prefLeaves(schema);
   return (path) => {
     const leaf = leaves.get(path);
-    return leaf?.kind === 'enum' ? leaf.options.map((option) => String(option.value)) : [];
+    return leaf?.kind === 'enum' ? (leaf as PrefEnum).options.map((option) => option.value) : [];
   };
 }
 

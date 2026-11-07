@@ -1,9 +1,4 @@
-import {
-  asNodeId,
-  createScene,
-  type Scene,
-  sceneFromJSON,
-} from '@weasel-js/core';
+import { asNodeId, createScene, type Scene, sceneFromJSON } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
 import { captureTarget } from './capture';
 import { type MarkDrawOptions, resolveMarkStyle } from './drawOne';

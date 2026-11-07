@@ -186,7 +186,7 @@ function assignedProps(program: t.Program): Map<string, t.ObjectProperty[]> {
 /** `spec` with `props` set over it, the last of them winning, as the assignments leave the story at runtime. */
 function withAssigned(spec: t.ObjectExpression | null, props: readonly t.ObjectProperty[] | undefined): t.ObjectExpression | null {
   if (!props) return spec;
-  return { type: 'ObjectExpression', properties: [...props].reverse().concat(spec?.properties ?? []) } as unknown as t.ObjectExpression;
+  return { type: 'ObjectExpression', properties: [...[...props].reverse(), ...(spec?.properties ?? [])] } as unknown as t.ObjectExpression;
 }
 
 /**
