@@ -192,6 +192,13 @@ describe('writing DOT', () => {
     expect(containers.find((c) => c.id === 'l')!.colors?.fill).toBeUndefined();
   });
 
+  it('writes a dotted dash as dotted, so a dotted DOT edge or node reads back dotted', () => {
+    const dot = 'digraph { a [style="filled,dotted"]; b; a -> b [style=dotted]; }';
+    const p = readDot(writeDot(readDot(dot).document).text).document.pages.map(asGraph)[0]!;
+    expect(p.data.nodes[0]!.colors?.dash).toEqual([2, 3]);
+    expect(p.data.edges[0]!.colors?.dash).toEqual([2, 3]);
+  });
+
   it('warns that a trimmed connector was written whole', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
     expect(writeDot(pageOf(data)).warnings).toEqual(['DOT draws a connector whole; trims were dropped.']);

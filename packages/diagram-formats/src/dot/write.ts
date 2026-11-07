@@ -2,7 +2,7 @@
 import type { DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../graphWrite';
-import { arrowName, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
+import { arrowName, dashStyle, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
 
 const RANKDIR: Readonly<Record<LayoutDirection, string | null>> = { down: null, up: 'BT', right: 'LR', left: 'RL' };
 const KEYWORDS = new Set(['node', 'edge', 'graph', 'digraph', 'subgraph', 'strict']);
@@ -27,7 +27,7 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   const { shape, rounded, missing, marked } = shapeOf(node.outline);
   if (missing) out.warnings.add('DOT has no shape for some outlines; they were written as boxes.');
   const own = changed(nodeStyleIn(out, node), nodeStyleIn(out));
-  const styles = [rounded ? 'rounded' : null, 'filled', own.dash !== undefined ? 'dashed' : null].filter((s) => s !== null);
+  const styles = [rounded ? 'rounded' : null, 'filled', own.dash !== undefined ? dashStyle(own.dash) : null].filter((s) => s !== null);
   const page = out.page.height;
   return attrList([
     `label=${quoteLabel(nodeLines(node, out.warnings, 'DOT'))}`,
@@ -104,7 +104,7 @@ function edgeLine(out: GraphOut, edge: DataEdge): string | null {
     edge.endLabels?.to ? `headlabel=${quoteLabel([edge.endLabels.to])}` : null,
     color('color', own.stroke), color('fontcolor', own.label),
     own.width !== undefined ? `penwidth=${own.width}` : null,
-    own.dash !== undefined ? 'style=dashed' : null,
+    own.dash !== undefined ? `style=${dashStyle(own.dash)}` : null,
     ...markerAttrs(out, edge),
   ])};`;
 }
