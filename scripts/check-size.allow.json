@@ -257,7 +257,6 @@
     "longestFunction": 132
   },
   "packages/ui/src/components/Select/Select.tsx": {
-    "lines": 453,
     "longestFunction": 125
   },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
@@ -267,7 +266,7 @@
     "longestFunction": 133
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 199
+    "longestFunction": 197
   },
   "packages/ui/src/components/Timeline/Timeline.tsx": {
     "longestFunction": 185

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { lineShape, runPlaces, trackRun, type RunSpot } from '@weasel-js/geom';
 import { useRunScroll } from './useRunScroll';
@@ -10,7 +12,7 @@ const GAP = 15;
 const lengths = [20, 20, 20, 20, 20];
 const keyOf = (el: Element): string | null => el.getAttribute('data-run-item');
 
-function mount(total: number, opts: { modReorders?: boolean } = {}) {
+function mount(total: number, opts: { modReorders?: boolean; dragPx?: number } = {}) {
   const root = document.createElement('div');
   for (let i = 0; i < lengths.length; i++) {
     const item = document.createElement('button');
@@ -24,6 +26,8 @@ function mount(total: number, opts: { modReorders?: boolean } = {}) {
     const scroll = useRunScroll({ root: ref, keyOf, run, total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
     drawn.offset = scroll.offset;
     return scroll;
+  }, opts.dragPx === undefined ? undefined : {
+    wrapper: ({ children }: { children: ReactNode }) => createElement(KitSettingsProvider, { value: { gestures: { dragPx: opts.dragPx } } }, children),
   });
   const items = Array.from(root.children) as HTMLElement[];
   return { root, items, hook };
@@ -123,6 +127,23 @@ describe('useRunScroll', () => {
       document.dispatchEvent(pointer('pointerup', 30));
     });
     expect(clickReaches(items[1]!)).toBe(false);
+  });
+
+  test('a drag scrolls only once it passes the gestures.dragPx kit setting', () => {
+    const { items, hook } = mount(160, { dragPx: 30 });
+    act(() => {
+      hook.result.current.onPointerDownCapture(press(items[1]!, 50));
+      document.dispatchEvent(pointer('pointermove', 30));
+    });
+    expect(hook.result.current.offset).toBe(0);
+    act(() => {
+      document.dispatchEvent(pointer('pointermove', 10));
+    });
+    expect(hook.result.current.offset).toBe(40);
+    act(() => {
+      document.dispatchEvent(pointer('pointerup', 10));
+    });
+    settle();
   });
 
   test('a drag with Cmd and Ctrl held scrolls a run that does not reorder', () => {

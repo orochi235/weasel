@@ -13,6 +13,7 @@ import { MenuBarTitle } from './MenuBarTitle';
 import { useMenuBarFocus } from './useMenuBarFocus';
 import { MenuBarHandleContext, type MenuAccessChord, type MenuBarHandle } from './menuBarHandle';
 import { MenuBarKeys } from './useMenuBarKeys';
+import { rovingTarget } from '../../useRovingTabIndex';
 import s from './MenuBar.module.css';
 
 export type { MenuAccessChord } from './menuBarHandle';
@@ -90,12 +91,12 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
     [],
   );
 
-  // The next title along, wrapping; with `enabled`, the next one that can open.
-  const neighbor = (key: string, dir: -1 | 1, enabled = false) => {
+  // The next title along that can open, wrapping.
+  const neighbor = (key: string, dir: -1 | 1) => {
     let i = menus.findIndex((m) => m.key === key);
     for (let n = 0; n < menus.length; n++) {
       i = (i + dir + menus.length) % menus.length;
-      if (!enabled || !disabled.has(menus[i]!.key)) return menus[i]!.key;
+      if (!disabled.has(menus[i]!.key)) return menus[i]!.key;
     }
     return key;
   };
@@ -106,8 +107,9 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
   }), [showNow]);
 
   const onTitleKey = (e: KeyboardEvent<HTMLButtonElement>, key: string) => {
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      const next = neighbor(key, e.key === 'ArrowRight' ? 1 : -1);
+    const to = rovingTarget(menus.findIndex((m) => m.key === key), e.key, menus.map(() => true), 'horizontal');
+    if (to !== null) {
+      const next = menus[to]!.key;
       setActive(next);
       buttons.current.get(next)?.focus();
     } else if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
@@ -155,7 +157,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
           close={close}
           labelledBy={titleId(opened.key)}
           inside={inside}
-          onEdge={(dir) => show(neighbor(opened.key, dir, true), 'keyboard')}
+          onEdge={(dir) => show(neighbor(opened.key, dir), 'keyboard')}
           releaseRuns={opened.release}
         />,
         target,

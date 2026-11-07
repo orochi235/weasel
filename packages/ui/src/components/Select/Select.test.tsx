@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
 import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { Select, SelectItem, SelectSection } from './Select';
 import s from './Select.module.css';
 
@@ -200,6 +201,16 @@ describe('Select', () => {
       const up = createEvent.pointerUp(document, { clientX: 20 + DRAG_THRESHOLD_PX, clientY: 10 });
       fireEvent(document, up);
       expect(up.defaultPrevented).toBe(false);
+    });
+
+    it('reads the threshold from the gestures.dragPx kit setting', () => {
+      render(<KitSettingsProvider value={{ gestures: { dragPx: 30 } }}><Select label="Color" options={OPTIONS} defaultSelectedKey="g" /></KitSettingsProvider>);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      press(trigger, { clientX: 20, clientY: 10 });
+      act(() => { fireEvent.click(trigger); });
+      const up = createEvent.pointerUp(document, { clientX: 40, clientY: 10 });
+      fireEvent(document, up);
+      expect(up.defaultPrevented).toBe(true);
     });
 
     it('keeps a release that travelled — a drag onto a row is a choice', () => {

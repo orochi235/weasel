@@ -1,5 +1,6 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { useKitSetting } from '@weasel-js/react';
 import { clamp } from '@weasel-js/geom';
 import type { SliderGeometry } from './sliderGeometry';
 import { resolveBounds } from './stops';
@@ -34,6 +35,7 @@ function regionReach<T extends Thumb>(thumbs: readonly T[], index: number, f: re
 export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometry }: RegionDragArgs<T>) {
   const { onInput, onChange, onCancel } = useLatestHandlers(props);
   const { valueToFraction, fractionToValue } = scale;
+  const dragPx = useKitSetting('gestures.dragPx');
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
@@ -54,7 +56,7 @@ export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometr
     // No capture: a region draws content of its own, and capture would retarget pointerup and kill the click on it.
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
-        if (!latest && !pastDragThreshold(press, ev)) return;
+        if (!latest && !pastDragThreshold(press, ev, dragPx)) return;
         const m = geometry.measure(ev.clientX, ev.clientY);
         if (!m) return;
         latest = moved(clamp(m.gRaw - start.gRaw, lo, hi));

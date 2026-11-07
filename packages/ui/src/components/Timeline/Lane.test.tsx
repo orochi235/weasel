@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import type { Track } from '@weasel-js/animator';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { Lane } from './Lane';
 import { buildLanes } from './lanes';
 
@@ -127,6 +128,21 @@ describe('Lane', () => {
     expect(onSelect).toHaveBeenCalledWith(1);
     expect(onKeyInput).not.toHaveBeenCalled();
     expect(onKeyCommit).not.toHaveBeenCalled();
+  });
+
+  it('moves a key only once the press passes the gestures.dragPx kit setting', () => {
+    const onKeyInput = vi.fn();
+    render(
+      <KitSettingsProvider value={{ gestures: { dragPx: 30 } }}>
+        <Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} />
+      </KitSettingsProvider>,
+    );
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 270, clientY: 10 });
+    expect(onKeyInput).not.toHaveBeenCalled();
+    fireEvent.pointerMove(document, { clientX: 290, clientY: 10 });
+    expect(onKeyInput).toHaveBeenCalled();
+    fireEvent.pointerUp(document, { clientX: 290, clientY: 10 });
   });
 
   it('selects a focused key on Enter or Space', () => {
