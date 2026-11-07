@@ -35,6 +35,15 @@ describe('createSimulation', () => {
     expect(sim.nodes.every((n) => Number.isFinite(n.y))).toBe(true);
   });
 
+  it('settles under an alphaTarget below alphaMin, where alpha can never climb back over it', () => {
+    const sim = createSimulation<TestNode>({ nodes: [node('a')], forces: [inert], alphaTarget: DEFAULT_ALPHA_MIN / 2 });
+    sim.tick(1000);
+    expect(sim.alpha()).toBeLessThan(DEFAULT_ALPHA_MIN);
+    expect(sim.isSettled()).toBe(true);
+    sim.alphaTarget(0.3);
+    expect(sim.isSettled()).toBe(false);
+  });
+
   it('runs a whole relaxation synchronously and settles', () => {
     const sim = createSimulation<TestNode>({ nodes: [node('a')], forces: [inert] });
     expect(sim.isSettled()).toBe(false);

@@ -79,6 +79,7 @@ export interface SimulationCore<TNode extends SimulationNode> {
    *  onTick or onEnd (matches d3-force). */
   tick(iterations?: number): this;
 
+  /** Whether alpha is below alphaMin and `alphaTarget` is too, so it stays there. */
   isSettled(): boolean;
 }
 
