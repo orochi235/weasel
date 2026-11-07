@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefEnum, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, convertLeaf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { nodeAt } from './schemaEdit';
 import { STUB } from './schemaExport';
@@ -23,7 +23,7 @@ describe('kindSchemas', () => {
 
   it('offers a number leaf linear, log and sqrt scales, and spaces its default\'s slider by the leaf\'s own', () => {
     const { own } = attributeSchema({ ...num, scale: 'log' } as PrefLeaf);
-    expect((own.scale as { options: { value: string }[] }).options.map((o) => o.value)).toEqual(['linear', 'log', 'sqrt']);
+    expect((own.scale as PrefEnum).options.map((o) => o.value)).toEqual(['linear', 'log', 'sqrt']);
     expect(own.default).toMatchObject({ scale: 'log' });
   });
 

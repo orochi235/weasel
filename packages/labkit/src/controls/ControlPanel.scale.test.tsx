@@ -25,14 +25,17 @@ describe('<ControlPanel> a number with a scale', () => {
   });
 
   it('lands the middle on √1000 to the step it is given', () => {
-    const fine = resolveConfigSchema(f.schema({ segments: f.number(16).range(1, 1000).step(0.1).scale('log') }), []);
+    const fine = resolveConfigSchema(
+      f.schema({ segments: f.number(16).range(1, 1000).step(0.1).scale('log') }),
+      [],
+    );
     const setConfig = vi.fn();
     render(<ControlPanel schema={fine} config={{ segments: 16 }} setConfig={setConfig} />);
     fireEvent.change(screen.getByRole('slider'), { target: { value: '0.5' } });
     expect(setConfig).toHaveBeenLastCalledWith('segments', 31.6);
   });
 
-  it('keeps the readout typing and stepping in the value\'s own units', () => {
+  it("keeps the readout typing and stepping in the value's own units", () => {
     const setConfig = vi.fn();
     render(<ControlPanel schema={schema} config={{ segments: 16 }} setConfig={setConfig} />);
     fireEvent.keyDown(screen.getByRole('spinbutton'), { key: 'ArrowUp' });

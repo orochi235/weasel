@@ -1,9 +1,4 @@
-import type {
-  PrefCondition,
-  PrefGroup,
-  PrefLeaf,
-  PrefSection,
-} from '@weasel-js/prefs';
+import type { PrefCondition, PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { BaseNode, conditioned } from './baseNode';
 import {

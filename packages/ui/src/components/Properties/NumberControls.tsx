@@ -4,7 +4,6 @@ import {
   type ReactNode,
   type RefObject,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -176,7 +175,7 @@ function SliderTrack(p: PropertyNumberFieldProps) {
   const { min, max, step, settle, onTrack } = sliderBounds(p);
   const live = p.onInput ?? p.onChange;
   const commit = p.onInput ? p.onChange : undefined;
-  const place = useMemo(() => trackPlace(p.scale, min, max, step, p.stops), [p.scale, min, max, step, p.stops]);
+  const place = trackPlace(p.scale, min, max, step, p.stops);
   const range = useCommitListener(commit && ((raw) => commit(settle(place.fromInput(Number(raw))))));
   const stops = useTrackStops(p.stops, min, max, place.fraction);
   const known = isKnown(p);
