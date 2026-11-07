@@ -23,14 +23,14 @@ import type {
   SectionSpec,
 } from './types';
 
-/** Drop keys whose value is undefined, so an unset annotation stays a gap the
- *  rule chain can fill rather than a settled `undefined`. */
 /** The `auto` a leaf's own fields gave it, where an object: a prefs leaf `fromPrefs` carried over. */
 const ownAuto = (patch: LeafPatch): PrefAuto | undefined => {
   const { auto } = patch as { auto?: unknown };
   return typeof auto === 'object' && auto !== null ? (auto as PrefAuto) : undefined;
 };
 
+/** Drop keys whose value is undefined, so an unset annotation stays a gap the
+ *  rule chain can fill rather than a settled `undefined`. */
 function defined(annotations: Record<string, unknown>): LeafPatch {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(annotations)) if (v !== undefined) out[k] = v;
