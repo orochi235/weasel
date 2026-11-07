@@ -620,6 +620,23 @@ commands inside a layer's group, every tile staged every command, and the tiled 
 (`tests/perf/recorded/retain-2026-11-03/`). Its timer-query column exceeds the frame's own time on tiled
 frames there, so read GPU time from it for untiled frames only.
 
+## An image's upload through the 2D canvas
+
+WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the
+canvas, since only the canvas knows whether the bitmap holds straight or premultiplied pixels
+(`packages/renderer/src/gpu/webgl/premultipliedBitmap.ts`). `image-upload.spec.ts` times a first upload,
+through to a one-pixel read of the texture, both ways. On teitou (Apple M5 Max, ANGLE Metal, load 5.9
+on 18 cores) on 2026-11-07, medians of 7 runs of a default bitmap:
+
+| side | direct (ms) | canvas (ms) | canvas, straight bitmap (ms) |
+|---:|---:|---:|---:|
+|  256 |  0.51 |  0.94 |  0.84 |
+| 1024 |  1.38 |  1.58 |  1.39 |
+| 4096 | 16.10 | 10.17 | 10.02 |
+
+So the pass adds a few tenths of a millisecond, once per image, at small sizes and saves time at
+4096. Only Chromium has been measured. The runs are in `tests/perf/recorded/image-upload-2026-11-07/`.
+
 ## Timing a frame
 
 Specs that time the renderer draw **one frame per task** and take the median,
