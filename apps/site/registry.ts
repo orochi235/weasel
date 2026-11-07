@@ -1270,6 +1270,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ScopedGridDemo.tsx',
   },
   {
+    id: 'rulers',
+    title: 'Rulers',
+    package: 'guides',
+    description: 'Rulers along the top and left of the canvas, from `createRulers` and `<Rulers>`. Their ticks follow the pan and zoom at the step `scaleBar` picks, and read in the unit scope of the frame under the pointer: inches on the document, millimeters over the part, which is drawn at half size, so its ruler reads its true lengths. A drag off a ruler places a guide (`useGuides`), snapping where the canvas snaps, as one undo step. The rulers\' look is provisional.',
+    hint: 'Move the pointer over the part and back. Drag down from the top ruler or right from the left one to place a guide, then undo it with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/RulersDemo').then((m) => m.RulersDemo),
+    path: 'apps/site/demos/RulersDemo.tsx',
+  },
+  {
     id: 'layout',
     title: 'Layout',
     package: 'guides',

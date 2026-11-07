@@ -19,6 +19,7 @@ import { usePathToolsTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
+import { Rulers } from '@weasel-js/ui/components/Rulers';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useMemo } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher, NoticesPublisher, ToolOptionsPublisher } from './adapterPublishers';
@@ -42,6 +43,7 @@ import { DRAW_TUNE } from './constraintKeys';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useViewBounds } from './useViewBounds';
 import { useGrid } from './useGrid';
+import { useRulers } from './useRulers';
 import { DRAW_NODE_ROUTING } from './nodeKinds';
 import { usePathOverlays } from './usePathOverlays';
 import { useSymmetry } from './useSymmetry';
@@ -94,6 +96,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(props.pages.placed, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const rulers = useRulers();
   const bounds = useViewBounds(props.pages.placed);
   const spacingHints = useSpacingHints();
   const pathOverlays = usePathOverlays();
@@ -122,6 +125,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     selection,
     modes: modes.ambient,
     grid: grid.commands,
+    rulers: rulers.commands,
     bounds: bounds.commands,
     pathOverlays: pathOverlays.contribution,
     symmetry,
@@ -137,13 +141,18 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     () => measurementsContribution(scene as never, measurements),
     [scene, measurements],
   );
-  const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
+  const rulersEntry = rulers.rulers?.contribution;
+  const ambientEntries = useMemo(
+    () => [...ambient, measureEntry, ...(rulersEntry ? [rulersEntry] : [])],
+    [ambient, measureEntry, rulersEntry],
+  );
   // Measurement ends, and the canvas's default path anchors, snap a gesture
-  // within a few screen pixels; past them it takes the grid.
+  // within a few screen pixels; past them it takes the guides, then the grid.
   const gridSource = grid.snapSource;
+  const guideSource = rulers.snapSource;
   const snap = useMemo(
-    () => ({ sources: [...(gridSource ? [gridSource] : []), measureEndSource()] }),
-    [gridSource],
+    () => ({ sources: [...(gridSource ? [gridSource] : []), guideSource, measureEndSource()] }),
+    [gridSource, guideSource],
   );
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
@@ -217,6 +226,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             layers={{
               paper: { layer: paperLayer, before: 'grid' },
               ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
+              guides: { layer: rulers.layer, after: 'scene' },
               modeTint: { layer: workspaceTint, after: 'grid' },
               selectionOverlay: { outline: { follow: 'shape' } },
             }}
@@ -243,6 +253,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
         )}
+        {rulers.rulers && <Rulers rulers={rulers.rulers} />}
         {/* In the workspace, not the viewport: a fixed region sits outside the theme and over the status bar. */}
         {hostRef.current && <ToastRegion portalContainer={hostRef.current} />}
         <LastOperation />

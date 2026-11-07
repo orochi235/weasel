@@ -18,6 +18,7 @@ export interface EditorAmbientArgs {
   /** The mode shortcuts and double-click entry, from `useCanvasModes`. */
   modes: readonly Contribution[];
   grid: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'>;
+  rulers: Pick<AppCommands, 'rulersVisible' | 'toggleRulers'>;
   bounds: Pick<AppCommands, 'boundToContent' | 'toggleBoundToContent'>;
   /** The entry sourcing the `chromeRules` dep path edit's overlay toggles write, from `usePathOverlays`. */
   pathOverlays: Contribution;
@@ -44,6 +45,7 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const chrome = useChromeCommands();
   const appCommands: AppCommands = {
     ...args.grid,
+    ...args.rulers,
     ...args.bounds,
     ...args.symmetry.commands,
     ...chrome,
@@ -59,7 +61,7 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   );
   // After the commit, so the dep reads what this render shows.
   const shown = [
-    appCommands.gridVisible, appCommands.snapToGrid, appCommands.boundToContent, appCommands.symmetryOn,
+    appCommands.gridVisible, appCommands.snapToGrid, appCommands.rulersVisible, appCommands.boundToContent, appCommands.symmetryOn,
     appCommands.canReleaseCompound, ...CHROME_ITEMS.map(({ id }) => appCommands.chromeHidden(id)),
   ].join();
   useLayoutEffect(() => commandsChanged.emit(), [commandsChanged, shown]);
