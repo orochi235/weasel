@@ -39,10 +39,9 @@ export function useSymmetry(scene: DrawScene, page: { id?: string; x?: number; y
   const ctrl = useMemo(() => createSymmetry(scene as never), [scene]);
   const group = useRef<NodeId | null>(null);
 
-  // A page frames what is on it, so the center is in its frame.
   const onPage = page.id === undefined ? null : pageNodeOf(scene, page.id);
-  const cx = (onPage === null ? page.x ?? 0 : 0) + page.width / 2;
-  const cy = (onPage === null ? page.y ?? 0 : 0) + page.height / 2;
+  const cx = (page.x ?? 0) + page.width / 2;
+  const cy = (page.y ?? 0) + page.height / 2;
   useLayoutEffect(() => {
     if (!on) {
       ctrl.setActive(null);

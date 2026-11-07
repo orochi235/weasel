@@ -2,7 +2,7 @@ import { createEmitter } from '@weasel-js/registry';
 import { hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import { bakeSymmetry, type BakeResult } from './bake';
 import {
-  editSymmetries, isSymmetryGroup, poseAtCenter, readGroup, specOfData, symmetryGroupOf,
+  centerUnder, editSymmetries, isSymmetryGroup, poseAtCenter, readGroup, specOfData, symmetryGroupOf,
   symmetryGroupSpec,
 } from './group';
 import { keepContentsPut, reachFrom } from './frames';
@@ -29,7 +29,8 @@ export interface SymmetryController {
   /** Hear that the active group, or anything about it, changed. */
   subscribe(listener: () => void): () => void;
   /** Add an empty group, one undo step, and make it the active one. Its layer
-   *  defaults to the scene's first. */
+   *  defaults to the scene's first. `center` is in the world, as every
+   *  center the controller reads and takes is, wherever `parent` puts it. */
   create(opts: { center: Point; symmetry?: Partial<SymmetrySpec>; layer?: string; parent?: NodeId | null }): NodeId;
   /** Group `id`'s spec and center, or null when it is not a symmetry group. */
   read(id: NodeId | null): { spec: SymmetrySpec; center: Point } | null;
@@ -76,7 +77,9 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     if (!node || !isSymmetryGroup(scene, id)) return;
     if (change.spec) scene.update(id, { data: { ...(node.data as object), symmetry: { ...specOfData(node.data), ...change.spec } } });
     const center = change.center;
-    if (center) keepContentsPut(scene, id, () => scene.setPose(id, { ...(node.pose as object), ...poseAtCenter(center) }));
+    if (!center) return;
+    const at = centerUnder(scene, center, node.parent);
+    keepContentsPut(scene, id, () => scene.setPose(id, { ...(node.pose as object), ...poseAtCenter(at) }));
   };
 
   const ctrl: SymmetryController = {
@@ -89,7 +92,8 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     subscribe: listeners.subscribe,
     create({ center, symmetry, layer, parent }) {
       const id = scene.add(symmetryGroupSpec({
-        layer: layer ?? scene.layers[0]?.id ?? 'default', center, ...(symmetry ? { symmetry } : {}),
+        layer: layer ?? scene.layers[0]?.id ?? 'default', center: centerUnder(scene, center, parent ?? null),
+        ...(symmetry ? { symmetry } : {}),
         ...(parent !== undefined ? { parent } : {}),
       }) as never);
       ctrl.setActive(id);
