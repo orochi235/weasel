@@ -25,7 +25,8 @@ export function workerInputs(args: {
   return {
     scene,
     alphaFor: hidden.size > 0 || alphaFor ? (id: string) => (hidden.has(id) ? 0 : (alphaFor?.(id) ?? 1)) : undefined,
-    ...(cull !== undefined ? { cull } : {}),
+    // Always present: the worker client keeps a field an update leaves out.
+    cull: cull === true,
     clock,
   };
 }
