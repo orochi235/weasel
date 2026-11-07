@@ -157,6 +157,16 @@ describe('urlHashAdapter', () => {
     expect(await urlHashAdapter.list('')).toEqual([['a', 1]]);
   });
 
+  it('warns once per key when JSON would change the value, as localStorage does', async () => {
+    window.history.replaceState(null, '', '#');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await urlHashAdapter.set('lk:w:a', { at: new Date(0) });
+    await urlHashAdapter.set('lk:w:a', { at: new Date(1) });
+    await urlHashAdapter.set('lk:w:b', { fine: [1, 'x', null] });
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
   it('keeps the history state a router left', async () => {
     window.history.replaceState({ route: 'lab' }, '', '#');
     await urlHashAdapter.set('k', 1);

@@ -8,6 +8,18 @@ export function parse(raw: string): unknown {
   }
 }
 
+/** A check for an adapter that stores JSON: warns once per key about a value JSON would change. */
+export function jsonLossWarner(substrate: string): (key: string, value: unknown) => void {
+  const warned = new Set<string>();
+  return (key, value) => {
+    if (warned.has(key) || isJsonSafe(value)) return;
+    warned.add(key);
+    console.warn(
+      `[storage] "${key}" holds a value JSON cannot keep exactly; ${substrate} stores what JSON keeps. Use IndexedDB for binary or non-JSON state.`,
+    );
+  };
+}
+
 /** Whether `JSON.stringify` would keep `value` exactly. An object key holding
  *  `undefined` counts as kept: JSON drops the key, and reading back an absent
  *  key yields the same `undefined`. */

@@ -1,4 +1,4 @@
-import { parse } from './json';
+import { jsonLossWarner, parse } from './json';
 import type { StorageAdapter, StorageChange } from './types';
 import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
@@ -36,6 +36,8 @@ function writeHashMap(map: Record<string, string>): void {
   for (const sub of hashSubscribers) sub.last = Object.assign(Object.create(null), map);
 }
 
+const warnLoss = jsonLossWarner('the URL fragment');
+
 /** Persist into the URL fragment, so the page's link carries its state and can
  *  be shared or bookmarked. Changes to the fragment made elsewhere — a pasted
  *  link, back and forward — arrive through `hashchange`. */
@@ -50,6 +52,7 @@ export const urlHashAdapter: StorageAdapter = {
       .map(([key, raw]): [string, unknown] => [key, parse(raw)]),
   set: async (key, value) => {
     if (value === undefined) return urlHashAdapter.delete(key);
+    warnLoss(key, value);
     const map = readHashMap();
     map[key] = JSON.stringify(value);
     writeHashMap(map);
