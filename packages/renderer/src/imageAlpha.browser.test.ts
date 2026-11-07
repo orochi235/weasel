@@ -42,6 +42,7 @@ async function imgOf(color: readonly number[]): Promise<HTMLImageElement> {
 
 const BITMAPS: Record<string, (color: readonly number[]) => Promise<ImageBitmap>> = {
   'ImageData': (color) => createImageBitmap(pixels(8, color)),
+  'straight-alpha ImageData': (color) => createImageBitmap(pixels(8, color), { premultiplyAlpha: 'none' }),
   'a PNG blob': async (color) => createImageBitmap(await pngOf(color)),
   'a canvas': (color) => createImageBitmap(canvasOf(color)),
   'an <img>': async (color) => createImageBitmap(await imgOf(color)),
@@ -146,11 +147,14 @@ describe('a translucent pattern tile, in a real context', () => {
     return filled(0, { kind: 'texture', texture: handle, units: 'local' });
   };
 
-  it('paints the same from a bitmap as from an <img>', async () => {
+  it('paints the same from a bitmap, straight or premultiplied, as from an <img>', async () => {
     const fromBitmap = paint([pattern(registerTexture(await BITMAPS.ImageData(ORANGE)))])(8, 8);
+    renderer?.dispose();
+    const fromStraight = paint([pattern(registerTexture(await BITMAPS['straight-alpha ImageData'](ORANGE)))])(8, 8);
     renderer?.dispose();
     const fromImg = paint([pattern(registerTexture(await imgOf(ORANGE)))])(8, 8);
     expectNear(fromBitmap, ORANGE_DRAWN);
+    expectNear(fromStraight, ORANGE_DRAWN);
     expectNear(fromImg, ORANGE_DRAWN);
   });
 });

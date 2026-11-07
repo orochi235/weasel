@@ -98,8 +98,8 @@ export function getTexture(id: string): TextureEntry | null {
  * The texture holds premultiplied texels whichever source it came from, so a
  * shader sampling one reads `vec4(rgb * a, a)`, the form its own output takes.
  *
- * @param image  HTMLImageElement must be fully loaded. An ImageBitmap must
- *               hold premultiplied pixels, the `createImageBitmap` default.
+ * @param image  HTMLImageElement must be fully loaded. An ImageBitmap may
+ *               hold its pixels premultiplied or straight.
  */
 export function registerTexture(
   image: HTMLImageElement | ImageBitmap,

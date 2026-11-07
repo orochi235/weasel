@@ -4,6 +4,7 @@ import type {
   GpuTextureData, GpuTextureFormat,
 } from '../types';
 import type { GlCache } from './glCache';
+import { withPremultipliedSource } from './premultipliedBitmap';
 
 export interface GlBuffer extends GpuBuffer {
   readonly handle: WebGLBuffer;
@@ -108,10 +109,15 @@ function wrapOf(gl: WebGL2RenderingContext, wrap: GpuSampling['wrapS']): number 
 
 function upload(gl: WebGL2RenderingContext, format: GpuTextureFormat, data: GpuTextureData): void {
   if ('source' in data) {
-    if (data.premultiply) gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.source);
+    if (!data.premultiply) {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.source);
+      return;
+    }
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    withPremultipliedSource(data.source, (source) =>
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source));
     // Put back: it would premultiply every later typed-array upload too.
-    if (data.premultiply) gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     return;
   }
   const { width, height } = data;

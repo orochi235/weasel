@@ -14,7 +14,7 @@ import { registerTexture, unregisterTexture, type TextureHandle } from '../../te
 import type { DrawCommand } from '../../DrawCommand';
 import type { ImageMinification } from '../../cache/GLImageCache';
 import {
-  closeBackends, diff, openBackends, parityDevice, releaseDevice, renderBoth, report, requireGpu,
+  closeBackends, diff, openBackends, parityDevice, releaseDevice, renderBoth, renderEach, report, requireGpu,
 } from '../../testing/parityHarness';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
@@ -51,10 +51,12 @@ async function expectParity(name: string, commands: DrawCommand[], dpr = 1): Pro
   expect(d.over, line).toBe(0);
 }
 
-async function bitmap(width: number, height: number, texel: (x: number, y: number) => number[]): Promise<ImageBitmap> {
+async function bitmap(
+  width: number, height: number, texel: (x: number, y: number) => number[], options?: ImageBitmapOptions,
+): Promise<ImageBitmap> {
   const data = new Uint8ClampedArray(width * height * 4);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) data.set(texel(x, y), (y * width + x) * 4);
-  return createImageBitmap(new ImageData(data, width, height));
+  return createImageBitmap(new ImageData(data, width, height), options);
 }
 
 /** A checker with a translucent corner: aliasing, filtering and premultiplying all show on it. */
@@ -102,6 +104,27 @@ describe('WebGL and WebGPU sample and read back the same', () => {
     const d = await renderBoth(b, commands);
     const line = report(`image minification ${mode}`, d);
     expect(d.over, line).toBe(0);
+  });
+
+  it('a straight-alpha bitmap draws as its premultiplied twin does, as an image and as a pattern', async () => {
+    const translucent = (x: number, y: number) => [40 + x * 20, 200 - y * 20, 230, 40 + (x + y) * 12];
+    const scene = async (options?: ImageBitmapOptions): Promise<DrawCommand[]> => {
+      const tile = registerTexture(await bitmap(8, 8, translucent, options));
+      registered.push(tile);
+      return [GROUND,
+        { kind: 'image', image: await bitmap(8, 8, translucent, options), x: 2, y: 2, w: 28, h: 28 },
+        { kind: 'path', path: { kind: 'rect', x: 34, y: 2, width: 28, height: 44 }, fill: { paint: { kind: 'texture', texture: tile, width: 8, height: 8 } } },
+      ] as DrawCommand[];
+    };
+    const b = await openBackends({ width: W, height: H, dpr: 1 });
+    const straight = await renderEach(b, await scene({ premultiplyAlpha: 'none' }));
+    const twin = await renderEach(b, await scene());
+    const parity = diff(straight.gl, straight.gpu, W);
+    expect(parity.over, report('straight-alpha bitmap', parity)).toBe(0);
+    for (const backend of ['gl', 'gpu'] as const) {
+      const d = diff(straight[backend], twin[backend], W);
+      expect(d.over, report(`straight-alpha bitmap against its twin on ${backend}`, d)).toBe(0);
+    }
   });
 
   it.each(['rgb', 'oklab', 'oklch'])('gradient ramps interpolated in %s', async (interpolate) => {
