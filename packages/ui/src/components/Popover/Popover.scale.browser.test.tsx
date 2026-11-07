@@ -4,7 +4,7 @@ import { cleanup } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
 import { Callout } from '@weasel-js/ui/components/Callout';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Where React Aria places an overlay is measured layout, and under a CSS transform: a real browser's.
 

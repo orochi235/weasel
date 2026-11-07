@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, expect, test, vi } from 'vitest';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 

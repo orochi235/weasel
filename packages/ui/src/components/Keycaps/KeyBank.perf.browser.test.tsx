@@ -2,9 +2,9 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/faces.css';
 import { cleanup } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { BankFitter } from './bankFitter';
+import { BankFitter } from '@weasel-js/ui/testing/geometry';
 import { KeyboardLayouts } from './KeyboardLayout.stories';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(() => {
   cleanup();

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { AudioEngine } from '../createAudioEngine';
 import type { AudioEngineOptions } from '../types';
-import { renderEngineStereo } from '../testing/renderEngine';
-import { rms } from '../testing/spectrum';
+import { renderEngineStereo } from '@weasel-js/audio/testing/renderEngine';
+import { rms } from '@weasel-js/audio/testing/spectrum';
 import { createGainNode, delayNode, createFileSourceNode, createOscillatorNode } from '@weasel-js/audio';
 import type { AudioGraph } from './types';
 

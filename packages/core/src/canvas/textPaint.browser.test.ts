@@ -15,7 +15,7 @@ import { createScene, registerPaintKind, asPaint, type PaintKindEntry, renderSce
 import type { RectPose } from 'core/scene/composePose';
 import { resolveFillPattern } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';
-import 'core/paint/registerMesh';
+import '@weasel-js/core/mesh';
 import { registerEffect } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/renderer';

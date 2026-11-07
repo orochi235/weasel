@@ -4,7 +4,7 @@ import { cleanup, render } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
-import { useWheelPassThrough } from './useWheelPassThrough';
+import { useWheelPassThrough } from '@weasel-js/labkit/testing/lens';
 
 // The wheel handed on is a dispatched copy, and a browser scrolls an element only for a trusted wheel. Whether the
 // scroller under a lens moves is a real browser's scrolling, with a real wheel.

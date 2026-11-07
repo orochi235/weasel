@@ -9,7 +9,7 @@ import { DEMO_WORKSPACE } from './AssetEditor.demo';
 import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
 import { keyedRow } from './treeRows.fixture';
 import type { Workspace } from './workspace';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Where the asset list sits and what its rows look like is the grid's and the stylesheet's doing, and whether a
 // drop is taken is read off real boxes; jsdom lays nothing out.

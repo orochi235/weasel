@@ -1,28 +1,12 @@
 import { act } from '@testing-library/react';
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { edgeIdOf } from '@weasel-js/diagram';
+import { EffectEditor, editorScene, type EffectDoc, type EffectEditorApi } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
-import type { DiagramViewApi, DiagramViewProps } from '../DiagramView';
-import { edgeIdOf } from '../fromData';
-import { EffectEditor } from './EffectEditor';
-import { editorScene } from './editorMapping';
-import type { EffectDoc } from './types';
 
 registerCanvasFont('sans-serif');
-
-const live: { api: DiagramViewApi | null } = { api: null };
-
-// EffectEditor keeps its DiagramViewApi private, so the test reads it through a spy wrapper.
-vi.mock('../DiagramView', async (original) => {
-  const real = await original<typeof import('../DiagramView')>();
-  const Spy = forwardRef<DiagramViewApi, DiagramViewProps>(function Spy(props, ref) {
-    const inner = useRef<DiagramViewApi | null>(null);
-    useImperativeHandle(ref, () => inner.current!);
-    return <real.DiagramView {...props} ref={(api) => { inner.current = api; live.api = api; }} />;
-  });
-  return { ...real, DiagramView: Spy };
-});
 
 const DOC: EffectDoc = {
   pipeline: {
@@ -43,7 +27,6 @@ let root: Root | null = null;
 afterEach(() => {
   act(() => root?.unmount());
   root = null;
-  live.api = null;
   document.body.replaceChildren();
 });
 
@@ -51,17 +34,18 @@ describe('<EffectEditor> pages', () => {
   it('draws an off-page tag at each end of a wire between pages, under nodeGraph only', async () => {
     const host = document.createElement('div');
     document.body.append(host);
+    const api = createRef<EffectEditorApi>();
     const render = (look: 'nodeGraph' | 'rack') => act(async () => {
       root ??= createRoot(host);
-      root.render(<EffectEditor doc={DOC} look={look} onChange={() => {}} width={900} height={400} />);
+      root.render(<EffectEditor ref={api} doc={DOC} look={look} onChange={() => {}} width={900} height={400} />);
     });
     await render('nodeGraph');
     await frame();
     await frame();
-    await expect.poll(() => tagIds().map((id) => live.api?.rectOf(id) != null)).toEqual([true, true]);
+    await expect.poll(() => tagIds().map((id) => api.current?.rectOf(id) != null)).toEqual([true, true]);
     await render('rack');
     await frame();
     await frame();
-    expect(tagIds().map((id) => live.api?.rectOf(id) ?? null)).toEqual([null, null]);
+    expect(tagIds().map((id) => api.current?.rectOf(id) ?? null)).toEqual([null, null]);
   });
 });

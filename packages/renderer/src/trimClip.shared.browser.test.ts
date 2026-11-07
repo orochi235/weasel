@@ -4,7 +4,7 @@
  * once there (`./testing/trimClip.ts` says what may differ).
  */
 import { describe } from 'vitest';
-import { disposeAfterEach, stencilCases, wholeCases } from './testing/trimClip';
+import { disposeAfterEach, stencilCases, wholeCases } from '@weasel-js/renderer/testing/trimClip';
 
 disposeAfterEach();
 

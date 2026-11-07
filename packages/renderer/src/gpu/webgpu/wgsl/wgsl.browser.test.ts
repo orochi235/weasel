@@ -1,11 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { reflectWgsl } from '../wgslReflect';
-import { createUniformBlock } from '../wgslUniforms';
-import { BufferUsage, MapMode, TextureUsage } from '../flags';
-import { identityNdcGroups } from './testNdc';
-import { assembleCustomWgsl } from './customPrelude';
-import { assembleEffectWgsl } from './effectPrelude';
-import { PATH_FILL_VCOLOR_WGSL, PATH_FILL_WGSL } from './pathFill';
+import {
+  assembleCustomWgsl, assembleEffectWgsl, BufferUsage, createUniformBlock, identityNdcGroups, MapMode, PATH_FILL_VCOLOR_WGSL, PATH_FILL_WGSL,
+  reflectWgsl, TextureUsage,
+} from '@weasel-js/renderer/testing/wgsl';
 
 /** Kit WGSL compiles without `uniform_buffer_standard_layout`. */
 const STRICT = { standardLayout: false };

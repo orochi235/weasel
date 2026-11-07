@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { ComposeLabView } from './ComposeLabView';
+import { ComposeLabView } from '@weasel-js/ui/testing/labViews';
 
 // Whether a panel's controls fit inside it is layout, which jsdom does not do.
 

@@ -7,9 +7,8 @@ import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { ApiTable } from '../../story/api';
 import { meta, story } from '@weasel-js/forge';
-import { loadNativeModule } from '../../story/native';
+import { IndexEnvContext, IndexPage, IndexStory, loadNativeModule, type IndexEnv } from '@weasel-js/forge/testing/frame';
 import type { IndexRender, LoadedStory } from '../../story/types';
-import { type IndexEnv, IndexEnvContext, IndexPage, IndexStory } from './IndexPage';
 
 // A cell's box is layout, which jsdom does not compute.
 

@@ -86,6 +86,12 @@ export interface EffectEditorApi {
    *  its box where it has none; a double-click on the title does
    *  the same. Renaming reports 'Rename group'. */
   renameGroup(id: string): void;
+  /** The world rect the editor shows, or `null` before it has a size. */
+  visible(): { x: number; y: number; width: number; height: number } | null;
+  /** Where a stage, group, wire or a part of one is drawn, in client
+   *  coordinates, as `DiagramViewApi.rectOf` reads it: `null` for an id the
+   *  editor does not draw under its look, or before it mounts. */
+  rectOf(id: string): { x: number; y: number; width: number; height: number } | null;
 }
 
 /** The pipeline-mode editor: a look's drawing of an effect pipeline, whose
@@ -159,6 +165,8 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       if (d.pipeline.groups?.some((g) => g.id === id)) report(ungroup(d, id), 'Ungroup');
     },
     renameGroup: (id) => setRenaming(id),
+    visible: () => view.current?.visible() ?? null,
+    rectOf: (id) => view.current?.rectOf(id) ?? null,
   }), [now]);
 
   const title = useGroupTitle(doc, look, renaming, setRenaming, onChange);

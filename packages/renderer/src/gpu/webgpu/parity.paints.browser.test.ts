@@ -10,12 +10,12 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { mat3, pathFromD } from '@weasel-js/geom';
 import { composePatternTransform } from '@weasel-js/paint';
 import { registerFont } from '@weasel-js/font';
-import { registerTexture, unregisterTexture, type TextureHandle } from '../../textures/registerTexture';
+import { registerTexture, unregisterTexture, type TextureHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from '../../DrawCommand';
 import type { ImageMinification } from '../../cache/GLImageCache';
 import {
   closeBackends, diff, openBackends, parityDevice, releaseDevice, renderBoth, renderEach, report, requireGpu,
-} from '../../testing/parityHarness';
+} from '@weasel-js/renderer/testing/parityHarness';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 

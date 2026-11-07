@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 import { CANVAS_CONTEXT_ATTRIBUTES } from '@weasel-js/core';
-import { canvasGl, pixelAt, readCanvas } from './canvasPixels';
+import { canvasGl, pixelAt, readCanvas } from '@weasel-js/core/testing/canvasPixels';
 
 let canvas: HTMLCanvasElement;
 

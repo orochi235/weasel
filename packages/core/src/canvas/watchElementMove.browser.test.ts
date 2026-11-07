@@ -1,6 +1,6 @@
 /** jsdom has no layout and no `IntersectionObserver`, so only a browser can run the watcher. */
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { watchElementMove } from './watchElementMove';
+import { watchElementMove } from '@weasel-js/core/testing/canvas';
 
 let page: HTMLDivElement | null = null;
 let stop: (() => void) | null = null;

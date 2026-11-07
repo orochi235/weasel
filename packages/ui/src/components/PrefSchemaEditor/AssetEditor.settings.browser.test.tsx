@@ -8,7 +8,7 @@ import { AssetEditor, workspaceCodec } from '@weasel-js/ui/components/PrefSchema
 import { DEMO_WORKSPACE } from './AssetEditor.demo';
 import { drag } from './pointerDrag.fixture';
 import type { Workspace } from './workspace';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Whether a row dragged out of the settings tree lands in the layout is read off real boxes; jsdom lays nothing out.
 

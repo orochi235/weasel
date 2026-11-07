@@ -8,7 +8,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
-import { BATCH_TEXTURE_SLOTS } from './shaders/batchFill';
+import { BATCH_TEXTURE_SLOTS } from '@weasel-js/renderer/testing/batch';
 
 /** One bitmap per slot past the white texel. */
 const COUNT = BATCH_TEXTURE_SLOTS - 1;

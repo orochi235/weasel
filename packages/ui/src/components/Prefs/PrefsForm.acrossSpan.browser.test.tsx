@@ -4,7 +4,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Where a spanning leaf's rows start against the two columns beside it is the browser's grid and flex layout.
 

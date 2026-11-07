@@ -5,8 +5,8 @@
  */
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DrawCommand } from '../../DrawCommand';
-import { registerProgram } from '../../shaders/registerProgram';
-import { closeBackends, openBackends, releaseDevice, requireGpu } from '../../testing/parityHarness';
+import { registerProgram } from '@weasel-js/renderer';
+import { closeBackends, openBackends, releaseDevice, requireGpu } from '@weasel-js/renderer/testing/parityHarness';
 
 const BROKEN = registerProgram('refused-wgsl', {
   wgsl: { frag: 'fn fragment(in: Varyings) -> vec4f { return vec4f(undeclared, 1.0); }' },

@@ -3,7 +3,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefConditionEditor } from '@weasel-js/ui/components/PrefConditionEditor';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Whether a row's controls wrap inside a narrow column or push it wider is layout, which jsdom does not do.
 // The test page is 414px wide, so that is as wide a column as these can ask about.

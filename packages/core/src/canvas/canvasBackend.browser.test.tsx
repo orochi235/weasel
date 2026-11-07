@@ -10,9 +10,8 @@ import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerProgram, type DrawCommand, type WeaselRenderer } from '@weasel-js/renderer';
-import { leaseCanvasRenderer } from './canvasRenderer';
-import { useCanvasRenderer } from './useCanvasRenderer';
-import { CanvasBackendProvider } from './canvasBackendContext';
+import { CanvasBackendProvider } from '@weasel-js/core';
+import { leaseCanvasRenderer, useCanvasRenderer } from '@weasel-js/core/testing/canvas';
 import type { CanvasBackend } from './canvasBackend';
 
 const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));

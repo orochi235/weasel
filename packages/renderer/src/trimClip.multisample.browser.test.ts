@@ -3,7 +3,7 @@
  * multisampled canvas (`./testing/trimClip.ts` says what may differ).
  */
 import { describe } from 'vitest';
-import { capCases, disposeAfterEach, metricCases, paintCases } from './testing/trimClip';
+import { capCases, disposeAfterEach, metricCases, paintCases } from '@weasel-js/renderer/testing/trimClip';
 
 disposeAfterEach();
 

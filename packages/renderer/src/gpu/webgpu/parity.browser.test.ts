@@ -8,11 +8,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { registerFont } from '@weasel-js/font';
-import { registerTexture, unregisterTexture, type TextureHandle } from '../../textures/registerTexture';
+import { registerTexture, unregisterTexture, type TextureHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from '../../DrawCommand';
 import {
   closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, renderEach, report, requireGpu,
-} from '../../testing/parityHarness';
+} from '@weasel-js/renderer/testing/parityHarness';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { strokeInsets } from '@weasel-js/stroke';
 import type { CommandStroke, Stroke } from '@weasel-js/paint';
-import { capCases, paintCases, metricCases, cutsOf, disposeAfterEach, edgesOf, frame, offCuts, paint, TRIMS, zigzag } from './testing/trimClip';
+import { capCases, paintCases, metricCases, cutsOf, disposeAfterEach, edgesOf, frame, offCuts, paint, TRIMS, zigzag } from '@weasel-js/renderer/testing/trimClip';
 
 disposeAfterEach();
 

@@ -4,7 +4,7 @@ import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Whether an entry's control keeps a usable width beside its remove button, and whether an
 // object entry's rows stay inside the entry, are facts of layout that jsdom has none of.

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { paintDifference } from './difference';
+import { paintDifference } from '@weasel-js/labkit/testing/lens';
 import type { LensCapture } from './lensSource';
 
 // What `paintDifference` puts on a canvas — the crop about the reticle, the

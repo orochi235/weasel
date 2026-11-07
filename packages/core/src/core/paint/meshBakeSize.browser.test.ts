@@ -9,7 +9,7 @@ import { createScene, renderSceneToPixels, type RasterImage } from '@weasel-js/c
 import type { RectPose } from 'core/scene/composePose';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';
-import 'core/paint/registerMesh';
+import '@weasel-js/core/mesh';
 
 const W = 64;
 const H = 4;

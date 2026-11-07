@@ -5,7 +5,7 @@ import { cleanup, render } from '@testing-library/react';
 import { CanvasStack } from '@weasel-js/labkit/canvas';
 import { useSurfaceTile } from '@weasel-js/labkit/surface';
 import { afterEach, expect, test } from 'vitest';
-import { LabSurface } from './LabSurface';
+import { LabSurface } from '@weasel-js/labkit/testing/lab';
 
 // A window moved to a display of another density: the device pixel ratio
 // changes and no box does, so no ResizeObserver fires. Only a browser has the

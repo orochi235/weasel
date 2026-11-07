@@ -13,7 +13,7 @@ import { registerCanvasFont } from '@weasel-js/font';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
 import { useTextEdit } from '@weasel-js/text-dom';
 import type { TextEditCommit, TextEditScreenPose, UseTextEditReturn } from './textEditTypes';
-import { overlayReady } from './testing/overlayReady';
+import { overlayReady } from '@weasel-js/text-dom/testing/overlayReady';
 
 const BOX = { x: 20, y: 20, width: 120, height: 200 };
 const FONT_SIZE = 20;
@@ -168,7 +168,7 @@ describe('pasting into the edit overlay', () => {
     const source = document.createElement('div');
     source.style.whiteSpace = 'pre';
     document.body.appendChild(source);
-    const { runsToDom } = await import('./domRuns');
+    const { runsToDom } = await import('@weasel-js/text-dom');
     runsToDom([{ text: 'plain ' }, { text: 'bold\nline', bold: true }], source);
     const overlay = await open({ text: 'abc', caret: 'all' });
     await copyThenPaste(source, overlay);

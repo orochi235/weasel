@@ -4,7 +4,7 @@ import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { renderWithIcons } from '../../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { arcInBox } from '@weasel-js/ui/components/Along';
 import { SWATCH_ARC_DEFAULTS, swatchArcOf, type SwatchArcConfig } from './swatchArcConfig';
 import { readRings } from './useRingReading';

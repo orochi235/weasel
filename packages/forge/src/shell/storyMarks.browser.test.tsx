@@ -1,7 +1,7 @@
 import './shell.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { captureHost, storyBox } from './storyMarks';
+import { captureHost, storyBox } from '@weasel-js/forge/testing/shell';
 import { TrialHost } from '@weasel-js/forge/shell';
 
 afterEach(cleanup);

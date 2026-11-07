@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { Canvas } from './testing/BareCanvas';
+import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { RenderLayer } from 'core/layers/render';
 import { stubCanvasContext } from './testing/stubCanvasContext';
 

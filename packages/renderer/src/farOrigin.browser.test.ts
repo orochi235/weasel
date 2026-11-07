@@ -12,7 +12,7 @@ import { WeaselRenderer, registerProgram, registerPaintDrawKind, resolvePatternS
 import { _resetProgramRegistryForTests } from '@weasel-js/renderer/test-seams';
 import { meshDrawKind, seedMeshPatch } from '@weasel-js/renderer/mesh';
 import type { DrawCommand } from './DrawCommand';
-import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { stencilledEvenOdd } from '@weasel-js/renderer/testing/stencilledEvenOdd';
 
 const ZOOM = 64;
 const FAR = 3_000_000.3;

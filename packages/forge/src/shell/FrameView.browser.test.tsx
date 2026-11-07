@@ -6,12 +6,9 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { FromFrame } from '../protocol/messages';
-import { describeSchema } from '../protocol/schema';
+import { connectFrame, createAnswerBook, describeSchema, flush, storyInstrument } from '@weasel-js/forge/testing/shell';
 import type { IndexEntry } from '../story/types';
-import { createAnswerBook } from './answers';
-import { connectFrame, flush } from './labHarness';
 import { StoryGlobalsContext } from '@weasel-js/forge/shell';
-import { storyInstrument } from './storyInstrument';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // The stubbed-observer test in storyInstrument.test.tsx proves the reload; this one proves a real scroll triggers it.

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { useState } from 'react';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import { ToastRegion, type ToastRegionProps, createToastQueue } from '@weasel-js/ui/components/Toast';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // With view transitions on, a toast reaches the DOM only on the next rendered frame, which a
 // loaded runner can withhold past findByRole's timeout. These tests measure layout, not motion.

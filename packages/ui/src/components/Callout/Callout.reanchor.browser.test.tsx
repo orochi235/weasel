@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { Callout } from '@weasel-js/ui/components/Callout';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Whether React Aria moves a popover after its anchor is only translated is its ResizeObserver's answer, which
 // jsdom does not have.

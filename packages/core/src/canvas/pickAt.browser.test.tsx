@@ -13,8 +13,8 @@ import {
 import { registerProgram, type DrawCommand } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
 import { renderHook } from '@testing-library/react';
-import { useSceneAdapter } from 'canvas/useSceneAdapter';
-import { useSceneSelectTool } from 'canvas/SceneCanvas/useSceneSelectTool';
+import { useSceneAdapter } from '@weasel-js/core';
+import { useSceneSelectTool } from '@weasel-js/core/testing/canvas';
 
 /** Opaque inside the circle its bounds hold, transparent outside it. */
 const DISC = registerProgram('pick-at-browser-disc', { glsl: { frag: `#version 300 es

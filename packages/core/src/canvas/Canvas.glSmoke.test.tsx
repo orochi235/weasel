@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
-import { Canvas } from './testing/BareCanvas';
+import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import { stubCanvasContext, waitForFrame } from './testing/stubCanvasContext';
 
 beforeAll(stubCanvasContext);

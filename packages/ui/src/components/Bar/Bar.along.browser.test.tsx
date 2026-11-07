@@ -9,8 +9,8 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, type AlongArc } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
-import { renderWithIcons } from '../../testing/withIcons';
-import { icon } from '../../icons.gen';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { icon } from '@weasel-js/ui/testing/icon';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const KEYS = ['undo', 'redo', 'flipX', 'flipY', 'front', 'back'] as const;

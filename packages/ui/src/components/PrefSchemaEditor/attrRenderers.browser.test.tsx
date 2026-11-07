@@ -2,8 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { PrefRenderContext } from '../Prefs';
-import { ATTR_RENDERERS } from './attrRenderers';
-import { renderWithIcons } from '../../testing/withIcons';
+import { ATTR_RENDERERS } from '@weasel-js/ui/testing/prefSchemaEditor';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // What color a flagged chip resolves to is the theme's cascade, which jsdom does not do.
 

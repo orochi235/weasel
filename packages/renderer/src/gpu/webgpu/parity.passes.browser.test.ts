@@ -5,12 +5,11 @@
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
-import { blur } from '../../effects/builtins';
-import { registerProgram } from '../../shaders/registerProgram';
+import { blur, registerProgram } from '@weasel-js/renderer';
 import type { DrawCommand } from '../../DrawCommand';
 import type { RetainedSurfaces } from '../../retain/RetainedSurfaces';
 import type { WeaselRenderer } from '../../WeaselRenderer';
-import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report, requireGpu } from '../../testing/parityHarness';
+import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report, requireGpu } from '@weasel-js/renderer/testing/parityHarness';
 
 const W = 64;
 const H = 48;

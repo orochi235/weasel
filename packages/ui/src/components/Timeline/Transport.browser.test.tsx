@@ -3,7 +3,7 @@ import '@weasel-js/theme/fonts.css';
 import { cleanup } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { Transport, type TransportProps } from '@weasel-js/ui/components/Timeline';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A transport sized to its content beside a greedy scrub bar, as astv's labs
 // lay it out: whatever the readouts gain, the transport gains, and the bar loses.

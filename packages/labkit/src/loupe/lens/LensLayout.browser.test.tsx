@@ -10,7 +10,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { HANDLE_SLOP } from './lensHitBoxes';
+import { HANDLE_SLOP } from '@weasel-js/labkit/testing/lens';
 import type { LensSource } from './lensSource';
 import type { LensScene } from './lensTypes';
 

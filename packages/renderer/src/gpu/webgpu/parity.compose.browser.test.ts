@@ -8,7 +8,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { DrawCommand } from '../../DrawCommand';
 import type { CompositeOp } from '../../effects/compositeOp';
-import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report, requireGpu } from '../../testing/parityHarness';
+import { closeBackends, openBackends, parityDevice, releaseDevice, renderBoth, report, requireGpu } from '@weasel-js/renderer/testing/parityHarness';
 
 const W = 64;
 const H = 48;

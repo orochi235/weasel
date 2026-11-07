@@ -7,7 +7,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { drag as dragTo } from './pointerDrag.fixture';
 import { rowKey } from './treeRows.fixture';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A drop into the live preview is hit-tested against the form's layout, which only a browser has.
 

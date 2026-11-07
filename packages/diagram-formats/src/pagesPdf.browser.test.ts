@@ -14,7 +14,7 @@ import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../assets/fonts/inter/inter.ttf?url';
 import { exportPagesPdf } from '@weasel-js/diagram-formats';
-import { pageScene } from './testing/pageScene';
+import { pageScene } from '@weasel-js/diagram-formats/testing/pageScene';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 // With the worker module on the main thread, its warnings reach the console spy below.

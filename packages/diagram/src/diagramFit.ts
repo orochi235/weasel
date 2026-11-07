@@ -13,9 +13,13 @@ import { diagramGroupOf } from './group';
 
 /** How `fitDiagram` frames a diagram in its box. */
 export interface DiagramFit {
+  /** The smallest scale a fit takes, below which the diagram overflows its box. */
   minScale?: number;
+  /** The largest scale a fit takes; 1 by default, so a small diagram is not enlarged. */
   maxScale?: number;
+  /** Which part of a diagram that overflows its box shows: its middle (`'center'`, the default) or its left or top edge. */
   anchor?: 'center' | 'start';
+  /** The space kept clear around the diagram, in CSS pixels; 16 by default. */
   padding?: number;
   /** A world rect every fit is kept inside, as `SceneCanvas` keeps every view inside its `viewBounds`. */
   bounds?: Bounds;

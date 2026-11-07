@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import type { CalloutProps } from '../Callout';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A popover held in a fixed box places against a fixed overlay frame; scrolling the page must not move the room
 // it flips and limits its height against.
