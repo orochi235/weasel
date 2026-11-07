@@ -116,3 +116,9 @@ frames with the device alive, and it is what the visual suite's WebGPU job launc
 and a `drawImage` in the task that drew it holds that frame; the visual specs read through `toDataURL`. Print
 `WEBGL_debug_renderer_info`'s `UNMASKED_RENDERER_WEBGL` and `adapter.info` before trusting a claim
 about what a GPU does.
+
+**A vm worker that lives a whole run can segfault V8.** On teitou, fleet runs died from a worker SIGSEGV (a jump
+to address 0 under `PromiseConstructor` during another worker's full GC) until `vmMemoryLimit: '1gb'` made vitest
+replace each vm worker about once a run (2026-10-22); vitest's default limit never recycles one, since it reads
+`heapUsed` without a GC. Nothing leaks (a worker over 319 files held a flat ~200 MB), and the cause was not hunted
+(ruled 2026-11-07), so raising or removing the limit brings the crash back.

@@ -109,7 +109,7 @@ export default defineConfig({
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
     // vitest's default (RAM / workers) never recycles a vm worker, and one that lives the whole run
-    // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/TODO.md).
+    // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/traps/testing.md).
     vmMemoryLimit: '1gb',
     ...(related && { related }),
     projects: [

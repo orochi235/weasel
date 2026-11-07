@@ -454,12 +454,12 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every variant at `md` and `sm` in a browser and called it
   done.
 
-- **(P3) [maintainer] An empty fragment takes no drop in the live preview.** It draws nothing
+- **(P3) [agent] An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
-  Closes when the maintainer has ruled on the slot's look, and an empty fragment takes a drop in the live
-  preview or is ruled to take none.
+  Ruled (2026-11-07): it draws a row-height drop slot only while a drag is on, and the rows around it move.
+  Closes when an empty fragment takes a drop in the live preview.
 
 - **(P3) [maintainer] Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -474,14 +474,15 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every beveled control under both themes and kept or retuned
   its hooks.
 
-- **(P3) [maintainer] Two control choices are labkit's alone, and two controls draw an enum their own way.**
+- **(P3) [agent] Two control choices are labkit's alone, and two controls draw an enum their own way.**
   Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
   segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
   `MatrixEditor` always lists an enum as radios.
-  Closes when the maintainer has ruled on both labkit rows, and `BarField` and `MatrixEditor` take their
-  enum control from `PARAMS_CONTROLS`.
+  Ruled (2026-11-07): both flip to true — an enum draws the control it asks for, and a slider with one bound
+  draws an open end. Closes when the table says so and `BarField` and `MatrixEditor` take their enum control
+  from `PARAMS_CONTROLS`.
 
 ### WeaselDraw app follow-ups (defer)
 
@@ -571,7 +572,7 @@ only story runner in the repo.
   up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
   Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
-- **(P3) [maintainer] The CSS Vars panel does not save a token the theme derives.** A token
+- **(P3) [agent] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
   component, or a literal semantic, in the branch the trial's globals read
   (`applyTokenEdits`, `packages/forge/src/shell/cssVars/saveTokens.ts`). One
@@ -580,8 +581,8 @@ only story runner in the repo.
   a value written over it would drop the derivation for every mode and density
   the branch covers. Not decided: whether such an edit should save at all, and
   if so as a pin over the one step or as a change to what it follows.
-  Closes when the maintainer has ruled, and a derived token edited in the panel either saves as he chose,
-  with a case in `saveTokens`' tests, or the panel says it will not be saved.
+  Ruled (2026-11-07): save it as a pin over that one token in the branch, leaving the derivation for the rest.
+  Closes when it does, with a case in `saveTokens`' tests.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
@@ -752,19 +753,6 @@ only story runner in the repo.
   Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when the fleet runs the
   Linux lane on its own.
 
-- **(P3) [maintainer] Whether to find what a long-lived vitest vm worker builds up that crashed V8.**
-  Fleet runs on teitou died from a worker SIGSEGV (a jump to address 0 under `PromiseConstructor`
-  while another worker ran a full GC) until `vmMemoryLimit: '1gb'` (2026-10-22) made vitest replace
-  each vm worker about once a run; the default limit never does, because it compares against
-  `heapUsed` read without a GC. Nothing leaks: one worker over 319 `weasel-ui` files held a flat
-  ~200 MB of live heap. teitou has written no SIGSEGV report since, over 183 suite runs, and with
-  `--no-sparkplug` dropped the jsdom projects ran 3 of 3 clean under `--stress-flush-code`, which
-  crashed 3 of 3 at the default limit (2026-10-29). So the crash is held off, not explained: what an
-  aged worker accumulates, and why only teitou crashed, are unknown. The cost of not knowing is that
-  raising or removing the limit would bring it back. Whether that is worth a heap-snapshot hunt is
-  the open call.
-  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when a heap snapshot names
-  what an aged worker accumulates.
 
 - **(P2) [maintainer] Browser test files fail to load when the node's network changes.** A file
   fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
