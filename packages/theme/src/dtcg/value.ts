@@ -1,3 +1,4 @@
+import { rgbaToHex } from '@weasel-js/paint';
 import type { TokenValue } from './types.ts';
 
 /**
@@ -45,4 +46,48 @@ export function parseTokenValue(type: string, text: string): TokenValue {
     return families.length > 0 ? families : raw;
   }
   return raw;
+}
+
+/** Spaces CSS spells as a function of their own, with the components it writes as percentages. */
+const FUNCTIONAL: Readonly<Record<string, readonly number[]>> = { hsl: [1, 2], hwb: [1, 2], lab: [], lch: [], oklab: [], oklch: [] };
+/** Spaces CSS reaches through `color()`. */
+const PREDEFINED = new Set(['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'xyz', 'xyz-d50', 'xyz-d65']);
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** A DTCG color object in CSS's own notation for its space: hex for an in-gamut sRGB color, nothing converted. */
+function colorObject(v: Record<string, unknown>): string | undefined {
+  const { colorSpace: space, components, alpha = 1 } = v;
+  if (typeof space !== 'string' || !Array.isArray(components) || components.length !== 3) return undefined;
+  if (!components.every((c) => (typeof c === 'number' && Number.isFinite(c)) || c === 'none')) return undefined;
+  if (typeof alpha !== 'number' || !(alpha >= 0 && alpha <= 1)) return undefined;
+  const [r, g, b] = components as unknown[];
+  if (space === 'srgb' && [r, g, b].every((c) => typeof c === 'number' && c >= 0 && c <= 1)) {
+    return rgbaToHex([r as number, g as number, b as number, alpha]);
+  }
+  const slash = alpha === 1 ? '' : ` / ${alpha}`;
+  const percent = FUNCTIONAL[space];
+  if (percent) return `${space}(${components.map((c, i) => (c !== 'none' && percent.includes(i) ? `${c}%` : c)).join(' ')}${slash})`;
+  if (PREDEFINED.has(space)) return `color(${space} ${components.join(' ')}${slash})`;
+  return undefined;
+}
+
+/**
+ * A DTCG `$value` as a token value: a string, number or list of those passes
+ * through, and the object forms of a dimension or duration (`{ value, unit }`)
+ * and a color (`{ colorSpace, components, alpha }`) become their CSS spelling.
+ * Throws naming `name` for anything else, such as a composite type, which no
+ * one custom property can hold.
+ */
+export function readDtcgValue(name: string, type: string, raw: unknown): TokenValue {
+  if (typeof raw === 'string' || typeof raw === 'number') return raw;
+  if (Array.isArray(raw) && raw.every((x) => typeof x === 'string' || typeof x === 'number')) return raw as TokenValue;
+  if (isRecord(raw)) {
+    if ((type === 'dimension' || type === 'duration') && typeof raw.value === 'number' && typeof raw.unit === 'string') {
+      return `${raw.value}${raw.unit}`;
+    }
+    const css = type === 'color' ? colorObject(raw) : undefined;
+    if (css !== undefined) return css;
+  }
+  throw new Error(`Token "${name}" has a ${type} value no CSS custom property can hold: ${JSON.stringify(raw)}`);
 }

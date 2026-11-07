@@ -1,7 +1,8 @@
-import { ALPHA_EXT, isSafeTokenName, SCOPE_EXT, unsafeTokenName, type FlatTokens, type RawToken, type TokenValue } from './types';
+import { ALPHA_EXT, isSafeTokenName, SCOPE_EXT, unsafeTokenName, type FlatTokens, type RawToken } from './types';
+import { readDtcgValue } from './value';
 
 interface DtcgToken {
-  $value: TokenValue;
+  $value: unknown;
   $type?: string;
   $description?: string;
   $extensions?: Record<string, unknown>;
@@ -46,7 +47,7 @@ export function flattenTokens(doc: Record<string, unknown>): FlatTokens {
       const scope = Array.isArray(scopeRaw) ? scopeRaw.filter((axis): axis is string => typeof axis === 'string') : undefined;
       const token: RawToken = {
         type,
-        value: node.$value,
+        value: readDtcgValue(leaf, type, node.$value),
         alpha: typeof alphaRaw === 'number' ? alphaRaw : undefined,
         description: node.$description,
         ...(scope ? { scope } : {}),
