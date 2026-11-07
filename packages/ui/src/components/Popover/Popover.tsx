@@ -3,7 +3,7 @@ import { mergeRefs } from 'react-aria';
 import { Popover as RACPopover, type PopoverProps as RACPopoverProps } from 'react-aria-components';
 import { targetInBlockUnits } from '../../overlays/blockFrame';
 import { frameBoundary, overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
-import { useReactAriaPortalTarget, withPortalTarget } from '../../overlays/portalHost';
+import { useOverlayTarget, withPortalTarget } from '../../overlays/portalHost';
 
 /** Props for {@link Popover}: React Aria's, unchanged. */
 export type PopoverProps = RACPopoverProps;
@@ -18,6 +18,9 @@ export type PopoverProps = RACPopoverProps;
  * in the container's own px, so the popover sits against its trigger, flips, shifts and limits its height against
  * the viewport as it would at 1× from the body, and is drawn at the container's scale.
  *
+ * Used bare, outside any weasel overlay, it portals into the nearest themed ancestor of where it is rendered, as the
+ * other overlays do, so it draws in that root's theme rather than the page's.
+ *
  * Every weasel popover is one of these; use it in place of React Aria's for the same reason. A
  * `getTargetRect` of the caller's is read first and converted the same way, and so is a `boundaryElement`'s
  * absence: one of the caller's is used as given. React Aria's own fallback to an opening point, used only by its
@@ -28,7 +31,7 @@ export const Popover = forwardRef<HTMLElement, PopoverProps>(function Popover(
   ref,
 ) {
   const own = useRef<HTMLElement | null>(null);
-  const container = useReactAriaPortalTarget(props);
+  const { anchor, container, ready } = useOverlayTarget(props);
   const frame = useMemo(() => overlayFrameFor(container), [container]);
   const targetRect = useCallback(
     (target: Element) => {
@@ -39,11 +42,16 @@ export const Popover = forwardRef<HTMLElement, PopoverProps>(function Popover(
   );
   const merged = useMemo(() => mergeRefs(own, ref), [ref]);
   return (
-    <RACPopover
-      {...withPortalTarget(props, frame)}
-      ref={merged}
-      boundaryElement={boundaryElement ?? (frame ? frameBoundary(frame) : undefined)}
-      getTargetRect={targetRect}
-    />
+    <>
+      {anchor}
+      {ready && (
+        <RACPopover
+          {...withPortalTarget(props, frame ?? container)}
+          ref={merged}
+          boundaryElement={boundaryElement ?? (frame ? frameBoundary(frame) : undefined)}
+          getTargetRect={targetRect}
+        />
+      )}
+    </>
   );
 });

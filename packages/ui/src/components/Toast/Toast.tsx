@@ -1,5 +1,4 @@
-import { useCallback, useLayoutEffect } from 'react';
-import { UNSAFE_PortalProvider } from 'react-aria';
+import { useLayoutEffect } from 'react';
 import { useKitSettings } from '@weasel-js/react';
 import {
   UNSTABLE_ToastRegion as RACToastRegion,
@@ -8,7 +7,7 @@ import {
   Text,
   type QueuedToast,
 } from 'react-aria-components';
-import { useAssignedPortalContainer, type OverlayPortalProps } from '../../overlays/portalHost';
+import { useAssignedPortalContainer, useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useAppearance } from '../appearance';
 import { CloseButton } from '../CloseButton';
 import { defaultToastQueue, racQueueOf, readDefaultTtl, type ToastContent, type ToastQueue } from './queue';
@@ -64,16 +63,17 @@ function ToastItem({ toast: t, queue }: { toast: QueuedToast<ToastContent>; queu
  * F6 reachable), screen-reader announcements, and hover pausing the
  * auto-dismiss timers.
  *
- * Unlike the other overlays, a toast region does not follow the nearest
- * themed ancestor, which is usually a page-tall app root: it sits fixed in a
- * corner of the viewport unless it is given a container, by `portalContainer`
- * or an `OverlayPortalProvider`. Given one, the stack renders inside it,
- * absolutely positioned in the container's corner, so the container must be a
- * containing block.
+ * With no container given, it portals into the nearest themed ancestor, as
+ * the other overlays do, so it draws in that root's theme, and sits fixed in a
+ * corner of the viewport, since that ancestor is usually a page-tall app root.
+ * Given a container, by `portalContainer` or an `OverlayPortalProvider`, the
+ * stack renders inside it, absolutely positioned in the container's corner, so
+ * the container must be a containing block.
  */
 export function ToastRegion(props: ToastRegionProps) {
   const { queue = defaultToastQueue, placement = 'bottom-right', className, portalContainer } = props;
   const assigned = useAssignedPortalContainer(portalContainer);
+  const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const settings = useKitSettings();
   useLayoutEffect(() => readDefaultTtl(queue, () => settings.get('toast.ttlMs')), [queue, settings]);
   const classes = [s.region, placementClass[placement], className];
@@ -82,7 +82,6 @@ export function ToastRegion(props: ToastRegionProps) {
 
   const doc = assigned?.ownerDocument;
   const contained = assigned && assigned !== doc?.body && assigned !== doc?.documentElement;
-  const getContainer = useCallback(() => assigned as HTMLElement, [assigned]);
   const region = (
     <RACToastRegion
       queue={racQueueOf(queue)}
@@ -91,7 +90,10 @@ export function ToastRegion(props: ToastRegionProps) {
       {({ toast: t }) => renderToast(t)}
     </RACToastRegion>
   );
-  if (assigned === undefined) return region;
-  // `null` clears an enclosing provider, so a region given the body is not pulled into an overlay's container.
-  return <UNSAFE_PortalProvider getContainer={contained ? getContainer : null}>{region}</UNSAFE_PortalProvider>;
+  return (
+    <>
+      {anchor}
+      {ready && provide(region)}
+    </>
+  );
 }
