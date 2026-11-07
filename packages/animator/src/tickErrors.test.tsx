@@ -119,3 +119,18 @@ describe('useAnimator — a target whose show throws', () => {
     expect(errors).toHaveBeenCalledWith(expect.stringMatching(/show threw/), boom);
   });
 });
+
+describe('useAnimator — a target whose set throws', () => {
+  it('leaves the target at rest, so another animator may move it', () => {
+    const { animator } = setup();
+    const other = setup();
+    let a = 0;
+    let refuse = true;
+    const t = createTarget<number>({ get: () => a, set: (v) => { if (refuse) throw boom; a = v; } });
+    expect(() => animator().tween({ target: t, to: 100, ms: 100 })).toThrow(boom);
+    expect(() => animator().spring({ target: t, to: 100 })).toThrow(boom);
+    expect(t.active).toBe(false);
+    refuse = false;
+    expect(() => act(() => { other.animator().tween({ target: t, to: 100, ms: 100 }); })).not.toThrow();
+  });
+});

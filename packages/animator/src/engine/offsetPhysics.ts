@@ -1,6 +1,6 @@
 import { stateOf, type Behind, type TargetState } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
-import type { AnimationContext, AnimationSeed } from './context';
+import { commitOrLeave, type AnimationContext, type AnimationSeed } from './context';
 import { absorb, axesFor, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
 import { earliestRest } from './springRest';
@@ -95,7 +95,7 @@ export function startOffsetPhysics<T>(
   const move = dest ? travel(ax, before, dest) : zeros();
 
   ctx.targets.attach(s as never);
-  if (o.to != null) s.set(o.to);
+  if (o.to != null) commitOrLeave(ctx, s as never, o.to);
   ctx.seedClock();
   const { voices, behind } = startVoices(
     ctx, s as never, { id, nextId: ctx.nextId, ...constants }, move, start, velocity ?? zeros(), dest == null,
