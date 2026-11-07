@@ -3,9 +3,11 @@ import type { DecayOptions, PhysicsOptions, TargetDecayOptions, TargetPhysicsOpt
 /** A decay as the coast `physics` runs. Per-second friction v(t) = v0 * friction^t is
  *  m*dv/dt = -c*v with c = -ln(friction), m = 1, k = 0. */
 export function decayAsPhysics<T>(o: DecayOptions<T> | TargetDecayOptions<T>): PhysicsOptions<T> | TargetPhysicsOptions<T> {
+  const friction = o.friction ?? 0.95;
+  if (!(friction > 0 && friction <= 1)) throw new Error(`decay: friction is a multiplier in (0, 1] a second, not ${friction}`);
   const shared = {
     from: o.from, to: null, velocity: o.velocity,
-    stiffness: 0, damping: -Math.log(o.friction ?? 0.95), mass: 1, restThreshold: o.threshold ?? 0.5,
+    stiffness: 0, damping: -Math.log(friction), mass: 1, restThreshold: o.threshold ?? 0.5,
     onTick: o.onTick, onDone: o.onDone, cancelKey: o.cancelKey, label: o.label,
   };
   if (o.target) return { ...shared, target: o.target, interrupt: o.interrupt, compositor: o.compositor };
