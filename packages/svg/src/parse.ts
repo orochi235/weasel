@@ -253,11 +253,19 @@ function parseElement(
       return image;
     }
   }
-  const clipRaw = tag === 'g' ? null : ownProp(el, 'clip-path');
-  if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
-    onWarn(`clip-path on <${tag}> is not modeled; only a <g> clips, so it is drawn unclipped`);
-  }
   if (tag === 'g') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
+  const clipRaw = ownProp(el, 'clip-path');
+  if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
+    if (SUPPORTED_GROUP_TAGS.has(tag)) {
+      onWarn(`clip-path on <${tag}> is not modeled; only a <g> clips, so it is drawn unclipped`);
+    } else {
+      // A leaf clips in its own user space, so the clip goes through its transform too.
+      const clip = clipFor(el, multiply(ctm, parseTransform(el.getAttribute('transform'))), clips, onWarn);
+      const leaf = parseLeaf(el, tag, ctm, style, from, gradients, onWarn, uriToPrefix);
+      if (!clip || !leaf) return leaf;
+      return { kind: 'group', clip, children: Array.isArray(leaf) ? leaf : [leaf] };
+    }
+  }
   if (SUPPORTED_GROUP_TAGS.has(tag)) {
     // Nested <svg> — a transparent group that establishes a viewport at
     // (x, y). Inheritance flows through it; clipping does not exist here.
@@ -268,6 +276,19 @@ function parseElement(
     }
     return parseChildren(el, multiply(ctm, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
   }
+  return parseLeaf(el, tag, ctm, style, from, gradients, onWarn, uriToPrefix);
+}
+
+function parseLeaf(
+  el: Element,
+  tag: string,
+  ctm: Matrix,
+  style: StyleContext,
+  from: GroupPaintFrom,
+  gradients: GradientTable,
+  onWarn: (m: string) => void,
+  uriToPrefix: Map<string, string>,
+): SvgNode | SvgNode[] | null {
   if (tag === 'text') {
     const textNode = parseTextElement(el, ctm, style, gradients, onWarn);
     if (textNode && !Array.isArray(textNode) && textNode.kind === 'text') {
