@@ -1,5 +1,47 @@
 # @weasel-js/pdf
 
+## 1.17.0
+
+### Patch Changes
+
+- Updated dependencies [13ca1ea]
+- Updated dependencies [d3820c9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [e3a95da]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [52fd33e]
+- Updated dependencies [3517855]
+- Updated dependencies [8e888a9]
+- Updated dependencies [ee7d8ce]
+- Updated dependencies [cb58393]
+- Updated dependencies [5b39acd]
+- Updated dependencies [c29b1f7]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [e95d9fc]
+- Updated dependencies [8fd23c2]
+- Updated dependencies [9f29268]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [df080bc]
+- Updated dependencies [305c461]
+- Updated dependencies [a3ff22a]
+- Updated dependencies [15a5e1d]
+  - @weasel-js/renderer@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/stroke@1.17.0
+  - @weasel-js/font@1.17.0
+  - @weasel-js/text@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

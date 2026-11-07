@@ -1,5 +1,11 @@
 # @weasel-js/icons
 
+## 1.17.0
+
+### Patch Changes
+
+- @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

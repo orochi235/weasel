@@ -1,5 +1,20 @@
 # @weasel-js/text-dom
 
+## 1.17.0
+
+### Patch Changes
+
+- 0a85ea5: `domPositionToCharOffset` read a caret sitting in an empty text node, which a browser can leave behind after deleting a span's last character, as the end of the text, so the edit overlay's selection jumped there. It now counts only the text before that node.
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [52fd33e]
+- Updated dependencies [d90931a]
+- Updated dependencies [df080bc]
+  - @weasel-js/react@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/font@1.17.0
+  - @weasel-js/text@1.17.0
+  - @weasel-js/ui-logic@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

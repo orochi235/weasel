@@ -1,5 +1,61 @@
 # @weasel-js/plot
 
+## 1.17.0
+
+### Patch Changes
+
+- 3a4cc62: A number pref's slider can space its track other than linearly. A number leaf takes `scale`: `'linear'`, `'log'`, `'sqrt'`, or a `{ to, from }` pair, and labkit's `NumberNode` takes `.scale(...)`, so a segment count where 1–100 matters most, `f.number(16).range(1, 1000).step(1).scale('log')`, gives 1–10, 10–100 and 100–1000 a third of the track each. Only the track changes: the typed value, `step`, `stops`, the arrow keys and the stored value stay in the value's own units. Under a `unit` the scale spaces the shown values. A `'log'` track over a range not above zero warns once in development and is drawn linear. `PropertyField`'s number field takes `scale` as a `ContinuousScaleFactory`, as `Slider` does, and draws its stops where the scale puts them; ui's `prefNumberScale` turns a leaf's `scale`, or a factory, into one, naming its caller in the log warning when given a label. `BandEditor` resolves its `scale` through it too, so its log default now also falls back to linear, rather than throwing, while an edge drag stretches the axis down to zero or below. `PrefSchemaEditor` offers linear, log and sqrt for a number leaf. Additive.
+  
+  `@weasel-js/plot/scales` adds `powScale({ domain, range, exponent })`, which keeps a negative value's sign so a square-root scale (`exponent: 0.5`) takes zero and negatives, and `warpScale({ domain, range, to, from })`, a scale linear in `to(value)`. Both tick and label in value units, as `linearScale` does. `Scale.kind` and `ContinuousScale.kind` gain `'pow'` and `'warp'`.
+- 1d6fe9b: An axis asked for more ticks than the default labeled them at the default's precision: `axisMarks({ ticks: 20 })` on a 0..1 linear scale read `0, 0.1, 0.1, 0.2…` instead of `0, 0.05, 0.1, 0.15…`, and a time axis with hourly ticks labeled each one with its date. Every built-in scale now has `tickFormat(count)`, which returns a formatter at the precision of `ticks(count)`, and `axisMarks` and `axisRoom` label through it. `format(value)` is unchanged. A scale of your own without `tickFormat` is labeled with `format`, as before, and so is a built-in scale whose `format` was replaced (`{ ...scale, format }`), as gantt's `axisFormat` does.
+- a4b3961: `ticks()` on a linear, log, or time scale whose domain reached `Infinity`, or a linear scale spanning more than `Number.MAX_VALUE` (say `-1e308..1e308`), never returned. They now return no ticks for an infinite domain and a few for a vast finite one. A time scale reaching back before the year 100 also placed its first ticks in the 1900s, out of order, because `Date.UTC` reads years 0 to 99 as 1900 to 1999.
+- d29469c: A linear scale over a domain finer than about 1e-20 put every tick at 0 and labeled each one `0`, and a log scale labeled its ticks below 1e-20 `0`: tick values and labels were rounded to at most 20 decimals. They now round to as many as `toFixed` allows, 100.
+- Updated dependencies [d28ff77]
+- Updated dependencies [217246e]
+- Updated dependencies [a161c0b]
+- Updated dependencies [34f7531]
+- Updated dependencies [bf27898]
+- Updated dependencies [533bb6a]
+- Updated dependencies [436da9e]
+- Updated dependencies [3c517d9]
+- Updated dependencies [7e3d359]
+- Updated dependencies [6539d70]
+- Updated dependencies [c5f7685]
+- Updated dependencies [7c26f2b]
+- Updated dependencies [ce7e8b5]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [d5cc782]
+- Updated dependencies [ee9bc7f]
+- Updated dependencies [0af766f]
+- Updated dependencies [e989ef7]
+- Updated dependencies [e6cf896]
+- Updated dependencies [2ebc73f]
+- Updated dependencies [b606ef9]
+- Updated dependencies [8e888a9]
+- Updated dependencies [5f43e16]
+- Updated dependencies [71f0ad6]
+- Updated dependencies [454e8e1]
+- Updated dependencies [e78e03c]
+- Updated dependencies [70113d3]
+- Updated dependencies [e603f3f]
+- Updated dependencies [34da47e]
+- Updated dependencies [5491ac0]
+- Updated dependencies [fed446b]
+- Updated dependencies [ad2f2a3]
+- Updated dependencies [d90931a]
+- Updated dependencies [84a8be0]
+- Updated dependencies [59ddef2]
+- Updated dependencies [df080bc]
+  - @weasel-js/core@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/theme@1.17.0
+  - @weasel-js/text@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

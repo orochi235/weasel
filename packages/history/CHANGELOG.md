@@ -1,5 +1,13 @@
 # @weasel-js/history
 
+## 1.17.0
+
+### Patch Changes
+
+- b37adcc: A journal's commit recorded its entry with separate forward and base op lists even when nothing inside the journal coalesced, so the parent treated it as a coalesced entry. When undoing or redoing that entry threw partway, the unwind replayed the entry's other half on top of undoing what had run, and an op that is not idempotent landed twice. The commit now records one list for both halves when every entry inside the journal holds one.
+- 8bcf2c8: A history restored from `serialize()` treated every entry as coalesced, since its forward and base ops came back as two separate lists. When an undo or redo of such an entry threw partway, the unwind then replayed the entry's other half on top of undoing what had run, so an op that is not idempotent (an insert, an increment) landed twice. `restore` now shares one list between the halves when they serialize the same, as the live entry did.
+- @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

@@ -1,5 +1,45 @@
 # @weasel-js/routing
 
+## 1.17.0
+
+### Patch Changes
+
+- b9f95c2: A drag bound to an action with a `dragThresholdPx` goes to the next binding when that action declines once the threshold is crossed. It used to hold the drag to its end doing nothing, so a press another binding would have taken did nothing.
+- 3c517d9: Keys that edit the document now wait for an in-flight gesture to end, as Delete and the arrow nudges already did. Pressed mid-drag, Transform Again and Duplicate made copies, Flip turned what was being dragged, Group and Ungroup reparented it, the arrange keys reordered it, Undo and Redo replayed history under it, and the path and anchor joins rewrote it, all before the release committed the drag over the result.
+  
+  `@weasel-js/routing` exports the phase these bindings carry as `BETWEEN_GESTURES`, the one the offhand tools and mode shortcuts already used.
+- c5f7685: A tool held on a modifier hotkey refused its own gestures, because that modifier is down through every one of them and a binding that leaves a modifier out forbids it. The eyedropper, held on Alt by default, never sampled. While a tool holds the hotkey slot on Alt, Shift, Ctrl, or Meta, its bindings that do not name that modifier now take it held; a binding that names it, `false` included, keeps what it says.
+- c59a02a: A modifier pressed or released mid-drag reaches the drag at once. A drag used to see a new Shift, Alt, Ctrl or Cmd only on the pointer's next move, so a resize held still while Shift went down kept its free aspect until the pointer moved, and a release right after kept the old modifiers' result.
+- e6cf896: An arrow key pressed mid-drag no longer nudges what the drag is moving. The nudge and anchor-nudge keys now wait until no gesture is in flight, as Delete does. And a binding gated to no gesture in flight (`phase: [{ channel: '*', phase: 'initial' }]`, as on Delete and Escape) now sees a drag no entry owns, such as `move`'s own default binding, which it used to miss.
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [6539d70]
+- Updated dependencies [b497b07]
+- Updated dependencies [75ef6d9]
+- Updated dependencies [12e9c39]
+- Updated dependencies [9d25103]
+- Updated dependencies [3b08834]
+- Updated dependencies [ceff0c3]
+- Updated dependencies [b37adcc]
+- Updated dependencies [8bcf2c8]
+- Updated dependencies [5d66b8b]
+- Updated dependencies [3a4cc62]
+- Updated dependencies [4264abb]
+- Updated dependencies [d53bb96]
+- Updated dependencies [454e8e1]
+- Updated dependencies [9778eee]
+  - @weasel-js/react@1.17.0
+  - @weasel-js/geom@1.17.0
+  - @weasel-js/history@1.17.0
+  - @weasel-js/menu@1.17.0
+  - @weasel-js/prefs@1.17.0
+  - @weasel-js/quantity@1.17.0
+  - @weasel-js/modes@1.17.0
+  - @weasel-js/gestures@1.17.0
+  - @weasel-js/cursor@1.17.0
+  - @weasel-js/icons@1.17.0
+  - @weasel-js/registry@1.17.0
+  - @weasel-js/select@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

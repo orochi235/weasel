@@ -1,5 +1,22 @@
 # @weasel-js/theme
 
+## 1.17.0
+
+### Patch Changes
+
+- e603f3f: `tokenPx` reads a length with the same parser as the rest of the theme, so `5.px` and an uppercase `PX` unit read as pixels too. The CSS emitter reads a `{token}` reference through the same function `resolveTokens` uses.
+- 34da47e: A pin's `scope` now survives `bake` and a `toDTCG` / `loadDTCG` round trip, as it already did `defineTheme`: a theme file that asks for a token's pref to be scoped by an axis gets that scope in `themePrefsSchema`. DTCG output carries it as a `com.weasel.scope` extension.
+- 5491ac0: `themePrefsPins` and `themeFromPrefs` keep a split pref's shared value: after a plain value is set and then one mode is given its own, every other mode pins the shared value instead of falling back to the base theme.
+- fed446b: `themePrefsSchema` groups a token the manifest does not list the way the manifest groups its siblings, so a theme's own `danger-…` token sits under `status` beside the built-in ones. A token's `scope` is read from every branch of a split definition, not only the first.
+- ad2f2a3: `resolveStanceSlots` gives a stance that declares no tint of its own the stance's surface, as the generated CSS does, rather than the base surface. A HUD window with `stance: 'aside'` no longer mixes the raised surface into its border bands where the DOM panel is transparent.
+- Updated dependencies [f7dc7c8]
+- Updated dependencies [52fd33e]
+- Updated dependencies [3a4cc62]
+  - @weasel-js/react@1.17.0
+  - @weasel-js/paint@1.17.0
+  - @weasel-js/prefs@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

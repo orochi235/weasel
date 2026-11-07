@@ -1,5 +1,12 @@
 # @weasel-js/icons-plugin
 
+## 1.17.0
+
+### Patch Changes
+
+- 5968910: `icon()` imported as `from './icons.gen.js'`, the way a TypeScript module written for Node's ESM resolution names its `.ts` neighbor, was left unrewritten with no warning: the plugin looked for `icons.gen.js` itself and never found the `.ts` source. Its glyphs could then be missing from a trimmed `virtual:weasel-icons`. A `.js`, `.mjs`, `.cjs`, or `.jsx` specifier now also finds its TypeScript source.
+- @weasel-js/icons@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes

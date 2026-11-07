@@ -1,5 +1,17 @@
 # @weasel-js/clock
 
+## 1.17.0
+
+### Patch Changes
+
+- d28ff77: Depends on `@msb235/blits` 0.20.0, up from 0.18.0. Neither release breaks anything the kit calls. Among their fixes: a seek back over children that a forward seek passed plays them in order again on the next frame, `inert` no longer reads true after a seek back while a staggered subject still has motion to come, so a frame loop sleeping on it wakes, and a child whose rate is written every frame keeps a bounded history instead of one entry per write.
+- 9e2e425: A clock given `loop: NaN`, at creation, by `declare`, or by setting `loop`, had a run of NaN ms and reported NaN for `pass` and `phase`. It now throws a `RangeError`.
+- 5067c7a: A ramp that carried a clock past the end of its run, or back past its start, and turned its rate the other way within the same frame left `elapsed` outside the run, and the clock played on from there instead of stopping at the end it reached.
+- 561550a: `clock.seek(NaN)`, or `seek(Infinity)` on a run that never ends, set `elapsed` to that value and left the clock unable to recover. Both now throw a `RangeError`, as a rate or duration that is no number does.
+- Updated dependencies [f7dc7c8]
+  - @weasel-js/react@1.17.0
+  - @weasel-js/registry@1.17.0
+
 ## 1.16.2
 
 ### Patch Changes
