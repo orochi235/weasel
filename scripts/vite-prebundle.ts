@@ -193,6 +193,9 @@ function viteQueriesExternal() {
  * the fields of vite's `PartialEnvironment` (`KEPT_AFTER_CLOSE`).
  */
 export async function restartLeavingNothing(server: ViteDevServer, force = true): Promise<void> {
+  // vite's default loader imports each load of the config file as a new ES module, and Node never frees one: forge's
+  // bundled config, with every plugin it inlines, stayed ~2 MB a restart. The module runner's evaluation is collected.
+  server.config.inlineConfig.configLoader ??= 'runner';
   const outgoing = server.environments as Record<string, object>;
   await server.restart(force && !(await rebundledApart(server.config)));
   if (server.environments === outgoing) return;
