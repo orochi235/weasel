@@ -85,6 +85,14 @@ export function describeAdapterContract(name: string, setup: () => AdapterHarnes
       expect(await adapter.list('lk:x:')).toEqual([]);
     });
 
+    it('deletes a key set to undefined', async () => {
+      const { adapter } = setup();
+      await adapter.set('lk:x:unset', { a: 1 });
+      await adapter.set('lk:x:unset', undefined);
+      expect(await adapter.get('lk:x:unset')).toBeUndefined();
+      expect(await adapter.list('lk:x:')).toEqual([]);
+    });
+
     it('keeps binary values exactly when it says it can', async () => {
       const { adapter, binary } = setup();
       if (!binary) return;

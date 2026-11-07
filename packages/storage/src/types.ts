@@ -11,7 +11,8 @@ export interface StorageAdapter {
   /** Every record under `prefix`, read without waiting. Only substrates that
    *  can answer synchronously implement it. */
   listSync?(prefix: string): [string, unknown][];
-  /** Rejects when the value did not land. */
+  /** Rejects when the value did not land. `undefined` is no value a key can
+   *  hold: setting it deletes the key. */
   set(key: string, value: unknown): Promise<void>;
   delete(key: string): Promise<void>;
   /** Reports writes under `prefix` made by anyone but this adapter — another

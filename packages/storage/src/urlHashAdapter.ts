@@ -49,6 +49,7 @@ export const urlHashAdapter: StorageAdapter = {
       .filter(([key]) => key.startsWith(prefix))
       .map(([key, raw]): [string, unknown] => [key, parse(raw)]),
   set: async (key, value) => {
+    if (value === undefined) return urlHashAdapter.delete(key);
     const map = readHashMap();
     map[key] = JSON.stringify(value);
     writeHashMap(map);

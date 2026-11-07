@@ -39,6 +39,7 @@ function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean)
     list: async (prefix) => listNow(prefix),
     listSync: listNow,
     set: async (key, value) => {
+      if (value === undefined) return adapter.delete(key);
       if (!warned.has(key) && !isJsonSafe(value)) {
         warned.add(key);
         console.warn(

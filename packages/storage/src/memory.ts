@@ -34,6 +34,7 @@ export function createMemoryAdapter(backing: Map<string, unknown> = new Map()): 
     list: async (prefix) => listNow(prefix),
     listSync: listNow,
     set: async (key, value) => {
+      if (value === undefined) return adapter.delete(key);
       const copy = structuredClone(value);
       backing.set(key, copy);
       notify(key, copy);

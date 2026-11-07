@@ -121,6 +121,7 @@ export function createIndexedDbAdapter({
           keys.result.map((key, i): [string, unknown] => [String(key), values.result[i]]);
       }),
     set: async (key, value) => {
+      if (value === undefined) return adapter.delete(key);
       await run('readwrite', (s) => {
         s.put(value, key);
         return () => undefined;
