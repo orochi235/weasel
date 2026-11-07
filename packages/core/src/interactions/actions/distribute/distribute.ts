@@ -5,7 +5,7 @@ import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
-import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
+import { alignBoxReader, translatePoseViaDescriptor, type UseAlignOptions } from '../align/align';
 import { planDistribute } from './plan';
 import { poseFrame } from '../poseFrame';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
@@ -42,6 +42,11 @@ export interface UseDistributeOptions<TPose> {
    *  pose the adapter answers as world; over a scene's adapter, pass
    *  `scene.composition`. */
   composition?: PoseComposition<TPose>;
+  /** The nodes behind the adapter's ids, as `useAlign` takes them: with it, a
+   *  stroked node is spaced by the box it is drawn with. */
+  scene?: UseAlignOptions<TPose>['scene'];
+  /** View scale a screen-pixel stroke is resolved at. Default 1. */
+  viewScale?: UseAlignOptions<TPose>['viewScale'];
 }
 
 /** Return shape of `useDistribute`. */
@@ -80,9 +85,10 @@ export function useDistribute<TPose>(
       },
       o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
     );
+    const boxOf = alignBoxReader(o, geom, frame.world);
     const items = sel.map((id) => {
       const pose = frame.world(id);
-      return { id, pose, b: visualBoundsViaDescriptor(pose, geom) };
+      return { id, pose, b: boxOf(id, pose) };
     });
     const targets = planDistribute(items.map((it) => it.b), axis, m);
 

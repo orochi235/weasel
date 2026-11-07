@@ -91,9 +91,9 @@ export function alignDeltaFor(b: Bounds, u: Bounds, edge: AlignEdge): { dx: numb
   }
 }
 
-/** The axis-aligned box `useAlign` measures an id at a world pose by. */
-function alignBoxReader<TPose>(
-  o: UseAlignOptions<TPose>,
+/** The axis-aligned box `useAlign` and `useDistribute` measure an id at a world pose by. */
+export function alignBoxReader<TPose>(
+  o: Pick<UseAlignOptions<TPose>, 'scene' | 'viewScale'>,
   geom: PoseDescriptor<TPose>,
   worldPoseOf: (id: NodeId) => TPose,
 ): (id: string, pose: TPose) => Bounds {
