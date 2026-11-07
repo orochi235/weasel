@@ -15,9 +15,10 @@ import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
 import { snapToNearest, useSnapRadiusPx } from '../../snap';
-import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { clamp01 } from '@weasel-js/geom';
-import { resolveScale, trackOf, withinAxis } from './scale';
+import { prefNumberScale } from '../Prefs/prefNumberScale';
+import { trackOf, withinAxis } from './scale';
 import { retagBands, untag } from './retag';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { DraftGhost, type DraftGhostAt } from './DraftGhost';
@@ -60,7 +61,7 @@ export interface BandEditorProps<T, F extends Quantity = number> {
   onRangeInput?: (min: number, max: number, bands: Band<T, F>[]) => void;
   /** How far outward `min` and `max` may be dragged. Default unbounded. */
   limits?: readonly [number, number];
-  /** Default `'log'`. */
+  /** Default `'log'`, which over an axis not above zero warns once in development and is drawn linear. */
   scale?: 'linear' | 'log' | ContinuousScaleFactory;
   /**
    * A tick with no `label` of its own is labeled through `display`, when given. Where labels
@@ -163,7 +164,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const [lo, hi] = draft?.range ?? [min, max];
   const axisMin = Math.min(min, lo);
   const axisMax = Math.max(max, hi);
-  const sc = resolveScale(scale, min);
+  const sc = prefNumberScale(scale ?? 'log', 'BandEditor') ?? linearScale;
   const { toUnit, fromUnit } = trackOf(sc, axisMin, axisMax);
 
   const snapRadiusPx = useSnapRadiusPx();

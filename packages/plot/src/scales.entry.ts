@@ -12,6 +12,9 @@ export {
 } from './scales/linear';
 export { formatTick, tickDecimals, type TickFormatCtx, type TickFormatter } from './scales/tickFormat';
 export { logScale, type LogScale, type LogScaleOptions } from './scales/log';
+export {
+  powScale, warpScale, type PowScale, type PowScaleOptions, type WarpScale, type WarpScaleOptions,
+} from './scales/warp';
 export { bandScale, type BandScale, type BandScaleOptions } from './scales/band';
 export { timeScale, formatInstant, type TimeScale, type TimeScaleOptions } from './scales/time';
 export { ordinalScale, type OrdinalScale, type OrdinalScaleOptions } from './scales/ordinal';

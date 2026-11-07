@@ -139,6 +139,7 @@ export {
   type PrefLeaf,
   type PrefNumber,
   type PrefNumberControl,
+  type PrefNumberScale,
   type PrefObject,
   type PrefPaint,
   type PrefPair,
