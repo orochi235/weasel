@@ -94,9 +94,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
   /** A fold moved. The key is a section's label — prefixed by its group's
    *  dotted path when the section sits inside one — or a group's own path. */
   onCollapse?: (key: string, collapsed: boolean) => void;
-  /** Dotted paths currently unpinned. A row in this set hides its control and
-   *  reads out `auto`, and clicking its label writes the sentinel back through
-   *  `setConfig`. Omitted, the panel keeps the set itself: the labels still
+  /** Dotted paths currently unpinned. A row in this set reads out `auto` beside its live, ghosted control,
+   *  an edit to which writes the new value and so pins it, and clicking its label writes the sentinel back
+   *  through `setConfig`. Omitted, the panel keeps the set itself: the labels still
    *  toggle and the sentinel never reaches `setConfig`, which would otherwise
    *  store it as the row's value. */
   auto?: ReadonlySet<string>;
@@ -127,6 +127,8 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
 
 const NO_AUTO: ReadonlySet<string> = new Set();
 
+type Write = (path: string, value: unknown) => void;
+
 /**
  * Which rows are unpinned, and what hands one to its resolver or takes it
  * back. An owner that tracks the set decides what a dot means; one that does
@@ -135,25 +137,41 @@ const NO_AUTO: ReadonlySet<string> = new Set();
  */
 function usePanelAuto(
   given: ReadonlySet<string> | undefined,
-  setConfig: (path: string, value: unknown) => void,
+  writes: { setConfig: Write; draftConfig?: Write },
 ) {
   const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(NO_AUTO);
-  const setRowAuto = (path: string, next: boolean, value: unknown): void => {
-    if (given) {
-      setConfig(path, next ? autoValue : value);
-      return;
-    }
+  const mark = (path: string, next: boolean): void =>
     setOwnAuto((prev) => {
+      if (prev.has(path) === next) return prev;
       const now = new Set(prev);
       if (next) now.add(path);
       else now.delete(path);
       return now;
     });
+  // An owner tracking the set hears every edit as a write that pins; a panel tracking its own pins it here.
+  const pinning = (write: Write): Write =>
+    given
+      ? write
+      : (path, value) => {
+          mark(path, false);
+          write(path, value);
+        };
+  const setRowAuto = (path: string, next: boolean, value: unknown): void => {
+    if (given) {
+      writes.setConfig(path, next ? autoValue : value);
+      return;
+    }
+    mark(path, next);
     // Pinning keeps whatever the row was showing, the same value the controlled
     // path writes back.
-    if (!next) setConfig(path, value);
+    if (!next) writes.setConfig(path, value);
   };
-  return { auto: given ?? ownAuto, setRowAuto };
+  return {
+    auto: given ?? ownAuto,
+    setRowAuto,
+    setConfig: pinning(writes.setConfig),
+    draftConfig: writes.draftConfig && pinning(writes.draftConfig),
+  };
 }
 
 /**
@@ -211,7 +229,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   const choices = useFieldChoicesOf(resolved.group);
   const over = overGiven ?? resolved.over;
 
-  const { auto, setRowAuto } = usePanelAuto(given, setConfig);
+  const { auto, setRowAuto, ...writes } = usePanelAuto(given, { setConfig, draftConfig });
 
   const shown = useShown(resolved, config, auto, reported);
 
@@ -237,8 +255,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     resolved,
     config,
     shown,
-    setConfig,
-    draftConfig,
+    ...writes,
     errors,
     renderers,
     over,

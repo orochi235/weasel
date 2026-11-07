@@ -50,8 +50,8 @@ export interface PropertyRowProps extends PropertyMetricProps {
   group?: boolean;
   className?: string;
   /** The row is auto: its value is not pinned and the owner computes it. The
-   *  control is hidden — its box kept, so the row does not resize — and the
-   *  row reads out the word instead. */
+   *  control keeps drawing, ghosted in the secondary accent, at the value the
+   *  owner passes; an edit to it reaches the owner like any other, which pins. */
   auto?: boolean;
   /** Given, the row's label toggles `auto` when it is clicked. Omitted, the row
    *  can show an auto state but not change it.
@@ -59,10 +59,6 @@ export interface PropertyRowProps extends PropertyMetricProps {
    *  The label then names that toggle, so a control passed as `children` has to
    *  carry its own accessible name — every `<PropertyField>` does. */
   onAutoChange?: (next: boolean) => void;
-  /** What an auto row does with its control. `'hidden'` (the default) keeps its
-   *  box and reads out the word instead; `'dimmed'` keeps drawing it, faded, for
-   *  an owner that passes the value the row inherits and pins on any edit. */
-  autoControl?: 'hidden' | 'dimmed';
   /** Small muted text after the label — where an inherited value comes from. */
   hint?: ReactNode;
   /** The row's value differs from a baseline of the caller's: its label is drawn in the accent color. */
@@ -98,7 +94,6 @@ export function PropertyRow({
   align,
   auto,
   onAutoChange,
-  autoControl = 'hidden',
   hint,
   changed = false,
   mixed = false,
@@ -121,7 +116,7 @@ export function PropertyRow({
       layoutClass,
       span && s.span,
       hug && !span && s.hug,
-      auto && (autoControl === 'dimmed' ? s.rowAutoInherited : s.rowAuto),
+      auto && s.rowAuto,
     ]
       .filter(Boolean)
       .join(' '),

@@ -198,9 +198,13 @@ growing a schema never strands a saved trial or a snapshot.
 ### Auto
 
 A field can be **auto**: nobody is pinning it, and the instrument decides what
-it should be. Shift-click a row in the settings panel, or click the pin dot
-beside its label, and the row reads "auto", quoting the value it resolved to in
-its help tooltip. Shift-click again and it pins back at that value.
+it should be. An auto row reads "auto" and keeps its control live, ghosted in
+the secondary accent, at the value in effect: the one the instrument reported,
+else its resolver's, else the field's default. Auto falls off as soon as anyone
+touches it: drag the slider, type a number, pick an option, or toggle the box,
+and the field pins at the new value, the same as `setConfig` on an auto path.
+Shift-click the row's label, or click the pin dot beside it, to hand it back to
+auto. So an instrument never asks for a "pin first" step: editing is pinning.
 
 `auto` is a value, so it goes wherever a config value goes:
 
@@ -222,7 +226,7 @@ addTrial('demo', { gap: auto });
 A field can be auto only if it says so. `.auto()` opts it in, and an auto field
 reads `undefined`. `.auto(fn)` also attaches a resolver: the instrument reads the
 computed value rather than writing `?? compute()` itself, and the ghosted control
-has a real number to draw. `.initial(auto)` opts in and opens the field auto
+draws that number. `.initial(auto)` opts in and opens the field auto
 instead of pinned at its default. A field that says none of these, like `seed`,
 has no dot and no gesture: the default for a value the instrument cannot
 receive as `undefined`, like a color going straight to a uniform.
@@ -236,8 +240,8 @@ beside the lever: the pin dot is that checkbox. Leave a lever pinned-only when
 `undefined` must never reach the instrument.
 
 An instrument that works an auto value out itself says what it came to with
-`reportAuto`, and the row quotes that number as it would a resolver's, through
-the leaf's own display, and pins at it:
+`reportAuto`, and the row's control draws that number as it would a resolver's,
+quoting it through the leaf's own display:
 
 ```ts
 // In the instrument's component, handed `ctx.reportAuto`, once a build settles:
@@ -250,11 +254,10 @@ instrument actually used. It is never stored: a report for a pinned path is
 ignored, pinning the path drops it, and going auto again shows no number until
 the instrument reports afresh, which a report from an effect of the commit that
 unpinned it counts as. `reportAuto(path, undefined)` or `reportAuto(path, null)`
-withdraws one. A
-`<ControlPanel>` drawn outside a trial takes the same values as its `reported`
+withdraws one. A `<ControlPanel>` drawn outside a trial takes the same values as its `reported`
 map.
 
-An auto row reads the bare word. A lever whose value is worth seeing at a
+An auto row's readout is the bare word. A lever whose value is worth seeing at a
 glance, like a count, adds `.quote()`, and its row then reads `auto · 12`
 whenever a value is known, reported or resolved, through the leaf's own
 display (`auto · 90°`). `.quote()` also lets the leaf be auto, as `.initial(auto)`

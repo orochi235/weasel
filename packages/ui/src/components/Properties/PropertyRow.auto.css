@@ -1,20 +1,6 @@
-/* An auto row: the value is not pinned, and the row says only that. The
-   control is hidden rather than removed, so the row keeps the height and the
-   width it has while pinned and nothing below it moves on the toggle —
-   `visibility` and not `opacity`, because a hidden control must also be out of
-   reach of the pointer and the tab ring. The label and the readout are what
-   stays: everything else in the row is the control. */
-.rowAuto > :not(.rowLabel):not(.readout) {
-  visibility: hidden;
-}
-
-.rowAuto > .rowLabel {
-  color: var(--wzl-fg-subtle);
-}
-
-/* An auto row that keeps drawing its control: the value is the one it inherits,
-   drawn in the secondary accent so it reads as not chosen here. */
-.rowAutoInherited {
+/* An auto row: the value is not pinned. Its control stays live at the value the owner computed, drawn in
+   the secondary accent so it reads as not chosen here, and an edit pins it. */
+.rowAuto {
   composes: inherited from '@weasel-js/theme/inherited.module.css';
 }
 

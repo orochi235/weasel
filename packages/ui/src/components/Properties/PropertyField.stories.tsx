@@ -298,8 +298,8 @@ export const UnitsChoicesAlpha: Story = {
   },
 };
 
-/** An auto row hides its control and reads out the word; its label toggles
- *  the state. */
+/** An auto row reads out the word beside its live, ghosted control; an edit pins it, and its label
+ *  toggles the state. */
 export const Auto: Story = {
   args: { label: 'Gap' },
   render: ({ label, description, layout, span, density, align, disabled }) => {
@@ -320,7 +320,10 @@ export const Auto: Story = {
           value={gap}
           min={0}
           max={48}
-          onChange={setGap}
+          onChange={(next) => {
+            setGap(next);
+            setAuto(false);
+          }}
           auto={auto}
           onAutoChange={setAuto}
           readout={auto ? 'auto' : undefined}

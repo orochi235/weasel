@@ -51,9 +51,10 @@ export function SliderRow({ row, readout, control }: {
   control: PropertyNumberFieldProps;
 }) {
   const p = useSliderDraft(control);
+  const replaced = boxedReadout(readout);
   return (
-    <PropertyRow {...row} readout={boxedReadout(readout) ?? <SliderReadout {...p} />}>
-      <SliderTrack {...p} />
+    <PropertyRow {...row} readout={replaced ?? <SliderReadout {...p} />}>
+      <SliderTrack {...p} keyed={replaced != null} />
     </PropertyRow>
   );
 }
@@ -182,7 +183,8 @@ function sliderBounds(p: PropertyNumberFieldProps): {
   return { min: track.min, max: track.max, step, settle: track.fromTrack, onTrack };
 }
 
-function SliderTrack(p: PropertyNumberFieldProps) {
+/** `keyed`: the track is the keyboard's way in, where the row's readout is not an editable one. */
+function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps & { keyed?: boolean }) {
   const { min, max, step, settle, onTrack } = sliderBounds(p);
   const live = p.onInput ?? p.onChange;
   const commit = p.onInput ? p.onChange : undefined;
@@ -209,7 +211,7 @@ function SliderTrack(p: PropertyNumberFieldProps) {
       aria-label={p.name}
       // The readout is the keyboard's way in, and steps as the track would; a
       // tab stop here too would be two stops for one value.
-      tabIndex={-1}
+      tabIndex={tabbable ? undefined : -1}
       min={place.min}
       max={place.max}
       step={place.step}

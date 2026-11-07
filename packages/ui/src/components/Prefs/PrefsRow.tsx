@@ -271,7 +271,6 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       // The owner passes an inherited leaf's value already resolved, so the
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
-      autoControl="dimmed"
       onAutoChange={toggles ? setAuto : undefined}
       hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{split && <SplitMarks levels={split.shape.levels} />}</> : inheritHint}
       disabled={renderCtx.disabled}

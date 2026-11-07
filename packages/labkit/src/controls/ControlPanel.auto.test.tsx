@@ -140,7 +140,7 @@ describe('<ControlPanel> auto', () => {
     expect(screen.getByText('auto')).toBeInTheDocument();
   });
 
-  it('writes the pinned value back when the dot un-autos a row', async () => {
+  it('pins at the value the row draws when the dot un-autos it: the default, where nothing else is known', async () => {
     const setConfig = vi.fn();
     render(
       <ControlPanel
@@ -151,7 +151,7 @@ describe('<ControlPanel> auto', () => {
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: /Gap/ }));
-    expect(setConfig).toHaveBeenCalledWith('gap', 24);
+    expect(setConfig).toHaveBeenCalledWith('gap', 12);
   });
 
   it('gives a row that never said auto no dot', () => {

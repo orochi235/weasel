@@ -1,4 +1,4 @@
-import type { PrefLeaf, PrefNumber } from '@weasel-js/prefs';
+import { type PrefLeaf, type PrefNumber, prefLeafValue } from '@weasel-js/prefs';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, leafCanAuto, resolveAutoConfig } from '../config/autoConfig';
@@ -67,10 +67,9 @@ export function useRowAuto(source: RowAutoSource) {
   // resolver, so the row reports the value the instrument actually got — the
   // two diverge as soon as a resolver reads another auto path.
   const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
-  // An auto row draws what the resolver decided, not the value underneath it —
-  // a handle sitting at the pinned number while the readout says something else
-  // reads as a rendering bug. Pinning then keeps what you were looking at.
-  const value = resolvedValue ?? pinned;
+  // An auto row's control stays live, so it draws the value in effect: the report, else the resolver's,
+  // else the leaf's default — never the stale pinned value underneath. Pinning keeps what it showed.
+  const value = isAutoRow ? (resolvedValue ?? prefLeafValue(leaf, leaf.default)) : pinned;
   const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are. An auto row the
@@ -83,7 +82,7 @@ export function useRowAuto(source: RowAutoSource) {
     isAutoRow,
     value,
     setAuto,
-    // An auto row hides its control, so the word is all the row has to say, unless the leaf quotes its value.
+    // The word marks the row auto beside its live control; a leaf that quotes its value adds it.
     readout: isAutoRow ? autoReadout(autoQuotes(leaf) ? autoValue : undefined) : undefined,
     props: { auto: isAutoRow, onAutoChange, autoValue },
   };
