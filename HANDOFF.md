@@ -12,6 +12,8 @@ For the session picking this up: what is in flight and what has no other home. O
   change, and a root dev-dependency sweep with zod and minimatch overrides (`npm audit` 41 → 1, typedoc's, filed).
 - 1.17.1's batch `test:fleet --full` at a54066909: 35048 passed, 1 failed, `AnnotationOverlay.clip.browser.test.tsx`,
   which fails in full runs on main as well (filed as a P2 with the evidence); `test:fleet:postbuild` passed.
+- `main` pins `@msb235/blits` at exactly 1.1.0 again (475e37d05, unreleased). When the release carrying it reaches
+  npm, message the "Blinken documentation site" session: it moves blinken onto that weasel and blits 1.1.0 together.
 - CI on 1218c89e3 passed, including the Linux browser job with the SwiftShader flag; the visual suite passed.
 - Release no longer repeats `check:manifests`, `check:treeshake` and `check:react-free`: postbuild runs them.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
