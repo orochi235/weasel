@@ -57,15 +57,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has watched a real OS drag in WeaselDraw and the ghost follows the
   pointer, clears on Esc, on leave and on drop, and looks right.
 
-- **(P3) [maintainer] The image and SVG drop handlers could leave core.** `kitImageHandler` /
-  `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in
-  `packages/core/src/domains/ingestion/` are about 300 lines no kernel path needs; the registry,
-  the `ingest` action, the `ingestion` dep, and the weasel-JSON handler stay, since Cmd+V of the
-  canvas's own content runs through them. Moving them makes a file drop do nothing on a bare
-  `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
-  2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
-  Closes when the maintainer revisits the 2026-10-11 ruling: the handlers move to an `images` package,
-  or he keeps them in core and this entry is deleted.
 
 - **(P3) [maintainer] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
@@ -113,20 +104,17 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
-- **(P3) [maintainer] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
-  primitive's, and moving it would change the output of saved documents.
-  Closes when the maintainer rules on it: Repeat Along moves onto `placeAlongRun` and saved output
-  changes, or it keeps its own semantics and this entry is deleted.
+- **(P3) [agent] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
+  primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
+  output change. Closes when Repeat Along places through `placeAlongRun`.
 
-- **(P3) [maintainer] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
+- **(P3) [agent] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
   Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is the maintainer's call.
-  Closes when the maintainer has ruled whether `bendAlongPath` measures its spine with `keepCorners`,
-  and the code does what he ruled.
+  Ruled (2026-11-07): keep corners, and let saved output change. Closes when `bendAlongPath` measures its spine
+  with `keepCorners`.
 
-- **(P3) [maintainer] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
-  it pressable in that mode; a design call.
-  Closes when the maintainer has ruled whether path edit lights a text-along effect's text, and the
-  code does what he ruled.
+- **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
+  (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
 
 ### Path editing tricks
 
