@@ -15,7 +15,7 @@ import { poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
-import { insertSelectionOps } from 'interactions/actions/defaultCommitAdapter';
+import { commitSelectionOps } from 'interactions/actions/defaultCommitAdapter';
 import {
   rectPath,
   ellipsePath,
@@ -255,7 +255,7 @@ export function useInsertDepSource(
         const built = build(bounds, extras, ends);
         if (built === null) return null;
         const label = `Insert ${extras.kind}`;
-        ad.applyOps([...built.ops, ...insertSelectionOps(select, built.id, label)], label);
+        ad.applyOps([...built.ops, ...commitSelectionOps(select, built.id, label)], label);
         return built.id;
       },
     };

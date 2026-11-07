@@ -1,6 +1,6 @@
 /** The `insert` dep over a 3D world: a drag becomes a footprint on the ground. */
 
-import type { InsertDep, InsertEnds, InsertExtras, InsertSelection } from '@weasel-js/core/engine';
+import type { InsertDep, InsertEnds, InsertExtras, CommitSelection } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
 import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { groundAxes, groundHit } from './ground';
@@ -53,8 +53,8 @@ export function createInsert(opts: {
   /** Smallest footprint a click-sized drag produces. Default 0.25. */
   minExtent?: number;
   /** Makes the node. Given `select`, it commits that selection change with the
-   *  node, in the same batch when it applies ops (`insertSelectionOps`). */
-  mint(footprint: Footprint, extras: InsertExtras, select?: InsertSelection): NodeId | null;
+   *  node, in the same batch when it applies ops (`commitSelectionOps`). */
+  mint(footprint: Footprint, extras: InsertExtras, select?: CommitSelection): NodeId | null;
 }): InsertDep {
   const up = opts.up ?? DEFAULT_UP;
   const minExtent = opts.minExtent ?? 0.25;

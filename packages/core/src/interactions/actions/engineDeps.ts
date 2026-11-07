@@ -25,14 +25,15 @@ import type { SnapDep } from './snapDep';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { TransformFollower, TransformPreviewNode } from './transformFinish';
 import type { HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
-import type { InsertDep, InsertEnds, InsertExtras, InsertSelection, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
+import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
+import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
 import type { TextEditDep, ClipboardDep, SliceDep } from './editDeps';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
 export type { HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
-export type { InsertDep, InsertEnds, InsertExtras, InsertSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
+export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
 export type { TextEditDep, ClipboardDep, SliceDep };
 

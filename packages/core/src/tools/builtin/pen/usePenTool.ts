@@ -6,14 +6,13 @@ import type { Tool } from '../../overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, ImmediateParams, InvocationCtx } from '@weasel-js/routing';
-import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors, worldCoords } from '@weasel-js/geom';
 import { createPenPreviewLayer, penReachOf } from 'domains/paths/penPreviewLayer';
 import { resolveEditablePathOf } from 'domains/paths/editablePath';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
-import { commitOps } from 'interactions/actions/defaultCommitAdapter';
+import { commitOps, selectCommitted } from 'interactions/actions/defaultCommitAdapter';
 import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
 import { pointSnap } from 'domains/snap/pointSnap';
 import { snapMods } from 'domains/snap/roles';
@@ -156,8 +155,7 @@ export function usePenTool(
         set.closed.push(...addedClosed.slice(1));
       })!;
       if (samePath(next.path, cont.original)) return;
-      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins);
-      if (optsRef.current.autoSelect) deps.selection?.set([asNodeId(cont.id)]);
+      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins, optsRef.current.autoSelect ? selectCommitted(deps.selection) : undefined);
     },
     [optsRef],
   );
@@ -179,8 +177,7 @@ export function usePenTool(
       s.finishedSubpaths.every((sp) => sp.closed) &&
       (open === null || open.closed);
     const path = buildPath(s.finishedSubpaths, open);
-    const sel = deps.selection;
-    const select = sel && optsRef.current.autoSelect ? { from: [...sel.get()], selectNew: true } : undefined;
+    const select = optsRef.current.autoSelect ? selectCommitted(deps.selection) : undefined;
     deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed }, undefined, select);
     resetScratch(s);
   }, [commitContinuation, optsRef]);

@@ -8,7 +8,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
-import type { InsertDep, InsertSelection, TextEditDep } from '../depSchema';
+import type { InsertDep, CommitSelection, TextEditDep } from '../depSchema';
 import { insertParent } from './parent';
 import { insertKind } from './shape';
 
@@ -47,8 +47,8 @@ export interface InsertSession {
 
 /** The selection change an insert's commit carries: from what the press
  *  cleared back to nothing, so undo restores it. None when nothing was cleared. */
-export function clearedSelection(prior: readonly NodeId[]): InsertSelection | undefined {
-  return prior.length > 0 ? { from: prior, selectNew: false } : undefined;
+export function clearedSelection(prior: readonly NodeId[]): CommitSelection | undefined {
+  return prior.length > 0 ? { from: prior, selectNode: false } : undefined;
 }
 
 /** What the latest pump event left. Replaced, not mutated, by the next. */

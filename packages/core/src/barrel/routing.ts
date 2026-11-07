@@ -134,7 +134,7 @@ export type {
   InsertDep,
   InsertEnds,
   InsertIntoDep,
-  InsertSelection,
+  CommitSelection,
   PathSymmetryDep,
   InsertLive,
   SnapDep,

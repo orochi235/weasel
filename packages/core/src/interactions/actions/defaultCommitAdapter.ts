@@ -10,7 +10,7 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
-import type { InsertSelection } from './insertDeps';
+import type { NodeId } from 'core/scene/types';
 import { createSetSelectionOp } from 'core/ops/select';
 import { documentReads, sceneMutators } from 'core/scene/sceneMutators';
 import type { Scene } from 'core/scene/types';
@@ -72,9 +72,25 @@ export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { se
   scene.applyBatch(ops, label, defaultCommitAdapter(scene, selectionMethods(deps.selection)));
 }
 
-/** The ops an insert of node `id` appends to its batch for `select`: none
+/** The selection change a commit that makes or edits one node puts in its own
+ *  undo entry (an `insert` dep's `commit`, an `editAnchors` dep's
+ *  `applyEdit`), so undoing it restores the selection from before it. */
+export interface CommitSelection {
+  /** What was selected before the change began. Undo restores it. */
+  from: readonly NodeId[];
+  /** Leave the node made or edited selected. Otherwise nothing is left selected. */
+  selectNode: boolean;
+}
+
+/** The ops a commit of node `id` appends to its batch for `select`: none
  *  without one, else the selection change from `select.from`. */
-export function insertSelectionOps(select: InsertSelection | undefined, id: string, label?: string): Op[] {
+export function commitSelectionOps(select: CommitSelection | undefined, id: string, label?: string): Op[] {
   if (!select) return [];
-  return [createSetSelectionOp({ from: select.from, to: select.selectNew ? [asNodeId(id)] : [], ...(label !== undefined ? { label } : {}) })];
+  return [createSetSelectionOp({ from: select.from, to: select.selectNode ? [asNodeId(id)] : [], ...(label !== undefined ? { label } : {}) })];
+}
+
+/** The {@link CommitSelection} that leaves the committed node selected, from
+ *  `selection` as it stands; none without a selection. */
+export function selectCommitted(selection: Pick<SelectionApi, 'get'> | undefined): CommitSelection | undefined {
+  return selection ? { from: [...selection.get()], selectNode: true } : undefined;
 }

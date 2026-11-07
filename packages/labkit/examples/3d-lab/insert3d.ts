@@ -32,7 +32,7 @@ export function useBoxInsert(scene: SolidScene, viewport: ViewportSource): Inser
           data: { kind: 'box', color: '#c49a3f' },
         });
         // `scene.add` applies no ops for the selection to join.
-        if (select) registry.get('selection')?.set(select.selectNew ? [id] : []);
+        if (select) registry.get('selection')?.set(select.selectNode ? [id] : []);
         return id;
       },
     });

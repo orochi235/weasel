@@ -1,5 +1,6 @@
 import type { PointOrigin } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
+import type { CommitSelection } from './defaultCommitAdapter';
 import type { PathEditExtension, PathEditMark, PathEditStore } from 'domains/paths/pathEditExtension';
 import type { HandleLocks } from './edit-anchors/params';
 
@@ -49,8 +50,12 @@ export interface EditAnchorsDep {
    *  setPose+update when it lives on data.path. Given `origins` (from
    *  `editAnchorSetTracked`), its per-anchor data (skin, vertex colors) is
    *  renumbered in that entry. The edit is finished first (see `finishEdit`); one an extension cannot
-   *  finish commits nothing. */
-  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): void;
+   *  finish commits nothing. Given `select`, the entry also carries that
+   *  selection change (`commitSelectionOps(select, id, label)`); an edit that
+   *  commits nothing changes no selection. */
+  applyEdit(
+    id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[], select?: CommitSelection,
+  ): void;
   /** The ops `applyEdit` would commit for the same arguments, unapplied, so
    *  a caller can make the edit part of a larger batch — the pen joining
    *  two paths edits one node and deletes the other in one undo step.

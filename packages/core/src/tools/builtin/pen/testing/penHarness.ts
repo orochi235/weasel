@@ -9,7 +9,7 @@ import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-j
 import type { ModifierState } from 'core/modifierState';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
-import type { InsertExtras, InsertSelection } from 'interactions/actions/depSchema';
+import type { InsertExtras, CommitSelection } from 'interactions/actions/depSchema';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
 import type { SnapSource } from 'domains/snap/types';
 import { sceneOfPaths, sessionDep } from 'domains/snap/testing/sessionDep';
@@ -47,9 +47,9 @@ export function penDeps(a: ReturnType<typeof makeAdapter>, noBuild = false) {
   };
   return {
     insert: {
-      commit: vi.fn((_bounds: unknown, extras: InsertExtras, _ends?: unknown, select?: InsertSelection) => {
+      commit: vi.fn((_bounds: unknown, extras: InsertExtras, _ends?: unknown, select?: CommitSelection) => {
         const id = a.addNode(poseOf(extras));
-        if (select) a.setSelection(select.selectNew ? [id] : []);
+        if (select) a.setSelection(select.selectNode ? [id] : []);
         return id;
       }),
       ...(noBuild ? {} : {
@@ -77,7 +77,10 @@ function standInScene(paths: Record<string, PolygonPath>, setSelection: (ids: st
       }
       return false;
     }));
-  const applyEdit = vi.fn((id: string, path: unknown) => { scene[id] = path as PolygonPath; });
+  const applyEdit = vi.fn((id: string, path: unknown, _label?: string, _origins?: unknown, select?: CommitSelection) => {
+    scene[id] = path as PolygonPath;
+    if (select) setSelection(select.selectNode ? [id] : []);
+  });
   const editOps = vi.fn((id: string, path: unknown): Op[] => [{
     apply: () => { scene[id] = path as PolygonPath; },
     invert: () => { throw new Error('not exercised'); },

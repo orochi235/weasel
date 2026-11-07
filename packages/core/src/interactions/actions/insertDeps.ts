@@ -2,6 +2,7 @@ import type { Affine, PolygonPath } from '@weasel-js/geom';
 import type { DragSample, WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { CommitSelection } from './defaultCommitAdapter';
 
 /**
  * Per-kind extra geometry passed to `InsertDep.commit`.
@@ -55,16 +56,6 @@ export interface InsertEnds {
   fromCenter?: boolean;
 }
 
-/** The selection change an insert puts in its own undo entry, so undoing the
- *  insert restores the selection from before it. A `commit` builds it with
- *  `insertSelectionOps`. */
-export interface InsertSelection {
-  /** What was selected before the insert began. Undo restores it. */
-  from: readonly NodeId[];
-  /** Leave the new node selected. Otherwise the insert leaves nothing selected. */
-  selectNew: boolean;
-}
-
 /** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
  *  + per-kind geometry. */
 export interface InsertDep {
@@ -81,9 +72,9 @@ export interface InsertDep {
      *  from its center. */
     ends?: InsertEnds,
     /** The selection change to commit in the same undo entry as the node. A
-     *  `commit` that applies ops appends `insertSelectionOps(select, id)` to
+     *  `commit` that applies ops appends `commitSelectionOps(select, id)` to
      *  them; one that applies none still sets the selection it names. */
-    select?: InsertSelection,
+    select?: CommitSelection,
   ): NodeId | null;
   /**
    * What `commit` would apply, unapplied: the new node's id and the ops that

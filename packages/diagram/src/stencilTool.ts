@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import {
-  commitOps, defineTool, insertSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
+  commitOps, defineTool, commitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
   type ActionDeps, type InsertDep, type NodeId, type Op, type Tool,
 } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
@@ -117,7 +117,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         if (built === null) return null;
         const deps = { scene, applyOps: registry.get('applyOps'), selection: registry.get('selection') };
         const label = `Insert ${stencil.label}`;
-        commitOps(deps as unknown as ActionDeps, [...built.ops, ...insertSelectionOps(select, built.id, label)], label);
+        commitOps(deps as unknown as ActionDeps, [...built.ops, ...commitSelectionOps(select, built.id, label)], label);
         return built.id;
       },
     };
