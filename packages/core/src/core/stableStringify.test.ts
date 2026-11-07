@@ -11,4 +11,22 @@ describe('stableStringify', () => {
   it('keeps array order', () => {
     expect(stableStringify([2, 1])).not.toBe(stableStringify([1, 2]));
   });
+
+  it('writes what JSON writes for dates, undefined and functions', () => {
+    const value = { d: new Date(0), u: undefined, f: () => 1, list: [undefined, NaN] };
+    expect(stableStringify(value)).toBe(JSON.stringify({ d: new Date(0), list: [undefined, NaN] }));
+    expect(stableStringify(undefined)).toBeUndefined();
+  });
+
+  it('writes a bigint as a marker instead of throwing, and tells two apart', () => {
+    expect(stableStringify({ n: 10n })).toBe('{"n":{"$type":"bigint","value":"10"}}');
+    expect(stableStringify(10n)).not.toBe(stableStringify(11n));
+  });
+
+  it('writes a cycle as a marker instead of throwing, and a shared reference out twice', () => {
+    const shared = { v: 1 };
+    const loop: Record<string, unknown> = { shared, again: shared };
+    loop.self = loop;
+    expect(stableStringify(loop)).toBe('{"again":{"v":1},"self":{"$type":"cycle"},"shared":{"v":1}}');
+  });
 });

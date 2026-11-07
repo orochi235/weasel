@@ -103,6 +103,13 @@ describe('decodeKnob', () => {
   it('reads a list and a json leaf as JSON of the default shape', () => {
     expect(decodeKnob('["x","y"]', leaf('list', []))).toEqual({ value: ['x', 'y'] });
     expect(decodeKnob('[1]', leaf('list', []))).toBeUndefined();
+  });
+
+  it('reads a list of numbers or booleans by what its entry holds', () => {
+    const numbers = f.list([1], f.number(0));
+    expect(decodeKnob('[2,3]', numbers)).toEqual({ value: [2, 3] });
+    expect(decodeKnob('["x"]', numbers)).toBeUndefined();
+    expect(decodeKnob('[true]', f.list([false], f.boolean(false)))).toEqual({ value: [true] });
     expect(decodeKnob('{"a":1}', leaf('json', { a: 0 }))).toEqual({ value: { a: 1 } });
     expect(decodeKnob('[1]', leaf('json', { a: 0 }))).toBeUndefined();
     expect(decodeKnob('{oops', leaf('json', {}))).toBeUndefined();
@@ -116,6 +123,13 @@ describe('decodeKnob', () => {
 });
 
 describe('knobsToParams', () => {
+  it('compares a story arg holding a cycle to its default, after a port has cloned it, without throwing', () => {
+    const tree: Record<string, unknown> = { name: 'root' };
+    tree.self = tree;
+    const csf = argsToSchema({ tree, label: 'x' }, {}, {});
+    expect(knobsToParams(csf, structuredClone(csf.defaults()))).toEqual({});
+  });
+
   it('writes only the leaves that differ from their defaults, grouped ones by dotted path', () => {
     const config = {
       ...schema.defaults(),

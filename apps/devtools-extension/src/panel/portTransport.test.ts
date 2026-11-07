@@ -49,6 +49,23 @@ describe('the panel’s port transport', () => {
     expect(heard).toEqual([sup]);
   });
 
+  it('answers the requests the background went without answering, and none it answered', () => {
+    const { transport, backgrounds } = setup();
+    const heard: unknown[] = [];
+    transport.onMessage((m) => heard.push(m));
+    transport.send(yo);
+    const ask = (requestId: number) => transport.send({ type: 'get-state', protocol: PROTOCOL, requestId, rootId: 'root-1' });
+    ask(1);
+    ask(2);
+    backgrounds[0]!.postMessage({ type: 'result', protocol: PROTOCOL, requestId: 1, result: null });
+    backgrounds[0]!.disconnect();
+    ask(3);
+    expect(heard.slice(1)).toEqual([
+      { type: 'error', protocol: PROTOCOL, requestId: 2, message: 'weasel devtools: the connection to the page restarted' },
+    ]);
+    expect(backgrounds[1]!.received.at(-1)).toMatchObject({ requestId: 3 });
+  });
+
   it('does not say yo again after it said bye', () => {
     const { transport, backgrounds } = setup();
     transport.send(yo);

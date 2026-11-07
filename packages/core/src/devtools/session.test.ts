@@ -100,7 +100,7 @@ describe('devtools session', () => {
     ]);
     expect(t.result({ type: 'get-children', nodeId: t.group })).toMatchObject([{ id: t.leaf, locked: true }]);
     expect(t.result({ type: 'get-node', nodeId: t.leaf })).toMatchObject({
-      parent: t.group, pose: { x: 1, y: 2, width: 3, height: 4 }, data: { label: 'leaf', draw: 'ƒ draw' },
+      parent: t.group, pose: { x: 1, y: 2, width: 3, height: 4 }, data: { label: 'leaf', draw: { $type: 'function', name: 'draw' } },
     });
     expect(t.ask({ type: 'get-node', nodeId: 'nope' })).toMatchObject({ type: 'error', message: 'no node "nope"' });
     expect(t.ask({ type: 'get-state', rootId: 'root-x' })).toMatchObject({ type: 'error', message: 'no root "root-x"' });

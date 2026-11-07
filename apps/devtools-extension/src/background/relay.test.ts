@@ -117,6 +117,22 @@ describe('the background relay', () => {
     expect(again.received).toEqual([yo]);
   });
 
+  it('tells the panel a frame’s roots are gone when a new content script takes the frame over', () => {
+    const { page, panel } = setup();
+    const p = panel(1);
+    p.postMessage(yo);
+    const old = page(1);
+    old.postMessage(sup(root('root-1'), root('root-2')));
+    const next = page(1);
+    expect(old.closed).toBe(true);
+    expect(p.received.slice(1)).toEqual([
+      { type: 'root-removed', protocol: P, rootId: 'root-1' },
+      { type: 'root-removed', protocol: P, rootId: 'root-2' },
+    ]);
+    next.postMessage(sup(root('root-1', 'again')));
+    expect(p.received.at(-1)).toEqual({ type: 'root-added', protocol: P, root: root('root-1', 'again') });
+  });
+
   it('keeps each frame’s roots apart, and routes a request to the frame that owns the root', () => {
     const { page, panel } = setup();
     const p = panel(1);
@@ -136,6 +152,34 @@ describe('the background relay', () => {
 
     sub.postMessage({ type: 'changed', protocol: P, rootId: 'root-1', areas: { scene: 2 } });
     expect(p.received.at(-1)).toEqual({ type: 'changed', protocol: P, rootId: 'frame7/root-1', areas: { scene: 2 } });
+  });
+
+  it('answers the requests a frame had not answered when it goes, and only that frame’s', () => {
+    const { page, panel } = setup();
+    const p = panel(1);
+    const top = page(1, 0);
+    const sub = page(1, 7);
+    p.postMessage(yo);
+    top.postMessage(sup(root('root-1')));
+    sub.postMessage(sup(root('root-1')));
+    const ask = (requestId: number, rootId: string) =>
+      p.postMessage({ type: 'get-state', protocol: P, requestId, rootId });
+    ask(1, 'root-1');
+    ask(2, 'frame7/root-1');
+    ask(3, 'frame7/root-1');
+    sub.postMessage({ type: 'result', protocol: P, requestId: 2, result: null });
+    const before = p.received.length;
+    sub.disconnect();
+    expect(p.received.slice(before)).toEqual([
+      { type: 'error', protocol: P, requestId: 3, message: 'weasel devtools: frame 7 went before it answered' },
+      { type: 'root-removed', protocol: P, rootId: 'frame7/root-1' },
+    ]);
+    const replaced = p.received.length;
+    page(1, 0);
+    expect(p.received.slice(replaced)).toEqual([
+      { type: 'error', protocol: P, requestId: 1, message: 'weasel devtools: frame 0 went before it answered' },
+      { type: 'root-removed', protocol: P, rootId: 'root-1' },
+    ]);
   });
 
   it('answers a request for a frame that is not there with an error', () => {
