@@ -719,8 +719,11 @@ only story runner in the repo.
 
 - **(P3) [agent] WebGPU backend.** Design and stage list: `docs/superpowers/specs/2026-11-06-webgpu-backend-design.md`.
   On branch `webgpu` (2026-11-06): the WebGPU device, every kit program in WGSL, `WeaselRendererOptions.gpu`,
-  `requestRendererDevice`, `renderIdsAsync`, and a parity suite against WebGL. Left: core's `backend` option,
-  WGSL for the apps' shaders, the visual suite's WebGPU run, and two parity cases a row of pixels apart: in
+  `requestRendererDevice`, `renderIdsAsync`, a parity suite against WebGL, core's `backend` option, async
+  `pickAt` / `readIds`, a paint-kind WGSL prelude, and the visual suite's `WEASEL_VISUAL_BACKEND=webgpu` run
+  with its CI job (`visual-regression-webgpu`, not gating). Left: that job has never run (it needs a push),
+  `geometry.picking: 'pixels'` walks the shapes on WebGPU because the pick must answer inside the pointer
+  event, a tile of a shared canvas stays on WebGL, and two parity cases a row of pixels apart: in
   `parity.browser.test.ts` "a filled curve with a stroke" (14 pixels along the top of the stroke, WebGPU inking
   what WebGL leaves; moving the path 0.01 CSS px keeps them, 0.1 removes them) and in
   `parity.passes.browser.test.ts` the retained group panned to (-21, 5) (1 pixel on the curved stroke). The

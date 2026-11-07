@@ -1,8 +1,8 @@
 # WebGPU backend for WeaselRenderer — design
 
 **Status: partly built (2026-11-06).** Work in flight on branch `webgpu` (`/Users/mike/src/weasel-webgpu`); the
-stage list at the end says which parts have landed. Delete this file when the last stage merges, moving
-the WGSL contract into `packages/renderer/README.md` first.
+stage list at the end says which parts have landed. Delete this file when the last stage merges; the WGSL
+contract already lives in `packages/renderer/README.md` ("Writing WGSL").
 
 For whoever builds or reviews a stage: how one draw-code path drives both WebGL2 and WebGPU, what a WGSL
 shader author is promised, and the order the work lands in.
@@ -71,33 +71,9 @@ for `textureSample`; its WGSL uses `textureSampleGrad` with derivatives taken be
 
 ## The WGSL contract for custom shaders
 
-WGSL is not rewritten the way GLSL is (`withIdOutput`). A custom program supplies plain functions, and the
-kit supplies the entry points that call them, so ids, origins and premultiplication stay the kit's job:
-
-```wgsl
-// registerProgram(id, { wgsl: { frag } }): the kit's prelude declares Varyings and `kit`.
-struct Params { u_time: f32, u_tint: vec4f }
-@group(1) @binding(0) var<uniform> params: Params;
-@group(1) @binding(1) var u_tex: texture_2d<f32>;
-@group(1) @binding(2) var u_tex_sampler: sampler;
-
-fn fragment(in: Varyings) -> vec4f {            // premultiplied
-  return textureSample(u_tex, u_tex_sampler, in.uv) * params.u_tint;
-}
-```
-
-- `Varyings`: `position` (`@builtin(position)`), `uv`, `screen`, `world`, `worldLocal`. The GLSL varyings
-  `v_uv`, `v_screen`, `v_world` and `v_worldLocal`, under their WGSL names.
-- `kit` (`@group(0) @binding(0)`): `proj`, `bounds`, `view`, `screenToLocal`, `worldOrigin`, `fragOrigin`.
-- A custom `wgsl.vert` supplies `fn vertex(in: KitVertex) -> Varyings`. Unset, it is the kit's vertex stage
-  for wherever the program is drawn: a shader quad, or an effect pass.
-- Uniform values are the same object a GLSL program takes (`{ u_time: 0.5, u_tex: handle }`): a name is a
-  member of the struct at `@group(1) @binding(0)`, or a texture variable in group 1.
-- Effects supply `fn effect(in: EffectVaryings) -> vec4f`, with `source` / `source_sampler`, `resolution`,
-  `texel` and `windowOrigin` in `kit`.
-- **Origins are WGSL's, top-left, everywhere.** GLSL keeps its bottom-left `u_fragOrigin` and bottom-up
-  effect `v_uv`; a WGSL author never sees a flipped coordinate. The one divergence between the languages,
-  chosen so each reads natively (2026-11-06).
+Moved to `packages/renderer/README.md` ("Writing WGSL"), where shader authors read it: a program supplies
+plain functions and the kit the entry points, and WGSL origins are top-left everywhere (2026-11-06). Paint
+kinds got a prelude of the same shape (`gpu/webgpu/wgsl/paintPrelude.ts`).
 
 ## Choosing a backend
 
@@ -105,15 +81,21 @@ fn fragment(in: Varyings) -> vec4f {            // premultiplied
   the caller already holds. `requestRendererDevice()` returns the process's one shared `GPUDevice`, or
   `null` where WebGPU is unavailable.
 - Core's canvas paint options take `backend: 'webgl2' | 'webgpu' | 'auto'`, default `'webgl2'` until the
-  visual suite passes on WebGPU. A canvas can hold only one kind of context, so the choice is made when its
-  first renderer is built: `'auto'` takes WebGPU when a device is ready and every program registered so far
-  has WGSL. Until the device resolves, the lease returns `null` and repaints through its `restored` signal,
-  the path context restore already uses.
+  visual suite passes on WebGPU; `CanvasBackendProvider` sets it for a subtree. A canvas can hold only one
+  kind of context, so the choice is made when its first renderer is built and kept for the element:
+  `'auto'` takes WebGPU when a device is ready and every program registered so far has WGSL. Until the
+  device resolves, the lease returns `null` and repaints through its `restored` signal, the path context
+  restore already uses; a lost device is rebuilt on the next one the same way. `'webgpu'` where there is no
+  device paints nothing and says so, so a WebGPU run cannot pass on WebGL. A tile of a shared canvas stays on
+  WebGL 2: each WebGPU renderer keeps a buffer of its own and presents all of it, which would erase its
+  co-tenants (2026-11-06).
 - A program with no WGSL registered after a canvas went WebGPU draws nothing there and is reported once,
   the mirror of a WGSL-only program on WebGL (my call, 2026-11-06: a canvas cannot change context kind
   mid-life, and swapping the element would lose its listeners and layout).
-- `renderIds` stays synchronous on WebGL. `renderIdsAsync` exists on both and is the only form on WebGPU;
-  core's callers move to it.
+- `renderIds` stays synchronous on WebGL. `renderIdsAsync` exists on both and is the only form on WebGPU.
+  Core's `pickAt` and `readIds` moved to it and return promises. The select tool's `'pixels'` picking must
+  answer inside the pointer event, so it reads `readIdsSync`, which is `null` on WebGPU, and walks the shapes
+  there instead. `RasterSession.renderIds` stays synchronous: a raster session is WebGL only.
 
 ## Public surface that changes
 
@@ -149,11 +131,20 @@ from the plan; this list says what is on the branch (2026-11-06).
    Kit programs carry their WGSL; `WeaselRendererOptions.gpu` and `requestRendererDevice()` build a renderer
    on it. The parity suite (`gpu/webgpu/parity*.browser.test.ts`) draws one corpus through both backends in
    one page and diffs the pixels; two stroke cases are still a row of pixels apart (TODO entry).
-4. Core's `backend` option, and WGSL for every shader the apps register.
-5. Parity suite over the visual demos; the visual suite's WebGPU run.
+4. **Landed.** Core's `backend` option and `CanvasBackendProvider`; async `pickAt` / `readIds`; the paint
+   prelude for registered paint kinds. Every shader the repo registers with a `WeaselRenderer` has WGSL;
+   kernel3d's line pass and labkit's 3D lab draw through WebGL contexts of their own and are not in scope.
+5. **Plumbing landed, unrun.** The site reads `?backend=` into a `CanvasBackendProvider` at its root;
+   `tests/visual/fixture.ts` appends it to every `page.goto` when `WEASEL_VISUAL_BACKEND` is set; the visual
+   workflow's `visual-regression-webgpu` job runs the suite that way against the same baselines, without
+   gating. Nothing has run it: it needs a push. Specs that read pixels through a WebGL context of their own
+   (`batch-pixels.spec.ts`) cannot read a WebGPU canvas and are expected to fail there.
 
 What the fleet's browsers impose on a WebGPU canvas, found building stage 3: headless Chromium's
 SwiftShader adapter hands back invalid textures for a `bgra8unorm` canvas, so every canvas is configured
 `rgba8unorm`; and an off-screen canvas's texture is invalid on every frame after its first until the
-context is configured again, which the parity harness does before each frame. The GPU's 4× sample pattern
+context is configured again, which the parity harness does before each frame. A WebGPU canvas in the
+document loses the device for the whole page once it has been presented for a few frames
+(`docs/traps/testing.md`), so the fleet's WebGPU tests draw only to canvases outside it, and the visual
+suite's WebGPU run, whose canvases are on the page, may meet the same on CI's headless Chromium. The GPU's 4× sample pattern
 and SwiftShader's differ, so multisampled parity is compared away from edges.
