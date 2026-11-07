@@ -26,6 +26,9 @@ For the session picking this up: what is in flight and what has no other home. O
   `test:fleet` ran green on 9ae52cb44 and `test:fleet:postbuild` on bdf528f34, which differs from it by a test file;
   the merge into `main` adds only another session's TODO rulings. A modifier-held tool now takes its own gestures
   in routing's dispatcher, and the symmetry controller's `create` takes its center in world coordinates.
+- Release 1.17.0 (2026-11-07): `minor` approved on `@weasel-js/core` in `.changeset/webgpu-backend.md` (9dcd2bc8c).
+  `test:fleet` (35046 passed, 0 failed) and `test:fleet:postbuild` (13/13 steps) ran green on e0591848d, which
+  includes batch/2026-11-07d; 9dcd2bc8c adds only that changeset. Next: push, let CI's visual suite run, release.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
 
