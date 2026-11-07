@@ -21,6 +21,7 @@ import type { ModifierState } from 'core/modifierState';
 import { cursorFor } from '@weasel-js/cursor';
 import { createPointerFollower } from '../shared/pointerFollower';
 import { icon } from '../../../icons.gen';
+import { anchorCount, buildPath, freshScratch, resetScratch, startSubpath } from './penScratch';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag
@@ -43,6 +44,10 @@ export interface PenAnchor {
 export interface PenSubpath {
   anchors: PenAnchor[]; // LOCAL PenAnchor — in-progress
   closed: boolean;
+  /** Begun by the press right after one that closed and committed a path:
+   *  the second click of a double click on the first anchor, which the
+   *  double click takes back. */
+  followsClose?: boolean;
 }
 
 /**
@@ -66,6 +71,9 @@ export interface PenScratch {
    *  around when it was picked up by its first anchor), and the commit
    *  writes back into the node. */
   continuing: PenContinuation | null;
+  /** The last press closed and committed a path; the next subpath begun
+   *  `followsClose`. */
+  justClosed?: boolean;
 }
 
 /** Which existing subpath the pen picked up, and the node's path as it was. */
@@ -99,44 +107,6 @@ export interface UsePenToolOptions {
    *  Measured as a screen-space circle, so it stays round under non-uniform
    *  zoom; aligns with `useSelectTool.handleHitRadius`. */
   closeHitRadius?: number;
-}
-
-function freshScratch(): PenScratch {
-  return {
-    finishedSubpaths: [],
-    current: null,
-    cursor: null,
-    draggingHandleAt: null,
-    closeHintActive: false,
-    continuing: null,
-  };
-}
-
-function resetScratch(s: PenScratch): void {
-  s.finishedSubpaths = [];
-  s.current = null;
-  s.cursor = null;
-  s.draggingHandleAt = null;
-  s.closeHintActive = false;
-  s.continuing = null;
-}
-
-/** Total anchors across finished subpaths plus the in-progress one. */
-function anchorCount(s: PenScratch): number {
-  return (s.current ? s.current.anchors.length : 0)
-    + s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
-}
-
-/** Build a PolygonPath from the pen's accumulated subpaths, by the same
- *  rule as any anchor set: segment A→B is a cubic through A's out-handle and
- *  B's in-handle when either exists, else a line. */
-function buildPath(
-  subpaths: PenSubpath[],
-  trailing: PenSubpath | null,
-): PolygonPath {
-  const all = [...subpaths];
-  if (trailing && trailing.anchors.length > 0) all.push(trailing);
-  return anchorsToPath(all.map((sp) => sp.anchors), all.map((sp) => sp.closed));
 }
 
 /**
@@ -392,14 +362,14 @@ export function usePenTool(
                 scratch.finishedSubpaths.push(scratch.current);
                 scratch.current = null;
                 scratch.closeHintActive = false;
-                if (optsRef.current.autoCommitOnClose) commit(scratch, deps);
+                if (optsRef.current.autoCommitOnClose) { commit(scratch, deps); scratch.justClosed = true; }
                 trail.update(deps);
                 return;
               }
             }
 
             const join = joinable(scratch, deps, hit);
-            if (!scratch.current) scratch.current = { anchors: [], closed: false };
+            scratch.current ??= startSubpath(scratch);
             scratch.current.anchors.push({ x: wx, y: wy });
             if (join) commitJoin(scratch, deps, hit);
             trail.update(deps);
@@ -412,21 +382,19 @@ export function usePenTool(
         label: 'Pen — finish open path',
         eligible: { capability: 'creates-paths' },
         requires: ['editAnchors', 'insert', 'selection'],
-        // Needs an actual path to commit. Declining also lets the gesture
-        // fall through: a ⌘-click with fewer than two anchors reaches the
-        // plain-click binding and places an anchor instead.
-        enabled: () => (anchorCount(s()) >= 2 ? true : ActionDisabledReason.NotApplicable),
+        // Needs a path, or a double click's own lone anchor, to take back. Declining lets a
+        // ⌘-click with fewer than two anchors reach the plain-click binding.
+        enabled: () => (anchorCount(s()) >= 2 || s().current?.followsClose ? true : ActionDisabledReason.NotApplicable),
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
             const scratch = s();
             const p = params as { viaDoubleClick?: boolean } | undefined;
+            if (!p?.viaDoubleClick && anchorCount(scratch) < 2) return 'pass';
 
-            // A double click arrives AFTER both of its clicks, so the second
-            // one has already appended an anchor. Undo exactly that before
-            // committing: pop it, and drop the subpath entirely if it was the
-            // only anchor in it (which happens when the FIRST click closed a
-            // subpath and the second started a fresh one).
+            // A double click arrives AFTER both of its clicks, so the second one has already
+            // appended an anchor: pop it, and the subpath with it when it was the only one
+            // (the FIRST click closed a subpath and the second started a fresh one).
             if (p?.viaDoubleClick && scratch.current) {
               scratch.current.anchors.pop();
               if (scratch.current.anchors.length === 0) scratch.current = null;
@@ -434,6 +402,7 @@ export function usePenTool(
 
             commit(scratch, deps);
             trail.refresh();
+            return undefined;
           },
         },
       },
@@ -461,7 +430,7 @@ export function usePenTool(
             if (!pickedUp) {
               const { x: ax, y: ay, hit } = placeAt(ctx.deps, origin.x, origin.y, ctx.modifiers);
               if (joinable(scratch, ctx.deps, hit)) joinHit = hit;
-              if (!scratch.current) scratch.current = { anchors: [], closed: false };
+              scratch.current ??= startSubpath(scratch);
               scratch.current.anchors.push({ x: ax, y: ay });
             }
             scratch.draggingHandleAt = scratch.current!.anchors.length - 1;

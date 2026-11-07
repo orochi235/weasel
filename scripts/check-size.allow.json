@@ -43,8 +43,8 @@
     "lines": 420
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
-    "lines": 644,
-    "longestFunction": 438
+    "lines": 613,
+    "longestFunction": 437
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
     "longestFunction": 122
