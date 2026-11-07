@@ -46,14 +46,8 @@ jobs:
       - run: npm ci
       # Builds every published workspace, in `scripts/build-workspaces.mjs`'s order.
       - run: npm run build
-      # Last gate before anything reaches npm: refuse to publish a package whose
-      # `exports`/`types` map promises files the tarball does not contain.
-      - run: npm run check:manifests
-      # And one that ships the whole kit to a consumer importing one symbol.
-      - run: npm run check:treeshake
-      # A subpath that promises no React must have none in its built closure.
-      # Only the emitted graph can say so. See scripts/check-react-free.mjs.
-      - run: npm run check:react-free
+      # check:manifests, check:treeshake and check:react-free are not repeated here:
+      # `test:fleet:postbuild` runs them on the commit, under this npm, before it merges.
       # Every import in a published package's source is one its manifest declares.
       - run: npm run check:imports
       # And refuse to *version* on an unapproved bump above patch. CI already
