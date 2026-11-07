@@ -4,7 +4,7 @@
  * minimap's own view answers the minimap's camera.
  */
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { wheelZoom, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
+import { viewWorldToScreen, wheelZoom, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Action id for `minimapCenterAction`. */
@@ -93,8 +93,7 @@ export function minimapZoomAction(clamp?: ZoomClampOpts | (() => ZoomClampOpts |
         const root = rootOf(deps);
         if (!root || !p?.world || !p.deltaY) return;
         const v = root.get();
-        const anchor = { x: (p.world.x - v.x) * v.scale.x, y: (p.world.y - v.y) * v.scale.y };
-        root.set(wheelZoom(v, anchor, p.deltaY, typeof clamp === 'function' ? clamp() : clamp));
+        root.set(wheelZoom(v, viewWorldToScreen(v, p.world), p.deltaY, typeof clamp === 'function' ? clamp() : clamp));
       },
     },
   };

@@ -167,6 +167,18 @@ describe('minimap chrome', () => {
     expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 })).toEqual([]);
   });
 
+  it('keeps the crosshair its screen size on each axis of a stretched or flipped view', () => {
+    const pos = { world: { x: 500, y: 400 }, viewId: 'elsewhere' };
+    const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00' });
+    // Twice as many px per unit across as down, and y-up.
+    const stretched = { x: 0, y: 0, scale: { x: 2, y: -1 } };
+    const bars = layer.draw({ viewId: null }, stretched, { width: 400, height: 300, dpr: 1 }).slice(4) as
+      Array<{ path: { width: number; height: number } }>;
+    // A 9px arm by a 2px bar, in world units on each axis.
+    expect(bars[0].path).toMatchObject({ width: 4.5, height: 2 });
+    expect(bars[2].path).toMatchObject({ width: 1, height: 9 });
+  });
+
   it('keeps out of views it was not built for', () => {
     const pos = { world: { x: 500, y: 400 }, viewId: 'elsewhere' };
     const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00', views: [null] });

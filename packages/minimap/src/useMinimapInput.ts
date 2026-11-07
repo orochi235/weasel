@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 import { useActionsRegistry, useDepSource, useGestureDispatcher } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
-import type { View, ViewApi, ZoomClampOpts } from '@weasel-js/core';
+import { viewScreenToWorld, type View, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
 import {
   MINIMAP_CENTER, MINIMAP_PAN, MINIMAP_ZOOM, minimapCenterAction, minimapPanAction, minimapZoomAction,
 } from './actions';
@@ -74,11 +74,7 @@ export function useMinimapInput(opts: MinimapInputOptions): (cx: number, cy: num
   /** Client point → world, through the fit camera. */
   const clientToWorld = useCallback((cx: number, cy: number) => {
     const rect = canvasRef.current?.getBoundingClientRect();
-    const fv = fitViewRef.current;
-    return {
-      x: fv.x + (cx - (rect?.left ?? 0)) / fv.scale.x,
-      y: fv.y + (cy - (rect?.top ?? 0)) / fv.scale.y,
-    };
+    return viewScreenToWorld(fitViewRef.current, { x: cx - (rect?.left ?? 0), y: cy - (rect?.top ?? 0) });
   }, [canvasRef, fitViewRef]);
 
   useGestureDispatcher({

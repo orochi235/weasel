@@ -151,6 +151,13 @@ describe('createCanvasSource', () => {
     expect(s.sample({ x: -1, y: 0 })).toBeNull();
   });
 
+  it('samples nothing at a point that is not a number', () => {
+    // A browser's drawImage skips a NaN rect, so the probe would report the last pixel it held.
+    const s = createCanvasSource(canvas(200, 100));
+    expect(s.sample({ x: NaN, y: 3 })).toBeNull();
+    expect(s.sample({ x: 3, y: NaN })).toBeNull();
+  });
+
   it('never calls getContext on the canvas it reads', () => {
     const c = canvas();
     const getContext = vi.fn(() => null);

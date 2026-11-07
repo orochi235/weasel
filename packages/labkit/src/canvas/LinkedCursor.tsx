@@ -23,7 +23,7 @@ export function LinkedCursor() {
     x: local.x,
     y: local.y * camera.frame.yDir,
   });
-  const { halo, bars } = crosshairRects(x, y, 1);
+  const { halo, bars } = crosshairRects(x, y, { x: 1, y: 1 });
   const arms = ARMS.map((name, i) => ({ name, halo: halo[i], bar: bars[i] }));
   return (
     <svg className="lk-linked-cursor" aria-hidden="true">

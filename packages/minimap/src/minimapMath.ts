@@ -1,5 +1,5 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import { composeWorldPose, documentPose, effectivePose, scenePoseAdapter } from '@weasel-js/core';
+import { composeWorldPose, documentPose, effectivePose, scenePoseAdapter, viewportWorldRect } from '@weasel-js/core';
 import type { NodeId, PoseAdapter, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
@@ -162,10 +162,7 @@ export function computeIndicatorCommand(
   // World-space rect, returned as-is: the caller wraps the command list in a
   // group transformed by the minimap's view, and screen coords here would get
   // that transform applied a second time.
-  const x = mainView.x;
-  const y = mainView.y;
-  const width = mainViewDims.width / mainView.scale.x;
-  const height = mainViewDims.height / mainView.scale.y;
+  const { x, y, width, height } = viewportWorldRect(mainView, mainViewDims);
   const px = minimapView ? 1 / Math.abs(minimapView.scale.x) : 1;
   return {
     kind: 'path',

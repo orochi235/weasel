@@ -282,7 +282,7 @@ function ChromeCanvas({
     if (world) {
       // Back to frame-local: the map is its own inverse.
       const at = px(world.x, world.y * camera.frame.yDir);
-      const { halo, bars } = crosshairRects(at.x, at.y, 1);
+      const { halo, bars } = crosshairRects(at.x, at.y, { x: 1, y: 1 });
       ctx.fillStyle = 'rgb(0 0 0 / 60%)';
       for (const r of halo) ctx.fillRect(r.x, r.y, r.w, r.h);
       ctx.fillStyle = cssVar(ref.current, '--wzl-accent', '#4c8dff');

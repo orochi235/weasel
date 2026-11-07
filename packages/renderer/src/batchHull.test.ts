@@ -138,6 +138,15 @@ describe('snappedRectOf', () => {
     }
   });
 
+  it('cuts a flipped rect (negative width and height) as the rect it covers', () => {
+    const flipped = snappedRectOf(rect(40, 30, -30, -10), ID, MAP)!;
+    const upright = snappedRectOf(rect(10, 20, 30, 10), ID, MAP)!;
+    expect(flipped.rect).toEqual({ x0: 10, y0: 20, x1: 40, y1: 30 });
+    // Its corners start elsewhere, so the same planes come in another order.
+    const planes = (s: HullSet) => Array.from({ length: s.count }, (_, k) => Array.from(s.planes.subarray(4 * k, 4 * k + 4)).join()).sort();
+    expect(planes(flipped.hull.set)).toEqual(planes(upright.hull.set));
+  });
+
   it('declines a window map that turns the axes', () => {
     expect(snappedRectOf(rect(0, 0, 10, 10), ID, { ...MAP, bx: 1 })).toBeNull();
   });

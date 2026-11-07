@@ -350,6 +350,14 @@ describe('computeIndicatorCommand', () => {
     expect(cmd.path.height).toBeCloseTo(200, 6);
   });
 
+  it('a flipped main view → the rect it shows, with a positive size', () => {
+    // y-up: the main view's top-left is world y = 100, and it shows y in [-500, 100].
+    const mainView: View = { x: 20, y: 100, scale: { x: -2, y: -1 } };
+    const cmd = computeIndicatorCommand(mainView, { width: 800, height: 600 });
+    if (cmd.path.kind !== 'rect') throw new Error('unreachable');
+    expect(cmd.path).toMatchObject({ x: -380, y: -500, width: 400, height: 600 });
+  });
+
   it('default style is white 1px [2,3] dash', () => {
     const cmd = computeIndicatorCommand(
       { x: 0, y: 0, scale: { x: 1, y: 1 } },

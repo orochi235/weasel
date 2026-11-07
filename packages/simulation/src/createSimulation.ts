@@ -125,7 +125,8 @@ export function createSimulation<TNode extends SimulationNode>(
       return core;
     },
     isSettled() {
-      return alpha < alphaMin && alphaTarget === 0;
+      // Where the loop stops, and alpha cannot climb back over alphaMin by itself.
+      return alpha < alphaMin && alphaTarget < alphaMin;
     },
   };
   /* eslint-enable @typescript-eslint/no-explicit-any */
