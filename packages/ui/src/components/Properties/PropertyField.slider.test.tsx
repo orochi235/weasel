@@ -184,4 +184,12 @@ describe('slider field', () => {
     );
     expect(screen.getByRole('spinbutton')).toHaveValue('pill');
   });
+  it('shows the readout to every place its step is written with', () => {
+    const { rerender } = render(
+      <PropertyField kind="number" control="slider" label="Op" value={0.25} min={0} max={1} step={0.25} onChange={() => {}} />,
+    );
+    expect(screen.getByRole('spinbutton')).toHaveValue('0.25');
+    rerender(<PropertyField kind="number" control="slider" label="Op" value={7.5} min={0} max={10} step={2.5} onChange={() => {}} />);
+    expect(screen.getByRole('spinbutton')).toHaveValue('7.5');
+  });
 });
