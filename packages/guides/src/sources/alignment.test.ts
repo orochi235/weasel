@@ -86,6 +86,15 @@ describe('alignmentSnapSource', () => {
     expectNear(out.point, { x: -3, y: 0 });
   });
 
+  it('carries a page box into the parallax plane a node moves in, as a guide is', () => {
+    // plane = 2 * camera - 100: the page's left edge at camera 60 lies at plane 20.
+    const plane = { scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } };
+    const page: Bounds = { x: 60, y: 0, width: 100, height: 100 };
+    const box = { x: 0, y: 300, width: 10, height: 10 };
+    const out = moveBy({ sources: [alignmentSnapSource({ page })], box, plane }).by(30, 0);
+    expectNear(out.point, { x: 20, y: 0 });
+  });
+
   describe('over a scene', () => {
     it('aligns to the subject\'s siblings, and marks the line out to the farthest one', () => {
       const { scene, ids } = sceneOf([

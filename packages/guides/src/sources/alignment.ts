@@ -1,4 +1,4 @@
-import type { Bounds, SnapCollect, SnapMark, SnapProbeAt, SnapSource } from '@weasel-js/core';
+import { rectToPlane, type Bounds, type SnapCollect, type SnapMark, type SnapProbeAt, type SnapSource } from '@weasel-js/core';
 import { deriveAlignmentGuides } from '../guides/alignment/derive';
 import { stretchSpan } from '../guides/alignment/match';
 import type { Guide } from '../guides/types';
@@ -66,7 +66,8 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
   const page = () => (typeof opts.page === 'function' ? opts.page() : opts.page) ?? undefined;
   const fromScene = cachedPerScene((boxes) => indexLines(deriveAlignmentGuides(boxes)), opts.filter);
   const linesFor = (q: SnapCollect): LineIndex[] => {
-    const pageBox = page();
+    const camera = page();
+    const pageBox = camera && q.plane ? rectToPlane(q.plane, camera) : camera;
     const own = opts.getCandidates ? indexLines(opts.getCandidates()) : fromScene(q);
     return [...(own ? [own] : []), ...(pageBox ? [indexLines(deriveAlignmentGuides([], { page: pageBox }))] : [])];
   };
