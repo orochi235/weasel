@@ -72,7 +72,8 @@ describe("an action's drag threshold", () => {
   });
 
   it('passes the drag on when the action, started past it, declines', () => {
-    const declines = ongoingAction('declines', { kind: 'drag' }, vi.fn(() => ({})));
+    const declineStart = vi.fn(() => ({}));
+    const declines = ongoingAction('declines', { kind: 'drag' }, declineStart);
     (declines.invoker as OngoingInvoker).dragThresholdPx = 8;
     const taker = { onMove: vi.fn(), onEnd: vi.fn() };
     const takes = ongoingAction('takes', { kind: 'drag' }, vi.fn(() => taker));
@@ -81,7 +82,7 @@ describe("an action's drag threshold", () => {
     const send = (e: InputEvent) => dispatcher.handleInput(e, ctx);
     send(at('pointerdown', 100));
     send(at('pointermove', 120));
-    expect(declines.invoker!.timing === 'ongoing' && (declines.invoker.start as ReturnType<typeof vi.fn>)).toHaveBeenCalledOnce();
+    expect(declineStart).toHaveBeenCalledOnce();
     expect(taker.onMove).toHaveBeenCalledOnce();
     send(at('pointerup', 120));
     expect(taker.onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
