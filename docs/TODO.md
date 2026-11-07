@@ -48,6 +48,12 @@ Owner tags, after the priority (2026-10-26):
   Ruled (2026-11-07): it should; build the exclude list.
   Closes when a clone snaps to its source's edges, with a test.
 
+- **(P3) [agent] A warp press on text that ends before any move may leave an outlines-only undo entry.**
+  Read from `path-tools/src/warp/warpActions.ts` and `outlineSession.ts`, not run: the text-to-outlines
+  conversion is committed at the drag's end even when no warp shape was produced. It only happens if the
+  dispatcher can end a warp drag with no move. Closes when a test either shows it and the fix lands, or shows
+  the dispatcher never ends one that way.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
