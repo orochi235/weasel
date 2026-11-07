@@ -1,5 +1,25 @@
 # @weasel-js/minimap
 
+## 1.17.3
+
+### Patch Changes
+
+- 56446ad: The minimap's view indicator now strokes in the theme's `--wzl-accent`, the color its crosshair already used, read
+  off the minimap's canvas and re-read when a theme or mode attribute above it changes; it was white in every theme.
+  An `indicatorStyle.stroke` still wins. `computeIndicatorCommand` takes the default stroke as a fifth argument, and
+  the linked crosshair now follows a theme change too rather than keeping the color it read when attached. Core
+  exports `watchThemeOf`, which reports when the colors read off an element may have changed.
+- Updated dependencies [f9e1b14]
+- Updated dependencies [5bda052]
+- Updated dependencies [49cd9bb]
+- Updated dependencies [778f26d]
+- Updated dependencies [778f26d]
+- Updated dependencies [56446ad]
+  - @weasel-js/core@1.17.3
+  - @weasel-js/animator@1.17.3
+  - @weasel-js/routing@1.17.3
+  - @weasel-js/react@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes

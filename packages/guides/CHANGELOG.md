@@ -1,5 +1,19 @@
 # @weasel-js/guides
 
+## 1.17.3
+
+### Patch Changes
+
+- Updated dependencies [f9e1b14]
+- Updated dependencies [49cd9bb]
+- Updated dependencies [13c6f66]
+- Updated dependencies [778f26d]
+- Updated dependencies [56446ad]
+  - @weasel-js/core@1.17.3
+  - @weasel-js/geom@1.17.3
+  - @weasel-js/quantity@1.17.3
+  - @weasel-js/registry@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes

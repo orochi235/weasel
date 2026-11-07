@@ -1,5 +1,11 @@
 # @weasel-js/icons-plugin
 
+## 1.17.3
+
+### Patch Changes
+
+- @weasel-js/icons@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/loupe",
-  "version": "1.17.2",
+  "version": "1.17.3",
   "description": "Surface-free magnifier model: where a loupe is aimed, how far it magnifies, and what colour it is over. Painters live with the surfaces they draw on.",
   "weasel": {
     "tier": "other"
@@ -32,11 +32,11 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.17.2",
-    "@weasel-js/registry": "1.17.2"
+    "@weasel-js/geom": "1.17.3",
+    "@weasel-js/registry": "1.17.3"
   },
   "devDependencies": {
-    "@weasel-js/core": "1.17.2"
+    "@weasel-js/core": "1.17.3"
   },
   "files": [
     "dist",

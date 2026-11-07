@@ -1,5 +1,22 @@
 # @weasel-js/devtools
 
+## 1.17.3
+
+### Patch Changes
+
+- Updated dependencies [f9e1b14]
+- Updated dependencies [5bda052]
+- Updated dependencies [ce9b42d]
+- Updated dependencies [49cd9bb]
+- Updated dependencies [778f26d]
+- Updated dependencies [542dab5]
+- Updated dependencies [56446ad]
+- Updated dependencies [13d7e65]
+  - @weasel-js/core@1.17.3
+  - @weasel-js/ui@1.17.3
+  - @weasel-js/react@1.17.3
+  - @weasel-js/registry@1.17.3
+
 ## 1.17.2
 
 ### Patch Changes
