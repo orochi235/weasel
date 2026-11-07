@@ -8,7 +8,7 @@
 import { scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import { invert, transformPath, type Affine, type Path, type PolygonPath } from '@weasel-js/geom';
 import { pathIntersect, pathSubtract, pathUnion, trianglesToPath } from '@weasel-js/geom/booleans';
-import { strokeInsets } from './markerInset';
+import { resolveMarkerSize, strokeInsets } from './markerInset';
 import { resolveStrokeWidth, tessellateStroke } from './tessellate/stroke';
 import { markerHeads } from './markerHeads';
 
@@ -59,6 +59,14 @@ function outlineOf(path: Path, stroke: Stroke, opts: StrokeToPathOptions): Polyg
   if (!(width > 0)) return EMPTY;
   const tolerance = opts.flattenTolerance;
   const sized: Stroke = { ...stroke, width };
+  // Markers sized `{ px }` resolve once here, so the heads and the insets
+  // they cut from the ribbon read the same world size.
+  for (const role of ['markerStart', 'markerMid', 'markerEnd'] as const) {
+    const ref = stroke[role];
+    if (typeof ref === 'object' && typeof ref.size === 'object') {
+      sized[role] = { ...ref, size: resolveMarkerSize(ref, width, opts.scale ?? 1) };
+    }
+  }
   const insets = strokeInsets(sized, width);
   const align = stroke.align ?? 'center';
   // A rect's aligned ribbon is built in place. Any other path gets a centered
