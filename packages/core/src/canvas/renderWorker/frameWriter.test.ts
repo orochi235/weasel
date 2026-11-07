@@ -54,6 +54,16 @@ describe('frameWriter', () => {
     expect(copy().overrides.read(id('a'))?.data?.({})).toEqual({ fill: 'red!' });
   });
 
+
+  it('carries an override set before its node was added, once the node is', () => {
+    const { page, sync, copy } = pair();
+    const pose = { x: 30, y: 0, width: 10, height: 10 };
+    page.overrides.set(id('z'), { pose });
+    sync();
+    page.add({ id: id('z'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    sync();
+    expect(copy().overrides.read(id('z'))?.pose).toEqual(pose);
+  });
   it('forgets the alpha of a removed node, so one put back under its id paints whole', () => {
     const page = createScene<D, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],

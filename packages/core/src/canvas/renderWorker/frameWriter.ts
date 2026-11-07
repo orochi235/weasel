@@ -42,9 +42,9 @@ function alphaChanges(scene: AnyScene, alphaFor: ((id: string) => number) | unde
   return out;
 }
 
-/** Whether any pose override shows data, which the page evaluates against the stored data. */
-function showsData(scene: AnyScene): boolean {
-  for (const id of scene.overrides.ids()) if (scene.overrides.read(id)?.data) return true;
+/** Whether the scene holds any pose override. */
+function overridden(scene: AnyScene): boolean {
+  for (const _ of scene.overrides.ids()) return true;
   return false;
 }
 
@@ -89,8 +89,9 @@ export function createFrameWriter(): FrameWriter {
         // reset sends them all again.
         if (delta?.reset) alphas.clear();
       }
-      // An override's shown data is its function of the stored data, which a delta may change.
-      if (overridesDirty || delta?.reset || (delta && showsData(scene))) {
+      // What crosses of an override reads the node: its shown data is a function of the stored
+      // data, and one for a node not yet added does not cross at all.
+      if (overridesDirty || delta?.reset || (delta && overridden(scene))) {
         overridesDirty = false;
         msg.overrides = wireOverrides(scene);
       }
