@@ -104,6 +104,16 @@ describe('writing Mermaid', () => {
     expect(back(pageOf(data)).data.edges.map(strokes)).toEqual(data.edges.map(strokes));
   });
 
+  it('writes a dash other than a dotted link\'s own in its link style, so it reads back', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a' }, { id: 'b' }],
+      edges: [{ from: 'a', to: 'b', colors: { dash: [4, 4] } }, { from: 'a', to: 'b', colors: { dash: [2, 3] } }],
+    };
+    const { text } = writeFlowchart(pageOf(data));
+    expect(text).not.toMatch(/linkStyle 0 /);
+    expect(back(pageOf(data)).data.edges.map((e) => e.colors?.dash)).toEqual([[4, 4], [2, 3]]);
+  });
+
   it('writes the page in view, and warns for what Mermaid cannot hold', () => {
     const doc = documentFromScene(docScene());
     const { warnings } = writeFlowchart(doc, { page: 'p2' });

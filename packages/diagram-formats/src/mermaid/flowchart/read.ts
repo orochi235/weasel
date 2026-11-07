@@ -33,6 +33,9 @@ const META_OUTLINES: Readonly<Record<string, Outline>> = {
   trapezoid: 'trapezoid', priority: 'trapezoid', 'trap-t': 'trapezoid', 'inv-trapezoid': 'trapezoid', manual: 'trapezoid',
 };
 
+/** The dash a dotted link draws. */
+export const DOTTED_DASH: readonly number[] = [4, 4];
+
 interface NodeDraft { lines: string[]; outline: Outline; classes: string[] }
 interface EdgeDraft { edge: DataEdge; index: number }
 
@@ -97,7 +100,7 @@ class MermaidReader {
     const start = this.marker(link.start);
     const end = this.marker(link.end);
     const colors: Partial<EdgeStyle> = {
-      ...(link.stroke === 'dotted' ? { dash: [4, 4] } : {}),
+      ...(link.stroke === 'dotted' ? { dash: [...DOTTED_DASH] } : {}),
       ...(link.stroke === 'thick' ? { width: 3 } : {}),
       ...(start !== null ? { markerStart: start } : {}),
       ...(end !== 'arrow' ? { markerEnd: end } : {}),

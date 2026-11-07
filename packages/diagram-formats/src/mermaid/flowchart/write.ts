@@ -1,9 +1,11 @@
 /** One page of a document as a Mermaid flowchart: regions as subgraphs, colors as classes and styles. */
+import { deepEqual } from '@weasel-js/registry';
 import type { DataEdge, DataNode, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../../graphWrite';
 import { styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
+import { DOTTED_DASH } from './read';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TD', up: 'BT', right: 'LR', left: 'RL' };
 export const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
@@ -104,6 +106,7 @@ class MermaidWriter {
         own.stroke !== undefined ? `stroke:${hexColor(own.stroke)}` : null,
         own.label !== undefined ? `color:${hexColor(own.label)}` : null,
         own.width !== undefined ? `stroke-width:${px(own.width)}` : null,
+        own.dash !== undefined && !deepEqual(own.dash, DOTTED_DASH) ? `stroke-dasharray:${own.dash.join(' ')}` : null,
       ].filter((p) => p !== null);
       if (props.length > 0) lines.push(`  linkStyle ${i} ${props.join(',')}`);
     });
