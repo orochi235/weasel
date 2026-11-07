@@ -296,6 +296,16 @@ describe('createClock', () => {
       expect(clock.rate).toBe(0);
     });
 
+    it('refuses a ramp over a time that is not finite', () => {
+      const { clock } = started({ rate: 1 });
+      expect(() => clock.ramp(2, Number.POSITIVE_INFINITY)).toThrow(RangeError);
+      expect(() => clock.ramp(2, Number.NaN)).toThrow(RangeError);
+      expect(clock.rate).toBe(1);
+      clock.rate = 0;
+      clock.sync(0);
+      expect(clock.inert).toBe(true);
+    });
+
     it('is replaced by a rate write', () => {
       const { clock } = started({ rate: 1 });
       clock.ramp(5, 1000);

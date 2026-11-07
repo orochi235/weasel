@@ -18,6 +18,10 @@ export const checkRate = (rate: number, seekable: boolean): void => {
     throw new RangeError('a clock that is not seekable cannot run backward');
 };
 
+export const checkRampTime = (over: number): void => {
+  if (!Number.isFinite(over)) throw new RangeError(`a clock ramps over a finite time, not ${over}`);
+};
+
 export const checkSpeed = (speed: number): void => {
   if (!(speed > 0) || !Number.isFinite(speed))
     throw new RangeError(`a clock's speed is finite and positive, not ${speed}`);

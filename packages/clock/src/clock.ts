@@ -3,7 +3,7 @@ import { followMix } from './mixFollow';
 import { passesOf, placeOf } from './place';
 import { type Ramp, stepRamp } from './ramp';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
-import { checkDuration, checkLoop, checkOrigin, checkRate, checkSpeed, ratesOf } from './validate';
+import { checkDuration, checkLoop, checkOrigin, checkRampTime, checkRate, checkSpeed, ratesOf } from './validate';
 
 /** Where `clock` stands, for a record to reopen it at; `declared` is the
  *  duration its spec gave, and `declaredOrigin` the origin. */
@@ -236,6 +236,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
     },
     ramp(to, over) {
       checkRate(to, seekable);
+      checkRampTime(over);
       if (!(over > 0)) {
         clock.rate = to;
         return;
