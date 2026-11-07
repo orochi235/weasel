@@ -119,11 +119,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
+    "@msb235/blits": "^1.1.0",
     "@weasel-js/font": "1.17.2",
     "react": ">=18"
   },
   "dependencies": {
-    "@msb235/blits": "1.1.0",
     "@weasel-js/animator": "1.17.2",
     "@weasel-js/cursor": "1.17.2",
     "@weasel-js/geom": "1.17.2",
@@ -161,6 +161,7 @@
     "2d"
   ],
   "devDependencies": {
+    "@msb235/blits": "1.1.0",
     "@weasel-js/icons-plugin": "1.17.2",
     "@weasel-js/modes": "1.17.2",
     "@weasel-js/theme": "1.17.2"
