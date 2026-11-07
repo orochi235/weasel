@@ -6,12 +6,14 @@
 
 const sortedSet = (at: readonly number[]): number[] => [...new Set(at)].sort((a, b) => a - b);
 
-/** `items` with the items at indices `at` taken out and put back, in their order, in gap `to`. */
+/** `items` with the items at indices `at` taken out and put back, in their order, in gap `to`. An index outside
+ *  `items` names nothing and is ignored; a gap past either end is that end. */
 export function moveItems<T>(items: readonly T[], at: readonly number[], to: number): T[] {
-  const taken = new Set(at);
-  const moved = sortedSet(at).flatMap((i) => (i >= 0 && i < items.length ? [items[i]!] : []));
+  const inside = sortedSet(at).filter((i) => i >= 0 && i < items.length);
+  const gap = Math.min(items.length, Math.max(0, to));
+  const taken = new Set(inside);
   const out = items.filter((_, i) => !taken.has(i));
-  out.splice(movedIndex(at, to), 0, ...moved);
+  out.splice(movedIndex(inside, gap), 0, ...inside.map((i) => items[i]!));
   return out;
 }
 
