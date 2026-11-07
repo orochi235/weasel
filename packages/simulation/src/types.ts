@@ -32,7 +32,8 @@ export interface UseSimulationOptions<TNode extends SimulationNode>
   extends SimulationOptions<TNode> {
   /** Fired after each integration step. */
   onTick?: (nodes: TNode[]) => void;
-  /** Fired once when the sim settles (alpha < alphaMin && alphaTarget === 0). */
+  /** Fired once when alpha falls below alphaMin and the loop stops, as d3-force's `end` does,
+   *  whatever `alphaTarget` is. */
   onEnd?: () => void;
   /** Steps the integrator on this clock rather than a frame loop of its own: once per `step` ms
    *  of its time (the clock's `step`, else 1000/60), so the clock's pause, rate and visibility
@@ -99,7 +100,7 @@ export interface SimulationOptions<TNode extends SimulationNode> {
 
   /** Initial alpha. Default 1. */
   alpha?: number;
-  /** Settle threshold. When alpha drops below and alphaTarget is 0, onEnd fires. Default 0.001. */
+  /** Settle threshold. When alpha drops below it, the loop stops and onEnd fires. Default 0.001. */
   alphaMin?: number;
   /** Per-tick decay rate toward alphaTarget. Default 1 - 0.001^(1/300) ≈ 0.0228. */
   alphaDecay?: number;
