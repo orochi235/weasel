@@ -155,4 +155,15 @@ describe('startSceneRenderWorker, the worker animator', () => {
     expect(answerImage).not.toHaveBeenCalled();
     expect(due).not.toHaveBeenCalled();
   });
+
+  it('watches no scene it is handed after dispose', () => {
+    const { client } = start();
+    const due = vi.fn();
+    client.subscribe(due);
+    client.dispose();
+    const other = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    client.update({ scene: other });
+    other.add({ id: asNodeId('b'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    expect(due).not.toHaveBeenCalled();
+  });
 });

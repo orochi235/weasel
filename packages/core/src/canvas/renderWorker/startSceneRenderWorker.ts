@@ -149,6 +149,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
 
   return {
     update(next) {
+      if (disposed) return;
       const sceneMoved = next.scene !== undefined && next.scene !== inputs.scene;
       const clockMoved = 'clock' in next && next.clock !== inputs.clock;
       inputs = { ...inputs, ...next };
