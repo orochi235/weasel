@@ -86,7 +86,7 @@ function layoutOf(t: WgslType, structs: Map<string, WgslStruct>): Layout {
       return { align: col.align, size: t.cols * roundUp(col.align, col.size) };
     }
     case 'array':
-      return { align: roundUp(16, layoutOf(t.element, structs).align), size: t.count * t.stride };
+      return { align: layoutOf(t.element, structs).align, size: t.count * t.stride };
     case 'struct': {
       const s = structs.get(t.name);
       if (!s) throw new Error(`WGSL: struct ${t.name} is used before it is declared`);
@@ -112,7 +112,7 @@ function parseType(src: string, structs: Map<string, WgslStruct>, consts: Map<st
     const count = /^\d+u?$/.test(parts[1]) ? parseInt(parts[1], 10) : consts.get(parts[1]);
     if (count === undefined) throw new Error(`WGSL: unknown array size ${parts[1]}`);
     const el = layoutOf(element, structs);
-    return { kind: 'array', element, count, stride: roundUp(roundUp(16, el.align), el.size) };
+    return { kind: 'array', element, count, stride: roundUp(el.align, el.size) };
   }
   if (structs.has(s)) return { kind: 'struct', name: s };
   throw new Error(`WGSL: unsupported type ${src}`);
@@ -145,7 +145,6 @@ function parseStruct(name: string, body: string, structs: Map<string, WgslStruct
     offset += size;
     align = Math.max(align, memberAlign);
   }
-  align = roundUp(16, align);
   return { name, members, align, size: roundUp(align, offset) };
 }
 
