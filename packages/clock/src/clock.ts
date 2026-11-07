@@ -244,7 +244,9 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
     },
     seek(target, line = 'start') {
       if (!seekable) throw new Error('this clock is not seekable');
-      run.elapsed = clamp(run, target);
+      const to = clamp(run, target);
+      if (!Number.isFinite(to)) throw new RangeError(`a clock seeks to a time in its run, not ${target}`);
+      run.elapsed = to;
       run.edge = line === 'end';
       change(run, hub);
       hub.subs.emit();

@@ -200,6 +200,16 @@ describe('createClock', () => {
       expect(clock.elapsed).toBe(200);
     });
 
+    it('refuses a time that is no number, or past the end of a run that never ends', () => {
+      const { clock } = createClock({});
+      clock.seek(40);
+      expect(() => clock.seek(Number.NaN)).toThrow(RangeError);
+      expect(() => clock.seek(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+      expect(clock.elapsed).toBe(40);
+      clock.seek(Number.NEGATIVE_INFINITY);
+      expect(clock.elapsed).toBe(0);
+    });
+
     it('wakes a paused clock for one frame', () => {
       const wake = vi.fn();
       const { clock } = started({});

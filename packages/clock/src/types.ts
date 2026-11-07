@@ -77,7 +77,8 @@ export interface Clock {
   /** Move `rate` to `to` linearly over `over` real ms; position stays continuous. */
   ramp(to: number, over: number): void;
   /** Move to `elapsed` ms from the start, clamped to the run. Never runs state
-   *  forward to meet it. Throws on a clock that is not seekable. A time on the
+   *  forward to meet it. Throws on a clock that is not seekable, and on a time
+   *  that is NaN or, for a run that never ends, `Infinity`. A time on the
    *  line between two passes is the start of the later one; `'end'` stands at
    *  the end of the earlier, `phase` 1, until the clock next moves. */
   seek(elapsed: number, line?: 'start' | 'end'): void;
