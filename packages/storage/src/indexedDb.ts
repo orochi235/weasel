@@ -13,6 +13,20 @@ interface NodeChannel extends BroadcastChannel {
   unref?: () => void;
 }
 
+/** The channel named `name`, opened on first call; null where there is no `BroadcastChannel`. */
+function lazyChannel(name: string): () => NodeChannel | null {
+  let channel: NodeChannel | null = null;
+  return () => {
+    if (typeof BroadcastChannel === 'undefined') return null;
+    if (!channel) {
+      channel = new BroadcastChannel(name) as NodeChannel;
+      // Node keeps its event loop alive for an open channel; a browser has no unref.
+      channel.unref?.();
+    }
+    return channel;
+  };
+}
+
 /** Persist to IndexedDB, which stores structured-clone values natively — typed
  *  arrays, `Map`s, `Blob`s — and holds far more than localStorage. Other tabs
  *  hear writes through a `BroadcastChannel`. The database opens on first use. */
@@ -92,16 +106,7 @@ export function createIndexedDbAdapter({
     });
   };
 
-  let channel: NodeChannel | null = null;
-  const getChannel = (): NodeChannel | null => {
-    if (typeof BroadcastChannel === 'undefined') return null;
-    if (!channel) {
-      channel = new BroadcastChannel(`weasel-storage:${database}:${store}`) as NodeChannel;
-      // Node keeps its event loop alive for an open channel; a browser has no unref.
-      channel.unref?.();
-    }
-    return channel;
-  };
+  const getChannel = lazyChannel(`weasel-storage:${database}:${store}`);
   const announce = (changes: StorageChange[]): void => {
     getChannel()?.postMessage(changes);
   };
