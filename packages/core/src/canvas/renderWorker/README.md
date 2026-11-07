@@ -171,7 +171,9 @@ than answer from part of the stack. Caching a whole id frame per frame would cos
 every frame to save a round trip a pick rarely needs, so the reads stay on demand. Both async
 reads exist on every canvas and answer at once where the page paints it all.
 
-**Every prop either works or is a type error.** The props are a union (`SceneCanvas/workerProps.ts`):
+**Every prop either works or is a type error.** The props are a union (`SceneCanvas/workerProps.ts`),
+with `worker` required in its branch: ruled over an optional `worker` (2026-11-06), so `clock` without
+`worker` stays a type error at the cost of wrappers distributing their `Omit` over the union:
 
 | In worker mode | |
 |---|---|
