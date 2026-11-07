@@ -85,17 +85,23 @@ export const panAction: Action = {
   },
 };
 
-/** Where on the pane a dolly anchors: the canvas-local point the event
- *  carries, or the middle when it carries none. */
-function anchorOf(
-  params: Record<string, unknown> | undefined,
+/** Where on the pane a dolly anchors: `at`, a canvas-local point, taken from
+ *  the pane's top-left, or the middle of the pane when there is none. */
+function paneAnchor(
+  at: { x: number; y: number } | undefined,
+  dep: Camera3dDep,
   pane: { width: number; height: number },
 ): { x: number; y: number } {
+  if (!at) return { x: pane.width / 2, y: pane.height / 2 };
+  const o = dep.origin?.() ?? { x: 0, y: 0 };
+  return { x: at.x - o.x, y: at.y - o.y };
+}
+
+/** The canvas-local point a wheel event carries, if it carries one. */
+function wheelPoint(params: Record<string, unknown> | undefined): { x: number; y: number } | undefined {
   const x = params?.clientX;
   const y = params?.clientY;
-  return typeof x === 'number' && typeof y === 'number'
-    ? { x, y }
-    : { x: pane.width / 2, y: pane.height / 2 };
+  return typeof x === 'number' && typeof y === 'number' ? { x, y } : undefined;
 }
 
 /** `camera.dolly`: moves the `camera3d` dep in or out about the point under
@@ -128,7 +134,7 @@ export const dollyAction: Action = {
         );
       if (!(factor > 0) || !Number.isFinite(factor)) return;
       const pane = dep.size();
-      dep.set(dollyToward(dep.get(), factor, anchorOf(params, pane), pane, dep.limits?.()));
+      dep.set(dollyToward(dep.get(), factor, paneAnchor(wheelPoint(params), dep, pane), pane, dep.limits?.()));
     },
   },
 };
@@ -154,8 +160,7 @@ export const pinchDollyAction: Action = {
           const spread = move.multiTouch?.pinch?.currentSpread ?? 0;
           if (!dep || !origin || !(startSpread > 0) || !(spread > 0)) return;
           const pane = dep.size();
-          const anchor = at ?? { x: pane.width / 2, y: pane.height / 2 };
-          dep.set(dollyToward(origin, startSpread / spread, anchor, pane, dep.limits?.()));
+          dep.set(dollyToward(origin, startSpread / spread, paneAnchor(at, dep, pane), pane, dep.limits?.()));
         },
       };
     },
