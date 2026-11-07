@@ -299,7 +299,8 @@ describe('writing', () => {
     const open = () => openRecords({ storage: { ...createMemoryAdapter(), set }, prefix: PREFIX });
     const closed = await open();
     closed.set('layout', 1);
-    await closed.close();
+    expect(await closed.close()).toBe(false);
+    expect(await closed.close()).toBe(false);
     const stopped = await open();
     stopped.set('layout', 1);
     await stopped.flush();
@@ -324,7 +325,7 @@ describe('writing', () => {
     const backing = new Map<string, unknown>();
     const cache = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });
     cache.set('layout', { a: 1 });
-    await cache.close();
+    expect(await cache.close()).toBe(true);
     expect(backing.get('lk:t:layout')).toEqual({ a: 1 });
     cache.set('layout', { a: 2 });
     await vi.advanceTimersByTimeAsync(5000);

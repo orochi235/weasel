@@ -13,6 +13,29 @@ interface NodeChannel extends BroadcastChannel {
   unref?: () => void;
 }
 
+/** Every string key starting with `prefix`: up to, not including, the first string past them all. */
+function prefixRange(prefix: string): IDBKeyRange {
+  for (let i = prefix.length - 1; i >= 0; i--) {
+    const unit = prefix.charCodeAt(i);
+    if (unit < 0xffff) return IDBKeyRange.bound(prefix, prefix.slice(0, i) + String.fromCharCode(unit + 1), false, true);
+  }
+  return IDBKeyRange.lowerBound(prefix);
+}
+
+/** The channel named `name`, opened on first call; null where there is no `BroadcastChannel`. */
+function lazyChannel(name: string): () => NodeChannel | null {
+  let channel: NodeChannel | null = null;
+  return () => {
+    if (typeof BroadcastChannel === 'undefined') return null;
+    if (!channel) {
+      channel = new BroadcastChannel(name) as NodeChannel;
+      // Node keeps its event loop alive for an open channel; a browser has no unref.
+      channel.unref?.();
+    }
+    return channel;
+  };
+}
+
 /** Persist to IndexedDB, which stores structured-clone values natively — typed
  *  arrays, `Map`s, `Blob`s — and holds far more than localStorage. Other tabs
  *  hear writes through a `BroadcastChannel`. The database opens on first use. */
@@ -92,16 +115,7 @@ export function createIndexedDbAdapter({
     });
   };
 
-  let channel: NodeChannel | null = null;
-  const getChannel = (): NodeChannel | null => {
-    if (typeof BroadcastChannel === 'undefined') return null;
-    if (!channel) {
-      channel = new BroadcastChannel(`weasel-storage:${database}:${store}`) as NodeChannel;
-      // Node keeps its event loop alive for an open channel; a browser has no unref.
-      channel.unref?.();
-    }
-    return channel;
-  };
+  const getChannel = lazyChannel(`weasel-storage:${database}:${store}`);
   const announce = (changes: StorageChange[]): void => {
     getChannel()?.postMessage(changes);
   };
@@ -114,13 +128,14 @@ export function createIndexedDbAdapter({
       }),
     list: (prefix) =>
       run('readonly', (s) => {
-        const range = IDBKeyRange.bound(prefix, `${prefix}￿`);
+        const range = prefixRange(prefix);
         const keys = s.getAllKeys(range);
         const values = s.getAll(range);
         return () =>
           keys.result.map((key, i): [string, unknown] => [String(key), values.result[i]]);
       }),
     set: async (key, value) => {
+      if (value === undefined) return adapter.delete(key);
       await run('readwrite', (s) => {
         s.put(value, key);
         return () => undefined;

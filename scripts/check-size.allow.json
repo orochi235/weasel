@@ -175,10 +175,10 @@
     "longestFunction": 144
   },
   "packages/storage/src/indexedDb.ts": {
-    "longestFunction": 133
+    "longestFunction": 125
   },
   "packages/storage/src/records.ts": {
-    "longestFunction": 185
+    "longestFunction": 174
   },
   "packages/svg/src/gradients.ts": {
     "lines": 525

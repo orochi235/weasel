@@ -22,28 +22,30 @@ export function reviveTypedArrays<T>(node: T): T {
   if (tagged) return tagged as unknown as T;
   const obj = node as Record<string, unknown>;
   for (const k of Object.keys(obj)) {
-    if (k === 'commands' || k === 'coords') {
-      const v = obj[k];
-      if (v instanceof Uint8Array || v instanceof Float32Array) continue;
-      if (Array.isArray(v)) {
-        obj[k] = k === 'commands' ? Uint8Array.from(v as number[]) : Float32Array.from(v as number[]);
+    const v = obj[k];
+    if ((k === 'commands' || k === 'coords') && !(v instanceof Uint8Array || v instanceof Float32Array)) {
+      const legacy = legacyNumbers(v);
+      if (legacy) {
+        obj[k] = k === 'commands' ? Uint8Array.from(legacy) : Float32Array.from(legacy);
         continue;
       }
-      if (v && typeof v === 'object') {
-        // Recover from older saves that lost the typed-array shape.
-        const src = v as Record<string, unknown>;
-        if (src.__ta) { obj[k] = reviveTypedArrays(v); continue; }
-        const len = Object.keys(src).filter((kk) => /^\d+$/.test(kk)).length;
-        const arr = new Array<number>(len);
-        for (let i = 0; i < len; i++) arr[i] = Number(src[String(i)] ?? 0);
-        obj[k] = k === 'commands' ? Uint8Array.from(arr) : Float32Array.from(arr);
-        continue;
-      }
-    } else {
-      obj[k] = reviveTypedArrays(obj[k]);
     }
+    obj[k] = reviveTypedArrays(v);
   }
   return node;
+}
+
+const isLegacyNumber = (v: unknown): boolean => typeof v === 'number' || v === null;
+
+/** A path's typed array as an older save wrote it, untagged: a plain array of numbers, or an object of
+ *  them under the keys `0`, `1`, .... `null` is how JSON wrote a NaN. Anything else is not one. */
+function legacyNumbers(v: unknown): number[] | undefined {
+  if (Array.isArray(v)) return v.every(isLegacyNumber) ? v.map((n) => Number(n ?? 0)) : undefined;
+  if (v === null || typeof v !== 'object') return undefined;
+  const src = v as Record<string, unknown>;
+  const keys = Object.keys(src);
+  if (!keys.every((key, i) => key === String(i) && isLegacyNumber(src[key]))) return undefined;
+  return keys.map((key) => Number(src[key] ?? 0));
 }
 
 /** How a snapshot is read: `specsFromSerialized`'s options; the pose descriptor that measures each root

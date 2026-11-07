@@ -43,6 +43,12 @@ describe('timestampAt', () => {
     expect(history.timestampAt(-1)).toBeUndefined();
     expect(history.timestampAt(3)).toBeUndefined();
   });
+
+  it('is undefined between entries and at NaN', () => {
+    const { history } = stamped();
+    history.undo();
+    expect([0.5, 2.5, Number.NaN].map((i) => history.timestampAt(i))).toEqual([undefined, undefined, undefined]);
+  });
 });
 
 describe('depthAt', () => {
@@ -76,6 +82,19 @@ describe('goto', () => {
     const version = history.getVersion();
     history.goto(3);
     expect(listener).not.toHaveBeenCalled();
+    expect(history.getVersion()).toBe(version);
+  });
+
+  it('ignores a depth that is not a whole number', () => {
+    const { cell, history } = stamped();
+    const steps = vi.fn();
+    history.observe(steps);
+    const version = history.getVersion();
+    history.goto(1.5);
+    history.goto(Number.NaN);
+    expect(cell.x).toBe(30);
+    expect(history.undoDepth()).toBe(3);
+    expect(steps).not.toHaveBeenCalled();
     expect(history.getVersion()).toBe(version);
   });
 });

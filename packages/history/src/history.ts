@@ -323,7 +323,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // Total length stays constant during this walk (we only shuffle
       // entries between undo and redo stacks).
       const total = undoStack.length + redoStack.length;
-      if (n < 0 || n > total || n === undoStack.length) return;
+      if (!Number.isInteger(n) || n < 0 || n > total || n === undoStack.length) return;
       const start = undoStack.length;
       let walked: Entry[];
       try {
@@ -343,7 +343,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       bump(stepOf('goto', walked));
     },
     timestampAt(i) {
-      if (i < 0) return undefined;
+      if (!Number.isInteger(i) || i < 0) return undefined;
       if (i < undoStack.length) return undoStack[i]!.timestamp;
       // redoStack is newest-on-top, so time order runs from its end.
       return redoStack[redoStack.length - 1 - (i - undoStack.length)]?.timestamp;

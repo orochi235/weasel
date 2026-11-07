@@ -45,8 +45,9 @@ export interface RecordCache {
    *  opened with them, and when a later read lands for one whose first read
    *  failed. Never resolves for a cache closed or stopped before that. */
   whenRead(): Promise<void>;
-  /** Send queued writes, stop hearing other writers, and stop retrying. */
-  close(): Promise<void>;
+  /** Send queued writes, stop hearing other writers, and stop retrying.
+   *  Resolves as `flush` does; a write still queued after it is never sent. */
+  close(): Promise<boolean>;
 }
 
 /** The parts of a cache only its opener uses. */
@@ -87,6 +88,20 @@ export interface CreateRecordCacheOptions extends RecordCacheOptions {
 /** A cache holding `initial`, with nothing read from storage. */
 export function createRecordCache(options: CreateRecordCacheOptions): OwnedRecordCache {
   return buildCache(options, false).cache;
+}
+
+/** Run `flush` whenever the page hides or goes away. Returns the stop. */
+function flushOnLeave(flush: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const onVisibility = (): void => {
+    if (document.visibilityState === 'hidden') flush();
+  };
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', onVisibility);
+  return () => {
+    window.removeEventListener('pagehide', flush);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
 }
 
 /** `startUnread` leaves the cache waiting on a first read: `cache.read()`
@@ -211,16 +226,7 @@ function buildCache(
     return reading;
   }
 
-  const onPageHide = (): void => {
-    void queue.flush();
-  };
-  const onVisibility = (): void => {
-    if (document.visibilityState === 'hidden') void queue.flush();
-  };
-  if (typeof window !== 'undefined') {
-    window.addEventListener('pagehide', onPageHide);
-    document.addEventListener('visibilitychange', onVisibility);
-  }
+  const stopFlushingOnLeave = flushOnLeave(() => void queue.flush());
 
   const remove = (name: string): void => {
     // An unread cache cannot tell what storage holds, so it queues the delete.
@@ -252,16 +258,14 @@ function buildCache(
     read,
     whenRead: () => hasRead,
     close: async () => {
-      if (closed) return;
+      if (closed) return queue.size === 0;
       stopRetrying();
-      await queue.flush();
+      const sent = await queue.flush();
       closed = true;
       queue.stopRetrying();
       unsubscribe?.();
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('pagehide', onPageHide);
-        document.removeEventListener('visibilitychange', onVisibility);
-      }
+      stopFlushingOnLeave();
+      return sent;
     },
     onOverruled: overruledEmitter.subscribe,
     seed: (entries) => {

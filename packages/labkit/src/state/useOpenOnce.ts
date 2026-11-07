@@ -2,7 +2,7 @@ import { isDev } from '@weasel-js/react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Closable {
-  close(): Promise<void> | void;
+  close(): Promise<unknown> | void;
 }
 
 interface Entry<T> {

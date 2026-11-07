@@ -104,6 +104,14 @@ describe('localStorageAdapter', () => {
     expect(await localStorageAdapter.get('lk:w:a')).toEqual({ at: {} });
     warn.mockRestore();
   });
+
+  it('warns about a negative zero and an array with holes, which JSON reads back changed', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await localStorageAdapter.set('lk:w:zero', { at: -0 });
+    await localStorageAdapter.set('lk:w:holes', [1, , 3]);
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
 });
 
 describe('localStorageAdapter — another tab clearing the store', () => {
@@ -155,6 +163,16 @@ describe('urlHashAdapter', () => {
   it('skips an entry that is not a stored string', async () => {
     setHash('{"a":"1","b":{"nested":true}}');
     expect(await urlHashAdapter.list('')).toEqual([['a', 1]]);
+  });
+
+  it('warns once per key when JSON would change the value, as localStorage does', async () => {
+    window.history.replaceState(null, '', '#');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await urlHashAdapter.set('lk:w:a', { at: new Date(0) });
+    await urlHashAdapter.set('lk:w:a', { at: new Date(1) });
+    await urlHashAdapter.set('lk:w:b', { fine: [1, 'x', null] });
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 
   it('keeps the history state a router left', async () => {
