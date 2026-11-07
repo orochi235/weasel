@@ -11,6 +11,7 @@ const LEAN_SOURCE: PresetSource = { named: null, pool: toolDrivenActions, baseli
 
 /** Props for {@link LeanSceneCanvas}: `<SceneCanvas>`'s, with `features`
  *  taking preset objects only. */
+// Distributed, since an `Omit` of the page-or-worker union would merge its two branches.
 export type LeanSceneCanvasProps<TData, TLayer extends string, TPose> =
   SceneCanvasProps<TData, TLayer, TPose> extends infer P ? (P extends unknown ? Omit<P, 'features'> : never)
     & { features?: readonly FeaturePreset[] } : never;

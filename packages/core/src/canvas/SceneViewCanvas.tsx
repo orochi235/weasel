@@ -55,6 +55,8 @@ interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends Sur
    *  `cull`. Off by default; worth it when the view shows a small part of a
    *  large scene. */
   cull?: boolean;
+  /** Device-pixel ratio. Defaults to `window.devicePixelRatio`, read per paint. */
+  dpr?: number;
   /** Optional CSS class for the `<canvas>`. Its size is `width` × `height`
    *  unless a rule on this class sizes it. */
   className?: string;
@@ -111,7 +113,7 @@ function PageSceneView<TData, TLayer extends string, TPose>(
 ) {
   const {
     scene, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    animator, className, canvasRef, cull, paintBounds,
+    animator, className, canvasRef, cull, paintBounds, dpr,
   } = props;
   const view = normalizeView(props.view);
 
@@ -143,10 +145,11 @@ function PageSceneView<TData, TLayer extends string, TPose>(
       overrides: animator,
       cull,
       paintBounds,
+      dpr,
     });
-    return lease.paint(canvas, commands, view, { width, height });
+    return lease.paint(canvas, commands, view, { width, height, dpr });
   };
-  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, onCommit: 'paint', size: { width, height } });
+  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, onCommit: 'paint', size: { width, height }, dpr });
 
   // Override writes never bump the scene version, so the version subscription
   // above cannot see them.

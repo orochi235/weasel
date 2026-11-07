@@ -18,10 +18,16 @@ import { useSceneCamera } from './useSceneCamera';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 
 /** Props for {@link TrialSceneCanvas}: a `<SceneCanvas>`'s, sized by the trial. */
-export type TrialSceneCanvasProps<TData, TLayer extends string, TPose> = Omit<
-  SceneCanvasProps<TData, TLayer, TPose>,
-  'width' | 'height' | 'scene'
-> & {
+// Distributed, since an `Omit` of the page-or-worker union would merge its two branches.
+export type TrialSceneCanvasProps<TData, TLayer extends string, TPose> = (SceneCanvasProps<
+  TData,
+  TLayer,
+  TPose
+> extends infer P
+  ? P extends unknown
+    ? Omit<P, 'width' | 'height' | 'scene'>
+    : never
+  : never) & {
   /** A live scene — `useTrialScene`'s, usually. */
   scene: Scene<TData, TLayer, TPose>;
   /** The trial it is mounted in, as `render` is handed it. */
