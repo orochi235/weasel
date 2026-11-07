@@ -12,6 +12,7 @@
  */
 import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
 import { mapFillPaint } from './fillPaint';
+import { withTransformsBaked } from './bakeTransforms';
 import type { SvgKitLeafData } from './fromKit';
 import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
@@ -160,7 +161,8 @@ function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
  * Handed a whole `ParseResult`, it also registers the document's markers
  * (`parsed.markers`), without which the strokes naming them draw bare.
  * Containers carry no opacity, so an element or group `opacity` is multiplied
- * into the paints of every leaf under it.
+ * into the paints of every leaf under it. Nor do they carry a transform: a
+ * group's `transform` is baked into what it holds, as `parseSvg` bakes one.
  *
  * `nextId` is handed the node each id is for. `options.leaf` replaces a leaf's
  * data; a group whose leaves it all leaves out is dropped like an empty one.
@@ -172,7 +174,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
   nextId: (source: SvgNode) => string,
   options: SvgNodesToKitDraftsOptions<TData> = {},
 ): SvgSceneDraft<TData>[] {
-  const nodes = isNodeList(input) ? input : input.nodes;
+  const nodes = withTransformsBaked(isNodeList(input) ? input : input.nodes);
   // Keyed by what they draw, so one already registered is this same marker
   // and re-registering it would only churn the paint memo.
   if (!isNodeList(input)) {

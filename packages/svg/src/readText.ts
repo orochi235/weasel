@@ -54,7 +54,7 @@ function numberAttr(el: Element, name: string): number | undefined {
 
 /** Take a text node built in its element's own coordinates through `m`,
  *  along with the lengths and user-space paints inside its box. */
-function placeTextNode(node: SvgTextNode, m: Matrix, onWarn: (m: string) => void): void {
+export function placeTextNode(node: SvgTextNode, m: Matrix, onWarn: (m: string) => void): void {
   const cx = node.x + node.width / 2;
   const cy = node.y + node.height / 2;
   const scale = placeNode(node, 'text', m, false, onWarn);
