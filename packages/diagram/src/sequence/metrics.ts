@@ -1,6 +1,7 @@
 /** The sizes a sequence is laid out with, and how its text is measured. */
 import type { MeasureRowText, RowTextStyle } from '../body';
-import { DEFAULT_FONT, GLYPH } from '../edgeLabel';
+import { DEFAULT_FONT } from '../edgeLabel';
+import { estimatedWidth } from '../rowMeasure';
 import { boxForContent, type Outline } from '../outline';
 import type { SeqParticipant } from './types';
 
@@ -59,7 +60,7 @@ export interface SeqMeasure {
 export function seqMeasure(measure: MeasureRowText | undefined, font = DEFAULT_FONT): SeqMeasure {
   const line: MeasureRowText = measure ?? ((text, s) => {
     const size = s.fontSize ?? font.fontSize;
-    return { width: text.length * GLYPH * size, height: Math.ceil(1.4 * size) };
+    return { width: estimatedWidth(text, { ...s, fontSize: size }), height: Math.ceil(1.4 * size) };
   });
   return {
     font,

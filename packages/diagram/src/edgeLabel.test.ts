@@ -2,8 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { AUTO_POSE_DESCRIPTOR, createScene, effectivePose, type ActionDeps, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import {
-  EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding,
+  EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize,
 } from './edgeLabel';
+import { seqMeasure } from './sequence/metrics';
 import { LABEL_DERIVE_POSE } from './label';
 import { diagramScene } from './fromData';
 
@@ -152,5 +153,15 @@ describe('dropEmptyEdgeLabel', () => {
     expect(scene.get('e1/label' as never)).toBeUndefined();
     expect(dropEmptyEdgeLabel(scene, 'e1')).toBe(false);
     expect(scene.get('e1' as never)).toBeDefined();
+  });
+});
+
+describe('estimated text widths', () => {
+  it('count a style\'s tracking for a label and a sequence diagram\'s text, as for a shape\'s rows', () => {
+    const plain = { fontFamily: 'sans-serif', fontSize: 10 };
+    const tracked = { ...plain, tracking: 0.1 };
+    expect(labelSize('abcd', tracked).width - labelSize('abcd', plain).width).toBeCloseTo(4);
+    const seq = seqMeasure(undefined, plain);
+    expect(seq.text('abcd', { tracking: 0.1 }).width - seq.text('abcd').width).toBeCloseTo(4);
   });
 });

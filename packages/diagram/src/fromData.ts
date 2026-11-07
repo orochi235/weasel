@@ -15,7 +15,7 @@ import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
 import { faceCapCenter } from './faceCapCenter';
-import { trackingWidth } from './rowMeasure';
+import { estimatedWidth } from './rowMeasure';
 import { edgeIdOf } from './edgeId';
 import { asideFillOf, headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
 import { dataNodeStyle } from './dataStyles';
@@ -26,7 +26,7 @@ import {
   type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
   type NodeStyle,
 } from './dataTypes';
-import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
+import { DEFAULT_FONT, labelSize, labelStyleOf } from './edgeLabel';
 import { grownBy } from './footprint';
 import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import { LABEL_PLACEMENT } from './labelTrait';
@@ -158,7 +158,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
         const face = { ...s, fontSize: s.fontSize ?? font.fontSize, fontFamily: s.fontFamily ?? font.fontFamily };
         const capCenter = faceCapCenter(face);
         return {
-          width: text.length * GLYPH * face.fontSize + trackingWidth(text, face), height: Math.ceil(LINE * face.fontSize),
+          width: estimatedWidth(text, face), height: Math.ceil(LINE * face.fontSize),
           ...(capCenter !== undefined ? { capCenter } : {}),
         };
       };

@@ -14,7 +14,7 @@
 import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
 import { marginOf, portLabelsOf, withLabels } from './portLabels';
 import { DEFAULT_PORTS } from './ports';
-import { FALLBACK_LINE, trackingWidth } from './rowMeasure';
+import { FALLBACK_LINE, estimatedWidth } from './rowMeasure';
 import type { DiagramNode, HeaderBand, PortSpec } from './types';
 
 /** One line of body content. */
@@ -125,7 +125,7 @@ export { canvasMeasure } from './rowMeasure';
 function measureText(s: string, style: RowTextStyle | undefined, measure: MeasureRowText | undefined): ReturnType<MeasureRowText> {
   if (measure !== undefined) return measure(s, style ?? {});
   const height = style?.fontSize === undefined ? FALLBACK_LINE : Math.ceil(style.fontSize * 1.2);
-  return { width: s.length * (style?.fontSize ?? FALLBACK_LINE) * 0.6 + trackingWidth(s, style), height };
+  return { width: estimatedWidth(s, style), height };
 }
 
 /** A header's band, and where its text's line box sits in it: centered on the caps when the face's
