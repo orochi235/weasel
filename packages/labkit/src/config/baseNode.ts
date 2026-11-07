@@ -167,4 +167,13 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
     if (!isAuto(value)) throw new Error('[labkit] .initial() takes `auto` and nothing else');
     return this.opt({ auto: { ...this.options.auto, on: true } });
   }
+
+  /**
+   * Read out the value this leaf's auto row came to beside the word, `auto · 12`, wherever one is known: its
+   * resolver's, or what the instrument reported. Without, the row reads `auto` alone and quotes the value
+   * only in its tooltip. Also lets the leaf be auto.
+   */
+  quote(): this {
+    return this.opt({ auto: { ...this.options.auto }, autoQuote: true });
+  }
 }

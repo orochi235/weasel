@@ -232,6 +232,8 @@ export interface NodeOptions extends BranchOptions {
    *  the row a real value to pin back to and keeps the instrument off
    *  `?? compute()`. */
   autoResolve?: (config: Record<string, unknown>) => unknown;
+  /** The auto row reads out its value beside the word, where one is known. Set by `.quote()`. */
+  autoQuote?: boolean;
 }
 
 /** A `.showIf` or `.enableIf` written as code, for what a condition cannot say. */

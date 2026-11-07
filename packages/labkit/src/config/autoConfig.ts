@@ -20,6 +20,11 @@ export function autoResolverOf(leaf: PrefLeaf): Resolver | undefined {
   return value === undefined ? undefined : () => value;
 }
 
+/** Whether a leaf's auto row reads out its value beside the word: `.quote()`. */
+export function autoQuotes(leaf: PrefLeaf): boolean {
+  return extra<boolean>(leaf, 'autoQuote') === true;
+}
+
 /** Whether a leaf may be auto: `.auto()` and `.initial(auto)` write an object to `auto`, and every other
  *  resolved leaf says `false`. */
 export function leafCanAuto(leaf: PrefLeaf): boolean {

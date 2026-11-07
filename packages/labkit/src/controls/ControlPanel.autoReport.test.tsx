@@ -87,4 +87,65 @@ describe('<ControlPanel reported>', () => {
     );
     expect(screen.getByRole('status')).toHaveTextContent('7');
   });
+
+  it("reads out a quoted leaf's reported value beside the word, through its display", () => {
+    const { container } = render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            turn: f
+              .number(0)
+              .range(0, Math.PI)
+              .unit({ suffix: '°', scale: Math.PI / 180 })
+              .quote(),
+          }),
+          [],
+        )}
+        config={{ turn: 0 }}
+        auto={new Set(['turn'])}
+        reported={new Map([['turn', Math.PI / 2]])}
+        setConfig={() => {}}
+      />,
+    );
+    expect(container.querySelector('[class*=autoReadout_]')).toHaveTextContent(/^auto · 90°$/);
+  });
+
+  it("reads out a quoted leaf's resolved value, and the bare word while none is known", () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        gap: f
+          .number(12)
+          .range(0, 48)
+          .auto(() => 18)
+          .quote(),
+        count: f.number(3).range(1, 20).quote(),
+      }),
+      [],
+    );
+    const { container } = render(
+      <ControlPanel
+        schema={schema}
+        config={{ gap: 12, count: 3 }}
+        auto={new Set(['gap', 'count'])}
+        setConfig={() => {}}
+      />,
+    );
+    const readouts = container.querySelectorAll('[class*=readoutText]');
+    expect([...readouts].map((r) => r.textContent)).toEqual(['auto · 18', 'auto']);
+    expect(screen.getByRole('button', { name: 'Pin Count' })).toBeInTheDocument();
+  });
+
+  it('keeps an unquoted row to the bare word, reported or not', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48).auto() }), [])}
+        config={{ gap: 12 }}
+        auto={new Set(['gap'])}
+        reported={new Map([['gap', 30]])}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.getByText('auto')).toBeInTheDocument();
+    expect(screen.queryByText(/auto · /)).toBeNull();
+  });
 });

@@ -252,6 +252,16 @@ the instrument reports afresh. `reportAuto(path, undefined)` withdraws one. A
 `<ControlPanel>` drawn outside a trial takes the same values as its `reported`
 map.
 
+An auto row reads the bare word. A lever whose value is worth seeing at a
+glance, like a count, adds `.quote()`, and its row then reads `auto · 12`
+whenever a value is known, reported or resolved, through the leaf's own
+display (`auto · 90°`). `.quote()` also lets the leaf be auto, as `.initial(auto)`
+does:
+
+```ts
+count: f.number(8).range(1, 64).initial(auto).quote(),
+```
+
 Nothing stores the sentinel. It is normalized at every boundary into the
 trial's set of unpinned paths, and the pinned value stays in the config
 underneath, so un-pinning loses nothing and Reset returns the trial to the auto

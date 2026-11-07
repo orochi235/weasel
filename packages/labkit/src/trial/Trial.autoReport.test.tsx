@@ -7,10 +7,10 @@ import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 
-// Count is auto with no resolver: only the instrument knows what it came to.
+// Count is auto with no resolver: only the instrument knows what it came to. It quotes it in its readout.
 const counted = defineInstrument({
   name: 'Counted',
-  config: f.schema({ count: f.number(3).range(1, 20).initial(auto).auto() }),
+  config: f.schema({ count: f.number(3).range(1, 20).initial(auto).quote() }),
   initialState: () => ({}),
   render: (ctx) => (
     <>
@@ -44,6 +44,7 @@ describe('an instrument reporting an auto value', () => {
     expect(quoted()).toBeNull();
     fireEvent.click(screen.getByText('report seven'));
     expect(quoted()).toBe('auto 7');
+    expect(document.querySelector('[class*=autoReadout_]')).toHaveTextContent(/^auto · 7$/);
     // The instrument's own config still reads the path as auto.
     expect(screen.getByRole('status')).toHaveTextContent('undefined');
   });

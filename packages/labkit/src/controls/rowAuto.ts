@@ -1,6 +1,7 @@
 import type { PrefLeaf, PrefNumber } from '@weasel-js/prefs';
-import { useMemo } from 'react';
-import { autoResolverOf, leafCanAuto, resolveAutoConfig } from '../config/autoConfig';
+import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
+import { createElement, type ReactNode, useMemo } from 'react';
+import { autoQuotes, autoResolverOf, leafCanAuto, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
@@ -12,6 +13,9 @@ function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
   const text = leaf.kind === 'number' ? numberText(leaf as PrefNumber, value) : undefined;
   return text ?? summarizeValue(Number(value.toPrecision(6)));
 }
+
+const autoReadout = (value: string | undefined): ReactNode =>
+  value === undefined ? 'auto' : createElement(PropertyAutoReadout, { value });
 
 /** What a row reads its auto state from. */
 export interface RowAutoSource {
@@ -79,8 +83,8 @@ export function useRowAuto(source: RowAutoSource) {
     isAutoRow,
     value,
     setAuto,
-    // An auto row hides its control, so the word is all the row has to say.
-    readout: isAutoRow ? 'auto' : undefined,
+    // An auto row hides its control, so the word is all the row has to say, unless the leaf quotes its value.
+    readout: isAutoRow ? autoReadout(autoQuotes(leaf) ? autoValue : undefined) : undefined,
     props: { auto: isAutoRow, onAutoChange, autoValue },
   };
 }
