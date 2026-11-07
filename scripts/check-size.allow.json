@@ -9,7 +9,7 @@
     "longestFunction": 165
   },
   "packages/audio/src/inserts.ts": {
-    "longestFunction": 232
+    "longestFunction": 231
   },
   "packages/audio/src/testing/fakeAudioContext.ts": {
     "lines": 419,
