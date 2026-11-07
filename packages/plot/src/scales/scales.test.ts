@@ -41,6 +41,12 @@ describe('linearScale', () => {
     expect(logScale({ domain: [1e-25, 1e-22], range: [0, 1] }).format(1e-24)).toBe('0.000000000000000000000001');
   });
 
+  it('ticks an infinite domain with none, and one spanning nearly every double with a few', () => {
+    expect(linearScale({ domain: [0, Infinity], range: [0, 1] }).ticks()).toEqual([]);
+    expect(linearScale({ domain: [Number.NaN, 1], range: [0, 1] }).ticks()).toEqual([]);
+    expect(linearScale({ domain: [-1e308, 1e308], range: [0, 1] }).ticks()).toEqual([-1e308, -5e307, 0, 5e307, 1e308]);
+  });
+
   it('widens a nice domain to whole steps', () => {
     expect(niceDomain([3, 97])).toEqual([0, 100]);
     expect(niceDomain([-13, 42])).toEqual([-20, 50]);
@@ -67,6 +73,10 @@ describe('logScale', () => {
   it('formats plainly', () => {
     expect(s.format(1000)).toBe('1000');
     expect(s.format(0.05)).toBe('0.05');
+  });
+
+  it('ticks an infinite domain with none', () => {
+    expect(logScale({ domain: [1, Infinity], range: [0, 1] }).ticks()).toEqual([]);
   });
 
   it('throws on a domain that does not lie above zero', () => {
@@ -131,6 +141,18 @@ describe('timeScale', () => {
   it('labels a denser tick count to its own unit', () => {
     const s = timeScale({ domain: [jan1, jan1 + 20 * day], range: [0, 1] });
     expect(s.ticks(100).slice(0, 3).map((v) => s.format(v, { count: 100 }))).toEqual(['2026-01-01', '06:00', '12:00']);
+  });
+
+  it('ticks centuries before the year 100 in order', () => {
+    const at = (year: number) => new Date(0).setUTCFullYear(year, 0, 1);
+    const s = timeScale({ domain: [at(0), at(2000)], range: [0, 1] });
+    const years = s.ticks().map((t) => new Date(t).getUTCFullYear());
+    expect(years[0]).toBe(0);
+    expect(years).toEqual([...years].sort((a, b) => a - b));
+  });
+
+  it('ticks an infinite domain with none', () => {
+    expect(timeScale({ domain: [jan1, Infinity], range: [0, 1] }).ticks()).toEqual([]);
   });
 
   it('ticks on hours within a day', () => {

@@ -44,9 +44,18 @@ function intervalFor(span: number, count: number): Interval {
   return best;
 }
 
+/** The first instant of month `month`, counted from January of year 0. `Date.UTC` would read years 0 to 99 as
+ *  1900 to 1999. */
+function monthStart(month: number): number {
+  const at = new Date(0);
+  at.setUTCFullYear(Math.floor(month / 12), ((month % 12) + 12) % 12, 1);
+  return at.getTime();
+}
+
 /** Every instant on `interval`'s grid from `lo` to `hi`. */
 function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   const out: number[] = [];
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return out;
   if (interval.ms !== undefined) {
     for (let t = Math.ceil(lo / interval.ms) * interval.ms; t <= hi; t += interval.ms) out.push(t);
     return out;
@@ -55,7 +64,7 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   let month = at.getUTCFullYear() * 12 + at.getUTCMonth();
   month = Math.ceil(month / interval.months) * interval.months;
   for (;; month += interval.months) {
-    const t = Date.UTC(Math.floor(month / 12), month % 12, 1);
+    const t = monthStart(month);
     if (t < lo) continue;
     if (t > hi) break;
     out.push(t);

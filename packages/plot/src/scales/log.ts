@@ -28,6 +28,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
   const map = (v: number) => (l1 === l0 ? (r0 + r1) / 2 : r0 + ((log(v) - l0) / (l1 - l0)) * (r1 - r0));
   const ticks = (count = 5): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
     const first = Math.floor(lo + 1e-9);
     const last = Math.ceil(hi - 1e-9);
     // Few decades get their 2s and 5s too, so a short axis still reads.
