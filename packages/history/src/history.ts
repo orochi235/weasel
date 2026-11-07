@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
-import { anyCaused, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
+import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 import {
   rebuilt, snapshot, touchedIdsFromOps,
@@ -434,13 +434,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
   };
   JOURNAL_ACCESS.set(history, {
-    appliedOps: () => {
-      const forwardOps = undoStack.flatMap((e) => e.forwardOps);
-      // One list when nothing coalesced, as a live entry holds it: a step
-      // that throws unwinds a two-list entry by replaying its other half.
-      if (undoStack.every((e) => e.forwardOps === e.baseOps)) return { forwardOps, baseOps: forwardOps };
-      return { forwardOps, baseOps: undoStack.flatMap((e) => e.baseOps) };
-    },
+    appliedOps: () => appliedHalves(undoStack),
     record,
   });
   return history;

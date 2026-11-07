@@ -90,8 +90,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 444,
-    "longestFunction": 405
+    "lines": 441,
+    "longestFunction": 402
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 148
@@ -181,7 +181,7 @@
     "longestFunction": 185
   },
   "packages/svg/src/gradients.ts": {
-    "lines": 561
+    "lines": 525
   },
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 669,
