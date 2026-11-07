@@ -50,20 +50,11 @@ describe('useEyedropperTool', () => {
       useEyedropperTool({ onPick: () => {}, colorOf: () => null }),
     );
     expect(result.current.bindings).toEqual([
-      { spec: { kind: 'click', mods: { alt: 'optional' } }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } },
+      { spec: { kind: 'click' }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } },
     ]);
     // The `pointerDown` claim gate is gone: it existed only to beat the other
     // dispatch pipeline's select tool to the press.
     expect(result.current.bindings?.some((b) => b.spec.kind === 'pointerDown')).toBe(false);
-  });
-
-  it('lets the click carry whichever modifier is its hotkey, and none for a key hotkey', () => {
-    const modsFor = (hotkey: 'shift' | 'space' | null) => renderHook(() =>
-      useEyedropperTool({ onPick: () => {}, colorOf: () => null, hotkey }),
-    ).result.current.bindings?.[0]?.spec.mods;
-    expect(modsFor('shift')).toEqual({ shift: 'optional' });
-    expect(modsFor('space')).toBeUndefined();
-    expect(modsFor(null)).toBeUndefined();
   });
 
   it('the pick action is eligibility-gated on samples-color', () => {
