@@ -253,15 +253,17 @@ function alphabeticBaselineBelow(ctx: CanvasRenderingContext2D): number {
   return Number.isFinite(d) ? d : 0;
 }
 
-/** Where a block `width` wide starts, given the x the context aligns it to. */
-function blockLeft(ctx: CanvasRenderingContext2D, x: number, width: number): number {
+/** How far toward its right edge the context's `textAlign` sets text: 0 for
+ *  left, 1/2 for center, 1 for right, with `start` and `end` read against its
+ *  `direction`. It places the block about `x` and each line within the block. */
+function alignShare(ctx: CanvasRenderingContext2D): number {
   const rtl = ctx.direction === 'rtl';
   switch (ctx.textAlign) {
-    case 'center': return x - width / 2;
-    case 'right': return x - width;
-    case 'end': return rtl ? x : x - width;
-    case 'start': return rtl ? x - width : x;
-    default: return x;
+    case 'center': return 0.5;
+    case 'right': return 1;
+    case 'end': return rtl ? 0 : 1;
+    case 'start': return rtl ? 1 : 0;
+    default: return 0;
   }
 }
 
@@ -269,8 +271,8 @@ function blockLeft(ctx: CanvasRenderingContext2D, x: number, width: number): num
  * Build a fill+stroke `TextRenderer` pair, laying the text out once.
  *
  * `text` is markdown, read by `markdownToRuns`, or runs already styled. The
- * block is placed by the context's `textAlign` and each run by its
- * `textBaseline`. The fill pass also paints underline, strikethrough and
+ * block, and each line within it, is placed by the context's `textAlign`,
+ * and each run by its `textBaseline`. The fill pass also paints underline, strikethrough and
  * overline in their run's fill, placed by the same metrics as the GL tier;
  * the stroke pass paints no rules, as on the GL tier.
  */
@@ -298,11 +300,12 @@ export function createMarkdownRenderer(
     drawRun: (run: PositionedRun, rx: number, ry: number, lineIndex: number) => void,
   ): void {
     const align = c.textAlign;
-    const left = blockLeft(c, x, layout.width);
+    const share = alignShare(c);
+    const left = x - layout.width * share;
     c.textAlign = 'left';
     let lineY = y;
     layout.lines.forEach((line, li) => {
-      const lineLeft = left + (layout.width - line.width) / 2;
+      const lineLeft = left + (layout.width - line.width) * share;
       for (const run of line.runs) {
         c.font = buildFont(run.size, run.bold ?? false, run.italic ?? false, fontOpts);
         drawRun(run, lineLeft + run.x, lineY + run.y, li);

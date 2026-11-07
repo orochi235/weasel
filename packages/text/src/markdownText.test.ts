@@ -386,6 +386,19 @@ describe('createMarkdownRenderer decorations', () => {
     expect(raw.textAlign).toBe('center');
   });
 
+  it.each([
+    ['left', 0, [0, 0]],
+    ['start', 0, [0, 0]],
+    ['center', 100, [85, 75]],
+    ['right', 100, [70, 50]],
+    ['end', 100, [70, 50]],
+  ] as const)('aligns each line of a wrapped block within it under textAlign %s', (align, x, xs) => {
+    const { ctx, texts } = makeRecordingCtx({ textAlign: align });
+    const r = createMarkdownRenderer(ctx, 'aaa bbbbb', 20, 50);
+    r.renderer(ctx, '', x, 0);
+    expect(texts.map((t) => t.x)).toEqual(xs);
+  });
+
   it('keeps decorations off the stroke pass', () => {
     const { ctx, rects } = makeRecordingCtx();
     const r = createMarkdownRenderer(ctx, [{ text: 'ab', underline: true }], 20);
