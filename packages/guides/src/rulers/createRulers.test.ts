@@ -137,8 +137,10 @@ describe('createRulers', () => {
     const move = grab({ x: 100, y: 50 });
     move.move({ x: 140, y: 50 });
     expect(rulers.get().draft).toEqual({ id: 'v', axis: 'x', offset: 140 });
+    expect(rulers.settled(guides.list)).toEqual([]);
     move.end({ x: 150, y: 50 });
     expect(guides.list).toEqual([{ id: 'v', axis: 'x', offset: 150 }]);
+    expect(rulers.settled(guides.list)).toBe(guides.list);
     scene.undo();
     expect(guides.list).toEqual([placed]);
     scene.redo();

@@ -48,6 +48,9 @@ export interface Rulers {
   subscribe(listener: () => void): () => void;
   /** Both rulers' ticks as the state stands, or `null` before the first paint. */
   layout(): RulersLayout | null;
+  /** `guides` less the one a drag is moving, which the rulers draw where it
+   *  is going: what a guides layer's `getGuides` draws. */
+  settled(guides: readonly Guide[]): readonly Guide[];
 }
 
 const MODS_ANY = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
@@ -125,5 +128,9 @@ export function createRulers(opts: RulersOptions): Rulers {
     },
   };
 
-  return { contribution, size, get: () => state, subscribe, layout: () => rulersLayout(state, spacing) };
+  const settled = (guides: readonly Guide[]): readonly Guide[] => {
+    const moving = state.draft?.id;
+    return moving === undefined || !guides.some((g) => g.id === moving) ? guides : guides.filter((g) => g.id !== moving);
+  };
+  return { contribution, size, get: () => state, subscribe, layout: () => rulersLayout(state, spacing), settled };
 }

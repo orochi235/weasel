@@ -101,7 +101,7 @@ export function rulersGuideAction(ctx: RulersActionCtx): Action {
         const onRuler = (part: RulerPart | null): boolean => (moving ? part !== null : part === hit.part);
         const deps = start.deps;
         const press = start.drag?.start ?? start.world;
-        const snap = deps.snap?.begin({ gesture: 'point', press }) ?? null;
+        const snap = deps.snap?.begin({ gesture: 'point', press, ...(moving ? { ids: [moving.id] } : {}) }) ?? null;
         let guide: Guide | null = moving;
         const follow = (at: InvocationCtx): void => {
           const p = at.drag?.current ?? at.world;

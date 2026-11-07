@@ -82,9 +82,14 @@ const rulers = useMemo(
   () => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: { system: IMPERIAL_INCHES } }),
   [addGuide, removeGuide, getGuides],
 );
+// The guide being moved is drawn by the rulers where it is going.
+const guidesLayer = useMemo(
+  () => createGuidesLayer({ getGuides: () => rulers.settled(getGuides()), extent: 'full' }),
+  [rulers, getGuides],
+);
 
 <div className="host">
-  <SceneCanvas /* … */ ambient={[rulers.contribution]} />
+  <SceneCanvas /* … */ ambient={[rulers.contribution]} layers={{ guides: { layer: guidesLayer, after: 'scene' } }} />
   <Rulers rulers={rulers} />
 </div>;
 ```
