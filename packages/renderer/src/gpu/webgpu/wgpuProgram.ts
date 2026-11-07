@@ -80,7 +80,11 @@ export class WgpuProgram implements GpuProgram {
   /** Bind groups 0 and 1, each binding in order. */
   readonly groups: readonly (readonly Binding[])[];
   readonly usesNdc: boolean;
-  readonly pipelines = new Map<string, GPURenderPipeline>();
+  /** A key's pipeline, or `null` once the GPU refused to make it. */
+  readonly pipelines = new Map<string, GPURenderPipeline | null>();
+  /** The GPU refused the module or a pipeline of it, which was reported:
+   *  a draw with it would void every command submitted beside it. */
+  refused = false;
   private readonly groupLayouts: GPUBindGroupLayout[];
   private readonly members = new Map<string, { slot: BlockSlot; member: string }>();
   private readonly arrays = new Map<string, GpuUniformArray>();
@@ -94,6 +98,7 @@ export class WgpuProgram implements GpuProgram {
     void this.module.getCompilationInfo().then((info) => {
       const errors = info.messages.filter((m) => m.type === 'error');
       if (errors.length > 0) {
+        this.refused = true;
         console.error('weasel: a WGSL program failed to compile:\n'
           + errors.map((m) => `${m.lineNum}:${m.linePos} ${m.message}`).join('\n'));
       }
@@ -146,6 +151,15 @@ export class WgpuProgram implements GpuProgram {
       if (m) counts.set(m[1], Math.max(counts.get(m[1]) ?? 0, Number(m[2]) + 1));
     }
     for (const [name, size] of counts) this.arrays.set(name, { type: 'sampler2D', size });
+  }
+
+  /** Stop drawing with the pipeline of `key` once the GPU's refusal of it
+   *  arrives, reporting the first refusal. */
+  refusePipeline(key: string, message: string): void {
+    this.pipelines.set(key, null);
+    if (this.refused) return;
+    this.refused = true;
+    console.error(`weasel: the GPU refused a WGSL program's pipeline, which then draws nothing: ${message}`);
   }
 
   private resolve(name: string): { slot: BlockSlot; member: string } | undefined {

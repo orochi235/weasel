@@ -178,12 +178,14 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     const frame = this.frame;
     if (!frame.pass || frame.pass.skip || count === 0) return;
     const program = state.program as WgpuProgram;
+    if (program.refused) return;
     const geom = geometry as res.WgpuGeometry;
     program.set1i('u_targetHeight', frame.pass.target.height);
     this.uploadUniforms(program);
     const pass = frame.pass;
     const { target, encoder } = pass;
     const pipeline = pipelineFor(this.device, program, geom, target, state);
+    if (!pipeline) return;
     if (pass.pipeline !== pipeline) {
       encoder.setPipeline(pipeline);
       pass.pipeline = pipeline;
@@ -258,6 +260,9 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
   }
 
   dispose(): void {
+    this.frame.end();
     this.canvas.dispose();
+    for (const object of [this.ringBuffer, this.defaultAttribute, this.dummyTexture.gpu]) this.frame.retire(object);
+    this.frame.flush();
   }
 }

@@ -175,7 +175,6 @@ export class WeaselRenderer {
     };
   }
 
-
   /**
    * Compile a consumer-registered shader program against this renderer's GL context.
    *
@@ -298,6 +297,7 @@ export class WeaselRenderer {
     this.effectTargets.releaseAll();
     this.retained.releaseAll();
     this.paintScratch.release();
+    gpu.dispose?.();
   }
 
   /**
