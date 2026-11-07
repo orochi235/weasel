@@ -1,5 +1,6 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import type { PrefFieldChoice } from '@weasel-js/ui/components/Prefs';
+import { drawsOwn } from '../config/drawsOwn';
 import { schemaNodeAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { isSliderLeaf, labField } from './fields';
@@ -25,21 +26,6 @@ export function loosePathsIn(resolved: ResolvedConfig, group: PrefGroup, at: str
   return Object.keys(group.children)
     .map((key) => (at === '' ? key : `${at}.${key}`))
     .filter((p) => !sectioned.has(p));
-}
-
-/** Whether the lab or the instrument draws the control of the leaf at `path` itself: by path, in a dialog, or by kind. */
-export function drawsOwn(
-  resolved: ResolvedConfig,
-  renderers: Record<string, ControlRenderer> | undefined,
-  path: string,
-  leaf: PrefLeaf,
-): boolean {
-  const own =
-    renderers?.[path] ??
-    resolved.renderers[path] ??
-    resolved.dialogs[path] ??
-    renderers?.[leaf.kind];
-  return own !== undefined;
 }
 
 /**
