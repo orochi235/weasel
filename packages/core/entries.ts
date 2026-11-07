@@ -15,6 +15,7 @@ const shims = [
   'routing',
   'engine',
   'test-seams',
+  'render-worker',
 ] as const;
 
 export const entries: Record<string, string> = {

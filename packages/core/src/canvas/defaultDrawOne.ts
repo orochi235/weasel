@@ -16,7 +16,8 @@ import { overChildren } from './overChildren';
 import { INHERIT } from '@weasel-js/paint';
 
 function pixelScaleOf(view: View): number {
-  const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  // `globalThis`, not `window`: a render worker has no window, and sets the density it paints at here.
+  const dpr = globalThis.devicePixelRatio || 1;
   return Math.max(Math.abs(view.scale.x), Math.abs(view.scale.y)) * dpr;
 }
 

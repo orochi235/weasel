@@ -28,12 +28,15 @@ export interface SurfaceCanvasProps {
   style?: CSSProperties;
   tabIndex?: number;
   'aria-label'?: string;
+  /** `'worker'` for a canvas handed to a worker with `transferControlToOffscreen`: the worker
+   *  sizes its buffer, and the element takes no size attributes, which it could no longer use. */
+  buffer?: 'page' | 'worker';
 }
 
 /** The `<canvas>` a kit component paints into, `width` × `height` CSS pixels,
  *  or its parent's size on an axis given neither. */
 export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
-  function SurfaceCanvas({ width, height, className, style, tabIndex, 'aria-label': ariaLabel }, ref) {
+  function SurfaceCanvas({ width, height, className, style, tabIndex, 'aria-label': ariaLabel, buffer }, ref) {
     // Stable while `ref` is, so a commit does not detach the element.
     const setRef = useCallback((el: HTMLCanvasElement | null) => {
       if (el) adoptSurfaceRule(el);
@@ -48,8 +51,8 @@ export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
     return (
       <canvas
         ref={setRef}
-        width={width}
-        height={height}
+        width={buffer === 'worker' ? undefined : width}
+        height={buffer === 'worker' ? undefined : height}
         tabIndex={tabIndex}
         aria-label={ariaLabel}
         className={className}

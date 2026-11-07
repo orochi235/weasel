@@ -40,6 +40,7 @@
       "@weasel-js/core/renderer": ["./src/import-shims/renderer.ts"],
       "@weasel-js/core/routing": ["./src/import-shims/routing.ts"],
       "@weasel-js/core/engine": ["./src/import-shims/engine.ts"],
+      "@weasel-js/core/render-worker": ["./src/import-shims/render-worker.ts"],
       "@weasel-js/core/test-seams": ["./src/import-shims/test-seams.ts"],
       "@weasel-js/core/testing/*": ["./src/testing/*"],
       "@weasel-js/cursor": ["../cursor/src/index.ts"],

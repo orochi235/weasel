@@ -12,6 +12,9 @@
 
 import { createEmitter } from '@weasel-js/registry';
 import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
+import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
+
+export { isVectorImageSrc };
 
 /** Public shape of an image node's `data`. `src` round-trips through
  *  serialization; the decoded bitmap is held in this cache, not on the node. */
@@ -67,17 +70,11 @@ interface Entry {
   readAt: number;
 }
 
-/** `size` is absent for the first load, which decodes at natural size. */
-type Loader = (src: string, size?: ImageRasterSize) => Promise<ImageBitmap>;
-
 /** One vector raster may hold at most 64MB of RGBA. */
 const MAX_VECTOR_RASTER_PIXELS = 4096 * 4096;
 /** A raster is only shrunk once it is this many times larger than needed, so
  *  zooming back and forth across a bucket edge does not re-raster each way. */
 const SHRINK_SLACK = 4;
-// CSS default object size, as `kit:svg` measures a viewBox-only SVG.
-const FALLBACK_WIDTH = 300;
-const FALLBACK_HEIGHT = 150;
 
 /** Decoded RGBA the cache holds before it starts dropping images: 256MB. */
 const DEFAULT_BUDGET_BYTES = 256 * 1024 * 1024;
@@ -88,64 +85,15 @@ let reads = 0;
 /** `reads` as the last {@link enforceBudget} left it. */
 let readsAtLastPass = 0;
 let ready = createEmitter();
-const decodedVectors = new Map<string, Promise<HTMLImageElement>>();
 
-/** True when `src` names SVG — a `data:image/svg+xml` URI, or a URL whose path
- *  ends in `.svg`/`.svgz`. Such sources re-rasterize at the size they are drawn
- *  at; everything else decodes once. A `blob:` URL carries no type and counts
- *  as raster. */
-export function isVectorImageSrc(src: string): boolean {
-  if (/^data:image\/svg\+xml[;,]/i.test(src)) return true;
-  if (/^(data|blob):/i.test(src)) return false;
-  return /\.svgz?$/i.test(src.replace(/[?#].*$/, ''));
+let loader: ImageLoader = loadImageBitmap;
+
+/** Replace how a `src` becomes a bitmap, for a realm the cache's own loader cannot serve —
+ *  a worker has no `<img>` to rasterize an SVG with. `null` puts back {@link loadImageBitmap}.
+ *  Images already loaded stay; the next load goes through `fn`. */
+export function setImageLoader(fn: ImageLoader | null): void {
+  loader = fn ?? loadImageBitmap;
 }
-
-function requireDom(): void {
-  if (typeof Image === 'undefined' || typeof createImageBitmap === 'undefined') {
-    throw new Error('weasel imageCache: no DOM image loader in this environment');
-  }
-}
-
-async function decodeImage(src: string): Promise<HTMLImageElement> {
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.src = src;
-  await img.decode();
-  return img;
-}
-
-function decodeVector(src: string): Promise<HTMLImageElement> {
-  let decoded = decodedVectors.get(src);
-  if (!decoded) {
-    decoded = decodeImage(src);
-    decodedVectors.set(src, decoded);
-    decoded.catch(() => decodedVectors.delete(src));
-  }
-  return decoded;
-}
-
-// `createImageBitmap` rejects SVG blobs and resamples an SVG `<img>` rather
-// than re-drawing it, so vectors go through a canvas `drawImage` at full size.
-async function rasterizeVector(src: string, size?: ImageRasterSize): Promise<ImageBitmap> {
-  const img = await decodeVector(src);
-  const width = size?.width ?? (img.naturalWidth || FALLBACK_WIDTH);
-  const height = size?.height ?? (img.naturalHeight || FALLBACK_HEIGHT);
-  const canvas: OffscreenCanvas | HTMLCanvasElement = typeof OffscreenCanvas !== 'undefined'
-    ? new OffscreenCanvas(width, height)
-    : Object.assign(document.createElement('canvas'), { width, height });
-  const c2d = canvas.getContext('2d') as CanvasDrawImage | null;
-  if (!c2d) throw new Error('weasel imageCache: no 2D context to rasterize an SVG');
-  c2d.drawImage(img, 0, 0, width, height);
-  return createImageBitmap(canvas);
-}
-
-const defaultLoader: Loader = async (src, size) => {
-  requireDom();
-  if (isVectorImageSrc(src)) return rasterizeVector(src, size);
-  return createImageBitmap(await decodeImage(src));
-};
-
-let loader: Loader = defaultLoader;
 
 function notify(): void {
   ready.emit();
@@ -354,7 +302,7 @@ export function releaseImage(src: string): void {
   }
   const entry = cache.get(src);
   cache.delete(src);
-  decodedVectors.delete(src);
+  forgetDecodedVector(src);
   if (entry?.bitmap) releaseImageSource(entry.bitmap);
 }
 
@@ -374,7 +322,7 @@ export function subscribeImageReady(cb: () => void): () => void {
 
 /** @internal test seam — override the async loader so unit tests don't need
  *  a real DOM image. Not part of the public barrel. */
-export function __setImageLoaderForTests(fn: Loader): void {
+export function __setImageLoaderForTests(fn: ImageLoader): void {
   loader = fn;
 }
 
@@ -385,8 +333,8 @@ export function _resetImageCacheForTests(): void {
   held = new Map();
   srcOfBitmap = new WeakMap();
   ready = createEmitter();
-  decodedVectors.clear();
-  loader = defaultLoader;
+  forgetDecodedVector();
+  loader = loadImageBitmap;
   budgetBytes = DEFAULT_BUDGET_BYTES;
   reads = 0;
   readsAtLastPass = 0;

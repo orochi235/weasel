@@ -104,6 +104,10 @@
       "import": "./dist/engine.js",
       "types": "./dist/engine.d.ts"
     },
+    "./render-worker": {
+      "import": "./dist/render-worker.js",
+      "types": "./dist/render-worker.d.ts"
+    },
     "./test-seams": {
       "import": "./dist/test-seams.js",
       "types": "./dist/test-seams.d.ts"

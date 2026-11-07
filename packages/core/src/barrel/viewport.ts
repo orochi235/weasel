@@ -133,6 +133,10 @@ export { VIEW_MARKER_DRAG, viewMarkerDragAction, createViewMarkerContribution } 
 // given view; `<MinimapCanvas>` is the opinionated minimap built on top.
 export { SceneViewCanvas } from '../canvas/SceneViewCanvas';
 export type { SceneViewCanvasProps } from '../canvas/SceneViewCanvas';
+// A scene view a worker paints: `<SceneViewCanvas worker>`, or the client under it for a host of its own.
+export { startSceneRenderWorker } from '../canvas/renderWorker/startSceneRenderWorker';
+export type { SceneRenderInputs, SceneRenderWorker } from '../canvas/renderWorker/startSceneRenderWorker';
+export type { WorkerCanvasHandle } from '../canvas/renderWorker/WorkerSceneView';
 export type { SurfaceSizeProps } from '../canvas/useSurfaceSize';
 // `<DrawCanvas>` is the same detached surface with no scene behind it: a
 // command list painted onto a canvas of its own.

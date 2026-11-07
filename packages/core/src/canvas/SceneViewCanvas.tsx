@@ -27,25 +27,19 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { Animator } from '@weasel-js/animator';
+import { WorkerSceneView, type WorkerCanvasHandle } from './renderWorker/WorkerSceneView';
 
-/** Props for `<SceneViewCanvas>`. */
-export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
+/** What `<SceneViewCanvas>` takes whether the page or a worker paints it. */
+interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
   /** Scene to render. The component subscribes to it and repaints when it
    *  changes. */
   scene: Scene<TData, TLayer, TPose>;
   /** Camera. Applied to scene + `extraCommands` via the renderer's group
    *  transform. */
   view: View;
-  /** Per-node draw callback. See `SceneViewDrawOne`. The consumer is
-   *  responsible for what gets painted — there is no AABB-fill default. */
-  drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
   /** Optional extra commands appended after scene commands, inside the same
    *  view transform — a world-space annotation over the scene. */
   extraCommands?: ReadonlyArray<DrawCommand>;
-  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
-   *  `alphaFor`. Pass the same function the main canvas uses to keep a
-   *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
-  alphaFor?: (id: string) => number;
   /** Hide scene layers in this view only, keyed `scene:<layerId>` as on
    *  `<SceneCanvas>` — pass the main canvas's map to keep the two in step. */
   layerVisibility?: SceneViewLayers['layerVisibility'];
@@ -55,14 +49,6 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> exten
    *  `cull`. Off by default; worth it when the view shows a small part of a
    *  large scene. */
   cull?: boolean;
-  /** Where `drawOne`'s output for a node can reach — the scene slot's
-   *  `paintBounds`. Defaults to `defaultPaintBounds` when `drawOne` is
-   *  `defaultDrawOne`. */
-  paintBounds?: RenderSceneToCanvasArgs<TData, TLayer, TPose>['paintBounds'];
-  /** Optional animator, as on `<SceneCanvas>`: the view repaints on its ticks
-   *  and paints its `colorOverrides` and `trimOverrides`. Pass the main canvas's
-   *  animator so both show the same colors and trims. */
-  animator?: Animator;
   /** Optional CSS class for the `<canvas>`. Its size is `width` × `height`
    *  unless a rule on this class sizes it. */
   className?: string;
@@ -71,8 +57,50 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> exten
   canvasRef?: Ref<HTMLCanvasElement>;
 }
 
-function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
-  props: SceneViewCanvasProps<TData, TLayer, TPose>,
+/** The page paints the view: `drawOne` and the props beside it are functions it calls. */
+interface PagePaintedView<TData, TLayer extends string, TPose> {
+  /** Per-node draw callback. See `SceneViewDrawOne`. The consumer is
+   *  responsible for what gets painted — there is no AABB-fill default. */
+  drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
+  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
+   *  `alphaFor`. Pass the same function the main canvas uses to keep a
+   *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
+  alphaFor?: (id: string) => number;
+  /** Where `drawOne`'s output for a node can reach — the scene slot's
+   *  `paintBounds`. Defaults to `defaultPaintBounds` when `drawOne` is
+   *  `defaultDrawOne`. */
+  paintBounds?: RenderSceneToCanvasArgs<TData, TLayer, TPose>['paintBounds'];
+  /** Optional animator, as on `<SceneCanvas>`: the view repaints on its ticks
+   *  and paints its `colorOverrides` and `trimOverrides`. Pass the main canvas's
+   *  animator so both show the same colors and trims. */
+  animator?: Animator;
+  worker?: undefined;
+  workerRef?: undefined;
+}
+
+/** A worker paints the view into this canvas, handed to it with `transferControlToOffscreen`:
+ *  the page sends it only what changed in the scene. */
+interface WorkerPaintedView {
+  /** Start the worker, whose module calls `serveSceneRender` from `@weasel-js/core/render-worker`
+   *  — `() => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' })`.
+   *  Called once per mount; the worker is stopped on unmount. A function cannot cross to a
+   *  worker, so what paints a node (`drawOne`, the node shapes, fonts and shaders it needs)
+   *  is the worker module's to set up, and `alphaFor` and `animator` do not apply. */
+  worker: () => Worker;
+  /** Reads what the worker's canvas shows, in place of `toBlob` on the canvas. */
+  workerRef?: Ref<WorkerCanvasHandle>;
+  drawOne?: undefined;
+  alphaFor?: undefined;
+  paintBounds?: undefined;
+  animator?: undefined;
+}
+
+/** Props for `<SceneViewCanvas>`. */
+export type SceneViewCanvasProps<TData, TLayer extends string, TPose> = SceneViewCanvasCommon<TData, TLayer, TPose>
+  & (PagePaintedView<TData, TLayer, TPose> | WorkerPaintedView);
+
+function PageSceneView<TData, TLayer extends string, TPose>(
+  props: SceneViewCanvasCommon<TData, TLayer, TPose> & PagePaintedView<TData, TLayer, TPose>,
 ) {
   const {
     scene, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
@@ -137,4 +165,8 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
  * pixels and size the drawing buffer; a `className` rule that sizes the
  * element stretches that buffer to fit. Given neither, it fills its parent.
  */
-export const SceneViewCanvas = SceneViewCanvasInner;
+export function SceneViewCanvas<TData, TLayer extends string, TPose>(
+  props: SceneViewCanvasProps<TData, TLayer, TPose>,
+) {
+  return props.worker ? <WorkerSceneView {...props} worker={props.worker} /> : <PageSceneView {...props} drawOne={props.drawOne!} />;
+}
