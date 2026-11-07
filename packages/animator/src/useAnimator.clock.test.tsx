@@ -114,3 +114,27 @@ describe('useAnimator on a clock', () => {
     expect(tw.done()).toBe(true);
   });
 });
+
+describe('useAnimator with its clock dropped', () => {
+  it('runs on its own frames from where the clock left it, without a jump', () => {
+    const handle = createClock({ rate: 1 });
+    const queued: ((t: number) => void)[] = [];
+    let now = 60_000;
+    const base = { requestFrame: (cb: (t: number) => void) => { queued.push(cb); return queued.length; }, cancelFrame: () => {}, now: () => now };
+    const { result, rerender } = renderHook(({ clock }) => useAnimator({ ...base, clock }), {
+      initialProps: { clock: handle as typeof handle | undefined },
+    });
+    act(() => { handle.clock.sync(0); });
+    const tw = tweenOn(result.current);
+    act(() => { handle.clock.sync(0); });
+    act(() => { handle.clock.sync(300); });
+    expect(tw.value()).toBeCloseTo(30);
+    rerender({ clock: undefined });
+    const frame = (t: number) => act(() => { now = t; for (const cb of queued.splice(0)) cb(t); });
+    act(() => { result.current.tween({ from: 0, to: 1, ms: 10, onTick: () => {} }); });
+    frame(60_000);
+    frame(60_100);
+    expect(tw.done()).toBe(false);
+    expect(tw.value()).toBeCloseTo(40);
+  });
+});
