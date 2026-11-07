@@ -401,6 +401,13 @@ Owner tags, after the priority (2026-10-26):
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
   Closes when Shift+F10 on a real Windows or Linux Chrome opens the menu once.
 
+- **(P3) [agent] `MenuBar` and `ContextMenu` read Left and Right as left-to-right under `dir="rtl"`.**
+  Every `useRovingTabIndex` row swaps them by its container's `direction` (`inlineDirection`), but a
+  menubar's titles step through `rovingTarget` with no `dir`, and `@weasel-js/menu`'s key map
+  (`packages/menu/src/keys.ts`: submenu open/close and the `edge` effect) knows no direction at all,
+  so under RTL Right moves to the next title on the left and opens a submenu drawn on the other side. Closes when a menubar and
+  a nested context menu inside `dir="rtl"` move and open the way their arrows point, with a test each.
+
 - **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
