@@ -18,6 +18,15 @@ import { deleteAction } from './defaults/delete';
 import { groupAction } from './defaults/group';
 import { cloneAction } from './clone/action';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
+import { createElement } from 'react';
+import { render } from '@testing-library/react';
+import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
+import { useInsertDepSource } from 'canvas/deps/insert';
+import type { InsertDep } from './depSchema';
+import { insertAction } from './insert/action';
+import { placeAction } from './insert/placeAction';
+import { createInsertOp } from 'core/ops/create';
+import type { InsertBehavior } from '../gestures/types';
 
 type AnyScene = ReturnType<typeof createScene<object, 'main', unknown>>;
 
@@ -29,6 +38,7 @@ function heldSelection(ids: readonly string[]) {
   const api = {
     get: () => held,
     set: (next: readonly NodeId[]) => { held = [...next]; },
+    clear: () => { held = []; },
     adapterMethods: { getSelection: () => held, setSelection: (next: NodeId[]) => { held = [...next]; } },
   };
   return api;
@@ -54,6 +64,25 @@ function ends() {
   const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(10, 0, 20, 0) });
   return { scene, a, b };
 }
+
+/** The kit's `insert` dep, committing through the consumer's `applyOps`. */
+function kitInsert(scene: AnyScene, applyOps: (ops: Op[], label: string) => void): InsertDep {
+  let reg!: DepRegistry;
+  function Wire() {
+    useInsertDepSource(scene as never, { applyOps: (ops, label) => applyOps(ops, label ?? '') });
+    reg = useDepRegistry();
+    return null;
+  }
+  render(createElement(DepRegistryProvider, null, createElement(Wire)));
+  return reg.get('insert') as InsertDep;
+}
+
+const dragCtx = (x: number, y: number, deps: ActionDeps) => ({
+  world: { x, y },
+  screen: { x, y },
+  modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+  deps,
+}) as unknown as InvocationCtx;
 
 const run = (action: { invoker?: unknown }, deps: ActionDeps) => (action.invoker as ImmediateInvoker).run(deps);
 
@@ -126,6 +155,50 @@ describe('undo restores the selection an action started from', () => {
     expect(selection.get()).toHaveLength(1);
     expect(selection.get()[0]).not.toBe(a);
     history.undo();
+    expect(selection.get()).toEqual([a]);
+  });
+
+  it('Insert, which cleared the selection at its press', () => {
+    const { scene, a, b } = ends();
+    const selection = heldSelection([a, b]);
+    const { deps: base, history } = consumerDeps(scene, selection);
+    const deps = { ...base, insert: kitInsert(scene, (ops, label) => history.applyOps(ops, label)) } as unknown as ActionDeps;
+    const handle = (insertAction.invoker as OngoingInvoker).start(dragCtx(100, 100, deps), { params: { kind: 'rect' } });
+    handle.onMove!(dragCtx(140, 140, deps));
+    handle.onEnd!(dragCtx(140, 140, deps), 'commit');
+    expect(scene.nodes.size).toBe(3);
+    expect(selection.get()).toEqual([]);
+    history.undo();
+    expect(scene.nodes.size).toBe(2);
+    expect(selection.get()).toEqual([a, b]);
+  });
+
+  it('Place, which cleared the selection at its click', () => {
+    const { scene, a } = ends();
+    const selection = heldSelection([a]);
+    const { deps: base, history } = consumerDeps(scene, selection);
+    const deps = { ...base, insert: kitInsert(scene, (ops, label) => history.applyOps(ops, label)) } as unknown as ActionDeps;
+    (placeAction.invoker as ImmediateInvoker).run(deps, { kind: 'rect', size: { width: 20, height: 20 }, world: { x: 100, y: 100 } });
+    expect(scene.nodes.size).toBe(3);
+    expect(selection.get()).toEqual([]);
+    history.undo();
+    expect(selection.get()).toEqual([a]);
+  });
+
+  it('Insert whose behavior answers with its own ops', () => {
+    const { scene, a } = ends();
+    const selection = heldSelection([a]);
+    const { deps: base, history } = consumerDeps(scene, selection);
+    const deps = { ...base, insert: kitInsert(scene, (ops, label) => history.applyOps(ops, label)) } as unknown as ActionDeps;
+    const own: InsertBehavior<unknown> = {
+      onEnd: () => [createInsertOp({ node: { id: 'own', kind: 'mark', layer: 'main', data: {}, pose: line(0, 0, 1, 1) } as never })],
+    };
+    const handle = (insertAction.invoker as OngoingInvoker).start(dragCtx(100, 100, deps), { params: { kind: 'rect' }, behaviors: [own] });
+    handle.onMove!(dragCtx(140, 140, deps));
+    handle.onEnd!(dragCtx(140, 140, deps), 'commit');
+    expect(scene.nodes.size).toBe(3);
+    history.undo();
+    expect(scene.nodes.size).toBe(2);
     expect(selection.get()).toEqual([a]);
   });
 });

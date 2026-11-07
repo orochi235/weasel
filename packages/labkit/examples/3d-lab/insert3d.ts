@@ -20,17 +20,20 @@ export function useBoxInsert(scene: SolidScene, viewport: ViewportSource): Inser
     };
     return createInsert({
       viewport,
-      mint: ({ center, width, depth }) => {
+      mint: ({ center, width, depth }, _extras, select) => {
         const height = (width + depth) / 2;
         // Under the scene's identity composition a child's pose is a world
         // pose, so the box needs no conversion into its container.
-        return scene.add({
+        const id = scene.add({
           kind: 'mark',
           layer: 'solids',
           parent: parentOf(),
           pose: pose3({ x: center.x, y: height / 2, z: center.z }, { x: width, y: height, z: depth }),
           data: { kind: 'box', color: '#c49a3f' },
         });
+        // `scene.add` applies no ops for the selection to join.
+        if (select) registry.get('selection')?.set(select.selectNew ? [id] : []);
+        return id;
       },
     });
   }, [registry, scene, viewport]);

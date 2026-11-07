@@ -2,7 +2,8 @@ import type { DragSample } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
-import type { InsertFrame, InsertSession } from './session';
+import { clearedSelection, type InsertFrame, type InsertSession } from './session';
+import { createSetSelectionOp } from 'core/ops/select';
 import { insertShape, isCommittableExtent } from './shape';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { TextEditDep } from '../depSchema';
@@ -52,7 +53,7 @@ export function commitInsert(
           adapter: defaultCommitAdapter(session.scene, session.selection?.adapterMethods),
         },
         readGestureLifecycle(resolved, 'Insert', session.behaviors),
-        r,
+        r.length > 0 ? [...r, ...selectionOps(session)] : r,
       );
     }
   }
@@ -61,7 +62,13 @@ export function commitInsert(
   // Sub-threshold drag — no insert.
   if (!isCommittableExtent(bounds, extras.kind)) return false;
 
-  const id = session.dep.commit(bounds, extras, ends);
+  const id = session.dep.commit(bounds, extras, ends, clearedSelection(session.priorSelection));
   enterInsertedText(session.textEdit, id === null ? null : String(id), extras.kind);
   return id !== null;
+}
+
+/** The press's selection clear, as ops for a behavior's batch. */
+function selectionOps(session: Pick<InsertSession, 'priorSelection'>) {
+  const prior = session.priorSelection;
+  return prior.length > 0 ? [createSetSelectionOp({ from: prior, to: [], label: 'Insert' })] : [];
 }

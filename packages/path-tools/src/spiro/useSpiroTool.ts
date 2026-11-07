@@ -66,8 +66,9 @@ function spiroActions(host: SpiroActionsHost): Action[] {
     const { points } = s();
     if (points.length >= 2) {
       const { path, representation } = spiroNodeData([{ points, closed }]);
-      const id = deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed, data: { representation } }) ?? null;
-      if (id !== null && host.options().autoSelect) deps.selection?.set([id]);
+      const sel = deps.selection;
+      const select = sel && host.options().autoSelect ? { from: [...sel.get()], selectNew: true } : undefined;
+      deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed, data: { representation } }, undefined, select);
     }
     host.reset();
     track();

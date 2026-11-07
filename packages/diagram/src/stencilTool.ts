@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import {
-  commitOps, defineTool, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
+  commitOps, defineTool, insertSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
   type ActionDeps, type InsertDep, type NodeId, type Op, type Tool,
 } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
@@ -110,13 +110,14 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       build,
       // A stencil builds a body and its rows, more than one node.
       peek: (bounds, extras, ends) => (stencilOf(extras.kind) === undefined ? fallback?.peek?.(bounds, extras, ends) ?? null : null),
-      commit(bounds, extras, ends) {
+      commit(bounds, extras, ends, select) {
         const stencil = stencilOf(extras.kind);
-        if (stencil === undefined) return fallback?.commit(bounds, extras, ends) ?? null;
+        if (stencil === undefined) return fallback?.commit(bounds, extras, ends, select) ?? null;
         const built = build(bounds, extras, ends);
         if (built === null) return null;
         const deps = { scene, applyOps: registry.get('applyOps'), selection: registry.get('selection') };
-        commitOps(deps as unknown as ActionDeps, built.ops, `Insert ${stencil.label}`);
+        const label = `Insert ${stencil.label}`;
+        commitOps(deps as unknown as ActionDeps, [...built.ops, ...insertSelectionOps(select, built.id, label)], label);
         return built.id;
       },
     };

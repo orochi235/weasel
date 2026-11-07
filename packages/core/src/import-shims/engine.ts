@@ -136,7 +136,7 @@ export type { AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapAnchors,
 export { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from '../domains/viewports/aim';
 export type { AimOutline, AimPoint, AimRect, AimSpace, RectAim, ViewAim } from '../domains/viewports/aim';
 export { IconRegistryProvider } from '../iconRegistry/IconRegistryProvider';
-export { commitOps, defaultCommitAdapter } from '../interactions/actions/defaultCommitAdapter';
+export { commitOps, defaultCommitAdapter, insertSelectionOps } from '../interactions/actions/defaultCommitAdapter';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { drawnBoxes, poseBoxes } from '../interactions/actions/drawnBoxes';
 export type { DrawnBoxes, DrawnBoxesDeps, DrawnBoxesSource } from '../interactions/actions/drawnBoxes';
@@ -148,7 +148,7 @@ export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardA
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export type { GestureLifecycleOptions } from '../interactions/actions/gestureLifecycle';
 export { insertAction } from '../interactions/actions/insert/action';
-export type { InsertDep, InsertEnds, InsertExtras, InsertIntoDep, InsertLive, PathSymmetryDep } from '../interactions/actions/insertDeps';
+export type { InsertDep, InsertEnds, InsertExtras, InsertIntoDep, InsertLive, InsertSelection, PathSymmetryDep } from '../interactions/actions/insertDeps';
 export type { CanDropIntoDep, LayoutDep } from '../interactions/actions/layoutDeps';
 export { moveAction } from '../interactions/actions/move/action';
 export { sceneBoxFrames, scenePoseFrame } from '../interactions/actions/poseFrame';

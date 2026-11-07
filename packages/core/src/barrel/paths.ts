@@ -220,7 +220,7 @@ export type { SetAnchorFieldParams } from '../interactions/actions/defaults/anch
 export type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geom';
 
 // ─── Building path commands and path-edit features on core ─────────────────
-export { commitOps } from '../interactions/actions/defaultCommitAdapter';
+export { commitOps, insertSelectionOps } from '../interactions/actions/defaultCommitAdapter';
 export {
   deleteNode,
   insertAt,

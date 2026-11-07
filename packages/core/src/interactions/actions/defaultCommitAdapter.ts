@@ -10,6 +10,7 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
+import type { InsertSelection } from './insertDeps';
 import { createSetSelectionOp } from 'core/ops/select';
 import { documentReads, sceneMutators } from 'core/scene/sceneMutators';
 import type { Scene } from 'core/scene/types';
@@ -69,4 +70,11 @@ export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { se
   const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
   if (!scene) return;
   scene.applyBatch(ops, label, defaultCommitAdapter(scene, selectionMethods(deps.selection)));
+}
+
+/** The ops an insert of node `id` appends to its batch for `select`: none
+ *  without one, else the selection change from `select.from`. */
+export function insertSelectionOps(select: InsertSelection | undefined, id: string, label?: string): Op[] {
+  if (!select) return [];
+  return [createSetSelectionOp({ from: select.from, to: select.selectNew ? [asNodeId(id)] : [], ...(label !== undefined ? { label } : {}) })];
 }

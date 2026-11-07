@@ -9,7 +9,7 @@ import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-j
 import type { ModifierState } from 'core/modifierState';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
-import type { InsertExtras } from 'interactions/actions/depSchema';
+import type { InsertExtras, InsertSelection } from 'interactions/actions/depSchema';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
 import type { SnapSource } from 'domains/snap/types';
 import { sceneOfPaths, sessionDep } from 'domains/snap/testing/sessionDep';
@@ -47,7 +47,11 @@ export function penDeps(a: ReturnType<typeof makeAdapter>, noBuild = false) {
   };
   return {
     insert: {
-      commit: vi.fn((_bounds: unknown, extras: InsertExtras) => a.addNode(poseOf(extras))),
+      commit: vi.fn((_bounds: unknown, extras: InsertExtras, _ends?: unknown, select?: InsertSelection) => {
+        const id = a.addNode(poseOf(extras));
+        if (select) a.setSelection(select.selectNew ? [id] : []);
+        return id;
+      }),
       ...(noBuild ? {} : {
         build: (_bounds: unknown, extras: InsertExtras) => {
           const node = a.makeNode(poseOf(extras));
@@ -55,13 +59,13 @@ export function penDeps(a: ReturnType<typeof makeAdapter>, noBuild = false) {
         },
       }),
     },
-    selection: { set: a.setSelection },
+    selection: { get: () => [] as string[], set: a.setSelection },
   };
 }
 
 /** Stand-ins for the deps the pen reads and writes existing paths through,
  *  over a plain record of world-space paths. */
-function standInScene(paths: Record<string, PolygonPath>) {
+function standInScene(paths: Record<string, PolygonPath>, setSelection: (ids: string[]) => void) {
   const scene = { ...paths };
   // The area query answers by anchor-in-rect, so a box the pen sizes wrongly
   // finds nothing.
@@ -85,6 +89,7 @@ function standInScene(paths: Record<string, PolygonPath>) {
     ...rootsTree(),
     insertNode: (node: { id: string; pose: Pose }) => { inserted.push(node); },
     removeNode: (id: string) => { delete scene[id]; },
+    setSelection,
   };
   const applyOps = vi.fn((ops: Op[], _label: string) => { for (const op of ops) op.apply(opTarget); });
   return { scene, hitTestArea, applyEdit, editOps, inserted, applyOps };
@@ -125,7 +130,7 @@ export function setup(over: {
   // The state this pen's overlay paints from.
   const scratch = previewLayers.mock.lastCall![0].state;
 
-  const { scene, hitTestArea, applyEdit, editOps, inserted, applyOps } = standInScene(paths);
+  const { scene, hitTestArea, applyEdit, editOps, inserted, applyOps } = standInScene(paths, adapter.setSelection);
   const deps = {
     view: { get: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }), set: () => {} },
     areaSelect: { hitTestArea },

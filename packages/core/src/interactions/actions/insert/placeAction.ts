@@ -5,6 +5,7 @@ import { inPlane, insertLayer } from '../planeInput';
 import { enterInsertedText } from './commit';
 import { insertParent } from './parent';
 import { insertKind } from './shape';
+import { clearedSelection } from './session';
 import { minSizeOf } from 'core/scene/minSize';
 import type { ImmediateParams } from '@weasel-js/routing';
 
@@ -47,6 +48,7 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       const { x, y } = world;
       if (!(size.width > 0 && size.height > 0)) return;
 
+      const prior = deps.selection ? [...deps.selection.get()] : [];
       deps.selection?.clear();
       const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
       const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
@@ -57,7 +59,7 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
       const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
       const ends = { start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true };
-      const id = dep.commit(bounds, extras as InsertExtras, ends);
+      const id = dep.commit(bounds, extras as InsertExtras, ends, clearedSelection(prior));
       enterInsertedText(deps.textEdit, id === null ? null : String(id), extras.kind as string);
     },
   },

@@ -142,8 +142,9 @@ describe('useStencilInsert', () => {
     const under = { commit: vi.fn(() => 'r1' as never), build: vi.fn(() => null), layer: () => 'main' } satisfies InsertDep;
     const { dep } = insertDep(undefined, under);
     const bounds = { x: 0, y: 0, width: 10, height: 10 };
-    expect(dep.commit(bounds, { kind: 'rect' } as never)).toBe('r1');
-    expect(under.commit).toHaveBeenCalledWith(bounds, { kind: 'rect' }, undefined);
+    const select = { from: ['a' as never], selectNew: true };
+    expect(dep.commit(bounds, { kind: 'rect' } as never, undefined, select)).toBe('r1');
+    expect(under.commit).toHaveBeenCalledWith(bounds, { kind: 'rect' }, undefined, select);
     dep.build!(bounds, { kind: 'rect' } as never);
     expect(under.build).toHaveBeenCalledTimes(1);
     dep.commit(bounds, { kind: stencilKind('process') } as never);

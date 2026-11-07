@@ -13,7 +13,7 @@ import { createPenPreviewLayer, penReachOf } from 'domains/paths/penPreviewLayer
 import { resolveEditablePathOf } from 'domains/paths/editablePath';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
-import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
+import { commitOps } from 'interactions/actions/defaultCommitAdapter';
 import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
 import { pointSnap } from 'domains/snap/pointSnap';
 import { snapMods } from 'domains/snap/roles';
@@ -179,8 +179,9 @@ export function usePenTool(
       s.finishedSubpaths.every((sp) => sp.closed) &&
       (open === null || open.closed);
     const path = buildPath(s.finishedSubpaths, open);
-    const id = deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed }) ?? null;
-    if (id !== null && optsRef.current.autoSelect) deps.selection?.set([id]);
+    const sel = deps.selection;
+    const select = sel && optsRef.current.autoSelect ? { from: [...sel.get()], selectNew: true } : undefined;
+    deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed }, undefined, select);
     resetScratch(s);
   }, [commitContinuation, optsRef]);
 
@@ -249,10 +250,7 @@ export function usePenTool(
     }
     if (!sameNode) ops.push(createDeleteOp({ node: scene!.get(hit.id as never) as { id: string } }));
 
-    const applyOps = deps.applyOps;
-    if (applyOps) applyOps(ops, label);
-    else scene!.applyBatch(ops, label, defaultCommitAdapter(scene!));
-    if (optsRef.current.autoSelect) deps.selection?.set([asNodeId(keptId)]);
+    commitOps(deps, ops, label, optsRef.current.autoSelect ? { select: [keptId] } : {});
     resetScratch(s);
   }, [optsRef]);
 
