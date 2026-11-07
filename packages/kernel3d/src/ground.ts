@@ -16,9 +16,11 @@ export interface GroundAxes {
   readonly up: Axis;
 }
 
+/** `up`'s own axis is the one it leans along most, so rounding left in the others is not read as a lean. */
 export function groundAxes(up: Vec3): GroundAxes {
-  if (up.y !== 0) return { u: 'x', v: 'z', up: 'y' };
-  if (up.x !== 0) return { u: 'y', v: 'z', up: 'x' };
+  const x = Math.abs(up.x), y = Math.abs(up.y), z = Math.abs(up.z);
+  if (y >= x && y >= z) return { u: 'x', v: 'z', up: 'y' };
+  if (x >= z) return { u: 'y', v: 'z', up: 'x' };
   return { u: 'x', v: 'y', up: 'z' };
 }
 
